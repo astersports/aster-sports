@@ -357,7 +357,7 @@ export default function Schedule() {
   const [teamFilter, setTeamFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [showCancelled, setShowCancelled] = useState(false);
-  const [expandedId, setExpandedId] = useState(null);
+  const [expandedIds, setExpandedIds] = useState(new Set());
   const [showSubscribe, setShowSubscribe] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const lastVisited = useRef(localStorage.getItem(LS_KEY));
@@ -376,7 +376,7 @@ export default function Schedule() {
       setSeason(seasonRes.data);
 
       const [eventsRes, teamsRes] = await Promise.all([
-        supabase.from('events').select('*, teams(id, name, sort_order, team_color), event_changes(id, field_name, old_value, new_value, changed_at), event_duties(id, duty_name, slots_needed, guardian_id, claimed_by_name), event_rsvps(id, response), event_rides(id, ride_type, seats), event_comments(id)').gte('start_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()).order('start_at', { ascending: true }),
+        supabase.from('events').select('*, teams(id, name, sort_order, team_color), event_changes(id, field_name, old_value, new_value, changed_at), event_duties(id, duty_name, slots_needed, guardian_id, claimed_by_name, claimed_at), event_rsvps(id, player_id, response, comment, responded_at), event_rides(id, ride_type, name, phone, seats, pickup_location, departure_time, notes), event_comments(id, author_name, body, pinned, created_at)').gte('start_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()).order('start_at', { ascending: true }),
         supabase.from('teams').select('id, name, sort_order, team_color').eq('season_id', seasonRes.data.id).order('sort_order', { ascending: true }),
       ]);
 
@@ -424,7 +424,7 @@ export default function Schedule() {
 
   const scrollToEvent = useCallback((id) => {
     const el = document.getElementById(`event-${id}`);
-    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setExpandedId(id); }
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setExpandedIds((prev) => new Set(prev).add(id)); }
   }, []);
 
   const scrollToToday = useCallback(() => {
@@ -511,8 +511,8 @@ export default function Schedule() {
                 <EventCard
                   key={event.id}
                   event={event}
-                  expanded={expandedId === event.id}
-                  onToggle={() => setExpandedId(expandedId === event.id ? null : event.id)}
+                  expanded={expandedIds.has(event.id)}
+                  onToggle={() => setExpandedIds((prev) => { const next = new Set(prev); if (next.has(event.id)) next.delete(event.id); else next.add(event.id); return next; })}
                   isNew={isNew}
                   isUpdated={isUpdated}
                   userRole={userRole}

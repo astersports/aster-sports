@@ -118,12 +118,12 @@ export function RsvpSection({ event, userRole, isPublic, onUpdate }) {
         </div>
       )}
 
-      {/* Public: player selector */}
-      {isPublic && (
+      {/* Player selector */}
+      {!isAdmin && (
         <div className="flex flex-wrap gap-2 items-end">
           <div className="flex-1 min-w-[150px]">
             <label className="block text-xs font-medium text-(--color-text-secondary) mb-1">Your player</label>
-            <select value={selectedPlayer} onChange={(e) => setSelectedPlayer(e.target.value)} className={`${INPUT_CLS} w-full`}>
+            <select value={selectedPlayer} onChange={(e) => { setSelectedPlayer(e.target.value); localStorage.setItem(LS_PLAYER, e.target.value); }} className={`${INPUT_CLS} w-full`}>
               <option value="">Select player...</option>
               {roster.map((r) => <option key={r.player_id} value={r.player_id}>{r.players?.first_name} {r.players?.last_name}</option>)}
             </select>
@@ -133,10 +133,7 @@ export function RsvpSection({ event, userRole, isPublic, onUpdate }) {
           </div>
         </div>
       )}
-      {isPublic && selectedPlayer && rsvpBtns(selectedPlayer)}
-
-      {/* Authenticated RSVP */}
-      {!isPublic && selectedPlayer && rsvpBtns(selectedPlayer)}
+      {!isAdmin && selectedPlayer && rsvpBtns(selectedPlayer)}
 
       {/* Admin: RSVP on behalf */}
       {isAdmin && (

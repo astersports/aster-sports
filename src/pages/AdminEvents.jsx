@@ -268,8 +268,8 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
   // Conflict warning overlay
   if (conflict && !forceOverride) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-        <div className="bg-(--color-background) rounded-lg shadow-lg w-full max-w-md p-6">
+      <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div className="rounded-lg shadow-lg w-full max-w-md p-6" style={{ backgroundColor: 'var(--color-background-primary, #ffffff)' }}>
           <h2 className="text-lg font-bold text-(--color-text-primary) mb-2">Schedule Conflict</h2>
           <p className="text-sm text-(--color-text-secondary) mb-3">This event overlaps with:</p>
           <ul className="text-sm text-(--color-text-primary) mb-4 space-y-1">
@@ -287,9 +287,10 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/50 px-0 sm:px-4 overflow-y-auto" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center px-0 sm:px-4 overflow-y-auto" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
       <div
-        className="bg-(--color-background) sm:rounded-lg shadow-lg w-full sm:max-w-lg sm:max-h-[90vh] min-h-screen sm:min-h-0 overflow-y-auto p-6 sm:my-8"
+        className="sm:rounded-lg shadow-lg w-full sm:max-w-lg sm:max-h-[90vh] min-h-screen sm:min-h-0 overflow-y-auto p-6 sm:my-8"
+        style={{ backgroundColor: 'var(--color-background-primary, #ffffff)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-bold text-(--color-text-primary) mb-4">
@@ -580,8 +581,8 @@ function RecurringModal({ teams, allEvents, onSave, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/50 px-0 sm:px-4 overflow-y-auto" onClick={onClose}>
-      <div className="bg-(--color-background) sm:rounded-lg shadow-lg w-full sm:max-w-lg sm:max-h-[90vh] min-h-screen sm:min-h-0 overflow-y-auto p-6 sm:my-8" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center px-0 sm:px-4 overflow-y-auto" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+      <div className="sm:rounded-lg shadow-lg w-full sm:max-w-lg sm:max-h-[90vh] min-h-screen sm:min-h-0 overflow-y-auto p-6 sm:my-8" style={{ backgroundColor: 'var(--color-background-primary, #ffffff)' }} onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-bold text-(--color-text-primary) mb-4">Create Recurring Event</h2>
         {error && <div role="alert" className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded mb-4">{error}</div>}
 
@@ -699,8 +700,8 @@ function DeleteDialog({ events, onConfirm, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
-      <div className="bg-(--color-background) rounded-lg shadow-lg w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+      <div className="rounded-lg shadow-lg w-full max-w-sm p-6" style={{ backgroundColor: 'var(--color-background-primary, #ffffff)' }} onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-bold text-(--color-text-primary) mb-2">Delete {isBulk ? `${events.length} Events` : 'Event'}</h2>
         {isBulk ? (
           <div className="text-sm text-(--color-text-secondary) mb-4">
@@ -728,16 +729,26 @@ function DeleteDialog({ events, onConfirm, onClose }) {
 // =================================================================
 // BULK ACTION BAR
 // =================================================================
-function BulkBar({ count, onDelete, onChangeStatus, onChangeLocation }) {
+function BulkBar({ count, onDelete, onChangeStatus, onChangeLocation, onReschedule }) {
   const [locInput, setLocInput] = useState('');
   const [showLoc, setShowLoc] = useState(false);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState('');
 
   return (
     <div className="bg-(--color-background-secondary) border border-(--color-border-tertiary) rounded-lg p-3 mb-4 flex flex-wrap items-center gap-3">
       <span className="text-sm font-medium text-(--color-text-primary)">{count} selected</span>
       <button onClick={() => onChangeStatus('cancelled')} className="text-sm font-medium text-amber-600 hover:underline">Cancel</button>
       <button onClick={() => onChangeStatus('postponed')} className="text-sm font-medium text-amber-600 hover:underline">Postpone</button>
-      <button onClick={() => onChangeStatus('scheduled')} className="text-sm font-medium text-emerald-600 hover:underline">Reschedule</button>
+      {showReschedule ? (
+        <div className="flex gap-2 items-center">
+          <input type="datetime-local" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} className={`${INPUT_CLS} w-auto`} />
+          <button onClick={() => { if (rescheduleDate) { onReschedule(rescheduleDate); setShowReschedule(false); setRescheduleDate(''); } }} disabled={!rescheduleDate} className="text-sm font-medium hover:underline disabled:opacity-50" style={{ color: 'var(--sf-accent)' }}>Apply</button>
+          <button onClick={() => { setShowReschedule(false); setRescheduleDate(''); }} className="text-sm font-medium text-(--color-text-secondary) hover:underline">Cancel</button>
+        </div>
+      ) : (
+        <button onClick={() => setShowReschedule(true)} className="text-sm font-medium text-emerald-600 hover:underline">Reschedule</button>
+      )}
       {showLoc ? (
         <div className="flex gap-2">
           <input type="text" value={locInput} onChange={(e) => setLocInput(e.target.value)} placeholder="New location" className={`${INPUT_CLS} w-40`} />
@@ -850,6 +861,12 @@ export default function AdminEvents() {
     loadData();
   }
 
+  async function bulkReschedule(newDateTime) {
+    const newStart = new Date(newDateTime).toISOString();
+    for (const id of selected) await supabase.from('events').update({ start_at: newStart, status: 'scheduled' }).eq('id', id);
+    loadData();
+  }
+
   async function bulkChangeLocation(location) {
     for (const id of selected) await supabase.from('events').update({ location }).eq('id', id);
     loadData();
@@ -911,6 +928,7 @@ export default function AdminEvents() {
           onDelete={() => setDeleteEvents(selectedEvents)}
           onChangeStatus={bulkChangeStatus}
           onChangeLocation={bulkChangeLocation}
+          onReschedule={bulkReschedule}
         />
       )}
 
