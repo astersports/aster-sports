@@ -96,8 +96,13 @@ export function RsvpSection({ event, userRole, isPublic, onUpdate }) {
     <div className="space-y-3">
       {/* Summary bar */}
       <div>
-        <p className="text-xs text-(--color-text-secondary) mb-1">
-          {counts.going} Going · {counts.maybe} Maybe · {counts.not_going} Not Going{noResponseCount > 0 ? ` · ${noResponseCount} No Response` : ''}
+        <p className="text-xs text-(--color-text-secondary) mb-1 flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />{counts.going} In</span>
+          <span>·</span>
+          <span className="inline-flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-amber-400" />{counts.maybe} Maybe</span>
+          <span>·</span>
+          <span className="inline-flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-red-500" />{counts.not_going} No</span>
+          {(noResponseCount > 0 || roster.length > 0) && <><span>·</span><span className="inline-flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-gray-300" />{noResponseCount > 0 ? noResponseCount : roster.length} Missing</span></>}
         </p>
         {total > 0 && (
           <div className="flex h-1.5 rounded-full overflow-hidden bg-(--color-background-secondary)">
@@ -189,19 +194,22 @@ export function RideBoard({ event, userRole, isPublic, onUpdate }) {
   const myName = localStorage.getItem(LS_NAME);
 
   async function submitRide(type) {
+    if (!form.name.trim()) return;
     setSubmitting(true);
+    const nameTrimmed = form.name.trim();
+    const phoneTrimmed = form.phone.trim() || null;
     const payload = {
       event_id: event.id,
       ride_type: type,
-      name: form.name.trim(),
-      phone: form.phone.trim() || null,
+      name: nameTrimmed,
+      phone: phoneTrimmed,
       seats: Number(form.seats) || 1,
       pickup_location: form.pickup_location.trim() || null,
       departure_time: form.departure_time ? new Date(`${new Date(event.start_at).toISOString().slice(0, 10)}T${form.departure_time}`).toISOString() : null,
       notes: form.notes.trim() || null,
     };
-    if (isPublic) localStorage.setItem(LS_NAME, form.name.trim());
-    if (form.phone) localStorage.setItem(LS_PHONE, form.phone.trim());
+    localStorage.setItem(LS_NAME, nameTrimmed);
+    if (phoneTrimmed) localStorage.setItem(LS_PHONE, phoneTrimmed);
 
     const { data, error } = await supabase.from('event_rides').insert(payload).select().single();
     if (!error && data) setRides((prev) => [...prev, data]);
@@ -224,9 +232,7 @@ export function RideBoard({ event, userRole, isPublic, onUpdate }) {
 
   const rideForm = (type) => (
     <div className="bg-(--color-background-secondary) rounded p-3 space-y-2 mt-2">
-      {(isPublic || !form.name) && (
-        <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Your name" required className={`${INPUT_CLS} w-full`} />
-      )}
+      <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Your name" required className={`${INPUT_CLS} w-full`} />
       {isPublic && <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="Phone (optional)" className={`${INPUT_CLS} w-full`} />}
       <div className="flex gap-2">
         <input type="number" min="1" max="6" value={form.seats} onChange={(e) => setForm((f) => ({ ...f, seats: e.target.value }))} className={`${INPUT_CLS} w-20`} />
@@ -270,7 +276,7 @@ export function RideBoard({ event, userRole, isPublic, onUpdate }) {
                 <span className="font-medium text-(--color-text-primary)">{r.name}</span>
                 {canRemove(r) && <button onClick={() => removeRide(r.id)} className="text-xs text-red-500 hover:underline">Remove</button>}
               </div>
-              <p className="text-xs text-(--color-text-secondary)">{r.seats} seat{r.seats !== 1 ? 's' : ''}{r.pickup_location ? ` · ${r.pickup_location}` : ''}{r.phone ? ` · ${r.phone}` : ''}</p>
+              <p className="text-xs text-(--color-text-secondary)">{r.seats} seat{r.seats !== 1 ? 's' : ''}{r.departure_time ? ` · Departs ${new Date(r.departure_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}{r.pickup_location ? ` · ${r.pickup_location}` : ''}{r.phone ? ` · ${r.phone}` : ''}</p>
             </div>
           ))}
           {showForm !== 'offering' && <button onClick={() => setShowForm('offering')} className="text-xs font-medium hover:underline" style={{ color: 'var(--sf-accent)' }}>I can drive</button>}

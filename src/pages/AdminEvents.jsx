@@ -141,9 +141,57 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
       }
       // Default enable_rides on for tournaments
       if (field === 'event_type' && value === 'tournament') next.enable_rides = true;
+      // Multi-day: set default end_date and enforce end >= start
+      if (field === 'is_multi_day' && value && next.start_at) {
+        const startDate = next.start_at.slice(0, 10);
+        const nextDay = new Date(startDate + 'T12:00:00');
+        nextDay.setDate(nextDay.getDate() + 1);
+        next.end_date = nextDay.toISOString().slice(0, 10);
+      }
+      if (field === 'start_at' && next.is_multi_day && value) {
+        const startDate = value.slice(0, 10);
+        const nextDay = new Date(startDate + 'T12:00:00');
+        nextDay.setDate(nextDay.getDate() + 1);
+        if (!next.end_date || next.end_date < startDate) {
+          next.end_date = nextDay.toISOString().slice(0, 10);
+        }
+      }
       return next;
     });
   }
+
+  // Date validation helper
+  function isValidDatetime(val) {
+    if (!val) return true; // empty is ok for optional fields
+    const d = new Date(val);
+    return !isNaN(d.getTime()) && d.getFullYear() >= 2000 && d.getFullYear() <= 2099;
+  }
+  function isValidDate(val) {
+    if (!val) return true;
+    const d = new Date(val + 'T12:00:00');
+    return !isNaN(d.getTime()) && d.getFullYear() >= 2000 && d.getFullYear() <= 2099;
+  }
+
+  const dateErrors = {
+    start_at: !isValidDatetime(form.start_at),
+    end_at: !isValidDatetime(form.end_at),
+    end_date: !isValidDate(form.end_date),
+    rsvp_deadline: !isValidDatetime(form.rsvp_deadline),
+  };
+  const hasDateError = Object.values(dateErrors).some(Boolean);
+
+  // Duration helper
+  const duration = (() => {
+    if (!form.start_at || (!form.is_multi_day && !form.end_at)) return null;
+    if (form.is_multi_day) return null;
+    const start = new Date(form.start_at).getTime();
+    const end = new Date(form.end_at).getTime();
+    if (isNaN(start) || isNaN(end) || end <= start) return null;
+    const mins = Math.round((end - start) / 60000);
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h > 0 ? `${h}h${m > 0 ? ` ${m}m` : ''}` : `${m}m`;
+  })();
 
   // Duties list management
   function addDuty() { setForm((f) => ({ ...f, duties: [...f.duties, { duty_name: '', slots_needed: 1 }] })); }
@@ -173,6 +221,7 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (hasDateError) { setError('Please fix invalid date values before saving.'); return; }
     setSaving(true);
     setError(null);
 
@@ -334,17 +383,21 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="ev-start" className={LABEL_CLS}>Start</label>
-              <input id="ev-start" type="datetime-local" required value={form.start_at} onChange={(e) => update('start_at', e.target.value)} className={INPUT_CLS} />
+              <input id="ev-start" type="datetime-local" required value={form.start_at} onChange={(e) => update('start_at', e.target.value)} className={`${INPUT_CLS} ${dateErrors.start_at ? 'border-red-500 focus:ring-red-500' : ''}`} />
+              {dateErrors.start_at && <p className="text-xs text-red-500 mt-1">Invalid date</p>}
             </div>
             {form.is_multi_day ? (
               <div>
                 <label htmlFor="ev-end-date" className={LABEL_CLS}>End Date</label>
-                <input id="ev-end-date" type="date" value={form.end_date} onChange={(e) => update('end_date', e.target.value)} className={INPUT_CLS} />
+                <input id="ev-end-date" type="date" value={form.end_date} onChange={(e) => update('end_date', e.target.value)} min={form.start_at ? form.start_at.slice(0, 10) : ''} className={`${INPUT_CLS} ${dateErrors.end_date ? 'border-red-500 focus:ring-red-500' : ''}`} />
+                {dateErrors.end_date && <p className="text-xs text-red-500 mt-1">Invalid date</p>}
               </div>
             ) : (
               <div>
                 <label htmlFor="ev-end" className={LABEL_CLS}>End (optional)</label>
-                <input id="ev-end" type="datetime-local" value={form.end_at} onChange={(e) => update('end_at', e.target.value)} className={INPUT_CLS} />
+                <input id="ev-end" type="datetime-local" value={form.end_at} onChange={(e) => update('end_at', e.target.value)} className={`${INPUT_CLS} ${dateErrors.end_at ? 'border-red-500 focus:ring-red-500' : ''}`} />
+                {dateErrors.end_at && <p className="text-xs text-red-500 mt-1">Invalid date</p>}
+                {duration && <p className="text-xs text-(--color-text-secondary) mt-1">{duration}</p>}
               </div>
             )}
           </div>
@@ -404,21 +457,28 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
           {/* RSVP deadline */}
           <div>
             <label htmlFor="ev-rsvp-deadline" className={LABEL_CLS}>RSVP deadline (optional)</label>
-            <input id="ev-rsvp-deadline" type="datetime-local" value={form.rsvp_deadline} onChange={(e) => update('rsvp_deadline', e.target.value)} className={INPUT_CLS} />
+            <div className="flex gap-2">
+              <input id="ev-rsvp-deadline" type="datetime-local" value={form.rsvp_deadline} onChange={(e) => update('rsvp_deadline', e.target.value)} className={`${INPUT_CLS} ${dateErrors.rsvp_deadline ? 'border-red-500 focus:ring-red-500' : ''}`} />
+              {form.start_at && isValidDatetime(form.start_at) && (
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const days = Number(e.target.value);
+                    if (!days) return;
+                    const deadline = new Date(new Date(form.start_at).getTime() - days * 86400000);
+                    update('rsvp_deadline', toLocalInput(deadline.toISOString()));
+                  }}
+                  className={`${INPUT_CLS} w-auto`}
+                >
+                  <option value="">Quick set...</option>
+                  <option value="1">1 day before</option>
+                  <option value="2">2 days before</option>
+                  <option value="3">3 days before</option>
+                </select>
+              )}
+            </div>
+            {dateErrors.rsvp_deadline && <p className="text-xs text-red-500 mt-1">Invalid date</p>}
           </div>
-
-          {/* Duty slots */}
-          <fieldset>
-            <legend className={LABEL_CLS}>Duty Slots</legend>
-            {form.duties.map((d, i) => (
-              <div key={i} className="flex gap-2 mb-2">
-                <input type="text" value={d.duty_name} onChange={(e) => updateDuty(i, 'duty_name', e.target.value)} placeholder="e.g. Snack duty" className={`${INPUT_CLS} flex-1`} />
-                <input type="number" min="1" value={d.slots_needed} onChange={(e) => updateDuty(i, 'slots_needed', e.target.value)} className={`${INPUT_CLS} w-16`} />
-                <button type="button" onClick={() => removeDuty(i)} className="text-red-500 text-sm font-medium px-2">Remove</button>
-              </div>
-            ))}
-            <button type="button" onClick={addDuty} className="text-sm font-medium hover:underline" style={{ color: 'var(--sf-accent)' }}>+ Add duty</button>
-          </fieldset>
 
           {/* Attachments */}
           <fieldset>
@@ -438,6 +498,21 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
             <label htmlFor="ev-notes" className={LABEL_CLS}>Notes</label>
             <textarea id="ev-notes" rows={2} value={form.notes} onChange={(e) => update('notes', e.target.value)} className={INPUT_CLS} />
           </div>
+
+          {/* Duty slots — after Notes for prominence */}
+          <fieldset>
+            <legend className={LABEL_CLS}>Volunteer Duties</legend>
+            <p className="text-xs text-(--color-text-secondary) mb-2">Add volunteer duties like snack duty or scorekeeping. Parents can claim slots from the schedule.</p>
+            {form.duties.map((d, i) => (
+              <div key={i} className="flex gap-2 mb-2">
+                <input type="text" value={d.duty_name} onChange={(e) => updateDuty(i, 'duty_name', e.target.value)} placeholder="e.g. Snack duty" className={`${INPUT_CLS} flex-1`} />
+                <input type="number" min="1" value={d.slots_needed} onChange={(e) => updateDuty(i, 'slots_needed', e.target.value)} className={`${INPUT_CLS} w-16`} />
+                <button type="button" onClick={() => removeDuty(i)} className="text-red-500 text-sm font-medium px-2">Remove</button>
+              </div>
+            ))}
+            <button type="button" onClick={addDuty} className="text-sm font-medium hover:underline" style={{ color: 'var(--sf-accent)' }}>+ Add duty</button>
+          </fieldset>
+
           <div>
             <label htmlFor="ev-coach-notes" className={LABEL_CLS}>Coach notes <span className="font-normal text-(--color-text-secondary)">(not visible to parents)</span></label>
             <textarea id="ev-coach-notes" rows={2} value={form.coach_notes} onChange={(e) => update('coach_notes', e.target.value)} className={INPUT_CLS} />
@@ -446,7 +521,7 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className={BTN_SECONDARY}>Cancel</button>
-            <button type="submit" disabled={saving} aria-busy={saving} className="px-4 py-2 text-sm font-medium rounded disabled:opacity-50" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>
+            <button type="submit" disabled={saving || hasDateError} aria-busy={saving} className="px-4 py-2 text-sm font-medium rounded disabled:opacity-50" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>
               {saving ? 'Saving...' : 'Save'}
             </button>
           </div>

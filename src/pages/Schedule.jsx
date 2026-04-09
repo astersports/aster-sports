@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { RsvpSection, RideBoard, CommentsThread, DutySignups, useWeather, WeatherBadge } from '../components/EventInteractions';
 
 // ─── Constants ───────────────────────────────────────────────
-const EVENT_TYPES = ['all', 'practice', 'game', 'tournament'];
+const EVENT_TYPES = ['all', 'practice', 'game', 'tournament', 'other'];
 const TYPE_LABELS = { all: 'All', practice: 'Practice', game: 'Game', tournament: 'Tournament', other: 'Other' };
 const TYPE_BADGE_CLS = { practice: 'bg-emerald-100 text-emerald-800', game: 'bg-blue-100 text-blue-800', tournament: 'bg-purple-100 text-purple-800', other: 'bg-slate-100 text-slate-700' };
 const STATUS_ICONS = { scheduled: { icon: '\u2713', cls: 'text-emerald-600' }, postponed: { icon: '\u23F8', cls: 'text-amber-500' }, cancelled: { icon: '\u2715', cls: 'text-red-500' } };
@@ -218,6 +218,32 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
         </div>
         <h3 className={`font-medium text-(--color-text-primary) ${isCancelled ? 'line-through' : ''}`}>{event.title}</h3>
         {!expanded && event.location && <p className="text-sm text-(--color-text-secondary) mt-0.5 truncate">{event.location}</p>}
+        {!expanded && (() => {
+          const rsvps = event.event_rsvps || [];
+          const rCounts = { going: 0, maybe: 0, not_going: 0 };
+          for (const r of rsvps) rCounts[r.response] = (rCounts[r.response] || 0) + 1;
+          const hasRsvps = rsvps.length > 0 || event.rsvp_deadline;
+          const rides = event.event_rides || [];
+          const offeredSeats = rides.filter((r) => r.ride_type === 'offering').reduce((s, r) => s + (r.seats || 0), 0);
+          const neededSeats = rides.filter((r) => r.ride_type === 'requesting').reduce((s, r) => s + (r.seats || 0), 0);
+          const deadlineMs = event.rsvp_deadline ? new Date(event.rsvp_deadline).getTime() - Date.now() : null;
+          const deadlineDays = deadlineMs && deadlineMs > 0 ? Math.ceil(deadlineMs / 86400000) : null;
+          return (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-xs text-(--color-text-secondary)">
+              {hasRsvps && (
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-0.5"><span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />{rCounts.going}</span>
+                  <span className="inline-flex items-center gap-0.5"><span className="inline-block w-2 h-2 rounded-full bg-amber-400" />{rCounts.maybe}</span>
+                  <span className="inline-flex items-center gap-0.5"><span className="inline-block w-2 h-2 rounded-full bg-red-500" />{rCounts.not_going}</span>
+                </span>
+              )}
+              {deadlineDays && deadlineDays <= 3 && <span className="text-amber-600 font-medium">RSVP closes in {deadlineDays} day{deadlineDays !== 1 ? 's' : ''}</span>}
+              {event.enable_rides && (offeredSeats > 0 || neededSeats > 0) && (
+                <span>{offeredSeats} seat{offeredSeats !== 1 ? 's' : ''} · {neededSeats} needed</span>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Expanded */}
@@ -478,7 +504,7 @@ export default function Schedule() {
         </div>
 
         <Pill active={showCancelled} onClick={() => setShowCancelled((v) => !v)} aria-pressed={showCancelled}>
-          {showCancelled ? 'Showing cancelled' : 'Show cancelled'}
+          {showCancelled ? 'Showing cancelled/postponed' : 'Show cancelled/postponed'}
         </Pill>
 
         {/* Action buttons */}
