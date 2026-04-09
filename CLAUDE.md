@@ -81,7 +81,7 @@ Copy `.env.example` to `.env` and fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE
 - `src/components/RequireAuth.jsx` — Route guard; accepts `allowedRoles` array
 - `src/components/ErrorBoundary.jsx` — Root error boundary (catches React crashes)
 - `src/components/Layout.jsx` — App shell with responsive nav (role-aware, org-branded)
-- `src/pages/` — Route-level components (Login, ForgotPassword, Dashboard, Schedule, Roster, Admin, Unauthorized)
+- `src/pages/` — Route-level components (Login, ForgotPassword, Dashboard, Schedule, PublicSchedule, Roster, Admin, AdminEvents, Unauthorized)
 - `supabase/migrations/` — SQL migrations (RLS-enabled, org-scoped)
 
 Role and organization are stored in `public.user_roles` + `public.organizations` (not in JWT claims), fetched on auth state change.
@@ -91,3 +91,5 @@ Role and organization are stored in `public.user_roles` + `public.organizations`
 - `001_user_roles.sql` — Initial user_roles table with RLS
 - `002_skyfire_foundation.sql` — Organizations, org settings, user_roles org scoping, Legacy Hoopers seed data
 - `003_core_data_model.sql` — Seasons, teams, players, team_players, guardians, player_guardians, team_staff, events; org-scoped RLS via `current_user_org_id()` helper; Legacy Hoopers Spring 2026 seed (5 teams); `updated_at` triggers
+- `004_schedule_extensions.sql` — Events table extensions (status, jersey, arrival, rides, multi-day, attachments, indoor, coach_notes, parent_event_id); event_changes, event_duties, event_rsvps, event_rides, event_comments tables; team_color on teams; Legacy Hoopers team color seeds; RLS via `event_org_matches()` helper + public read policies
+- `005_interactive_features.sql` — rsvp_deadline on events; notifications_queue table (org-scoped, status-indexed)

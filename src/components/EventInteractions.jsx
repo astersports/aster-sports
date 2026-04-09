@@ -1,0 +1,549 @@
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+const INPUT_CLS = 'border border-(--color-border-tertiary) rounded px-3 py-2 text-sm bg-(--color-background) text-(--color-text-primary) focus:outline-none focus:ring-2 focus:ring-[var(--sf-accent)]';
+const LS_NAME = 'skyfire_user_name';
+const LS_PHONE = 'skyfire_user_phone';
+const LS_PLAYER = 'skyfire_player_id';
+
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+// =================================================================
+// RSVP SECTION
+// =================================================================
+export function RsvpSection({ event, userRole, isPublic, onUpdate }) {
+  const [rsvps, setRsvps] = useState(event.event_rsvps || []);
+  const [roster, setRoster] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState(localStorage.getItem(LS_PLAYER) || '');
+  const [comment, setComment] = useState('');
+  const [showList, setShowList] = useState(false);
+  const [adminPlayerId, setAdminPlayerId] = useState('');
+
+  const deadlinePassed = event.rsvp_deadline && new Date(event.rsvp_deadline) < new Date();
+  const isAdmin = userRole === 'admin';
+
+  useEffect(() => {
+    supabase.from('team_players').select('player_id, players(id, first_name, last_name), roster_type').eq('team_id', event.team_id).eq('status', 'active').then(({ data }) => {
+      if (data) setRoster(data);
+    });
+  }, [event.team_id]);
+
+  const counts = { going: 0, maybe: 0, not_going: 0 };
+  for (const r of rsvps) counts[r.response] = (counts[r.response] || 0) + 1;
+  const rsvpPlayerIds = new Set(rsvps.map((r) => r.player_id));
+  const noResponseCount = roster.filter((r) => !rsvpPlayerIds.has(r.player_id)).length;
+  const total = rsvps.length + noResponseCount;
+
+  // Futures alert
+  const rosteredGoing = rsvps.filter((r) => r.response === 'going' && roster.find((p) => p.player_id === r.player_id && p.roster_type === 'rostered')).length;
+  const showFuturesAlert = isAdmin && rosteredGoing > 0 && rosteredGoing < 8 && roster.some((p) => p.roster_type === 'futures');
+
+  // Current user's player RSVP
+  const myRsvp = rsvps.find((r) => r.player_id === selectedPlayer);
+
+  async function submitRsvp(response, playerId) {
+    if (!playerId) return;
+    setSubmitting(true);
+    const { data, error } = await supabase.from('event_rsvps').upsert({
+      event_id: event.id,
+      player_id: playerId,
+      response,
+      comment: comment.trim() || null,
+      responded_at: new Date().toISOString(),
+    }, { onConflict: 'event_id,player_id' }).select().single();
+
+    if (!error && data) {
+      setRsvps((prev) => {
+        const filtered = prev.filter((r) => r.player_id !== playerId);
+        return [...filtered, data];
+      });
+      if (isPublic) localStorage.setItem(LS_PLAYER, playerId);
+    }
+    setComment('');
+    setSubmitting(false);
+    onUpdate?.();
+  }
+
+  const rsvpBtns = (playerId) => (
+    <div className="flex gap-2">
+      {['going', 'maybe', 'not_going'].map((r) => {
+        const active = rsvps.find((rv) => rv.player_id === playerId)?.response === r;
+        const colors = { going: 'bg-emerald-500 text-white', maybe: 'bg-amber-400 text-white', not_going: 'bg-red-500 text-white' };
+        const inactive = { going: 'border-emerald-500 text-emerald-600', maybe: 'border-amber-400 text-amber-600', not_going: 'border-red-500 text-red-600' };
+        return (
+          <button
+            key={r}
+            onClick={() => submitRsvp(r, playerId)}
+            disabled={submitting || (deadlinePassed && !isAdmin)}
+            className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${active ? colors[r] : `${inactive[r]} bg-transparent`} disabled:opacity-50`}
+          >
+            {r === 'going' ? 'Going' : r === 'maybe' ? 'Maybe' : 'Not Going'}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div className="space-y-3">
+      {/* Summary bar */}
+      <div>
+        <p className="text-xs text-(--color-text-secondary) mb-1">
+          {counts.going} Going · {counts.maybe} Maybe · {counts.not_going} Not Going{noResponseCount > 0 ? ` · ${noResponseCount} No Response` : ''}
+        </p>
+        {total > 0 && (
+          <div className="flex h-1.5 rounded-full overflow-hidden bg-(--color-background-secondary)">
+            {counts.going > 0 && <div className="bg-emerald-500" style={{ width: `${(counts.going / total) * 100}%` }} />}
+            {counts.maybe > 0 && <div className="bg-amber-400" style={{ width: `${(counts.maybe / total) * 100}%` }} />}
+            {counts.not_going > 0 && <div className="bg-red-400" style={{ width: `${(counts.not_going / total) * 100}%` }} />}
+            {noResponseCount > 0 && <div className="bg-gray-300" style={{ width: `${(noResponseCount / total) * 100}%` }} />}
+          </div>
+        )}
+      </div>
+
+      {deadlinePassed && !isAdmin && <p className="text-xs text-amber-600 font-medium">RSVP closed</p>}
+
+      {/* Futures alert */}
+      {showFuturesAlert && (
+        <div className="bg-amber-50 border border-amber-200 rounded p-2 text-sm text-amber-800">
+          Only {rosteredGoing} rostered player{rosteredGoing !== 1 ? 's' : ''} confirmed. Consider activating a Futures player.
+        </div>
+      )}
+
+      {/* Public: player selector */}
+      {isPublic && (
+        <div className="flex flex-wrap gap-2 items-end">
+          <div className="flex-1 min-w-[150px]">
+            <label className="block text-xs font-medium text-(--color-text-secondary) mb-1">Your player</label>
+            <select value={selectedPlayer} onChange={(e) => setSelectedPlayer(e.target.value)} className={`${INPUT_CLS} w-full`}>
+              <option value="">Select player...</option>
+              {roster.map((r) => <option key={r.player_id} value={r.player_id}>{r.players?.first_name} {r.players?.last_name}</option>)}
+            </select>
+          </div>
+          <div className="flex-1 min-w-[120px]">
+            <input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Note (optional)" className={`${INPUT_CLS} w-full`} />
+          </div>
+        </div>
+      )}
+      {isPublic && selectedPlayer && rsvpBtns(selectedPlayer)}
+
+      {/* Authenticated RSVP */}
+      {!isPublic && selectedPlayer && rsvpBtns(selectedPlayer)}
+
+      {/* Admin: RSVP on behalf */}
+      {isAdmin && (
+        <div className="flex flex-wrap gap-2 items-end">
+          <select value={adminPlayerId} onChange={(e) => setAdminPlayerId(e.target.value)} className={`${INPUT_CLS}`}>
+            <option value="">RSVP on behalf of...</option>
+            {roster.map((r) => <option key={r.player_id} value={r.player_id}>{r.players?.first_name} {r.players?.last_name}</option>)}
+          </select>
+          {adminPlayerId && rsvpBtns(adminPlayerId)}
+        </div>
+      )}
+
+      {/* Admin: detailed RSVP list */}
+      {isAdmin && roster.length > 0 && (
+        <details open={showList} onToggle={(e) => setShowList(e.target.open)}>
+          <summary className="text-xs text-(--color-text-secondary) cursor-pointer hover:underline">Player responses ({roster.length})</summary>
+          <ul className="mt-1 space-y-1 text-sm">
+            {roster.map((r) => {
+              const rv = rsvps.find((x) => x.player_id === r.player_id);
+              const statusCls = rv ? { going: 'text-emerald-600', maybe: 'text-amber-600', not_going: 'text-red-500' }[rv.response] : 'text-gray-400';
+              const label = rv ? { going: 'Going', maybe: 'Maybe', not_going: 'Not Going' }[rv.response] : 'No response';
+              return (
+                <li key={r.player_id} className="flex items-center gap-2">
+                  <span className="text-(--color-text-primary)">{r.players?.first_name} {r.players?.last_name}</span>
+                  <span className={`text-xs font-medium ${statusCls}`}>{label}</span>
+                  {r.roster_type === 'futures' && <span className="text-xs bg-purple-100 text-purple-700 px-1.5 rounded">Futures</span>}
+                  {rv?.comment && <span className="text-xs text-(--color-text-secondary)">— {rv.comment}</span>}
+                </li>
+              );
+            })}
+          </ul>
+        </details>
+      )}
+    </div>
+  );
+}
+
+// =================================================================
+// RIDE BOARD
+// =================================================================
+export function RideBoard({ event, userRole, isPublic, onUpdate }) {
+  const [rides, setRides] = useState(event.event_rides || []);
+  const [showForm, setShowForm] = useState(null); // 'offering' | 'requesting' | null
+  const [form, setForm] = useState({ seats: 1, pickup_location: '', departure_time: '', notes: '', name: localStorage.getItem(LS_NAME) || '', phone: localStorage.getItem(LS_PHONE) || '' });
+  const [submitting, setSubmitting] = useState(false);
+
+  const drivers = rides.filter((r) => r.ride_type === 'offering');
+  const riders = rides.filter((r) => r.ride_type === 'requesting');
+  const offeredSeats = drivers.reduce((s, r) => s + (r.seats || 0), 0);
+  const neededSeats = riders.reduce((s, r) => s + (r.seats || 0), 0);
+  const covered = offeredSeats >= neededSeats;
+
+  const myName = localStorage.getItem(LS_NAME);
+
+  async function submitRide(type) {
+    setSubmitting(true);
+    const payload = {
+      event_id: event.id,
+      ride_type: type,
+      name: form.name.trim(),
+      phone: form.phone.trim() || null,
+      seats: Number(form.seats) || 1,
+      pickup_location: form.pickup_location.trim() || null,
+      departure_time: form.departure_time ? new Date(`${new Date(event.start_at).toISOString().slice(0, 10)}T${form.departure_time}`).toISOString() : null,
+      notes: form.notes.trim() || null,
+    };
+    if (isPublic) localStorage.setItem(LS_NAME, form.name.trim());
+    if (form.phone) localStorage.setItem(LS_PHONE, form.phone.trim());
+
+    const { data, error } = await supabase.from('event_rides').insert(payload).select().single();
+    if (!error && data) setRides((prev) => [...prev, data]);
+    setShowForm(null);
+    setForm((f) => ({ ...f, seats: 1, pickup_location: '', departure_time: '', notes: '' }));
+    setSubmitting(false);
+    onUpdate?.();
+  }
+
+  async function removeRide(id) {
+    await supabase.from('event_rides').delete().eq('id', id);
+    setRides((prev) => prev.filter((r) => r.id !== id));
+    onUpdate?.();
+  }
+
+  function canRemove(ride) {
+    if (userRole === 'admin') return true;
+    return ride.name === myName;
+  }
+
+  const rideForm = (type) => (
+    <div className="bg-(--color-background-secondary) rounded p-3 space-y-2 mt-2">
+      {(isPublic || !form.name) && (
+        <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Your name" required className={`${INPUT_CLS} w-full`} />
+      )}
+      {isPublic && <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="Phone (optional)" className={`${INPUT_CLS} w-full`} />}
+      <div className="flex gap-2">
+        <input type="number" min="1" max="6" value={form.seats} onChange={(e) => setForm((f) => ({ ...f, seats: e.target.value }))} className={`${INPUT_CLS} w-20`} />
+        <span className="text-sm text-(--color-text-secondary) self-center">{type === 'offering' ? 'seats available' : 'seats needed'}</span>
+      </div>
+      {type === 'offering' && (
+        <>
+          <input value={form.pickup_location} onChange={(e) => setForm((f) => ({ ...f, pickup_location: e.target.value }))} placeholder="Pickup location (optional)" className={`${INPUT_CLS} w-full`} />
+          <input type="time" value={form.departure_time} onChange={(e) => setForm((f) => ({ ...f, departure_time: e.target.value }))} className={INPUT_CLS} />
+        </>
+      )}
+      {type === 'requesting' && (
+        <input value={form.pickup_location} onChange={(e) => setForm((f) => ({ ...f, pickup_location: e.target.value }))} placeholder="Your area/neighborhood (optional)" className={`${INPUT_CLS} w-full`} />
+      )}
+      <input value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Notes (optional)" className={`${INPUT_CLS} w-full`} />
+      <div className="flex gap-2">
+        <button onClick={() => submitRide(type)} disabled={submitting || !form.name.trim()} className="px-3 py-1.5 text-sm font-medium rounded disabled:opacity-50" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>
+          {submitting ? 'Saving...' : 'Add'}
+        </button>
+        <button onClick={() => setShowForm(null)} className="px-3 py-1.5 text-sm font-medium rounded border border-(--color-border-tertiary) text-(--color-text-primary)">Cancel</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <p className="text-xs font-medium text-(--color-text-secondary)">Ride Board</p>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${covered ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+          {offeredSeats} seat{offeredSeats !== 1 ? 's' : ''} offered · {neededSeats} needed
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Drivers */}
+        <div>
+          <p className="text-xs font-semibold text-(--color-text-secondary) mb-2">Drivers ({drivers.length})</p>
+          {drivers.map((r) => (
+            <div key={r.id} className="text-sm mb-2 bg-(--color-background-secondary) rounded p-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-(--color-text-primary)">{r.name}</span>
+                {canRemove(r) && <button onClick={() => removeRide(r.id)} className="text-xs text-red-500 hover:underline">Remove</button>}
+              </div>
+              <p className="text-xs text-(--color-text-secondary)">{r.seats} seat{r.seats !== 1 ? 's' : ''}{r.pickup_location ? ` · ${r.pickup_location}` : ''}{r.phone ? ` · ${r.phone}` : ''}</p>
+            </div>
+          ))}
+          {showForm !== 'offering' && <button onClick={() => setShowForm('offering')} className="text-xs font-medium hover:underline" style={{ color: 'var(--sf-accent)' }}>I can drive</button>}
+          {showForm === 'offering' && rideForm('offering')}
+        </div>
+
+        {/* Riders */}
+        <div>
+          <p className="text-xs font-semibold text-(--color-text-secondary) mb-2">Riders ({riders.length})</p>
+          {riders.map((r) => (
+            <div key={r.id} className="text-sm mb-2 bg-(--color-background-secondary) rounded p-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-(--color-text-primary)">{r.name}</span>
+                {canRemove(r) && <button onClick={() => removeRide(r.id)} className="text-xs text-red-500 hover:underline">Remove</button>}
+              </div>
+              <p className="text-xs text-(--color-text-secondary)">{r.seats} seat{r.seats !== 1 ? 's' : ''} needed{r.pickup_location ? ` · ${r.pickup_location}` : ''}{r.phone ? ` · ${r.phone}` : ''}</p>
+            </div>
+          ))}
+          {showForm !== 'requesting' && <button onClick={() => setShowForm('requesting')} className="text-xs font-medium hover:underline" style={{ color: 'var(--sf-accent)' }}>Need a ride</button>}
+          {showForm === 'requesting' && rideForm('requesting')}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =================================================================
+// COMMENTS THREAD
+// =================================================================
+export function CommentsThread({ event, userRole, isPublic, onUpdate }) {
+  const [comments, setComments] = useState(event.event_comments || []);
+  const [body, setBody] = useState('');
+  const [name, setName] = useState(localStorage.getItem(LS_NAME) || '');
+  const [submitting, setSubmitting] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+
+  const sorted = [...comments].sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return new Date(a.created_at) - new Date(b.created_at);
+  });
+  const visible = showAll ? sorted : sorted.slice(0, 3);
+
+  async function postComment() {
+    if (!body.trim()) return;
+    setSubmitting(true);
+    const payload = {
+      event_id: event.id,
+      author_name: isPublic ? name.trim() : (userRole || 'User'),
+      body: body.trim(),
+    };
+    if (isPublic) localStorage.setItem(LS_NAME, name.trim());
+
+    const { data, error } = await supabase.from('event_comments').insert(payload).select().single();
+    if (!error && data) setComments((prev) => [...prev, data]);
+    setBody('');
+    setSubmitting(false);
+    onUpdate?.();
+  }
+
+  async function deleteComment(id) {
+    await supabase.from('event_comments').delete().eq('id', id);
+    setComments((prev) => prev.filter((c) => c.id !== id));
+    onUpdate?.();
+  }
+
+  async function togglePin(c) {
+    const { data } = await supabase.from('event_comments').update({ pinned: !c.pinned }).eq('id', c.id).select().single();
+    if (data) setComments((prev) => prev.map((x) => x.id === data.id ? data : x));
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-(--color-text-secondary)">Comments ({comments.length})</p>
+
+      {visible.map((c) => (
+        <div key={c.id} className={`text-sm rounded p-2 ${c.pinned ? 'bg-amber-50 border border-amber-200' : 'bg-(--color-background-secondary)'}`}>
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="font-medium text-(--color-text-primary)">{c.author_name}</span>
+            <span className="text-xs text-(--color-text-secondary)">{timeAgo(c.created_at)}</span>
+            {c.pinned && <span className="text-xs font-medium text-amber-600">Pinned</span>}
+            {userRole === 'admin' && (
+              <>
+                <button onClick={() => togglePin(c)} className="text-xs text-(--color-text-secondary) hover:underline ml-auto">{c.pinned ? 'Unpin' : 'Pin'}</button>
+                <button onClick={() => deleteComment(c.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+              </>
+            )}
+          </div>
+          <p className="text-(--color-text-primary)">{c.body}</p>
+        </div>
+      ))}
+
+      {sorted.length > 3 && !showAll && (
+        <button onClick={() => setShowAll(true)} className="text-xs text-(--color-text-secondary) hover:underline">Show all {sorted.length} comments</button>
+      )}
+
+      {/* Add comment */}
+      <div className="flex flex-wrap gap-2 pt-1">
+        {isPublic && <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className={`${INPUT_CLS} w-32`} />}
+        <input value={body} onChange={(e) => setBody(e.target.value)} placeholder="Add a comment..." className={`${INPUT_CLS} flex-1 min-w-[150px]`} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) postComment(); }} />
+        <button onClick={postComment} disabled={submitting || !body.trim() || (isPublic && !name.trim())} className="px-3 py-1.5 text-sm font-medium rounded disabled:opacity-50" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>Post</button>
+      </div>
+    </div>
+  );
+}
+
+// =================================================================
+// DUTY SIGN-UPS
+// =================================================================
+export function DutySignups({ event, userRole, isPublic, onUpdate }) {
+  const [duties, setDuties] = useState(event.event_duties || []);
+  const [claimName, setClaimName] = useState(localStorage.getItem(LS_NAME) || '');
+  const [claimingId, setClaimingId] = useState(null);
+
+  const myName = localStorage.getItem(LS_NAME);
+  const isAdmin = userRole === 'admin';
+
+  async function claim(dutyId) {
+    if (isPublic && !claimName.trim()) return;
+    const name = isPublic ? claimName.trim() : (userRole || 'User');
+    if (isPublic) localStorage.setItem(LS_NAME, name);
+
+    const { data } = await supabase.from('event_duties').update({
+      claimed_by_name: name,
+      claimed_at: new Date().toISOString(),
+    }).eq('id', dutyId).select().single();
+
+    if (data) setDuties((prev) => prev.map((d) => d.id === data.id ? data : d));
+    setClaimingId(null);
+    onUpdate?.();
+  }
+
+  async function unclaim(dutyId) {
+    const { data } = await supabase.from('event_duties').update({
+      claimed_by_name: null,
+      guardian_id: null,
+      claimed_at: null,
+    }).eq('id', dutyId).select().single();
+
+    if (data) setDuties((prev) => prev.map((d) => d.id === data.id ? data : d));
+    onUpdate?.();
+  }
+
+  function canUnclaim(d) {
+    if (isAdmin) return true;
+    return d.claimed_by_name === myName;
+  }
+
+  if (duties.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-(--color-text-secondary)">Volunteer Duties</p>
+      {duties.map((d) => {
+        const claimed = d.claimed_by_name || d.guardian_id;
+        return (
+          <div key={d.id} className={`flex items-center gap-2 text-sm rounded p-2 ${claimed ? 'bg-(--color-background-secondary)' : 'border border-dashed border-(--color-border-tertiary)'}`}>
+            <span className="font-medium text-(--color-text-primary)">{d.duty_name}</span>
+            {claimed ? (
+              <>
+                <span className="text-emerald-600 text-xs font-medium">{d.claimed_by_name || 'Claimed'} ✓</span>
+                {canUnclaim(d) && <button onClick={() => unclaim(d.id)} className="text-xs text-red-500 hover:underline ml-auto">Unclaim</button>}
+              </>
+            ) : (
+              <>
+                {claimingId === d.id ? (
+                  <div className="flex gap-2 ml-auto">
+                    {isPublic && <input value={claimName} onChange={(e) => setClaimName(e.target.value)} placeholder="Your name" className={`${INPUT_CLS} w-28 text-xs`} />}
+                    <button onClick={() => claim(d.id)} className="text-xs font-medium px-2 py-1 rounded" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>Confirm</button>
+                    <button onClick={() => setClaimingId(null)} className="text-xs text-(--color-text-secondary)">Cancel</button>
+                  </div>
+                ) : (
+                  <button onClick={() => setClaimingId(d.id)} className="text-xs font-medium hover:underline ml-auto" style={{ color: 'var(--sf-accent)' }}>Sign up</button>
+                )}
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// =================================================================
+// WEATHER BADGE (used on card collapsed state)
+// =================================================================
+const WMO_ICONS = {
+  0: '\u2600\uFE0F', 1: '\u2600\uFE0F', 2: '\u26C5', 3: '\u2601\uFE0F',
+  45: '\u2601\uFE0F', 48: '\u2601\uFE0F',
+  51: '\uD83C\uDF27\uFE0F', 53: '\uD83C\uDF27\uFE0F', 55: '\uD83C\uDF27\uFE0F',
+  61: '\uD83C\uDF27\uFE0F', 63: '\uD83C\uDF27\uFE0F', 65: '\uD83C\uDF27\uFE0F',
+  71: '\u2744\uFE0F', 73: '\u2744\uFE0F', 75: '\u2744\uFE0F',
+  80: '\uD83C\uDF27\uFE0F', 81: '\uD83C\uDF27\uFE0F', 82: '\uD83C\uDF27\uFE0F',
+  85: '\u2744\uFE0F', 86: '\u2744\uFE0F',
+  95: '\u26C8\uFE0F', 96: '\u26C8\uFE0F', 99: '\u26C8\uFE0F',
+};
+
+// Global cache: address → { lat, lon, weather }
+const weatherCache = {};
+
+export function useWeather(events) {
+  const [weatherMap, setWeatherMap] = useState({});
+
+  useEffect(() => {
+    async function fetchWeather() {
+      const now = Date.now();
+      const upcoming = events.filter((e) =>
+        !e.indoor &&
+        e.location_address &&
+        new Date(e.start_at).getTime() - now < 72 * 3600000 &&
+        new Date(e.start_at).getTime() > now
+      );
+
+      // Group by unique address
+      const addresses = [...new Set(upcoming.map((e) => e.location_address))];
+      const results = {};
+
+      for (const addr of addresses) {
+        if (weatherCache[addr]) {
+          Object.assign(results, weatherCache[addr]);
+          continue;
+        }
+
+        try {
+          // Geocode
+          const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(addr.split(',')[0])}&count=1`);
+          const geoData = await geoRes.json();
+          if (!geoData.results?.length) continue;
+          const { latitude, longitude } = geoData.results[0];
+
+          // Forecast
+          const wxRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,weathercode&timezone=America/New_York&forecast_days=3&temperature_unit=fahrenheit`);
+          const wxData = await wxRes.json();
+          if (!wxData.hourly) continue;
+
+          const addrResults = {};
+          // Match each event at this address
+          for (const ev of upcoming.filter((e) => e.location_address === addr)) {
+            const evTime = new Date(ev.start_at).getTime();
+            let bestIdx = 0;
+            let bestDiff = Infinity;
+            for (let i = 0; i < wxData.hourly.time.length; i++) {
+              const diff = Math.abs(new Date(wxData.hourly.time[i]).getTime() - evTime);
+              if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
+            }
+            const temp = Math.round(wxData.hourly.temperature_2m[bestIdx]);
+            const code = wxData.hourly.weathercode[bestIdx];
+            addrResults[ev.id] = { temp, icon: WMO_ICONS[code] || '\u2601\uFE0F' };
+          }
+
+          weatherCache[addr] = addrResults;
+          Object.assign(results, addrResults);
+        } catch {
+          // Silently skip
+        }
+      }
+
+      if (Object.keys(results).length > 0) setWeatherMap(results);
+    }
+
+    if (events.length > 0) fetchWeather();
+  }, [events]);
+
+  return weatherMap;
+}
+
+export function WeatherBadge({ weather }) {
+  if (!weather) return null;
+  return (
+    <span className="text-xs text-(--color-text-secondary) whitespace-nowrap" title="Weather forecast">
+      {weather.icon} {weather.temp}°F
+    </span>
+  );
+}

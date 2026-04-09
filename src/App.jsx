@@ -4,8 +4,10 @@ import RequireAuth from './components/RequireAuth';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Schedule from './pages/Schedule';
+import PublicSchedule from './pages/PublicSchedule';
 import Roster from './pages/Roster';
 import Admin from './pages/Admin';
+import AdminEvents from './pages/AdminEvents';
 import ForgotPassword from './pages/ForgotPassword';
 import Unauthorized from './pages/Unauthorized';
 
@@ -15,6 +17,8 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
+      <Route path="/s/:orgSlug" element={<PublicSchedule />} />
+      <Route path="/s/:orgSlug/:teamSlug" element={<PublicSchedule />} />
 
       <Route
         element={
@@ -31,6 +35,14 @@ export default function App() {
           element={
             <RequireAuth allowedRoles={['admin']}>
               <Admin />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="admin/events"
+          element={
+            <RequireAuth allowedRoles={['admin']}>
+              <AdminEvents />
             </RequireAuth>
           }
         />
