@@ -31,8 +31,10 @@ export function RsvpSection({ event, userRole, isPublic, onUpdate }) {
   const isAdmin = userRole === 'admin';
 
   useEffect(() => {
-    supabase.from('team_players').select('player_id, players(id, first_name, last_name), roster_type').eq('team_id', event.team_id).eq('status', 'active').then(({ data }) => {
-      if (data) setRoster(data);
+    if (!event.team_id) return;
+    supabase.from('team_players').select('player_id, players(id, first_name, last_name), roster_type, status').eq('team_id', event.team_id).then(({ data, error }) => {
+      if (error) console.error('Roster fetch error:', error);
+      if (data) setRoster(data.filter((r) => r.status === 'active'));
     });
   }, [event.team_id]);
 
@@ -184,6 +186,29 @@ export function RideBoard({ event, userRole, isPublic, onUpdate }) {
   const [showForm, setShowForm] = useState(null); // 'offering' | 'requesting' | null
   const [form, setForm] = useState({ seats: 1, pickup_location: '', departure_time: '', notes: '', name: localStorage.getItem(LS_NAME) || '', phone: localStorage.getItem(LS_PHONE) || '' });
   const [submitting, setSubmitting] = useState(false);
+  const [rosterPlayers, setRosterPlayers] = useState([]);
+  const [guardians, setGuardians] = useState([]);
+
+  useEffect(() => {
+    if (isPublic || !event.team_id) return;
+    // Fetch players for "Need a ride" dropdown
+    supabase.from('team_players').select('player_id, players(id, first_name, last_name)').eq('team_id', event.team_id).then(({ data }) => {
+      if (data) setRosterPlayers(data);
+    });
+    // Fetch guardians for "I can drive" dropdown
+    supabase.from('team_players').select('player_id, players(id, player_guardians(guardian_id, guardians(id, first_name, last_name)))').eq('team_id', event.team_id).then(({ data }) => {
+      if (data) {
+        const guardianMap = new Map();
+        for (const tp of data) {
+          for (const pg of tp.players?.player_guardians || []) {
+            const g = pg.guardians;
+            if (g && !guardianMap.has(g.id)) guardianMap.set(g.id, g);
+          }
+        }
+        setGuardians([...guardianMap.values()]);
+      }
+    });
+  }, [event.team_id, isPublic]);
 
   const drivers = rides.filter((r) => r.ride_type === 'offering');
   const riders = rides.filter((r) => r.ride_type === 'requesting');
@@ -232,7 +257,30 @@ export function RideBoard({ event, userRole, isPublic, onUpdate }) {
 
   const rideForm = (type) => (
     <div className="bg-(--color-background-secondary) rounded p-3 space-y-2 mt-2">
-      <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Your name" required className={`${INPUT_CLS} w-full`} />
+      {/* Name: dropdown for authenticated, freeform for public */}
+      {!isPublic && type === 'requesting' && rosterPlayers.length > 0 ? (
+        <select value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className={`${INPUT_CLS} w-full`}>
+          <option value="">Select player...</option>
+          {rosterPlayers.map((r) => {
+            const name = `${r.players?.first_name} ${r.players?.last_name}`;
+            return <option key={r.player_id} value={name}>{name}</option>;
+          })}
+        </select>
+      ) : !isPublic && type === 'offering' && guardians.length > 0 ? (
+        <select value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className={`${INPUT_CLS} w-full`}>
+          <option value="">Select driver...</option>
+          {guardians.map((g) => {
+            const name = `${g.first_name} ${g.last_name}`;
+            return <option key={g.id} value={name}>{name}</option>;
+          })}
+          <option value="__custom">Other...</option>
+        </select>
+      ) : (
+        <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Your name" required className={`${INPUT_CLS} w-full`} />
+      )}
+      {!isPublic && type === 'offering' && form.name === '__custom' && (
+        <input value="" onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Enter name" className={`${INPUT_CLS} w-full`} autoFocus />
+      )}
       {isPublic && <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="Phone (optional)" className={`${INPUT_CLS} w-full`} />}
       <div className="flex gap-2">
         <input type="number" min="1" max="6" value={form.seats} onChange={(e) => setForm((f) => ({ ...f, seats: e.target.value }))} className={`${INPUT_CLS} w-20`} />
@@ -262,7 +310,7 @@ export function RideBoard({ event, userRole, isPublic, onUpdate }) {
       <div className="flex items-center gap-2">
         <p className="text-xs font-medium text-(--color-text-secondary)">Ride Board</p>
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${covered ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-          {offeredSeats} seat{offeredSeats !== 1 ? 's' : ''} offered · {neededSeats} needed
+          {offeredSeats} {offeredSeats !== 1 ? 'seats' : 'seat'} offered · {neededSeats} needed
         </span>
       </div>
 
@@ -434,9 +482,10 @@ export function DutySignups({ event, userRole, isPublic, onUpdate }) {
         return (
           <div key={d.id} className={`flex items-center gap-2 text-sm rounded p-2 ${claimed ? 'bg-(--color-background-secondary)' : 'border border-dashed border-(--color-border-tertiary)'}`}>
             <span className="font-medium text-(--color-text-primary)">{d.duty_name}</span>
+            <span className="text-xs text-(--color-text-secondary)">({d.slots_needed} {d.slots_needed === 1 ? 'slot' : 'slots'})</span>
             {claimed ? (
               <>
-                <span className="text-emerald-600 text-xs font-medium">{d.claimed_by_name || 'Claimed'} ✓</span>
+                <span className="text-emerald-600 text-xs font-medium">— {d.claimed_by_name || 'Claimed'}</span>
                 {canUnclaim(d) && <button onClick={() => unclaim(d.id)} className="text-xs text-red-500 hover:underline ml-auto">Unclaim</button>}
               </>
             ) : (
@@ -448,7 +497,10 @@ export function DutySignups({ event, userRole, isPublic, onUpdate }) {
                     <button onClick={() => setClaimingId(null)} className="text-xs text-(--color-text-secondary)">Cancel</button>
                   </div>
                 ) : (
-                  <button onClick={() => setClaimingId(d.id)} className="text-xs font-medium hover:underline ml-auto" style={{ color: 'var(--sf-accent)' }}>Sign up</button>
+                  <>
+                    <span className="text-xs text-amber-600 font-medium">— Open</span>
+                    <button onClick={() => setClaimingId(d.id)} className="text-xs font-medium hover:underline ml-auto" style={{ color: 'var(--sf-accent)' }}>Sign up</button>
+                  </>
                 )}
               </>
             )}
@@ -488,6 +540,7 @@ export function useWeather(events) {
         new Date(e.start_at).getTime() - now < 72 * 3600000 &&
         new Date(e.start_at).getTime() > now
       );
+      console.log('[Weather] Eligible events:', upcoming.length, 'of', events.length, 'total');
 
       // Group by unique address
       const addresses = [...new Set(upcoming.map((e) => e.location_address))];
@@ -500,9 +553,11 @@ export function useWeather(events) {
         }
 
         try {
-          // Geocode
-          const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(addr.split(',')[0])}&count=1`);
+          // Geocode — use full address for better results
+          const geoQuery = addr.replace(/\s+/g, '+');
+          const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(geoQuery)}&count=1`);
           const geoData = await geoRes.json();
+          console.log('[Weather] Geocode for', addr, ':', geoData.results?.length || 0, 'results');
           if (!geoData.results?.length) continue;
           const { latitude, longitude } = geoData.results[0];
 
@@ -528,8 +583,8 @@ export function useWeather(events) {
 
           weatherCache[addr] = addrResults;
           Object.assign(results, addrResults);
-        } catch {
-          // Silently skip
+        } catch (err) {
+          console.error('[Weather] Fetch error for', addr, err);
         }
       }
 

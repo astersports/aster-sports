@@ -70,9 +70,10 @@ function TeamDot({ color }) {
 // =================================================================
 // EVENT MODAL (Add / Edit / Duplicate)
 // =================================================================
-function EventModal({ event, teams, allEvents, onSave, onClose }) {
+function EventModal({ event, teams, allEvents, locations, opponents, onSave, onClose }) {
   const { session, organization } = useAuth();
   const isEdit = Boolean(event?.id);
+  const [newOpponent, setNewOpponent] = useState('');
 
   const defaultForm = {
     team_id: teams[0]?.id || '',
@@ -164,12 +165,12 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
   function isValidDatetime(val) {
     if (!val) return true; // empty is ok for optional fields
     const d = new Date(val);
-    return !isNaN(d.getTime()) && d.getFullYear() >= 2000 && d.getFullYear() <= 2099;
+    return !isNaN(d.getTime()) && d.getFullYear() >= 2024 && d.getFullYear() <= 2030;
   }
   function isValidDate(val) {
     if (!val) return true;
     const d = new Date(val + 'T12:00:00');
-    return !isNaN(d.getTime()) && d.getFullYear() >= 2000 && d.getFullYear() <= 2099;
+    return !isNaN(d.getTime()) && d.getFullYear() >= 2024 && d.getFullYear() <= 2030;
   }
 
   const dateErrors = {
@@ -261,10 +262,17 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
     if (isEdit) {
       // Build change log
       const changes = [];
+      const timestampFields = new Set(['start_at', 'end_at', 'rsvp_deadline']);
       const trackFields = ['team_id', 'event_type', 'status', 'title', 'start_at', 'end_at', 'location', 'location_address', 'opponent', 'jersey', 'indoor', 'enable_rides', 'notes', 'coach_notes', 'arrival_minutes_before', 'is_multi_day', 'end_date'];
       for (const f of trackFields) {
-        const oldVal = String(event[f] ?? '');
-        const newVal = String(payload[f] ?? '');
+        let oldVal = String(event[f] ?? '');
+        let newVal = String(payload[f] ?? '');
+        // Normalize timestamps to epoch ms to avoid format-only diffs
+        if (timestampFields.has(f) && oldVal && newVal) {
+          const oldMs = new Date(oldVal).getTime();
+          const newMs = new Date(newVal).getTime();
+          if (!isNaN(oldMs) && !isNaN(newMs) && oldMs === newMs) continue;
+        }
         if (oldVal !== newVal) {
           changes.push({ event_id: event.id, changed_by: session?.user?.id, field_name: f, old_value: oldVal || null, new_value: newVal || null });
         }
@@ -411,12 +419,58 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
           {/* Location */}
           <div>
             <label htmlFor="ev-location" className={LABEL_CLS}>Location</label>
-            <input id="ev-location" type="text" value={form.location} onChange={(e) => update('location', e.target.value)} className={INPUT_CLS} />
+            <select
+              id="ev-location"
+              value={locations.find((l) => l.name === form.location)?.id || '__custom'}
+              onChange={(e) => {
+                if (e.target.value === '__custom') {
+                  setForm((f) => ({ ...f, location: '', location_address: '', _sub_location: '' }));
+                } else {
+                  const loc = locations.find((l) => l.id === e.target.value);
+                  if (loc) setForm((f) => ({ ...f, location: loc.name, location_address: loc.address || '', _sub_location: '' }));
+                }
+              }}
+              className={INPUT_CLS}
+            >
+              {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+              <option value="__custom">Custom location...</option>
+            </select>
           </div>
-          <div>
-            <label htmlFor="ev-address" className={LABEL_CLS}>Address</label>
-            <input id="ev-address" type="text" value={form.location_address} onChange={(e) => update('location_address', e.target.value)} className={INPUT_CLS} placeholder="Full address for map links and directions" />
-          </div>
+          {(() => {
+            const selLoc = locations.find((l) => l.name === form.location);
+            if (selLoc?.sub_locations?.length > 0) return (
+              <div>
+                <label className={LABEL_CLS}>Sub-location</label>
+                <select value={form._sub_location || ''} onChange={(e) => {
+                  const sub = e.target.value;
+                  setForm((f) => ({
+                    ...f,
+                    _sub_location: sub,
+                    location: sub ? `${selLoc.name} — ${sub}` : selLoc.name,
+                  }));
+                }} className={INPUT_CLS}>
+                  <option value="">None</option>
+                  {selLoc.sub_locations.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            );
+            return null;
+          })()}
+          {!locations.find((l) => l.name === form.location) && (
+            <>
+              <div>
+                <label className={LABEL_CLS}>Location name</label>
+                <input type="text" value={form.location} onChange={(e) => update('location', e.target.value)} className={INPUT_CLS} placeholder="Venue name" />
+              </div>
+              <div>
+                <label htmlFor="ev-address" className={LABEL_CLS}>Address</label>
+                <input id="ev-address" type="text" value={form.location_address} onChange={(e) => update('location_address', e.target.value)} className={INPUT_CLS} placeholder="Full address for map links and directions" />
+              </div>
+            </>
+          )}
+          {locations.find((l) => l.name === form.location) && form.location_address && (
+            <p className="text-xs text-(--color-text-secondary) -mt-2">{form.location_address}</p>
+          )}
 
           {/* Indoor + Arrival */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -425,8 +479,31 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
               Indoor venue
             </label>
             <div>
-              <label htmlFor="ev-arrival" className={LABEL_CLS}>Arrive early (minutes)</label>
-              <input id="ev-arrival" type="number" min="0" value={form.arrival_minutes_before} onChange={(e) => update('arrival_minutes_before', e.target.value)} className={INPUT_CLS} placeholder="e.g. 30" />
+              <label htmlFor="ev-arrival" className={LABEL_CLS}>Arrive early</label>
+              {(() => {
+                const presets = [15, 20, 25, 30, 45, 60];
+                const val = form.arrival_minutes_before;
+                const isCustom = val !== '' && !presets.includes(Number(val));
+                return (
+                  <div className="flex gap-2">
+                    <select
+                      id="ev-arrival"
+                      value={isCustom ? 'custom' : String(val)}
+                      onChange={(e) => {
+                        if (e.target.value === 'custom') update('arrival_minutes_before', '');
+                        else if (e.target.value === '') update('arrival_minutes_before', '');
+                        else update('arrival_minutes_before', Number(e.target.value));
+                      }}
+                      className={INPUT_CLS}
+                    >
+                      <option value="">None</option>
+                      {presets.map((m) => <option key={m} value={m}>{m} min</option>)}
+                      <option value="custom">Custom...</option>
+                    </select>
+                    {isCustom && <input type="number" min="1" max="120" value={val} onChange={(e) => update('arrival_minutes_before', e.target.value)} className={`${INPUT_CLS} w-20`} placeholder="min" />}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -443,10 +520,37 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
               </div>
               <div>
                 <label htmlFor="ev-opponent" className={LABEL_CLS}>Opponent</label>
-                <input id="ev-opponent" type="text" value={form.opponent} onChange={(e) => update('opponent', e.target.value)} className={INPUT_CLS} />
+                <select id="ev-opponent" value={opponents.find((o) => o.name === form.opponent) ? form.opponent : form.opponent ? '__custom' : ''} onChange={(e) => {
+                  if (e.target.value === '__new') setNewOpponent('');
+                  else if (e.target.value === '__custom') { /* keep current */ }
+                  else update('opponent', e.target.value);
+                }} className={INPUT_CLS}>
+                  <option value="">—</option>
+                  {opponents.map((o) => <option key={o.id} value={o.name}>{o.name}</option>)}
+                  {form.opponent && !opponents.find((o) => o.name === form.opponent) && (
+                    <option value="__custom">{form.opponent}</option>
+                  )}
+                  <option value="__new">+ Add new...</option>
+                </select>
+                {newOpponent !== undefined && form.opponent === '' && newOpponent === '' ? null : null}
               </div>
             </div>
           )}
+          {form.event_type === 'game' && newOpponent !== undefined && (() => {
+            const sel = document.getElementById('ev-opponent');
+            if (sel?.value === '__new') return (
+              <div className="flex gap-2">
+                <input type="text" value={newOpponent} onChange={(e) => setNewOpponent(e.target.value)} placeholder="New opponent name" className={`${INPUT_CLS} flex-1`} autoFocus />
+                <button type="button" onClick={async () => {
+                  if (!newOpponent.trim() || !organization?.id) return;
+                  await supabase.from('opponents').insert({ org_id: organization.id, name: newOpponent.trim() });
+                  update('opponent', newOpponent.trim());
+                  setNewOpponent('');
+                }} className="px-3 py-2 text-sm font-medium rounded" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>Add</button>
+              </div>
+            );
+            return null;
+          })()}
 
           {/* Enable rides */}
           <label className="flex items-center gap-2 text-sm text-(--color-text-primary)">
@@ -504,10 +608,16 @@ function EventModal({ event, teams, allEvents, onSave, onClose }) {
             <legend className={LABEL_CLS}>Volunteer Duties</legend>
             <p className="text-xs text-(--color-text-secondary) mb-2">Add volunteer duties like snack duty or scorekeeping. Parents can claim slots from the schedule.</p>
             {form.duties.map((d, i) => (
-              <div key={i} className="flex gap-2 mb-2">
-                <input type="text" value={d.duty_name} onChange={(e) => updateDuty(i, 'duty_name', e.target.value)} placeholder="e.g. Snack duty" className={`${INPUT_CLS} flex-1`} />
-                <input type="number" min="1" value={d.slots_needed} onChange={(e) => updateDuty(i, 'slots_needed', e.target.value)} className={`${INPUT_CLS} w-16`} />
-                <button type="button" onClick={() => removeDuty(i)} className="text-red-500 text-sm font-medium px-2">Remove</button>
+              <div key={i} className="flex items-end gap-2 mb-2">
+                <div className="flex-1">
+                  {i === 0 && <label className="block text-xs text-(--color-text-secondary) mb-1">Duty name</label>}
+                  <input type="text" value={d.duty_name} onChange={(e) => updateDuty(i, 'duty_name', e.target.value)} placeholder="e.g. Snacks, Scorebook" className={INPUT_CLS} />
+                </div>
+                <div className="w-20">
+                  {i === 0 && <label className="block text-xs text-(--color-text-secondary) mb-1">Slots</label>}
+                  <input type="number" min="1" value={d.slots_needed} onChange={(e) => updateDuty(i, 'slots_needed', e.target.value)} className={INPUT_CLS} />
+                </div>
+                <button type="button" onClick={() => removeDuty(i)} className="text-red-500 text-sm font-medium px-2 py-2">Remove</button>
               </div>
             ))}
             <button type="button" onClick={addDuty} className="text-sm font-medium hover:underline" style={{ color: 'var(--sf-accent)' }}>+ Add duty</button>
@@ -843,6 +953,8 @@ function BulkBar({ count, onDelete, onChangeStatus, onChangeLocation, onReschedu
 export default function AdminEvents() {
   const [events, setEvents] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [opponents, setOpponents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -888,8 +1000,14 @@ export default function AdminEvents() {
     else setEvents(eventsRes.data);
     if (!teamsRes.error) setTeams(teamsRes.data);
 
-    // Fetch pending notification count
-    const { count } = await supabase.from('notifications_queue').select('id', { count: 'exact', head: true }).eq('status', 'pending');
+    // Fetch locations, opponents, and pending notification count
+    const [locsRes, oppsRes, { count }] = await Promise.all([
+      supabase.from('locations').select('*').order('name'),
+      supabase.from('opponents').select('*').order('name'),
+      supabase.from('notifications_queue').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    ]);
+    if (locsRes.data) setLocations(locsRes.data);
+    if (oppsRes.data) setOpponents(oppsRes.data);
     setPendingNotifications(count || 0);
 
     setLoading(false);
@@ -1097,7 +1215,7 @@ export default function AdminEvents() {
 
       {/* Modals */}
       {modalEvent !== undefined && (
-        <EventModal event={modalEvent} teams={teams} allEvents={events} onSave={handleSave} onClose={() => setModalEvent(undefined)} />
+        <EventModal event={modalEvent} teams={teams} allEvents={events} locations={locations} opponents={opponents} onSave={handleSave} onClose={() => setModalEvent(undefined)} />
       )}
       {showRecurring && (
         <RecurringModal teams={teams} allEvents={events} onSave={handleSave} onClose={() => setShowRecurring(false)} />

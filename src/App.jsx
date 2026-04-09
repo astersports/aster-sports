@@ -8,6 +8,8 @@ import PublicSchedule from './pages/PublicSchedule';
 import Roster from './pages/Roster';
 import Admin from './pages/Admin';
 import AdminEvents from './pages/AdminEvents';
+import AdminLocations from './pages/AdminLocations';
+import AdminOpponents from './pages/AdminOpponents';
 import ForgotPassword from './pages/ForgotPassword';
 import Unauthorized from './pages/Unauthorized';
 
@@ -43,6 +45,22 @@ export default function App() {
           element={
             <RequireAuth allowedRoles={['admin']}>
               <AdminEvents />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="admin/locations"
+          element={
+            <RequireAuth allowedRoles={['admin']}>
+              <AdminLocations />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="admin/opponents"
+          element={
+            <RequireAuth allowedRoles={['admin']}>
+              <AdminOpponents />
             </RequireAuth>
           }
         />

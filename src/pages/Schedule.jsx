@@ -238,8 +238,13 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
                 </span>
               )}
               {deadlineDays && deadlineDays <= 3 && <span className="text-amber-600 font-medium">RSVP closes in {deadlineDays} day{deadlineDays !== 1 ? 's' : ''}</span>}
-              {event.enable_rides && (offeredSeats > 0 || neededSeats > 0) && (
-                <span>{offeredSeats} seat{offeredSeats !== 1 ? 's' : ''} · {neededSeats} needed</span>
+              {event.enable_rides && (
+                <span>{offeredSeats > 0 || neededSeats > 0 ? `${offeredSeats} ${offeredSeats !== 1 ? 'seats' : 'seat'} · ${neededSeats} needed` : 'No rides yet'}</span>
+              )}
+              {(event.event_duties || []).length > 0 && (
+                <span className="truncate max-w-[250px]">
+                  {(event.event_duties || []).map((d) => `${d.duty_name}: ${d.claimed_by_name || 'Open'}`).join(' · ')}
+                </span>
               )}
             </div>
           );
