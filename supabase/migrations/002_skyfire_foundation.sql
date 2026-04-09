@@ -46,14 +46,11 @@ alter table public.user_roles
 -- ------------------------------------------------------------
 alter table public.organizations enable row level security;
 
-create policy "Users can read their own organization"
+drop policy if exists "Users can read their own organization" on public.organizations;
+
+create policy "Authenticated users can read orgs"
   on public.organizations for select
-  using (
-    id in (
-      select organization_id from public.user_roles
-      where user_id = auth.uid()
-    )
-  );
+  using (auth.uid() is not null);
 
 -- ------------------------------------------------------------
 -- 5. RLS on organization_settings (scoped to user's org)
