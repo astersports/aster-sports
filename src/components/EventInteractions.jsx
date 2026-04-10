@@ -7,6 +7,69 @@ const LS_NAME = 'skyfire_user_name';
 const LS_PHONE = 'skyfire_user_phone';
 const LS_PLAYER = 'skyfire_player_id';
 
+// ─── Shared sub-components ──────────────────────────────────
+// First-letter avatar circle. Used by the RSVP player selector, ride board
+// driver/rider rows, and comment headers so the visual treatment is identical
+// everywhere.
+function Avatar({ name, size = 24 }) {
+  const letter = (name && name.trim()[0]?.toUpperCase()) || '?';
+  return (
+    <div
+      className="inline-flex items-center justify-center rounded-full font-bold text-(--color-text-primary) flex-shrink-0"
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        backgroundColor: 'var(--color-background-secondary)',
+        fontSize: size <= 24 ? '11px' : size <= 28 ? '12px' : '14px',
+      }}
+      aria-hidden="true"
+    >
+      {letter}
+    </div>
+  );
+}
+
+// 24px duty checkbox — filled emerald square with white check when claimed,
+// dashed-border empty square when open. Mirrors the language of a real
+// to-do checkbox so parents instantly read the status.
+function DutyCheckbox({ checked }) {
+  if (checked) {
+    return (
+      <div
+        className="flex items-center justify-center text-white font-bold flex-shrink-0"
+        style={{ width: '24px', height: '24px', backgroundColor: '#10b981', borderRadius: '6px' }}
+        aria-hidden="true"
+      >
+        <span style={{ fontSize: '14px', lineHeight: 1 }}>✓</span>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="flex-shrink-0"
+      style={{
+        width: '24px',
+        height: '24px',
+        border: '2px dashed var(--color-border-secondary)',
+        borderRadius: '6px',
+      }}
+      aria-hidden="true"
+    />
+  );
+}
+
+// Format the time remaining until an RSVP deadline as a parent-friendly
+// string. Returns null if the deadline is more than 72h away (caller hides
+// the banner) or already passed (caller shows the closed message instead).
+function rsvpDeadlineLabel(deadlineIso) {
+  const ms = new Date(deadlineIso).getTime() - Date.now();
+  if (ms <= 0 || ms > 72 * 3600000) return null;
+  const days = Math.floor(ms / 86400000);
+  const hours = Math.floor((ms % 86400000) / 3600000);
+  if (days > 0) return `${days} day${days !== 1 ? 's' : ''} ${hours} hour${hours !== 1 ? 's' : ''}`;
+  return `${hours} hour${hours !== 1 ? 's' : ''}`;
+}
+
 // =================================================================
 // RSVP SECTION
 // =================================================================
@@ -21,6 +84,12 @@ export function RsvpSection({ event, userRole, isPublic, onUpdate }) {
 
   const deadlinePassed = event.rsvp_deadline && new Date(event.rsvp_deadline) < new Date();
   const isAdmin = userRole === 'admin';
+  // Tracks which player is in "edit my RSVP" mode after they've already
+  // submitted one — see rsvpBtns below.
+  const [changingPlayerId, setChangingPlayerId] = useState(null);
+  // Live label for the deadline banner. Recomputes on every render so the
+  // text stays accurate while the modal stays open.
+  const deadlineCountdown = event.rsvp_deadline ? rsvpDeadlineLabel(event.rsvp_deadline) : null;
 
   useEffect(() => {
     if (!event.team_id) return;
@@ -72,31 +141,83 @@ export function RsvpSection({ event, userRole, isPublic, onUpdate }) {
     }
     setComment('');
     setSubmitting(false);
+    // Exit "change" mode so the freshly-submitted RSVP renders as confirmed.
+    setChangingPlayerId(null);
     onUpdate?.();
   }
 
-  const rsvpBtns = (playerId) => (
-    <div className="flex gap-2">
-      {['going', 'maybe', 'not_going'].map((r) => {
-        const active = rsvps.find((rv) => rv.player_id === playerId)?.response === r;
-        const colors = { going: 'bg-emerald-500 text-white', maybe: 'bg-amber-400 text-white', not_going: 'bg-red-500 text-white' };
-        const inactive = { going: 'border-emerald-500 text-emerald-600', maybe: 'border-amber-400 text-amber-600', not_going: 'border-red-500 text-red-600' };
-        return (
+  const rsvpBtns = (playerId) => {
+    const playerRsvp = rsvps.find((rv) => rv.player_id === playerId);
+    const inChangeMode = changingPlayerId === playerId;
+    const isConfirmed = !!playerRsvp && !inChangeMode;
+    const labels = { going: 'Going', maybe: 'Maybe', not_going: 'Not Going' };
+    const filledCls = {
+      going: 'bg-emerald-500 text-white border-transparent',
+      maybe: 'bg-amber-400 text-white border-transparent',
+      not_going: 'bg-red-500 text-white border-transparent',
+    };
+    const outlineCls = {
+      going: 'border-emerald-500 text-emerald-600',
+      maybe: 'border-amber-400 text-amber-600',
+      not_going: 'border-red-500 text-red-600',
+    };
+
+    // Confirmed view — single filled button + small "Change" link.
+    if (isConfirmed) {
+      return (
+        <div className="flex flex-wrap items-center gap-3">
           <button
-            key={r}
-            onClick={() => submitRsvp(r, playerId)}
-            disabled={submitting || (deadlinePassed && !isAdmin)}
-            className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${active ? colors[r] : `${inactive[r]} bg-transparent`} disabled:opacity-50`}
+            type="button"
+            disabled
+            aria-label={`Confirmed: ${labels[playerRsvp.response]}`}
+            className={`min-h-[44px] w-full sm:w-auto px-4 py-2.5 rounded text-sm font-medium border ${filledCls[playerRsvp.response]} disabled:opacity-100`}
           >
-            {r === 'going' ? 'Going' : r === 'maybe' ? 'Maybe' : 'Not Going'}
+            {labels[playerRsvp.response]} ✓
           </button>
-        );
-      })}
-    </div>
-  );
+          <button
+            type="button"
+            onClick={() => setChangingPlayerId(playerId)}
+            className="text-xs text-(--color-text-secondary) underline"
+          >
+            Change
+          </button>
+        </div>
+      );
+    }
+
+    // Default — three big touch-friendly buttons.
+    return (
+      <div className="flex flex-col sm:flex-row gap-2">
+        {['going', 'maybe', 'not_going'].map((r) => {
+          const active = playerRsvp?.response === r;
+          return (
+            <button
+              key={r}
+              onClick={() => submitRsvp(r, playerId)}
+              disabled={submitting || (deadlinePassed && !isAdmin)}
+              className={`min-h-[44px] w-full sm:w-auto px-4 py-2.5 rounded text-sm font-medium border transition-colors sf-bounce-tap ${active ? filledCls[r] : `${outlineCls[r]} bg-transparent`} disabled:opacity-50`}
+            >
+              {labels[r]}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-3">
+      {/* RSVP deadline banner — amber inside 72h, red after passed. */}
+      {deadlinePassed ? (
+        <div className="bg-red-50 border border-red-200 rounded px-3 py-2 text-sm font-medium text-red-700">
+          RSVP closed
+        </div>
+      ) : deadlineCountdown ? (
+        <div className="bg-amber-50 border border-amber-200 rounded px-3 py-2 text-sm font-medium text-amber-800">
+          RSVP closes in {deadlineCountdown}
+        </div>
+      ) : null}
+
       {/* Summary bar */}
       <div>
         <p className="text-xs text-(--color-text-secondary) mb-1 flex flex-wrap items-center gap-1.5">
@@ -108,16 +229,16 @@ export function RsvpSection({ event, userRole, isPublic, onUpdate }) {
           {(noResponseCount > 0 || roster.length > 0) && <><span>·</span><span className="inline-flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-gray-300" />{noResponseCount > 0 ? noResponseCount : roster.length} Missing</span></>}
         </p>
         {total > 0 && (
-          <div className="flex h-1.5 rounded-full overflow-hidden bg-(--color-background-secondary)">
-            {counts.going > 0 && <div className="bg-emerald-500" style={{ width: `${(counts.going / total) * 100}%` }} />}
-            {counts.maybe > 0 && <div className="bg-amber-400" style={{ width: `${(counts.maybe / total) * 100}%` }} />}
-            {counts.not_going > 0 && <div className="bg-red-400" style={{ width: `${(counts.not_going / total) * 100}%` }} />}
-            {noResponseCount > 0 && <div className="bg-gray-300" style={{ width: `${(noResponseCount / total) * 100}%` }} />}
+          <div className="flex h-2 rounded-full overflow-hidden bg-(--color-background-secondary)">
+            {counts.going > 0 && <div className="bg-emerald-500" style={{ width: `${(counts.going / total) * 100}%`, transition: 'width 300ms ease' }} />}
+            {counts.maybe > 0 && <div className="bg-amber-400" style={{ width: `${(counts.maybe / total) * 100}%`, transition: 'width 300ms ease' }} />}
+            {counts.not_going > 0 && <div className="bg-red-400" style={{ width: `${(counts.not_going / total) * 100}%`, transition: 'width 300ms ease' }} />}
+            {noResponseCount > 0 && <div className="bg-gray-300" style={{ width: `${(noResponseCount / total) * 100}%`, transition: 'width 300ms ease' }} />}
           </div>
         )}
       </div>
 
-      {deadlinePassed && !isAdmin && <p className="text-xs text-amber-600 font-medium">RSVP closed</p>}
+      {/* deadlinePassed message moved to the banner above. */}
       {submitError && <p role="alert" className="text-xs text-red-600">{submitError}</p>}
 
       {/* Futures alert */}
@@ -128,20 +249,34 @@ export function RsvpSection({ event, userRole, isPublic, onUpdate }) {
       )}
 
       {/* Player selector */}
-      {!isAdmin && (
-        <div className="flex flex-wrap gap-2 items-end">
-          <div className="flex-1 min-w-[150px]">
-            <label className="block text-xs font-medium text-(--color-text-secondary) mb-1">Your player</label>
-            <select value={selectedPlayer} onChange={(e) => { setSelectedPlayer(e.target.value); localStorage.setItem(LS_PLAYER, e.target.value); }} className={`${INPUT_CLS} w-full`}>
-              <option value="">Select player...</option>
-              {roster.map((r) => <option key={r.player_id} value={r.player_id}>{r.players?.first_name} {r.players?.last_name}</option>)}
-            </select>
+      {!isAdmin && (() => {
+        const selectedPlayerObj = roster.find((r) => r.player_id === selectedPlayer);
+        const selectedPlayerName = selectedPlayerObj?.players?.first_name || '';
+        return (
+          <div className="flex flex-wrap gap-2 items-end">
+            <Avatar name={selectedPlayerName} size={32} />
+            <div className="flex-1 min-w-[150px]">
+              <label className="block text-xs font-medium text-(--color-text-secondary) mb-1">Your player</label>
+              <select
+                value={selectedPlayer}
+                onChange={(e) => {
+                  setSelectedPlayer(e.target.value);
+                  localStorage.setItem(LS_PLAYER, e.target.value);
+                  // A new player has their own RSVP state — reset change mode.
+                  setChangingPlayerId(null);
+                }}
+                className={`${INPUT_CLS} w-full`}
+              >
+                <option value="">Select player...</option>
+                {roster.map((r) => <option key={r.player_id} value={r.player_id}>{r.players?.first_name} {r.players?.last_name}</option>)}
+              </select>
+            </div>
+            <div className="flex-1 min-w-[120px]">
+              <input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Note (optional)" className={`${INPUT_CLS} w-full`} />
+            </div>
           </div>
-          <div className="flex-1 min-w-[120px]">
-            <input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Note (optional)" className={`${INPUT_CLS} w-full`} />
-          </div>
-        </div>
-      )}
+        );
+      })()}
       {!isAdmin && selectedPlayer && rsvpBtns(selectedPlayer)}
 
       {/* Admin: RSVP on behalf */}
@@ -338,14 +473,32 @@ export function RideBoard({ event, userRole, isPublic, onUpdate }) {
           <p className="text-xs font-semibold text-(--color-text-secondary) mb-2">Drivers ({drivers.length})</p>
           {drivers.map((r) => (
             <div key={r.id} className="text-sm mb-2 bg-(--color-background-secondary) rounded p-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-(--color-text-primary)">{r.name}</span>
+              <div className="flex items-center gap-2">
+                <Avatar name={r.name} size={28} />
+                <span className="font-medium text-(--color-text-primary) flex-1 min-w-0 truncate">{r.name}</span>
                 {canRemove(r) && <button onClick={() => removeRide(r.id)} className="text-xs text-red-500 hover:underline">Remove</button>}
               </div>
-              <p className="text-xs text-(--color-text-secondary)">{r.seats} seat{r.seats !== 1 ? 's' : ''}{r.departure_time ? ` · Departs ${new Date(r.departure_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}{r.pickup_location ? ` · ${r.pickup_location}` : ''}{r.phone ? ` · ${r.phone}` : ''}</p>
+              <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs text-(--color-text-secondary)">
+                <span>{r.seats} seat{r.seats !== 1 ? 's' : ''}</span>
+                {r.departure_time && (
+                  <span className="rounded-full bg-(--color-background) px-2 py-0.5 text-xs">
+                    Departs {new Date(r.departure_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                  </span>
+                )}
+                {r.pickup_location && <span>· {r.pickup_location}</span>}
+                {r.phone && <span>· {r.phone}</span>}
+              </div>
             </div>
           ))}
-          {showForm !== 'offering' && <button onClick={() => setShowForm('offering')} className="text-xs font-medium hover:underline" style={{ color: 'var(--sf-accent)' }}>I can drive</button>}
+          {showForm !== 'offering' && (
+            <button
+              onClick={() => setShowForm('offering')}
+              className="min-h-[44px] w-full sm:w-auto rounded-lg px-4 text-sm font-medium"
+              style={{ border: '1px solid var(--sf-accent)', color: 'var(--sf-accent)' }}
+            >
+              I can drive
+            </button>
+          )}
           {showForm === 'offering' && rideForm('offering')}
         </div>
 
@@ -354,14 +507,25 @@ export function RideBoard({ event, userRole, isPublic, onUpdate }) {
           <p className="text-xs font-semibold text-(--color-text-secondary) mb-2">Riders ({riders.length})</p>
           {riders.map((r) => (
             <div key={r.id} className="text-sm mb-2 bg-(--color-background-secondary) rounded p-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-(--color-text-primary)">{r.name}</span>
+              <div className="flex items-center gap-2">
+                <Avatar name={r.name} size={28} />
+                <span className="font-medium text-(--color-text-primary) flex-1 min-w-0 truncate">{r.name}</span>
                 {canRemove(r) && <button onClick={() => removeRide(r.id)} className="text-xs text-red-500 hover:underline">Remove</button>}
               </div>
-              <p className="text-xs text-(--color-text-secondary)">{r.seats} seat{r.seats !== 1 ? 's' : ''} needed{r.pickup_location ? ` · ${r.pickup_location}` : ''}{r.phone ? ` · ${r.phone}` : ''}</p>
+              <p className="text-xs text-(--color-text-secondary) mt-1">
+                {r.seats} seat{r.seats !== 1 ? 's' : ''} needed{r.pickup_location ? ` · ${r.pickup_location}` : ''}{r.phone ? ` · ${r.phone}` : ''}
+              </p>
             </div>
           ))}
-          {showForm !== 'requesting' && <button onClick={() => setShowForm('requesting')} className="text-xs font-medium hover:underline" style={{ color: 'var(--sf-accent)' }}>Need a ride</button>}
+          {showForm !== 'requesting' && (
+            <button
+              onClick={() => setShowForm('requesting')}
+              className="min-h-[44px] w-full sm:w-auto rounded-lg px-4 text-sm font-medium"
+              style={{ border: '1px solid var(--sf-accent)', color: 'var(--sf-accent)' }}
+            >
+              Need a ride
+            </button>
+          )}
           {showForm === 'requesting' && rideForm('requesting')}
         </div>
       </div>
@@ -437,19 +601,28 @@ export function CommentsThread({ event, userRole, isPublic, onUpdate }) {
       {commentError && <p role="alert" className="text-xs text-red-600">{commentError}</p>}
 
       {visible.map((c) => (
-        <div key={c.id} className={`text-sm rounded p-2 ${c.pinned ? 'bg-amber-50 border border-amber-200' : 'bg-(--color-background-secondary)'}`}>
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="font-medium text-(--color-text-primary)">{c.author_name}</span>
-            <span className="text-xs text-(--color-text-secondary)">{timeAgo(c.created_at)}</span>
-            {c.pinned && <span className="text-xs font-medium text-amber-600">Pinned</span>}
-            {userRole === 'admin' && (
-              <>
-                <button onClick={() => togglePin(c)} className="text-xs text-(--color-text-secondary) hover:underline ml-auto">{c.pinned ? 'Unpin' : 'Pin'}</button>
-                <button onClick={() => deleteComment(c.id)} className="text-xs text-red-500 hover:underline">Delete</button>
-              </>
-            )}
+        <div
+          key={c.id}
+          className="text-sm rounded p-2 bg-(--color-background-secondary)"
+          style={c.pinned ? { borderLeft: '2px solid #fbbf24' } : undefined}
+        >
+          <div className="flex items-start gap-2">
+            <Avatar name={c.author_name} size={24} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-(--color-text-primary) truncate">{c.author_name}</span>
+                {c.pinned && <span className="text-xs font-medium text-amber-600 flex-shrink-0">Pinned</span>}
+                <span className="text-xs text-(--color-text-secondary) ml-auto flex-shrink-0">{timeAgo(c.created_at)}</span>
+              </div>
+              <p className="text-(--color-text-primary) mt-0.5">{c.body}</p>
+              {userRole === 'admin' && (
+                <div className="flex gap-3 mt-1">
+                  <button onClick={() => togglePin(c)} className="text-xs text-(--color-text-secondary) hover:underline">{c.pinned ? 'Unpin' : 'Pin'}</button>
+                  <button onClick={() => deleteComment(c.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                </div>
+              )}
+            </div>
           </div>
-          <p className="text-(--color-text-primary)">{c.body}</p>
         </div>
       ))}
 
@@ -457,11 +630,41 @@ export function CommentsThread({ event, userRole, isPublic, onUpdate }) {
         <button onClick={() => setShowAll(true)} className="text-xs text-(--color-text-secondary) hover:underline">Show all {sorted.length} comments</button>
       )}
 
-      {/* Add comment */}
-      <div className="flex flex-wrap gap-2 pt-1">
-        {isPublic && <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className={`${INPUT_CLS} w-32`} />}
-        <input value={body} onChange={(e) => setBody(e.target.value)} placeholder="Add a comment..." className={`${INPUT_CLS} flex-1 min-w-[150px]`} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) postComment(); }} />
-        <button onClick={postComment} disabled={submitting || !body.trim() || (isPublic && !name.trim())} className="px-3 py-1.5 text-sm font-medium rounded disabled:opacity-50" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>Post</button>
+      {/* Add comment — chat-style: pill input + circular send button. */}
+      <div className="flex items-center gap-2 pt-1">
+        {isPublic && (
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            className={`${INPUT_CLS} w-32`}
+            style={{ borderRadius: '9999px', height: '44px' }}
+            aria-label="Your name"
+          />
+        )}
+        <input
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="Add a comment..."
+          className={`${INPUT_CLS} flex-1 min-w-[150px]`}
+          style={{ borderRadius: '9999px', height: '44px' }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) postComment(); }}
+          aria-label="Comment"
+        />
+        <button
+          onClick={postComment}
+          disabled={submitting || !body.trim() || (isPublic && !name.trim())}
+          aria-label="Post comment"
+          className="flex items-center justify-center rounded-full disabled:opacity-50 flex-shrink-0"
+          style={{
+            width: '36px',
+            height: '36px',
+            backgroundColor: 'var(--sf-accent)',
+            color: 'var(--sf-text-on-dark)',
+          }}
+        >
+          <span style={{ fontSize: '16px', lineHeight: 1 }} aria-hidden="true">↑</span>
+        </button>
       </div>
     </div>
   );
@@ -540,6 +743,7 @@ export function DutySignups({ event, userRole, isPublic, onUpdate }) {
         const isSubmitting = submittingId === d.id;
         return (
           <div key={d.id} className={`flex items-center gap-2 text-sm rounded p-2 ${claimed ? 'bg-(--color-background-secondary)' : 'border border-dashed border-(--color-border-tertiary)'}`}>
+            <DutyCheckbox checked={!!claimed} />
             <span className="font-medium text-(--color-text-primary)">{d.duty_name}</span>
             <span className="text-xs text-(--color-text-secondary)">({d.slots_needed} {d.slots_needed === 1 ? 'slot' : 'slots'})</span>
             {claimed ? (
