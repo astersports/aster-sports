@@ -74,6 +74,37 @@ export function relativeTime(iso) {
   return `${target.toLocaleDateString('en-US', { weekday: 'long' })} at ${formatTime(iso)}`;
 }
 
+// Live countdown for an upcoming event happening today — e.g.
+// "Starts in 2h 15m", "Starts in 45m", "Starts in less than a minute".
+// Returns null if the event is more than 12 hours away (caller should
+// fall back to formatTime), or if it's already started/finished (caller
+// should use eventStatus instead).
+export function formatCountdown(startIso) {
+  const start = new Date(startIso).getTime();
+  const diff = start - Date.now();
+  if (diff <= 0 || diff > 12 * 3600000) return null;
+  const totalMins = Math.floor(diff / 60000);
+  if (totalMins < 1) return 'Starts in less than a minute';
+  if (totalMins < 60) return `Starts in ${totalMins}m`;
+  const hours = Math.floor(totalMins / 60);
+  const mins = totalMins % 60;
+  return `Starts in ${hours}h${mins > 0 ? ` ${mins}m` : ''}`;
+}
+
+// Returns a coarse status for live event UI: "upcoming" | "in_progress" |
+// "completed". Used by EventCard to swap the time text for "In progress" /
+// "Completed" labels on the day of the event.
+export function eventLiveStatus(startIso, endIso) {
+  const now = Date.now();
+  const start = new Date(startIso).getTime();
+  // If end_at is missing, assume 90 minutes — long enough for a typical
+  // practice or game.
+  const end = endIso ? new Date(endIso).getTime() : start + 90 * 60000;
+  if (now < start) return 'upcoming';
+  if (now < end) return 'in_progress';
+  return 'completed';
+}
+
 // Past-facing relative — "5m ago", "3h ago", "2d ago". Used for change logs,
 // comments, and the "what changed" lists on event cards.
 export function timeAgo(iso) {

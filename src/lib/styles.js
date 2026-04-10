@@ -77,6 +77,19 @@ export const PILL_CLS = 'px-3 py-1.5 rounded-full text-sm font-medium transition
 export const CARD_CLS =
   'bg-(--color-background) rounded-lg shadow-sm border border-(--color-border-tertiary) overflow-hidden cursor-pointer transition-all';
 
+// "Press" feedback wrapper — slightly lift on hover/active. Combine with
+// CARD_CLS for the schedule event cards. The class itself is defined in
+// index.css so the transition can be handled in pure CSS.
+export const CARD_PRESS_CLS = `${CARD_CLS} sf-press hover:shadow-md`;
+
+// ─── Section header (inside expanded event card) ────────────
+// "Game Day", "RSVP", "Comments" etc. headers — uppercase, tracked, muted.
+export const SECTION_HEADER_CLS =
+  'text-[11px] font-semibold uppercase tracking-wider text-(--color-text-secondary) mb-2';
+
+// Thin section divider for the expanded card body.
+export const SECTION_DIVIDER_CLS = 'border-t border-(--color-border-tertiary) pt-4 mt-4';
+
 // ─── Event-type colored badges ──────────────────────────────
 // Maps event_type → Tailwind utility classes for the small "Practice / Game /
 // Tournament / Other" pills. Lives in styles.js (not constants.js) because
