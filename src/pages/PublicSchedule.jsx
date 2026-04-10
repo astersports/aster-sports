@@ -138,7 +138,7 @@ export default function PublicSchedule() {
       ))}
 
       {/* Footer */}
-      <p className="text-center text-xs text-(--color-text-secondary) mt-12 pt-4 border-t border-(--color-border-tertiary)">
+      <p className="text-center text-xs text-(--color-text-secondary) mt-12 py-6 border-t border-(--color-border-tertiary)">
         Powered by Skyfire
       </p>
     </div>

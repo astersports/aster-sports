@@ -96,10 +96,23 @@ body {
   to   { transform: scaleX(1); }
 }
 
-.sf-pulse        { animation: sf-pulse 1.5s ease-in-out infinite; }
-.sf-fade-in      { animation: sf-fade-in 0.4s ease-out both; }
-.sf-pulse-dot    { animation: sf-pulse-dot 2s ease-in-out infinite; }
-.sf-bounce-tap   { animation: sf-bounce-tap 0.3s ease-out; }
+/* Only animate when the user hasn't asked the OS to reduce motion. The
+ * reduce branch below collapses every animation/transition to ~0ms via a
+ * global override, so anyone who turns on "Reduce motion" in their OS
+ * settings sees a static UI without losing the layout. */
+@media (prefers-reduced-motion: no-preference) {
+  .sf-pulse        { animation: sf-pulse 1.5s ease-in-out infinite; }
+  .sf-fade-in      { animation: sf-fade-in 0.4s ease-out both; }
+  .sf-pulse-dot    { animation: sf-pulse-dot 2s ease-in-out infinite; }
+  .sf-bounce-tap   { animation: sf-bounce-tap 0.3s ease-out; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 /* Smooth height auto: grid-template-rows trick. Wrap content in
  * `.sf-collapsible` and toggle `[data-open="true"]`. Animates from 0fr→1fr

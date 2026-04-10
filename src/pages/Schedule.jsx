@@ -28,6 +28,11 @@ import {
 } from '../lib/styles';
 
 const LS_KEY = 'schedule_last_visited';
+// Mirrors the keys used in EventInteractions.jsx so the GameDayChecklist
+// (and Running Late feature) can read the user's identity without round-
+// tripping through props.
+const LS_PLAYER = 'skyfire_player_id';
+const LS_NAME = 'skyfire_user_name';
 
 // ─── Helpers ─────────────────────────────────────────────────
 function getMonday(d) { const dt = new Date(d); const day = dt.getDay(); dt.setDate(dt.getDate() - ((day + 6) % 7)); dt.setHours(0, 0, 0, 0); return dt; }
@@ -404,6 +409,37 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
     return () => clearInterval(id);
   }, [showLiveCountdown]);
 
+  // Running Late — only available within 1h of an upcoming scheduled event.
+  const minutesUntil = (new Date(event.start_at).getTime() - Date.now()) / 60000;
+  const canRunLate = event.status === 'scheduled' && minutesUntil > 0 && minutesUntil < 60;
+  const [showLatePicker, setShowLatePicker] = useState(false);
+  const [lateNotified, setLateNotified] = useState(false);
+  const [lateName, setLateName] = useState(typeof window !== 'undefined' ? localStorage.getItem(LS_NAME) || '' : '');
+  const [lateCustom, setLateCustom] = useState('');
+  const [lateSubmitting, setLateSubmitting] = useState(false);
+
+  async function notifyLate(mins) {
+    if (!mins || lateSubmitting) return;
+    const name = (lateName || '').trim() || 'Someone';
+    if (lateName.trim()) localStorage.setItem(LS_NAME, lateName.trim());
+    setLateSubmitting(true);
+    const { error: err } = await supabase.from('event_comments').insert({
+      event_id: event.id,
+      author_name: name,
+      body: `Running ${mins} min late`,
+    });
+    setLateSubmitting(false);
+    if (err) {
+      console.error('Running-late notify failed:', err);
+      return;
+    }
+    setLateNotified(true);
+    setShowLatePicker(false);
+    setLateCustom('');
+    setTimeout(() => setLateNotified(false), 3000);
+    onUpdate?.();
+  }
+
   const liveStatus = showLiveCountdown ? eventLiveStatus(event.start_at, event.end_at) : null;
   const countdownLabel = liveStatus === 'upcoming' ? formatCountdown(event.start_at) : null;
 
@@ -631,6 +667,68 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
             </SectionDivider>
           )}
 
+          {/* Running Late — only within 1h of an upcoming game/practice. */}
+          {canRunLate && (
+            <SectionDivider label="Running Late?">
+              {lateNotified ? (
+                <p className="text-sm font-medium text-emerald-600">Team notified ✓</p>
+              ) : !showLatePicker ? (
+                <button
+                  type="button"
+                  onClick={() => setShowLatePicker(true)}
+                  className="text-xs text-(--color-text-secondary) underline"
+                >
+                  Running late?
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  {!localStorage.getItem(LS_NAME) && (
+                    <input
+                      type="text"
+                      value={lateName}
+                      onChange={(e) => setLateName(e.target.value)}
+                      placeholder="Your name"
+                      aria-label="Your name"
+                      className="w-full sm:w-48 border border-(--color-border-tertiary) rounded px-3 py-2 text-sm bg-(--color-background) text-(--color-text-primary) focus:outline-none focus:ring-2 focus:ring-[var(--sf-accent)]"
+                    />
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {[5, 10, 15].map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => notifyLate(m)}
+                        disabled={lateSubmitting}
+                        className="rounded px-3 py-2 text-sm font-medium border border-(--color-border-tertiary) text-(--color-text-primary) hover:bg-(--color-background-secondary) disabled:opacity-50"
+                      >
+                        {m} min
+                      </button>
+                    ))}
+                    <input
+                      type="number"
+                      min="1"
+                      max="120"
+                      value={lateCustom}
+                      onChange={(e) => setLateCustom(e.target.value)}
+                      placeholder="min"
+                      aria-label="Custom minutes late"
+                      className="w-20 border border-(--color-border-tertiary) rounded px-3 py-2 text-sm bg-(--color-background) text-(--color-text-primary) focus:outline-none focus:ring-2 focus:ring-[var(--sf-accent)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => notifyLate(Number(lateCustom))}
+                      disabled={lateSubmitting || !lateCustom}
+                      className="rounded px-3 py-2 text-sm font-medium disabled:opacity-50"
+                      style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}
+                    >
+                      Send
+                    </button>
+                  </div>
+                </div>
+              )}
+            </SectionDivider>
+          )}
+
           {/* RSVP */}
           <SectionDivider label="Availability">
             <RsvpSection event={event} userRole={userRole} isPublic={isPublic || false} onUpdate={onUpdate} />
@@ -715,10 +813,19 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
 }
 
 // ─── Print table ─────────────────────────────────────────────
-function PrintTable({ events }) {
+function PrintTable({ events, organization, season }) {
   let prevMonthKey = null;
   return (
     <div className="hidden print:block">
+      {/* Print header — org name + season range, only visible on paper. */}
+      <div className="mb-3">
+        {organization?.name && <h1 className="text-lg font-bold mb-0.5">{organization.name}</h1>}
+        {season && (
+          <p className="text-[13px] text-(--color-text-secondary)">
+            {season.name} — {formatDateShort(season.start_date)} to {formatDateShort(season.end_date)}
+          </p>
+        )}
+      </div>
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="border-b-2 border-black text-left">
@@ -745,6 +852,206 @@ function PrintTable({ events }) {
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+// ─── Mobile overflow menu (Subscribe / Share / Print) ──────
+// Tap the ⋯ button → small dropdown anchored bottom-right of the button.
+// Closes on outside click, Escape, or selecting any item.
+function ScheduleOverflowMenu({ onSubscribe, onShare, onPrint, shareCopied, isAdmin }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleDoc(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    }
+    function handleKey(e) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', handleDoc);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleDoc);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative sm:hidden" ref={wrapRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="More actions"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="w-8 h-8 rounded-full font-bold flex items-center justify-center text-(--color-text-primary) bg-(--color-background-secondary) hover:bg-(--color-border-tertiary)"
+        style={{ fontSize: '16px', lineHeight: 1 }}
+      >
+        ⋯
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-full mt-1 rounded-lg shadow-lg z-50 overflow-hidden border border-(--color-border-tertiary)"
+          style={{ backgroundColor: 'var(--color-background-primary, #ffffff)', minWidth: '140px' }}
+        >
+          <button
+            role="menuitem"
+            onClick={() => { setOpen(false); onSubscribe(); }}
+            className="flex items-center w-full px-4 text-sm text-(--color-text-primary) hover:bg-(--color-background-secondary)"
+            style={{ height: '44px' }}
+          >
+            Subscribe
+          </button>
+          {isAdmin && (
+            <button
+              role="menuitem"
+              onClick={() => { setOpen(false); onShare(); }}
+              className="flex items-center w-full px-4 text-sm text-(--color-text-primary) hover:bg-(--color-background-secondary)"
+              style={{ height: '44px' }}
+            >
+              {shareCopied ? 'Copied!' : 'Share'}
+            </button>
+          )}
+          <button
+            role="menuitem"
+            onClick={() => { setOpen(false); onPrint(); }}
+            className="flex items-center w-full px-4 text-sm text-(--color-text-primary) hover:bg-(--color-background-secondary)"
+            style={{ height: '44px' }}
+          >
+            Print
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Game Day Checklist ─────────────────────────────────────
+// Tiny pre-game checklist that surfaces in the 4 hours before a game.
+// Each row is either a manual checkbox (jersey, water, arrival) persisted
+// to localStorage so the parent's progress sticks across reloads, or an
+// auto-derived row (RSVP'd, carpool arranged) that reflects the latest
+// data already on the page.
+function GameDayChecklist({ events }) {
+  const nextGame = useMemo(() => {
+    const now = Date.now();
+    return events.find((e) =>
+      e.event_type === 'game' &&
+      e.status === 'scheduled' &&
+      new Date(e.start_at).getTime() - now > 0 &&
+      new Date(e.start_at).getTime() - now < 4 * 3600000
+    );
+  }, [events]);
+
+  // Hook calls have to run unconditionally — drive everything off `nextGame`
+  // and bail at render time if there's no game.
+  const eventId = nextGame?.id || '';
+  const dismissedKey = `gdc_${eventId}_dismissed`;
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    if (!eventId) return;
+    setDismissed(localStorage.getItem(dismissedKey) === '1');
+  }, [eventId, dismissedKey]);
+
+  const [manualChecks, setManualChecks] = useState({});
+  useEffect(() => {
+    if (!eventId) return;
+    setManualChecks({
+      jersey:  localStorage.getItem(`gdc_${eventId}_jersey`)  === '1',
+      water:   localStorage.getItem(`gdc_${eventId}_water`)   === '1',
+      arrival: localStorage.getItem(`gdc_${eventId}_arrival`) === '1',
+    });
+  }, [eventId]);
+
+  if (!nextGame || dismissed) return null;
+
+  const team = nextGame.teams;
+  const teamColor = team?.team_color || 'var(--sf-accent)';
+  const playerId = localStorage.getItem(LS_PLAYER);
+  const myName = localStorage.getItem(LS_NAME);
+  const myRsvp = playerId ? (nextGame.event_rsvps || []).find((r) => r.player_id === playerId) : null;
+  const rsvpdGoing = myRsvp?.response === 'going';
+  const carpoolArranged =
+    nextGame.enable_rides &&
+    !!myName &&
+    (nextGame.event_rides || []).some((r) => r.name === myName);
+  const arrivalTime = nextGame.arrival_minutes_before
+    ? formatTime(new Date(new Date(nextGame.start_at).getTime() - nextGame.arrival_minutes_before * 60000).toISOString())
+    : null;
+
+  function toggle(key) {
+    setManualChecks((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem(`gdc_${eventId}_${key}`, next[key] ? '1' : '0');
+      return next;
+    });
+  }
+
+  function dismiss() {
+    localStorage.setItem(dismissedKey, '1');
+    setDismissed(true);
+  }
+
+  // Each item: { key, label, checked, auto }
+  const items = [
+    { key: 'jersey',  label: `Jersey packed${nextGame.jersey ? ` (${nextGame.jersey.toUpperCase()})` : ''}`, checked: !!manualChecks.jersey,  auto: false },
+    { key: 'water',   label: 'Water bottle',                                                                  checked: !!manualChecks.water,   auto: false },
+    ...(arrivalTime ? [{ key: 'arrival', label: `Arrive by ${arrivalTime}`, checked: !!manualChecks.arrival, auto: false }] : []),
+    { key: 'rsvp',    label: "RSVP'd",         checked: rsvpdGoing,     auto: true },
+    ...(nextGame.enable_rides ? [{ key: 'carpool', label: 'Carpool arranged', checked: carpoolArranged, auto: true }] : []),
+  ];
+
+  return (
+    <div
+      className="relative rounded-lg p-4 mb-4 sf-fade-in print:hidden"
+      style={{
+        borderLeft: `4px solid ${teamColor}`,
+        backgroundColor: `${teamColor}08`,
+      }}
+    >
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label="Dismiss game day checklist"
+        className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-(--color-text-secondary) hover:bg-(--color-background-secondary)"
+        style={{ fontSize: '14px', lineHeight: 1 }}
+      >
+        ×
+      </button>
+      <p className="text-sm font-bold text-(--color-text-primary) mb-3 pr-6">
+        Game Day — {team?.name || 'Team'}
+        {nextGame.opponent ? ` vs. ${nextGame.opponent}` : ''}
+      </p>
+      <ul className="space-y-2">
+        {items.map((item) => (
+          <li key={item.key} className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => !item.auto && toggle(item.key)}
+              disabled={item.auto}
+              aria-label={item.label}
+              aria-pressed={item.checked}
+              className={`flex items-center justify-center text-white font-bold flex-shrink-0 ${item.auto ? 'pointer-events-none' : ''}`}
+              style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '6px',
+                backgroundColor: item.checked ? '#10b981' : 'transparent',
+                border: item.checked ? 'none' : '2px solid var(--color-border-secondary)',
+              }}
+            >
+              {item.checked && <span style={{ fontSize: '14px', lineHeight: 1 }}>✓</span>}
+            </button>
+            <span className={`text-sm ${item.checked ? 'text-(--color-text-secondary) line-through' : 'text-(--color-text-primary)'}`}>
+              {item.label}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -877,14 +1184,11 @@ export default function Schedule() {
 
   return (
     <div>
-      {/* Print header */}
-      <div className="hidden print:block mb-4">
-        <h1 className="text-xl font-bold">{organization?.name || 'Schedule'}</h1>
-        {season && <p className="text-sm">{season.name} — {formatDateShort(season.start_date)} to {formatDateShort(season.end_date)}</p>}
-      </div>
-
+      {/* The print header now lives inside PrintTable so it sits directly
+          above the table and doesn't double-print. */}
       <h1 className="text-2xl font-bold mb-4 print:hidden">Schedule</h1>
 
+      <GameDayChecklist events={filtered} />
       <SeasonBar season={season} />
       <DayStrip events={filtered} onScrollToDate={scrollToDate} />
       <CountdownBanner events={filtered} onScrollTo={scrollToEvent} />
@@ -904,11 +1208,20 @@ export default function Schedule() {
           {showCancelled ? 'Showing cancelled/postponed' : 'Show cancelled/postponed'}
         </Pill>
 
-        {/* Action buttons */}
-        <div className="flex gap-2 ml-auto">
+        {/* Action buttons — desktop shows inline links, mobile collapses
+            into a single ⋯ overflow menu so the filter row doesn't get
+            cramped on a phone. */}
+        <div className="flex gap-2 ml-auto items-center">
           <button onClick={() => setShowSubscribe(true)} className="text-sm font-medium hover:underline hidden sm:inline" style={{ color: 'var(--sf-accent)' }}>Subscribe</button>
           {userRole === 'admin' && <button onClick={handleShare} className="text-sm font-medium hover:underline hidden sm:inline" style={{ color: 'var(--sf-accent)' }}>{shareCopied ? 'Copied!' : 'Share'}</button>}
           <button onClick={() => window.print()} className="text-sm font-medium hover:underline hidden sm:inline" style={{ color: 'var(--sf-accent)' }}>Print</button>
+          <ScheduleOverflowMenu
+            onSubscribe={() => setShowSubscribe(true)}
+            onShare={handleShare}
+            onPrint={() => window.print()}
+            shareCopied={shareCopied}
+            isAdmin={userRole === 'admin'}
+          />
         </div>
       </div>
 
@@ -1009,12 +1322,24 @@ export default function Schedule() {
       })}
 
       {/* Print-only table */}
-      <PrintTable events={filtered} />
+      <PrintTable events={filtered} organization={organization} season={season} />
 
-      {/* Today button — mobile floating, desktop hidden (scroll-to-today is near filters on desktop) */}
+      {/* Today button — mobile floating, desktop hidden (scroll-to-today is
+          near filters on desktop). 56px circle, just an arrow, with a slow
+          breathing pulse so it's findable without nagging the user. */}
       {!loading && filtered.length > 0 && (
-        <button onClick={scrollToToday} className="sm:hidden fixed bottom-6 right-6 z-40 rounded-full shadow-lg px-4 py-2 text-sm font-medium flex items-center gap-1 print:hidden" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>
-          Today <span aria-hidden="true">&darr;</span>
+        <button
+          onClick={scrollToToday}
+          aria-label="Scroll to today"
+          className="sm:hidden fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center print:hidden sf-pulse-dot sf-press"
+          style={{
+            backgroundColor: 'var(--sf-accent)',
+            color: 'var(--sf-text-on-dark)',
+            animationDelay: '5s',
+            animationIterationCount: 'infinite',
+          }}
+        >
+          <span aria-hidden="true" style={{ fontSize: '20px', lineHeight: 1 }}>↓</span>
         </button>
       )}
 
