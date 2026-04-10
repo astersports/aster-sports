@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { EventCard, SeasonBar, fmtDate, TYPE_LABELS, EVENT_TYPES, Pill, useWeather } from './Schedule';
+import { EventCard, SeasonBar, Pill } from './Schedule';
+import { useWeather } from '../components/EventInteractions';
+import { FILTER_TYPES as EVENT_TYPES, TYPE_LABELS } from '../lib/constants';
+import { formatDate } from '../lib/formatters';
 
 export default function PublicSchedule() {
   const { orgSlug, teamSlug } = useParams();
@@ -114,7 +117,7 @@ export default function PublicSchedule() {
 
       {grouped.map((group) => (
         <div key={group.dateStr} className="mb-6">
-          <h2 className="text-sm font-semibold text-(--color-text-secondary) uppercase tracking-wide mb-3">{fmtDate(group.date)}</h2>
+          <h2 className="text-sm font-semibold text-(--color-text-secondary) uppercase tracking-wide mb-3">{formatDate(group.date)}</h2>
           <div className="flex flex-col gap-3">
             {group.events.map((event) => (
               <EventCard

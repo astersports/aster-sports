@@ -2,44 +2,28 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { RsvpSection, RideBoard, CommentsThread, DutySignups, useWeather, WeatherBadge } from '../components/EventInteractions';
+import { FILTER_TYPES as EVENT_TYPES, TYPE_LABELS, STATUS_ICONS } from '../lib/constants';
+import { formatDate, formatDateShort, formatTime, relativeTime, changeAgo } from '../lib/formatters';
+import {
+  TYPE_BADGE_CLS,
+  PILL_ACTIVE,
+  PILL_INACTIVE,
+  PILL_CLS,
+  CARD_CLS,
+  MODAL_BACKDROP,
+  MODAL_PANEL,
+  MODAL_CENTER_CLS,
+  MODAL_CENTER_PANEL_MD_CLS,
+  BTN_PRIMARY,
+  BTN_PRIMARY_STYLE,
+  BTN_SECONDARY,
+} from '../lib/styles';
 
-// ─── Constants ───────────────────────────────────────────────
-const EVENT_TYPES = ['all', 'practice', 'game', 'tournament', 'other'];
-const TYPE_LABELS = { all: 'All', practice: 'Practice', game: 'Game', tournament: 'Tournament', other: 'Other' };
-const TYPE_BADGE_CLS = { practice: 'bg-emerald-100 text-emerald-800', game: 'bg-blue-100 text-blue-800', tournament: 'bg-purple-100 text-purple-800', other: 'bg-slate-100 text-slate-700' };
-const STATUS_ICONS = { scheduled: { icon: '\u2713', cls: 'text-emerald-600' }, postponed: { icon: '\u23F8', cls: 'text-amber-500' }, cancelled: { icon: '\u2715', cls: 'text-red-500' } };
-const PILL_ACTIVE = { backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' };
-const PILL_INACTIVE = { backgroundColor: 'var(--color-background-secondary)', color: 'var(--color-text-secondary)' };
 const LS_KEY = 'schedule_last_visited';
 
 // ─── Helpers ─────────────────────────────────────────────────
-function fmtDate(d) { return new Date(d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); }
-function fmtDateShort(d) { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
-function fmtTime(d) { return new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); }
-
 function getMonday(d) { const dt = new Date(d); const day = dt.getDay(); dt.setDate(dt.getDate() - ((day + 6) % 7)); dt.setHours(0, 0, 0, 0); return dt; }
 function getSunday(mon) { const s = new Date(mon); s.setDate(s.getDate() + 6); s.setHours(23, 59, 59, 999); return s; }
-
-function relativeTime(iso) {
-  const diff = new Date(iso).getTime() - Date.now();
-  if (diff < 0) return null;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `in ${mins} minute${mins !== 1 ? 's' : ''}`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `in ${hrs} hour${hrs !== 1 ? 's' : ''}`;
-  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-  if (new Date(iso).toDateString() === tomorrow.toDateString()) return `Tomorrow at ${fmtTime(iso)}`;
-  return `${new Date(iso).toLocaleDateString('en-US', { weekday: 'long' })} at ${fmtTime(iso)}`;
-}
-
-function changeAgo(iso) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
 
 function mapsUrl(address) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`; }
 
@@ -78,7 +62,7 @@ function TeamPill({ name, color }) {
 }
 
 function Pill({ active, onClick, children, ...rest }) {
-  return <button onClick={onClick} className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors" style={active ? PILL_ACTIVE : PILL_INACTIVE} {...rest}>{children}</button>;
+  return <button onClick={onClick} className={PILL_CLS} style={active ? PILL_ACTIVE : PILL_INACTIVE} {...rest}>{children}</button>;
 }
 
 // ─── Season Progress Bar ─────────────────────────────────────
@@ -146,16 +130,16 @@ function SubscribeModal({ icsBlob, calName, onClose }) {
     if (url) { navigator.clipboard.writeText(url).then(() => setCopied(true)); setTimeout(() => setCopied(false), 2000); }
   }
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
-      <div className="bg-(--color-background) rounded-lg shadow-lg w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+    <div className={MODAL_CENTER_CLS} style={MODAL_BACKDROP} onClick={onClose}>
+      <div className={MODAL_CENTER_PANEL_MD_CLS} style={MODAL_PANEL} onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-bold text-(--color-text-primary) mb-2">Subscribe to Calendar</h2>
         <p className="text-sm text-(--color-text-secondary) mb-4">Download the .ics file and import it into Google Calendar (Add by URL), Apple Calendar (File → Import), or Outlook.</p>
         <div className="flex gap-3">
-          {url && <a href={url} download={`${calName}.ics`} className="px-4 py-2 text-sm font-medium rounded" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>Download .ics</a>}
-          <button onClick={handleCopy} className="px-4 py-2 text-sm font-medium rounded border border-(--color-border-tertiary) text-(--color-text-primary) hover:bg-(--color-background-secondary)">
+          {url && <a href={url} download={`${calName}.ics`} className={BTN_PRIMARY} style={BTN_PRIMARY_STYLE}>Download .ics</a>}
+          <button onClick={handleCopy} className={BTN_SECONDARY}>
             {copied ? 'Copied!' : 'Copy URL'}
           </button>
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded border border-(--color-border-tertiary) text-(--color-text-primary) hover:bg-(--color-background-secondary) ml-auto">Close</button>
+          <button onClick={onClose} className={`${BTN_SECONDARY} ml-auto`}>Close</button>
         </div>
       </div>
     </div>
@@ -171,7 +155,7 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
   const si = STATUS_ICONS[event.status] || STATUS_ICONS.scheduled;
 
   // Arrival time
-  const arrivalTime = event.arrival_minutes_before ? fmtTime(new Date(new Date(event.start_at).getTime() - event.arrival_minutes_before * 60000).toISOString()) : null;
+  const arrivalTime = event.arrival_minutes_before ? formatTime(new Date(new Date(event.start_at).getTime() - event.arrival_minutes_before * 60000).toISOString()) : null;
 
   // Proximity badge
   const hoursUntil = (new Date(event.start_at).getTime() - Date.now()) / 3600000;
@@ -187,7 +171,7 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
 
   // Multi-day
   const isMultiDay = event.is_multi_day && event.end_date;
-  const dateRange = isMultiDay ? `${fmtDateShort(event.start_at)}–${fmtDateShort(event.end_date + 'T12:00:00')}` : null;
+  const dateRange = isMultiDay ? `${formatDateShort(event.start_at)}–${formatDateShort(event.end_date + 'T12:00:00')}` : null;
 
   // Sub-events
   const subEvents = event._children || [];
@@ -197,7 +181,7 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
   return (
     <div
       id={`event-${event.id}`}
-      className={`bg-(--color-background) rounded-lg shadow-sm border border-(--color-border-tertiary) overflow-hidden cursor-pointer transition-all ${isCancelled ? 'opacity-60' : ''}`}
+      className={`${CARD_CLS} ${isCancelled ? 'opacity-60' : ''}`}
       style={{ borderLeftWidth: '4px', borderLeftColor: borderColor }}
       onClick={onToggle}
       role="button"
@@ -214,7 +198,7 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
       <div className="p-4">
         <div className="flex flex-wrap items-center gap-2 mb-1">
           <span className="text-sm font-semibold text-(--color-text-primary)">
-            {isMultiDay ? dateRange : (<>{fmtTime(event.start_at)}{event.end_at && !event.is_multi_day && ` – ${fmtTime(event.end_at)}`}</>)}
+            {isMultiDay ? dateRange : (<>{formatTime(event.start_at)}{event.end_at && !event.is_multi_day && ` – ${formatTime(event.end_at)}`}</>)}
           </span>
           {team && <TeamPill name={team.name} color={team.team_color} />}
           <TypeBadge type={event.event_type} />
@@ -340,7 +324,7 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
             <div className="space-y-2 pl-2 border-l-2 border-(--color-border-tertiary)">
               {subEvents.map((sub) => (
                 <div key={sub.id} className="text-sm">
-                  <span className="font-medium text-(--color-text-primary)">{fmtTime(sub.start_at)}</span>
+                  <span className="font-medium text-(--color-text-primary)">{formatTime(sub.start_at)}</span>
                   {sub.opponent && <span className="text-(--color-text-secondary)"> — vs. {sub.opponent}</span>}
                   <span className="text-(--color-text-secondary)"> {sub.title}</span>
                 </div>
@@ -375,8 +359,8 @@ function PrintTable({ events }) {
             prevMonthKey = monthKey;
             return (
               <tr key={ev.id} className={`border-b border-gray-300 break-inside-avoid ${isNewMonth ? 'break-before-page' : ''}`}>
-                <td className="py-1 pr-3 whitespace-nowrap">{fmtDateShort(ev.start_at)}</td>
-                <td className="py-1 pr-3 whitespace-nowrap">{fmtTime(ev.start_at)}</td>
+                <td className="py-1 pr-3 whitespace-nowrap">{formatDateShort(ev.start_at)}</td>
+                <td className="py-1 pr-3 whitespace-nowrap">{formatTime(ev.start_at)}</td>
                 <td className="py-1 pr-3">{ev.teams?.name || '—'}</td>
                 <td className="py-1 pr-3">{TYPE_LABELS[ev.event_type] || ev.event_type}</td>
                 <td className="py-1 pr-3 font-medium">{ev.title}</td>
@@ -419,7 +403,10 @@ export default function Schedule() {
       setError(null);
 
       const seasonRes = await supabase.from('seasons').select('id, name, start_date, end_date').eq('status', 'active').single();
-      if (seasonRes.error) { setEvents([]); setTeams([]); setLoading(false); return; }
+      if (seasonRes.error) {
+        console.error('Failed to load season:', seasonRes.error);
+        setEvents([]); setTeams([]); setLoading(false); return;
+      }
       setSeason(seasonRes.data);
 
       const [eventsRes, teamsRes] = await Promise.all([
@@ -436,11 +423,13 @@ export default function Schedule() {
         for (const ev of all) { ev._children = parentMap[ev.id] || []; }
         setEvents(all.filter((ev) => !ev.parent_event_id));
       }
-      if (!teamsRes.error) setTeams(teamsRes.data);
+      if (teamsRes.error) console.error('Failed to load teams:', teamsRes.error);
+      else setTeams(teamsRes.data);
 
       // Check if user is staff on any team
-      const { data: staffData } = await supabase.from('team_staff').select('team_id');
-      if (staffData) setStaffTeamIds(staffData.map((s) => s.team_id));
+      const { data: staffData, error: staffErr } = await supabase.from('team_staff').select('team_id');
+      if (staffErr) console.error('Failed to load team_staff:', staffErr);
+      else if (staffData) setStaffTeamIds(staffData.map((s) => s.team_id));
 
       setLoading(false);
     }
@@ -514,7 +503,7 @@ export default function Schedule() {
       {/* Print header */}
       <div className="hidden print:block mb-4">
         <h1 className="text-xl font-bold">{organization?.name || 'Schedule'}</h1>
-        {season && <p className="text-sm">{season.name} — {fmtDateShort(season.start_date)} to {fmtDateShort(season.end_date)}</p>}
+        {season && <p className="text-sm">{season.name} — {formatDateShort(season.start_date)} to {formatDateShort(season.end_date)}</p>}
       </div>
 
       <h1 className="text-2xl font-bold mb-4 print:hidden">Schedule</h1>
@@ -559,7 +548,7 @@ export default function Schedule() {
       {/* Event list */}
       {!loading && !error && grouped.map((group) => (
         <div key={group.dateStr} id={`date-${group.dateStr}`} className="mb-6 print:hidden">
-          <h2 className="text-sm font-semibold text-(--color-text-secondary) uppercase tracking-wide mb-3">{fmtDate(group.date)}</h2>
+          <h2 className="text-sm font-semibold text-(--color-text-secondary) uppercase tracking-wide mb-3">{formatDate(group.date)}</h2>
           <div className="flex flex-col gap-3">
             {group.events.map((event) => {
               const isNew = lv && event.created_at > lv;
@@ -601,4 +590,4 @@ export default function Schedule() {
 }
 
 // ─── Shared components for public schedule ───────────────────
-export { EventCard, TypeBadge, TeamPill, SeasonBar, fmtDate, fmtTime, fmtDateShort, generateIcs, gcalUrl, mapsUrl, TYPE_LABELS, TYPE_BADGE_CLS, EVENT_TYPES, PILL_ACTIVE, PILL_INACTIVE, STATUS_ICONS, Pill, useWeather };
+export { EventCard, TypeBadge, TeamPill, SeasonBar, generateIcs, gcalUrl, mapsUrl, Pill };

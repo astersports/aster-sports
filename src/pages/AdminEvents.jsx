@@ -1,35 +1,38 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-
-const FILTER_TYPES = ['all', 'practice', 'game', 'tournament', 'other'];
-const EVENT_TYPES = ['practice', 'game', 'tournament', 'other'];
-const TYPE_LABELS = { all: 'All', practice: 'Practice', game: 'Game', tournament: 'Tournament', other: 'Other' };
-const STATUS_OPTIONS = ['scheduled', 'cancelled', 'postponed'];
-const STATUS_LABELS = { all: 'All', scheduled: 'Scheduled', cancelled: 'Cancelled', postponed: 'Postponed' };
-const STATUS_ICONS = { scheduled: { icon: '\u2713', cls: 'text-emerald-600' }, postponed: { icon: '\u23F8', cls: 'text-amber-500' }, cancelled: { icon: '\u2715', cls: 'text-red-500' } };
-const FILTER_STATUSES = ['all', 'scheduled', 'cancelled', 'postponed'];
-
-const INPUT_CLS = 'w-full border border-(--color-border-tertiary) rounded px-3 py-2 text-sm bg-(--color-background) text-(--color-text-primary) focus:outline-none focus:ring-2 focus:ring-[var(--sf-accent)]';
-const LABEL_CLS = 'block text-sm font-medium text-(--color-text-primary) mb-1';
-const BTN_SECONDARY = 'px-4 py-2 text-sm font-medium rounded border border-(--color-border-tertiary) text-(--color-text-primary) hover:bg-(--color-background-secondary)';
-
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-function formatTime(dateStr) {
-  return new Date(dateStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-}
-function toLocalInput(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
-function toTimeInput(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(11, 16);
-}
+import LocationSelect from '../components/LocationSelect';
+import ArrivalSelect from '../components/ArrivalSelect';
+import {
+  EVENT_TYPES,
+  FILTER_TYPES,
+  TYPE_LABELS,
+  STATUS_OPTIONS,
+  FILTER_STATUSES,
+  STATUS_LABELS,
+  STATUS_ICONS,
+} from '../lib/constants';
+import {
+  formatDateLong,
+  formatTime,
+  formatDateInput,
+  isValidDatetime,
+  isValidDate,
+} from '../lib/formatters';
+import {
+  INPUT_CLS,
+  LABEL_CLS,
+  BTN_SECONDARY,
+  BTN_PRIMARY,
+  BTN_PRIMARY_STYLE,
+  MODAL_BACKDROP,
+  MODAL_PANEL,
+  MODAL_BACKDROP_CLS,
+  MODAL_PANEL_CLS,
+  MODAL_CENTER_CLS,
+  MODAL_CENTER_PANEL_SM_CLS,
+  MODAL_CENTER_PANEL_MD_CLS,
+} from '../lib/styles';
 
 // --- Pill button used in filters ---
 function Pill({ active, onClick, children, ariaProps }) {
@@ -85,7 +88,8 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
     end_at: '',
     is_multi_day: false,
     end_date: '',
-    location: '',
+    location_base: '',
+    _sub_location: '',
     location_address: '',
     indoor: false,
     arrival_minutes_before: '',
@@ -101,23 +105,27 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
 
   const [form, setForm] = useState(() => {
     if (event) {
+      // Split a saved "Venue — SubLocation" string back into its parts so the
+      // LocationSelect dropdowns can match the parent venue.
+      const [locBase, locSub] = (event.location || '').split(' — ');
       return {
         team_id: event.team_id,
         event_type: event.event_type,
         status: event.status || 'scheduled',
         title: event.title,
-        start_at: event.id ? toLocalInput(event.start_at) : '', // blank for duplicates
-        end_at: event.id ? toLocalInput(event.end_at) : '',
+        start_at: event.id ? formatDateInput(event.start_at) : '', // blank for duplicates
+        end_at: event.id ? formatDateInput(event.end_at) : '',
         is_multi_day: event.is_multi_day || false,
         end_date: event.end_date || '',
-        location: event.location || '',
+        location_base: locBase || '',
+        _sub_location: locSub || '',
         location_address: event.location_address || '',
         indoor: event.indoor || false,
         arrival_minutes_before: event.arrival_minutes_before ?? '',
         jersey: event.jersey || '',
         opponent: event.opponent || '',
         enable_rides: event.enable_rides || false,
-        rsvp_deadline: event.id ? toLocalInput(event.rsvp_deadline) : '',
+        rsvp_deadline: event.id ? formatDateInput(event.rsvp_deadline) : '',
         duties: event._duties || [],
         attachments: event.attachments || [],
         notes: event.notes || '',
@@ -159,18 +167,6 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
       }
       return next;
     });
-  }
-
-  // Date validation helper
-  function isValidDatetime(val) {
-    if (!val) return true; // empty is ok for optional fields
-    const d = new Date(val);
-    return !isNaN(d.getTime()) && d.getFullYear() >= 2024 && d.getFullYear() <= 2030;
-  }
-  function isValidDate(val) {
-    if (!val) return true;
-    const d = new Date(val + 'T12:00:00');
-    return !isNaN(d.getTime()) && d.getFullYear() >= 2024 && d.getFullYear() <= 2030;
   }
 
   const dateErrors = {
@@ -226,6 +222,12 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
     setSaving(true);
     setError(null);
 
+    const locationCombined = form.location_base
+      ? form._sub_location
+        ? `${form.location_base} — ${form._sub_location}`
+        : form.location_base
+      : null;
+
     const payload = {
       team_id: form.team_id,
       event_type: form.event_type,
@@ -235,7 +237,7 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
       end_at: !form.is_multi_day && form.end_at ? new Date(form.end_at).toISOString() : null,
       is_multi_day: form.is_multi_day,
       end_date: form.is_multi_day && form.end_date ? form.end_date : null,
-      location: form.location.trim() || null,
+      location: locationCombined,
       location_address: form.location_address.trim() || null,
       indoor: form.indoor,
       arrival_minutes_before: form.arrival_minutes_before !== '' ? Number(form.arrival_minutes_before) : null,
@@ -279,22 +281,25 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
       }
       result = await supabase.from('events').update(payload).eq('id', event.id);
       if (!result.error && changes.length > 0) {
-        await supabase.from('event_changes').insert(changes);
+        const { error: chErr } = await supabase.from('event_changes').insert(changes);
+        if (chErr) console.error('Failed to log event changes:', chErr);
       }
       // Queue notifications for visible changes
       if (!result.error && organization?.id) {
         const visibleFields = ['status', 'title', 'start_at', 'end_at', 'location', 'location_address', 'opponent'];
         const visibleChanges = changes.filter((c) => visibleFields.includes(c.field_name));
         if (payload.status === 'cancelled' && event.status !== 'cancelled') {
-          await supabase.from('notifications_queue').insert({
+          const { error: nqErr } = await supabase.from('notifications_queue').insert({
             org_id: organization.id, event_id: event.id, notification_type: 'cancellation',
             recipient_type: 'team', payload: { title: payload.title, team_id: payload.team_id, start_at: payload.start_at },
           });
+          if (nqErr) console.error('Failed to queue cancellation notification:', nqErr);
         } else if (visibleChanges.length > 0) {
-          await supabase.from('notifications_queue').insert({
+          const { error: nqErr } = await supabase.from('notifications_queue').insert({
             org_id: organization.id, event_id: event.id, notification_type: 'schedule_change',
             recipient_type: 'team', payload: { title: payload.title, team_id: payload.team_id, changes: visibleChanges.map((c) => ({ field: c.field_name, from: c.old_value, to: c.new_value })) },
           });
+          if (nqErr) console.error('Failed to queue schedule change notification:', nqErr);
         }
       }
     } else {
@@ -311,12 +316,16 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
     const eventId = isEdit ? event.id : result.data?.id;
     if (eventId && form.duties.length > 0) {
       if (isEdit) {
-        await supabase.from('event_duties').delete().eq('event_id', eventId);
+        const { error: delErr } = await supabase.from('event_duties').delete().eq('event_id', eventId);
+        if (delErr) console.error('Failed to clear existing duties:', delErr);
       }
       const dutyRows = form.duties.filter((d) => d.duty_name.trim()).map((d) => ({
         event_id: eventId, duty_name: d.duty_name.trim(), slots_needed: Number(d.slots_needed) || 1,
       }));
-      if (dutyRows.length > 0) await supabase.from('event_duties').insert(dutyRows);
+      if (dutyRows.length > 0) {
+        const { error: dutyErr } = await supabase.from('event_duties').insert(dutyRows);
+        if (dutyErr) console.error('Failed to insert duties:', dutyErr);
+      }
     }
 
     onSave();
@@ -325,13 +334,13 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
   // Conflict warning overlay
   if (conflict) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-        <div className="rounded-lg shadow-lg w-full max-w-md p-6" style={{ backgroundColor: 'var(--color-background-primary, #ffffff)' }}>
+      <div className={MODAL_CENTER_CLS} style={MODAL_BACKDROP}>
+        <div className={MODAL_CENTER_PANEL_MD_CLS} style={MODAL_PANEL}>
           <h2 className="text-lg font-bold text-(--color-text-primary) mb-2">Schedule Conflict</h2>
           <p className="text-sm text-(--color-text-secondary) mb-3">This event overlaps with:</p>
           <ul className="text-sm text-(--color-text-primary) mb-4 space-y-1">
             {conflict.map((c) => (
-              <li key={c.id}><strong>{c.title}</strong> — {formatDate(c.start_at)} {formatTime(c.start_at)}{c.teams?.name ? ` (${c.teams.name})` : ''}</li>
+              <li key={c.id}><strong>{c.title}</strong> — {formatDateLong(c.start_at)} {formatTime(c.start_at)}{c.teams?.name ? ` (${c.teams.name})` : ''}</li>
             ))}
           </ul>
           <div className="flex justify-end gap-3">
@@ -344,10 +353,10 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center px-0 sm:px-4 overflow-y-auto" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+    <div className={MODAL_BACKDROP_CLS} style={MODAL_BACKDROP} onClick={onClose}>
       <div
-        className="sm:rounded-lg shadow-lg w-full sm:max-w-lg sm:max-h-[90vh] min-h-screen sm:min-h-0 overflow-y-auto p-6 sm:my-8"
-        style={{ backgroundColor: 'var(--color-background-primary, #ffffff)' }}
+        className={MODAL_PANEL_CLS}
+        style={MODAL_PANEL}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-bold text-(--color-text-primary) mb-4">
@@ -417,60 +426,21 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
           </label>
 
           {/* Location */}
-          <div>
-            <label htmlFor="ev-location" className={LABEL_CLS}>Location</label>
-            <select
-              id="ev-location"
-              value={locations.find((l) => l.name === form.location)?.id || '__custom'}
-              onChange={(e) => {
-                if (e.target.value === '__custom') {
-                  setForm((f) => ({ ...f, location: '', location_address: '', _sub_location: '' }));
-                } else {
-                  const loc = locations.find((l) => l.id === e.target.value);
-                  if (loc) setForm((f) => ({ ...f, location: loc.name, location_address: loc.address || '', _sub_location: '' }));
-                }
-              }}
-              className={INPUT_CLS}
-            >
-              {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-              <option value="__custom">Custom location...</option>
-            </select>
-          </div>
-          {(() => {
-            const selLoc = locations.find((l) => l.name === form.location);
-            if (selLoc?.sub_locations?.length > 0) return (
-              <div>
-                <label className={LABEL_CLS}>Sub-location</label>
-                <select value={form._sub_location || ''} onChange={(e) => {
-                  const sub = e.target.value;
-                  setForm((f) => ({
-                    ...f,
-                    _sub_location: sub,
-                    location: sub ? `${selLoc.name} — ${sub}` : selLoc.name,
-                  }));
-                }} className={INPUT_CLS}>
-                  <option value="">None</option>
-                  {selLoc.sub_locations.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-            );
-            return null;
-          })()}
-          {!locations.find((l) => l.name === form.location) && (
-            <>
-              <div>
-                <label className={LABEL_CLS}>Location name</label>
-                <input type="text" value={form.location} onChange={(e) => update('location', e.target.value)} className={INPUT_CLS} placeholder="Venue name" />
-              </div>
-              <div>
-                <label htmlFor="ev-address" className={LABEL_CLS}>Address</label>
-                <input id="ev-address" type="text" value={form.location_address} onChange={(e) => update('location_address', e.target.value)} className={INPUT_CLS} placeholder="Full address for map links and directions" />
-              </div>
-            </>
-          )}
-          {locations.find((l) => l.name === form.location) && form.location_address && (
-            <p className="text-xs text-(--color-text-secondary) -mt-2">{form.location_address}</p>
-          )}
+          <LocationSelect
+            baseName={form.location_base}
+            subLocation={form._sub_location}
+            address={form.location_address}
+            locations={locations}
+            idPrefix="ev"
+            onChange={({ baseName, subLocation, address }) =>
+              setForm((f) => ({
+                ...f,
+                location_base: baseName,
+                _sub_location: subLocation,
+                location_address: address,
+              }))
+            }
+          />
 
           {/* Indoor + Arrival */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -478,33 +448,11 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
               <input type="checkbox" checked={form.indoor} onChange={(e) => update('indoor', e.target.checked)} className="rounded" />
               Indoor venue
             </label>
-            <div>
-              <label htmlFor="ev-arrival" className={LABEL_CLS}>Arrive early</label>
-              {(() => {
-                const presets = [15, 20, 25, 30, 45, 60];
-                const val = form.arrival_minutes_before;
-                const isCustom = val !== '' && !presets.includes(Number(val));
-                return (
-                  <div className="flex gap-2">
-                    <select
-                      id="ev-arrival"
-                      value={isCustom ? 'custom' : String(val)}
-                      onChange={(e) => {
-                        if (e.target.value === 'custom') update('arrival_minutes_before', '');
-                        else if (e.target.value === '') update('arrival_minutes_before', '');
-                        else update('arrival_minutes_before', Number(e.target.value));
-                      }}
-                      className={INPUT_CLS}
-                    >
-                      <option value="">None</option>
-                      {presets.map((m) => <option key={m} value={m}>{m} min</option>)}
-                      <option value="custom">Custom...</option>
-                    </select>
-                    {isCustom && <input type="number" min="1" max="120" value={val} onChange={(e) => update('arrival_minutes_before', e.target.value)} className={`${INPUT_CLS} w-20`} placeholder="min" />}
-                  </div>
-                );
-              })()}
-            </div>
+            <ArrivalSelect
+              value={form.arrival_minutes_before}
+              onChange={(v) => update('arrival_minutes_before', v)}
+              idPrefix="ev"
+            />
           </div>
 
           {/* Game-specific: Jersey + Opponent */}
@@ -572,7 +520,7 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
                     const days = Number(e.target.value);
                     if (!days) return;
                     const deadline = new Date(new Date(form.start_at).getTime() - days * 86400000);
-                    update('rsvp_deadline', toLocalInput(deadline.toISOString()));
+                    update('rsvp_deadline', formatDateInput(deadline.toISOString()));
                   }}
                   className={`${INPUT_CLS} w-auto`}
                 >
@@ -633,7 +581,7 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className={BTN_SECONDARY}>Cancel</button>
-            <button type="submit" disabled={saving || hasDateError} aria-busy={saving} className="px-4 py-2 text-sm font-medium rounded disabled:opacity-50" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>
+            <button type="submit" disabled={saving || hasDateError} aria-busy={saving} className={BTN_PRIMARY} style={BTN_PRIMARY_STYLE}>
               {saving ? 'Saving...' : 'Save'}
             </button>
           </div>
@@ -646,15 +594,17 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
 // =================================================================
 // RECURRING EVENT CREATOR
 // =================================================================
-function RecurringModal({ teams, allEvents, onSave, onClose }) {
+function RecurringModal({ teams, allEvents, locations, onSave, onClose }) {
   const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const [form, setForm] = useState({
     team_id: teams[0]?.id || '',
     event_type: 'practice',
     title: '',
-    location: '',
+    location_base: '',
+    _sub_location: '',
     location_address: '',
     indoor: false,
+    enable_rides: false,
     arrival_minutes_before: '',
     day_of_week: 1,
     start_time: '18:00',
@@ -675,12 +625,27 @@ function RecurringModal({ teams, allEvents, onSave, onClose }) {
         const type = TYPE_LABELS[field === 'event_type' ? value : f.event_type];
         if (team && type) next.title = `${team.name} ${type}`;
       }
+      // Default enable_rides on for tournaments — match EventModal behavior
+      if (field === 'event_type' && value === 'tournament') next.enable_rides = true;
       return next;
     });
   }
 
+  // Date validation — same range as EventModal
+  const dateErrors = {
+    first_date: !isValidDate(form.first_date),
+  };
+  const hasDateError = Object.values(dateErrors).some(Boolean);
+
+  // Combine base + sub for the saved location string
+  const locationCombined = form.location_base
+    ? form._sub_location
+      ? `${form.location_base} — ${form._sub_location}`
+      : form.location_base
+    : null;
+
   const generatedDates = useMemo(() => {
-    if (!form.first_date || !form.num_weeks) return [];
+    if (!form.first_date || !form.num_weeks || !isValidDate(form.first_date)) return [];
     const dates = [];
     const first = new Date(form.first_date + 'T12:00:00');
     // Adjust to the right day of week
@@ -707,11 +672,11 @@ function RecurringModal({ teams, allEvents, onSave, onClose }) {
         title: form.title.trim(),
         start_at: startIso,
         end_at: endIso,
-        location: form.location.trim() || null,
+        location: locationCombined,
         location_address: form.location_address.trim() || null,
         indoor: form.indoor,
         arrival_minutes_before: form.arrival_minutes_before !== '' ? Number(form.arrival_minutes_before) : null,
-        enable_rides: false,
+        enable_rides: form.enable_rides,
         is_multi_day: false,
         attachments: [],
       };
@@ -736,17 +701,24 @@ function RecurringModal({ teams, allEvents, onSave, onClose }) {
       }
     }
     setConflicts(found);
-  }, [generatedDates, form.team_id, form.location, form.start_time, form.end_time]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generatedDates, form.team_id, locationCombined, form.start_time, form.end_time]);
 
   async function handleCreate(e) {
     e.preventDefault();
+    if (hasDateError) { setError('Please fix invalid date values before saving.'); return; }
     setSaving(true);
     setError(null);
     const payloads = buildPayloads();
     if (payloads.length === 0) { setError('No dates generated.'); setSaving(false); return; }
 
     const { data, error: insertErr } = await supabase.from('events').insert(payloads).select('id');
-    if (insertErr) { setError(insertErr.message); setSaving(false); return; }
+    if (insertErr) {
+      console.error('Recurring event insert failed:', insertErr);
+      setError(insertErr.message);
+      setSaving(false);
+      return;
+    }
 
     // Insert duties for each event
     if (data && form.duties.length > 0) {
@@ -755,7 +727,10 @@ function RecurringModal({ teams, allEvents, onSave, onClose }) {
           event_id: ev.id, duty_name: d.duty_name.trim(), slots_needed: Number(d.slots_needed) || 1,
         }))
       );
-      if (dutyRows.length > 0) await supabase.from('event_duties').insert(dutyRows);
+      if (dutyRows.length > 0) {
+        const { error: dutyErr } = await supabase.from('event_duties').insert(dutyRows);
+        if (dutyErr) console.error('Recurring duties insert failed:', dutyErr);
+      }
     }
 
     onSave();
@@ -768,8 +743,8 @@ function RecurringModal({ teams, allEvents, onSave, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center px-0 sm:px-4 overflow-y-auto" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
-      <div className="sm:rounded-lg shadow-lg w-full sm:max-w-lg sm:max-h-[90vh] min-h-screen sm:min-h-0 overflow-y-auto p-6 sm:my-8" style={{ backgroundColor: 'var(--color-background-primary, #ffffff)' }} onClick={(e) => e.stopPropagation()}>
+    <div className={MODAL_BACKDROP_CLS} style={MODAL_BACKDROP} onClick={onClose}>
+      <div className={MODAL_PANEL_CLS} style={MODAL_PANEL} onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-bold text-(--color-text-primary) mb-4">Create Recurring Event</h2>
         {error && <div role="alert" className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded mb-4">{error}</div>}
 
@@ -790,24 +765,41 @@ function RecurringModal({ teams, allEvents, onSave, onClose }) {
             <label htmlFor="rc-title" className={LABEL_CLS}>Title</label>
             <input id="rc-title" type="text" required value={form.title} onChange={(e) => update('title', e.target.value)} className={INPUT_CLS} />
           </div>
-          <div>
-            <label htmlFor="rc-location" className={LABEL_CLS}>Location</label>
-            <input id="rc-location" type="text" value={form.location} onChange={(e) => update('location', e.target.value)} className={INPUT_CLS} />
-          </div>
-          <div>
-            <label htmlFor="rc-address" className={LABEL_CLS}>Address</label>
-            <input id="rc-address" type="text" value={form.location_address} onChange={(e) => update('location_address', e.target.value)} className={INPUT_CLS} placeholder="Full address for map links" />
-          </div>
+
+          {/* Location — same dropdown pattern as EventModal */}
+          <LocationSelect
+            baseName={form.location_base}
+            subLocation={form._sub_location}
+            address={form.location_address}
+            locations={locations}
+            idPrefix="rc"
+            onChange={({ baseName, subLocation, address }) =>
+              setForm((f) => ({
+                ...f,
+                location_base: baseName,
+                _sub_location: subLocation,
+                location_address: address,
+              }))
+            }
+          />
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="flex items-center gap-2 text-sm text-(--color-text-primary)">
               <input type="checkbox" checked={form.indoor} onChange={(e) => update('indoor', e.target.checked)} className="rounded" />
-              Indoor
+              Indoor venue
             </label>
-            <div>
-              <label htmlFor="rc-arrival" className={LABEL_CLS}>Arrive early (min)</label>
-              <input id="rc-arrival" type="number" min="0" value={form.arrival_minutes_before} onChange={(e) => update('arrival_minutes_before', e.target.value)} className={INPUT_CLS} />
-            </div>
+            <ArrivalSelect
+              value={form.arrival_minutes_before}
+              onChange={(v) => update('arrival_minutes_before', v)}
+              idPrefix="rc"
+            />
           </div>
+
+          {/* Enable rides — match EventModal */}
+          <label className="flex items-center gap-2 text-sm text-(--color-text-primary)">
+            <input type="checkbox" checked={form.enable_rides} onChange={(e) => update('enable_rides', e.target.checked)} className="rounded" />
+            Enable ride board
+          </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -818,7 +810,15 @@ function RecurringModal({ teams, allEvents, onSave, onClose }) {
             </div>
             <div>
               <label htmlFor="rc-first" className={LABEL_CLS}>First Occurrence</label>
-              <input id="rc-first" type="date" required value={form.first_date} onChange={(e) => update('first_date', e.target.value)} className={INPUT_CLS} />
+              <input
+                id="rc-first"
+                type="date"
+                required
+                value={form.first_date}
+                onChange={(e) => update('first_date', e.target.value)}
+                className={`${INPUT_CLS} ${dateErrors.first_date ? 'border-red-500 focus:ring-red-500' : ''}`}
+              />
+              {dateErrors.first_date && <p className="text-xs text-red-500 mt-1">Invalid date</p>}
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -836,14 +836,21 @@ function RecurringModal({ teams, allEvents, onSave, onClose }) {
             </div>
           </div>
 
-          {/* Duties */}
+          {/* Duties — match EventModal sizing pattern: flex-1 name, w-20 slots, labels on first row */}
           <fieldset>
             <legend className={LABEL_CLS}>Duty Slots (applied to all events)</legend>
+            <p className="text-xs text-(--color-text-secondary) mb-2">Add duties like snack duty or scorekeeping. Parents can claim slots from the schedule.</p>
             {form.duties.map((d, i) => (
-              <div key={i} className="flex gap-2 mb-2">
-                <input type="text" value={d.duty_name} onChange={(e) => updateDuty(i, 'duty_name', e.target.value)} placeholder="e.g. Snack duty" className={`${INPUT_CLS} flex-1`} />
-                <input type="number" min="1" value={d.slots_needed} onChange={(e) => updateDuty(i, 'slots_needed', e.target.value)} className={`${INPUT_CLS} w-16`} />
-                <button type="button" onClick={() => removeDuty(i)} className="text-red-500 text-sm font-medium px-2">Remove</button>
+              <div key={i} className="flex items-end gap-2 mb-2">
+                <div className="flex-1">
+                  {i === 0 && <label className="block text-xs text-(--color-text-secondary) mb-1">Duty name</label>}
+                  <input type="text" value={d.duty_name} onChange={(e) => updateDuty(i, 'duty_name', e.target.value)} placeholder="e.g. Snacks, Scorebook" className={INPUT_CLS} aria-label="Duty name" />
+                </div>
+                <div className="w-20">
+                  {i === 0 && <label className="block text-xs text-(--color-text-secondary) mb-1">Slots</label>}
+                  <input type="number" min="1" value={d.slots_needed} onChange={(e) => updateDuty(i, 'slots_needed', e.target.value)} className={INPUT_CLS} aria-label="Slots needed" />
+                </div>
+                <button type="button" onClick={() => removeDuty(i)} className="text-red-500 text-sm font-medium px-2 py-2">Remove</button>
               </div>
             ))}
             <button type="button" onClick={addDuty} className="text-sm font-medium hover:underline" style={{ color: 'var(--sf-accent)' }}>+ Add duty</button>
@@ -864,7 +871,7 @@ function RecurringModal({ teams, allEvents, onSave, onClose }) {
 
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className={BTN_SECONDARY}>Cancel</button>
-            <button type="submit" disabled={saving || generatedDates.length === 0} aria-busy={saving} className="px-4 py-2 text-sm font-medium rounded disabled:opacity-50" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>
+            <button type="submit" disabled={saving || hasDateError || generatedDates.length === 0} aria-busy={saving} className={BTN_PRIMARY} style={BTN_PRIMARY_STYLE}>
               {saving ? 'Creating...' : `Create ${generatedDates.length} Events`}
             </button>
           </div>
@@ -887,19 +894,19 @@ function DeleteDialog({ events, onConfirm, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
-      <div className="rounded-lg shadow-lg w-full max-w-sm p-6" style={{ backgroundColor: 'var(--color-background-primary, #ffffff)' }} onClick={(e) => e.stopPropagation()}>
+    <div className={MODAL_CENTER_CLS} style={MODAL_BACKDROP} onClick={onClose}>
+      <div className={MODAL_CENTER_PANEL_SM_CLS} style={MODAL_PANEL} onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-bold text-(--color-text-primary) mb-2">Delete {isBulk ? `${events.length} Events` : 'Event'}</h2>
         {isBulk ? (
           <div className="text-sm text-(--color-text-secondary) mb-4">
             <p className="mb-2">This cannot be undone:</p>
             <ul className="list-disc pl-4 space-y-0.5">
-              {events.map((ev) => <li key={ev.id}>{ev.title} — {formatDate(ev.start_at)}</li>)}
+              {events.map((ev) => <li key={ev.id}>{ev.title} — {formatDateLong(ev.start_at)}</li>)}
             </ul>
           </div>
         ) : (
           <p className="text-sm text-(--color-text-secondary) mb-6">
-            Delete <strong>{events[0].title}</strong> on {formatDate(events[0].start_at)}? This cannot be undone.
+            Delete <strong>{events[0].title}</strong> on {formatDateLong(events[0].start_at)}? This cannot be undone.
           </p>
         )}
         <div className="flex justify-end gap-3">
@@ -1000,17 +1007,21 @@ export default function AdminEvents() {
 
     if (eventsRes.error) { setError('Failed to load events.'); console.error(eventsRes.error); }
     else setEvents(eventsRes.data);
-    if (!teamsRes.error) setTeams(teamsRes.data);
+    if (teamsRes.error) console.error('Failed to load teams:', teamsRes.error);
+    else setTeams(teamsRes.data);
 
     // Fetch locations, opponents, and pending notification count
-    const [locsRes, oppsRes, { count }] = await Promise.all([
+    const [locsRes, oppsRes, notifRes] = await Promise.all([
       supabase.from('locations').select('*').order('name'),
       supabase.from('opponents').select('*').order('name'),
       supabase.from('notifications_queue').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     ]);
-    if (locsRes.data) setLocations(locsRes.data);
-    if (oppsRes.data) setOpponents(oppsRes.data);
-    setPendingNotifications(count || 0);
+    if (locsRes.error) console.error('Failed to load locations:', locsRes.error);
+    else if (locsRes.data) setLocations(locsRes.data);
+    if (oppsRes.error) console.error('Failed to load opponents:', oppsRes.error);
+    else if (oppsRes.data) setOpponents(oppsRes.data);
+    if (notifRes.error) console.error('Failed to load notification count:', notifRes.error);
+    else setPendingNotifications(notifRes.count || 0);
 
     setLoading(false);
   }
@@ -1046,24 +1057,31 @@ export default function AdminEvents() {
   }
 
   async function handleDelete(ids) {
-    await supabase.from('events').delete().in('id', ids);
+    const { error: delErr } = await supabase.from('events').delete().in('id', ids);
+    if (delErr) {
+      console.error('Bulk delete failed:', delErr);
+      setError('Failed to delete events.');
+    }
     setDeleteEvents(null);
     loadData();
   }
 
   async function bulkChangeStatus(status) {
-    await supabase.from('events').update({ status }).in('id', [...selected]);
+    const { error: updErr } = await supabase.from('events').update({ status }).in('id', [...selected]);
+    if (updErr) { console.error('Bulk status change failed:', updErr); setError('Failed to update events.'); }
     loadData();
   }
 
   async function bulkReschedule(newDateTime) {
     const newStart = new Date(newDateTime).toISOString();
-    await supabase.from('events').update({ start_at: newStart, status: 'scheduled' }).in('id', [...selected]);
+    const { error: updErr } = await supabase.from('events').update({ start_at: newStart, status: 'scheduled' }).in('id', [...selected]);
+    if (updErr) { console.error('Bulk reschedule failed:', updErr); setError('Failed to reschedule events.'); }
     loadData();
   }
 
   async function bulkChangeLocation(location) {
-    await supabase.from('events').update({ location }).in('id', [...selected]);
+    const { error: updErr } = await supabase.from('events').update({ location }).in('id', [...selected]);
+    if (updErr) { console.error('Bulk location change failed:', updErr); setError('Failed to update locations.'); }
     loadData();
   }
 
@@ -1163,7 +1181,7 @@ export default function AdminEvents() {
                     <tr key={ev.id} className={`border-b border-(--color-border-tertiary) ${selected.has(ev.id) ? 'bg-(--color-background-secondary)' : ''}`}>
                       <td className="py-2 pr-2"><input type="checkbox" checked={selected.has(ev.id)} onChange={() => toggleSelect(ev.id)} aria-label={`Select ${ev.title}`} /></td>
                       <td className="py-2 pr-2"><span className={si.cls} title={STATUS_LABELS[ev.status]}>{si.icon}</span></td>
-                      <td className="py-2 pr-4 text-(--color-text-primary) whitespace-nowrap">{formatDate(ev.start_at)}</td>
+                      <td className="py-2 pr-4 text-(--color-text-primary) whitespace-nowrap">{formatDateLong(ev.start_at)}</td>
                       <td className="py-2 pr-4 text-(--color-text-primary) whitespace-nowrap">{formatTime(ev.start_at)}</td>
                       <td className="py-2 pr-4 text-(--color-text-primary) whitespace-nowrap"><TeamDot color={ev.teams?.team_color} />{ev.teams?.name || '—'}</td>
                       <td className="py-2 pr-4 text-(--color-text-secondary)">{TYPE_LABELS[ev.event_type] || ev.event_type}</td>
@@ -1192,7 +1210,7 @@ export default function AdminEvents() {
                     <div className="flex items-center gap-2">
                       <input type="checkbox" checked={selected.has(ev.id)} onChange={() => toggleSelect(ev.id)} aria-label={`Select ${ev.title}`} />
                       <span className={si.cls}>{si.icon}</span>
-                      <span className="text-sm font-semibold text-(--color-text-primary)">{formatDate(ev.start_at)}</span>
+                      <span className="text-sm font-semibold text-(--color-text-primary)">{formatDateLong(ev.start_at)}</span>
                       <span className="text-sm text-(--color-text-secondary)">{formatTime(ev.start_at)}</span>
                     </div>
                   </div>
@@ -1220,7 +1238,7 @@ export default function AdminEvents() {
         <EventModal event={modalEvent} teams={teams} allEvents={events} locations={locations} opponents={opponents} onSave={handleSave} onClose={() => setModalEvent(undefined)} />
       )}
       {showRecurring && (
-        <RecurringModal teams={teams} allEvents={events} onSave={handleSave} onClose={() => setShowRecurring(false)} />
+        <RecurringModal teams={teams} allEvents={events} locations={locations} onSave={handleSave} onClose={() => setShowRecurring(false)} />
       )}
       {deleteEvents && (
         <DeleteDialog events={deleteEvents} onConfirm={handleDelete} onClose={() => setDeleteEvents(null)} />

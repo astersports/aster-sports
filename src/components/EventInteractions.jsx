@@ -1,19 +1,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { INPUT_CLS_INLINE as INPUT_CLS } from '../lib/styles';
+import { timeAgo } from '../lib/formatters';
 
-const INPUT_CLS = 'border border-(--color-border-tertiary) rounded px-3 py-2 text-sm bg-(--color-background) text-(--color-text-primary) focus:outline-none focus:ring-2 focus:ring-[var(--sf-accent)]';
 const LS_NAME = 'skyfire_user_name';
 const LS_PHONE = 'skyfire_user_phone';
 const LS_PLAYER = 'skyfire_player_id';
-
-function timeAgo(iso) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
 
 // =================================================================
 // RSVP SECTION
@@ -51,9 +43,12 @@ export function RsvpSection({ event, userRole, isPublic, onUpdate }) {
   // Current user's player RSVP
   const myRsvp = rsvps.find((r) => r.player_id === selectedPlayer);
 
+  const [submitError, setSubmitError] = useState(null);
+
   async function submitRsvp(response, playerId) {
     if (!playerId) return;
     setSubmitting(true);
+    setSubmitError(null);
     const { data, error } = await supabase.from('event_rsvps').upsert({
       event_id: event.id,
       player_id: playerId,
@@ -62,7 +57,13 @@ export function RsvpSection({ event, userRole, isPublic, onUpdate }) {
       responded_at: new Date().toISOString(),
     }, { onConflict: 'event_id,player_id' }).select().single();
 
-    if (!error && data) {
+    if (error) {
+      console.error('RSVP submit failed:', error);
+      setSubmitError('Could not save RSVP. Please try again.');
+      setSubmitting(false);
+      return;
+    }
+    if (data) {
       setRsvps((prev) => {
         const filtered = prev.filter((r) => r.player_id !== playerId);
         return [...filtered, data];
@@ -117,6 +118,7 @@ export function RsvpSection({ event, userRole, isPublic, onUpdate }) {
       </div>
 
       {deadlinePassed && !isAdmin && <p className="text-xs text-amber-600 font-medium">RSVP closed</p>}
+      {submitError && <p role="alert" className="text-xs text-red-600">{submitError}</p>}
 
       {/* Futures alert */}
       {showFuturesAlert && (
@@ -186,17 +188,20 @@ export function RideBoard({ event, userRole, isPublic, onUpdate }) {
   const [showForm, setShowForm] = useState(null); // 'offering' | 'requesting' | null
   const [form, setForm] = useState({ seats: 1, pickup_location: '', departure_time: '', notes: '', name: localStorage.getItem(LS_NAME) || '', phone: localStorage.getItem(LS_PHONE) || '' });
   const [submitting, setSubmitting] = useState(false);
+  const [rideError, setRideError] = useState(null);
   const [rosterPlayers, setRosterPlayers] = useState([]);
   const [guardians, setGuardians] = useState([]);
 
   useEffect(() => {
     if (isPublic || !event.team_id) return;
     // Fetch players for "Need a ride" dropdown
-    supabase.from('team_players').select('player_id, players(id, first_name, last_name)').eq('team_id', event.team_id).then(({ data }) => {
-      if (data) setRosterPlayers(data);
+    supabase.from('team_players').select('player_id, players(id, first_name, last_name)').eq('team_id', event.team_id).then(({ data, error }) => {
+      if (error) console.error('Roster fetch failed:', error);
+      else if (data) setRosterPlayers(data);
     });
     // Fetch guardians for "I can drive" dropdown
-    supabase.from('team_players').select('player_id, players(id, player_guardians(guardian_id, guardians(id, first_name, last_name)))').eq('team_id', event.team_id).then(({ data }) => {
+    supabase.from('team_players').select('player_id, players(id, player_guardians(guardian_id, guardians(id, first_name, last_name)))').eq('team_id', event.team_id).then(({ data, error }) => {
+      if (error) { console.error('Guardian fetch failed:', error); return; }
       if (data) {
         const guardianMap = new Map();
         for (const tp of data) {
@@ -221,6 +226,7 @@ export function RideBoard({ event, userRole, isPublic, onUpdate }) {
   async function submitRide(type) {
     if (!form.name.trim()) return;
     setSubmitting(true);
+    setRideError(null);
     const nameTrimmed = form.name.trim();
     const phoneTrimmed = form.phone.trim() || null;
     const payload = {
@@ -237,7 +243,13 @@ export function RideBoard({ event, userRole, isPublic, onUpdate }) {
     if (phoneTrimmed) localStorage.setItem(LS_PHONE, phoneTrimmed);
 
     const { data, error } = await supabase.from('event_rides').insert(payload).select().single();
-    if (!error && data) setRides((prev) => [...prev, data]);
+    if (error) {
+      console.error('Ride submit failed:', error);
+      setRideError('Could not save ride. Please try again.');
+      setSubmitting(false);
+      return;
+    }
+    if (data) setRides((prev) => [...prev, data]);
     setShowForm(null);
     setForm((f) => ({ ...f, seats: 1, pickup_location: '', departure_time: '', notes: '' }));
     setSubmitting(false);
@@ -245,7 +257,12 @@ export function RideBoard({ event, userRole, isPublic, onUpdate }) {
   }
 
   async function removeRide(id) {
-    await supabase.from('event_rides').delete().eq('id', id);
+    const { error: delErr } = await supabase.from('event_rides').delete().eq('id', id);
+    if (delErr) {
+      console.error('Failed to remove ride:', delErr);
+      setRideError('Could not remove ride.');
+      return;
+    }
     setRides((prev) => prev.filter((r) => r.id !== id));
     onUpdate?.();
   }
@@ -313,6 +330,7 @@ export function RideBoard({ event, userRole, isPublic, onUpdate }) {
           {offeredSeats} {offeredSeats !== 1 ? 'seats' : 'seat'} offered · {neededSeats} needed
         </span>
       </div>
+      {rideError && <p role="alert" className="text-xs text-red-600">{rideError}</p>}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Drivers */}
@@ -360,6 +378,7 @@ export function CommentsThread({ event, userRole, isPublic, onUpdate }) {
   const [name, setName] = useState(localStorage.getItem(LS_NAME) || '');
   const [submitting, setSubmitting] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [commentError, setCommentError] = useState(null);
 
   const sorted = [...comments].sort((a, b) => {
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
@@ -370,6 +389,7 @@ export function CommentsThread({ event, userRole, isPublic, onUpdate }) {
   async function postComment() {
     if (!body.trim()) return;
     setSubmitting(true);
+    setCommentError(null);
     const payload = {
       event_id: event.id,
       author_name: isPublic ? name.trim() : (userRole || 'User'),
@@ -378,26 +398,43 @@ export function CommentsThread({ event, userRole, isPublic, onUpdate }) {
     if (isPublic) localStorage.setItem(LS_NAME, name.trim());
 
     const { data, error } = await supabase.from('event_comments').insert(payload).select().single();
-    if (!error && data) setComments((prev) => [...prev, data]);
+    if (error) {
+      console.error('Comment post failed:', error);
+      setCommentError('Could not post comment.');
+      setSubmitting(false);
+      return;
+    }
+    if (data) setComments((prev) => [...prev, data]);
     setBody('');
     setSubmitting(false);
     onUpdate?.();
   }
 
   async function deleteComment(id) {
-    await supabase.from('event_comments').delete().eq('id', id);
+    const { error: delErr } = await supabase.from('event_comments').delete().eq('id', id);
+    if (delErr) {
+      console.error('Comment delete failed:', delErr);
+      setCommentError('Could not delete comment.');
+      return;
+    }
     setComments((prev) => prev.filter((c) => c.id !== id));
     onUpdate?.();
   }
 
   async function togglePin(c) {
-    const { data } = await supabase.from('event_comments').update({ pinned: !c.pinned }).eq('id', c.id).select().single();
+    const { data, error } = await supabase.from('event_comments').update({ pinned: !c.pinned }).eq('id', c.id).select().single();
+    if (error) {
+      console.error('Pin toggle failed:', error);
+      setCommentError('Could not update pin.');
+      return;
+    }
     if (data) setComments((prev) => prev.map((x) => x.id === data.id ? data : x));
   }
 
   return (
     <div className="space-y-2">
       <p className="text-xs font-medium text-(--color-text-secondary)">Comments ({comments.length})</p>
+      {commentError && <p role="alert" className="text-xs text-red-600">{commentError}</p>}
 
       {visible.map((c) => (
         <div key={c.id} className={`text-sm rounded p-2 ${c.pinned ? 'bg-amber-50 border border-amber-200' : 'bg-(--color-background-secondary)'}`}>
@@ -437,6 +474,8 @@ export function DutySignups({ event, userRole, isPublic, onUpdate }) {
   const [duties, setDuties] = useState(event.event_duties || []);
   const [claimName, setClaimName] = useState(localStorage.getItem(LS_NAME) || '');
   const [claimingId, setClaimingId] = useState(null);
+  const [submittingId, setSubmittingId] = useState(null);
+  const [dutyError, setDutyError] = useState(null);
 
   const myName = localStorage.getItem(LS_NAME);
   const isAdmin = userRole === 'admin';
@@ -446,24 +485,42 @@ export function DutySignups({ event, userRole, isPublic, onUpdate }) {
     const name = isPublic ? claimName.trim() : (userRole || 'User');
     if (isPublic) localStorage.setItem(LS_NAME, name);
 
-    const { data } = await supabase.from('event_duties').update({
+    setSubmittingId(dutyId);
+    setDutyError(null);
+    const { data, error } = await supabase.from('event_duties').update({
       claimed_by_name: name,
       claimed_at: new Date().toISOString(),
     }).eq('id', dutyId).select().single();
 
+    if (error) {
+      console.error('Duty claim failed:', error);
+      setDutyError('Could not claim duty.');
+      setSubmittingId(null);
+      return;
+    }
     if (data) setDuties((prev) => prev.map((d) => d.id === data.id ? data : d));
     setClaimingId(null);
+    setSubmittingId(null);
     onUpdate?.();
   }
 
   async function unclaim(dutyId) {
-    const { data } = await supabase.from('event_duties').update({
+    setSubmittingId(dutyId);
+    setDutyError(null);
+    const { data, error } = await supabase.from('event_duties').update({
       claimed_by_name: null,
       guardian_id: null,
       claimed_at: null,
     }).eq('id', dutyId).select().single();
 
+    if (error) {
+      console.error('Duty unclaim failed:', error);
+      setDutyError('Could not unclaim duty.');
+      setSubmittingId(null);
+      return;
+    }
     if (data) setDuties((prev) => prev.map((d) => d.id === data.id ? data : d));
+    setSubmittingId(null);
     onUpdate?.();
   }
 
@@ -477,8 +534,10 @@ export function DutySignups({ event, userRole, isPublic, onUpdate }) {
   return (
     <div className="space-y-2">
       <p className="text-xs font-medium text-(--color-text-secondary)">Volunteer Duties</p>
+      {dutyError && <p role="alert" className="text-xs text-red-600">{dutyError}</p>}
       {duties.map((d) => {
         const claimed = d.claimed_by_name || d.guardian_id;
+        const isSubmitting = submittingId === d.id;
         return (
           <div key={d.id} className={`flex items-center gap-2 text-sm rounded p-2 ${claimed ? 'bg-(--color-background-secondary)' : 'border border-dashed border-(--color-border-tertiary)'}`}>
             <span className="font-medium text-(--color-text-primary)">{d.duty_name}</span>
@@ -486,15 +545,32 @@ export function DutySignups({ event, userRole, isPublic, onUpdate }) {
             {claimed ? (
               <>
                 <span className="text-emerald-600 text-xs font-medium">— {d.claimed_by_name || 'Claimed'}</span>
-                {canUnclaim(d) && <button onClick={() => unclaim(d.id)} className="text-xs text-red-500 hover:underline ml-auto">Unclaim</button>}
+                {canUnclaim(d) && (
+                  <button
+                    onClick={() => unclaim(d.id)}
+                    disabled={isSubmitting}
+                    aria-busy={isSubmitting}
+                    className="text-xs text-red-500 hover:underline ml-auto disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Working...' : 'Unclaim'}
+                  </button>
+                )}
               </>
             ) : (
               <>
                 {claimingId === d.id ? (
                   <div className="flex gap-2 ml-auto">
-                    {isPublic && <input value={claimName} onChange={(e) => setClaimName(e.target.value)} placeholder="Your name" className={`${INPUT_CLS} w-28 text-xs`} />}
-                    <button onClick={() => claim(d.id)} className="text-xs font-medium px-2 py-1 rounded" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>Confirm</button>
-                    <button onClick={() => setClaimingId(null)} className="text-xs text-(--color-text-secondary)">Cancel</button>
+                    {isPublic && <input value={claimName} onChange={(e) => setClaimName(e.target.value)} placeholder="Your name" className={`${INPUT_CLS} w-28 text-xs`} aria-label="Your name" />}
+                    <button
+                      onClick={() => claim(d.id)}
+                      disabled={isSubmitting || (isPublic && !claimName.trim())}
+                      aria-busy={isSubmitting}
+                      className="text-xs font-medium px-2 py-1 rounded disabled:opacity-50"
+                      style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}
+                    >
+                      {isSubmitting ? 'Saving...' : 'Confirm'}
+                    </button>
+                    <button onClick={() => setClaimingId(null)} disabled={isSubmitting} className="text-xs text-(--color-text-secondary)">Cancel</button>
                   </div>
                 ) : (
                   <>

@@ -10,9 +10,12 @@ export default function ForgotPassword() {
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
-    await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/login`,
     });
+    // We intentionally show the same "if an account exists..." message even on
+    // error so we don't leak which emails have accounts.
+    if (error) console.error('Password reset request failed:', error);
     setSubmitted(true);
     setLoading(false);
   }

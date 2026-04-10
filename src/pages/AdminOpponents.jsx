@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-
-const INPUT_CLS = 'w-full border border-(--color-border-tertiary) rounded px-3 py-2 text-sm bg-(--color-background) text-(--color-text-primary) focus:outline-none focus:ring-2 focus:ring-[var(--sf-accent)]';
-const LABEL_CLS = 'block text-sm font-medium text-(--color-text-primary) mb-1';
-const BTN_SECONDARY = 'px-4 py-2 text-sm font-medium rounded border border-(--color-border-tertiary) text-(--color-text-primary) hover:bg-(--color-background-secondary)';
+import {
+  INPUT_CLS,
+  LABEL_CLS,
+  BTN_SECONDARY,
+  BTN_PRIMARY,
+  BTN_PRIMARY_STYLE,
+  MODAL_CENTER_CLS,
+  MODAL_CENTER_PANEL_SM_CLS,
+  MODAL_BACKDROP,
+  MODAL_PANEL,
+} from '../lib/styles';
 
 export default function AdminOpponents() {
   const { organization } = useAuth();
@@ -13,11 +20,18 @@ export default function AdminOpponents() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: '', notes: '' });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
 
   async function load() {
     setLoading(true);
-    const { data } = await supabase.from('opponents').select('*').order('name');
-    if (data) setOpponents(data);
+    setError(null);
+    const { data, error: loadErr } = await supabase.from('opponents').select('*').order('name');
+    if (loadErr) {
+      console.error('Failed to load opponents:', loadErr);
+      setError('Failed to load opponents.');
+    } else if (data) {
+      setOpponents(data);
+    }
     setLoading(false);
   }
 
@@ -31,11 +45,16 @@ export default function AdminOpponents() {
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
+    setError(null);
     const payload = { name: form.name.trim(), notes: form.notes.trim() || null };
-    if (editing.id) {
-      await supabase.from('opponents').update(payload).eq('id', editing.id);
-    } else {
-      await supabase.from('opponents').insert({ ...payload, org_id: organization.id });
+    const result = editing.id
+      ? await supabase.from('opponents').update(payload).eq('id', editing.id)
+      : await supabase.from('opponents').insert({ ...payload, org_id: organization.id });
+    if (result.error) {
+      console.error('Failed to save opponent:', result.error);
+      setError(result.error.message);
+      setSaving(false);
+      return;
     }
     setEditing(null);
     setSaving(false);
@@ -43,7 +62,12 @@ export default function AdminOpponents() {
   }
 
   async function handleDelete(id) {
-    await supabase.from('opponents').delete().eq('id', id);
+    const { error: delErr } = await supabase.from('opponents').delete().eq('id', id);
+    if (delErr) {
+      console.error('Failed to delete opponent:', delErr);
+      setError('Failed to delete opponent.');
+      return;
+    }
     load();
   }
 
@@ -51,10 +75,12 @@ export default function AdminOpponents() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Opponents</h1>
-        <button onClick={() => openEdit(null)} className="px-4 py-2 text-sm font-medium rounded" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>+ Add Opponent</button>
+        <button onClick={() => openEdit(null)} className={BTN_PRIMARY} style={BTN_PRIMARY_STYLE}>+ Add Opponent</button>
       </div>
 
-      {loading && <p className="text-(--color-text-secondary) py-8 text-center">Loading...</p>}
+      {error && <div role="alert" className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded mb-4">{error}</div>}
+
+      {loading && <p className="text-(--color-text-secondary) py-8 text-center" role="status" aria-live="polite">Loading...</p>}
 
       {!loading && opponents.length === 0 && (
         <p className="text-(--color-text-secondary) py-8 text-center">No opponents yet. Add your first opponent.</p>
@@ -78,21 +104,21 @@ export default function AdminOpponents() {
       )}
 
       {editing !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setEditing(null)}>
-          <div className="rounded-lg shadow-lg w-full max-w-sm p-6" style={{ backgroundColor: 'var(--color-background-primary, #ffffff)' }} onClick={(e) => e.stopPropagation()}>
+        <div className={MODAL_CENTER_CLS} style={MODAL_BACKDROP} onClick={() => setEditing(null)}>
+          <div className={MODAL_CENTER_PANEL_SM_CLS} style={MODAL_PANEL} onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-(--color-text-primary) mb-4">{editing.id ? 'Edit Opponent' : 'Add Opponent'}</h2>
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className={LABEL_CLS}>Name</label>
-                <input type="text" required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className={INPUT_CLS} placeholder="e.g. Stamford Sharks" />
+                <label htmlFor="opp-name" className={LABEL_CLS}>Name</label>
+                <input id="opp-name" type="text" required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className={INPUT_CLS} placeholder="e.g. Stamford Sharks" />
               </div>
               <div>
-                <label className={LABEL_CLS}>Notes (optional)</label>
-                <textarea rows={2} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} className={INPUT_CLS} />
+                <label htmlFor="opp-notes" className={LABEL_CLS}>Notes (optional)</label>
+                <textarea id="opp-notes" rows={2} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} className={INPUT_CLS} />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setEditing(null)} className={BTN_SECONDARY}>Cancel</button>
-                <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-medium rounded disabled:opacity-50" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>
+                <button type="submit" disabled={saving} aria-busy={saving} className={BTN_PRIMARY} style={BTN_PRIMARY_STYLE}>
                   {saving ? 'Saving...' : 'Save'}
                 </button>
               </div>

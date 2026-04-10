@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-
-const INPUT_CLS = 'w-full border border-(--color-border-tertiary) rounded px-3 py-2 text-sm bg-(--color-background) text-(--color-text-primary) focus:outline-none focus:ring-2 focus:ring-[var(--sf-accent)]';
-const LABEL_CLS = 'block text-sm font-medium text-(--color-text-primary) mb-1';
-const BTN_SECONDARY = 'px-4 py-2 text-sm font-medium rounded border border-(--color-border-tertiary) text-(--color-text-primary) hover:bg-(--color-background-secondary)';
+import {
+  INPUT_CLS,
+  LABEL_CLS,
+  BTN_SECONDARY,
+  BTN_PRIMARY,
+  BTN_PRIMARY_STYLE,
+  MODAL_CENTER_CLS,
+  MODAL_CENTER_PANEL_MD_CLS,
+  MODAL_BACKDROP,
+  MODAL_PANEL,
+} from '../lib/styles';
 
 export default function AdminLocations() {
   const { organization } = useAuth();
@@ -15,10 +22,18 @@ export default function AdminLocations() {
   const [subInput, setSubInput] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const [error, setError] = useState(null);
+
   async function load() {
     setLoading(true);
-    const { data } = await supabase.from('locations').select('*').order('name');
-    if (data) setLocations(data);
+    setError(null);
+    const { data, error: loadErr } = await supabase.from('locations').select('*').order('name');
+    if (loadErr) {
+      console.error('Failed to load locations:', loadErr);
+      setError('Failed to load locations.');
+    } else if (data) {
+      setLocations(data);
+    }
     setLoading(false);
   }
 
@@ -47,15 +62,20 @@ export default function AdminLocations() {
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
+    setError(null);
     const payload = {
       name: form.name.trim(),
       address: form.address.trim() || null,
       sub_locations: form.sub_locations,
     };
-    if (editing.id) {
-      await supabase.from('locations').update(payload).eq('id', editing.id);
-    } else {
-      await supabase.from('locations').insert({ ...payload, org_id: organization.id });
+    const result = editing.id
+      ? await supabase.from('locations').update(payload).eq('id', editing.id)
+      : await supabase.from('locations').insert({ ...payload, org_id: organization.id });
+    if (result.error) {
+      console.error('Failed to save location:', result.error);
+      setError(result.error.message);
+      setSaving(false);
+      return;
     }
     setEditing(null);
     setSaving(false);
@@ -63,7 +83,12 @@ export default function AdminLocations() {
   }
 
   async function handleDelete(id) {
-    await supabase.from('locations').delete().eq('id', id);
+    const { error: delErr } = await supabase.from('locations').delete().eq('id', id);
+    if (delErr) {
+      console.error('Failed to delete location:', delErr);
+      setError('Failed to delete location.');
+      return;
+    }
     load();
   }
 
@@ -71,10 +96,12 @@ export default function AdminLocations() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Locations</h1>
-        <button onClick={() => openEdit(null)} className="px-4 py-2 text-sm font-medium rounded" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>+ Add Location</button>
+        <button onClick={() => openEdit(null)} className={BTN_PRIMARY} style={BTN_PRIMARY_STYLE}>+ Add Location</button>
       </div>
 
-      {loading && <p className="text-(--color-text-secondary) py-8 text-center">Loading...</p>}
+      {error && <div role="alert" className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded mb-4">{error}</div>}
+
+      {loading && <p className="text-(--color-text-secondary) py-8 text-center" role="status" aria-live="polite">Loading...</p>}
 
       {!loading && locations.length === 0 && (
         <p className="text-(--color-text-secondary) py-8 text-center">No locations yet. Add your first venue.</p>
@@ -108,36 +135,36 @@ export default function AdminLocations() {
 
       {/* Modal */}
       {editing !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setEditing(null)}>
-          <div className="rounded-lg shadow-lg w-full max-w-md p-6" style={{ backgroundColor: 'var(--color-background-primary, #ffffff)' }} onClick={(e) => e.stopPropagation()}>
+        <div className={MODAL_CENTER_CLS} style={MODAL_BACKDROP} onClick={() => setEditing(null)}>
+          <div className={MODAL_CENTER_PANEL_MD_CLS} style={MODAL_PANEL} onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-(--color-text-primary) mb-4">{editing.id ? 'Edit Location' : 'Add Location'}</h2>
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className={LABEL_CLS}>Name</label>
-                <input type="text" required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className={INPUT_CLS} placeholder="e.g. St. Patrick's Gym" />
+                <label htmlFor="loc-name" className={LABEL_CLS}>Name</label>
+                <input id="loc-name" type="text" required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className={INPUT_CLS} placeholder="e.g. St. Patrick's Gym" />
               </div>
               <div>
-                <label className={LABEL_CLS}>Address</label>
-                <input type="text" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} className={INPUT_CLS} placeholder="Full address for map links" />
+                <label htmlFor="loc-address" className={LABEL_CLS}>Address</label>
+                <input id="loc-address" type="text" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} className={INPUT_CLS} placeholder="Full address for map links" />
               </div>
               <div>
-                <label className={LABEL_CLS}>Sub-locations</label>
+                <label htmlFor="loc-sub" className={LABEL_CLS}>Sub-locations</label>
                 <div className="flex flex-wrap gap-1 mb-2">
                   {form.sub_locations.map((s, i) => (
                     <span key={i} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-(--color-background-secondary) text-(--color-text-primary)">
                       {s}
-                      <button type="button" onClick={() => removeSub(i)} className="text-red-500 hover:text-red-700">&times;</button>
+                      <button type="button" onClick={() => removeSub(i)} className="text-red-500 hover:text-red-700" aria-label={`Remove ${s}`}>&times;</button>
                     </span>
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <input type="text" value={subInput} onChange={(e) => setSubInput(e.target.value)} className={INPUT_CLS} placeholder="e.g. Court 1" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSub(); } }} />
-                  <button type="button" onClick={addSub} className="text-sm font-medium px-3 py-2 rounded" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>Add</button>
+                  <input id="loc-sub" type="text" value={subInput} onChange={(e) => setSubInput(e.target.value)} className={INPUT_CLS} placeholder="e.g. Court 1" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSub(); } }} />
+                  <button type="button" onClick={addSub} className={BTN_PRIMARY} style={BTN_PRIMARY_STYLE}>Add</button>
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setEditing(null)} className={BTN_SECONDARY}>Cancel</button>
-                <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-medium rounded disabled:opacity-50" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>
+                <button type="submit" disabled={saving} aria-busy={saving} className={BTN_PRIMARY} style={BTN_PRIMARY_STYLE}>
                   {saving ? 'Saving...' : 'Save'}
                 </button>
               </div>

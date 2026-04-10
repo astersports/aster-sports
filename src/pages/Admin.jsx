@@ -26,6 +26,13 @@ export default function Admin() {
           <h2 className="font-semibold text-(--color-text-primary) mb-1">Opponents</h2>
           <p className="text-sm text-(--color-text-secondary)">Manage opponent teams for games</p>
         </Link>
+        <Link
+          to="/roster"
+          className="block rounded-lg border border-(--color-border-tertiary) p-5 hover:shadow-md transition-shadow"
+        >
+          <h2 className="font-semibold text-(--color-text-primary) mb-1">Roster</h2>
+          <p className="text-sm text-(--color-text-secondary)">Manage players, team assignments, and guardians</p>
+        </Link>
       </div>
     </div>
   );
