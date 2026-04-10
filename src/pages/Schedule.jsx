@@ -3,7 +3,15 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { RsvpSection, RideBoard, CommentsThread, DutySignups, useWeather, WeatherBadge } from '../components/EventInteractions';
 import { FILTER_TYPES as EVENT_TYPES, TYPE_LABELS, STATUS_ICONS } from '../lib/constants';
-import { formatDate, formatDateShort, formatTime, relativeTime, changeAgo } from '../lib/formatters';
+import {
+  formatDate,
+  formatDateShort,
+  formatTime,
+  relativeTime,
+  changeAgo,
+  formatCountdown,
+  eventLiveStatus,
+} from '../lib/formatters';
 import {
   TYPE_BADGE_CLS,
   PILL_ACTIVE,
@@ -52,6 +60,27 @@ function generateIcs(events, calName) {
   return lines.join('\r\n');
 }
 
+// ─── Skeleton card ───────────────────────────────────────────
+// Renders during initial load — same dimensions as a real EventCard so the
+// page doesn't shift when data lands. Pulses via the sf-pulse animation
+// defined in index.css.
+function SkeletonCard() {
+  return (
+    <div
+      className="rounded-lg border border-(--color-border-tertiary) bg-(--color-background)"
+      style={{ borderLeftWidth: '4px', borderLeftColor: 'var(--color-skeleton)', minHeight: '80px' }}
+      aria-hidden="true"
+    >
+      <div className="p-4">
+        <div className="sf-pulse rounded mb-2" style={{ width: '60px', height: '14px', backgroundColor: 'var(--color-skeleton)' }} />
+        <div className="sf-pulse rounded-full mb-2" style={{ width: '80px', height: '20px', backgroundColor: 'var(--color-skeleton)' }} />
+        <div className="sf-pulse rounded mb-2" style={{ width: '200px', height: '16px', backgroundColor: 'var(--color-skeleton)' }} />
+        <div className="sf-pulse rounded" style={{ width: '150px', height: '12px', backgroundColor: 'var(--color-skeleton)' }} />
+      </div>
+    </div>
+  );
+}
+
 // ─── Sub-components ──────────────────────────────────────────
 function TypeBadge({ type }) {
   return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${TYPE_BADGE_CLS[type] || TYPE_BADGE_CLS.other}`}>{TYPE_LABELS[type] || type}</span>;
@@ -75,31 +104,103 @@ function SeasonBar({ season }) {
   const elapsed = Math.max(0, Math.min(totalWeeks, Math.ceil((now - start) / (7 * 86400000))));
   const pct = Math.min(100, Math.round((elapsed / totalWeeks) * 100));
   return (
-    <div className="mb-4 print:hidden">
-      <p className="text-xs text-(--color-text-secondary) mb-1">Week {elapsed} of {totalWeeks} — {season.name}</p>
-      <div className="h-1.5 rounded-full bg-(--color-background-secondary) overflow-hidden">
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: 'var(--sf-accent)' }} />
+    <div className="mb-4 print:hidden sf-fade-in">
+      <p className="text-xs font-medium text-(--color-text-secondary) mb-1.5">
+        Week <span className="font-bold text-(--color-text-primary)">{elapsed}</span> of {totalWeeks} — {season.name}
+      </p>
+      {/* 2px filled line — no track background, just the progress and a glow dot at the leading edge. */}
+      <div className="relative h-0.5 w-full">
+        {pct > 0 && (
+          <div
+            className="absolute inset-y-0 left-0 rounded-full transition-all"
+            style={{ width: `${pct}%`, backgroundColor: 'var(--sf-accent)' }}
+          />
+        )}
+        {pct > 0 && pct < 100 && (
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-1 h-1 rounded-full"
+            style={{
+              left: `calc(${pct}% - 2px)`,
+              backgroundColor: 'var(--sf-accent)',
+              boxShadow: '0 0 6px var(--sf-accent)',
+            }}
+            aria-hidden="true"
+          />
+        )}
       </div>
     </div>
   );
 }
 
-// ─── This Week Summary ───────────────────────────────────────
-function WeekSummary({ events }) {
-  const mon = getMonday(new Date());
-  const sun = getSunday(mon);
-  const thisWeek = events.filter((e) => { const d = new Date(e.start_at); return d >= mon && d <= sun; });
-  if (thisWeek.length === 0) return <p className="text-sm text-(--color-text-secondary) mb-3 print:hidden">No events this week</p>;
-  const counts = {};
-  for (const e of thisWeek) counts[e.event_type] = (counts[e.event_type] || 0) + 1;
+// ─── Day Strip ───────────────────────────────────────────────
+// Mon-Sun of the current week. Today is highlighted, days that have events
+// get a small team-colored dot underneath, and tapping a day with events
+// scrolls to that date group in the schedule.
+const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+function DayStrip({ events, onScrollToDate }) {
+  const monday = useMemo(() => getMonday(new Date()), []);
+  const todayStr = new Date().toDateString();
+
+  const days = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(d.getDate() + i);
+      const dateStr = d.toDateString();
+      const dayEvents = events.filter((e) => new Date(e.start_at).toDateString() === dateStr);
+      return {
+        date: d,
+        dateStr,
+        isToday: dateStr === todayStr,
+        label: DAY_LABELS[i],
+        hasEvents: dayEvents.length > 0,
+        color: dayEvents[0]?.teams?.team_color || null,
+        ariaLabel: d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+      };
+    });
+  }, [monday, events, todayStr]);
+
+  const thisWeekHasEvents = days.some((d) => d.hasEvents);
+
   return (
-    <div className="flex flex-wrap items-center gap-2 text-sm mb-3 print:hidden">
-      <span className="text-(--color-text-secondary) font-medium">This week:</span>
-      {Object.entries(counts).map(([type, count]) => (
-        <span key={type} className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_BADGE_CLS[type] || TYPE_BADGE_CLS.other}`}>
-          {count} {TYPE_LABELS[type]?.toLowerCase() || type}{count > 1 ? 's' : ''}
-        </span>
-      ))}
+    <div className="mb-4 print:hidden sf-fade-in">
+      <div
+        className="flex gap-2 overflow-x-auto sf-no-scrollbar pb-1"
+        style={{ scrollSnapType: 'x mandatory' }}
+        aria-label="Days this week"
+      >
+        {days.map((d, i) => (
+          <button
+            key={i}
+            onClick={() => d.hasEvents && onScrollToDate(d.dateStr)}
+            disabled={!d.hasEvents}
+            className="flex-shrink-0 w-11 flex flex-col items-center gap-1 sf-press"
+            style={{ scrollSnapAlign: 'center' }}
+            aria-label={`${d.ariaLabel}${d.hasEvents ? '' : ' (no events)'}`}
+          >
+            <div
+              className="w-11 h-11 rounded-full flex items-center justify-center text-xs font-semibold transition-colors"
+              style={{
+                backgroundColor: d.isToday ? 'var(--sf-accent)' : 'var(--color-background-secondary)',
+                color: d.isToday
+                  ? 'var(--sf-text-on-dark)'
+                  : 'var(--color-text-primary)',
+                opacity: d.isToday || d.hasEvents ? 1 : 0.4,
+              }}
+            >
+              {d.label}
+            </div>
+            <div
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ backgroundColor: d.color || 'transparent' }}
+              aria-hidden="true"
+            />
+          </button>
+        ))}
+      </div>
+      {!thisWeekHasEvents && (
+        <p className="text-[13px] text-(--color-text-secondary) mt-1">No events this week</p>
+      )}
     </div>
   );
 }
@@ -112,10 +213,32 @@ function CountdownBanner({ events, onScrollTo }) {
   if (!next) return null;
   const rel = relativeTime(next.start_at);
   if (!rel) return null;
+
+  const teamColor = next.teams?.team_color || 'var(--sf-accent)';
+  const hoursUntil = (new Date(next.start_at).getTime() - Date.now()) / 3600000;
+  const isWithin2h = hoursUntil < 2;
+
   return (
-    <button onClick={() => onScrollTo(next.id)} className="w-full text-left rounded-lg p-3 mb-4 flex items-center gap-3 border border-(--color-border-tertiary) bg-(--color-background) hover:shadow-sm transition-shadow print:hidden" style={{ borderLeftWidth: '4px', borderLeftColor: next.teams?.team_color || 'var(--sf-accent)' }}>
+    <button
+      onClick={() => onScrollTo(next.id)}
+      className="w-full text-left rounded-lg p-3 mb-4 flex items-center gap-3 border border-(--color-border-tertiary) hover:shadow-sm transition-shadow print:hidden sf-fade-in sf-press"
+      style={{
+        borderLeftWidth: '4px',
+        borderLeftColor: teamColor,
+        // 5% team-color tint fading to transparent — 0d hex alpha ≈ 5%.
+        background: `linear-gradient(to right, ${teamColor}0d, transparent 65%)`,
+      }}
+    >
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-(--color-text-primary) truncate">Next up: {next.title}</p>
+        <p className="text-sm font-semibold text-(--color-text-primary) truncate flex items-center gap-2">
+          {isWithin2h && (
+            <span
+              className="inline-block w-2 h-2 rounded-full bg-emerald-500 sf-pulse-dot flex-shrink-0"
+              aria-hidden="true"
+            />
+          )}
+          <span className="truncate">Next up: {next.title}</span>
+        </p>
         <p className="text-xs text-(--color-text-secondary)">{rel}</p>
       </div>
     </button>
@@ -153,6 +276,20 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
   const isPostponed = event.status === 'postponed';
   const borderColor = isPostponed ? '#f59e0b' : team?.team_color || 'var(--sf-accent)';
   const si = STATUS_ICONS[event.status] || STATUS_ICONS.scheduled;
+
+  // Live tick — only events happening today need a countdown that updates
+  // every minute. Other cards skip the interval entirely.
+  const isToday = new Date(event.start_at).toDateString() === new Date().toDateString();
+  const showLiveCountdown = isToday && event.status === 'scheduled';
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!showLiveCountdown) return;
+    const id = setInterval(() => setTick((t) => t + 1), 60000);
+    return () => clearInterval(id);
+  }, [showLiveCountdown]);
+
+  const liveStatus = showLiveCountdown ? eventLiveStatus(event.start_at, event.end_at) : null;
+  const countdownLabel = liveStatus === 'upcoming' ? formatCountdown(event.start_at) : null;
 
   // Arrival time
   const arrivalTime = event.arrival_minutes_before ? formatTime(new Date(new Date(event.start_at).getTime() - event.arrival_minutes_before * 60000).toISOString()) : null;
@@ -197,9 +334,25 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
       {/* Collapsed */}
       <div className="p-4">
         <div className="flex flex-wrap items-center gap-2 mb-1">
-          <span className="text-sm font-semibold text-(--color-text-primary)">
-            {isMultiDay ? dateRange : (<>{formatTime(event.start_at)}{event.end_at && !event.is_multi_day && ` – ${formatTime(event.end_at)}`}</>)}
-          </span>
+          {liveStatus === 'in_progress' ? (
+            <span className="text-sm font-semibold text-emerald-600 inline-flex items-center gap-1.5">
+              <span
+                className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 sf-pulse-dot"
+                aria-hidden="true"
+              />
+              In progress
+            </span>
+          ) : liveStatus === 'completed' ? (
+            <span className="text-sm font-semibold text-(--color-text-secondary)">
+              ✓ Completed
+            </span>
+          ) : countdownLabel ? (
+            <span className="text-sm font-semibold text-(--color-text-primary)">{countdownLabel}</span>
+          ) : (
+            <span className="text-sm font-semibold text-(--color-text-primary)">
+              {isMultiDay ? dateRange : (<>{formatTime(event.start_at)}{event.end_at && !event.is_multi_day && ` – ${formatTime(event.end_at)}`}</>)}
+            </span>
+          )}
           {team && <TeamPill name={team.name} color={team.team_color} />}
           <TypeBadge type={event.event_type} />
           {isPostponed && <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Postponed</span>}
@@ -473,14 +626,17 @@ export default function Schedule() {
     if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setExpandedIds((prev) => new Set(prev).add(id)); }
   }, []);
 
+  // Used by the day strip — scroll to a specific date group by its dateStr key.
+  const scrollToDate = useCallback((dateStr) => {
+    const el = document.getElementById(`date-${dateStr}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
   const scrollToToday = useCallback(() => {
     const today = new Date().toDateString();
     const todayGroup = grouped.find((g) => g.dateStr === today) || grouped[0];
-    if (todayGroup) {
-      const el = document.getElementById(`date-${todayGroup.dateStr}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [grouped]);
+    if (todayGroup) scrollToDate(todayGroup.dateStr);
+  }, [grouped, scrollToDate]);
 
   function handleShare() {
     const slug = organization?.slug || 'org';
@@ -509,7 +665,7 @@ export default function Schedule() {
       <h1 className="text-2xl font-bold mb-4 print:hidden">Schedule</h1>
 
       <SeasonBar season={season} />
-      <WeekSummary events={filtered} />
+      <DayStrip events={filtered} onScrollToDate={scrollToDate} />
       <CountdownBanner events={filtered} onScrollTo={scrollToEvent} />
 
       {/* Filters */}
@@ -536,19 +692,76 @@ export default function Schedule() {
       </div>
 
       {/* Loading / Error / Empty */}
-      {loading && <p className="text-(--color-text-secondary) py-8 text-center" role="status" aria-live="polite">Loading schedule...</p>}
+      {loading && (
+        <div className="flex flex-col gap-3" role="status" aria-live="polite" aria-label="Loading schedule">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      )}
       {error && <p role="alert" className="text-red-600 py-8 text-center">{error}</p>}
       {!loading && !error && filtered.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-(--color-text-secondary) text-lg mb-1">No upcoming events</p>
-          <p className="text-(--color-text-secondary) text-sm">{teamFilter !== 'all' || typeFilter !== 'all' ? 'Try adjusting your filters.' : 'Events will appear here once they are scheduled.'}</p>
+        <div className="py-12 text-center sf-fade-in">
+          <svg
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="mx-auto mb-3 text-(--color-text-secondary)"
+            aria-hidden="true"
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          <h2 className="text-lg font-medium text-(--color-text-primary) mb-1">All clear!</h2>
+          <p className="text-sm text-(--color-text-secondary)">
+            {teamFilter !== 'all' || typeFilter !== 'all'
+              ? 'Try adjusting your filters.'
+              : 'No upcoming events. Enjoy the downtime.'}
+          </p>
         </div>
       )}
 
       {/* Event list */}
-      {!loading && !error && grouped.map((group) => (
+      {!loading && !error && grouped.map((group) => {
+        const groupDate = new Date(group.date);
+        const isTodayHeader = groupDate.toDateString() === new Date().toDateString();
+        const dayOfWeek = groupDate.toLocaleDateString('en-US', { weekday: 'long' });
+        const monthDay = groupDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+        const count = group.events.length;
+        return (
         <div key={group.dateStr} id={`date-${group.dateStr}`} className="mb-6 print:hidden">
-          <h2 className="text-sm font-semibold text-(--color-text-secondary) uppercase tracking-wide mb-3">{formatDate(group.date)}</h2>
+          <div
+            className="flex justify-between items-center rounded-lg px-4 py-3 mb-3"
+            style={{
+              backgroundColor: 'var(--color-background-secondary)',
+              borderLeft: isTodayHeader ? '4px solid var(--sf-accent)' : undefined,
+            }}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 className="text-sm font-semibold text-(--color-text-primary)">
+                {dayOfWeek} <span className="text-[13px] font-normal text-(--color-text-secondary) ml-1">{monthDay}</span>
+              </h2>
+              {isTodayHeader && (
+                <span
+                  className="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5"
+                  style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}
+                >
+                  Today
+                </span>
+              )}
+            </div>
+            <span className="text-xs text-(--color-text-secondary) flex-shrink-0">
+              {count} event{count !== 1 ? 's' : ''}
+            </span>
+          </div>
           <div className="flex flex-col gap-3">
             {group.events.map((event) => {
               const isNew = lv && event.created_at > lv;
@@ -571,7 +784,8 @@ export default function Schedule() {
             })}
           </div>
         </div>
-      ))}
+        );
+      })}
 
       {/* Print-only table */}
       <PrintTable events={filtered} />
