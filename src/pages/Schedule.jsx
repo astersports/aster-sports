@@ -269,6 +269,122 @@ function SubscribeModal({ icsBlob, calName, onClose }) {
   );
 }
 
+// ─── Section header (used inside expanded card) ─────────────
+// Tiny presentational helper so every section header in the expanded view
+// looks identical: thin border-top divider + uppercase label.
+function SectionDivider({ label, children }) {
+  return (
+    <div className="border-t border-(--color-border-tertiary) mt-3 pt-3">
+      <p
+        className="mb-2 font-medium text-(--color-text-secondary)"
+        style={{ fontSize: '11px', letterSpacing: '0.05em', textTransform: 'uppercase' }}
+      >
+        {label}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+// ─── Multi-provider directions button + popover ─────────────
+// Tap "Get Directions" → small popover with Google / Apple / Waze rows.
+// Each row opens the platform's map app with the encoded address. The
+// popover closes on outside click and Escape.
+function DirectionsButton({ address }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleDoc(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    }
+    function handleKey(e) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', handleDoc);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleDoc);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [open]);
+
+  if (!address) return null;
+  const enc = encodeURIComponent(address);
+  const providers = [
+    { label: 'Google Maps', url: `https://www.google.com/maps/search/?api=1&query=${enc}` },
+    { label: 'Apple Maps',  url: `https://maps.apple.com/?q=${enc}` },
+    { label: 'Waze',        url: `https://waze.com/ul?q=${enc}` },
+  ];
+
+  return (
+    <div className="relative inline-block" ref={wrapRef}>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className="rounded px-3 py-2 text-sm font-medium"
+        style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        Get Directions
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute left-0 top-full mt-1 rounded-lg shadow-lg z-10 overflow-hidden border border-(--color-border-tertiary)"
+          style={{ backgroundColor: 'var(--color-background-primary, #ffffff)', minWidth: '180px' }}
+        >
+          {providers.map((p) => (
+            <a
+              key={p.label}
+              role="menuitem"
+              href={p.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => { e.stopPropagation(); setOpen(false); }}
+              className="flex items-center px-4 text-sm text-(--color-text-primary) hover:bg-(--color-background-secondary)"
+              style={{ height: '44px' }}
+            >
+              {p.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Share event button ─────────────────────────────────────
+// Uses the Web Share API on mobile when available, otherwise falls back to
+// copying the URL to the clipboard with a transient "Copied!" label.
+function ShareEventButton({ url, title }) {
+  const [copied, setCopied] = useState(false);
+  async function handleClick(e) {
+    e.stopPropagation();
+    if (navigator.share) {
+      try { await navigator.share({ title, url }); return; } catch { /* user cancelled */ }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Share fallback failed:', err);
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="rounded border px-3 py-2 text-sm font-medium border-(--color-border-tertiary) text-(--color-text-secondary) hover:bg-(--color-background-secondary)"
+    >
+      {copied ? 'Copied!' : 'Share'}
+    </button>
+  );
+}
+
 // ─── Expandable Event Card ───────────────────────────────────
 function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isStaff, weather, isPublic, onUpdate }) {
   const team = event.teams;
@@ -290,6 +406,16 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
 
   const liveStatus = showLiveCountdown ? eventLiveStatus(event.start_at, event.end_at) : null;
   const countdownLabel = liveStatus === 'upcoming' ? formatCountdown(event.start_at) : null;
+
+  // Smooth height transition for expand/collapse — measure the real content
+  // height with a ref so the animation runs from 0 → actual scrollHeight
+  // instead of relying on a hard-coded max-height cap.
+  const contentRef = useRef(null);
+  const [measuredHeight, setMeasuredHeight] = useState(0);
+  useEffect(() => {
+    if (!expanded) return;
+    if (contentRef.current) setMeasuredHeight(contentRef.current.scrollHeight);
+  }, [expanded, event]);
 
   // Arrival time
   const arrivalTime = event.arrival_minutes_before ? formatTime(new Date(new Date(event.start_at).getTime() - event.arrival_minutes_before * 60000).toISOString()) : null;
@@ -397,96 +523,191 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
         })()}
       </div>
 
-      {/* Expanded */}
-      <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${expanded ? 'max-h-[2000px]' : 'max-h-0'}`}>
-        <div className="px-4 pb-4 space-y-3 border-t border-(--color-border-tertiary) pt-3" onClick={(e) => e.stopPropagation()}>
-          {/* Game day info block */}
+      {/* Expanded — height animates from 0 → measured scrollHeight via the
+          ref-based approach in the useEffect above. */}
+      <div
+        style={{
+          height: expanded ? `${measuredHeight}px` : '0px',
+          transition: 'height 300ms ease-out',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          ref={contentRef}
+          className="px-4 pb-4 border-t border-(--color-border-tertiary) pt-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Game day block — for game events, with team-color tinted background. */}
           {event.event_type === 'game' && (
-            <div className="bg-(--color-background-secondary) rounded-lg p-3 space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-(--color-text-secondary)">Game Day</p>
-              {event.opponent && <p className="text-sm font-medium text-(--color-text-primary)">vs. {event.opponent}</p>}
-              {event.jersey && <p className="text-sm text-(--color-text-primary)">Wear <strong>{event.jersey.toUpperCase()}</strong> jersey</p>}
-              {arrivalTime && <p className="text-sm text-(--color-text-primary)">Arrive by {arrivalTime}</p>}
-              {event.location && <p className="text-sm text-(--color-text-primary)">{event.location}</p>}
-              {event.location_address && (
-                <a href={mapsUrl(event.location_address)} target="_blank" rel="noopener noreferrer" className="inline-block text-sm font-medium hover:underline mt-1" style={{ color: 'var(--sf-accent)' }}>Directions &rarr;</a>
-              )}
+            <div>
+              <p
+                className="mb-2 font-medium text-(--color-text-secondary)"
+                style={{ fontSize: '11px', letterSpacing: '0.05em', textTransform: 'uppercase' }}
+              >
+                Game Day
+              </p>
+              <div
+                className="rounded-lg p-3 space-y-1"
+                style={{ backgroundColor: `${team?.team_color || '#000000'}08` }}
+              >
+                {event.opponent && <p className="text-sm font-medium text-(--color-text-primary)">vs. {event.opponent}</p>}
+                {event.jersey && <p className="text-sm text-(--color-text-primary)">Wear <strong>{event.jersey.toUpperCase()}</strong> jersey</p>}
+                {arrivalTime && <p className="text-sm text-(--color-text-primary)">Arrive by {arrivalTime}</p>}
+                {event.location && <p className="text-sm text-(--color-text-primary)">{event.location}</p>}
+                {event.location_address && (
+                  <p className="text-xs text-(--color-text-secondary)">{event.location_address}</p>
+                )}
+                {event.location_address && (
+                  <div className="pt-1">
+                    <DirectionsButton address={event.location_address} />
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Non-game details */}
-          {event.event_type !== 'game' && (
-            <>
-              {arrivalTime && <p className="text-sm text-(--color-text-primary)">Arrive by {arrivalTime}</p>}
-              {event.location && <p className="text-sm text-(--color-text-primary)">{event.location}</p>}
-              {event.location_address && (
-                <div>
+          {/* Details — for non-game events. */}
+          {event.event_type !== 'game' && (arrivalTime || event.location || event.location_address) && (
+            <SectionDivider label="Details">
+              <div className="space-y-1">
+                {arrivalTime && <p className="text-sm text-(--color-text-primary)">Arrive by {arrivalTime}</p>}
+                {event.location && <p className="text-sm text-(--color-text-primary)">{event.location}</p>}
+                {event.location_address && (
                   <p className="text-xs text-(--color-text-secondary)">{event.location_address}</p>
-                  <a href={mapsUrl(event.location_address)} target="_blank" rel="noopener noreferrer" className="inline-block text-sm font-medium hover:underline mt-1" style={{ color: 'var(--sf-accent)' }}>Directions &rarr;</a>
-                </div>
-              )}
-            </>
+                )}
+                {event.location_address && (
+                  <div className="pt-1">
+                    <DirectionsButton address={event.location_address} />
+                  </div>
+                )}
+              </div>
+            </SectionDivider>
           )}
 
           {/* Notes */}
-          {event.notes && <p className="text-sm text-(--color-text-secondary)">{event.notes}</p>}
+          {event.notes && (
+            <SectionDivider label="Notes">
+              <p className="text-sm text-(--color-text-secondary)">{event.notes}</p>
+            </SectionDivider>
+          )}
 
           {/* Attachments */}
           {event.attachments?.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {event.attachments.map((a, i) => (
-                <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline" style={{ color: 'var(--sf-accent)' }}>{a.name}</a>
-              ))}
-            </div>
+            <SectionDivider label="Attachments">
+              <div className="flex flex-wrap gap-2">
+                {event.attachments.map((a, i) => (
+                  <a
+                    key={i}
+                    href={a.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium hover:underline"
+                    style={{ color: 'var(--sf-accent)' }}
+                  >
+                    {a.name}
+                  </a>
+                ))}
+              </div>
+            </SectionDivider>
           )}
 
-          {/* What changed */}
+          {/* What changed (last 48h) */}
           {recentChanges.length > 0 && (
-            <details className="text-sm">
-              <summary className="text-(--color-text-secondary) cursor-pointer hover:underline">What changed ({recentChanges.length})</summary>
-              <ul className="mt-1 space-y-0.5 pl-4 text-(--color-text-secondary)">
-                {recentChanges.map((c) => (
-                  <li key={c.id}>{c.field_name} changed{c.old_value ? ` from "${c.old_value}"` : ''}{c.new_value ? ` to "${c.new_value}"` : ''} — {changeAgo(c.changed_at)}</li>
-                ))}
-              </ul>
-            </details>
+            <SectionDivider label="Changes">
+              <details className="text-sm">
+                <summary className="text-(--color-text-secondary) cursor-pointer hover:underline">
+                  What changed ({recentChanges.length})
+                </summary>
+                <ul className="mt-1 space-y-0.5 pl-4 text-(--color-text-secondary)">
+                  {recentChanges.map((c) => (
+                    <li key={c.id}>
+                      {c.field_name} changed
+                      {c.old_value ? ` from "${c.old_value}"` : ''}
+                      {c.new_value ? ` to "${c.new_value}"` : ''} — {changeAgo(c.changed_at)}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </SectionDivider>
           )}
 
           {/* RSVP */}
-          <RsvpSection event={event} userRole={userRole} isPublic={isPublic || false} onUpdate={onUpdate} />
+          <SectionDivider label="Availability">
+            <RsvpSection event={event} userRole={userRole} isPublic={isPublic || false} onUpdate={onUpdate} />
+          </SectionDivider>
 
           {/* Duties */}
-          <DutySignups event={event} userRole={userRole} isPublic={isPublic || false} onUpdate={onUpdate} />
+          {(event.event_duties || []).length > 0 && (
+            <SectionDivider label="Duties">
+              <DutySignups event={event} userRole={userRole} isPublic={isPublic || false} onUpdate={onUpdate} />
+            </SectionDivider>
+          )}
 
           {/* Rides */}
-          {event.enable_rides && <RideBoard event={event} userRole={userRole} isPublic={isPublic || false} onUpdate={onUpdate} />}
+          {event.enable_rides && (
+            <SectionDivider label="Rides">
+              <RideBoard event={event} userRole={userRole} isPublic={isPublic || false} onUpdate={onUpdate} />
+            </SectionDivider>
+          )}
 
-          {/* Coach notes (admin/staff only) */}
+          {/* Coach notes (admin/staff only) — distinct amber treatment with
+              a small lock label so it's obvious this isn't parent-visible. */}
           {showCoachNotes && (
-            <div className="bg-amber-50 rounded p-2 text-sm text-amber-800">
-              <p className="text-xs font-semibold uppercase tracking-wide mb-0.5">Coach Notes</p>
-              {event.coach_notes}
-            </div>
+            <SectionDivider label="Coach Only">
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+                <p
+                  className="mb-1 font-medium text-amber-700"
+                  style={{ fontSize: '11px', letterSpacing: '0.05em', textTransform: 'uppercase' }}
+                >
+                  🔒 Coach Only
+                </p>
+                <p className="text-sm text-amber-800 whitespace-pre-wrap">{event.coach_notes}</p>
+              </div>
+            </SectionDivider>
           )}
 
           {/* Comments */}
-          <CommentsThread event={event} userRole={userRole} isPublic={isPublic || false} onUpdate={onUpdate} />
+          <SectionDivider label="Discussion">
+            <CommentsThread event={event} userRole={userRole} isPublic={isPublic || false} onUpdate={onUpdate} />
+          </SectionDivider>
 
           {/* Sub-events (multi-day tournament children) */}
           {subEvents.length > 0 && (
-            <div className="space-y-2 pl-2 border-l-2 border-(--color-border-tertiary)">
-              {subEvents.map((sub) => (
-                <div key={sub.id} className="text-sm">
-                  <span className="font-medium text-(--color-text-primary)">{formatTime(sub.start_at)}</span>
-                  {sub.opponent && <span className="text-(--color-text-secondary)"> — vs. {sub.opponent}</span>}
-                  <span className="text-(--color-text-secondary)"> {sub.title}</span>
-                </div>
-              ))}
-            </div>
+            <SectionDivider label="Sub-events">
+              <div className="space-y-2 pl-2 border-l-2 border-(--color-border-tertiary)">
+                {subEvents.map((sub) => (
+                  <div key={sub.id} className="text-sm">
+                    <span className="font-medium text-(--color-text-primary)">{formatTime(sub.start_at)}</span>
+                    {sub.opponent && <span className="text-(--color-text-secondary)"> — vs. {sub.opponent}</span>}
+                    <span className="text-(--color-text-secondary)"> {sub.title}</span>
+                  </div>
+                ))}
+              </div>
+            </SectionDivider>
           )}
 
-          {/* Add to calendar */}
-          <a href={gcalUrl(event)} target="_blank" rel="noopener noreferrer" className="inline-block text-xs font-medium hover:underline" style={{ color: 'var(--sf-accent)' }}>Add to Google Calendar</a>
+          {/* Actions row — proper buttons for calendar export and share. */}
+          <SectionDivider label="Actions">
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={gcalUrl(event)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="rounded border px-3 py-2 text-sm font-medium hover:bg-(--color-background-secondary)"
+                style={{ borderColor: 'var(--sf-accent)', color: 'var(--sf-accent)' }}
+              >
+                Add to Calendar
+              </a>
+              <ShareEventButton
+                title={event.title}
+                // Share the current page URL with an event-id hash so the
+                // recipient can deep-link to the same event. A proper public
+                // /s/[slug]/event/[id] route arrives in B3.
+                url={`${window.location.href.split('#')[0]}#event-${event.id}`}
+              />
+            </div>
+          </SectionDivider>
         </div>
       </div>
     </div>
