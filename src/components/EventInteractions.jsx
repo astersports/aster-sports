@@ -530,6 +530,9 @@ const weatherCache = {};
 
 export function useWeather(events) {
   const [weatherMap, setWeatherMap] = useState({});
+  // Stable key derived from event IDs — only re-fetch when the set of events actually changes,
+  // not when the parent re-renders and creates a new array reference.
+  const eventsKey = events.map((e) => e.id).join(',');
 
   useEffect(() => {
     async function fetchWeather() {
@@ -592,7 +595,8 @@ export function useWeather(events) {
     }
 
     if (events.length > 0) fetchWeather();
-  }, [events]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventsKey]);
 
   return weatherMap;
 }

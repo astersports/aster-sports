@@ -146,7 +146,7 @@ function SubscribeModal({ icsBlob, calName, onClose }) {
     if (url) { navigator.clipboard.writeText(url).then(() => setCopied(true)); setTimeout(() => setCopied(false), 2000); }
   }
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
       <div className="bg-(--color-background) rounded-lg shadow-lg w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-bold text-(--color-text-primary) mb-2">Subscribe to Calendar</h2>
         <p className="text-sm text-(--color-text-secondary) mb-4">Download the .ics file and import it into Google Calendar (Add by URL), Apple Calendar (File → Import), or Outlook.</p>
@@ -163,7 +163,7 @@ function SubscribeModal({ icsBlob, calName, onClose }) {
 }
 
 // ─── Expandable Event Card ───────────────────────────────────
-function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isStaff, weather, isPublic }) {
+function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isStaff, weather, isPublic, onUpdate }) {
   const team = event.teams;
   const isCancelled = event.status === 'cancelled';
   const isPostponed = event.status === 'postponed';
@@ -200,6 +200,15 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
       className={`bg-(--color-background) rounded-lg shadow-sm border border-(--color-border-tertiary) overflow-hidden cursor-pointer transition-all ${isCancelled ? 'opacity-60' : ''}`}
       style={{ borderLeftWidth: '4px', borderLeftColor: borderColor }}
       onClick={onToggle}
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
+      onKeyDown={(e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
     >
       {/* Collapsed */}
       <div className="p-4">
@@ -307,13 +316,13 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
           )}
 
           {/* RSVP */}
-          <RsvpSection event={event} userRole={userRole} isPublic={isPublic || false} />
+          <RsvpSection event={event} userRole={userRole} isPublic={isPublic || false} onUpdate={onUpdate} />
 
           {/* Duties */}
-          <DutySignups event={event} userRole={userRole} isPublic={isPublic || false} />
+          <DutySignups event={event} userRole={userRole} isPublic={isPublic || false} onUpdate={onUpdate} />
 
           {/* Rides */}
-          {event.enable_rides && <RideBoard event={event} userRole={userRole} isPublic={isPublic || false} />}
+          {event.enable_rides && <RideBoard event={event} userRole={userRole} isPublic={isPublic || false} onUpdate={onUpdate} />}
 
           {/* Coach notes (admin/staff only) */}
           {showCoachNotes && (
@@ -324,7 +333,7 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
           )}
 
           {/* Comments */}
-          <CommentsThread event={event} userRole={userRole} isPublic={isPublic || false} />
+          <CommentsThread event={event} userRole={userRole} isPublic={isPublic || false} onUpdate={onUpdate} />
 
           {/* Sub-events (multi-day tournament children) */}
           {subEvents.length > 0 && (
@@ -349,6 +358,7 @@ function EventCard({ event, expanded, onToggle, isNew, isUpdated, userRole, isSt
 
 // ─── Print table ─────────────────────────────────────────────
 function PrintTable({ events }) {
+  let prevMonthKey = null;
   return (
     <div className="hidden print:block">
       <table className="w-full text-sm border-collapse">
@@ -358,17 +368,23 @@ function PrintTable({ events }) {
           </tr>
         </thead>
         <tbody>
-          {events.map((ev) => (
-            <tr key={ev.id} className="border-b border-gray-300">
-              <td className="py-1 pr-3 whitespace-nowrap">{fmtDateShort(ev.start_at)}</td>
-              <td className="py-1 pr-3 whitespace-nowrap">{fmtTime(ev.start_at)}</td>
-              <td className="py-1 pr-3">{ev.teams?.name || '—'}</td>
-              <td className="py-1 pr-3">{TYPE_LABELS[ev.event_type] || ev.event_type}</td>
-              <td className="py-1 pr-3 font-medium">{ev.title}</td>
-              <td className="py-1 pr-3">{ev.location || '—'}</td>
-              <td className="py-1">{ev.opponent || '—'}</td>
-            </tr>
-          ))}
+          {events.map((ev) => {
+            const d = new Date(ev.start_at);
+            const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
+            const isNewMonth = prevMonthKey !== null && monthKey !== prevMonthKey;
+            prevMonthKey = monthKey;
+            return (
+              <tr key={ev.id} className={`border-b border-gray-300 break-inside-avoid ${isNewMonth ? 'break-before-page' : ''}`}>
+                <td className="py-1 pr-3 whitespace-nowrap">{fmtDateShort(ev.start_at)}</td>
+                <td className="py-1 pr-3 whitespace-nowrap">{fmtTime(ev.start_at)}</td>
+                <td className="py-1 pr-3">{ev.teams?.name || '—'}</td>
+                <td className="py-1 pr-3">{TYPE_LABELS[ev.event_type] || ev.event_type}</td>
+                <td className="py-1 pr-3 font-medium">{ev.title}</td>
+                <td className="py-1 pr-3">{ev.location || '—'}</td>
+                <td className="py-1">{ev.opponent || '—'}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -452,6 +468,16 @@ export default function Schedule() {
     }
     return groups;
   }, [filtered]);
+
+  const refetchEvent = useCallback(async (eventId) => {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*, teams(id, name, sort_order, team_color), event_changes(id, field_name, old_value, new_value, changed_at), event_duties(id, duty_name, slots_needed, guardian_id, claimed_by_name, claimed_at), event_rsvps(id, player_id, response, comment, responded_at), event_rides(id, ride_type, name, phone, seats, pickup_location, departure_time, notes), event_comments(id, author_name, body, pinned, created_at)')
+      .eq('id', eventId)
+      .single();
+    if (error || !data) return;
+    setEvents((prev) => prev.map((e) => e.id === eventId ? { ...data, _children: e._children || [] } : e));
+  }, []);
 
   const scrollToEvent = useCallback((id) => {
     const el = document.getElementById(`event-${id}`);
@@ -550,6 +576,7 @@ export default function Schedule() {
                   isStaff={staffTeamIds.includes(event.team_id)}
                   weather={weatherMap[event.id]}
                   isPublic={false}
+                  onUpdate={() => refetchEvent(event.id)}
                 />
               );
             })}

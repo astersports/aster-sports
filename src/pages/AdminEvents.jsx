@@ -74,6 +74,7 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
   const { session, organization } = useAuth();
   const isEdit = Boolean(event?.id);
   const [newOpponent, setNewOpponent] = useState('');
+  const [addingNewOpponent, setAddingNewOpponent] = useState(false);
 
   const defaultForm = {
     team_id: teams[0]?.id || '',
@@ -129,7 +130,6 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [conflict, setConflict] = useState(null);
-  const [forceOverride, setForceOverride] = useState(false);
 
   function update(field, value) {
     setForm((f) => {
@@ -220,8 +220,8 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
     });
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(e, force = false) {
+    e?.preventDefault();
     if (hasDateError) { setError('Please fix invalid date values before saving.'); return; }
     setSaving(true);
     setError(null);
@@ -249,7 +249,7 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
     };
 
     // Conflict detection
-    if (!forceOverride) {
+    if (!force) {
       const conflicts = checkConflicts(payload);
       if (conflicts.length > 0) {
         setConflict(conflicts);
@@ -323,7 +323,7 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
   }
 
   // Conflict warning overlay
-  if (conflict && !forceOverride) {
+  if (conflict) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
         <div className="rounded-lg shadow-lg w-full max-w-md p-6" style={{ backgroundColor: 'var(--color-background-primary, #ffffff)' }}>
@@ -336,7 +336,7 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
           </ul>
           <div className="flex justify-end gap-3">
             <button type="button" onClick={() => { setConflict(null); }} className={BTN_SECONDARY}>Go Back</button>
-            <button type="button" onClick={() => { setForceOverride(true); setConflict(null); setSaving(false); }} className="px-4 py-2 text-sm font-medium rounded bg-amber-500 text-white hover:bg-amber-600">Save Anyway</button>
+            <button type="button" onClick={() => { setConflict(null); handleSubmit(null, true); }} className="px-4 py-2 text-sm font-medium rounded bg-amber-500 text-white hover:bg-amber-600">Save Anyway</button>
           </div>
         </div>
       </div>
@@ -520,10 +520,16 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
               </div>
               <div>
                 <label htmlFor="ev-opponent" className={LABEL_CLS}>Opponent</label>
-                <select id="ev-opponent" value={opponents.find((o) => o.name === form.opponent) ? form.opponent : form.opponent ? '__custom' : ''} onChange={(e) => {
-                  if (e.target.value === '__new') setNewOpponent('');
-                  else if (e.target.value === '__custom') { /* keep current */ }
-                  else update('opponent', e.target.value);
+                <select id="ev-opponent" value={addingNewOpponent ? '__new' : (opponents.find((o) => o.name === form.opponent) ? form.opponent : form.opponent ? '__custom' : '')} onChange={(e) => {
+                  if (e.target.value === '__new') {
+                    setAddingNewOpponent(true);
+                    setNewOpponent('');
+                  } else if (e.target.value === '__custom') {
+                    setAddingNewOpponent(false);
+                  } else {
+                    setAddingNewOpponent(false);
+                    update('opponent', e.target.value);
+                  }
                 }} className={INPUT_CLS}>
                   <option value="">—</option>
                   {opponents.map((o) => <option key={o.id} value={o.name}>{o.name}</option>)}
@@ -532,25 +538,21 @@ function EventModal({ event, teams, allEvents, locations, opponents, onSave, onC
                   )}
                   <option value="__new">+ Add new...</option>
                 </select>
-                {newOpponent !== undefined && form.opponent === '' && newOpponent === '' ? null : null}
               </div>
             </div>
           )}
-          {form.event_type === 'game' && newOpponent !== undefined && (() => {
-            const sel = document.getElementById('ev-opponent');
-            if (sel?.value === '__new') return (
-              <div className="flex gap-2">
-                <input type="text" value={newOpponent} onChange={(e) => setNewOpponent(e.target.value)} placeholder="New opponent name" className={`${INPUT_CLS} flex-1`} autoFocus />
-                <button type="button" onClick={async () => {
-                  if (!newOpponent.trim() || !organization?.id) return;
-                  await supabase.from('opponents').insert({ org_id: organization.id, name: newOpponent.trim() });
-                  update('opponent', newOpponent.trim());
-                  setNewOpponent('');
-                }} className="px-3 py-2 text-sm font-medium rounded" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>Add</button>
-              </div>
-            );
-            return null;
-          })()}
+          {form.event_type === 'game' && addingNewOpponent && (
+            <div className="flex gap-2">
+              <input type="text" value={newOpponent} onChange={(e) => setNewOpponent(e.target.value)} placeholder="New opponent name" className={`${INPUT_CLS} flex-1`} autoFocus />
+              <button type="button" onClick={async () => {
+                if (!newOpponent.trim() || !organization?.id) return;
+                await supabase.from('opponents').insert({ org_id: organization.id, name: newOpponent.trim() });
+                update('opponent', newOpponent.trim());
+                setNewOpponent('');
+                setAddingNewOpponent(false);
+              }} className="px-3 py-2 text-sm font-medium rounded" style={{ backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-on-dark)' }}>Add</button>
+            </div>
+          )}
 
           {/* Enable rides */}
           <label className="flex items-center gap-2 text-sm text-(--color-text-primary)">
@@ -1044,24 +1046,24 @@ export default function AdminEvents() {
   }
 
   async function handleDelete(ids) {
-    for (const id of ids) await supabase.from('events').delete().eq('id', id);
+    await supabase.from('events').delete().in('id', ids);
     setDeleteEvents(null);
     loadData();
   }
 
   async function bulkChangeStatus(status) {
-    for (const id of selected) await supabase.from('events').update({ status }).eq('id', id);
+    await supabase.from('events').update({ status }).in('id', [...selected]);
     loadData();
   }
 
   async function bulkReschedule(newDateTime) {
     const newStart = new Date(newDateTime).toISOString();
-    for (const id of selected) await supabase.from('events').update({ start_at: newStart, status: 'scheduled' }).eq('id', id);
+    await supabase.from('events').update({ start_at: newStart, status: 'scheduled' }).in('id', [...selected]);
     loadData();
   }
 
   async function bulkChangeLocation(location) {
-    for (const id of selected) await supabase.from('events').update({ location }).eq('id', id);
+    await supabase.from('events').update({ location }).in('id', [...selected]);
     loadData();
   }
 
