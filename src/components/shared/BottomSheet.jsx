@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 
 // Mobile-native bottom sheet. Height is CONTENT-DRIVEN with a cap:
-// the panel sizes to whatever its children render, up to a maximum of
-// `initialHeight` of the visual viewport. If children exceed the cap,
-// the inner scroll region engages. Tapping the drag handle toggles the
-// cap to `expandedHeight`. Short forms get a short sheet with the Save
-// button near the content; tall forms get a capped scrolling sheet.
-// Backdrop click or Escape dismisses.
+// the panel is a plain block container (NOT a flex container) that
+// shrink-wraps its children — handle (44px block) + content region.
+// The content region carries its own `max-height: cap - 44px` and
+// `overflow-y: auto`, so short forms produce a short sheet with the
+// Save button sitting flush against the content, and tall forms hit
+// the cap and scroll inside the content region while the handle stays
+// pinned. Tapping the handle toggles between `initialHeight` and
+// `expandedHeight`. Backdrop click or Escape dismisses.
 //
 // Viewport handling: `initialHeight`/`expandedHeight` are percentage
 // strings like "85%". We measure `window.visualViewport.height` (with
@@ -84,8 +86,12 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  const HANDLE_PX = 44;
   const pct = expanded ? parsePct(expandedHeight) : parsePct(initialHeight);
   const maxHeightPx = Math.round(vh * pct);
+  // Scroll region gets the cap minus the fixed handle row, so the
+  // handle is always visible even when the content scrolls.
+  const contentMaxHeightPx = Math.max(0, maxHeightPx - HANDLE_PX);
 
   return (
     <div
@@ -95,13 +101,17 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
       role="dialog"
       aria-modal="true"
     >
+      {/* Panel is a plain block element — NO flex layout. Normal block
+          flow sizes it to the sum of its children's natural heights
+          (handle + content), capped by maxHeight. Short forms get a
+          short sheet with zero dead space; tall forms hit the cap and
+          the inner scroll region engages. `overflow: hidden` keeps the
+          rounded corners from being clipped by the scrollable child. */}
       <div
-        className="w-full sf-sheet-rise flex flex-col"
+        className="w-full sf-sheet-rise"
         style={{
-          // maxHeight caps the panel at the chosen pct of the visual
-          // viewport; no fixed `height`, so short forms produce short
-          // sheets and the content area never has dead space below.
           maxHeight: `${maxHeightPx}px`,
+          overflow: 'hidden',
           backgroundColor: 'var(--sf-bg-card)',
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
@@ -113,8 +123,8 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="flex items-center justify-center sf-press"
-          style={{ height: 44, width: '100%', flexShrink: 0 }}
+          className="sf-press flex items-center justify-center"
+          style={{ display: 'flex', width: '100%', height: HANDLE_PX }}
           aria-label={expanded ? 'Collapse sheet' : 'Expand sheet'}
         >
           <span
@@ -124,12 +134,10 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
             }}
           />
         </button>
-        {/* flex-1 + min-h-0 is the textbook flex-scroll pattern: without
-            min-h-0 the flex child defaults to min-height: auto and refuses
-            to shrink below its content, so overflow-y-auto never engages. */}
         <div
-          className="flex-1 min-h-0 overflow-y-auto px-4 pb-4"
+          className="overflow-y-auto px-4 pb-4"
           style={{
+            maxHeight: `${contentMaxHeightPx}px`,
             overscrollBehavior: 'contain',
             WebkitOverflowScrolling: 'touch',
           }}
