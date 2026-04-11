@@ -7,39 +7,57 @@ import { useSeason } from '../context/SeasonContext';
 // own try/catch so one missing table doesn't take the whole grid down —
 // if `team_players` or `events` isn't provisioned yet the card just shows 0.
 // Payment totals are hard-coded to 0 until the billing schema lands.
+//
+// The loading contract matters for the UI: we only flip `loading: false`
+// AFTER the hook has authoritative numbers for the active season.
+// Previously we set loading=false in three places (no org, no season,
+// after fetch), which caused the cards to flash "0 → 0 → real value" on
+// every mount. Now the effect stays in the loading state until both
+// `orgId` and season context have settled, then does exactly one write.
 const SAFE = async (fn) => {
   try { return await fn(); }
   catch { return 0; }
 };
 
+const INITIAL = {
+  players: 0,
+  events: 0,
+  collected: 0,
+  outstanding: 0,
+  loading: true,
+};
+
 export function useAdminStats() {
   const { orgId } = useAuth();
-  const { activeSeason } = useSeason();
+  const { activeSeason, loading: seasonsLoading } = useSeason();
   const seasonId = activeSeason?.id ?? null;
 
-  const [stats, setStats] = useState({
-    players: 0, events: 0, collected: 0, outstanding: 0, loading: true,
-  });
+  const [stats, setStats] = useState(INITIAL);
 
   useEffect(() => {
-    let cancelled = false;
+    // Still waiting for auth or season context to resolve? Do nothing —
+    // the effect will re-run when those values settle, so the card stays
+    // on the loading placeholder instead of flashing zeros.
+    if (!orgId || seasonsLoading) return undefined;
 
-    // Everything — including the "no org" short-circuit — runs inside the
-    // microtask so setState never fires synchronously from the effect body.
+    let cancelled = false;
     Promise.resolve().then(async () => {
       if (cancelled) return;
-      if (!orgId) {
-        setStats((s) => ({ ...s, loading: false }));
+
+      // Seasons finished loading but the org has no active season — the
+      // zeros here are authoritative, not a flash.
+      if (!seasonId) {
+        setStats({ ...INITIAL, loading: false });
         return;
       }
-      // 1. Find team IDs in the active season so both counts scope correctly.
-      let teamIds = [];
-      if (seasonId) {
-        const { data } = await supabase
-          .from('teams').select('id')
-          .eq('org_id', orgId).eq('season_id', seasonId);
-        teamIds = (data ?? []).map((t) => t.id);
-      }
+
+      // 1. Team IDs for the active season scope every subsequent count.
+      const { data } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('org_id', orgId)
+        .eq('season_id', seasonId);
+      const teamIds = (data ?? []).map((t) => t.id);
 
       const players = await SAFE(async () => {
         if (teamIds.length === 0) return 0;
@@ -65,7 +83,7 @@ export function useAdminStats() {
     });
 
     return () => { cancelled = true; };
-  }, [orgId, seasonId]);
+  }, [orgId, seasonId, seasonsLoading]);
 
   return stats;
 }

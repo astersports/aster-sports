@@ -28,7 +28,7 @@ function applyPreset(quarter, year) {
 // a fresh mount starts from the right season every time.
 export default function SeasonFormSheet({ open, season, onClose, onSave }) {
   return (
-    <BottomSheet open={open} onClose={onClose} initialHeight="85%" expandedHeight="95%">
+    <BottomSheet open={open} onClose={onClose} initialHeight="85dvh" expandedHeight="95dvh">
       <Body key={season?.id ?? 'new'} season={season} onSave={onSave} />
     </BottomSheet>
   );

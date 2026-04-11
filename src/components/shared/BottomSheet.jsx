@@ -1,12 +1,26 @@
 import { useEffect, useState } from 'react';
 
-// Mobile-native bottom sheet. Starts at 40% viewport height; tapping the
-// drag handle toggles to 90%. Backdrop click or Escape dismisses.
+// Mobile-native bottom sheet. Starts at `initialHeight` of the visual
+// viewport; tapping the drag handle toggles to `expandedHeight`.
+// Backdrop click or Escape dismisses.
 //
-// The inner <Sheet> is keyed on `open` via conditional mount: when open
-// flips to false the inner unmounts, and the next open mount starts fresh
-// with `expanded=false` — no effect-based reset needed.
-export default function BottomSheet({ open, onClose, children, initialHeight = '40%', expandedHeight = '90%' }) {
+// Height units: pass values using `dvh` (dynamic visual viewport height)
+// — e.g. "40dvh", "85dvh" — NOT percentages. `position: fixed; inset: 0`
+// on iOS Safari sizes against the *layout* viewport which includes the
+// area behind the URL bar, so percentage children can extend below the
+// visible screen and the bottom of the form gets hidden under the fold.
+// `dvh` units track the visible area and clip predictably.
+//
+// BottomSheet returns null when closed so the inner <Sheet> unmounts and
+// its useState resets to `expanded=false` on every reopen — no effect-
+// based reset needed.
+export default function BottomSheet({
+  open,
+  onClose,
+  children,
+  initialHeight = '40dvh',
+  expandedHeight = '90dvh',
+}) {
   if (!open) return null;
   return (
     <Sheet
@@ -37,17 +51,15 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
       aria-modal="true"
     >
       <div
-        className="w-full sf-sheet-rise"
+        className="w-full sf-sheet-rise flex flex-col"
         style={{
           height: expanded ? expandedHeight : initialHeight,
-          maxHeight: '90vh',
+          maxHeight: '95dvh',
           backgroundColor: 'var(--sf-bg-card)',
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
           boxShadow: 'var(--sf-shadow-xl)',
           transition: 'height 250ms ease-out',
-          display: 'flex',
-          flexDirection: 'column',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -68,10 +80,11 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
             }}
           />
         </button>
-        {/* min-h-0 is load-bearing: without it, the flex child defaults
-            to min-height: auto and expands past its parent instead of
-            honoring overflow-y-auto — tall forms silently clip at the
-            sheet boundary. overscroll-behavior contains the rubber-band. */}
+        {/* flex-1 + min-h-0 is the textbook flex-scroll pattern: without
+            min-h-0 the flex child defaults to min-height: auto and refuses
+            to shrink below its content, so the overflow-y-auto would
+            never actually engage. overscroll-behavior contains rubber-
+            band so scrolling the form can't scroll the page behind it. */}
         <div
           className="flex-1 min-h-0 overflow-y-auto px-4 pb-4"
           style={{

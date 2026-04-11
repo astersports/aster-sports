@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSeason } from '../context/SeasonContext';
 import { useAdminStats } from '../hooks/useAdminStats';
@@ -21,13 +22,22 @@ function firstNameFrom(user) {
 }
 
 export default function AdminHomePage() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { activeSeason } = useSeason();
   const stats = useAdminStats();
   const { seasons } = useSeasons();
   const { programs } = usePrograms();
+  const navigate = useNavigate();
 
   const name = firstNameFrom(user);
+
+  // Temporary sign-out affordance until the Account page is built. Lives
+  // at the bottom of the admin dashboard so it's reachable without
+  // needing a top-nav menu yet.
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <div className="px-4 py-4 flex flex-col gap-5 sf-fade-in">
@@ -73,6 +83,26 @@ export default function AdminHomePage() {
           hasPrograms={programs.length > 0}
         />
       </section>
+
+      {/* TEMP: sign-out affordance until the Account page is built. */}
+      <div className="flex justify-center pt-2">
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="sf-press"
+          style={{
+            minHeight: 44,
+            padding: '0 16px',
+            background: 'none',
+            border: 'none',
+            color: 'var(--sf-danger)',
+            fontSize: 14,
+            fontWeight: 500,
+          }}
+        >
+          Sign out
+        </button>
+      </div>
     </div>
   );
 }
