@@ -21,9 +21,17 @@ export function SeasonProvider({ children }) {
     Promise.resolve().then(async () => {
       if (cancelled) return;
       if (!orgId) {
+        // Deliberately do NOT call setLoading(false) here. If orgId
+        // hasn't resolved yet (initial mount before auth finishes),
+        // consumers should still observe loading=true so they know the
+        // season data isn't authoritative yet. Setting loading=false
+        // here used to cause useAdminStats to see seasonsLoading=false
+        // the instant auth resolved — but before the seasons fetch had
+        // even started — which flashed a premature "0" on the KPI
+        // cards. We still clear any stale rows so a sign-out doesn't
+        // leak the previous org's data.
         setSeasons([]);
         setActiveSeasonId(null);
-        setLoading(false);
         return;
       }
       setLoading(true);

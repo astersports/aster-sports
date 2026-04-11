@@ -35,7 +35,7 @@ const EMPTY = {
 // — no effect-based reset needed.
 export default function TeamFormSheet({ open, program, onClose, onSave, onDelete }) {
   return (
-    <BottomSheet open={open} onClose={onClose} initialHeight="90dvh" expandedHeight="95dvh">
+    <BottomSheet open={open} onClose={onClose} initialHeight="90%" expandedHeight="95%">
       <Body key={program?.id ?? 'new'} program={program} onSave={onSave} onDelete={onDelete} />
     </BottomSheet>
   );

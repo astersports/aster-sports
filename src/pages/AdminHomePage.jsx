@@ -39,25 +39,33 @@ export default function AdminHomePage() {
     navigate('/login', { replace: true });
   };
 
+  // overflow-x-hidden + max-w-full on the page wrapper is defense in
+  // depth — even if a child component escapes its box, nothing drags
+  // the page horizontally. `min-w-0` on each section lets flex children
+  // actually shrink below their content width (the default is auto,
+  // which refuses to shrink and widens the parent).
   return (
-    <div className="px-4 py-4 flex flex-col gap-5 sf-fade-in">
-      <section>
+    <div
+      className="px-4 py-4 flex flex-col gap-5 sf-fade-in overflow-x-hidden"
+      style={{ maxWidth: '100%' }}
+    >
+      <section className="min-w-0">
         <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 13 }}>
           Welcome back,
         </div>
         <h1
-          className="font-bold"
+          className="font-bold truncate"
           style={{ color: 'var(--sf-text-primary)', fontSize: 24, lineHeight: 1.2 }}
         >
           {name}
         </h1>
       </section>
 
-      <section aria-label="Key metrics">
+      <section className="min-w-0" aria-label="Key metrics">
         <KpiGrid stats={stats} />
       </section>
 
-      <section aria-label="Quick actions">
+      <section className="min-w-0" aria-label="Quick actions">
         <div
           className="font-semibold mb-2"
           style={{ color: 'var(--sf-text-secondary)', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}
@@ -67,7 +75,7 @@ export default function AdminHomePage() {
         <QuickActions />
       </section>
 
-      <section aria-label="Active season">
+      <section className="min-w-0" aria-label="Active season">
         <div
           className="font-semibold mb-2"
           style={{ color: 'var(--sf-text-secondary)', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}
@@ -77,7 +85,7 @@ export default function AdminHomePage() {
         <ActiveSeasonCard season={activeSeason} />
       </section>
 
-      <section>
+      <section className="min-w-0">
         <GettingStarted
           hasSeasons={seasons.length > 0}
           hasPrograms={programs.length > 0}

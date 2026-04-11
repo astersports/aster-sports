@@ -12,9 +12,15 @@ const ACTIONS = [
 ];
 
 export default function QuickActions() {
+  // Previously used `-mx-4 px-4` to bleed edge-to-edge inside the
+  // parent's px-4 gutter, but the negative margins were blowing out the
+  // page wrapper's computed width on iOS Safari and letting the whole
+  // admin dashboard drag horizontally. A plain scroll row sits inside
+  // the gutter — slightly less chrome-y, no overflow risk.
   return (
     <div
-      className="flex gap-2 overflow-x-auto sf-no-scrollbar -mx-4 px-4"
+      className="flex gap-2 overflow-x-auto sf-no-scrollbar"
+      style={{ maxWidth: '100%' }}
       aria-label="Quick actions"
     >
       {ACTIONS.map((action) => {

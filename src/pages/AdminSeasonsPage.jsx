@@ -39,7 +39,7 @@ export default function AdminSeasonsPage() {
   };
 
   return (
-    <div className="px-4 py-4 sf-fade-in">
+    <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 22 }}>
           Seasons
