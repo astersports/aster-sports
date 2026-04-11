@@ -1,70 +1,45 @@
 import { Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout';
-import RequireAuth from './components/RequireAuth';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Schedule from './pages/Schedule';
-import PublicSchedule from './pages/PublicSchedule';
-import Roster from './pages/Roster';
-import Admin from './pages/Admin';
-import AdminEvents from './pages/AdminEvents';
-import AdminLocations from './pages/AdminLocations';
-import AdminOpponents from './pages/AdminOpponents';
-import ForgotPassword from './pages/ForgotPassword';
-import Unauthorized from './pages/Unauthorized';
+import AppShell from './components/layout/AppShell';
+import RequireAuth from './components/layout/RequireAuth';
+import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import UnauthorizedPage from './pages/UnauthorizedPage';
+import HomePage from './pages/HomePage';
+import SchedulePage from './pages/SchedulePage';
+import ScorePage from './pages/ScorePage';
+import TeamsPage from './pages/TeamsPage';
+import MessagesPage from './pages/MessagesPage';
+
+// Wrap an authenticated route in both the shell and the auth guard. Keeps
+// the route table below flat and readable instead of nesting <RequireAuth>
+// manually on every line.
+const Protected = ({ children, allowedRoles }) => (
+  <RequireAuth allowedRoles={allowedRoles}>
+    <AppShell>{children}</AppShell>
+  </RequireAuth>
+);
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/unauthorized" element={<Unauthorized />} />
-      <Route path="/s/:orgSlug" element={<PublicSchedule />} />
-      <Route path="/s/:orgSlug/:teamSlug" element={<PublicSchedule />} />
+      {/* Public auth routes — no shell, no guard */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
+      {/* Authenticated routes */}
+      <Route path="/"         element={<Protected><HomePage /></Protected>} />
+      <Route path="/schedule" element={<Protected><SchedulePage /></Protected>} />
       <Route
+        path="/score"
         element={
-          <RequireAuth allowedRoles={['admin', 'coach', 'parent']}>
-            <Layout />
-          </RequireAuth>
+          <Protected allowedRoles={['admin', 'coach']}>
+            <ScorePage />
+          </Protected>
         }
-      >
-        <Route index element={<Dashboard />} />
-        <Route path="schedule" element={<Schedule />} />
-        <Route path="roster" element={<Roster />} />
-        <Route
-          path="admin"
-          element={
-            <RequireAuth allowedRoles={['admin']}>
-              <Admin />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="admin/events"
-          element={
-            <RequireAuth allowedRoles={['admin']}>
-              <AdminEvents />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="admin/locations"
-          element={
-            <RequireAuth allowedRoles={['admin']}>
-              <AdminLocations />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="admin/opponents"
-          element={
-            <RequireAuth allowedRoles={['admin']}>
-              <AdminOpponents />
-            </RequireAuth>
-          }
-        />
-      </Route>
+      />
+      <Route path="/teams"    element={<Protected><TeamsPage /></Protected>} />
+      <Route path="/messages" element={<Protected><MessagesPage /></Protected>} />
     </Routes>
   );
 }

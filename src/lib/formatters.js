@@ -1,145 +1,70 @@
-// Shared date / time formatters and validators.
-// Every page that displays or parses a date/time should use these helpers
-// instead of inlining `toLocaleDateString` calls.
+// Shared date / time / money formatters. Everything in the app that renders
+// a date, time, countdown, or currency should go through these so the output
+// stays consistent and switching locales later is a single-file edit.
 
-import { MIN_DATE_YEAR, MAX_DATE_YEAR } from './constants';
+// "Mon · Apr 13" — compact row header for list items and day strip cells.
+export function formatDate(date) {
+  const d = new Date(date);
+  const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
+  const md = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${weekday} · ${md}`;
+}
 
-// ─── Display formatters ──────────────────────────────────────
+// "6:30 PM" — lowercase meridiem stripped by toLocaleTimeString by default.
+export function formatTime(time) {
+  const d = typeof time === 'string' && time.length <= 8 && time.includes(':')
+    ? new Date(`1970-01-01T${time}`)
+    : new Date(time);
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
 
-// "Monday, April 13" — used in Schedule date headers.
-export function formatDate(d) {
-  return new Date(d).toLocaleDateString('en-US', {
+// "Monday, April 13, 2026" — full date headers, confirmation dialogs.
+export function formatDateFull(date) {
+  return new Date(date).toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
-    day: 'numeric',
-  });
-}
-
-// "Apr 13" — compact, no year. Used in proximity badges and ICS exports.
-export function formatDateShort(d) {
-  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-// "Apr 13, 2026" — with year. Used in admin tables and confirmation dialogs
-// where the year matters because we may be looking at past/future events.
-export function formatDateLong(d) {
-  return new Date(d).toLocaleDateString('en-US', {
-    month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
 }
 
-// "6:00 PM"
-export function formatTime(d) {
-  return new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+// "$450.00" — takes integer cents to avoid float drift on pricing math.
+export function formatCurrency(cents) {
+  const n = (cents ?? 0) / 100;
+  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
 
-// ─── HTML <input> serializers ────────────────────────────────
+// "in 3h 20m" for the future, "2 days ago" for the past.
+// Coarse granularity — good enough for card subtitles and change logs.
+export function getRelativeTime(date) {
+  const target = new Date(date).getTime();
+  const diff = target - Date.now();
+  const abs = Math.abs(diff);
+  const mins = Math.floor(abs / 60000);
+  const hours = Math.floor(mins / 60);
+  const days = Math.floor(hours / 24);
+  const future = diff >= 0;
 
-// "YYYY-MM-DDTHH:MM" — for <input type="datetime-local">.
-// Adjusts for the local timezone offset so the picker shows the user's wall-
-// clock time, not UTC.
-export function formatDateInput(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
-
-// "HH:MM" — for <input type="time">.
-export function formatTimeInput(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(11, 16);
-}
-
-// ─── Relative time helpers ──────────────────────────────────
-
-// Future-facing countdown — "in 30 minutes", "in 3 hours", "Tomorrow at 6:00 PM",
-// "Saturday at 9:00 AM". Returns null for past times so callers can hide the
-// banner.
-export function relativeTime(iso) {
-  const target = new Date(iso);
-  const diff = target.getTime() - Date.now();
-  if (diff < 0) return null;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `in ${mins} minute${mins !== 1 ? 's' : ''}`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `in ${hrs} hour${hrs !== 1 ? 's' : ''}`;
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  if (target.toDateString() === tomorrow.toDateString()) {
-    return `Tomorrow at ${formatTime(iso)}`;
+  if (mins < 1) return future ? 'in moments' : 'just now';
+  if (mins < 60) return future ? `in ${mins}m` : `${mins}m ago`;
+  if (hours < 24) {
+    const remMins = mins % 60;
+    const body = remMins > 0 ? `${hours}h ${remMins}m` : `${hours}h`;
+    return future ? `in ${body}` : `${body} ago`;
   }
-  return `${target.toLocaleDateString('en-US', { weekday: 'long' })} at ${formatTime(iso)}`;
+  const unit = days === 1 ? 'day' : 'days';
+  return future ? `in ${days} ${unit}` : `${days} ${unit} ago`;
 }
 
-// Live countdown for an upcoming event happening today — e.g.
-// "Starts in 2h 15m", "Starts in 45m", "Starts in less than a minute".
-// Returns null if the event is more than 12 hours away (caller should
-// fall back to formatTime), or if it's already started/finished (caller
-// should use eventStatus instead).
-export function formatCountdown(startIso) {
-  const start = new Date(startIso).getTime();
-  const diff = start - Date.now();
-  if (diff <= 0 || diff > 12 * 3600000) return null;
-  const totalMins = Math.floor(diff / 60000);
-  if (totalMins < 1) return 'Starts in less than a minute';
-  if (totalMins < 60) return `Starts in ${totalMins}m`;
-  const hours = Math.floor(totalMins / 60);
-  const mins = totalMins % 60;
-  return `Starts in ${hours}h${mins > 0 ? ` ${mins}m` : ''}`;
-}
-
-// Returns a coarse status for live event UI: "upcoming" | "in_progress" |
-// "completed". Used by EventCard to swap the time text for "In progress" /
-// "Completed" labels on the day of the event.
-export function eventLiveStatus(startIso, endIso) {
-  const now = Date.now();
-  const start = new Date(startIso).getTime();
-  // If end_at is missing, assume 90 minutes — long enough for a typical
-  // practice or game.
-  const end = endIso ? new Date(endIso).getTime() : start + 90 * 60000;
-  if (now < start) return 'upcoming';
-  if (now < end) return 'in_progress';
-  return 'completed';
-}
-
-// Past-facing relative — "5m ago", "3h ago", "2d ago". Used for change logs,
-// comments, and the "what changed" lists on event cards.
-export function timeAgo(iso) {
-  const diff = Date.now() - new Date(iso).getTime();
+// "Starts in 2h 15m" — used by the countdown banner on Today's event card.
+// Returns null once the event has started so callers can swap to a live label.
+export function formatCountdown(targetDate) {
+  const diff = new Date(targetDate).getTime() - Date.now();
+  if (diff <= 0) return null;
   const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
-
-// Alias retained because Schedule's "What changed" list reads naturally as
-// `changeAgo(...)`.
-export const changeAgo = timeAgo;
-
-// ─── Validators ─────────────────────────────────────────────
-// Reject obvious typos (year < 2024 or > 2030) — common when users type a
-// date manually instead of using the picker.
-
-export function isValidDatetime(val) {
-  if (!val) return true; // empty is acceptable for optional fields
-  const d = new Date(val);
-  return (
-    !isNaN(d.getTime()) &&
-    d.getFullYear() >= MIN_DATE_YEAR &&
-    d.getFullYear() <= MAX_DATE_YEAR
-  );
-}
-
-export function isValidDate(val) {
-  if (!val) return true;
-  const d = new Date(val + 'T12:00:00');
-  return (
-    !isNaN(d.getTime()) &&
-    d.getFullYear() >= MIN_DATE_YEAR &&
-    d.getFullYear() <= MAX_DATE_YEAR
-  );
+  if (mins < 1) return 'Starts in <1m';
+  if (mins < 60) return `Starts in ${mins}m`;
+  const hours = Math.floor(mins / 60);
+  const rem = mins % 60;
+  return rem > 0 ? `Starts in ${hours}h ${rem}m` : `Starts in ${hours}h`;
 }

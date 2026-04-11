@@ -1,0 +1,70 @@
+import { Bell } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+
+// Top app bar: org initial + name on the left, notification bell on the right.
+// Org logo is a future enhancement — for now we always render the initial
+// circle because no org stores a logo URL yet.
+export default function Header() {
+  const { org, orgName } = useAuth();
+  const initial = (orgName || 'S').trim().charAt(0).toUpperCase();
+  // Future: read unread count from a notifications query. Hardcoded to 0 for
+  // now so the dot stays hidden until that feature lands.
+  const unread = 0;
+
+  return (
+    <header
+      className="fixed top-0 left-0 right-0 z-50 flex items-center px-4"
+      style={{
+        height: 56,
+        backgroundColor: 'var(--sf-header)',
+        color: 'var(--sf-text-on-dark)',
+      }}
+    >
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div
+          className="flex items-center justify-center font-semibold"
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            backgroundColor: 'var(--sf-accent)',
+            color: 'var(--sf-text-inverse)',
+            fontSize: 14,
+          }}
+          aria-hidden="true"
+        >
+          {initial}
+        </div>
+        <div
+          className="truncate font-semibold"
+          style={{ fontSize: 15 }}
+          title={orgName || ''}
+        >
+          {org ? orgName : 'Skyfire'}
+        </div>
+      </div>
+      <button
+        type="button"
+        className="relative flex items-center justify-center sf-press"
+        style={{ width: 44, height: 44, color: 'var(--sf-text-on-dark)' }}
+        aria-label="Notifications"
+      >
+        <Bell size={24} strokeWidth={1.75} />
+        {unread > 0 && (
+          <span
+            className="absolute"
+            style={{
+              top: 10,
+              right: 10,
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              backgroundColor: 'var(--sf-danger)',
+            }}
+            aria-label={`${unread} unread notifications`}
+          />
+        )}
+      </button>
+    </header>
+  );
+}

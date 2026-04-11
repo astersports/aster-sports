@@ -1,82 +1,75 @@
 @import "tailwindcss";
 
-/* ─── Design tokens ─────────────────────────────────────────
- * Light theme (default).
- * The same names are referenced everywhere via `text-(--color-text-primary)`,
- * `bg-(--color-background-secondary)`, etc. Tailwind v4's arbitrary-value
- * syntax pulls these straight from CSS variables, so swapping the variables
- * automatically theme-flips the whole app.
+/* ─── Skyfire design tokens ─────────────────────────────────
+ * All components reference these via var(--sf-*). Brand tokens are
+ * re-set at runtime from organizations.brand_colors inside AuthContext,
+ * so the same markup theme-flips per org.
  */
 :root {
-  /* Brand */
-  --sf-header: #151525;
-  --sf-accent: #C9952E;
-  --sf-accent-hover: #D4A843;
-  --sf-text-on-dark: #F5F0E8;
+  /* Platform surfaces + text */
+  --sf-bg-page:        #F7F5F0;
+  --sf-bg-card:        #FFFFFF;
+  --sf-bg-subtle:      #F1EDE5;
+  --sf-bg-muted:       #EAE6DD;
+  --sf-text-primary:   #1C1B1F;
+  --sf-text-secondary: #4A4852;
+  --sf-text-tertiary:  #8A8690;
+  --sf-text-inverse:   #FFFFFF;
+  --sf-border-default: #E5E0D6;
+  --sf-border-strong:  #C7C1B4;
+  --sf-border-subtle:  #EEEAE1;
 
-  /* Surfaces */
-  --color-background: #ffffff;              /* card / surface bg */
-  --color-background-primary: #ffffff;       /* modal panel bg */
-  --color-background-secondary: #f1f5f9;     /* date headers, subtle fills */
-  --color-background-tertiary: #f8fafc;      /* page bg */
+  /* Status */
+  --sf-success:        #2E7D4F;
+  --sf-success-soft:   #DDEFE2;
+  --sf-warning:        #B86E00;
+  --sf-warning-soft:   #FBEBD1;
+  --sf-danger:         #B3261E;
+  --sf-danger-soft:    #F8DDDB;
+  --sf-info:           #1E5FAE;
+  --sf-info-soft:      #DCE8F7;
+  --sf-neutral:        #4A4852;
+  --sf-neutral-soft:   #EAE6DD;
 
-  /* Text */
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #64748b;
-  --color-text-muted: #94a3b8;
+  /* Brand (Skyfire defaults, overridden per org at runtime) */
+  --sf-header:         #151525;
+  --sf-accent:         #C9952E;
+  --sf-accent-hover:   #D4A843;
+  --sf-accent-soft:    #F5EBD0;
+  --sf-text-on-dark:   #F5F0E8;
 
-  /* Borders */
-  --color-border-tertiary: #e2e8f0;
-  --color-border-secondary: #cbd5e1;
+  /* Decorative */
+  --sf-flame-mid:      #E8622C;
+  --sf-crimson:        #B3261E;
+  --sf-electric:       #4A8FD4;
 
-  /* Skeleton shimmer */
-  --color-skeleton: #e2e8f0;
-
-  /* Sticky filter bar background — semi-transparent so backdrop-blur shows
-   * the page underneath. */
-  --color-sticky-bg: rgba(255, 255, 255, 0.85);
+  /* Shadows */
+  --sf-shadow-sm:  0 1px 2px rgba(21, 21, 37, 0.06);
+  --sf-shadow-md:  0 2px 8px rgba(21, 21, 37, 0.08);
+  --sf-shadow-lg:  0 8px 24px rgba(21, 21, 37, 0.12);
+  --sf-shadow-xl:  0 16px 40px rgba(21, 21, 37, 0.18);
 }
 
-/* ─── Dark mode ─────────────────────────────────────────────
- * Auto-follows system preference. Every variable above gets a dark
- * counterpart so cards, text, badges, and modals all flip together.
- */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: #1a1a24;             /* card surface, slightly raised */
-    --color-background-primary: #1a1a24;     /* modal panel */
-    --color-background-secondary: #232330;   /* subtle fill / date header */
-    --color-background-tertiary: #0a0a0f;    /* page bg, deepest */
+*, *::before, *::after { box-sizing: border-box; }
 
-    --color-text-primary: #f1f5f9;
-    --color-text-secondary: #94a3b8;
-    --color-text-muted: #64748b;
-
-    --color-border-tertiary: #2a2a3a;
-    --color-border-secondary: #3a3a4a;
-
-    --color-skeleton: #2a2a3a;
-
-    --color-sticky-bg: rgba(26, 26, 36, 0.85);
-  }
-}
+html, body, #root { height: 100%; }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  background-color: var(--color-background-tertiary);
-  color: var(--color-text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background-color: var(--sf-bg-page);
+  color: var(--sf-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── Animations ────────────────────────────────────────────
- * Skeleton pulse, fade-in, dot pulse, button bounce. All defined here
- * so any component can use them via simple class names.
+/* ─── Keyframes ─────────────────────────────────────────────
+ * All 8 Skyfire animations. Applied only when the user hasn't
+ * requested reduced motion (see wrapping media query below).
  */
 @keyframes sf-pulse {
   0%, 100% { opacity: 0.4; }
-  50%       { opacity: 0.7; }
+  50%      { opacity: 0.7; }
 }
 @keyframes sf-fade-in {
   from { opacity: 0; transform: translateY(4px); }
@@ -84,7 +77,7 @@ body {
 }
 @keyframes sf-pulse-dot {
   0%, 100% { transform: scale(1);   opacity: 1;   }
-  50%       { transform: scale(1.4); opacity: 0.6; }
+  50%      { transform: scale(1.4); opacity: 0.6; }
 }
 @keyframes sf-bounce-tap {
   0%   { transform: scale(1);    }
@@ -95,18 +88,29 @@ body {
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }
 }
-
-/* Only animate when the user hasn't asked the OS to reduce motion. The
- * reduce branch below collapses every animation/transition to ~0ms via a
- * global override, so anyone who turns on "Reduce motion" in their OS
- * settings sees a static UI without losing the layout. */
-@media (prefers-reduced-motion: no-preference) {
-  .sf-pulse        { animation: sf-pulse 1.5s ease-in-out infinite; }
-  .sf-fade-in      { animation: sf-fade-in 0.4s ease-out both; }
-  .sf-pulse-dot    { animation: sf-pulse-dot 2s ease-in-out infinite; }
-  .sf-bounce-tap   { animation: sf-bounce-tap 0.3s ease-out; }
+@keyframes card-expand {
+  from { opacity: 0; transform: scaleY(0.96); transform-origin: top; }
+  to   { opacity: 1; transform: scaleY(1);    transform-origin: top; }
+}
+@keyframes sheet-rise {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0);    }
+}
+@keyframes toast-enter {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to   { opacity: 1; transform: translate(-50%, 0);    }
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .sf-pulse      { animation: sf-pulse      1.5s ease-in-out infinite; }
+  .sf-fade-in    { animation: sf-fade-in    0.4s ease-out both; }
+  .sf-pulse-dot  { animation: sf-pulse-dot  2s   ease-in-out infinite; }
+  .sf-bounce-tap { animation: sf-bounce-tap 0.3s ease-out; }
+  .sf-fill-grow  { animation: sf-fill-grow  0.6s ease-out both; transform-origin: left; }
+  .sf-card-expand{ animation: card-expand   0.25s ease-out both; }
+  .sf-sheet-rise { animation: sheet-rise    0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+  .sf-toast-enter{ animation: toast-enter   0.25s ease-out both; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -114,64 +118,30 @@ body {
   }
 }
 
-/* Smooth height auto: grid-template-rows trick. Wrap content in
- * `.sf-collapsible` and toggle `[data-open="true"]`. Animates from 0fr→1fr
- * which gives a real height transition without the max-height hack. */
+/* Smooth height-auto collapsible via grid-template-rows trick. */
 .sf-collapsible {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 300ms ease-out;
 }
-.sf-collapsible[data-open="true"] {
-  grid-template-rows: 1fr;
-}
-.sf-collapsible > .sf-collapsible-inner {
-  overflow: hidden;
-  min-height: 0;
-}
+.sf-collapsible[data-open="true"] { grid-template-rows: 1fr; }
+.sf-collapsible > .sf-collapsible-inner { overflow: hidden; min-height: 0; }
 
-/* Hide scrollbars on horizontally-scrolling rows (filter pills, day strip)
- * while keeping wheel/touch scrolling functional. */
-.sf-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-.sf-no-scrollbar::-webkit-scrollbar { display: none; }
-
-/* Sticky filter bar with backdrop blur. Class is applied conditionally
- * by Schedule when the user has scrolled past the filters. */
+/* Sticky filter bar with blur. */
 .sf-sticky-filters {
   position: sticky;
   top: 0;
   z-index: 30;
-  background-color: var(--color-sticky-bg);
+  background-color: color-mix(in srgb, var(--sf-bg-page) 85%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--sf-shadow-sm);
 }
 
-/* Button press feedback — slight downward motion on active. */
-.sf-press {
-  transition: transform 200ms ease-out, box-shadow 200ms ease-out;
-}
-.sf-press:active {
-  transform: translateY(0) scale(0.98);
-}
+/* Tap press feedback. */
+.sf-press { transition: transform 200ms ease-out; }
+.sf-press:active { transform: scale(0.97); }
 
-/* ─── Print ─────────────────────────────────────────────────
- * Hide everything except the print table. Keep this minimal — the
- * Schedule print layout is built around `print:hidden` / `print:block`
- * Tailwind classes.
- */
-@media print {
-  header, nav, footer, .print\:hidden, button, select {
-    display: none !important;
-  }
-  .print\:block { display: block !important; }
-  body {
-    background: white;
-    color: black;
-    font-size: 11pt;
-  }
-  main {
-    max-width: 100% !important;
-    padding: 0 !important;
-  }
-}
+/* Hide native scrollbars on horizontal scrollers (day strip, pill rows). */
+.sf-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.sf-no-scrollbar::-webkit-scrollbar { display: none; }
