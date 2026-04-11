@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Flame } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 // Skyfire brand landing + sign-in. Email auto-trims on submit. Inline field
@@ -56,16 +56,15 @@ export default function LoginPage() {
         }}
       >
         <div className="flex flex-col items-center mb-6">
-          <div
-            className="flex items-center justify-center mb-3"
+          <img
+            src="/phoenix-logo.png"
+            alt=""
+            className="mb-3"
             style={{
-              width: 96, height: 96, borderRadius: '50%',
-              backgroundColor: 'var(--sf-accent-soft)', color: 'var(--sf-accent)',
+              width: 96, height: 96, borderRadius: '50%', objectFit: 'cover',
+              backgroundColor: 'var(--sf-accent-soft)',
             }}
-            aria-hidden="true"
-          >
-            <Flame size={48} strokeWidth={1.75} />
-          </div>
+          />
           <div
             className="font-bold"
             style={{ color: 'var(--sf-accent)', fontSize: 24, letterSpacing: 2 }}
