@@ -9,6 +9,8 @@ import SchedulePage from './pages/SchedulePage';
 import ScorePage from './pages/ScorePage';
 import TeamsPage from './pages/TeamsPage';
 import MessagesPage from './pages/MessagesPage';
+import AdminSeasonsPage from './pages/AdminSeasonsPage';
+import AdminTeamsPage from './pages/AdminTeamsPage';
 
 // Wrap an authenticated route in both the shell and the auth guard. Keeps
 // the route table below flat and readable instead of nesting <RequireAuth>
@@ -40,6 +42,24 @@ export default function App() {
       />
       <Route path="/teams"    element={<Protected><TeamsPage /></Protected>} />
       <Route path="/messages" element={<Protected><MessagesPage /></Protected>} />
+
+      {/* Admin-only management routes */}
+      <Route
+        path="/admin/seasons"
+        element={
+          <Protected allowedRoles={['admin']}>
+            <AdminSeasonsPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin/teams"
+        element={
+          <Protected allowedRoles={['admin']}>
+            <AdminTeamsPage />
+          </Protected>
+        }
+      />
     </Routes>
   );
 }

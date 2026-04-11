@@ -1,9 +1,19 @@
-import PlaceholderPage from './PlaceholderPage';
 import { House } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { isAdmin } from '../lib/permissions';
+import AdminHomePage from './AdminHomePage';
+import PlaceholderPage from './PlaceholderPage';
 
-// Placeholder — the real dashboard lands in a later prompt. Keeping this
-// as a thin re-export makes it trivial to replace the body without
-// touching the router.
+// Home dispatches on role: admins land on the KPI dashboard, coaches and
+// parents get a placeholder until their role-specific dashboards are built.
 export default function HomePage() {
-  return <PlaceholderPage icon={House} title="Home" description="Your dashboard will live here." />;
+  const { role } = useAuth();
+  if (isAdmin(role)) return <AdminHomePage />;
+  return (
+    <PlaceholderPage
+      icon={House}
+      title="Home"
+      description="Your personalized dashboard will live here."
+    />
+  );
 }
