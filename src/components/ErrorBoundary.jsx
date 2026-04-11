@@ -20,7 +20,7 @@ export default class ErrorBoundary extends Component {
     if (!this.state.hasError) return this.props.children;
     return (
       <div
-        className="min-h-screen flex items-center justify-center px-4"
+        className="sf-fullscreen flex items-center justify-center px-4"
         style={{ backgroundColor: 'var(--sf-bg-page)' }}
       >
         <div className="text-center">

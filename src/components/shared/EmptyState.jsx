@@ -15,7 +15,7 @@ export default function EmptyState({ icon: Icon, title, description, action }) {
             width: 56,
             height: 56,
             borderRadius: '50%',
-            backgroundColor: 'var(--sf-bg-subtle)',
+            backgroundColor: 'var(--sf-bg-secondary)',
             color: 'var(--sf-text-tertiary)',
           }}
         >

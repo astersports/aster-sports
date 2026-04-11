@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -16,6 +16,17 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Reset brand tokens to Skyfire defaults on mount so the login page
+  // always shows dark navy regardless of cached org colors.
+  useEffect(() => {
+    const r = document.documentElement.style;
+    r.setProperty('--sf-header', '#151525');
+    r.setProperty('--sf-accent', '#C9952E');
+    r.setProperty('--sf-accent-hover', '#D4A843');
+    r.setProperty('--sf-accent-soft', 'rgba(201,149,46,0.1)');
+    r.setProperty('--sf-text-on-dark', '#F5F0E8');
+  }, []);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -52,23 +63,14 @@ export default function LoginPage() {
         className="w-full sf-fade-in"
         style={{
           maxWidth: 400, backgroundColor: 'var(--sf-bg-card)',
-          borderRadius: 16, padding: 28, boxShadow: 'var(--sf-shadow-xl)',
+          borderRadius: 16, padding: 28, boxShadow: 'var(--sf-shadow-lg)',
         }}
       >
         <div className="flex flex-col items-center mb-6">
-          <img
-            src="/phoenix-logo.png"
-            alt=""
-            className="mb-3"
-            style={{
-              width: 96, height: 96, borderRadius: '50%', objectFit: 'cover',
-              backgroundColor: 'var(--sf-accent-soft)',
-            }}
-          />
-          <div
-            className="font-bold"
-            style={{ color: 'var(--sf-accent)', fontSize: 24, letterSpacing: 2 }}
-          >
+          <img src="/phoenix-logo.png" alt="" className="mb-3"
+            style={{ width: 120, height: 120, objectFit: 'contain' }} />
+          <div className="font-bold"
+            style={{ color: 'var(--sf-accent)', fontSize: 24, letterSpacing: 2 }}>
             SKYFIRE
           </div>
         </div>

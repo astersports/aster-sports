@@ -115,7 +115,7 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
           backgroundColor: 'var(--sf-bg-card)',
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
-          boxShadow: 'var(--sf-shadow-xl)',
+          boxShadow: 'var(--sf-shadow-lg)',
           transition: 'max-height 250ms ease-out',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -130,7 +130,7 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
           <span
             style={{
               width: 36, height: 4, borderRadius: 999,
-              backgroundColor: 'var(--sf-border-strong)',
+              backgroundColor: 'var(--sf-border-default)',
             }}
           />
         </button>

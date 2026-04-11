@@ -6,48 +6,47 @@
  * so the same markup theme-flips per org.
  */
 :root {
-  /* Platform surfaces + text */
-  --sf-bg-page:        #F7F5F0;
+  /* ─── Platform surfaces + text (COOL GRAY — NOT warm/beige) ─── */
+  --sf-bg-page:        #F7F8FA;
   --sf-bg-card:        #FFFFFF;
-  --sf-bg-subtle:      #F1EDE5;
-  --sf-bg-muted:       #EAE6DD;
-  --sf-text-primary:   #1C1B1F;
-  --sf-text-secondary: #4A4852;
-  --sf-text-tertiary:  #8A8690;
+  --sf-bg-card-hover:  #F9FAFB;
+  --sf-bg-secondary:   #F1F3F5;
+  --sf-bg-tertiary:    #E9ECEF;
+  --sf-text-primary:   #1A1D23;
+  --sf-text-secondary: #4A5568;
+  --sf-text-tertiary:  #8896AB;
   --sf-text-inverse:   #FFFFFF;
-  --sf-border-default: #E5E0D6;
-  --sf-border-strong:  #C7C1B4;
-  --sf-border-subtle:  #EEEAE1;
+  --sf-border-default: #E2E8F0;
+  --sf-border-subtle:  #EDF2F7;
 
-  /* Status */
-  --sf-success:        #2E7D4F;
-  --sf-success-soft:   #DDEFE2;
-  --sf-warning:        #B86E00;
-  --sf-warning-soft:   #FBEBD1;
-  --sf-danger:         #B3261E;
-  --sf-danger-soft:    #F8DDDB;
-  --sf-info:           #1E5FAE;
-  --sf-info-soft:      #DCE8F7;
-  --sf-neutral:        #4A4852;
-  --sf-neutral-soft:   #EAE6DD;
+  /* ─── Status (semantic) ─── */
+  --sf-success:        #16A34A;
+  --sf-success-soft:   #DCFCE7;
+  --sf-warning:        #D97706;
+  --sf-warning-soft:   #FEF3C7;
+  --sf-danger:         #DC2626;
+  --sf-danger-soft:    #FEE2E2;
+  --sf-info:           #3B82F6;
+  --sf-info-soft:      #EFF6FF;
+  --sf-neutral:        #9CA3AF;
+  --sf-neutral-soft:   #F3F4F6;
 
-  /* Brand (Skyfire defaults, overridden per org at runtime) */
+  /* ─── Brand (Skyfire defaults — overridden per org at runtime) ─── */
   --sf-header:         #151525;
   --sf-accent:         #C9952E;
   --sf-accent-hover:   #D4A843;
-  --sf-accent-soft:    #F5EBD0;
+  --sf-accent-soft:    rgba(201, 149, 46, 0.1);
   --sf-text-on-dark:   #F5F0E8;
 
-  /* Decorative */
-  --sf-flame-mid:      #E8622C;
-  --sf-crimson:        #B3261E;
-  --sf-electric:       #4A8FD4;
+  /* ─── Decorative ─── */
+  --sf-flame-mid:      #E87520;
+  --sf-crimson:        #8B1A1A;
+  --sf-electric:       #4A9FFF;
 
-  /* Shadows */
-  --sf-shadow-sm:  0 1px 2px rgba(21, 21, 37, 0.06);
-  --sf-shadow-md:  0 2px 8px rgba(21, 21, 37, 0.08);
-  --sf-shadow-lg:  0 8px 24px rgba(21, 21, 37, 0.12);
-  --sf-shadow-xl:  0 16px 40px rgba(21, 21, 37, 0.18);
+  /* ─── Shadows (exactly three — no fourth) ─── */
+  --sf-shadow-sm:  0 1px 2px rgba(0,0,0,0.04);
+  --sf-shadow-md:  0 2px 8px rgba(0,0,0,0.08);
+  --sf-shadow-lg:  0 8px 24px rgba(0,0,0,0.12);
 }
 
 *, *::before, *::after { box-sizing: border-box; }

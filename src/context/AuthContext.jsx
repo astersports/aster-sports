@@ -9,7 +9,7 @@ const SKYFIRE_DEFAULTS = {
   header:       '#151525',
   accent:       '#C9952E',
   accent_hover: '#D4A843',
-  accent_soft:  '#F5EBD0',
+  accent_soft:  'rgba(201, 149, 46, 0.1)',
   text_on_dark: '#F5F0E8',
 };
 

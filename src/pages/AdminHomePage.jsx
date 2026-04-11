@@ -21,6 +21,16 @@ function firstNameFrom(user) {
   return first.charAt(0).toUpperCase() + first.slice(1);
 }
 
+// Time-of-day-aware greeting. Boundaries: <12:00 morning, 12:00-16:59
+// afternoon, ≥17:00 evening. Uses the browser's local clock so the
+// greeting tracks where the user actually is.
+function greetingFor(date = new Date()) {
+  const h = date.getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
 export default function AdminHomePage() {
   const { user, signOut } = useAuth();
   const { activeSeason } = useSeason();
@@ -51,7 +61,7 @@ export default function AdminHomePage() {
     >
       <section className="min-w-0">
         <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 13 }}>
-          Welcome back,
+          {greetingFor()},
         </div>
         <h1
           className="font-bold truncate"

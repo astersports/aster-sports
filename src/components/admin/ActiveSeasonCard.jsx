@@ -77,7 +77,7 @@ export default function ActiveSeasonCard({ season }) {
       <div
         style={{
           height: 2, width: '100%', borderRadius: 999,
-          backgroundColor: 'var(--sf-bg-muted)', overflow: 'hidden',
+          backgroundColor: 'var(--sf-bg-tertiary)', overflow: 'hidden',
         }}
         aria-label={`Season ${Math.round(pct * 100)}% complete`}
       >
