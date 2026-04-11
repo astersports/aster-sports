@@ -21,6 +21,7 @@ export default function FullScreenForm({ open, onClose, title, children }) {
         backgroundColor: 'var(--sf-bg-page)',
         display: 'flex',
         flexDirection: 'column',
+        overflowX: 'hidden',
       }}
       role="dialog"
       aria-modal="true"
