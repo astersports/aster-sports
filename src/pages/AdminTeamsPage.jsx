@@ -70,7 +70,7 @@ export default function AdminTeamsPage() {
           className="flex items-center gap-1 font-semibold sf-press"
           style={{
             minHeight: 44, padding: '0 14px', borderRadius: 10,
-            backgroundColor: 'var(--sf-accent)', color: '#FFFFFF', fontSize: 14,
+            backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 14,
           }}
         >
           <Plus size={18} strokeWidth={1.75} /> New

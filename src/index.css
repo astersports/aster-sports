@@ -78,6 +78,15 @@ html, body         {
   overflow: hidden;
 }
 
+/* Standalone full-height page (Login, ForgotPassword, Unauthorized).
+ * Uses min-height so content can grow when the iOS soft keyboard opens,
+ * unlike sf-app-shell which is strictly bounded. Double declaration is
+ * the CSS cascade fallback for pre-iOS 15.4 Safari. */
+.sf-fullscreen {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;

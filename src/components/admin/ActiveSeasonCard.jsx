@@ -38,7 +38,7 @@ export default function ActiveSeasonCard({ season }) {
           className="inline-flex items-center sf-press font-semibold"
           style={{
             minHeight: 44, padding: '0 16px', borderRadius: 10,
-            backgroundColor: 'var(--sf-accent)', color: '#FFFFFF', fontSize: 14,
+            backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 14,
           }}
         >
           Create your first season

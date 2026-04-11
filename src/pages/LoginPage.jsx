@@ -45,7 +45,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-6"
+      className="sf-fullscreen flex items-center justify-center p-6"
       style={{ backgroundColor: 'var(--sf-header)' }}
     >
       <div
@@ -121,22 +121,23 @@ export default function LoginPage() {
           )}
 
           <button
-            type="submit"
-            disabled={submitting}
+            type="submit" disabled={submitting}
             className="w-full font-semibold sf-press sf-bounce-tap"
             style={{
-              minHeight: 44, borderRadius: 10,
-              backgroundColor: 'var(--sf-accent)', color: '#FFFFFF',
-              fontSize: 15, opacity: submitting ? 0.7 : 1,
+              minHeight: 44, borderRadius: 10, fontSize: 15,
+              backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)',
+              opacity: submitting ? 0.7 : 1,
             }}
-          >
-            {submitting ? 'Signing in…' : 'Sign in'}
-          </button>
+          >{submitting ? 'Signing in…' : 'Sign in'}</button>
 
-          <div className="text-center mt-4">
+          <div className="flex justify-center mt-2">
             <Link
               to="/forgot-password"
-              style={{ color: 'var(--sf-accent)', fontSize: 13, fontWeight: 500 }}
+              className="sf-press inline-flex items-center justify-center"
+              style={{
+                minHeight: 44, padding: '0 12px',
+                color: 'var(--sf-accent)', fontSize: 13, fontWeight: 500,
+              }}
             >
               Forgot password?
             </Link>

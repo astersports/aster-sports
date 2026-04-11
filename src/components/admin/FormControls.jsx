@@ -51,8 +51,8 @@ export function ChipField({ label, options, value, onChange }) {
               onClick={() => onChange(key)}
               className="sf-press"
               style={{
-                minHeight: 36,
-                padding: '0 14px',
+                minHeight: 44,
+                padding: '0 16px',
                 borderRadius: 999,
                 fontSize: 13,
                 border: `1px solid ${active ? 'var(--sf-accent)' : 'var(--sf-border-default)'}`,

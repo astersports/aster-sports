@@ -83,7 +83,7 @@ export default function ConfirmDialog({
               minHeight: 44,
               borderRadius: 10,
               backgroundColor: confirmBg,
-              color: '#FFFFFF',
+              color: 'var(--sf-text-inverse)',
               fontSize: 15,
             }}
           >

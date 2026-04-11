@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react';
 
-// Mobile-native bottom sheet. Starts at `initialHeight` of the visual
-// viewport; tapping the drag handle toggles to `expandedHeight`.
+// Mobile-native bottom sheet. Height is CONTENT-DRIVEN with a cap:
+// the panel sizes to whatever its children render, up to a maximum of
+// `initialHeight` of the visual viewport. If children exceed the cap,
+// the inner scroll region engages. Tapping the drag handle toggles the
+// cap to `expandedHeight`. Short forms get a short sheet with the Save
+// button near the content; tall forms get a capped scrolling sheet.
 // Backdrop click or Escape dismisses.
 //
-// Height handling: `initialHeight`/`expandedHeight` are percentage
+// Viewport handling: `initialHeight`/`expandedHeight` are percentage
 // strings like "85%". We measure `window.visualViewport.height` (with
-// `window.innerHeight` as fallback) and compute the absolute pixel value
+// `window.innerHeight` as fallback) and compute the cap in pixels
 // ourselves instead of relying on CSS `%` or `dvh`. Why:
 //   - CSS `%` inside `position: fixed; inset: 0` resolves against the
-//     iOS layout viewport (tall, extends behind the URL bar), so the
-//     bottom of the sheet gets cut off below the visible screen.
-//   - CSS `dvh` fixes this on iOS 15.4+, but older Safari ignores it
-//     silently, falling back to the broken percentage behavior.
+//     iOS layout viewport (tall, extends behind the URL bar), so caps
+//     extend below the visible screen.
+//   - CSS `dvh` fixes that on iOS 15.4+, but older Safari ignores it.
 //   - `window.visualViewport.height` is the authoritative visible
 //     viewport and is supported back to iOS 13.
 //
@@ -82,8 +85,7 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
   }, [onClose]);
 
   const pct = expanded ? parsePct(expandedHeight) : parsePct(initialHeight);
-  const heightPx = Math.round(vh * pct);
-  const maxHeightPx = Math.round(vh * 0.98);
+  const maxHeightPx = Math.round(vh * pct);
 
   return (
     <div
@@ -96,13 +98,15 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
       <div
         className="w-full sf-sheet-rise flex flex-col"
         style={{
-          height: `${heightPx}px`,
+          // maxHeight caps the panel at the chosen pct of the visual
+          // viewport; no fixed `height`, so short forms produce short
+          // sheets and the content area never has dead space below.
           maxHeight: `${maxHeightPx}px`,
           backgroundColor: 'var(--sf-bg-card)',
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
           boxShadow: 'var(--sf-shadow-xl)',
-          transition: 'height 250ms ease-out',
+          transition: 'max-height 250ms ease-out',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -110,13 +114,13 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
           type="button"
           onClick={() => setExpanded((v) => !v)}
           className="flex items-center justify-center sf-press"
-          style={{ height: 24, width: '100%', flexShrink: 0 }}
+          style={{ height: 44, width: '100%', flexShrink: 0 }}
           aria-label={expanded ? 'Collapse sheet' : 'Expand sheet'}
         >
           <span
             style={{
               width: 36, height: 4, borderRadius: 999,
-              backgroundColor: 'var(--sf-border-strong)', marginTop: 8,
+              backgroundColor: 'var(--sf-border-strong)',
             }}
           />
         </button>

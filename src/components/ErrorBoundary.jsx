@@ -42,7 +42,7 @@ export default class ErrorBoundary extends Component {
               padding: '0 20px',
               borderRadius: 10,
               backgroundColor: 'var(--sf-accent)',
-              color: '#FFFFFF',
+              color: 'var(--sf-text-inverse)',
               fontSize: 15,
             }}
           >
