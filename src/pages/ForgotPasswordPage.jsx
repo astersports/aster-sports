@@ -17,7 +17,7 @@ export default function ForgotPasswordPage() {
           backgroundColor: 'var(--sf-bg-card)',
           borderRadius: 16,
           padding: 28,
-          boxShadow: 'var(--sf-shadow-xl)',
+          boxShadow: 'var(--sf-shadow-lg)',
         }}
       >
         <div

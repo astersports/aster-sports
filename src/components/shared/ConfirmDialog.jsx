@@ -42,7 +42,7 @@ export default function ConfirmDialog({
           padding: 20,
           width: '100%',
           maxWidth: 360,
-          boxShadow: 'var(--sf-shadow-xl)',
+          boxShadow: 'var(--sf-shadow-lg)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -68,7 +68,7 @@ export default function ConfirmDialog({
             style={{
               minHeight: 44,
               borderRadius: 10,
-              backgroundColor: 'var(--sf-bg-subtle)',
+              backgroundColor: 'var(--sf-bg-secondary)',
               color: 'var(--sf-text-primary)',
               fontSize: 15,
             }}

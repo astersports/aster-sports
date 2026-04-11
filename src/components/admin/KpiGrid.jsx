@@ -11,7 +11,7 @@ function ValueSkeleton() {
         width: '60%',
         height: 24,
         borderRadius: 6,
-        backgroundColor: 'var(--sf-bg-muted)',
+        backgroundColor: 'var(--sf-bg-tertiary)',
       }}
       aria-hidden="true"
     />
