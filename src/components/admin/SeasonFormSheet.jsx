@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import BottomSheet from '../shared/BottomSheet';
+import FullScreenForm from '../shared/FullScreenForm';
 
 // Maps a preset quarter label to (monthStart, monthEnd) pairs that we'll
 // combine with the chosen year to produce start_date / end_date. Months
@@ -22,15 +22,16 @@ function applyPreset(quarter, year) {
   return { name: `${quarter} ${year}`, start_date: start, end_date: end };
 }
 
-// The BottomSheet returns null when closed so everything inside unmounts;
-// that lets us drop useState initialization straight into a Body component
-// that only exists while the sheet is open. No effect-based reset needed —
-// a fresh mount starts from the right season every time.
+// FullScreenForm unmounts its children when closed, so Body mounts fresh
+// on every open and initializes useState directly from the season prop —
+// no effect-based reset needed. The `key` also remounts Body when the
+// edited season changes while the sheet is already open.
 export default function SeasonFormSheet({ open, season, onClose, onSave }) {
+  const title = season ? 'Edit season' : 'New season';
   return (
-    <BottomSheet open={open} onClose={onClose} initialHeight="85%" expandedHeight="95%">
+    <FullScreenForm open={open} onClose={onClose} title={title}>
       <Body key={season?.id ?? 'new'} season={season} onSave={onSave} />
-    </BottomSheet>
+    </FullScreenForm>
   );
 }
 
@@ -72,11 +73,7 @@ function Body({ season, onSave }) {
   const label = { color: 'var(--sf-text-secondary)', fontSize: 13, marginBottom: 6, display: 'block' };
 
   return (
-    <div className="pt-2">
-        <h2 className="font-semibold mb-4" style={{ color: 'var(--sf-text-primary)', fontSize: 18 }}>
-          {editing ? 'Edit season' : 'New season'}
-        </h2>
-
+    <div>
         <div className="mb-4">
           <span style={label}>Preset</span>
           <div className="flex flex-wrap gap-2 mb-2">

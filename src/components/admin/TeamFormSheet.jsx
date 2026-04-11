@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import BottomSheet from '../shared/BottomSheet';
+import FullScreenForm from '../shared/FullScreenForm';
 import ConfirmDialog from '../shared/ConfirmDialog';
 import { Field, Input, ChipField } from './FormControls';
 
@@ -30,14 +30,15 @@ const EMPTY = {
   practice_location: '', sort_order: 0,
 };
 
-// Outer shell: BottomSheet only renders when `open` is true, so Body
-// mounts fresh each time and can initialize state from `program` directly
-// — no effect-based reset needed.
+// FullScreenForm unmounts children when closed, so Body mounts fresh
+// each open and initializes state from `program` directly — no effect-
+// based reset needed. The title flips on new vs. edit.
 export default function TeamFormSheet({ open, program, onClose, onSave, onDelete }) {
+  const title = program ? 'Edit team' : 'New team';
   return (
-    <BottomSheet open={open} onClose={onClose} initialHeight="90%" expandedHeight="95%">
+    <FullScreenForm open={open} onClose={onClose} title={title}>
       <Body key={program?.id ?? 'new'} program={program} onSave={onSave} onDelete={onDelete} />
-    </BottomSheet>
+    </FullScreenForm>
   );
 }
 
@@ -64,11 +65,7 @@ function Body({ program, onSave, onDelete }) {
 
   return (
     <>
-      <div className="pt-2">
-        <h2 className="font-semibold mb-4" style={{ color: 'var(--sf-text-primary)', fontSize: 18 }}>
-          {editing ? 'Edit team' : 'New team'}
-        </h2>
-
+      <div>
         <Field label="Display name">
           <Input value={form.name} onChange={(v) => patch('name', v)} placeholder="10U Black" />
         </Field>
