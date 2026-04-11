@@ -55,7 +55,7 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
           type="button"
           onClick={() => setExpanded((v) => !v)}
           className="flex items-center justify-center sf-press"
-          style={{ height: 24, width: '100%' }}
+          style={{ height: 24, width: '100%', flexShrink: 0 }}
           aria-label={expanded ? 'Collapse sheet' : 'Expand sheet'}
         >
           <span
@@ -68,7 +68,19 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
             }}
           />
         </button>
-        <div className="flex-1 overflow-y-auto px-4 pb-4">{children}</div>
+        {/* min-h-0 is load-bearing: without it, the flex child defaults
+            to min-height: auto and expands past its parent instead of
+            honoring overflow-y-auto — tall forms silently clip at the
+            sheet boundary. overscroll-behavior contains the rubber-band. */}
+        <div
+          className="flex-1 min-h-0 overflow-y-auto px-4 pb-4"
+          style={{
+            overscrollBehavior: 'contain',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );
