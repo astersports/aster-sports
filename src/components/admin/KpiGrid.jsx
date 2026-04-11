@@ -3,12 +3,16 @@ import { formatCurrency } from '../../lib/formatters';
 
 // 2x2 KPI grid at the top of the admin dashboard. Each card renders the
 // same shell — small icon top-left, big value, small secondary label.
+// `min-w-0` on the card is load-bearing: without it, a long currency
+// value like "$999,999.99" would widen its grid column past 50% of the
+// viewport and blow out the parent (CSS grid items default to
+// min-width: auto, which refuses to shrink below content width).
 function Card(props) {
   const { label, value, accent } = props;
   const Icon = props.icon;
   return (
     <div
-      className="p-4"
+      className="p-4 min-w-0"
       style={{
         backgroundColor: 'var(--sf-bg-card)',
         borderRadius: 10,
@@ -20,12 +24,16 @@ function Card(props) {
         <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
       </div>
       <div
-        className="font-bold"
+        className="font-bold truncate"
         style={{ color: 'var(--sf-text-primary)', fontSize: 24, lineHeight: 1.1 }}
+        title={String(value)}
       >
         {value}
       </div>
-      <div style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginTop: 2 }}>
+      <div
+        className="truncate"
+        style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginTop: 2 }}
+      >
         {label}
       </div>
     </div>
