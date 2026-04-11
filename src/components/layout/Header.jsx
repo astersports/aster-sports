@@ -11,11 +11,21 @@ export default function Header() {
   // now so the dot stays hidden until that feature lands.
   const unread = 0;
 
+  // Total rendered height = 56px of content + env(safe-area-inset-top).
+  // On a notched iPhone, the inset pushes the content row below the notch
+  // while the blue background extends behind it; on devices with no inset
+  // the header collapses to exactly 56px. `flex-shrink: 0` + explicit
+  // min/max height keep the row from ever growing past its content area
+  // if a future parent uses flex-grow or similar.
   return (
     <header
       className="fixed top-0 left-0 right-0 z-50 flex items-center px-4"
       style={{
-        height: 56,
+        height: 'calc(56px + env(safe-area-inset-top, 0px))',
+        minHeight: 'calc(56px + env(safe-area-inset-top, 0px))',
+        maxHeight: 'calc(56px + env(safe-area-inset-top, 0px))',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        flexShrink: 0,
         backgroundColor: 'var(--sf-header)',
         color: 'var(--sf-text-on-dark)',
       }}

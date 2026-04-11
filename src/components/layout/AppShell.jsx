@@ -11,7 +11,22 @@ export default function AppShell({ children }) {
       style={{ backgroundColor: 'var(--sf-bg-page)' }}
     >
       <Header />
-      <main className="flex-1 overflow-y-auto pt-14 pb-20">{children}</main>
+      {/* Padding top/bottom track the fixed Header + BottomNav heights,
+          both of which extend into the iOS safe-area insets. If you
+          change Header or BottomNav heights, update these calc() values
+          to match — keeping them inline avoids divergence between
+          Tailwind classes and the components' actual rendered sizes.
+          overflow-x-hidden here is redundant with the html/body rule
+          but keeps scroll containment local. */}
+      <main
+        className="flex-1 overflow-x-hidden overflow-y-auto"
+        style={{
+          paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))',
+          paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+        }}
+      >
+        {children}
+      </main>
       <BottomNav />
     </div>
   );

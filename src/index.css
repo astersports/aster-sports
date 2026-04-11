@@ -52,7 +52,12 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* `overflow-x: hidden` on html+body is the last-line defense against
+ * horizontal scroll. Any child that breaks out of the viewport (negative
+ * margin tricks, grid items that won't shrink below content, etc.) will
+ * clip here instead of introducing a phantom horizontal scrollbar. */
 html, body, #root { height: 100%; }
+html, body         { overflow-x: hidden; max-width: 100vw; }
 
 body {
   margin: 0;
