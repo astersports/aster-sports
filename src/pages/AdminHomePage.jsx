@@ -55,10 +55,7 @@ export default function AdminHomePage() {
   // actually shrink below their content width (the default is auto,
   // which refuses to shrink and widens the parent).
   return (
-    <div
-      className="px-4 py-4 flex flex-col gap-5 sf-fade-in overflow-x-hidden"
-      style={{ maxWidth: '100%' }}
-    >
+    <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
       <section className="min-w-0">
         <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 13 }}>
           {greetingFor()},
@@ -76,22 +73,26 @@ export default function AdminHomePage() {
       </section>
 
       <section className="min-w-0" aria-label="Quick actions">
-        <div
-          className="font-semibold mb-2"
-          style={{ color: 'var(--sf-text-secondary)', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}
-        >
-          Quick actions
-        </div>
+        <div style={{
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+          color: 'var(--sf-text-tertiary)',
+          marginBottom: 8,
+        }}>QUICK ACTIONS</div>
         <QuickActions />
       </section>
 
       <section className="min-w-0" aria-label="Active season">
-        <div
-          className="font-semibold mb-2"
-          style={{ color: 'var(--sf-text-secondary)', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}
-        >
-          Season
-        </div>
+        <div style={{
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+          color: 'var(--sf-text-tertiary)',
+          marginBottom: 8,
+        }}>SEASON</div>
         <ActiveSeasonCard season={activeSeason} />
       </section>
 
@@ -103,14 +104,14 @@ export default function AdminHomePage() {
       </section>
 
       {/* TEMP: sign-out affordance until the Account page is built. */}
-      <div className="flex justify-center pt-2">
+      <div style={{ borderTop: '1px solid var(--sf-border-subtle)', paddingTop: 12 }}>
         <button
           type="button"
           onClick={handleSignOut}
-          className="sf-press"
+          className="w-full sf-press flex items-center justify-between"
           style={{
             minHeight: 44,
-            padding: '0 16px',
+            padding: '0 4px',
             background: 'none',
             border: 'none',
             color: 'var(--sf-danger)',
@@ -118,7 +119,8 @@ export default function AdminHomePage() {
             fontWeight: 500,
           }}
         >
-          Sign out
+          <span>Sign out</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </button>
       </div>
     </div>

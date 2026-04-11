@@ -36,12 +36,14 @@ export default function QuickActions() {
               borderRadius: 10,
               backgroundColor: 'var(--sf-bg-card)',
               border: '1px solid var(--sf-border-default)',
+              boxShadow: 'var(--sf-shadow-sm)',
               color: 'var(--sf-text-primary)',
               fontSize: 14,
               fontWeight: 500,
+              transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
             }}
           >
-            <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
+            <Icon size={20} strokeWidth={1.75} style={{ color: 'var(--sf-text-tertiary)' }} aria-hidden="true" />
             {action.label}
           </Link>
         );

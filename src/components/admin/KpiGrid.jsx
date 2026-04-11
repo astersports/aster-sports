@@ -25,16 +25,17 @@ function ValueSkeleton() {
 // viewport and blow out the parent (CSS grid items default to
 // min-width: auto, which refuses to shrink below content width).
 function Card(props) {
-  const { label, value, accent, loading } = props;
+  const { label, value, accent, accentValue, loading } = props;
   const Icon = props.icon;
   return (
     <div
-      className="p-4 min-w-0"
+      className="p-4 min-w-0 sf-press"
       style={{
         backgroundColor: 'var(--sf-bg-card)',
         borderRadius: 10,
+        border: '1px solid var(--sf-border-default)',
         boxShadow: 'var(--sf-shadow-sm)',
-        border: '1px solid var(--sf-border-subtle)',
+        transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
       }}
     >
       <div style={{ color: accent || 'var(--sf-text-tertiary)', marginBottom: 8 }}>
@@ -45,7 +46,11 @@ function Card(props) {
       ) : (
         <div
           className="font-bold truncate"
-          style={{ color: 'var(--sf-text-primary)', fontSize: 24, lineHeight: 1.1 }}
+          style={{
+            color: accentValue ? accent : 'var(--sf-text-primary)',
+            fontSize: 24,
+            lineHeight: 1.1,
+          }}
           title={String(value)}
         >
           {value}
@@ -54,7 +59,6 @@ function Card(props) {
       <div
         className="truncate"
         style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginTop: 2 }}
-        aria-label={loading ? `${label} loading` : undefined}
       >
         {label}
       </div>
@@ -67,21 +71,23 @@ export default function KpiGrid({ stats }) {
 
   return (
     <div className="grid grid-cols-2 gap-3">
-      <Card icon={Users}    label="Players" value={players} loading={loading} />
-      <Card icon={Calendar} label="Events"  value={events}  loading={loading} />
+      <Card icon={Users} label="Players" value={players} loading={loading} />
+      <Card icon={Calendar} label="Events" value={events} loading={loading} accent="var(--sf-info)" />
       <Card
         icon={DollarSign}
         label="Collected"
-        accent="var(--sf-success)"
         value={formatCurrency(collected)}
         loading={loading}
+        accent="var(--sf-success)"
+        accentValue
       />
       <Card
         icon={AlertCircle}
         label="Outstanding"
-        accent="var(--sf-warning)"
         value={formatCurrency(outstanding)}
         loading={loading}
+        accent={outstanding > 0 ? 'var(--sf-warning)' : 'var(--sf-text-tertiary)'}
+        accentValue={outstanding > 0}
       />
     </div>
   );

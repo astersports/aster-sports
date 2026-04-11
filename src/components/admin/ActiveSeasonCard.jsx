@@ -60,35 +60,43 @@ export default function ActiveSeasonCard({ season }) {
         color: 'inherit',
       }}
     >
-      <div className="flex items-baseline justify-between mb-1">
-        <div
-          className="font-semibold"
-          style={{ color: 'var(--sf-text-primary)', fontSize: 16 }}
-        >
-          {season.name}
-        </div>
-        <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 12 }}>
-          Week {weekIdx} of {totalWeeks}
-        </div>
-      </div>
       <div style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginBottom: 10 }}>
         {formatDateFull(season.start_date)} – {formatDateFull(season.end_date)}
       </div>
-      <div
-        style={{
-          height: 2, width: '100%', borderRadius: 999,
-          backgroundColor: 'var(--sf-bg-tertiary)', overflow: 'hidden',
-        }}
-        aria-label={`Season ${Math.round(pct * 100)}% complete`}
-      >
-        <div
-          style={{
-            height: '100%',
-            width: `${Math.max(2, Math.round(pct * 100))}%`,
+      <div style={{ marginTop: 12 }}>
+        <div className="flex justify-between" style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginBottom: 6 }}>
+          <span>{season.name}</span>
+          <span>Week {weekIdx} of {totalWeeks}</span>
+        </div>
+        <div style={{
+          position: 'relative',
+          height: 2,
+          backgroundColor: 'var(--sf-bg-tertiary)',
+          borderRadius: 999,
+          overflow: 'visible',
+        }}>
+          <div style={{
+            height: 2,
+            width: `${Math.max(pct * 100, 1)}%`,
             backgroundColor: 'var(--sf-accent)',
-            transition: 'width 300ms ease-out',
-          }}
-        />
+            borderRadius: 999,
+            transition: 'width 600ms ease-out',
+          }} />
+          <div
+            className="sf-pulse-dot"
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: `${pct * 100}%`,
+              transform: 'translate(-50%, -50%)',
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              backgroundColor: 'var(--sf-accent)',
+              boxShadow: '0 0 6px var(--sf-accent)',
+            }}
+          />
+        </div>
       </div>
     </Link>
   );
