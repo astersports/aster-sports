@@ -127,7 +127,7 @@ function Body({ program, onSave, onDelete }) {
             className="flex-1 font-semibold sf-press sf-bounce-tap"
             style={{
               minHeight: 44, borderRadius: 10, fontSize: 15,
-              backgroundColor: 'var(--sf-accent)', color: '#FFFFFF',
+              backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)',
             }}
           >{editing ? 'Save changes' : 'Create team'}</button>
         </div>

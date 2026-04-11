@@ -57,7 +57,7 @@ function Body({ season, onSave }) {
   };
 
   const chip = (active) => ({
-    minHeight: 36, padding: '0 14px', borderRadius: 999, fontSize: 13,
+    minHeight: 44, padding: '0 16px', borderRadius: 999, fontSize: 13,
     border: `1px solid ${active ? 'var(--sf-accent)' : 'var(--sf-border-default)'}`,
     backgroundColor: active ? 'var(--sf-accent-soft)' : 'var(--sf-bg-card)',
     color: active ? 'var(--sf-accent)' : 'var(--sf-text-primary)',
@@ -122,7 +122,7 @@ function Body({ season, onSave }) {
           className="w-full font-semibold sf-press sf-bounce-tap"
           style={{
             minHeight: 44, borderRadius: 10,
-            backgroundColor: 'var(--sf-accent)', color: '#FFFFFF', fontSize: 15,
+            backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 15,
           }}
         >
         {editing ? 'Save changes' : 'Create season'}

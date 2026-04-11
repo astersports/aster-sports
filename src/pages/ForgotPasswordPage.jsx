@@ -7,7 +7,7 @@ import { KeyRound } from 'lucide-react';
 export default function ForgotPasswordPage() {
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-6"
+      className="sf-fullscreen flex items-center justify-center p-6"
       style={{ backgroundColor: 'var(--sf-header)' }}
     >
       <div
@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
             padding: '0 20px',
             borderRadius: 10,
             backgroundColor: 'var(--sf-accent)',
-            color: '#FFFFFF',
+            color: 'var(--sf-text-inverse)',
             fontSize: 15,
           }}
         >
