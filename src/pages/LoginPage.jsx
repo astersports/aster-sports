@@ -67,12 +67,8 @@ export default function LoginPage() {
         }}
       >
         <div className="flex flex-col items-center mb-6">
-          <img src="/phoenix-logo.png" alt="" className="mb-3"
-            style={{ width: 120, height: 120, objectFit: 'contain' }} />
-          <div className="font-bold"
-            style={{ color: 'var(--sf-accent)', fontSize: 24, letterSpacing: 2 }}>
-            SKYFIRE
-          </div>
+          <img src="/phoenix-logo.png" alt="Skyfire"
+            style={{ width: 120, height: 120, objectFit: 'contain', borderRadius: 16 }} />
         </div>
 
         <form onSubmit={onSubmit} noValidate>
