@@ -12,6 +12,7 @@ import RosterControls from '../components/roster/RosterControls';
 import CopyRosterButton from '../components/roster/CopyRosterButton';
 import UpcomingEvents from '../components/roster/UpcomingEvents';
 import MessageTeamFAB from '../components/roster/MessageTeamFAB';
+import TeamSwitcher from '../components/roster/TeamSwitcher';
 
 // Read-only roster view for a single team. The team lookup piggybacks on
 // usePrograms() — it already queries every team in the active season, so
@@ -70,6 +71,8 @@ export default function TeamDetailPage() {
       >
         <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
       </button>
+
+      <TeamSwitcher programs={programs} teamId={teamId} navigate={navigate} />
 
       <TeamHeaderCard team={team} players={players} />
 

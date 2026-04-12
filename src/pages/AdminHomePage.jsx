@@ -8,6 +8,7 @@ import KpiGrid from '../components/admin/KpiGrid';
 import QuickActions from '../components/admin/QuickActions';
 import ActiveSeasonCard from '../components/admin/ActiveSeasonCard';
 import NextEventCard from '../components/admin/NextEventCard';
+import TeamPerformanceStrip from '../components/admin/TeamPerformanceStrip';
 import GettingStarted from '../components/admin/GettingStarted';
 
 // Derives a user-visible first name from either the Supabase user metadata
@@ -87,6 +88,11 @@ export default function AdminHomePage() {
           marginBottom: 8,
         }}>QUICK ACTIONS</div>
         <QuickActions />
+      </section>
+
+      <section className="min-w-0">
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--sf-text-tertiary)', marginBottom: 8 }}>TEAMS</div>
+        <TeamPerformanceStrip programs={programs} navigate={navigate} />
       </section>
 
       <section className="min-w-0" aria-label="Active season">

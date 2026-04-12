@@ -245,8 +245,8 @@ Inter (400/500/600/700). Scale: 24/20/17/15/13/11px.
 ### Shadows
 Only three: sm / md / lg (see section 3 for exact values). **No fourth shadow.**
 
-### Animations (9 total, all behind prefers-reduced-motion)
-sf-pulse, sf-fade-in, sf-pulse-dot, sf-bounce-tap, sf-fill-grow, card-expand, sheet-rise, toast-enter, sf-bell-shake
+### Animations (10 total, all behind prefers-reduced-motion)
+sf-pulse, sf-fade-in, sf-pulse-dot, sf-bounce-tap, sf-fill-grow, card-expand, sheet-rise, toast-enter, sf-bell-shake, spin
 
 ---
 

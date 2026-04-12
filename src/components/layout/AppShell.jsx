@@ -1,5 +1,6 @@
 import Header from './Header';
 import BottomNav from './BottomNav';
+import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 
 // App shell for every authenticated page. The root is pinned to the
 // dynamic viewport height (100dvh, with 100vh fallback) and clips
@@ -8,12 +9,26 @@ import BottomNav from './BottomNav';
 // sole flex child and the sole scroll container — pages scroll inside
 // it while the header/nav stay locked to the viewport.
 export default function AppShell({ children }) {
+  const online = useOnlineStatus();
   return (
     <div
       className="sf-app-shell flex flex-col"
       style={{ backgroundColor: 'var(--sf-bg-page)' }}
     >
       <Header />
+      {!online && (
+        <div style={{
+          backgroundColor: 'var(--sf-danger)',
+          color: 'var(--sf-text-inverse)',
+          textAlign: 'center',
+          padding: '6px 16px',
+          fontSize: 13,
+          fontWeight: 500,
+          flexShrink: 0,
+        }}>
+          You're offline — some features may not work
+        </div>
+      )}
       {/* overscroll-behavior: contain kills pull-to-refresh / rubber-band
           bounce inside main. Padding top/bottom clear the fixed Header
           and BottomNav (both of which include their safe-area insets). */}

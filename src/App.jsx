@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
 import RequireAuth from './components/layout/RequireAuth';
 import LoginPage from './pages/LoginPage';
@@ -22,9 +22,19 @@ const Protected = ({ children, allowedRoles }) => (
   </RequireAuth>
 );
 
+function PageTransition({ children }) {
+  const location = useLocation();
+  return (
+    <div key={location.pathname} className="sf-fade-in">
+      {children}
+    </div>
+  );
+}
+
 export default function App() {
   return (
-    <Routes>
+    <PageTransition>
+      <Routes>
       {/* Public auth routes — no shell, no guard */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -63,5 +73,6 @@ export default function App() {
         }
       />
     </Routes>
+    </PageTransition>
   );
 }
