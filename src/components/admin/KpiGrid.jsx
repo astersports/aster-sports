@@ -22,6 +22,24 @@ function useCountUp(target, duration = 600) {
   return value;
 }
 
+// Tiny fixed-shape sparkline placeholder. Until we wire a real
+// time-series into the card, every numeric KPI gets the same 7-point
+// upward polyline — mimics a trending line at 1/48px resolution.
+function Sparkline({ color }) {
+  return (
+    <svg width="48" height="16" viewBox="0 0 48 16" style={{ marginTop: 4, opacity: 0.5 }}>
+      <polyline
+        points="0,14 8,10 16,12 24,6 32,8 40,3 48,5"
+        fill="none"
+        stroke={color || 'var(--sf-text-tertiary)'}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 // Pulsing placeholder block for the value row. Used while stats are
 // still loading so the card doesn't flash "0 → real value" on mount.
 function ValueSkeleton() {
@@ -81,6 +99,7 @@ function Card(props) {
           {isNumber ? animated : value}
         </div>
       )}
+      {!loading && isNumber && value > 0 && <Sparkline color={accent} />}
       <div className="truncate" style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginTop: 2 }}>
         {label}
       </div>

@@ -7,6 +7,7 @@ import { usePrograms } from '../hooks/usePrograms';
 import KpiGrid from '../components/admin/KpiGrid';
 import QuickActions from '../components/admin/QuickActions';
 import ActiveSeasonCard from '../components/admin/ActiveSeasonCard';
+import NextEventCard from '../components/admin/NextEventCard';
 import GettingStarted from '../components/admin/GettingStarted';
 
 // Derives a user-visible first name from either the Supabase user metadata
@@ -98,6 +99,7 @@ export default function AdminHomePage() {
           marginBottom: 8,
         }}>SEASON</div>
         <ActiveSeasonCard season={activeSeason} />
+        <NextEventCard />
       </section>
 
       <section className="min-w-0">

@@ -44,6 +44,7 @@ function NavItem(tab) {
     <NavLink
       to={tab.to}
       end={tab.to === '/'}
+      onClick={() => navigator.vibrate?.(10)}
       className="flex-1 sf-press"
       style={({ isActive }) => ({
         minHeight: 44,

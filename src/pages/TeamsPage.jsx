@@ -79,6 +79,34 @@ export default function TeamsPage() {
                     }}>0-0</span>
                   </div>
                 </div>
+                <div style={{ display: 'flex', marginLeft: 'auto', marginRight: 12 }}>
+                  {['A', 'S', 'C'].map((letter, i) => (
+                    <div key={i} style={{
+                      width: 24, height: 24, borderRadius: '50%',
+                      backgroundColor: team.team_color || 'var(--sf-neutral)',
+                      border: '2px solid var(--sf-bg-card)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'var(--sf-text-inverse)', fontSize: 10, fontWeight: 700,
+                      marginLeft: i === 0 ? 0 : -8,
+                      zIndex: 3 - i,
+                      position: 'relative',
+                    }}>
+                      {letter}
+                    </div>
+                  ))}
+                  <div style={{
+                    width: 24, height: 24, borderRadius: '50%',
+                    backgroundColor: 'var(--sf-bg-secondary)',
+                    border: '2px solid var(--sf-bg-card)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'var(--sf-text-tertiary)', fontSize: 9, fontWeight: 600,
+                    marginLeft: -8,
+                    zIndex: 0,
+                    position: 'relative',
+                  }}>
+                    +7
+                  </div>
+                </div>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sf-text-tertiary)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m9 18 6-6-6-6"/>
                 </svg>

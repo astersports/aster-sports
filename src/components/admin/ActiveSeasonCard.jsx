@@ -75,6 +75,20 @@ export default function ActiveSeasonCard({ season }) {
             strokeDashoffset={`${2 * Math.PI * 20 * (1 - pct)}`}
             style={{ transition: 'stroke-dashoffset 800ms ease-out' }}
           />
+          <text
+            x="24" y="24"
+            textAnchor="middle"
+            dominantBaseline="central"
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              fill: 'var(--sf-text-primary)',
+              transform: 'rotate(90deg)',
+              transformOrigin: '24px 24px',
+            }}
+          >
+            {Math.round(pct * 100)}%
+          </text>
         </svg>
         <div>
           <div className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 15 }}>

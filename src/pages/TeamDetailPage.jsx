@@ -44,7 +44,16 @@ export default function TeamDetailPage() {
   }
 
   return (
-    <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
+    <div
+      className="sf-fade-in overflow-x-hidden"
+      style={{
+        padding: 16,
+        minHeight: '100%',
+        background: team?.team_color
+          ? `linear-gradient(180deg, ${team.team_color}08 0%, transparent 200px)`
+          : undefined,
+      }}
+    >
       <button
         type="button"
         onClick={() => navigate('/teams')}

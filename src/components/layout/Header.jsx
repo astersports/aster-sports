@@ -26,7 +26,7 @@ export default function Header() {
         maxHeight: 'calc(56px + env(safe-area-inset-top, 0px))',
         paddingTop: 'env(safe-area-inset-top, 0px)',
         flexShrink: 0,
-        backgroundColor: 'var(--sf-header)',
+        background: 'linear-gradient(180deg, var(--sf-header) 0%, color-mix(in srgb, var(--sf-header) 85%, black) 100%)',
         color: 'var(--sf-text-on-dark)',
         boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
       }}
@@ -64,7 +64,7 @@ export default function Header() {
         style={{ width: 44, height: 44, color: 'var(--sf-text-on-dark)' }}
         aria-label="Notifications"
       >
-        <div style={{
+        <div className="sf-bell-shake" style={{
           width: 40,
           height: 40,
           borderRadius: '50%',

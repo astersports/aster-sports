@@ -6,11 +6,13 @@ export default function PlayerRow({ player, teamColor, isLast }) {
     <div
       className="flex items-center sf-press"
       onClick={() => navigator.vibrate?.(10)}
+      onTouchStart={(e) => { e.currentTarget.style.backgroundColor = `${teamColor}08`; }}
+      onTouchEnd={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
       style={{
         padding: '10px 16px',
         minHeight: 56,
         borderBottom: isLast ? 'none' : '1px solid var(--sf-border-subtle)',
-        transition: 'background-color 150ms ease-out',
+        transition: 'background-color 150ms ease-out, box-shadow 150ms ease-out',
       }}
     >
       {/* Avatar */}
