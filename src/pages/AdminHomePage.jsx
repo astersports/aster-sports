@@ -60,12 +60,16 @@ export default function AdminHomePage() {
         <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 13 }}>
           {greetingFor()},
         </div>
-        <h1
-          className="font-bold truncate"
-          style={{ color: 'var(--sf-text-primary)', fontSize: 24, lineHeight: 1.2 }}
-        >
+        <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>
           {name}
         </h1>
+        <div style={{
+          width: 40,
+          height: 3,
+          borderRadius: 999,
+          backgroundColor: 'var(--sf-accent)',
+          marginTop: 8,
+        }} />
       </section>
 
       <section className="min-w-0" aria-label="Key metrics">
@@ -97,6 +101,14 @@ export default function AdminHomePage() {
       </section>
 
       <section className="min-w-0">
+        <div style={{
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+          color: 'var(--sf-text-tertiary)',
+          marginBottom: 8,
+        }}>GETTING STARTED</div>
         <GettingStarted
           hasSeasons={seasons.length > 0}
           hasPrograms={programs.length > 0}

@@ -26,7 +26,7 @@ export default function ActiveSeasonCard({ season }) {
         style={{
           backgroundColor: 'var(--sf-bg-card)',
           borderRadius: 10,
-          border: '1px solid var(--sf-border-subtle)',
+          border: '1px solid var(--sf-border-default)',
           boxShadow: 'var(--sf-shadow-sm)',
         }}
       >
@@ -55,7 +55,7 @@ export default function ActiveSeasonCard({ season }) {
       style={{
         backgroundColor: 'var(--sf-bg-card)',
         borderRadius: 10,
-        border: '1px solid var(--sf-border-subtle)',
+        border: '1px solid var(--sf-border-default)',
         boxShadow: 'var(--sf-shadow-sm)',
         color: 'inherit',
       }}

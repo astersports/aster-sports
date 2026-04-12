@@ -2,12 +2,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Plus, Users } from 'lucide-react';
 import { usePrograms } from '../hooks/usePrograms';
 import { useRoster } from '../hooks/useRoster';
-import Badge from '../components/shared/Badge';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import PlayerRow from '../components/roster/PlayerRow';
-
-const CIRCUIT_LABELS = { aau: 'AAU', league_play: 'League Play', tournament: 'Tournament' };
+import TeamHeaderCard from '../components/roster/TeamHeaderCard';
 
 // Read-only roster view for a single team. The team lookup piggybacks on
 // usePrograms() — it already queries every team in the active season, so
@@ -18,9 +16,12 @@ export default function TeamDetailPage() {
   const navigate = useNavigate();
   const { programs, loading: teamsLoading } = usePrograms();
   const { players, loading: rosterLoading } = useRoster(teamId);
+  // useRoster already returns players sorted by jersey ascending (null
+  // jerseys sink); this alias keeps the JSX readable while leaving the
+  // sort logic centralized in the hook.
+  const sortedPlayers = players;
 
   const team = programs.find((p) => p.id === teamId);
-  const color = team?.team_color || 'var(--sf-text-tertiary)';
 
   if (teamsLoading) {
     return (
@@ -56,18 +57,7 @@ export default function TeamDetailPage() {
         <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
       </button>
 
-      <div className="mb-4">
-        <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 20, lineHeight: 1.2 }}>
-          {team.name}
-        </h1>
-        <div className="flex gap-1" style={{ marginTop: 8 }}>
-          <Badge>{team.age_group}</Badge>
-          <Badge variant="info">{CIRCUIT_LABELS[team.circuit] || team.circuit}</Badge>
-        </div>
-        <div style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginTop: 6 }}>
-          {players.length} {players.length === 1 ? 'player' : 'players'}
-        </div>
-      </div>
+      <TeamHeaderCard team={team} playerCount={players.length} />
 
       {rosterLoading ? (
         <LoadingSkeleton variant="list" count={6} />
@@ -89,20 +79,32 @@ export default function TeamDetailPage() {
           }
         />
       ) : (
-        <ul
-          className="flex flex-col"
-          style={{
+        <>
+          <div style={{
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            color: 'var(--sf-text-tertiary)',
+            marginBottom: 8,
+          }}>ROSTER</div>
+          <div style={{
             backgroundColor: 'var(--sf-bg-card)',
             borderRadius: 10,
             border: '1px solid var(--sf-border-default)',
             boxShadow: 'var(--sf-shadow-sm)',
             overflow: 'hidden',
-          }}
-        >
-          {players.map((pl, i) => (
-            <PlayerRow key={pl.id} player={pl} color={color} isLast={i === players.length - 1} />
-          ))}
-        </ul>
+          }}>
+            {sortedPlayers.map((player, i) => (
+              <PlayerRow
+                key={player.id}
+                player={player}
+                teamColor={team.team_color}
+                isLast={i === sortedPlayers.length - 1}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

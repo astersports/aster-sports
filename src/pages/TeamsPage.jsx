@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { usePrograms } from '../hooks/usePrograms';
 import { useSeason } from '../context/SeasonContext';
-import Badge from '../components/shared/Badge';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 
@@ -10,7 +9,6 @@ import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 // stays self-contained until we extract circuit/day labels into
 // lib/constants.js during a dedicated cleanup pass.
 const CIRCUIT_LABELS = { aau: 'AAU', league_play: 'League Play', tournament: 'Tournament' };
-const DAY_LABELS = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
 
 // Public teams list. Every signed-in user — admin, coach, parent — sees
 // all teams in the active season, sorted oldest-to-youngest via the
@@ -23,13 +21,20 @@ export default function TeamsPage() {
 
   return (
     <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
-      <div className="mb-4">
-        <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 22 }}>
+      <div style={{ marginBottom: 4 }}>
+        <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 20, letterSpacing: '-0.025em' }}>
           Teams
         </h1>
-        {activeSeason && (
-          <div style={{ color: 'var(--sf-text-secondary)', fontSize: 13 }}>{activeSeason.name}</div>
-        )}
+        <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
+          {activeSeason?.name || 'No active season'}
+        </div>
+        <div style={{
+          width: 32,
+          height: 3,
+          borderRadius: 999,
+          backgroundColor: 'var(--sf-accent)',
+          marginTop: 8,
+        }} />
       </div>
 
       {loading ? (
@@ -41,39 +46,58 @@ export default function TeamsPage() {
           description="Teams will appear here once an admin adds them."
         />
       ) : (
-        <ul className="flex flex-col gap-2">
-          {programs.map((p) => (
-            <li key={p.id}>
-              <button
-                type="button"
-                onClick={() => navigate(`/teams/${p.id}`)}
-                className="w-full text-left p-4 sf-press"
-                style={{
-                  backgroundColor: 'var(--sf-bg-card)',
-                  borderRadius: 10,
-                  border: '1px solid var(--sf-border-default)',
-                  borderLeft: `4px solid ${p.team_color || 'var(--sf-border-default)'}`,
-                  boxShadow: 'var(--sf-shadow-sm)',
-                  minHeight: 44,
-                }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 16 }}>
-                    {p.name}
-                  </span>
-                  <div className="flex gap-1">
-                    <Badge>{p.age_group}</Badge>
-                    <Badge variant="info">{CIRCUIT_LABELS[p.circuit] || p.circuit}</Badge>
+        <div className="flex flex-col gap-2" style={{ marginTop: 16 }}>
+          {programs.map((team) => (
+            <button
+              key={team.id}
+              type="button"
+              onClick={() => navigate(`/teams/${team.id}`)}
+              className="w-full text-left sf-press"
+              style={{
+                display: 'flex',
+                alignItems: 'stretch',
+                backgroundColor: 'var(--sf-bg-card)',
+                borderRadius: 10,
+                border: '1px solid var(--sf-border-default)',
+                boxShadow: 'var(--sf-shadow-sm)',
+                overflow: 'hidden',
+                transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
+                minHeight: 72,
+              }}
+            >
+              <div style={{
+                width: 5,
+                flexShrink: 0,
+                backgroundColor: team.team_color || 'var(--sf-neutral)',
+              }} />
+              <div style={{ flex: 1, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 16, marginBottom: 2 }}>
+                    {team.name}
                   </div>
+                  <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
+                    <span style={{
+                      fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6,
+                      backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-secondary)',
+                    }}>{team.age_group}</span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6,
+                      backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-secondary)',
+                    }}>{CIRCUIT_LABELS[team.circuit] || team.circuit}</span>
+                  </div>
+                  {team.practice_day && (
+                    <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginTop: 4 }}>
+                      {team.practice_day}
+                    </div>
+                  )}
                 </div>
-                <div style={{ color: 'var(--sf-text-secondary)', fontSize: 13 }}>
-                  {p.practice_day ? DAY_LABELS[p.practice_day] : 'No practice day set'}
-                  {p.practice_location ? ` · ${p.practice_location}` : ''}
-                </div>
-              </button>
-            </li>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sf-text-tertiary)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </div>
+            </button>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

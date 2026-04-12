@@ -44,18 +44,32 @@ function NavItem(tab) {
     <NavLink
       to={tab.to}
       end={tab.to === '/'}
-      className="flex-1 flex flex-col items-center justify-center gap-0.5 sf-press"
+      className="flex-1 sf-press"
       style={({ isActive }) => ({
         minHeight: 44,
-        paddingTop: 8,
-        paddingBottom: 8,
         color: isActive ? 'var(--sf-accent)' : 'var(--sf-text-tertiary)',
-        fontWeight: isActive ? 600 : 500,
       })}
       aria-label={tab.label}
     >
-      <Icon size={24} strokeWidth={1.75} aria-hidden="true" />
-      <span style={{ fontSize: 11 }}>{tab.label}</span>
+      {({ isActive: active }) => (
+        <div className="flex flex-col items-center justify-center" style={{ gap: 2, paddingTop: 6, paddingBottom: 2 }}>
+          <Icon size={22} strokeWidth={active ? 2 : 1.5} />
+          <span style={{
+            fontSize: 10,
+            fontWeight: active ? 600 : 400,
+            letterSpacing: '0.02em',
+          }}>{tab.label}</span>
+          {active && (
+            <div style={{
+              width: 4,
+              height: 4,
+              borderRadius: '50%',
+              backgroundColor: 'var(--sf-accent)',
+              marginTop: -1,
+            }} />
+          )}
+        </div>
+      )}
     </NavLink>
   );
 }

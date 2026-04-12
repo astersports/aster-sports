@@ -1,65 +1,80 @@
-import Badge from '../shared/Badge';
+export default function PlayerRow({ player, teamColor, isLast }) {
+  const initial = (player.last_name || player.first_name || '?').charAt(0).toUpperCase();
+  const isAcademy = player.member_type === 'futures_academy';
 
-// Ordinal grade formatter — "1st", "2nd", "3rd", "4th". Handles the
-// english-irregular 11/12/13 block and defaults to "th" otherwise.
-function ordinalGrade(n) {
-  if (n == null) return '—';
-  const s = ['th', 'st', 'nd', 'rd'];
-  const v = n % 100;
-  return `${n}${s[(v - 20) % 10] || s[v] || s[0]}`;
-}
-
-// Single roster row. `color` is the team_color string passed through as
-// inline style — the only hex allowed in a component per CLAUDE.md §0.
-export default function PlayerRow({ player, color, isLast }) {
-  const initial = (player.last_name?.[0] || player.first_name?.[0] || '?').toUpperCase();
   return (
-    <li
-      className="flex items-center gap-3"
+    <div
+      className="flex items-center sf-press"
       style={{
-        padding: '12px 16px',
-        minHeight: 44,
+        padding: '10px 16px',
+        minHeight: 56,
         borderBottom: isLast ? 'none' : '1px solid var(--sf-border-subtle)',
+        transition: 'background-color 150ms ease-out',
       }}
     >
-      <div
-        className="flex items-center justify-center font-semibold flex-shrink-0"
-        style={{
-          width: 40, height: 40, borderRadius: '50%',
-          backgroundColor: color, color: 'var(--sf-text-inverse)', fontSize: 15,
-        }}
-        aria-hidden="true"
-      >
+      {/* Avatar */}
+      <div style={{
+        width: 40,
+        height: 40,
+        borderRadius: '50%',
+        backgroundColor: teamColor || 'var(--sf-neutral)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'var(--sf-text-inverse)',
+        fontSize: 15,
+        fontWeight: 700,
+        flexShrink: 0,
+      }}>
         {initial}
       </div>
-      <div
-        className="flex-1 min-w-0 truncate font-semibold"
-        style={{ color: 'var(--sf-text-primary)', fontSize: 15 }}
-      >
-        {player.first_name} {player.last_name}
+
+      {/* Name + badges */}
+      <div style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
+        <div className="font-semibold truncate" style={{ color: 'var(--sf-text-primary)', fontSize: 15 }}>
+          {player.first_name} {player.last_name}
+        </div>
+        <div className="flex items-center gap-1" style={{ marginTop: 2 }}>
+          {isAcademy && (
+            <span style={{
+              fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4,
+              backgroundColor: 'var(--sf-academy-soft)', color: 'var(--sf-academy)',
+            }}>Academy</span>
+          )}
+          <span style={{
+            fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4,
+            backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-secondary)',
+            marginLeft: isAcademy ? 0 : 0,
+          }}>{ordinalGrade(player.grade)}</span>
+        </div>
       </div>
-      {player.member_type === 'futures_academy' && (
-        <Badge variant="academy">Academy</Badge>
+
+      {/* Jersey number */}
+      {player.jersey_number != null && (
+        <div style={{
+          width: 32,
+          height: 32,
+          borderRadius: '50%',
+          border: `2px solid ${teamColor || 'var(--sf-neutral)'}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 13,
+          fontWeight: 700,
+          color: teamColor || 'var(--sf-text-primary)',
+          flexShrink: 0,
+        }}>
+          {player.jersey_number}
+        </div>
       )}
-      <span
-        style={{
-          backgroundColor: 'var(--sf-bg-secondary)',
-          color: 'var(--sf-text-secondary)',
-          borderRadius: 6, fontSize: 13, padding: '4px 8px', fontWeight: 500,
-          marginLeft: 4,
-        }}
-      >
-        {ordinalGrade(player.grade)}
-      </span>
-      <div
-        className="flex items-center justify-center font-bold flex-shrink-0"
-        style={{
-          width: 24, height: 24, borderRadius: '50%',
-          backgroundColor: color, color: 'var(--sf-text-inverse)', fontSize: 11,
-        }}
-      >
-        {player.jersey_number ?? '—'}
-      </div>
-    </li>
+    </div>
   );
+}
+
+function ordinalGrade(g) {
+  if (!g) return '';
+  if (g === 1) return '1st';
+  if (g === 2) return '2nd';
+  if (g === 3) return '3rd';
+  return `${g}th`;
 }

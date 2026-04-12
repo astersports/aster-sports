@@ -28,6 +28,7 @@ export default function Header() {
         flexShrink: 0,
         backgroundColor: 'var(--sf-header)',
         color: 'var(--sf-text-on-dark)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
       }}
     >
       <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -37,9 +38,13 @@ export default function Header() {
             width: 32,
             height: 32,
             borderRadius: '50%',
-            backgroundColor: 'var(--sf-accent)',
-            color: 'var(--sf-text-inverse)',
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            border: '2px solid rgba(255,255,255,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             fontSize: 14,
+            fontWeight: 700,
           }}
           aria-hidden="true"
         >
@@ -47,7 +52,7 @@ export default function Header() {
         </div>
         <div
           className="truncate font-semibold"
-          style={{ fontSize: 15 }}
+          style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}
           title={orgName || ''}
         >
           {org ? orgName : 'Skyfire'}
@@ -59,7 +64,17 @@ export default function Header() {
         style={{ width: 44, height: 44, color: 'var(--sf-text-on-dark)' }}
         aria-label="Notifications"
       >
-        <Bell size={24} strokeWidth={1.75} />
+        <div style={{
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(255,255,255,0.1)',
+        }}>
+          <Bell size={22} strokeWidth={1.75} />
+        </div>
         {unread > 0 && (
           <span
             className="absolute"
