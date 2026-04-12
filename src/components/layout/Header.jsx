@@ -32,24 +32,7 @@ export default function Header() {
       }}
     >
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div
-          className="flex items-center justify-center font-semibold"
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255,255,255,0.15)',
-            border: '2px solid rgba(255,255,255,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 14,
-            fontWeight: 700,
-          }}
-          aria-hidden="true"
-        >
-          {initial}
-        </div>
+        <img src="/Knight_logo.png" alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
         <div
           className="truncate font-semibold"
           style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}
