@@ -57,7 +57,7 @@ export default function TeamDetailPage() {
         <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
       </button>
 
-      <TeamHeaderCard team={team} playerCount={players.length} />
+      <TeamHeaderCard team={team} players={players} />
 
       {rosterLoading ? (
         <LoadingSkeleton variant="list" count={6} />
@@ -80,14 +80,12 @@ export default function TeamDetailPage() {
         />
       ) : (
         <>
-          <div style={{
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-            color: 'var(--sf-text-tertiary)',
-            marginBottom: 8,
-          }}>ROSTER</div>
+          <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+            <div style={{
+              fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
+              textTransform: 'uppercase', color: 'var(--sf-text-tertiary)',
+            }}>ROSTER</div>
+          </div>
           <div style={{
             backgroundColor: 'var(--sf-bg-card)',
             borderRadius: 10,
@@ -96,12 +94,13 @@ export default function TeamDetailPage() {
             overflow: 'hidden',
           }}>
             {sortedPlayers.map((player, i) => (
-              <PlayerRow
-                key={player.id}
-                player={player}
-                teamColor={team.team_color}
-                isLast={i === sortedPlayers.length - 1}
-              />
+              <div key={player.id} className={`sf-stagger-${Math.min(i + 1, 8)}`}>
+                <PlayerRow
+                  player={player}
+                  teamColor={team.team_color}
+                  isLast={i === sortedPlayers.length - 1}
+                />
+              </div>
             ))}
           </div>
         </>

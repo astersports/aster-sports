@@ -29,6 +29,7 @@ export default function QuickActions() {
           <Link
             key={action.label}
             to={action.to}
+            onClick={() => navigator.vibrate?.(10)}
             className="flex items-center gap-2 sf-press whitespace-nowrap"
             style={{
               minHeight: 44,

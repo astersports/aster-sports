@@ -26,15 +26,9 @@ export default function TeamsPage() {
           Teams
         </h1>
         <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
-          {activeSeason?.name || 'No active season'}
+          {activeSeason?.name || 'No active season'} · {programs.length} teams
         </div>
-        <div style={{
-          width: 32,
-          height: 3,
-          borderRadius: 999,
-          backgroundColor: 'var(--sf-accent)',
-          marginTop: 8,
-        }} />
+        <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: 'var(--sf-accent)', marginTop: 8 }} />
       </div>
 
       {loading ? (
@@ -46,13 +40,13 @@ export default function TeamsPage() {
           description="Teams will appear here once an admin adds them."
         />
       ) : (
-        <div className="flex flex-col gap-2" style={{ marginTop: 16 }}>
-          {programs.map((team) => (
+        <div className="flex flex-col gap-3">
+          {programs.map((team, i) => (
             <button
               key={team.id}
               type="button"
-              onClick={() => navigate(`/teams/${team.id}`)}
-              className="w-full text-left sf-press"
+              onClick={() => { navigator.vibrate?.(10); navigate(`/teams/${team.id}`); }}
+              className={`w-full text-left sf-press sf-stagger-${i + 1}`}
               style={{
                 display: 'flex',
                 alignItems: 'stretch',
@@ -62,17 +56,12 @@ export default function TeamsPage() {
                 boxShadow: 'var(--sf-shadow-sm)',
                 overflow: 'hidden',
                 transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
-                minHeight: 72,
               }}
             >
-              <div style={{
-                width: 5,
-                flexShrink: 0,
-                backgroundColor: team.team_color || 'var(--sf-neutral)',
-              }} />
+              <div style={{ width: 5, flexShrink: 0, backgroundColor: team.team_color || 'var(--sf-neutral)' }} />
               <div style={{ flex: 1, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 16, marginBottom: 2 }}>
+                  <div className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 16 }}>
                     {team.name}
                   </div>
                   <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
@@ -84,12 +73,11 @@ export default function TeamsPage() {
                       fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6,
                       backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-secondary)',
                     }}>{CIRCUIT_LABELS[team.circuit] || team.circuit}</span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
+                      backgroundColor: 'var(--sf-neutral-soft)', color: 'var(--sf-text-tertiary)',
+                    }}>0-0</span>
                   </div>
-                  {team.practice_day && (
-                    <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginTop: 4 }}>
-                      {team.practice_day}
-                    </div>
-                  )}
                 </div>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sf-text-tertiary)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m9 18 6-6-6-6"/>

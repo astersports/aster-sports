@@ -144,6 +144,14 @@ body {
   .sf-card-expand{ animation: card-expand   0.25s ease-out both; }
   .sf-sheet-rise { animation: sheet-rise    0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
   .sf-toast-enter{ animation: toast-enter   0.25s ease-out both; }
+  .sf-stagger-1 { animation: sf-fade-in 0.3s ease-out 0.05s both; }
+  .sf-stagger-2 { animation: sf-fade-in 0.3s ease-out 0.1s both; }
+  .sf-stagger-3 { animation: sf-fade-in 0.3s ease-out 0.15s both; }
+  .sf-stagger-4 { animation: sf-fade-in 0.3s ease-out 0.2s both; }
+  .sf-stagger-5 { animation: sf-fade-in 0.3s ease-out 0.25s both; }
+  .sf-stagger-6 { animation: sf-fade-in 0.3s ease-out 0.3s both; }
+  .sf-stagger-7 { animation: sf-fade-in 0.3s ease-out 0.35s both; }
+  .sf-stagger-8 { animation: sf-fade-in 0.3s ease-out 0.4s both; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

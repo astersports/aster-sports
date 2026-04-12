@@ -51,15 +51,16 @@ function NavItem(tab) {
       })}
       aria-label={tab.label}
     >
-      {({ isActive: active }) => (
+      {({ isActive }) => (
         <div className="flex flex-col items-center justify-center" style={{ gap: 2, paddingTop: 6, paddingBottom: 2 }}>
-          <Icon size={22} strokeWidth={active ? 2 : 1.5} />
+          <Icon size={22} strokeWidth={isActive ? 2 : 1.5} />
           <span style={{
             fontSize: 10,
-            fontWeight: active ? 600 : 400,
+            fontWeight: isActive ? 600 : 400,
             letterSpacing: '0.02em',
+            color: isActive ? 'var(--sf-accent)' : 'var(--sf-text-tertiary)',
           }}>{tab.label}</span>
-          {active && (
+          {isActive && (
             <div style={{
               width: 4,
               height: 4,

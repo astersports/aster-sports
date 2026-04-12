@@ -1,5 +1,26 @@
+import { useState, useEffect } from 'react';
 import { Users, Calendar, DollarSign, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../../lib/formatters';
+
+// Animates a number from 0 to `target` over `duration` ms with an
+// ease-out cubic curve. Called per Card with the resolved numeric value
+// so non-numeric values (currency strings) bypass the hook via the
+// isNumber check in Card and render unchanged.
+function useCountUp(target, duration = 600) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (target === 0) { setValue(0); return; }
+    const start = performance.now();
+    const step = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(eased * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [target, duration]);
+  return value;
+}
 
 // Pulsing placeholder block for the value row. Used while stats are
 // still loading so the card doesn't flash "0 → real value" on mount.
@@ -25,11 +46,14 @@ function ValueSkeleton() {
 // viewport and blow out the parent (CSS grid items default to
 // min-width: auto, which refuses to shrink below content width).
 function Card(props) {
-  const { label, value, accent, accentValue, loading } = props;
+  const { label, value, accent, accentValue, loading, stagger } = props;
   const Icon = props.icon;
+  const isNumber = typeof value === 'number';
+  const animated = useCountUp(loading ? 0 : (isNumber ? value : 0));
+
   return (
     <div
-      className="p-4 min-w-0 sf-press"
+      className={`p-4 min-w-0 sf-press ${stagger || ''}`}
       style={{
         backgroundColor: 'var(--sf-bg-card)',
         borderRadius: 10,
@@ -37,6 +61,7 @@ function Card(props) {
         boxShadow: 'var(--sf-shadow-sm)',
         transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
       }}
+      onClick={() => navigator.vibrate?.(10)}
     >
       <div style={{ color: accent || 'var(--sf-text-tertiary)', marginBottom: 8 }}>
         <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
@@ -53,13 +78,10 @@ function Card(props) {
           }}
           title={String(value)}
         >
-          {value}
+          {isNumber ? animated : value}
         </div>
       )}
-      <div
-        className="truncate"
-        style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginTop: 2 }}
-      >
+      <div className="truncate" style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginTop: 2 }}>
         {label}
       </div>
     </div>
@@ -71,8 +93,8 @@ export default function KpiGrid({ stats }) {
 
   return (
     <div className="grid grid-cols-2 gap-3">
-      <Card icon={Users} label="Players" value={players} loading={loading} />
-      <Card icon={Calendar} label="Events" value={events} loading={loading} accent="var(--sf-info)" />
+      <Card icon={Users} label="Players" value={players} loading={loading} stagger="sf-stagger-1" />
+      <Card icon={Calendar} label="Events" value={events} loading={loading} accent="var(--sf-info)" stagger="sf-stagger-2" />
       <Card
         icon={DollarSign}
         label="Collected"
@@ -80,6 +102,7 @@ export default function KpiGrid({ stats }) {
         loading={loading}
         accent="var(--sf-success)"
         accentValue
+        stagger="sf-stagger-3"
       />
       <Card
         icon={AlertCircle}
@@ -88,6 +111,7 @@ export default function KpiGrid({ stats }) {
         loading={loading}
         accent={outstanding > 0 ? 'var(--sf-warning)' : 'var(--sf-text-tertiary)'}
         accentValue={outstanding > 0}
+        stagger="sf-stagger-4"
       />
     </div>
   );

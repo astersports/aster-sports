@@ -63,39 +63,26 @@ export default function ActiveSeasonCard({ season }) {
       <div style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginBottom: 10 }}>
         {formatDateFull(season.start_date)} – {formatDateFull(season.end_date)}
       </div>
-      <div style={{ marginTop: 12 }}>
-        <div className="flex justify-between" style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginBottom: 6 }}>
-          <span>{season.name}</span>
-          <span>Week {weekIdx} of {totalWeeks}</span>
-        </div>
-        <div style={{
-          position: 'relative',
-          height: 2,
-          backgroundColor: 'var(--sf-bg-tertiary)',
-          borderRadius: 999,
-          overflow: 'visible',
-        }}>
-          <div style={{
-            height: 2,
-            width: `${Math.max(pct * 100, 1)}%`,
-            backgroundColor: 'var(--sf-accent)',
-            borderRadius: 999,
-            transition: 'width 600ms ease-out',
-          }} />
-          <div
-            className="sf-pulse-dot"
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: `${pct * 100}%`,
-              transform: 'translate(-50%, -50%)',
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              backgroundColor: 'var(--sf-accent)',
-              boxShadow: '0 0 6px var(--sf-accent)',
-            }}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 12 }}>
+        <svg width="48" height="48" viewBox="0 0 48 48" style={{ flexShrink: 0, transform: 'rotate(-90deg)' }}>
+          <circle cx="24" cy="24" r="20" fill="none" stroke="var(--sf-bg-tertiary)" strokeWidth="3" />
+          <circle
+            cx="24" cy="24" r="20" fill="none"
+            stroke="var(--sf-accent)"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={`${2 * Math.PI * 20}`}
+            strokeDashoffset={`${2 * Math.PI * 20 * (1 - pct)}`}
+            style={{ transition: 'stroke-dashoffset 800ms ease-out' }}
           />
+        </svg>
+        <div>
+          <div className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 15 }}>
+            Week {weekIdx} of {totalWeeks}
+          </div>
+          <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 13 }}>
+            {Math.round(pct * 100)}% complete
+          </div>
         </div>
       </div>
     </Link>

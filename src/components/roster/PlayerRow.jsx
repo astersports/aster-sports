@@ -5,6 +5,7 @@ export default function PlayerRow({ player, teamColor, isLast }) {
   return (
     <div
       className="flex items-center sf-press"
+      onClick={() => navigator.vibrate?.(10)}
       style={{
         padding: '10px 16px',
         minHeight: 56,
@@ -44,7 +45,6 @@ export default function PlayerRow({ player, teamColor, isLast }) {
           <span style={{
             fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4,
             backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-secondary)',
-            marginLeft: isAcademy ? 0 : 0,
           }}>{ordinalGrade(player.grade)}</span>
         </div>
       </div>
