@@ -8,6 +8,7 @@ const VARIANTS = {
   danger:  { bg: 'var(--sf-danger-soft)',  fg: 'var(--sf-danger)'  },
   info:    { bg: 'var(--sf-info-soft)',    fg: 'var(--sf-info)'    },
   neutral: { bg: 'var(--sf-neutral-soft)', fg: 'var(--sf-neutral)' },
+  academy: { bg: 'var(--sf-academy-soft)', fg: 'var(--sf-academy)' },
 };
 
 export default function Badge({ children, variant = 'neutral', className = '' }) {

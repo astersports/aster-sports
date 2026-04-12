@@ -101,6 +101,8 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
   --sf-info-soft:      #EFF6FF;
   --sf-neutral:        #9CA3AF;
   --sf-neutral-soft:   #F3F4F6;
+  --sf-academy:        #7C3AED;
+  --sf-academy-soft:   rgba(124, 58, 237, 0.1);
 
   /* ─── Brand (Skyfire defaults — overridden per org at runtime) ─── */
   --sf-header:         #151525;

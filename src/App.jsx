@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage';
 import SchedulePage from './pages/SchedulePage';
 import ScorePage from './pages/ScorePage';
 import TeamsPage from './pages/TeamsPage';
+import TeamDetailPage from './pages/TeamDetailPage';
 import MessagesPage from './pages/MessagesPage';
 import AdminSeasonsPage from './pages/AdminSeasonsPage';
 import AdminTeamsPage from './pages/AdminTeamsPage';
@@ -40,8 +41,9 @@ export default function App() {
           </Protected>
         }
       />
-      <Route path="/teams"    element={<Protected><TeamsPage /></Protected>} />
-      <Route path="/messages" element={<Protected><MessagesPage /></Protected>} />
+      <Route path="/teams"           element={<Protected><TeamsPage /></Protected>} />
+      <Route path="/teams/:teamId"   element={<Protected><TeamDetailPage /></Protected>} />
+      <Route path="/messages"        element={<Protected><MessagesPage /></Protected>} />
 
       {/* Admin-only management routes */}
       <Route
