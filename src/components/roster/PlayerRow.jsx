@@ -46,6 +46,7 @@ export default function PlayerRow({ player, color, isLast }) {
           backgroundColor: 'var(--sf-bg-secondary)',
           color: 'var(--sf-text-secondary)',
           borderRadius: 6, fontSize: 13, padding: '4px 8px', fontWeight: 500,
+          marginLeft: 4,
         }}
       >
         {ordinalGrade(player.grade)}
