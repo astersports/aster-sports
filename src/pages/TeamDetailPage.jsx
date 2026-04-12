@@ -1,11 +1,17 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Plus, Users } from 'lucide-react';
 import { usePrograms } from '../hooks/usePrograms';
 import { useRoster } from '../hooks/useRoster';
+import { useFilteredRoster } from '../hooks/useFilteredRoster';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import PlayerRow from '../components/roster/PlayerRow';
 import TeamHeaderCard from '../components/roster/TeamHeaderCard';
+import RosterControls from '../components/roster/RosterControls';
+import CopyRosterButton from '../components/roster/CopyRosterButton';
+import UpcomingEvents from '../components/roster/UpcomingEvents';
+import MessageTeamFAB from '../components/roster/MessageTeamFAB';
 
 // Read-only roster view for a single team. The team lookup piggybacks on
 // usePrograms() — it already queries every team in the active season, so
@@ -16,10 +22,9 @@ export default function TeamDetailPage() {
   const navigate = useNavigate();
   const { programs, loading: teamsLoading } = usePrograms();
   const { players, loading: rosterLoading } = useRoster(teamId);
-  // useRoster already returns players sorted by jersey ascending (null
-  // jerseys sink); this alias keeps the JSX readable while leaving the
-  // sort logic centralized in the hook.
-  const sortedPlayers = players;
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('jersey'); // 'jersey' | 'name' | 'grade'
+  const sortedPlayers = useFilteredRoster(players, search, sortBy);
 
   const team = programs.find((p) => p.id === teamId);
 
@@ -89,11 +94,18 @@ export default function TeamDetailPage() {
         />
       ) : (
         <>
+          <RosterControls
+            search={search}
+            setSearch={setSearch}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+          />
           <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
             <div style={{
               fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
               textTransform: 'uppercase', color: 'var(--sf-text-tertiary)',
             }}>ROSTER</div>
+            <CopyRosterButton team={team} sortedPlayers={sortedPlayers} />
           </div>
           <div style={{
             backgroundColor: 'var(--sf-bg-card)',
@@ -112,8 +124,11 @@ export default function TeamDetailPage() {
               </div>
             ))}
           </div>
+          <UpcomingEvents />
         </>
       )}
+
+      <MessageTeamFAB />
     </div>
   );
 }
