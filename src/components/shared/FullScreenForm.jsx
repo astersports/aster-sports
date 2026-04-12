@@ -48,7 +48,7 @@ export default function FullScreenForm({ open, onClose, title, children }) {
         <div style={{ width: 60 }} />
       </div>
       <div style={{
-        flex: 1, overflowY: 'auto',
+        flex: 1, overflowY: 'auto', overflowX: 'hidden',
         overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch',
         padding: 16,
         paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
