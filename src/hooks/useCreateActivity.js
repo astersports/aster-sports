@@ -9,15 +9,10 @@ export function useCreateActivity() {
     setLoading(true);
     setError(null);
     try {
-      const startAt = new Date(`${formData.date}T${formData.startTime}`);
-      const endAt = new Date(`${formData.date}T${formData.endTime}`);
-
-      const row = {
+      const baseRow = {
         team_id: formData.teamId,
         event_type: formData.eventType,
         title: formData.title || buildTitle(formData.eventType, formData.opponent),
-        start_at: startAt.toISOString(),
-        end_at: endAt.toISOString(),
         location: formData.location || null,
         location_address: formData.locationAddress || null,
         sub_location: formData.subLocation || null,
@@ -33,9 +28,26 @@ export function useCreateActivity() {
         status: 'scheduled',
       };
 
-      const { data, error: err } = await supabase.from('events').insert(row).select().single();
-      if (err) throw err;
-      return data;
+      const pattern = formData.recurrence?.pattern || 'once';
+      const dates = expandDates(formData, pattern);
+
+      // Insert the first event alone so we can reference its ID as
+      // parent_event_id on any recurring siblings.
+      const firstRow = withTime(baseRow, dates[0], formData);
+      const { data: first, error: firstErr } = await supabase
+        .from('events').insert(firstRow).select().single();
+      if (firstErr) throw firstErr;
+
+      if (dates.length > 1) {
+        const siblings = dates.slice(1).map((d) => ({
+          ...withTime(baseRow, d, formData),
+          parent_event_id: first.id,
+        }));
+        const { error: sibErr } = await supabase.from('events').insert(siblings);
+        if (sibErr) throw sibErr;
+      }
+
+      return first;
     } catch (err) {
       setError(err.message);
       return null;
@@ -45,6 +57,35 @@ export function useCreateActivity() {
   };
 
   return { create, loading, error };
+}
+
+// Builds the ISO-string start_at / end_at for a specific date, holding
+// the HH:MM constant. Called once per recurring instance.
+function withTime(row, date, formData) {
+  return {
+    ...row,
+    start_at: new Date(`${date}T${formData.startTime}`).toISOString(),
+    end_at: new Date(`${date}T${formData.endTime}`).toISOString(),
+  };
+}
+
+// Returns an array of YYYY-MM-DD strings. For 'once' it's [startDate];
+// for weekly/biweekly it steps by 7 or 14 days up to (and including)
+// the `until` date, capped at 100 to avoid runaway loops.
+function expandDates(formData, pattern) {
+  const startDate = formData.date;
+  if (pattern === 'once') return [startDate];
+  const step = pattern === 'weekly' ? 7 : 14;
+  const until = formData.recurrence?.until
+    ? new Date(`${formData.recurrence.until}T00:00:00`)
+    : null;
+  const out = [];
+  const cursor = new Date(`${startDate}T00:00:00`);
+  while ((!until || cursor <= until) && out.length < 100) {
+    out.push(cursor.toISOString().slice(0, 10));
+    cursor.setDate(cursor.getDate() + step);
+  }
+  return out;
 }
 
 function buildTitle(type, opponent) {

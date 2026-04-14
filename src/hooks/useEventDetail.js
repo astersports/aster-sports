@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 export function useEventDetail(eventId) {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const refetch = useCallback(() => {
     if (!eventId) { setLoading(false); return; }
     setLoading(true);
     supabase
@@ -20,5 +20,7 @@ export function useEventDetail(eventId) {
       });
   }, [eventId]);
 
-  return { event, loading };
+  useEffect(() => { refetch(); }, [refetch]);
+
+  return { event, loading, refetch };
 }

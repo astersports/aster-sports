@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import RecurrenceSelector from './RecurrenceSelector';
 
 const DURATIONS = [
   { label: '1h', minutes: 60 },
@@ -59,6 +60,8 @@ export default function StepWhen({ data, onChange }) {
         <span style={labelStyle}>Date</span>
         <input type="date" value={data.date || ''} onChange={(e) => set('date', e.target.value)} style={inputStyle} />
       </label>
+
+      <RecurrenceSelector value={data.recurrence} onChange={(r) => set('recurrence', r)} />
 
       <label style={fieldStyle}>
         <span style={labelStyle}>Start time</span>
