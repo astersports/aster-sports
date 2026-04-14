@@ -1,3 +1,5 @@
+import { useToast } from '../../context/ToastContext';
+
 // Small "Copy" pill next to the ROSTER section header. Serializes the
 // team name + sorted player list to plain text and writes it to the
 // clipboard for quick pasting into a group text or email.
@@ -13,13 +15,18 @@ function ordinalGrade(g) {
 }
 
 export default function CopyRosterButton({ team, sortedPlayers }) {
-  const onCopy = () => {
+  const { showToast } = useToast();
+  const onCopy = async () => {
     const text = sortedPlayers.map((p) =>
       `#${p.jersey_number || '-'} ${p.first_name} ${p.last_name} (${ordinalGrade(p.grade)})`
     ).join('\n');
-    navigator.clipboard?.writeText(`${team.name} Roster\n\n${text}`);
     navigator.vibrate?.(10);
-    // TODO: show Toast "Roster copied"
+    try {
+      await navigator.clipboard.writeText(`${team.name} Roster\n\n${text}`);
+      showToast('Roster copied');
+    } catch {
+      showToast('Copy failed', 'error');
+    }
   };
 
   return (
