@@ -27,6 +27,7 @@ export default function DayStrip({ selectedDate, onSelectDate, activities }) {
   }, [allDays.length]);
 
   const jumpToToday = () => {
+    onSelectDate(null);
     const el = scrollRef.current?.querySelector('[data-today="true"]');
     if (el) el.scrollIntoView({ inline: 'center', behavior: 'smooth' });
   };
