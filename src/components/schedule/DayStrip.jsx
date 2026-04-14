@@ -13,6 +13,8 @@ export default function DayStrip({ selectedDate, onSelectDate, activities }) {
     return enumerateDates(start, end);
   }, [activities]);
 
+  console.log('DayStrip dates:', allDays.length, 'activities:', activities?.length);
+
   // Center today once per mount. Deselects and selection changes do NOT
   // re-trigger — didInitialScroll gate keeps the user's scroll position.
   useEffect(() => {
