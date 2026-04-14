@@ -14,7 +14,7 @@ export default function EventCard({ event, rsvpCount, stagger }) {
 
   return (
     <div
-      className={`sf-press ${stagger || ''}`}
+      className={`sf-press ${isPast ? '' : (stagger || '')}`}
       onClick={() => { navigator.vibrate?.(10); navigate(`/events/${event.id}`); }}
       style={{
         display: 'flex',

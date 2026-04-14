@@ -20,22 +20,27 @@ export function useScheduleScroll(loading, ready = true) {
   }, []);
 
   useEffect(() => {
+    console.log('[scheduleScroll] effect fire', { loading, ready, didInit: didInit.current });
     if (loading || !ready || didInit.current) return;
     didInit.current = true;
 
     const main = document.querySelector('main');
     let saved = null;
     try { saved = sessionStorage.getItem('sf.schedule.scroll'); } catch { /* ignore */ }
+    console.log('[scheduleScroll] main=', !!main, 'saved=', saved);
     if (saved !== null && main) {
       const n = parseInt(saved, 10);
       if (!Number.isNaN(n)) {
         main.scrollTop = n;
         try { sessionStorage.removeItem('sf.schedule.scroll'); } catch { /* ignore */ }
+        console.log('[scheduleScroll] restored to', n, '— skipping today scroll');
         return;
       }
     }
     const today = new Date().toISOString().slice(0, 10);
     const target = document.querySelector(`[data-date-group="${today}"]`);
+    const allGroups = Array.from(document.querySelectorAll('[data-date-group]')).map((e) => e.getAttribute('data-date-group'));
+    console.log('[scheduleScroll] today=', today, 'targetFound=', !!target, 'allGroups=', allGroups);
     if (target) target.scrollIntoView({ behavior: 'instant', block: 'start' });
   }, [loading, ready]);
 }
