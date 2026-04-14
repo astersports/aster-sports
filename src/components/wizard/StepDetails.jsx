@@ -81,7 +81,7 @@ function Toggle({ label, checked, onChange }) {
         transition: 'background-color 0.2s', display: 'flex', alignItems: 'center',
       }}>
         <div style={{
-          width: 24, height: 24, borderRadius: 12, backgroundColor: '#fff',
+          width: 24, height: 24, borderRadius: 12, backgroundColor: 'var(--sf-text-inverse)',
           transform: checked ? 'translateX(20px)' : 'translateX(0)',
           transition: 'transform 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
         }} />
