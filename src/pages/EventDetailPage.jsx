@@ -5,15 +5,23 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useEventDetail } from '../hooks/useEventDetail';
 import { useRsvps } from '../hooks/useRsvps';
-import EventInfo from '../components/event/EventInfo';
-import RsvpSummary from '../components/rsvp/RsvpSummary';
-import RsvpPlayerRow from '../components/rsvp/RsvpPlayerRow';
+import EventDetailTab from '../components/event/EventDetailTab';
+import EventLocationTab from '../components/event/EventLocationTab';
+import EventRsvpTab from '../components/event/EventRsvpTab';
+import EventCheckinTab from '../components/event/EventCheckinTab';
 import CreateActivityWizard from '../components/wizard/CreateActivityWizard';
 
 const TYPE_LABELS = {
   practice: 'Practice', game: 'Game', skills_lab: 'Skills Lab',
   tryout: 'Tryout', tournament: 'Tournament', other: 'Event',
 };
+
+const TABS = [
+  { key: 'details', label: 'Details' },
+  { key: 'location', label: 'Location' },
+  { key: 'rsvps', label: 'RSVPs' },
+  { key: 'checkin', label: 'Check-in' },
+];
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -23,6 +31,7 @@ export default function EventDetailPage() {
   const teamId = event?.team_id || null;
   const { rsvps, roster, loading: rsvpLoading, setRsvp } = useRsvps(id, teamId);
   const [editing, setEditing] = useState(false);
+  const [tab, setTab] = useState('details');
 
   if (eventLoading) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
   if (!event) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Event not found</div>;
@@ -75,36 +84,44 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      <EventInfo event={event} />
-
-      <div style={{ padding: '0 16px 32px' }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--sf-text-primary)', marginBottom: 12 }}>RSVPs</h2>
-        {rsvpLoading ? (
-          <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 14 }}>Loading roster...</div>
-        ) : roster.length === 0 ? (
-          <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 14 }}>No players on this team yet.</div>
-        ) : (
-          <>
-            <RsvpSummary roster={roster} rsvps={rsvps} />
-            {roster.map((player) => (
-              <RsvpPlayerRow
-                key={player.id}
-                player={player}
-                response={rsvpMap[player.id] || null}
-                teamColor={teamColor}
-                onSetRsvp={setRsvp}
-              />
-            ))}
-          </>
-        )}
+      <div className="flex sf-no-scrollbar" style={{
+        overflowX: 'auto',
+        borderBottom: '1px solid var(--sf-border-default)',
+        backgroundColor: 'var(--sf-bg-card)',
+      }}>
+        {TABS.map((t) => {
+          const active = tab === t.key;
+          return (
+            <button key={t.key} type="button" onClick={() => setTab(t.key)}
+              className="sf-press"
+              style={{
+                flex: 1, minWidth: 80, minHeight: 44,
+                padding: '0 12px', fontSize: 13, fontWeight: active ? 600 : 500,
+                backgroundColor: 'transparent', border: 'none',
+                color: active ? teamColor : 'var(--sf-text-tertiary)',
+                borderBottom: active ? `2px solid ${teamColor}` : '2px solid transparent',
+                marginBottom: -1,
+              }}>
+              {t.label}
+            </button>
+          );
+        })}
       </div>
+
+      {tab === 'details' && <EventDetailTab event={event} />}
+      {tab === 'location' && <EventLocationTab event={event} />}
+      {tab === 'rsvps' && (
+        <EventRsvpTab
+          roster={roster} rsvps={rsvps} rsvpMap={rsvpMap}
+          teamColor={teamColor} onSetRsvp={setRsvp} loading={rsvpLoading}
+        />
+      )}
+      {tab === 'checkin' && <EventCheckinTab eventId={event.id} roster={roster} teamColor={teamColor} />}
 
       {editing && (
         <CreateActivityWizard
-          orgId={orgId}
-          editEvent={event}
-          onClose={() => setEditing(false)}
-          onCreated={refetch}
+          orgId={orgId} editEvent={event}
+          onClose={() => setEditing(false)} onCreated={refetch}
         />
       )}
     </div>

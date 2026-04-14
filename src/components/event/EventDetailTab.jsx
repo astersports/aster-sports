@@ -1,8 +1,9 @@
-import { Calendar, Clock, MapPin } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 
-// Presentational info + notes rows for the event detail page. No data
-// fetching; just renders whatever fields the event row exposes.
-export default function EventInfo({ event }) {
+// Details tab — date/time, arrival, opponent pill, jersey, parent
+// instructions, and coach notes. Location is intentionally NOT here;
+// it lives on the Location tab.
+export default function EventDetailTab({ event }) {
   const date = event.start_at ? new Date(event.start_at) : null;
   const endDate = event.end_at ? new Date(event.end_at) : null;
 
@@ -16,12 +17,6 @@ export default function EventInfo({ event }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--sf-text-primary)' }}>
             <Calendar size={16} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
             <span>{fmt(date)}{endDate ? ` · ${fmtTime(date)} – ${fmtTime(endDate)}` : ''}</span>
-          </div>
-        )}
-        {event.location && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--sf-text-primary)' }}>
-            <MapPin size={16} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
-            <span>{event.location}{event.sub_location ? ` · ${event.sub_location}` : ''}</span>
           </div>
         )}
         {event.arrival_minutes_before > 0 && (

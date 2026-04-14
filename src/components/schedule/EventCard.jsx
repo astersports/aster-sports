@@ -4,7 +4,7 @@ import { formatTime } from '../../lib/formatters';
 
 const TYPE_LABELS = { practice: 'Practice', game: 'Game', skills_lab: 'Skills Lab', tryout: 'Tryout', tournament: 'Tournament', other: 'Event' };
 
-export default function EventCard({ event, stagger }) {
+export default function EventCard({ event, rsvpCount, stagger }) {
   const navigate = useNavigate();
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--sf-neutral)';
@@ -55,7 +55,19 @@ export default function EventCard({ event, stagger }) {
             )}
           </div>
         )}
+        {/* Row 4: RSVP counts (only if any response recorded) */}
+        {rsvpCount && (rsvpCount.going + rsvpCount.not_going + rsvpCount.maybe) > 0 && (
+          <div className="flex items-center" style={{ fontSize: 12, gap: 8, marginTop: 4, color: 'var(--sf-text-tertiary)' }}>
+            <Dot color="var(--sf-success)" />{rsvpCount.going} going
+            <Dot color="var(--sf-danger)" />{rsvpCount.not_going} not going
+            {rsvpCount.noResponse > 0 && <><Dot color="var(--sf-neutral)" />{rsvpCount.noResponse} no response</>}
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+function Dot({ color }) {
+  return <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 3, backgroundColor: color, marginRight: 2 }} />;
 }

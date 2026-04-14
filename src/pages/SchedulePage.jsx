@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Calendar, Plus } from 'lucide-react';
 import { useActivities } from '../hooks/useActivities';
 import { usePrograms } from '../hooks/usePrograms';
+import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
 import { useAuth } from '../context/AuthContext';
 import DayStrip from '../components/schedule/DayStrip';
 import CountdownBanner from '../components/schedule/CountdownBanner';
@@ -16,6 +17,7 @@ export default function SchedulePage() {
   const { activities, loading, refetch } = useActivities();
   const { programs } = usePrograms();
   const { orgId } = useAuth();
+  const rsvpCounts = useEventRsvpCounts(activities);
   const [selectedDate, setSelectedDate] = useState(null);
   const [filters, setFilters] = useState({ teamId: null, eventType: 'all' });
   const [density, setDensity] = useState('comfortable');
@@ -102,11 +104,7 @@ export default function SchedulePage() {
               </div>
               <div className={`flex flex-col ${density === 'compact' ? 'gap-1' : 'gap-2'}`}>
                 {events.map((event, i) => (
-                  <Card
-                    key={event.id}
-                    event={event}
-                    stagger={`sf-stagger-${Math.min(i + 1, 8)}`}
-                  />
+                  <Card key={event.id} event={event} rsvpCount={rsvpCounts[event.id]} stagger={`sf-stagger-${Math.min(i + 1, 8)}`} />
                 ))}
               </div>
             </div>
