@@ -19,7 +19,8 @@ export function sundayOf(d) {
 
 // Returns [monday of earliest week, sunday of latest week] covering
 // the entire season — earliest event through latest event, always
-// including today. With no events, falls back to ±4 weeks around today.
+// including today. With no events, falls back to today-3/+10 snapped
+// to Mon/Sun so the strip always shows at least the current week.
 export function getSeasonRange(activities) {
   const today = new Date();
   const safe = Array.isArray(activities) ? activities : [];
@@ -27,8 +28,8 @@ export function getSeasonRange(activities) {
     .map((a) => a?.start_at ? new Date(a.start_at) : null)
     .filter((d) => d && !Number.isNaN(d.getTime()));
   if (dates.length === 0) {
-    const back = new Date(today); back.setDate(today.getDate() - 28);
-    const forward = new Date(today); forward.setDate(today.getDate() + 56);
+    const back = new Date(today); back.setDate(today.getDate() - 3);
+    const forward = new Date(today); forward.setDate(today.getDate() + 10);
     return [mondayOf(back), sundayOf(forward)];
   }
   const times = dates.map((d) => d.getTime());

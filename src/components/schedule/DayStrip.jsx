@@ -13,6 +13,9 @@ export default function DayStrip({ selectedDate, onSelectDate, activities }) {
     return enumerateDates(start, end);
   }, [activities]);
 
+  // Diagnostic: confirm mount + dates from devtools. Remove once verified.
+  console.log('DayStrip render', { activities, dates: allDays });
+
   // Center today once per mount. Deselects and selection changes do NOT
   // re-trigger — didInitialScroll gate keeps the user's scroll position.
   useEffect(() => {
