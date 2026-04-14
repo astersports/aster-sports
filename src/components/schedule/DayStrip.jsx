@@ -31,6 +31,12 @@ export default function DayStrip({ selectedDate, onSelectDate, activities }) {
 
   return (
     <div style={{ position: 'relative' }}>
+      <div style={{
+        background: 'red', color: 'white', padding: '4px 8px',
+        fontSize: 12, fontWeight: 700, fontFamily: 'monospace',
+      }}>
+        DayStrip MOUNTED · activities={activities?.length ?? 'undef'} · dates={allDays.length}
+      </div>
       <div
         ref={scrollRef}
         className="flex gap-1 overflow-x-auto sf-no-scrollbar"

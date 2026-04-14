@@ -69,6 +69,7 @@ export default function SchedulePage() {
         }} />
       </div>
 
+      <div style={{ background: 'lime', color: 'black', padding: '4px 8px', fontSize: 12, fontWeight: 700, fontFamily: 'monospace' }}>SchedulePage · loading={String(loading)} · activities={activities.length} · orgId={orgId ? 'set' : 'null'}</div>
       <DayStrip
         selectedDate={selectedDate || now}
         onSelectDate={setSelectedDate}
