@@ -17,6 +17,7 @@ function addMinutes(time, mins) {
 
 export default function StepWhen({ data, onChange }) {
   const [locations, setLocations] = useState([]);
+  const [customMode, setCustomMode] = useState(false);
 
   useEffect(() => {
     supabase.from('events').select('location').not('location', 'is', null)
@@ -35,9 +36,19 @@ export default function StepWhen({ data, onChange }) {
   };
 
   const setDuration = (mins) => {
+    setCustomMode(false);
     const updates = { ...data, durationMinutes: mins };
     if (data.startTime) updates.endTime = addMinutes(data.startTime, mins);
     onChange(updates);
+  };
+
+  const enterCustomMode = () => {
+    setCustomMode(true);
+    onChange({ ...data, durationMinutes: null });
+  };
+
+  const setCustomEndTime = (time) => {
+    onChange({ ...data, durationMinutes: null, endTime: time });
   };
 
   return (
@@ -59,12 +70,22 @@ export default function StepWhen({ data, onChange }) {
         <div style={{ display: 'flex', gap: 8 }}>
           {DURATIONS.map((d) => (
             <button key={d.minutes} type="button" onClick={() => setDuration(d.minutes)}
-              className="sf-press" style={chipStyle(data.durationMinutes === d.minutes)}>
+              className="sf-press" style={chipStyle(!customMode && data.durationMinutes === d.minutes)}>
               {d.label}
             </button>
           ))}
+          <button type="button" onClick={enterCustomMode}
+            className="sf-press" style={chipStyle(customMode)}>
+            Custom
+          </button>
         </div>
-        {data.endTime && <span style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 4, display: 'block' }}>Ends at {data.endTime}</span>}
+        {customMode ? (
+          <input type="time" value={data.endTime || ''}
+            onChange={(e) => setCustomEndTime(e.target.value)} step="300"
+            style={{ ...inputStyle, marginTop: 8 }} />
+        ) : (
+          data.endTime && <span style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 4, display: 'block' }}>Ends at {data.endTime}</span>
+        )}
       </div>
 
       <label style={fieldStyle}>
