@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,17 +10,18 @@ export function useDuties(eventId) {
   const { user } = useAuth();
   const [duties, setDuties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const didInitialLoad = useRef(false);
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
-    if (duties.length === 0) setLoading(true);
+    if (!didInitialLoad.current) setLoading(true);
     const { data, error } = await supabase
       .from('event_duties').select('*').eq('event_id', eventId)
       .order('duty_name', { ascending: true });
     if (error) console.error('useDuties:', error.message);
     setDuties(data || []);
+    didInitialLoad.current = true;
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
   useEffect(() => { fetch(); }, [fetch]);

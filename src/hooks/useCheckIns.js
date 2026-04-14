@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 // Fetches check-in rows for an event and exposes a toggle(playerId)
@@ -8,16 +8,17 @@ import { supabase } from '../lib/supabase';
 export function useCheckIns(eventId) {
   const [checkIns, setCheckIns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const didInitialLoad = useRef(false);
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
-    if (checkIns.length === 0) setLoading(true);
+    if (!didInitialLoad.current) setLoading(true);
     const { data, error } = await supabase
       .from('check_ins').select('*').eq('event_id', eventId);
     if (error) console.error('useCheckIns:', error.message);
     setCheckIns(data || []);
+    didInitialLoad.current = true;
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
   useEffect(() => { fetch(); }, [fetch]);

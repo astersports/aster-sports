@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 export function useRsvps(eventId, teamId) {
   const [rsvps, setRsvps] = useState([]);
   const [roster, setRoster] = useState([]);
   const [loading, setLoading] = useState(true);
+  const didInitialLoad = useRef(false);
 
   const fetch = useCallback(async () => {
     if (!eventId || !teamId) { setLoading(false); return; }
-    if (roster.length === 0) setLoading(true);
+    if (!didInitialLoad.current) setLoading(true);
     const [rsvpRes, rosterRes] = await Promise.all([
       supabase.from('event_rsvps').select('*').eq('event_id', eventId),
       supabase
@@ -26,8 +27,8 @@ export function useRsvps(eventId, teamId) {
       jersey_number: rm.jersey_number,
     }));
     setRoster(mapped);
+    didInitialLoad.current = true;
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, teamId]);
 
   useEffect(() => { fetch(); }, [fetch]);

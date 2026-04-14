@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,18 +9,19 @@ export function useComments(eventId) {
   const { user } = useAuth();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const didInitialLoad = useRef(false);
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
-    if (comments.length === 0) setLoading(true);
+    if (!didInitialLoad.current) setLoading(true);
     const { data, error } = await supabase
       .from('event_comments').select('*').eq('event_id', eventId)
       .order('pinned', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: true });
     if (error) console.error('useComments:', error.message);
     setComments(data || []);
+    didInitialLoad.current = true;
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
   useEffect(() => { fetch(); }, [fetch]);
