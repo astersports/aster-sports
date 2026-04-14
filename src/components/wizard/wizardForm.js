@@ -11,6 +11,7 @@ export const EMPTY_FORM = {
   notes: '', coachNotes: '',
   indoor: true, enableRides: false, isScrimmage: false,
   recurrence: { pattern: 'once', until: null },
+  duties: [],
 };
 
 // Builds wizard form state from an existing event row. Splits the
@@ -41,5 +42,6 @@ export function eventToForm(event) {
     enableRides: event.enable_rides || false,
     isScrimmage: event.is_scrimmage || false,
     recurrence: { pattern: 'once', until: null },
+    duties: [],
   };
 }

@@ -1,3 +1,5 @@
+import DutyEditor from './DutyEditor';
+
 const HOME_AWAY = ['home', 'away', 'neutral', 'tbd'];
 
 export default function StepDetails({ eventType, data, onChange }) {
@@ -64,6 +66,8 @@ export default function StepDetails({ eventType, data, onChange }) {
         <Toggle label="Enable rides" checked={data.enableRides || false} onChange={(v) => set('enableRides', v)} />
         {isGame && <Toggle label="Scrimmage" checked={data.isScrimmage || false} onChange={(v) => set('isScrimmage', v)} />}
       </div>
+
+      <DutyEditor value={data.duties} onChange={(duties) => set('duties', duties)} />
     </div>
   );
 }

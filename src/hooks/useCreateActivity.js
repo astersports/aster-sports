@@ -38,13 +38,34 @@ export function useCreateActivity() {
         .from('events').insert(firstRow).select().single();
       if (firstErr) throw firstErr;
 
+      const createdIds = [first.id];
       if (dates.length > 1) {
         const siblings = dates.slice(1).map((d) => ({
           ...withTime(baseRow, d, formData),
           parent_event_id: first.id,
         }));
-        const { error: sibErr } = await supabase.from('events').insert(siblings);
+        const { data: sibData, error: sibErr } = await supabase
+          .from('events').insert(siblings).select('id');
         if (sibErr) throw sibErr;
+        (sibData || []).forEach((r) => createdIds.push(r.id));
+      }
+
+      // Fan out duty slots across every created event. One row per slot
+      // (a "Scorekeeper (2 needed)" duty becomes 2 event_duties rows).
+      const duties = (formData.duties || []).filter((d) => d.name?.trim());
+      if (duties.length > 0) {
+        const dutyRows = [];
+        createdIds.forEach((eid) => {
+          duties.forEach((d) => {
+            for (let i = 0; i < (d.slots_needed || 1); i++) {
+              dutyRows.push({ event_id: eid, name: d.name.trim() });
+            }
+          });
+        });
+        if (dutyRows.length > 0) {
+          const { error: dErr } = await supabase.from('event_duties').insert(dutyRows);
+          if (dErr) console.error('event_duties insert:', dErr.message);
+        }
       }
 
       return first;

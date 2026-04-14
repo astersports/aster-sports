@@ -9,6 +9,9 @@ import EventDetailTab from '../components/event/EventDetailTab';
 import EventLocationTab from '../components/event/EventLocationTab';
 import EventRsvpTab from '../components/event/EventRsvpTab';
 import EventCheckinTab from '../components/event/EventCheckinTab';
+import EventDutiesTab from '../components/event/EventDutiesTab';
+import EventCommentsTab from '../components/event/EventCommentsTab';
+import EventRidesTab from '../components/event/EventRidesTab';
 import CreateActivityWizard from '../components/wizard/CreateActivityWizard';
 
 const TYPE_LABELS = {
@@ -16,11 +19,14 @@ const TYPE_LABELS = {
   tryout: 'Tryout', tournament: 'Tournament', other: 'Event',
 };
 
-const TABS = [
+const ALL_TABS = [
   { key: 'details', label: 'Details' },
   { key: 'location', label: 'Location' },
   { key: 'rsvps', label: 'RSVPs' },
+  { key: 'duties', label: 'Duties' },
   { key: 'checkin', label: 'Check-in' },
+  { key: 'rides', label: 'Rides', ridesOnly: true },
+  { key: 'comments', label: 'Comments' },
 ];
 
 export default function EventDetailPage() {
@@ -89,7 +95,7 @@ export default function EventDetailPage() {
         borderBottom: '1px solid var(--sf-border-default)',
         backgroundColor: 'var(--sf-bg-card)',
       }}>
-        {TABS.map((t) => {
+        {ALL_TABS.filter((t) => !t.ridesOnly || event.enable_rides).map((t) => {
           const active = tab === t.key;
           return (
             <button key={t.key} type="button" onClick={() => setTab(t.key)}
@@ -116,7 +122,10 @@ export default function EventDetailPage() {
           teamColor={teamColor} onSetRsvp={setRsvp} loading={rsvpLoading}
         />
       )}
+      {tab === 'duties' && <EventDutiesTab eventId={event.id} />}
       {tab === 'checkin' && <EventCheckinTab eventId={event.id} roster={roster} teamColor={teamColor} />}
+      {tab === 'rides' && event.enable_rides && <EventRidesTab eventId={event.id} />}
+      {tab === 'comments' && <EventCommentsTab eventId={event.id} />}
 
       {editing && (
         <CreateActivityWizard
