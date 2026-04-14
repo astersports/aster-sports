@@ -122,7 +122,7 @@ export default function SchedulePage() {
         aria-label="Create event"
         style={{
           position: 'fixed',
-          bottom: 'calc(80px + env(safe-area-inset-bottom, 0px) + 16px)',
+          bottom: 'calc(80px + env(safe-area-inset-bottom, 0px) + 8px)',
           right: 16,
           width: 56, height: 56, borderRadius: 28,
           backgroundColor: 'var(--sf-accent)',
