@@ -12,7 +12,7 @@ export function useComments(eventId) {
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
-    setLoading(true);
+    if (comments.length === 0) setLoading(true);
     const { data, error } = await supabase
       .from('event_comments').select('*').eq('event_id', eventId)
       .order('pinned', { ascending: false, nullsFirst: false })
@@ -20,6 +20,7 @@ export function useComments(eventId) {
     if (error) console.error('useComments:', error.message);
     setComments(data || []);
     setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
   useEffect(() => { fetch(); }, [fetch]);
