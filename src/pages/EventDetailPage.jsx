@@ -43,14 +43,14 @@ export default function EventDetailPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <button type="button" onClick={() => navigate(-1)} className="sf-press"
             style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ArrowLeft size={20} strokeWidth={1.75} color="#fff" />
+            <ArrowLeft size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
           </button>
           <span style={{
             fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)',
             backgroundColor: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: 6,
           }}>{typeLabel}</span>
         </div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: 0 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--sf-text-inverse)', margin: 0 }}>
           {event.title || typeLabel}
         </h1>
         {team && <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>{team.name}</div>}

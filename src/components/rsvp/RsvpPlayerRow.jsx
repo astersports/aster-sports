@@ -17,7 +17,7 @@ export default function RsvpPlayerRow({ player, response, teamColor, onSetRsvp }
       <div style={{
         width: 32, height: 32, borderRadius: 16,
         backgroundColor: teamColor || 'var(--sf-bg-tertiary)',
-        color: '#fff', fontSize: 12, fontWeight: 600,
+        color: 'var(--sf-text-inverse)', fontSize: 12, fontWeight: 600,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexShrink: 0,
       }}>
@@ -31,8 +31,8 @@ export default function RsvpPlayerRow({ player, response, teamColor, onSetRsvp }
         </div>
         {player.member_type === 'futures_academy' && (
           <span style={{
-            fontSize: 11, color: '#7C3AED', fontWeight: 500,
-            backgroundColor: '#F3E8FF', padding: '1px 6px', borderRadius: 4,
+            fontSize: 11, color: 'var(--sf-academy)', fontWeight: 500,
+            backgroundColor: 'var(--sf-academy-soft)', padding: '1px 6px', borderRadius: 4,
           }}>Academy</span>
         )}
       </div>
