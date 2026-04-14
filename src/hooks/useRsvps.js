@@ -15,7 +15,7 @@ export function useRsvps(eventId, teamId) {
         .from('roster_members')
         .select('jersey_number, players(id, first_name, last_name, member_type)')
         .eq('team_id', teamId)
-        .order('jersey_number', { ascending: true }),
+        .order('jersey_number', { ascending: true, nullsFirst: false }),
     ]);
     setRsvps(rsvpRes.data || []);
     const mapped = (rosterRes.data || []).map((rm) => ({
