@@ -23,12 +23,3 @@ createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </StrictMode>,
 );
-
-// Register the service worker after the page loads so its install step
-// doesn't contend with the initial paint. Failures are logged but
-// non-fatal — the app still works without it, just loses offline cache.
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js').catch(console.error);
-  });
-}
