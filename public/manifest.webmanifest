@@ -1,0 +1,23 @@
+{
+  "name": "Skyfire",
+  "short_name": "Skyfire",
+  "description": "Youth sports team management",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#151525",
+  "background_color": "#F7F8FA",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/Knight_logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
