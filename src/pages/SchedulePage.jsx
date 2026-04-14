@@ -3,6 +3,7 @@ import { Calendar, Plus } from 'lucide-react';
 import { useActivities } from '../hooks/useActivities';
 import { usePrograms } from '../hooks/usePrograms';
 import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
+import { useScheduleScroll } from '../hooks/useScheduleScroll';
 import { useAuth } from '../context/AuthContext';
 import DayStrip from '../components/schedule/DayStrip';
 import CountdownBanner from '../components/schedule/CountdownBanner';
@@ -18,6 +19,7 @@ export default function SchedulePage() {
   const { programs } = usePrograms();
   const { orgId } = useAuth();
   const rsvpCounts = useEventRsvpCounts(activities);
+  useScheduleScroll(loading);
   const [selectedDate, setSelectedDate] = useState(null);
   const [filters, setFilters] = useState({ teamId: null, eventType: 'all' });
   const [density, setDensity] = useState('comfortable');
@@ -92,7 +94,7 @@ export default function SchedulePage() {
       ) : (
         <div className="flex flex-col gap-2" style={{ marginTop: 8 }}>
           {grouped.map(([date, events]) => (
-            <div key={date}>
+            <div key={date} data-date-group={date}>
               <div style={{
                 fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
                 textTransform: 'uppercase', color: 'var(--sf-text-tertiary)',

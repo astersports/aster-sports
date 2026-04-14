@@ -1,25 +1,24 @@
 import { useState } from 'react';
-import { Car, UserRound, Plus } from 'lucide-react';
+import { Car, UserRound, Plus, MapPin } from 'lucide-react';
 import { useRides } from '../../hooks/useRides';
 import { useAuth } from '../../context/AuthContext';
 
 // Ride board — offer (driver) and request (rider) cards for an event.
-// Separate forms for each mode are inline below the toggles. Owner of
-// a ride can delete it via the X button on their card.
+// Schema: ride_type, pickup_location, departure_time, seats, guardian_id, name.
 export default function EventRidesTab({ eventId }) {
   const { user } = useAuth();
   const { rides, loading, create, remove } = useRides(eventId);
   const [form, setForm] = useState(null); // 'offer' | 'request' | null
-  const [draft, setDraft] = useState({ pickup_address: '', pickup_time: '', seats: 1 });
+  const [draft, setDraft] = useState({ pickup_location: '', departure_time: '', seats: 1 });
 
   if (loading) return <div style={{ padding: 16, color: 'var(--sf-text-tertiary)', fontSize: 14 }}>Loading rides...</div>;
 
-  const offers = rides.filter((r) => r.type === 'offer');
-  const requests = rides.filter((r) => r.type === 'request');
+  const offers = rides.filter((r) => r.ride_type === 'offer');
+  const requests = rides.filter((r) => r.ride_type === 'request');
 
   const submit = async () => {
-    const ok = await create({ type: form, ...draft });
-    if (ok) { setForm(null); setDraft({ pickup_address: '', pickup_time: '', seats: 1 }); }
+    const ok = await create({ ride_type: form, ...draft });
+    if (ok) { setForm(null); setDraft({ pickup_location: '', departure_time: '', seats: 1 }); }
   };
 
   return (
@@ -33,11 +32,11 @@ export default function EventRidesTab({ eventId }) {
 
       {form && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12, backgroundColor: 'var(--sf-bg-secondary)', borderRadius: 10 }}>
-          <input type="text" value={draft.pickup_address}
-            onChange={(e) => setDraft({ ...draft, pickup_address: e.target.value })}
-            placeholder="Pickup address" style={inputStyle} />
-          <input type="time" value={draft.pickup_time}
-            onChange={(e) => setDraft({ ...draft, pickup_time: e.target.value })} style={inputStyle} />
+          <input type="text" value={draft.pickup_location}
+            onChange={(e) => setDraft({ ...draft, pickup_location: e.target.value })}
+            placeholder="Pickup location" style={inputStyle} />
+          <input type="time" value={draft.departure_time}
+            onChange={(e) => setDraft({ ...draft, departure_time: e.target.value })} style={inputStyle} />
           <input type="number" min={1} value={draft.seats}
             onChange={(e) => setDraft({ ...draft, seats: Math.max(1, parseInt(e.target.value) || 1) })}
             placeholder={form === 'offer' ? 'Seats available' : 'Riders'} style={inputStyle} />
@@ -81,17 +80,17 @@ function RideSection({ title, icon: Icon, empty, children }) {
 }
 
 function RideCard({ ride, user, onRemove }) {
-  const isMine = ride.created_by === user?.id;
+  const isMine = ride.guardian_id === user?.id;
   return (
     <div style={{ padding: 12, backgroundColor: 'var(--sf-bg-card)', borderRadius: 10, border: '1px solid var(--sf-border-default)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--sf-text-primary)' }}>{ride.author_name || 'User'}</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--sf-text-primary)' }}>{ride.name || 'User'}</span>
         {isMine && <button type="button" onClick={() => onRemove(ride.id)} style={{ background: 'none', border: 'none', color: 'var(--sf-danger)', fontSize: 12, cursor: 'pointer' }}>Remove</button>}
       </div>
-      <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 4 }}>
-        {ride.pickup_address && <>📍 {ride.pickup_address} · </>}
-        {ride.pickup_time && <>{ride.pickup_time} · </>}
-        {ride.seats} {ride.type === 'offer' ? 'seats' : ride.seats === 1 ? 'rider' : 'riders'}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 4, flexWrap: 'wrap' }}>
+        {ride.pickup_location && <><MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" /><span>{ride.pickup_location}</span><span>·</span></>}
+        {ride.departure_time && <><span>{ride.departure_time}</span><span>·</span></>}
+        <span>{ride.seats} {ride.ride_type === 'offer' ? 'seats' : ride.seats === 1 ? 'rider' : 'riders'}</span>
       </div>
     </div>
   );

@@ -16,11 +16,20 @@ export default function DutyEditor({ value, onChange }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 }}>
         {duties.map((d, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input type="text" value={d.name} onChange={(e) => update(i, { name: e.target.value })}
+            <input type="text" value={d.duty_name || d.name || ''}
+              onChange={(e) => update(i, { duty_name: e.target.value })}
               placeholder="e.g. Scorekeeper" style={{ ...inputStyle, flex: 1 }} />
-            <input type="number" min={1} value={d.slots_needed}
-              onChange={(e) => update(i, { slots_needed: Math.max(1, parseInt(e.target.value) || 1) })}
-              style={{ ...inputStyle, width: 64, textAlign: 'center' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button type="button" disabled={(d.slots_needed || 1) <= 1}
+                onClick={() => update(i, { slots_needed: Math.max(1, (d.slots_needed || 1) - 1) })}
+                style={stepBtn}>−</button>
+              <span style={{ minWidth: 20, textAlign: 'center', fontSize: 14, fontWeight: 500 }}>
+                {d.slots_needed || 1}
+              </span>
+              <button type="button"
+                onClick={() => update(i, { slots_needed: Math.min(10, (d.slots_needed || 1) + 1) })}
+                style={stepBtn}>+</button>
+            </div>
             <button type="button" onClick={() => remove(i)} className="sf-press"
               aria-label="Remove duty"
               style={{
@@ -53,4 +62,11 @@ const inputStyle = {
   minHeight: 40, borderRadius: 10, border: '1px solid var(--sf-border-default)',
   backgroundColor: 'var(--sf-bg-card)', padding: '0 10px', fontSize: 14,
   color: 'var(--sf-text-primary)',
+};
+
+const stepBtn = {
+  width: 32, height: 32, borderRadius: 8,
+  border: '1px solid var(--sf-border-default)',
+  backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-text-primary)',
+  fontSize: 16, fontWeight: 500, cursor: 'pointer',
 };

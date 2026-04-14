@@ -11,12 +11,13 @@ export function useCheckIns(eventId) {
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
-    setLoading(true);
+    if (checkIns.length === 0) setLoading(true);
     const { data, error } = await supabase
       .from('check_ins').select('*').eq('event_id', eventId);
     if (error) console.error('useCheckIns:', error.message);
     setCheckIns(data || []);
     setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
   useEffect(() => { fetch(); }, [fetch]);

@@ -1,34 +1,22 @@
-import { useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
+import { getSeasonRange, enumerateDates, isSameDay } from './dayStripDates';
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-function isSameDay(a, b) {
-  return a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
-}
-
-function getWeekDays(baseDate) {
-  const d = new Date(baseDate);
-  const day = d.getDay();
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - ((day + 6) % 7));
-  return Array.from({ length: 7 }, (_, i) => {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + i);
-    return date;
-  });
-}
+const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']; // Mon..Sun
 
 export default function DayStrip({ selectedDate, onSelectDate, activities }) {
   const today = new Date();
-  const week = getWeekDays(selectedDate || today);
   const scrollRef = useRef(null);
+
+  const allDays = useMemo(() => {
+    const [start, end] = getSeasonRange(activities);
+    return enumerateDates(start, end);
+  }, [activities]);
 
   useEffect(() => {
     const el = scrollRef.current?.querySelector('[data-today="true"]');
-    if (el) el.scrollIntoView({ inline: 'center', behavior: 'smooth' });
-  }, []);
+    if (el) el.scrollIntoView({ inline: 'center', behavior: 'instant' });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allDays.length]);
 
   return (
     <div
@@ -36,12 +24,13 @@ export default function DayStrip({ selectedDate, onSelectDate, activities }) {
       className="flex gap-1 overflow-x-auto sf-no-scrollbar"
       style={{ padding: '8px 0' }}
     >
-      {week.map((date, i) => {
+      {allDays.map((date, i) => {
         const isToday = isSameDay(date, today);
         const isSelected = selectedDate && isSameDay(date, selectedDate);
         const dateStr = date.toISOString().split('T')[0];
         const dayEvents = (activities || []).filter((a) => a.date === dateStr);
         const teamColors = [...new Set(dayEvents.map((a) => a.teams?.team_color).filter(Boolean))];
+        const dayLabel = DAY_LETTERS[(date.getDay() + 6) % 7];
 
         return (
           <button
@@ -51,7 +40,7 @@ export default function DayStrip({ selectedDate, onSelectDate, activities }) {
             onClick={() => { navigator.vibrate?.(10); onSelectDate(isSelected ? null : date); }}
             className="sf-press flex flex-col items-center"
             style={{
-              minWidth: 44,
+              minWidth: 40, flexShrink: 0,
               padding: '6px 4px',
               borderRadius: 10,
               backgroundColor: isSelected ? 'var(--sf-accent)' : 'transparent',
@@ -59,12 +48,12 @@ export default function DayStrip({ selectedDate, onSelectDate, activities }) {
             }}
           >
             <span style={{
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 500,
               color: isSelected ? 'var(--sf-text-inverse)' : 'var(--sf-text-tertiary)',
-            }}>{DAYS[i]}</span>
+            }}>{dayLabel}</span>
             <span style={{
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: isToday ? 700 : 500,
               color: isSelected ? 'var(--sf-text-inverse)' : isToday ? 'var(--sf-accent)' : 'var(--sf-text-primary)',
               marginTop: 2,

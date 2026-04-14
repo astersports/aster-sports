@@ -11,6 +11,7 @@ export default function EventCard({ event, rsvpCount, stagger }) {
   const teamName = team?.name || '';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
   const isGame = event.event_type === 'game';
+  const isPast = event.start_at && new Date(event.start_at) < new Date();
 
   return (
     <div
@@ -24,7 +25,8 @@ export default function EventCard({ event, rsvpCount, stagger }) {
         border: '1px solid var(--sf-border-default)',
         boxShadow: 'var(--sf-shadow-sm)',
         overflow: 'hidden',
-        transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
+        opacity: isPast ? 0.5 : 1,
+        transition: 'box-shadow 150ms ease-out, transform 150ms ease-out, opacity 150ms ease-out',
       }}
     >
       <div style={{ width: 4, flexShrink: 0, backgroundColor: teamColor }} />

@@ -31,7 +31,7 @@ export function useComments(eventId) {
     const { error } = await supabase.from('event_comments').insert({
       event_id: eventId,
       body: trimmed,
-      created_by: user.id,
+      author_user_id: user.id,
       author_name: authorName,
     });
     if (error) { console.error('post comment:', error.message); return; }

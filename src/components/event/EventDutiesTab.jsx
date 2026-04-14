@@ -1,9 +1,9 @@
 import { useDuties } from '../../hooks/useDuties';
 import { useAuth } from '../../context/AuthContext';
 
-// Duties tab — grouped by duty name. Each slot is an independent row
-// in event_duties, so a "Scorekeeper (2 needed)" duty is 2 slots shown
-// here as 2 claimable items. Parents tap Claim to take an open slot.
+// Duties tab — grouped by duty_name. Each row in event_duties is one
+// claimable slot (guardian_id nullable). Users tap Claim to take an
+// open slot; Release if it's theirs.
 export default function EventDutiesTab({ eventId }) {
   const { user } = useAuth();
   const { duties, loading, claim, unclaim } = useDuties(eventId);
@@ -13,8 +13,8 @@ export default function EventDutiesTab({ eventId }) {
 
   const groups = {};
   duties.forEach((d) => {
-    if (!groups[d.name]) groups[d.name] = [];
-    groups[d.name].push(d);
+    if (!groups[d.duty_name]) groups[d.duty_name] = [];
+    groups[d.duty_name].push(d);
   });
 
   return (
@@ -29,8 +29,8 @@ export default function EventDutiesTab({ eventId }) {
             border: '1px solid var(--sf-border-default)', overflow: 'hidden',
           }}>
             {slots.map((slot, i) => {
-              const claimed = !!slot.claimed_by;
-              const isMine = claimed && slot.claimed_by === user?.id;
+              const claimed = !!slot.guardian_id;
+              const isMine = claimed && slot.guardian_id === user?.id;
               return (
                 <div key={slot.id} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',

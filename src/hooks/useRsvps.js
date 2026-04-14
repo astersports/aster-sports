@@ -8,7 +8,7 @@ export function useRsvps(eventId, teamId) {
 
   const fetch = useCallback(async () => {
     if (!eventId || !teamId) { setLoading(false); return; }
-    setLoading(true);
+    if (roster.length === 0) setLoading(true);
     const [rsvpRes, rosterRes] = await Promise.all([
       supabase.from('event_rsvps').select('*').eq('event_id', eventId),
       supabase
@@ -27,6 +27,7 @@ export function useRsvps(eventId, teamId) {
     }));
     setRoster(mapped);
     setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, teamId]);
 
   useEffect(() => { fetch(); }, [fetch]);

@@ -1,16 +1,19 @@
+import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../../lib/formatters';
 
 const TYPE_LABELS = { practice: 'Practice', game: 'Game', skills_lab: 'Skills Lab', tryout: 'Tryout', tournament: 'Tournament', other: 'Event' };
 
 export default function CompactCard({ event, stagger }) {
+  const navigate = useNavigate();
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--sf-neutral)';
   const teamName = team?.name || '';
+  const isPast = event.start_at && new Date(event.start_at) < new Date();
 
   return (
     <div
       className={`sf-press ${stagger || ''}`}
-      onClick={() => navigator.vibrate?.(10)}
+      onClick={() => { navigator.vibrate?.(10); navigate(`/events/${event.id}`); }}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -19,7 +22,9 @@ export default function CompactCard({ event, stagger }) {
         borderRadius: 8,
         border: '1px solid var(--sf-border-default)',
         overflow: 'hidden',
-        transition: 'box-shadow 150ms ease-out',
+        opacity: isPast ? 0.5 : 1,
+        cursor: 'pointer',
+        transition: 'box-shadow 150ms ease-out, opacity 150ms ease-out',
       }}
     >
       <div style={{ width: 3, alignSelf: 'stretch', flexShrink: 0, backgroundColor: teamColor }} />

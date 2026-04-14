@@ -34,6 +34,7 @@ export default function CountdownBanner({ nextEvent }) {
         border: '1px solid var(--sf-border-default)',
         boxShadow: 'var(--sf-shadow-sm)',
         marginBottom: 8,
+        overflow: 'hidden',
       }}
     >
       <div className="sf-pulse-dot" style={{

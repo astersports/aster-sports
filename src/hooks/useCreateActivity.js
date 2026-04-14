@@ -51,14 +51,16 @@ export function useCreateActivity() {
       }
 
       // Fan out duty slots across every created event. One row per slot
-      // (a "Scorekeeper (2 needed)" duty becomes 2 event_duties rows).
-      const duties = (formData.duties || []).filter((d) => d.name?.trim());
+      // (a "Scorekeeper x 2" duty becomes 2 event_duties rows with the
+      // same duty_name). Schema uses `duty_name` not `name`.
+      const duties = (formData.duties || []).filter((d) => d.duty_name?.trim() || d.name?.trim());
       if (duties.length > 0) {
         const dutyRows = [];
         createdIds.forEach((eid) => {
           duties.forEach((d) => {
+            const label = (d.duty_name || d.name).trim();
             for (let i = 0; i < (d.slots_needed || 1); i++) {
-              dutyRows.push({ event_id: eid, name: d.name.trim() });
+              dutyRows.push({ event_id: eid, duty_name: label });
             }
           });
         });

@@ -11,10 +11,11 @@ import { useUpdateActivity } from '../../hooks/useUpdateActivity';
 import { useConflictCheck } from '../../hooks/useConflictCheck';
 
 const STEPS = ['Type', 'Team', 'When', 'Details'];
+const EDIT_STEPS = ['When', 'Details'];
 
 export default function CreateActivityWizard({ orgId, editEvent, onClose, onCreated }) {
   const isEdit = !!editEvent;
-  const [step, setStep] = useState(isEdit ? 1 : 0);
+  const [step, setStep] = useState(isEdit ? 2 : 0);
   const [form, setForm] = useState(isEdit ? eventToForm(editEvent) : EMPTY_FORM);
   const conflicts = useConflictCheck(step, form, isEdit ? editEvent.id : null);
   const { create, loading: creating } = useCreateActivity();
@@ -30,7 +31,9 @@ export default function CreateActivityWizard({ orgId, editEvent, onClose, onCrea
   };
 
   const canNext = step === 2 ? (form.date && form.startTime && form.endTime) : true;
-  const backStop = isEdit ? 1 : 0;
+  const backStop = isEdit ? 2 : 0;
+  const dots = isEdit ? EDIT_STEPS : STEPS;
+  const dotIndex = isEdit ? step - 2 : step;
 
   return createPortal(
     <div style={{
@@ -55,10 +58,10 @@ export default function CreateActivityWizard({ orgId, editEvent, onClose, onCrea
           {isEdit ? 'Edit Event' : 'New Event'}
         </span>
         <div style={{ display: 'flex', gap: 6, paddingRight: 8 }}>
-          {STEPS.map((_, i) => (
+          {dots.map((_, i) => (
             <div key={i} style={{
               width: 8, height: 8, borderRadius: 4,
-              backgroundColor: i <= step ? 'var(--sf-accent)' : 'var(--sf-border-default)',
+              backgroundColor: i <= dotIndex ? 'var(--sf-accent)' : 'var(--sf-border-default)',
             }} />
           ))}
         </div>
