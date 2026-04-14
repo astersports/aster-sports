@@ -1,6 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../../lib/formatters';
 
 export default function EventCard({ event, stagger }) {
+  const navigate = useNavigate();
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--sf-neutral)';
   const teamName = team?.name || '';
@@ -10,7 +12,7 @@ export default function EventCard({ event, stagger }) {
   return (
     <div
       className={`sf-press ${stagger || ''}`}
-      onClick={() => navigator.vibrate?.(10)}
+      onClick={() => { navigator.vibrate?.(10); navigate(`/events/${event.id}`); }}
       style={{
         display: 'flex',
         alignItems: 'stretch',

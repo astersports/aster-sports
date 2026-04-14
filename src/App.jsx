@@ -10,6 +10,7 @@ import ScorePage from './pages/ScorePage';
 import TeamsPage from './pages/TeamsPage';
 import TeamDetailPage from './pages/TeamDetailPage';
 import MessagesPage from './pages/MessagesPage';
+import EventDetailPage from './pages/EventDetailPage';
 import AdminSeasonsPage from './pages/AdminSeasonsPage';
 import AdminTeamsPage from './pages/AdminTeamsPage';
 
@@ -54,6 +55,9 @@ export default function App() {
       <Route path="/teams"           element={<Protected><TeamsPage /></Protected>} />
       <Route path="/teams/:teamId"   element={<Protected><TeamDetailPage /></Protected>} />
       <Route path="/messages"        element={<Protected><MessagesPage /></Protected>} />
+
+      {/* Full-screen authenticated routes — auth guard without AppShell chrome */}
+      <Route path="/events/:id" element={<RequireAuth><EventDetailPage /></RequireAuth>} />
 
       {/* Admin-only management routes */}
       <Route
