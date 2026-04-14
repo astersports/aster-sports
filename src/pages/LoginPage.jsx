@@ -67,7 +67,7 @@ export default function LoginPage() {
         }}
       >
         <div className="flex flex-col items-center mb-6">
-          <img src="/phoenix-logo.jpg" alt="Skyfire"
+          <img src="/skyfire_phoenix.png" alt="Skyfire"
             style={{ width: 120, height: 120, objectFit: 'contain', borderRadius: 16 }} />
         </div>
 
