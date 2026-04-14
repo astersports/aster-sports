@@ -85,7 +85,7 @@ function RideCard({ ride, user, onRemove }) {
     <div style={{ padding: 12, backgroundColor: 'var(--sf-bg-card)', borderRadius: 10, border: '1px solid var(--sf-border-default)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--sf-text-primary)' }}>{ride.name || 'User'}</span>
-        {isMine && <button type="button" onClick={() => onRemove(ride.id)} style={{ background: 'none', border: 'none', color: 'var(--sf-danger)', fontSize: 12, cursor: 'pointer' }}>Remove</button>}
+        {isMine && <button type="button" onClick={() => onRemove(ride.id)} className="sf-press" style={{ minHeight: 32, padding: '0 8px', background: 'none', border: 'none', color: 'var(--sf-danger)', fontSize: 12, cursor: 'pointer' }}>Remove</button>}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 4, flexWrap: 'wrap' }}>
         {ride.pickup_location && <><MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" /><span>{ride.pickup_location}</span><span>·</span></>}

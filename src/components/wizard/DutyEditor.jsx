@@ -6,7 +6,7 @@ import { Plus, X } from 'lucide-react';
 export default function DutyEditor({ value, onChange }) {
   const duties = value || [];
 
-  const add = () => onChange([...duties, { name: '', slots_needed: 1 }]);
+  const add = () => onChange([...duties, { duty_name: '', slots_needed: 1 }]);
   const update = (i, patch) => onChange(duties.map((d, idx) => idx === i ? { ...d, ...patch } : d));
   const remove = (i) => onChange(duties.filter((_, idx) => idx !== i));
 
