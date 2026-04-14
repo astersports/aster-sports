@@ -52,12 +52,13 @@ export default function SchedulePage() {
     return t > now;
   });
 
-  if (loading) return <div className="p-4"><LoadingSkeleton variant="card" count={4} /></div>;
-
+  const sentinel = <div style={{ background: 'lime', color: 'black', padding: '8px 12px', fontSize: 14, fontWeight: 700, fontFamily: 'monospace', textAlign: 'center' }}>Sched · loading={String(loading)} · acts={activities.length} · org={orgId ? 'set' : 'null'}</div>;
+  if (loading) return <div className="p-4">{sentinel}<LoadingSkeleton variant="card" count={4} /></div>;
   const Card = density === 'compact' ? CompactCard : EventCard;
 
   return (
     <div className="px-4 py-4 sf-fade-in">
+      {sentinel}
       <div style={{ marginBottom: 4 }}>
         <h1 className="font-bold" style={{
           color: 'var(--sf-text-primary)', fontSize: 20,
@@ -69,7 +70,7 @@ export default function SchedulePage() {
         }} />
       </div>
 
-      <div style={{ background: 'lime', color: 'black', padding: '4px 8px', fontSize: 12, fontWeight: 700, fontFamily: 'monospace' }}>SchedulePage · loading={String(loading)} · activities={activities.length} · orgId={orgId ? 'set' : 'null'}</div>
+      <div style={{ background: 'lime', color: 'black', padding: '4px 8px', fontSize: 12, fontWeight: 700, fontFamily: 'monospace' }}>before DayStrip · acts={activities.length}</div>
       <DayStrip
         selectedDate={selectedDate || now}
         onSelectDate={setSelectedDate}
