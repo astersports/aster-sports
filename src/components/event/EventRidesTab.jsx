@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Car, UserRound, Plus, MapPin } from 'lucide-react';
 import { useRides } from '../../hooks/useRides';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 
 // Ride board — offer (driver) and request (rider) cards for an event.
 // Schema: ride_type, pickup_location, departure_time, seats, guardian_id, name.
 export default function EventRidesTab({ eventId }) {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const { rides, loading, create, remove } = useRides(eventId);
   const [form, setForm] = useState(null); // 'offer' | 'request' | null
   const [draft, setDraft] = useState({ pickup_location: '', departure_time: '', seats: 1 });
@@ -19,6 +21,7 @@ export default function EventRidesTab({ eventId }) {
   const submit = async () => {
     const ok = await create({ ride_type: form, ...draft });
     if (ok) { setForm(null); setDraft({ pickup_location: '', departure_time: '', seats: 1 }); }
+    else showToast('Could not save ride', 'error');
   };
 
   return (

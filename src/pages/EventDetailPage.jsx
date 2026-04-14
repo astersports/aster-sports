@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { useEventDetail } from '../hooks/useEventDetail';
 import { useRsvps } from '../hooks/useRsvps';
+import { TYPE_LABELS } from '../lib/constants';
 import EventDetailTab from '../components/event/EventDetailTab';
 import EventLocationTab from '../components/event/EventLocationTab';
 import EventRsvpTab from '../components/event/EventRsvpTab';
@@ -13,17 +15,11 @@ import EventDutiesTab from '../components/event/EventDutiesTab';
 import EventCommentsTab from '../components/event/EventCommentsTab';
 import EventRidesTab from '../components/event/EventRidesTab';
 import CreateActivityWizard from '../components/wizard/CreateActivityWizard';
-
-const TYPE_LABELS = {
-  practice: 'Practice', game: 'Game', skills_lab: 'Skills Lab',
-  tryout: 'Tryout', tournament: 'Tournament', other: 'Event',
-};
+import ConfirmDialog from '../components/shared/ConfirmDialog';
 
 const ALL_TABS = [
-  { key: 'details', label: 'Details' },
-  { key: 'location', label: 'Location' },
-  { key: 'rsvps', label: 'RSVPs' },
-  { key: 'duties', label: 'Duties' },
+  { key: 'details', label: 'Details' }, { key: 'location', label: 'Location' },
+  { key: 'rsvps', label: 'RSVPs' }, { key: 'duties', label: 'Duties' },
   { key: 'checkin', label: 'Check-in' },
   { key: 'rides', label: 'Rides', ridesOnly: true },
   { key: 'comments', label: 'Comments' },
@@ -33,11 +29,13 @@ export default function EventDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { orgId } = useAuth();
+  const { showToast } = useToast();
   const { event, loading: eventLoading, refetch } = useEventDetail(id);
   const teamId = event?.team_id || null;
   const { rsvps, roster, loading: rsvpLoading, setRsvp } = useRsvps(id, teamId);
   const [editing, setEditing] = useState(false);
   const [editMode, setEditMode] = useState('single');
+  const [confirmDel, setConfirmDel] = useState(false);
   const [tab, setTab] = useState('details');
 
   if (eventLoading) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
@@ -60,10 +58,10 @@ export default function EventDetailPage() {
     setEditing(true);
   };
 
-  const onDelete = async () => {
-    if (!window.confirm("Delete this event? This can't be undone.")) return;
+  const doDelete = async () => {
+    setConfirmDel(false);
     const { error } = await supabase.from('events').delete().eq('id', event.id);
-    if (error) { window.alert(`Delete failed: ${error.message}`); return; }
+    if (error) { showToast(`Delete failed: ${error.message}`, 'error'); return; }
     navigate('/schedule');
   };
 
@@ -85,7 +83,7 @@ export default function EventDetailPage() {
               style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Pencil size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
             </button>
-            <button type="button" onClick={onDelete} className="sf-press" aria-label="Delete event"
+            <button type="button" onClick={() => setConfirmDel(true)} className="sf-press" aria-label="Delete event"
               style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Trash2 size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
             </button>
@@ -143,6 +141,8 @@ export default function EventDetailPage() {
           onClose={() => setEditing(false)} onCreated={refetch}
         />
       )}
+      <ConfirmDialog open={confirmDel} title="Delete this event?" message="This can't be undone."
+        confirmLabel="Delete" destructive onCancel={() => setConfirmDel(false)} onConfirm={doDelete} />
     </div>
   );
 }

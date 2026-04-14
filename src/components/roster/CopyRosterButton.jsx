@@ -35,7 +35,7 @@ export default function CopyRosterButton({ team, sortedPlayers }) {
       onClick={onCopy}
       className="sf-press flex items-center gap-1"
       style={{
-        minHeight: 36, padding: '0 12px', borderRadius: 8,
+        minHeight: 44, padding: '0 14px', borderRadius: 8,
         border: '1px solid var(--sf-border-default)',
         backgroundColor: 'var(--sf-bg-card)',
         color: 'var(--sf-text-secondary)',

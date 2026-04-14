@@ -1,6 +1,5 @@
 import DutyEditor from './DutyEditor';
-
-const HOME_AWAY = ['home', 'away', 'neutral', 'tbd'];
+import { HOME_AWAY } from '../../lib/constants';
 
 export default function StepDetails({ eventType, data, onChange }) {
   const set = (key, val) => onChange({ ...data, [key]: val });

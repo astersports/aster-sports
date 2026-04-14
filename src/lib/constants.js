@@ -16,7 +16,7 @@ export const TYPE_LABELS = {
   skills_lab: 'Skills Lab',
   tryout: 'Tryout',
   tournament: 'Tournament',
-  other: 'Other',
+  other: 'Event',
 };
 
 export const RSVP_STATUSES = ['going', 'not_going', 'maybe', 'injury', 'partial'];

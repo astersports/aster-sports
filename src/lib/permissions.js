@@ -3,8 +3,6 @@
 // inline, so changing the role set later is a one-file edit.
 
 export const isAdmin  = (role) => role === 'admin';
-export const isCoach  = (role) => role === 'coach';
-export const isParent = (role) => role === 'parent';
 
 // Staff = admin or coach — both have write access to their team's data.
 export const isStaff  = (role) => role === 'admin' || role === 'coach';

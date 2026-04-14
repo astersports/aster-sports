@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../../lib/formatters';
-
-const TYPE_LABELS = { practice: 'Practice', game: 'Game', skills_lab: 'Skills Lab', tryout: 'Tryout', tournament: 'Tournament', other: 'Event' };
+import { TYPE_LABELS } from '../../lib/constants';
 
 export default function CompactCard({ event, stagger }) {
   const navigate = useNavigate();

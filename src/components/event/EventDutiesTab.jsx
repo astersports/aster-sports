@@ -67,8 +67,8 @@ function Empty({ text }) {
 }
 
 const btnStyle = (bg, color, bordered) => ({
-  minHeight: 32, padding: '0 12px', borderRadius: 8,
+  minHeight: 44, padding: '0 14px', borderRadius: 8,
   backgroundColor: bg, color,
   border: bordered ? '1px solid var(--sf-border-default)' : 'none',
-  fontSize: 12, fontWeight: 600,
+  fontSize: 13, fontWeight: 600,
 });
