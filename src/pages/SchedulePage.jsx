@@ -57,7 +57,8 @@ export default function SchedulePage() {
   const Card = density === 'compact' ? CompactCard : EventCard;
 
   return (
-    <div className="px-4 py-4 sf-fade-in">
+    <>
+      <div className="px-4 py-4 sf-fade-in">
       <div style={{ marginBottom: 4 }}>
         <h1 className="font-bold" style={{
           color: 'var(--sf-text-primary)', fontSize: 20,
@@ -113,8 +114,10 @@ export default function SchedulePage() {
           ))}
         </div>
       )}
+      </div>
 
-      {/* Create FAB */}
+      {/* Create FAB — sibling of .sf-fade-in so its transform doesn't
+          form a containing block for this position:fixed element. */}
       <button
         type="button"
         onClick={() => setShowWizard(true)}
@@ -143,6 +146,6 @@ export default function SchedulePage() {
           onCreated={refetch}
         />
       )}
-    </div>
+    </>
   );
 }
