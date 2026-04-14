@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, Plus } from 'lucide-react';
 import { useActivities } from '../hooks/useActivities';
 import { usePrograms } from '../hooks/usePrograms';
+import { useAuth } from '../context/AuthContext';
 import DayStrip from '../components/schedule/DayStrip';
 import CountdownBanner from '../components/schedule/CountdownBanner';
 import FilterBar from '../components/schedule/FilterBar';
@@ -9,13 +10,16 @@ import EventCard from '../components/schedule/EventCard';
 import CompactCard from '../components/schedule/CompactCard';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
+import CreateActivityWizard from '../components/wizard/CreateActivityWizard';
 
 export default function SchedulePage() {
-  const { activities, loading } = useActivities();
+  const { activities, loading, refetch } = useActivities();
   const { programs } = usePrograms();
+  const { orgId } = useAuth();
   const [selectedDate, setSelectedDate] = useState(null);
   const [filters, setFilters] = useState({ teamId: null, eventType: 'all' });
   const [density, setDensity] = useState('comfortable');
+  const [showWizard, setShowWizard] = useState(false);
 
   const filtered = useMemo(() => {
     let list = activities;
@@ -108,6 +112,36 @@ export default function SchedulePage() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Create FAB */}
+      <button
+        type="button"
+        onClick={() => setShowWizard(true)}
+        className="sf-press sf-bounce-tap"
+        aria-label="Create event"
+        style={{
+          position: 'fixed',
+          bottom: 'calc(80px + env(safe-area-inset-bottom, 0px) + 16px)',
+          right: 16,
+          width: 56, height: 56, borderRadius: 28,
+          backgroundColor: 'var(--sf-accent)',
+          color: 'var(--sf-text-inverse)',
+          border: 'none',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 100,
+        }}
+      >
+        <Plus size={24} strokeWidth={2} />
+      </button>
+
+      {showWizard && (
+        <CreateActivityWizard
+          orgId={orgId}
+          onClose={() => setShowWizard(false)}
+          onCreated={refetch}
+        />
       )}
     </div>
   );
