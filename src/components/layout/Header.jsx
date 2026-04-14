@@ -77,7 +77,7 @@ export default function Header() {
         type="button"
         onClick={signOut}
         className="sf-press flex items-center justify-center"
-        style={{ width: 44, height: 44, color: 'rgba(255,255,255,0.7)', background: 'none', border: 'none' }}
+        style={{ width: 44, height: 44, color: 'var(--sf-text-on-dark)', background: 'none', border: 'none' }}
         aria-label="Sign out"
       >
         <LogOut size={20} strokeWidth={1.75} />
