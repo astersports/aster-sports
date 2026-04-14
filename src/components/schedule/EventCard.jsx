@@ -1,12 +1,15 @@
+import { MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../../lib/formatters';
+
+const TYPE_LABELS = { practice: 'Practice', game: 'Game', skills_lab: 'Skills Lab', tryout: 'Tryout', tournament: 'Tournament', other: 'Event' };
 
 export default function EventCard({ event, stagger }) {
   const navigate = useNavigate();
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--sf-neutral)';
   const teamName = team?.name || '';
-  const typeBadge = (event.event_type || 'event').toUpperCase();
+  const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
   const isGame = event.event_type === 'game';
 
   return (
@@ -26,28 +29,30 @@ export default function EventCard({ event, stagger }) {
     >
       <div style={{ width: 4, flexShrink: 0, backgroundColor: teamColor }} />
       <div style={{ flex: 1, padding: '10px 14px' }}>
-        <div className="flex items-center justify-between" style={{ marginBottom: 4 }}>
+        {/* Row 1: Time · Type */}
+        <div style={{ marginBottom: 4 }}>
           <span className="font-bold" style={{ fontSize: 17, color: 'var(--sf-text-primary)' }}>
             {formatTime(event.start_time || '00:00')}
           </span>
-          <div className="flex items-center gap-2">
-            <span style={{
-              fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4,
-              backgroundColor: teamColor, color: 'var(--sf-text-inverse)',
-            }}>{teamName}</span>
-            <span style={{
-              fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4,
-              backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-tertiary)',
-              letterSpacing: '0.05em',
-            }}>{typeBadge}</span>
-          </div>
+          <span style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginLeft: 6 }}>
+            · {typeLabel}
+          </span>
         </div>
-        <div style={{ fontSize: 14, color: 'var(--sf-text-primary)', marginBottom: 2 }}>
-          {event.title || event.event_type || 'Event'}
+        {/* Row 2: Title */}
+        <div style={{ fontSize: 15, color: 'var(--sf-text-primary)', marginBottom: 2 }}>
+          {event.title || typeLabel}
         </div>
-        {event.location_name && (
-          <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)' }}>
-            📍 {event.location_name}
+        {/* Row 3: Team · pin Location */}
+        {(teamName || event.location_name) && (
+          <div className="flex items-center" style={{ fontSize: 13, gap: 4 }}>
+            {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
+            {teamName && event.location_name && <span style={{ color: 'var(--sf-text-tertiary)' }}>·</span>}
+            {event.location_name && (
+              <>
+                <MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+                <span style={{ color: 'var(--sf-text-tertiary)' }}>{event.location_name}</span>
+              </>
+            )}
           </div>
         )}
       </div>

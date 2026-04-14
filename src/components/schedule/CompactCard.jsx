@@ -1,5 +1,7 @@
 import { formatTime } from '../../lib/formatters';
 
+const TYPE_LABELS = { practice: 'Practice', game: 'Game', skills_lab: 'Skills Lab', tryout: 'Tryout', tournament: 'Tournament', other: 'Event' };
+
 export default function CompactCard({ event, stagger }) {
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--sf-neutral)';
@@ -30,7 +32,7 @@ export default function CompactCard({ event, stagger }) {
           backgroundColor: teamColor, color: 'var(--sf-text-inverse)',
         }}>{teamName}</span>
         <span className="truncate" style={{ flex: 1, fontSize: 13, color: 'var(--sf-text-secondary)' }}>
-          {event.title || event.event_type || 'Event'}
+          {event.title || TYPE_LABELS[event.event_type] || event.event_type || 'Event'}
         </span>
       </div>
     </div>

@@ -40,7 +40,7 @@ export function AuthProvider({ children }) {
     setLoading(true);
     const { data, error } = await supabase
       .from('user_roles')
-      .select('role, organization_id, organizations(id, name, slug, brand_colors)')
+      .select('role, organization_id, organizations(id, name, slug, logo_url, brand_colors)')
       .eq('user_id', userId)
       .single();
     if (id !== fetchIdRef.current) return;
