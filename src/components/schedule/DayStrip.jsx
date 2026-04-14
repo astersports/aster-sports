@@ -48,7 +48,7 @@ export default function DayStrip({ selectedDate, onSelectDate, activities }) {
             key={i}
             type="button"
             data-today={isToday || undefined}
-            onClick={() => { navigator.vibrate?.(10); onSelectDate(date); }}
+            onClick={() => { navigator.vibrate?.(10); onSelectDate(isSelected ? null : date); }}
             className="sf-press flex flex-col items-center"
             style={{
               minWidth: 44,
