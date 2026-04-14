@@ -19,7 +19,7 @@ export default function SchedulePage() {
   const { programs } = usePrograms();
   const { orgId } = useAuth();
   const rsvpCounts = useEventRsvpCounts(activities);
-  useScheduleScroll(loading);
+  useScheduleScroll(loading, activities.length > 0);
   const [selectedDate, setSelectedDate] = useState(null);
   const [filters, setFilters] = useState({ teamId: null, eventType: 'all' });
   const [density, setDensity] = useState('comfortable');

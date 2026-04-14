@@ -57,6 +57,12 @@ export default function EventCard({ event, rsvpCount, stagger }) {
             )}
           </div>
         )}
+        {/* Row 3b: Jersey color (games/tournaments when set) */}
+        {event.jersey && (
+          <div style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
+            {event.jersey} jersey
+          </div>
+        )}
         {/* Row 4: RSVP counts (only if any response recorded) */}
         {rsvpCount && (rsvpCount.going + rsvpCount.not_going + rsvpCount.maybe) > 0 && (
           <div className="flex items-center" style={{ fontSize: 12, gap: 8, marginTop: 4, color: 'var(--sf-text-tertiary)' }}>

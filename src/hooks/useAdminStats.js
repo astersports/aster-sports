@@ -63,10 +63,9 @@ export function useAdminStats() {
       const players = await SAFE(async () => {
         if (teamIds.length === 0) return 0;
         const { count } = await supabase
-          .from('team_players')
+          .from('roster_members')
           .select('id', { count: 'exact', head: true })
-          .in('team_id', teamIds)
-          .eq('status', 'active');
+          .in('team_id', teamIds);
         return count ?? 0;
       });
 

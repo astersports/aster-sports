@@ -1,4 +1,4 @@
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock, Repeat } from 'lucide-react';
 
 // Details tab — date/time, arrival, opponent pill, jersey, parent
 // instructions, and coach notes. Location is intentionally NOT here;
@@ -13,6 +13,17 @@ export default function EventDetailTab({ event }) {
   return (
     <>
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {event.parent_event_id && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            fontSize: 12, color: 'var(--sf-text-tertiary)',
+            backgroundColor: 'var(--sf-bg-secondary)', padding: '2px 8px', borderRadius: 6,
+            alignSelf: 'flex-start',
+          }}>
+            <Repeat size={12} strokeWidth={1.75} />
+            Part of recurring series
+          </div>
+        )}
         {date && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--sf-text-primary)' }}>
             <Calendar size={16} strokeWidth={1.75} color="var(--sf-text-tertiary)" />

@@ -1,11 +1,11 @@
-import { Bell } from 'lucide-react';
+import { Bell, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 // Top app bar: org initial + name on the left, notification bell on the right.
 // Org logo is a future enhancement — for now we always render the initial
 // circle because no org stores a logo URL yet.
 export default function Header() {
-  const { org, orgName } = useAuth();
+  const { org, orgName, signOut } = useAuth();
   const initial = (orgName || 'S').trim().charAt(0).toUpperCase();
   // Future: read unread count from a notifications query. Hardcoded to 0 for
   // now so the dot stays hidden until that feature lands.
@@ -72,6 +72,15 @@ export default function Header() {
             aria-label={`${unread} unread notifications`}
           />
         )}
+      </button>
+      <button
+        type="button"
+        onClick={signOut}
+        className="sf-press flex items-center justify-center"
+        style={{ width: 44, height: 44, color: 'rgba(255,255,255,0.7)', background: 'none', border: 'none' }}
+        aria-label="Sign out"
+      >
+        <LogOut size={20} strokeWidth={1.75} />
       </button>
     </header>
   );

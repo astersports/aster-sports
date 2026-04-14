@@ -13,20 +13,27 @@ import { useConflictCheck } from '../../hooks/useConflictCheck';
 const STEPS = ['Type', 'Team', 'When', 'Details'];
 const EDIT_STEPS = ['When', 'Details'];
 
-export default function CreateActivityWizard({ orgId, editEvent, onClose, onCreated }) {
+export default function CreateActivityWizard({ orgId, editEvent, editMode = 'single', onClose, onCreated }) {
   const isEdit = !!editEvent;
   const [step, setStep] = useState(isEdit ? 2 : 0);
   const [form, setForm] = useState(isEdit ? eventToForm(editEvent) : EMPTY_FORM);
   const conflicts = useConflictCheck(step, form, isEdit ? editEvent.id : null);
   const { create, loading: creating } = useCreateActivity();
-  const { update, loading: updating } = useUpdateActivity();
+  const { update, updateSeries, loading: updating } = useUpdateActivity();
   const loading = creating || updating;
 
   const selectType = (type) => { setForm((f) => ({ ...f, eventType: type })); setStep(1); };
   const selectTeam = (id) => { setForm((f) => ({ ...f, teamId: id })); setStep(2); };
 
   const handleSave = async () => {
-    const result = isEdit ? await update(editEvent.id, form) : await create(form);
+    let result;
+    if (isEdit) {
+      result = editMode === 'series'
+        ? await updateSeries(editEvent.id, editEvent.parent_event_id, editEvent.start_at, form)
+        : await update(editEvent.id, form);
+    } else {
+      result = await create(form);
+    }
     if (result) { onCreated?.(); onClose(); }
   };
 
@@ -67,10 +74,10 @@ export default function CreateActivityWizard({ orgId, editEvent, onClose, onCrea
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' }}>
         {step === 0 && <StepType value={form.eventType} onSelect={selectType} />}
         {step === 1 && <StepTeam orgId={orgId} value={form.teamId} onSelect={selectTeam} />}
-        {step === 2 && <StepWhen data={form} onChange={setForm} />}
+        {step === 2 && <StepWhen data={form} onChange={setForm} isEdit={isEdit} />}
         {step === 3 && <StepDetails eventType={form.eventType} data={form} onChange={setForm} />}
       </div>
 
