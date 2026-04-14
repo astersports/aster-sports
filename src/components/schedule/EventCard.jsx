@@ -24,7 +24,7 @@ export default function EventCard({ event, rsvpCount, stagger }) {
         border: '1px solid var(--sf-border-default)',
         boxShadow: 'var(--sf-shadow-sm)',
         overflow: 'hidden',
-        opacity: isPast ? 0.5 : 1,
+        opacity: isPast ? 0.4 : 1,
         transition: 'box-shadow 150ms ease-out, transform 150ms ease-out, opacity 150ms ease-out',
       }}
     >

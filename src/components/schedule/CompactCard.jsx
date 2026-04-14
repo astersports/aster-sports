@@ -21,7 +21,7 @@ export default function CompactCard({ event, stagger }) {
         borderRadius: 8,
         border: '1px solid var(--sf-border-default)',
         overflow: 'hidden',
-        opacity: isPast ? 0.5 : 1,
+        opacity: isPast ? 0.4 : 1,
         cursor: 'pointer',
         transition: 'box-shadow 150ms ease-out, opacity 150ms ease-out',
       }}
