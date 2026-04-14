@@ -22,8 +22,9 @@ export function sundayOf(d) {
 // including today. With no events, falls back to ±4 weeks around today.
 export function getSeasonRange(activities) {
   const today = new Date();
-  const dates = (activities || [])
-    .map((a) => a.start_at ? new Date(a.start_at) : null)
+  const safe = Array.isArray(activities) ? activities : [];
+  const dates = safe
+    .map((a) => a?.start_at ? new Date(a.start_at) : null)
     .filter((d) => d && !Number.isNaN(d.getTime()));
   if (dates.length === 0) {
     const back = new Date(today); back.setDate(today.getDate() - 28);
