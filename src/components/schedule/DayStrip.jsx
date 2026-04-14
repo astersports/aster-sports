@@ -13,15 +13,17 @@ export default function DayStrip({ selectedDate, onSelectDate, activities }) {
     return enumerateDates(start, end);
   }, [activities]);
 
-  // Diagnostic: confirm mount + dates from devtools. Remove once verified.
-  console.log('DayStrip render', { activities, dates: allDays });
-
-  // Center today once per mount. Deselects and selection changes do NOT
-  // re-trigger — didInitialScroll gate keeps the user's scroll position.
+  // Center today once per mount. rAF gives the browser one frame to
+  // complete layout before scrollIntoView — on iOS, scrolling during
+  // the same frame the strip mounts silently no-ops, which was leaving
+  // the strip parked at Mar 23 (the left edge of the season).
   useEffect(() => {
     if (didInitialScroll.current || allDays.length === 0) return;
-    const el = scrollRef.current?.querySelector('[data-today="true"]');
-    if (el) { el.scrollIntoView({ inline: 'center', behavior: 'instant' }); didInitialScroll.current = true; }
+    const raf = requestAnimationFrame(() => {
+      const el = scrollRef.current?.querySelector('[data-today="true"]');
+      if (el) { el.scrollIntoView({ inline: 'center', behavior: 'auto' }); didInitialScroll.current = true; }
+    });
+    return () => cancelAnimationFrame(raf);
   }, [allDays.length]);
 
   const jumpToToday = () => {
@@ -31,12 +33,6 @@ export default function DayStrip({ selectedDate, onSelectDate, activities }) {
 
   return (
     <div style={{ position: 'relative' }}>
-      <div style={{
-        background: 'red', color: 'white', padding: '4px 8px',
-        fontSize: 12, fontWeight: 700, fontFamily: 'monospace',
-      }}>
-        DayStrip MOUNTED · activities={activities?.length ?? 'undef'} · dates={allDays.length}
-      </div>
       <div
         ref={scrollRef}
         className="flex gap-1 overflow-x-auto sf-no-scrollbar"
@@ -45,6 +41,7 @@ export default function DayStrip({ selectedDate, onSelectDate, activities }) {
         {allDays.map((date, i) => {
           const isToday = isSameDay(date, today);
           const isSelected = selectedDate && isSameDay(date, selectedDate);
+          const isPast = !isToday && date < today;
           const dateStr = date.toISOString().split('T')[0];
           const dayEvents = (activities || []).filter((a) => a.date === dateStr);
           const teamColors = [...new Set(dayEvents.map((a) => a.teams?.team_color).filter(Boolean))];
@@ -74,6 +71,7 @@ export default function DayStrip({ selectedDate, onSelectDate, activities }) {
                   minWidth: 40, flexShrink: 0, padding: '6px 4px', borderRadius: 10,
                   backgroundColor: isSelected ? 'var(--sf-accent)' : 'transparent',
                   border: isToday && !isSelected ? '1.5px solid var(--sf-accent)' : '1.5px solid transparent',
+                  opacity: isPast ? 0.45 : 1,
                 }}
               >
                 <span style={{

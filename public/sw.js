@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skyfire-v2-debug';
+const CACHE_NAME = 'skyfire-v3';
 const PRECACHE = ['/', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
