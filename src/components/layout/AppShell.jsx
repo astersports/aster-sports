@@ -1,5 +1,6 @@
 import Header from './Header';
 import BottomNav from './BottomNav';
+import InstallPrompt from '../shared/InstallPrompt';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 
 // App shell for every authenticated page. The root is pinned to the
@@ -44,6 +45,7 @@ export default function AppShell({ children }) {
         {children}
       </main>
       <BottomNav />
+      <InstallPrompt />
     </div>
   );
 }
