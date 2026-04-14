@@ -2,7 +2,10 @@ const TYPE_OPTIONS = [
   { key: 'all', label: 'All' },
   { key: 'practice', label: 'Practice' },
   { key: 'game', label: 'Game' },
+  { key: 'skills_lab', label: 'Skills Lab' },
+  { key: 'tryout', label: 'Tryout' },
   { key: 'tournament', label: 'Tournament' },
+  { key: 'other', label: 'Other' },
 ];
 
 export default function FilterBar({ teams, filters, onFilterChange, density, onDensityChange }) {
