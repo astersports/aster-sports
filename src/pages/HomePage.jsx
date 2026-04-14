@@ -4,6 +4,7 @@ import { isAdmin } from '../lib/permissions';
 import AdminHomePage from './AdminHomePage';
 import PlaceholderPage from './PlaceholderPage';
 import WelcomeOverlay from '../components/shared/WelcomeOverlay';
+import InstallPrompt from '../components/shared/InstallPrompt';
 
 // Home dispatches on role: admins land on the KPI dashboard, coaches and
 // parents get a placeholder until their role-specific dashboards are built.
@@ -12,12 +13,14 @@ export default function HomePage() {
   if (isAdmin(role)) return (
     <>
       <WelcomeOverlay />
+      <InstallPrompt />
       <AdminHomePage />
     </>
   );
   return (
     <>
       <WelcomeOverlay />
+      <InstallPrompt />
       <PlaceholderPage
         icon={House}
         title="Home"
