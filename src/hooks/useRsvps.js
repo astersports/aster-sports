@@ -14,7 +14,8 @@ export function useRsvps(eventId, teamId) {
       supabase
         .from('roster_members')
         .select('jersey_number, players(id, first_name, last_name, member_type)')
-        .eq('team_id', teamId),
+        .eq('team_id', teamId)
+        .order('jersey_number', { ascending: true }),
     ]);
     setRsvps(rsvpRes.data || []);
     const mapped = (rosterRes.data || []).map((rm) => ({
