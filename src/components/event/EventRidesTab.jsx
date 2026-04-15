@@ -10,13 +10,13 @@ export default function EventRidesTab({ eventId }) {
   const { user } = useAuth();
   const { showToast } = useToast();
   const { rides, loading, create, remove } = useRides(eventId);
-  const [form, setForm] = useState(null); // 'offer' | 'request' | null
+  const [form, setForm] = useState(null); // 'offering' | 'requesting' | null
   const [draft, setDraft] = useState({ pickup_location: '', departure_time: '', seats: 1 });
 
   if (loading) return <div style={{ padding: 16, color: 'var(--sf-text-tertiary)', fontSize: 14 }}>Loading rides...</div>;
 
-  const offers = rides.filter((r) => r.ride_type === 'offer');
-  const requests = rides.filter((r) => r.ride_type === 'request');
+  const offers = rides.filter((r) => r.ride_type === 'offering');
+  const requests = rides.filter((r) => r.ride_type === 'requesting');
 
   const submit = async () => {
     const ok = await create({ ride_type: form, ...draft });
@@ -42,7 +42,7 @@ export default function EventRidesTab({ eventId }) {
             onChange={(e) => setDraft({ ...draft, departure_time: e.target.value })} style={inputStyle} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 14, color: 'var(--sf-text-secondary)' }}>
-              {form === 'offer' ? 'Seats available' : 'Riders'}
+              {form === 'offering' ? 'Seats available' : 'Riders'}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <button type="button" onClick={() => setDraft({ ...draft, seats: Math.max(1, draft.seats - 1) })}
@@ -66,7 +66,7 @@ export default function EventRidesTab({ eventId }) {
             </button>
             <button type="button" onClick={submit} className="sf-press"
               style={{ flex: 1, minHeight: 40, borderRadius: 10, border: 'none', backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 14, fontWeight: 600 }}>
-              {form === 'offer' ? 'Offer ride' : 'Request ride'}
+              {form === 'offering' ? 'Offer ride' : 'Request ride'}
             </button>
           </div>
         </div>
@@ -74,9 +74,9 @@ export default function EventRidesTab({ eventId }) {
 
       {!form && (
         <div style={{ display: 'flex', gap: 8 }}>
-          <button type="button" onClick={() => setForm('offer')} className="sf-press"
+          <button type="button" onClick={() => setForm('offering')} className="sf-press"
             style={ghostBtn}><Plus size={16} strokeWidth={1.75} /> Offer ride</button>
-          <button type="button" onClick={() => setForm('request')} className="sf-press"
+          <button type="button" onClick={() => setForm('requesting')} className="sf-press"
             style={ghostBtn}><Plus size={16} strokeWidth={1.75} /> Request ride</button>
         </div>
       )}
@@ -109,7 +109,7 @@ function RideCard({ ride, user, onRemove }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 4, flexWrap: 'wrap' }}>
         {ride.pickup_location && <><MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" /><span>{ride.pickup_location}</span><span>·</span></>}
         {ride.departure_time && <><span>{ride.departure_time}</span><span>·</span></>}
-        <span>{ride.seats} {ride.ride_type === 'offer' ? 'seats' : ride.seats === 1 ? 'rider' : 'riders'}</span>
+        <span>{ride.seats} {ride.ride_type === 'offering' ? 'seats' : ride.seats === 1 ? 'rider' : 'riders'}</span>
       </div>
     </div>
   );

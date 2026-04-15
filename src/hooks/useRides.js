@@ -3,8 +3,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
 // Schema: event_rides uses (ride_type, pickup_location, departure_time,
-// guardian_id, name, seats). ride_type is 'offer' (driver) or
-// 'request' (rider needing a seat).
+// guardian_id, name, seats). ride_type is 'offering' (driver) or
+// 'requesting' (rider needing a seat).
 export function useRides(eventId) {
   const { user } = useAuth();
   const [rides, setRides] = useState([]);
