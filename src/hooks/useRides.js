@@ -43,6 +43,7 @@ export function useRides(eventId) {
       notes: payload.notes || null,
       guardian_id: null,
       name: authorName,
+      phone: payload.phone || null,
     });
     if (error) { console.error('Ride insert error:', error); return false; }
     await fetch();
