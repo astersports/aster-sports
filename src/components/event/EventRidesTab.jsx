@@ -40,9 +40,25 @@ export default function EventRidesTab({ eventId }) {
             placeholder="Pickup location" style={inputStyle} />
           <input type="time" value={draft.departure_time}
             onChange={(e) => setDraft({ ...draft, departure_time: e.target.value })} style={inputStyle} />
-          <input type="number" min={1} value={draft.seats}
-            onChange={(e) => setDraft({ ...draft, seats: Math.max(1, parseInt(e.target.value) || 1) })}
-            placeholder={form === 'offer' ? 'Seats available' : 'Riders'} style={inputStyle} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 14, color: 'var(--sf-text-secondary)' }}>
+              {form === 'offer' ? 'Seats available' : 'Riders'}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button type="button" onClick={() => setDraft({ ...draft, seats: Math.max(1, draft.seats - 1) })}
+                disabled={draft.seats <= 1}
+                style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)', fontSize: 16 }}>
+                -
+              </button>
+              <span style={{ minWidth: 24, textAlign: 'center', fontSize: 15, fontWeight: 600 }}>
+                {draft.seats}
+              </span>
+              <button type="button" onClick={() => setDraft({ ...draft, seats: Math.min(8, draft.seats + 1) })}
+                style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)', fontSize: 16 }}>
+                +
+              </button>
+            </div>
+          </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="button" onClick={() => setForm(null)} className="sf-press"
               style={{ flex: 1, minHeight: 40, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-text-secondary)', fontSize: 14 }}>
@@ -100,4 +116,4 @@ function RideCard({ ride, user, onRemove }) {
 }
 
 const inputStyle = { minHeight: 40, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)', padding: '0 10px', fontSize: 14, color: 'var(--sf-text-primary)' };
-const ghostBtn = { flex: 1, minHeight: 40, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-accent)', fontSize: 13, fontWeight: 500, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 };
+const ghostBtn = { flex: 1, minHeight: 40, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-text-primary)', fontSize: 13, fontWeight: 500, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 };
