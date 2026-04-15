@@ -125,6 +125,11 @@ function RideCard({ ride, user, onRemove, eventLocation, eventEndAt }) {
           Est. return: {new Date(new Date(eventEndAt).getTime() + 15 * 60000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
         </div>
       )}
+      {ride.notes && (
+        <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 4, fontStyle: 'italic' }}>
+          {ride.notes}
+        </div>
+      )}
     </div>
   );
 }
