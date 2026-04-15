@@ -6,12 +6,12 @@ import { useToast } from '../../context/ToastContext';
 
 // Ride board — offer (driver) and request (rider) cards for an event.
 // Schema: ride_type, pickup_location, departure_time, seats, guardian_id, name.
-export default function EventRidesTab({ eventId, eventDate }) {
+export default function EventRidesTab({ eventId, eventStartAt, eventLocation, eventEndAt }) {
   const { user } = useAuth();
   const { showToast } = useToast();
   const { rides, loading, create, remove } = useRides(eventId);
   const [form, setForm] = useState(null); // 'offering' | 'requesting' | null
-  const [draft, setDraft] = useState({ pickup_location: '', departure_time: '', seats: 1 });
+  const [draft, setDraft] = useState({ pickup_location: '', departure_time: '', seats: 1, notes: '' });
 
   if (loading) return <div style={{ padding: 16, color: 'var(--sf-text-tertiary)', fontSize: 14 }}>Loading rides...</div>;
 
@@ -19,18 +19,18 @@ export default function EventRidesTab({ eventId, eventDate }) {
   const requests = rides.filter((r) => r.ride_type === 'requesting');
 
   const submit = async () => {
-    const ok = await create({ ride_type: form, event_date: eventDate, ...draft });
-    if (ok) { setForm(null); setDraft({ pickup_location: '', departure_time: '', seats: 1 }); }
+    const ok = await create({ ride_type: form, event_date: eventStartAt?.slice(0, 10), ...draft });
+    if (ok) { setForm(null); setDraft({ pickup_location: '', departure_time: '', seats: 1, notes: '' }); }
     else showToast('Could not save ride', 'error');
   };
 
   return (
     <div style={{ padding: '16px 16px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
       <RideSection title="Drivers offering rides" icon={Car} empty="No drivers yet.">
-        {offers.map((r) => <RideCard key={r.id} ride={r} user={user} onRemove={remove} />)}
+        {offers.map((r) => <RideCard key={r.id} ride={r} user={user} onRemove={remove} eventLocation={eventLocation} eventEndAt={eventEndAt} />)}
       </RideSection>
       <RideSection title="Riders needing a ride" icon={UserRound} empty="No requests yet.">
-        {requests.map((r) => <RideCard key={r.id} ride={r} user={user} onRemove={remove} />)}
+        {requests.map((r) => <RideCard key={r.id} ride={r} user={user} onRemove={remove} eventLocation={eventLocation} eventEndAt={eventEndAt} />)}
       </RideSection>
 
       {form && (
@@ -59,6 +59,9 @@ export default function EventRidesTab({ eventId, eventDate }) {
               </button>
             </div>
           </div>
+          <input type="text" value={draft.notes}
+            onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
+            placeholder="e.g. I'll text when leaving" style={inputStyle} />
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="button" onClick={() => setForm(null)} className="sf-press"
               style={{ flex: 1, minHeight: 40, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-text-secondary)', fontSize: 14 }}>
@@ -98,7 +101,7 @@ function RideSection({ title, icon: Icon, empty, children }) {
   );
 }
 
-function RideCard({ ride, user, onRemove }) {
+function RideCard({ ride, user, onRemove, eventLocation, eventEndAt }) {
   const isMine = ride.guardian_id === user?.id;
   return (
     <div style={{ padding: 12, backgroundColor: 'var(--sf-bg-card)', borderRadius: 10, border: '1px solid var(--sf-border-default)' }}>
@@ -111,6 +114,17 @@ function RideCard({ ride, user, onRemove }) {
         {ride.departure_time && <><span>{ride.departure_time}</span><span>·</span></>}
         <span>{ride.seats} {ride.ride_type === 'offering' ? 'seats' : ride.seats === 1 ? 'rider' : 'riders'}</span>
       </div>
+      {eventLocation && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--sf-text-secondary)' }}>
+          <MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+          <span>Drop-off: {eventLocation}</span>
+        </div>
+      )}
+      {eventEndAt && (
+        <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 2 }}>
+          Est. return: {new Date(new Date(eventEndAt).getTime() + 15 * 60000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+        </div>
+      )}
     </div>
   );
 }

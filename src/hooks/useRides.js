@@ -40,6 +40,7 @@ export function useRides(eventId) {
       pickup_location: payload.pickup_location || null,
       departure_time: depTime,
       seats: payload.seats || 1,
+      notes: payload.notes || null,
       guardian_id: null,
       name: authorName,
     });
