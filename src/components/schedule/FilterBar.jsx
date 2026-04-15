@@ -1,5 +1,5 @@
 const TYPE_OPTIONS = [
-  { key: 'all', label: 'All' },
+  { key: null, label: 'All' },
   { key: 'practice', label: 'Practice' },
   { key: 'game', label: 'Game' },
   { key: 'skills_lab', label: 'Skills Lab' },
@@ -8,60 +8,43 @@ const TYPE_OPTIONS = [
   { key: 'other', label: 'Other' },
 ];
 
-export default function FilterBar({ teams, filters, onFilterChange, density, onDensityChange }) {
-  const { teamId, eventType } = filters;
+export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedType, onSelectType }) {
+  const uniqueTeams = [];
+  const seen = new Set();
+  (teams || []).forEach((a) => {
+    if (a.team_id && !seen.has(a.team_id) && a.teams) {
+      seen.add(a.team_id);
+      uniqueTeams.push({ id: a.team_id, name: a.teams.name, team_color: a.teams.team_color });
+    }
+  });
 
   return (
-    <div className="sf-sticky-filters" style={{ padding: '8px 0' }}>
+    <div style={{ padding: '8px 0' }}>
       <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 6 }}>
         <Chip
           label="All Teams"
-          active={!teamId}
-          onClick={() => onFilterChange({ ...filters, teamId: null })}
+          active={!selectedTeam}
+          onClick={() => onSelectTeam(null)}
         />
-        {teams.map((t) => (
+        {uniqueTeams.map((t) => (
           <Chip
             key={t.id}
             label={t.name}
-            active={teamId === t.id}
+            active={selectedTeam === t.id}
             color={t.team_color}
-            onClick={() => onFilterChange({ ...filters, teamId: teamId === t.id ? null : t.id })}
+            onClick={() => onSelectTeam(selectedTeam === t.id ? null : t.id)}
           />
         ))}
       </div>
-      <div className="flex items-center gap-2">
-        <div className="flex gap-2 overflow-x-auto sf-no-scrollbar flex-1">
-          {TYPE_OPTIONS.map((opt) => (
-            <Chip
-              key={opt.key}
-              label={opt.label}
-              active={eventType === opt.key}
-              onClick={() => onFilterChange({ ...filters, eventType: opt.key })}
-            />
-          ))}
-        </div>
-        <div className="flex" style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid var(--sf-border-default)', flexShrink: 0 }}>
-          <button
-            type="button"
-            onClick={() => { navigator.vibrate?.(10); onDensityChange('comfortable'); }}
-            style={{
-              width: 32, height: 32, border: 'none',
-              backgroundColor: density === 'comfortable' ? 'var(--sf-accent)' : 'var(--sf-bg-card)',
-              color: density === 'comfortable' ? 'var(--sf-text-inverse)' : 'var(--sf-text-tertiary)',
-              fontSize: 14,
-            }}
-          >⊞</button>
-          <button
-            type="button"
-            onClick={() => { navigator.vibrate?.(10); onDensityChange('compact'); }}
-            style={{
-              width: 32, height: 32, border: 'none',
-              backgroundColor: density === 'compact' ? 'var(--sf-accent)' : 'var(--sf-bg-card)',
-              color: density === 'compact' ? 'var(--sf-text-inverse)' : 'var(--sf-text-tertiary)',
-              fontSize: 14,
-            }}
-          >⊟</button>
-        </div>
+      <div className="flex gap-2 overflow-x-auto sf-no-scrollbar">
+        {TYPE_OPTIONS.map((opt) => (
+          <Chip
+            key={opt.key || 'all'}
+            label={opt.label}
+            active={selectedType === opt.key}
+            onClick={() => onSelectType(opt.key)}
+          />
+        ))}
       </div>
     </div>
   );
