@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
 import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
+import { useNextEventRides } from '../hooks/useNextEventRides';
 import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
 import { Plus, ChevronDown } from 'lucide-react';
 import EventCard from '../components/schedule/EventCard';
@@ -32,6 +33,7 @@ export default function SchedulePage() {
   const nextEvent = upcoming[0] || null;
   const thisWeek = useMemo(() => upcoming.filter((a) => new Date(a.start_at) <= weekEnd), [upcoming]);
   const remaining = useMemo(() => upcoming.filter((a) => new Date(a.start_at) > weekEnd), [upcoming]);
+  const rideInfo = useNextEventRides(nextEvent);
 
   if (loading) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
 
@@ -43,12 +45,7 @@ export default function SchedulePage() {
         </h1>
         <div style={{ width: 32, height: 3, backgroundColor: 'var(--sf-accent)', borderRadius: 2, marginBottom: 16 }} />
 
-        {nextEvent && (
-          <NextUpCard
-            event={nextEvent}
-            rsvpCount={rsvpCounts[nextEvent.id]}
-          />
-        )}
+        {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideInfo={rideInfo} />}
 
         <FilterBar
           teams={activities}

@@ -21,7 +21,7 @@ function formatCountdown(startAt) {
     dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
-export default function NextUpCard({ event, rsvpCount }) {
+export default function NextUpCard({ event, rsvpCount, rideInfo }) {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(() => formatCountdown(event.start_at));
 
@@ -70,6 +70,13 @@ export default function NextUpCard({ event, rsvpCount }) {
               <span><strong style={{ color: 'var(--sf-success)' }}>{rsvpCount.going}</strong> going</span>
               <span><strong style={{ color: 'var(--sf-danger)' }}>{rsvpCount.not_going}</strong> not going</span>
               <span><strong style={{ color: 'var(--sf-neutral)' }}>{rsvpCount.noResponse}</strong> no response</span>
+            </div>
+          )}
+          {rideInfo && (rideInfo.offers > 0 || rideInfo.requests > 0) && (
+            <div style={{ display: 'flex', gap: 6, fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 4 }}>
+              {rideInfo.offers > 0 && <span>{rideInfo.offers} seat{rideInfo.offers !== 1 ? 's' : ''} offered</span>}
+              {rideInfo.offers > 0 && rideInfo.requests > 0 && <span>·</span>}
+              {rideInfo.requests > 0 && <span>{rideInfo.requests} ride{rideInfo.requests !== 1 ? 's' : ''} needed</span>}
             </div>
           )}
         </div>
