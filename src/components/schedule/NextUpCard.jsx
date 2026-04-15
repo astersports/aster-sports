@@ -21,7 +21,7 @@ function formatCountdown(startAt) {
     dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
-export default function NextUpCard({ event, rsvpCount, onRsvp, currentRsvp }) {
+export default function NextUpCard({ event, rsvpCount }) {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(() => formatCountdown(event.start_at));
 
@@ -33,20 +33,6 @@ export default function NextUpCard({ event, rsvpCount, onRsvp, currentRsvp }) {
   const teamColor = event.team_color || 'var(--sf-text-tertiary)';
   const teamName = event.team_name || '';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
-
-  const buttons = [
-    { key: 'going', label: 'Going', color: 'var(--sf-success)', bg: 'var(--sf-success-soft)' },
-    { key: 'maybe', label: 'Maybe', color: 'var(--sf-warning)', bg: 'var(--sf-warning-soft)' },
-    { key: 'not_going', label: 'Not Going', color: 'var(--sf-danger)', bg: 'var(--sf-danger-soft)' },
-  ];
-
-  const handleRsvp = (status) => {
-    if (currentRsvp === status) {
-      onRsvp?.(event.id, null);
-    } else {
-      onRsvp?.(event.id, status);
-    }
-  };
 
   return (
     <div
@@ -88,29 +74,16 @@ export default function NextUpCard({ event, rsvpCount, onRsvp, currentRsvp }) {
           )}
         </div>
       </div>
-      <div style={{
-        display: 'flex', gap: 8, padding: '0 16px 16px',
-      }}>
-        {buttons.map((b) => {
-          const active = currentRsvp === b.key;
-          return (
-            <button
-              key={b.key}
-              type="button"
-              onClick={() => handleRsvp(b.key)}
-              className="sf-press"
-              style={{
-                flex: 1, minHeight: 44, borderRadius: 10,
-                border: active ? 'none' : '1px solid var(--sf-border-default)',
-                backgroundColor: active ? b.bg : 'transparent',
-                color: active ? b.color : 'var(--sf-text-secondary)',
-                fontSize: 14, fontWeight: active ? 600 : 500,
-              }}
-            >
-              {b.label}
-            </button>
-          );
-        })}
+      <div
+        onClick={() => navigate(`/events/${event.id}`)}
+        className="sf-press"
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minHeight: 44, borderTop: '1px solid var(--sf-border-subtle)',
+          fontSize: 14, fontWeight: 500, color: 'var(--sf-accent)', cursor: 'pointer',
+        }}
+      >
+        Manage RSVPs
       </div>
     </div>
   );

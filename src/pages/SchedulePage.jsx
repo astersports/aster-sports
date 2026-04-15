@@ -47,8 +47,6 @@ export default function SchedulePage() {
           <NextUpCard
             event={nextEvent}
             rsvpCount={rsvpCounts[nextEvent.id]}
-            currentRsvp={null}
-            onRsvp={() => {}}
           />
         )}
 
