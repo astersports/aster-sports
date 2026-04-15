@@ -17,18 +17,17 @@ import EventRidesTab from '../components/event/EventRidesTab';
 import CreateActivityWizard from '../components/wizard/CreateActivityWizard';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 
-const ALL_TABS = [
-  { key: 'details', label: 'Details' }, { key: 'location', label: 'Location' },
-  { key: 'rsvps', label: 'RSVPs' }, { key: 'duties', label: 'Duties' },
-  { key: 'checkin', label: 'Check-in' },
-  { key: 'rides', label: 'Rides', ridesOnly: true },
-  { key: 'comments', label: 'Comments' },
-];
+const SectionHeader = ({ children }) => (
+  <h2 style={{
+    fontSize: 16, fontWeight: 700, color: 'var(--sf-text-primary)',
+    padding: '0 16px', marginTop: 16, marginBottom: 8,
+  }}>{children}</h2>
+);
 
 export default function EventDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { orgId } = useAuth();
+  const { orgId, role } = useAuth();
   const { showToast } = useToast();
   const { event, loading: eventLoading, refetch } = useEventDetail(id);
   const teamId = event?.team_id || null;
@@ -36,7 +35,6 @@ export default function EventDetailPage() {
   const [editing, setEditing] = useState(false);
   const [editMode, setEditMode] = useState('single');
   const [confirmDel, setConfirmDel] = useState(false);
-  const [tab, setTab] = useState('details');
 
   if (eventLoading) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
   if (!event) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Event not found</div>;
@@ -65,7 +63,7 @@ export default function EventDetailPage() {
     navigate('/schedule');
   };
 
-  const visibleTabs = ALL_TABS.filter((t) => !t.ridesOnly || event.enable_rides);
+  const isStaff = role === 'admin' || role === 'coach';
 
   return (
     <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100vh' }}>
@@ -101,39 +99,33 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      <div className="flex sf-no-scrollbar" style={{
-        overflowX: 'auto',
-        borderBottom: '1px solid var(--sf-border-default)',
-        backgroundColor: 'var(--sf-bg-card)',
-      }}>
-        {visibleTabs.map((t) => {
-          const active = tab === t.key;
-          return (
-            <button key={t.key} type="button" onClick={() => setTab(t.key)}
-              className="sf-press"
-              style={{
-                flex: 1, minWidth: 80, minHeight: 44,
-                padding: '0 12px', fontSize: 13, fontWeight: active ? 600 : 500,
-                backgroundColor: 'transparent', border: 'none',
-                color: active ? teamColor : 'var(--sf-text-tertiary)',
-                borderBottom: active ? `2px solid ${teamColor}` : '2px solid transparent',
-                marginBottom: -1,
-              }}>
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
+      <EventDetailTab event={event} />
 
-      <div style={{ display: tab === 'details' ? 'block' : 'none' }}><EventDetailTab event={event} /></div>
-      <div style={{ display: tab === 'location' ? 'block' : 'none' }}><EventLocationTab event={event} /></div>
-      <div style={{ display: tab === 'rsvps' ? 'block' : 'none' }}>
-        <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} loading={rsvpLoading} />
-      </div>
-      <div style={{ display: tab === 'duties' ? 'block' : 'none' }}><EventDutiesTab eventId={event.id} /></div>
-      <div style={{ display: tab === 'checkin' ? 'block' : 'none' }}><EventCheckinTab eventId={event.id} roster={roster} teamColor={teamColor} /></div>
-      {event.enable_rides && <div style={{ display: tab === 'rides' ? 'block' : 'none' }}><EventRidesTab eventId={event.id} /></div>}
-      <div style={{ display: tab === 'comments' ? 'block' : 'none' }}><EventCommentsTab eventId={event.id} /></div>
+      <SectionHeader>RSVPs</SectionHeader>
+      <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} loading={rsvpLoading} />
+
+      {isStaff && (
+        <>
+          <SectionHeader>Check-in</SectionHeader>
+          <EventCheckinTab eventId={event.id} roster={roster} teamColor={teamColor} />
+        </>
+      )}
+
+      <SectionHeader>Duties</SectionHeader>
+      <EventDutiesTab eventId={event.id} />
+
+      <SectionHeader>Location</SectionHeader>
+      <EventLocationTab event={event} />
+
+      {event.enable_rides && (
+        <>
+          <SectionHeader>Rides</SectionHeader>
+          <EventRidesTab eventId={event.id} />
+        </>
+      )}
+
+      <SectionHeader>Comments</SectionHeader>
+      <EventCommentsTab eventId={event.id} />
 
       {editing && (
         <CreateActivityWizard
