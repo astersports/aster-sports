@@ -24,7 +24,6 @@ export function ToastProvider({ children }) {
           justifyContent: 'center',
         }}>
           <div
-            className="sf-toast-enter"
             style={{
               display: 'flex',
               alignItems: 'center',
