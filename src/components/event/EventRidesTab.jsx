@@ -6,7 +6,7 @@ import { useToast } from '../../context/ToastContext';
 
 // Ride board — offer (driver) and request (rider) cards for an event.
 // Schema: ride_type, pickup_location, departure_time, seats, guardian_id, name.
-export default function EventRidesTab({ eventId }) {
+export default function EventRidesTab({ eventId, eventDate }) {
   const { user } = useAuth();
   const { showToast } = useToast();
   const { rides, loading, create, remove } = useRides(eventId);
@@ -19,7 +19,7 @@ export default function EventRidesTab({ eventId }) {
   const requests = rides.filter((r) => r.ride_type === 'requesting');
 
   const submit = async () => {
-    const ok = await create({ ride_type: form, ...draft });
+    const ok = await create({ ride_type: form, event_date: eventDate, ...draft });
     if (ok) { setForm(null); setDraft({ pickup_location: '', departure_time: '', seats: 1 }); }
     else showToast('Could not save ride', 'error');
   };

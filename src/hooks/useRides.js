@@ -28,13 +28,19 @@ export function useRides(eventId) {
   const create = async (payload) => {
     const authorName = user?.user_metadata?.full_name || user?.email || 'User';
     console.log('Ride insert payload:', payload);
+    // Build a real timestamp from the time-only input
+    let depTime = null;
+    if (payload.departure_time) {
+      const eventDate = payload.event_date || new Date().toISOString().slice(0, 10);
+      depTime = `${eventDate}T${payload.departure_time}:00`;
+    }
     const { error } = await supabase.from('event_rides').insert({
       event_id: eventId,
       ride_type: payload.ride_type,
       pickup_location: payload.pickup_location || null,
-      departure_time: payload.departure_time || null,
+      departure_time: depTime,
       seats: payload.seats || 1,
-      guardian_id: user.id,
+      guardian_id: null,
       name: authorName,
     });
     if (error) { console.error('Ride insert error:', error); return false; }
