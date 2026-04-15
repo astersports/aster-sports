@@ -27,6 +27,7 @@ export function useRides(eventId) {
 
   const create = async (payload) => {
     const authorName = user?.user_metadata?.full_name || user?.email || 'User';
+    console.log('Ride insert payload:', payload);
     const { error } = await supabase.from('event_rides').insert({
       event_id: eventId,
       ride_type: payload.ride_type,
@@ -36,7 +37,7 @@ export function useRides(eventId) {
       guardian_id: user.id,
       name: authorName,
     });
-    if (error) { console.error('create ride:', error.message); return false; }
+    if (error) { console.error('Ride insert error:', error); return false; }
     await fetch();
     return true;
   };
