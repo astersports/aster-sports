@@ -18,7 +18,14 @@ export default function EventLocationTab({ event }) {
   }, [event.location]);
 
   return (
-    <div style={{ padding: 16 }}>
+    <div style={{
+      margin: '0 16px',
+      padding: 16,
+      backgroundColor: 'var(--sf-bg-card)',
+      border: '1px solid var(--sf-border-default)',
+      borderRadius: 10,
+      boxShadow: 'var(--sf-shadow-sm)',
+    }}>
       {event.location ? (
         <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--sf-text-primary)' }}>
           {event.location}
