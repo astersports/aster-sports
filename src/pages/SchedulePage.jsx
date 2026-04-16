@@ -22,25 +22,12 @@ export default function SchedulePage() {
   const now = new Date();
   const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  const monday = useMemo(() => {
-    const d = new Date(now);
-    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
-
   const filtered = useMemo(() => {
     let list = activities;
     if (selectedTeam) list = list.filter((a) => a.team_id === selectedTeam);
     if (selectedType) list = list.filter((a) => a.event_type === selectedType);
     return list.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
   }, [activities, selectedTeam, selectedType]);
-
-  const thisWeekPast = useMemo(() =>
-    filtered.filter((a) => {
-      const d = new Date(a.start_at);
-      return d >= monday && d < now;
-    }), [filtered]);
 
   const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= now), [filtered]);
   const nextEvent = upcoming[0] || null;
@@ -66,15 +53,6 @@ export default function SchedulePage() {
           selectedType={selectedType}
           onSelectType={setSelectedType}
         />
-
-        {thisWeekPast.length > 0 && (
-          <div style={{ marginTop: 16, opacity: 0.5 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              Earlier this week
-            </div>
-            <DateGroupedList events={thisWeekPast} rsvpCounts={rsvpCounts} rideCounts={rideCounts} />
-          </div>
-        )}
 
         {thisWeek.length > 0 ? (
           <div style={{ marginTop: 16 }}>

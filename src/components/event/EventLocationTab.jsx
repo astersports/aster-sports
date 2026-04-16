@@ -7,10 +7,13 @@ export default function EventLocationTab({ event }) {
 
   useEffect(() => {
     if (!event.location) return;
+    const searchName = event.location.replace(/['']/g, "'").split(' - ')[0].split('(')[0].trim();
+    const firstWord = searchName.split(' ')[0];
     supabase.from('locations').select('name, address, city, state, lat, lon')
-      .ilike('name', `%${event.location.split(' - ')[0].split('(')[0].trim()}%`)
+      .or(`name.ilike.%${searchName}%,name.ilike.%${firstWord}%`)
       .limit(1)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error('Location lookup:', error.message);
         if (data && data[0]) setLocationData(data[0]);
       });
   }, [event.location]);

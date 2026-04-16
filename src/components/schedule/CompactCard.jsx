@@ -7,7 +7,9 @@ export default function CompactCard({ event, stagger }) {
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--sf-neutral)';
   const teamName = team?.name || '';
-  const isPast = event.start_at && new Date(event.start_at) < new Date();
+  const endTime = event.end_at ? new Date(event.end_at).getTime() : null;
+  const startTime = event.start_at ? new Date(event.start_at).getTime() : null;
+  const isPast = endTime ? endTime < Date.now() : (startTime ? startTime < Date.now() : false);
 
   return (
     <div

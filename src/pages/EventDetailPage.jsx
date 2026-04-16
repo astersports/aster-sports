@@ -48,16 +48,20 @@ export default function EventDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    if (searchParams.get('tab') === 'rsvps' && !rsvpLoading) {
-      setTimeout(() => {
-        const el = document.querySelector('[data-section="rsvps"]');
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 300);
+    if (searchParams.get('tab') === 'rsvps' && !rsvpLoading && roster.length > 0) {
+      const el = document.querySelector('[data-section="rsvps"]');
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
     }
-  }, [searchParams, rsvpLoading]);
+  }, [searchParams, rsvpLoading, roster.length]);
 
-  if (eventLoading) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)', minHeight: '100vh', backgroundColor: 'var(--sf-bg-page)' }}>Loading...</div>;
-  if (!event) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)', minHeight: '100vh', backgroundColor: 'var(--sf-bg-page)' }}>Event not found</div>;
+  if (eventLoading) return (
+    <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100vh', minHeight: '100dvh' }} />
+  );
+  if (!event) return (
+    <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100vh', padding: 24, color: 'var(--sf-text-tertiary)' }}>
+      Event not found
+    </div>
+  );
 
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--sf-text-tertiary)';
