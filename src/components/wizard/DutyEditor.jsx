@@ -12,7 +12,7 @@ export default function DutyEditor({ value, onChange }) {
 
   return (
     <div>
-      <span style={labelStyle}>Duties</span>
+      <span style={labelStyle}>Volunteers</span>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 }}>
         {duties.map((d, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -31,7 +31,7 @@ export default function DutyEditor({ value, onChange }) {
                 style={stepBtn}>+</button>
             </div>
             <button type="button" onClick={() => remove(i)} className="sf-press"
-              aria-label="Remove duty"
+              aria-label="Remove volunteer"
               style={{
                 width: 40, height: 40, borderRadius: 10,
                 border: '1px solid var(--sf-border-default)',
@@ -51,7 +51,7 @@ export default function DutyEditor({ value, onChange }) {
           color: 'var(--sf-accent)', fontSize: 13, fontWeight: 500,
           display: 'inline-flex', alignItems: 'center', gap: 6,
         }}>
-        <Plus size={16} strokeWidth={1.75} /> Add duty
+        <Plus size={16} strokeWidth={1.75} /> Add volunteer
       </button>
     </div>
   );

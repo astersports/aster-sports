@@ -114,7 +114,7 @@ export default function EventDetailPage() {
       <SectionHeader sectionKey="rsvps">RSVPs</SectionHeader>
       <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} />
 
-      {dutyCount > 0 && (<><SectionHeader>Duties</SectionHeader><EventDutiesTab eventId={event.id} /></>)}
+      {dutyCount > 0 && (<><SectionHeader>Volunteers</SectionHeader><EventDutiesTab eventId={event.id} /></>)}
 
       <SectionHeader>Rides</SectionHeader>
       <EventRidesTab eventId={event.id} eventStartAt={event.start_at} eventLocation={event.location} eventEndAt={event.end_at} />

@@ -112,7 +112,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
           )}
           {dutyCount && dutyCount.total > 0 && (
             <div style={{ fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--sf-warning)' : 'var(--sf-success)' }}>
-              {dutyCount.claimed}/{dutyCount.total} duties filled
+              {dutyCount.claimed}/{dutyCount.total} volunteers filled
             </div>
           )}
         </div>

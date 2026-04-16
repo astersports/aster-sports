@@ -116,10 +116,10 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
             )}
           </div>
         )}
-        {/* Row 6: Duty counts */}
+        {/* Row 6: Volunteer counts */}
         {dutyCount && dutyCount.total > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--sf-warning)' : 'var(--sf-success)' }}>
-            {dutyCount.claimed}/{dutyCount.total} duties filled
+            {dutyCount.claimed}/{dutyCount.total} volunteers filled
           </div>
         )}
       </div>
