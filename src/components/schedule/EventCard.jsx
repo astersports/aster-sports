@@ -23,9 +23,10 @@ export default function EventCard({ event, rsvpCount, rideCount, stagger }) {
       className={`sf-press ${dimmed ? '' : (stagger || '')}`}
       onClick={() => { navigator.vibrate?.(10); navigate(`/events/${event.id}`); }}
       style={{
+        position: 'relative',
         display: 'flex',
         alignItems: 'stretch',
-        backgroundColor: (event.event_type === 'game' || event.event_type === 'tournament') ? `${teamColor}0D` : 'var(--sf-bg-card)',
+        backgroundColor: 'var(--sf-bg-card)',
         borderRadius: 10,
         border: '1px solid var(--sf-border-default)',
         boxShadow: 'var(--sf-shadow-sm)',
@@ -34,6 +35,9 @@ export default function EventCard({ event, rsvpCount, rideCount, stagger }) {
         transition: 'box-shadow 150ms ease-out, transform 150ms ease-out, opacity 150ms ease-out',
       }}
     >
+      {(event.event_type === 'game' || event.event_type === 'tournament') && (
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: teamColor, opacity: 0.05, pointerEvents: 'none', borderRadius: 10 }} />
+      )}
       <div style={{ width: 4, flexShrink: 0, backgroundColor: teamColor }} />
       <div style={{ flex: 1, padding: '10px 14px' }}>
         {/* Row 1: Time · Type + recurring + updated dot + cancelled */}
