@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../../lib/formatters';
 import { TYPE_LABELS } from '../../lib/constants';
 
-export default function EventCard({ event, rsvpCount, rideCount, stagger }) {
+export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger }) {
   const navigate = useNavigate();
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--sf-neutral)';
@@ -114,6 +114,12 @@ export default function EventCard({ event, rsvpCount, rideCount, stagger }) {
                 {rideCount.urgent ? 'URGENT: ' : ''}{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed
               </span>
             )}
+          </div>
+        )}
+        {/* Row 6: Duty counts */}
+        {dutyCount && dutyCount.total > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--sf-warning)' : 'var(--sf-success)' }}>
+            {dutyCount.claimed}/{dutyCount.total} duties filled
           </div>
         )}
       </div>

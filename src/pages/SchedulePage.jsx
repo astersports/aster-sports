@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
 import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
+import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
 import { Plus, ChevronDown } from 'lucide-react';
 import FilterBar from '../components/schedule/FilterBar';
 import NextUpCard from '../components/schedule/NextUpCard';
@@ -14,6 +15,7 @@ export default function SchedulePage() {
   const { activities, loading, refetch } = useActivities(orgId);
   const rsvpCounts = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
+  const dutyCounts = useEventDutyCounts(activities);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
   const [showAll, setShowAll] = useState(false);
@@ -69,7 +71,7 @@ export default function SchedulePage() {
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
               This week
             </div>
-            <DateGroupedList events={thisWeek} rsvpCounts={rsvpCounts} rideCounts={rideCounts} />
+            <DateGroupedList events={thisWeek} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} />
           </div>
         ) : (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--sf-text-tertiary)' }}>
@@ -100,7 +102,7 @@ export default function SchedulePage() {
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
               Upcoming
             </div>
-            <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} />
+            <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} />
           </div>
         )}
       </div>
