@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin } from 'lucide-react';
+import { MapPin, Car } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
 
 function formatCountdown(startAt) {
@@ -21,7 +21,7 @@ function formatCountdown(startAt) {
     dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
-export default function NextUpCard({ event, rsvpCount, rideInfo }) {
+export default function NextUpCard({ event, rsvpCount, rideCount }) {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(() => formatCountdown(event.start_at));
 
@@ -72,25 +72,30 @@ export default function NextUpCard({ event, rsvpCount, rideInfo }) {
               <span><strong style={{ color: 'var(--sf-neutral)' }}>{rsvpCount.noResponse}</strong> no response</span>
             </div>
           )}
-          {rideInfo && (rideInfo.offers > 0 || rideInfo.requests > 0) && (
-            <div style={{ display: 'flex', gap: 6, fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 4 }}>
-              {rideInfo.offers > 0 && <span>{rideInfo.offers} seat{rideInfo.offers !== 1 ? 's' : ''} offered</span>}
-              {rideInfo.offers > 0 && rideInfo.requests > 0 && <span>·</span>}
-              {rideInfo.requests > 0 && <span>{rideInfo.requests} ride{rideInfo.requests !== 1 ? 's' : ''} needed</span>}
+          {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--sf-text-secondary)', marginTop: 4 }}>
+              <Car size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+              {rideCount.offers > 0 && <span>{rideCount.offers} seat{rideCount.offers !== 1 ? 's' : ''} offered</span>}
+              {rideCount.offers > 0 && rideCount.requests > 0 && <span style={{ color: 'var(--sf-text-tertiary)' }}>·</span>}
+              {rideCount.requests > 0 && <span style={{ color: 'var(--sf-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>}
             </div>
           )}
         </div>
       </div>
-      <div
-        onClick={() => navigate(`/events/${event.id}`)}
-        className="sf-press"
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          minHeight: 44, borderTop: '1px solid var(--sf-border-subtle)',
-          fontSize: 14, fontWeight: 500, color: 'var(--sf-accent)', cursor: 'pointer',
-        }}
-      >
-        Manage RSVPs
+      <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8 }}>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); navigate(`/events/${event.id}`); }}
+          className="sf-press"
+          style={{
+            flex: 1, minHeight: 44, borderRadius: 10,
+            border: '1px solid var(--sf-border-default)',
+            backgroundColor: 'transparent',
+            color: 'var(--sf-accent)', fontSize: 14, fontWeight: 500,
+          }}
+        >
+          Manage RSVPs
+        </button>
       </div>
     </div>
   );

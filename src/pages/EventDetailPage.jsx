@@ -1,14 +1,15 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Pencil, Trash2, UserCheck } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useEventDetail } from '../hooks/useEventDetail';
 import { useRsvps } from '../hooks/useRsvps';
-import { TYPE_LABELS } from '../lib/constants';
+import EventDetailHeader from '../components/event/EventDetailHeader';
 import EventDetailTab from '../components/event/EventDetailTab';
+import EventLocationTab from '../components/event/EventLocationTab';
 import EventRsvpTab from '../components/event/EventRsvpTab';
 import EventCheckinTab from '../components/event/EventCheckinTab';
 import EventDutiesTab from '../components/event/EventDutiesTab';
@@ -31,7 +32,7 @@ export default function EventDetailPage() {
   const { showToast } = useToast();
   const { event, loading: eventLoading, refetch } = useEventDetail(id);
   const teamId = event?.team_id || null;
-  const { rsvps, roster, loading: rsvpLoading, setRsvp } = useRsvps(id, teamId);
+  const { rsvps, roster, loading: rsvpLoading, setRsvp, saveNote } = useRsvps(id, teamId);
   const [editing, setEditing] = useState(false);
   const [editMode, setEditMode] = useState('single');
   const [confirmDel, setConfirmDel] = useState(false);
@@ -49,7 +50,6 @@ export default function EventDetailPage() {
 
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--sf-text-tertiary)';
-  const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
   const isStaff = role === 'admin' || role === 'coach';
 
   const rsvpMap = {};
@@ -74,38 +74,16 @@ export default function EventDetailPage() {
 
   return (
     <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100vh' }}>
-      <div style={{ backgroundColor: teamColor, padding: '0 8px 16px 4px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button type="button" onClick={() => navigate(-1)} className="sf-press" style={iconBtn}>
-            <ArrowLeft size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
-          </button>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {isStaff && (
-              <button type="button" onClick={() => setShowCheckin(true)} className="sf-press" aria-label="Take attendance" style={iconBtn}>
-                <UserCheck size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
-              </button>
-            )}
-            <button type="button" onClick={openEdit} className="sf-press" aria-label="Edit event" style={iconBtn}>
-              <Pencil size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
-            </button>
-            <button type="button" onClick={() => setConfirmDel(true)} className="sf-press" aria-label="Delete event" style={iconBtn}>
-              <Trash2 size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
-            </button>
-          </div>
-        </div>
-        <div style={{ padding: '0 12px', marginTop: 4 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)', backgroundColor: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: 6 }}>{typeLabel}</span>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--sf-text-inverse)', margin: '12px 0 0 0' }}>
-            {event.title || typeLabel}
-          </h1>
-          {team && <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>{team.name}</div>}
-        </div>
-      </div>
+      <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={() => setConfirmDel(true)} onCheckin={() => setShowCheckin(true)} />
 
       <EventDetailTab event={event} />
 
+      {(event.location || event.location_address) && (
+        <><SectionHeader>Location</SectionHeader><EventLocationTab event={event} /></>
+      )}
+
       <SectionHeader>RSVPs</SectionHeader>
-      <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} loading={rsvpLoading} />
+      <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} />
 
       {dutyCount > 0 && (<><SectionHeader>Duties</SectionHeader><EventDutiesTab eventId={event.id} /></>)}
 

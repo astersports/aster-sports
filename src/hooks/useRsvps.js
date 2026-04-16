@@ -45,5 +45,14 @@ export function useRsvps(eventId, teamId) {
     await fetch();
   };
 
-  return { rsvps, roster, loading, setRsvp, refetch: fetch };
+  const saveNote = async (playerId, comment) => {
+    const { error } = await supabase.from('event_rsvps').upsert(
+      { event_id: eventId, player_id: playerId, comment, responded_at: new Date().toISOString() },
+      { onConflict: 'event_id,player_id' }
+    );
+    if (error) console.error('saveNote:', error.message);
+    else await fetch();
+  };
+
+  return { rsvps, roster, loading, setRsvp, saveNote, refetch: fetch };
 }

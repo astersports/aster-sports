@@ -2,18 +2,18 @@ import { useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
 import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
-import { useNextEventRides } from '../hooks/useNextEventRides';
-import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
+import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { Plus, ChevronDown } from 'lucide-react';
-import EventCard from '../components/schedule/EventCard';
 import FilterBar from '../components/schedule/FilterBar';
 import NextUpCard from '../components/schedule/NextUpCard';
+import DateGroupedList from '../components/schedule/DateGroupedList';
 import CreateActivityWizard from '../components/wizard/CreateActivityWizard';
 
 export default function SchedulePage() {
   const { orgId } = useAuth();
   const { activities, loading, refetch } = useActivities(orgId);
   const rsvpCounts = useEventRsvpCounts(activities);
+  const rideCounts = useEventRideCounts(activities);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
   const [showAll, setShowAll] = useState(false);
@@ -22,6 +22,13 @@ export default function SchedulePage() {
   const now = new Date();
   const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
+  const monday = useMemo(() => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
   const filtered = useMemo(() => {
     let list = activities;
     if (selectedTeam) list = list.filter((a) => a.team_id === selectedTeam);
@@ -29,11 +36,16 @@ export default function SchedulePage() {
     return list.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
   }, [activities, selectedTeam, selectedType]);
 
+  const thisWeekPast = useMemo(() =>
+    filtered.filter((a) => {
+      const d = new Date(a.start_at);
+      return d >= monday && d < now;
+    }), [filtered]);
+
   const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= now), [filtered]);
   const nextEvent = upcoming[0] || null;
   const thisWeek = useMemo(() => upcoming.filter((a) => new Date(a.start_at) <= weekEnd), [upcoming]);
   const remaining = useMemo(() => upcoming.filter((a) => new Date(a.start_at) > weekEnd), [upcoming]);
-  const rideInfo = useNextEventRides(nextEvent);
 
   if (loading) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
 
@@ -45,7 +57,7 @@ export default function SchedulePage() {
         </h1>
         <div style={{ width: 32, height: 3, backgroundColor: 'var(--sf-accent)', borderRadius: 2, marginBottom: 16 }} />
 
-        {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideInfo={rideInfo} />}
+        {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} />}
 
         <FilterBar
           teams={activities}
@@ -55,21 +67,21 @@ export default function SchedulePage() {
           onSelectType={setSelectedType}
         />
 
+        {thisWeekPast.length > 0 && (
+          <div style={{ marginTop: 16, opacity: 0.4 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Earlier this week
+            </div>
+            <DateGroupedList events={thisWeekPast} rsvpCounts={rsvpCounts} rideCounts={rideCounts} />
+          </div>
+        )}
+
         {thisWeek.length > 0 ? (
           <div style={{ marginTop: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
               This week
             </div>
-            {groupByDate(thisWeek).map(([date, events]) => (
-              <div key={date} data-date-group={date}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
-                  {formatDateHeader(date)}
-                </div>
-                {events.map((event) => (
-                  <EventCard key={event.id} event={event} rsvpCount={rsvpCounts[event.id]} />
-                ))}
-              </div>
-            ))}
+            <DateGroupedList events={thisWeek} rsvpCounts={rsvpCounts} rideCounts={rideCounts} />
           </div>
         ) : (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--sf-text-tertiary)' }}>
@@ -100,16 +112,7 @@ export default function SchedulePage() {
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
               Upcoming
             </div>
-            {groupByDate(remaining).map(([date, events]) => (
-              <div key={date} data-date-group={date}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
-                  {formatDateHeader(date)}
-                </div>
-                {events.map((event) => (
-                  <EventCard key={event.id} event={event} rsvpCount={rsvpCounts[event.id]} />
-                ))}
-              </div>
-            ))}
+            <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} />
           </div>
         )}
       </div>
