@@ -19,7 +19,7 @@ export default function SchedulePage() {
   const [showAll, setShowAll] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
 
-  const now = new Date();
+  const [now] = useState(() => new Date());
   const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   const filtered = useMemo(() => {

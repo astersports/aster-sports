@@ -118,7 +118,3 @@ export default function EventCard({ event, rsvpCount, rideCount, stagger }) {
     </div>
   );
 }
-
-function Dot({ color }) {
-  return <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 3, backgroundColor: color, marginRight: 2 }} />;
-}

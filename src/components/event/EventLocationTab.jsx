@@ -8,6 +8,7 @@ export default function EventLocationTab({ event }) {
   useEffect(() => {
     if (!event.location) return;
     const searchName = event.location.replace(/[\u2018\u2019\u2032]/g, "'").split(' - ')[0].split('(')[0].trim();
+    if (!searchName) return;
     supabase.from('locations').select('name, address, city, state, lat, lon')
       .ilike('name', `%${searchName}%`)
       .limit(1)
