@@ -18,8 +18,8 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
   const [step, setStep] = useState(isEdit ? 2 : 0);
   const [form, setForm] = useState(isEdit ? eventToForm(editEvent) : EMPTY_FORM);
   const conflicts = useConflictCheck(step, form, isEdit ? editEvent.id : null);
-  const { create, loading: creating, error: createError } = useCreateActivity();
-  const { update, updateSeries, loading: updating, error: updateError } = useUpdateActivity();
+  const { create, loading: creating } = useCreateActivity();
+  const { update, updateSeries, loading: updating } = useUpdateActivity();
   const loading = creating || updating;
 
   const selectType = (type) => { setForm((f) => ({ ...f, eventType: type })); setStep(1); };
@@ -34,11 +34,8 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
     } else {
       result = await create(form);
     }
-    if (result) { onCreated?.(); onClose(); }
-    else {
-      const msg = createError || updateError;
-      if (msg) window.alert(`Save failed: ${msg}`);
-    }
+    if (result?.data) { onCreated?.(); onClose(); }
+    else if (result?.error) { window.alert(`Save failed: ${result.error}`); }
   };
 
   const canNext = step === 2 ? (form.date && form.startTime && form.endTime) : true;

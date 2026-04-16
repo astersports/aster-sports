@@ -70,11 +70,11 @@ export function useCreateActivity() {
         }
       }
 
-      return first;
+      return { data: first };
     } catch (err) {
       console.error('Create event failed:', err.message, err);
       setError(err.message);
-      return null;
+      return { error: err.message };
     } finally {
       setLoading(false);
     }

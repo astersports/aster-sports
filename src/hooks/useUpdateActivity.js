@@ -39,11 +39,26 @@ export function useUpdateActivity() {
       const { data, error: err } = await supabase
         .from('events').update(buildRow(formData)).eq('id', eventId).select().single();
       if (err) throw err;
-      return data;
+      // Additively insert any new duties from the form. Does NOT delete or
+      // modify existing event_duties — those are safe from overwrites.
+      // eventToForm initializes duties: [] so an untouched edit is a no-op.
+      const newDuties = (formData.duties || []).filter((d) => d.duty_name?.trim() || d.name?.trim());
+      if (newDuties.length > 0) {
+        const dutyRows = [];
+        newDuties.forEach((d) => {
+          const label = (d.duty_name || d.name).trim();
+          for (let i = 0; i < (d.slots_needed || 1); i++) {
+            dutyRows.push({ event_id: eventId, duty_name: label });
+          }
+        });
+        const { error: dErr } = await supabase.from('event_duties').insert(dutyRows);
+        if (dErr) console.error('event_duties insert on update:', dErr.message);
+      }
+      return { data };
     } catch (err) {
       console.error('Update event failed:', err.message, err);
       setError(err.message);
-      return null;
+      return { error: err.message };
     }
     finally { setLoading(false); }
   };
@@ -64,11 +79,11 @@ export function useUpdateActivity() {
       const sibUp = await supabase.from('events').update(row)
         .eq('parent_event_id', seriesId).gte('start_at', startAt);
       if (sibUp.error) throw sibUp.error;
-      return true;
+      return { data: true };
     } catch (err) {
       console.error('Update series failed:', err.message, err);
       setError(err.message);
-      return null;
+      return { error: err.message };
     }
     finally { setLoading(false); }
   };
