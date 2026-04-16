@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, X } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import StepType from './StepType';
 import StepTeam from './StepTeam';
 import StepWhen from './StepWhen';
@@ -24,6 +25,22 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
 
   const selectType = (type) => { setForm((f) => ({ ...f, eventType: type })); setStep(1); };
   const selectTeam = (id) => { setForm((f) => ({ ...f, teamId: id })); setStep(2); };
+
+  // On edit, load existing series recurrence (pattern + until) by
+  // querying siblings. eventToForm can't do this — it's synchronous.
+  useEffect(() => {
+    if (!isEdit || !editEvent?.parent_event_id) return;
+    supabase.from('events').select('start_at')
+      .eq('parent_event_id', editEvent.parent_event_id)
+      .order('start_at', { ascending: true })
+      .then(({ data }) => {
+        if (!data || data.length < 2) return;
+        const days = Math.round((new Date(data[1].start_at) - new Date(data[0].start_at)) / 86400000);
+        const pattern = days === 14 ? 'biweekly' : 'weekly';
+        const until = data[data.length - 1].start_at.slice(0, 10);
+        setForm((f) => ({ ...f, recurrence: { pattern, until } }));
+      });
+  }, [isEdit, editEvent?.parent_event_id]);
 
   const handleSave = async () => {
     let result;

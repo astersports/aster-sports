@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { reconcileSeries } from './seriesReconcile';
 
 export function useUpdateActivity() {
   const [loading, setLoading] = useState(false);
@@ -79,6 +80,8 @@ export function useUpdateActivity() {
       const sibUp = await supabase.from('events').update(row)
         .eq('parent_event_id', seriesId).gte('start_at', startAt);
       if (sibUp.error) throw sibUp.error;
+      // Grow/shrink series to match formData.recurrence.until.
+      await reconcileSeries({ seriesId, formData, row });
       return { data: true };
     } catch (err) {
       console.error('Update series failed:', err.message, err);

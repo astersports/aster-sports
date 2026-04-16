@@ -74,7 +74,7 @@ export default function StepWhen({ data, onChange, isEdit, orgId }) {
         <input type="date" value={data.date || ''} onChange={(e) => set('date', e.target.value)} style={inputStyle} />
       </label>
 
-      {!isEdit && <RecurrenceSelector value={data.recurrence} onChange={setRecurrence} />}
+      <RecurrenceSelector value={data.recurrence} onChange={setRecurrence} />
 
       <label style={fieldStyle}>
         <span style={labelStyle}>Start time</span>
