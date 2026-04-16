@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Car } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
+import { WhenRow, GameInfo } from './NextUpCardInfo';
 
 function formatCountdown(startAt) {
   const diff = new Date(startAt) - new Date();
@@ -81,7 +82,8 @@ export default function NextUpCard({ event, rsvpCount, rideCount, onRefresh }) {
           <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--sf-text-primary)', marginBottom: 4 }}>
             {event.title || typeLabel}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginBottom: 8 }}>
+          <WhenRow event={event} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8 }}>
             {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
             {teamName && event.location && <span style={{ color: 'var(--sf-text-tertiary)' }}>·</span>}
             {event.location && (
@@ -91,6 +93,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, onRefresh }) {
               </>
             )}
           </div>
+          <GameInfo event={event} />
           {rsvpCount && (
             <div style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--sf-text-secondary)' }}>
               <span><strong style={{ color: 'var(--sf-success)' }}>{rsvpCount.going}</strong> going</span>
