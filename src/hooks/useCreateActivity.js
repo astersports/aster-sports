@@ -48,6 +48,10 @@ export function useCreateActivity() {
           .from('events').insert(siblings).select('id');
         if (sibErr) throw sibErr;
         (sibData || []).forEach((r) => createdIds.push(r.id));
+        // Self-reference the parent so the repeat icon fires on every
+        // event in the series (including the first). Siblings already
+        // carry parent_event_id = first.id; this closes the loop.
+        await supabase.from('events').update({ parent_event_id: first.id }).eq('id', first.id);
       }
 
       // Fan out duty slots across every created event. One row per slot
