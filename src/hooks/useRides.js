@@ -58,7 +58,7 @@ export function useRides(eventId) {
 
   const remove = async (rideId) => {
     const { error } = await supabase.from('event_rides')
-      .delete().eq('id', rideId).eq('guardian_id', user.id);
+      .delete().eq('id', rideId);
     if (error) { console.error('remove ride:', error.message); return; }
     await fetch();
   };
