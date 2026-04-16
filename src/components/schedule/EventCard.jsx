@@ -36,7 +36,7 @@ export default function EventCard({ event, rsvpCount, rideCount, stagger }) {
       }}
     >
       {(event.event_type === 'game' || event.event_type === 'tournament') && (
-        <div style={{ position: 'absolute', inset: 0, backgroundColor: teamColor, opacity: 0.05, pointerEvents: 'none', borderRadius: 10 }} />
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: teamColor, opacity: 0.08, pointerEvents: 'none', borderRadius: 10 }} />
       )}
       <div style={{ width: 4, flexShrink: 0, backgroundColor: teamColor }} />
       <div style={{ flex: 1, padding: '10px 14px' }}>
