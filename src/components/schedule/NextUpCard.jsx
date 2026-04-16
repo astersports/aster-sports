@@ -44,6 +44,8 @@ export default function NextUpCard({ event, rsvpCount, rideCount, onRefresh }) {
   const teamColor = event.team_color || 'var(--sf-text-tertiary)';
   const teamName = event.team_name || '';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
+  const secondsUntil = (new Date(event.start_at).getTime() - Date.now()) / 1000;
+  const imminent = secondsUntil > 0 && secondsUntil < 7200;
 
   return (
     <div
@@ -61,16 +63,13 @@ export default function NextUpCard({ event, rsvpCount, rideCount, onRefresh }) {
         <div style={{ flex: 1, padding: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
             <span style={{ fontSize: 13, color: 'var(--sf-text-secondary)' }}>{typeLabel}</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-accent)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              {(() => {
-                const secondsUntil = (new Date(event.start_at).getTime() - Date.now()) / 1000;
-                return secondsUntil > 0 && secondsUntil < 7200 ? (
-                  <span className="sf-pulse-dot" aria-hidden="true" style={{
-                    display: 'inline-block', width: 8, height: 8, borderRadius: 4,
-                    backgroundColor: 'var(--sf-success)', flexShrink: 0,
-                  }} />
-                ) : null;
-              })()}
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-accent)', display: 'inline-flex', alignItems: 'center', gap: 6 }} data-seconds-until={Math.round(secondsUntil)}>
+              {imminent && (
+                <span className="sf-pulse-dot" aria-hidden="true" style={{
+                  display: 'inline-block', width: 8, height: 8, borderRadius: 4,
+                  backgroundColor: 'var(--sf-success)', flexShrink: 0,
+                }} />
+              )}
               {countdown}
             </span>
           </div>
