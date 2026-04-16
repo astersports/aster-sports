@@ -8,7 +8,7 @@ const TYPE_OPTIONS = [
   { key: 'other', label: 'Other' },
 ];
 
-export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedType, onSelectType }) {
+export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedType, onSelectType, showCancelled, onToggleCancelled }) {
   const uniqueTeams = [];
   const seen = new Set();
   (teams || []).forEach((a) => {
@@ -46,6 +46,12 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
           />
         ))}
       </div>
+      {onToggleCancelled && (
+        <button type="button" onClick={onToggleCancelled}
+          style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', marginTop: 4 }}>
+          {showCancelled ? 'Hide cancelled' : 'Show cancelled'}
+        </button>
+      )}
     </div>
   );
 }

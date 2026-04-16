@@ -20,6 +20,7 @@ export default function SchedulePage() {
   const [selectedType, setSelectedType] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [showCancelled, setShowCancelled] = useState(false);
 
   // tick increments every 60s so the upcoming / thisWeek / remaining
   // memos re-evaluate against a fresh `now`. Without this, a user who
@@ -38,8 +39,9 @@ export default function SchedulePage() {
     let list = activities;
     if (selectedTeam) list = list.filter((a) => a.team_id === selectedTeam);
     if (selectedType) list = list.filter((a) => a.event_type === selectedType);
+    if (!showCancelled) list = list.filter((a) => a.status !== 'cancelled');
     return list.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
-  }, [activities, selectedTeam, selectedType]);
+  }, [activities, selectedTeam, selectedType, showCancelled]);
 
   const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= now), [filtered, tick, now]);
   const nextEvent = upcoming[0] || null;
@@ -64,6 +66,8 @@ export default function SchedulePage() {
           onSelectTeam={setSelectedTeam}
           selectedType={selectedType}
           onSelectType={setSelectedType}
+          showCancelled={showCancelled}
+          onToggleCancelled={() => setShowCancelled((v) => !v)}
         />
 
         {thisWeek.length > 0 ? (
