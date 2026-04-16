@@ -7,8 +7,14 @@ export function useUpdateActivity() {
 
   // Full row builder shared between single and series updates.
   const buildRow = (formData) => {
+    // See useCreateActivity.withTime for the local-time contract.
     const startAt = new Date(`${formData.date}T${formData.startTime}`);
     const endAt = new Date(`${formData.date}T${formData.endTime}`);
+    // Midnight-crossover: if end is earlier than start, bump end one day.
+    if (endAt <= startAt) endAt.setDate(endAt.getDate() + 1);
+    // jersey column has CHECK (jersey IN ('home','away')); the wizard
+    // auto-fill writes 'Black'/'White' which would violate it.
+    const safeJersey = (formData.jersey === 'home' || formData.jersey === 'away') ? formData.jersey : null;
     return {
       team_id: formData.teamId,
       event_type: formData.eventType,
@@ -23,7 +29,7 @@ export function useUpdateActivity() {
       is_scrimmage: formData.isScrimmage || false,
       notes: formData.notes || null,
       coach_notes: formData.coachNotes || null,
-      jersey: formData.jersey || null,
+      jersey: safeJersey,
       indoor: formData.indoor ?? true,
       enable_rides: formData.enableRides || false,
       arrival_minutes_before: formData.arrivalMinutes || 15,
@@ -37,7 +43,11 @@ export function useUpdateActivity() {
         .from('events').update(buildRow(formData)).eq('id', eventId).select().single();
       if (err) throw err;
       return data;
-    } catch (err) { setError(err.message); return null; }
+    } catch (err) {
+      console.error('Update event failed:', err.message, err);
+      setError(err.message);
+      return null;
+    }
     finally { setLoading(false); }
   };
 
@@ -58,7 +68,11 @@ export function useUpdateActivity() {
         .eq('parent_event_id', seriesId).gte('start_at', startAt);
       if (sibUp.error) throw sibUp.error;
       return true;
-    } catch (err) { setError(err.message); return null; }
+    } catch (err) {
+      console.error('Update series failed:', err.message, err);
+      setError(err.message);
+      return null;
+    }
     finally { setLoading(false); }
   };
 
