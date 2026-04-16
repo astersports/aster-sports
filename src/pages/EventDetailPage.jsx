@@ -54,14 +54,8 @@ export default function EventDetailPage() {
     }
   }, [searchParams, rsvpLoading, roster.length]);
 
-  if (eventLoading) return (
-    <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100vh', minHeight: '100dvh' }} />
-  );
-  if (!event) return (
-    <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100vh', padding: 24, color: 'var(--sf-text-tertiary)' }}>
-      Event not found
-    </div>
-  );
+  if (eventLoading) return <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100dvh' }} />;
+  if (!event) return <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100dvh', padding: 24, color: 'var(--sf-text-tertiary)' }}>Event not found</div>;
 
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--sf-text-tertiary)';

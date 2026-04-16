@@ -77,7 +77,7 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' }}>
         {step === 0 && <StepType value={form.eventType} onSelect={selectType} />}
         {step === 1 && <StepTeam orgId={orgId} value={form.teamId} onSelect={selectTeam} />}
-        {step === 2 && <StepWhen data={form} onChange={setForm} isEdit={isEdit} />}
+        {step === 2 && <StepWhen data={form} onChange={setForm} isEdit={isEdit} orgId={orgId} />}
         {step === 3 && <StepDetails eventType={form.eventType} data={form} onChange={setForm} />}
       </div>
 

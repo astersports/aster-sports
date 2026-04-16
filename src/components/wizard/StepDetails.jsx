@@ -3,6 +3,13 @@ import { HOME_AWAY } from '../../lib/constants';
 
 export default function StepDetails({ eventType, data, onChange }) {
   const set = (key, val) => onChange({ ...data, [key]: val });
+  const setHomeAway = (val) => {
+    onChange({
+      ...data,
+      homeAway: val,
+      jersey: val === 'home' ? 'Black' : val === 'away' ? 'White' : data.jersey,
+    });
+  };
   const isGame = eventType === 'game' || eventType === 'tournament';
 
   return (
@@ -28,7 +35,7 @@ export default function StepDetails({ eventType, data, onChange }) {
           <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>Home / Away</span>
           <div style={{ display: 'flex', gap: 8 }}>
             {HOME_AWAY.map((v) => (
-              <button key={v} type="button" onClick={() => set('homeAway', v)}
+              <button key={v} type="button" onClick={() => setHomeAway(v)}
                 className="sf-press" style={chipStyle(data.homeAway === v)}>
                 {v === 'tbd' ? 'TBD' : v.charAt(0).toUpperCase() + v.slice(1)}
               </button>

@@ -16,17 +16,17 @@ function addMinutes(time, mins) {
   return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
-export default function StepWhen({ data, onChange, isEdit }) {
+export default function StepWhen({ data, onChange, isEdit, orgId }) {
   const [locations, setLocations] = useState([]);
   const [customMode, setCustomMode] = useState(false);
 
   useEffect(() => {
-    supabase.from('events').select('location').not('location', 'is', null)
-      .then(({ data: rows }) => {
-        const unique = [...new Set((rows || []).map((r) => r.location).filter(Boolean))];
-        setLocations(unique.sort());
-      });
-  }, []);
+    let query = supabase.from('locations').select('name').order('name');
+    if (orgId) query = query.eq('org_id', orgId);
+    query.then(({ data: rows }) => {
+      setLocations((rows || []).map((r) => r.name));
+    });
+  }, [orgId]);
 
   const set = (key, val) => onChange({ ...data, [key]: val });
 
