@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -84,6 +84,13 @@ export default function EventDetailPage() {
   return (
     <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={() => setConfirmDel(true)} onCheckin={() => setShowCheckin(true)} />
+
+      {event.parent_event_id && (
+        <div style={{ padding: '6px 16px', fontSize: 12, color: 'var(--sf-text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Repeat size={12} strokeWidth={1.75} />
+          Part of a recurring series
+        </div>
+      )}
 
       <EventDetailTab event={event} />
 
