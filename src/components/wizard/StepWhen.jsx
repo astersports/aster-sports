@@ -30,6 +30,19 @@ export default function StepWhen({ data, onChange, isEdit, orgId }) {
 
   const set = (key, val) => onChange({ ...data, [key]: val });
 
+  // When a user picks Weekly/Biweekly without setting Until, default it
+  // to 12 weeks (84 days) from the event's start date — one season-ish.
+  // Prevents expandDates from looping to its 100-event cap on empty until.
+  const setRecurrence = (r) => {
+    if (r.pattern !== 'once' && !r.until && data.date) {
+      const defaultUntil = new Date(`${data.date}T00:00:00`);
+      defaultUntil.setDate(defaultUntil.getDate() + 84);
+      onChange({ ...data, recurrence: { pattern: r.pattern, until: defaultUntil.toISOString().slice(0, 10) } });
+    } else {
+      onChange({ ...data, recurrence: r });
+    }
+  };
+
   const setStartTime = (time) => {
     const updates = { ...data, startTime: time };
     if (data.durationMinutes) updates.endTime = addMinutes(time, data.durationMinutes);
@@ -61,7 +74,7 @@ export default function StepWhen({ data, onChange, isEdit, orgId }) {
         <input type="date" value={data.date || ''} onChange={(e) => set('date', e.target.value)} style={inputStyle} />
       </label>
 
-      {!isEdit && <RecurrenceSelector value={data.recurrence} onChange={(r) => set('recurrence', r)} />}
+      {!isEdit && <RecurrenceSelector value={data.recurrence} onChange={setRecurrence} />}
 
       <label style={fieldStyle}>
         <span style={labelStyle}>Start time</span>
