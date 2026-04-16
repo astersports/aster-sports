@@ -18,7 +18,6 @@ import EventRidesTab from '../components/event/EventRidesTab';
 import EventNotes from '../components/event/EventNotes';
 import EventCancelActions from '../components/event/EventCancelActions';
 import CreateActivityWizard from '../components/wizard/CreateActivityWizard';
-import ConfirmDialog from '../components/shared/ConfirmDialog';
 
 const SectionHeader = ({ children, sectionKey }) => (
   <h2 data-section={sectionKey} style={{ fontSize: 16, fontWeight: 700, color: 'var(--sf-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>
@@ -37,7 +36,6 @@ export default function EventDetailPage() {
   const { rsvps, roster, loading: rsvpLoading, setRsvp, saveNote } = useRsvps(id, teamId);
   const [editing, setEditing] = useState(false);
   const [editMode, setEditMode] = useState('single');
-  const [confirmDel, setConfirmDel] = useState(false);
   const [showCheckin, setShowCheckin] = useState(false);
   const [dutyCount, setDutyCount] = useState(0);
 
@@ -75,10 +73,11 @@ export default function EventDetailPage() {
   };
 
   const doDelete = async () => {
-    setConfirmDel(false);
-    // Recurring: OK = delete all future, Cancel = only this event.
+    // Step 1: blocking confirm. Cancel → abort everything.
+    if (!window.confirm('Delete this event?')) return;
+    // Step 2 (recurring only): OK = also delete all future siblings.
     const deleteAll = event.parent_event_id && window.confirm(
-      'Delete ALL future events in this series?\n\nOK = delete all future\nCancel = delete only this one'
+      'Also delete all future events in this series?\n\nOK = delete all future\nCancel = delete only this one'
     );
     try {
       if (deleteAll) {
@@ -97,7 +96,7 @@ export default function EventDetailPage() {
 
   return (
     <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100vh' }}>
-      <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={() => setConfirmDel(true)} onCheckin={() => setShowCheckin(true)} />
+      <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={doDelete} onCheckin={() => setShowCheckin(true)} />
 
       {event.parent_event_id && (
         <div style={{ padding: '6px 16px', fontSize: 12, color: 'var(--sf-text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -144,7 +143,6 @@ export default function EventDetailPage() {
         </div>,
         document.body,
       )}
-      <ConfirmDialog open={confirmDel} title="Delete this event?" message="This can't be undone." confirmLabel="Delete" destructive onCancel={() => setConfirmDel(false)} onConfirm={doDelete} />
     </div>
   );
 }
