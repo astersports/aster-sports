@@ -4,9 +4,8 @@ import { supabase } from '../lib/supabase';
 export function useEventRideCounts(activities) {
   const [counts, setCounts] = useState({});
   useEffect(() => {
-    const rideEvents = (activities || []).filter((a) => a.enable_rides);
-    if (rideEvents.length === 0) { setCounts({}); return; }
-    const ids = rideEvents.map((a) => a.id);
+    const ids = (activities || []).map((a) => a.id);
+    if (ids.length === 0) { setCounts({}); return; }
     supabase.from('event_rides').select('event_id, ride_type, seats, is_urgent').in('event_id', ids)
       .then(({ data }) => {
         if (!data) return;
