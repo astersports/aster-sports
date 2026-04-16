@@ -11,9 +11,7 @@ export default function EventCard({ event, rsvpCount, rideCount, stagger }) {
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
   const isGame = event.event_type === 'game';
   const isCancelled = event.status === 'cancelled';
-  const endTime = event.end_at ? new Date(event.end_at).getTime() : null;
-  const startTime = event.start_at ? new Date(event.start_at).getTime() : null;
-  const isPast = !isCancelled && endTime ? endTime < Date.now() : (!isCancelled && startTime ? startTime < Date.now() : false);
+  const isPast = event.end_at ? new Date(event.end_at) < new Date() : false;
   const dimmed = isCancelled || isPast;
   const rawTitle = event.title || typeLabel;
   const alreadyPrefixed = rawTitle.startsWith('vs.') || rawTitle.startsWith('vs ') || rawTitle.startsWith('@ ') || rawTitle.startsWith('@');
