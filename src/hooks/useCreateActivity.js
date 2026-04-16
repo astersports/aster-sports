@@ -30,6 +30,7 @@ export function useCreateActivity() {
 
       const pattern = formData.recurrence?.pattern || 'once';
       const dates = expandDates(formData, pattern);
+      console.log('Recurring expand:', { pattern, recurrence: formData.recurrence, date: formData.date, dates });
 
       // Insert the first event alone so we can reference its ID as
       // parent_event_id on any recurring siblings.
@@ -44,6 +45,7 @@ export function useCreateActivity() {
           ...withTime(baseRow, d, formData),
           parent_event_id: first.id,
         }));
+        console.log('Recurring insert:', dates, siblings);
         const { data: sibData, error: sibErr } = await supabase
           .from('events').insert(siblings).select('id');
         if (sibErr) throw sibErr;
