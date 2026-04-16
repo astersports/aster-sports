@@ -87,8 +87,10 @@ export default function EventDetailPage() {
 
       <EventDetailTab event={event} />
 
-      <SectionHeader>Location</SectionHeader>
-      <EventLocationTab event={event} />
+      <div style={{ border: '3px solid red', margin: 16 }}>
+        <SectionHeader>Location</SectionHeader>
+        <EventLocationTab event={event} />
+      </div>
 
       <SectionHeader sectionKey="rsvps">RSVPs</SectionHeader>
       <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} />
