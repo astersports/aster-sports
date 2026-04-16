@@ -77,10 +77,10 @@ export default function NextUpCard({ event, rsvpCount, rideCount, onRefresh }) {
             {event.title || typeLabel}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginBottom: 8 }}>
-            <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>
+            {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
+            {teamName && event.location && <span style={{ color: 'var(--sf-text-tertiary)' }}>·</span>}
             {event.location && (
               <>
-                <span style={{ color: 'var(--sf-text-tertiary)' }}>·</span>
                 <MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
                 <span style={{ color: 'var(--sf-text-secondary)' }}>{event.location}</span>
               </>
