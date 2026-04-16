@@ -27,14 +27,12 @@ export function useRides(eventId) {
 
   const create = async (payload) => {
     const authorName = user?.user_metadata?.full_name || user?.email || 'User';
-    console.log('Ride insert payload:', payload);
-    // Build a real timestamp from the time-only input
     let depTime = null;
     if (payload.departure_time) {
       const eventDate = payload.event_date || new Date().toISOString().slice(0, 10);
       depTime = `${eventDate}T${payload.departure_time}:00`;
     }
-    const { error } = await supabase.from('event_rides').insert({
+    const row = {
       event_id: eventId,
       ride_type: payload.ride_type,
       pickup_location: payload.pickup_location || null,
@@ -44,8 +42,16 @@ export function useRides(eventId) {
       guardian_id: null,
       name: authorName,
       phone: payload.phone || null,
-    });
-    if (error) { console.error('Ride insert error:', error); return false; }
+    };
+    // If this user already has an active offer/request for this event,
+    // update that row instead of creating a duplicate.
+    const { data: existing } = await supabase.from('event_rides')
+      .select('id').eq('event_id', eventId).eq('name', authorName)
+      .eq('ride_type', payload.ride_type).maybeSingle();
+    const { error } = existing
+      ? await supabase.from('event_rides').update(row).eq('id', existing.id)
+      : await supabase.from('event_rides').insert(row);
+    if (error) { console.error('Ride save error:', error); return false; }
     await fetch();
     return true;
   };
