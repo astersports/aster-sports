@@ -12,9 +12,6 @@ export function useUpdateActivity() {
     const endAt = new Date(`${formData.date}T${formData.endTime}`);
     // Midnight-crossover: if end is earlier than start, bump end one day.
     if (endAt <= startAt) endAt.setDate(endAt.getDate() + 1);
-    // jersey column has CHECK (jersey IN ('home','away')); the wizard
-    // auto-fill writes 'Black'/'White' which would violate it.
-    const safeJersey = (formData.jersey === 'home' || formData.jersey === 'away') ? formData.jersey : null;
     return {
       team_id: formData.teamId,
       event_type: formData.eventType,
@@ -29,7 +26,7 @@ export function useUpdateActivity() {
       is_scrimmage: formData.isScrimmage || false,
       notes: formData.notes || null,
       coach_notes: formData.coachNotes || null,
-      jersey: safeJersey,
+      jersey: formData.jersey || null,
       indoor: formData.indoor ?? true,
       enable_rides: formData.enableRides || false,
       arrival_minutes_before: formData.arrivalMinutes || 15,

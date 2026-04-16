@@ -9,10 +9,6 @@ export function useCreateActivity() {
     setLoading(true);
     setError(null);
     try {
-      // jersey column has CHECK (jersey IN ('home','away')) — the wizard
-      // auto-fills color names ('Black'/'White') which violate it, so we
-      // only persist 'home'/'away' values and drop anything else.
-      const safeJersey = (formData.jersey === 'home' || formData.jersey === 'away') ? formData.jersey : null;
       const baseRow = {
         team_id: formData.teamId,
         event_type: formData.eventType,
@@ -25,7 +21,7 @@ export function useCreateActivity() {
         is_scrimmage: formData.isScrimmage || false,
         notes: formData.notes || null,
         coach_notes: formData.coachNotes || null,
-        jersey: safeJersey,
+        jersey: formData.jersey || null,
         indoor: formData.indoor ?? true,
         enable_rides: formData.enableRides || false,
         arrival_minutes_before: formData.arrivalMinutes || 15,
