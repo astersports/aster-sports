@@ -42,8 +42,8 @@ export default function NextUpCard({ event, rsvpCount, rideCount, onRefresh }) {
     return () => clearInterval(id);
   }, [event.end_at, onRefresh]);
 
-  const teamColor = event.team_color || 'var(--sf-text-tertiary)';
-  const teamName = event.team_name || '';
+  const teamColor = event.teams?.team_color || event.team_color || 'var(--sf-text-tertiary)';
+  const teamName = event.teams?.name || event.team_name || '';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
   const secondsUntil = (new Date(event.start_at).getTime() - Date.now()) / 1000;
   const imminent = secondsUntil > 0 && secondsUntil < 7200;
@@ -83,16 +83,12 @@ export default function NextUpCard({ event, rsvpCount, rideCount, onRefresh }) {
             {event.title || typeLabel}
           </div>
           <WhenRow event={event} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8 }}>
-            {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
-            {teamName && event.location && <span style={{ color: 'var(--sf-text-tertiary)' }}>·</span>}
-            {event.location && (
-              <>
-                <MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
-                <span style={{ color: 'var(--sf-text-secondary)' }}>{event.location}</span>
-              </>
-            )}
-          </div>
+          {event.location && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8 }}>
+              <MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+              <span style={{ color: 'var(--sf-text-secondary)' }}>{event.location}</span>
+            </div>
+          )}
           <GameInfo event={event} />
           {rsvpCount && (
             <div style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--sf-text-secondary)' }}>
