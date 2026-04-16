@@ -85,7 +85,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount }) {
       <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8 }}>
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); navigate(`/events/${event.id}`); }}
+          onClick={(e) => { e.stopPropagation(); navigate(`/events/${event.id}?tab=rsvps`); }}
           className="sf-press"
           style={{
             flex: 1, minHeight: 44, borderRadius: 10,

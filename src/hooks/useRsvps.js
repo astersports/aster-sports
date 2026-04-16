@@ -46,10 +46,22 @@ export function useRsvps(eventId, teamId) {
   };
 
   const saveNote = async (playerId, comment) => {
-    const { error } = await supabase.from('event_rsvps').upsert(
-      { event_id: eventId, player_id: playerId, comment, responded_at: new Date().toISOString() },
-      { onConflict: 'event_id,player_id' }
-    );
+    // Only update comment on existing RSVP rows — event_rsvps.response is NOT NULL
+    const { data: existing } = await supabase
+      .from('event_rsvps')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('player_id', playerId)
+      .maybeSingle();
+    if (!existing) {
+      console.warn('No RSVP exists for this player, cannot save note without RSVP');
+      return;
+    }
+    const { error } = await supabase
+      .from('event_rsvps')
+      .update({ comment })
+      .eq('event_id', eventId)
+      .eq('player_id', playerId);
     if (error) console.error('saveNote:', error.message);
     else await fetch();
   };

@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Pencil, Trash2, UserCheck, Ban } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 import { TYPE_LABELS } from '../../lib/constants';
 
 const iconBtn = { minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' };
@@ -29,35 +28,6 @@ export default function EventDetailHeader({ event, team, isStaff, onEdit, onDele
             <button type="button" onClick={onDelete} className="sf-press" aria-label="Delete event" style={iconBtn}>
               <Trash2 size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
             </button>
-            {event.status !== 'cancelled' && (
-              <button
-                type="button"
-                onClick={async () => {
-                  const ok = window.confirm('Cancel this event? It will stay on the schedule as cancelled.');
-                  if (!ok) return;
-                  await supabase.from('events').update({ status: 'cancelled' }).eq('id', event.id);
-                  window.location.reload();
-                }}
-                className="sf-press"
-                style={{ minHeight: 44, padding: '0 12px', fontSize: 13, color: 'var(--sf-warning)', display: 'flex', alignItems: 'center', gap: 4 }}
-              >
-                <Ban size={16} strokeWidth={1.75} />
-                Cancel Event
-              </button>
-            )}
-            {event.status === 'cancelled' && (
-              <button
-                type="button"
-                onClick={async () => {
-                  await supabase.from('events').update({ status: 'scheduled' }).eq('id', event.id);
-                  window.location.reload();
-                }}
-                className="sf-press"
-                style={{ minHeight: 44, padding: '0 12px', fontSize: 13, color: 'var(--sf-accent)', display: 'flex', alignItems: 'center', gap: 4 }}
-              >
-                Reinstate Event
-              </button>
-            )}
           </div>
         </div>
         <div style={{ padding: '0 12px', marginTop: 4 }}>

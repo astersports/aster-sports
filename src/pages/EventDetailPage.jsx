@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -16,11 +16,12 @@ import EventDutiesTab from '../components/event/EventDutiesTab';
 import EventCommentsTab from '../components/event/EventCommentsTab';
 import EventRidesTab from '../components/event/EventRidesTab';
 import EventNotes from '../components/event/EventNotes';
+import EventCancelActions from '../components/event/EventCancelActions';
 import CreateActivityWizard from '../components/wizard/CreateActivityWizard';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 
-const SectionHeader = ({ children }) => (
-  <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--sf-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>
+const SectionHeader = ({ children, sectionKey }) => (
+  <h2 data-section={sectionKey} style={{ fontSize: 16, fontWeight: 700, color: 'var(--sf-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>
 );
 
 const iconBtn = { minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' };
@@ -28,6 +29,7 @@ const iconBtn = { minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'cen
 export default function EventDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { orgId, role } = useAuth();
   const { showToast } = useToast();
   const { event, loading: eventLoading, refetch } = useEventDetail(id);
@@ -45,8 +47,17 @@ export default function EventDetailPage() {
       .then(({ count }) => setDutyCount(count || 0));
   }, [id]);
 
-  if (eventLoading) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
-  if (!event) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Event not found</div>;
+  useEffect(() => {
+    if (searchParams.get('tab') === 'rsvps' && !rsvpLoading) {
+      setTimeout(() => {
+        const el = document.querySelector('[data-section="rsvps"]');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+  }, [searchParams, rsvpLoading]);
+
+  if (eventLoading) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)', minHeight: '100vh', backgroundColor: 'var(--sf-bg-page)' }}>Loading...</div>;
+  if (!event) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)', minHeight: '100vh', backgroundColor: 'var(--sf-bg-page)' }}>Event not found</div>;
 
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--sf-text-tertiary)';
@@ -78,11 +89,10 @@ export default function EventDetailPage() {
 
       <EventDetailTab event={event} />
 
-      {(event.location || event.location_address) && (
-        <><SectionHeader>Location</SectionHeader><EventLocationTab event={event} /></>
-      )}
+      <SectionHeader>Location</SectionHeader>
+      <EventLocationTab event={event} />
 
-      <SectionHeader>RSVPs</SectionHeader>
+      <SectionHeader sectionKey="rsvps">RSVPs</SectionHeader>
       <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} />
 
       {dutyCount > 0 && (<><SectionHeader>Duties</SectionHeader><EventDutiesTab eventId={event.id} /></>)}
@@ -95,6 +105,8 @@ export default function EventDetailPage() {
 
       <SectionHeader>Comments</SectionHeader>
       <EventCommentsTab eventId={event.id} />
+
+      {isStaff && <EventCancelActions event={event} />}
 
       {editing && (
         <CreateActivityWizard orgId={orgId} editEvent={event} editMode={editMode} onClose={() => setEditing(false)} onCreated={refetch} />

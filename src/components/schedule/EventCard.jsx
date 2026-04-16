@@ -13,7 +13,9 @@ export default function EventCard({ event, rsvpCount, rideCount, stagger }) {
   const isCancelled = event.status === 'cancelled';
   const isPast = !isCancelled && event.start_at && new Date(event.start_at).getTime() < Date.now();
   const dimmed = isCancelled || isPast;
-  const titlePrefix = (event.event_type === 'game' || event.event_type === 'tournament') && event.opponent
+  const rawTitle = event.title || typeLabel;
+  const alreadyPrefixed = rawTitle.startsWith('vs.') || rawTitle.startsWith('vs ') || rawTitle.startsWith('@ ') || rawTitle.startsWith('@');
+  const titlePrefix = !alreadyPrefixed && (event.event_type === 'game' || event.event_type === 'tournament') && event.opponent
     ? (event.home_away === 'away' ? '@ ' : 'vs. ')
     : '';
 
@@ -29,7 +31,7 @@ export default function EventCard({ event, rsvpCount, rideCount, stagger }) {
         border: '1px solid var(--sf-border-default)',
         boxShadow: 'var(--sf-shadow-sm)',
         overflow: 'hidden',
-        opacity: dimmed ? 0.4 : 1,
+        opacity: dimmed ? 0.5 : 1,
         transition: 'box-shadow 150ms ease-out, transform 150ms ease-out, opacity 150ms ease-out',
       }}
     >
@@ -64,7 +66,7 @@ export default function EventCard({ event, rsvpCount, rideCount, stagger }) {
         </div>
         {/* Row 2: Title */}
         <div style={{ fontSize: 15, color: 'var(--sf-text-primary)', marginBottom: 2, textDecoration: isCancelled ? 'line-through' : 'none' }}>
-          {titlePrefix}{event.title || typeLabel}
+          {titlePrefix}{rawTitle}
         </div>
         {/* Row 3: Team · pin Location */}
         {(teamName || event.location_name) && (

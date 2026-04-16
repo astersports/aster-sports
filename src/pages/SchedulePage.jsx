@@ -68,7 +68,7 @@ export default function SchedulePage() {
         />
 
         {thisWeekPast.length > 0 && (
-          <div style={{ marginTop: 16, opacity: 0.4 }}>
+          <div style={{ marginTop: 16, opacity: 0.5 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
               Earlier this week
             </div>
