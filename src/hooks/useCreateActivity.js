@@ -82,7 +82,7 @@ export function useCreateActivity() {
         });
         if (dutyRows.length > 0) {
           const { error: dErr } = await supabase.from('event_duties').insert(dutyRows);
-          if (dErr) console.error('event_duties insert:', dErr.message);
+          if (dErr) throw new Error(`Volunteers failed to save: ${dErr.message}`);
         }
       }
 

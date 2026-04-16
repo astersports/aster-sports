@@ -53,7 +53,7 @@ export function useUpdateActivity() {
           }
         });
         const { error: dErr } = await supabase.from('event_duties').insert(dutyRows);
-        if (dErr) console.error('event_duties insert on update:', dErr.message);
+        if (dErr) throw new Error(`Volunteers failed to save: ${dErr.message}`);
       }
       return { data };
     } catch (err) {
