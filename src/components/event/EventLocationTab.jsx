@@ -19,9 +19,13 @@ export default function EventLocationTab({ event }) {
 
   return (
     <div style={{ padding: 16 }}>
-      {event.location && (
+      {event.location ? (
         <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--sf-text-primary)' }}>
           {event.location}
+        </div>
+      ) : (
+        <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', fontStyle: 'italic' }}>
+          Location TBD
         </div>
       )}
       {(event.location_address || locationData?.address) && (
