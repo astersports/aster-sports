@@ -9,7 +9,6 @@ export default function EventCard({ event, rsvpCount, rideCount, stagger }) {
   const teamColor = team?.team_color || 'var(--sf-neutral)';
   const teamName = team?.name || '';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
-  const isGame = event.event_type === 'game';
   const isCancelled = event.status === 'cancelled';
   const isPast = event.end_at ? new Date(event.end_at) < new Date() : false;
   const dimmed = isCancelled || isPast;
@@ -26,7 +25,7 @@ export default function EventCard({ event, rsvpCount, rideCount, stagger }) {
       style={{
         display: 'flex',
         alignItems: 'stretch',
-        backgroundColor: isGame ? `${teamColor}08` : 'var(--sf-bg-card)',
+        backgroundColor: (event.event_type === 'game' || event.event_type === 'tournament') ? `${teamColor}0D` : 'var(--sf-bg-card)',
         borderRadius: 10,
         border: '1px solid var(--sf-border-default)',
         boxShadow: 'var(--sf-shadow-sm)',
