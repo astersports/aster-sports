@@ -61,7 +61,18 @@ export default function NextUpCard({ event, rsvpCount, rideCount, onRefresh }) {
         <div style={{ flex: 1, padding: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
             <span style={{ fontSize: 13, color: 'var(--sf-text-secondary)' }}>{typeLabel}</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-accent)' }}>{countdown}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-accent)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {(() => {
+                const secondsUntil = (new Date(event.start_at).getTime() - Date.now()) / 1000;
+                return secondsUntil > 0 && secondsUntil < 7200 ? (
+                  <span className="sf-pulse-dot" aria-hidden="true" style={{
+                    display: 'inline-block', width: 8, height: 8, borderRadius: 4,
+                    backgroundColor: 'var(--sf-success)', flexShrink: 0,
+                  }} />
+                ) : null;
+              })()}
+              {countdown}
+            </span>
           </div>
           <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--sf-text-primary)', marginBottom: 4 }}>
             {event.title || typeLabel}
