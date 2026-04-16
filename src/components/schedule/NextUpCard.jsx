@@ -73,6 +73,11 @@ export default function NextUpCard({ event, rsvpCount, rideCount, onRefresh }) {
               {countdown}
             </span>
           </div>
+          {(event.teams?.name || event.team_name) && (
+            <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginBottom: 4 }}>
+              {event.teams?.name || event.team_name}
+            </div>
+          )}
           <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--sf-text-primary)', marginBottom: 4 }}>
             {event.title || typeLabel}
           </div>
