@@ -21,7 +21,7 @@ function formatCountdown(startAt) {
     dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
-export default function NextUpCard({ event, rsvpCount, rideCount }) {
+export default function NextUpCard({ event, rsvpCount, rideCount, onRefresh }) {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(() => formatCountdown(event.start_at));
 
@@ -29,6 +29,17 @@ export default function NextUpCard({ event, rsvpCount, rideCount }) {
     const id = setInterval(() => setCountdown(formatCountdown(event.start_at)), 60000);
     return () => clearInterval(id);
   }, [event.start_at]);
+
+  // Every 60s, check whether the currently-featured event has ended.
+  // If yes, ask the parent to refresh so nextEvent can advance to the
+  // next upcoming event. Belt-and-suspenders with SchedulePage's tick.
+  useEffect(() => {
+    if (!event.end_at || !onRefresh) return;
+    const id = setInterval(() => {
+      if (new Date(event.end_at) < new Date()) onRefresh();
+    }, 60000);
+    return () => clearInterval(id);
+  }, [event.end_at, onRefresh]);
 
   const teamColor = event.team_color || 'var(--sf-text-tertiary)';
   const teamName = event.team_name || '';

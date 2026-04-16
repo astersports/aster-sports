@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
 import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
@@ -19,8 +19,18 @@ export default function SchedulePage() {
   const [showAll, setShowAll] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
 
-  const [now] = useState(() => new Date());
-  const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  // tick increments every 60s so the upcoming / thisWeek / remaining
+  // memos re-evaluate against a fresh `now`. Without this, a user who
+  // leaves the schedule open would see nextEvent stuck on an event
+  // that has already ended.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  const now = useMemo(() => new Date(), [tick]);
+  const weekEnd = useMemo(() => new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), [now]);
 
   const filtered = useMemo(() => {
     let list = activities;
@@ -29,10 +39,10 @@ export default function SchedulePage() {
     return list.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
   }, [activities, selectedTeam, selectedType]);
 
-  const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= now), [filtered]);
+  const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= now), [filtered, tick, now]);
   const nextEvent = upcoming[0] || null;
-  const thisWeek = useMemo(() => upcoming.filter((a) => new Date(a.start_at) <= weekEnd), [upcoming]);
-  const remaining = useMemo(() => upcoming.filter((a) => new Date(a.start_at) > weekEnd), [upcoming]);
+  const thisWeek = useMemo(() => upcoming.filter((a) => new Date(a.start_at) <= weekEnd), [upcoming, tick, weekEnd]);
+  const remaining = useMemo(() => upcoming.filter((a) => new Date(a.start_at) > weekEnd), [upcoming, tick, weekEnd]);
 
   if (loading) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
 
@@ -44,7 +54,7 @@ export default function SchedulePage() {
         </h1>
         <div style={{ width: 32, height: 3, backgroundColor: 'var(--sf-accent)', borderRadius: 2, marginBottom: 16 }} />
 
-        {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} />}
+        {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} onRefresh={refetch} />}
 
         <FilterBar
           teams={activities}
