@@ -45,6 +45,11 @@ export default function EventCard({ event, rsvpCount, rideCount, stagger }) {
           <span style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginLeft: 6 }}>
             · {typeLabel}
           </span>
+          {event.is_scrimmage && (
+            <span style={{ fontSize: 11, color: 'var(--sf-text-tertiary)', marginLeft: 4 }}>
+              Scrimmage
+            </span>
+          )}
           {event.parent_event_id && (
             <Repeat size={11} strokeWidth={1.75} color="var(--sf-text-tertiary)" style={{ marginLeft: 4 }} />
           )}

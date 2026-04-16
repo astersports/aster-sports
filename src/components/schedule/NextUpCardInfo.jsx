@@ -37,6 +37,11 @@ export function GameInfo({ event }) {
           )}
         </div>
       )}
+      {event.is_scrimmage && (
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--sf-text-tertiary)', textTransform: 'uppercase', marginTop: 4, display: 'block' }}>
+          Scrimmage
+        </span>
+      )}
     </>
   );
 }
