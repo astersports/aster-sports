@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { computeDefaultUntil } from '../lib/recurrenceHelpers';
 
 export function useCreateActivity() {
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,18 @@ export function useCreateActivity() {
       };
 
       const pattern = formData.recurrence?.pattern || 'once';
-      const dates = expandDates(formData, pattern);
+      // Safety net: if UI didn't set a recurrence.until, fetch season
+      // end via team → season and default to last-weekday-before-end.
+      let safeForm = formData;
+      if (pattern !== 'once' && !formData.recurrence?.until && formData.teamId && formData.date) {
+        const { data: team } = await supabase.from('teams').select('season_id').eq('id', formData.teamId).single();
+        const { data: season } = team?.season_id
+          ? await supabase.from('seasons').select('end_date').eq('id', team.season_id).single()
+          : { data: null };
+        const until = computeDefaultUntil(formData.date, pattern, season?.end_date);
+        safeForm = { ...formData, recurrence: { pattern, until } };
+      }
+      const dates = expandDates(safeForm, pattern);
 
       // Insert the first event alone so we can reference its ID as
       // parent_event_id on any recurring siblings.

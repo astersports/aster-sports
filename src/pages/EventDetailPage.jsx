@@ -75,10 +75,11 @@ export default function EventDetailPage() {
   const doDelete = async () => {
     // Step 1: blocking confirm. Cancel → abort everything.
     if (!window.confirm('Delete this event?')) return;
-    // Step 2 (recurring only): OK = also delete all future siblings.
-    const deleteAll = event.parent_event_id && window.confirm(
-      'Also delete all future events in this series?\n\nOK = delete all future\nCancel = delete only this one'
-    );
+    // Step 2: only for recurring events, ask if siblings go too.
+    let deleteAll = false;
+    if (event.parent_event_id) {
+      deleteAll = window.confirm('Also delete all future events in this series?\n\nOK = delete all future\nCancel = delete only this one');
+    }
     try {
       if (deleteAll) {
         const { error: serErr } = await supabase.from('events').delete()

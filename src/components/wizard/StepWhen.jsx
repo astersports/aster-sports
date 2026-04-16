@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import RecurrenceSelector from './RecurrenceSelector';
+import { useActiveSeasonEnd } from '../../hooks/useActiveSeasonEnd';
+import { computeDefaultUntil } from '../../lib/recurrenceHelpers';
 
 const DURATIONS = [
   { label: '1h', minutes: 60 },
@@ -19,6 +21,7 @@ function addMinutes(time, mins) {
 export default function StepWhen({ data, onChange, isEdit, orgId }) {
   const [locations, setLocations] = useState([]);
   const [customMode, setCustomMode] = useState(false);
+  const seasonEnd = useActiveSeasonEnd(orgId);
 
   useEffect(() => {
     let query = supabase.from('locations').select('name').order('name');
@@ -30,14 +33,11 @@ export default function StepWhen({ data, onChange, isEdit, orgId }) {
 
   const set = (key, val) => onChange({ ...data, [key]: val });
 
-  // When a user picks Weekly/Biweekly without setting Until, default it
-  // to 12 weeks (84 days) from the event's start date — one season-ish.
-  // Prevents expandDates from looping to its 100-event cap on empty until.
+  // Default Until to last matching weekday before season_end on pick.
   const setRecurrence = (r) => {
     if (r.pattern !== 'once' && !r.until && data.date) {
-      const defaultUntil = new Date(`${data.date}T00:00:00`);
-      defaultUntil.setDate(defaultUntil.getDate() + 84);
-      onChange({ ...data, recurrence: { pattern: r.pattern, until: defaultUntil.toISOString().slice(0, 10) } });
+      const until = computeDefaultUntil(data.date, r.pattern, seasonEnd);
+      onChange({ ...data, recurrence: { pattern: r.pattern, until } });
     } else {
       onChange({ ...data, recurrence: r });
     }
