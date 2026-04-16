@@ -76,9 +76,23 @@ export default function EventDetailPage() {
 
   const doDelete = async () => {
     setConfirmDel(false);
-    const { error } = await supabase.from('events').delete().eq('id', event.id);
-    if (error) { showToast(`Delete failed: ${error.message}`, 'error'); return; }
-    navigate('/schedule');
+    // Recurring: OK = delete all future, Cancel = only this event.
+    const deleteAll = event.parent_event_id && window.confirm(
+      'Delete ALL future events in this series?\n\nOK = delete all future\nCancel = delete only this one'
+    );
+    try {
+      if (deleteAll) {
+        const { error: serErr } = await supabase.from('events').delete()
+          .eq('parent_event_id', event.parent_event_id)
+          .gte('start_at', event.start_at);
+        if (serErr) throw serErr;
+      }
+      const { error } = await supabase.from('events').delete().eq('id', event.id);
+      if (error) throw error;
+      navigate('/schedule');
+    } catch (err) {
+      showToast(`Delete failed: ${err.message}`, 'error');
+    }
   };
 
   return (
