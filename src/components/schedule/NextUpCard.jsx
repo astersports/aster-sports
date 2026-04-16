@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Car } from 'lucide-react';
+import { MapPin, Car, Repeat } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
 import { WhenRow, GameInfo } from './NextUpCardInfo';
 
@@ -63,7 +63,12 @@ export default function NextUpCard({ event, rsvpCount, rideCount, onRefresh }) {
         <div style={{ width: 4, backgroundColor: teamColor, flexShrink: 0 }} />
         <div style={{ flex: 1, padding: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-            <span style={{ fontSize: 13, color: 'var(--sf-text-secondary)' }}>{typeLabel}</span>
+            <span style={{ fontSize: 13, color: 'var(--sf-text-secondary)' }}>
+              {typeLabel}
+              {event.parent_event_id && (
+                <Repeat size={11} strokeWidth={1.75} color="var(--sf-text-tertiary)" style={{ marginLeft: 4 }} />
+              )}
+            </span>
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-accent)', display: 'inline-flex', alignItems: 'center', gap: 6 }} data-seconds-until={Math.round(secondsUntil)}>
               {imminent && (
                 <span className="sf-pulse-dot" aria-hidden="true" style={{
