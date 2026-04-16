@@ -22,7 +22,7 @@ function formatCountdown(startAt) {
     dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
-export default function NextUpCard({ event, rsvpCount, rideCount, onRefresh }) {
+export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onRefresh }) {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(() => formatCountdown(event.start_at));
 
@@ -108,6 +108,11 @@ export default function NextUpCard({ event, rsvpCount, rideCount, onRefresh }) {
               {rideCount.offers > 0 && <span>{rideCount.offers} seat{rideCount.offers !== 1 ? 's' : ''} offered</span>}
               {rideCount.offers > 0 && rideCount.requests > 0 && <span style={{ color: 'var(--sf-text-tertiary)' }}>·</span>}
               {rideCount.requests > 0 && <span style={{ color: 'var(--sf-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>}
+            </div>
+          )}
+          {dutyCount && dutyCount.total > 0 && (
+            <div style={{ fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--sf-warning)' : 'var(--sf-success)' }}>
+              {dutyCount.claimed}/{dutyCount.total} duties filled
             </div>
           )}
         </div>

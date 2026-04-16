@@ -58,7 +58,7 @@ export default function SchedulePage() {
         </h1>
         <div style={{ width: 32, height: 3, backgroundColor: 'var(--sf-accent)', borderRadius: 2, marginBottom: 16 }} />
 
-        {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} onRefresh={refetch} />}
+        {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} dutyCount={dutyCounts[nextEvent.id]} onRefresh={refetch} />}
 
         <FilterBar
           teams={activities}
