@@ -24,7 +24,7 @@ export function useCreateActivity() {
         jersey: formData.jersey || null,
         indoor: formData.indoor ?? true,
         enable_rides: formData.enableRides || false,
-        arrival_minutes_before: formData.arrivalMinutes || 15,
+        arrival_minutes_before: formData.arrivalMinutes ?? 5,
         status: 'scheduled',
       };
 

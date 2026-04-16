@@ -6,7 +6,7 @@ export const PRESET_DURATIONS = [60, 90, 120];
 export const EMPTY_FORM = {
   eventType: null, teamId: null,
   date: '', startTime: '', endTime: '', durationMinutes: null,
-  location: '', locationAddress: '', subLocation: '', arrivalMinutes: 15,
+  location: '', locationAddress: '', subLocation: '', arrivalMinutes: 5,
   title: '', opponent: '', homeAway: 'tbd', jersey: '',
   notes: '', coachNotes: '',
   indoor: true, enableRides: false, isScrimmage: false,
@@ -31,7 +31,7 @@ export function eventToForm(event) {
     durationMinutes: PRESET_DURATIONS.includes(durationMinutes) ? durationMinutes : null,
     location: event.location || '', locationAddress: event.location_address || '',
     subLocation: event.sub_location || '',
-    arrivalMinutes: event.arrival_minutes_before || 15,
+    arrivalMinutes: event.arrival_minutes_before ?? 5,
     title: event.title || '',
     opponent: event.opponent || '',
     homeAway: event.home_away || 'tbd',

@@ -8,7 +8,7 @@ const DURATIONS = [
   { label: '2h', minutes: 120 },
 ];
 
-const ARRIVAL = [15, 20, 30, 45];
+const ARRIVAL = [0, 5, 10, 15, 20, 30, 45, 60];
 
 function addMinutes(time, mins) {
   const [h, m] = time.split(':').map(Number);
@@ -120,11 +120,11 @@ export default function StepWhen({ data, onChange, isEdit, orgId }) {
 
       <div>
         <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>Arrive early</span>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {ARRIVAL.map((m) => (
             <button key={m} type="button" onClick={() => set('arrivalMinutes', m)}
               className="sf-press" style={chipStyle(data.arrivalMinutes === m)}>
-              {m}m
+              {m === 0 ? 'On time' : `${m}m`}
             </button>
           ))}
         </div>
