@@ -131,7 +131,7 @@ function expandDates(formData, pattern) {
     : null;
   const out = [];
   const cursor = new Date(`${startDate}T00:00:00`);
-  while ((!until || cursor <= until) && out.length < 100) {
+  while ((!until || cursor <= until) && out.length < 26) {
     out.push(cursor.toISOString().slice(0, 10));
     cursor.setDate(cursor.getDate() + step);
   }

@@ -19,16 +19,9 @@ export const TYPE_LABELS = {
   other: 'Event',
 };
 
-export const RSVP_STATUSES = ['going', 'not_going', 'maybe', 'injury', 'partial'];
+export const RSVP_STATUSES = ['going', 'not_going', 'maybe'];
 
-export const EVENT_STATUSES = [
-  'scheduled',
-  'confirmed',
-  'in_progress',
-  'completed',
-  'cancelled',
-  'postponed',
-];
+export const EVENT_STATUSES = ['scheduled', 'cancelled', 'postponed'];
 
 export const TYPE_OPTIONS = [
   { key: null, label: 'All' },
