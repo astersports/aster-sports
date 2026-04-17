@@ -7,7 +7,10 @@ export function useEventDetail(eventId) {
 
   const refetch = useCallback(() => {
     if (!eventId) { setLoading(false); return; }
-    setLoading(true);
+    // Don't setLoading(true) on refetch — only the initial mount
+    // should show the loading placeholder. Subsequent refetches
+    // (cancel, reinstate, edit) update the event in-place so the
+    // page stays visible and scroll position is preserved.
     supabase
       .from('events')
       .select('*, teams(id, name, team_color, org_id, sort_order)')
