@@ -26,8 +26,7 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
   const selectType = (type) => { setForm((f) => ({ ...f, eventType: type })); setStep(1); };
   const selectTeam = (id) => { setForm((f) => ({ ...f, teamId: id })); setStep(2); };
 
-  // On edit, load existing series recurrence (pattern + until) by
-  // querying siblings. eventToForm can't do this — it's synchronous.
+  // On edit, load recurrence (pattern + until) from sibling dates.
   useEffect(() => {
     if (!isEdit || !editEvent?.parent_event_id) return;
     supabase.from('events').select('start_at')
@@ -42,6 +41,21 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
       });
   }, [isEdit, editEvent?.parent_event_id]);
 
+  // On edit, load existing volunteer slots into the DutyEditor.
+  useEffect(() => {
+    if (!isEdit || !editEvent?.id) return;
+    supabase.from('event_duties').select('*').eq('event_id', editEvent.id)
+      .then(({ data }) => {
+        if (!data || data.length === 0) return;
+        const grouped = {};
+        data.forEach((d) => {
+          if (!grouped[d.duty_name]) grouped[d.duty_name] = { duty_name: d.duty_name, slots_needed: 0, claimed: 0 };
+          grouped[d.duty_name].slots_needed += 1;
+          if (d.claimed_by_name || d.guardian_id) grouped[d.duty_name].claimed += 1;
+        });
+        setForm((f) => ({ ...f, duties: Object.values(grouped) }));
+      });
+  }, [isEdit, editEvent?.id]);
   const handleSave = async () => {
     let result;
     if (isEdit) {
