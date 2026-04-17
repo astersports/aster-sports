@@ -25,3 +25,22 @@ export function formatCurrency(cents) {
   const n = (cents ?? 0) / 100;
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
+
+// "in 35m", "in 2h 15m", "Tomorrow 6:30 PM", "Wed 5:00 PM"
+export function formatCountdown(startAt) {
+  const diff = new Date(startAt) - new Date();
+  if (diff < 0) return 'Now';
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `in ${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  const rm = mins % 60;
+  if (hrs < 24) return `in ${hrs}h ${rm}m`;
+  const dt = new Date(startAt);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (dt.toDateString() === tomorrow.toDateString()) {
+    return `Tomorrow ${dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+  }
+  return dt.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' +
+    dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}

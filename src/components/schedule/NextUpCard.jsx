@@ -1,26 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Car, Repeat } from 'lucide-react';
+import { MapPin, Car, Repeat, ExternalLink } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import { TYPE_LABELS } from '../../lib/constants';
+import { formatCountdown } from '../../lib/formatters';
 import { WhenRow, GameInfo } from './NextUpCardInfo';
-
-function formatCountdown(startAt) {
-  const diff = new Date(startAt) - new Date();
-  if (diff < 0) return 'Now';
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `in ${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  const rm = mins % 60;
-  if (hrs < 24) return `in ${hrs}h ${rm}m`;
-  const dt = new Date(startAt);
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  if (dt.toDateString() === tomorrow.toDateString()) {
-    return `Tomorrow ${dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
-  }
-  return dt.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' +
-    dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-}
 
 export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onRefresh }) {
   const navigate = useNavigate();
@@ -41,6 +25,17 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
     }, 60000);
     return () => clearInterval(id);
   }, [event.end_at, onRefresh]);
+
+  const [directionsUrl, setDirectionsUrl] = useState(null);
+  useEffect(() => {
+    if (!event.location) return;
+    const name = event.location.replace(/[\u2018\u2019\u2032]/g, "'").split(' - ')[0].split('(')[0].trim();
+    if (!name) return;
+    supabase.from('locations').select('lat, lon').ilike('name', `%${name}%`).limit(1)
+      .then(({ data }) => {
+        if (data?.[0]?.lat && data?.[0]?.lon) setDirectionsUrl(`https://maps.google.com/maps?daddr=${data[0].lat},${data[0].lon}`);
+      });
+  }, [event.location]);
 
   const teamColor = event.teams?.team_color || event.team_color || 'var(--sf-text-tertiary)';
   const teamName = event.teams?.name || event.team_name || '';
@@ -89,10 +84,19 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
           </div>
           <WhenRow event={event} />
           {event.location && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8 }}>
-              <MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
-              <span style={{ color: 'var(--sf-text-secondary)' }}>{event.location}</span>
-            </div>
+            directionsUrl ? (
+              <a href={directionsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8, textDecoration: 'none' }}>
+                <MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+                <span style={{ color: 'var(--sf-text-secondary)' }}>{event.location}</span>
+                <ExternalLink size={10} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+              </a>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8 }}>
+                <MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+                <span style={{ color: 'var(--sf-text-secondary)' }}>{event.location}</span>
+              </div>
+            )
           )}
           {event.notes && (
             <div style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
