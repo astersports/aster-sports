@@ -1,12 +1,4 @@
-const TYPE_OPTIONS = [
-  { key: null, label: 'All' },
-  { key: 'practice', label: 'Practice' },
-  { key: 'game', label: 'Game' },
-  { key: 'skills_lab', label: 'Skills Lab' },
-  { key: 'tryout', label: 'Tryout' },
-  { key: 'tournament', label: 'Tournament' },
-  { key: 'other', label: 'Other' },
-];
+import { TYPE_OPTIONS } from '../../lib/constants';
 
 export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedType, onSelectType, showCancelled, onToggleCancelled }) {
   const uniqueTeams = [];

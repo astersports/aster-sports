@@ -30,6 +30,11 @@ export const EVENT_STATUSES = [
   'postponed',
 ];
 
+export const TYPE_OPTIONS = [
+  { key: null, label: 'All' },
+  ...ACTIVITY_TYPES.map((key) => ({ key, label: TYPE_LABELS[key] || key })),
+];
+
 export const HOME_AWAY = ['home', 'away', 'neutral', 'tbd'];
 
 export const USER_ROLES = ['admin', 'coach', 'parent'];
