@@ -82,7 +82,7 @@ export function useUpdateActivity() {
         .eq('parent_event_id', seriesId).gte('start_at', startAt);
       if (sibUp.error) throw sibUp.error;
       // Grow/shrink series to match formData.recurrence.until.
-      await reconcileSeries({ seriesId, formData, row });
+      await reconcileSeries({ seriesId, eventId, formData, row });
       return { data: true };
     } catch (err) {
       console.error('Update series failed:', err.message, err);
