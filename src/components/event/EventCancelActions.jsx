@@ -5,12 +5,14 @@ export default function EventCancelActions({ event, onRefresh }) {
   const doCancel = async () => {
     const ok = window.confirm('Cancel this event? It will stay on the schedule as cancelled.');
     if (!ok) return;
-    await supabase.from('events').update({ status: 'cancelled' }).eq('id', event.id);
+    const { error } = await supabase.from('events').update({ status: 'cancelled' }).eq('id', event.id);
+    if (error) { window.alert(`Cancel failed: ${error.message}`); return; }
     onRefresh?.();
   };
 
   const doReinstate = async () => {
-    await supabase.from('events').update({ status: 'scheduled' }).eq('id', event.id);
+    const { error } = await supabase.from('events').update({ status: 'scheduled' }).eq('id', event.id);
+    if (error) { window.alert(`Reinstate failed: ${error.message}`); return; }
     onRefresh?.();
   };
 
