@@ -31,7 +31,7 @@ export default function EventDetailPage() {
   const [searchParams] = useSearchParams();
   const { orgId, role } = useAuth();
   const { showToast } = useToast();
-  const { event, loading: eventLoading, refetch } = useEventDetail(id);
+  const { event, loading: eventLoading, refetch, patchEvent } = useEventDetail(id);
   const teamId = event?.team_id || null;
   const { rsvps, roster, loading: rsvpLoading, setRsvp, saveNote } = useRsvps(id, teamId);
   const [editing, setEditing] = useState(false);
@@ -126,7 +126,7 @@ export default function EventDetailPage() {
       <SectionHeader>Comments</SectionHeader>
       <EventCommentsTab eventId={event.id} />
 
-      {isStaff && <EventCancelActions event={event} onRefresh={refetch} />}
+      {isStaff && <EventCancelActions event={event} onStatusChange={(status) => { patchEvent({ status }); refetch(); }} />}
 
       {editing && (
         <CreateActivityWizard orgId={orgId} editEvent={event} editMode={editMode} onClose={() => setEditing(false)} onCreated={refetch} />

@@ -1,19 +1,19 @@
 import { Ban } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
-export default function EventCancelActions({ event, onRefresh }) {
+export default function EventCancelActions({ event, onStatusChange }) {
   const doCancel = async () => {
     const ok = window.confirm('Cancel this event? It will stay on the schedule as cancelled.');
     if (!ok) return;
     const { error } = await supabase.from('events').update({ status: 'cancelled' }).eq('id', event.id);
     if (error) { window.alert(`Cancel failed: ${error.message}`); return; }
-    onRefresh?.();
+    onStatusChange?.('cancelled');
   };
 
   const doReinstate = async () => {
     const { error } = await supabase.from('events').update({ status: 'scheduled' }).eq('id', event.id);
     if (error) { window.alert(`Reinstate failed: ${error.message}`); return; }
-    onRefresh?.();
+    onStatusChange?.('scheduled');
   };
 
   return (

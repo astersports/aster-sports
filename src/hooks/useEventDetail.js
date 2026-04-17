@@ -25,5 +25,11 @@ export function useEventDetail(eventId) {
 
   useEffect(() => { refetch(); }, [refetch]);
 
-  return { event, loading, refetch };
+  // Optimistically patch a field without waiting for a full refetch.
+  // Used by cancel/reinstate to update status instantly in the UI.
+  const patchEvent = useCallback((patch) => {
+    setEvent((prev) => prev ? { ...prev, ...patch } : prev);
+  }, []);
+
+  return { event, loading, refetch, patchEvent };
 }
