@@ -70,22 +70,25 @@ export default function EventDetailPage() {
   };
 
   const doDelete = async () => {
-    // Step 1: blocking confirm. Cancel → abort everything.
-    if (!window.confirm('Delete this event?')) return;
-    // Step 2: only for recurring events, ask if siblings go too.
-    let deleteAll = false;
-    if (event.parent_event_id) {
-      deleteAll = window.confirm('Also delete all future events in this series?\n\nOK = delete all future\nCancel = delete only this one');
-    }
     try {
-      if (deleteAll) {
-        const { error: serErr } = await supabase.from('events').delete()
-          .eq('parent_event_id', event.parent_event_id)
-          .gte('start_at', event.start_at);
-        if (serErr) throw serErr;
+      if (event.parent_event_id) {
+        // Recurring: first ask about the whole series.
+        if (window.confirm('Delete ALL future events in this series?\n\nOK = delete all future\nCancel = delete only this one')) {
+          const { error: serErr } = await supabase.from('events').delete()
+            .eq('parent_event_id', event.parent_event_id)
+            .gte('start_at', event.start_at);
+          if (serErr) throw serErr;
+          await supabase.from('events').delete().eq('id', event.id);
+        } else {
+          if (!window.confirm('Delete just this one event?')) return;
+          const { error } = await supabase.from('events').delete().eq('id', event.id);
+          if (error) throw error;
+        }
+      } else {
+        if (!window.confirm('Delete this event?')) return;
+        const { error } = await supabase.from('events').delete().eq('id', event.id);
+        if (error) throw error;
       }
-      const { error } = await supabase.from('events').delete().eq('id', event.id);
-      if (error) throw error;
       navigate('/schedule');
     } catch (err) {
       showToast(`Delete failed: ${err.message}`, 'error');
