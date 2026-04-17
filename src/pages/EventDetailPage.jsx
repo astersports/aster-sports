@@ -1,7 +1,6 @@
-import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Repeat } from 'lucide-react';
+import { Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -11,7 +10,7 @@ import EventDetailHeader from '../components/event/EventDetailHeader';
 import EventDetailTab from '../components/event/EventDetailTab';
 import EventLocationTab from '../components/event/EventLocationTab';
 import EventRsvpTab from '../components/event/EventRsvpTab';
-import EventCheckinTab from '../components/event/EventCheckinTab';
+import EventCheckinOverlay from '../components/event/EventCheckinOverlay';
 import EventDutiesTab from '../components/event/EventDutiesTab';
 import EventCommentsTab from '../components/event/EventCommentsTab';
 import EventRidesTab from '../components/event/EventRidesTab';
@@ -22,8 +21,6 @@ import CreateActivityWizard from '../components/wizard/CreateActivityWizard';
 const SectionHeader = ({ children, sectionKey }) => (
   <h2 data-section={sectionKey} style={{ fontSize: 16, fontWeight: 700, color: 'var(--sf-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>
 );
-
-const iconBtn = { minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' };
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -100,9 +97,17 @@ export default function EventDetailPage() {
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={doDelete} onCheckin={() => setShowCheckin(true)} />
 
       {event.parent_event_id && (
-        <div style={{ padding: '6px 16px', fontSize: 12, color: 'var(--sf-text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ padding: '6px 16px', fontSize: 12, color: 'var(--sf-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Repeat size={12} strokeWidth={1.75} />
           Part of a recurring series
+          <button type="button" onClick={async () => {
+            if (!window.confirm('Remove this event from the series? It will become standalone.')) return;
+            await supabase.from('events').update({ parent_event_id: null }).eq('id', event.id);
+            patchEvent({ parent_event_id: null });
+            refetch();
+          }} style={{ fontSize: 12, color: 'var(--sf-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>
+            Remove from series
+          </button>
         </div>
       )}
 
@@ -131,20 +136,7 @@ export default function EventDetailPage() {
       {editing && (
         <CreateActivityWizard orgId={orgId} editEvent={event} editMode={editMode} onClose={() => setEditing(false)} onCreated={refetch} />
       )}
-      {showCheckin && createPortal(
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--sf-bg-page)', zIndex: 9999, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 4px', borderBottom: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)' }}>
-            <button type="button" onClick={() => setShowCheckin(false)} className="sf-press" style={iconBtn}>
-              <ArrowLeft size={20} strokeWidth={1.75} color="var(--sf-text-primary)" />
-            </button>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--sf-text-primary)' }}>Take Attendance</h2>
-          </div>
-          <div style={{ flex: 1, overflowY: 'auto' }}>
-            <EventCheckinTab eventId={event.id} roster={roster} teamColor={teamColor} />
-          </div>
-        </div>,
-        document.body,
-      )}
+      {showCheckin && <EventCheckinOverlay eventId={event.id} roster={roster} teamColor={teamColor} onClose={() => setShowCheckin(false)} />}
     </div>
   );
 }
