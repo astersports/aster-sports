@@ -126,7 +126,7 @@ export default function EventDetailPage() {
       <SectionHeader>Comments</SectionHeader>
       <EventCommentsTab eventId={event.id} />
 
-      {isStaff && <EventCancelActions event={event} />}
+      {isStaff && <EventCancelActions event={event} onRefresh={refetch} />}
 
       {editing && (
         <CreateActivityWizard orgId={orgId} editEvent={event} editMode={editMode} onClose={() => setEditing(false)} onCreated={refetch} />
