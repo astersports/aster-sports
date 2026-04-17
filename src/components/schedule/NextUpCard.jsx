@@ -94,6 +94,11 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
               <span style={{ color: 'var(--sf-text-secondary)' }}>{event.location}</span>
             </div>
           )}
+          {event.notes && (
+            <div style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {event.notes.length > 60 ? event.notes.slice(0, 60) + '...' : event.notes}
+            </div>
+          )}
           <GameInfo event={event} />
           {rsvpCount && (
             <div style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--sf-text-secondary)' }}>

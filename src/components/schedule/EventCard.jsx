@@ -85,6 +85,12 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
             )}
           </div>
         )}
+        {/* Row 3a: Notes excerpt */}
+        {event.notes && (
+          <div style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {event.notes.length > 60 ? event.notes.slice(0, 60) + '...' : event.notes}
+          </div>
+        )}
         {/* Row 3b: Jersey color (games/tournaments when set) */}
         {event.jersey && (
           <div style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
