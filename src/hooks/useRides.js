@@ -51,7 +51,7 @@ export function useRides(eventId) {
     const { error } = existing
       ? await supabase.from('event_rides').update(row).eq('id', existing.id)
       : await supabase.from('event_rides').insert(row);
-    if (error) { console.error('Ride save error:', error); return false; }
+    if (error) { window.alert(`Failed to save ride: ${error.message}`); return false; }
     await fetch();
     return true;
   };
@@ -59,7 +59,7 @@ export function useRides(eventId) {
   const remove = async (rideId) => {
     const { error } = await supabase.from('event_rides')
       .delete().eq('id', rideId);
-    if (error) { console.error('remove ride:', error.message); return; }
+    if (error) { window.alert(`Failed to remove ride: ${error.message}`); return; }
     await fetch();
   };
 
