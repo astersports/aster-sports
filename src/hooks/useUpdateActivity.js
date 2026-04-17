@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { reconcileSeries } from './seriesReconcile';
+import { reconcileSeries, convertToSeries } from './seriesReconcile';
 import { buildTitle } from '../lib/constants';
 
 export function useUpdateActivity() {
@@ -55,6 +55,11 @@ export function useUpdateActivity() {
         });
         const { error: dErr } = await supabase.from('event_duties').insert(dutyRows);
         if (dErr) throw new Error(`Volunteers failed to save: ${dErr.message}`);
+      }
+      // Convert standalone → recurring if user changed Once → Weekly/Biweekly.
+      const pattern = formData.recurrence?.pattern;
+      if (pattern && pattern !== 'once' && !data.parent_event_id) {
+        await convertToSeries({ eventId, formData, row: buildRow(formData) });
       }
       return { data };
     } catch (err) {
