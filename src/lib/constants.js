@@ -35,3 +35,8 @@ export const HOME_AWAY = ['home', 'away', 'neutral', 'tbd'];
 export const USER_ROLES = ['admin', 'coach', 'parent'];
 
 export const MEMBER_TYPES = ['roster', 'futures_academy'];
+
+export function buildTitle(type, opponent) {
+  if ((type === 'game' || type === 'tournament') && opponent) return `vs. ${opponent}`;
+  return TYPE_LABELS[type] || 'Event';
+}

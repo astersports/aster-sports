@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { computeDefaultUntil } from '../lib/recurrenceHelpers';
+import { buildTitle } from '../lib/constants';
 
 export function useCreateActivity() {
   const [loading, setLoading] = useState(false);
@@ -137,8 +138,3 @@ function expandDates(formData, pattern) {
   return out;
 }
 
-function buildTitle(type, opponent) {
-  if ((type === 'game' || type === 'tournament') && opponent) return `vs. ${opponent}`;
-  const labels = { practice: 'Practice', game: 'Game', skills_lab: 'Skills Lab', tryout: 'Tryout', tournament: 'Tournament', other: 'Event' };
-  return labels[type] || 'Event';
-}

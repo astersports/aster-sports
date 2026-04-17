@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { reconcileSeries } from './seriesReconcile';
+import { buildTitle } from '../lib/constants';
 
 export function useUpdateActivity() {
   const [loading, setLoading] = useState(false);
@@ -94,8 +95,3 @@ export function useUpdateActivity() {
   return { update, updateSeries, loading, error };
 }
 
-function buildTitle(type, opponent) {
-  if ((type === 'game' || type === 'tournament') && opponent) return `vs. ${opponent}`;
-  const labels = { practice: 'Practice', game: 'Game', skills_lab: 'Skills Lab', tryout: 'Tryout', tournament: 'Tournament', other: 'Event' };
-  return labels[type] || 'Event';
-}
