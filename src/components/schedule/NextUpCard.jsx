@@ -5,9 +5,13 @@ import { supabase } from '../../lib/supabase';
 import { TYPE_LABELS } from '../../lib/constants';
 import { formatCountdown } from '../../lib/formatters';
 import { WhenRow, GameInfo } from './NextUpCardInfo';
+import { useAuth } from '../../context/AuthContext';
+import ChildRsvp from './ChildRsvp';
 
 export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onRefresh }) {
   const navigate = useNavigate();
+  const { role, myChildren } = useAuth();
+  const childrenOnTeam = (myChildren || []).filter((c) => c.teamId === event.team_id);
   const [countdown, setCountdown] = useState(() => formatCountdown(event.start_at));
 
   useEffect(() => {
@@ -126,21 +130,18 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
           )}
         </div>
       </div>
-      <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8 }}>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); navigate(`/events/${event.id}?tab=rsvps`); }}
-          className="sf-press"
-          style={{
-            flex: 1, minHeight: 44, borderRadius: 10,
-            border: '1px solid var(--sf-border-default)',
-            backgroundColor: 'transparent',
-            color: 'var(--sf-accent)', fontSize: 14, fontWeight: 500,
-          }}
-        >
-          Manage RSVPs
-        </button>
-      </div>
+      {role === 'parent' && childrenOnTeam.length > 0 ? (
+        <div style={{ padding: '0 16px 16px' }}>
+          {childrenOnTeam.map((c) => <ChildRsvp key={c.playerId} child={c} eventId={event.id} />)}
+        </div>
+      ) : (
+        <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8 }}>
+          <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/events/${event.id}?tab=rsvps`); }} className="sf-press"
+            style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'transparent', color: 'var(--sf-accent)', fontSize: 14, fontWeight: 500 }}>
+            Manage RSVPs
+          </button>
+        </div>
+      )}
     </div>
   );
 }

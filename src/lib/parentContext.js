@@ -5,20 +5,21 @@ import { supabase } from './supabase';
 // Returns empty arrays when no guardian row exists or the user has no
 // linked players yet — callers can treat the empty result as "no scope".
 export async function fetchParentContext(userId) {
-  if (!userId) return { myChildren: [], myTeamIds: [] };
+  const empty = { myChildren: [], myTeamIds: [], guardianId: null };
+  if (!userId) return empty;
 
   const { data: guardian, error: gErr } = await supabase
     .from('guardians')
     .select('id')
     .eq('user_id', userId)
     .maybeSingle();
-  if (gErr || !guardian) return { myChildren: [], myTeamIds: [] };
+  if (gErr || !guardian) return empty;
 
   const { data: links, error: lErr } = await supabase
     .from('player_guardians')
     .select('player_id, players!inner(id, first_name, last_name, roster_members!inner(team_id))')
     .eq('guardian_id', guardian.id);
-  if (lErr || !links) return { myChildren: [], myTeamIds: [] };
+  if (lErr || !links) return { ...empty, guardianId: guardian.id };
 
   const myChildren = [];
   const teamIdSet = new Set();
@@ -36,5 +37,5 @@ export async function fetchParentContext(userId) {
       teamId: rosters[0]?.team_id ?? null,
     });
   }
-  return { myChildren, myTeamIds: [...teamIdSet] };
+  return { myChildren, myTeamIds: [...teamIdSet], guardianId: guardian.id };
 }
