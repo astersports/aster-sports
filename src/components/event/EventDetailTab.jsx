@@ -1,4 +1,4 @@
-import { Calendar, Clock, MapPin } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 
 // Info block — date/time, location, arrival, opponent, jersey.
 // Parent and coach notes are rendered separately in EventDetailPage.
@@ -15,26 +15,6 @@ export default function EventDetailTab({ event }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--sf-text-primary)' }}>
           <Calendar size={16} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
           <span>{fmt(date)}{endDate ? ` · ${fmtTime(date)} – ${fmtTime(endDate)}` : ''}</span>
-        </div>
-      )}
-      {(event.location || event.location_address) && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <MapPin size={16} strokeWidth={1.75} color="var(--sf-text-tertiary)" style={{ marginTop: 2, flexShrink: 0 }} />
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--sf-text-primary)' }}>
-              {event.location || 'Location TBD'}
-            </div>
-            {event.sub_location && (
-              <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 2 }}>
-                {event.sub_location}
-              </div>
-            )}
-            {event.location_address && (
-              <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginTop: 4 }}>
-                {event.location_address}
-              </div>
-            )}
-          </div>
         </div>
       )}
       {event.arrival_minutes_before > 0 && (
