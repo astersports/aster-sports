@@ -25,7 +25,7 @@ export function GameInfo({ event }) {
       {showJerseyOrChip && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
           {event.jersey && <span style={{ fontSize: 12, color: 'var(--sf-text-secondary)' }}>{event.jersey} jersey</span>}
-          {event.home_away && event.home_away !== 'tbd' && (
+          {event.home_away && event.home_away !== 'tbd' && event.home_away !== 'neutral' && (
             <span style={{
               fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
               padding: '1px 6px', borderRadius: 4,
