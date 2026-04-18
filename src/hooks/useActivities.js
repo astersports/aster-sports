@@ -12,7 +12,7 @@ import { useSeason } from '../context/SeasonContext';
 // org_id and season_id live on the `teams` table, not `events`, so we
 // use an inner join + filter on the joined columns.
 export function useActivities() {
-  const { orgId } = useAuth();
+  const { orgId, role, myTeamIds } = useAuth();
   const { activeSeason } = useSeason();
   const seasonId = activeSeason?.id ?? null;
   const [activities, setActivities] = useState([]);
@@ -20,6 +20,9 @@ export function useActivities() {
 
   const refetch = useCallback(async () => {
     if (!orgId) { setLoading(false); return; }
+    if (role === 'parent' && (!myTeamIds || myTeamIds.length === 0)) {
+      setActivities([]); setLoading(false); return;
+    }
     setLoading(true);
     try {
       let query = supabase
@@ -28,6 +31,7 @@ export function useActivities() {
         .eq('teams.org_id', orgId)
         .order('start_at', { ascending: true });
       if (seasonId) query = query.eq('teams.season_id', seasonId);
+      if (role === 'parent' && myTeamIds?.length) query = query.in('team_id', myTeamIds);
       const { data, error } = await query;
       if (error) throw error;
       const processed = (data || []).map((e) => ({
@@ -42,7 +46,7 @@ export function useActivities() {
       setActivities([]);
     }
     setLoading(false);
-  }, [orgId, seasonId]);
+  }, [orgId, seasonId, role, myTeamIds]);
 
   useEffect(() => {
     Promise.resolve().then(refetch);

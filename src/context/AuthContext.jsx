@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { autoLinkGuardian } from '../lib/autoLinkGuardian';
+import { fetchParentContext } from '../lib/parentContext';
 
 const AuthContext = createContext(null);
 
@@ -31,6 +32,8 @@ export function AuthProvider({ children }) {
   const [user, setUser]     = useState(null);
   const [role, setRole]     = useState(null);
   const [org,  setOrg]      = useState(null);
+  const [myChildren, setMyChildren] = useState([]);
+  const [myTeamIds, setMyTeamIds]   = useState([]);
   const [loading, setLoading] = useState(true);
   const fetchIdRef = useRef(0);
 
@@ -45,23 +48,33 @@ export function AuthProvider({ children }) {
       .eq('user_id', authUser.id)
       .maybeSingle();
     if (id !== fetchIdRef.current) return;
+
+    let resolvedRole = null;
+    let resolvedOrg = null;
     if (error) {
       console.error('Failed to load membership:', error.message);
-      setRole(null); setOrg(null); applyBrandColors(null); setLoading(false);
-      return;
+    } else if (data) {
+      resolvedRole = data.role ?? null;
+      resolvedOrg = data.organizations ?? null;
+    } else {
+      const linked = await autoLinkGuardian(authUser);
+      if (id !== fetchIdRef.current) return;
+      resolvedRole = linked?.role ?? null;
+      resolvedOrg = linked?.organization ?? null;
     }
-    if (data) {
-      setRole(data.role ?? null);
-      setOrg(data.organizations ?? null);
-      applyBrandColors(data.organizations?.brand_colors);
-      setLoading(false);
-      return;
+    setRole(resolvedRole);
+    setOrg(resolvedOrg);
+    applyBrandColors(resolvedOrg?.brand_colors);
+
+    if (resolvedRole === 'parent') {
+      const ctx = await fetchParentContext(authUser.id);
+      if (id !== fetchIdRef.current) return;
+      setMyChildren(ctx.myChildren);
+      setMyTeamIds(ctx.myTeamIds);
+    } else {
+      setMyChildren([]);
+      setMyTeamIds([]);
     }
-    const linked = await autoLinkGuardian(authUser);
-    if (id !== fetchIdRef.current) return;
-    setRole(linked?.role ?? null);
-    setOrg(linked?.organization ?? null);
-    applyBrandColors(linked?.organization?.brand_colors);
     setLoading(false);
   }, []);
 
@@ -79,6 +92,8 @@ export function AuthProvider({ children }) {
         else {
           setRole(null);
           setOrg(null);
+          setMyChildren([]);
+          setMyTeamIds([]);
           applyBrandColors(null);
           setLoading(false);
         }
@@ -101,6 +116,8 @@ export function AuthProvider({ children }) {
     setUser(null);
     setRole(null);
     setOrg(null);
+    setMyChildren([]);
+    setMyTeamIds([]);
     applyBrandColors(null);
   }, []);
 
@@ -111,11 +128,13 @@ export function AuthProvider({ children }) {
       orgId: org?.id ?? null,
       orgName: org?.name ?? null,
       org,
+      myChildren,
+      myTeamIds,
       loading,
       signIn,
       signOut,
     }),
-    [user, role, org, loading, signIn, signOut],
+    [user, role, org, myChildren, myTeamIds, loading, signIn, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
