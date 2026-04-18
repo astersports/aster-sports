@@ -6,9 +6,10 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
   (teams || []).forEach((a) => {
     if (a.team_id && !seen.has(a.team_id) && a.teams) {
       seen.add(a.team_id);
-      uniqueTeams.push({ id: a.team_id, name: a.teams.name, team_color: a.teams.team_color });
+      uniqueTeams.push({ id: a.team_id, name: a.teams.name, team_color: a.teams.team_color, sort_order: a.teams.sort_order });
     }
   });
+  uniqueTeams.sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
 
   return (
     <div style={{ padding: '8px 0' }}>
