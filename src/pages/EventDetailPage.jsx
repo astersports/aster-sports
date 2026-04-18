@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import AddToCalendarButton from '../components/event/AddToCalendarButton';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useEventDetail } from '../hooks/useEventDetail';
@@ -130,6 +131,8 @@ export default function EventDetailPage() {
       {(event.notes || event.coach_notes) && (
         <><SectionHeader>Notes</SectionHeader><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></>
       )}
+
+      <AddToCalendarButton event={event} />
 
       <SectionHeader>Comments</SectionHeader>
       <EventCommentsTab eventId={event.id} />
