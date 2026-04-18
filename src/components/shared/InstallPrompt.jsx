@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 
-const LS_KEY = 'sf.install.dismissed';
+const LS_KEY = 'sf-install-dismissed';
 
 function wasDismissed() {
-  try { return localStorage.getItem(LS_KEY) === '1'; } catch { return false; }
+  try { return localStorage.getItem(LS_KEY) === 'true'; } catch { return false; }
 }
 
 function isStandalone() {
@@ -36,7 +36,7 @@ export default function InstallPrompt() {
   }, [dismissed]);
 
   const dismiss = () => {
-    try { localStorage.setItem(LS_KEY, '1'); } catch {}
+    try { localStorage.setItem(LS_KEY, 'true'); } catch {}
     setDismissed(true);
     setDeferredPrompt(null);
     setShowIosBanner(false);
