@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { autoLinkGuardian } from '../lib/autoLinkGuardian';
 
 const AuthContext = createContext(null);
 
@@ -35,39 +36,46 @@ export function AuthProvider({ children }) {
 
   // Load role + org for a given auth user. Uses a ref-based token to drop
   // stale responses if auth state flips while a previous fetch is in flight.
-  const loadMembership = useCallback(async (userId) => {
+  const loadMembership = useCallback(async (authUser) => {
     const id = ++fetchIdRef.current;
     setLoading(true);
     const { data, error } = await supabase
       .from('user_roles')
       .select('role, organization_id, organizations(id, name, slug, logo_url, brand_colors)')
-      .eq('user_id', userId)
-      .single();
+      .eq('user_id', authUser.id)
+      .maybeSingle();
     if (id !== fetchIdRef.current) return;
     if (error) {
       console.error('Failed to load membership:', error.message);
-      setRole(null);
-      setOrg(null);
-      applyBrandColors(null);
-    } else {
-      setRole(data?.role ?? null);
-      setOrg(data?.organizations ?? null);
-      applyBrandColors(data?.organizations?.brand_colors);
+      setRole(null); setOrg(null); applyBrandColors(null); setLoading(false);
+      return;
     }
+    if (data) {
+      setRole(data.role ?? null);
+      setOrg(data.organizations ?? null);
+      applyBrandColors(data.organizations?.brand_colors);
+      setLoading(false);
+      return;
+    }
+    const linked = await autoLinkGuardian(authUser);
+    if (id !== fetchIdRef.current) return;
+    setRole(linked?.role ?? null);
+    setOrg(linked?.organization ?? null);
+    applyBrandColors(linked?.organization?.brand_colors);
     setLoading(false);
   }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) loadMembership(session.user.id);
+      if (session?.user) loadMembership(session.user);
       else setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user ?? null);
-        if (session?.user) loadMembership(session.user.id);
+        if (session?.user) loadMembership(session.user);
         else {
           setRole(null);
           setOrg(null);
