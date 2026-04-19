@@ -22,10 +22,12 @@ function greetingFor(date = new Date()) {
 }
 
 export default function ParentHomePage() {
-  const { user } = useAuth();
+  const { user, guardianFirstName } = useAuth();
   const { activities, loading } = useActivities();
   const navigate = useNavigate();
-  const name = firstNameFrom(user);
+  const name = guardianFirstName
+    ? guardianFirstName.charAt(0).toUpperCase() + guardianFirstName.slice(1)
+    : firstNameFrom(user);
   const now = Date.now();
   const weekEnd = now + 7 * 24 * 60 * 60 * 1000;
 

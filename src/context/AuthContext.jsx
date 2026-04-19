@@ -35,6 +35,7 @@ export function AuthProvider({ children }) {
   const [myChildren, setMyChildren] = useState([]);
   const [myTeamIds, setMyTeamIds]   = useState([]);
   const [guardianId, setGuardianId] = useState(null);
+  const [guardianFirstName, setGuardianFirstName] = useState(null);
   const [loading, setLoading] = useState(true);
   const fetchIdRef = useRef(0);
 
@@ -71,8 +72,9 @@ export function AuthProvider({ children }) {
       const ctx = await fetchParentContext(authUser.id);
       if (id !== fetchIdRef.current) return;
       setMyChildren(ctx.myChildren); setMyTeamIds(ctx.myTeamIds); setGuardianId(ctx.guardianId);
+      setGuardianFirstName(ctx.guardianFirstName ?? null);
     } else {
-      setMyChildren([]); setMyTeamIds([]); setGuardianId(null);
+      setMyChildren([]); setMyTeamIds([]); setGuardianId(null); setGuardianFirstName(null);
     }
     setLoading(false);
   }, []);
@@ -90,7 +92,7 @@ export function AuthProvider({ children }) {
         if (session?.user) loadMembership(session.user);
         else {
           setRole(null); setOrg(null);
-          setMyChildren([]); setMyTeamIds([]); setGuardianId(null);
+          setMyChildren([]); setMyTeamIds([]); setGuardianId(null); setGuardianFirstName(null);
           applyBrandColors(null); setLoading(false);
         }
       }
@@ -110,7 +112,7 @@ export function AuthProvider({ children }) {
     try { await supabase.auth.signOut(); }
     catch (err) { console.error('Sign out failed:', err); }
     setUser(null); setRole(null); setOrg(null);
-    setMyChildren([]); setMyTeamIds([]); setGuardianId(null);
+    setMyChildren([]); setMyTeamIds([]); setGuardianId(null); setGuardianFirstName(null);
     applyBrandColors(null);
   }, []);
 
@@ -124,11 +126,12 @@ export function AuthProvider({ children }) {
       myChildren,
       myTeamIds,
       guardianId,
+      guardianFirstName,
       loading,
       signIn,
       signOut,
     }),
-    [user, role, org, myChildren, myTeamIds, guardianId, loading, signIn, signOut],
+    [user, role, org, myChildren, myTeamIds, guardianId, guardianFirstName, loading, signIn, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
