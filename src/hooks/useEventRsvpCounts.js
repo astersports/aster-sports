@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 // Given a list of activities, fetches RSVP counts per event and team
@@ -7,11 +7,15 @@ import { supabase } from '../lib/supabase';
 // noResponse is inferred from (teamSize − sum of responses).
 export function useEventRsvpCounts(activities) {
   const [summary, setSummary] = useState({});
+  const lastKeyRef = useRef(null);
 
   useEffect(() => {
-    if (!activities || activities.length === 0) { setSummary({}); return; }
+    if (!activities || activities.length === 0) { setSummary({}); lastKeyRef.current = ''; return; }
     const eventIds = activities.map((a) => a.id);
     const teamIds = [...new Set(activities.map((a) => a.team_id).filter(Boolean))];
+    const key = [...eventIds].sort().join(',') + '|' + [...teamIds].sort().join(',');
+    if (lastKeyRef.current === key) return;
+    lastKeyRef.current = key;
 
     Promise.all([
       supabase.from('event_rsvps').select('event_id, response').in('event_id', eventIds),

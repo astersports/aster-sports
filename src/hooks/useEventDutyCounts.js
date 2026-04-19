@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 // Per-event duty counts: { [event_id]: { total, claimed } }.
@@ -6,9 +6,13 @@ import { supabase } from '../lib/supabase';
 // or guardian_id (signed-in guardian pickup) is set.
 export function useEventDutyCounts(activities) {
   const [counts, setCounts] = useState({});
+  const lastKeyRef = useRef(null);
   useEffect(() => {
     const ids = (activities || []).map((a) => a.id);
-    if (ids.length === 0) { setCounts({}); return; }
+    if (ids.length === 0) { setCounts({}); lastKeyRef.current = ''; return; }
+    const key = [...ids].sort().join(',');
+    if (lastKeyRef.current === key) return;
+    lastKeyRef.current = key;
     supabase.from('event_duties').select('event_id, claimed_by_name, guardian_id').in('event_id', ids)
       .then(({ data }) => {
         if (!data) return;
