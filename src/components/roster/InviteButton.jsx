@@ -1,0 +1,50 @@
+import { useState } from 'react';
+import { supabase } from '../../lib/supabase';
+
+// Small pill button that triggers the invite-parent Edge Function. Admin-only
+// placement is the caller's responsibility — this component just handles the
+// request lifecycle and in-place status swap.
+export default function InviteButton({ guardianEmail }) {
+  const [status, setStatus] = useState('idle');
+  const [error, setError] = useState(null);
+
+  const invite = async () => {
+    setStatus('loading'); setError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not signed in');
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-parent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ email: guardianEmail }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `HTTP ${res.status}`);
+      }
+      setStatus('sent');
+    } catch (e) {
+      setError(e.message || 'Error'); setStatus('error');
+    }
+  };
+
+  const pill = { minHeight: 32, padding: '0 10px', borderRadius: 9999, fontSize: 12, fontWeight: 500, backgroundColor: 'transparent' };
+
+  if (status === 'sent') {
+    return <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--sf-success)' }}>Invited ✓</span>;
+  }
+  if (status === 'error') {
+    return (
+      <button type="button" onClick={invite} className="sf-press" title={error}
+        style={{ ...pill, border: '1.5px solid var(--sf-danger)', color: 'var(--sf-danger)' }}>
+        {error?.length > 14 ? 'Retry' : error}
+      </button>
+    );
+  }
+  return (
+    <button type="button" onClick={invite} disabled={status === 'loading'} className="sf-press"
+      style={{ ...pill, border: '1.5px solid var(--sf-accent)', color: 'var(--sf-accent)', opacity: status === 'loading' ? 0.6 : 1 }}>
+      {status === 'loading' ? 'Sending…' : 'Invite'}
+    </button>
+  );
+}
