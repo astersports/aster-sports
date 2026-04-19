@@ -13,14 +13,18 @@ export default function InviteButton({ guardianEmail }) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not signed in');
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-parent`, {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-parent`;
+      console.log('Invite URL:', url, 'email:', guardianEmail);
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
         body: JSON.stringify({ email: guardianEmail }),
       });
+      const text = await res.text();
+      console.error('Invite response:', res.status, text);
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `HTTP ${res.status}`);
+        let body = {}; try { body = JSON.parse(text); } catch { /* not json */ }
+        throw new Error(body.error || text?.slice(0, 80) || `HTTP ${res.status}`);
       }
       setStatus('sent');
     } catch (e) {
