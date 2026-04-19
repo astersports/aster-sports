@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 
@@ -19,10 +19,18 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
   const [response, setResponse] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    supabase.from('event_rsvps').select('response').eq('event_id', eventId).eq('player_id', child.playerId).maybeSingle()
-      .then(({ data }) => setResponse(data?.response ?? null));
+  const fetchRsvp = useCallback(async () => {
+    const { data } = await supabase.from('event_rsvps').select('response')
+      .eq('event_id', eventId).eq('player_id', child.playerId).maybeSingle();
+    setResponse(data?.response ?? null);
   }, [eventId, child.playerId]);
+
+  useEffect(() => {
+    fetchRsvp();
+    const handler = () => fetchRsvp();
+    window.addEventListener('focus', handler);
+    return () => window.removeEventListener('focus', handler);
+  }, [fetchRsvp]);
 
   const save = async (value) => {
     setSaving(true);
