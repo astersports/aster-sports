@@ -4,8 +4,15 @@ import { useAuth } from '../../context/AuthContext';
 
 const PILLS = [
   { value: 'going',     label: 'Going',     color: 'var(--sf-success)' },
+  { value: 'maybe',     label: 'Maybe',     color: 'var(--sf-warning)' },
   { value: 'not_going', label: 'Not Going', color: 'var(--sf-danger)' },
 ];
+
+const CONFIRMED = {
+  going:     { icon: '✓', label: 'Going',     color: 'var(--sf-success)' },
+  maybe:     { icon: '?', label: 'Maybe',     color: 'var(--sf-warning)' },
+  not_going: { icon: '✗', label: 'Not Going', color: 'var(--sf-danger)' },
+};
 
 export default function ChildRsvp({ child, eventId, compact = false }) {
   const { guardianId } = useAuth();
@@ -33,12 +40,12 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
   const nameSize = compact ? 12 : 14;
   const pillSize = compact ? 12 : 13;
 
-  if (response === 'going' || response === 'not_going') {
-    const isGoing = response === 'going';
+  const state = CONFIRMED[response];
+  if (state) {
     return (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: minH, marginTop: compact ? 4 : 8 }}>
-        <span style={{ fontSize: nameSize, fontWeight: 500, color: isGoing ? 'var(--sf-success)' : 'var(--sf-danger)' }}>
-          {isGoing ? '✓' : '✗'} {child.firstName} {isGoing ? 'Going' : 'Not Going'}
+        <span style={{ fontSize: nameSize, fontWeight: 500, color: state.color }}>
+          {state.icon} {child.firstName} {state.label}
         </span>
         <button type="button" onClick={(e) => { e.stopPropagation(); setResponse(null); }}
           style={{ background: 'none', border: 'none', color: 'var(--sf-accent)', fontSize: pillSize, fontWeight: 500, padding: 4 }}>
