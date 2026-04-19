@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { lazy, Suspense, useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
 import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
@@ -9,7 +9,7 @@ import { Plus, ChevronDown } from 'lucide-react';
 import FilterBar from '../components/schedule/FilterBar';
 import NextUpCard from '../components/schedule/NextUpCard';
 import DateGroupedList from '../components/schedule/DateGroupedList';
-import CreateActivityWizard from '../components/wizard/CreateActivityWizard';
+const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
 export default function SchedulePage() {
   const { orgId } = useAuth();
@@ -134,11 +134,13 @@ export default function SchedulePage() {
       </button>
 
       {showWizard && (
-        <CreateActivityWizard
-          orgId={orgId}
-          onClose={() => setShowWizard(false)}
-          onCreated={refetch}
-        />
+        <Suspense fallback={null}>
+          <CreateActivityWizard
+            orgId={orgId}
+            onClose={() => setShowWizard(false)}
+            onCreated={refetch}
+          />
+        </Suspense>
       )}
     </>
   );

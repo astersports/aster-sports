@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -11,13 +11,13 @@ import EventDetailHeader from '../components/event/EventDetailHeader';
 import EventDetailTab from '../components/event/EventDetailTab';
 import EventLocationTab from '../components/event/EventLocationTab';
 import EventRsvpTab from '../components/event/EventRsvpTab';
-import EventCheckinOverlay from '../components/event/EventCheckinOverlay';
 import EventDutiesTab from '../components/event/EventDutiesTab';
 import EventCommentsTab from '../components/event/EventCommentsTab';
 import EventRidesTab from '../components/event/EventRidesTab';
 import EventNotes from '../components/event/EventNotes';
 import EventCancelActions from '../components/event/EventCancelActions';
-import CreateActivityWizard from '../components/wizard/CreateActivityWizard';
+const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
+const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
 const SectionHeader = ({ children, sectionKey }) => (
   <h2 data-section={sectionKey} style={{ fontSize: 16, fontWeight: 700, color: 'var(--sf-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>
@@ -140,10 +140,8 @@ export default function EventDetailPage() {
 
       {isStaff && <EventCancelActions event={event} onStatusChange={(status) => { patchEvent({ status }); refetch(); }} />}
 
-      {editing && (
-        <CreateActivityWizard orgId={orgId} editEvent={event} editMode={editMode} onClose={() => setEditing(false)} onCreated={refetch} />
-      )}
-      {showCheckin && <EventCheckinOverlay eventId={event.id} roster={roster} teamColor={teamColor} onClose={() => setShowCheckin(false)} />}
+      {editing && <Suspense fallback={null}><CreateActivityWizard orgId={orgId} editEvent={event} editMode={editMode} onClose={() => setEditing(false)} onCreated={refetch} /></Suspense>}
+      {showCheckin && <Suspense fallback={null}><EventCheckinOverlay eventId={event.id} roster={roster} teamColor={teamColor} onClose={() => setShowCheckin(false)} /></Suspense>}
     </div>
   );
 }

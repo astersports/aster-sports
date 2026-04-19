@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
 import RequireAuth from './components/layout/RequireAuth';
@@ -11,8 +12,11 @@ import TeamsPage from './pages/TeamsPage';
 import TeamDetailPage from './pages/TeamDetailPage';
 import MessagesPage from './pages/MessagesPage';
 import EventDetailPage from './pages/EventDetailPage';
-import AdminSeasonsPage from './pages/AdminSeasonsPage';
-import AdminTeamsPage from './pages/AdminTeamsPage';
+
+const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
+const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
+
+const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
 
 // Wrap an authenticated route in both the shell and the auth guard. Keeps
 // the route table below flat and readable instead of nesting <RequireAuth>
@@ -35,6 +39,7 @@ function PageTransition({ children }) {
 export default function App() {
   return (
     <PageTransition>
+      <Suspense fallback={LAZY_FALLBACK}>
       <Routes>
       {/* Public auth routes — no shell, no guard */}
       <Route path="/login" element={<LoginPage />} />
@@ -77,6 +82,7 @@ export default function App() {
         }
       />
     </Routes>
+      </Suspense>
     </PageTransition>
   );
 }
