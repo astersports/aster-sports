@@ -91,7 +91,7 @@ export default function ParentHomePage() {
         <section>
           <SectionHeader>MY TEAMS</SectionHeader>
           <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 6 }}>
-            {myTeams.map((t) => <TeamCard key={t.id} team={t} onClick={() => navigate(`/teams/${t.id}`)} />)}
+            {myTeams.map((t) => <TeamCard key={t.id} team={t} onClick={() => navigate(`/schedule?team=${t.id}`)} />)}
           </div>
         </section>
       )}
@@ -133,18 +133,18 @@ function EmptyLine({ children }) {
 
 function TeamCard({ team, onClick }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="sf-press"
+    <button type="button" onClick={onClick} className="sf-press"
       style={{
-        flexShrink: 0, minWidth: 140, minHeight: 80, padding: 12, borderRadius: 10,
-        border: `2px solid ${team.team_color}`, backgroundColor: 'var(--sf-bg-card)',
-        display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, textAlign: 'left',
+        flexShrink: 0, minWidth: 140, minHeight: 80, borderRadius: 10, overflow: 'hidden',
+        border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)',
+        boxShadow: 'var(--sf-shadow-sm)', display: 'flex', alignItems: 'stretch', textAlign: 'left',
       }}
     >
-      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--sf-text-primary)' }}>{team.name}</span>
-      <span style={{ fontSize: 12, color: 'var(--sf-text-tertiary)' }}>0-0</span>
+      <div style={{ width: 3, flexShrink: 0, backgroundColor: team.team_color || 'var(--sf-neutral)' }} />
+      <div style={{ flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--sf-text-primary)' }}>{team.name}</span>
+        <span style={{ fontSize: 12, color: 'var(--sf-text-tertiary)' }}>0-0</span>
+      </div>
     </button>
   );
 }

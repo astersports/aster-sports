@@ -18,7 +18,7 @@ export default function SchedulePage() {
   const rsvpCounts = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
   const dutyCounts = useEventDutyCounts(activities);
-  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [selectedTeam, setSelectedTeam] = useState(() => new URLSearchParams(window.location.search).get('team'));
   const [selectedType, setSelectedType] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
