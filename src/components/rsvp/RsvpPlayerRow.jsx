@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Check, X, HelpCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const BUTTONS = [
   { key: 'going', icon: Check, color: 'var(--sf-success)', bg: 'var(--sf-success-soft)', label: 'Going' },
@@ -7,9 +8,18 @@ const BUTTONS = [
   { key: 'not_going', icon: X, color: 'var(--sf-danger)', bg: 'var(--sf-danger-soft)', label: 'Not going' },
 ];
 
+const STATUS_LABELS = {
+  going:     { label: 'Going',     color: 'var(--sf-success)' },
+  maybe:     { label: 'Maybe',     color: 'var(--sf-warning)' },
+  not_going: { label: 'Not Going', color: 'var(--sf-danger)' },
+};
+
 export default function RsvpPlayerRow({ player, response, existingNote, teamColor, onSetRsvp, onSaveNote }) {
+  const { role, myChildren } = useAuth();
   const [showNote, setShowNote] = useState(false);
   const [noteText, setNoteText] = useState(existingNote || '');
+  const isMyChild = (myChildren || []).some((c) => c.playerId === player.id);
+  const readOnly = role === 'parent' && !isMyChild;
 
   return (
     <div style={{
@@ -41,31 +51,37 @@ export default function RsvpPlayerRow({ player, response, existingNote, teamColo
           )}
         </div>
 
-        {/* RSVP buttons */}
-        <div style={{ display: 'flex', gap: 6 }}>
-          {BUTTONS.map((b) => {
-            const Icon = b.icon;
-            const active = response === b.key;
-            return (
-              <button
-                key={b.key}
-                type="button"
-                onClick={() => onSetRsvp(player.id, b.key)}
-                className="sf-press"
-                aria-label={b.label}
-                style={{
-                  width: 36, height: 36, borderRadius: 18,
-                  border: active ? 'none' : '1px solid var(--sf-border-default)',
-                  backgroundColor: active ? b.bg : 'transparent',
-                  color: active ? b.color : 'var(--sf-text-tertiary)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <Icon size={16} strokeWidth={active ? 2.5 : 1.75} />
-              </button>
-            );
-          })}
-        </div>
+        {/* RSVP buttons or read-only status */}
+        {readOnly ? (
+          <div style={{ fontSize: 13, fontWeight: 500, color: STATUS_LABELS[response]?.color || 'var(--sf-text-tertiary)' }}>
+            {STATUS_LABELS[response]?.label || 'No response'}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 6 }}>
+            {BUTTONS.map((b) => {
+              const Icon = b.icon;
+              const active = response === b.key;
+              return (
+                <button
+                  key={b.key}
+                  type="button"
+                  onClick={() => onSetRsvp(player.id, b.key)}
+                  className="sf-press"
+                  aria-label={b.label}
+                  style={{
+                    width: 36, height: 36, borderRadius: 18,
+                    border: active ? 'none' : '1px solid var(--sf-border-default)',
+                    backgroundColor: active ? b.bg : 'transparent',
+                    color: active ? b.color : 'var(--sf-text-tertiary)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <Icon size={16} strokeWidth={active ? 2.5 : 1.75} />
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
         {!showNote && (
