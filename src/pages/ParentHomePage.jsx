@@ -2,16 +2,17 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
+import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
+import { useEventRideCounts } from '../hooks/useEventRideCounts';
+import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
 import NextUpCard from '../components/schedule/NextUpCard';
 import CompactCard from '../components/schedule/CompactCard';
 import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
 
 function firstNameFrom(user) {
-  const md = user?.user_metadata || {};
-  const raw = md.full_name || md.name || user?.email || '';
+  const raw = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || '';
   const first = String(raw).split(/[\s.@]/)[0];
-  if (!first) return 'there';
-  return first.charAt(0).toUpperCase() + first.slice(1);
+  return first ? first.charAt(0).toUpperCase() + first.slice(1) : 'there';
 }
 
 function greetingFor(date = new Date()) {
@@ -24,10 +25,11 @@ function greetingFor(date = new Date()) {
 export default function ParentHomePage() {
   const { user, guardianFirstName } = useAuth();
   const { activities, loading } = useActivities();
+  const rsvpCounts = useEventRsvpCounts(activities);
+  const rideCounts = useEventRideCounts(activities);
+  const dutyCounts = useEventDutyCounts(activities);
   const navigate = useNavigate();
-  const name = guardianFirstName
-    ? guardianFirstName.charAt(0).toUpperCase() + guardianFirstName.slice(1)
-    : firstNameFrom(user);
+  const name = guardianFirstName ? guardianFirstName.charAt(0).toUpperCase() + guardianFirstName.slice(1) : firstNameFrom(user);
   const now = Date.now();
   const weekEnd = now + 7 * 24 * 60 * 60 * 1000;
 
@@ -80,7 +82,7 @@ export default function ParentHomePage() {
         {myTeams.length === 0 && <EmptyLine>No teams yet</EmptyLine>}
         {myTeams.map((t) => (
           nextByTeam[t.id]
-            ? <NextUpCard key={t.id} event={nextByTeam[t.id]} />
+            ? <NextUpCard key={t.id} event={nextByTeam[t.id]} rsvpCount={rsvpCounts[nextByTeam[t.id].id]} rideCount={rideCounts[nextByTeam[t.id].id]} dutyCount={dutyCounts[nextByTeam[t.id].id]} />
             : <EmptyLine key={t.id}>No upcoming events for {t.name}</EmptyLine>
         ))}
       </section>
