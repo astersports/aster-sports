@@ -58,6 +58,14 @@ export function useRides(eventId) {
   };
 
   const claim = async (offer, authorName, phone) => {
+    const claimantName = authorName || user?.user_metadata?.full_name || user?.email || 'User';
+    // Dedup: if this user already has a request on this event, no-op.
+    const dedupQuery = supabase.from('event_rides').select('id')
+      .eq('event_id', eventId).eq('ride_type', 'requesting');
+    const { data: existing } = await (guardianId
+      ? dedupQuery.eq('guardian_id', guardianId)
+      : dedupQuery.eq('name', claimantName)).maybeSingle();
+    if (existing) { await fetch(); return true; }
     const row = {
       event_id: eventId,
       ride_type: 'requesting',
@@ -66,7 +74,7 @@ export function useRides(eventId) {
       seats: 1,
       notes: `Riding with ${offer.name}`,
       guardian_id: guardianId ?? null,
-      name: authorName || user?.user_metadata?.full_name || user?.email || 'User',
+      name: claimantName,
       phone: phone || null,
     };
     const { error } = await supabase.from('event_rides').insert(row);
