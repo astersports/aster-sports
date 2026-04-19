@@ -32,7 +32,12 @@ export default function Header() {
       }}
     >
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        <img src={org?.logo_url || '/skyfire_phoenix.webp'} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+        <img
+          src={org?.logo_url || '/skyfire_phoenix.webp'}
+          onError={(e) => { if (e.currentTarget.src.endsWith('/skyfire_phoenix.webp')) return; e.currentTarget.src = '/skyfire_phoenix.webp'; }}
+          alt=""
+          style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
+        />
         <div
           className="truncate font-semibold"
           style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}

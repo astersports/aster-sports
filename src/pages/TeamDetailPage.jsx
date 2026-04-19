@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Plus, Users } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { usePrograms } from '../hooks/usePrograms';
 import { useRoster } from '../hooks/useRoster';
 import { useFilteredRoster } from '../hooks/useFilteredRoster';
@@ -21,7 +22,9 @@ import TeamSwitcher from '../components/roster/TeamSwitcher';
 export default function TeamDetailPage() {
   const { teamId } = useParams();
   const navigate = useNavigate();
+  const { role, myTeamIds } = useAuth();
   const { programs, loading: teamsLoading } = usePrograms();
+  const switcherPrograms = role === 'parent' ? programs.filter((p) => (myTeamIds || []).includes(p.id)) : programs;
   const { players, loading: rosterLoading } = useRoster(teamId);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('jersey'); // 'jersey' | 'name' | 'grade'
@@ -72,7 +75,7 @@ export default function TeamDetailPage() {
         <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
       </button>
 
-      <TeamSwitcher programs={programs} teamId={teamId} navigate={navigate} />
+      <TeamSwitcher programs={switcherPrograms} teamId={teamId} navigate={navigate} />
 
       <TeamHeaderCard team={team} players={players} />
 

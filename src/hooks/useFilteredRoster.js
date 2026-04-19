@@ -12,14 +12,17 @@ export function useFilteredRoster(players, search, sortBy) {
       if (!search.trim()) return true;
       const q = search.toLowerCase();
       return (
-        p.first_name.toLowerCase().includes(q) ||
-        p.last_name.toLowerCase().includes(q) ||
-        String(p.jersey_number).includes(q)
+        (p.first_name || '').toLowerCase().includes(q) ||
+        (p.last_name || '').toLowerCase().includes(q) ||
+        String(p.jersey_number ?? '').includes(q)
       );
     });
 
     return [...filtered].sort((a, b) => {
-      if (sortBy === 'name') return a.last_name.localeCompare(b.last_name);
+      if (sortBy === 'name') {
+        const c = (a.last_name || '').localeCompare(b.last_name || '');
+        return c !== 0 ? c : (a.first_name || '').localeCompare(b.first_name || '');
+      }
       if (sortBy === 'grade') return (a.grade || 0) - (b.grade || 0);
       const aJ = a.jersey_number ?? 999;
       const bJ = b.jersey_number ?? 999;
