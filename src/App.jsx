@@ -12,6 +12,7 @@ import TeamsPage from './pages/TeamsPage';
 import TeamDetailPage from './pages/TeamDetailPage';
 import MessagesPage from './pages/MessagesPage';
 import EventDetailPage from './pages/EventDetailPage';
+import AccountPage from './pages/AccountPage';
 
 const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
 const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
@@ -60,6 +61,7 @@ export default function App() {
       <Route path="/teams"           element={<Protected><TeamsPage /></Protected>} />
       <Route path="/teams/:teamId"   element={<Protected><TeamDetailPage /></Protected>} />
       <Route path="/messages"        element={<Protected><MessagesPage /></Protected>} />
+      <Route path="/account"         element={<Protected><AccountPage /></Protected>} />
 
       {/* Full-screen authenticated routes — auth guard without AppShell chrome */}
       <Route path="/events/:id" element={<RequireAuth><EventDetailPage /></RequireAuth>} />

@@ -1,11 +1,13 @@
-import { Bell, LogOut } from 'lucide-react';
+import { Bell, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 // Top app bar: org initial + name on the left, notification bell on the right.
 // Org logo is a future enhancement — for now we always render the initial
 // circle because no org stores a logo URL yet.
 export default function Header() {
-  const { org, orgName, signOut } = useAuth();
+  const { org, orgName } = useAuth();
+  const navigate = useNavigate();
   const initial = (orgName || 'S').trim().charAt(0).toUpperCase();
   // Future: read unread count from a notifications query. Hardcoded to 0 for
   // now so the dot stays hidden until that feature lands.
@@ -80,12 +82,12 @@ export default function Header() {
       </button>
       <button
         type="button"
-        onClick={signOut}
+        onClick={() => navigate('/account')}
         className="sf-press flex items-center justify-center"
         style={{ width: 44, height: 44, color: 'var(--sf-text-on-dark)', background: 'none', border: 'none' }}
-        aria-label="Sign out"
+        aria-label="Account"
       >
-        <LogOut size={20} strokeWidth={1.75} />
+        <Settings size={20} strokeWidth={1.75} />
       </button>
     </header>
   );
