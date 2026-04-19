@@ -1,12 +1,15 @@
 import { ExternalLink } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
-export default function RideCard({ ride, user, currentGuardianId, onRemove, onClaim, eventLocation, eventEndAt }) {
-  const viewerName = user?.user_metadata?.full_name || user?.email;
+export default function RideCard({ ride, user, onRemove, onClaim, eventLocation, eventEndAt }) {
+  const { guardianId } = useAuth();
+  const viewerGuardianId = guardianId;
+  const authorName = user?.user_metadata?.full_name || user?.email;
   const isAuthor = ride.guardian_id
-    ? ride.guardian_id === currentGuardianId
-    : ride.name === viewerName;
-  const canRemove = isAuthor && user?.id;
-  const canClaim = onClaim && ride.ride_type === 'offering' && !isAuthor;
+    ? ride.guardian_id === viewerGuardianId
+    : ride.name === authorName;
+  const canRemove = isAuthor;
+  const showClaim = onClaim && ride.ride_type === 'offering' && !isAuthor;
   const mapsUrl = ride.pickup_location ? `https://maps.google.com/maps?q=${encodeURIComponent(ride.pickup_location)}` : null;
 
   return (
@@ -39,7 +42,7 @@ export default function RideCard({ ride, user, currentGuardianId, onRemove, onCl
         {eventEndAt && <div>Est. return: {new Date(new Date(eventEndAt).getTime() + 15 * 60000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>}
         {ride.notes && <div style={{ fontStyle: 'italic', color: 'var(--sf-text-tertiary)' }}>&ldquo;{ride.notes}&rdquo;</div>}
       </div>
-      {canClaim && (
+      {showClaim && (
         <button type="button" onClick={() => onClaim(ride)} className="sf-press"
           style={{ marginTop: 8, fontSize: 13, color: 'var(--sf-accent)', minHeight: 36, padding: '0 10px', backgroundColor: 'var(--sf-accent-soft)', border: '1px solid var(--sf-accent)', borderRadius: 8, fontWeight: 500 }}>
           Claim seat
