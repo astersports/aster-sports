@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Car, Repeat, ExternalLink } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 import { TYPE_LABELS } from '../../lib/constants';
 import { formatCountdown } from '../../lib/formatters';
 import { WhenRow, GameInfo } from './NextUpCardInfo';
 import { useAuth } from '../../context/AuthContext';
+import { useMapsUrl } from '../../hooks/useMapsUrl';
 import ChildRsvp from './ChildRsvp';
 
 export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onRefresh }) {
@@ -30,16 +30,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
     return () => clearInterval(id);
   }, [event.end_at, onRefresh]);
 
-  const [directionsUrl, setDirectionsUrl] = useState(null);
-  useEffect(() => {
-    if (!event.location) return;
-    const name = event.location.replace(/[\u2018\u2019\u2032]/g, "'").split(' - ')[0].split('(')[0].trim();
-    if (!name) return;
-    supabase.from('locations').select('lat, lon').ilike('name', `%${name}%`).limit(1)
-      .then(({ data }) => {
-        if (data?.[0]?.lat && data?.[0]?.lon) setDirectionsUrl(`https://maps.google.com/maps?daddr=${data[0].lat},${data[0].lon}`);
-      });
-  }, [event.location]);
+  const directionsUrl = useMapsUrl(event.location);
 
   const teamColor = event.teams?.team_color || event.team_color || 'var(--sf-text-tertiary)';
   const teamName = event.teams?.name || event.team_name || '';
