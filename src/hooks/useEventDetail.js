@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-export function useEventDetail(eventId) {
-  const [event, setEvent] = useState(null);
-  const [loading, setLoading] = useState(true);
+export function useEventDetail(eventId, seed = null) {
+  const [event, setEvent] = useState(seed);
+  const [loading, setLoading] = useState(!seed);
 
   const refetch = useCallback(() => {
     if (!eventId) { setLoading(false); return; }

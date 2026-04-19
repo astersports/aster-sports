@@ -25,7 +25,7 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
   return (
     <div
       className={`sf-press ${dimmed ? '' : (stagger || '')}`}
-      onClick={() => { navigator.vibrate?.(10); navigate(`/events/${event.id}`); }}
+      onClick={() => { navigator.vibrate?.(10); navigate(`/events/${event.id}`, { state: { event } }); }}
       style={{
         display: 'flex',
         alignItems: 'stretch',

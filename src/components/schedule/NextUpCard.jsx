@@ -56,7 +56,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
       }}
     >
       <div
-        onClick={() => navigate(`/events/${event.id}`)}
+        onClick={() => navigate(`/events/${event.id}`, { state: { event } })}
         style={{ display: 'flex', cursor: 'pointer' }}
       >
         <div style={{ width: 4, backgroundColor: teamColor, flexShrink: 0 }} />
@@ -136,7 +136,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
         </div>
       ) : (
         <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8 }}>
-          <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/events/${event.id}?tab=rsvps`); }} className="sf-press"
+          <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/events/${event.id}?tab=rsvps`, { state: { event } }); }} className="sf-press"
             style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'transparent', color: 'var(--sf-accent)', fontSize: 14, fontWeight: 500 }}>
             Manage RSVPs
           </button>

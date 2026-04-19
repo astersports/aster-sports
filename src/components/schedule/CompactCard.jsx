@@ -14,7 +14,7 @@ export default function CompactCard({ event, stagger }) {
   return (
     <div
       className={`sf-press ${isPast ? '' : (stagger || '')}`}
-      onClick={() => { navigator.vibrate?.(10); navigate(`/events/${event.id}`); }}
+      onClick={() => { navigator.vibrate?.(10); navigate(`/events/${event.id}`, { state: { event } }); }}
       style={{
         display: 'flex',
         alignItems: 'center',

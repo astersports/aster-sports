@@ -3,27 +3,35 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useSeason } from '../context/SeasonContext';
 
+// Module-level cache. Keyed by (orgId, seasonId, role, myTeamIds) so that
+// navigating between Home / Schedule / Event Detail doesn't refetch on
+// every mount. Second mount reads the cache instantly and refetches
+// silently in the background.
+const cache = { key: null, data: null };
+
+const buildKey = (orgId, seasonId, role, myTeamIds) =>
+  `${orgId || ''}:${seasonId || ''}:${role || ''}:${(myTeamIds || []).join(',')}`;
+
 // Queries the events table and normalizes columns for downstream
 // components. The DB stores a single `start_at` timestamptz; we split
 // it into `date` (YYYY-MM-DD) and `start_time` (HH:MM) so DayStrip,
 // EventCard, CompactCard, and CountdownBanner can use simple strings.
 // `location` is aliased to `location_name` for the same reason.
-//
-// org_id and season_id live on the `teams` table, not `events`, so we
-// use an inner join + filter on the joined columns.
 export function useActivities() {
   const { orgId, role, myTeamIds } = useAuth();
   const { activeSeason } = useSeason();
   const seasonId = activeSeason?.id ?? null;
-  const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const key = buildKey(orgId, seasonId, role, myTeamIds);
+  const hasCached = cache.key === key && cache.data;
+  const [activities, setActivities] = useState(() => hasCached ? cache.data : []);
+  const [loading, setLoading] = useState(() => !hasCached);
 
   const refetch = useCallback(async () => {
     if (!orgId) { setLoading(false); return; }
     if (role === 'parent' && (!myTeamIds || myTeamIds.length === 0)) {
+      cache.key = key; cache.data = [];
       setActivities([]); setLoading(false); return;
     }
-    setLoading(true);
     try {
       let query = supabase
         .from('events')
@@ -40,13 +48,14 @@ export function useActivities() {
         start_time: e.start_at ? new Date(e.start_at).toTimeString().slice(0, 5) : null,
         location_name: e.location || null,
       }));
+      cache.key = key; cache.data = processed;
       setActivities(processed);
     } catch (err) {
       console.error('useActivities:', err.message);
       setActivities([]);
     }
     setLoading(false);
-  }, [orgId, seasonId, role, myTeamIds]);
+  }, [orgId, seasonId, role, myTeamIds, key]);
 
   useEffect(() => {
     Promise.resolve().then(refetch);

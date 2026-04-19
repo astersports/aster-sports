@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import AddToCalendarButton from '../components/event/AddToCalendarButton';
@@ -27,9 +27,10 @@ export default function EventDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { orgId, role } = useAuth();
   const { showToast } = useToast();
-  const { event, loading: eventLoading, refetch, patchEvent } = useEventDetail(id);
+  const { event, loading: eventLoading, refetch, patchEvent } = useEventDetail(id, location.state?.event);
   const teamId = event?.team_id || null;
   const { rsvps, roster, loading: rsvpLoading, setRsvp, saveNote } = useRsvps(id, teamId);
   const [editing, setEditing] = useState(false);
