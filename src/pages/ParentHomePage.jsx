@@ -8,6 +8,7 @@ import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import NextUpCard from '../components/schedule/NextUpCard';
 import CompactCard from '../components/schedule/CompactCard';
+import TextEmptyState from '../components/shared/TextEmptyState';
 import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
 
 function firstNameFrom(user) {
@@ -17,9 +18,7 @@ function firstNameFrom(user) {
 
 function greetingFor(date = new Date()) {
   const h = date.getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
 export default function ParentHomePage() {
@@ -58,6 +57,7 @@ export default function ParentHomePage() {
     return out;
   }, [activities, now]);
 
+  const nextEventOverall = activities.find((a) => a.start_at && a.status !== 'cancelled' && new Date(a.start_at).getTime() >= now) || null;
   const thisWeek = useMemo(() => activities
     .filter((a) => {
       if (!a.start_at || a.status === 'cancelled') return false;
@@ -79,12 +79,12 @@ export default function ParentHomePage() {
 
       <section>
         <SectionHeader>NEXT UP</SectionHeader>
-        {myTeams.length === 0 && <EmptyLine>No teams yet</EmptyLine>}
-        {myTeams.map((t) => (
-          nextByTeam[t.id]
-            ? <NextUpCard key={t.id} event={nextByTeam[t.id]} rsvpCount={rsvpCounts[nextByTeam[t.id].id]} rideCount={rideCounts[nextByTeam[t.id].id]} dutyCount={dutyCounts[nextByTeam[t.id].id]} />
-            : <EmptyLine key={t.id}>No upcoming events for {t.name}</EmptyLine>
-        ))}
+        {myTeams.length === 0 ? <EmptyLine>No teams yet</EmptyLine> : !Object.keys(nextByTeam).length ? <TextEmptyState heading="All caught up" message="No upcoming events for your teams. Check back when the schedule updates." />
+          : myTeams.map((t) => (
+            nextByTeam[t.id]
+              ? <NextUpCard key={t.id} event={nextByTeam[t.id]} rsvpCount={rsvpCounts[nextByTeam[t.id].id]} rideCount={rideCounts[nextByTeam[t.id].id]} dutyCount={dutyCounts[nextByTeam[t.id].id]} />
+              : <EmptyLine key={t.id}>No upcoming events for {t.name}</EmptyLine>
+          ))}
       </section>
 
       {myTeams.length > 0 && (
@@ -96,21 +96,21 @@ export default function ParentHomePage() {
         </section>
       )}
 
-      {thisWeek.length > 0 && (
-        <section>
-          <SectionHeader>THIS WEEK</SectionHeader>
-          {groupByDate(thisWeek).map(([date, evts]) => (
-            <div key={date}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
-                {formatDateHeader(date)}
-              </div>
-              <div className="flex flex-col gap-2">
-                {evts.map((e) => <CompactCard key={e.id} event={e} />)}
-              </div>
+      <section>
+        <SectionHeader>THIS WEEK</SectionHeader>
+        {thisWeek.length > 0 ? groupByDate(thisWeek).map(([date, evts]) => (
+          <div key={date}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
+              {formatDateHeader(date)}
             </div>
-          ))}
-        </section>
-      )}
+            <div className="flex flex-col gap-2">
+              {evts.map((e) => <CompactCard key={e.id} event={e} />)}
+            </div>
+          </div>
+        )) : (
+          <TextEmptyState heading="Nothing this week" message={nextEventOverall ? `Your next event is ${new Date(nextEventOverall.start_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}` : 'No upcoming events scheduled'} />
+        )}
+      </section>
     </div>
   );
 }

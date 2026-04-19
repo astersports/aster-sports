@@ -9,6 +9,7 @@ import { Plus, ChevronDown } from 'lucide-react';
 import FilterBar from '../components/schedule/FilterBar';
 import NextUpCard from '../components/schedule/NextUpCard';
 import DateGroupedList from '../components/schedule/DateGroupedList';
+import TextEmptyState from '../components/shared/TextEmptyState';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
 export default function SchedulePage() {
@@ -73,7 +74,9 @@ export default function SchedulePage() {
           onToggleCancelled={() => setShowCancelled((v) => !v)}
         />
 
-        {thisWeek.length > 0 ? (
+        {filtered.length === 0 ? (
+          <TextEmptyState heading="No events found" message="Try changing your filters or check back later." />
+        ) : thisWeek.length > 0 ? (
           <div style={{ marginTop: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
               This week

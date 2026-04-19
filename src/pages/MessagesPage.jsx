@@ -1,12 +1,10 @@
-import { MessageSquare } from 'lucide-react';
-import PlaceholderPage from './PlaceholderPage';
+import TextEmptyState from '../components/shared/TextEmptyState';
 
 export default function MessagesPage() {
   return (
-    <PlaceholderPage
-      icon={MessageSquare}
-      title="Messages"
-      description="Team chat and announcements — coming soon."
+    <TextEmptyState
+      heading="No messages yet"
+      message="Team announcements and messages will appear here."
     />
   );
 }
