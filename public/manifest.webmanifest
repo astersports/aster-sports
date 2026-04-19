@@ -14,9 +14,9 @@
       "type": "image/png"
     },
     {
-      "src": "/skyfire_phoenix.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "/skyfire_phoenix.webp",
+      "sizes": "200x200",
+      "type": "image/webp",
       "purpose": "any maskable"
     }
   ]
