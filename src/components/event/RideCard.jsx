@@ -2,10 +2,11 @@ import { ExternalLink } from 'lucide-react';
 
 export default function RideCard({ ride, user, currentGuardianId, onRemove, onClaim, eventLocation, eventEndAt }) {
   const authorName = user?.user_metadata?.full_name || user?.email;
-  const isMine = (ride.guardian_id && ride.guardian_id === currentGuardianId)
-    || (!ride.guardian_id && ride.name === authorName);
+  const isMine = (ride.guardian_id && currentGuardianId)
+    ? ride.guardian_id === currentGuardianId
+    : ride.name === authorName;
   const canRemove = isMine && user?.id;
-  const canClaim = onClaim && ride.ride_type === 'offering' && !isMine && currentGuardianId && ride.seats > 0;
+  const canClaim = onClaim && ride.ride_type === 'offering' && !isMine && ride.seats > 0;
   const mapsUrl = ride.pickup_location ? `https://maps.google.com/maps?q=${encodeURIComponent(ride.pickup_location)}` : null;
 
   return (
