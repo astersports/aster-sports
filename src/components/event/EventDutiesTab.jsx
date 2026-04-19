@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 // claimable slot (guardian_id nullable). Users tap Claim to take an
 // open slot; Release if it's theirs.
 export default function EventDutiesTab({ eventId }) {
-  const { user } = useAuth();
+  const { guardianId } = useAuth();
   const { duties, loading, claim, unclaim } = useDuties(eventId);
 
   if (loading) return <Empty text="Loading duties..." />;
@@ -30,7 +30,7 @@ export default function EventDutiesTab({ eventId }) {
           }}>
             {slots.map((slot, i) => {
               const claimed = !!slot.guardian_id;
-              const isMine = claimed && slot.guardian_id === user?.id;
+              const isMine = claimed && guardianId && slot.guardian_id === guardianId;
               return (
                 <div key={slot.id} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',

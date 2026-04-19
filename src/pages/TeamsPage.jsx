@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { usePrograms } from '../hooks/usePrograms';
 import { useSeason } from '../context/SeasonContext';
+import { useAuth } from '../context/AuthContext';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
@@ -17,9 +18,11 @@ const CIRCUIT_LABELS = { aau: 'AAU', league_play: 'League Play', tournament: 'To
 // /teams/:teamId where the roster lives.
 export default function TeamsPage() {
   const { activeSeason } = useSeason();
+  const { role, myTeamIds } = useAuth();
   const { programs, loading, refetch } = usePrograms();
   const navigate = useNavigate();
   const { refreshing, onTouchStart, onTouchEnd } = usePullToRefresh(() => refetch?.());
+  const visiblePrograms = role === 'parent' ? programs.filter((t) => (myTeamIds || []).includes(t.id)) : programs;
 
   return (
     <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
@@ -28,7 +31,7 @@ export default function TeamsPage() {
           Teams
         </h1>
         <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
-          {activeSeason?.name || 'No active season'} · {programs.length} teams
+          {activeSeason?.name || 'No active season'} · {visiblePrograms.length} teams
         </div>
         <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: 'var(--sf-accent)', marginTop: 8 }} />
       </div>
@@ -46,7 +49,7 @@ export default function TeamsPage() {
 
       {loading ? (
         <LoadingSkeleton variant="card" count={5} />
-      ) : programs.length === 0 ? (
+      ) : visiblePrograms.length === 0 ? (
         <EmptyState
           icon={Users}
           title="No teams yet"
@@ -54,7 +57,7 @@ export default function TeamsPage() {
         />
       ) : (
         <div className="flex flex-col gap-3">
-          {programs.map((team, i) => (
+          {visiblePrograms.map((team, i) => (
             <button
               key={team.id}
               type="button"

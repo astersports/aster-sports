@@ -12,7 +12,7 @@ export default function RideFormOverlay({ form, draft, setDraft, onClose, onSubm
   return createPortal(
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--sf-bg-page)', zIndex: 9999, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 4px', borderBottom: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)' }}>
-        <button type="button" onClick={onClose} className="sf-press" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button type="button" onClick={(e) => { e.stopPropagation(); onClose(); }} className="sf-press" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ArrowLeft size={20} strokeWidth={1.75} color="var(--sf-text-primary)" />
         </button>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--sf-text-primary)' }}>

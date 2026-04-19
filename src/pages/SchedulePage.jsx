@@ -4,6 +4,7 @@ import { useActivities } from '../hooks/useActivities';
 import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { Plus, ChevronDown } from 'lucide-react';
 import FilterBar from '../components/schedule/FilterBar';
 import NextUpCard from '../components/schedule/NextUpCard';
@@ -31,6 +32,8 @@ export default function SchedulePage() {
     const id = setInterval(() => setTick((t) => t + 1), 60000);
     return () => clearInterval(id);
   }, []);
+
+  useRefetchOnVisible(refetch);
 
   const now = useMemo(() => new Date(), [tick]);
   const weekEnd = useMemo(() => new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), [now]);

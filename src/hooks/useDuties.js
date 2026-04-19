@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 // A "Scorekeeper x 2" duty is inserted as 2 rows with the same duty_name,
 // each independently claimable (see useCreateActivity).
 export function useDuties(eventId) {
-  const { user } = useAuth();
+  const { user, guardianId } = useAuth();
   const [duties, setDuties] = useState([]);
   const [loading, setLoading] = useState(true);
   const didInitialLoad = useRef(false);
@@ -29,16 +29,17 @@ export function useDuties(eventId) {
   const claim = async (dutyId) => {
     const authorName = user?.user_metadata?.full_name || user?.email || 'User';
     const { error } = await supabase.from('event_duties')
-      .update({ guardian_id: user.id, claimed_by_name: authorName, claimed_at: new Date().toISOString() })
+      .update({ guardian_id: guardianId ?? null, claimed_by_name: authorName, claimed_at: new Date().toISOString() })
       .eq('id', dutyId).is('guardian_id', null);
     if (error) { console.error('claim duty:', error.message); return; }
     await fetch();
   };
 
   const unclaim = async (dutyId) => {
-    const { error } = await supabase.from('event_duties')
+    const q = supabase.from('event_duties')
       .update({ guardian_id: null, claimed_by_name: null, claimed_at: null })
-      .eq('id', dutyId).eq('guardian_id', user.id);
+      .eq('id', dutyId);
+    const { error } = await (guardianId ? q.eq('guardian_id', guardianId) : q);
     if (error) { console.error('unclaim duty:', error.message); return; }
     await fetch();
   };

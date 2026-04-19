@@ -83,15 +83,17 @@ export default function RsvpPlayerRow({ player, response, existingNote, teamColo
           </div>
         )}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
-        {!showNote && (
-          <button type="button" onClick={() => setShowNote(true)}
-            style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer' }}>
-            {existingNote ? 'Edit note' : 'Add note'}
-          </button>
-        )}
-      </div>
-      {showNote && (
+      {!readOnly && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
+          {!showNote && (
+            <button type="button" onClick={() => setShowNote(true)}
+              style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer' }}>
+              {existingNote ? 'Edit note' : 'Add note'}
+            </button>
+          )}
+        </div>
+      )}
+      {!readOnly && showNote && (
         <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
           <input
             type="text"

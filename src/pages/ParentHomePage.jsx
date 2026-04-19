@@ -5,14 +5,14 @@ import { useActivities } from '../hooks/useActivities';
 import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import NextUpCard from '../components/schedule/NextUpCard';
 import CompactCard from '../components/schedule/CompactCard';
 import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
 
 function firstNameFrom(user) {
-  const raw = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || '';
-  const first = String(raw).split(/[\s.@]/)[0];
-  return first ? first.charAt(0).toUpperCase() + first.slice(1) : 'there';
+  const f = (user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || '').split(/[\s.@]/)[0];
+  return f ? f.charAt(0).toUpperCase() + f.slice(1) : 'there';
 }
 
 function greetingFor(date = new Date()) {
@@ -24,14 +24,14 @@ function greetingFor(date = new Date()) {
 
 export default function ParentHomePage() {
   const { user, guardianFirstName } = useAuth();
-  const { activities, loading } = useActivities();
+  const { activities, loading, refetch } = useActivities();
   const rsvpCounts = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
   const dutyCounts = useEventDutyCounts(activities);
   const navigate = useNavigate();
   const name = guardianFirstName ? guardianFirstName.charAt(0).toUpperCase() + guardianFirstName.slice(1) : firstNameFrom(user);
-  const now = Date.now();
-  const weekEnd = now + 7 * 24 * 60 * 60 * 1000;
+  const now = Date.now(), weekEnd = now + 7 * 24 * 60 * 60 * 1000;
+  useRefetchOnVisible(refetch);
 
   const myTeams = useMemo(() => {
     const map = new Map();

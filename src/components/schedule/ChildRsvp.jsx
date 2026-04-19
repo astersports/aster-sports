@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 
+// Module-level cache so response survives component unmount/remount on nav.
+const responseCache = new Map();
+const cacheKey = (eventId, playerId) => `${eventId}:${playerId}`;
+
 const PILLS = [
   { value: 'going',     label: 'Going',     color: 'var(--sf-success)' },
   { value: 'maybe',     label: 'Maybe',     color: 'var(--sf-warning)' },
@@ -16,13 +20,15 @@ const CONFIRMED = {
 
 export default function ChildRsvp({ child, eventId, compact = false }) {
   const { guardianId } = useAuth();
-  const [response, setResponse] = useState(null);
+  const [response, setResponse] = useState(() => responseCache.get(cacheKey(eventId, child.playerId)) ?? null);
   const [saving, setSaving] = useState(false);
 
   const fetchRsvp = useCallback(async () => {
     const { data } = await supabase.from('event_rsvps').select('response')
       .eq('event_id', eventId).eq('player_id', child.playerId).maybeSingle();
-    setResponse(data?.response ?? null);
+    const next = data?.response ?? null;
+    responseCache.set(cacheKey(eventId, child.playerId), next);
+    setResponse((prev) => (prev === next ? prev : next));
   }, [eventId, child.playerId]);
 
   useEffect(() => {
@@ -40,7 +46,7 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
       response: value, responded_at: new Date().toISOString(),
     }, { onConflict: 'event_id,player_id' });
     setSaving(false);
-    if (!error) setResponse(value);
+    if (!error) { responseCache.set(cacheKey(eventId, child.playerId), value); setResponse(value); }
     else console.error('RSVP save failed:', error.message);
   };
 
