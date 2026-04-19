@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 // guardian_id, name, seats). ride_type is 'offering' (driver) or
 // 'requesting' (rider needing a seat).
 export function useRides(eventId) {
-  const { user } = useAuth();
+  const { user, guardianId } = useAuth();
   const [rides, setRides] = useState([]);
   const [loading, setLoading] = useState(true);
   const didInitialLoad = useRef(false);
@@ -26,7 +26,7 @@ export function useRides(eventId) {
   useEffect(() => { fetch(); }, [fetch]);
 
   const create = async (payload) => {
-    const authorName = user?.user_metadata?.full_name || user?.email || 'User';
+    const authorName = payload.authorName || user?.user_metadata?.full_name || user?.email || 'User';
     let depTime = null;
     if (payload.departure_time) {
       const eventDate = payload.event_date || new Date().toISOString().slice(0, 10);
@@ -39,19 +39,38 @@ export function useRides(eventId) {
       departure_time: depTime,
       seats: payload.seats || 1,
       notes: payload.notes || null,
-      guardian_id: null,
+      guardian_id: guardianId ?? null,
       name: authorName,
       phone: payload.phone || null,
     };
-    // If this user already has an active offer/request for this event,
-    // update that row instead of creating a duplicate.
-    const { data: existing } = await supabase.from('event_rides')
-      .select('id').eq('event_id', eventId).eq('name', authorName)
-      .eq('ride_type', payload.ride_type).maybeSingle();
+    // Dedup by guardian_id when available, else by name.
+    const base = supabase.from('event_rides').select('id')
+      .eq('event_id', eventId).eq('ride_type', payload.ride_type);
+    const { data: existing } = await (guardianId
+      ? base.eq('guardian_id', guardianId)
+      : base.eq('name', authorName)).maybeSingle();
     const { error } = existing
       ? await supabase.from('event_rides').update(row).eq('id', existing.id)
       : await supabase.from('event_rides').insert(row);
     if (error) { window.alert(`Failed to save ride: ${error.message}`); return false; }
+    await fetch();
+    return true;
+  };
+
+  const claim = async (offer, authorName, phone) => {
+    const row = {
+      event_id: eventId,
+      ride_type: 'requesting',
+      pickup_location: null,
+      departure_time: null,
+      seats: 1,
+      notes: `Riding with ${offer.name}`,
+      guardian_id: guardianId ?? null,
+      name: authorName || user?.user_metadata?.full_name || user?.email || 'User',
+      phone: phone || null,
+    };
+    const { error } = await supabase.from('event_rides').insert(row);
+    if (error) { window.alert(`Failed to claim seat: ${error.message}`); return false; }
     await fetch();
     return true;
   };
@@ -63,5 +82,5 @@ export function useRides(eventId) {
     await fetch();
   };
 
-  return { rides, loading, create, remove, refetch: fetch };
+  return { rides, loading, create, claim, remove, refetch: fetch };
 }

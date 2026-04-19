@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--sf-text-secondary)', marginBottom: 2, display: 'block' };
 const inputStyle = { minHeight: 40, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)', padding: '0 10px', fontSize: 14, color: 'var(--sf-text-primary)' };
 
-export default function RideFormOverlay({ form, draft, setDraft, onClose, onSubmit, eventLocation, eventEndAt }) {
+export default function RideFormOverlay({ form, draft, setDraft, onClose, onSubmit, eventLocation, eventEndAt, phoneKnown }) {
   const estReturn = eventEndAt
     ? new Date(new Date(eventEndAt).getTime() + 15 * 60000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
     : 'TBD';
@@ -20,11 +20,13 @@ export default function RideFormOverlay({ form, draft, setDraft, onClose, onSubm
         </h2>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div>
-          <label style={labelStyle}>Phone (required)</label>
-          <input type="tel" placeholder="(914) 555-1234" value={draft.phone} required
-            onChange={(e) => setDraft({ ...draft, phone: e.target.value })} style={{ ...inputStyle, width: '100%' }} />
-        </div>
+        {!phoneKnown && (
+          <div>
+            <label style={labelStyle}>Phone (required)</label>
+            <input type="tel" placeholder="(914) 555-1234" value={draft.phone} required
+              onChange={(e) => setDraft({ ...draft, phone: e.target.value })} style={{ ...inputStyle, width: '100%' }} />
+          </div>
+        )}
         <div>
           <label style={labelStyle}>Pickup address</label>
           <input type="text" placeholder="4 Byram Brook Place, Armonk" value={draft.pickup_location}
