@@ -44,8 +44,8 @@ export default function InviteButton({ guardianEmail }) {
   if (status === 'error') {
     return (
       <button type="button" onClick={invite} className="sf-press" title={error}
-        style={{ ...pill, border: '1.5px solid var(--sf-danger)', color: 'var(--sf-danger)' }}>
-        {error?.length > 14 ? 'Retry' : error}
+        style={{ ...pill, border: '1.5px solid var(--sf-danger)', color: 'var(--sf-danger)', maxWidth: '100%', whiteSpace: 'normal', textAlign: 'left', padding: '6px 10px', borderRadius: 8 }}>
+        {error || 'Error — tap to retry'}
       </button>
     );
   }
