@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 const LS_KEY = 'sf.welcome.seen';
 
@@ -7,8 +8,10 @@ function wasSeen() {
 }
 
 export default function WelcomeOverlay() {
+  const { role } = useAuth();
   const [visible, setVisible] = useState(!wasSeen());
 
+  if (role === 'parent') return null;
   if (!visible) return null;
 
   const dismiss = () => {

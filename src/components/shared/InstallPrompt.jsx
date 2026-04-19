@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 const LS_KEY = 'sf-install-dismissed';
 
@@ -12,6 +13,7 @@ function isStandalone() {
 }
 
 export default function InstallPrompt() {
+  const { role } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showIosBanner, setShowIosBanner] = useState(false);
   const [dismissed, setDismissed] = useState(wasDismissed);
@@ -50,6 +52,7 @@ export default function InstallPrompt() {
     dismiss();
   };
 
+  if (role === 'parent') return null;
   if (dismissed || isStandalone()) return null;
   if (!deferredPrompt && !showIosBanner) return null;
 
