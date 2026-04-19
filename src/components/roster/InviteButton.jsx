@@ -17,7 +17,11 @@ export default function InviteButton({ guardianEmail }) {
       console.log('Invite URL:', url, 'email:', guardianEmail);
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
         body: JSON.stringify({ email: guardianEmail }),
       });
       const text = await res.text();
