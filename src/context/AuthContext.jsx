@@ -33,11 +33,16 @@ export function AuthProvider({ children }) {
   const [role, setRole]     = useState(null);
   const [org,  setOrg]      = useState(null);
   const [myChildren, setMyChildren] = useState([]);
-  const [myTeamIds, setMyTeamIds]   = useState([]);
+  const [myTeamIds, setMyTeamIdsRaw] = useState([]);
   const [guardianId, setGuardianId] = useState(null);
   const [guardianFirstName, setGuardianFirstName] = useState(null);
   const [loading, setLoading] = useState(true);
   const fetchIdRef = useRef(0);
+  const teamIdsKeyRef = useRef('');
+  const setMyTeamIds = useCallback((ids) => {
+    const k = [...(ids || [])].sort().join(',');
+    if (k !== teamIdsKeyRef.current) { teamIdsKeyRef.current = k; setMyTeamIdsRaw(ids || []); }
+  }, []);
 
   // Load role + org for a given auth user. Uses a ref-based token to drop
   // stale responses if auth state flips while a previous fetch is in flight.
