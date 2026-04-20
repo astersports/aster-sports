@@ -22,6 +22,7 @@ export function useCreateActivity() {
         home_away: formData.homeAway || 'tbd',
         is_scrimmage: formData.isScrimmage || false,
         notes: formData.notes || null,
+        tournament_name: formData.tournamentName || null,
         coach_notes: formData.coachNotes || null,
         jersey: formData.jersey || null,
         indoor: formData.indoor ?? true,

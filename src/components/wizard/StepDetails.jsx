@@ -31,6 +31,14 @@ export default function StepDetails({ eventType, data, onChange }) {
       )}
 
       {isGame && (
+        <label style={fieldStyle}>
+          <span style={labelStyle}>Tournament name</span>
+          <input type="text" value={data.tournamentName || ''} onChange={(e) => set('tournamentName', e.target.value)}
+            placeholder="e.g. ZG NY Metro Showdown" style={inputStyle} />
+        </label>
+      )}
+
+      {isGame && (
         <div>
           <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>Home / Away</span>
           <div style={{ display: 'flex', gap: 8 }}>

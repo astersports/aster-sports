@@ -16,6 +16,7 @@ import EventCommentsTab from '../components/event/EventCommentsTab';
 import EventRidesTab from '../components/event/EventRidesTab';
 import EventNotes from '../components/event/EventNotes';
 import EventCancelActions from '../components/event/EventCancelActions';
+import TournamentBriefingBanner from '../components/event/TournamentBriefingBanner';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
@@ -100,6 +101,7 @@ export default function EventDetailPage() {
   return (
     <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={doDelete} onCheckin={() => setShowCheckin(true)} />
+      <TournamentBriefingBanner event={event} team={team} role={role} />
 
       {event.parent_event_id && (
         <div style={{ padding: '6px 16px', fontSize: 12, color: 'var(--sf-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>

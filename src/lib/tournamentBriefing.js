@@ -1,3 +1,5 @@
+import { renderSurvivalGuide, renderCoachKeys, renderContactFooter } from './tournamentBriefingSections';
+
 const NY_TZ = 'America/New_York';
 
 const dateKeyFmt = new Intl.DateTimeFormat('en-US', {
@@ -44,8 +46,8 @@ function groupByLocalDate(events) {
 function renderRow(ev, leftCell, teamName) {
   const { digits, meridiem } = splitTime(ev.start_at);
   const mText = escapeHtml(matchup(teamName, ev.opponent, ev.home_away).toUpperCase());
-  const loc = escapeHtml(ev.location_name || 'TBD');
-  const courtPart = ev.court ? `, Court ${escapeHtml(ev.court)}` : '';
+  const loc = escapeHtml(ev.location || 'TBD');
+  const courtPart = ev.sub_location ? `, Court ${escapeHtml(ev.sub_location)}` : '';
   const mapLink = ev.maps_url
     ? ` <a href="${escapeHtml(ev.maps_url)}" style="color:#4a8fd4;font-weight:bold;text-decoration:none;">Map</a>`
     : '';
@@ -89,8 +91,8 @@ function renderPlain(groups, teamName) {
     for (const ev of evs) {
       const t = timeFmt.format(new Date(ev.start_at));
       const m = matchup(teamName, ev.opponent, ev.home_away);
-      const loc = ev.location_name || 'TBD';
-      const court = ev.court ? `, Court ${ev.court}` : '';
+      const loc = ev.location || 'TBD';
+      const court = ev.sub_location ? `, Court ${ev.sub_location}` : '';
       lines.push(`\u2022 ${t} \u2014 ${m} \u2014 ${loc}${court}`);
     }
     lines.push('');
@@ -104,6 +106,7 @@ export function generateTournamentBriefing({
   tournamentName,
   dateLabel,
   events,
+  coachKeys = '',
   orgName = 'Legacy Hoopers',
 }) {
   const groups = groupByLocalDate(events);
@@ -123,7 +126,10 @@ export function generateTournamentBriefing({
     + `<div style="display:inline-block;background:#f0d050;color:#1a1a2e;font-size:12px;font-weight:bold;padding:5px 12px;border-radius:4px;border:1px solid rgba(74,143,212,0.4);">${dLabel}</div>`
     + '</div>'
     + `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">${body}</table>`
+    + renderSurvivalGuide(events)
+    + renderCoachKeys(coachKeys)
     + '<div style="background:#f5f7fa;text-align:center;padding:12px;font-size:13px;color:#1a1a2e;font-weight:bold;">Arrive 15 minutes before tip-off</div>'
+    + renderContactFooter()
     + `<div style="background:#1a1a2e;text-align:center;padding:10px;font-size:11px;color:#666;">${org} \u2014 Westchester, NY</div>`
     + '</div>';
 
