@@ -2,7 +2,7 @@
 > Single source of truth for all Claude Code sessions.
 > Place at project root: `~/legacy-hoopers-app/CLAUDE.md`
 > Branch: `v2` (clean rebuild) — prototype preserved on `main`
-> Last updated: April 11, 2026
+> Last updated: April 20, 2026
 
 ---
 
@@ -256,26 +256,28 @@ sf-pulse, sf-fade-in, sf-pulse-dot, sf-bounce-tap, sf-fill-grow, card-expand, sh
 |---|---|---|
 | 1-A | Skeleton + auth + layout + shared | ✅ DONE |
 | 1-B | Admin home + season mgr + team mgr | ✅ DONE |
-| RESET | Foundation Reset (token + visual fix) | ⬅ NEXT |
-| 2-A | Roster + player/guardian CRUD | |
-| 2-B | Schedule + weather + density | |
-| 2-C | Activity CRUD wizard | |
-| 2-D | RSVP + event detail + check-in | |
-| 2-D2 | Ride board + duties + comments | |
+| RESET | Foundation Reset (token + visual fix) | ✅ DONE |
+| 2-A | Roster + player/guardian CRUD | ✅ DONE |
+| 2-B | Schedule + weather + density | ⚠ PARTIAL — schedule + density done; weather not wired |
+| 2-C | Activity CRUD wizard | ✅ DONE |
+| 2-D | RSVP + event detail + check-in | ✅ DONE |
+| 2-D2 | Ride board + duties + comments | ✅ DONE |
 | 2-D3 | Game day checklist + running late | |
 | 2-E | Availability heatmap | |
-| 3-A | Location + opponent mgr | |
+| 3-A | Location + opponent mgr | ⚠ PARTIAL — locations seeded (9 venues), no mgmt UI |
 | 3-B | Calendar sync + public schedule + QR | |
-| 3-C | Home dashboard + inline RSVP | |
+| 3-C | Home dashboard + inline RSVP | ✅ DONE |
 | 4-A | Team chat + announcements | |
 | 4-B | Save & Message Team + auto-notifications | |
 | 5-A | Quick score entry + records | |
 | 5-B | Live scoring interface | |
 | 5-C | Player stats + box score | |
-| 6-A | Parent onboarding + QR invites | |
+| 6-A | Parent onboarding + QR invites | ⚠ PARTIAL — auto-link guardians done; QR invites not |
 | 7-A | Financial dashboard | |
 | 7-B | Multi-org + season rollover | |
-| 7-C | PWA + auth upgrades | |
+| 7-C | PWA + auth upgrades | ✅ DONE — sw.js, manifest, install prompt, apple-touch-icon |
+
+⬅ NEXT unbuilt items: 2-D3 (game day), 2-E (availability), 3-B (calendar sync), 4-A/B (messaging), 5-A/B/C (scoring), 6-A QR invites, 7-A (finance), 7-B (multi-org). Plus finish partials: 2-B weather, 3-A location mgr UI.
 
 ---
 
