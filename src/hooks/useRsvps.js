@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useToast } from '../context/ToastContext';
 
 export function useRsvps(eventId, teamId) {
+  const { showToast } = useToast();
   const [rsvps, setRsvps] = useState([]);
   const [roster, setRoster] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,9 +44,11 @@ export function useRsvps(eventId, teamId) {
     );
     if (error) {
       console.error('setRsvp:', error.message);
-      return;
+      showToast('Could not save RSVP. Check your connection.', 'error');
+      return false;
     }
     await fetch();
+    return true;
   };
 
   const saveNote = async (playerId, comment) => {
@@ -57,15 +61,21 @@ export function useRsvps(eventId, teamId) {
       .maybeSingle();
     if (!existing) {
       console.warn('No RSVP exists for this player, cannot save note without RSVP');
-      return;
+      showToast('Set an RSVP before adding a note.', 'error');
+      return false;
     }
     const { error } = await supabase
       .from('event_rsvps')
       .update({ comment })
       .eq('event_id', eventId)
       .eq('player_id', playerId);
-    if (error) console.error('saveNote:', error.message);
-    else await fetch();
+    if (error) {
+      console.error('saveNote:', error.message);
+      showToast('Could not save note. Try again.', 'error');
+      return false;
+    }
+    await fetch();
+    return true;
   };
 
   return { rsvps, roster, loading, setRsvp, saveNote, refetch: fetch };
