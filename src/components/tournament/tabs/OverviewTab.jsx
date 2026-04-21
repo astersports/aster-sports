@@ -1,0 +1,98 @@
+import { MapPin, ExternalLink, BedDouble, Info, BookOpen } from 'lucide-react';
+import { useToast } from '../../../context/ToastContext';
+
+function mapsUrl(address) {
+  return `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+}
+
+export default function OverviewTab({ tournament, isStaff }) {
+  const { showToast } = useToast();
+  const hasAddress = Boolean(tournament.primary_venue_address);
+  const hasHotel = Boolean(tournament.hotel_url);
+  const hasTourneyUrl = Boolean(tournament.tourney_url);
+  const hasNotes = Boolean(tournament.survival_notes);
+
+  const card = {
+    backgroundColor: 'var(--sf-bg-card)', borderRadius: 10,
+    border: '1px solid var(--sf-border-default)', padding: 14, marginBottom: 12,
+  };
+  const sectionLabel = {
+    fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase',
+    color: 'var(--sf-text-secondary)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6,
+  };
+  const value = { fontSize: 14, color: 'var(--sf-text-primary)', lineHeight: 1.4 };
+  const linkButton = {
+    display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 40,
+    padding: '0 12px', borderRadius: 8, fontSize: 13, fontWeight: 500,
+    textDecoration: 'none', marginTop: 8,
+    backgroundColor: 'var(--sf-accent-soft)', color: 'var(--sf-accent)',
+  };
+
+  return (
+    <div>
+      {(tournament.primary_venue || hasAddress) && (
+        <div style={card}>
+          <div style={sectionLabel}><MapPin size={11} strokeWidth={2} /> Venue</div>
+          <div style={value}>{tournament.primary_venue || 'Unnamed venue'}</div>
+          {hasAddress && <div style={{ ...value, fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 2 }}>{tournament.primary_venue_address}</div>}
+          {hasAddress && (
+            <a href={mapsUrl(tournament.primary_venue_address)} target="_blank" rel="noopener noreferrer" style={linkButton} aria-label="Open venue in Google Maps">
+              Open in Maps <ExternalLink size={12} strokeWidth={2} />
+            </a>
+          )}
+        </div>
+      )}
+
+      {hasTourneyUrl && (
+        <div style={card}>
+          <div style={sectionLabel}><ExternalLink size={11} strokeWidth={2} /> Tournament page</div>
+          <a href={tournament.tourney_url} target="_blank" rel="noopener noreferrer" style={linkButton}>
+            Open TourneyMachine <ExternalLink size={12} strokeWidth={2} />
+          </a>
+        </div>
+      )}
+
+      {hasHotel && (
+        <div style={card}>
+          <div style={sectionLabel}><BedDouble size={11} strokeWidth={2} /> Hotel block</div>
+          <a href={tournament.hotel_url} target="_blank" rel="noopener noreferrer" style={linkButton}>
+            Book hotel <ExternalLink size={12} strokeWidth={2} />
+          </a>
+          {tournament.hotel_deadline_at && (
+            <div style={{ fontSize: 12, color: 'var(--sf-warning)', marginTop: 8 }}>
+              Deadline: {new Date(tournament.hotel_deadline_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {hasNotes && (
+        <div style={card}>
+          <div style={sectionLabel}><Info size={11} strokeWidth={2} /> Parent survival notes</div>
+          <div style={{ ...value, whiteSpace: 'pre-wrap' }}>{tournament.survival_notes}</div>
+        </div>
+      )}
+
+      <div style={card}>
+        <div style={sectionLabel}><BookOpen size={11} strokeWidth={2} /> Game day guide</div>
+        <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)' }}>
+          Structured field guide for parents: arrival, parking, concessions, rules, contacts.
+        </div>
+        {isStaff && (
+          <button onClick={() => showToast('Game Day Guide editor ships in Session 2B-β', 'info')} className="sf-press" style={{
+            ...linkButton, backgroundColor: 'var(--sf-bg-tertiary)', color: 'var(--sf-text-primary)',
+            border: 'none', cursor: 'pointer',
+          }} aria-label="Edit Game Day Guide">
+            Edit guide
+          </button>
+        )}
+      </div>
+
+      {!tournament.primary_venue && !hasAddress && !hasTourneyUrl && !hasHotel && !hasNotes && (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--sf-text-tertiary)', fontSize: 13 }}>
+          No details yet. {isStaff && 'Tap Edit above to add venue, links, and survival notes.'}
+        </div>
+      )}
+    </div>
+  );
+}
