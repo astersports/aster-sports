@@ -6,8 +6,10 @@ import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
+import { useNow } from '../hooks/useNow';
 import NextUpCard from '../components/schedule/NextUpCard';
 import CompactCard from '../components/schedule/CompactCard';
+import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
 
@@ -29,7 +31,7 @@ export default function ParentHomePage() {
   const dutyCounts = useEventDutyCounts(activities);
   const navigate = useNavigate();
   const name = guardianFirstName ? guardianFirstName.charAt(0).toUpperCase() + guardianFirstName.slice(1) : firstNameFrom(user);
-  const now = Date.now(), weekEnd = now + 7 * 24 * 60 * 60 * 1000;
+  const now = useNow(), weekEnd = now + 7 * 24 * 60 * 60 * 1000;
   useRefetchOnVisible(refetch);
 
   const myTeams = useMemo(() => {
@@ -91,7 +93,7 @@ export default function ParentHomePage() {
         <section>
           <SectionHeader>MY TEAMS</SectionHeader>
           <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 6 }}>
-            {myTeams.map((t) => <TeamCard key={t.id} team={t} onClick={() => navigate(`/schedule?team=${t.id}`)} />)}
+            {myTeams.map((t) => <ParentHomeTeamCard key={t.id} team={t} onClick={() => navigate(`/schedule?team=${t.id}`)} />)}
           </div>
         </section>
       )}
@@ -131,20 +133,3 @@ function EmptyLine({ children }) {
   );
 }
 
-function TeamCard({ team, onClick }) {
-  return (
-    <button type="button" onClick={onClick} className="sf-press"
-      style={{
-        flexShrink: 0, minWidth: 140, minHeight: 80, borderRadius: 10, overflow: 'hidden',
-        border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)',
-        boxShadow: 'var(--sf-shadow-sm)', display: 'flex', alignItems: 'stretch', textAlign: 'left',
-      }}
-    >
-      <div style={{ width: 3, flexShrink: 0, backgroundColor: team.team_color || 'var(--sf-neutral)' }} />
-      <div style={{ flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--sf-text-primary)' }}>{team.name}</span>
-        <span style={{ fontSize: 12, color: 'var(--sf-text-tertiary)' }}>0-0</span>
-      </div>
-    </button>
-  );
-}
