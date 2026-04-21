@@ -22,6 +22,21 @@ export default function NextUpCardRsvpSection({ eventId, rsvpCount }) {
   const extra = Math.max(0, notes.length - 3);
   return (
     <>
+      {/* TEMP DEBUG - remove after diagnosis */}
+      <div style={{
+        background: '#fff3cd',
+        border: '1px solid #ffc107',
+        padding: 8,
+        margin: '8px 0',
+        fontSize: 11,
+        fontFamily: 'monospace',
+        color: '#856404',
+        borderRadius: 4,
+        wordBreak: 'break-all',
+      }}>
+        DEBUG: eventId={eventId || 'UNDEFINED'}, notes.length={notes.length}
+        {notes.length > 0 && ` | first: ${JSON.stringify(notes[0])}`}
+      </div>
       <div style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--sf-text-secondary)' }}>
         <span><strong style={{ color: 'var(--sf-success)' }}>{rsvpCount.going}</strong> going</span>
         <span><strong style={{ color: 'var(--sf-warning)' }}>{rsvpCount.maybe}</strong> maybe</span>

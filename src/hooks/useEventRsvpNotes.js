@@ -43,6 +43,14 @@ export function useEventRsvpNotes(eventId) {
         response: r.response,
         comment: r.comment,
       }));
+      // TEMP DEBUG - remove after diagnosis
+      console.log('[useEventRsvpNotes]', {
+        eventId,
+        count: data?.length,
+        firstRow: data?.[0],
+        firstRowPlayers: data?.[0]?.players,
+        mapped,
+      });
       const ordered = orderNotes(mapped);
       cache.set(eventId, ordered);
       setNotes(ordered);
