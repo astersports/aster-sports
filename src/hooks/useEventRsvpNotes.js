@@ -32,17 +32,17 @@ export function useEventRsvpNotes(eventId) {
       const { data, error } = await supabase
         .from('event_rsvps')
         .select('player_id, response, comment, players(first_name)')
-        .eq('event_id', eventId)
-        .not('comment', 'is', null)
-        .neq('comment', '');
+        .eq('event_id', eventId);
       if (cancelled) return;
       if (error) { console.error('useEventRsvpNotes:', error.message); return; }
-      const mapped = (data || []).map((r) => ({
-        playerId: r.player_id,
-        firstName: r.players?.first_name || '',
-        response: r.response,
-        comment: r.comment,
-      }));
+      const mapped = (data || [])
+        .filter((r) => r.comment && r.comment.trim() !== '')
+        .map((r) => ({
+          playerId: r.player_id,
+          firstName: r.players?.first_name || '',
+          response: r.response,
+          comment: r.comment,
+        }));
       // TEMP DEBUG - remove after diagnosis
       console.log('[useEventRsvpNotes]', {
         eventId,
