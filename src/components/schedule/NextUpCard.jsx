@@ -6,11 +6,13 @@ import { formatCountdown } from '../../lib/formatters';
 import { WhenRow, GameInfo } from './NextUpCardInfo';
 import { useAuth } from '../../context/AuthContext';
 import { useMapsUrl } from '../../hooks/useMapsUrl';
+import { useNow } from '../../hooks/useNow';
 import ChildRsvp from './ChildRsvp';
 
 export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onRefresh }) {
   const navigate = useNavigate();
   const { role, myChildren } = useAuth();
+  const now = useNow();
   const childrenOnTeam = (myChildren || []).filter((c) => c.teamId === event.team_id);
   const [countdown, setCountdown] = useState(() => formatCountdown(event.start_at));
 
@@ -33,9 +35,8 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
   const directionsUrl = useMapsUrl(event.location);
 
   const teamColor = event.teams?.team_color || event.team_color || 'var(--sf-text-tertiary)';
-  const teamName = event.teams?.name || event.team_name || '';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
-  const secondsUntil = (new Date(event.start_at).getTime() - Date.now()) / 1000;
+  const secondsUntil = (new Date(event.start_at).getTime() - now) / 1000;
   const imminent = secondsUntil > 0 && secondsUntil < 7200;
 
   return (
