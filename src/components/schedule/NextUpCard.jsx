@@ -109,7 +109,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
             </div>
           )}
           <GameInfo event={event} />
-          <NextUpCardRsvpSection rsvpCount={rsvpCount} />
+          <NextUpCardRsvpSection eventId={event.id} rsvpCount={rsvpCount} />
           {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--sf-text-secondary)', marginTop: 4 }}>
               <Car size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
