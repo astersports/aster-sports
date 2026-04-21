@@ -1,17 +1,16 @@
 import { NavLink } from 'react-router-dom';
-import { House, Calendar, Trophy, Users, MessageSquare } from 'lucide-react';
+import { House, Calendar, MapPin, Users, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/permissions';
 
-// Admin/Coach see the Score tab; parents don't. Defining the full tab set in
-// one array keeps the active-state styling and a11y labels consistent across
-// both role variants.
+// Defining the full tab set in one array keeps the active-state styling and
+// a11y labels consistent across every role.
 const ALL_TABS = [
-  { to: '/',         label: 'Home',     icon: House,         staffOnly: false },
-  { to: '/schedule', label: 'Schedule', icon: Calendar,      staffOnly: false },
-  { to: '/score',    label: 'Score',    icon: Trophy,        staffOnly: true  },
-  { to: '/teams',    label: 'Teams',    icon: Users,         staffOnly: false },
-  { to: '/messages', label: 'Messages', icon: MessageSquare, staffOnly: false },
+  { to: '/',          label: 'Home',      icon: House,         staffOnly: false },
+  { to: '/schedule',  label: 'Schedule',  icon: Calendar,      staffOnly: false },
+  { to: '/locations', label: 'Locations', icon: MapPin,        staffOnly: false },
+  { to: '/teams',     label: 'Teams',     icon: Users,         staffOnly: false },
+  { to: '/messages',  label: 'Messages',  icon: MessageSquare, staffOnly: false },
 ];
 
 export default function BottomNav() {

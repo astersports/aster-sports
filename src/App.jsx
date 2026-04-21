@@ -7,7 +7,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import HomePage from './pages/HomePage';
 import SchedulePage from './pages/SchedulePage';
-import ScorePage from './pages/ScorePage';
+import LocationsPage from './pages/LocationsPage';
 import TeamsPage from './pages/TeamsPage';
 import TeamDetailPage from './pages/TeamDetailPage';
 import MessagesPage from './pages/MessagesPage';
@@ -52,14 +52,7 @@ export default function App() {
       {/* Authenticated routes */}
       <Route path="/"         element={<Protected><HomePage /></Protected>} />
       <Route path="/schedule" element={<Protected><SchedulePage /></Protected>} />
-      <Route
-        path="/score"
-        element={
-          <Protected allowedRoles={['admin', 'coach']}>
-            <ScorePage />
-          </Protected>
-        }
-      />
+      <Route path="/locations" element={<Protected><LocationsPage /></Protected>} />
       <Route path="/teams"           element={<Protected><TeamsPage /></Protected>} />
       <Route path="/teams/:teamId"   element={<Protected><TeamDetailPage /></Protected>} />
       <Route path="/teams/:teamId/tournaments" element={<Protected><TournamentsPage /></Protected>} />
