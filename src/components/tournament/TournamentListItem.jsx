@@ -16,14 +16,20 @@ function formatRange(start, end) {
   return `${s.toLocaleDateString('en-US', opts)} – ${e.toLocaleDateString('en-US', opts)}`;
 }
 
-export default function TournamentListItem({ tournament }) {
+export default function TournamentListItem({ tournament, rightSlot }) {
   const navigate = useNavigate();
   const dateRange = formatRange(tournament.start_date, tournament.end_date);
+  const open = () => navigate(`/tournaments/${tournament.id}`);
+  const onKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+  };
 
   return (
-    <button
-      type="button"
-      onClick={() => navigate(`/tournaments/${tournament.id}`)}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={open}
+      onKeyDown={onKeyDown}
       className="sf-press"
       aria-label={`Open tournament ${tournament.name}`}
       style={{
@@ -40,7 +46,10 @@ export default function TournamentListItem({ tournament }) {
         <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--sf-text-primary)', lineHeight: 1.3 }}>
           {tournament.name}
         </div>
-        <StatusBadge status={tournament.status} />
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+          <StatusBadge status={tournament.status} />
+          {rightSlot}
+        </div>
       </div>
 
       <div style={{ fontSize: 12, color: 'var(--sf-text-secondary)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -71,6 +80,6 @@ export default function TournamentListItem({ tournament }) {
           ))}
         </div>
       )}
-    </button>
+    </div>
   );
 }

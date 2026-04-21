@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Trophy } from 'lucide-react';
+import { Plus, Trophy } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTournaments } from '../hooks/useTournaments';
 import TournamentListItem from '../components/tournament/TournamentListItem';
+import TournamentFormSheet from '../components/tournament/TournamentFormSheet';
+import TournamentRowMenu from '../components/tournament/TournamentRowMenu';
 
 // Tournaments list page. Admin sees org-wide list. If mounted under
 // /teams/:teamId/tournaments (from team detail tab in 2A-γ), filters to that
@@ -21,16 +23,38 @@ export default function TournamentsPage() {
   const { role } = useAuth();
   const { teamId } = useParams();
   const [statusFilter, setStatusFilter] = useState('all');
-  const { tournaments, loading, error, hasMore, loadMore } = useTournaments({
+  const { tournaments, loading, error, hasMore, loadMore, archive } = useTournaments({
     teamId,
     statusFilter,
   });
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingTournament, setEditingTournament] = useState(null);
+  const openCreate = () => { setEditingTournament(null); setFormOpen(true); };
+  const openEdit = (t) => { setEditingTournament(t); setFormOpen(true); };
+  const closeForm = () => { setFormOpen(false); setEditingTournament(null); };
+  const handleArchive = async (t) => {
+    if (!window.confirm(`Archive "${t.name}"? This hides it from the list but preserves all data.`)) return;
+    await archive(t.id);
+  };
+  const isStaff = role === 'admin' || role === 'coach';
 
   return (
     <div style={{ padding: 16, paddingBottom: 80 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--sf-text-primary)', margin: '0 0 14px' }}>
-        Tournaments
-      </h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--sf-text-primary)', margin: 0 }}>
+          Tournaments
+        </h1>
+        {isStaff && (
+          <button type="button" onClick={openCreate} className="sf-press" aria-label="New tournament" style={{
+            minHeight: 40, padding: '0 14px', borderRadius: 10,
+            backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)',
+            fontSize: 13, fontWeight: 600, border: 'none',
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            <Plus size={16} strokeWidth={2} /> New
+          </button>
+        )}
+      </div>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto', paddingBottom: 4 }}>
         {STATUS_CHIPS.map((c) => {
@@ -82,7 +106,13 @@ export default function TournamentsPage() {
       )}
 
       {tournaments.map((t) => (
-        <TournamentListItem key={t.id} tournament={t} />
+        <TournamentListItem
+          key={t.id}
+          tournament={t}
+          rightSlot={isStaff ? (
+            <TournamentRowMenu onEdit={() => openEdit(t)} onArchive={() => handleArchive(t)} />
+          ) : null}
+        />
       ))}
 
       {hasMore && !loading && (
@@ -99,6 +129,10 @@ export default function TournamentsPage() {
         >
           Load more
         </button>
+      )}
+
+      {formOpen && (
+        <TournamentFormSheet tournament={editingTournament} onClose={closeForm} />
       )}
     </div>
   );
