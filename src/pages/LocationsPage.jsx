@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Search, Plus, MapPin, ExternalLink } from 'lucide-react';
+import { Plus, MapPin, ExternalLink } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLocations } from '../hooks/useLocations';
 import LocationFormSheet from '../components/location/LocationFormSheet';
 import LocationRowMenu from '../components/location/LocationRowMenu';
+import SearchToolbar from '../components/location/SearchToolbar';
 
 function mapsUrl(address, lat, lon) {
   if (lat && lon) return `https://maps.google.com/?q=${lat},${lon}`;
@@ -13,11 +14,13 @@ function mapsUrl(address, lat, lon) {
 export default function LocationsPage() {
   const { role } = useAuth();
   const [search, setSearch] = useState('');
-  const { locations, loading, error, archive } = useLocations({ search });
+  const [showArchived, setShowArchived] = useState(false);
+  const { locations, loading, error, archive, unarchive } = useLocations({ search, showArchived });
   const [formOpen, setFormOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
 
-  const isStaff = role === 'admin' || role === 'coach';
+  const authReady = role !== undefined && role !== null;
+  const isStaff = authReady && (role === 'admin' || role === 'coach');
 
   const openCreate = () => { setEditingLocation(null); setFormOpen(true); };
   const openEdit = (l) => { setEditingLocation(l); setFormOpen(true); };
@@ -45,22 +48,13 @@ export default function LocationsPage() {
         )}
       </div>
 
-      <div style={{ position: 'relative', marginBottom: 14 }}>
-        <Search size={16} strokeWidth={1.75} style={{ position: 'absolute', left: 12, top: 14, color: 'var(--sf-text-tertiary)' }} />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search venues"
-          aria-label="Search venues"
-          style={{
-            width: '100%', minHeight: 44, padding: '10px 12px 10px 36px', borderRadius: 10,
-            border: '1.5px solid var(--sf-border-default)',
-            backgroundColor: 'var(--sf-bg-tertiary)',
-            color: 'var(--sf-text-primary)', fontSize: 14, fontFamily: 'Inter, sans-serif',
-          }}
-        />
-      </div>
+      <SearchToolbar
+        search={search}
+        setSearch={setSearch}
+        showArchived={showArchived}
+        setShowArchived={setShowArchived}
+        isStaff={isStaff}
+      />
 
       {loading && locations.length === 0 && (
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--sf-text-secondary)', fontSize: 14 }}>
@@ -93,11 +87,21 @@ export default function LocationsPage() {
           borderRadius: 10, padding: 14, marginBottom: 10,
           boxShadow: 'var(--sf-shadow-sm)',
           display: 'flex', flexDirection: 'column', gap: 8,
+          opacity: showArchived ? 0.7 : 1,
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--sf-text-primary)', lineHeight: 1.3 }}>
                 {l.name}
+                {showArchived && (
+                  <span style={{
+                    fontSize: 9, fontWeight: 700, letterSpacing: '1px',
+                    padding: '2px 6px', borderRadius: 4, marginLeft: 6,
+                    backgroundColor: 'var(--sf-neutral-soft)', color: 'var(--sf-text-tertiary)',
+                  }}>
+                    ARCHIVED
+                  </span>
+                )}
               </div>
               {l.address && (
                 <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -106,7 +110,12 @@ export default function LocationsPage() {
               )}
             </div>
             {isStaff && (
-              <LocationRowMenu onEdit={() => openEdit(l)} onArchive={() => handleArchive(l)} />
+              <LocationRowMenu
+                showArchived={showArchived}
+                onEdit={() => openEdit(l)}
+                onArchive={() => handleArchive(l)}
+                onUnarchive={() => unarchive(l.id)}
+              />
             )}
           </div>
 

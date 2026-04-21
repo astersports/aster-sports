@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { MoreVertical, Edit2, Archive } from 'lucide-react';
+import { MoreVertical, Edit2, Archive, RotateCcw } from 'lucide-react';
 
-export default function LocationRowMenu({ onEdit, onArchive }) {
+export default function LocationRowMenu({ showArchived = false, onEdit, onArchive, onUnarchive }) {
   const [open, setOpen] = useState(false);
   const stop = (e) => { e.stopPropagation(); e.preventDefault(); };
 
@@ -35,10 +35,17 @@ export default function LocationRowMenu({ onEdit, onArchive }) {
               style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--sf-text-primary)', cursor: 'pointer' }}>
               <Edit2 size={14} strokeWidth={1.75} /> Edit
             </button>
-            <button type="button" onClick={(e) => { stop(e); setOpen(false); onArchive(); }} className="sf-press"
-              style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--sf-danger)', cursor: 'pointer' }}>
-              <Archive size={14} strokeWidth={1.75} /> Archive
-            </button>
+            {showArchived ? (
+              <button type="button" onClick={(e) => { stop(e); setOpen(false); onUnarchive && onUnarchive(); }} className="sf-press"
+                style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--sf-accent)', cursor: 'pointer' }}>
+                <RotateCcw size={14} strokeWidth={1.75} /> Unarchive
+              </button>
+            ) : (
+              <button type="button" onClick={(e) => { stop(e); setOpen(false); onArchive(); }} className="sf-press"
+                style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--sf-danger)', cursor: 'pointer' }}>
+                <Archive size={14} strokeWidth={1.75} /> Archive
+              </button>
+            )}
           </div>
         </>
       )}

@@ -36,7 +36,8 @@ export default function TournamentsPage() {
     if (!window.confirm(`Archive "${t.name}"? This hides it from the list but preserves all data.`)) return;
     await archive(t.id);
   };
-  const isStaff = role === 'admin' || role === 'coach';
+  const authReady = role !== undefined && role !== null;
+  const isStaff = authReady && (role === 'admin' || role === 'coach');
 
   return (
     <div style={{ padding: 16, paddingBottom: 80 }}>

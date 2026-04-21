@@ -3,12 +3,14 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
 const cache = new Map();
-const cacheKey = (orgId, search) => `${orgId}:${search || ''}`;
+const cacheKey = (orgId, search, showArchived) =>
+  `${orgId}:${search || ''}:${showArchived ? 'archived' : 'active'}`;
 
-// Fetches all non-archived locations for the org. Optional search filters by
-// name or address. Exposes CRUD mutations. Every query scoped to org_id.
+// Fetches locations for the org. When showArchived=true, returns archived rows
+// instead of active. Optional search filters by name or address. Exposes CRUD
+// mutations. Every query scoped to org_id.
 
-export function useLocations({ search = '' } = {}) {
+export function useLocations({ search = '', showArchived = false } = {}) {
   const { orgId } = useAuth();
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +18,7 @@ export function useLocations({ search = '' } = {}) {
 
   const fetch = useCallback(async () => {
     if (!orgId) return;
-    cache.delete(cacheKey(orgId, search));
+    cache.delete(cacheKey(orgId, search, showArchived));
     setLoading(true);
     setError(null);
     try {
@@ -24,8 +26,10 @@ export function useLocations({ search = '' } = {}) {
         .from('locations')
         .select('id, name, address, parking_notes, notes, lat, lon, sub_locations')
         .eq('org_id', orgId)
-        .is('archived_at', null)
         .order('name', { ascending: true });
+      query = showArchived
+        ? query.not('archived_at', 'is', null)
+        : query.is('archived_at', null);
 
       const { data, error: err } = await query;
       if (err) throw err;
@@ -38,20 +42,20 @@ export function useLocations({ search = '' } = {}) {
           l.address?.toLowerCase().includes(q)
         );
       }
-      setLocations(rows);
-      cache.set(cacheKey(orgId, search), rows);
+      setLocations([...rows]);
+      cache.set(cacheKey(orgId, search, showArchived), rows);
     } catch (e) {
       setError(e);
     } finally {
       setLoading(false);
     }
-  }, [orgId, search]);
+  }, [orgId, search, showArchived]);
 
   useEffect(() => {
-    const cached = cache.get(cacheKey(orgId, search));
+    const cached = cache.get(cacheKey(orgId, search, showArchived));
     if (cached) { setLocations(cached); setLoading(false); }
     fetch();
-  }, [fetch, orgId, search]);
+  }, [fetch, orgId, search, showArchived]);
 
   const create = async (fields) => {
     if (!orgId) return { error: new Error('No orgId') };
@@ -80,5 +84,13 @@ export function useLocations({ search = '' } = {}) {
     return { data: true };
   };
 
-  return { locations, loading, error, create, update, archive, refetch: fetch };
+  const unarchive = async (id) => {
+    const { error: err } = await supabase
+      .from('locations').update({ archived_at: null }).eq('id', id);
+    if (err) return { error: err };
+    await fetch();
+    return { data: true };
+  };
+
+  return { locations, loading, error, create, update, archive, unarchive, refetch: fetch };
 }
