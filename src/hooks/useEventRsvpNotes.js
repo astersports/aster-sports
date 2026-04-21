@@ -31,7 +31,7 @@ export function useEventRsvpNotes(eventId) {
     const run = async () => {
       const { data, error } = await supabase
         .from('event_rsvps')
-        .select('player_id, response, comment, players(first_name)')
+        .select('player_id, response, comment')
         .eq('event_id', eventId);
       if (cancelled) return;
       if (error) { console.error('useEventRsvpNotes:', error.message); return; }
@@ -39,7 +39,7 @@ export function useEventRsvpNotes(eventId) {
         .filter((r) => r.comment && r.comment.trim() !== '')
         .map((r) => ({
           playerId: r.player_id,
-          firstName: r.players?.first_name || '',
+          firstName: 'Player', // temporary until we fix the join
           response: r.response,
           comment: r.comment,
         }));
