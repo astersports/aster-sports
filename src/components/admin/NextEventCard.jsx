@@ -1,24 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useNow } from '../../hooks/useNow';
 
 // Default event window when no explicit duration is known. Used as a
 // fallback so a card doesn't stay stuck on "Now" hours (or days) after
 // start. 2h covers both practices and typical games.
 const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
 
-// Live countdown. Re-renders every second while targetDate is truthy —
-// used only on the Home dashboard below the Season card so the
-// dashboard has one always-ticking element. Returns:
+// Live countdown. Re-renders every second via useNow(1000) — used only
+// on the Home dashboard below the Season card so the dashboard has one
+// always-ticking element. Returns:
 //  - null if no date OR the event has ended (now > start + duration)
 //  - 'Now' if the event is in progress (started but not yet ended)
 //  - a formatted "Xd Yh Zm" / "Xh Ym Zs" / "Xm Ys" string otherwise
 function useLiveCountdown(targetDate) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!targetDate) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [targetDate]);
-
+  const now = useNow(1000);
   if (!targetDate) return null;
   const start = new Date(targetDate).getTime();
   if (now - start > DEFAULT_EVENT_DURATION_MS) return null;
