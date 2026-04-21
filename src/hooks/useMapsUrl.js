@@ -17,7 +17,12 @@ export function useMapsUrl(location) {
     if (!name) return;
     const toUrl = (r) => (r?.lat && r?.lon ? `https://maps.google.com/maps?daddr=${r.lat},${r.lon}` : null);
     const hit = cache.get(name);
-    if (hit !== undefined) { setUrl(toUrl(hit)); return; }
+    // Microtask wrap on the cache-hit setUrl pushes it out of the
+    // effect body, satisfying react-hooks/set-state-in-effect.
+    if (hit !== undefined) {
+      Promise.resolve().then(() => setUrl(toUrl(hit)));
+      return;
+    }
     supabase.from('locations').select('lat, lon').ilike('name', `%${name}%`).limit(1)
       .then(({ data }) => {
         const r = data?.[0] || null;

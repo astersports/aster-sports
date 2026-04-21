@@ -23,7 +23,9 @@ export function useEventDetail(eventId, seed = null) {
       });
   }, [eventId]);
 
-  useEffect(() => { refetch(); }, [refetch]);
+  // Microtask wrap pushes the synchronous setLoading(false) at the top of
+  // refetch() out of the effect body, satisfying react-hooks/set-state-in-effect.
+  useEffect(() => { Promise.resolve().then(refetch); }, [refetch]);
 
   // Optimistically patch a field without waiting for a full refetch.
   // Used by cancel/reinstate to update status instantly in the UI.

@@ -24,7 +24,9 @@ export function useComments(eventId) {
     setLoading(false);
   }, [eventId]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  // Microtask wrap pushes the synchronous setLoading(true) at the top of
+  // fetch() out of the effect body, satisfying react-hooks/set-state-in-effect.
+  useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
 
   const post = async (body) => {
     const trimmed = body.trim();

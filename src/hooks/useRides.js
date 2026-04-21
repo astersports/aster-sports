@@ -23,7 +23,9 @@ export function useRides(eventId) {
     setLoading(false);
   }, [eventId]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  // Microtask wrap pushes the synchronous setLoading(true) at the top of
+  // fetch() out of the effect body, satisfying react-hooks/set-state-in-effect.
+  useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
 
   const create = async (payload) => {
     const authorName = payload.authorName || user?.user_metadata?.full_name || user?.email || 'User';

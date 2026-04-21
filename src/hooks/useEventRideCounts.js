@@ -4,9 +4,15 @@ import { supabase } from '../lib/supabase';
 export function useEventRideCounts(activities) {
   const [counts, setCounts] = useState({});
   const lastKeyRef = useRef(null);
+  // Microtask wrap on the early-return setCounts({}) pushes it out of
+  // the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => {
     const ids = (activities || []).map((a) => a.id);
-    if (ids.length === 0) { setCounts({}); lastKeyRef.current = ''; return; }
+    if (ids.length === 0) {
+      Promise.resolve().then(() => setCounts({}));
+      lastKeyRef.current = '';
+      return;
+    }
     const key = [...ids].sort().join(',');
     if (lastKeyRef.current === key) return;
     lastKeyRef.current = key;

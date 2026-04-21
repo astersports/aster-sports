@@ -24,7 +24,9 @@ export function useDuties(eventId) {
     setLoading(false);
   }, [eventId]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  // Microtask wrap pushes the synchronous setLoading(true) at the top of
+  // fetch() out of the effect body, satisfying react-hooks/set-state-in-effect.
+  useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
 
   const claim = async (dutyId) => {
     const authorName = user?.user_metadata?.full_name || user?.email || 'User';

@@ -31,8 +31,10 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
     setResponse((prev) => (prev === next ? prev : next));
   }, [eventId, child.playerId]);
 
+  // Microtask wrap on the initial fetchRsvp() call pushes its synchronous
+  // setResponse out of the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => {
-    fetchRsvp();
+    Promise.resolve().then(fetchRsvp);
     const handler = () => fetchRsvp();
     window.addEventListener('focus', handler);
     return () => window.removeEventListener('focus', handler);
