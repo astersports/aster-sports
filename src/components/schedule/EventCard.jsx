@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../../lib/formatters';
 import { TYPE_LABELS } from '../../lib/constants';
 import { useAuth } from '../../context/AuthContext';
+import { useNow } from '../../hooks/useNow';
 import ChildRsvp from './ChildRsvp';
 
 export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger }) {
   const navigate = useNavigate();
   const { role, myChildren } = useAuth();
+  const now = useNow();
   const childrenOnTeam = (myChildren || []).filter((c) => c.teamId === event.team_id);
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--sf-neutral)';
@@ -56,7 +58,7 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
           {event.parent_event_id && (
             <Repeat size={11} strokeWidth={1.75} color="var(--sf-text-tertiary)" style={{ marginLeft: 4 }} />
           )}
-          {event.updated_at && (new Date(event.updated_at).getTime() > Date.now() - 86400000) && !isPast && !isCancelled && (
+          {event.updated_at && (new Date(event.updated_at).getTime() > now - 86400000) && !isPast && !isCancelled && (
             <span style={{
               display: 'inline-block', width: 6, height: 6, borderRadius: 3,
               backgroundColor: 'var(--sf-info)', marginLeft: 6, verticalAlign: 'middle',
