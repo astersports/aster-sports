@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import LoginForm from '../components/auth/LoginForm';
 
 // Skyfire brand landing + sign-in. Email auto-trims on submit. Inline field
 // errors (not toasts) so the user sees exactly which field failed.
@@ -47,15 +47,6 @@ export default function LoginPage() {
     navigate(from, { replace: true });
   };
 
-  const input = (err) => ({
-    width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10,
-    border: `1px solid ${err ? 'var(--sf-danger)' : 'var(--sf-border-default)'}`,
-    backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-text-primary)',
-    fontSize: 15, outline: 'none',
-  });
-  const lbl = { color: 'var(--sf-text-secondary)', fontSize: 13 };
-  const err = { color: 'var(--sf-danger)', fontSize: 12, marginTop: 4 };
-
   return (
     <div
       className="sf-fullscreen flex items-center justify-center p-6"
@@ -73,75 +64,12 @@ export default function LoginPage() {
             style={{ width: 120, height: 120, objectFit: 'contain', borderRadius: 16 }} />
         </div>
 
-        <form onSubmit={onSubmit} noValidate>
-          <label className="block mb-3">
-            <span className="block mb-1 font-medium" style={lbl}>Email</span>
-            <input
-              type="email" autoComplete="email" value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={input(!!errors.email)} aria-invalid={!!errors.email}
-            />
-            {errors.email && <div style={err}>{errors.email}</div>}
-          </label>
-
-          <label className="block mb-3">
-            <span className="block mb-1 font-medium" style={lbl}>Password</span>
-            <div className="relative">
-              <input
-                type={showPw ? 'text' : 'password'} autoComplete="current-password"
-                value={password} onChange={(e) => setPassword(e.target.value)}
-                style={{ ...input(!!errors.password), paddingRight: 48 }}
-                aria-invalid={!!errors.password}
-              />
-              <button
-                type="button" onClick={() => setShowPw((v) => !v)}
-                className="absolute flex items-center justify-center sf-press"
-                style={{ top: 0, right: 0, width: 44, height: 44, color: 'var(--sf-text-tertiary)' }}
-                aria-label={showPw ? 'Hide password' : 'Show password'}
-              >
-                {showPw
-                  ? <EyeOff size={20} strokeWidth={1.75} />
-                  : <Eye size={20} strokeWidth={1.75} />}
-              </button>
-            </div>
-            {errors.password && <div style={err}>{errors.password}</div>}
-          </label>
-
-          {errors.form && (
-            <div
-              className="mb-3"
-              style={{
-                color: 'var(--sf-danger)', backgroundColor: 'var(--sf-danger-soft)',
-                padding: '8px 12px', borderRadius: 8, fontSize: 13,
-              }}
-            >
-              {errors.form}
-            </div>
-          )}
-
-          <button
-            type="submit" disabled={submitting}
-            className="w-full font-semibold sf-press sf-bounce-tap"
-            style={{
-              minHeight: 44, borderRadius: 10, fontSize: 15,
-              backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)',
-              opacity: submitting ? 0.7 : 1,
-            }}
-          >{submitting ? 'Signing in…' : 'Sign in'}</button>
-
-          <div className="flex justify-center mt-2">
-            <Link
-              to="/forgot-password"
-              className="sf-press inline-flex items-center justify-center"
-              style={{
-                minHeight: 44, padding: '0 12px',
-                color: 'var(--sf-accent)', fontSize: 13, fontWeight: 500,
-              }}
-            >
-              Forgot password?
-            </Link>
-          </div>
-        </form>
+        <LoginForm
+          email={email} setEmail={setEmail}
+          password={password} setPassword={setPassword}
+          showPw={showPw} setShowPw={setShowPw}
+          errors={errors} submitting={submitting} onSubmit={onSubmit}
+        />
       </div>
     </div>
   );
