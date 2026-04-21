@@ -1,10 +1,18 @@
 import { useState, useEffect } from 'react';
 
+// Default event window when no explicit duration is known. Used as a
+// fallback so a card doesn't stay stuck on "Now" hours (or days) after
+// start. 2h covers both practices and typical games.
+const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
+
 // Live countdown. Re-renders every second while targetDate is truthy —
 // used only on the Home dashboard below the Season card so the
-// dashboard has one always-ticking element. Returns null if no date.
+// dashboard has one always-ticking element. Returns:
+//  - null if no date OR the event has ended (now > start + duration)
+//  - 'Now' if the event is in progress (started but not yet ended)
+//  - a formatted "Xd Yh Zm" / "Xh Ym Zs" / "Xm Ys" string otherwise
 function useLiveCountdown(targetDate) {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!targetDate) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -12,7 +20,9 @@ function useLiveCountdown(targetDate) {
   }, [targetDate]);
 
   if (!targetDate) return null;
-  const diff = new Date(targetDate).getTime() - now;
+  const start = new Date(targetDate).getTime();
+  if (now - start > DEFAULT_EVENT_DURATION_MS) return null;
+  const diff = start - now;
   if (diff <= 0) return 'Now';
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor((diff % 86400000) / 3600000);
@@ -56,10 +66,12 @@ export default function NextEventCard() {
         <div className="font-bold" style={{ fontSize: 20, color: 'var(--sf-accent)', fontVariantNumeric: 'tabular-nums' }}>
           {countdown || '—'}
         </div>
-        <div className="sf-pulse-dot" style={{
-          width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--sf-success)',
-          margin: '4px 0 0 auto',
-        }} />
+        {countdown === 'Now' && (
+          <div className="sf-pulse-dot" style={{
+            width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--sf-success)',
+            margin: '4px 0 0 auto',
+          }} />
+        )}
       </div>
     </div>
   );
