@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom';
-import { CalendarPlus, UserPlus, MessageSquare, Calendar } from 'lucide-react';
+import { CalendarPlus, UserPlus, MessageSquare, Calendar, Trophy } from 'lucide-react';
 
 // Four-chip horizontal scroll row for the admin home shortcuts. The create
 // routes are placeholders for now — they deep-link into the schedule/roster
 // pages and will gain dedicated /new routes in a later prompt.
 const ACTIONS = [
-  { label: '+ Event',  icon: CalendarPlus,  to: '/schedule' },
-  { label: '+ Player', icon: UserPlus,      to: '/teams'    },
-  { label: 'Message',  icon: MessageSquare, to: '/messages' },
-  { label: 'Schedule', icon: Calendar,      to: '/schedule' },
+  { label: '+ Event',     icon: CalendarPlus,  to: '/schedule'     },
+  { label: '+ Player',    icon: UserPlus,      to: '/teams'        },
+  { label: 'Message',     icon: MessageSquare, to: '/messages'     },
+  { label: 'Schedule',    icon: Calendar,      to: '/schedule'     },
+  { label: 'Tournaments', icon: Trophy,        to: '/tournaments'  },
 ];
 
 export default function QuickActions() {

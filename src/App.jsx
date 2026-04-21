@@ -13,6 +13,7 @@ import TeamDetailPage from './pages/TeamDetailPage';
 import MessagesPage from './pages/MessagesPage';
 import EventDetailPage from './pages/EventDetailPage';
 import AccountPage from './pages/AccountPage';
+import TournamentsPage from './pages/TournamentsPage';
 
 const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
 const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
@@ -60,6 +61,8 @@ export default function App() {
       />
       <Route path="/teams"           element={<Protected><TeamsPage /></Protected>} />
       <Route path="/teams/:teamId"   element={<Protected><TeamDetailPage /></Protected>} />
+      <Route path="/teams/:teamId/tournaments" element={<Protected><TournamentsPage /></Protected>} />
+      <Route path="/tournaments"     element={<Protected><TournamentsPage /></Protected>} />
       <Route path="/messages"        element={<Protected><MessagesPage /></Protected>} />
       <Route path="/account"         element={<Protected><AccountPage /></Protected>} />
 
