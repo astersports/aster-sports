@@ -4,6 +4,7 @@ import { MapPin, Car, Repeat, ExternalLink } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
 import { formatCountdown } from '../../lib/formatters';
 import { WhenRow, GameInfo } from './NextUpCardInfo';
+import NextUpCardRsvpSection from './NextUpCardRsvpSection';
 import { useAuth } from '../../context/AuthContext';
 import { useMapsUrl } from '../../hooks/useMapsUrl';
 import { useNow } from '../../hooks/useNow';
@@ -108,14 +109,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
             </div>
           )}
           <GameInfo event={event} />
-          {rsvpCount && (
-            <div style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--sf-text-secondary)' }}>
-              <span><strong style={{ color: 'var(--sf-success)' }}>{rsvpCount.going}</strong> going</span>
-              <span><strong style={{ color: 'var(--sf-warning)' }}>{rsvpCount.maybe}</strong> maybe</span>
-              <span><strong style={{ color: 'var(--sf-danger)' }}>{rsvpCount.not_going}</strong> not going</span>
-              <span><strong style={{ color: 'var(--sf-neutral)' }}>{rsvpCount.noResponse}</strong> no response</span>
-            </div>
-          )}
+          <NextUpCardRsvpSection rsvpCount={rsvpCount} />
           {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--sf-text-secondary)', marginTop: 4 }}>
               <Car size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
