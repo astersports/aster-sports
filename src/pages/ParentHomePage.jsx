@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
@@ -9,6 +9,7 @@ import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
 import NextUpCard from '../components/schedule/NextUpCard';
 import CompactCard from '../components/schedule/CompactCard';
+import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
@@ -24,12 +25,13 @@ function greetingFor(date = new Date()) {
 }
 
 export default function ParentHomePage() {
-  const { user, guardianFirstName } = useAuth();
+  const { user, guardianFirstName, myChildren } = useAuth();
   const { activities, loading, refetch } = useActivities();
   const rsvpCounts = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
   const dutyCounts = useEventDutyCounts(activities);
   const navigate = useNavigate();
+  const [activeKidFilter, setActiveKidFilter] = useState(null);
   const name = guardianFirstName ? guardianFirstName.charAt(0).toUpperCase() + guardianFirstName.slice(1) : firstNameFrom(user);
   const now = useNow(), weekEnd = now + 7 * 24 * 60 * 60 * 1000;
   useRefetchOnVisible(refetch);
@@ -69,6 +71,14 @@ export default function ParentHomePage() {
     .sort((a, b) => new Date(a.start_at) - new Date(b.start_at)),
     [activities, now, weekEnd]);
 
+  const filteredThisWeek = useMemo(() => {
+    if (!activeKidFilter) return thisWeek;
+    const kid = (myChildren || []).find((k) => k.playerId === activeKidFilter);
+    const teamId = kid?.teamId ?? null;
+    if (!teamId) return thisWeek;
+    return thisWeek.filter((e) => e.team_id === teamId);
+  }, [thisWeek, activeKidFilter, myChildren]);
+
   if (loading) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
 
   return (
@@ -100,7 +110,12 @@ export default function ParentHomePage() {
 
       <section>
         <SectionHeader>THIS WEEK</SectionHeader>
-        {thisWeek.length > 0 ? groupByDate(thisWeek).map(([date, evts]) => (
+        <ChildFilterChips
+          kids={myChildren}
+          activeFilter={activeKidFilter}
+          onChange={setActiveKidFilter}
+        />
+        {filteredThisWeek.length > 0 ? groupByDate(filteredThisWeek).map(([date, evts]) => (
           <div key={date}>
             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
               {formatDateHeader(date)}
