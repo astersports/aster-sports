@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { supabase } from '../lib/supabase';
 import { autoLinkGuardian } from '../lib/autoLinkGuardian';
 import { fetchParentContext } from '../lib/parentContext';
+import { setSentryUser, clearSentryUser } from '../lib/sentry';
 
 const AuthContext = createContext(null);
 
@@ -69,9 +70,8 @@ export function AuthProvider({ children }) {
       resolvedRole = linked?.role ?? null;
       resolvedOrg = linked?.organization ?? null;
     }
-    setRole(resolvedRole);
-    setOrg(resolvedOrg);
-    applyBrandColors(resolvedOrg?.brand_colors);
+    setRole(resolvedRole); setOrg(resolvedOrg); applyBrandColors(resolvedOrg?.brand_colors);
+    setSentryUser(authUser, resolvedRole, resolvedOrg?.id);
 
     if (resolvedRole === 'parent') {
       const ctx = await fetchParentContext(authUser.id);
@@ -98,7 +98,7 @@ export function AuthProvider({ children }) {
         else {
           setRole(null); setOrg(null);
           setMyChildren([]); setMyTeamIds([]); setGuardianId(null); setGuardianFirstName(null);
-          applyBrandColors(null); setLoading(false);
+          applyBrandColors(null); clearSentryUser(); setLoading(false);
         }
       }
     );
