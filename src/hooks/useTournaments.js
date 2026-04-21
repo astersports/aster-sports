@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { seedRosters } from '../lib/tournamentRosters';
 import { useAuth } from '../context/AuthContext';
 
 // Module-level cache survives component unmount. Keyed by query params.
@@ -27,6 +28,7 @@ export function useTournaments({ teamId, statusFilter = 'all', seasonFilter = 'a
   const fetch = useCallback(async ({ append = false } = {}) => {
     if (!orgId) return;
     if (!append) offsetRef.current = 0;
+    if (!append) cache.delete(cacheKey(orgId, teamId, statusFilter, seasonFilter));
     setLoading(true);
     setError(null);
     try {
@@ -60,7 +62,11 @@ export function useTournaments({ teamId, statusFilter = 'all', seasonFilter = 'a
       }));
       if (teamId) rows = rows.filter((t) => t.teams.some((team) => team.id === teamId));
 
-      setTournaments(append ? (prev) => [...prev, ...rows] : rows);
+      if (append) {
+        setTournaments((prev) => [...prev, ...rows]);
+      } else {
+        setTournaments(rows);
+      }
       setHasMore(rows.length === limit);
       offsetRef.current += rows.length;
       cache.set(cacheKey(orgId, teamId, statusFilter, seasonFilter), rows);
@@ -127,23 +133,4 @@ export function useTournaments({ teamId, statusFilter = 'all', seasonFilter = 'a
   };
 
   return { tournaments, loading, error, hasMore, loadMore, create, update, archive, refetch: fetch };
-}
-
-// Seeds tournament_rosters with active (non-Futures) players from each team.
-async function seedRosters(tournamentId, teamIds) {
-  for (const teamId of teamIds) {
-    const { data: roster } = await supabase
-      .from('roster_members')
-      .select('player_id, players!inner(id, member_type)')
-      .eq('team_id', teamId)
-      .eq('players.member_type', 'roster');
-    if (!roster?.length) continue;
-    const rows = roster.map((rm) => ({
-      tournament_id: tournamentId,
-      team_id: teamId,
-      player_id: rm.player_id,
-      roster_status: 'active',
-    }));
-    await supabase.from('tournament_rosters').insert(rows);
-  }
 }
