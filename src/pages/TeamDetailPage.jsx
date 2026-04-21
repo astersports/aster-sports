@@ -8,11 +8,8 @@ import { useRoster } from '../hooks/useRoster';
 import { useFilteredRoster } from '../hooks/useFilteredRoster';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
-import PlayerRow from '../components/roster/PlayerRow';
 import TeamHeaderCard from '../components/roster/TeamHeaderCard';
-import RosterControls from '../components/roster/RosterControls';
-import CopyRosterButton from '../components/roster/CopyRosterButton';
-import UpcomingEvents from '../components/roster/UpcomingEvents';
+import RosterSection from '../components/roster/RosterSection';
 import MessageTeamFAB from '../components/roster/MessageTeamFAB';
 import TeamSwitcher from '../components/roster/TeamSwitcher';
 
@@ -108,39 +105,14 @@ export default function TeamDetailPage() {
           />
         )
       ) : (
-        <>
-          <RosterControls
-            search={search}
-            setSearch={setSearch}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-          />
-          <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-            <div style={{
-              fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-              textTransform: 'uppercase', color: 'var(--sf-text-tertiary)',
-            }}>ROSTER</div>
-            <CopyRosterButton team={team} sortedPlayers={sortedPlayers} />
-          </div>
-          <div style={{
-            backgroundColor: 'var(--sf-bg-card)',
-            borderRadius: 10,
-            border: '1px solid var(--sf-border-default)',
-            boxShadow: 'var(--sf-shadow-sm)',
-            overflow: 'hidden',
-          }}>
-            {sortedPlayers.map((player, i) => (
-              <div key={player.id} className={`sf-stagger-${Math.min(i + 1, 8)}`}>
-                <PlayerRow
-                  player={player}
-                  teamColor={team.team_color}
-                  isLast={i === sortedPlayers.length - 1}
-                />
-              </div>
-            ))}
-          </div>
-          <UpcomingEvents />
-        </>
+        <RosterSection
+          team={team}
+          sortedPlayers={sortedPlayers}
+          search={search}
+          setSearch={setSearch}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+        />
       )}
 
       <MessageTeamFAB />
