@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 
 // Module-level cache so response survives component unmount/remount on nav.
 const responseCache = new Map();
@@ -20,6 +21,7 @@ const CONFIRMED = {
 
 export default function ChildRsvp({ child, eventId, compact = false }) {
   const { guardianId } = useAuth();
+  const { showToast } = useToast();
   const [response, setResponse] = useState(() => responseCache.get(cacheKey(eventId, child.playerId)) ?? null);
   const [saving, setSaving] = useState(false);
 
@@ -49,7 +51,10 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
     }, { onConflict: 'event_id,player_id' });
     setSaving(false);
     if (!error) { responseCache.set(cacheKey(eventId, child.playerId), value); setResponse(value); }
-    else console.error('RSVP save failed:', error.message);
+    else {
+      console.error('RSVP save failed:', error.message);
+      showToast('Could not save RSVP. Check your connection.', 'error');
+    }
   };
 
   const minH = compact ? 36 : 44;
