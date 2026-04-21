@@ -1,15 +1,17 @@
 import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../../lib/formatters';
 import { TYPE_LABELS } from '../../lib/constants';
+import { useNow } from '../../hooks/useNow';
 
 export default function CompactCard({ event, stagger }) {
   const navigate = useNavigate();
+  const now = useNow();
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--sf-neutral)';
   const teamName = team?.name || '';
   const endTime = event.end_at ? new Date(event.end_at).getTime() : null;
   const startTime = event.start_at ? new Date(event.start_at).getTime() : null;
-  const isPast = endTime ? endTime < Date.now() : (startTime ? startTime < Date.now() : false);
+  const isPast = endTime ? endTime < now : (startTime ? startTime < now : false);
 
   return (
     <div
