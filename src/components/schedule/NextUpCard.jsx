@@ -103,6 +103,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
           {rsvpCount && (
             <div style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--sf-text-secondary)' }}>
               <span><strong style={{ color: 'var(--sf-success)' }}>{rsvpCount.going}</strong> going</span>
+              <span><strong style={{ color: 'var(--sf-warning)' }}>{rsvpCount.maybe}</strong> maybe</span>
               <span><strong style={{ color: 'var(--sf-danger)' }}>{rsvpCount.not_going}</strong> not going</span>
               <span><strong style={{ color: 'var(--sf-neutral)' }}>{rsvpCount.noResponse}</strong> no response</span>
             </div>
