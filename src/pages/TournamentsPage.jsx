@@ -6,18 +6,12 @@ import { useTournaments } from '../hooks/useTournaments';
 import TournamentListItem from '../components/tournament/TournamentListItem';
 import TournamentFormSheet from '../components/tournament/TournamentFormSheet';
 import TournamentRowMenu from '../components/tournament/TournamentRowMenu';
+import TournamentStatusChips from '../components/tournament/TournamentStatusChips';
 
 // Tournaments list page. Admin sees org-wide list. If mounted under
 // /teams/:teamId/tournaments (from team detail tab in 2A-γ), filters to that
 // team. Status filter chips for quick narrowing. No + New button yet
 // (ships in 2A-γ with the form sheet).
-
-const STATUS_CHIPS = [
-  { value: 'all', label: 'All' },
-  { value: 'scheduled', label: 'Scheduled' },
-  { value: 'in_progress', label: 'Live' },
-  { value: 'complete', label: 'Complete' },
-];
 
 export default function TournamentsPage() {
   const { role } = useAuth();
@@ -57,30 +51,7 @@ export default function TournamentsPage() {
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto', paddingBottom: 4 }}>
-        {STATUS_CHIPS.map((c) => {
-          const active = statusFilter === c.value;
-          return (
-            <button
-              key={c.value}
-              type="button"
-              onClick={() => setStatusFilter(c.value)}
-              className="sf-press"
-              aria-pressed={active}
-              style={{
-                minHeight: 32, padding: '0 12px', borderRadius: 999,
-                border: `1.5px solid ${active ? 'var(--sf-accent)' : 'var(--sf-border-default)'}`,
-                backgroundColor: active ? 'var(--sf-accent-soft)' : 'var(--sf-bg-card)',
-                color: active ? 'var(--sf-accent)' : 'var(--sf-text-primary)',
-                fontSize: 12, fontWeight: active ? 600 : 400,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {c.label}
-            </button>
-          );
-        })}
-      </div>
+      <TournamentStatusChips statusFilter={statusFilter} setStatusFilter={setStatusFilter} />
 
       {loading && tournaments.length === 0 && (
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--sf-text-secondary)', fontSize: 14 }}>
