@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 // Fetches event_duties for an event and exposes claim/unclaim.
 // Schema: one row per claimable slot (duty_name + guardian_id nullable).
@@ -8,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 // each independently claimable (see useCreateActivity).
 export function useDuties(eventId) {
   const { user, guardianId } = useAuth();
+  const { showToast } = useToast();
   const [duties, setDuties] = useState([]);
   const [loading, setLoading] = useState(true);
   const didInitialLoad = useRef(false);
@@ -33,8 +35,13 @@ export function useDuties(eventId) {
     const { error } = await supabase.from('event_duties')
       .update({ guardian_id: guardianId ?? null, claimed_by_name: authorName, claimed_at: new Date().toISOString() })
       .eq('id', dutyId).is('guardian_id', null);
-    if (error) { console.error('claim duty:', error.message); return; }
+    if (error) {
+      console.error('claim duty:', error.message);
+      showToast('Could not save assignment. Try again.', 'error');
+      return false;
+    }
     await fetch();
+    return true;
   };
 
   const unclaim = async (dutyId) => {
@@ -42,8 +49,13 @@ export function useDuties(eventId) {
       .update({ guardian_id: null, claimed_by_name: null, claimed_at: null })
       .eq('id', dutyId);
     const { error } = await (guardianId ? q.eq('guardian_id', guardianId) : q);
-    if (error) { console.error('unclaim duty:', error.message); return; }
+    if (error) {
+      console.error('unclaim duty:', error.message);
+      showToast('Could not unassign. Try again.', 'error');
+      return false;
+    }
     await fetch();
+    return true;
   };
 
   return { duties, loading, claim, unclaim, refetch: fetch };
