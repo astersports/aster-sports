@@ -1,6 +1,6 @@
 import { TYPE_OPTIONS } from '../../lib/constants';
 
-export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedType, onSelectType, showCancelled, onToggleCancelled }) {
+export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedType, onSelectType, showCancelled, onToggleCancelled, hideTeamRow = false }) {
   const uniqueTeams = [];
   const seen = new Set();
   (teams || []).forEach((a) => {
@@ -13,6 +13,7 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
 
   return (
     <div style={{ padding: '8px 0' }}>
+      {!hideTeamRow && (
       <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 6 }}>
         <Chip
           label="All Teams"
@@ -29,6 +30,7 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
           />
         ))}
       </div>
+      )}
       <div className="flex gap-2 overflow-x-auto sf-no-scrollbar">
         {TYPE_OPTIONS.map((opt) => (
           <Chip

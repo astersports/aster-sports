@@ -5,21 +5,24 @@ import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
-import { Plus, ChevronDown } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import FilterBar from '../components/schedule/FilterBar';
 import NextUpCard from '../components/schedule/NextUpCard';
 import DateGroupedList from '../components/schedule/DateGroupedList';
+import ChildFilterChips from '../components/schedule/ChildFilterChips';
+import ScheduleShowMoreButton from '../components/schedule/ScheduleShowMoreButton';
 import TextEmptyState from '../components/shared/TextEmptyState';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
 export default function SchedulePage() {
-  const { orgId } = useAuth();
+  const { orgId, myChildren } = useAuth();
   const { activities, loading, refetch } = useActivities(orgId);
   const rsvpCounts = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
   const dutyCounts = useEventDutyCounts(activities);
   const [selectedTeam, setSelectedTeam] = useState(() => new URLSearchParams(window.location.search).get('team'));
   const [selectedType, setSelectedType] = useState(null);
+  const [activeKidFilter, setActiveKidFilter] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);
@@ -41,11 +44,13 @@ export default function SchedulePage() {
 
   const filtered = useMemo(() => {
     let list = activities;
+    const kidTeamId = activeKidFilter && (myChildren || []).find((k) => k.playerId === activeKidFilter)?.teamId;
+    if (kidTeamId) list = list.filter((a) => a.team_id === kidTeamId);
     if (selectedTeam) list = list.filter((a) => a.team_id === selectedTeam);
     if (selectedType) list = list.filter((a) => a.event_type === selectedType);
     if (!showCancelled) list = list.filter((a) => a.status !== 'cancelled');
     return list.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
-  }, [activities, selectedTeam, selectedType, showCancelled]);
+  }, [activities, selectedTeam, selectedType, showCancelled, activeKidFilter, myChildren]);
 
   const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= now), [filtered, tick, now]);
   const nextEvent = upcoming[0] || null;
@@ -64,6 +69,12 @@ export default function SchedulePage() {
 
         {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} dutyCount={dutyCounts[nextEvent.id]} onRefresh={refetch} />}
 
+        <ChildFilterChips
+          kids={myChildren}
+          activeFilter={activeKidFilter}
+          onChange={setActiveKidFilter}
+        />
+
         <FilterBar
           teams={activities}
           selectedTeam={selectedTeam}
@@ -72,6 +83,7 @@ export default function SchedulePage() {
           onSelectType={setSelectedType}
           showCancelled={showCancelled}
           onToggleCancelled={() => setShowCancelled((v) => !v)}
+          hideTeamRow={!!activeKidFilter}
         />
 
         {filtered.length === 0 ? (
@@ -90,22 +102,7 @@ export default function SchedulePage() {
           </div>
         )}
 
-        {remaining.length > 0 && !showAll && (
-          <button
-            type="button"
-            onClick={() => setShowAll(true)}
-            className="sf-press"
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-              width: '100%', minHeight: 44, marginTop: 16, borderRadius: 10,
-              border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)',
-              color: 'var(--sf-text-secondary)', fontSize: 14, fontWeight: 500,
-            }}
-          >
-            See full schedule ({remaining.length} more)
-            <ChevronDown size={16} strokeWidth={1.75} />
-          </button>
-        )}
+        {!showAll && <ScheduleShowMoreButton remaining={remaining.length} onClick={() => setShowAll(true)} />}
 
         {showAll && remaining.length > 0 && (
           <div style={{ marginTop: 16 }}>
