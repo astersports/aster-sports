@@ -41,6 +41,25 @@ Direct. Witty. Emotionally intelligent. Never corporate. Key tonal patterns:
 
 ## PART 2: VISUAL SYSTEM
 
+### Brand marks
+
+Legacy Hoopers uses two logo marks that should be treated as a
+matched pair — per-org Skyfire branding must recognize both:
+
+- **Knight crest** — shield/helmet mascot mark. In-repo asset:
+  `knight logo 2048.png` (to be renamed `knight-logo-2048.png` and
+  moved under a structured per-org branding path when multi-tenant
+  asset organization lands).
+- **Legacy Hoopers wordmark** — the text-based logo used on the
+  marketing site header, records page, and official documents.
+
+**Correction note:** the `knight logo 2048.png` commit (`44e4741`)
+flagged the asset as "assumed St. Patrick's — VERIFY." That assumption
+was wrong. The knight crest is a Legacy Hoopers mark. St. Patrick's
+CYO is a future program (onboarded after Legacy Hoopers) with its own
+brand marks to be documented separately when that program enters
+scope.
+
 ### Color palette (AUTHORITATIVE from records-v14_2.html)
 
 ```
