@@ -5,12 +5,12 @@ import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
-import { Plus } from 'lucide-react';
 import FilterBar from '../components/schedule/FilterBar';
 import NextUpCard from '../components/schedule/NextUpCard';
 import DateGroupedList from '../components/schedule/DateGroupedList';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import ScheduleShowMoreButton from '../components/schedule/ScheduleShowMoreButton';
+import ScheduleFab from '../components/schedule/ScheduleFab';
 import TextEmptyState from '../components/shared/TextEmptyState';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
@@ -102,7 +102,12 @@ export default function SchedulePage() {
           </div>
         )}
 
-        {!showAll && <ScheduleShowMoreButton remaining={remaining.length} onClick={() => setShowAll(true)} />}
+        {!showAll && (
+          <ScheduleShowMoreButton
+            remaining={remaining.length}
+            onClick={() => setShowAll(true)}
+          />
+        )}
 
         {showAll && remaining.length > 0 && (
           <div style={{ marginTop: 16 }}>
@@ -114,24 +119,7 @@ export default function SchedulePage() {
         )}
       </div>
 
-      {/* FAB — outside content div, no transform ancestor */}
-      <button
-        type="button"
-        onClick={() => setShowWizard(true)}
-        className="sf-press sf-bounce-tap"
-        aria-label="Create event"
-        style={{
-          position: 'fixed',
-          bottom: 'calc(80px + env(safe-area-inset-bottom, 0px) + 8px)',
-          right: 16, width: 56, height: 56, borderRadius: 28,
-          backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)',
-          border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 100,
-        }}
-      >
-        <Plus size={24} strokeWidth={2} />
-      </button>
+      <ScheduleFab onClick={() => setShowWizard(true)} />
 
       {showWizard && (
         <Suspense fallback={null}>
