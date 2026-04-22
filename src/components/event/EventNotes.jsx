@@ -1,4 +1,7 @@
+import { useAuth } from '../../context/AuthContext';
+
 export default function EventNotes({ notes, coachNotes }) {
+  const { role } = useAuth();
   return (
     <div style={{ padding: '0 16px' }}>
       {notes && (
@@ -7,7 +10,7 @@ export default function EventNotes({ notes, coachNotes }) {
           {notes}
         </div>
       )}
-      {coachNotes && (
+      {coachNotes && role !== 'parent' && (
         <div style={{ fontSize: 14, color: 'var(--sf-text-secondary)' }}>
           <div style={{ fontWeight: 500, color: 'var(--sf-warning)', marginBottom: 4, fontSize: 13 }}>Coach notes (not visible to parents)</div>
           {coachNotes}

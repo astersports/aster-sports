@@ -37,6 +37,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
 
   const teamColor = event.teams?.team_color || event.team_color || 'var(--sf-text-tertiary)';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
+  const isTitleRedundant = (event.title || '').trim().toLowerCase() === (typeLabel || '').trim().toLowerCase();
   const secondsUntil = (new Date(event.start_at).getTime() - now) / 1000;
   const imminent = secondsUntil > 0 && secondsUntil < 7200;
 
@@ -56,7 +57,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
         <div style={{ flex: 1, padding: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
             <span style={{ fontSize: 13, color: 'var(--sf-text-secondary)' }}>
-              {typeLabel}
+              {!isTitleRedundant && typeLabel}
               {event.parent_event_id && (
                 <Repeat size={11} strokeWidth={1.75} color="var(--sf-text-tertiary)" style={{ marginLeft: 4 }} />
               )}

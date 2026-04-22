@@ -19,6 +19,7 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
   const isPast = event.end_at ? new Date(event.end_at) < new Date() : false;
   const dimmed = isCancelled || isPast;
   const rawTitle = event.title || typeLabel;
+  const isTitleRedundant = (event.title || '').trim().toLowerCase() === (typeLabel || '').trim().toLowerCase();
   const alreadyPrefixed = rawTitle.startsWith('vs.') || rawTitle.startsWith('vs ') || rawTitle.startsWith('@ ') || rawTitle.startsWith('@');
   const titlePrefix = !alreadyPrefixed && (event.event_type === 'game' || event.event_type === 'tournament') && event.opponent
     ? (event.home_away === 'away' ? '@ ' : 'vs. ')
@@ -47,9 +48,11 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
           <span className="font-bold" style={{ fontSize: 17, color: 'var(--sf-text-primary)' }}>
             {formatTime(event.start_time || '00:00')}
           </span>
-          <span style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginLeft: 6 }}>
-            · {typeLabel}
-          </span>
+          {!isTitleRedundant && (
+            <span style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginLeft: 6 }}>
+              {' · '}{typeLabel}
+            </span>
+          )}
           {event.is_scrimmage && (
             <span style={{ fontSize: 11, color: 'var(--sf-text-tertiary)', marginLeft: 4 }}>
               Scrimmage
