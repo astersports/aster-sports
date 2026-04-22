@@ -5,6 +5,7 @@ import { TYPE_LABELS } from '../../lib/constants';
 import { useAuth } from '../../context/AuthContext';
 import { useNow } from '../../hooks/useNow';
 import ChildRsvp from './ChildRsvp';
+import RsvpCountRow from './RsvpCountRow';
 
 export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger }) {
   const navigate = useNavigate();
@@ -107,17 +108,9 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
           </div>
         )}
         {/* Row 4: RSVP counts */}
-        {rsvpCount && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 4, color: 'var(--sf-text-tertiary)' }}>
-            <span style={{ color: 'var(--sf-success)' }}>{rsvpCount.going || 0}</span>
-            <span>going</span>
-            <span>·</span>
-            <span style={{ color: 'var(--sf-danger)' }}>{rsvpCount.not_going || 0}</span>
-            <span>out</span>
-            <span>·</span>
-            <span>{rsvpCount.noResponse || 0} no reply</span>
-          </div>
-        )}
+        <div style={{ marginTop: 4 }}>
+          <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
+        </div>
         {/* Row 5: Ride counts */}
         {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4 }}>

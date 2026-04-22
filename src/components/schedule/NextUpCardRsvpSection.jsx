@@ -1,4 +1,5 @@
 import { useEventRsvpNotes } from '../../hooks/useEventRsvpNotes';
+import RsvpCountRow from './RsvpCountRow';
 
 // RSVP counts + per-player notes on NextUpCard. Kept as its own
 // component so NextUpCard stays under the 150-line ceiling as RSVP
@@ -22,12 +23,7 @@ export default function NextUpCardRsvpSection({ eventId, rsvpCount }) {
   const extra = Math.max(0, notes.length - 3);
   return (
     <>
-      <div style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--sf-text-secondary)' }}>
-        <span><strong style={{ color: 'var(--sf-success)' }}>{rsvpCount.going}</strong> going</span>
-        <span><strong style={{ color: 'var(--sf-warning)' }}>{rsvpCount.maybe}</strong> maybe</span>
-        <span><strong style={{ color: 'var(--sf-danger)' }}>{rsvpCount.not_going}</strong> not going</span>
-        <span><strong style={{ color: 'var(--sf-neutral)' }}>{rsvpCount.noResponse}</strong> no response</span>
-      </div>
+      <RsvpCountRow rsvpCount={rsvpCount} compact={false} />
       {notes.length > 0 && (
         <div style={{ marginTop: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--sf-text-tertiary)', marginBottom: 4 }}>
