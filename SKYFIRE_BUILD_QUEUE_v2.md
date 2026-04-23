@@ -80,9 +80,11 @@ If these rules aren't followed, the drift problem returns and the next chat miss
   - **Schema shipped:** hybrid structured (summary, source_url, game_format, overtime, timeouts, fouls, defense, mercy, roster) + division_overrides per-grade + misc_notes freeform. Value validation deferred to app layer via TypeScript + Zod in tournamentRules.ts (Phase 1+).
   - **Reference sources reviewed:** CYO Westchester/Putnam Spring League Rules 2025, Zero Gravity Basketball rules page
   - **Next step:** Seed rules JSONB on existing Nationals + CYO tournaments via UPDATE statements (queued separately)
-- 📋 **Migration 016** — user_preferences NEW TABLE
-  - Density toggle, theme, notification preferences per user
-  - card_density JSONB with per-card overrides
+- ✅ **Migration 016** — user_preferences NEW TABLE + RLS + auto-create trigger + user_roles.organization_id NOT NULL
+  - **Shipped:** April 23, 2026 (commit 211f38a on main)
+  - **Evidence:** supabase/migrations/016_user_preferences.sql, rollback at supabase/rollbacks/016_user_preferences_REVERT.sql, supabase migration list shows Local+Remote sync for 016. All 7 verification queries passed: 11 columns with correct types/defaults, user_roles.organization_id NOT NULL, 5 CHECK constraints (theme_enum + card_density_valid + 3 is_object), 3 indexes (composite PK + GIN on notification_preferences + btree on org_id), 2 triggers (updated_at + auto-create), 4 RLS policies (select_own, insert_own, update_own, delete_blocked), 4 backfilled rows (all existing user_roles).
+  - **Scope delivered:** Per-user-per-org preferences with hybrid structured + JSONB schema. Hot-path columns (theme, timezone, locale) + narrow JSONB (card_density, notification_preferences, quiet_hours, role_preferences). Auto-create trigger on user_roles INSERT via SECURITY DEFINER function with search_path hardening. Service role bypasses RLS.
+  - **Design decisions locked:** Per-user-per-org (not just per-user). Admin has no read access to user prefs (privacy default; service role for support). DELETE blocked for everyone (preferences reset via UPDATE). Coach/admin role_preferences scoped under role-named keys.
 - 📋 **Migration 017** — organization_settings admin-configurable extensions
   - ADD COLUMNS: reminder_cadence, rsvp_deadlines, note_rules, nudge_rules, roster_rules, notification_channels (all JSONB)
   - Admin UI exposes all of these in Phase 3
