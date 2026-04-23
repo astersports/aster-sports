@@ -22,12 +22,16 @@ export default function EventDetailHeader({ event, team, isStaff, onEdit, onDele
                 <UserCheck size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
               </button>
             )}
-            <button type="button" onClick={onEdit} className="sf-press" aria-label="Edit event" style={iconBtn}>
-              <Pencil size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
-            </button>
-            <button type="button" onClick={onDelete} className="sf-press" aria-label="Delete event" style={iconBtn}>
-              <Trash2 size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
-            </button>
+            {isStaff && (
+              <>
+                <button type="button" onClick={onEdit} className="sf-press" aria-label="Edit event" style={iconBtn}>
+                  <Pencil size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
+                </button>
+                <button type="button" onClick={onDelete} className="sf-press" aria-label="Delete event" style={iconBtn}>
+                  <Trash2 size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
+                </button>
+              </>
+            )}
           </div>
         </div>
         <div style={{ padding: '0 12px', marginTop: 4 }}>
