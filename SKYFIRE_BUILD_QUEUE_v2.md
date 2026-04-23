@@ -1,0 +1,414 @@
+# SKYFIRE / EMBER — BUILD QUEUE v2
+## The Evidence-Based Replacement for the April 19 Version
+**Written:** April 23, 2026
+**Verified against filesystem:** April 23, 2026
+**Replaces:** SKYFIRE_BUILD_QUEUE.md dated April 19, 2026 (15+ shipped features were missing)
+
+---
+
+# HOW THIS DOCUMENT IS MAINTAINED
+
+**RULE:** This document is updated IMMEDIATELY when a feature ships — not at end of session, not in a handoff doc, not next week. Immediately.
+
+**RULE:** Every "SHIPPED" claim cites evidence source (filename, migration number, git commit hash, or verification screenshot).
+
+**RULE:** Never move a feature to "SHIPPED" based on memory. Verify via filesystem grep or database query first.
+
+If these rules aren't followed, the drift problem returns and the next chat misses work.
+
+---
+
+# STATUS KEY
+
+- ✅ **SHIPPED** — verified in production, evidence cited
+- 🚧 **IN PROGRESS** — being worked on currently
+- 📋 **DESIGNED** — architecture decided, not built
+- 🔜 **QUEUED** — next to work on
+- 📝 **BACKLOG** — known need, not urgent
+
+---
+
+# PHASE 0A: SECURITY LOCKDOWN ✅ COMPLETE (April 22-23, 2026)
+
+## Fixes shipped
+
+- ✅ **0A-1:** EventDetailHeader.jsx Edit/Delete buttons gated behind `{isStaff && ...}`
+  - **Evidence:** Component file lines 25-34 after edit, git commit "Phase 0A-1: gate Edit/Delete buttons behind isStaff (P0 security fix)"
+  - **Verified:** Parent no longer sees buttons, admin sees all three (Check-in + Edit + Delete)
+- ✅ **0A-2:** SchedulePage.jsx FAB (+) button gated behind `{isStaff(role) && ...}`
+  - **Evidence:** Imports `isStaff` from lib/permissions added, `role` destructured from useAuth, FAB wrapped
+  - **Verified:** Parent no longer sees FAB, admin sees and wizard opens correctly
+- ✅ **0A-3:** RosterSection.jsx CopyRosterButton gated behind `{isStaff(role) && ...}`
+  - **Evidence:** Imports added, role destructured, button wrapped on line 27
+  - **Verified:** Parent no longer sees Copy button, admin sees (though clipboard has known "Copy Failed" bug on HTTP)
+- ✅ **0A-4:** RsvpPlayerRow.jsx guard verified working (no edit needed)
+  - **Evidence:** Lines 17-22 correctly define `readOnly = role === 'parent' && !isMyChild`, lines 55-58 render status text when readOnly, lines 59-83 render RSVP buttons otherwise
+  - **Verified:** Parent sees RSVP buttons only for Milo and Charlie, read-only status text for all other players
+
+## Security posture change
+
+| Action | Before Phase 0A | After Phase 0A |
+|---|---|---|
+| Edit any event | ❌ Parent could (P0 hole) | ✅ Admin/coach only |
+| Delete any event | ❌ Parent could (P0 hole) | ✅ Admin/coach only |
+| Create new events | ❌ Parent could (P0 hole) | ✅ Admin/coach only |
+| Bulk-export guardian contacts | ❌ Parent could (P0 privacy hole) | ✅ Admin/coach only |
+| RSVP other families' kids | ✅ Already blocked | ✅ Confirmed blocked |
+
+---
+
+# PHASE 0B: DATA STABILITY 🔜 NEXT
+
+## Migrations to ship (8 additive + 1 destructive, 14 SQL files total queued)
+
+### Schema additions (non-destructive, safe to ship together)
+
+- ✅ **Migration 013** — coaching_assignments.rates JSONB column
+  - **Shipped:** April 23, 2026 (commit 9eb1f9c on main)
+  - **Evidence:** supabase/migrations/013_coaching_assignments_rates.sql, supabase migration list shows Local+Remote sync for 013, verification returned rates column, CHECK constraint, get_coach_rate_cents function, GIN index
+  - **Scope delivered:** rates JSONB + object-shape CHECK + helper function + GIN index. Value validation deferred to app layer.
+  - **Existing column pay_per_session_cents stays** as fallback default
+- 📋 **Migration 014** — game_results publishing workflow
+  - ADD COLUMNS: published_at, published_by, private_notes
+  - Enables draft→publish flow for Quick Score
+- 📋 **Migration 015** — tournaments.rules JSONB column
+  - Per-tournament rule overrides (game_format, fouls, free_throws, jump_ball, press, overtime, misc_notes)
+  - Distinct from org-level circuit_rules (which stay as defaults)
+- 📋 **Migration 016** — user_preferences NEW TABLE
+  - Density toggle, theme, notification preferences per user
+  - card_density JSONB with per-card overrides
+- 📋 **Migration 017** — organization_settings admin-configurable extensions
+  - ADD COLUMNS: reminder_cadence, rsvp_deadlines, note_rules, nudge_rules, roster_rules, notification_channels (all JSONB)
+  - Admin UI exposes all of these in Phase 3
+- 📋 **Migration 018** — team_achievements NEW TABLE
+  - Champions / Nationals Qualified / Finalists / Custom badges
+  - Links to tournaments and teams
+- 📋 **Migration 019** — event_notifications NEW TABLE
+  - Audit trail for "notify families on edit" pattern
+  - Tracks channels (push/email/SMS), recipient scope, delivery status
+- 📋 **Migration 020** — attendance trending VIEWS
+  - No schema change, just CREATE VIEW
+  - Computes player attendance rate from check_ins
+  - Computes trend (current rate vs 4 weeks prior) for ↑/↓ arrows
+
+### Data corrections (DESTRUCTIVE — defer Migration 021 until verification)
+
+- 📋 **Migration 021** — data corrections bundle
+  - UPDATE tournaments SET start_at/end_at (revert midnight-midnight to 08:00-20:00 Eastern)
+  - DELETE from locations WHERE name='Happy Gym' (test data)
+  - DELETE duplicate Apr 23 11U Girls practice (Frank to specify which row)
+  - UPDATE team_achievements (remove 8U Nationals, add Summer Hoops Jam Bergen County)
+  - UPDATE tournaments SET name (revert "2026 Zero Gravity Girls National Finals" to canonical)
+  - Document team color v14 palette (production state, no migration needed if colors already correct)
+
+## Workflow for each migration (Supabase SQL Editor pattern)
+
+1. SQL authored in chat, saved to `supabase/migrations/NNN_title.sql` locally
+2. Commit to git: `git add supabase/migrations/NNN_*.sql && git commit && git push origin v2`
+3. Paste SQL into Supabase SQL Editor
+4. Run migration, verify no errors
+5. Run `SELECT 1` or simple verification query
+6. Record in history: `npx supabase migration repair --status applied NNN`
+7. Merge to main: `git checkout main && git merge v2 && git push origin main && git checkout v2`
+
+Docker-based `db push` / `db pull` not viable on Frank's 4GB Chromebook.
+
+---
+
+# PHASE 0C: EMBER REBRAND 📋 DESIGNED
+
+Blocked on 013-020 shipping. Estimated: 1-2 sessions.
+
+## Scope
+
+- Find/replace `Skyfire` → `Ember` in all UI strings, package.json, README.md
+- CSS namespace rename: `--sf-*` → `--em-*` throughout codebase
+- File rename: `skyfire_phoenix.webp` retired, `phoenix_logo_2048.png` becomes canonical Ember logo
+- Possibly rename: `src/context/SkyfireContext` if exists (verify)
+- GitHub repo rename: `skyfire-app` → `ember-app` (redirects auto-maintained)
+- Vercel project rename
+- Seed `ember_platform` registry table (singleton, platform-level metadata)
+- Update organizations.branding JSONB:
+  ```jsonb
+  {
+    "primary_color": "#4a8fd4",
+    "org_name_display": "Legacy Hoopers",
+    "tagline": "Grow Your Game. Leave Your Legacy.",
+    "website": "https://legacyhoopers.org",
+    "logo_url": "/logos/knight-logo-2048.png"
+  }
+  ```
+- App header: displays `org.branding.org_name_display` primary + small "Powered by Ember" footer
+- Login screen: Ember branding loads first, org branding loads after sign-in
+- Document.title format: "{OrgName} · Ember"
+- Domain decision (Frank): ember.app vs emberhq.com vs getember.co
+- CLAUDE.md addendum: new governance rules for Ember platform work
+
+---
+
+# PHASE 1: PARENT 95% 📋 DESIGNED (6-7 sessions estimated)
+
+Blocked on 0B + 0C. Priority ordering:
+
+## Priority 1 — Honest rendering (replaces fake data)
+
+- 📋 **SeasonProgressBar component** — replaces fake "0-0" on MY TEAMS strip
+  - Shows "Week 5 of 12 · 37% complete" style progress
+  - Only renders record if game_results exist for that team this season
+- 📋 **TeamHeaderCard update** — show season progress % + real record when available
+- 📋 **SpringPulse card on ParentHomePage** — Season in Progress callout
+  - "5 teams · Nationals + Summer Hoops Jam locked in"
+  - "10U Black: Chase for the Chain Champions"
+  - "11U Girls: Nationals May 29-31 MA"
+  - "10U Black: Nationals Jun 5-7 MA"
+  - "8U Boys: Summer Hoops Jam NJ Jun 6-7"
+- 📋 **TournamentTracker 5-dot timeline** — shows weekend tournaments for the team
+- 📋 **AchievementCard** (Champions, Nationals Qualified, Finalists) on team detail
+
+## Priority 2 — Bug fixes (from 22-bug catalog)
+
+- 📋 Season dates timezone fix (formatDateFull — one-line fix, "Mar 22" shows instead of "Mar 23")
+- 📋 UpcomingEvents.jsx rewrite (drop UPCOMING_SEED hardcoded stub, real team_id query)
+- 📋 Comments display name fix (resolve email to guardian first_name)
+- 📋 Games filter includes tournaments
+- 📋 "May Reschedule" amber pill on draft events (schedule_status = 'draft')
+- 📋 NextUpCard urgency filter (<48h cutoff for "next up" semantics)
+
+## Priority 3 — Polish
+
+- 📋 **Density toggle system** — CompactCard already exists (46 lines), wire to user_preferences
+  - Minimal: 1-line row, 7-8 visible per screen
+  - Medium (default): Current EventCards
+  - Maximum: Full NextUpCard detail on every card
+  - Toggle control on FilterBar
+  - Preference saved per-card in user_preferences.card_density JSONB
+- 📋 Login screen redesign (cobalt #4a8fd4 CTA, gradient background inspired by legacyhoopers.org hero)
+- 📋 Remove underline on "Good morning, Frank" greeting
+- 📋 Recurring series edit: replace native confirm modal with FullScreenForm
+- 📋 RSVP optimistic update (fix for current "requires hard refresh" bug)
+
+## Priority 4 — Team messaging foundation
+
+- 📋 **Team-wide chat** — real implementation replacing dead MessageTeamFAB
+  - All guardians linked to players on roster + coaches assigned to team
+  - Supabase realtime channels per team
+  - 24-Hour Rule enforcement (parent→coach playing-time messages blocked within 24h of game)
+  - Inbox in Messages bottom nav tab
+  - Unread badges across surfaces
+
+---
+
+# PHASE 2: COACH 95% 📋 DESIGNED (5-6 sessions)
+
+## Quick Score Entry
+
+- 📋 Inside event detail, not bottom nav (Score tab hidden per Frank's decision)
+- 📋 For events where event_type IN ('game', 'tournament')
+- 📋 Full-screen modal with: Team+Opponent pre-filled, Our Score input, Their Score input, Player of the Game dropdown, Public notes, Private notes, Save Draft, Publish
+- 📋 Draft → Publish workflow (uses Migration 014 columns)
+- 📋 Parents see final score only when published
+
+## Rotation Planner
+
+- 📋 Pre-game: starting 5 + bench order + rotation strategy (equal_minutes/competitive/custom)
+- 📋 Coach + admin only view (never parent pre-game)
+- 📋 Shareable with assigned assistants (Kenny drafts, Darien adds notes)
+- 📋 Saves to game_results.starting_lineup JSONB
+
+## Live Substitution Tracker
+
+- 📋 In-game: tap player out, tap player in, auto-timestamps
+- 📋 Period markers (Q1/Q2/HT/Q3/Q4)
+- 📋 Saves to game_results.substitution_log JSONB
+
+## Minutes computation + season trends
+
+- 📋 Computed from substitution_log per player per game
+- 📋 Season trends (up/down/stable per player)
+- 📋 Parent-visible POST-game: own kid's minutes + period starts only
+
+## Player of the Game
+
+- 📋 Coach designates via scoring modal
+- 📋 Creates team_achievements row
+- 📋 Parents see POG badge + "8 pts, 3 ast, 2 stl" style summary on event detail
+
+## Roster Health dashboard
+
+- 📋 Coach-level view of attendance trending across team
+- 📋 Declining players flagged with drill-down
+- 📋 Auto-draft message: "Noticed Charlie missed 2 of last 3 practices. Everything ok?"
+
+## Call-Up flow
+
+- 📋 Coach triggered when Active Roster < 10 (urgent < 8)
+- 📋 Manual invite from Academy player list (no auto-ranking)
+- 📋 2-hour response window per invite (admin configurable)
+- 📋 Push notification to selected parents
+- 📋 Accept → slot filled; decline → coach invites next
+
+## Coach compensation (personal view)
+
+- 📋 Coach home shows current month accrual ("$850 pending · 17 sessions")
+- 📋 Breakdown by event type (Practices, Games, Tournaments, Bonuses)
+- 📋 Last paid history
+- 📋 Uses Migration 013 rates JSONB + check_ins for attendance-derived earnings
+
+---
+
+# PHASE 3: ADMIN 95% 📋 DESIGNED (8-10 sessions)
+
+## Content CMS
+
+- 📋 Academy Standards editor
+- 📋 Policy pages (24-Hour Rule, refund policy, playing time philosophy)
+- 📋 Announcements broadcast
+- 📋 Markdown-based with preview
+
+## Season/Tournament/Achievement CRUD
+
+- 📋 Full CRUD for seasons (already partial)
+- 📋 Tournament entry form with rules JSONB structured editor (Migration 015)
+- 📋 Achievement management (Champions, Nationals Qualified, Finalists)
+- 📋 Save as template for reuse
+
+## Briefing templates editor
+
+- 📋 5 types documented: Team Briefing (auto), VIP Family Guide (auto), Day Recap (blocked on Quick Score), Coach Consolidated (already via All Teams view), Program Card (stays manual/Canva)
+- 📋 Type 1 Team Wrapup auto-generates after games published
+
+## Admin settings panel (uses Migration 017 columns)
+
+- 📋 Reminder cadence configurator
+- 📋 RSVP deadlines by circuit
+- 📋 Note editing rules
+- 📋 Nudge rules
+- 📋 Roster minimums
+- 📋 Notification channel defaults + quiet hours
+
+## Hotel code distribution
+
+- 📋 Admin uploads hotel code to tournament
+- 📋 Review + "Distribute to Active Roster" manual trigger
+- 📋 Push + email to guardians of Active Roster on participating teams
+- 📋 Audit trail in event_notifications (Migration 019)
+
+## Monthly coach invoice generation
+
+- 📋 Auto-generates at month end from approved check_ins × rates
+- 📋 Admin reviews, marks paid via Zelle/Venmo, logs payment_method + payment_reference
+- 📋 Dispute flow for coach pushback
+- 📋 Year-end 1099 summary (threshold $600)
+
+## Admin compensation dashboard
+
+- 📋 All coaches at-a-glance
+- 📋 Pending / Approved / Paid / Disputed by month
+- 📋 Year-to-date totals per coach
+
+## Tournament rules editor
+
+- 📋 Structured form: game_format, fouls, free_throws, jump_ball, press, overtime, misc_notes
+- 📋 Save as template per circuit (AAU Zero Gravity, League Play, custom)
+- 📋 Rules display on parent tournament detail (medium density)
+
+---
+
+# PHASE 4: MULTI-TENANT HARDENING 📝 DEFERRED
+
+Not needed for Fall 2026 Legacy Hoopers pilot. Scheduled for 2027 before St. Pat's onboarding.
+
+- Feature flag gating per org (enabled_features JSONB)
+- Org-scoped branding (already architected, needs Phase 0C)
+- White-label subdomain support (already has custom_domain column)
+- Stress test at 25 teams (St. Pat's scale)
+
+---
+
+# PHASE 5: LAUNCH + NATIVE 📋 DESIGNED (3-4 sessions)
+
+- 📋 Capacitor wrapper for iOS + Android
+- 📋 Push notifications (APNs iOS, FCM Android)
+- 📋 Haptics plugin (Taptic Engine)
+- 📋 Native share sheet
+- 📋 Apple Developer account ($99/year)
+- 📋 Google Play ($25 one-time)
+- 📋 App Store submission (app icon 1024x1024, screenshots iPhone 15 Pro Max + iPhone 8 Plus, privacy policy)
+- 📋 Fall 2026 rollout — 11U Girls families first cohort
+
+---
+
+# PHASE 6-7: PLATFORM + BILLING 📝 BACKLOG (2027)
+
+- Super Admin role UI (Ember platform surfaces)
+- Stripe subscription (monthly base)
+- Stripe Connect (registration % layer)
+- Multi-org switcher UI
+- Ember marketing site
+- St. Pat's CYO onboarding
+- Registration builder (7 program types)
+- Financial dashboard
+
+---
+
+# KNOWN BUGS (22-bug catalog)
+
+## P0 Security — ALL CLOSED ✅
+
+See Phase 0A section above.
+
+## P1 Data Integrity — Addresses in Migration 021
+
+- 📋 Tournament times 00:00-23:59 must be 08:00-20:00 Eastern
+- 📋 Apr 23 duplicate 11U Girls practice (Frank to specify which row)
+- 📋 8U Boys currently marked Nationals Qualified (should be Summer Hoops Jam NJ)
+- 📋 Happy Gym test location (delete)
+- 📋 "Test notes" on Milo RSVP (delete)
+- 📋 Tournament title "2026 Zero Gravity Girls National Finals" (revert to "Girls Nationals if qualify")
+
+## P1 UI Bugs — Address in Phase 1
+
+- 📋 Season dates show Mar 22 instead of Mar 23 (formatDateFull timezone bug)
+- 📋 UpcomingEvents.jsx hardcoded UPCOMING_SEED data (rewrite with real team_id query)
+- 📋 Comments show author email instead of guardian first_name
+- 📋 Games filter excludes tournaments
+- 📋 Fake "0-0" records on MY TEAMS cards (replace with season progress %)
+- 📋 "Good morning, Frank" has underline styling
+
+## P2 UX Polish — Address in Phase 1
+
+- 📋 NextUpCard shows events >48h out (add <48h cutoff)
+- 📋 RSVP writes don't optimistically update UI (requires hard refresh)
+- 📋 Recurring series edit uses native confirm (should use FullScreenForm)
+- 📋 Login screen amber (#C9952E) instead of cobalt (#4a8fd4)
+
+## P3 Cosmetic — Address in Phase 2 or 0C
+
+- 📋 Copy Roster "Copy Failed" on HTTP dev (works on HTTPS production, clipboard API limitation)
+- 📋 MessageTeamFAB has dead TODO click handler
+
+---
+
+# VERIFIED SHIPPED (session C era + earlier)
+
+These features were missed in the April 19 build queue. Confirmed shipped via screenshot evidence (Coach_access_under_admin_email.pdf, Parent_access_under_fsamaritanogmail_com.pdf) and filesystem verification.
+
+- ✅ Kid filter chips on parent schedule + home (ChildFilterChips.jsx)
+- ✅ Season Window card with "Week 5 of 12 · 37% complete"
+- ✅ Locations CRUD with active/archived tabs + search
+- ✅ Per-guardian Invite buttons
+- ✅ Team color v14 palette in production database
+- ✅ MY TEAMS stats grid on team detail (Players/Roster/Academy counts)
+- ✅ Event-type filters (All/Game/Practice/Skills Lab/Tryout)
+- ✅ Relative time countdown ("in 8h 27m") on event cards
+- ✅ Admin Seasons CRUD with preset chips
+- ✅ Take Attendance (check-in overlay, admin/coach)
+- ✅ Tournament Briefing component exists (uses tournament_messages table)
+- ✅ Edge Function invite-parent deployed
+- ✅ Guardian notification preferences per person
+
+---
+
+# END OF BUILD QUEUE v2
+
+**Maintainer note:** When you ship a feature, update this document IMMEDIATELY. Add to the SHIPPED section above with evidence citation. Don't wait for session end.
