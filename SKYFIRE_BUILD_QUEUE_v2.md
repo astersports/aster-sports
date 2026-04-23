@@ -74,9 +74,12 @@ If these rules aren't followed, the drift problem returns and the next chat miss
   - **Scope delivered:** publish columns + partial index + RLS swap. Rollback saved at supabase/rollbacks/014_game_results_publishing_workflow_REVERT.sql.
   - **Security fix:** Closed silent hole where parents could read draft game_results once drafts existed. Now enforced at RLS layer, defense-in-depth vs frontend filters.
   - **Coach_highlight** reserved as parent-visible (existing column), private_notes is new coach-only field.
-- 📋 **Migration 015** — tournaments.rules JSONB column
-  - Per-tournament rule overrides (game_format, fouls, free_throws, jump_ball, press, overtime, misc_notes)
-  - Distinct from org-level circuit_rules (which stay as defaults)
+- ✅ **Migration 015** — tournaments.rules JSONB column
+  - **Shipped:** April 23, 2026 (commit df243cb on main)
+  - **Evidence:** supabase/migrations/015_tournaments_rules_extension.sql, supabase migration list shows Local+Remote sync for 015, verification returned rules column (jsonb NOT NULL default '{}'), tournaments_rules_is_object CHECK constraint (object-shape), idx_tournaments_rules_gin GIN index
+  - **Schema shipped:** hybrid structured (summary, source_url, game_format, overtime, timeouts, fouls, defense, mercy, roster) + division_overrides per-grade + misc_notes freeform. Value validation deferred to app layer via TypeScript + Zod in tournamentRules.ts (Phase 1+).
+  - **Reference sources reviewed:** CYO Westchester/Putnam Spring League Rules 2025, Zero Gravity Basketball rules page
+  - **Next step:** Seed rules JSONB on existing Nationals + CYO tournaments via UPDATE statements (queued separately)
 - 📋 **Migration 016** — user_preferences NEW TABLE
   - Density toggle, theme, notification preferences per user
   - card_density JSONB with per-card overrides
