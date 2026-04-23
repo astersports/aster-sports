@@ -12,10 +12,11 @@ import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import ScheduleShowMoreButton from '../components/schedule/ScheduleShowMoreButton';
 import ScheduleFab from '../components/schedule/ScheduleFab';
 import TextEmptyState from '../components/shared/TextEmptyState';
+import { isStaff } from '../lib/permissions';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
 export default function SchedulePage() {
-  const { orgId, myChildren } = useAuth();
+  const { orgId, myChildren, role } = useAuth();
   const { activities, loading, refetch } = useActivities(orgId);
   const rsvpCounts = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
@@ -119,7 +120,7 @@ export default function SchedulePage() {
         )}
       </div>
 
-      <ScheduleFab onClick={() => setShowWizard(true)} />
+      {isStaff(role) && <ScheduleFab onClick={() => setShowWizard(true)} />}
 
       {showWizard && (
         <Suspense fallback={null}>
