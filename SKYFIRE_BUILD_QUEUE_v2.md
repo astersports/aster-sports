@@ -68,9 +68,12 @@ If these rules aren't followed, the drift problem returns and the next chat miss
   - **Evidence:** supabase/migrations/013_coaching_assignments_rates.sql, supabase migration list shows Local+Remote sync for 013, verification returned rates column, CHECK constraint, get_coach_rate_cents function, GIN index
   - **Scope delivered:** rates JSONB + object-shape CHECK + helper function + GIN index. Value validation deferred to app layer.
   - **Existing column pay_per_session_cents stays** as fallback default
-- 📋 **Migration 014** — game_results publishing workflow
-  - ADD COLUMNS: published_at, published_by, private_notes
-  - Enables draft→publish flow for Quick Score
+- ✅ **Migration 014** — game_results publishing workflow + RLS parent/staff split
+  - **Shipped:** April 23, 2026 (commit e563b65 on main)
+  - **Evidence:** supabase/migrations/014_game_results_publishing_workflow.sql, supabase migration list shows Local+Remote sync for 014, verification returned 3 new columns (published_at timestamptz, published_by uuid FK auth.users, private_notes text), idx_game_results_published_at partial index, 3 policies replaced old 2 (game_results_select_parent restricts to published_at IS NOT NULL + guardian chain, game_results_select_staff sees all in org, game_results_write_staff admin/coach only)
+  - **Scope delivered:** publish columns + partial index + RLS swap. Rollback saved at supabase/rollbacks/014_game_results_publishing_workflow_REVERT.sql.
+  - **Security fix:** Closed silent hole where parents could read draft game_results once drafts existed. Now enforced at RLS layer, defense-in-depth vs frontend filters.
+  - **Coach_highlight** reserved as parent-visible (existing column), private_notes is new coach-only field.
 - 📋 **Migration 015** — tournaments.rules JSONB column
   - Per-tournament rule overrides (game_format, fouls, free_throws, jump_ball, press, overtime, misc_notes)
   - Distinct from org-level circuit_rules (which stay as defaults)
