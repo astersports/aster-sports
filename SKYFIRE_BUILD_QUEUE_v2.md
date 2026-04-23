@@ -95,17 +95,27 @@ If these rules aren't followed, the drift problem returns and the next chat miss
   - **Evidence:** supabase/migrations/018_team_achievements.sql, rollback at supabase/rollbacks/018_team_achievements_REVERT.sql, supabase migration list shows Local+Remote sync for 018. All 7 verification queries passed: 22 columns with correct types, 4 CHECK constraints (type_enum with 6 types, custom_title_required, rank_range 1-100, confirmed_pair), 5 custom indexes + PK (team_id+earned_at DESC, tournament_id, season_id, org_season_type, pending_queue partial index), updated_at trigger, 4 RLS policies (parent SELECT confirmed-only, staff SELECT all, coach INSERT pending-only, admin full), 6 FK constraints (4 public + 2 to auth.users confirmed via pg_constraint), table empty.
   - **Scope delivered:** 6 achievement types (champions, nationals_qualified, finalists, semifinalists, undefeated_season, custom). Context fields for shareable moments (rank, opponent_team_name, event_location). Visual customization (badge_emoji, badge_color, photo_url). Pending/confirmation workflow (is_pending_confirmation + confirmed_at + confirmed_by). Audit (created_at, created_by, updated_at). Soft-delete (archived_at). Dual season+tournament linkage (both nullable FKs).
   - **L99 design decisions locked:** Coaches INSERT only with is_pending_confirmation=true (RLS-enforced). Admin pending-review queue has dedicated partial index. Photos are the primary emotional artifact (photo_url field). No uniqueness constraint (teams can earn same type multiple times). Player-level awards deferred to separate player_awards table (Phase 2+).
-- 📋 **Migration 019** — event_notifications NEW TABLE
-  - Audit trail for "notify families on edit" pattern
-  - Tracks channels (push/email/SMS), recipient scope, delivery status
-- 📋 **Migration 020** — attendance trending VIEWS
+- ✅ **Migration 019** — event_notifications (renamed from notifications_queue) + 7 columns + 6 indexes + backward-compat VIEW
+  - **Shipped:** April 23, 2026 (commit fa85b42 on main)
+  - **Scope change from plan:** Pre-verification revealed notifications_queue already existed (Migration 005). Correct path was rename + add columns, not new table. notifications_queue VIEW preserved for backward-compat until frontend refs update (TODO: migrate src/ references, then drop view in future migration).
+  - **Evidence:** supabase/migrations/019_event_notifications_audit_trail.sql, rollback at supabase/rollbacks/019_event_notifications_audit_trail_REVERT.sql, supabase migration list shows Local+Remote sync for 019. Verification confirmed: table renamed to event_notifications (BASE TABLE), notifications_queue is now VIEW, 7 new columns (channels, delivered_at, failed_at, failure_reason, read_at, triggered_by_user_id, change_summary) with correct types/defaults, 6 new indexes, backward-compat view returns 0 rows (empty table).
+  - **Scope delivered:** channels JSONB array + delivery tracking (delivered_at, failed_at + failure_reason paired via CHECK, read_at) + audit (triggered_by_user_id FK to auth.users) + edit-change diff (change_summary JSONB). Hot-path indexes on recipient, status+time, triggered_by, event, org+status, GIN on channels.
+  - **Followed immediately by Migration 020** to reconcile enum conflicts with Migration 005 legacy constraints.
+- 📋 **Migration 019 cleanup (future)** — drop notifications_queue VIEW once frontend references migrate to event_notifications
+  - TODO: grep src/ for notifications_queue, migrate to event_notifications, then ship cleanup migration
+- ✅ **Migration 020** — event_notifications enum reconciliation (renumbered from planned attendance VIEWS migration)
+  - **Shipped:** April 23, 2026 (commit d16c6c3 on main)
+  - **Why this exists:** Migration 019's rename of notifications_queue to event_notifications left the 3 Migration-005-era CHECK constraints (notifications_queue_status_check, _notification_type_check, _recipient_type_check) attached to the renamed table with legacy enum sets that conflict with the new status lifecycle and Phase 2 categories. Migration 020 drops all 4 legacy+intermediate constraints and creates 3 correctly-named, correctly-scoped replacements.
+  - **Evidence:** supabase/migrations/020_event_notifications_enum_reconciliation.sql, supabase migration list shows Local+Remote sync for 020. Verification confirmed: 6 CHECK constraints all named event_notifications_* (change_summary_is_object, channels_is_array, failure_pair, notification_type_enum with 13 types, recipient_type_enum with 5 types, status_enum with 7 lifecycle states). Zero legacy notifications_queue_* constraints remain.
+  - **Final enums:** status {queued, sending, sent, delivered, failed, read, cancelled}. notification_type {schedule_change, rsvp_reminder, volunteer_opportunity, ride_request, briefing, score_published, announcement, chat_mention, reminder_24h, reminder_gameday, cancellation, rsvp_nudge, custom}. recipient_type {team, player, guardian, user, org}.
+- 📋 **Migration 021** — attendance trending VIEWS (renumbered from original 020)
   - No schema change, just CREATE VIEW
   - Computes player attendance rate from check_ins
   - Computes trend (current rate vs 4 weeks prior) for ↑/↓ arrows
 
-### Data corrections (DESTRUCTIVE — defer Migration 021 until verification)
+### Data corrections (DESTRUCTIVE — defer Migration 022 until verification)
 
-- 📋 **Migration 021** — data corrections bundle
+- 📋 **Migration 022** — data corrections bundle (renumbered from original 021)
   - UPDATE tournaments SET start_at/end_at (revert midnight-midnight to 08:00-20:00 Eastern)
   - DELETE from locations WHERE name='Happy Gym' (test data)
   - DELETE duplicate Apr 23 11U Girls practice (Frank to specify which row)
@@ -369,7 +379,7 @@ Not needed for Fall 2026 Legacy Hoopers pilot. Scheduled for 2027 before St. Pat
 
 See Phase 0A section above.
 
-## P1 Data Integrity — Addresses in Migration 021
+## P1 Data Integrity — Addresses in Migration 022
 
 - 📋 Tournament times 00:00-23:59 must be 08:00-20:00 Eastern
 - 📋 Apr 23 duplicate 11U Girls practice (Frank to specify which row)
