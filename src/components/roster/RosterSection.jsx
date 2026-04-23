@@ -2,12 +2,15 @@ import RosterControls from './RosterControls';
 import CopyRosterButton from './CopyRosterButton';
 import PlayerRow from './PlayerRow';
 import UpcomingEvents from './UpcomingEvents';
+import { useAuth } from '../../context/AuthContext';
+import { isStaff } from '../../lib/permissions';
 
 // Populated-roster view for TeamDetailPage: controls (search + sort),
 // ROSTER section header with copy button, the player list itself, and
 // the trailing UpcomingEvents block. Pure presentational — all state
 // (search, sortBy) lives in the parent.
 export default function RosterSection({ team, sortedPlayers, search, setSearch, sortBy, setSortBy }) {
+  const { role } = useAuth();
   return (
     <>
       <RosterControls
@@ -21,7 +24,7 @@ export default function RosterSection({ team, sortedPlayers, search, setSearch, 
           fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
           textTransform: 'uppercase', color: 'var(--sf-text-tertiary)',
         }}>ROSTER</div>
-        <CopyRosterButton team={team} sortedPlayers={sortedPlayers} />
+        {isStaff(role) && <CopyRosterButton team={team} sortedPlayers={sortedPlayers} />}
       </div>
       <div style={{
         backgroundColor: 'var(--sf-bg-card)',
