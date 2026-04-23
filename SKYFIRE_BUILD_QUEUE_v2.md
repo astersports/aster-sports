@@ -85,9 +85,11 @@ If these rules aren't followed, the drift problem returns and the next chat miss
   - **Evidence:** supabase/migrations/016_user_preferences.sql, rollback at supabase/rollbacks/016_user_preferences_REVERT.sql, supabase migration list shows Local+Remote sync for 016. All 7 verification queries passed: 11 columns with correct types/defaults, user_roles.organization_id NOT NULL, 5 CHECK constraints (theme_enum + card_density_valid + 3 is_object), 3 indexes (composite PK + GIN on notification_preferences + btree on org_id), 2 triggers (updated_at + auto-create), 4 RLS policies (select_own, insert_own, update_own, delete_blocked), 4 backfilled rows (all existing user_roles).
   - **Scope delivered:** Per-user-per-org preferences with hybrid structured + JSONB schema. Hot-path columns (theme, timezone, locale) + narrow JSONB (card_density, notification_preferences, quiet_hours, role_preferences). Auto-create trigger on user_roles INSERT via SECURITY DEFINER function with search_path hardening. Service role bypasses RLS.
   - **Design decisions locked:** Per-user-per-org (not just per-user). Admin has no read access to user prefs (privacy default; service role for support). DELETE blocked for everyone (preferences reset via UPDATE). Coach/admin role_preferences scoped under role-named keys.
-- 📋 **Migration 017** — organization_settings admin-configurable extensions
-  - ADD COLUMNS: reminder_cadence, rsvp_deadlines, note_rules, nudge_rules, roster_rules, notification_channels (all JSONB)
-  - Admin UI exposes all of these in Phase 3
+- ✅ **Migration 017** — organization_settings admin-configurable extensions (6 JSONB columns)
+  - **Shipped:** April 23, 2026 (commit 92551d4 on main)
+  - **Evidence:** supabase/migrations/017_organization_settings_admin_configurable.sql, supabase migration list shows Local+Remote sync for 017. All 3 verification queries passed: 6 columns with correct jsonb NOT NULL types and production defaults, 6 CHECK constraints (object-shape), Legacy Hoopers row has all 6 columns populated.
+  - **Scope delivered:** reminder_cadence (4-72-168hr cadences per event type), rsvp_deadlines (2hr practice to 168hr tournament), note_rules (4hr cooldown + admin override + role visibility), nudge_rules (2hr call-up window + serial invites + 24hr RSVP nag), roster_rules (8/10/15 min/target/max + 3-practice Academy eligibility), notification_channels (per-category push/email/sms defaults + emergency bypass).
+  - **Design decisions locked:** Tournament reminders at 7 days out (168hr). Practice RSVPs close 2hr before (allows last-minute). Call-up invites are serial (1 at a time). Emergency notifications bypass quiet hours. User preferences override org defaults at read time.
 - 📋 **Migration 018** — team_achievements NEW TABLE
   - Champions / Nationals Qualified / Finalists / Custom badges
   - Links to tournaments and teams
