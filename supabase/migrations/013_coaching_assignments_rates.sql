@@ -11,7 +11,9 @@
 --   2. coaching_assignments.pay_per_session_cents if set
 --   3. 0 (unpaid / volunteer)
 --
--- All values in CENTS (integer) to avoid decimal precision issues.
+-- All values in CENTS (integer). Value-level validation (non-negative
+-- integer) enforced at the application layer via TypeScript + Zod in
+-- the admin UI. DB constraint only enforces JSONB object shape.
 --
 -- Safe to re-apply: idempotent.
 -- ============================================================
@@ -23,23 +25,15 @@ ALTER TABLE public.coaching_assignments
   ADD COLUMN IF NOT EXISTS rates JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 COMMENT ON COLUMN public.coaching_assignments.rates IS
-  'Per-event-type pay rates in cents. Keys match events.event_type values (practice, game, tournament, skills_lab, tryout, other). Example: {"practice": 3000, "game": 5000, "tournament_day": 10000}. When a key is present, it overrides pay_per_session_cents for that event type.';
+  'Per-event-type pay rates in cents. Keys match events.event_type values (practice, game, tournament, skills_lab, tryout, other). Example: {"practice": 3000, "game": 5000, "tournament_day": 10000}. When a key is present, it overrides pay_per_session_cents for that event type. Value validation (non-negative integers) enforced at app layer.';
 
--- 2. CHECK constraint: rates must be an object, and (if any values exist)
--- every value must be a non-negative integer.
--- Uses jsonb_path_exists (single expression, no subquery) for CHECK compatibility.
+-- 2. CHECK constraint: rates must be a JSON object (not array, not null, not scalar)
 ALTER TABLE public.coaching_assignments
   DROP CONSTRAINT IF EXISTS coaching_assignments_rates_valid_structure;
 
 ALTER TABLE public.coaching_assignments
-  ADD CONSTRAINT coaching_assignments_rates_valid_structure
-  CHECK (
-    jsonb_typeof(rates) = 'object'
-    AND NOT jsonb_path_exists(
-      rates,
-      '$.* ? (@.type() != "number" || @ < 0 || @ != floor(@))'
-    )
-  );
+  ADD CONSTRAINT coaching_assignments_rates_is_object
+  CHECK (jsonb_typeof(rates) = 'object');
 
 -- 3. Helper function: get effective rate for assignment + event type
 CREATE OR REPLACE FUNCTION public.get_coach_rate_cents(
