@@ -1,0 +1,21 @@
+-- ============================================================
+-- MIGRATION 025: Rides redesign — offers + claims + waitlist
+-- Date: 2026-04-24
+-- Status: APPLIED VIA IN-CHAT EXECUTION
+-- Spec: RIDES_DESIGN_SPEC.md v1.0 (exact compliance)
+--
+-- WHAT MIGRATION 025 DID:
+--   1. DROP legacy event_rides (0 rows in production)
+--   2. ADD events.ride_coordination_enabled boolean DEFAULT true
+--   3. CREATE event_ride_offers (driver_user_id, seats_offered, ride_type round_trip/arrival_only/return_only,
+--      pickup + return location/time, vehicle_description, driver_phone, status active/cancelled)
+--   4. CREATE event_ride_claims (rider_user_id, for_child_id, seats_requested, status pending/confirmed/declined/
+--      cancelled/waitlisted, waitlist_position, cancelled_by rider/driver/system/admin)
+--   5. SECURITY DEFINER claim_ride_offer() — atomic claim with capacity + waitlist overflow
+--   6. SECURITY DEFINER cancel_ride_claim() — cancel + auto-promote waitlisted
+--   7. Granular RLS (8 policies, SELECT/INSERT/UPDATE/DELETE per table)
+--   8. Auto-confirm pg_cron deferred to Migration 028+
+--
+-- ROLLBACK: supabase/rollbacks/025_rides_redesign_REVERT.sql
+-- ============================================================
+SELECT 1 WHERE false;
