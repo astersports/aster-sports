@@ -180,7 +180,15 @@ Deferred per specs: carpool chat, running-late, geography matching, trust signal
 
 ## 🎯 REMAINING PHASE 0B / 0C MIGRATIONS
 
-- 📋 **Migration 022** — 5 P0 RLS holes + roster_members left_at (~200 lines)
+- ✅ **Migration 022** — RLS privacy lockdown + roster_members left_at (SHIPPED 2026-04-24)
+  - **File:** supabase/migrations/022_rls_privacy_lockdown_plus_roster_left_at.sql (149 lines)
+  - **Rollback:** supabase/rollbacks/022_rls_privacy_lockdown_plus_roster_left_at_REVERT.sql (63 lines)
+  - **Commits:** f52f9a5 (v1, recursion bug) -> 44de53f (v2, SECURITY DEFINER helpers fix)
+  - **Closed 5 P0 holes:** guardians, players, player_guardians, roster_members, tournament_pool_teams
+  - **23 policies, 4 SECURITY DEFINER helper functions** (user_has_role_in_org, current_user_guardian_id, current_user_player_ids, current_user_staff_team_ids)
+  - **Added:** roster_members.left_at column, dates_coherent CHECK, 3 indexes, roster_members_public VIEW
+  - **Live verified:** Frank's parent account sees 1 own guardian, 2 own players, 2 own rosters via RLS
+  - **Lesson learned:** L99 anti-pattern Part 9 confirmed: never inline subquery user_roles in RLS policies. Always use SECURITY DEFINER helpers. Initial v1 caused infinite recursion that broke parent app, fixed in v2 within same session
 - 📋 **Migration 023** — Attendance trending views on roster_members (CREATE VIEW only)
 - 📋 **Migration 024** — Data corrections bundle (DESTRUCTIVE)
 - 📋 **Migration 025** — Rides schema redesign (see RIDES_DESIGN_SPEC.md)
