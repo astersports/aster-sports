@@ -212,7 +212,44 @@ Deferred per specs: carpool chat, running-late, geography matching, trust signal
     - Rich denormalized data (compute once)
   - **Production validation:** All 5 teams visible. Both Frank's children visible. Math correct. Real attendance % near 0 because check-in feature not yet rolled out to parents (RSVPs are manual test inputs only)
   - **Future Phase 2:** materialize views with scheduled REFRESH; add admin-configurable excused absence logic; tournament weekend rollup view
-- 📋 **Migration 024** — Data corrections bundle (DESTRUCTIVE)
+- ✅ **Migration 024** — Spring 2026 schedule rebuild + location FK + opponents cleanup (SHIPPED 2026-04-24)
+  - **Files:** supabase/migrations/024_schedule_rebuild.sql (stub) + supabase/rollbacks/024_schedule_rebuild_REVERT.sql (full executable revert)
+  - **Commit:** 428e1b4
+  - **Method:** Executed in 4 chunks (A/B/C/D) with per-chunk verification per L99 standard
+  - **Schema additions:**
+    - location_rooms table (11 rooms: Wades Gym, Trustees Gym, McConnell, Fenstermacher, Court 1/2s for Leffell + East Coast + Maria Regina, Sarah Lawrence Campbell, House of Sports Court 2)
+    - events.location_id FK -> locations(id) ON DELETE SET NULL
+    - events.location_room_id FK -> location_rooms(id) ON DELETE SET NULL
+    - events.publish_status text NOT NULL DEFAULT 'published' CHECK in ('draft','published')
+    - events.arrival_time time
+    - locations.latitude decimal(9,6), longitude decimal(9,6), google_maps_url, parking_notes, entry_instructions
+  - **Data corrections:**
+    - 15 location naming updates (St. Patricks->St. Patrick's, Harvey->The Harvey, Hackley->The Hackley, WCC drop suffix, etc.)
+    - All location addresses upgraded to full city/state/zip
+    - lat/lng populated on 3 home practice venues (Rippowam, WCC, St. Patrick's)
+    - Google Maps URLs on 10 venues from gym-locations-v4.html
+    - DELETE Happy Gym (id 52c376bd) - test location, no event references
+    - DELETE Westchester County Center (id 039de263) - test venue
+    - DELETE Test Opponent + Armonk Moms - test opponents
+    - INSERT OLPH 5A opponent for 11U Girls Apr 10 scrimmage
+    - seasons.end_date Jun 15 -> Jun 14 (Hoop Festival finale)
+  - **Destructive wipe (test data confirmed):**
+    - DELETE all 145 Spring 2026 events
+    - Cascades destroyed: 54 RSVPs, 26 rides, 112 duties (12 claimed), 5 checkins, 2 comments
+  - **Schedule reseed (140 events from canonical CSV + Skills Lab generation):**
+    - 53 Tue/Wed practices (8U/9U/10U Blue Tuesday, 10U Black/11U Girls Wednesday)
+    - 34 tournament events: Chase for the Chain (13), NY Metro Showdown (12), Rumble for the Ring CT (3), Girls Nationals MA (1), Boys Nationals MA (1), Pre-Summer Hoops Jam Bergen NJ (1), Hoop Festival (3)
+    - 16 league games (all opponent_id populated, all "Active Roster Only")
+    - 1 scrimmage (11U Girls vs OLPH 5A Apr 10 at OLPH/St Catharine-Pelham)
+    - 36 Skills Labs (12 Mondays Mar 23-Jun 8 x 3 teams: 11U Girls, 10U Black, 10U Blue, 7:35-8:35 PM St. Patrick's)
+  - **All 140 events:** publish_status='draft' for admin publish workflow
+  - **Production verification:**
+    - events: 89 practice + 34 tournament + 17 game = 140 ✓
+    - Per team: 11U Girls 33, 10U Black 34, 10U Blue 31, 9U Boys 19, 8U Boys 23
+    - 140/140 location_id linked, 56 sub-room linked, 17/17 games with opponent_id
+    - 7 distinct tournament_name groups with proper Zero Gravity titles
+  - **Production team IDs verified (memory was wrong, corrected):**
+    - 11U Girls: 507d7a4e | 10U Black: 6abb0447 | 10U Blue: 13abc98d | 9U Boys: 0366db32 | 8U Boys: e6dde2e0
 - 📋 **Migration 025** — Rides schema redesign (see RIDES_DESIGN_SPEC.md)
 
 
