@@ -6,6 +6,68 @@
 
 ---
 
+
+## 🐛 Open Bugs & 95% UX Audit — Logged April 23, 2026
+
+### P0 Bugs (data accuracy on Next Up card)
+
+- 🐛 **BUG-001** — Admin home "Next Up" card data is stale/broken
+  - **Observed:** Admin home at 4:19 PM Apr 23. Card shows "Practice · 10U Black" with no date/time/location, just a dash.
+  - **Expected:** Full date, time, location like the parent view shows.
+  - **Evidence:** Screenshot IMG_9880.png Apr 23 2026.
+  - **Hypothesis:** Frontend rendering bug in AdminHomePage.jsx NextEventCard, null-handling issue, OR stale row from duplicate 11U Girls practice (Migration 022 deletes). Validate after 022 ships.
+  - **Fix phase:** Phase 1 after Migration 022.
+
+- 🐛 **BUG-002** — Parent card shows "2/2 volunteers filled" when state is 1 claimed + 1 open
+  - **Observed:** Card reads "✓ 2/2 volunteers filled". Detail shows 1 Open + 1 claimed by fsamaritano@gmail.com. True count is 1/2.
+  - **Severity:** P0. Misleads parents into thinking coverage is complete.
+  - **Evidence:** Screenshots IMG_9882.png (card) + IMG_9881.png (detail).
+  - **Hypothesis:** useEventDutyCounts.js counts incorrectly. Inspect aggregation.
+  - **Fix phase:** Phase 1. File: src/hooks/useEventDutyCounts.js.
+
+- 🐛 **BUG-003** — Parent card ride summary undercounts
+  - **Observed:** Card reads "1 seat offered · 1 ride needed". Detail shows Frank offering 1 seat AND Frank needing ride for 2.
+  - **Severity:** P0. Card should show 2 rides needed.
+  - **Evidence:** IMG_9882.png + IMG_9881.png.
+  - **Hypothesis:** useEventRideCounts.js uses COUNT(*) instead of SUM(seats_requested) for riders.
+  - **Fix phase:** Phase 1. File: src/hooks/useEventRideCounts.js.
+
+- 🐛 **BUG-004** — Same user can offer AND request ride for same event
+  - **Observed:** Frank Samaritano appears in both Drivers Offering Rides and Riders Needing a Ride on same event.
+  - **Severity:** P1. Data quality + UX confusion.
+  - **Fix phase:** Phase 1. Add DB CHECK or frontend guard in RideFormOverlay.jsx.
+
+### P1 UX Gaps on Next Up card (parent)
+
+- 📐 **UX-001** — Add inline actionability CTAs (Claim volunteer, Offer/Request ride) when state incomplete
+- 📐 **UX-002** — Countdown visibility scales with urgency (<1hr red, 1-2hr orange, 2-6hr green)
+- 📐 **UX-003** — Player name prefix for multi-child parents ("Charlie · 11U Girls · Practice")
+- 📐 **UX-004** — Reorder: RSVP Notes above RSVP counts (notes more actionable)
+- 📐 **UX-005** — Calendar icon on card top-right (1-tap add from home)
+- 📐 **UX-006** — Collapse Arrive-Early + Notes into single "Pre-event info" section
+
+### P1 UX Gaps on Next Up card (coach)
+
+- 📐 **UX-007** — Staff RSVP row (Coach Kenny · Going, Coach Darien · No RSVP)
+- 📐 **UX-008** — RSVP response indicator ("10 of 12 RSVP'd") not just breakdown of responses
+- 📐 **UX-009** — "Start Check-In" CTA in 60min pre-event window
+- 📐 **UX-010** — Practice plan / run-of-show link on card
+
+### P1 UX Gaps on Next Up card (admin)
+
+- 📐 **UX-011** — Admin card needs full redesign: multi-event dashboard, not single-event focus
+- 📐 **UX-012** — Operational alerts strip ("1 practice needs snack volunteer, 1 event location unconfirmed")
+- 📐 **UX-013** — Pending achievement confirmation queue indicator (post Migration 018 UI)
+- 📐 **UX-014** — Recent notification audit trail indicator (post Migration 019 UI)
+
+### Validation needed
+
+- ❓ **VAL-001** — RSVP count accuracy on Apr 23 11U Girls practice card (6+4+3=13 vs ~10-12 roster). Check for test data bleed or call-ups.
+
+---
+
+
+
 # HOW THIS DOCUMENT IS MAINTAINED
 
 **RULE:** This document is updated IMMEDIATELY when a feature ships — not at end of session, not in a handoff doc, not next week. Immediately.
