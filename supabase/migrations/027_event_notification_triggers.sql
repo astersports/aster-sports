@@ -1,0 +1,29 @@
+-- ============================================================
+-- MIGRATION 027: Event notification triggers
+-- Date: 2026-04-24
+-- Status: APPLIED VIA IN-CHAT EXECUTION
+--
+-- Populates event_notifications when events change.
+-- Powers EMERGENCY ALERT banner per HOME_DESIGN_SPEC 1.1.1.
+--
+-- WHAT MIGRATION 027 DID:
+--   1. Fixed latent bug: event_notifications.status default 'pending' -> 'queued'
+--      (CHECK enum disallowed 'pending'; would have failed every insert)
+--   2. Created 6 SECURITY DEFINER functions:
+--      - notify_team_of_event_change (helper)
+--      - trg_event_inserted, trg_event_cancelled, trg_event_rescheduled,
+--        trg_event_relocated, trg_event_comment_posted
+--   3. Attached 5 triggers:
+--      - events INSERT (published only) -> schedule_change notification
+--      - events UPDATE status='cancelled' -> URGENT cancellation notification
+--      - events UPDATE start_at OR end_at -> URGENT reschedule notification
+--      - events UPDATE location_id OR location_room_id -> URGENT relocation notification
+--      - event_comments INSERT (coach/admin author) -> chat_mention notification
+--
+--   All triggers honor publish_status: draft events do NOT notify.
+--   Recipients = team (per-user fan-out at dispatch time, Migration 046+).
+--   Channels: ["push", "in_app"] for urgent, ["in_app"] for normal.
+--
+-- ROLLBACK: supabase/rollbacks/027_event_notification_triggers_REVERT.sql
+-- ============================================================
+SELECT 1 WHERE false;
