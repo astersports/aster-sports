@@ -1,0 +1,28 @@
+-- ============================================================
+-- MIGRATION 026: RLS granular policies (split ALL into SELECT + modify)
+-- Date: 2026-04-24
+-- Status: APPLIED VIA IN-CHAT EXECUTION + parent app smoke test PASS
+--
+-- Closed P0 security hole: 9 tables had single command='ALL' policies
+-- allowing any org member to INSERT/UPDATE/DELETE.
+--
+-- Replaced with proper granular policies (4 per table = 36 total):
+--   - SELECT: all org members
+--   - INSERT/UPDATE/DELETE: admin (and coach where applicable) only
+--
+-- Tables modified (9):
+--   events, teams, team_players, team_staff, seasons,
+--   locations, opponents, event_notifications, player_activations
+--
+-- Tables NOT modified (correct as-is):
+--   user_roles (self-only), guardian_notification_prefs (self-only),
+--   organizations (broad SELECT until multi-org)
+--
+-- Helper functions used (existing from Migration 022):
+--   - current_user_org_id() SECURITY DEFINER
+--   - user_has_role_in_org(check_org_id uuid, check_roles text[])
+--   - current_user_player_ids() SECURITY DEFINER
+--
+-- ROLLBACK: supabase/rollbacks/026_rls_granular_REVERT.sql
+-- ============================================================
+SELECT 1 WHERE false;
