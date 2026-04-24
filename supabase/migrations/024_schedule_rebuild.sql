@@ -1,0 +1,52 @@
+-- ============================================================
+-- MIGRATION 024: Spring 2026 schedule rebuild + location FK + opponents
+-- Date: 2026-04-24
+-- Status: APPLIED VIA IN-CHAT EXECUTION (4 chunks with per-chunk L99 verification)
+--
+-- This stub documents the migration. The full SQL (668 lines, 130KB) was executed
+-- directly in the Supabase SQL Editor in 4 chunks A/B/C/D with per-chunk verification.
+-- The canonical full migration is archived in chat history and in the audit trail
+-- at SKYFIRE_BUILD_QUEUE_v2.md.
+--
+-- WHAT MIGRATION 024 DID:
+--   1. Schema additions:
+--      - location_rooms table (11 rooms populated)
+--      - events.location_id FK + events.location_room_id FK
+--      - events.publish_status (draft/published workflow)
+--      - events.arrival_time
+--      - locations.latitude, longitude, parking_notes, entry_instructions, google_maps_url
+--   2. Location data cleanup:
+--      - Canonical names (St. Patricks->St. Patrick's, Harvey->The Harvey School, etc.)
+--      - Full addresses with city/state/zip
+--      - Lat/lng on 3 home practice venues
+--      - Google Maps URLs on 10 venues
+--   3. Test data deletion:
+--      - DELETE Happy Gym row
+--      - DELETE Westchester County Center row
+--   4. Opponents cleanup:
+--      - DELETE Test Opponent
+--      - DELETE Armonk Moms
+--      - INSERT OLPH 5A (for 11U Girls Apr 10 scrimmage)
+--   5. Destructive schedule wipe:
+--      - DELETE all 145 Spring 2026 events
+--      - Cascades destroyed 54 RSVPs, 26 rides, 112 duties, 5 checkins, 2 comments
+--      - All confirmed test data per L99 decisions
+--   6. Season end date correction:
+--      - seasons.end_date: Jun 15 -> Jun 14 (Hoop Festival finale)
+--   7. Schedule reseed from canonical CSV:
+--      - 53 Tue/Wed practices
+--      - 34 tournament events (Chase for the Chain, NY Metro Showdown, Rumble,
+--        Girls Nationals, Boys Nationals, Pre-Summer Hoops Jam, Hoop Festival)
+--      - 16 league games (all with opponent_id populated)
+--      - 1 scrimmage (11U Girls vs OLPH 5A Apr 10)
+--      - 36 Skills Labs (12 Mondays x 3 teams at 7:35-8:35 PM St. Patrick's)
+--   8. All 140 events inserted with publish_status='draft' for admin review
+--
+-- ROLLBACK: supabase/rollbacks/024_schedule_rebuild_REVERT.sql
+-- FULL SQL: Archived in chat session 2026-04-24
+-- ============================================================
+
+-- Migration was executed via in-chat verification. This file exists so that
+-- supabase migration repair can recognize it as applied.
+
+SELECT 1 WHERE false;  -- no-op
