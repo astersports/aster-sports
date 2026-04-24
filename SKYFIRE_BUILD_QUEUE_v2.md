@@ -189,7 +189,29 @@ Deferred per specs: carpool chat, running-late, geography matching, trust signal
   - **Added:** roster_members.left_at column, dates_coherent CHECK, 3 indexes, roster_members_public VIEW
   - **Live verified:** Frank's parent account sees 1 own guardian, 2 own players, 2 own rosters via RLS
   - **Lesson learned:** L99 anti-pattern Part 9 confirmed: never inline subquery user_roles in RLS policies. Always use SECURITY DEFINER helpers. Initial v1 caused infinite recursion that broke parent app, fixed in v2 within same session
-- 📋 **Migration 023** — Attendance trending views on roster_members (CREATE VIEW only)
+- ✅ **Migration 023** — events.season_id + 4 attendance/RSVP trending VIEWs (SHIPPED 2026-04-24)
+  - **File:** supabase/migrations/023_attendance_trending_views.sql (378 lines)
+  - **Rollback:** supabase/rollbacks/023_attendance_trending_views_REVERT.sql (22 lines)
+  - **Commit:** 2aa30cc
+  - **Schema add:** events.season_id UUID FK -> seasons(id) ON DELETE SET NULL
+  - **Backfill:** 145/145 events linked via date overlap (zero orphans)
+  - **Indexes:** idx_events_season_team, idx_events_team_start
+  - **4 VIEWs (all security_invoker=true so Migration 022 RLS cascades):**
+    - team_attendance_30d - team check-in % rolling 30d + prior 30d trend + per-event-type breakdown
+    - team_rsvp_30d - team RSVP rates rolling 30d + prior 30d trend
+    - player_attendance_season - per-player check-in % current active season
+    - player_rsvp_season - per-player RSVP rates current active season
+  - **Locked design decisions (Q1-Q10 per L99 audit):**
+    - Hybrid attendance: RSVP "not_going" excuses, no-shows count
+    - Always show denominator (confidence indicator)
+    - Trend baseline: last 30d vs prior 30d
+    - Per-event-type breakdown (practice/game/tournament)
+    - Date-windowed roster correctly via Migration 022 indexes
+    - Cancelled events excluded from denominator
+    - Plain VIEWs Phase 1, materialize in Phase 2 if needed
+    - Rich denormalized data (compute once)
+  - **Production validation:** All 5 teams visible. Both Frank's children visible. Math correct. Real attendance % near 0 because check-in feature not yet rolled out to parents (RSVPs are manual test inputs only)
+  - **Future Phase 2:** materialize views with scheduled REFRESH; add admin-configurable excused absence logic; tournament weekend rollup view
 - 📋 **Migration 024** — Data corrections bundle (DESTRUCTIVE)
 - 📋 **Migration 025** — Rides schema redesign (see RIDES_DESIGN_SPEC.md)
 
