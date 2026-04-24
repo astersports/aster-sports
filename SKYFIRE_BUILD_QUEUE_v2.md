@@ -64,6 +64,128 @@
 
 - ❓ **VAL-001** — RSVP count accuracy on Apr 23 11U Girls practice card (6+4+3=13 vs ~10-12 roster). Check for test data bleed or call-ups.
 
+### BUG-005 (added Apr 24)
+
+- 🐛 **BUG-005** — Parent can create duplicate ride offers on same event
+  - **Observed:** Click Offer Ride, submit, click again creates second independent row
+  - **Severity:** P1 — data quality + UX confusion
+  - **Root cause:** No UNIQUE constraint on event_rides, no frontend edit-mode guard
+  - **Fix:** Migration 025 adds constraint + RideFormOverlay checks existing offer state
+  - **Fix phase:** Phase 1 (see RIDES_DESIGN_SPEC.md Section 2.1)
+
+### P0 RLS Privacy Holes (added Apr 24)
+
+- 🔴 **HOLE-001** — `guardians` table: no RLS, 120 rows of PII exposed
+- 🔴 **HOLE-002** — `player_guardians` table: no RLS, relationships exposed
+- 🔴 **HOLE-003** — `players` table: no RLS, 63 child records exposed
+- 🔴 **HOLE-004** — `roster_members` table: no RLS, 63 rows + payment data exposed
+- 🟠 **HOLE-005** — `tournament_pool_teams` table: no RLS
+- **All 5 fixed in:** Migration 022 (queued, designed, not yet executed)
+
+---
+
+## 📘 DESIGN SPECIFICATIONS (Apr 24, 2026)
+
+Two comprehensive spec documents live alongside this build queue. BUILD_QUEUE is tactical sprint planning; specs are the source of truth for implementation.
+
+### HOME_DESIGN_SPEC.md (1199 lines)
+Complete design for all 3 role home pages:
+- Parent home: 13 sections (Emergency, Action Zone, Live Now, Next Up, My Teams, Recognition, Coach Message, This Week, Payment, Tournament Banner, FAB)
+- Coach home: 7 sections (Coaching Today, Team Pulse, Action Queue, Messaging, Upcoming Prep, Quick Actions, FAB)
+- Admin home: 9 sections (Attention Required, KPI Cards, Today's Program, Pending Queues, Program Health, Activity Feed, Quick Actions, FAB)
+- Density toggle specification (Minimal / Medium / Maximum per card)
+- 22+ parent scenarios covered
+- Dark mode + accessibility + analytics instrumented
+- Multi-org architecture baked in
+
+### RIDES_DESIGN_SPEC.md (311 lines)
+Complete design for ride coordination across all 3 roles:
+- Model C ride direction (round-trip default, one-way opt-in)
+- Separate arrival + return coverage metrics
+- Offers + claims as separate entities
+- 23 scenarios (SC-1 through SC-23) with explicit handling
+- Waitlist mechanic for overflow
+- Auto-confirm at T+12h of driver silence
+- Per-role UX (parent status-first, coach dashboard, admin audit)
+- Migration 025 scope + RLS design
+
+---
+
+## 🔜 PHASE 1 SPRINT PLAN (Apr 24, 2026)
+
+### Sprint A — Data correctness (prerequisite)
+Migrations 022-024 + BUG-001 through BUG-005 fixes
+
+- **Migration 022:** Close 5 P0 RLS holes + add left_at to roster_members
+- **Migration 023:** Attendance trending views on roster_members (per Migration 023 section in STATE_OF_AFFAIRS)
+- **Migration 024:** Data corrections bundle (destructive) — tournament times, duplicate practice, test data
+- **Bug fixes:** 001-005 per root cause analyses
+
+### Sprint B — Parent home Phase 1
+Reference: HOME_DESIGN_SPEC.md Section 1
+
+- MY TEAMS upgrade to dynamic data (per D2 decision)
+- ACTION ZONE implementation
+- Density toggle wiring (reads Migration 016 user_preferences.card_density)
+- Relative date language
+- Empty state design
+
+### Sprint C — Parent home Phase 2
+Reference: HOME_DESIGN_SPEC.md Section 1.1.3 onward
+
+- LIVE NOW card
+- RECOGNITION card (ties to Migration 018 team_achievements UI)
+- Tournament weekend banner
+- Emergency alert banner
+- Coach message block
+
+### Sprint D — Coach home
+Reference: HOME_DESIGN_SPEC.md Section 2
+
+- New CoachHomePage.jsx file
+- All coach-specific sections
+- Team Pulse wiring (blocked on Migration 023)
+
+### Sprint E — Admin home redesign
+Reference: HOME_DESIGN_SPEC.md Section 3
+
+- Complete AdminHomePage rewrite
+- Ops dashboard with KPI cards
+- Pending queues
+- Activity feed
+- Attention Required banner
+
+### Sprint F — Cross-role polish
+Reference: HOME_DESIGN_SPEC.md Section 4
+
+- Dark mode complete implementation (Q10)
+- Accessibility full audit (Q1 all)
+- Analytics instrumentation (Q9)
+- Performance optimization
+- Multi-org scaffolding (Q3)
+
+### Sprint G — Rides redesign
+Reference: RIDES_DESIGN_SPEC.md
+
+- Migration 025 schema redesign
+- Offer + claim UI for parents
+- Coach rides dashboard
+- Admin rides widget + audit
+- Waitlist + auto-confirm infrastructure
+
+### Sprint H — Advanced features (Phase 2)
+Deferred per specs: carpool chat, running-late, geography matching, trust signals, personalization, section reordering
+
+---
+
+## 🎯 REMAINING PHASE 0B / 0C MIGRATIONS
+
+- 📋 **Migration 022** — 5 P0 RLS holes + roster_members left_at (~200 lines)
+- 📋 **Migration 023** — Attendance trending views on roster_members (CREATE VIEW only)
+- 📋 **Migration 024** — Data corrections bundle (DESTRUCTIVE)
+- 📋 **Migration 025** — Rides schema redesign (see RIDES_DESIGN_SPEC.md)
+
+
 ---
 
 
