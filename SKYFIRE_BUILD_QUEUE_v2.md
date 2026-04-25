@@ -685,3 +685,56 @@ These features were missed in the April 19 build queue. Confirmed shipped via sc
 # END OF BUILD QUEUE v2
 
 **Maintainer note:** When you ship a feature, update this document IMMEDIATELY. Add to the SHIPPED section above with evidence citation. Don't wait for session end.
+
+
+---
+
+# SESSION LOG — April 24, 2026 (Phase 0B Final + Sprint A.1)
+
+## Migrations shipped this session
+
+- ✅ **Migration 024** — Spring 2026 schedule rebuild (commit 428e1b4): location_rooms table + location FK + publish_status + arrival_time + 140 events seeded from canonical CSV + 36 Skills Labs + opponents cleanup + season end_date corrected to Jun 14
+- ✅ **Migration 025** — Rides redesign per RIDES_DESIGN_SPEC.md v1.0 (commit eaade3a): event_ride_offers + event_ride_claims tables + claim_ride_offer + cancel_ride_claim SECURITY DEFINER helpers + 8 granular RLS policies. Auto-confirm pg_cron deferred to Migration 028+
+- ✅ **Migration 026** — RLS granular policies (commit da14103): split 9 ALL policies into 36 SELECT/INSERT/UPDATE/DELETE policies. Closed P0 security hole. Parent app smoke test PASS
+- ✅ **Migration 027** — Event notification triggers (commit bd9673e): 6 functions + 5 triggers populate event_notifications on event INSERT/cancel/reschedule/relocate + coach comment. Honors publish_status (drafts don't notify). Status default fixed pending → queued
+
+## Sprint A.1 bug fixes shipped this session
+
+- ✅ **Bug A1** (commit bcce0e3) — Removed accent underline below greeting (ParentHomePage + AdminGreeting)
+- ✅ **Bug A2** (commit 51d0452) — UpcomingEvents.jsx renders real activities filtered by team_id (next 7 days, max 5), drops UPCOMING_SEED stub. RosterSection passes teamId prop
+- ✅ **Bug A3** (commit b112619) — useComments.js authorName chain now: guardianFirstName -> user_metadata.full_name -> capitalized email local-part. No more raw email leaks in comment author display
+- ✅ **Bug A4** (commit 82c1943) — SchedulePage Game filter chip includes tournaments (event_type IN game, tournament). Tournament chip still drills down to tournament-only
+
+## Audit deliverables committed (commit d59ba23)
+
+- ✅ SKYFIRE_95_AUDIT.md (860 lines) — initial 46-gap audit
+- ✅ SKYFIRE_OPTION_A_AUDIT.md (905 lines) — full Option A audit, 118 gaps, 24 migrations, 12-month roadmap to Fall 2027 launch
+
+## Decisions locked this session
+
+- **D-roster1:** Parents see FULL team roster RSVP view by default on event detail. Each row shows player name + their RSVP status (Going / Not Going / Maybe / No Response). No privacy default.
+- **D-roster2:** Roster visibility privacy toggle DEFERRED to Sprint E admin work. Add organization_settings.roster_visibility_to_parents boolean (default true). Admin can flip off later.
+- **D-roster3:** RSVP-write-on-others-kids stays gated. Parents see WHO is going but can only set RSVPs for their own children (guardian_id check, enforced Phase 0A).
+- **D-season1:** seasons.end_date corrected Jun 15 -> Jun 14 (Hoop Festival Sunday is the season finale, no Skills Lab on Jun 15)
+- **D-027:** Skipped originally-planned Migration 027 (lat/lng backfill + event location FK). Most work collapsed into Migration 024. Migration 027 became event notification triggers (was 028 in audit). Renumbering propagates: original 028 -> 028+ stays.
+
+## Branch alignment
+
+End-of-session state: v2 + main + origin/v2 + origin/main all at commit 82c1943. Branches synchronized via reset --hard after early divergence.
+
+## What's next
+
+**Sprint A.2 (5 MATERIAL bugs):**
+- A5: Season dates Mar 22 vs 23 timezone (formatDateFull tweak)
+- A6: RSVP optimistic update (useRsvps hook update for current "requires hard refresh" bug)
+- A7: Recurring series edit native confirm -> custom FullScreenForm dialog
+- A8: Login button amber #C9952E -> cobalt #4a8fd4 (1 CSS variable change)
+- A9: Parent queries missing season_id filter (useActivities/useEventDetail update for season boundary safety)
+
+**Then Phase 0C Ember rebrand** per locked decisions:
+- D1=(b): Internal rebrand + org-aware header (logo reads from organizations.logo_url). Parents still see Knight + Legacy Hoopers, architecture supports future St. Pat's
+- D2=(a): Internal Skyfire -> Ember scope = everything (CSS vars --sf-* -> --em-*, file names, doc names, comments — clean break)
+- D3=(b): Repo name skyfire-app stays for now, rename closer to launch
+- Phoenix logo PNGs already committed at repo root (bcce0e3 stowaway commit)
+
+**Then Sprint B1+B2** parent home page redesign per HOME_DESIGN_SPEC.md
