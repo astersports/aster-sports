@@ -3,31 +3,9 @@ import { supabase } from '../lib/supabase';
 import { autoLinkGuardian } from '../lib/autoLinkGuardian';
 import { fetchParentContext } from '../lib/parentContext';
 import { setSentryUser, clearSentryUser } from '../lib/sentry';
+import { useOrgBranding } from '../hooks/useOrgBranding';
 
 const AuthContext = createContext(null);
-
-// Skyfire platform defaults. Any brand_colors key that is missing on an org
-// falls back to the value here so the UI never renders without a token.
-const SKYFIRE_DEFAULTS = {
-  header:       '#151525',
-  accent:       '#C9952E',
-  accent_hover: '#D4A843',
-  accent_soft:  'rgba(201, 149, 46, 0.1)',
-  text_on_dark: '#F5F0E8',
-};
-
-// Mirror brand_colors onto --sf-* CSS custom properties on <html>. Called on
-// login and whenever the auth listener fires — cheap, idempotent, and cleared
-// back to defaults on sign out.
-function applyBrandColors(brandColors) {
-  const c = brandColors || {};
-  const root = document.documentElement;
-  root.style.setProperty('--sf-header',        c.header        || SKYFIRE_DEFAULTS.header);
-  root.style.setProperty('--sf-accent',        c.accent        || SKYFIRE_DEFAULTS.accent);
-  root.style.setProperty('--sf-accent-hover',  c.accent_hover  || SKYFIRE_DEFAULTS.accent_hover);
-  root.style.setProperty('--sf-accent-soft',   c.accent_soft   || SKYFIRE_DEFAULTS.accent_soft);
-  root.style.setProperty('--sf-text-on-dark',  c.text_on_dark  || SKYFIRE_DEFAULTS.text_on_dark);
-}
 
 export function AuthProvider({ children }) {
   const [user, setUser]     = useState(null);
@@ -45,6 +23,10 @@ export function AuthProvider({ children }) {
     if (k !== teamIdsKeyRef.current) { teamIdsKeyRef.current = k; setMyTeamIdsRaw(ids || []); }
   }, []);
 
+  // Apply org brand colors to documentElement CSS variables.
+  // Hook handles cleanup on org change to null.
+  useOrgBranding(org);
+
   // Load role + org for a given auth user. Uses a ref-based token to drop
   // stale responses if auth state flips while a previous fetch is in flight.
   const loadMembership = useCallback(async (authUser) => {
@@ -52,7 +34,7 @@ export function AuthProvider({ children }) {
     setLoading(true);
     const { data, error } = await supabase
       .from('user_roles')
-      .select('role, organization_id, organizations(id, name, slug, logo_url, brand_colors)')
+      .select('role, organization_id, organizations(id, name, display_name, slug, logo_url, brand_colors, tagline, primary_domain)')
       .eq('user_id', authUser.id)
       .maybeSingle();
     if (id !== fetchIdRef.current) return;
@@ -70,7 +52,7 @@ export function AuthProvider({ children }) {
       resolvedRole = linked?.role ?? null;
       resolvedOrg = linked?.organization ?? null;
     }
-    setRole(resolvedRole); setOrg(resolvedOrg); applyBrandColors(resolvedOrg?.brand_colors);
+    setRole(resolvedRole); setOrg(resolvedOrg);
     setSentryUser(authUser, resolvedRole, resolvedOrg?.id);
 
     if (resolvedRole === 'parent') {
@@ -98,7 +80,7 @@ export function AuthProvider({ children }) {
         else {
           setRole(null); setOrg(null);
           setMyChildren([]); setMyTeamIds([]); setGuardianId(null); setGuardianFirstName(null);
-          applyBrandColors(null); clearSentryUser(); setLoading(false);
+          clearSentryUser(); setLoading(false);
         }
       }
     );
@@ -118,7 +100,6 @@ export function AuthProvider({ children }) {
     catch (err) { console.error('Sign out failed:', err); }
     setUser(null); setRole(null); setOrg(null);
     setMyChildren([]); setMyTeamIds([]); setGuardianId(null); setGuardianFirstName(null);
-    applyBrandColors(null);
   }, []);
 
   const value = useMemo(
