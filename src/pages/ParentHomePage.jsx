@@ -86,7 +86,6 @@ export default function ParentHomePage() {
       <section>
         <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 13 }}>{greetingFor()},</div>
         <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>{name}</h1>
-        <div style={{ width: 40, height: 3, borderRadius: 999, backgroundColor: 'var(--sf-accent)', marginTop: 8 }} />
       </section>
 
       <section>

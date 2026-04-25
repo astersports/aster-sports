@@ -32,13 +32,6 @@ export default function AdminGreeting({ user }) {
       <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>
         {firstNameFrom(user)}
       </h1>
-      <div style={{
-        width: 40,
-        height: 3,
-        borderRadius: 999,
-        backgroundColor: 'var(--sf-accent)',
-        marginTop: 8,
-      }} />
     </section>
   );
 }
