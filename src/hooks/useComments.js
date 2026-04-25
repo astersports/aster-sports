@@ -7,7 +7,7 @@ import { useToast } from '../context/ToastContext';
 // by pinned first, then created_at ascending (oldest first) so the
 // thread reads top-down like a chat.
 export function useComments(eventId) {
-  const { user } = useAuth();
+  const { user, guardianFirstName } = useAuth();
   const { showToast } = useToast();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +33,12 @@ export function useComments(eventId) {
   const post = async (body) => {
     const trimmed = body.trim();
     if (!trimmed) return false;
-    const authorName = user?.user_metadata?.full_name || user?.email || 'User';
+    const emailLocal = (user?.email || '').split('@')[0];
+    const fallbackName = emailLocal ? emailLocal.charAt(0).toUpperCase() + emailLocal.slice(1) : 'User';
+    const authorName = guardianFirstName
+      || user?.user_metadata?.full_name
+      || user?.user_metadata?.name
+      || fallbackName;
     const { error } = await supabase.from('event_comments').insert({
       event_id: eventId,
       body: trimmed,
