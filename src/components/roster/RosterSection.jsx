@@ -43,7 +43,7 @@ export default function RosterSection({ team, sortedPlayers, search, setSearch, 
           </div>
         ))}
       </div>
-      <UpcomingEvents />
+      <UpcomingEvents teamId={team.id} />
     </>
   );
 }
