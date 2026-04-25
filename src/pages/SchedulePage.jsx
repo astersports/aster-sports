@@ -48,7 +48,13 @@ export default function SchedulePage() {
     const kidTeamId = activeKidFilter && (myChildren || []).find((k) => k.playerId === activeKidFilter)?.teamId;
     if (kidTeamId) list = list.filter((a) => a.team_id === kidTeamId);
     if (selectedTeam) list = list.filter((a) => a.team_id === selectedTeam);
-    if (selectedType) list = list.filter((a) => a.event_type === selectedType);
+    if (selectedType) {
+      if (selectedType === 'game') {
+        list = list.filter((a) => a.event_type === 'game' || a.event_type === 'tournament');
+      } else {
+        list = list.filter((a) => a.event_type === selectedType);
+      }
+    }
     if (!showCancelled) list = list.filter((a) => a.status !== 'cancelled');
     return list.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
   }, [activities, selectedTeam, selectedType, showCancelled, activeKidFilter, myChildren]);
