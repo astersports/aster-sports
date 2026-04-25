@@ -738,3 +738,42 @@ End-of-session state: v2 + main + origin/v2 + origin/main all at commit 82c1943.
 - Phoenix logo PNGs already committed at repo root (bcce0e3 stowaway commit)
 
 **Then Sprint B1+B2** parent home page redesign per HOME_DESIGN_SPEC.md
+
+
+---
+
+# MIGRATION 028 SHIPPED — April 24/25 late session (Parent roster visibility)
+
+## What it does
+
+Adds 3rd SELECT policy on players table so parents see all players on teams where they have at least one child rostered. Cross-team isolation preserved (Frank does NOT see 9U Boys roster). Privacy line preserved (Frank sees other girls' names but NOT their guardians' contact info, guardians table policies untouched).
+
+## Helper added
+
+current_user_teammate_player_ids() SECURITY DEFINER returning uuid[]. Mirrors the existing current_user_child_team_ids() pattern. No recursion possible because the inner SELECT bypasses RLS via SECURITY DEFINER.
+
+## Verification (real auth context, not DB owner bypass)
+
+- Teams page as Frank: 11U Girls shows 13 Players, 8U Boys shows 14 Players, other 3 teams show 0 Players (privacy intact).
+- Event detail RSVPs as Frank on 11U Girls event: 13 rows visible. Charlie has Going/Maybe/Not Going buttons + Add Note. Other 12 girls show No response read-only.
+- Guardian contact info: only visible for Frank's own children (Charlie, Milo). Other families show No guardians linked. Privacy line holds.
+
+## L99 lessons applied this session
+
+1. RLS recursion is the #1 anti-pattern in production. Three policies in one session failed because USING clause did inner SELECT on related RLS-protected tables. Fix: always SECURITY DEFINER helpers.
+
+2. Postgrest nested joins evaluate RLS on every joined table. If parent table returns rows but joined table returns NULL due to RLS, Postgrest drops the parent rows. The roster_members policy alone was not enough because the chain useRoster -> roster_members -> players -> player_guardians -> guardians had a block at the players layer.
+
+3. DB owner queries bypass RLS entirely. Verifying as DB owner shows you what data exists, not what the user can see. Real verification requires impersonated auth context or browser smoke test.
+
+4. PWA service worker caching was a red herring. Earlier in session I diagnosed stale browser build as the cause. It was not. The actual cause was always RLS on the joined players table. Cache clearing wasted 20 minutes.
+
+## Files committed
+
+- supabase/migrations/028_parent_roster_visibility.sql
+- supabase/rollbacks/028_parent_roster_visibility_REVERT.sql
+- Migration history repaired via npx supabase migration repair --status applied 028
+
+## Status
+
+Migration 028 LOCKED + DEPLOYED + VERIFIED. Parent role now matches D-roster1 spec. Ready to start Sprint A.2 next session.
