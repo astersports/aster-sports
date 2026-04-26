@@ -35,7 +35,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
 
   const directionsUrl = useMapsUrl(event.location);
 
-  const teamColor = event.teams?.team_color || event.team_color || 'var(--sf-text-tertiary)';
+  const teamColor = event.teams?.team_color || event.team_color || 'var(--em-text-tertiary)';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
   const isTitleRedundant = (event.title || '').trim().toLowerCase() === (typeLabel || '').trim().toLowerCase();
   const secondsUntil = (new Date(event.start_at).getTime() - now) / 1000;
@@ -44,8 +44,8 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
   return (
     <div
       style={{
-        backgroundColor: 'var(--sf-bg-card)', borderRadius: 12,
-        border: '1px solid var(--sf-border-default)', overflow: 'hidden',
+        backgroundColor: 'var(--em-bg-card)', borderRadius: 12,
+        border: '1px solid var(--em-border-default)', overflow: 'hidden',
         marginBottom: 16,
       }}
     >
@@ -56,28 +56,28 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
         <div style={{ width: 4, backgroundColor: teamColor, flexShrink: 0 }} />
         <div style={{ flex: 1, padding: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-            <span style={{ fontSize: 13, color: 'var(--sf-text-secondary)' }}>
+            <span style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
               {!isTitleRedundant && typeLabel}
               {event.parent_event_id && (
-                <Repeat size={11} strokeWidth={1.75} color="var(--sf-text-tertiary)" style={{ marginLeft: 4 }} />
+                <Repeat size={11} strokeWidth={1.75} color="var(--em-text-tertiary)" style={{ marginLeft: 4 }} />
               )}
             </span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-accent)', display: 'inline-flex', alignItems: 'center', gap: 6 }} data-seconds-until={Math.round(secondsUntil)}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-accent)', display: 'inline-flex', alignItems: 'center', gap: 6 }} data-seconds-until={Math.round(secondsUntil)}>
               {imminent && (
                 <span className="sf-pulse-dot" aria-hidden="true" style={{
                   display: 'inline-block', width: 8, height: 8, borderRadius: 4,
-                  backgroundColor: 'var(--sf-success)', flexShrink: 0,
+                  backgroundColor: 'var(--em-success)', flexShrink: 0,
                 }} />
               )}
               {countdown}
             </span>
           </div>
           {(event.teams?.name || event.team_name) && (
-            <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginBottom: 4 }}>
+            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginBottom: 4 }}>
               {event.teams?.name || event.team_name}
             </div>
           )}
-          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--sf-text-primary)', marginBottom: 4 }}>
+          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', marginBottom: 4 }}>
             {event.title || typeLabel}
           </div>
           <WhenRow event={event} />
@@ -85,21 +85,21 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
             directionsUrl ? (
               <a href={directionsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
                 style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8, textDecoration: 'none' }}>
-                <MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
-                <span style={{ color: 'var(--sf-text-secondary)' }}>{event.location}</span>
-                <ExternalLink size={10} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+                <MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+                <span style={{ color: 'var(--em-text-secondary)' }}>{event.location}</span>
+                <ExternalLink size={10} strokeWidth={1.75} color="var(--em-text-tertiary)" />
               </a>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8 }}>
-                <MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
-                <span style={{ color: 'var(--sf-text-secondary)' }}>{event.location}</span>
+                <MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+                <span style={{ color: 'var(--em-text-secondary)' }}>{event.location}</span>
               </div>
             )
           )}
           {event.notes && (
             <div style={{
               fontSize: 12,
-              color: 'var(--sf-text-secondary)',
+              color: 'var(--em-text-secondary)',
               marginTop: 6,
               display: '-webkit-box',
               WebkitLineClamp: 3,
@@ -112,15 +112,15 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
           <GameInfo event={event} />
           <NextUpCardRsvpSection eventId={event.id} rsvpCount={rsvpCount} />
           {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--sf-text-secondary)', marginTop: 4 }}>
-              <Car size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--em-text-secondary)', marginTop: 4 }}>
+              <Car size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />
               {rideCount.offers > 0 && <span>{rideCount.offers} seat{rideCount.offers !== 1 ? 's' : ''} offered</span>}
-              {rideCount.offers > 0 && rideCount.requests > 0 && <span style={{ color: 'var(--sf-text-tertiary)' }}>·</span>}
-              {rideCount.requests > 0 && <span style={{ color: 'var(--sf-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>}
+              {rideCount.offers > 0 && rideCount.requests > 0 && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
+              {rideCount.requests > 0 && <span style={{ color: 'var(--em-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>}
             </div>
           )}
           {dutyCount && dutyCount.total > 0 && (
-            <div style={{ fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--sf-warning)' : 'var(--sf-success)' }}>
+            <div style={{ fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--em-warning)' : 'var(--em-success)' }}>
               {dutyCount.claimed}/{dutyCount.total} volunteers filled
             </div>
           )}
@@ -133,7 +133,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
       ) : (
         <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8 }}>
           <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/events/${event.id}?tab=rsvps`, { state: { event } }); }} className="sf-press"
-            style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'transparent', color: 'var(--sf-accent)', fontSize: 14, fontWeight: 500 }}>
+            style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'transparent', color: 'var(--em-accent)', fontSize: 14, fontWeight: 500 }}>
             Manage RSVPs
           </button>
         </div>

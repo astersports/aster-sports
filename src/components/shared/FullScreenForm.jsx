@@ -18,7 +18,7 @@ export default function FullScreenForm({ open, onClose, title, children }) {
         position: 'fixed',
         top: 0, left: 0, right: 0, bottom: 0,
         zIndex: 9999,
-        backgroundColor: 'var(--sf-bg-page)',
+        backgroundColor: 'var(--em-bg-page)',
         display: 'flex',
         flexDirection: 'column',
         overflowX: 'hidden',
@@ -34,15 +34,15 @@ export default function FullScreenForm({ open, onClose, title, children }) {
         paddingTop: 'env(safe-area-inset-top, 0px)',
         minHeight: 'calc(56px + env(safe-area-inset-top, 0px))',
         paddingLeft: 16, paddingRight: 16,
-        backgroundColor: 'var(--sf-bg-card)',
-        borderBottom: '1px solid var(--sf-border-default)',
+        backgroundColor: 'var(--em-bg-card)',
+        borderBottom: '1px solid var(--em-border-default)',
         flexShrink: 0,
       }}>
         <button type="button" onClick={onClose} className="sf-press" style={{
           minHeight: 44, padding: '0 8px', background: 'none', border: 'none',
-          color: 'var(--sf-accent)', fontSize: 15, fontWeight: 500,
+          color: 'var(--em-accent)', fontSize: 15, fontWeight: 500,
         }}>Cancel</button>
-        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--sf-text-primary)' }}>
+        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>
           {title}
         </span>
         <div style={{ width: 60 }} />

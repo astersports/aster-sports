@@ -6,7 +6,7 @@ export default function EmptyState({ icon: Icon, title, description, action }) {
   return (
     <div
       className="flex flex-col items-center justify-center text-center px-6 py-12"
-      style={{ color: 'var(--sf-text-secondary)' }}
+      style={{ color: 'var(--em-text-secondary)' }}
     >
       {Icon && (
         <div
@@ -15,8 +15,8 @@ export default function EmptyState({ icon: Icon, title, description, action }) {
             width: 56,
             height: 56,
             borderRadius: '50%',
-            backgroundColor: 'var(--sf-bg-secondary)',
-            color: 'var(--sf-text-tertiary)',
+            backgroundColor: 'var(--em-bg-secondary)',
+            color: 'var(--em-text-tertiary)',
           }}
         >
           <Icon size={24} strokeWidth={1.75} aria-hidden="true" />
@@ -25,7 +25,7 @@ export default function EmptyState({ icon: Icon, title, description, action }) {
       {title && (
         <div
           className="font-semibold"
-          style={{ color: 'var(--sf-text-primary)', fontSize: 16, marginBottom: 4 }}
+          style={{ color: 'var(--em-text-primary)', fontSize: 16, marginBottom: 4 }}
         >
           {title}
         </div>

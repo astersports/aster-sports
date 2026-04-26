@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/useToast';
 
 // Fetches event_comments for an event and exposes post(body). Sorted
 // by pinned first, then created_at ascending (oldest first) so the

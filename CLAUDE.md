@@ -11,9 +11,9 @@
 These rules override any instinct to "improve" or "interpret" the spec:
 
 1. **NEVER change a CSS token value** from what's defined in this file. The hex values are final. Do not warm them, cool them, soften them, darken them, or substitute "better" alternatives.
-2. **NEVER invent new tokens.** If a token isn't listed in section 3 below, it doesn't exist. Do not create `--sf-shadow-xl`, `--sf-border-strong`, `--sf-bg-muted`, `--sf-bg-subtle`, or any other token not explicitly listed.
-3. **NEVER rename tokens.** `--sf-bg-card-hover` stays `--sf-bg-card-hover`. Do not rename it to `--sf-bg-subtle` or anything else.
-4. **NEVER use hardcoded hex in components** except `team_color` inline from the database. Use `var(--sf-*)` for everything. `#FFFFFF` in JSX → `var(--sf-text-inverse)`.
+2. **NEVER invent new tokens.** If a token isn't listed in section 3 below, it doesn't exist. Do not create `--em-shadow-xl`, `--em-border-strong`, `--em-bg-muted`, `--em-bg-subtle`, or any other token not explicitly listed.
+3. **NEVER rename tokens.** `--em-bg-card-hover` stays `--em-bg-card-hover`. Do not rename it to `--em-bg-subtle` or anything else.
+4. **NEVER use hardcoded hex in components** except `team_color` inline from the database. Use `var(--em-*)` for everything. `#FFFFFF` in JSX → `var(--em-text-inverse)`.
 5. **NEVER use percentages or dvh for overlay heights on iOS.** Use `window.visualViewport.height` (JS) for any viewport-relative sizing. Or use full-screen fixed overlays (position: fixed; inset: 0).
 6. **NEVER use BottomSheet for forms with 3+ fields.** Use FullScreenForm. BottomSheet is only for RSVP confirmations, filter pickers, and 1-2 button dialogs.
 7. **If a design decision isn't in this file, ASK — don't improvise.**
@@ -78,58 +78,58 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
 ```css
 :root {
   /* ─── Platform surfaces + text (COOL GRAY — NOT warm/beige) ─── */
-  --sf-bg-page:        #F7F8FA;
-  --sf-bg-card:        #FFFFFF;
-  --sf-bg-card-hover:  #F9FAFB;
-  --sf-bg-secondary:   #F1F3F5;
-  --sf-bg-tertiary:    #E9ECEF;
-  --sf-text-primary:   #1A1D23;
-  --sf-text-secondary: #4A5568;
-  --sf-text-tertiary:  #8896AB;
-  --sf-text-inverse:   #FFFFFF;
-  --sf-border-default: #E2E8F0;
-  --sf-border-subtle:  #EDF2F7;
+  --em-bg-page:        #F7F8FA;
+  --em-bg-card:        #FFFFFF;
+  --em-bg-card-hover:  #F9FAFB;
+  --em-bg-secondary:   #F1F3F5;
+  --em-bg-tertiary:    #E9ECEF;
+  --em-text-primary:   #1A1D23;
+  --em-text-secondary: #4A5568;
+  --em-text-tertiary:  #8896AB;
+  --em-text-inverse:   #FFFFFF;
+  --em-border-default: #E2E8F0;
+  --em-border-subtle:  #EDF2F7;
 
   /* ─── Status (semantic) ─── */
-  --sf-success:        #16A34A;
-  --sf-success-soft:   #DCFCE7;
-  --sf-warning:        #D97706;
-  --sf-warning-soft:   #FEF3C7;
-  --sf-danger:         #DC2626;
-  --sf-danger-soft:    #FEE2E2;
-  --sf-info:           #3B82F6;
-  --sf-info-soft:      #EFF6FF;
-  --sf-neutral:        #9CA3AF;
-  --sf-neutral-soft:   #F3F4F6;
-  --sf-academy:        #7C3AED;
-  --sf-academy-soft:   rgba(124, 58, 237, 0.1);
+  --em-success:        #16A34A;
+  --em-success-soft:   #DCFCE7;
+  --em-warning:        #D97706;
+  --em-warning-soft:   #FEF3C7;
+  --em-danger:         #DC2626;
+  --em-danger-soft:    #FEE2E2;
+  --em-info:           #3B82F6;
+  --em-info-soft:      #EFF6FF;
+  --em-neutral:        #9CA3AF;
+  --em-neutral-soft:   #F3F4F6;
+  --em-academy:        #7C3AED;
+  --em-academy-soft:   rgba(124, 58, 237, 0.1);
 
   /* ─── Brand (Skyfire defaults — overridden per org at runtime) ─── */
-  --sf-header:         #151525;
-  --sf-accent:         #C9952E;
-  --sf-accent-hover:   #D4A843;
-  --sf-accent-soft:    rgba(201, 149, 46, 0.1);
-  --sf-text-on-dark:   #F5F0E8;
+  --em-header:         #151525;
+  --em-accent:         #C9952E;
+  --em-accent-hover:   #D4A843;
+  --em-accent-soft:    rgba(201, 149, 46, 0.1);
+  --em-text-on-dark:   #F5F0E8;
 
   /* ─── Decorative ─── */
-  --sf-flame-mid:      #E87520;
-  --sf-crimson:        #8B1A1A;
-  --sf-electric:       #4A9FFF;
+  --em-flame-mid:      #E87520;
+  --em-crimson:        #8B1A1A;
+  --em-electric:       #4A9FFF;
 
   /* ─── Shadows (exactly three — no fourth) ─── */
-  --sf-shadow-sm:  0 1px 2px rgba(0,0,0,0.04);
-  --sf-shadow-md:  0 2px 8px rgba(0,0,0,0.08);
-  --sf-shadow-lg:  0 8px 24px rgba(0,0,0,0.12);
+  --em-shadow-sm:  0 1px 2px rgba(0,0,0,0.04);
+  --em-shadow-md:  0 2px 8px rgba(0,0,0,0.08);
+  --em-shadow-lg:  0 8px 24px rgba(0,0,0,0.12);
 }
 ```
 
 ### Legacy Hoopers Org Overrides (applied at runtime via AuthContext)
 ```css
---sf-header:       #4a8fd4;
---sf-accent:       #4a8fd4;
---sf-accent-hover: #5BA0E0;
---sf-accent-soft:  rgba(74, 143, 212, 0.1);
---sf-text-on-dark: #FFFFFF;
+--em-header:       #4a8fd4;
+--em-accent:       #4a8fd4;
+--em-accent-hover: #5BA0E0;
+--em-accent-soft:  rgba(74, 143, 212, 0.1);
+--em-text-on-dark: #FFFFFF;
 ```
 
 ### Team Colors (inline style from DB — the ONLY acceptable inline hex)
@@ -218,8 +218,8 @@ Key rules:
 
 ### Component Standards
 - Tap targets: **44px minimum** (non-negotiable)
-- Inputs: 44px height, `var(--sf-bg-tertiary)` bg, 1.5px border, 10px radius, accent focus ring
-- Cards: `var(--sf-bg-card)`, `var(--sf-border-default)`, 10px radius, `var(--sf-shadow-sm)`
+- Inputs: 44px height, `var(--em-bg-tertiary)` bg, 1.5px border, 10px radius, accent focus ring
+- Cards: `var(--em-bg-card)`, `var(--em-border-default)`, 10px radius, `var(--em-shadow-sm)`
 - Buttons: primary (accent bg, inverse text) / secondary (accent border) / destructive (danger bg, inverse text) / ghost
 - Button press: `scale(0.97)` + `vibrate(50)`
 - Modals: `rgba(0,0,0,0.3)` backdrop — **never bg-black/50**

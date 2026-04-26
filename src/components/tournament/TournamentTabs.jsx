@@ -12,8 +12,8 @@ export default function TournamentTabs({ active, onChange }) {
       role="tablist"
       aria-label="Tournament sections"
       style={{
-        display: 'flex', overflowX: 'auto', borderBottom: '1px solid var(--sf-border-default)',
-        backgroundColor: 'var(--sf-bg-card)', paddingLeft: 8, scrollbarWidth: 'none',
+        display: 'flex', overflowX: 'auto', borderBottom: '1px solid var(--em-border-default)',
+        backgroundColor: 'var(--em-bg-card)', paddingLeft: 8, scrollbarWidth: 'none',
       }}
     >
       {TABS.map((t) => {
@@ -29,9 +29,9 @@ export default function TournamentTabs({ active, onChange }) {
             className="sf-press"
             style={{
               minHeight: 44, padding: '10px 16px', border: 'none',
-              borderBottom: `2px solid ${isActive ? 'var(--sf-accent)' : 'transparent'}`,
+              borderBottom: `2px solid ${isActive ? 'var(--em-accent)' : 'transparent'}`,
               backgroundColor: 'transparent',
-              color: isActive ? 'var(--sf-accent)' : 'var(--sf-text-secondary)',
+              color: isActive ? 'var(--em-accent)' : 'var(--em-text-secondary)',
               fontSize: 14, fontWeight: isActive ? 600 : 500,
               cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
             }}

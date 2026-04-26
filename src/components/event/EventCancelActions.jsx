@@ -23,8 +23,8 @@ export default function EventCancelActions({ event, onStatusChange }) {
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             width: '100%', minHeight: 44, borderRadius: 10,
-            border: '1px solid var(--sf-warning)', backgroundColor: 'transparent',
-            color: 'var(--sf-warning)', fontSize: 14, fontWeight: 500,
+            border: '1px solid var(--em-warning)', backgroundColor: 'transparent',
+            color: 'var(--em-warning)', fontSize: 14, fontWeight: 500,
           }}>
           <Ban size={16} strokeWidth={1.75} />
           Cancel Event
@@ -35,8 +35,8 @@ export default function EventCancelActions({ event, onStatusChange }) {
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             width: '100%', minHeight: 44, borderRadius: 10,
-            border: '1px solid var(--sf-accent)', backgroundColor: 'transparent',
-            color: 'var(--sf-accent)', fontSize: 14, fontWeight: 500,
+            border: '1px solid var(--em-accent)', backgroundColor: 'transparent',
+            color: 'var(--em-accent)', fontSize: 14, fontWeight: 500,
           }}>
           Reinstate Event
         </button>

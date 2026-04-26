@@ -4,7 +4,7 @@ import { Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import AddToCalendarButton from '../components/event/AddToCalendarButton';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/useToast';
 import { useEventDetail } from '../hooks/useEventDetail';
 import { useRsvps } from '../hooks/useRsvps';
 import EventDetailHeader from '../components/event/EventDetailHeader';
@@ -21,7 +21,7 @@ const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinO
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
 const SectionHeader = ({ children, sectionKey }) => (
-  <h2 data-section={sectionKey} style={{ fontSize: 16, fontWeight: 700, color: 'var(--sf-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>
+  <h2 data-section={sectionKey} style={{ fontSize: 16, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>
 );
 
 export default function EventDetailPage() {
@@ -52,11 +52,11 @@ export default function EventDetailPage() {
     }
   }, [searchParams, rsvpLoading, roster.length]);
 
-  if (eventLoading) return <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100dvh' }} />;
-  if (!event) return <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100dvh', padding: 24, color: 'var(--sf-text-tertiary)' }}>Event not found</div>;
+  if (eventLoading) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100dvh' }} />;
+  if (!event) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100dvh', padding: 24, color: 'var(--em-text-tertiary)' }}>Event not found</div>;
 
   const team = event.teams;
-  const teamColor = team?.team_color || 'var(--sf-text-tertiary)';
+  const teamColor = team?.team_color || 'var(--em-text-tertiary)';
   const isStaff = role === 'admin' || role === 'coach';
 
   const rsvpMap = {};
@@ -99,12 +99,12 @@ export default function EventDetailPage() {
   };
 
   return (
-    <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100vh' }}>
+    <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={doDelete} onCheckin={() => setShowCheckin(true)} />
       <TournamentBriefingBanner event={event} team={team} role={role} />
 
       {event.parent_event_id && (
-        <div style={{ padding: '6px 16px', fontSize: 12, color: 'var(--sf-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ padding: '6px 16px', fontSize: 12, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Repeat size={12} strokeWidth={1.75} />
           Part of a recurring series
           <button type="button" onClick={async () => {
@@ -112,7 +112,7 @@ export default function EventDetailPage() {
             await supabase.from('events').update({ parent_event_id: null }).eq('id', event.id);
             patchEvent({ parent_event_id: null });
             refetch();
-          }} style={{ fontSize: 12, color: 'var(--sf-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>
+          }} style={{ fontSize: 12, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>
             Remove from series
           </button>
         </div>

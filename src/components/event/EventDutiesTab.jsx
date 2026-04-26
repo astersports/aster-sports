@@ -21,12 +21,12 @@ export default function EventDutiesTab({ eventId }) {
     <div style={{ padding: '16px 16px 32px' }}>
       {Object.entries(groups).map(([name, slots]) => (
         <div key={name} style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-text-secondary)', marginBottom: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-secondary)', marginBottom: 8 }}>
             {name}
           </div>
           <div style={{
-            backgroundColor: 'var(--sf-bg-card)', borderRadius: 10,
-            border: '1px solid var(--sf-border-default)', overflow: 'hidden',
+            backgroundColor: 'var(--em-bg-card)', borderRadius: 10,
+            border: '1px solid var(--em-border-default)', overflow: 'hidden',
           }}>
             {slots.map((slot, i) => {
               const claimed = !!slot.guardian_id;
@@ -35,20 +35,20 @@ export default function EventDutiesTab({ eventId }) {
                 <div key={slot.id} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: '12px 14px',
-                  borderTop: i === 0 ? 'none' : '1px solid var(--sf-border-subtle)',
+                  borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)',
                 }}>
-                  <div style={{ fontSize: 14, color: claimed ? 'var(--sf-text-primary)' : 'var(--sf-text-tertiary)' }}>
+                  <div style={{ fontSize: 14, color: claimed ? 'var(--em-text-primary)' : 'var(--em-text-tertiary)' }}>
                     {claimed ? (slot.claimed_by_name || 'Claimed') : 'Open'}
                   </div>
                   {!claimed && (
                     <button type="button" onClick={() => claim(slot.id)} className="sf-press"
-                      style={btnStyle('var(--sf-accent)', 'var(--sf-text-inverse)')}>
+                      style={btnStyle('var(--em-accent)', 'var(--em-text-inverse)')}>
                       Claim
                     </button>
                   )}
                   {isMine && (
                     <button type="button" onClick={() => unclaim(slot.id)} className="sf-press"
-                      style={btnStyle('var(--sf-bg-card)', 'var(--sf-text-secondary)', true)}>
+                      style={btnStyle('var(--em-bg-card)', 'var(--em-text-secondary)', true)}>
                       Release
                     </button>
                   )}
@@ -63,12 +63,12 @@ export default function EventDutiesTab({ eventId }) {
 }
 
 function Empty({ text }) {
-  return <div style={{ padding: 16, color: 'var(--sf-text-tertiary)', fontSize: 14 }}>{text}</div>;
+  return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 14 }}>{text}</div>;
 }
 
 const btnStyle = (bg, color, bordered) => ({
   minHeight: 44, padding: '0 14px', borderRadius: 8,
   backgroundColor: bg, color,
-  border: bordered ? '1px solid var(--sf-border-default)' : 'none',
+  border: bordered ? '1px solid var(--em-border-default)' : 'none',
   fontSize: 13, fontWeight: 600,
 });

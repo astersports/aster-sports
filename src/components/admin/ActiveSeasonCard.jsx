@@ -24,13 +24,13 @@ export default function ActiveSeasonCard({ season }) {
       <div
         className="p-4"
         style={{
-          backgroundColor: 'var(--sf-bg-card)',
+          backgroundColor: 'var(--em-bg-card)',
           borderRadius: 10,
-          border: '1px solid var(--sf-border-default)',
-          boxShadow: 'var(--sf-shadow-sm)',
+          border: '1px solid var(--em-border-default)',
+          boxShadow: 'var(--em-shadow-sm)',
         }}
       >
-        <div style={{ color: 'var(--sf-text-secondary)', fontSize: 14, marginBottom: 8 }}>
+        <div style={{ color: 'var(--em-text-secondary)', fontSize: 14, marginBottom: 8 }}>
           No active season
         </div>
         <Link
@@ -38,7 +38,7 @@ export default function ActiveSeasonCard({ season }) {
           className="inline-flex items-center sf-press font-semibold"
           style={{
             minHeight: 44, padding: '0 16px', borderRadius: 10,
-            backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 14,
+            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14,
           }}
         >
           Create your first season
@@ -53,22 +53,22 @@ export default function ActiveSeasonCard({ season }) {
       to="/admin/seasons"
       className="block p-4 sf-press"
       style={{
-        backgroundColor: 'var(--sf-bg-card)',
+        backgroundColor: 'var(--em-bg-card)',
         borderRadius: 10,
-        border: '1px solid var(--sf-border-default)',
-        boxShadow: 'var(--sf-shadow-sm)',
+        border: '1px solid var(--em-border-default)',
+        boxShadow: 'var(--em-shadow-sm)',
         color: 'inherit',
       }}
     >
-      <div style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginBottom: 10 }}>
+      <div style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginBottom: 10 }}>
         {formatDateFull(season.start_date)} – {formatDateFull(season.end_date)}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 12 }}>
         <svg width="48" height="48" viewBox="0 0 48 48" style={{ flexShrink: 0, transform: 'rotate(-90deg)' }}>
-          <circle cx="24" cy="24" r="20" fill="none" stroke="var(--sf-bg-tertiary)" strokeWidth="3" />
+          <circle cx="24" cy="24" r="20" fill="none" stroke="var(--em-bg-tertiary)" strokeWidth="3" />
           <circle
             cx="24" cy="24" r="20" fill="none"
-            stroke="var(--sf-accent)"
+            stroke="var(--em-accent)"
             strokeWidth="3"
             strokeLinecap="round"
             strokeDasharray={`${2 * Math.PI * 20}`}
@@ -82,7 +82,7 @@ export default function ActiveSeasonCard({ season }) {
             style={{
               fontSize: 11,
               fontWeight: 700,
-              fill: 'var(--sf-text-primary)',
+              fill: 'var(--em-text-primary)',
               transform: 'rotate(90deg)',
               transformOrigin: '24px 24px',
             }}
@@ -91,10 +91,10 @@ export default function ActiveSeasonCard({ season }) {
           </text>
         </svg>
         <div>
-          <div className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 15 }}>
+          <div className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 15 }}>
             Week {weekIdx} of {totalWeeks}
           </div>
-          <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 13 }}>
+          <div style={{ color: 'var(--em-text-tertiary)', fontSize: 13 }}>
             {Math.round(pct * 100)}% complete
           </div>
         </div>

@@ -7,8 +7,8 @@ export default function AddToCalendarButton({ event }) {
     <button type="button" onClick={() => downloadIcs(event)} style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
       width: 'calc(100% - 32px)', margin: '0 16px 16px', minHeight: 44,
-      borderRadius: 10, border: '1px solid var(--sf-border-default)',
-      backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-accent)',
+      borderRadius: 10, border: '1px solid var(--em-border-default)',
+      backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)',
       fontSize: 14, fontWeight: 500,
     }}>
       <Calendar size={16} strokeWidth={1.75} />

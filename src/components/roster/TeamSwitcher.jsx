@@ -17,9 +17,9 @@ export default function TeamSwitcher({ programs, teamId, navigate }) {
             borderRadius: 999,
             fontSize: 12,
             fontWeight: p.id === teamId ? 600 : 400,
-            border: `2px solid ${p.team_color || 'var(--sf-border-default)'}`,
-            backgroundColor: p.id === teamId ? (p.team_color || 'var(--sf-accent)') : 'var(--sf-bg-card)',
-            color: p.id === teamId ? 'var(--sf-text-inverse)' : 'var(--sf-text-primary)',
+            border: `2px solid ${p.team_color || 'var(--em-border-default)'}`,
+            backgroundColor: p.id === teamId ? (p.team_color || 'var(--em-accent)') : 'var(--em-bg-card)',
+            color: p.id === teamId ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
             whiteSpace: 'nowrap',
           }}
         >

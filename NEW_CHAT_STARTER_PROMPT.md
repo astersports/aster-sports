@@ -76,7 +76,7 @@ After completing 1-3, summarize to me in EXACTLY this format:
 
 9. **Answer first, then detail.** No preamble. No em dashes. No "leverage/utilize/seamless/robust/streamline."
 
-10. **Design tokens absolute:** Inter font, 4px grid, 10px card radius, 44px tap targets, Lucide at stroke-width 1.75, CSS variables only (`--sf-*` current, `--em-*` after Phase 0C).
+10. **Design tokens absolute:** Inter font, 4px grid, 10px card radius, 44px tap targets, Lucide at stroke-width 1.75, CSS variables only (`--em-*` current, `--em-*` after Phase 0C).
 
 Ready to begin verification. Post your summary when complete.
 

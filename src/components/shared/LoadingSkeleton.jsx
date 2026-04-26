@@ -10,7 +10,7 @@ function Bar({ width = '100%', height = 12, radius = 6, className = '' }) {
         width,
         height,
         borderRadius: radius,
-        backgroundColor: 'var(--sf-bg-tertiary)',
+        backgroundColor: 'var(--em-bg-tertiary)',
       }}
     />
   );
@@ -21,9 +21,9 @@ function Card() {
     <div
       className="p-4 mb-3"
       style={{
-        backgroundColor: 'var(--sf-bg-card)',
+        backgroundColor: 'var(--em-bg-card)',
         borderRadius: 12,
-        border: '1px solid var(--sf-border-subtle)',
+        border: '1px solid var(--em-border-subtle)',
       }}
     >
       <Bar width="40%" height={10} className="mb-3" />
@@ -38,7 +38,7 @@ function ListRow() {
     <div className="flex items-center gap-3 py-3">
       <div
         className="sf-pulse"
-        style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: 'var(--sf-bg-tertiary)' }}
+        style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: 'var(--em-bg-tertiary)' }}
       />
       <div className="flex-1">
         <Bar width="60%" height={12} className="mb-2" />

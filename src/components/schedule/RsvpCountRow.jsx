@@ -10,16 +10,16 @@ function RsvpCountRow({ rsvpCount, compact = false }) {
   const gap = compact ? 8 : 10;
 
   const states = [
-    { value: rsvpCount.going, label: 'going', color: 'var(--sf-success)' },
-    { value: rsvpCount.maybe, label: 'maybe', color: 'var(--sf-warning)' },
-    { value: rsvpCount.not_going, label: 'not going', color: 'var(--sf-danger)' },
-    { value: rsvpCount.noResponse, label: 'no response', color: 'var(--sf-neutral)' },
+    { value: rsvpCount.going, label: 'going', color: 'var(--em-success)' },
+    { value: rsvpCount.maybe, label: 'maybe', color: 'var(--em-warning)' },
+    { value: rsvpCount.not_going, label: 'not going', color: 'var(--em-danger)' },
+    { value: rsvpCount.noResponse, label: 'no response', color: 'var(--em-neutral)' },
   ].filter((s) => s.value > 0);
 
   if (states.length === 0) return null;
 
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap, fontSize, color: 'var(--sf-text-secondary)' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap, fontSize, color: 'var(--em-text-secondary)' }}>
       {states.map((s) => (
         <span key={s.label}>
           <strong style={{ color: s.color }}>{s.value}</strong> {s.label}

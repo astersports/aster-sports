@@ -6,7 +6,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SeasonProvider } from './context/SeasonContext';
 import ErrorBoundary from './components/ErrorBoundary';
-import { ToastProvider } from './context/ToastContext';
+import { ToastProvider } from './context/ToastProvider';
 import App from './App.jsx';
 import './index.css';
 

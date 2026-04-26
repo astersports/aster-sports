@@ -7,7 +7,7 @@ export default function CompactCard({ event, stagger }) {
   const navigate = useNavigate();
   const now = useNow();
   const team = event.teams;
-  const teamColor = team?.team_color || 'var(--sf-neutral)';
+  const teamColor = team?.team_color || 'var(--em-neutral)';
   const teamName = team?.name || '';
   const endTime = event.end_at ? new Date(event.end_at).getTime() : null;
   const startTime = event.start_at ? new Date(event.start_at).getTime() : null;
@@ -21,9 +21,9 @@ export default function CompactCard({ event, stagger }) {
         display: 'flex',
         alignItems: 'center',
         minHeight: 48,
-        backgroundColor: 'var(--sf-bg-card)',
+        backgroundColor: 'var(--em-bg-card)',
         borderRadius: 8,
-        border: '1px solid var(--sf-border-default)',
+        border: '1px solid var(--em-border-default)',
         overflow: 'hidden',
         opacity: isPast ? 0.5 : 1,
         cursor: 'pointer',
@@ -32,14 +32,14 @@ export default function CompactCard({ event, stagger }) {
     >
       <div style={{ width: 3, alignSelf: 'stretch', flexShrink: 0, backgroundColor: teamColor }} />
       <div className="flex items-center flex-1 gap-3" style={{ padding: '6px 12px' }}>
-        <span className="font-bold" style={{ fontSize: 14, color: 'var(--sf-text-primary)', minWidth: 56 }}>
+        <span className="font-bold" style={{ fontSize: 14, color: 'var(--em-text-primary)', minWidth: 56 }}>
           {formatTime(event.start_time || '00:00')}
         </span>
         <span style={{
           fontSize: 10, fontWeight: 600, padding: '1px 5px', borderRadius: 4,
-          backgroundColor: teamColor, color: 'var(--sf-text-inverse)',
+          backgroundColor: teamColor, color: 'var(--em-text-inverse)',
         }}>{teamName}</span>
-        <span className="truncate" style={{ flex: 1, fontSize: 13, color: 'var(--sf-text-secondary)' }}>
+        <span className="truncate" style={{ flex: 1, fontSize: 13, color: 'var(--em-text-secondary)' }}>
           {event.title || TYPE_LABELS[event.event_type] || event.event_type || 'Event'}
         </span>
       </div>

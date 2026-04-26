@@ -3,12 +3,12 @@
 // which keeps contrast readable in both light and dark surfaces.
 
 const VARIANTS = {
-  success: { bg: 'var(--sf-success-soft)', fg: 'var(--sf-success)' },
-  warning: { bg: 'var(--sf-warning-soft)', fg: 'var(--sf-warning)' },
-  danger:  { bg: 'var(--sf-danger-soft)',  fg: 'var(--sf-danger)'  },
-  info:    { bg: 'var(--sf-info-soft)',    fg: 'var(--sf-info)'    },
-  neutral: { bg: 'var(--sf-neutral-soft)', fg: 'var(--sf-neutral)' },
-  academy: { bg: 'var(--sf-academy-soft)', fg: 'var(--sf-academy)' },
+  success: { bg: 'var(--em-success-soft)', fg: 'var(--em-success)' },
+  warning: { bg: 'var(--em-warning-soft)', fg: 'var(--em-warning)' },
+  danger:  { bg: 'var(--em-danger-soft)',  fg: 'var(--em-danger)'  },
+  info:    { bg: 'var(--em-info-soft)',    fg: 'var(--em-info)'    },
+  neutral: { bg: 'var(--em-neutral-soft)', fg: 'var(--em-neutral)' },
+  academy: { bg: 'var(--em-academy-soft)', fg: 'var(--em-academy)' },
 };
 
 export default function Badge({ children, variant = 'neutral', className = '' }) {

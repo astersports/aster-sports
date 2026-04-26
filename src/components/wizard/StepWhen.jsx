@@ -18,7 +18,7 @@ function addMinutes(time, mins) {
   return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
-export default function StepWhen({ data, onChange, isEdit, orgId }) {
+export default function StepWhen({ data, onChange, orgId }) {
   const [locations, setLocations] = useState([]);
   const [customMode, setCustomMode] = useState(false);
   const seasonEnd = useActiveSeasonEnd(orgId);
@@ -67,7 +67,7 @@ export default function StepWhen({ data, onChange, isEdit, orgId }) {
 
   return (
     <div style={{ padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--sf-text-primary)' }}>When and where?</h2>
+      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>When and where?</h2>
 
       <label style={fieldStyle}>
         <span style={labelStyle}>Date</span>
@@ -100,7 +100,7 @@ export default function StepWhen({ data, onChange, isEdit, orgId }) {
             onChange={(e) => setCustomEndTime(e.target.value)} step="300"
             style={{ ...inputStyle, marginTop: 8 }} />
         ) : (
-          data.endTime && <span style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 4, display: 'block' }}>Ends at {data.endTime}</span>
+          data.endTime && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>Ends at {data.endTime}</span>
         )}
       </div>
 
@@ -134,16 +134,16 @@ export default function StepWhen({ data, onChange, isEdit, orgId }) {
 }
 
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 6 };
-const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--sf-text-secondary)' };
+const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)' };
 const inputStyle = {
-  minHeight: 44, borderRadius: 10, border: '1px solid var(--sf-border-default)',
-  backgroundColor: 'var(--sf-bg-card)', padding: '0 12px', fontSize: 15,
-  color: 'var(--sf-text-primary)', width: '100%',
+  minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)',
+  backgroundColor: 'var(--em-bg-card)', padding: '0 12px', fontSize: 15,
+  color: 'var(--em-text-primary)', width: '100%',
 };
 const chipStyle = (sel) => ({
   minHeight: 40, minWidth: 56, borderRadius: 10,
-  border: sel ? '2px solid var(--sf-accent)' : '1px solid var(--sf-border-default)',
-  backgroundColor: sel ? 'var(--sf-accent)' : 'var(--sf-bg-card)',
-  color: sel ? 'var(--sf-text-inverse)' : 'var(--sf-text-primary)',
+  border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
+  backgroundColor: sel ? 'var(--em-accent)' : 'var(--em-bg-card)',
+  color: sel ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
   fontSize: 14, fontWeight: 500, padding: '0 12px',
 });

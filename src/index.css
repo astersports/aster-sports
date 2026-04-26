@@ -1,54 +1,54 @@
 @import "tailwindcss";
 
 /* ─── Skyfire design tokens ─────────────────────────────────
- * All components reference these via var(--sf-*). Brand tokens are
+ * All components reference these via var(--em-*). Brand tokens are
  * re-set at runtime from organizations.brand_colors inside AuthContext,
  * so the same markup theme-flips per org.
  */
 :root {
   /* ─── Platform surfaces + text (COOL GRAY — NOT warm/beige) ─── */
-  --sf-bg-page:        #F7F8FA;
-  --sf-bg-card:        #FFFFFF;
-  --sf-bg-card-hover:  #F9FAFB;
-  --sf-bg-secondary:   #F1F3F5;
-  --sf-bg-tertiary:    #E9ECEF;
-  --sf-text-primary:   #1A1D23;
-  --sf-text-secondary: #4A5568;
-  --sf-text-tertiary:  #8896AB;
-  --sf-text-inverse:   #FFFFFF;
-  --sf-border-default: #E2E8F0;
-  --sf-border-subtle:  #EDF2F7;
+  --em-bg-page:        #F7F8FA;
+  --em-bg-card:        #FFFFFF;
+  --em-bg-card-hover:  #F9FAFB;
+  --em-bg-secondary:   #F1F3F5;
+  --em-bg-tertiary:    #E9ECEF;
+  --em-text-primary:   #1A1D23;
+  --em-text-secondary: #4A5568;
+  --em-text-tertiary:  #8896AB;
+  --em-text-inverse:   #FFFFFF;
+  --em-border-default: #E2E8F0;
+  --em-border-subtle:  #EDF2F7;
 
   /* ─── Status (semantic) ─── */
-  --sf-success:        #16A34A;
-  --sf-success-soft:   #DCFCE7;
-  --sf-warning:        #D97706;
-  --sf-warning-soft:   #FEF3C7;
-  --sf-danger:         #DC2626;
-  --sf-danger-soft:    #FEE2E2;
-  --sf-info:           #3B82F6;
-  --sf-info-soft:      #EFF6FF;
-  --sf-neutral:        #9CA3AF;
-  --sf-neutral-soft:   #F3F4F6;
-  --sf-academy:        #7C3AED;
-  --sf-academy-soft:   rgba(124, 58, 237, 0.1);
+  --em-success:        #16A34A;
+  --em-success-soft:   #DCFCE7;
+  --em-warning:        #D97706;
+  --em-warning-soft:   #FEF3C7;
+  --em-danger:         #DC2626;
+  --em-danger-soft:    #FEE2E2;
+  --em-info:           #3B82F6;
+  --em-info-soft:      #EFF6FF;
+  --em-neutral:        #9CA3AF;
+  --em-neutral-soft:   #F3F4F6;
+  --em-academy:        #7C3AED;
+  --em-academy-soft:   rgba(124, 58, 237, 0.1);
 
   /* ─── Brand (Skyfire defaults — overridden per org at runtime) ─── */
-  --sf-header:         #151525;
-  --sf-accent:         #C9952E;
-  --sf-accent-hover:   #D4A843;
-  --sf-accent-soft:    rgba(201, 149, 46, 0.1);
-  --sf-text-on-dark:   #F5F0E8;
+  --em-header:         #151525;
+  --em-accent:         #C9952E;
+  --em-accent-hover:   #D4A843;
+  --em-accent-soft:    rgba(201, 149, 46, 0.1);
+  --em-text-on-dark:   #F5F0E8;
 
   /* ─── Decorative ─── */
-  --sf-flame-mid:      #E87520;
-  --sf-crimson:        #8B1A1A;
-  --sf-electric:       #4A9FFF;
+  --em-flame-mid:      #E87520;
+  --em-crimson:        #8B1A1A;
+  --em-electric:       #4A9FFF;
 
   /* ─── Shadows (exactly three — no fourth) ─── */
-  --sf-shadow-sm:  0 1px 2px rgba(0,0,0,0.04);
-  --sf-shadow-md:  0 2px 8px rgba(0,0,0,0.08);
-  --sf-shadow-lg:  0 8px 24px rgba(0,0,0,0.12);
+  --em-shadow-sm:  0 1px 2px rgba(0,0,0,0.04);
+  --em-shadow-md:  0 2px 8px rgba(0,0,0,0.08);
+  --em-shadow-lg:  0 8px 24px rgba(0,0,0,0.12);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -91,8 +91,8 @@ html, body         {
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  background-color: var(--sf-bg-page);
-  color: var(--sf-text-primary);
+  background-color: var(--em-bg-page);
+  color: var(--em-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -184,10 +184,10 @@ body {
   position: sticky;
   top: 0;
   z-index: 30;
-  background-color: color-mix(in srgb, var(--sf-bg-page) 85%, transparent);
+  background-color: color-mix(in srgb, var(--em-bg-page) 85%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--sf-shadow-sm);
+  box-shadow: var(--em-shadow-sm);
 }
 
 /* Tap press feedback. */

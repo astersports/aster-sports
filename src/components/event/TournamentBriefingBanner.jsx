@@ -13,21 +13,21 @@ export default function TournamentBriefingBanner({ event, team, role }) {
   return (
     <>
       <div style={{
-        backgroundColor: 'var(--sf-accent-soft)', border: '1px solid var(--sf-accent)',
+        backgroundColor: 'var(--em-accent-soft)', border: '1px solid var(--em-accent)',
         borderRadius: 10, padding: 12, margin: '12px 16px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--sf-accent)', marginBottom: 2 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-accent)', marginBottom: 2 }}>
             Tournament
           </div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--sf-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--em-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {event.tournament_name}
           </div>
         </div>
         <button type="button" onClick={() => setOpen(true)} className="sf-press" style={{
           minHeight: 44, padding: '0 14px', borderRadius: 10,
-          backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)',
+          backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
           fontSize: 13, fontWeight: 600, border: 'none',
           display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
         }}>

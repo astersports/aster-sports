@@ -2,7 +2,7 @@ import { useState } from 'react';
 import FullScreenForm from '../shared/FullScreenForm';
 import TeamMultiSelect from './TeamMultiSelect';
 import { useTournaments } from '../../hooks/useTournaments';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/useToast';
 
 const CIRCUITS = ['AAU Zero Gravity', 'League Play', 'Independent', 'Other'];
 const STATUSES = [
@@ -54,11 +54,11 @@ export default function TournamentFormSheet({ tournament, onClose }) {
     onClose();
   };
 
-  const label = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--sf-text-secondary)', marginBottom: 6, display: 'block' };
+  const label = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)', marginBottom: 6, display: 'block' };
   const input = {
     width: '100%', minHeight: 44, padding: '10px 12px', borderRadius: 10,
-    border: '1.5px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-tertiary)',
-    color: 'var(--sf-text-primary)', fontSize: 14, fontFamily: 'Inter, sans-serif',
+    border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)',
+    color: 'var(--em-text-primary)', fontSize: 14, fontFamily: 'Inter, sans-serif',
   };
   const section = { marginBottom: 18 };
   const disabled = !valid || saving;
@@ -119,18 +119,18 @@ export default function TournamentFormSheet({ tournament, onClose }) {
         position: 'sticky', bottom: -16, margin: '8px -16px -16px',
         padding: '12px 16px',
         paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-        backgroundColor: 'var(--sf-bg-card)',
-        borderTop: '1px solid var(--sf-border-default)',
+        backgroundColor: 'var(--em-bg-card)',
+        borderTop: '1px solid var(--em-border-default)',
         display: 'flex', gap: 10,
       }}>
         <button type="button" onClick={onClose} className="sf-press" aria-label="Cancel" style={{
           flex: 1, minHeight: 44, borderRadius: 10,
-          border: '1.5px solid var(--sf-accent)', backgroundColor: 'var(--sf-bg-card)',
-          color: 'var(--sf-accent)', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+          border: '1.5px solid var(--em-accent)', backgroundColor: 'var(--em-bg-card)',
+          color: 'var(--em-accent)', fontSize: 15, fontWeight: 600, cursor: 'pointer',
         }}>Cancel</button>
         <button type="button" onClick={save} disabled={disabled} className="sf-press" aria-label={saving ? 'Saving' : 'Save'} style={{
           flex: 1, minHeight: 44, borderRadius: 10, border: 'none',
-          backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)',
+          backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
           fontSize: 15, fontWeight: 600,
           opacity: disabled ? 0.5 : 1,
           cursor: disabled ? 'not-allowed' : 'pointer',

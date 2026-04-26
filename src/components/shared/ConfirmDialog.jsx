@@ -23,7 +23,7 @@ export default function ConfirmDialog({
 
   if (!open) return null;
 
-  const confirmBg = destructive ? 'var(--sf-danger)' : 'var(--sf-accent)';
+  const confirmBg = destructive ? 'var(--em-danger)' : 'var(--em-accent)';
 
   return (
     <div
@@ -37,12 +37,12 @@ export default function ConfirmDialog({
       <div
         className="sf-fade-in"
         style={{
-          backgroundColor: 'var(--sf-bg-card)',
+          backgroundColor: 'var(--em-bg-card)',
           borderRadius: 14,
           padding: 20,
           width: '100%',
           maxWidth: 360,
-          boxShadow: 'var(--sf-shadow-lg)',
+          boxShadow: 'var(--em-shadow-lg)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -50,13 +50,13 @@ export default function ConfirmDialog({
           <h2
             id="confirm-title"
             className="font-semibold"
-            style={{ color: 'var(--sf-text-primary)', fontSize: 17, marginBottom: 8 }}
+            style={{ color: 'var(--em-text-primary)', fontSize: 17, marginBottom: 8 }}
           >
             {title}
           </h2>
         )}
         {message && (
-          <p style={{ color: 'var(--sf-text-secondary)', fontSize: 14, lineHeight: 1.5 }}>
+          <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, lineHeight: 1.5 }}>
             {message}
           </p>
         )}
@@ -68,8 +68,8 @@ export default function ConfirmDialog({
             style={{
               minHeight: 44,
               borderRadius: 10,
-              backgroundColor: 'var(--sf-bg-secondary)',
-              color: 'var(--sf-text-primary)',
+              backgroundColor: 'var(--em-bg-secondary)',
+              color: 'var(--em-text-primary)',
               fontSize: 15,
             }}
           >
@@ -83,7 +83,7 @@ export default function ConfirmDialog({
               minHeight: 44,
               borderRadius: 10,
               backgroundColor: confirmBg,
-              color: 'var(--sf-text-inverse)',
+              color: 'var(--em-text-inverse)',
               fontSize: 15,
             }}
           >

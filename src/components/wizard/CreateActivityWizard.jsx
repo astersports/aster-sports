@@ -77,30 +77,30 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
   return createPortal(
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999,
-      backgroundColor: 'var(--sf-bg-page)',
+      backgroundColor: 'var(--em-bg-page)',
       display: 'flex', flexDirection: 'column', overflow: 'hidden',
     }}>
       <div style={{
         minHeight: 56, padding: '0 8px 0 4px',
         display: 'flex', alignItems: 'center', gap: 8,
-        borderBottom: '1px solid var(--sf-border-default)',
-        backgroundColor: 'var(--sf-bg-card)', flexShrink: 0,
+        borderBottom: '1px solid var(--em-border-default)',
+        backgroundColor: 'var(--em-bg-card)', flexShrink: 0,
         paddingTop: 'env(safe-area-inset-top, 0px)',
       }}>
         <button type="button" onClick={step > backStop ? () => setStep(step - 1) : onClose}
           className="sf-press" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {step > backStop
-            ? <ArrowLeft size={20} strokeWidth={1.75} color="var(--sf-text-primary)" />
-            : <X size={20} strokeWidth={1.75} color="var(--sf-text-primary)" />}
+            ? <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-primary)" />
+            : <X size={20} strokeWidth={1.75} color="var(--em-text-primary)" />}
         </button>
-        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--sf-text-primary)', flex: 1 }}>
+        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', flex: 1 }}>
           {isEdit ? 'Edit Event' : 'New Event'}
         </span>
         <div style={{ display: 'flex', gap: 6, paddingRight: 8 }}>
           {dots.map((_, i) => (
             <div key={i} style={{
               width: 8, height: 8, borderRadius: 4,
-              backgroundColor: i <= dotIndex ? 'var(--sf-accent)' : 'var(--sf-border-default)',
+              backgroundColor: i <= dotIndex ? 'var(--em-accent)' : 'var(--em-border-default)',
             }} />
           ))}
         </div>
@@ -115,9 +115,9 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
 
       {step === 2 && conflicts.length > 0 && (
         <div style={{
-          padding: '10px 16px', backgroundColor: 'var(--sf-warning-soft)',
-          borderTop: '1px solid var(--sf-warning)', flexShrink: 0,
-          fontSize: 13, color: 'var(--sf-warning)', fontWeight: 500,
+          padding: '10px 16px', backgroundColor: 'var(--em-warning-soft)',
+          borderTop: '1px solid var(--em-warning)', flexShrink: 0,
+          fontSize: 13, color: 'var(--em-warning)', fontWeight: 500,
         }}>
           Conflicts with: {conflicts.map((c) => c.title).join(', ')}. You can save anyway.
         </div>
@@ -127,8 +127,8 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
         <div style={{
           padding: '12px 16px',
           paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-          borderTop: '1px solid var(--sf-border-default)',
-          backgroundColor: 'var(--sf-bg-card)', flexShrink: 0,
+          borderTop: '1px solid var(--em-border-default)',
+          backgroundColor: 'var(--em-bg-card)', flexShrink: 0,
         }}>
           <button type="button"
             onClick={step === 3 ? handleSave : () => setStep(step + 1)}
@@ -136,8 +136,8 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
             className="sf-press sf-bounce-tap"
             style={{
               width: '100%', minHeight: 48, borderRadius: 12, border: 'none',
-              backgroundColor: canNext ? 'var(--sf-accent)' : 'var(--sf-bg-tertiary)',
-              color: canNext ? 'var(--sf-text-inverse)' : 'var(--sf-text-tertiary)',
+              backgroundColor: canNext ? 'var(--em-accent)' : 'var(--em-bg-tertiary)',
+              color: canNext ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)',
               fontSize: 16, fontWeight: 600, opacity: loading ? 0.6 : 1,
             }}>
             {loading ? 'Saving...' : step === 3 ? (isEdit ? 'Save Changes' : 'Save Event') : 'Next'}

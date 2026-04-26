@@ -28,7 +28,7 @@ The handoff protocol (documented in NEW_CHAT_STARTER_PROMPT.md) requires the new
 - "Built to burn bright"
 - "From spark to championship"
 
-**Current naming state:** Code still uses "Skyfire" throughout (CSS `--sf-*` namespace, file names like `skyfire_phoenix.webp`). Rebrand scheduled for Phase 0C.
+**Current naming state:** Code still uses "Skyfire" throughout (CSS `--em-*` namespace, file names like `skyfire_phoenix.webp`). Rebrand scheduled for Phase 0C.
 
 ## First org: Legacy Hoopers (pilot, proprietary through 2027)
 
@@ -447,7 +447,7 @@ These 8 migrations will be authored as SQL files, pasted into Supabase SQL Edito
 ## Phase 0C: Ember rebrand (blocked on 013-020 ship)
 
 - Find/replace Skyfire → Ember in all UI strings, README, package.json
-- CSS namespace: `--sf-*` → `--em-*`
+- CSS namespace: `--em-*` → `--em-*`
 - File renames: skyfire_phoenix.webp retired, phoenix_logo_*.png becomes canonical
 - GitHub repo rename: skyfire-app → ember-app
 - Vercel project rename
@@ -590,7 +590,7 @@ Claude Code tends to push to `claude/` branches by default — always correct ex
 - **Tap target minimum:** 44px
 - **Icon library:** Lucide React at stroke-width 1.75 (heavier for active states only)
 - **Color storage:** CSS variables only, never hardcoded hex
-- **Current namespace:** `--sf-*` (migrating to `--em-*` in Phase 0C)
+- **Current namespace:** `--em-*` (migrating to `--em-*` in Phase 0C)
 - **Exception to hardcoded hex:** `team_color` passed inline from database
 
 ## Brand colors (current production)

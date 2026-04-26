@@ -37,7 +37,7 @@ export default function TeamMultiSelect({ selectedIds = [], onChange }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {useTypeahead && (
         <div style={{ position: 'relative' }}>
-          <Search size={16} strokeWidth={1.75} style={{ position: 'absolute', left: 12, top: 14, color: 'var(--sf-text-tertiary)' }} />
+          <Search size={16} strokeWidth={1.75} style={{ position: 'absolute', left: 12, top: 14, color: 'var(--em-text-tertiary)' }} />
           <input
             type="text"
             value={search}
@@ -46,9 +46,9 @@ export default function TeamMultiSelect({ selectedIds = [], onChange }) {
             aria-label="Search teams"
             style={{
               width: '100%', minHeight: 44, padding: '10px 12px 10px 36px', borderRadius: 10,
-              border: '1.5px solid var(--sf-border-default)',
-              backgroundColor: 'var(--sf-bg-tertiary)',
-              color: 'var(--sf-text-primary)', fontSize: 14, fontFamily: 'Inter, sans-serif',
+              border: '1.5px solid var(--em-border-default)',
+              backgroundColor: 'var(--em-bg-tertiary)',
+              color: 'var(--em-text-primary)', fontSize: 14, fontFamily: 'Inter, sans-serif',
             }}
           />
         </div>
@@ -66,23 +66,23 @@ export default function TeamMultiSelect({ selectedIds = [], onChange }) {
               aria-label={`${selected ? 'Deselect' : 'Select'} ${t.name}`}
               style={{
                 minHeight: 44, padding: '10px 14px', borderRadius: 10,
-                border: `1.5px solid ${selected ? 'var(--sf-accent)' : 'var(--sf-border-default)'}`,
-                backgroundColor: selected ? 'var(--sf-accent-soft)' : 'var(--sf-bg-card)',
+                border: `1.5px solid ${selected ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
+                backgroundColor: selected ? 'var(--em-accent-soft)' : 'var(--em-bg-card)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-                fontSize: 14, fontWeight: 500, color: 'var(--sf-text-primary)',
+                fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)',
                 cursor: 'pointer', width: '100%',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: t.team_color || 'var(--sf-text-tertiary)', flexShrink: 0 }} />
+                <span style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: t.team_color || 'var(--em-text-tertiary)', flexShrink: 0 }} />
                 <span>{t.name}</span>
               </div>
-              {selected && <Check size={18} strokeWidth={2} color="var(--sf-accent)" />}
+              {selected && <Check size={18} strokeWidth={2} color="var(--em-accent)" />}
             </button>
           );
         })}
         {useTypeahead && filtered.length === 0 && (
-          <div style={{ padding: 16, textAlign: 'center', fontSize: 13, color: 'var(--sf-text-tertiary)' }}>
+          <div style={{ padding: 16, textAlign: 'center', fontSize: 13, color: 'var(--em-text-tertiary)' }}>
             No teams match "{search}"
           </div>
         )}

@@ -19,7 +19,7 @@ import TournamentDetailPage from './pages/TournamentDetailPage';
 const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
 const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
 
-const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
+const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading...</div>;
 
 // Wrap an authenticated route in both the shell and the auth guard. Keeps
 // the route table below flat and readable instead of nesting <RequireAuth>

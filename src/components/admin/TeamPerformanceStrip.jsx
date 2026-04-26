@@ -15,20 +15,20 @@ export default function TeamPerformanceStrip({ programs, navigate }) {
             width: 140,
             padding: 12,
             borderRadius: 10,
-            backgroundColor: 'var(--sf-bg-card)',
-            border: '1px solid var(--sf-border-default)',
-            boxShadow: 'var(--sf-shadow-sm)',
+            backgroundColor: 'var(--em-bg-card)',
+            border: '1px solid var(--em-border-default)',
+            boxShadow: 'var(--em-shadow-sm)',
             textAlign: 'left',
-            borderTop: `3px solid ${team.team_color || 'var(--sf-neutral)'}`,
+            borderTop: `3px solid ${team.team_color || 'var(--em-neutral)'}`,
           }}
         >
-          <div className="font-semibold truncate" style={{ fontSize: 14, color: 'var(--sf-text-primary)' }}>
+          <div className="font-semibold truncate" style={{ fontSize: 14, color: 'var(--em-text-primary)' }}>
             {team.name}
           </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--sf-text-primary)', marginTop: 4 }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', marginTop: 4 }}>
             0-0
           </div>
-          <div style={{ fontSize: 11, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
             {team.age_group} · {team.circuit === 'aau' ? 'AAU' : 'League Play'}
           </div>
         </button>

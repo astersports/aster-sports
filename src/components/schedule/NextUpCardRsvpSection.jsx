@@ -26,19 +26,19 @@ export default function NextUpCardRsvpSection({ eventId, rsvpCount }) {
       <RsvpCountRow rsvpCount={rsvpCount} compact={false} />
       {notes.length > 0 && (
         <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--sf-text-tertiary)', marginBottom: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 4 }}>
             RSVP Notes
           </div>
           {visible.map((n) => (
             <div key={n.playerId} style={{ fontSize: 12, marginTop: 5 }}>
-              <span style={{ color: 'var(--sf-text-secondary)' }}>
+              <span style={{ color: 'var(--em-text-secondary)' }}>
                 {n.firstName} ({RESPONSE_LABEL[n.response] || n.response}) —{' '}
               </span>
-              <span style={{ color: 'var(--sf-text-primary)' }}>{truncate(n.comment)}</span>
+              <span style={{ color: 'var(--em-text-primary)' }}>{truncate(n.comment)}</span>
             </div>
           ))}
           {extra > 0 && (
-            <div style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--sf-text-tertiary)', marginTop: 5 }}>
+            <div style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--em-text-tertiary)', marginTop: 5 }}>
               +{extra} more
             </div>
           )}

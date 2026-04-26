@@ -22,18 +22,18 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
   const dateRange = formatRange(tournament.start_date, tournament.end_date);
 
   return (
-    <div style={{ padding: '8px 16px 16px', borderBottom: '1px solid var(--sf-border-default)' }}>
+    <div style={{ padding: '8px 16px 16px', borderBottom: '1px solid var(--em-border-default)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <Trophy size={14} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+            <Trophy size={14} strokeWidth={1.75} color="var(--em-text-tertiary)" />
             {tournament.circuit && (
-              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--sf-text-secondary)' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--em-text-secondary)' }}>
                 {tournament.circuit}
               </span>
             )}
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--sf-text-primary)', margin: 0, lineHeight: 1.2, wordBreak: 'break-word' }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0, lineHeight: 1.2, wordBreak: 'break-word' }}>
             {tournament.name}
           </h1>
         </div>
@@ -41,12 +41,12 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--sf-text-secondary)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--em-text-secondary)' }}>
           <Calendar size={13} strokeWidth={1.75} />
           <span>{dateRange}</span>
         </div>
         {tournament.primary_venue && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--sf-text-secondary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--em-text-secondary)' }}>
             <MapPin size={13} strokeWidth={1.75} />
             <span>{tournament.primary_venue}</span>
           </div>
@@ -58,8 +58,8 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
           {tournament.teams.map((t) => (
             <span key={t.id} style={{
               fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 999,
-              backgroundColor: 'var(--sf-bg-tertiary)', color: 'var(--sf-text-primary)',
-              borderLeft: `3px solid ${t.team_color || 'var(--sf-text-tertiary)'}`,
+              backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)',
+              borderLeft: `3px solid ${t.team_color || 'var(--em-text-tertiary)'}`,
             }}>
               {t.name}
             </span>
@@ -70,8 +70,8 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
       {isStaff && (
         <button onClick={() => setEditing(true)} className="sf-press" aria-label="Edit tournament" style={{
           minHeight: 40, padding: '0 14px', borderRadius: 10,
-          border: '1.5px solid var(--sf-border-default)',
-          backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-text-primary)',
+          border: '1.5px solid var(--em-border-default)',
+          backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
           fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6,
           cursor: 'pointer',
         }}>

@@ -7,12 +7,12 @@ export default function TextEmptyState({ heading, message }) {
       textAlign: 'center', padding: '40px 16px', minHeight: 120,
     }}>
       {heading && (
-        <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--sf-text-primary)', marginBottom: 6 }}>
+        <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 6 }}>
           {heading}
         </div>
       )}
       {message && (
-        <div style={{ fontSize: 14, color: 'var(--sf-text-tertiary)', maxWidth: 320, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 14, color: 'var(--em-text-tertiary)', maxWidth: 320, lineHeight: 1.5 }}>
           {message}
         </div>
       )}

@@ -47,14 +47,14 @@ export default function AdminHomePage() {
           fontWeight: 600,
           letterSpacing: '0.05em',
           textTransform: 'uppercase',
-          color: 'var(--sf-text-tertiary)',
+          color: 'var(--em-text-tertiary)',
           marginBottom: 8,
         }}>QUICK ACTIONS</div>
         <QuickActions />
       </section>
 
       <section className="min-w-0">
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--sf-text-tertiary)', marginBottom: 8 }}>TEAMS</div>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>TEAMS</div>
         <TeamPerformanceStrip programs={programs} navigate={navigate} />
       </section>
 
@@ -64,7 +64,7 @@ export default function AdminHomePage() {
           fontWeight: 600,
           letterSpacing: '0.05em',
           textTransform: 'uppercase',
-          color: 'var(--sf-text-tertiary)',
+          color: 'var(--em-text-tertiary)',
           marginBottom: 8,
         }}>SEASON</div>
         <ActiveSeasonCard season={activeSeason} />
@@ -77,7 +77,7 @@ export default function AdminHomePage() {
           fontWeight: 600,
           letterSpacing: '0.05em',
           textTransform: 'uppercase',
-          color: 'var(--sf-text-tertiary)',
+          color: 'var(--em-text-tertiary)',
           marginBottom: 8,
         }}>GETTING STARTED</div>
         <GettingStarted
@@ -87,7 +87,7 @@ export default function AdminHomePage() {
       </section>
 
       {/* TEMP: sign-out affordance until the Account page is built. */}
-      <div style={{ borderTop: '1px solid var(--sf-border-subtle)', paddingTop: 12 }}>
+      <div style={{ borderTop: '1px solid var(--em-border-subtle)', paddingTop: 12 }}>
         <button
           type="button"
           onClick={handleSignOut}
@@ -97,7 +97,7 @@ export default function AdminHomePage() {
             padding: '0 4px',
             background: 'none',
             border: 'none',
-            color: 'var(--sf-danger)',
+            color: 'var(--em-danger)',
             fontSize: 14,
             fontWeight: 500,
           }}

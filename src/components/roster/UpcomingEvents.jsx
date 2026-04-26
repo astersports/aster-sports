@@ -47,16 +47,16 @@ export default function UpcomingEvents({ teamId }) {
     <div style={{ marginTop: 24 }}>
       <div style={{
         fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-        textTransform: 'uppercase', color: 'var(--sf-text-tertiary)', marginBottom: 8,
+        textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8,
       }}>UPCOMING (NEXT 7 DAYS)</div>
       {upcoming.length === 0 ? (
         <TextEmptyState heading="Nothing this week" message="No events scheduled in the next 7 days." />
       ) : (
         <div style={{
-          backgroundColor: 'var(--sf-bg-card)',
+          backgroundColor: 'var(--em-bg-card)',
           borderRadius: 10,
-          border: '1px solid var(--sf-border-default)',
-          boxShadow: 'var(--sf-shadow-sm)',
+          border: '1px solid var(--em-border-default)',
+          boxShadow: 'var(--em-shadow-sm)',
           overflow: 'hidden',
         }}>
           {upcoming.map((evt, i) => {
@@ -68,17 +68,17 @@ export default function UpcomingEvents({ teamId }) {
                 onClick={() => navigator.vibrate?.(10)}
                 style={{
                   padding: '12px 16px',
-                  borderBottom: i < upcoming.length - 1 ? '1px solid var(--sf-border-subtle)' : 'none',
+                  borderBottom: i < upcoming.length - 1 ? '1px solid var(--em-border-subtle)' : 'none',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 52,
                 }}
               >
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div className="font-semibold" style={{ fontSize: 14, color: 'var(--sf-text-primary)' }}>{label}</div>
-                  <div style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
+                  <div className="font-semibold" style={{ fontSize: 14, color: 'var(--em-text-primary)' }}>{label}</div>
+                  <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
                     {dateStr}{location ? ` · ${location}` : ''}
                   </div>
                 </div>
-                <div className="font-semibold" style={{ fontSize: 14, color: 'var(--sf-text-primary)', marginLeft: 12, flexShrink: 0 }}>
+                <div className="font-semibold" style={{ fontSize: 14, color: 'var(--em-text-primary)', marginLeft: 12, flexShrink: 0 }}>
                   {timeStr}
                 </div>
               </div>
@@ -92,8 +92,8 @@ export default function UpcomingEvents({ teamId }) {
         className="w-full sf-press"
         style={{
           marginTop: 8, minHeight: 44, borderRadius: 10,
-          border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)',
-          color: 'var(--sf-accent)', fontSize: 14, fontWeight: 500,
+          border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+          color: 'var(--em-accent)', fontSize: 14, fontWeight: 500,
         }}
       >
         View full schedule →

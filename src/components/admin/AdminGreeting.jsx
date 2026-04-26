@@ -26,10 +26,10 @@ function greetingFor(date = new Date()) {
 export default function AdminGreeting({ user }) {
   return (
     <section className="min-w-0">
-      <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 13 }}>
+      <div style={{ color: 'var(--em-text-tertiary)', fontSize: 13 }}>
         {greetingFor()},
       </div>
-      <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>
+      <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>
         {firstNameFrom(user)}
       </h1>
     </section>

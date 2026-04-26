@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import FullScreenForm from '../shared/FullScreenForm';
 import { useLocations } from '../../hooks/useLocations';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/useToast';
 import { geocodeAddress } from '../../lib/geocode';
 
 const emptyForm = { name: '', address: '', parking_notes: '', notes: '' };
@@ -38,18 +38,18 @@ export default function LocationFormSheet({ location, onClose }) {
     onClose();
   };
 
-  const label = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--sf-text-secondary)', marginBottom: 6, display: 'block' };
+  const label = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)', marginBottom: 6, display: 'block' };
   const input = {
     width: '100%', minHeight: 44, padding: '10px 12px', borderRadius: 10,
-    border: '1.5px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-tertiary)',
-    color: 'var(--sf-text-primary)', fontSize: 14, fontFamily: 'Inter, sans-serif',
+    border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)',
+    color: 'var(--em-text-primary)', fontSize: 14, fontFamily: 'Inter, sans-serif',
   };
   const section = { marginBottom: 18 };
   const footerBtn = (primary) => ({
     minHeight: 44, padding: '0 18px', borderRadius: 10,
-    border: primary ? 'none' : '1.5px solid var(--sf-border-default)',
-    backgroundColor: primary ? 'var(--sf-accent)' : 'var(--sf-bg-card)',
-    color: primary ? 'var(--sf-text-inverse)' : 'var(--sf-text-primary)',
+    border: primary ? 'none' : '1.5px solid var(--em-border-default)',
+    backgroundColor: primary ? 'var(--em-accent)' : 'var(--em-bg-card)',
+    color: primary ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
     fontSize: 14, fontWeight: 600, cursor: 'pointer',
   });
 
@@ -62,7 +62,7 @@ export default function LocationFormSheet({ location, onClose }) {
       <div style={section}>
         <label style={label} htmlFor="l-addr">Address</label>
         <input id="l-addr" type="text" value={form.address} onChange={(e) => patch({ address: e.target.value })} placeholder="75 Grasslands Rd, Valhalla, NY 10595" style={input} />
-        <div style={{ fontSize: 11, color: 'var(--sf-text-tertiary)', marginTop: 4 }}>
+        <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 4 }}>
           Coordinates auto-fetched on save.
         </div>
       </div>
@@ -78,8 +78,8 @@ export default function LocationFormSheet({ location, onClose }) {
       <div style={{
         position: 'sticky', bottom: 0, marginTop: 'auto',
         padding: '12px 0 calc(12px + env(safe-area-inset-bottom))',
-        borderTop: '1px solid var(--sf-border-default)',
-        backgroundColor: 'var(--sf-bg-card)',
+        borderTop: '1px solid var(--em-border-default)',
+        backgroundColor: 'var(--em-bg-card)',
         display: 'flex', justifyContent: 'space-between', gap: 8,
       }}>
         <button type="button" onClick={onClose} style={footerBtn(false)} aria-label="Cancel">Cancel</button>

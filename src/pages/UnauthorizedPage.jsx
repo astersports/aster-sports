@@ -7,7 +7,7 @@ export default function UnauthorizedPage() {
   return (
     <div
       className="sf-fullscreen flex items-center justify-center p-6"
-      style={{ backgroundColor: 'var(--sf-bg-page)' }}
+      style={{ backgroundColor: 'var(--em-bg-page)' }}
     >
       <div className="text-center" style={{ maxWidth: 360 }}>
         <div
@@ -16,8 +16,8 @@ export default function UnauthorizedPage() {
             width: 72,
             height: 72,
             borderRadius: '50%',
-            backgroundColor: 'var(--sf-warning-soft)',
-            color: 'var(--sf-warning)',
+            backgroundColor: 'var(--em-warning-soft)',
+            color: 'var(--em-warning)',
           }}
           aria-hidden="true"
         >
@@ -25,11 +25,11 @@ export default function UnauthorizedPage() {
         </div>
         <h1
           className="font-semibold"
-          style={{ color: 'var(--sf-text-primary)', fontSize: 20, marginBottom: 8 }}
+          style={{ color: 'var(--em-text-primary)', fontSize: 20, marginBottom: 8 }}
         >
           You don't have access to this page
         </h1>
-        <p style={{ color: 'var(--sf-text-secondary)', fontSize: 14, marginBottom: 20 }}>
+        <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, marginBottom: 20 }}>
           Ask an admin if you think this is a mistake.
         </p>
         <Link
@@ -39,8 +39,8 @@ export default function UnauthorizedPage() {
             minHeight: 44,
             padding: '0 20px',
             borderRadius: 10,
-            backgroundColor: 'var(--sf-accent)',
-            color: 'var(--sf-text-inverse)',
+            backgroundColor: 'var(--em-accent)',
+            color: 'var(--em-text-inverse)',
             fontSize: 15,
           }}
         >

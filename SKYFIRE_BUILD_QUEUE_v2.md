@@ -395,7 +395,7 @@ Blocked on 013-020 shipping. Estimated: 1-2 sessions.
 ## Scope
 
 - Find/replace `Skyfire` → `Ember` in all UI strings, package.json, README.md
-- CSS namespace rename: `--sf-*` → `--em-*` throughout codebase
+- CSS namespace rename: `--em-*` → `--em-*` throughout codebase
 - File rename: `skyfire_phoenix.webp` retired, `phoenix_logo_2048.png` becomes canonical Ember logo
 - Possibly rename: `src/context/SkyfireContext` if exists (verify)
 - GitHub repo rename: `skyfire-app` → `ember-app` (redirects auto-maintained)
@@ -733,7 +733,7 @@ End-of-session state: v2 + main + origin/v2 + origin/main all at commit 82c1943.
 
 **Then Phase 0C Ember rebrand** per locked decisions:
 - D1=(b): Internal rebrand + org-aware header (logo reads from organizations.logo_url). Parents still see Knight + Legacy Hoopers, architecture supports future St. Pat's
-- D2=(a): Internal Skyfire -> Ember scope = everything (CSS vars --sf-* -> --em-*, file names, doc names, comments — clean break)
+- D2=(a): Internal Skyfire -> Ember scope = everything (CSS vars --em-* -> --em-*, file names, doc names, comments — clean break)
 - D3=(b): Repo name skyfire-app stays for now, rename closer to launch
 - Phoenix logo PNGs already committed at repo root (bcce0e3 stowaway commit)
 

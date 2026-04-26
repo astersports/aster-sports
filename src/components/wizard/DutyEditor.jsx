@@ -34,11 +34,11 @@ export default function DutyEditor({ value, onChange }) {
               aria-label="Remove volunteer"
               style={{
                 width: 40, height: 40, borderRadius: 10,
-                border: '1px solid var(--sf-border-default)',
-                backgroundColor: 'var(--sf-bg-card)', display: 'flex',
+                border: '1px solid var(--em-border-default)',
+                backgroundColor: 'var(--em-bg-card)', display: 'flex',
                 alignItems: 'center', justifyContent: 'center',
               }}>
-              <X size={16} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+              <X size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
             </button>
           </div>
         ))}
@@ -46,9 +46,9 @@ export default function DutyEditor({ value, onChange }) {
       <button type="button" onClick={add} className="sf-press"
         style={{
           marginTop: 8, minHeight: 40, padding: '0 14px', borderRadius: 10,
-          border: '1px solid var(--sf-border-default)',
-          backgroundColor: 'var(--sf-bg-card)',
-          color: 'var(--sf-accent)', fontSize: 13, fontWeight: 500,
+          border: '1px solid var(--em-border-default)',
+          backgroundColor: 'var(--em-bg-card)',
+          color: 'var(--em-accent)', fontSize: 13, fontWeight: 500,
           display: 'inline-flex', alignItems: 'center', gap: 6,
         }}>
         <Plus size={16} strokeWidth={1.75} /> Add volunteer
@@ -57,16 +57,16 @@ export default function DutyEditor({ value, onChange }) {
   );
 }
 
-const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--sf-text-secondary)', display: 'block' };
+const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)', display: 'block' };
 const inputStyle = {
-  minHeight: 40, borderRadius: 10, border: '1px solid var(--sf-border-default)',
-  backgroundColor: 'var(--sf-bg-card)', padding: '0 10px', fontSize: 14,
-  color: 'var(--sf-text-primary)',
+  minHeight: 40, borderRadius: 10, border: '1px solid var(--em-border-default)',
+  backgroundColor: 'var(--em-bg-card)', padding: '0 10px', fontSize: 14,
+  color: 'var(--em-text-primary)',
 };
 
 const stepBtn = {
   width: 32, height: 32, borderRadius: 8,
-  border: '1px solid var(--sf-border-default)',
-  backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-text-primary)',
+  border: '1px solid var(--em-border-default)',
+  backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
   fontSize: 16, fontWeight: 500, cursor: 'pointer',
 };

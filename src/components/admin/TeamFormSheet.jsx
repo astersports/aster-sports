@@ -87,7 +87,7 @@ function Body({ program, onSave, onDelete }) {
                 aria-label={`Color ${hex}`} aria-pressed={form.team_color === hex}
                 style={{
                   width: 44, height: 44, borderRadius: '50%', backgroundColor: hex,
-                  border: `3px solid ${form.team_color === hex ? 'var(--sf-text-primary)' : 'transparent'}`,
+                  border: `3px solid ${form.team_color === hex ? 'var(--em-text-primary)' : 'transparent'}`,
                 }}
               />
             ))}
@@ -115,7 +115,7 @@ function Body({ program, onSave, onDelete }) {
               className="flex-1 font-semibold sf-press"
               style={{
                 minHeight: 44, borderRadius: 10, fontSize: 15,
-                backgroundColor: 'var(--sf-danger-soft)', color: 'var(--sf-danger)',
+                backgroundColor: 'var(--em-danger-soft)', color: 'var(--em-danger)',
               }}
             >Delete</button>
           )}
@@ -124,7 +124,7 @@ function Body({ program, onSave, onDelete }) {
             className="flex-1 font-semibold sf-press sf-bounce-tap"
             style={{
               minHeight: 44, borderRadius: 10, fontSize: 15,
-              backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)',
+              backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
             }}
           >{editing ? 'Save changes' : 'Create team'}</button>
         </div>

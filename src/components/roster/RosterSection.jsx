@@ -22,15 +22,15 @@ export default function RosterSection({ team, sortedPlayers, search, setSearch, 
       <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
         <div style={{
           fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-          textTransform: 'uppercase', color: 'var(--sf-text-tertiary)',
+          textTransform: 'uppercase', color: 'var(--em-text-tertiary)',
         }}>ROSTER</div>
         {isStaff(role) && <CopyRosterButton team={team} sortedPlayers={sortedPlayers} />}
       </div>
       <div style={{
-        backgroundColor: 'var(--sf-bg-card)',
+        backgroundColor: 'var(--em-bg-card)',
         borderRadius: 10,
-        border: '1px solid var(--sf-border-default)',
-        boxShadow: 'var(--sf-shadow-sm)',
+        border: '1px solid var(--em-border-default)',
+        boxShadow: 'var(--em-shadow-sm)',
         overflow: 'hidden',
       }}>
         {sortedPlayers.map((player, i) => (

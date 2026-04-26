@@ -24,7 +24,7 @@
     17	const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
     18	const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
     19	
-    20	const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
+    20	const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading...</div>;
     21	
     22	// Wrap an authenticated route in both the shell and the auth guard. Keeps
     23	// the route table below flat and readable instead of nesting <RequireAuth>
@@ -125,13 +125,13 @@
     24	      <div
     25	        className="p-4"
     26	        style={{
-    27	          backgroundColor: 'var(--sf-bg-card)',
+    27	          backgroundColor: 'var(--em-bg-card)',
     28	          borderRadius: 10,
-    29	          border: '1px solid var(--sf-border-default)',
-    30	          boxShadow: 'var(--sf-shadow-sm)',
+    29	          border: '1px solid var(--em-border-default)',
+    30	          boxShadow: 'var(--em-shadow-sm)',
     31	        }}
     32	      >
-    33	        <div style={{ color: 'var(--sf-text-secondary)', fontSize: 14, marginBottom: 8 }}>
+    33	        <div style={{ color: 'var(--em-text-secondary)', fontSize: 14, marginBottom: 8 }}>
     34	          No active season
     35	        </div>
     36	        <Link
@@ -139,7 +139,7 @@
     38	          className="inline-flex items-center sf-press font-semibold"
     39	          style={{
     40	            minHeight: 44, padding: '0 16px', borderRadius: 10,
-    41	            backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 14,
+    41	            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14,
     42	          }}
     43	        >
     44	          Create your first season
@@ -154,22 +154,22 @@
     53	      to="/admin/seasons"
     54	      className="block p-4 sf-press"
     55	      style={{
-    56	        backgroundColor: 'var(--sf-bg-card)',
+    56	        backgroundColor: 'var(--em-bg-card)',
     57	        borderRadius: 10,
-    58	        border: '1px solid var(--sf-border-default)',
-    59	        boxShadow: 'var(--sf-shadow-sm)',
+    58	        border: '1px solid var(--em-border-default)',
+    59	        boxShadow: 'var(--em-shadow-sm)',
     60	        color: 'inherit',
     61	      }}
     62	    >
-    63	      <div style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginBottom: 10 }}>
+    63	      <div style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginBottom: 10 }}>
     64	        {formatDateFull(season.start_date)} – {formatDateFull(season.end_date)}
     65	      </div>
     66	      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 12 }}>
     67	        <svg width="48" height="48" viewBox="0 0 48 48" style={{ flexShrink: 0, transform: 'rotate(-90deg)' }}>
-    68	          <circle cx="24" cy="24" r="20" fill="none" stroke="var(--sf-bg-tertiary)" strokeWidth="3" />
+    68	          <circle cx="24" cy="24" r="20" fill="none" stroke="var(--em-bg-tertiary)" strokeWidth="3" />
     69	          <circle
     70	            cx="24" cy="24" r="20" fill="none"
-    71	            stroke="var(--sf-accent)"
+    71	            stroke="var(--em-accent)"
     72	            strokeWidth="3"
     73	            strokeLinecap="round"
     74	            strokeDasharray={`${2 * Math.PI * 20}`}
@@ -183,7 +183,7 @@
     82	            style={{
     83	              fontSize: 11,
     84	              fontWeight: 700,
-    85	              fill: 'var(--sf-text-primary)',
+    85	              fill: 'var(--em-text-primary)',
     86	              transform: 'rotate(90deg)',
     87	              transformOrigin: '24px 24px',
     88	            }}
@@ -192,10 +192,10 @@
     91	          </text>
     92	        </svg>
     93	        <div>
-    94	          <div className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 15 }}>
+    94	          <div className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 15 }}>
     95	            Week {weekIdx} of {totalWeeks}
     96	          </div>
-    97	          <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 13 }}>
+    97	          <div style={{ color: 'var(--em-text-tertiary)', fontSize: 13 }}>
     98	            {Math.round(pct * 100)}% complete
     99	          </div>
    100	        </div>
@@ -209,12 +209,12 @@
 ```
      1	// Tiny building blocks for the admin CRUD sheets. Kept separate so the
      2	// TeamFormSheet and SeasonFormSheet don't each reinvent the same input
-     3	// styles — everything that writes to --sf-* tokens lives here.
+     3	// styles — everything that writes to --em-* tokens lives here.
      4	
      5	export function Field({ label, children }) {
      6	  return (
      7	    <div className="mb-3">
-     8	      <div style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginBottom: 6 }}>
+     8	      <div style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginBottom: 6 }}>
      9	        {label}
     10	      </div>
     11	      {children}
@@ -234,9 +234,9 @@
     25	        minHeight: 44,
     26	        padding: '0 14px',
     27	        borderRadius: 10,
-    28	        border: '1px solid var(--sf-border-default)',
-    29	        backgroundColor: 'var(--sf-bg-card)',
-    30	        color: 'var(--sf-text-primary)',
+    28	        border: '1px solid var(--em-border-default)',
+    29	        backgroundColor: 'var(--em-bg-card)',
+    30	        color: 'var(--em-text-primary)',
     31	        fontSize: 15,
     32	        outline: 'none',
     33	      }}
@@ -264,9 +264,9 @@
     55	                padding: '0 16px',
     56	                borderRadius: 999,
     57	                fontSize: 13,
-    58	                border: `1px solid ${active ? 'var(--sf-accent)' : 'var(--sf-border-default)'}`,
-    59	                backgroundColor: active ? 'var(--sf-accent-soft)' : 'var(--sf-bg-card)',
-    60	                color: active ? 'var(--sf-accent)' : 'var(--sf-text-primary)',
+    58	                border: `1px solid ${active ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
+    59	                backgroundColor: active ? 'var(--em-accent-soft)' : 'var(--em-bg-card)',
+    60	                color: active ? 'var(--em-accent)' : 'var(--em-text-primary)',
     61	                fontWeight: 500,
     62	              }}
     63	              aria-pressed={active}
@@ -324,10 +324,10 @@
     39	  return (
     40	    <div
     41	      style={{
-    42	        backgroundColor: 'var(--sf-bg-card)',
+    42	        backgroundColor: 'var(--em-bg-card)',
     43	        borderRadius: 10,
-    44	        border: '1px solid var(--sf-border-default)',
-    45	        boxShadow: 'var(--sf-shadow-sm)',
+    44	        border: '1px solid var(--em-border-default)',
+    45	        boxShadow: 'var(--em-shadow-sm)',
     46	        overflow: 'hidden',
     47	      }}
     48	    >
@@ -338,7 +338,7 @@
     53	        style={{ background: 'none', border: 'none', minHeight: 44 }}
     54	      >
     55	        <div className="flex items-center gap-2">
-    56	          <span className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 15 }}>
+    56	          <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 15 }}>
     57	            Getting started
     58	          </span>
     59	          {remaining > 0 && (
@@ -347,8 +347,8 @@
     62	              fontWeight: 600,
     63	              padding: '2px 8px',
     64	              borderRadius: 999,
-    65	              backgroundColor: 'var(--sf-neutral-soft)',
-    66	              color: 'var(--sf-text-secondary)',
+    65	              backgroundColor: 'var(--em-neutral-soft)',
+    66	              color: 'var(--em-text-secondary)',
     67	            }}>
     68	              {remaining} left
     69	            </span>
@@ -356,7 +356,7 @@
     71	        </div>
     72	        <svg
     73	          width="16" height="16" viewBox="0 0 24 24" fill="none"
-    74	          stroke="var(--sf-text-tertiary)" strokeWidth="1.75"
+    74	          stroke="var(--em-text-tertiary)" strokeWidth="1.75"
     75	          strokeLinecap="round" strokeLinejoin="round"
     76	          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms ease-out' }}
     77	        >
@@ -371,12 +371,12 @@
     86	                <Link
     87	                  to={s.to}
     88	                  className="flex items-center gap-3 sf-press"
-    89	                  style={{ minHeight: 44, color: 'var(--sf-text-primary)', fontSize: 14 }}
+    89	                  style={{ minHeight: 44, color: 'var(--em-text-primary)', fontSize: 14 }}
     90	                >
     91	                  {s.done ? (
-    92	                    <CheckCircle2 size={20} strokeWidth={1.75} color="var(--sf-success)" />
+    92	                    <CheckCircle2 size={20} strokeWidth={1.75} color="var(--em-success)" />
     93	                  ) : (
-    94	                    <Circle size={20} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+    94	                    <Circle size={20} strokeWidth={1.75} color="var(--em-text-tertiary)" />
     95	                  )}
     96	                  <span style={{ textDecoration: s.done ? 'line-through' : 'none', opacity: s.done ? 0.6 : 1 }}>
     97	                    {s.label}
@@ -427,7 +427,7 @@
     31	      <polyline
     32	        points="0,14 8,10 16,12 24,6 32,8 40,3 48,5"
     33	        fill="none"
-    34	        stroke={color || 'var(--sf-text-tertiary)'}
+    34	        stroke={color || 'var(--em-text-tertiary)'}
     35	        strokeWidth="1.5"
     36	        strokeLinecap="round"
     37	        strokeLinejoin="round"
@@ -446,7 +446,7 @@
     50	        width: '60%',
     51	        height: 24,
     52	        borderRadius: 6,
-    53	        backgroundColor: 'var(--sf-bg-tertiary)',
+    53	        backgroundColor: 'var(--em-bg-tertiary)',
     54	      }}
     55	      aria-hidden="true"
     56	    />
@@ -469,15 +469,15 @@
     73	    <div
     74	      className={`p-4 min-w-0 sf-press ${stagger || ''}`}
     75	      style={{
-    76	        backgroundColor: 'var(--sf-bg-card)',
+    76	        backgroundColor: 'var(--em-bg-card)',
     77	        borderRadius: 10,
-    78	        border: '1px solid var(--sf-border-default)',
-    79	        boxShadow: 'var(--sf-shadow-sm)',
+    78	        border: '1px solid var(--em-border-default)',
+    79	        boxShadow: 'var(--em-shadow-sm)',
     80	        transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
     81	      }}
     82	      onClick={() => navigator.vibrate?.(10)}
     83	    >
-    84	      <div style={{ color: accent || 'var(--sf-text-tertiary)', marginBottom: 8 }}>
+    84	      <div style={{ color: accent || 'var(--em-text-tertiary)', marginBottom: 8 }}>
     85	        <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
     86	      </div>
     87	      {loading ? (
@@ -486,7 +486,7 @@
     90	        <div
     91	          className="font-bold truncate"
     92	          style={{
-    93	            color: accentValue ? accent : 'var(--sf-text-primary)',
+    93	            color: accentValue ? accent : 'var(--em-text-primary)',
     94	            fontSize: 24,
     95	            lineHeight: 1.1,
     96	          }}
@@ -496,7 +496,7 @@
    100	        </div>
    101	      )}
    102	      {!loading && isNumber && value > 0 && <Sparkline color={accent} />}
-   103	      <div className="truncate" style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginTop: 2 }}>
+   103	      <div className="truncate" style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginTop: 2 }}>
    104	        {label}
    105	      </div>
    106	    </div>
@@ -509,13 +509,13 @@
    113	  return (
    114	    <div className="grid grid-cols-2 gap-3">
    115	      <Card icon={Users} label="Players" value={players} loading={loading} stagger="sf-stagger-1" />
-   116	      <Card icon={Calendar} label="Events" value={events} loading={loading} accent="var(--sf-info)" stagger="sf-stagger-2" />
+   116	      <Card icon={Calendar} label="Events" value={events} loading={loading} accent="var(--em-info)" stagger="sf-stagger-2" />
    117	      <Card
    118	        icon={DollarSign}
    119	        label="Collected"
    120	        value={formatCurrency(collected)}
    121	        loading={loading}
-   122	        accent="var(--sf-success)"
+   122	        accent="var(--em-success)"
    123	        accentValue
    124	        stagger="sf-stagger-3"
    125	      />
@@ -524,7 +524,7 @@
    128	        label="Outstanding"
    129	        value={formatCurrency(outstanding)}
    130	        loading={loading}
-   131	        accent={outstanding > 0 ? 'var(--sf-warning)' : 'var(--sf-text-tertiary)'}
+   131	        accent={outstanding > 0 ? 'var(--em-warning)' : 'var(--em-text-tertiary)'}
    132	        accentValue={outstanding > 0}
    133	        stagger="sf-stagger-4"
    134	      />
@@ -570,10 +570,10 @@
     33	    <div
     34	      className="sf-stagger-5"
     35	      style={{
-    36	        backgroundColor: 'var(--sf-bg-card)',
+    36	        backgroundColor: 'var(--em-bg-card)',
     37	        borderRadius: 10,
-    38	        border: '1px solid var(--sf-border-default)',
-    39	        boxShadow: 'var(--sf-shadow-sm)',
+    38	        border: '1px solid var(--em-border-default)',
+    39	        boxShadow: 'var(--em-shadow-sm)',
     40	        padding: 16,
     41	        marginTop: 12,
     42	        display: 'flex',
@@ -582,19 +582,19 @@
     45	      }}
     46	    >
     47	      <div>
-    48	        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--sf-text-tertiary)' }}>
+    48	        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' }}>
     49	          NEXT EVENT
     50	        </div>
-    51	        <div className="font-semibold" style={{ fontSize: 15, color: 'var(--sf-text-primary)', marginTop: 2 }}>
+    51	        <div className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginTop: 2 }}>
     52	          Practice · 10U Black
     53	        </div>
     54	      </div>
     55	      <div style={{ textAlign: 'right' }}>
-    56	        <div className="font-bold" style={{ fontSize: 20, color: 'var(--sf-accent)', fontVariantNumeric: 'tabular-nums' }}>
+    56	        <div className="font-bold" style={{ fontSize: 20, color: 'var(--em-accent)', fontVariantNumeric: 'tabular-nums' }}>
     57	          {countdown || '—'}
     58	        </div>
     59	        <div className="sf-pulse-dot" style={{
-    60	          width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--sf-success)',
+    60	          width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--em-success)',
     61	          margin: '4px 0 0 auto',
     62	        }} />
     63	      </div>
@@ -642,16 +642,16 @@
     35	              minHeight: 44,
     36	              padding: '0 16px',
     37	              borderRadius: 10,
-    38	              backgroundColor: 'var(--sf-bg-card)',
-    39	              border: '1px solid var(--sf-border-default)',
-    40	              boxShadow: 'var(--sf-shadow-sm)',
-    41	              color: 'var(--sf-text-primary)',
+    38	              backgroundColor: 'var(--em-bg-card)',
+    39	              border: '1px solid var(--em-border-default)',
+    40	              boxShadow: 'var(--em-shadow-sm)',
+    41	              color: 'var(--em-text-primary)',
     42	              fontSize: 14,
     43	              fontWeight: 500,
     44	              transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
     45	            }}
     46	          >
-    47	            <Icon size={20} strokeWidth={1.75} style={{ color: 'var(--sf-text-tertiary)' }} aria-hidden="true" />
+    47	            <Icon size={20} strokeWidth={1.75} style={{ color: 'var(--em-text-tertiary)' }} aria-hidden="true" />
     48	            {action.label}
     49	          </Link>
     50	        );
@@ -724,18 +724,18 @@
     59	
     60	  const chip = (active) => ({
     61	    minHeight: 44, padding: '0 16px', borderRadius: 999, fontSize: 13,
-    62	    border: `1px solid ${active ? 'var(--sf-accent)' : 'var(--sf-border-default)'}`,
-    63	    backgroundColor: active ? 'var(--sf-accent-soft)' : 'var(--sf-bg-card)',
-    64	    color: active ? 'var(--sf-accent)' : 'var(--sf-text-primary)',
+    62	    border: `1px solid ${active ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
+    63	    backgroundColor: active ? 'var(--em-accent-soft)' : 'var(--em-bg-card)',
+    64	    color: active ? 'var(--em-accent)' : 'var(--em-text-primary)',
     65	    fontWeight: 500,
     66	  });
     67	  const inputStyle = {
     68	    width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10,
-    69	    border: '1px solid var(--sf-border-default)',
-    70	    backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-text-primary)',
+    69	    border: '1px solid var(--em-border-default)',
+    70	    backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
     71	    fontSize: 15, outline: 'none',
     72	  };
-    73	  const label = { color: 'var(--sf-text-secondary)', fontSize: 13, marginBottom: 6, display: 'block' };
+    73	  const label = { color: 'var(--em-text-secondary)', fontSize: 13, marginBottom: 6, display: 'block' };
     74	
     75	  return (
     76	    <div>
@@ -784,7 +784,7 @@
    119	          className="w-full font-semibold sf-press sf-bounce-tap"
    120	          style={{
    121	            minHeight: 44, borderRadius: 10,
-   122	            backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 15,
+   122	            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15,
    123	          }}
    124	        >
    125	        {editing ? 'Save changes' : 'Create season'}
@@ -885,7 +885,7 @@
     87	                aria-label={`Color ${hex}`} aria-pressed={form.team_color === hex}
     88	                style={{
     89	                  width: 44, height: 44, borderRadius: '50%', backgroundColor: hex,
-    90	                  border: `3px solid ${form.team_color === hex ? 'var(--sf-text-primary)' : 'transparent'}`,
+    90	                  border: `3px solid ${form.team_color === hex ? 'var(--em-text-primary)' : 'transparent'}`,
     91	                }}
     92	              />
     93	            ))}
@@ -913,7 +913,7 @@
    115	              className="flex-1 font-semibold sf-press"
    116	              style={{
    117	                minHeight: 44, borderRadius: 10, fontSize: 15,
-   118	                backgroundColor: 'var(--sf-danger-soft)', color: 'var(--sf-danger)',
+   118	                backgroundColor: 'var(--em-danger-soft)', color: 'var(--em-danger)',
    119	              }}
    120	            >Delete</button>
    121	          )}
@@ -922,7 +922,7 @@
    124	            className="flex-1 font-semibold sf-press sf-bounce-tap"
    125	            style={{
    126	              minHeight: 44, borderRadius: 10, fontSize: 15,
-   127	              backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)',
+   127	              backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
    128	            }}
    129	          >{editing ? 'Save changes' : 'Create team'}</button>
    130	        </div>
@@ -961,20 +961,20 @@
     15	            width: 140,
     16	            padding: 12,
     17	            borderRadius: 10,
-    18	            backgroundColor: 'var(--sf-bg-card)',
-    19	            border: '1px solid var(--sf-border-default)',
-    20	            boxShadow: 'var(--sf-shadow-sm)',
+    18	            backgroundColor: 'var(--em-bg-card)',
+    19	            border: '1px solid var(--em-border-default)',
+    20	            boxShadow: 'var(--em-shadow-sm)',
     21	            textAlign: 'left',
-    22	            borderTop: `3px solid ${team.team_color || 'var(--sf-neutral)'}`,
+    22	            borderTop: `3px solid ${team.team_color || 'var(--em-neutral)'}`,
     23	          }}
     24	        >
-    25	          <div className="font-semibold truncate" style={{ fontSize: 14, color: 'var(--sf-text-primary)' }}>
+    25	          <div className="font-semibold truncate" style={{ fontSize: 14, color: 'var(--em-text-primary)' }}>
     26	            {team.name}
     27	          </div>
-    28	          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--sf-text-primary)', marginTop: 4 }}>
+    28	          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', marginTop: 4 }}>
     29	            0-0
     30	          </div>
-    31	          <div style={{ fontSize: 11, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
+    31	          <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
     32	            {team.age_group} · {team.circuit === 'aau' ? 'AAU' : 'League Play'}
     33	          </div>
     34	        </button>
@@ -1009,16 +1009,16 @@
     21	    return (
     22	      <div
     23	        className="sf-fullscreen flex items-center justify-center px-4"
-    24	        style={{ backgroundColor: 'var(--sf-bg-page)' }}
+    24	        style={{ backgroundColor: 'var(--em-bg-page)' }}
     25	      >
     26	        <div className="text-center">
     27	          <h1
     28	            className="font-semibold"
-    29	            style={{ color: 'var(--sf-text-primary)', fontSize: 20, marginBottom: 8 }}
+    29	            style={{ color: 'var(--em-text-primary)', fontSize: 20, marginBottom: 8 }}
     30	          >
     31	            Something went wrong
     32	          </h1>
-    33	          <p style={{ color: 'var(--sf-text-secondary)', fontSize: 14, marginBottom: 16 }}>
+    33	          <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, marginBottom: 16 }}>
     34	            Please try refreshing the page.
     35	          </p>
     36	          <button
@@ -1029,8 +1029,8 @@
     41	              minHeight: 44,
     42	              padding: '0 20px',
     43	              borderRadius: 10,
-    44	              backgroundColor: 'var(--sf-accent)',
-    45	              color: 'var(--sf-text-inverse)',
+    44	              backgroundColor: 'var(--em-accent)',
+    45	              color: 'var(--em-text-inverse)',
     46	              fontSize: 15,
     47	            }}
     48	          >
@@ -1054,8 +1054,8 @@
      7	    <button type="button" onClick={() => downloadIcs(event)} style={{
      8	      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
      9	      width: 'calc(100% - 32px)', margin: '0 16px 16px', minHeight: 44,
-    10	      borderRadius: 10, border: '1px solid var(--sf-border-default)',
-    11	      backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-accent)',
+    10	      borderRadius: 10, border: '1px solid var(--em-border-default)',
+    11	      backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)',
     12	      fontSize: 14, fontWeight: 500,
     13	    }}>
     14	      <Calendar size={16} strokeWidth={1.75} />
@@ -1092,8 +1092,8 @@
     23	          style={{
     24	            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
     25	            width: '100%', minHeight: 44, borderRadius: 10,
-    26	            border: '1px solid var(--sf-warning)', backgroundColor: 'transparent',
-    27	            color: 'var(--sf-warning)', fontSize: 14, fontWeight: 500,
+    26	            border: '1px solid var(--em-warning)', backgroundColor: 'transparent',
+    27	            color: 'var(--em-warning)', fontSize: 14, fontWeight: 500,
     28	          }}>
     29	          <Ban size={16} strokeWidth={1.75} />
     30	          Cancel Event
@@ -1104,8 +1104,8 @@
     35	          style={{
     36	            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
     37	            width: '100%', minHeight: 44, borderRadius: 10,
-    38	            border: '1px solid var(--sf-accent)', backgroundColor: 'transparent',
-    39	            color: 'var(--sf-accent)', fontSize: 14, fontWeight: 500,
+    38	            border: '1px solid var(--em-accent)', backgroundColor: 'transparent',
+    39	            color: 'var(--em-accent)', fontSize: 14, fontWeight: 500,
     40	          }}>
     41	          Reinstate Event
     42	        </button>
@@ -1125,12 +1125,12 @@
      6	
      7	export default function EventCheckinOverlay({ eventId, roster, teamColor, onClose }) {
      8	  return createPortal(
-     9	    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--sf-bg-page)', zIndex: 9999, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-    10	      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 4px', borderBottom: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)' }}>
+     9	    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--em-bg-page)', zIndex: 9999, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+    10	      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 4px', borderBottom: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)' }}>
     11	        <button type="button" onClick={onClose} className="sf-press" style={iconBtn}>
-    12	          <ArrowLeft size={20} strokeWidth={1.75} color="var(--sf-text-primary)" />
+    12	          <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-primary)" />
     13	        </button>
-    14	        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--sf-text-primary)' }}>Take Attendance</h2>
+    14	        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--em-text-primary)' }}>Take Attendance</h2>
     15	      </div>
     16	      <div style={{ flex: 1, overflowY: 'auto' }}>
     17	        <EventCheckinTab eventId={eventId} roster={roster} teamColor={teamColor} />
@@ -1153,10 +1153,10 @@
      8	  const { checkIns, loading, toggle } = useCheckIns(eventId);
      9	
     10	  if (loading) {
-    11	    return <div style={{ padding: 16, color: 'var(--sf-text-tertiary)', fontSize: 14 }}>Loading check-ins...</div>;
+    11	    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 14 }}>Loading check-ins...</div>;
     12	  }
     13	  if (roster.length === 0) {
-    14	    return <div style={{ padding: 16, color: 'var(--sf-text-tertiary)', fontSize: 14 }}>No players on this team yet.</div>;
+    14	    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 14 }}>No players on this team yet.</div>;
     15	  }
     16	
     17	  const map = {};
@@ -1165,7 +1165,7 @@
     20	
     21	  return (
     22	    <div style={{ padding: '16px 16px 32px' }}>
-    23	      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-text-secondary)', marginBottom: 12 }}>
+    23	      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-secondary)', marginBottom: 12 }}>
     24	        {checkedCount} of {roster.length} checked in
     25	      </div>
     26	      {roster.map((player) => {
@@ -1176,30 +1176,30 @@
     31	            style={{
     32	              display: 'flex', alignItems: 'center', gap: 10,
     33	              padding: '10px 0',
-    34	              borderBottom: '1px solid var(--sf-border-subtle)',
+    34	              borderBottom: '1px solid var(--em-border-subtle)',
     35	              cursor: 'pointer',
     36	            }}>
     37	            <div style={{
     38	              width: 32, height: 32, borderRadius: 16,
-    39	              backgroundColor: teamColor || 'var(--sf-bg-tertiary)',
-    40	              color: 'var(--sf-text-inverse)', fontSize: 12, fontWeight: 600,
+    39	              backgroundColor: teamColor || 'var(--em-bg-tertiary)',
+    40	              color: 'var(--em-text-inverse)', fontSize: 12, fontWeight: 600,
     41	              display: 'flex', alignItems: 'center', justifyContent: 'center',
     42	              flexShrink: 0,
     43	            }}>
     44	              {player.jersey_number || '—'}
     45	            </div>
-    46	            <div style={{ flex: 1, fontSize: 14, color: 'var(--sf-text-primary)', fontWeight: 500 }}>
+    46	            <div style={{ flex: 1, fontSize: 14, color: 'var(--em-text-primary)', fontWeight: 500 }}>
     47	              {player.first_name} {player.last_name}
     48	            </div>
     49	            <div style={{
     50	              width: 36, height: 36, borderRadius: 18,
-    51	              backgroundColor: on ? 'var(--sf-success-soft)' : 'transparent',
-    52	              border: on ? 'none' : '1px solid var(--sf-border-default)',
+    51	              backgroundColor: on ? 'var(--em-success-soft)' : 'transparent',
+    52	              border: on ? 'none' : '1px solid var(--em-border-default)',
     53	              display: 'flex', alignItems: 'center', justifyContent: 'center',
     54	            }}>
     55	              {on
-    56	                ? <Check size={18} strokeWidth={2.5} color="var(--sf-success)" />
-    57	                : <Circle size={18} strokeWidth={1.5} color="var(--sf-text-tertiary)" />}
+    56	                ? <Check size={18} strokeWidth={2.5} color="var(--em-success)" />
+    57	                : <Circle size={18} strokeWidth={1.5} color="var(--em-text-tertiary)" />}
     58	            </div>
     59	          </div>
     60	        );
@@ -1230,27 +1230,27 @@
     17	
     18	  return (
     19	    <div style={{ padding: '16px 16px 32px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-    20	      {loading && <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 14 }}>Loading comments...</div>}
+    20	      {loading && <div style={{ color: 'var(--em-text-tertiary)', fontSize: 14 }}>Loading comments...</div>}
     21	      {!loading && comments.length === 0 && (
-    22	        <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 14 }}>No comments yet. Start the conversation.</div>
+    22	        <div style={{ color: 'var(--em-text-tertiary)', fontSize: 14 }}>No comments yet. Start the conversation.</div>
     23	      )}
     24	      {comments.map((c) => (
     25	        <div key={c.id} style={{
-    26	          backgroundColor: c.pinned ? 'var(--sf-warning-soft)' : 'var(--sf-bg-card)',
+    26	          backgroundColor: c.pinned ? 'var(--em-warning-soft)' : 'var(--em-bg-card)',
     27	          borderRadius: 10,
-    28	          border: '1px solid ' + (c.pinned ? 'var(--sf-warning)' : 'var(--sf-border-default)'),
+    28	          border: '1px solid ' + (c.pinned ? 'var(--em-warning)' : 'var(--em-border-default)'),
     29	          padding: 12,
     30	        }}>
     31	          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-    32	            {c.pinned && <Pin size={12} strokeWidth={2} color="var(--sf-warning)" />}
-    33	            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--sf-text-primary)' }}>
+    32	            {c.pinned && <Pin size={12} strokeWidth={2} color="var(--em-warning)" />}
+    33	            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--em-text-primary)' }}>
     34	              {c.author_name || 'User'}
     35	            </span>
-    36	            <span style={{ fontSize: 11, color: 'var(--sf-text-tertiary)' }}>
+    36	            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>
     37	              {new Date(c.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
     38	            </span>
     39	          </div>
-    40	          <div style={{ fontSize: 14, color: 'var(--sf-text-primary)', whiteSpace: 'pre-wrap' }}>{c.body}</div>
+    40	          <div style={{ fontSize: 14, color: 'var(--em-text-primary)', whiteSpace: 'pre-wrap' }}>{c.body}</div>
     41	        </div>
     42	      ))}
     43	
@@ -1260,16 +1260,16 @@
     47	          placeholder="Write a comment..."
     48	          style={{
     49	            flex: 1, minHeight: 44, padding: '0 14px', borderRadius: 10,
-    50	            border: '1px solid var(--sf-border-default)',
-    51	            backgroundColor: 'var(--sf-bg-card)', fontSize: 15,
-    52	            color: 'var(--sf-text-primary)',
+    50	            border: '1px solid var(--em-border-default)',
+    51	            backgroundColor: 'var(--em-bg-card)', fontSize: 15,
+    52	            color: 'var(--em-text-primary)',
     53	          }} />
     54	        <button type="button" onClick={send} disabled={!draft.trim()} className="sf-press"
     55	          aria-label="Send comment"
     56	          style={{
     57	            width: 44, height: 44, borderRadius: 10, border: 'none',
-    58	            backgroundColor: draft.trim() ? 'var(--sf-accent)' : 'var(--sf-bg-tertiary)',
-    59	            color: draft.trim() ? 'var(--sf-text-inverse)' : 'var(--sf-text-tertiary)',
+    58	            backgroundColor: draft.trim() ? 'var(--em-accent)' : 'var(--em-bg-tertiary)',
+    59	            color: draft.trim() ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)',
     60	            display: 'flex', alignItems: 'center', justifyContent: 'center',
     61	          }}>
     62	          <Send size={18} strokeWidth={1.75} />
@@ -1290,7 +1290,7 @@
      6	
      7	export default function EventDetailHeader({ event, team, isStaff, onEdit, onDelete, onCheckin }) {
      8	  const navigate = useNavigate();
-     9	  const teamColor = team?.team_color || 'var(--sf-text-tertiary)';
+     9	  const teamColor = team?.team_color || 'var(--em-text-tertiary)';
     10	  const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
     11	
     12	  return (
@@ -1298,25 +1298,25 @@
     14	      <div style={{ backgroundColor: teamColor, padding: '0 8px 16px 4px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
     15	        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
     16	          <button type="button" onClick={() => navigate(-1)} className="sf-press" style={iconBtn}>
-    17	            <ArrowLeft size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
+    17	            <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-inverse)" />
     18	          </button>
     19	          <div style={{ display: 'flex', gap: 4 }}>
     20	            {isStaff && (
     21	              <button type="button" onClick={onCheckin} className="sf-press" aria-label="Take attendance" style={iconBtn}>
-    22	                <UserCheck size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
+    22	                <UserCheck size={20} strokeWidth={1.75} color="var(--em-text-inverse)" />
     23	              </button>
     24	            )}
     25	            <button type="button" onClick={onEdit} className="sf-press" aria-label="Edit event" style={iconBtn}>
-    26	              <Pencil size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
+    26	              <Pencil size={20} strokeWidth={1.75} color="var(--em-text-inverse)" />
     27	            </button>
     28	            <button type="button" onClick={onDelete} className="sf-press" aria-label="Delete event" style={iconBtn}>
-    29	              <Trash2 size={20} strokeWidth={1.75} color="var(--sf-text-inverse)" />
+    29	              <Trash2 size={20} strokeWidth={1.75} color="var(--em-text-inverse)" />
     30	            </button>
     31	          </div>
     32	        </div>
     33	        <div style={{ padding: '0 12px', marginTop: 4 }}>
     34	          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)', backgroundColor: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: 6 }}>{typeLabel}</span>
-    35	          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--sf-text-inverse)', margin: '12px 0 0 0' }}>
+    35	          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--em-text-inverse)', margin: '12px 0 0 0' }}>
     36	            {event.title || typeLabel}
     37	          </h1>
     38	          {team && <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>{team.name}</div>}
@@ -1324,9 +1324,9 @@
     40	      </div>
     41	      {event.status === 'cancelled' && (
     42	        <div style={{
-    43	          backgroundColor: 'var(--sf-danger-soft)', padding: '8px 16px',
+    43	          backgroundColor: 'var(--em-danger-soft)', padding: '8px 16px',
     44	          display: 'flex', alignItems: 'center', gap: 8,
-    45	          fontSize: 14, fontWeight: 500, color: 'var(--sf-danger)',
+    45	          fontSize: 14, fontWeight: 500, color: 'var(--em-danger)',
     46	        }}>
     47	          <Ban size={16} strokeWidth={1.75} />
     48	          This event has been cancelled
@@ -1353,27 +1353,27 @@
     12	  return (
     13	    <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
     14	      {date && (
-    15	        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--sf-text-primary)' }}>
-    16	          <Calendar size={16} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+    15	        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--em-text-primary)' }}>
+    16	          <Calendar size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
     17	          <span>{fmt(date)}{endDate ? ` · ${fmtTime(date)} – ${fmtTime(endDate)}` : ''}</span>
     18	        </div>
     19	      )}
     20	      {event.arrival_minutes_before > 0 && (
-    21	        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--sf-text-secondary)' }}>
-    22	          <Clock size={16} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+    21	        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--em-text-secondary)' }}>
+    22	          <Clock size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
     23	          <span>Arrive {event.arrival_minutes_before} min early</span>
     24	        </div>
     25	      )}
     26	      {event.opponent && (
     27	        <div style={{
-    28	          fontSize: 15, fontWeight: 600, color: 'var(--sf-text-primary)',
-    29	          padding: '8px 12px', backgroundColor: 'var(--sf-bg-secondary)', borderRadius: 10,
+    28	          fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)',
+    29	          padding: '8px 12px', backgroundColor: 'var(--em-bg-secondary)', borderRadius: 10,
     30	        }}>
     31	          vs. {event.opponent} · {(event.home_away || 'tbd').toUpperCase()}
     32	        </div>
     33	      )}
     34	      {event.jersey && (
-    35	        <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)' }}>Jersey: {event.jersey}</div>
+    35	        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>Jersey: {event.jersey}</div>
     36	      )}
     37	    </div>
     38	  );
@@ -1405,12 +1405,12 @@
     21	    <div style={{ padding: '16px 16px 32px' }}>
     22	      {Object.entries(groups).map(([name, slots]) => (
     23	        <div key={name} style={{ marginBottom: 20 }}>
-    24	          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-text-secondary)', marginBottom: 8 }}>
+    24	          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-secondary)', marginBottom: 8 }}>
     25	            {name}
     26	          </div>
     27	          <div style={{
-    28	            backgroundColor: 'var(--sf-bg-card)', borderRadius: 10,
-    29	            border: '1px solid var(--sf-border-default)', overflow: 'hidden',
+    28	            backgroundColor: 'var(--em-bg-card)', borderRadius: 10,
+    29	            border: '1px solid var(--em-border-default)', overflow: 'hidden',
     30	          }}>
     31	            {slots.map((slot, i) => {
     32	              const claimed = !!slot.guardian_id;
@@ -1419,20 +1419,20 @@
     35	                <div key={slot.id} style={{
     36	                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     37	                  padding: '12px 14px',
-    38	                  borderTop: i === 0 ? 'none' : '1px solid var(--sf-border-subtle)',
+    38	                  borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)',
     39	                }}>
-    40	                  <div style={{ fontSize: 14, color: claimed ? 'var(--sf-text-primary)' : 'var(--sf-text-tertiary)' }}>
+    40	                  <div style={{ fontSize: 14, color: claimed ? 'var(--em-text-primary)' : 'var(--em-text-tertiary)' }}>
     41	                    {claimed ? (slot.claimed_by_name || 'Claimed') : 'Open'}
     42	                  </div>
     43	                  {!claimed && (
     44	                    <button type="button" onClick={() => claim(slot.id)} className="sf-press"
-    45	                      style={btnStyle('var(--sf-accent)', 'var(--sf-text-inverse)')}>
+    45	                      style={btnStyle('var(--em-accent)', 'var(--em-text-inverse)')}>
     46	                      Claim
     47	                    </button>
     48	                  )}
     49	                  {isMine && (
     50	                    <button type="button" onClick={() => unclaim(slot.id)} className="sf-press"
-    51	                      style={btnStyle('var(--sf-bg-card)', 'var(--sf-text-secondary)', true)}>
+    51	                      style={btnStyle('var(--em-bg-card)', 'var(--em-text-secondary)', true)}>
     52	                      Release
     53	                    </button>
     54	                  )}
@@ -1447,13 +1447,13 @@
     63	}
     64	
     65	function Empty({ text }) {
-    66	  return <div style={{ padding: 16, color: 'var(--sf-text-tertiary)', fontSize: 14 }}>{text}</div>;
+    66	  return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 14 }}>{text}</div>;
     67	}
     68	
     69	const btnStyle = (bg, color, bordered) => ({
     70	  minHeight: 44, padding: '0 14px', borderRadius: 8,
     71	  backgroundColor: bg, color,
-    72	  border: bordered ? '1px solid var(--sf-border-default)' : 'none',
+    72	  border: bordered ? '1px solid var(--em-border-default)' : 'none',
     73	  fontSize: 13, fontWeight: 600,
     74	});
 ```
@@ -1483,27 +1483,27 @@
     21	    <div style={{
     22	      margin: '0 16px',
     23	      padding: 16,
-    24	      backgroundColor: 'var(--sf-bg-card)',
-    25	      border: '1px solid var(--sf-border-default)',
+    24	      backgroundColor: 'var(--em-bg-card)',
+    25	      border: '1px solid var(--em-border-default)',
     26	      borderRadius: 10,
-    27	      boxShadow: 'var(--sf-shadow-sm)',
+    27	      boxShadow: 'var(--em-shadow-sm)',
     28	    }}>
     29	      {event.location ? (
-    30	        <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--sf-text-primary)' }}>
+    30	        <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
     31	          {event.location}
     32	        </div>
     33	      ) : (
-    34	        <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', fontStyle: 'italic' }}>
+    34	        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', fontStyle: 'italic' }}>
     35	          Location TBD
     36	        </div>
     37	      )}
     38	      {(event.location_address || locationData?.address) && (
-    39	        <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 4 }}>
+    39	        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 4 }}>
     40	          {event.location_address || `${locationData.address}, ${locationData.city}, ${locationData.state}`}
     41	        </div>
     42	      )}
     43	      {event.sub_location && (
-    44	        <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
+    44	        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
     45	          {event.sub_location}
     46	        </div>
     47	      )}
@@ -1513,8 +1513,8 @@
     51	            className="sf-press"
     52	            style={{
     53	              flex: 1, minHeight: 44, borderRadius: 10,
-    54	              border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)',
-    55	              color: 'var(--sf-text-primary)', fontSize: 13, fontWeight: 500,
+    54	              border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+    55	              color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500,
     56	              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, textDecoration: 'none',
     57	            }}>
     58	            <Navigation size={14} strokeWidth={1.75} />
@@ -1524,8 +1524,8 @@
     62	            className="sf-press"
     63	            style={{
     64	              flex: 1, minHeight: 44, borderRadius: 10,
-    65	              border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)',
-    66	              color: 'var(--sf-text-primary)', fontSize: 13, fontWeight: 500,
+    65	              border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+    66	              color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500,
     67	              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, textDecoration: 'none',
     68	            }}>
     69	            <Navigation size={14} strokeWidth={1.75} />
@@ -1535,8 +1535,8 @@
     73	            className="sf-press"
     74	            style={{
     75	              flex: 1, minHeight: 44, borderRadius: 10,
-    76	              border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)',
-    77	              color: 'var(--sf-text-primary)', fontSize: 13, fontWeight: 500,
+    76	              border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+    77	              color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500,
     78	              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, textDecoration: 'none',
     79	            }}>
     80	            <Navigation size={14} strokeWidth={1.75} />
@@ -1555,14 +1555,14 @@
      2	  return (
      3	    <div style={{ padding: '0 16px' }}>
      4	      {notes && (
-     5	        <div style={{ fontSize: 14, color: 'var(--sf-text-secondary)', marginBottom: 12 }}>
-     6	          <div style={{ fontWeight: 500, color: 'var(--sf-text-primary)', marginBottom: 4, fontSize: 13 }}>Parent instructions</div>
+     5	        <div style={{ fontSize: 14, color: 'var(--em-text-secondary)', marginBottom: 12 }}>
+     6	          <div style={{ fontWeight: 500, color: 'var(--em-text-primary)', marginBottom: 4, fontSize: 13 }}>Parent instructions</div>
      7	          {notes}
      8	        </div>
      9	      )}
     10	      {coachNotes && (
-    11	        <div style={{ fontSize: 14, color: 'var(--sf-text-secondary)' }}>
-    12	          <div style={{ fontWeight: 500, color: 'var(--sf-warning)', marginBottom: 4, fontSize: 13 }}>Coach notes (not visible to parents)</div>
+    11	        <div style={{ fontSize: 14, color: 'var(--em-text-secondary)' }}>
+    12	          <div style={{ fontWeight: 500, color: 'var(--em-warning)', marginBottom: 4, fontSize: 13 }}>Coach notes (not visible to parents)</div>
     13	          {coachNotes}
     14	        </div>
     15	      )}
@@ -1603,7 +1603,7 @@
     28	      .then(({ data }) => setGuardian(data || null));
     29	  }, [user?.id]);
     30	
-    31	  if (loading) return <div style={{ padding: 16, color: 'var(--sf-text-tertiary)', fontSize: 14 }}>Loading rides...</div>;
+    31	  if (loading) return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 14 }}>Loading rides...</div>;
     32	
     33	  const offers = rides.filter((r) => r.ride_type === 'offering');
     34	  const requests = rides.filter((r) => r.ride_type === 'requesting');
@@ -1661,17 +1661,17 @@
     86	  const arr = Array.isArray(children) ? children : [children];
     87	  return (
     88	    <div>
-    89	      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: 'var(--sf-text-secondary)', marginBottom: 8 }}>
+    89	      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: 'var(--em-text-secondary)', marginBottom: 8 }}>
     90	        <Icon size={14} strokeWidth={1.75} /> {title}
     91	      </div>
     92	      {arr.filter(Boolean).length === 0
-    93	        ? <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)' }}>{empty}</div>
+    93	        ? <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{empty}</div>
     94	        : <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{children}</div>}
     95	    </div>
     96	  );
     97	}
     98	
-    99	const ghostBtn = { flex: 1, minHeight: 40, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-text-primary)', fontSize: 13, fontWeight: 500, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 };
+    99	const ghostBtn = { flex: 1, minHeight: 40, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 };
 ```
 
 ## src/components/event/EventRsvpTab.jsx (55 lines)
@@ -1685,10 +1685,10 @@
      7	// the useRsvps hook and pass in the resulting data.
      8	export default function EventRsvpTab({ roster, rsvps, rsvpMap, teamColor, onSetRsvp, onSaveNote, loading }) {
      9	  if (loading) {
-    10	    return <div style={{ padding: 16, color: 'var(--sf-text-tertiary)', fontSize: 14 }}>Loading roster...</div>;
+    10	    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 14 }}>Loading roster...</div>;
     11	  }
     12	  if (roster.length === 0) {
-    13	    return <div style={{ padding: 16, color: 'var(--sf-text-tertiary)', fontSize: 14 }}>No players on this team yet.</div>;
+    13	    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 14 }}>No players on this team yet.</div>;
     14	  }
     15	
     16	  const statusOrder = { going: 0, maybe: 1, not_going: 2 };
@@ -1713,7 +1713,7 @@
     35	        return (
     36	          <div key={player.id}>
     37	            {showHeader && (
-    38	              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--sf-text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: i > 0 ? 12 : 0, marginBottom: 4 }}>
+    38	              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: i > 0 ? 12 : 0, marginBottom: 4 }}>
     39	                {headerLabels[status]}
     40	              </div>
     41	            )}
@@ -1750,25 +1750,25 @@
     13	  const mapsUrl = ride.pickup_location ? `https://maps.google.com/maps?q=${encodeURIComponent(ride.pickup_location)}` : null;
     14	
     15	  return (
-    16	    <div style={{ backgroundColor: 'var(--sf-bg-card)', border: '1px solid var(--sf-border-default)', borderRadius: 10, padding: 12, marginBottom: 8 }}>
-    17	      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--sf-text-primary)', marginBottom: 4 }}>
+    16	    <div style={{ backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, padding: 12, marginBottom: 8 }}>
+    17	      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 4 }}>
     18	        {ride.name} {ride.ride_type === 'offering' ? `is offering ${ride.seats} seat${ride.seats > 1 ? 's' : ''}` : `needs a ride for ${ride.seats}`}
     19	      </div>
     20	      {ride.phone && (
     21	        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-    22	          <a href={`tel:${ride.phone}`} className="sf-press" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 36, borderRadius: 8, border: '1px solid var(--sf-border-default)', fontSize: 13, color: 'var(--sf-text-primary)', textDecoration: 'none' }}>
+    22	          <a href={`tel:${ride.phone}`} className="sf-press" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 36, borderRadius: 8, border: '1px solid var(--em-border-default)', fontSize: 13, color: 'var(--em-text-primary)', textDecoration: 'none' }}>
     23	            Call
     24	          </a>
-    25	          <a href={`sms:${ride.phone}`} className="sf-press" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 36, borderRadius: 8, border: '1px solid var(--sf-border-default)', fontSize: 13, color: 'var(--sf-text-primary)', textDecoration: 'none' }}>
+    25	          <a href={`sms:${ride.phone}`} className="sf-press" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 36, borderRadius: 8, border: '1px solid var(--em-border-default)', fontSize: 13, color: 'var(--em-text-primary)', textDecoration: 'none' }}>
     26	            Text
     27	          </a>
     28	        </div>
     29	      )}
-    30	      <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+    30	      <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', display: 'flex', flexDirection: 'column', gap: 4 }}>
     31	        {ride.pickup_location && (
     32	          <div>
     33	            Pickup:{' '}
-    34	            <a href={mapsUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--sf-accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+    34	            <a href={mapsUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--em-accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
     35	              {ride.pickup_location}
     36	              <ExternalLink size={12} strokeWidth={1.75} />
     37	            </a>
@@ -1777,17 +1777,17 @@
     40	        )}
     41	        {eventLocation && <div>Drop-off: {eventLocation}</div>}
     42	        {eventEndAt && <div>Est. return: {new Date(new Date(eventEndAt).getTime() + 15 * 60000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>}
-    43	        {ride.notes && <div style={{ fontStyle: 'italic', color: 'var(--sf-text-tertiary)' }}>&ldquo;{ride.notes}&rdquo;</div>}
+    43	        {ride.notes && <div style={{ fontStyle: 'italic', color: 'var(--em-text-tertiary)' }}>&ldquo;{ride.notes}&rdquo;</div>}
     44	      </div>
     45	      {showClaim && (
     46	        <button type="button" onClick={() => onClaim(ride)} className="sf-press"
-    47	          style={{ marginTop: 8, fontSize: 13, color: 'var(--sf-accent)', minHeight: 36, padding: '0 10px', backgroundColor: 'var(--sf-accent-soft)', border: '1px solid var(--sf-accent)', borderRadius: 8, fontWeight: 500 }}>
+    47	          style={{ marginTop: 8, fontSize: 13, color: 'var(--em-accent)', minHeight: 36, padding: '0 10px', backgroundColor: 'var(--em-accent-soft)', border: '1px solid var(--em-accent)', borderRadius: 8, fontWeight: 500 }}>
     48	          Claim seat
     49	        </button>
     50	      )}
     51	      {canRemove && (
     52	        <button type="button" onClick={() => onRemove(ride.id)} className="sf-press"
-    53	          style={{ marginTop: 8, fontSize: 13, color: 'var(--sf-danger)', minHeight: 36, padding: '0 8px', background: 'none', border: 'none' }}>
+    53	          style={{ marginTop: 8, fontSize: 13, color: 'var(--em-danger)', minHeight: 36, padding: '0 8px', background: 'none', border: 'none' }}>
     54	          Remove
     55	        </button>
     56	      )}
@@ -1801,8 +1801,8 @@
      1	import { createPortal } from 'react-dom';
      2	import { ArrowLeft } from 'lucide-react';
      3	
-     4	const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--sf-text-secondary)', marginBottom: 2, display: 'block' };
-     5	const inputStyle = { minHeight: 40, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)', padding: '0 10px', fontSize: 14, color: 'var(--sf-text-primary)' };
+     4	const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)', marginBottom: 2, display: 'block' };
+     5	const inputStyle = { minHeight: 40, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', padding: '0 10px', fontSize: 14, color: 'var(--em-text-primary)' };
      6	
      7	export default function RideFormOverlay({ form, draft, setDraft, onClose, onSubmit, eventLocation, eventEndAt, phoneKnown }) {
      8	  const estReturn = eventEndAt
@@ -1810,12 +1810,12 @@
     10	    : 'TBD';
     11	
     12	  return createPortal(
-    13	    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--sf-bg-page)', zIndex: 9999, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-    14	      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 4px', borderBottom: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)' }}>
+    13	    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--em-bg-page)', zIndex: 9999, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+    14	      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 4px', borderBottom: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)' }}>
     15	        <button type="button" onClick={(e) => { e.stopPropagation(); onClose(); }} className="sf-press" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    16	          <ArrowLeft size={20} strokeWidth={1.75} color="var(--sf-text-primary)" />
+    16	          <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-primary)" />
     17	        </button>
-    18	        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--sf-text-primary)' }}>
+    18	        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--em-text-primary)' }}>
     19	          {form === 'offering' ? 'Offer a ride' : 'Request a ride'}
     20	        </h2>
     21	      </div>
@@ -1837,22 +1837,22 @@
     37	          <input type="time" value={draft.departure_time}
     38	            onChange={(e) => setDraft({ ...draft, departure_time: e.target.value })} style={{ ...inputStyle, width: '100%' }} />
     39	        </div>
-    40	        <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)' }}>
+    40	        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>
     41	          Drop-off: {eventLocation || 'TBD'} · Est. return: {estReturn}
     42	        </div>
     43	        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-    44	          <span style={{ fontSize: 14, color: 'var(--sf-text-secondary)' }}>
+    44	          <span style={{ fontSize: 14, color: 'var(--em-text-secondary)' }}>
     45	            {form === 'offering' ? 'Seats available' : 'Riders'}
     46	          </span>
     47	          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
     48	            <button type="button" onClick={() => setDraft({ ...draft, seats: Math.max(1, draft.seats - 1) })}
     49	              disabled={draft.seats <= 1}
-    50	              style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)', fontSize: 16 }}>
+    50	              style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', fontSize: 16 }}>
     51	              -
     52	            </button>
     53	            <span style={{ minWidth: 24, textAlign: 'center', fontSize: 15, fontWeight: 600 }}>{draft.seats}</span>
     54	            <button type="button" onClick={() => setDraft({ ...draft, seats: Math.min(8, draft.seats + 1) })}
-    55	              style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)', fontSize: 16 }}>
+    55	              style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', fontSize: 16 }}>
     56	              +
     57	            </button>
     58	          </div>
@@ -1863,9 +1863,9 @@
     63	            onChange={(e) => setDraft({ ...draft, notes: e.target.value })} style={{ ...inputStyle, width: '100%' }} />
     64	        </div>
     65	      </div>
-    66	      <div style={{ padding: 16, borderTop: '1px solid var(--sf-border-default)' }}>
+    66	      <div style={{ padding: 16, borderTop: '1px solid var(--em-border-default)' }}>
     67	        <button type="button" onClick={onSubmit} className="sf-press"
-    68	          style={{ width: '100%', minHeight: 48, borderRadius: 10, border: 'none', backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 16, fontWeight: 600 }}>
+    68	          style={{ width: '100%', minHeight: 48, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 16, fontWeight: 600 }}>
     69	          {form === 'offering' ? 'Offer ride' : 'Request ride'}
     70	        </button>
     71	      </div>
@@ -1892,13 +1892,13 @@
     13	  return (
     14	    <div
     15	      className="sf-app-shell flex flex-col"
-    16	      style={{ backgroundColor: 'var(--sf-bg-page)' }}
+    16	      style={{ backgroundColor: 'var(--em-bg-page)' }}
     17	    >
     18	      <Header />
     19	      {!online && (
     20	        <div style={{
-    21	          backgroundColor: 'var(--sf-danger)',
-    22	          color: 'var(--sf-text-inverse)',
+    21	          backgroundColor: 'var(--em-danger)',
+    22	          color: 'var(--em-text-inverse)',
     23	          textAlign: 'center',
     24	          padding: '6px 16px',
     25	          fontSize: 13,
@@ -1954,8 +1954,8 @@
     22	    <nav
     23	      className="fixed bottom-0 left-0 right-0 z-50 flex items-stretch"
     24	      style={{
-    25	        backgroundColor: 'var(--sf-bg-card)',
-    26	        borderTop: '1px solid var(--sf-border-default)',
+    25	        backgroundColor: 'var(--em-bg-card)',
+    26	        borderTop: '1px solid var(--em-border-default)',
     27	        paddingBottom: 'env(safe-area-inset-bottom)',
     28	      }}
     29	      aria-label="Primary"
@@ -1980,7 +1980,7 @@
     48	      className="flex-1 sf-press"
     49	      style={({ isActive }) => ({
     50	        minHeight: 44,
-    51	        color: isActive ? 'var(--sf-accent)' : 'var(--sf-text-tertiary)',
+    51	        color: isActive ? 'var(--em-accent)' : 'var(--em-text-tertiary)',
     52	      })}
     53	      aria-label={tab.label}
     54	    >
@@ -1991,14 +1991,14 @@
     59	            fontSize: 10,
     60	            fontWeight: isActive ? 600 : 400,
     61	            letterSpacing: '0.02em',
-    62	            color: isActive ? 'var(--sf-accent)' : 'var(--sf-text-tertiary)',
+    62	            color: isActive ? 'var(--em-accent)' : 'var(--em-text-tertiary)',
     63	          }}>{tab.label}</span>
     64	          {isActive && (
     65	            <div style={{
     66	              width: 4,
     67	              height: 4,
     68	              borderRadius: '50%',
-    69	              backgroundColor: 'var(--sf-accent)',
+    69	              backgroundColor: 'var(--em-accent)',
     70	              marginTop: -1,
     71	            }} />
     72	          )}
@@ -2041,8 +2041,8 @@
     28	        maxHeight: 'calc(56px + env(safe-area-inset-top, 0px))',
     29	        paddingTop: 'env(safe-area-inset-top, 0px)',
     30	        flexShrink: 0,
-    31	        background: 'linear-gradient(180deg, var(--sf-header) 0%, color-mix(in srgb, var(--sf-header) 85%, black) 100%)',
-    32	        color: 'var(--sf-text-on-dark)',
+    31	        background: 'linear-gradient(180deg, var(--em-header) 0%, color-mix(in srgb, var(--em-header) 85%, black) 100%)',
+    32	        color: 'var(--em-text-on-dark)',
     33	        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
     34	      }}
     35	    >
@@ -2064,7 +2064,7 @@
     51	      <button
     52	        type="button"
     53	        className="relative flex items-center justify-center sf-press"
-    54	        style={{ width: 44, height: 44, color: 'var(--sf-text-on-dark)' }}
+    54	        style={{ width: 44, height: 44, color: 'var(--em-text-on-dark)' }}
     55	        aria-label="Notifications"
     56	      >
     57	        <div className="sf-bell-shake" style={{
@@ -2087,7 +2087,7 @@
     74	              width: 8,
     75	              height: 8,
     76	              borderRadius: '50%',
-    77	              backgroundColor: 'var(--sf-danger)',
+    77	              backgroundColor: 'var(--em-danger)',
     78	            }}
     79	            aria-label={`${unread} unread notifications`}
     80	          />
@@ -2097,7 +2097,7 @@
     84	        type="button"
     85	        onClick={() => navigate('/account')}
     86	        className="sf-press flex items-center justify-center"
-    87	        style={{ width: 44, height: 44, color: 'var(--sf-text-on-dark)', background: 'none', border: 'none' }}
+    87	        style={{ width: 44, height: 44, color: 'var(--em-text-on-dark)', background: 'none', border: 'none' }}
     88	        aria-label="Account"
     89	      >
     90	        <Settings size={20} strokeWidth={1.75} />
@@ -2180,9 +2180,9 @@
     36	      className="sf-press flex items-center gap-1"
     37	      style={{
     38	        minHeight: 44, padding: '0 14px', borderRadius: 8,
-    39	        border: '1px solid var(--sf-border-default)',
-    40	        backgroundColor: 'var(--sf-bg-card)',
-    41	        color: 'var(--sf-text-secondary)',
+    39	        border: '1px solid var(--em-border-default)',
+    40	        backgroundColor: 'var(--em-bg-card)',
+    41	        color: 'var(--em-text-secondary)',
     42	        fontSize: 12, fontWeight: 500,
     43	      }}
     44	    >
@@ -2238,19 +2238,19 @@
     39	  const pill = { minHeight: 32, padding: '0 10px', borderRadius: 9999, fontSize: 12, fontWeight: 500, backgroundColor: 'transparent' };
     40	
     41	  if (status === 'sent') {
-    42	    return <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--sf-success)' }}>Invited ✓</span>;
+    42	    return <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--em-success)' }}>Invited ✓</span>;
     43	  }
     44	  if (status === 'error') {
     45	    return (
     46	      <button type="button" onClick={invite} className="sf-press" title={error}
-    47	        style={{ ...pill, border: '1.5px solid var(--sf-danger)', color: 'var(--sf-danger)', maxWidth: '100%', whiteSpace: 'normal', textAlign: 'left', padding: '6px 10px', borderRadius: 8 }}>
+    47	        style={{ ...pill, border: '1.5px solid var(--em-danger)', color: 'var(--em-danger)', maxWidth: '100%', whiteSpace: 'normal', textAlign: 'left', padding: '6px 10px', borderRadius: 8 }}>
     48	        {error || 'Error — tap to retry'}
     49	      </button>
     50	    );
     51	  }
     52	  return (
     53	    <button type="button" onClick={invite} disabled={status === 'loading'} className="sf-press"
-    54	      style={{ ...pill, border: '1.5px solid var(--sf-accent)', color: 'var(--sf-accent)', opacity: status === 'loading' ? 0.6 : 1 }}>
+    54	      style={{ ...pill, border: '1.5px solid var(--em-accent)', color: 'var(--em-accent)', opacity: status === 'loading' ? 0.6 : 1 }}>
     55	      {status === 'loading' ? 'Sending…' : 'Invite'}
     56	    </button>
     57	  );
@@ -2276,14 +2276,14 @@
     15	        className="sf-press sf-bounce-tap"
     16	        style={{
     17	          width: 56, height: 56, borderRadius: '50%',
-    18	          backgroundColor: 'var(--sf-accent)',
-    19	          boxShadow: 'var(--sf-shadow-lg)',
+    18	          backgroundColor: 'var(--em-accent)',
+    19	          boxShadow: 'var(--em-shadow-lg)',
     20	          display: 'flex', alignItems: 'center', justifyContent: 'center',
     21	          border: 'none',
     22	        }}
     23	        aria-label="Message team"
     24	      >
-    25	        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--sf-text-inverse)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    25	        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--em-text-inverse)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
     26	          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
     27	        </svg>
     28	      </button>
@@ -2307,7 +2307,7 @@
     11	  const guardians = player.guardians || [];
     12	
     13	  return (
-    14	    <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--sf-border-subtle)' }}>
+    14	    <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--em-border-subtle)' }}>
     15	      <div
     16	        className="flex items-center sf-press"
     17	        onClick={() => { navigator.vibrate?.(10); setExpanded((v) => !v); }}
@@ -2316,47 +2316,47 @@
     20	        style={{ padding: '10px 16px', minHeight: 56, transition: 'background-color 150ms ease-out' }}
     21	      >
     22	        <div style={{
-    23	          width: 40, height: 40, borderRadius: '50%', backgroundColor: teamColor || 'var(--sf-neutral)',
+    23	          width: 40, height: 40, borderRadius: '50%', backgroundColor: teamColor || 'var(--em-neutral)',
     24	          display: 'flex', alignItems: 'center', justifyContent: 'center',
-    25	          color: 'var(--sf-text-inverse)', fontSize: 15, fontWeight: 700, flexShrink: 0,
+    25	          color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 700, flexShrink: 0,
     26	        }}>{initial}</div>
     27	        <div style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
     28	          <div className="flex items-center gap-2">
-    29	            <div className="font-semibold truncate" style={{ color: 'var(--sf-text-primary)', fontSize: 15 }}>
+    29	            <div className="font-semibold truncate" style={{ color: 'var(--em-text-primary)', fontSize: 15 }}>
     30	              {player.first_name} {player.last_name}
     31	            </div>
     32	            <div style={{
     33	              width: 6, height: 6, borderRadius: '50%',
-    34	              backgroundColor: player.payment_status === 'partial' ? 'var(--sf-warning)'
-    35	                : player.payment_status === 'overdue' ? 'var(--sf-danger)' : 'var(--sf-success)',
+    34	              backgroundColor: player.payment_status === 'partial' ? 'var(--em-warning)'
+    35	                : player.payment_status === 'overdue' ? 'var(--em-danger)' : 'var(--em-success)',
     36	              flexShrink: 0,
     37	            }} title={player.payment_status === 'partial' ? 'Partial payment' : player.payment_status === 'overdue' ? 'Payment overdue' : 'Paid'} />
     38	          </div>
     39	          <div className="flex items-center gap-1" style={{ marginTop: 2 }}>
-    40	            {isAcademy && <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--sf-academy-soft)', color: 'var(--sf-academy)' }}>Academy</span>}
-    41	            <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-secondary)' }}>{ordinalGrade(player.grade)}</span>
+    40	            {isAcademy && <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-academy-soft)', color: 'var(--em-academy)' }}>Academy</span>}
+    41	            <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{ordinalGrade(player.grade)}</span>
     42	          </div>
     43	          <div className="flex items-center gap-1" style={{ marginTop: 3 }}>
-    44	            <div style={{ width: 40, height: 3, borderRadius: 999, backgroundColor: 'var(--sf-bg-tertiary)', overflow: 'hidden' }}>
-    45	              <div style={{ height: '100%', width: `${player.attendance_pct || 85}%`, backgroundColor: (player.attendance_pct || 85) >= 80 ? 'var(--sf-success)' : 'var(--sf-warning)', borderRadius: 999 }} />
+    44	            <div style={{ width: 40, height: 3, borderRadius: 999, backgroundColor: 'var(--em-bg-tertiary)', overflow: 'hidden' }}>
+    45	              <div style={{ height: '100%', width: `${player.attendance_pct || 85}%`, backgroundColor: (player.attendance_pct || 85) >= 80 ? 'var(--em-success)' : 'var(--em-warning)', borderRadius: 999 }} />
     46	            </div>
-    47	            <span style={{ fontSize: 10, color: 'var(--sf-text-tertiary)' }}>{player.attendance_pct || 85}%</span>
+    47	            <span style={{ fontSize: 10, color: 'var(--em-text-tertiary)' }}>{player.attendance_pct || 85}%</span>
     48	          </div>
     49	        </div>
     50	        {player.jersey_number != null && (
     51	          <div style={{
-    52	            width: 32, height: 32, borderRadius: '50%', border: `2px solid ${teamColor || 'var(--sf-neutral)'}`,
+    52	            width: 32, height: 32, borderRadius: '50%', border: `2px solid ${teamColor || 'var(--em-neutral)'}`,
     53	            display: 'flex', alignItems: 'center', justifyContent: 'center',
-    54	            fontSize: 13, fontWeight: 700, color: teamColor || 'var(--sf-text-primary)', flexShrink: 0,
+    54	            fontSize: 13, fontWeight: 700, color: teamColor || 'var(--em-text-primary)', flexShrink: 0,
     55	          }}>{player.jersey_number}</div>
     56	        )}
-    57	        <ChevronDown size={16} strokeWidth={1.75} color="var(--sf-text-tertiary)"
+    57	        <ChevronDown size={16} strokeWidth={1.75} color="var(--em-text-tertiary)"
     58	          style={{ marginLeft: 8, flexShrink: 0, transform: expanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 150ms' }} />
     59	      </div>
     60	      {expanded && (
     61	        <div style={{ padding: '4px 16px 12px 68px', display: 'flex', flexDirection: 'column', gap: 8 }}>
     62	          {guardians.length === 0
-    63	            ? <div style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', fontStyle: 'italic' }}>No guardians linked</div>
+    63	            ? <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', fontStyle: 'italic' }}>No guardians linked</div>
     64	            : guardians.map((g) => <GuardianRow key={g.id} guardian={g} role={role} />)}
     65	        </div>
     66	      )}
@@ -2368,18 +2368,18 @@
     72	  const name = `${guardian.firstName || ''} ${guardian.lastName || ''}`.trim() || 'Guardian';
     73	  const canInvite = role === 'admin' && guardian.email && !guardian.userId;
     74	  const linked = guardian.email && guardian.userId;
-    75	  const iconBtn = { width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--sf-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+    75	  const iconBtn = { width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--em-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
     76	  const spacer = <div style={{ width: 32, height: 32, flexShrink: 0 }} />;
     77	  const stop = (e) => e.stopPropagation();
     78	  return (
     79	    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 36 }}>
-    80	      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: 'var(--sf-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+    80	      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
     81	      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-    82	        {guardian.phone ? <a href={`tel:${guardian.phone}`} onClick={stop} aria-label="Call" style={iconBtn}><Phone size={14} strokeWidth={1.75} color="var(--sf-text-secondary)" /></a> : spacer}
-    83	        {guardian.phone ? <a href={`sms:${guardian.phone}`} onClick={stop} aria-label="Text" style={iconBtn}><MessageSquare size={14} strokeWidth={1.75} color="var(--sf-text-secondary)" /></a> : spacer}
-    84	        {guardian.email ? <a href={`mailto:${guardian.email}`} onClick={stop} aria-label="Email" style={iconBtn}><Mail size={14} strokeWidth={1.75} color="var(--sf-text-secondary)" /></a> : spacer}
+    82	        {guardian.phone ? <a href={`tel:${guardian.phone}`} onClick={stop} aria-label="Call" style={iconBtn}><Phone size={14} strokeWidth={1.75} color="var(--em-text-secondary)" /></a> : spacer}
+    83	        {guardian.phone ? <a href={`sms:${guardian.phone}`} onClick={stop} aria-label="Text" style={iconBtn}><MessageSquare size={14} strokeWidth={1.75} color="var(--em-text-secondary)" /></a> : spacer}
+    84	        {guardian.email ? <a href={`mailto:${guardian.email}`} onClick={stop} aria-label="Email" style={iconBtn}><Mail size={14} strokeWidth={1.75} color="var(--em-text-secondary)" /></a> : spacer}
     85	        {canInvite ? <span onClick={stop}><InviteButton guardianEmail={guardian.email} /></span>
-    86	          : linked ? <span style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: 'var(--sf-success)' }} title="Account linked">✓</span>
+    86	          : linked ? <span style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: 'var(--em-success)' }} title="Account linked">✓</span>
     87	          : spacer}
     88	      </div>
     89	    </div>
@@ -2407,12 +2407,12 @@
      8	        flex: 1,
      9	        display: 'flex',
     10	        alignItems: 'center',
-    11	        backgroundColor: 'var(--sf-bg-secondary)',
+    11	        backgroundColor: 'var(--em-bg-secondary)',
     12	        borderRadius: 10,
     13	        padding: '0 12px',
     14	        minHeight: 40,
     15	      }}>
-    16	        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--sf-text-tertiary)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    16	        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--em-text-tertiary)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
     17	          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
     18	        </svg>
     19	        <input
@@ -2426,13 +2426,13 @@
     27	            border: 'none',
     28	            outline: 'none',
     29	            fontSize: 14,
-    30	            color: 'var(--sf-text-primary)',
+    30	            color: 'var(--em-text-primary)',
     31	            marginLeft: 8,
     32	            minHeight: 40,
     33	          }}
     34	        />
     35	      </div>
-    36	      <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--sf-border-default)' }}>
+    36	      <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--em-border-default)' }}>
     37	        {[
     38	          { key: 'jersey', label: '#' },
     39	          { key: 'name', label: 'A-Z' },
@@ -2444,8 +2444,8 @@
     45	            onClick={() => { setSortBy(opt.key); navigator.vibrate?.(10); }}
     46	            style={{
     47	              minWidth: 36, minHeight: 40, border: 'none',
-    48	              backgroundColor: sortBy === opt.key ? 'var(--sf-accent)' : 'var(--sf-bg-card)',
-    49	              color: sortBy === opt.key ? 'var(--sf-text-inverse)' : 'var(--sf-text-secondary)',
+    48	              backgroundColor: sortBy === opt.key ? 'var(--em-accent)' : 'var(--em-bg-card)',
+    49	              color: sortBy === opt.key ? 'var(--em-text-inverse)' : 'var(--em-text-secondary)',
     50	              fontSize: 12, fontWeight: 600,
     51	            }}
     52	          >
@@ -2473,47 +2473,47 @@
     11	
     12	  return (
     13	    <div className="sf-fade-in" style={{
-    14	      backgroundColor: 'var(--sf-bg-card)',
+    14	      backgroundColor: 'var(--em-bg-card)',
     15	      borderRadius: 10,
-    16	      border: '1px solid var(--sf-border-default)',
-    17	      boxShadow: 'var(--sf-shadow-sm)',
+    16	      border: '1px solid var(--em-border-default)',
+    17	      boxShadow: 'var(--em-shadow-sm)',
     18	      overflow: 'hidden',
     19	      marginBottom: 16,
     20	    }}>
-    21	      <div style={{ height: 6, backgroundColor: team.team_color || 'var(--sf-neutral)' }} />
+    21	      <div style={{ height: 6, backgroundColor: team.team_color || 'var(--em-neutral)' }} />
     22	      <div style={{ padding: 16 }}>
     23	        <div className="flex items-center justify-between">
-    24	          <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 20, letterSpacing: '-0.025em' }}>
+    24	          <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20, letterSpacing: '-0.025em' }}>
     25	            {team.name}
     26	          </h1>
     27	          <div style={{
     28	            width: 40, height: 40, borderRadius: '50%',
-    29	            backgroundColor: team.team_color || 'var(--sf-neutral)',
+    29	            backgroundColor: team.team_color || 'var(--em-neutral)',
     30	            display: 'flex', alignItems: 'center', justifyContent: 'center',
-    31	            color: 'var(--sf-text-inverse)', fontSize: 15, fontWeight: 700,
+    31	            color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 700,
     32	          }}>
     33	            {team.age_group}
     34	          </div>
     35	        </div>
     36	        <div className="flex items-center gap-2" style={{ marginTop: 8 }}>
-    37	          <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-secondary)' }}>{team.age_group}</span>
-    38	          <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-secondary)' }}>{CIRCUIT_LABELS[team.circuit] || team.circuit}</span>
-    39	          <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--sf-neutral-soft)', color: 'var(--sf-text-tertiary)' }}>0-0</span>
+    37	          <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{team.age_group}</span>
+    38	          <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{CIRCUIT_LABELS[team.circuit] || team.circuit}</span>
+    39	          <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--em-neutral-soft)', color: 'var(--em-text-tertiary)' }}>0-0</span>
     40	        </div>
-    41	        <div className="flex items-center gap-4" style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--sf-border-subtle)' }}>
+    41	        <div className="flex items-center gap-4" style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--em-border-subtle)' }}>
     42	          <div style={{ textAlign: 'center' }}>
-    43	            <div className="font-bold" style={{ fontSize: 20, color: 'var(--sf-text-primary)' }}>{players.length}</div>
-    44	            <div style={{ fontSize: 11, color: 'var(--sf-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Players</div>
+    43	            <div className="font-bold" style={{ fontSize: 20, color: 'var(--em-text-primary)' }}>{players.length}</div>
+    44	            <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Players</div>
     45	          </div>
-    46	          <div style={{ width: 1, height: 32, backgroundColor: 'var(--sf-border-subtle)' }} />
+    46	          <div style={{ width: 1, height: 32, backgroundColor: 'var(--em-border-subtle)' }} />
     47	          <div style={{ textAlign: 'center' }}>
-    48	            <div className="font-bold" style={{ fontSize: 20, color: 'var(--sf-text-primary)' }}>{rosterCount}</div>
-    49	            <div style={{ fontSize: 11, color: 'var(--sf-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Roster</div>
+    48	            <div className="font-bold" style={{ fontSize: 20, color: 'var(--em-text-primary)' }}>{rosterCount}</div>
+    49	            <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Roster</div>
     50	          </div>
-    51	          <div style={{ width: 1, height: 32, backgroundColor: 'var(--sf-border-subtle)' }} />
+    51	          <div style={{ width: 1, height: 32, backgroundColor: 'var(--em-border-subtle)' }} />
     52	          <div style={{ textAlign: 'center' }}>
-    53	            <div className="font-bold" style={{ fontSize: 20, color: 'var(--sf-academy)' }}>{academyCount}</div>
-    54	            <div style={{ fontSize: 11, color: 'var(--sf-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Academy</div>
+    53	            <div className="font-bold" style={{ fontSize: 20, color: 'var(--em-academy)' }}>{academyCount}</div>
+    54	            <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Academy</div>
     55	          </div>
     56	        </div>
     57	      </div>
@@ -2543,9 +2543,9 @@
     17	            borderRadius: 999,
     18	            fontSize: 12,
     19	            fontWeight: p.id === teamId ? 600 : 400,
-    20	            border: `2px solid ${p.team_color || 'var(--sf-border-default)'}`,
-    21	            backgroundColor: p.id === teamId ? (p.team_color || 'var(--sf-accent)') : 'var(--sf-bg-card)',
-    22	            color: p.id === teamId ? 'var(--sf-text-inverse)' : 'var(--sf-text-primary)',
+    20	            border: `2px solid ${p.team_color || 'var(--em-border-default)'}`,
+    21	            backgroundColor: p.id === teamId ? (p.team_color || 'var(--em-accent)') : 'var(--em-bg-card)',
+    22	            color: p.id === teamId ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
     23	            whiteSpace: 'nowrap',
     24	          }}
     25	        >
@@ -2573,13 +2573,13 @@
     12	    <div style={{ marginTop: 24 }}>
     13	      <div style={{
     14	        fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-    15	        textTransform: 'uppercase', color: 'var(--sf-text-tertiary)', marginBottom: 8,
+    15	        textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8,
     16	      }}>UPCOMING</div>
     17	      <div style={{
-    18	        backgroundColor: 'var(--sf-bg-card)',
+    18	        backgroundColor: 'var(--em-bg-card)',
     19	        borderRadius: 10,
-    20	        border: '1px solid var(--sf-border-default)',
-    21	        boxShadow: 'var(--sf-shadow-sm)',
+    20	        border: '1px solid var(--em-border-default)',
+    21	        boxShadow: 'var(--em-shadow-sm)',
     22	        overflow: 'hidden',
     23	      }}>
     24	        {UPCOMING_SEED.map((evt, i, arr) => (
@@ -2589,7 +2589,7 @@
     28	            onClick={() => navigator.vibrate?.(10)}
     29	            style={{
     30	              padding: '12px 16px',
-    31	              borderBottom: i < arr.length - 1 ? '1px solid var(--sf-border-subtle)' : 'none',
+    31	              borderBottom: i < arr.length - 1 ? '1px solid var(--em-border-subtle)' : 'none',
     32	              display: 'flex',
     33	              justifyContent: 'space-between',
     34	              alignItems: 'center',
@@ -2597,14 +2597,14 @@
     36	            }}
     37	          >
     38	            <div>
-    39	              <div className="font-semibold" style={{ fontSize: 14, color: 'var(--sf-text-primary)' }}>
+    39	              <div className="font-semibold" style={{ fontSize: 14, color: 'var(--em-text-primary)' }}>
     40	                {evt.opponent || evt.type}
     41	              </div>
-    42	              <div style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
+    42	              <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
     43	                {evt.date} · {evt.location}
     44	              </div>
     45	            </div>
-    46	            <div className="font-semibold" style={{ fontSize: 14, color: 'var(--sf-text-primary)' }}>
+    46	            <div className="font-semibold" style={{ fontSize: 14, color: 'var(--em-text-primary)' }}>
     47	              {evt.time}
     48	            </div>
     49	          </div>
@@ -2618,9 +2618,9 @@
     57	          marginTop: 8,
     58	          minHeight: 44,
     59	          borderRadius: 10,
-    60	          border: '1px solid var(--sf-border-default)',
-    61	          backgroundColor: 'var(--sf-bg-card)',
-    62	          color: 'var(--sf-accent)',
+    60	          border: '1px solid var(--em-border-default)',
+    61	          backgroundColor: 'var(--em-bg-card)',
+    62	          color: 'var(--em-accent)',
     63	          fontSize: 14,
     64	          fontWeight: 500,
     65	        }}
@@ -2639,15 +2639,15 @@
      3	import { useAuth } from '../../context/AuthContext';
      4	
      5	const BUTTONS = [
-     6	  { key: 'going', icon: Check, color: 'var(--sf-success)', bg: 'var(--sf-success-soft)', label: 'Going' },
-     7	  { key: 'maybe', icon: HelpCircle, color: 'var(--sf-warning)', bg: 'var(--sf-warning-soft)', label: 'Maybe' },
-     8	  { key: 'not_going', icon: X, color: 'var(--sf-danger)', bg: 'var(--sf-danger-soft)', label: 'Not going' },
+     6	  { key: 'going', icon: Check, color: 'var(--em-success)', bg: 'var(--em-success-soft)', label: 'Going' },
+     7	  { key: 'maybe', icon: HelpCircle, color: 'var(--em-warning)', bg: 'var(--em-warning-soft)', label: 'Maybe' },
+     8	  { key: 'not_going', icon: X, color: 'var(--em-danger)', bg: 'var(--em-danger-soft)', label: 'Not going' },
      9	];
     10	
     11	const STATUS_LABELS = {
-    12	  going:     { label: 'Going',     color: 'var(--sf-success)' },
-    13	  maybe:     { label: 'Maybe',     color: 'var(--sf-warning)' },
-    14	  not_going: { label: 'Not Going', color: 'var(--sf-danger)' },
+    12	  going:     { label: 'Going',     color: 'var(--em-success)' },
+    13	  maybe:     { label: 'Maybe',     color: 'var(--em-warning)' },
+    14	  not_going: { label: 'Not Going', color: 'var(--em-danger)' },
     15	};
     16	
     17	export default function RsvpPlayerRow({ player, response, existingNote, teamColor, onSetRsvp, onSaveNote }) {
@@ -2660,14 +2660,14 @@
     24	  return (
     25	    <div style={{
     26	      padding: '10px 0',
-    27	      borderBottom: '1px solid var(--sf-border-subtle)',
+    27	      borderBottom: '1px solid var(--em-border-subtle)',
     28	    }}>
     29	      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
     30	        {/* Jersey circle */}
     31	        <div style={{
     32	          width: 32, height: 32, borderRadius: 16,
-    33	          backgroundColor: teamColor || 'var(--sf-bg-tertiary)',
-    34	          color: 'var(--sf-text-inverse)', fontSize: 12, fontWeight: 600,
+    33	          backgroundColor: teamColor || 'var(--em-bg-tertiary)',
+    34	          color: 'var(--em-text-inverse)', fontSize: 12, fontWeight: 600,
     35	          display: 'flex', alignItems: 'center', justifyContent: 'center',
     36	          flexShrink: 0,
     37	        }}>
@@ -2676,20 +2676,20 @@
     40	
     41	        {/* Name */}
     42	        <div style={{ flex: 1, minWidth: 0 }}>
-    43	          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--sf-text-primary)' }}>
+    43	          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>
     44	            {player.first_name} {player.last_name}
     45	          </div>
     46	          {player.member_type === 'futures_academy' && (
     47	            <span style={{
-    48	              fontSize: 11, color: 'var(--sf-academy)', fontWeight: 500,
-    49	              backgroundColor: 'var(--sf-academy-soft)', padding: '1px 6px', borderRadius: 4,
+    48	              fontSize: 11, color: 'var(--em-academy)', fontWeight: 500,
+    49	              backgroundColor: 'var(--em-academy-soft)', padding: '1px 6px', borderRadius: 4,
     50	            }}>Academy</span>
     51	          )}
     52	        </div>
     53	
     54	        {/* RSVP buttons or read-only status */}
     55	        {readOnly ? (
-    56	          <div style={{ fontSize: 13, fontWeight: 500, color: STATUS_LABELS[response]?.color || 'var(--sf-text-tertiary)' }}>
+    56	          <div style={{ fontSize: 13, fontWeight: 500, color: STATUS_LABELS[response]?.color || 'var(--em-text-tertiary)' }}>
     57	            {STATUS_LABELS[response]?.label || 'No response'}
     58	          </div>
     59	        ) : (
@@ -2706,9 +2706,9 @@
     70	                  aria-label={b.label}
     71	                  style={{
     72	                    width: 36, height: 36, borderRadius: 18,
-    73	                    border: active ? 'none' : '1px solid var(--sf-border-default)',
+    73	                    border: active ? 'none' : '1px solid var(--em-border-default)',
     74	                    backgroundColor: active ? b.bg : 'transparent',
-    75	                    color: active ? b.color : 'var(--sf-text-tertiary)',
+    75	                    color: active ? b.color : 'var(--em-text-tertiary)',
     76	                    display: 'flex', alignItems: 'center', justifyContent: 'center',
     77	                  }}
     78	                >
@@ -2723,7 +2723,7 @@
     87	        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
     88	          {!showNote && (
     89	            <button type="button" onClick={() => setShowNote(true)}
-    90	              style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer' }}>
+    90	              style={{ fontSize: 12, color: 'var(--em-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer' }}>
     91	              {existingNote ? 'Edit note' : 'Add note'}
     92	            </button>
     93	          )}
@@ -2738,23 +2738,23 @@
    102	            placeholder="Out of town, back Thursday..."
    103	            style={{
    104	              flex: 1, fontSize: 13, padding: '6px 10px', borderRadius: 8,
-   105	              border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)',
-   106	              color: 'var(--sf-text-primary)',
+   105	              border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+   106	              color: 'var(--em-text-primary)',
    107	            }}
    108	          />
    109	          <button type="button" onClick={() => { onSaveNote?.(player.id, noteText); setShowNote(false); }}
    110	            className="sf-press"
    111	            style={{
-   112	              fontSize: 13, fontWeight: 500, color: 'var(--sf-accent)',
+   112	              fontSize: 13, fontWeight: 500, color: 'var(--em-accent)',
    113	              padding: '6px 12px', borderRadius: 8,
-   114	              border: '1px solid var(--sf-accent)', backgroundColor: 'transparent',
+   114	              border: '1px solid var(--em-accent)', backgroundColor: 'transparent',
    115	            }}>
    116	            Save
    117	          </button>
    118	        </div>
    119	      )}
    120	      {existingNote && !showNote && (
-   121	        <div style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', fontStyle: 'italic', marginTop: 2 }}>
+   121	        <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', fontStyle: 'italic', marginTop: 2 }}>
    122	          &ldquo;{existingNote}&rdquo;
    123	        </div>
    124	      )}
@@ -2780,17 +2780,17 @@
     13	    <div style={{ marginBottom: 16 }}>
     14	      {/* Colored bar */}
     15	      <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', marginBottom: 8 }}>
-    16	        {going > 0 && <div style={{ width: `${pct(going)}%`, backgroundColor: 'var(--sf-success)' }} />}
-    17	        {maybe > 0 && <div style={{ width: `${pct(maybe)}%`, backgroundColor: 'var(--sf-warning)' }} />}
-    18	        {notGoing > 0 && <div style={{ width: `${pct(notGoing)}%`, backgroundColor: 'var(--sf-danger)' }} />}
-    19	        {noResponse > 0 && <div style={{ width: `${pct(noResponse)}%`, backgroundColor: 'var(--sf-neutral)' }} />}
+    16	        {going > 0 && <div style={{ width: `${pct(going)}%`, backgroundColor: 'var(--em-success)' }} />}
+    17	        {maybe > 0 && <div style={{ width: `${pct(maybe)}%`, backgroundColor: 'var(--em-warning)' }} />}
+    18	        {notGoing > 0 && <div style={{ width: `${pct(notGoing)}%`, backgroundColor: 'var(--em-danger)' }} />}
+    19	        {noResponse > 0 && <div style={{ width: `${pct(noResponse)}%`, backgroundColor: 'var(--em-neutral)' }} />}
     20	      </div>
     21	      {/* Counts */}
-    22	      <div style={{ display: 'flex', gap: 12, fontSize: 13, color: 'var(--sf-text-secondary)', flexWrap: 'wrap' }}>
-    23	        <span><strong style={{ color: 'var(--sf-success)' }}>{going}</strong> Going</span>
-    24	        {maybe > 0 && <span><strong style={{ color: 'var(--sf-warning)' }}>{maybe}</strong> Maybe</span>}
-    25	        <span><strong style={{ color: 'var(--sf-danger)' }}>{notGoing}</strong> Not Going</span>
-    26	        <span><strong style={{ color: 'var(--sf-neutral)' }}>{noResponse}</strong> No Response</span>
+    22	      <div style={{ display: 'flex', gap: 12, fontSize: 13, color: 'var(--em-text-secondary)', flexWrap: 'wrap' }}>
+    23	        <span><strong style={{ color: 'var(--em-success)' }}>{going}</strong> Going</span>
+    24	        {maybe > 0 && <span><strong style={{ color: 'var(--em-warning)' }}>{maybe}</strong> Maybe</span>}
+    25	        <span><strong style={{ color: 'var(--em-danger)' }}>{notGoing}</strong> Not Going</span>
+    26	        <span><strong style={{ color: 'var(--em-neutral)' }}>{noResponse}</strong> No Response</span>
     27	      </div>
     28	    </div>
     29	  );
@@ -2808,15 +2808,15 @@
      7	const cacheKey = (eventId, playerId) => `${eventId}:${playerId}`;
      8	
      9	const PILLS = [
-    10	  { value: 'going',     label: 'Going',     color: 'var(--sf-success)' },
-    11	  { value: 'maybe',     label: 'Maybe',     color: 'var(--sf-warning)' },
-    12	  { value: 'not_going', label: 'Not Going', color: 'var(--sf-danger)' },
+    10	  { value: 'going',     label: 'Going',     color: 'var(--em-success)' },
+    11	  { value: 'maybe',     label: 'Maybe',     color: 'var(--em-warning)' },
+    12	  { value: 'not_going', label: 'Not Going', color: 'var(--em-danger)' },
     13	];
     14	
     15	const CONFIRMED = {
-    16	  going:     { icon: '✓', label: 'Going',     color: 'var(--sf-success)' },
-    17	  maybe:     { icon: '?', label: 'Maybe',     color: 'var(--sf-warning)' },
-    18	  not_going: { icon: '✗', label: 'Not Going', color: 'var(--sf-danger)' },
+    16	  going:     { icon: '✓', label: 'Going',     color: 'var(--em-success)' },
+    17	  maybe:     { icon: '?', label: 'Maybe',     color: 'var(--em-warning)' },
+    18	  not_going: { icon: '✗', label: 'Not Going', color: 'var(--em-danger)' },
     19	};
     20	
     21	export default function ChildRsvp({ child, eventId, compact = false }) {
@@ -2863,7 +2863,7 @@
     62	          {state.icon} {child.firstName} {state.label}
     63	        </span>
     64	        <button type="button" onClick={(e) => { e.stopPropagation(); setResponse(null); }}
-    65	          style={{ background: 'none', border: 'none', color: 'var(--sf-accent)', fontSize: pillSize, fontWeight: 500, padding: 4 }}>
+    65	          style={{ background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: pillSize, fontWeight: 500, padding: 4 }}>
     66	          Change
     67	        </button>
     68	      </div>
@@ -2872,7 +2872,7 @@
     71	
     72	  return (
     73	    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: compact ? 4 : 8 }}>
-    74	      <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--sf-text-primary)', minWidth: 60 }}>{child.firstName}</span>
+    74	      <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--em-text-primary)', minWidth: 60 }}>{child.firstName}</span>
     75	      {PILLS.map((p) => (
     76	        <button key={p.value} type="button" onClick={(e) => { e.stopPropagation(); save(p.value); }} disabled={saving} className="sf-press"
     77	          style={{ flex: 1, minHeight: minH, borderRadius: 10, fontSize: pillSize, fontWeight: 600, border: `1.5px solid ${p.color}`, backgroundColor: 'transparent', color: p.color, opacity: saving ? 0.6 : 1 }}>
@@ -2893,7 +2893,7 @@
      5	export default function CompactCard({ event, stagger }) {
      6	  const navigate = useNavigate();
      7	  const team = event.teams;
-     8	  const teamColor = team?.team_color || 'var(--sf-neutral)';
+     8	  const teamColor = team?.team_color || 'var(--em-neutral)';
      9	  const teamName = team?.name || '';
     10	  const endTime = event.end_at ? new Date(event.end_at).getTime() : null;
     11	  const startTime = event.start_at ? new Date(event.start_at).getTime() : null;
@@ -2907,9 +2907,9 @@
     19	        display: 'flex',
     20	        alignItems: 'center',
     21	        minHeight: 48,
-    22	        backgroundColor: 'var(--sf-bg-card)',
+    22	        backgroundColor: 'var(--em-bg-card)',
     23	        borderRadius: 8,
-    24	        border: '1px solid var(--sf-border-default)',
+    24	        border: '1px solid var(--em-border-default)',
     25	        overflow: 'hidden',
     26	        opacity: isPast ? 0.5 : 1,
     27	        cursor: 'pointer',
@@ -2918,14 +2918,14 @@
     30	    >
     31	      <div style={{ width: 3, alignSelf: 'stretch', flexShrink: 0, backgroundColor: teamColor }} />
     32	      <div className="flex items-center flex-1 gap-3" style={{ padding: '6px 12px' }}>
-    33	        <span className="font-bold" style={{ fontSize: 14, color: 'var(--sf-text-primary)', minWidth: 56 }}>
+    33	        <span className="font-bold" style={{ fontSize: 14, color: 'var(--em-text-primary)', minWidth: 56 }}>
     34	          {formatTime(event.start_time || '00:00')}
     35	        </span>
     36	        <span style={{
     37	          fontSize: 10, fontWeight: 600, padding: '1px 5px', borderRadius: 4,
-    38	          backgroundColor: teamColor, color: 'var(--sf-text-inverse)',
+    38	          backgroundColor: teamColor, color: 'var(--em-text-inverse)',
     39	        }}>{teamName}</span>
-    40	        <span className="truncate" style={{ flex: 1, fontSize: 13, color: 'var(--sf-text-secondary)' }}>
+    40	        <span className="truncate" style={{ flex: 1, fontSize: 13, color: 'var(--em-text-secondary)' }}>
     41	          {event.title || TYPE_LABELS[event.event_type] || event.event_type || 'Event'}
     42	        </span>
     43	      </div>
@@ -2942,7 +2942,7 @@
      4	export default function DateGroupedList({ events, rsvpCounts, rideCounts, dutyCounts }) {
      5	  return groupByDate(events).map(([date, evts]) => (
      6	    <div key={date} data-date-group={date}>
-     7	      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
+     7	      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--em-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
      8	        {formatDateHeader(date)}
      9	      </div>
     10	      {evts.map((event) => (
@@ -2973,7 +2973,7 @@
     10	  const { role, myChildren } = useAuth();
     11	  const childrenOnTeam = (myChildren || []).filter((c) => c.teamId === event.team_id);
     12	  const team = event.teams;
-    13	  const teamColor = team?.team_color || 'var(--sf-neutral)';
+    13	  const teamColor = team?.team_color || 'var(--em-neutral)';
     14	  const teamName = team?.name || '';
     15	  const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
     16	  const isCancelled = event.status === 'cancelled';
@@ -2992,10 +2992,10 @@
     29	      style={{
     30	        display: 'flex',
     31	        alignItems: 'stretch',
-    32	        backgroundColor: (event.event_type === 'game' || event.event_type === 'tournament') ? 'rgba(74, 143, 212, 0.06)' : 'var(--sf-bg-card)',
+    32	        backgroundColor: (event.event_type === 'game' || event.event_type === 'tournament') ? 'rgba(74, 143, 212, 0.06)' : 'var(--em-bg-card)',
     33	        borderRadius: 10,
-    34	        border: '1px solid var(--sf-border-default)',
-    35	        boxShadow: 'var(--sf-shadow-sm)',
+    34	        border: '1px solid var(--em-border-default)',
+    35	        boxShadow: 'var(--em-shadow-sm)',
     36	        overflow: 'hidden',
     37	        opacity: dimmed ? 0.5 : 1,
     38	        transition: 'box-shadow 150ms ease-out, transform 150ms ease-out, opacity 150ms ease-out',
@@ -3005,30 +3005,30 @@
     42	      <div style={{ flex: 1, padding: '10px 14px' }}>
     43	        {/* Row 1: Time · Type + recurring + updated dot + cancelled */}
     44	        <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center' }}>
-    45	          <span className="font-bold" style={{ fontSize: 17, color: 'var(--sf-text-primary)' }}>
+    45	          <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)' }}>
     46	            {formatTime(event.start_time || '00:00')}
     47	          </span>
-    48	          <span style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginLeft: 6 }}>
+    48	          <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginLeft: 6 }}>
     49	            · {typeLabel}
     50	          </span>
     51	          {event.is_scrimmage && (
-    52	            <span style={{ fontSize: 11, color: 'var(--sf-text-tertiary)', marginLeft: 4 }}>
+    52	            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginLeft: 4 }}>
     53	              Scrimmage
     54	            </span>
     55	          )}
     56	          {event.parent_event_id && (
-    57	            <Repeat size={11} strokeWidth={1.75} color="var(--sf-text-tertiary)" style={{ marginLeft: 4 }} />
+    57	            <Repeat size={11} strokeWidth={1.75} color="var(--em-text-tertiary)" style={{ marginLeft: 4 }} />
     58	          )}
     59	          {event.updated_at && (new Date(event.updated_at).getTime() > Date.now() - 86400000) && !isPast && !isCancelled && (
     60	            <span style={{
     61	              display: 'inline-block', width: 6, height: 6, borderRadius: 3,
-    62	              backgroundColor: 'var(--sf-info)', marginLeft: 6, verticalAlign: 'middle',
+    62	              backgroundColor: 'var(--em-info)', marginLeft: 6, verticalAlign: 'middle',
     63	            }} />
     64	          )}
     65	          {isCancelled && (
     66	            <span style={{
-    67	              fontSize: 11, fontWeight: 600, color: 'var(--sf-danger)',
-    68	              backgroundColor: 'var(--sf-danger-soft)', padding: '1px 6px',
+    67	              fontSize: 11, fontWeight: 600, color: 'var(--em-danger)',
+    68	              backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px',
     69	              borderRadius: 4, marginLeft: 4, textTransform: 'uppercase',
     70	            }}>
     71	              Cancelled
@@ -3036,41 +3036,41 @@
     73	          )}
     74	        </div>
     75	        {/* Row 2: Title */}
-    76	        <div style={{ fontSize: 15, color: 'var(--sf-text-primary)', marginBottom: 2, textDecoration: isCancelled ? 'line-through' : 'none' }}>
+    76	        <div style={{ fontSize: 15, color: 'var(--em-text-primary)', marginBottom: 2, textDecoration: isCancelled ? 'line-through' : 'none' }}>
     77	          {titlePrefix}{rawTitle}
     78	        </div>
     79	        {/* Row 3: Team · pin Location */}
     80	        {(teamName || event.location_name) && (
     81	          <div className="flex items-center" style={{ fontSize: 13, gap: 4 }}>
     82	            {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
-    83	            {teamName && event.location_name && <span style={{ color: 'var(--sf-text-tertiary)' }}>·</span>}
+    83	            {teamName && event.location_name && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
     84	            {event.location_name && (
     85	              <>
-    86	                <MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
-    87	                <span style={{ color: 'var(--sf-text-tertiary)' }}>{event.location_name}</span>
+    86	                <MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+    87	                <span style={{ color: 'var(--em-text-tertiary)' }}>{event.location_name}</span>
     88	              </>
     89	            )}
     90	          </div>
     91	        )}
     92	        {/* Row 3a: Notes excerpt */}
     93	        {event.notes && (
-    94	          <div style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+    94	          <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
     95	            {event.notes.length > 60 ? event.notes.slice(0, 60) + '...' : event.notes}
     96	          </div>
     97	        )}
     98	        {/* Row 3b: Jersey color (games/tournaments when set) */}
     99	        {event.jersey && (
-   100	          <div style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
+   100	          <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
    101	            {event.jersey} jersey
    102	          </div>
    103	        )}
    104	        {/* Row 4: RSVP counts */}
    105	        {rsvpCount && (
-   106	          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 4, color: 'var(--sf-text-tertiary)' }}>
-   107	            <span style={{ color: 'var(--sf-success)' }}>{rsvpCount.going || 0}</span>
+   106	          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 4, color: 'var(--em-text-tertiary)' }}>
+   107	            <span style={{ color: 'var(--em-success)' }}>{rsvpCount.going || 0}</span>
    108	            <span>going</span>
    109	            <span>·</span>
-   110	            <span style={{ color: 'var(--sf-danger)' }}>{rsvpCount.not_going || 0}</span>
+   110	            <span style={{ color: 'var(--em-danger)' }}>{rsvpCount.not_going || 0}</span>
    111	            <span>out</span>
    112	            <span>·</span>
    113	            <span>{rsvpCount.noResponse || 0} no reply</span>
@@ -3079,11 +3079,11 @@
    116	        {/* Row 5: Ride counts */}
    117	        {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
    118	          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4 }}>
-   119	            <Car size={12} strokeWidth={1.75} color={rideCount.urgent ? 'var(--sf-danger)' : rideCount.requests > 0 ? 'var(--sf-warning)' : 'var(--sf-text-tertiary)'} />
-   120	            {rideCount.offers > 0 && <span style={{ color: 'var(--sf-text-secondary)' }}>{rideCount.offers} seat{rideCount.offers !== 1 ? 's' : ''}</span>}
-   121	            {rideCount.offers > 0 && rideCount.requests > 0 && <span style={{ color: 'var(--sf-text-tertiary)' }}>·</span>}
+   119	            <Car size={12} strokeWidth={1.75} color={rideCount.urgent ? 'var(--em-danger)' : rideCount.requests > 0 ? 'var(--em-warning)' : 'var(--em-text-tertiary)'} />
+   120	            {rideCount.offers > 0 && <span style={{ color: 'var(--em-text-secondary)' }}>{rideCount.offers} seat{rideCount.offers !== 1 ? 's' : ''}</span>}
+   121	            {rideCount.offers > 0 && rideCount.requests > 0 && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
    122	            {rideCount.requests > 0 && (
-   123	              <span style={{ color: rideCount.urgent ? 'var(--sf-danger)' : 'var(--sf-warning)', fontWeight: 500 }}>
+   123	              <span style={{ color: rideCount.urgent ? 'var(--em-danger)' : 'var(--em-warning)', fontWeight: 500 }}>
    124	                {rideCount.urgent ? 'URGENT: ' : ''}{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed
    125	              </span>
    126	            )}
@@ -3091,7 +3091,7 @@
    128	        )}
    129	        {/* Row 6: Volunteer counts */}
    130	        {dutyCount && dutyCount.total > 0 && (
-   131	          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--sf-warning)' : 'var(--sf-success)' }}>
+   131	          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--em-warning)' : 'var(--em-success)' }}>
    132	            {dutyCount.claimed}/{dutyCount.total} volunteers filled
    133	          </div>
    134	        )}
@@ -3153,7 +3153,7 @@
     41	      </div>
     42	      {onToggleCancelled && (
     43	        <button type="button" onClick={onToggleCancelled}
-    44	          style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', marginTop: 4 }}>
+    44	          style={{ fontSize: 12, color: 'var(--em-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', marginTop: 4 }}>
     45	          {showCancelled ? 'Hide cancelled' : 'Show cancelled'}
     46	        </button>
     47	      )}
@@ -3174,9 +3174,9 @@
     62	        borderRadius: 999,
     63	        fontSize: 12,
     64	        fontWeight: active ? 600 : 400,
-    65	        border: `1.5px solid ${active ? (color || 'var(--sf-accent)') : 'var(--sf-border-default)'}`,
-    66	        backgroundColor: active ? (color ? `${color}15` : 'var(--sf-accent-soft)') : 'var(--sf-bg-card)',
-    67	        color: active ? (color || 'var(--sf-accent)') : 'var(--sf-text-primary)',
+    65	        border: `1.5px solid ${active ? (color || 'var(--em-accent)') : 'var(--em-border-default)'}`,
+    66	        backgroundColor: active ? (color ? `${color}15` : 'var(--em-accent-soft)') : 'var(--em-bg-card)',
+    67	        color: active ? (color || 'var(--em-accent)') : 'var(--em-text-primary)',
     68	        whiteSpace: 'nowrap',
     69	      }}
     70	    >
@@ -3195,7 +3195,7 @@
      5	
      6	export function WhenRow({ event }) {
      7	  return (
-     8	    <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 2 }}>
+     8	    <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2 }}>
      9	      {new Date(event.start_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}, {new Date(event.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
     10	      {event.end_at && ` - ${new Date(event.end_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
     11	    </div>
@@ -3208,19 +3208,19 @@
     18	  return (
     19	    <>
     20	      {event.arrival_minutes_before > 0 && (
-    21	        <div style={{ fontSize: 12, color: 'var(--sf-warning)', fontWeight: 500, marginTop: 2 }}>
+    21	        <div style={{ fontSize: 12, color: 'var(--em-warning)', fontWeight: 500, marginTop: 2 }}>
     22	          Arrive {event.arrival_minutes_before} min early
     23	        </div>
     24	      )}
     25	      {showJerseyOrChip && (
     26	        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
-    27	          {event.jersey && <span style={{ fontSize: 12, color: 'var(--sf-text-secondary)' }}>{event.jersey} jersey</span>}
+    27	          {event.jersey && <span style={{ fontSize: 12, color: 'var(--em-text-secondary)' }}>{event.jersey} jersey</span>}
     28	          {event.home_away && event.home_away !== 'tbd' && event.home_away !== 'neutral' && (
     29	            <span style={{
     30	              fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
     31	              padding: '1px 6px', borderRadius: 4,
-    32	              backgroundColor: event.home_away === 'home' ? 'var(--sf-success-soft)' : 'var(--sf-info-soft)',
-    33	              color: event.home_away === 'home' ? 'var(--sf-success)' : 'var(--sf-info)',
+    32	              backgroundColor: event.home_away === 'home' ? 'var(--em-success-soft)' : 'var(--em-info-soft)',
+    33	              color: event.home_away === 'home' ? 'var(--em-success)' : 'var(--em-info)',
     34	            }}>
     35	              {event.home_away}
     36	            </span>
@@ -3228,7 +3228,7 @@
     38	        </div>
     39	      )}
     40	      {event.is_scrimmage && (
-    41	        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--sf-text-tertiary)', textTransform: 'uppercase', marginTop: 4, display: 'block' }}>
+    41	        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', marginTop: 4, display: 'block' }}>
     42	          Scrimmage
     43	        </span>
     44	      )}
@@ -3273,7 +3273,7 @@
     32	
     33	  const directionsUrl = useMapsUrl(event.location);
     34	
-    35	  const teamColor = event.teams?.team_color || event.team_color || 'var(--sf-text-tertiary)';
+    35	  const teamColor = event.teams?.team_color || event.team_color || 'var(--em-text-tertiary)';
     36	  const teamName = event.teams?.name || event.team_name || '';
     37	  const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
     38	  const secondsUntil = (new Date(event.start_at).getTime() - Date.now()) / 1000;
@@ -3282,8 +3282,8 @@
     41	  return (
     42	    <div
     43	      style={{
-    44	        backgroundColor: 'var(--sf-bg-card)', borderRadius: 12,
-    45	        border: '1px solid var(--sf-border-default)', overflow: 'hidden',
+    44	        backgroundColor: 'var(--em-bg-card)', borderRadius: 12,
+    45	        border: '1px solid var(--em-border-default)', overflow: 'hidden',
     46	        marginBottom: 16,
     47	      }}
     48	    >
@@ -3294,28 +3294,28 @@
     53	        <div style={{ width: 4, backgroundColor: teamColor, flexShrink: 0 }} />
     54	        <div style={{ flex: 1, padding: 16 }}>
     55	          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-    56	            <span style={{ fontSize: 13, color: 'var(--sf-text-secondary)' }}>
+    56	            <span style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
     57	              {typeLabel}
     58	              {event.parent_event_id && (
-    59	                <Repeat size={11} strokeWidth={1.75} color="var(--sf-text-tertiary)" style={{ marginLeft: 4 }} />
+    59	                <Repeat size={11} strokeWidth={1.75} color="var(--em-text-tertiary)" style={{ marginLeft: 4 }} />
     60	              )}
     61	            </span>
-    62	            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-accent)', display: 'inline-flex', alignItems: 'center', gap: 6 }} data-seconds-until={Math.round(secondsUntil)}>
+    62	            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-accent)', display: 'inline-flex', alignItems: 'center', gap: 6 }} data-seconds-until={Math.round(secondsUntil)}>
     63	              {imminent && (
     64	                <span className="sf-pulse-dot" aria-hidden="true" style={{
     65	                  display: 'inline-block', width: 8, height: 8, borderRadius: 4,
-    66	                  backgroundColor: 'var(--sf-success)', flexShrink: 0,
+    66	                  backgroundColor: 'var(--em-success)', flexShrink: 0,
     67	                }} />
     68	              )}
     69	              {countdown}
     70	            </span>
     71	          </div>
     72	          {(event.teams?.name || event.team_name) && (
-    73	            <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginBottom: 4 }}>
+    73	            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginBottom: 4 }}>
     74	              {event.teams?.name || event.team_name}
     75	            </div>
     76	          )}
-    77	          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--sf-text-primary)', marginBottom: 4 }}>
+    77	          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', marginBottom: 4 }}>
     78	            {event.title || typeLabel}
     79	          </div>
     80	          <WhenRow event={event} />
@@ -3323,40 +3323,40 @@
     82	            directionsUrl ? (
     83	              <a href={directionsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
     84	                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8, textDecoration: 'none' }}>
-    85	                <MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
-    86	                <span style={{ color: 'var(--sf-text-secondary)' }}>{event.location}</span>
-    87	                <ExternalLink size={10} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+    85	                <MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+    86	                <span style={{ color: 'var(--em-text-secondary)' }}>{event.location}</span>
+    87	                <ExternalLink size={10} strokeWidth={1.75} color="var(--em-text-tertiary)" />
     88	              </a>
     89	            ) : (
     90	              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8 }}>
-    91	                <MapPin size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
-    92	                <span style={{ color: 'var(--sf-text-secondary)' }}>{event.location}</span>
+    91	                <MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+    92	                <span style={{ color: 'var(--em-text-secondary)' }}>{event.location}</span>
     93	              </div>
     94	            )
     95	          )}
     96	          {event.notes && (
-    97	            <div style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+    97	            <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
     98	              {event.notes.length > 60 ? event.notes.slice(0, 60) + '...' : event.notes}
     99	            </div>
    100	          )}
    101	          <GameInfo event={event} />
    102	          {rsvpCount && (
-   103	            <div style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--sf-text-secondary)' }}>
-   104	              <span><strong style={{ color: 'var(--sf-success)' }}>{rsvpCount.going}</strong> going</span>
-   105	              <span><strong style={{ color: 'var(--sf-danger)' }}>{rsvpCount.not_going}</strong> not going</span>
-   106	              <span><strong style={{ color: 'var(--sf-neutral)' }}>{rsvpCount.noResponse}</strong> no response</span>
+   103	            <div style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--em-text-secondary)' }}>
+   104	              <span><strong style={{ color: 'var(--em-success)' }}>{rsvpCount.going}</strong> going</span>
+   105	              <span><strong style={{ color: 'var(--em-danger)' }}>{rsvpCount.not_going}</strong> not going</span>
+   106	              <span><strong style={{ color: 'var(--em-neutral)' }}>{rsvpCount.noResponse}</strong> no response</span>
    107	            </div>
    108	          )}
    109	          {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
-   110	            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--sf-text-secondary)', marginTop: 4 }}>
-   111	              <Car size={12} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+   110	            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--em-text-secondary)', marginTop: 4 }}>
+   111	              <Car size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />
    112	              {rideCount.offers > 0 && <span>{rideCount.offers} seat{rideCount.offers !== 1 ? 's' : ''} offered</span>}
-   113	              {rideCount.offers > 0 && rideCount.requests > 0 && <span style={{ color: 'var(--sf-text-tertiary)' }}>·</span>}
-   114	              {rideCount.requests > 0 && <span style={{ color: 'var(--sf-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>}
+   113	              {rideCount.offers > 0 && rideCount.requests > 0 && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
+   114	              {rideCount.requests > 0 && <span style={{ color: 'var(--em-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>}
    115	            </div>
    116	          )}
    117	          {dutyCount && dutyCount.total > 0 && (
-   118	            <div style={{ fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--sf-warning)' : 'var(--sf-success)' }}>
+   118	            <div style={{ fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--em-warning)' : 'var(--em-success)' }}>
    119	              {dutyCount.claimed}/{dutyCount.total} volunteers filled
    120	            </div>
    121	          )}
@@ -3369,7 +3369,7 @@
    128	      ) : (
    129	        <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8 }}>
    130	          <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/events/${event.id}?tab=rsvps`, { state: { event } }); }} className="sf-press"
-   131	            style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'transparent', color: 'var(--sf-accent)', fontSize: 14, fontWeight: 500 }}>
+   131	            style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'transparent', color: 'var(--em-accent)', fontSize: 14, fontWeight: 500 }}>
    132	            Manage RSVPs
    133	          </button>
    134	        </div>
@@ -3383,7 +3383,7 @@
 ```
      1	// Circular avatar. Renders an image when `src` is provided, otherwise falls
      2	// back to the first letter of `name` on a colored background (defaults to
-     3	// --sf-accent, or use `color` to pass a team_color straight from the DB —
+     3	// --em-accent, or use `color` to pass a team_color straight from the DB —
      4	// the one legitimate case for inline hex in the app).
      5	
      6	const SIZES = { 24: 24, 32: 32, 40: 40, 56: 56 };
@@ -3392,7 +3392,7 @@
      9	export default function Avatar({ src, name = '', size = 32, color, alt, className = '' }) {
     10	  const px = SIZES[size] || 32;
     11	  const initial = (name.trim() || '?').charAt(0).toUpperCase();
-    12	  const bg = color || 'var(--sf-accent)';
+    12	  const bg = color || 'var(--em-accent)';
     13	
     14	  if (src) {
     15	    return (
@@ -3413,7 +3413,7 @@
     30	        height: px,
     31	        borderRadius: '50%',
     32	        backgroundColor: bg,
-    33	        color: 'var(--sf-text-inverse)',
+    33	        color: 'var(--em-text-inverse)',
     34	        fontSize: FONT_FOR[px] || 13,
     35	      }}
     36	      aria-label={alt || name}
@@ -3431,12 +3431,12 @@
      3	// which keeps contrast readable in both light and dark surfaces.
      4	
      5	const VARIANTS = {
-     6	  success: { bg: 'var(--sf-success-soft)', fg: 'var(--sf-success)' },
-     7	  warning: { bg: 'var(--sf-warning-soft)', fg: 'var(--sf-warning)' },
-     8	  danger:  { bg: 'var(--sf-danger-soft)',  fg: 'var(--sf-danger)'  },
-     9	  info:    { bg: 'var(--sf-info-soft)',    fg: 'var(--sf-info)'    },
-    10	  neutral: { bg: 'var(--sf-neutral-soft)', fg: 'var(--sf-neutral)' },
-    11	  academy: { bg: 'var(--sf-academy-soft)', fg: 'var(--sf-academy)' },
+     6	  success: { bg: 'var(--em-success-soft)', fg: 'var(--em-success)' },
+     7	  warning: { bg: 'var(--em-warning-soft)', fg: 'var(--em-warning)' },
+     8	  danger:  { bg: 'var(--em-danger-soft)',  fg: 'var(--em-danger)'  },
+     9	  info:    { bg: 'var(--em-info-soft)',    fg: 'var(--em-info)'    },
+    10	  neutral: { bg: 'var(--em-neutral-soft)', fg: 'var(--em-neutral)' },
+    11	  academy: { bg: 'var(--em-academy-soft)', fg: 'var(--em-academy)' },
     12	};
     13	
     14	export default function Badge({ children, variant = 'neutral', className = '' }) {
@@ -3576,10 +3576,10 @@
    112	        style={{
    113	          maxHeight: `${maxHeightPx}px`,
    114	          overflow: 'hidden',
-   115	          backgroundColor: 'var(--sf-bg-card)',
+   115	          backgroundColor: 'var(--em-bg-card)',
    116	          borderTopLeftRadius: 16,
    117	          borderTopRightRadius: 16,
-   118	          boxShadow: 'var(--sf-shadow-lg)',
+   118	          boxShadow: 'var(--em-shadow-lg)',
    119	          transition: 'max-height 250ms ease-out',
    120	        }}
    121	        onClick={(e) => e.stopPropagation()}
@@ -3594,7 +3594,7 @@
    130	          <span
    131	            style={{
    132	              width: 36, height: 4, borderRadius: 999,
-   133	              backgroundColor: 'var(--sf-border-default)',
+   133	              backgroundColor: 'var(--em-border-default)',
    134	            }}
    135	          />
    136	        </button>
@@ -3641,7 +3641,7 @@
     23	
     24	  if (!open) return null;
     25	
-    26	  const confirmBg = destructive ? 'var(--sf-danger)' : 'var(--sf-accent)';
+    26	  const confirmBg = destructive ? 'var(--em-danger)' : 'var(--em-accent)';
     27	
     28	  return (
     29	    <div
@@ -3655,12 +3655,12 @@
     37	      <div
     38	        className="sf-fade-in"
     39	        style={{
-    40	          backgroundColor: 'var(--sf-bg-card)',
+    40	          backgroundColor: 'var(--em-bg-card)',
     41	          borderRadius: 14,
     42	          padding: 20,
     43	          width: '100%',
     44	          maxWidth: 360,
-    45	          boxShadow: 'var(--sf-shadow-lg)',
+    45	          boxShadow: 'var(--em-shadow-lg)',
     46	        }}
     47	        onClick={(e) => e.stopPropagation()}
     48	      >
@@ -3668,13 +3668,13 @@
     50	          <h2
     51	            id="confirm-title"
     52	            className="font-semibold"
-    53	            style={{ color: 'var(--sf-text-primary)', fontSize: 17, marginBottom: 8 }}
+    53	            style={{ color: 'var(--em-text-primary)', fontSize: 17, marginBottom: 8 }}
     54	          >
     55	            {title}
     56	          </h2>
     57	        )}
     58	        {message && (
-    59	          <p style={{ color: 'var(--sf-text-secondary)', fontSize: 14, lineHeight: 1.5 }}>
+    59	          <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, lineHeight: 1.5 }}>
     60	            {message}
     61	          </p>
     62	        )}
@@ -3686,8 +3686,8 @@
     68	            style={{
     69	              minHeight: 44,
     70	              borderRadius: 10,
-    71	              backgroundColor: 'var(--sf-bg-secondary)',
-    72	              color: 'var(--sf-text-primary)',
+    71	              backgroundColor: 'var(--em-bg-secondary)',
+    72	              color: 'var(--em-text-primary)',
     73	              fontSize: 15,
     74	            }}
     75	          >
@@ -3701,7 +3701,7 @@
     83	              minHeight: 44,
     84	              borderRadius: 10,
     85	              backgroundColor: confirmBg,
-    86	              color: 'var(--sf-text-inverse)',
+    86	              color: 'var(--em-text-inverse)',
     87	              fontSize: 15,
     88	            }}
     89	          >
@@ -3724,7 +3724,7 @@
      6	  return (
      7	    <div
      8	      className="flex flex-col items-center justify-center text-center px-6 py-12"
-     9	      style={{ color: 'var(--sf-text-secondary)' }}
+     9	      style={{ color: 'var(--em-text-secondary)' }}
     10	    >
     11	      {Icon && (
     12	        <div
@@ -3733,8 +3733,8 @@
     15	            width: 56,
     16	            height: 56,
     17	            borderRadius: '50%',
-    18	            backgroundColor: 'var(--sf-bg-secondary)',
-    19	            color: 'var(--sf-text-tertiary)',
+    18	            backgroundColor: 'var(--em-bg-secondary)',
+    19	            color: 'var(--em-text-tertiary)',
     20	          }}
     21	        >
     22	          <Icon size={24} strokeWidth={1.75} aria-hidden="true" />
@@ -3743,7 +3743,7 @@
     25	      {title && (
     26	        <div
     27	          className="font-semibold"
-    28	          style={{ color: 'var(--sf-text-primary)', fontSize: 16, marginBottom: 4 }}
+    28	          style={{ color: 'var(--em-text-primary)', fontSize: 16, marginBottom: 4 }}
     29	        >
     30	          {title}
     31	        </div>
@@ -3779,7 +3779,7 @@
     18	        position: 'fixed',
     19	        top: 0, left: 0, right: 0, bottom: 0,
     20	        zIndex: 9999,
-    21	        backgroundColor: 'var(--sf-bg-page)',
+    21	        backgroundColor: 'var(--em-bg-page)',
     22	        display: 'flex',
     23	        flexDirection: 'column',
     24	        overflowX: 'hidden',
@@ -3795,15 +3795,15 @@
     34	        paddingTop: 'env(safe-area-inset-top, 0px)',
     35	        minHeight: 'calc(56px + env(safe-area-inset-top, 0px))',
     36	        paddingLeft: 16, paddingRight: 16,
-    37	        backgroundColor: 'var(--sf-bg-card)',
-    38	        borderBottom: '1px solid var(--sf-border-default)',
+    37	        backgroundColor: 'var(--em-bg-card)',
+    38	        borderBottom: '1px solid var(--em-border-default)',
     39	        flexShrink: 0,
     40	      }}>
     41	        <button type="button" onClick={onClose} className="sf-press" style={{
     42	          minHeight: 44, padding: '0 8px', background: 'none', border: 'none',
-    43	          color: 'var(--sf-accent)', fontSize: 15, fontWeight: 500,
+    43	          color: 'var(--em-accent)', fontSize: 15, fontWeight: 500,
     44	        }}>Cancel</button>
-    45	        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--sf-text-primary)' }}>
+    45	        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>
     46	          {title}
     47	        </span>
     48	        <div style={{ width: 60 }} />
@@ -3844,7 +3844,7 @@
     10	        width,
     11	        height,
     12	        borderRadius: radius,
-    13	        backgroundColor: 'var(--sf-bg-tertiary)',
+    13	        backgroundColor: 'var(--em-bg-tertiary)',
     14	      }}
     15	    />
     16	  );
@@ -3855,9 +3855,9 @@
     21	    <div
     22	      className="p-4 mb-3"
     23	      style={{
-    24	        backgroundColor: 'var(--sf-bg-card)',
+    24	        backgroundColor: 'var(--em-bg-card)',
     25	        borderRadius: 12,
-    26	        border: '1px solid var(--sf-border-subtle)',
+    26	        border: '1px solid var(--em-border-subtle)',
     27	      }}
     28	    >
     29	      <Bar width="40%" height={10} className="mb-3" />
@@ -3872,7 +3872,7 @@
     38	    <div className="flex items-center gap-3 py-3">
     39	      <div
     40	        className="sf-pulse"
-    41	        style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: 'var(--sf-bg-tertiary)' }}
+    41	        style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: 'var(--em-bg-tertiary)' }}
     42	      />
     43	      <div className="flex-1">
     44	        <Bar width="60%" height={12} className="mb-2" />
@@ -3917,12 +3917,12 @@
      7	      textAlign: 'center', padding: '40px 16px', minHeight: 120,
      8	    }}>
      9	      {heading && (
-    10	        <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--sf-text-primary)', marginBottom: 6 }}>
+    10	        <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 6 }}>
     11	          {heading}
     12	        </div>
     13	      )}
     14	      {message && (
-    15	        <div style={{ fontSize: 14, color: 'var(--sf-text-tertiary)', maxWidth: 320, lineHeight: 1.5 }}>
+    15	        <div style={{ fontSize: 14, color: 'var(--em-text-tertiary)', maxWidth: 320, lineHeight: 1.5 }}>
     16	          {message}
     17	        </div>
     18	      )}
@@ -3940,9 +3940,9 @@
      5	// parents can keep the component mounted and toggle it via a single
      6	// `setToast(null)` call.
      7	const VARIANT_META = {
-     8	  success: { icon: CheckCircle2, bg: 'var(--sf-success)',  fg: 'var(--sf-text-inverse)' },
-     9	  error:   { icon: AlertCircle,  bg: 'var(--sf-danger)',   fg: 'var(--sf-text-inverse)' },
-    10	  info:    { icon: Info,         bg: 'var(--sf-info)',     fg: 'var(--sf-text-inverse)' },
+     8	  success: { icon: CheckCircle2, bg: 'var(--em-success)',  fg: 'var(--em-text-inverse)' },
+     9	  error:   { icon: AlertCircle,  bg: 'var(--em-danger)',   fg: 'var(--em-text-inverse)' },
+    10	  info:    { icon: Info,         bg: 'var(--em-info)',     fg: 'var(--em-text-inverse)' },
     11	};
     12	
     13	export default function Toast({ message, variant = 'info', onDismiss, duration = 3000 }) {
@@ -3969,7 +3969,7 @@
     34	        color: meta.fg,
     35	        padding: '12px 16px',
     36	        borderRadius: 10,
-    37	        boxShadow: 'var(--sf-shadow-lg)',
+    37	        boxShadow: 'var(--em-shadow-lg)',
     38	        maxWidth: 'calc(100% - 32px)',
     39	        fontSize: 14,
     40	        fontWeight: 500,
@@ -4071,30 +4071,30 @@
     77	  return createPortal(
     78	    <div style={{
     79	      position: 'fixed', inset: 0, zIndex: 9999,
-    80	      backgroundColor: 'var(--sf-bg-page)',
+    80	      backgroundColor: 'var(--em-bg-page)',
     81	      display: 'flex', flexDirection: 'column', overflow: 'hidden',
     82	    }}>
     83	      <div style={{
     84	        minHeight: 56, padding: '0 8px 0 4px',
     85	        display: 'flex', alignItems: 'center', gap: 8,
-    86	        borderBottom: '1px solid var(--sf-border-default)',
-    87	        backgroundColor: 'var(--sf-bg-card)', flexShrink: 0,
+    86	        borderBottom: '1px solid var(--em-border-default)',
+    87	        backgroundColor: 'var(--em-bg-card)', flexShrink: 0,
     88	        paddingTop: 'env(safe-area-inset-top, 0px)',
     89	      }}>
     90	        <button type="button" onClick={step > backStop ? () => setStep(step - 1) : onClose}
     91	          className="sf-press" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
     92	          {step > backStop
-    93	            ? <ArrowLeft size={20} strokeWidth={1.75} color="var(--sf-text-primary)" />
-    94	            : <X size={20} strokeWidth={1.75} color="var(--sf-text-primary)" />}
+    93	            ? <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-primary)" />
+    94	            : <X size={20} strokeWidth={1.75} color="var(--em-text-primary)" />}
     95	        </button>
-    96	        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--sf-text-primary)', flex: 1 }}>
+    96	        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', flex: 1 }}>
     97	          {isEdit ? 'Edit Event' : 'New Event'}
     98	        </span>
     99	        <div style={{ display: 'flex', gap: 6, paddingRight: 8 }}>
    100	          {dots.map((_, i) => (
    101	            <div key={i} style={{
    102	              width: 8, height: 8, borderRadius: 4,
-   103	              backgroundColor: i <= dotIndex ? 'var(--sf-accent)' : 'var(--sf-border-default)',
+   103	              backgroundColor: i <= dotIndex ? 'var(--em-accent)' : 'var(--em-border-default)',
    104	            }} />
    105	          ))}
    106	        </div>
@@ -4109,9 +4109,9 @@
    115	
    116	      {step === 2 && conflicts.length > 0 && (
    117	        <div style={{
-   118	          padding: '10px 16px', backgroundColor: 'var(--sf-warning-soft)',
-   119	          borderTop: '1px solid var(--sf-warning)', flexShrink: 0,
-   120	          fontSize: 13, color: 'var(--sf-warning)', fontWeight: 500,
+   118	          padding: '10px 16px', backgroundColor: 'var(--em-warning-soft)',
+   119	          borderTop: '1px solid var(--em-warning)', flexShrink: 0,
+   120	          fontSize: 13, color: 'var(--em-warning)', fontWeight: 500,
    121	        }}>
    122	          Conflicts with: {conflicts.map((c) => c.title).join(', ')}. You can save anyway.
    123	        </div>
@@ -4121,8 +4121,8 @@
    127	        <div style={{
    128	          padding: '12px 16px',
    129	          paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-   130	          borderTop: '1px solid var(--sf-border-default)',
-   131	          backgroundColor: 'var(--sf-bg-card)', flexShrink: 0,
+   130	          borderTop: '1px solid var(--em-border-default)',
+   131	          backgroundColor: 'var(--em-bg-card)', flexShrink: 0,
    132	        }}>
    133	          <button type="button"
    134	            onClick={step === 3 ? handleSave : () => setStep(step + 1)}
@@ -4130,8 +4130,8 @@
    136	            className="sf-press sf-bounce-tap"
    137	            style={{
    138	              width: '100%', minHeight: 48, borderRadius: 12, border: 'none',
-   139	              backgroundColor: canNext ? 'var(--sf-accent)' : 'var(--sf-bg-tertiary)',
-   140	              color: canNext ? 'var(--sf-text-inverse)' : 'var(--sf-text-tertiary)',
+   139	              backgroundColor: canNext ? 'var(--em-accent)' : 'var(--em-bg-tertiary)',
+   140	              color: canNext ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)',
    141	              fontSize: 16, fontWeight: 600, opacity: loading ? 0.6 : 1,
    142	            }}>
    143	            {loading ? 'Saving...' : step === 3 ? (isEdit ? 'Save Changes' : 'Save Event') : 'Next'}
@@ -4182,11 +4182,11 @@
     34	              aria-label="Remove volunteer"
     35	              style={{
     36	                width: 40, height: 40, borderRadius: 10,
-    37	                border: '1px solid var(--sf-border-default)',
-    38	                backgroundColor: 'var(--sf-bg-card)', display: 'flex',
+    37	                border: '1px solid var(--em-border-default)',
+    38	                backgroundColor: 'var(--em-bg-card)', display: 'flex',
     39	                alignItems: 'center', justifyContent: 'center',
     40	              }}>
-    41	              <X size={16} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+    41	              <X size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
     42	            </button>
     43	          </div>
     44	        ))}
@@ -4194,9 +4194,9 @@
     46	      <button type="button" onClick={add} className="sf-press"
     47	        style={{
     48	          marginTop: 8, minHeight: 40, padding: '0 14px', borderRadius: 10,
-    49	          border: '1px solid var(--sf-border-default)',
-    50	          backgroundColor: 'var(--sf-bg-card)',
-    51	          color: 'var(--sf-accent)', fontSize: 13, fontWeight: 500,
+    49	          border: '1px solid var(--em-border-default)',
+    50	          backgroundColor: 'var(--em-bg-card)',
+    51	          color: 'var(--em-accent)', fontSize: 13, fontWeight: 500,
     52	          display: 'inline-flex', alignItems: 'center', gap: 6,
     53	        }}>
     54	        <Plus size={16} strokeWidth={1.75} /> Add volunteer
@@ -4205,17 +4205,17 @@
     57	  );
     58	}
     59	
-    60	const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--sf-text-secondary)', display: 'block' };
+    60	const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)', display: 'block' };
     61	const inputStyle = {
-    62	  minHeight: 40, borderRadius: 10, border: '1px solid var(--sf-border-default)',
-    63	  backgroundColor: 'var(--sf-bg-card)', padding: '0 10px', fontSize: 14,
-    64	  color: 'var(--sf-text-primary)',
+    62	  minHeight: 40, borderRadius: 10, border: '1px solid var(--em-border-default)',
+    63	  backgroundColor: 'var(--em-bg-card)', padding: '0 10px', fontSize: 14,
+    64	  color: 'var(--em-text-primary)',
     65	};
     66	
     67	const stepBtn = {
     68	  width: 32, height: 32, borderRadius: 8,
-    69	  border: '1px solid var(--sf-border-default)',
-    70	  backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-text-primary)',
+    69	  border: '1px solid var(--em-border-default)',
+    70	  backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
     71	  fontSize: 16, fontWeight: 500, cursor: 'pointer',
     72	};
 ```
@@ -4240,7 +4240,7 @@
     16	
     17	  return (
     18	    <div>
-    19	      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--sf-text-secondary)', marginBottom: 6, display: 'block' }}>
+    19	      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)', marginBottom: 6, display: 'block' }}>
     20	        Repeat
     21	      </span>
     22	      <div style={{ display: 'flex', gap: 8, marginBottom: pattern !== 'once' ? 12 : 0 }}>
@@ -4253,7 +4253,7 @@
     29	      </div>
     30	      {pattern !== 'once' && (
     31	        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-    32	          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--sf-text-secondary)' }}>Until</span>
+    32	          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)' }}>Until</span>
     33	          <input type="date" value={until || ''} onChange={(e) => setUntil(e.target.value)}
     34	            style={inputStyle} />
     35	        </label>
@@ -4264,16 +4264,16 @@
     40	
     41	const chipStyle = (sel) => ({
     42	  flex: 1, minHeight: 40, borderRadius: 10,
-    43	  border: sel ? '2px solid var(--sf-accent)' : '1px solid var(--sf-border-default)',
-    44	  backgroundColor: sel ? 'var(--sf-accent)' : 'var(--sf-bg-card)',
-    45	  color: sel ? 'var(--sf-text-inverse)' : 'var(--sf-text-primary)',
+    43	  border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
+    44	  backgroundColor: sel ? 'var(--em-accent)' : 'var(--em-bg-card)',
+    45	  color: sel ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
     46	  fontSize: 13, fontWeight: 500, padding: '0 12px',
     47	});
     48	
     49	const inputStyle = {
-    50	  minHeight: 44, borderRadius: 10, border: '1px solid var(--sf-border-default)',
-    51	  backgroundColor: 'var(--sf-bg-card)', padding: '0 12px', fontSize: 15,
-    52	  color: 'var(--sf-text-primary)', width: '100%',
+    50	  minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)',
+    51	  backgroundColor: 'var(--em-bg-card)', padding: '0 12px', fontSize: 15,
+    52	  color: 'var(--em-text-primary)', width: '100%',
     53	};
 ```
 
@@ -4295,7 +4295,7 @@
     14	
     15	  return (
     16	    <div style={{ padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-    17	      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--sf-text-primary)' }}>Details</h2>
+    17	      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>Details</h2>
     18	
     19	      <label style={fieldStyle}>
     20	        <span style={labelStyle}>Title (optional)</span>
@@ -4342,7 +4342,7 @@
     61	
     62	      <label style={fieldStyle}>
     63	        <span style={labelStyle}>Coach notes</span>
-    64	        <span style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: -4 }}>Not visible to parents</span>
+    64	        <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: -4 }}>Not visible to parents</span>
     65	        <textarea value={data.coachNotes || ''} onChange={(e) => set('coachNotes', e.target.value)}
     66	          placeholder="Internal notes" rows={2}
     67	          style={{ ...inputStyle, minHeight: 60, padding: '10px 12px', resize: 'vertical' }} />
@@ -4365,14 +4365,14 @@
     84	      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     85	      minHeight: 44, padding: '0 4px', cursor: 'pointer',
     86	    }}>
-    87	      <span style={{ fontSize: 15, color: 'var(--sf-text-primary)' }}>{label}</span>
+    87	      <span style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{label}</span>
     88	      <div style={{
     89	        width: 48, height: 28, borderRadius: 14, padding: 2,
-    90	        backgroundColor: checked ? 'var(--sf-accent)' : 'var(--sf-bg-tertiary)',
+    90	        backgroundColor: checked ? 'var(--em-accent)' : 'var(--em-bg-tertiary)',
     91	        transition: 'background-color 0.2s', display: 'flex', alignItems: 'center',
     92	      }}>
     93	        <div style={{
-    94	          width: 24, height: 24, borderRadius: 12, backgroundColor: 'var(--sf-text-inverse)',
+    94	          width: 24, height: 24, borderRadius: 12, backgroundColor: 'var(--em-text-inverse)',
     95	          transform: checked ? 'translateX(20px)' : 'translateX(0)',
     96	          transition: 'transform 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
     97	        }} />
@@ -4382,17 +4382,17 @@
    101	}
    102	
    103	const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 6 };
-   104	const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--sf-text-secondary)' };
+   104	const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)' };
    105	const inputStyle = {
-   106	  minHeight: 44, borderRadius: 10, border: '1px solid var(--sf-border-default)',
-   107	  backgroundColor: 'var(--sf-bg-card)', padding: '0 12px', fontSize: 15,
-   108	  color: 'var(--sf-text-primary)', width: '100%',
+   106	  minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)',
+   107	  backgroundColor: 'var(--em-bg-card)', padding: '0 12px', fontSize: 15,
+   108	  color: 'var(--em-text-primary)', width: '100%',
    109	};
    110	const chipStyle = (sel) => ({
    111	  flex: 1, minHeight: 40, borderRadius: 10,
-   112	  border: sel ? '2px solid var(--sf-accent)' : '1px solid var(--sf-border-default)',
-   113	  backgroundColor: sel ? 'var(--sf-accent)' : 'var(--sf-bg-card)',
-   114	  color: sel ? 'var(--sf-text-inverse)' : 'var(--sf-text-primary)',
+   112	  border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
+   113	  backgroundColor: sel ? 'var(--em-accent)' : 'var(--em-bg-card)',
+   114	  color: sel ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
    115	  fontSize: 13, fontWeight: 500,
    116	});
 ```
@@ -4417,7 +4417,7 @@
     16	
     17	  return (
     18	    <div style={{ padding: '24px 16px' }}>
-    19	      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--sf-text-primary)', marginBottom: 16 }}>
+    19	      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 16 }}>
     20	        Which team?
     21	      </h2>
     22	      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -4431,8 +4431,8 @@
     30	              className="sf-press"
     31	              style={{
     32	                minHeight: 56, borderRadius: 12,
-    33	                border: sel ? '2px solid var(--sf-accent)' : '1px solid var(--sf-border-default)',
-    34	                backgroundColor: sel ? 'var(--sf-bg-card-hover)' : 'var(--sf-bg-card)',
+    33	                border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
+    34	                backgroundColor: sel ? 'var(--em-bg-card-hover)' : 'var(--em-bg-card)',
     35	                padding: '0 16px', display: 'flex', alignItems: 'center', gap: 12,
     36	                textAlign: 'left',
     37	              }}
@@ -4441,10 +4441,10 @@
     40	                width: 8, height: 32, borderRadius: 4,
     41	                backgroundColor: t.team_color, flexShrink: 0,
     42	              }} />
-    43	              <span style={{ fontSize: 15, fontWeight: sel ? 600 : 500, color: 'var(--sf-text-primary)' }}>
+    43	              <span style={{ fontSize: 15, fontWeight: sel ? 600 : 500, color: 'var(--em-text-primary)' }}>
     44	                {t.name}
     45	              </span>
-    46	              {sel && <span style={{ marginLeft: 'auto', color: 'var(--sf-accent)', fontSize: 18 }}>✓</span>}
+    46	              {sel && <span style={{ marginLeft: 'auto', color: 'var(--em-accent)', fontSize: 18 }}>✓</span>}
     47	            </button>
     48	          );
     49	        })}
@@ -4470,7 +4470,7 @@
     12	export default function StepType({ value, onSelect }) {
     13	  return (
     14	    <div style={{ padding: '24px 16px' }}>
-    15	      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--sf-text-primary)', marginBottom: 16 }}>
+    15	      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 16 }}>
     16	        What type of event?
     17	      </h2>
     18	      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -4486,9 +4486,9 @@
     28	              style={{
     29	                minHeight: t.large ? 88 : 64,
     30	                borderRadius: 12,
-    31	                border: sel ? '2px solid var(--sf-accent)' : '1px solid var(--sf-border-default)',
-    32	                backgroundColor: sel ? 'var(--sf-accent)' : 'var(--sf-bg-card)',
-    33	                color: sel ? 'var(--sf-text-inverse)' : 'var(--sf-text-primary)',
+    31	                border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
+    32	                backgroundColor: sel ? 'var(--em-accent)' : 'var(--em-bg-card)',
+    33	                color: sel ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
     34	                display: 'flex', flexDirection: 'column', alignItems: 'center',
     35	                justifyContent: 'center', gap: 6, fontSize: 14, fontWeight: 500,
     36	              }}
@@ -4575,7 +4575,7 @@
     67	
     68	  return (
     69	    <div style={{ padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-    70	      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--sf-text-primary)' }}>When and where?</h2>
+    70	      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>When and where?</h2>
     71	
     72	      <label style={fieldStyle}>
     73	        <span style={labelStyle}>Date</span>
@@ -4608,7 +4608,7 @@
    100	            onChange={(e) => setCustomEndTime(e.target.value)} step="300"
    101	            style={{ ...inputStyle, marginTop: 8 }} />
    102	        ) : (
-   103	          data.endTime && <span style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', marginTop: 4, display: 'block' }}>Ends at {data.endTime}</span>
+   103	          data.endTime && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>Ends at {data.endTime}</span>
    104	        )}
    105	      </div>
    106	
@@ -4642,17 +4642,17 @@
    134	}
    135	
    136	const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 6 };
-   137	const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--sf-text-secondary)' };
+   137	const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)' };
    138	const inputStyle = {
-   139	  minHeight: 44, borderRadius: 10, border: '1px solid var(--sf-border-default)',
-   140	  backgroundColor: 'var(--sf-bg-card)', padding: '0 12px', fontSize: 15,
-   141	  color: 'var(--sf-text-primary)', width: '100%',
+   139	  minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)',
+   140	  backgroundColor: 'var(--em-bg-card)', padding: '0 12px', fontSize: 15,
+   141	  color: 'var(--em-text-primary)', width: '100%',
    142	};
    143	const chipStyle = (sel) => ({
    144	  minHeight: 40, minWidth: 56, borderRadius: 10,
-   145	  border: sel ? '2px solid var(--sf-accent)' : '1px solid var(--sf-border-default)',
-   146	  backgroundColor: sel ? 'var(--sf-accent)' : 'var(--sf-bg-card)',
-   147	  color: sel ? 'var(--sf-text-inverse)' : 'var(--sf-text-primary)',
+   145	  border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
+   146	  backgroundColor: sel ? 'var(--em-accent)' : 'var(--em-bg-card)',
+   147	  color: sel ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
    148	  fontSize: 14, fontWeight: 500, padding: '0 12px',
    149	});
 ```
@@ -4727,17 +4727,17 @@
     15	  text_on_dark: '#F5F0E8',
     16	};
     17	
-    18	// Mirror brand_colors onto --sf-* CSS custom properties on <html>. Called on
+    18	// Mirror brand_colors onto --em-* CSS custom properties on <html>. Called on
     19	// login and whenever the auth listener fires — cheap, idempotent, and cleared
     20	// back to defaults on sign out.
     21	function applyBrandColors(brandColors) {
     22	  const c = brandColors || {};
     23	  const root = document.documentElement;
-    24	  root.style.setProperty('--sf-header',        c.header        || SKYFIRE_DEFAULTS.header);
-    25	  root.style.setProperty('--sf-accent',        c.accent        || SKYFIRE_DEFAULTS.accent);
-    26	  root.style.setProperty('--sf-accent-hover',  c.accent_hover  || SKYFIRE_DEFAULTS.accent_hover);
-    27	  root.style.setProperty('--sf-accent-soft',   c.accent_soft   || SKYFIRE_DEFAULTS.accent_soft);
-    28	  root.style.setProperty('--sf-text-on-dark',  c.text_on_dark  || SKYFIRE_DEFAULTS.text_on_dark);
+    24	  root.style.setProperty('--em-header',        c.header        || SKYFIRE_DEFAULTS.header);
+    25	  root.style.setProperty('--em-accent',        c.accent        || SKYFIRE_DEFAULTS.accent);
+    26	  root.style.setProperty('--em-accent-hover',  c.accent_hover  || SKYFIRE_DEFAULTS.accent_hover);
+    27	  root.style.setProperty('--em-accent-soft',   c.accent_soft   || SKYFIRE_DEFAULTS.accent_soft);
+    28	  root.style.setProperty('--em-text-on-dark',  c.text_on_dark  || SKYFIRE_DEFAULTS.text_on_dark);
     29	}
     30	
     31	export function AuthProvider({ children }) {
@@ -4979,11 +4979,11 @@
     30	              gap: 12,
     31	              padding: '12px 16px',
     32	              borderRadius: 10,
-    33	              backgroundColor: toast.variant === 'error' ? 'var(--sf-danger)' : toast.variant === 'success' ? 'var(--sf-success)' : 'var(--sf-info)',
-    34	              color: 'var(--sf-text-inverse)',
+    33	              backgroundColor: toast.variant === 'error' ? 'var(--em-danger)' : toast.variant === 'success' ? 'var(--em-success)' : 'var(--em-info)',
+    34	              color: 'var(--em-text-inverse)',
     35	              fontSize: 14,
     36	              fontWeight: 500,
-    37	              boxShadow: 'var(--sf-shadow-lg)',
+    37	              boxShadow: 'var(--em-shadow-lg)',
     38	              maxWidth: 400,
     39	              width: '100%',
     40	            }}
@@ -4995,7 +4995,7 @@
     46	                onClick={() => { toast.onUndo(); dismiss(); }}
     47	                style={{
     48	                  background: 'none', border: 'none',
-    49	                  color: 'var(--sf-text-inverse)',
+    49	                  color: 'var(--em-text-inverse)',
     50	                  fontSize: 14, fontWeight: 700,
     51	                  textDecoration: 'underline',
     52	                  padding: '4px 8px',
@@ -6889,7 +6889,7 @@
      9	const VERSION = 'Skyfire v2.0';
     10	
     11	const SectionHeader = ({ children }) => (
-    12	  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--sf-text-tertiary)', marginBottom: 8 }}>{children}</div>
+    12	  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>{children}</div>
     13	);
     14	
     15	export default function AccountPage() {
@@ -6909,30 +6909,30 @@
     29	  const teamName = (teamId) => programs.find((p) => p.id === teamId)?.name || '—';
     30	
     31	  return (
-    32	    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--sf-bg-page)', padding: '16px 16px 32px' }}>
+    32	    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--em-bg-page)', padding: '16px 16px 32px' }}>
     33	      <button type="button" onClick={() => navigate(-1)} className="sf-press"
-    34	        style={{ display: 'flex', alignItems: 'center', minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--sf-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12 }}>
+    34	        style={{ display: 'flex', alignItems: 'center', minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12 }}>
     35	        <ChevronLeft size={20} strokeWidth={1.75} /> Back
     36	      </button>
     37	
-    38	      <section style={{ backgroundColor: 'var(--sf-bg-card)', borderRadius: 10, border: '1px solid var(--sf-border-default)', boxShadow: 'var(--sf-shadow-sm)', padding: 16, marginBottom: 16 }}>
-    39	        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--sf-text-primary)' }}>{displayName}</div>
+    38	      <section style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', boxShadow: 'var(--em-shadow-sm)', padding: 16, marginBottom: 16 }}>
+    39	        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--em-text-primary)' }}>{displayName}</div>
     40	        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-    41	          <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--sf-accent-soft)', color: 'var(--sf-accent)' }}>
+    41	          <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>
     42	            {ROLE_LABELS[role] || 'User'}
     43	          </span>
-    44	          <span style={{ fontSize: 13, color: 'var(--sf-text-tertiary)' }}>{orgName || 'Skyfire'}</span>
+    44	          <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{orgName || 'Skyfire'}</span>
     45	        </div>
     46	      </section>
     47	
     48	      {role === 'parent' && (myChildren?.length > 0) && (
     49	        <section style={{ marginBottom: 16 }}>
     50	          <SectionHeader>MY CHILDREN</SectionHeader>
-    51	          <div style={{ backgroundColor: 'var(--sf-bg-card)', borderRadius: 10, border: '1px solid var(--sf-border-default)', overflow: 'hidden' }}>
+    51	          <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
     52	            {myChildren.map((c, i) => (
-    53	              <div key={c.playerId} style={{ padding: '12px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--sf-border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
-    54	                <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--sf-text-primary)' }}>{c.firstName} {c.lastName}</span>
-    55	                <span style={{ fontSize: 13, color: 'var(--sf-text-tertiary)' }}>{teamName(c.teamId)}</span>
+    53	              <div key={c.playerId} style={{ padding: '12px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
+    54	                <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>{c.firstName} {c.lastName}</span>
+    55	                <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{teamName(c.teamId)}</span>
     56	              </div>
     57	            ))}
     58	          </div>
@@ -6941,17 +6941,17 @@
     61	
     62	      <section style={{ marginBottom: 16 }}>
     63	        <SectionHeader>PREFERENCES</SectionHeader>
-    64	        <div style={{ backgroundColor: 'var(--sf-bg-card)', borderRadius: 10, border: '1px solid var(--sf-border-default)', padding: 16, fontSize: 13, color: 'var(--sf-text-tertiary)' }}>
+    64	        <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', padding: 16, fontSize: 13, color: 'var(--em-text-tertiary)' }}>
     65	          Notification preferences coming soon.
     66	        </div>
     67	      </section>
     68	
     69	      <button type="button" onClick={signOut} className="sf-press"
-    70	        style={{ width: '100%', minHeight: 44, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'transparent', color: 'var(--sf-danger)', fontSize: 14, fontWeight: 500, marginBottom: 24 }}>
+    70	        style={{ width: '100%', minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'transparent', color: 'var(--em-danger)', fontSize: 14, fontWeight: 500, marginBottom: 24 }}>
     71	        Sign out
     72	      </button>
     73	
-    74	      <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--sf-text-tertiary)' }}>{VERSION}</div>
+    74	      <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--em-text-tertiary)' }}>{VERSION}</div>
     75	    </div>
     76	  );
     77	}
@@ -7020,17 +7020,17 @@
     59	  return (
     60	    <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
     61	      <section className="min-w-0">
-    62	        <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 13 }}>
+    62	        <div style={{ color: 'var(--em-text-tertiary)', fontSize: 13 }}>
     63	          {greetingFor()},
     64	        </div>
-    65	        <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>
+    65	        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>
     66	          {name}
     67	        </h1>
     68	        <div style={{
     69	          width: 40,
     70	          height: 3,
     71	          borderRadius: 999,
-    72	          backgroundColor: 'var(--sf-accent)',
+    72	          backgroundColor: 'var(--em-accent)',
     73	          marginTop: 8,
     74	        }} />
     75	      </section>
@@ -7045,14 +7045,14 @@
     84	          fontWeight: 600,
     85	          letterSpacing: '0.05em',
     86	          textTransform: 'uppercase',
-    87	          color: 'var(--sf-text-tertiary)',
+    87	          color: 'var(--em-text-tertiary)',
     88	          marginBottom: 8,
     89	        }}>QUICK ACTIONS</div>
     90	        <QuickActions />
     91	      </section>
     92	
     93	      <section className="min-w-0">
-    94	        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--sf-text-tertiary)', marginBottom: 8 }}>TEAMS</div>
+    94	        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>TEAMS</div>
     95	        <TeamPerformanceStrip programs={programs} navigate={navigate} />
     96	      </section>
     97	
@@ -7062,7 +7062,7 @@
    101	          fontWeight: 600,
    102	          letterSpacing: '0.05em',
    103	          textTransform: 'uppercase',
-   104	          color: 'var(--sf-text-tertiary)',
+   104	          color: 'var(--em-text-tertiary)',
    105	          marginBottom: 8,
    106	        }}>SEASON</div>
    107	        <ActiveSeasonCard season={activeSeason} />
@@ -7075,7 +7075,7 @@
    114	          fontWeight: 600,
    115	          letterSpacing: '0.05em',
    116	          textTransform: 'uppercase',
-   117	          color: 'var(--sf-text-tertiary)',
+   117	          color: 'var(--em-text-tertiary)',
    118	          marginBottom: 8,
    119	        }}>GETTING STARTED</div>
    120	        <GettingStarted
@@ -7085,7 +7085,7 @@
    124	      </section>
    125	
    126	      {/* TEMP: sign-out affordance until the Account page is built. */}
-   127	      <div style={{ borderTop: '1px solid var(--sf-border-subtle)', paddingTop: 12 }}>
+   127	      <div style={{ borderTop: '1px solid var(--em-border-subtle)', paddingTop: 12 }}>
    128	        <button
    129	          type="button"
    130	          onClick={handleSignOut}
@@ -7095,7 +7095,7 @@
    134	            padding: '0 4px',
    135	            background: 'none',
    136	            border: 'none',
-   137	            color: 'var(--sf-danger)',
+   137	            color: 'var(--em-danger)',
    138	            fontSize: 14,
    139	            fontWeight: 500,
    140	          }}
@@ -7154,7 +7154,7 @@
     41	  return (
     42	    <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
     43	      <div className="flex items-center justify-between mb-4">
-    44	        <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 22 }}>
+    44	        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 22 }}>
     45	          Seasons
     46	        </h1>
     47	        <button
@@ -7163,7 +7163,7 @@
     50	          className="flex items-center gap-1 font-semibold sf-press"
     51	          style={{
     52	            minHeight: 44, padding: '0 14px', borderRadius: 10,
-    53	            backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 14,
+    53	            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14,
     54	          }}
     55	        >
     56	          <Plus size={18} strokeWidth={1.75} /> New
@@ -7189,11 +7189,11 @@
     76	            // all four sides, then `borderLeft` overrides just the left
     77	            // edge with a thicker accent.
     78	            const cardStyle = {
-    79	              backgroundColor: 'var(--sf-bg-card)',
+    79	              backgroundColor: 'var(--em-bg-card)',
     80	              borderRadius: 10,
-    81	              border: '1px solid var(--sf-border-subtle)',
-    82	              borderLeft: `4px solid ${active ? 'var(--sf-success)' : 'var(--sf-border-default)'}`,
-    83	              boxShadow: 'var(--sf-shadow-sm)',
+    81	              border: '1px solid var(--em-border-subtle)',
+    82	              borderLeft: `4px solid ${active ? 'var(--em-success)' : 'var(--em-border-default)'}`,
+    83	              boxShadow: 'var(--em-shadow-sm)',
     84	              overflow: 'hidden',
     85	            };
     86	            return (
@@ -7204,12 +7204,12 @@
     91	                  className="w-full text-left p-4 sf-press flex flex-col"
     92	                >
     93	                  <div className="flex items-center justify-between mb-1">
-    94	                    <span className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 16 }}>
+    94	                    <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 16 }}>
     95	                      {s.name}
     96	                    </span>
     97	                    {active ? <Badge variant="success">Active</Badge> : <Badge>Archived</Badge>}
     98	                  </div>
-    99	                  <span style={{ color: 'var(--sf-text-secondary)', fontSize: 13 }}>
+    99	                  <span style={{ color: 'var(--em-text-secondary)', fontSize: 13 }}>
    100	                    {formatDateFull(s.start_date)} – {formatDateFull(s.end_date)}
    101	                  </span>
    102	                </button>
@@ -7221,8 +7221,8 @@
    108	                    style={{
    109	                      minHeight: 44,
    110	                      padding: '0 16px',
-   111	                      borderTop: '1px solid var(--sf-border-subtle)',
-   112	                      color: 'var(--sf-accent)',
+   111	                      borderTop: '1px solid var(--em-border-subtle)',
+   112	                      color: 'var(--em-accent)',
    113	                      fontSize: 13,
    114	                      fontWeight: 500,
    115	                    }}
@@ -7321,11 +7321,11 @@
     57	    <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
     58	      <div className="flex items-center justify-between mb-4">
     59	        <div>
-    60	          <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 22 }}>
+    60	          <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 22 }}>
     61	            Teams
     62	          </h1>
     63	          {activeSeason && (
-    64	            <div style={{ color: 'var(--sf-text-secondary)', fontSize: 13 }}>{activeSeason.name}</div>
+    64	            <div style={{ color: 'var(--em-text-secondary)', fontSize: 13 }}>{activeSeason.name}</div>
     65	          )}
     66	        </div>
     67	        <button
@@ -7334,7 +7334,7 @@
     70	          className="flex items-center gap-1 font-semibold sf-press"
     71	          style={{
     72	            minHeight: 44, padding: '0 14px', borderRadius: 10,
-    73	            backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 14,
+    73	            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14,
     74	          }}
     75	        >
     76	          <Plus size={18} strokeWidth={1.75} /> New
@@ -7358,15 +7358,15 @@
     94	                onClick={() => openEdit(p)}
     95	                className="w-full text-left p-4 sf-press"
     96	                style={{
-    97	                  backgroundColor: 'var(--sf-bg-card)',
+    97	                  backgroundColor: 'var(--em-bg-card)',
     98	                  borderRadius: 10,
-    99	                  border: '1px solid var(--sf-border-subtle)',
-   100	                  borderLeft: `4px solid ${p.team_color || 'var(--sf-border-default)'}`,
-   101	                  boxShadow: 'var(--sf-shadow-sm)',
+    99	                  border: '1px solid var(--em-border-subtle)',
+   100	                  borderLeft: `4px solid ${p.team_color || 'var(--em-border-default)'}`,
+   101	                  boxShadow: 'var(--em-shadow-sm)',
    102	                }}
    103	              >
    104	                <div className="flex items-center justify-between mb-1">
-   105	                  <span className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 16 }}>
+   105	                  <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 16 }}>
    106	                    {p.name}
    107	                  </span>
    108	                  <div className="flex gap-1">
@@ -7374,7 +7374,7 @@
    110	                    <Badge variant="info">{CIRCUIT_LABELS[p.circuit] || p.circuit}</Badge>
    111	                  </div>
    112	                </div>
-   113	                <div style={{ color: 'var(--sf-text-secondary)', fontSize: 13 }}>
+   113	                <div style={{ color: 'var(--em-text-secondary)', fontSize: 13 }}>
    114	                  {p.practice_day ? `${DAY_LABELS[p.practice_day]}` : 'No practice day set'}
    115	                  {p.practice_location ? ` · ${p.practice_location}` : ''}
    116	                  {p.circuit === 'aau' && p.circuit_name ? ` · ${p.circuit_name}` : ''}
@@ -7426,7 +7426,7 @@
     20	const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
     21	
     22	const SectionHeader = ({ children, sectionKey }) => (
-    23	  <h2 data-section={sectionKey} style={{ fontSize: 16, fontWeight: 700, color: 'var(--sf-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>
+    23	  <h2 data-section={sectionKey} style={{ fontSize: 16, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>
     24	);
     25	
     26	export default function EventDetailPage() {
@@ -7457,11 +7457,11 @@
     51	    }
     52	  }, [searchParams, rsvpLoading, roster.length]);
     53	
-    54	  if (eventLoading) return <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100dvh' }} />;
-    55	  if (!event) return <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100dvh', padding: 24, color: 'var(--sf-text-tertiary)' }}>Event not found</div>;
+    54	  if (eventLoading) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100dvh' }} />;
+    55	  if (!event) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100dvh', padding: 24, color: 'var(--em-text-tertiary)' }}>Event not found</div>;
     56	
     57	  const team = event.teams;
-    58	  const teamColor = team?.team_color || 'var(--sf-text-tertiary)';
+    58	  const teamColor = team?.team_color || 'var(--em-text-tertiary)';
     59	  const isStaff = role === 'admin' || role === 'coach';
     60	
     61	  const rsvpMap = {};
@@ -7504,11 +7504,11 @@
     98	  };
     99	
    100	  return (
-   101	    <div style={{ backgroundColor: 'var(--sf-bg-page)', minHeight: '100vh' }}>
+   101	    <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
    102	      <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={doDelete} onCheckin={() => setShowCheckin(true)} />
    103	
    104	      {event.parent_event_id && (
-   105	        <div style={{ padding: '6px 16px', fontSize: 12, color: 'var(--sf-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+   105	        <div style={{ padding: '6px 16px', fontSize: 12, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
    106	          <Repeat size={12} strokeWidth={1.75} />
    107	          Part of a recurring series
    108	          <button type="button" onClick={async () => {
@@ -7516,7 +7516,7 @@
    110	            await supabase.from('events').update({ parent_event_id: null }).eq('id', event.id);
    111	            patchEvent({ parent_event_id: null });
    112	            refetch();
-   113	          }} style={{ fontSize: 12, color: 'var(--sf-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>
+   113	          }} style={{ fontSize: 12, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>
    114	            Remove from series
    115	          </button>
    116	        </div>
@@ -7565,16 +7565,16 @@
      8	  return (
      9	    <div
     10	      className="sf-fullscreen flex items-center justify-center p-6"
-    11	      style={{ backgroundColor: 'var(--sf-header)' }}
+    11	      style={{ backgroundColor: 'var(--em-header)' }}
     12	    >
     13	      <div
     14	        className="w-full text-center"
     15	        style={{
     16	          maxWidth: 400,
-    17	          backgroundColor: 'var(--sf-bg-card)',
+    17	          backgroundColor: 'var(--em-bg-card)',
     18	          borderRadius: 16,
     19	          padding: 28,
-    20	          boxShadow: 'var(--sf-shadow-lg)',
+    20	          boxShadow: 'var(--em-shadow-lg)',
     21	        }}
     22	      >
     23	        <div
@@ -7583,8 +7583,8 @@
     26	            width: 72,
     27	            height: 72,
     28	            borderRadius: '50%',
-    29	            backgroundColor: 'var(--sf-accent-soft)',
-    30	            color: 'var(--sf-accent)',
+    29	            backgroundColor: 'var(--em-accent-soft)',
+    30	            color: 'var(--em-accent)',
     31	          }}
     32	          aria-hidden="true"
     33	        >
@@ -7592,11 +7592,11 @@
     35	        </div>
     36	        <h1
     37	          className="font-semibold"
-    38	          style={{ color: 'var(--sf-text-primary)', fontSize: 20, marginBottom: 8 }}
+    38	          style={{ color: 'var(--em-text-primary)', fontSize: 20, marginBottom: 8 }}
     39	        >
     40	          Reset password
     41	        </h1>
-    42	        <p style={{ color: 'var(--sf-text-secondary)', fontSize: 14, marginBottom: 20 }}>
+    42	        <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, marginBottom: 20 }}>
     43	          Password reset is coming soon. Ask an admin to send you a new invite.
     44	        </p>
     45	        <Link
@@ -7606,8 +7606,8 @@
     49	            minHeight: 44,
     50	            padding: '0 20px',
     51	            borderRadius: 10,
-    52	            backgroundColor: 'var(--sf-accent)',
-    53	            color: 'var(--sf-text-inverse)',
+    52	            backgroundColor: 'var(--em-accent)',
+    53	            color: 'var(--em-text-inverse)',
     54	            fontSize: 15,
     55	          }}
     56	        >
@@ -7631,7 +7631,7 @@
      8	import InstallPrompt from '../components/shared/InstallPrompt';
      9	
     10	const AdminHomePage = lazy(() => import('./AdminHomePage'));
-    11	const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
+    11	const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading...</div>;
     12	
     13	// Home dispatches on role: admins land on the KPI dashboard, parents get
     14	// the personalized schedule view, and coaches see a placeholder until
@@ -7691,11 +7691,11 @@
     21	  // always shows dark navy regardless of cached org colors.
     22	  useEffect(() => {
     23	    const r = document.documentElement.style;
-    24	    r.setProperty('--sf-header', '#151525');
-    25	    r.setProperty('--sf-accent', '#C9952E');
-    26	    r.setProperty('--sf-accent-hover', '#D4A843');
-    27	    r.setProperty('--sf-accent-soft', 'rgba(201,149,46,0.1)');
-    28	    r.setProperty('--sf-text-on-dark', '#F5F0E8');
+    24	    r.setProperty('--em-header', '#151525');
+    25	    r.setProperty('--em-accent', '#C9952E');
+    26	    r.setProperty('--em-accent-hover', '#D4A843');
+    27	    r.setProperty('--em-accent-soft', 'rgba(201,149,46,0.1)');
+    28	    r.setProperty('--em-text-on-dark', '#F5F0E8');
     29	  }, []);
     30	
     31	  const onSubmit = async (e) => {
@@ -7717,23 +7717,23 @@
     47	
     48	  const input = (err) => ({
     49	    width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10,
-    50	    border: `1px solid ${err ? 'var(--sf-danger)' : 'var(--sf-border-default)'}`,
-    51	    backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-text-primary)',
+    50	    border: `1px solid ${err ? 'var(--em-danger)' : 'var(--em-border-default)'}`,
+    51	    backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
     52	    fontSize: 15, outline: 'none',
     53	  });
-    54	  const lbl = { color: 'var(--sf-text-secondary)', fontSize: 13 };
-    55	  const err = { color: 'var(--sf-danger)', fontSize: 12, marginTop: 4 };
+    54	  const lbl = { color: 'var(--em-text-secondary)', fontSize: 13 };
+    55	  const err = { color: 'var(--em-danger)', fontSize: 12, marginTop: 4 };
     56	
     57	  return (
     58	    <div
     59	      className="sf-fullscreen flex items-center justify-center p-6"
-    60	      style={{ backgroundColor: 'var(--sf-header)' }}
+    60	      style={{ backgroundColor: 'var(--em-header)' }}
     61	    >
     62	      <div
     63	        className="w-full sf-fade-in"
     64	        style={{
-    65	          maxWidth: 400, backgroundColor: 'var(--sf-bg-card)',
-    66	          borderRadius: 16, padding: 28, boxShadow: 'var(--sf-shadow-lg)',
+    65	          maxWidth: 400, backgroundColor: 'var(--em-bg-card)',
+    66	          borderRadius: 16, padding: 28, boxShadow: 'var(--em-shadow-lg)',
     67	        }}
     68	      >
     69	        <div className="flex flex-col items-center mb-6">
@@ -7764,7 +7764,7 @@
     94	              <button
     95	                type="button" onClick={() => setShowPw((v) => !v)}
     96	                className="absolute flex items-center justify-center sf-press"
-    97	                style={{ top: 0, right: 0, width: 44, height: 44, color: 'var(--sf-text-tertiary)' }}
+    97	                style={{ top: 0, right: 0, width: 44, height: 44, color: 'var(--em-text-tertiary)' }}
     98	                aria-label={showPw ? 'Hide password' : 'Show password'}
     99	              >
    100	                {showPw
@@ -7779,7 +7779,7 @@
    109	            <div
    110	              className="mb-3"
    111	              style={{
-   112	                color: 'var(--sf-danger)', backgroundColor: 'var(--sf-danger-soft)',
+   112	                color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)',
    113	                padding: '8px 12px', borderRadius: 8, fontSize: 13,
    114	              }}
    115	            >
@@ -7792,7 +7792,7 @@
    122	            className="w-full font-semibold sf-press sf-bounce-tap"
    123	            style={{
    124	              minHeight: 44, borderRadius: 10, fontSize: 15,
-   125	              backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)',
+   125	              backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
    126	              opacity: submitting ? 0.7 : 1,
    127	            }}
    128	          >{submitting ? 'Signing in…' : 'Sign in'}</button>
@@ -7803,7 +7803,7 @@
    133	              className="sf-press inline-flex items-center justify-center"
    134	              style={{
    135	                minHeight: 44, padding: '0 12px',
-   136	                color: 'var(--sf-accent)', fontSize: 13, fontWeight: 500,
+   136	                color: 'var(--em-accent)', fontSize: 13, fontWeight: 500,
    137	              }}
    138	            >
    139	              Forgot password?
@@ -7873,7 +7873,7 @@
     39	      map.set(a.team_id, {
     40	        id: a.team_id,
     41	        name: a.teams?.name || '—',
-    42	        team_color: a.teams?.team_color || 'var(--sf-neutral)',
+    42	        team_color: a.teams?.team_color || 'var(--em-neutral)',
     43	        sort_order: a.teams?.sort_order ?? 999,
     44	      });
     45	    }
@@ -7901,14 +7901,14 @@
     67	    .sort((a, b) => new Date(a.start_at) - new Date(b.start_at)),
     68	    [activities, now, weekEnd]);
     69	
-    70	  if (loading) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
+    70	  if (loading) return <div style={{ padding: 24, color: 'var(--em-text-tertiary)' }}>Loading...</div>;
     71	
     72	  return (
     73	    <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
     74	      <section>
-    75	        <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 13 }}>{greetingFor()},</div>
-    76	        <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>{name}</h1>
-    77	        <div style={{ width: 40, height: 3, borderRadius: 999, backgroundColor: 'var(--sf-accent)', marginTop: 8 }} />
+    75	        <div style={{ color: 'var(--em-text-tertiary)', fontSize: 13 }}>{greetingFor()},</div>
+    76	        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>{name}</h1>
+    77	        <div style={{ width: 40, height: 3, borderRadius: 999, backgroundColor: 'var(--em-accent)', marginTop: 8 }} />
     78	      </section>
     79	
     80	      <section>
@@ -7934,7 +7934,7 @@
    100	        <SectionHeader>THIS WEEK</SectionHeader>
    101	        {thisWeek.length > 0 ? groupByDate(thisWeek).map(([date, evts]) => (
    102	          <div key={date}>
-   103	            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
+   103	            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--em-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
    104	              {formatDateHeader(date)}
    105	            </div>
    106	            <div className="flex flex-col gap-2">
@@ -7951,7 +7951,7 @@
    117	
    118	function SectionHeader({ children }) {
    119	  return (
-   120	    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--sf-text-tertiary)', marginBottom: 8 }}>
+   120	    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>
    121	      {children}
    122	    </div>
    123	  );
@@ -7959,7 +7959,7 @@
    125	
    126	function EmptyLine({ children }) {
    127	  return (
-   128	    <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', padding: '8px 12px', marginBottom: 8 }}>
+   128	    <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', padding: '8px 12px', marginBottom: 8 }}>
    129	      {children}
    130	    </div>
    131	  );
@@ -7970,14 +7970,14 @@
    136	    <button type="button" onClick={onClick} className="sf-press"
    137	      style={{
    138	        flexShrink: 0, minWidth: 140, minHeight: 80, borderRadius: 10, overflow: 'hidden',
-   139	        border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)',
-   140	        boxShadow: 'var(--sf-shadow-sm)', display: 'flex', alignItems: 'stretch', textAlign: 'left',
+   139	        border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+   140	        boxShadow: 'var(--em-shadow-sm)', display: 'flex', alignItems: 'stretch', textAlign: 'left',
    141	      }}
    142	    >
-   143	      <div style={{ width: 3, flexShrink: 0, backgroundColor: team.team_color || 'var(--sf-neutral)' }} />
+   143	      <div style={{ width: 3, flexShrink: 0, backgroundColor: team.team_color || 'var(--em-neutral)' }} />
    144	      <div style={{ flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
-   145	        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--sf-text-primary)' }}>{team.name}</span>
-   146	        <span style={{ fontSize: 12, color: 'var(--sf-text-tertiary)' }}>0-0</span>
+   145	        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--em-text-primary)' }}>{team.name}</span>
+   146	        <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>0-0</span>
    147	      </div>
    148	    </button>
    149	  );
@@ -8060,15 +8060,15 @@
     52	  const thisWeek = useMemo(() => upcoming.filter((a) => new Date(a.start_at) <= weekEnd), [upcoming, tick, weekEnd]);
     53	  const remaining = useMemo(() => upcoming.filter((a) => new Date(a.start_at) > weekEnd), [upcoming, tick, weekEnd]);
     54	
-    55	  if (loading) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
+    55	  if (loading) return <div style={{ padding: 24, color: 'var(--em-text-tertiary)' }}>Loading...</div>;
     56	
     57	  return (
     58	    <>
     59	      <div className="px-4 py-4">
-    60	        <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 20, marginBottom: 4 }}>
+    60	        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20, marginBottom: 4 }}>
     61	          Schedule
     62	        </h1>
-    63	        <div style={{ width: 32, height: 3, backgroundColor: 'var(--sf-accent)', borderRadius: 2, marginBottom: 16 }} />
+    63	        <div style={{ width: 32, height: 3, backgroundColor: 'var(--em-accent)', borderRadius: 2, marginBottom: 16 }} />
     64	
     65	        {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} dutyCount={dutyCounts[nextEvent.id]} onRefresh={refetch} />}
     66	
@@ -8086,13 +8086,13 @@
     78	          <TextEmptyState heading="No events found" message="Try changing your filters or check back later." />
     79	        ) : thisWeek.length > 0 ? (
     80	          <div style={{ marginTop: 16 }}>
-    81	            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+    81	            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
     82	              This week
     83	            </div>
     84	            <DateGroupedList events={thisWeek} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} />
     85	          </div>
     86	        ) : (
-    87	          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--sf-text-tertiary)' }}>
+    87	          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--em-text-tertiary)' }}>
     88	            <div style={{ fontSize: 15, fontWeight: 500 }}>No events this week</div>
     89	            <div style={{ fontSize: 13, marginTop: 4 }}>Tap + to create one</div>
     90	          </div>
@@ -8106,8 +8106,8 @@
     98	            style={{
     99	              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
    100	              width: '100%', minHeight: 44, marginTop: 16, borderRadius: 10,
-   101	              border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)',
-   102	              color: 'var(--sf-text-secondary)', fontSize: 14, fontWeight: 500,
+   101	              border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+   102	              color: 'var(--em-text-secondary)', fontSize: 14, fontWeight: 500,
    103	            }}
    104	          >
    105	            See full schedule ({remaining.length} more)
@@ -8117,7 +8117,7 @@
    109	
    110	        {showAll && remaining.length > 0 && (
    111	          <div style={{ marginTop: 16 }}>
-   112	            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+   112	            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
    113	              Upcoming
    114	            </div>
    115	            <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} />
@@ -8135,7 +8135,7 @@
    127	          position: 'fixed',
    128	          bottom: 'calc(80px + env(safe-area-inset-bottom, 0px) + 8px)',
    129	          right: 16, width: 56, height: 56, borderRadius: 28,
-   130	          backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)',
+   130	          backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
    131	          border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
    132	          display: 'flex', alignItems: 'center', justifyContent: 'center',
    133	          zIndex: 100,
@@ -8247,7 +8247,7 @@
     69	        className="flex items-center sf-press mb-3"
     70	        style={{
     71	          minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none',
-    72	          color: 'var(--sf-accent)', fontSize: 15, fontWeight: 500,
+    72	          color: 'var(--em-accent)', fontSize: 15, fontWeight: 500,
     73	        }}
     74	      >
     75	        <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
@@ -8269,7 +8269,7 @@
     91	              className="flex items-center gap-1 font-semibold sf-press"
     92	              style={{
     93	                minHeight: 44, padding: '0 14px', borderRadius: 10,
-    94	                backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 14,
+    94	                backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14,
     95	              }}
     96	            >
     97	              <Plus size={18} strokeWidth={1.75} aria-hidden="true" /> Add Player
@@ -8287,15 +8287,15 @@
    109	          <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
    110	            <div style={{
    111	              fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-   112	              textTransform: 'uppercase', color: 'var(--sf-text-tertiary)',
+   112	              textTransform: 'uppercase', color: 'var(--em-text-tertiary)',
    113	            }}>ROSTER</div>
    114	            <CopyRosterButton team={team} sortedPlayers={sortedPlayers} />
    115	          </div>
    116	          <div style={{
-   117	            backgroundColor: 'var(--sf-bg-card)',
+   117	            backgroundColor: 'var(--em-bg-card)',
    118	            borderRadius: 10,
-   119	            border: '1px solid var(--sf-border-default)',
-   120	            boxShadow: 'var(--sf-shadow-sm)',
+   119	            border: '1px solid var(--em-border-default)',
+   120	            boxShadow: 'var(--em-shadow-sm)',
    121	            overflow: 'hidden',
    122	          }}>
    123	            {sortedPlayers.map((player, i) => (
@@ -8349,20 +8349,20 @@
     27	  return (
     28	    <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
     29	      <div style={{ marginBottom: 4 }}>
-    30	        <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 20, letterSpacing: '-0.025em' }}>
+    30	        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20, letterSpacing: '-0.025em' }}>
     31	          Teams
     32	        </h1>
-    33	        <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
+    33	        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
     34	          {activeSeason?.name || 'No active season'} · {visiblePrograms.length} teams
     35	        </div>
-    36	        <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: 'var(--sf-accent)', marginTop: 8 }} />
+    36	        <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: 'var(--em-accent)', marginTop: 8 }} />
     37	      </div>
     38	
     39	      {refreshing && (
     40	        <div className="flex justify-center py-3">
     41	          <div style={{
     42	            width: 24, height: 24, borderRadius: '50%',
-    43	            border: '2px solid var(--sf-accent)',
+    43	            border: '2px solid var(--em-accent)',
     44	            borderTopColor: 'transparent',
     45	            animation: 'spin 0.6s linear infinite',
     46	          }} />
@@ -8388,32 +8388,32 @@
     66	              style={{
     67	                display: 'flex',
     68	                alignItems: 'stretch',
-    69	                backgroundColor: 'var(--sf-bg-card)',
+    69	                backgroundColor: 'var(--em-bg-card)',
     70	                borderRadius: 10,
-    71	                border: '1px solid var(--sf-border-default)',
-    72	                boxShadow: 'var(--sf-shadow-sm)',
+    71	                border: '1px solid var(--em-border-default)',
+    72	                boxShadow: 'var(--em-shadow-sm)',
     73	                overflow: 'hidden',
     74	                transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
     75	              }}
     76	            >
-    77	              <div style={{ width: 5, flexShrink: 0, backgroundColor: team.team_color || 'var(--sf-neutral)' }} />
+    77	              <div style={{ width: 5, flexShrink: 0, backgroundColor: team.team_color || 'var(--em-neutral)' }} />
     78	              <div style={{ flex: 1, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
     79	                <div>
-    80	                  <div className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 16 }}>
+    80	                  <div className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 16 }}>
     81	                    {team.name}
     82	                  </div>
     83	                  <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
     84	                    <span style={{
     85	                      fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6,
-    86	                      backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-secondary)',
+    86	                      backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)',
     87	                    }}>{team.age_group}</span>
     88	                    <span style={{
     89	                      fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6,
-    90	                      backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-secondary)',
+    90	                      backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)',
     91	                    }}>{CIRCUIT_LABELS[team.circuit] || team.circuit}</span>
     92	                    <span style={{
     93	                      fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
-    94	                      backgroundColor: 'var(--sf-neutral-soft)', color: 'var(--sf-text-tertiary)',
+    94	                      backgroundColor: 'var(--em-neutral-soft)', color: 'var(--em-text-tertiary)',
     95	                    }}>0-0</span>
     96	                  </div>
     97	                </div>
@@ -8421,10 +8421,10 @@
     99	                  {['A', 'S', 'C'].map((letter, i) => (
    100	                    <div key={i} style={{
    101	                      width: 24, height: 24, borderRadius: '50%',
-   102	                      backgroundColor: team.team_color || 'var(--sf-neutral)',
-   103	                      border: '2px solid var(--sf-bg-card)',
+   102	                      backgroundColor: team.team_color || 'var(--em-neutral)',
+   103	                      border: '2px solid var(--em-bg-card)',
    104	                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-   105	                      color: 'var(--sf-text-inverse)', fontSize: 10, fontWeight: 700,
+   105	                      color: 'var(--em-text-inverse)', fontSize: 10, fontWeight: 700,
    106	                      marginLeft: i === 0 ? 0 : -8,
    107	                      zIndex: 3 - i,
    108	                      position: 'relative',
@@ -8434,10 +8434,10 @@
    112	                  ))}
    113	                  <div style={{
    114	                    width: 24, height: 24, borderRadius: '50%',
-   115	                    backgroundColor: 'var(--sf-bg-secondary)',
-   116	                    border: '2px solid var(--sf-bg-card)',
+   115	                    backgroundColor: 'var(--em-bg-secondary)',
+   116	                    border: '2px solid var(--em-bg-card)',
    117	                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-   118	                    color: 'var(--sf-text-tertiary)', fontSize: 9, fontWeight: 600,
+   118	                    color: 'var(--em-text-tertiary)', fontSize: 9, fontWeight: 600,
    119	                    marginLeft: -8,
    120	                    zIndex: 0,
    121	                    position: 'relative',
@@ -8445,7 +8445,7 @@
    123	                    +7
    124	                  </div>
    125	                </div>
-   126	                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sf-text-tertiary)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+   126	                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--em-text-tertiary)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
    127	                  <path d="m9 18 6-6-6-6"/>
    128	                </svg>
    129	              </div>
@@ -8469,7 +8469,7 @@
      7	  return (
      8	    <div
      9	      className="sf-fullscreen flex items-center justify-center p-6"
-    10	      style={{ backgroundColor: 'var(--sf-bg-page)' }}
+    10	      style={{ backgroundColor: 'var(--em-bg-page)' }}
     11	    >
     12	      <div className="text-center" style={{ maxWidth: 360 }}>
     13	        <div
@@ -8478,8 +8478,8 @@
     16	            width: 72,
     17	            height: 72,
     18	            borderRadius: '50%',
-    19	            backgroundColor: 'var(--sf-warning-soft)',
-    20	            color: 'var(--sf-warning)',
+    19	            backgroundColor: 'var(--em-warning-soft)',
+    20	            color: 'var(--em-warning)',
     21	          }}
     22	          aria-hidden="true"
     23	        >
@@ -8487,11 +8487,11 @@
     25	        </div>
     26	        <h1
     27	          className="font-semibold"
-    28	          style={{ color: 'var(--sf-text-primary)', fontSize: 20, marginBottom: 8 }}
+    28	          style={{ color: 'var(--em-text-primary)', fontSize: 20, marginBottom: 8 }}
     29	        >
     30	          You don't have access to this page
     31	        </h1>
-    32	        <p style={{ color: 'var(--sf-text-secondary)', fontSize: 14, marginBottom: 20 }}>
+    32	        <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, marginBottom: 20 }}>
     33	          Ask an admin if you think this is a mistake.
     34	        </p>
     35	        <Link
@@ -8501,8 +8501,8 @@
     39	            minHeight: 44,
     40	            padding: '0 20px',
     41	            borderRadius: 10,
-    42	            backgroundColor: 'var(--sf-accent)',
-    43	            color: 'var(--sf-text-inverse)',
+    42	            backgroundColor: 'var(--em-accent)',
+    43	            color: 'var(--em-text-inverse)',
     44	            fontSize: 15,
     45	          }}
     46	        >

@@ -19,30 +19,30 @@ export default function LocationRowMenu({ showArchived = false, onEdit, onArchiv
           cursor: 'pointer',
         }}
       >
-        <MoreVertical size={18} strokeWidth={1.75} color="var(--sf-text-secondary)" />
+        <MoreVertical size={18} strokeWidth={1.75} color="var(--em-text-secondary)" />
       </button>
       {open && (
         <>
           <div onClick={(e) => { stop(e); setOpen(false); }} style={{ position: 'fixed', inset: 0, zIndex: 1 }} />
           <div style={{
             position: 'absolute', top: 36, right: 0, zIndex: 2,
-            backgroundColor: 'var(--sf-bg-card)',
-            border: '1px solid var(--sf-border-default)',
-            borderRadius: 10, boxShadow: 'var(--sf-shadow-md)',
+            backgroundColor: 'var(--em-bg-card)',
+            border: '1px solid var(--em-border-default)',
+            borderRadius: 10, boxShadow: 'var(--em-shadow-md)',
             minWidth: 140, overflow: 'hidden',
           }}>
             <button type="button" onClick={(e) => { stop(e); setOpen(false); onEdit(); }} className="sf-press"
-              style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--sf-text-primary)', cursor: 'pointer' }}>
+              style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--em-text-primary)', cursor: 'pointer' }}>
               <Edit2 size={14} strokeWidth={1.75} /> Edit
             </button>
             {showArchived ? (
               <button type="button" onClick={(e) => { stop(e); setOpen(false); onUnarchive && onUnarchive(); }} className="sf-press"
-                style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--sf-accent)', cursor: 'pointer' }}>
+                style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--em-accent)', cursor: 'pointer' }}>
                 <RotateCcw size={14} strokeWidth={1.75} /> Unarchive
               </button>
             ) : (
               <button type="button" onClick={(e) => { stop(e); setOpen(false); onArchive(); }} className="sf-press"
-                style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--sf-danger)', cursor: 'pointer' }}>
+                style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--em-danger)', cursor: 'pointer' }}>
                 <Archive size={14} strokeWidth={1.75} /> Archive
               </button>
             )}

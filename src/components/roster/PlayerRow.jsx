@@ -11,7 +11,7 @@ export default function PlayerRow({ player, teamColor, isLast }) {
   const guardians = player.guardians || [];
 
   return (
-    <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--sf-border-subtle)' }}>
+    <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--em-border-subtle)' }}>
       <div
         className="flex items-center sf-press"
         onClick={() => { navigator.vibrate?.(10); setExpanded((v) => !v); }}
@@ -20,47 +20,47 @@ export default function PlayerRow({ player, teamColor, isLast }) {
         style={{ padding: '10px 16px', minHeight: 56, transition: 'background-color 150ms ease-out' }}
       >
         <div style={{
-          width: 40, height: 40, borderRadius: '50%', backgroundColor: teamColor || 'var(--sf-neutral)',
+          width: 40, height: 40, borderRadius: '50%', backgroundColor: teamColor || 'var(--em-neutral)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--sf-text-inverse)', fontSize: 15, fontWeight: 700, flexShrink: 0,
+          color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 700, flexShrink: 0,
         }}>{initial}</div>
         <div style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
           <div className="flex items-center gap-2">
-            <div className="font-semibold truncate" style={{ color: 'var(--sf-text-primary)', fontSize: 15 }}>
+            <div className="font-semibold truncate" style={{ color: 'var(--em-text-primary)', fontSize: 15 }}>
               {player.first_name} {player.last_name}
             </div>
             <div style={{
               width: 6, height: 6, borderRadius: '50%',
-              backgroundColor: player.payment_status === 'partial' ? 'var(--sf-warning)'
-                : player.payment_status === 'overdue' ? 'var(--sf-danger)' : 'var(--sf-success)',
+              backgroundColor: player.payment_status === 'partial' ? 'var(--em-warning)'
+                : player.payment_status === 'overdue' ? 'var(--em-danger)' : 'var(--em-success)',
               flexShrink: 0,
             }} title={player.payment_status === 'partial' ? 'Partial payment' : player.payment_status === 'overdue' ? 'Payment overdue' : 'Paid'} />
           </div>
           <div className="flex items-center gap-1" style={{ marginTop: 2 }}>
-            {isAcademy && <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--sf-academy-soft)', color: 'var(--sf-academy)' }}>Academy</span>}
-            <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-secondary)' }}>{ordinalGrade(player.grade)}</span>
+            {isAcademy && <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-academy-soft)', color: 'var(--em-academy)' }}>Academy</span>}
+            <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{ordinalGrade(player.grade)}</span>
           </div>
           <div className="flex items-center gap-1" style={{ marginTop: 3 }}>
-            <div style={{ width: 40, height: 3, borderRadius: 999, backgroundColor: 'var(--sf-bg-tertiary)', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${player.attendance_pct || 85}%`, backgroundColor: (player.attendance_pct || 85) >= 80 ? 'var(--sf-success)' : 'var(--sf-warning)', borderRadius: 999 }} />
+            <div style={{ width: 40, height: 3, borderRadius: 999, backgroundColor: 'var(--em-bg-tertiary)', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${player.attendance_pct || 85}%`, backgroundColor: (player.attendance_pct || 85) >= 80 ? 'var(--em-success)' : 'var(--em-warning)', borderRadius: 999 }} />
             </div>
-            <span style={{ fontSize: 10, color: 'var(--sf-text-tertiary)' }}>{player.attendance_pct || 85}%</span>
+            <span style={{ fontSize: 10, color: 'var(--em-text-tertiary)' }}>{player.attendance_pct || 85}%</span>
           </div>
         </div>
         {player.jersey_number != null && (
           <div style={{
-            width: 32, height: 32, borderRadius: '50%', border: `2px solid ${teamColor || 'var(--sf-neutral)'}`,
+            width: 32, height: 32, borderRadius: '50%', border: `2px solid ${teamColor || 'var(--em-neutral)'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 700, color: teamColor || 'var(--sf-text-primary)', flexShrink: 0,
+            fontSize: 13, fontWeight: 700, color: teamColor || 'var(--em-text-primary)', flexShrink: 0,
           }}>{player.jersey_number}</div>
         )}
-        <ChevronDown size={16} strokeWidth={1.75} color="var(--sf-text-tertiary)"
+        <ChevronDown size={16} strokeWidth={1.75} color="var(--em-text-tertiary)"
           style={{ marginLeft: 8, flexShrink: 0, transform: expanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 150ms' }} />
       </div>
       {expanded && (
         <div style={{ padding: '4px 16px 12px 68px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {guardians.length === 0
-            ? <div style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', fontStyle: 'italic' }}>No guardians linked</div>
+            ? <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', fontStyle: 'italic' }}>No guardians linked</div>
             : guardians.map((g) => <GuardianRow key={g.id} guardian={g} role={role} />)}
         </div>
       )}
@@ -72,18 +72,18 @@ function GuardianRow({ guardian, role }) {
   const name = `${guardian.firstName || ''} ${guardian.lastName || ''}`.trim() || 'Guardian';
   const canInvite = role === 'admin' && guardian.email && !guardian.userId;
   const linked = guardian.email && guardian.userId;
-  const iconBtn = { width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--sf-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+  const iconBtn = { width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--em-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
   const spacer = <div style={{ width: 32, height: 32, flexShrink: 0 }} />;
   const stop = (e) => e.stopPropagation();
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 36 }}>
-      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: 'var(--sf-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
       <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-        {guardian.phone ? <a href={`tel:${guardian.phone}`} onClick={stop} aria-label="Call" style={iconBtn}><Phone size={14} strokeWidth={1.75} color="var(--sf-text-secondary)" /></a> : spacer}
-        {guardian.phone ? <a href={`sms:${guardian.phone}`} onClick={stop} aria-label="Text" style={iconBtn}><MessageSquare size={14} strokeWidth={1.75} color="var(--sf-text-secondary)" /></a> : spacer}
-        {guardian.email ? <a href={`mailto:${guardian.email}`} onClick={stop} aria-label="Email" style={iconBtn}><Mail size={14} strokeWidth={1.75} color="var(--sf-text-secondary)" /></a> : spacer}
+        {guardian.phone ? <a href={`tel:${guardian.phone}`} onClick={stop} aria-label="Call" style={iconBtn}><Phone size={14} strokeWidth={1.75} color="var(--em-text-secondary)" /></a> : spacer}
+        {guardian.phone ? <a href={`sms:${guardian.phone}`} onClick={stop} aria-label="Text" style={iconBtn}><MessageSquare size={14} strokeWidth={1.75} color="var(--em-text-secondary)" /></a> : spacer}
+        {guardian.email ? <a href={`mailto:${guardian.email}`} onClick={stop} aria-label="Email" style={iconBtn}><Mail size={14} strokeWidth={1.75} color="var(--em-text-secondary)" /></a> : spacer}
         {canInvite ? <span onClick={stop}><InviteButton guardianEmail={guardian.email} /></span>
-          : linked ? <span style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: 'var(--sf-success)' }} title="Account linked">✓</span>
+          : linked ? <span style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: 'var(--em-success)' }} title="Account linked">✓</span>
           : spacer}
       </div>
     </div>

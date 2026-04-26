@@ -1,4 +1,4 @@
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/useToast';
 
 // Small "Copy" pill next to the ROSTER section header. Serializes the
 // team name + sorted player list to plain text and writes it to the
@@ -36,9 +36,9 @@ export default function CopyRosterButton({ team, sortedPlayers }) {
       className="sf-press flex items-center gap-1"
       style={{
         minHeight: 44, padding: '0 14px', borderRadius: 8,
-        border: '1px solid var(--sf-border-default)',
-        backgroundColor: 'var(--sf-bg-card)',
-        color: 'var(--sf-text-secondary)',
+        border: '1px solid var(--em-border-default)',
+        backgroundColor: 'var(--em-bg-card)',
+        color: 'var(--em-text-secondary)',
         fontSize: 12, fontWeight: 500,
       }}
     >

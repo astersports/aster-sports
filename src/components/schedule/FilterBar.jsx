@@ -43,7 +43,7 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
       </div>
       {onToggleCancelled && (
         <button type="button" onClick={onToggleCancelled}
-          style={{ fontSize: 12, color: 'var(--sf-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', marginTop: 4 }}>
+          style={{ fontSize: 12, color: 'var(--em-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', marginTop: 4 }}>
           {showCancelled ? 'Hide cancelled' : 'Show cancelled'}
         </button>
       )}
@@ -64,9 +64,9 @@ function Chip({ label, active, color, onClick }) {
         borderRadius: 999,
         fontSize: 12,
         fontWeight: active ? 600 : 400,
-        border: `1.5px solid ${active ? (color || 'var(--sf-accent)') : 'var(--sf-border-default)'}`,
-        backgroundColor: active ? (color ? `${color}15` : 'var(--sf-accent-soft)') : 'var(--sf-bg-card)',
-        color: active ? (color || 'var(--sf-accent)') : 'var(--sf-text-primary)',
+        border: `1.5px solid ${active ? (color || 'var(--em-accent)') : 'var(--em-border-default)'}`,
+        backgroundColor: active ? (color ? `${color}15` : 'var(--em-accent-soft)') : 'var(--em-bg-card)',
+        color: active ? (color || 'var(--em-accent)') : 'var(--em-text-primary)',
         whiteSpace: 'nowrap',
       }}
     >

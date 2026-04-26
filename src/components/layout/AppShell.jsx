@@ -13,13 +13,13 @@ export default function AppShell({ children }) {
   return (
     <div
       className="sf-app-shell flex flex-col"
-      style={{ backgroundColor: 'var(--sf-bg-page)' }}
+      style={{ backgroundColor: 'var(--em-bg-page)' }}
     >
       <Header />
       {!online && (
         <div style={{
-          backgroundColor: 'var(--sf-danger)',
-          color: 'var(--sf-text-inverse)',
+          backgroundColor: 'var(--em-danger)',
+          color: 'var(--em-text-inverse)',
           textAlign: 'center',
           padding: '6px 16px',
           fontSize: 13,

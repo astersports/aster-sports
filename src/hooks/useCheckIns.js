@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/useToast';
 
 // Fetches check-in rows for an event and exposes a toggle(playerId)
 // that upserts true/false on the (event_id, player_id) unique pair.

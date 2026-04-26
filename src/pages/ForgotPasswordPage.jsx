@@ -8,16 +8,16 @@ export default function ForgotPasswordPage() {
   return (
     <div
       className="sf-fullscreen flex items-center justify-center p-6"
-      style={{ backgroundColor: 'var(--sf-header)' }}
+      style={{ backgroundColor: 'var(--em-header)' }}
     >
       <div
         className="w-full text-center"
         style={{
           maxWidth: 400,
-          backgroundColor: 'var(--sf-bg-card)',
+          backgroundColor: 'var(--em-bg-card)',
           borderRadius: 16,
           padding: 28,
-          boxShadow: 'var(--sf-shadow-lg)',
+          boxShadow: 'var(--em-shadow-lg)',
         }}
       >
         <div
@@ -26,8 +26,8 @@ export default function ForgotPasswordPage() {
             width: 72,
             height: 72,
             borderRadius: '50%',
-            backgroundColor: 'var(--sf-accent-soft)',
-            color: 'var(--sf-accent)',
+            backgroundColor: 'var(--em-accent-soft)',
+            color: 'var(--em-accent)',
           }}
           aria-hidden="true"
         >
@@ -35,11 +35,11 @@ export default function ForgotPasswordPage() {
         </div>
         <h1
           className="font-semibold"
-          style={{ color: 'var(--sf-text-primary)', fontSize: 20, marginBottom: 8 }}
+          style={{ color: 'var(--em-text-primary)', fontSize: 20, marginBottom: 8 }}
         >
           Reset password
         </h1>
-        <p style={{ color: 'var(--sf-text-secondary)', fontSize: 14, marginBottom: 20 }}>
+        <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, marginBottom: 20 }}>
           Password reset is coming soon. Ask an admin to send you a new invite.
         </p>
         <Link
@@ -49,8 +49,8 @@ export default function ForgotPasswordPage() {
             minHeight: 44,
             padding: '0 20px',
             borderRadius: 10,
-            backgroundColor: 'var(--sf-accent)',
-            color: 'var(--sf-text-inverse)',
+            backgroundColor: 'var(--em-accent)',
+            color: 'var(--em-text-inverse)',
             fontSize: 15,
           }}
         >

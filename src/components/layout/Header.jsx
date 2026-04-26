@@ -27,8 +27,8 @@ export default function Header() {
         maxHeight: 'calc(56px + env(safe-area-inset-top, 0px))',
         paddingTop: 'env(safe-area-inset-top, 0px)',
         flexShrink: 0,
-        background: 'linear-gradient(180deg, var(--sf-header) 0%, color-mix(in srgb, var(--sf-header) 85%, black) 100%)',
-        color: 'var(--sf-text-on-dark)',
+        background: 'linear-gradient(180deg, var(--em-header) 0%, color-mix(in srgb, var(--em-header) 85%, black) 100%)',
+        color: 'var(--em-text-on-dark)',
         boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
       }}
     >
@@ -50,7 +50,7 @@ export default function Header() {
       <button
         type="button"
         className="relative flex items-center justify-center sf-press"
-        style={{ width: 44, height: 44, color: 'var(--sf-text-on-dark)' }}
+        style={{ width: 44, height: 44, color: 'var(--em-text-on-dark)' }}
         aria-label="Notifications"
       >
         <div className="sf-bell-shake" style={{
@@ -73,7 +73,7 @@ export default function Header() {
               width: 8,
               height: 8,
               borderRadius: '50%',
-              backgroundColor: 'var(--sf-danger)',
+              backgroundColor: 'var(--em-danger)',
             }}
             aria-label={`${unread} unread notifications`}
           />
@@ -83,7 +83,7 @@ export default function Header() {
         type="button"
         onClick={() => navigate('/account')}
         className="sf-press flex items-center justify-center"
-        style={{ width: 44, height: 44, color: 'var(--sf-text-on-dark)', background: 'none', border: 'none' }}
+        style={{ width: 44, height: 44, color: 'var(--em-text-on-dark)', background: 'none', border: 'none' }}
         aria-label="Account"
       >
         <Settings size={20} strokeWidth={1.75} />

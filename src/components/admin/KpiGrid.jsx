@@ -36,7 +36,7 @@ function Sparkline({ color }) {
       <polyline
         points="0,14 8,10 16,12 24,6 32,8 40,3 48,5"
         fill="none"
-        stroke={color || 'var(--sf-text-tertiary)'}
+        stroke={color || 'var(--em-text-tertiary)'}
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -55,7 +55,7 @@ function ValueSkeleton() {
         width: '60%',
         height: 24,
         borderRadius: 6,
-        backgroundColor: 'var(--sf-bg-tertiary)',
+        backgroundColor: 'var(--em-bg-tertiary)',
       }}
       aria-hidden="true"
     />
@@ -78,15 +78,15 @@ function Card(props) {
     <div
       className={`p-4 min-w-0 sf-press ${stagger || ''}`}
       style={{
-        backgroundColor: 'var(--sf-bg-card)',
+        backgroundColor: 'var(--em-bg-card)',
         borderRadius: 10,
-        border: '1px solid var(--sf-border-default)',
-        boxShadow: 'var(--sf-shadow-sm)',
+        border: '1px solid var(--em-border-default)',
+        boxShadow: 'var(--em-shadow-sm)',
         transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
       }}
       onClick={() => navigator.vibrate?.(10)}
     >
-      <div style={{ color: accent || 'var(--sf-text-tertiary)', marginBottom: 8 }}>
+      <div style={{ color: accent || 'var(--em-text-tertiary)', marginBottom: 8 }}>
         <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
       </div>
       {loading ? (
@@ -95,7 +95,7 @@ function Card(props) {
         <div
           className="font-bold truncate"
           style={{
-            color: accentValue ? accent : 'var(--sf-text-primary)',
+            color: accentValue ? accent : 'var(--em-text-primary)',
             fontSize: 24,
             lineHeight: 1.1,
           }}
@@ -105,7 +105,7 @@ function Card(props) {
         </div>
       )}
       {!loading && isNumber && value > 0 && <Sparkline color={accent} />}
-      <div className="truncate" style={{ color: 'var(--sf-text-secondary)', fontSize: 13, marginTop: 2 }}>
+      <div className="truncate" style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginTop: 2 }}>
         {label}
       </div>
     </div>
@@ -118,13 +118,13 @@ export default function KpiGrid({ stats }) {
   return (
     <div className="grid grid-cols-2 gap-3">
       <Card icon={Users} label="Players" value={players} loading={loading} stagger="sf-stagger-1" />
-      <Card icon={Calendar} label="Events" value={events} loading={loading} accent="var(--sf-info)" stagger="sf-stagger-2" />
+      <Card icon={Calendar} label="Events" value={events} loading={loading} accent="var(--em-info)" stagger="sf-stagger-2" />
       <Card
         icon={DollarSign}
         label="Collected"
         value={formatCurrency(collected)}
         loading={loading}
-        accent="var(--sf-success)"
+        accent="var(--em-success)"
         accentValue
         stagger="sf-stagger-3"
       />
@@ -133,7 +133,7 @@ export default function KpiGrid({ stats }) {
         label="Outstanding"
         value={formatCurrency(outstanding)}
         loading={loading}
-        accent={outstanding > 0 ? 'var(--sf-warning)' : 'var(--sf-text-tertiary)'}
+        accent={outstanding > 0 ? 'var(--em-warning)' : 'var(--em-text-tertiary)'}
         accentValue={outstanding > 0}
         stagger="sf-stagger-4"
       />

@@ -9,7 +9,7 @@ const ROLE_LABELS = { admin: 'Admin', coach: 'Coach', parent: 'Parent' };
 const VERSION = 'Skyfire v2.0';
 
 const SectionHeader = ({ children }) => (
-  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--sf-text-tertiary)', marginBottom: 8 }}>{children}</div>
+  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>{children}</div>
 );
 
 export default function AccountPage() {
@@ -29,30 +29,30 @@ export default function AccountPage() {
   const teamName = (teamId) => programs.find((p) => p.id === teamId)?.name || '—';
 
   return (
-    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--sf-bg-page)', padding: '16px 16px 32px' }}>
+    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--em-bg-page)', padding: '16px 16px 32px' }}>
       <button type="button" onClick={() => navigate(-1)} className="sf-press"
-        style={{ display: 'flex', alignItems: 'center', minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--sf-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12 }}>
+        style={{ display: 'flex', alignItems: 'center', minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12 }}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back
       </button>
 
-      <section style={{ backgroundColor: 'var(--sf-bg-card)', borderRadius: 10, border: '1px solid var(--sf-border-default)', boxShadow: 'var(--sf-shadow-sm)', padding: 16, marginBottom: 16 }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--sf-text-primary)' }}>{displayName}</div>
+      <section style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', boxShadow: 'var(--em-shadow-sm)', padding: 16, marginBottom: 16 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--em-text-primary)' }}>{displayName}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--sf-accent-soft)', color: 'var(--sf-accent)' }}>
+          <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>
             {ROLE_LABELS[role] || 'User'}
           </span>
-          <span style={{ fontSize: 13, color: 'var(--sf-text-tertiary)' }}>{orgName || 'Skyfire'}</span>
+          <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{orgName || 'Skyfire'}</span>
         </div>
       </section>
 
       {role === 'parent' && (myChildren?.length > 0) && (
         <section style={{ marginBottom: 16 }}>
           <SectionHeader>MY CHILDREN</SectionHeader>
-          <div style={{ backgroundColor: 'var(--sf-bg-card)', borderRadius: 10, border: '1px solid var(--sf-border-default)', overflow: 'hidden' }}>
+          <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
             {myChildren.map((c, i) => (
-              <div key={c.playerId} style={{ padding: '12px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--sf-border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
-                <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--sf-text-primary)' }}>{c.firstName} {c.lastName}</span>
-                <span style={{ fontSize: 13, color: 'var(--sf-text-tertiary)' }}>{teamName(c.teamId)}</span>
+              <div key={c.playerId} style={{ padding: '12px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
+                <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>{c.firstName} {c.lastName}</span>
+                <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{teamName(c.teamId)}</span>
               </div>
             ))}
           </div>
@@ -61,17 +61,17 @@ export default function AccountPage() {
 
       <section style={{ marginBottom: 16 }}>
         <SectionHeader>PREFERENCES</SectionHeader>
-        <div style={{ backgroundColor: 'var(--sf-bg-card)', borderRadius: 10, border: '1px solid var(--sf-border-default)', padding: 16, fontSize: 13, color: 'var(--sf-text-tertiary)' }}>
+        <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', padding: 16, fontSize: 13, color: 'var(--em-text-tertiary)' }}>
           Notification preferences coming soon.
         </div>
       </section>
 
       <button type="button" onClick={signOut} className="sf-press"
-        style={{ width: '100%', minHeight: 44, borderRadius: 10, border: '1px solid var(--sf-border-default)', backgroundColor: 'transparent', color: 'var(--sf-danger)', fontSize: 14, fontWeight: 500, marginBottom: 24 }}>
+        style={{ width: '100%', minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'transparent', color: 'var(--em-danger)', fontSize: 14, fontWeight: 500, marginBottom: 24 }}>
         Sign out
       </button>
 
-      <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--sf-text-tertiary)' }}>{VERSION}</div>
+      <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--em-text-tertiary)' }}>{VERSION}</div>
     </div>
   );
 }

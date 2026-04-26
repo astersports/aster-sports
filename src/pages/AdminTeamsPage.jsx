@@ -57,11 +57,11 @@ export default function AdminTeamsPage() {
     <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 22 }}>
+          <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 22 }}>
             Teams
           </h1>
           {activeSeason && (
-            <div style={{ color: 'var(--sf-text-secondary)', fontSize: 13 }}>{activeSeason.name}</div>
+            <div style={{ color: 'var(--em-text-secondary)', fontSize: 13 }}>{activeSeason.name}</div>
           )}
         </div>
         <button
@@ -70,7 +70,7 @@ export default function AdminTeamsPage() {
           className="flex items-center gap-1 font-semibold sf-press"
           style={{
             minHeight: 44, padding: '0 14px', borderRadius: 10,
-            backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 14,
+            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14,
           }}
         >
           <Plus size={18} strokeWidth={1.75} /> New
@@ -94,15 +94,15 @@ export default function AdminTeamsPage() {
                 onClick={() => openEdit(p)}
                 className="w-full text-left p-4 sf-press"
                 style={{
-                  backgroundColor: 'var(--sf-bg-card)',
+                  backgroundColor: 'var(--em-bg-card)',
                   borderRadius: 10,
-                  border: '1px solid var(--sf-border-subtle)',
-                  borderLeft: `4px solid ${p.team_color || 'var(--sf-border-default)'}`,
-                  boxShadow: 'var(--sf-shadow-sm)',
+                  border: '1px solid var(--em-border-subtle)',
+                  borderLeft: `4px solid ${p.team_color || 'var(--em-border-default)'}`,
+                  boxShadow: 'var(--em-shadow-sm)',
                 }}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 16 }}>
+                  <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 16 }}>
                     {p.name}
                   </span>
                   <div className="flex gap-1">
@@ -110,7 +110,7 @@ export default function AdminTeamsPage() {
                     <Badge variant="info">{CIRCUIT_LABELS[p.circuit] || p.circuit}</Badge>
                   </div>
                 </div>
-                <div style={{ color: 'var(--sf-text-secondary)', fontSize: 13 }}>
+                <div style={{ color: 'var(--em-text-secondary)', fontSize: 13 }}>
                   {p.practice_day ? `${DAY_LABELS[p.practice_day]}` : 'No practice day set'}
                   {p.practice_location ? ` · ${p.practice_location}` : ''}
                   {p.circuit === 'aau' && p.circuit_name ? ` · ${p.circuit_name}` : ''}

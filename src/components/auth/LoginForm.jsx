@@ -4,12 +4,12 @@ import { Eye, EyeOff } from 'lucide-react';
 // Style helpers scoped to the login form. Kept colocated here rather
 // than hoisted to a shared module so the visual rules for the
 // login-specific inputs live next to the markup that uses them.
-const lbl = { color: 'var(--sf-text-secondary)', fontSize: 13 };
-const err = { color: 'var(--sf-danger)', fontSize: 12, marginTop: 4 };
+const lbl = { color: 'var(--em-text-secondary)', fontSize: 13 };
+const err = { color: 'var(--em-danger)', fontSize: 12, marginTop: 4 };
 const input = (hasErr) => ({
   width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10,
-  border: `1px solid ${hasErr ? 'var(--sf-danger)' : 'var(--sf-border-default)'}`,
-  backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-text-primary)',
+  border: `1px solid ${hasErr ? 'var(--em-danger)' : 'var(--em-border-default)'}`,
+  backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
   fontSize: 15, outline: 'none',
 });
 
@@ -45,7 +45,7 @@ export default function LoginForm({
           <button
             type="button" onClick={() => setShowPw((v) => !v)}
             className="absolute flex items-center justify-center sf-press"
-            style={{ top: 0, right: 0, width: 44, height: 44, color: 'var(--sf-text-tertiary)' }}
+            style={{ top: 0, right: 0, width: 44, height: 44, color: 'var(--em-text-tertiary)' }}
             aria-label={showPw ? 'Hide password' : 'Show password'}
           >
             {showPw
@@ -60,7 +60,7 @@ export default function LoginForm({
         <div
           className="mb-3"
           style={{
-            color: 'var(--sf-danger)', backgroundColor: 'var(--sf-danger-soft)',
+            color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)',
             padding: '8px 12px', borderRadius: 8, fontSize: 13,
           }}
         >
@@ -73,7 +73,7 @@ export default function LoginForm({
         className="w-full font-semibold sf-press sf-bounce-tap"
         style={{
           minHeight: 44, borderRadius: 10, fontSize: 15,
-          backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)',
+          backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
           opacity: submitting ? 0.7 : 1,
         }}
       >{submitting ? 'Signing in…' : 'Sign in'}</button>
@@ -84,7 +84,7 @@ export default function LoginForm({
           className="sf-press inline-flex items-center justify-center"
           style={{
             minHeight: 44, padding: '0 12px',
-            color: 'var(--sf-accent)', fontSize: 13, fontWeight: 500,
+            color: 'var(--em-accent)', fontSize: 13, fontWeight: 500,
           }}
         >
           Forgot password?

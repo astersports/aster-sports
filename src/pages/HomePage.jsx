@@ -8,7 +8,7 @@ import WelcomeOverlay from '../components/shared/WelcomeOverlay';
 import InstallPrompt from '../components/shared/InstallPrompt';
 
 const AdminHomePage = lazy(() => import('./AdminHomePage'));
-const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
+const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading...</div>;
 
 // Home dispatches on role: admins land on the KPI dashboard, parents get
 // the personalized schedule view, and coaches see a placeholder until

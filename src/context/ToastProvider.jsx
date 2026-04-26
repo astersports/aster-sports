@@ -1,6 +1,5 @@
-import { createContext, useCallback, useContext, useState } from 'react';
-
-const ToastContext = createContext(null);
+import { useCallback, useState } from 'react';
+import { ToastContext } from './ToastContext';
 
 export function ToastProvider({ children }) {
   const [toast, setToast] = useState(null);
@@ -30,11 +29,11 @@ export function ToastProvider({ children }) {
               gap: 12,
               padding: '12px 16px',
               borderRadius: 10,
-              backgroundColor: toast.variant === 'error' ? 'var(--sf-danger)' : toast.variant === 'success' ? 'var(--sf-success)' : 'var(--sf-info)',
-              color: 'var(--sf-text-inverse)',
+              backgroundColor: toast.variant === 'error' ? 'var(--em-danger)' : toast.variant === 'success' ? 'var(--em-success)' : 'var(--em-info)',
+              color: 'var(--em-text-inverse)',
               fontSize: 14,
               fontWeight: 500,
-              boxShadow: 'var(--sf-shadow-lg)',
+              boxShadow: 'var(--em-shadow-lg)',
               maxWidth: 400,
               width: '100%',
             }}
@@ -46,7 +45,7 @@ export function ToastProvider({ children }) {
                 onClick={() => { toast.onUndo(); dismiss(); }}
                 style={{
                   background: 'none', border: 'none',
-                  color: 'var(--sf-text-inverse)',
+                  color: 'var(--em-text-inverse)',
                   fontSize: 14, fontWeight: 700,
                   textDecoration: 'underline',
                   padding: '4px 8px',
@@ -73,10 +72,4 @@ export function ToastProvider({ children }) {
       )}
     </ToastContext.Provider>
   );
-}
-
-export function useToast() {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error('useToast must be inside ToastProvider');
-  return ctx;
 }

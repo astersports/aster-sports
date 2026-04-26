@@ -39,19 +39,19 @@ export default function InviteButton({ guardianEmail }) {
   const pill = { minHeight: 32, padding: '0 10px', borderRadius: 9999, fontSize: 12, fontWeight: 500, backgroundColor: 'transparent' };
 
   if (status === 'sent') {
-    return <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--sf-success)' }}>Invited ✓</span>;
+    return <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--em-success)' }}>Invited ✓</span>;
   }
   if (status === 'error') {
     return (
       <button type="button" onClick={invite} className="sf-press" title={error}
-        style={{ ...pill, border: '1.5px solid var(--sf-danger)', color: 'var(--sf-danger)', maxWidth: '100%', whiteSpace: 'normal', textAlign: 'left', padding: '6px 10px', borderRadius: 8 }}>
+        style={{ ...pill, border: '1.5px solid var(--em-danger)', color: 'var(--em-danger)', maxWidth: '100%', whiteSpace: 'normal', textAlign: 'left', padding: '6px 10px', borderRadius: 8 }}>
         {error || 'Error — tap to retry'}
       </button>
     );
   }
   return (
     <button type="button" onClick={invite} disabled={status === 'loading'} className="sf-press"
-      style={{ ...pill, border: '1.5px solid var(--sf-accent)', color: 'var(--sf-accent)', opacity: status === 'loading' ? 0.6 : 1 }}>
+      style={{ ...pill, border: '1.5px solid var(--em-accent)', color: 'var(--em-accent)', opacity: status === 'loading' ? 0.6 : 1 }}>
       {status === 'loading' ? 'Sending…' : 'Invite'}
     </button>
   );

@@ -21,27 +21,27 @@ export default function EventLocationTab({ event }) {
     <div style={{
       margin: '0 16px',
       padding: 16,
-      backgroundColor: 'var(--sf-bg-card)',
-      border: '1px solid var(--sf-border-default)',
+      backgroundColor: 'var(--em-bg-card)',
+      border: '1px solid var(--em-border-default)',
       borderRadius: 10,
-      boxShadow: 'var(--sf-shadow-sm)',
+      boxShadow: 'var(--em-shadow-sm)',
     }}>
       {event.location ? (
-        <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--sf-text-primary)' }}>
+        <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
           {event.location}
         </div>
       ) : (
-        <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', fontStyle: 'italic' }}>
+        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', fontStyle: 'italic' }}>
           Location TBD
         </div>
       )}
       {(event.location_address || locationData?.address) && (
-        <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 4 }}>
+        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 4 }}>
           {event.location_address || `${locationData.address}, ${locationData.city}, ${locationData.state}`}
         </div>
       )}
       {event.sub_location && (
-        <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
+        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
           {event.sub_location}
         </div>
       )}
@@ -51,8 +51,8 @@ export default function EventLocationTab({ event }) {
             className="sf-press"
             style={{
               flex: 1, minHeight: 44, borderRadius: 10,
-              border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)',
-              color: 'var(--sf-text-primary)', fontSize: 13, fontWeight: 500,
+              border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+              color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, textDecoration: 'none',
             }}>
             <Navigation size={14} strokeWidth={1.75} />
@@ -62,8 +62,8 @@ export default function EventLocationTab({ event }) {
             className="sf-press"
             style={{
               flex: 1, minHeight: 44, borderRadius: 10,
-              border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)',
-              color: 'var(--sf-text-primary)', fontSize: 13, fontWeight: 500,
+              border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+              color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, textDecoration: 'none',
             }}>
             <Navigation size={14} strokeWidth={1.75} />
@@ -73,8 +73,8 @@ export default function EventLocationTab({ event }) {
             className="sf-press"
             style={{
               flex: 1, minHeight: 44, borderRadius: 10,
-              border: '1px solid var(--sf-border-default)', backgroundColor: 'var(--sf-bg-card)',
-              color: 'var(--sf-text-primary)', fontSize: 13, fontWeight: 500,
+              border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+              color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, textDecoration: 'none',
             }}>
             <Navigation size={14} strokeWidth={1.75} />

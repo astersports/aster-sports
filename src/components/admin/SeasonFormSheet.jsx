@@ -59,18 +59,18 @@ function Body({ season, onSave }) {
 
   const chip = (active) => ({
     minHeight: 44, padding: '0 16px', borderRadius: 999, fontSize: 13,
-    border: `1px solid ${active ? 'var(--sf-accent)' : 'var(--sf-border-default)'}`,
-    backgroundColor: active ? 'var(--sf-accent-soft)' : 'var(--sf-bg-card)',
-    color: active ? 'var(--sf-accent)' : 'var(--sf-text-primary)',
+    border: `1px solid ${active ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
+    backgroundColor: active ? 'var(--em-accent-soft)' : 'var(--em-bg-card)',
+    color: active ? 'var(--em-accent)' : 'var(--em-text-primary)',
     fontWeight: 500,
   });
   const inputStyle = {
     width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10,
-    border: '1px solid var(--sf-border-default)',
-    backgroundColor: 'var(--sf-bg-card)', color: 'var(--sf-text-primary)',
+    border: '1px solid var(--em-border-default)',
+    backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
     fontSize: 15, outline: 'none',
   };
-  const label = { color: 'var(--sf-text-secondary)', fontSize: 13, marginBottom: 6, display: 'block' };
+  const label = { color: 'var(--em-text-secondary)', fontSize: 13, marginBottom: 6, display: 'block' };
 
   return (
     <div>
@@ -119,7 +119,7 @@ function Body({ season, onSave }) {
           className="w-full font-semibold sf-press sf-bounce-tap"
           style={{
             minHeight: 44, borderRadius: 10,
-            backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 15,
+            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15,
           }}
         >
         {editing ? 'Save changes' : 'Create season'}

@@ -16,7 +16,7 @@ export default function RecurrenceSelector({ value, onChange }) {
 
   return (
     <div>
-      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--sf-text-secondary)', marginBottom: 6, display: 'block' }}>
+      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)', marginBottom: 6, display: 'block' }}>
         Repeat
       </span>
       <div style={{ display: 'flex', gap: 8, marginBottom: pattern !== 'once' ? 12 : 0 }}>
@@ -29,7 +29,7 @@ export default function RecurrenceSelector({ value, onChange }) {
       </div>
       {pattern !== 'once' && (
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--sf-text-secondary)' }}>Until</span>
+          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)' }}>Until</span>
           <input type="date" value={until || ''} onChange={(e) => setUntil(e.target.value)}
             style={inputStyle} />
         </label>
@@ -40,14 +40,14 @@ export default function RecurrenceSelector({ value, onChange }) {
 
 const chipStyle = (sel) => ({
   flex: 1, minHeight: 40, borderRadius: 10,
-  border: sel ? '2px solid var(--sf-accent)' : '1px solid var(--sf-border-default)',
-  backgroundColor: sel ? 'var(--sf-accent)' : 'var(--sf-bg-card)',
-  color: sel ? 'var(--sf-text-inverse)' : 'var(--sf-text-primary)',
+  border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
+  backgroundColor: sel ? 'var(--em-accent)' : 'var(--em-bg-card)',
+  color: sel ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
   fontSize: 13, fontWeight: 500, padding: '0 12px',
 });
 
 const inputStyle = {
-  minHeight: 44, borderRadius: 10, border: '1px solid var(--sf-border-default)',
-  backgroundColor: 'var(--sf-bg-card)', padding: '0 12px', fontSize: 15,
-  color: 'var(--sf-text-primary)', width: '100%',
+  minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)',
+  backgroundColor: 'var(--em-bg-card)', padding: '0 12px', fontSize: 15,
+  color: 'var(--em-text-primary)', width: '100%',
 };

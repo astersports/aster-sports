@@ -21,8 +21,8 @@ export default function BottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 flex items-stretch"
       style={{
-        backgroundColor: 'var(--sf-bg-card)',
-        borderTop: '1px solid var(--sf-border-default)',
+        backgroundColor: 'var(--em-bg-card)',
+        borderTop: '1px solid var(--em-border-default)',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
       aria-label="Primary"
@@ -47,7 +47,7 @@ function NavItem(tab) {
       className="flex-1 sf-press"
       style={({ isActive }) => ({
         minHeight: 44,
-        color: isActive ? 'var(--sf-accent)' : 'var(--sf-text-tertiary)',
+        color: isActive ? 'var(--em-accent)' : 'var(--em-text-tertiary)',
       })}
       aria-label={tab.label}
     >
@@ -58,14 +58,14 @@ function NavItem(tab) {
             fontSize: 10,
             fontWeight: isActive ? 600 : 400,
             letterSpacing: '0.02em',
-            color: isActive ? 'var(--sf-accent)' : 'var(--sf-text-tertiary)',
+            color: isActive ? 'var(--em-accent)' : 'var(--em-text-tertiary)',
           }}>{tab.label}</span>
           {isActive && (
             <div style={{
               width: 4,
               height: 4,
               borderRadius: '50%',
-              backgroundColor: 'var(--sf-accent)',
+              backgroundColor: 'var(--em-accent)',
               marginTop: -1,
             }} />
           )}

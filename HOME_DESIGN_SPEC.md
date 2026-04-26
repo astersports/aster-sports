@@ -104,7 +104,7 @@ Tabs:
 4. **Teams** — team directory (role-appropriate view)
 5. **Messages** — role-specific messaging hub
 
-Active tab: cobalt accent (--sf-accent).
+Active tab: cobalt accent (--em-accent).
 Inactive: gray icon + label.
 Tap target: 44px minimum.
 

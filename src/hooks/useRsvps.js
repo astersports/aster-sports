@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/useToast';
 
 export function useRsvps(eventId, teamId) {
   const { showToast } = useToast();

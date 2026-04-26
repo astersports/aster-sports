@@ -27,20 +27,20 @@ export default function TeamsPage() {
   return (
     <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <div style={{ marginBottom: 4 }}>
-        <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 20, letterSpacing: '-0.025em' }}>
+        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20, letterSpacing: '-0.025em' }}>
           Teams
         </h1>
-        <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', marginTop: 2 }}>
+        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
           {activeSeason?.name || 'No active season'} · {visiblePrograms.length} teams
         </div>
-        <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: 'var(--sf-accent)', marginTop: 8 }} />
+        <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: 'var(--em-accent)', marginTop: 8 }} />
       </div>
 
       {refreshing && (
         <div className="flex justify-center py-3">
           <div style={{
             width: 24, height: 24, borderRadius: '50%',
-            border: '2px solid var(--sf-accent)',
+            border: '2px solid var(--em-accent)',
             borderTopColor: 'transparent',
             animation: 'spin 0.6s linear infinite',
           }} />
@@ -66,32 +66,32 @@ export default function TeamsPage() {
               style={{
                 display: 'flex',
                 alignItems: 'stretch',
-                backgroundColor: 'var(--sf-bg-card)',
+                backgroundColor: 'var(--em-bg-card)',
                 borderRadius: 10,
-                border: '1px solid var(--sf-border-default)',
-                boxShadow: 'var(--sf-shadow-sm)',
+                border: '1px solid var(--em-border-default)',
+                boxShadow: 'var(--em-shadow-sm)',
                 overflow: 'hidden',
                 transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
               }}
             >
-              <div style={{ width: 5, flexShrink: 0, backgroundColor: team.team_color || 'var(--sf-neutral)' }} />
+              <div style={{ width: 5, flexShrink: 0, backgroundColor: team.team_color || 'var(--em-neutral)' }} />
               <div style={{ flex: 1, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 16 }}>
+                  <div className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 16 }}>
                     {team.name}
                   </div>
                   <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
                     <span style={{
                       fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6,
-                      backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-secondary)',
+                      backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)',
                     }}>{team.age_group}</span>
                     <span style={{
                       fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6,
-                      backgroundColor: 'var(--sf-bg-secondary)', color: 'var(--sf-text-secondary)',
+                      backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)',
                     }}>{CIRCUIT_LABELS[team.circuit] || team.circuit}</span>
                     <span style={{
                       fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
-                      backgroundColor: 'var(--sf-neutral-soft)', color: 'var(--sf-text-tertiary)',
+                      backgroundColor: 'var(--em-neutral-soft)', color: 'var(--em-text-tertiary)',
                     }}>0-0</span>
                   </div>
                 </div>
@@ -99,10 +99,10 @@ export default function TeamsPage() {
                   {['A', 'S', 'C'].map((letter, i) => (
                     <div key={i} style={{
                       width: 24, height: 24, borderRadius: '50%',
-                      backgroundColor: team.team_color || 'var(--sf-neutral)',
-                      border: '2px solid var(--sf-bg-card)',
+                      backgroundColor: team.team_color || 'var(--em-neutral)',
+                      border: '2px solid var(--em-bg-card)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--sf-text-inverse)', fontSize: 10, fontWeight: 700,
+                      color: 'var(--em-text-inverse)', fontSize: 10, fontWeight: 700,
                       marginLeft: i === 0 ? 0 : -8,
                       zIndex: 3 - i,
                       position: 'relative',
@@ -112,10 +112,10 @@ export default function TeamsPage() {
                   ))}
                   <div style={{
                     width: 24, height: 24, borderRadius: '50%',
-                    backgroundColor: 'var(--sf-bg-secondary)',
-                    border: '2px solid var(--sf-bg-card)',
+                    backgroundColor: 'var(--em-bg-secondary)',
+                    border: '2px solid var(--em-bg-card)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--sf-text-tertiary)', fontSize: 9, fontWeight: 600,
+                    color: 'var(--em-text-tertiary)', fontSize: 9, fontWeight: 600,
                     marginLeft: -8,
                     zIndex: 0,
                     position: 'relative',
@@ -123,7 +123,7 @@ export default function TeamsPage() {
                     +7
                   </div>
                 </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sf-text-tertiary)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--em-text-tertiary)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m9 18 6-6-6-6"/>
                 </svg>
               </div>

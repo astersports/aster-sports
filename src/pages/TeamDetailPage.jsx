@@ -67,7 +67,7 @@ export default function TeamDetailPage() {
         className="flex items-center sf-press mb-3"
         style={{
           minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none',
-          color: 'var(--sf-accent)', fontSize: 15, fontWeight: 500,
+          color: 'var(--em-accent)', fontSize: 15, fontWeight: 500,
         }}
       >
         <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
@@ -90,7 +90,7 @@ export default function TeamDetailPage() {
                 className="flex items-center gap-1 font-semibold sf-press"
                 style={{
                   minHeight: 44, padding: '0 14px', borderRadius: 10,
-                  backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 14,
+                  backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14,
                 }}
               >
                 <Plus size={18} strokeWidth={1.75} aria-hidden="true" /> Add Player

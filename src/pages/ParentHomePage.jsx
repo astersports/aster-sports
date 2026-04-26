@@ -43,7 +43,7 @@ export default function ParentHomePage() {
       map.set(a.team_id, {
         id: a.team_id,
         name: a.teams?.name || '—',
-        team_color: a.teams?.team_color || 'var(--sf-neutral)',
+        team_color: a.teams?.team_color || 'var(--em-neutral)',
         sort_order: a.teams?.sort_order ?? 999,
       });
     }
@@ -79,13 +79,13 @@ export default function ParentHomePage() {
     return thisWeek.filter((e) => e.team_id === teamId);
   }, [thisWeek, activeKidFilter, myChildren]);
 
-  if (loading) return <div style={{ padding: 24, color: 'var(--sf-text-tertiary)' }}>Loading...</div>;
+  if (loading) return <div style={{ padding: 24, color: 'var(--em-text-tertiary)' }}>Loading...</div>;
 
   return (
     <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
       <section>
-        <div style={{ color: 'var(--sf-text-tertiary)', fontSize: 13 }}>{greetingFor()},</div>
-        <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>{name}</h1>
+        <div style={{ color: 'var(--em-text-tertiary)', fontSize: 13 }}>{greetingFor()},</div>
+        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>{name}</h1>
       </section>
 
       <section>
@@ -116,7 +116,7 @@ export default function ParentHomePage() {
         />
         {filteredThisWeek.length > 0 ? groupByDate(filteredThisWeek).map(([date, evts]) => (
           <div key={date}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sf-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--em-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
               {formatDateHeader(date)}
             </div>
             <div className="flex flex-col gap-2">
@@ -133,7 +133,7 @@ export default function ParentHomePage() {
 
 function SectionHeader({ children }) {
   return (
-    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--sf-text-tertiary)', marginBottom: 8 }}>
+    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>
       {children}
     </div>
   );
@@ -141,7 +141,7 @@ function SectionHeader({ children }) {
 
 function EmptyLine({ children }) {
   return (
-    <div style={{ fontSize: 13, color: 'var(--sf-text-tertiary)', padding: '8px 12px', marginBottom: 8 }}>
+    <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', padding: '8px 12px', marginBottom: 8 }}>
       {children}
     </div>
   );

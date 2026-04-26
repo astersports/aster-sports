@@ -37,10 +37,10 @@ export default function NextEventCard() {
     <div
       className="sf-stagger-5"
       style={{
-        backgroundColor: 'var(--sf-bg-card)',
+        backgroundColor: 'var(--em-bg-card)',
         borderRadius: 10,
-        border: '1px solid var(--sf-border-default)',
-        boxShadow: 'var(--sf-shadow-sm)',
+        border: '1px solid var(--em-border-default)',
+        boxShadow: 'var(--em-shadow-sm)',
         padding: 16,
         marginTop: 12,
         display: 'flex',
@@ -49,20 +49,20 @@ export default function NextEventCard() {
       }}
     >
       <div>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--sf-text-tertiary)' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' }}>
           NEXT EVENT
         </div>
-        <div className="font-semibold" style={{ fontSize: 15, color: 'var(--sf-text-primary)', marginTop: 2 }}>
+        <div className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginTop: 2 }}>
           Practice · 10U Black
         </div>
       </div>
       <div style={{ textAlign: 'right' }}>
-        <div className="font-bold" style={{ fontSize: 20, color: 'var(--sf-accent)', fontVariantNumeric: 'tabular-nums' }}>
+        <div className="font-bold" style={{ fontSize: 20, color: 'var(--em-accent)', fontVariantNumeric: 'tabular-nums' }}>
           {countdown || '—'}
         </div>
         {countdown === 'Now' && (
           <div className="sf-pulse-dot" style={{
-            width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--sf-success)',
+            width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--em-success)',
             margin: '4px 0 0 auto',
           }} />
         )}

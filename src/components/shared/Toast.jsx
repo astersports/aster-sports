@@ -5,9 +5,9 @@ import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 // parents can keep the component mounted and toggle it via a single
 // `setToast(null)` call.
 const VARIANT_META = {
-  success: { icon: CheckCircle2, bg: 'var(--sf-success)',  fg: 'var(--sf-text-inverse)' },
-  error:   { icon: AlertCircle,  bg: 'var(--sf-danger)',   fg: 'var(--sf-text-inverse)' },
-  info:    { icon: Info,         bg: 'var(--sf-info)',     fg: 'var(--sf-text-inverse)' },
+  success: { icon: CheckCircle2, bg: 'var(--em-success)',  fg: 'var(--em-text-inverse)' },
+  error:   { icon: AlertCircle,  bg: 'var(--em-danger)',   fg: 'var(--em-text-inverse)' },
+  info:    { icon: Info,         bg: 'var(--em-info)',     fg: 'var(--em-text-inverse)' },
 };
 
 export default function Toast({ message, variant = 'info', onDismiss, duration = 3000 }) {
@@ -34,7 +34,7 @@ export default function Toast({ message, variant = 'info', onDismiss, duration =
         color: meta.fg,
         padding: '12px 16px',
         borderRadius: 10,
-        boxShadow: 'var(--sf-shadow-lg)',
+        boxShadow: 'var(--em-shadow-lg)',
         maxWidth: 'calc(100% - 32px)',
         fontSize: 14,
         fontWeight: 500,

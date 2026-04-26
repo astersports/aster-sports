@@ -1,22 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/useToast';
 
 // Module-level cache so response survives component unmount/remount on nav.
 const responseCache = new Map();
 const cacheKey = (eventId, playerId) => `${eventId}:${playerId}`;
 
 const PILLS = [
-  { value: 'going',     label: 'Going',     color: 'var(--sf-success)' },
-  { value: 'maybe',     label: 'Maybe',     color: 'var(--sf-warning)' },
-  { value: 'not_going', label: 'Not Going', color: 'var(--sf-danger)' },
+  { value: 'going',     label: 'Going',     color: 'var(--em-success)' },
+  { value: 'maybe',     label: 'Maybe',     color: 'var(--em-warning)' },
+  { value: 'not_going', label: 'Not Going', color: 'var(--em-danger)' },
 ];
 
 const CONFIRMED = {
-  going:     { icon: '✓', label: 'Going',     color: 'var(--sf-success)' },
-  maybe:     { icon: '?', label: 'Maybe',     color: 'var(--sf-warning)' },
-  not_going: { icon: '✗', label: 'Not Going', color: 'var(--sf-danger)' },
+  going:     { icon: '✓', label: 'Going',     color: 'var(--em-success)' },
+  maybe:     { icon: '?', label: 'Maybe',     color: 'var(--em-warning)' },
+  not_going: { icon: '✗', label: 'Not Going', color: 'var(--em-danger)' },
 };
 
 export default function ChildRsvp({ child, eventId, compact = false }) {
@@ -69,7 +69,7 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
           {state.icon} {child.firstName} {state.label}
         </span>
         <button type="button" onClick={(e) => { e.stopPropagation(); setResponse(null); }}
-          style={{ background: 'none', border: 'none', color: 'var(--sf-accent)', fontSize: pillSize, fontWeight: 500, padding: 4 }}>
+          style={{ background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: pillSize, fontWeight: 500, padding: 4 }}>
           Change
         </button>
       </div>
@@ -78,7 +78,7 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: compact ? 4 : 8 }}>
-      <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--sf-text-primary)', minWidth: 60 }}>{child.firstName}</span>
+      <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--em-text-primary)', minWidth: 60 }}>{child.firstName}</span>
       {PILLS.map((p) => (
         <button key={p.value} type="button" onClick={(e) => { e.stopPropagation(); save(p.value); }} disabled={saving} className="sf-press"
           style={{ flex: 1, minHeight: minH, borderRadius: 10, fontSize: pillSize, fontWeight: 600, border: `1.5px solid ${p.color}`, backgroundColor: 'transparent', color: p.color, opacity: saving ? 0.6 : 1 }}>

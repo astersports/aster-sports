@@ -41,7 +41,7 @@ export default function AdminSeasonsPage() {
   return (
     <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="font-bold" style={{ color: 'var(--sf-text-primary)', fontSize: 22 }}>
+        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 22 }}>
           Seasons
         </h1>
         <button
@@ -50,7 +50,7 @@ export default function AdminSeasonsPage() {
           className="flex items-center gap-1 font-semibold sf-press"
           style={{
             minHeight: 44, padding: '0 14px', borderRadius: 10,
-            backgroundColor: 'var(--sf-accent)', color: 'var(--sf-text-inverse)', fontSize: 14,
+            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14,
           }}
         >
           <Plus size={18} strokeWidth={1.75} /> New
@@ -76,11 +76,11 @@ export default function AdminSeasonsPage() {
             // all four sides, then `borderLeft` overrides just the left
             // edge with a thicker accent.
             const cardStyle = {
-              backgroundColor: 'var(--sf-bg-card)',
+              backgroundColor: 'var(--em-bg-card)',
               borderRadius: 10,
-              border: '1px solid var(--sf-border-subtle)',
-              borderLeft: `4px solid ${active ? 'var(--sf-success)' : 'var(--sf-border-default)'}`,
-              boxShadow: 'var(--sf-shadow-sm)',
+              border: '1px solid var(--em-border-subtle)',
+              borderLeft: `4px solid ${active ? 'var(--em-success)' : 'var(--em-border-default)'}`,
+              boxShadow: 'var(--em-shadow-sm)',
               overflow: 'hidden',
             };
             return (
@@ -91,12 +91,12 @@ export default function AdminSeasonsPage() {
                   className="w-full text-left p-4 sf-press flex flex-col"
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 16 }}>
+                    <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 16 }}>
                       {s.name}
                     </span>
                     {active ? <Badge variant="success">Active</Badge> : <Badge>Archived</Badge>}
                   </div>
-                  <span style={{ color: 'var(--sf-text-secondary)', fontSize: 13 }}>
+                  <span style={{ color: 'var(--em-text-secondary)', fontSize: 13 }}>
                     {formatDateFull(s.start_date)} – {formatDateFull(s.end_date)}
                   </span>
                 </button>
@@ -108,8 +108,8 @@ export default function AdminSeasonsPage() {
                     style={{
                       minHeight: 44,
                       padding: '0 16px',
-                      borderTop: '1px solid var(--sf-border-subtle)',
-                      color: 'var(--sf-accent)',
+                      borderTop: '1px solid var(--em-border-subtle)',
+                      color: 'var(--em-accent)',
                       fontSize: 13,
                       fontWeight: 500,
                     }}

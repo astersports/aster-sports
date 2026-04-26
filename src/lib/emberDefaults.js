@@ -17,9 +17,9 @@ export const EMBER_TAGLINE = 'Coach more. Coordinate less.';
 // Maps brand_colors jsonb keys to CSS variable names.
 // Used by useOrgBranding to apply or clear org overrides.
 export const BRAND_CSS_VAR_MAP = Object.freeze({
-  accent: '--sf-accent',
-  accent_hover: '--sf-accent-hover',
-  accent_soft: '--sf-accent-soft',
-  header: '--sf-header',
-  text_on_dark: '--sf-text-on-dark',
+  accent: '--em-accent',
+  accent_hover: '--em-accent-hover',
+  accent_soft: '--em-accent-soft',
+  header: '--em-header',
+  text_on_dark: '--em-text-on-dark',
 });

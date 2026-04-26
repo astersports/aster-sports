@@ -21,16 +21,16 @@ export default class ErrorBoundary extends Component {
     return (
       <div
         className="sf-fullscreen flex items-center justify-center px-4"
-        style={{ backgroundColor: 'var(--sf-bg-page)' }}
+        style={{ backgroundColor: 'var(--em-bg-page)' }}
       >
         <div className="text-center">
           <h1
             className="font-semibold"
-            style={{ color: 'var(--sf-text-primary)', fontSize: 20, marginBottom: 8 }}
+            style={{ color: 'var(--em-text-primary)', fontSize: 20, marginBottom: 8 }}
           >
             Something went wrong
           </h1>
-          <p style={{ color: 'var(--sf-text-secondary)', fontSize: 14, marginBottom: 16 }}>
+          <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, marginBottom: 16 }}>
             Please try refreshing the page.
           </p>
           <button
@@ -41,8 +41,8 @@ export default class ErrorBoundary extends Component {
               minHeight: 44,
               padding: '0 20px',
               borderRadius: 10,
-              backgroundColor: 'var(--sf-accent)',
-              color: 'var(--sf-text-inverse)',
+              backgroundColor: 'var(--em-accent)',
+              color: 'var(--em-text-inverse)',
               fontSize: 15,
             }}
           >

@@ -39,10 +39,10 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
   return (
     <div
       style={{
-        backgroundColor: 'var(--sf-bg-card)',
+        backgroundColor: 'var(--em-bg-card)',
         borderRadius: 10,
-        border: '1px solid var(--sf-border-default)',
-        boxShadow: 'var(--sf-shadow-sm)',
+        border: '1px solid var(--em-border-default)',
+        boxShadow: 'var(--em-shadow-sm)',
         overflow: 'hidden',
       }}
     >
@@ -53,7 +53,7 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
         style={{ background: 'none', border: 'none', minHeight: 44 }}
       >
         <div className="flex items-center gap-2">
-          <span className="font-semibold" style={{ color: 'var(--sf-text-primary)', fontSize: 15 }}>
+          <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 15 }}>
             Getting started
           </span>
           {remaining > 0 && (
@@ -62,8 +62,8 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
               fontWeight: 600,
               padding: '2px 8px',
               borderRadius: 999,
-              backgroundColor: 'var(--sf-neutral-soft)',
-              color: 'var(--sf-text-secondary)',
+              backgroundColor: 'var(--em-neutral-soft)',
+              color: 'var(--em-text-secondary)',
             }}>
               {remaining} left
             </span>
@@ -71,7 +71,7 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
         </div>
         <svg
           width="16" height="16" viewBox="0 0 24 24" fill="none"
-          stroke="var(--sf-text-tertiary)" strokeWidth="1.75"
+          stroke="var(--em-text-tertiary)" strokeWidth="1.75"
           strokeLinecap="round" strokeLinejoin="round"
           style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms ease-out' }}
         >
@@ -86,12 +86,12 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
                 <Link
                   to={s.to}
                   className="flex items-center gap-3 sf-press"
-                  style={{ minHeight: 44, color: 'var(--sf-text-primary)', fontSize: 14 }}
+                  style={{ minHeight: 44, color: 'var(--em-text-primary)', fontSize: 14 }}
                 >
                   {s.done ? (
-                    <CheckCircle2 size={20} strokeWidth={1.75} color="var(--sf-success)" />
+                    <CheckCircle2 size={20} strokeWidth={1.75} color="var(--em-success)" />
                   ) : (
-                    <Circle size={20} strokeWidth={1.75} color="var(--sf-text-tertiary)" />
+                    <Circle size={20} strokeWidth={1.75} color="var(--em-text-tertiary)" />
                   )}
                   <span style={{ textDecoration: s.done ? 'line-through' : 'none', opacity: s.done ? 0.6 : 1 }}>
                     {s.label}

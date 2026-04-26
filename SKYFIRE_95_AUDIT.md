@@ -798,7 +798,7 @@ After Migration 026 ships:
 ## Phase 0C: Ember rebrand
 
 6. Find/replace Skyfire → Ember in UI strings
-7. CSS namespace --sf-* → --em-*
+7. CSS namespace --em-* → --em-*
 8. Logo swap
 9. Domain decision
 

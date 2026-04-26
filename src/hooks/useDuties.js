@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/useToast';
 
 // Fetches event_duties for an event and exposes claim/unclaim.
 // Schema: one row per claimable slot (duty_name + guardian_id nullable).

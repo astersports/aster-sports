@@ -659,7 +659,7 @@ Must complete before any UI sprint can start.
 ## Phase 0C — Ember rebrand (2 sessions)
 
 ```
-Find/replace Skyfire → Ember ──► CSS --sf-* → --em-* ──► Logo swap ──► Domain decision
+Find/replace Skyfire → Ember ──► CSS --em-* → --em-* ──► Logo swap ──► Domain decision
 ```
 
 Independent of schema. Can run parallel to Phase 1 if needed.

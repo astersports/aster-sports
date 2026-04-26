@@ -18,7 +18,7 @@ export default function TournamentDetailPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: 'var(--sf-text-secondary)', fontSize: 14 }}>
+      <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-secondary)', fontSize: 14 }}>
         Loading tournament…
       </div>
     );
@@ -29,16 +29,16 @@ export default function TournamentDetailPage() {
       <div style={{ padding: 16 }}>
         <button onClick={() => navigate('/tournaments')} className="sf-press" aria-label="Back to tournaments" style={{
           minHeight: 44, padding: '8px 12px', border: 'none', backgroundColor: 'transparent',
-          display: 'flex', alignItems: 'center', gap: 6, color: 'var(--sf-accent)',
+          display: 'flex', alignItems: 'center', gap: 6, color: 'var(--em-accent)',
           fontSize: 14, fontWeight: 500, cursor: 'pointer', marginBottom: 12,
         }}>
           <ArrowLeft size={16} strokeWidth={1.75} /> Tournaments
         </button>
         <div style={{ padding: 40, textAlign: 'center' }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--sf-text-primary)', marginBottom: 6 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 6 }}>
             Tournament not found
           </div>
-          <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)' }}>
+          <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
             {error ? error.message : 'This tournament may have been archived or deleted.'}
           </div>
         </div>
@@ -51,7 +51,7 @@ export default function TournamentDetailPage() {
       <div style={{ padding: '8px 16px 0' }}>
         <button onClick={() => navigate('/tournaments')} className="sf-press" aria-label="Back to tournaments" style={{
           minHeight: 44, padding: '8px 0', border: 'none', backgroundColor: 'transparent',
-          display: 'flex', alignItems: 'center', gap: 6, color: 'var(--sf-accent)',
+          display: 'flex', alignItems: 'center', gap: 6, color: 'var(--em-accent)',
           fontSize: 14, fontWeight: 500, cursor: 'pointer',
         }}>
           <ArrowLeft size={16} strokeWidth={1.75} /> Tournaments
@@ -74,11 +74,11 @@ export default function TournamentDetailPage() {
 
 function TabStub({ label, session }) {
   return (
-    <div style={{ padding: 40, textAlign: 'center', backgroundColor: 'var(--sf-bg-card)', borderRadius: 10, border: '1px solid var(--sf-border-default)' }}>
-      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--sf-text-primary)', marginBottom: 6 }}>
+    <div style={{ padding: 40, textAlign: 'center', backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)' }}>
+      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 6 }}>
         {label} tab
       </div>
-      <div style={{ fontSize: 13, color: 'var(--sf-text-secondary)' }}>
+      <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
         Ships in Session {session}.
       </div>
     </div>

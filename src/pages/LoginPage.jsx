@@ -23,11 +23,11 @@ export default function LoginPage() {
   // always shows dark navy regardless of cached org colors.
   useEffect(() => {
     const r = document.documentElement.style;
-    r.setProperty('--sf-header', '#151525');
-    r.setProperty('--sf-accent', '#C9952E');
-    r.setProperty('--sf-accent-hover', '#D4A843');
-    r.setProperty('--sf-accent-soft', 'rgba(201,149,46,0.1)');
-    r.setProperty('--sf-text-on-dark', '#F5F0E8');
+    r.setProperty('--em-header', '#151525');
+    r.setProperty('--em-accent', '#C9952E');
+    r.setProperty('--em-accent-hover', '#D4A843');
+    r.setProperty('--em-accent-soft', 'rgba(201,149,46,0.1)');
+    r.setProperty('--em-text-on-dark', '#F5F0E8');
   }, []);
 
   const onSubmit = async (e) => {
@@ -50,13 +50,13 @@ export default function LoginPage() {
   return (
     <div
       className="sf-fullscreen flex items-center justify-center p-6"
-      style={{ backgroundColor: 'var(--sf-header)' }}
+      style={{ backgroundColor: 'var(--em-header)' }}
     >
       <div
         className="w-full sf-fade-in"
         style={{
-          maxWidth: 400, backgroundColor: 'var(--sf-bg-card)',
-          borderRadius: 16, padding: 28, boxShadow: 'var(--sf-shadow-lg)',
+          maxWidth: 400, backgroundColor: 'var(--em-bg-card)',
+          borderRadius: 16, padding: 28, boxShadow: 'var(--em-shadow-lg)',
         }}
       >
         <div className="flex flex-col items-center mb-6">
