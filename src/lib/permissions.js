@@ -11,3 +11,17 @@ export const isStaff  = (role) => role === 'admin' || role === 'coach';
 // call sites read more naturally and we can tighten the rule later without
 // touching every page.
 export const canEdit  = (role) => role === 'admin' || role === 'coach';
+
+export const VIEW_AS_EXPIRY_HOURS = 24;
+
+export const isParent = (role) => role === 'parent';
+
+export const isCoach = (role) => role === 'coach';
+
+export const isViewAsExpired = (setAtIso) => {
+  if (!setAtIso) return true;
+  const setAt = new Date(setAtIso);
+  if (Number.isNaN(setAt.getTime())) return true;
+  const expiry = setAt.getTime() + VIEW_AS_EXPIRY_HOURS * 60 * 60 * 1000;
+  return Date.now() > expiry;
+};

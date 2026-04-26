@@ -4,6 +4,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { PreferencesProvider } from './context/PreferencesProvider';
 import { SeasonProvider } from './context/SeasonContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastProvider';
@@ -15,11 +16,13 @@ createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <SeasonProvider>
+          <PreferencesProvider>
+            <SeasonProvider>
             <ToastProvider>
               <App />
             </ToastProvider>
           </SeasonProvider>
+          </PreferencesProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

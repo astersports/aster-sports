@@ -95,7 +95,7 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-[60] flex items-end justify-center"
       style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
       onClick={onClose}
       role="dialog"
