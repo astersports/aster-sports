@@ -12,6 +12,7 @@ import WelcomeOverlay from '../components/shared/WelcomeOverlay';
 import InstallPrompt from '../components/shared/InstallPrompt';
 
 const AdminHomePage = lazy(() => import('./AdminHomePage'));
+const CoachHomePage = lazy(() => import('./CoachHomePage'));
 
 const FALLBACK = (
   <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>
@@ -47,11 +48,9 @@ export default function HomePage() {
 
   if (activeRole === 'coach') {
     return withChrome(
-      <PlaceholderPage
-        icon={House}
-        title="Coach home"
-        description="Your team dashboard is coming soon."
-      />
+      <Suspense fallback={FALLBACK}>
+        <CoachHomePage />
+      </Suspense>
     );
   }
 
