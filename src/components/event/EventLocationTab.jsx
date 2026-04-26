@@ -1,9 +1,26 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Navigation } from 'lucide-react';
+import { Navigation, Calendar } from 'lucide-react';
+import { getDirectionUrls } from '../../lib/mapsUrls';
 
 export default function EventLocationTab({ event }) {
   const [locationData, setLocationData] = useState(null);
+  const [tournamentStatus, setTournamentStatus] = useState(undefined);
+
+  useEffect(() => {
+    if (event.event_type !== 'tournament') return;
+    let cancelled = false;
+    if (!event.tournament_id) {
+      Promise.resolve().then(() => { if (!cancelled) setTournamentStatus(null); });
+      return () => { cancelled = true; };
+    }
+    supabase.from('tournaments').select('schedule_status').eq('id', event.tournament_id).limit(1)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setTournamentStatus(data?.[0]?.schedule_status ?? null);
+      });
+    return () => { cancelled = true; };
+  }, [event.event_type, event.tournament_id]);
 
   useEffect(() => {
     if (!event.location) return;
@@ -16,6 +33,38 @@ export default function EventLocationTab({ event }) {
         if (data && data[0]) setLocationData(data[0]);
       });
   }, [event.location]);
+
+  const isTournamentNotPublished = event.event_type === 'tournament' &&
+    (tournamentStatus === undefined || tournamentStatus === null || tournamentStatus === 'draft');
+
+  if (isTournamentNotPublished) {
+    return (
+      <div style={{
+        margin: '0 16px',
+        padding: 16,
+        backgroundColor: 'var(--em-bg-card)',
+        border: '1px solid var(--em-border-default)',
+        borderRadius: 10,
+        boxShadow: 'var(--em-shadow-sm)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <Calendar size={20} strokeWidth={1.75} style={{ color: 'var(--em-text-primary)', flexShrink: 0, marginTop: 2 }} />
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
+              Schedule releases Wednesday
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 4, lineHeight: 1.5 }}>
+              Venue, court assignments, and game times will appear once the tournament organizer publishes the bracket.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const resolvedAddress = event.location_address ||
+    (locationData ? `${locationData.address}, ${locationData.city}, ${locationData.state}` : null);
+  const urls = getDirectionUrls(resolvedAddress, locationData?.lat, locationData?.lon);
 
   return (
     <div style={{
@@ -45,9 +94,9 @@ export default function EventLocationTab({ event }) {
           {event.sub_location}
         </div>
       )}
-      {locationData?.lat && locationData?.lon && (
+      {urls && (
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-          <a href={`https://maps.apple.com/?daddr=${locationData.lat},${locationData.lon}`}
+          <a href={urls.apple}
             className="sf-press"
             style={{
               flex: 1, minHeight: 44, borderRadius: 10,
@@ -58,7 +107,7 @@ export default function EventLocationTab({ event }) {
             <Navigation size={14} strokeWidth={1.75} />
             Apple
           </a>
-          <a href={`https://www.google.com/maps/dir/?api=1&destination=${locationData.lat},${locationData.lon}`}
+          <a href={urls.google}
             className="sf-press"
             style={{
               flex: 1, minHeight: 44, borderRadius: 10,
@@ -69,7 +118,7 @@ export default function EventLocationTab({ event }) {
             <Navigation size={14} strokeWidth={1.75} />
             Google
           </a>
-          <a href={`https://waze.com/ul?ll=${locationData.lat},${locationData.lon}&navigate=yes`}
+          <a href={urls.waze}
             className="sf-press"
             style={{
               flex: 1, minHeight: 44, borderRadius: 10,
