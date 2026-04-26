@@ -682,6 +682,183 @@ These features were missed in the April 19 build queue. Confirmed shipped via sc
 
 ---
 
+# SESSION OF APRIL 24-26 — WHAT SHIPPED
+
+**Phases 0B + 0C declared COMPLETE this session. All migrations 013-028 shipped + 10 more (029-038). Phase 4 persona infra shipped. Ember rebrand finalized.**
+
+## Migrations applied (16 total, 029-038 are this session)
+
+| # | Name | Purpose | Commit |
+|---|------|---------|--------|
+| 013-028 | various | Phase 0B data stability complete | shipped pre-session |
+| 029 | organizations_branding | Org branding fields + Ember default values | f2bfaba |
+| 030 | security_cleanup | RLS holes + SECURITY DEFINER fix + 18 functions search_path | cd77020 |
+| 031 | tournament_times_correction | Tournament event times normalized | applied via MCP — **SQL not yet captured in repo** |
+| 032 | rides_lifecycle_and_realtime | Rides backend + waitlist promotion + Realtime publication | 48ea8a9 |
+| 033 | tournament_orphan_repair | 6 tournaments created, 34 events FK-linked | 48ea8a9 |
+| 034 | data_integrity_fix | Jersey defaults LP=Black/AAU=Black, arrival defaults | applied via MCP — SQL not in repo |
+| 035 | data_corrections_resurrection_jersey | Resurrection address fix + AAU jersey 'Both'→'Black' | applied via MCP — SQL not in repo |
+| 036 | resurrection_address_correction | Final Resurrection address: 946 Boston Post Road, Rye | applied via MCP — SQL not in repo |
+| 037 | venue_address_corrections_and_canonical_urls | 4 wrong addresses fixed, 10 google_maps_url, 4 entry_instructions, 3 new venues | applied via MCP — SQL not in repo |
+| 038 | rename_cardinal_spellman_to_cyo_spellman | Venue rename + parking + $30 fee note + 9 events updated | applied via MCP — SQL not in repo |
+
+**Outstanding hygiene:** 6 migrations applied via MCP that need retro capture into supabase/migrations/ directory. See "Outstanding Repo Hygiene" section below.
+
+## Frontend commits to main (16 commits, ending at 1d6ddce)
+
+| Commit | What |
+|--------|------|
+| f2bfaba | Migration 029: organizations branding fields |
+| 14ef599 | emberDefaults.js canonical brand defaults + CSS var map |
+| 16c5226 | useOrgBranding hook |
+| 9ffd8e8 | AuthContext refactor for emberDefaults + useOrgBranding |
+| e5f9551 | Phase 0C Step 5: Ember phoenix asset swap |
+| cc6d3ea | Phase 0C Step 5b: in-app logo refs fix |
+| cd77020 | Migration 030 retro SQL capture |
+| 6989368 | chore: token rotation smoke test |
+| 95358fe | Phase 0C Step 6: --sf-* → --em-* CSS rename (112 files) |
+| 86f5349 | Phase 0C Step 7: display strings cleanup → Skyfire to Ember |
+| 48ea8a9 | Migrations 032+033 retro SQL capture |
+| fb26e86 | Step 3: density infra (usePreferences + useDensity hooks) |
+| 7b08926 | Step 4B: persona hooks (useHomeRole + useNotificationBadge) |
+| 2d907b7 | Step 4C: Header rewrite + RoleSwitcherSheet + RoleSwitcherViews |
+| cfd72d5 | Step 4D: PreferencesProvider Context refactor (16/16 smoke PASS) |
+| 13cc15a | fix(parent): map address fallback first attempt — incomplete |
+| d4b56dc | fix(maps): google_maps_url priority across all surfaces + city/state concat killed + tournament hide for OverviewTab |
+| 991c408 | fix(maps): Apple daddr= + Waze www. + NextUpCard placeholder hide |
+| ef1c2ad | fix(event-detail): single Google directions button opens in new tab |
+| 1d6ddce | merge: v2 → main (rebrand finalize, persona infra, Step 4D, all map fixes) |
+
+## Decisions locked this session
+
+1. AAU jersey neutral = Black (per Frank: "black is our neutral default")
+2. Tournament hide-until-preliminary (Option B): hide map UI for tournament events where schedule_status='draft' or null
+3. google_maps_url priority: google_maps_url > coords > address text
+4. Apple/Waze removed from event detail Location tab pending URL format fix (helper still exports them — easy to re-add)
+5. Single Google "Get Directions" button on event detail Location tab, opens in new tab via target="_blank"
+6. NextUpCard hides location link when event.location starts with "Tournament -"
+7. Cardinal Spellman → CYO Spellman with parking note + $30 entry fee callout
+
+## Phase reset (use this nomenclature going forward)
+
+Phase 0A SECURITY: ✅ COMPLETE
+Phase 0B DATA STABILITY: ✅ COMPLETE (all 13-28 + 29-38 shipped)
+Phase 0C EMBER REBRAND: ✅ COMPLETE
+Phase 1 PARENT 95%: 🚧 ~85% — NOW Section per persona (Step 5A-5.5J) is next
+Phase 2 COACH 95%: 🚧 ~82% — Quick Score + Rotation Planner + comp tracking
+Phase 3 ADMIN 95%: 🚧 ~55% — Communications Engine + Operations Now + comp dashboard
+Phase 4 MULTI-TENANT: 📝 DEFERRED to 2027
+Phase 5 LAUNCH + NATIVE: 📋 DESIGNED (Capacitor + push + App Store)
+Phase 6-7 PLATFORM + BILLING: 📝 BACKLOG
+
+## Phase 1 Step 5: NOW Section per persona — DESIGNED
+
+| Step | What | Time |
+|------|------|------|
+| 5A | Discovery: read HomePage.jsx + ParentHomePage current shape | 5 min |
+| 5B | SectionShell wrapper (loading/error/empty/data + brand-aware skeletons) | 25 min |
+| 5C | Wire HomePage to useHomeRole().activeRole router | 15 min |
+| 5D | CoachHomePage scaffold | 20 min |
+| 5E | NowSection per persona: parent (per-child cards) + coach (per-team rows) + admin (3 KPI tiles + Operations Now) | 75 min |
+| 5F | Migration 039: event_rsvps Realtime publication | 5 min |
+| 5G | Realtime subscription wired into NowSection | 15 min |
+| 5.5H | LIVE/AWAITING SCORE card states (T-0 to T+24h) | 30 min |
+| 5.5I | Friday Workflow card (coach + admin only Fridays) | 30 min |
+| 5.5J | TournamentDay multi-day card consolidation | 30 min |
+
+Design max ideas baked into 5E (locked):
+- Parent: confidence pills (green check/red exclaim), "Teammates going" social proof, smart RSVP nudges
+- Coach: pre-game prep checklist auto-completing, one-tap RSVP override with audit log, Roster Health gauge
+- Admin: smart triage Operations Now, multi-team week heatmap
+
+## Phase 3 Communications Engine — DESIGNED (replaces 8hr/weekend manual workflow)
+
+This is THE killer feature of Ember. Frank currently spends ~8 hours every weekend writing 5 message types manually. Fall 2026 brings 5-10 teams = 80+ hours/weekend without this.
+
+### 5-message weekly cadence
+
+| Day | Type | Trigger | Audience |
+|---|---|---|---|
+| Wed ~6pm | Preliminary Schedule | Tournament organizer drops draft | Tournament roster |
+| Thu ~6pm | Final Schedule + Game Day Guide | Schedule confirmed | Tournament roster |
+| Fri 12pm | RSVP Lock + Roster Finalize | Auto + manual | Tournament roster |
+| Sat night | Day 1 Recap + Sunday Scenarios | After last Sat game | Tournament roster |
+| Sun night | Weekend Wrap + Week Ahead | After last Sun game | Tournament roster |
+| Ad-hoc | Schedule Change | Auto-diff on event edit | Affected only |
+
+### Schema additions needed (Migration 039 future)
+
+- tournament_messages.message_type ENUM: preliminary_schedule | final_schedule | rsvp_lock | saturday_night_scenarios | weekend_recap | week_ahead | schedule_change
+- parent_message_id (uuid, FK self-ref) for multi-team consolidation
+- message_group_id (uuid) for deduplication
+- seasons.circuit_rules (jsonb) for AAU PD cap +20 etc.
+
+### Build steps
+
+| Step | What | Time |
+|------|------|------|
+| 6A | Academy Callup workflow + academy_callups table + ranked queue + 2hr response window | 90 min |
+| 6B | Briefing Generator foundation: lib/briefing.js + BriefingComposer.jsx + side-by-side preview | 90 min |
+| 6C | Wednesday Preliminary message type | 60 min |
+| 6D | Thursday Final + Game Day Guide message + JSONB editor for game_day_guide | 60 min |
+| 6E | Saturday Night Scenarios builder (conditional rendering, pool standings, bonus game flag) | 75 min |
+| 6F | Sunday Wrap + Week Ahead generator | 75 min |
+
+### Audience scoping rule (LOCKED)
+
+Tournament messages scope to tournament_rosters table, NOT team roster. Helper: getTournamentRecipients(tournament_id). UI shows "Active: X · Futures: Y · Recipients: Z guardians".
+
+### HTML rendering rules (LOCKED — LeagueApps-compatible)
+
+- Inline-styled only, no <style> blocks
+- Table-based layout, no <div> wrappers in rules sections
+- <span> + <br> instead of block elements
+- Standard bullet &#8226; not unicode bullets
+- Cobalt #1e3a5f accent (Migration 029)
+- Orange #e05c2a game day arrival callout
+- Dark navy #091c36 header
+
+### Delivery method evolution
+
+1. Phase 1 (now): Generate in Ember, copy-paste to LeagueApps + email
+2. Phase 2: In-app announcement + email via Resend
+3. Phase 3: Push notifications
+4. Phase 4: Replace LeagueApps entirely
+
+## Outstanding Repo Hygiene
+
+Migrations applied via MCP that need SQL captured in supabase/migrations/ for repo symmetry:
+
+- 20260426111421_tournament_times_correction.sql (M031)
+- 20260426200358_data_integrity_fix.sql (M034)
+- 20260426203347_data_corrections_resurrection_jersey.sql (M035)
+- 20260426203943_resurrection_address_correction.sql (M036)
+- 20260426205441_venue_address_corrections_and_canonical_urls.sql (M037)
+- 20260426215822_rename_cardinal_spellman_to_cyo_spellman.sql (M038)
+
+To capture: query Supabase migrations table via MCP, write each SQL to a new file, commit. Defer to next session.
+
+## Open issues parked from this session
+
+P1 frontend bugs (revisit Phase 1 Step 5+):
+- Apple Maps URL format: ?daddr= with coords reverse-geocodes to nearest street (e.g., "23 Whippoorwill Rd E" instead of "St. Patrick's"). Fix probably needs ?daddr=address-text always, never coords.
+- Waze URL format: works but shows lat/lon as destination label (cosmetic). Frank's website also has this so not blocking.
+- 4 of 5 map URL surfaces consolidated to use mapsUrls.js helper. NextUpCard's useMapsUrl is the holdout (single-string contract). Refactor to triplet later.
+- useTournamentBriefing.js inline buildMapsUrl never refactored to use shared helper.
+
+P1 data integrity (deferred):
+- 1 player on 11U Girls missing guardian linkage
+- 13 guardians missing phone, 4 missing email
+- Sarah Lawrence address has "Campbell Sports Center, " prefix added in M037 (verify on phone)
+
+P2 schema/architecture risks (Phase 3+):
+- event.location TEXT vs event.location_id FK schism: lookup uses ilike on text. Brittle.
+- Per-game jersey override needed for tournament events (1 row but 4 games inside, each may need different jersey)
+- Tournament location swap workflow undefined: when schedule_status flips draft → preliminary on Wednesday, no defined process to swap event.location_id from placeholder to actual venue
+- locations table has TWO coord column pairs (lat/lon used, latitude/longitude legacy unused). Drop latitude/longitude in future cleanup migration.
+
+---
+
 # END OF BUILD QUEUE v2
 
 **Maintainer note:** When you ship a feature, update this document IMMEDIATELY. Add to the SHIPPED section above with evidence citation. Don't wait for session end.

@@ -163,7 +163,7 @@ Every table includes `org_id` FK → organizations. All RLS policies scope to us
 
 ---
 
-## 5. DATABASE SCHEMA (v2 — 12 Migrations)
+## 5. DATABASE SCHEMA (v2 — 38 Migrations applied as of April 26, 2026)
 
 | # | File | What It Does |
 |---|---|---|
@@ -368,3 +368,47 @@ git add -A && git commit -m "description" && git push origin v2 && git checkout 
 13. **Bundle size budget: 350KB total compressed.** Run `npm run build` and check the dist/assets/*.js sizes. If total exceeds 350KB, do not merge. Code-split or remove dependencies.
 
 14. **Accessibility is non-negotiable.** All interactive elements must have aria-label or visible text. All form inputs must have associated <label>. Tab order must be logical. Run `npx @axe-core/cli` before parent rollout.
+
+---
+
+## 13. COMMUNICATIONS ENGINE HTML RULES (Phase 6)
+
+When generating tournament briefing HTML for LeagueApps + email delivery:
+
+1. **Inline-styled only.** No `<style>` blocks. LeagueApps strips them.
+2. **Table-based layout.** No `<div>` wrappers in rules sections.
+3. **`<span>` + `<br>` for inline content.** Not `<p>` tags inside list rows.
+4. **Standard bullets.** Use `&#8226;` not unicode bullets.
+5. **Brand colors:**
+   - Header: dark navy #091c36
+   - Accent: cobalt #1e3a5f (Migration 029, NOT old sky blue #29b6f6)
+   - Game-day arrival callout: orange #e05c2a
+6. **Audience scoping for tournament messages:** scope to `tournament_rosters` table, NOT team roster. Use `getTournamentRecipients(tournament_id)` helper.
+7. **Recipient preview before send:** show "Active: X · Futures: Y · Recipients: Z guardians" chip.
+8. **7 message types in `tournament_messages.message_type` ENUM:** preliminary_schedule, final_schedule, rsvp_lock, saturday_night_scenarios, weekend_recap, week_ahead, schedule_change.
+
+---
+
+## 14. STR_REPLACE INDENTATION DRIFT (PRE-FLIGHT FOR CLAUDE.AI HANDOFFS)
+
+Documented pattern across 5+ commits this session: when claude.ai writes str_replace OLD blocks for files it did not author verbatim earlier in the same conversation, the OLD will be over-indented by exactly 2 spaces per level relative to the actual file.
+
+**Pre-flight:** Before applying any multi-line str_replace OLD, count leading spaces on the file's actual line and match them. Don't trust claude.ai's inferred indent. Strip 2 leading spaces from every line in OLD if first attempt fails.
+
+**Implication for prompt writing:** When generating str_replace prompts that target files NOT authored verbatim earlier in the conversation, explicitly note the file's actual indentation pattern in the prompt header. Or instruct claude.ai to read the verbatim source via grep + cat first and re-anchor before generating OLD blocks.
+
+---
+
+## 15. MAP URL PRIORITY (Phase 1+ canonical pattern)
+
+When constructing map deep links across the app, priority order is:
+
+1. `location.google_maps_url` (Frank-verified pin from gym-locations-v4.html or admin-curated)
+2. `location.lat` + `location.lon` (geocoded coordinates)
+3. `location.address` (text fallback, encodeURIComponent)
+
+If none of the above are present, render a "Location TBD" non-link.
+
+For tournament events with `tournament.schedule_status='draft'` or null, hide the map UI entirely and render a "Schedule releases Wednesday" placeholder instead. Map appears only after schedule_status advances to preliminary/final/live/complete.
+
+Apple Maps + Waze URL formats are deferred — currently only Google "Get Directions" button renders on event detail Location tab. Helper `src/lib/mapsUrls.js` still exports apple/waze URLs for the day they are re-added.

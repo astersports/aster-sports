@@ -1,7 +1,8 @@
 # STATE OF AFFAIRS L99 — v3
 ## Legacy Hoopers / Ember Platform Build
 **Written:** April 23, 2026
-**Verified against production:** April 23, 2026
+**Last updated:** April 26, 2026 (Steps 0C complete + Phase 4 persona infra shipped + map fixes shipped + 10 migrations applied)
+**Verified against production:** April 26, 2026
 **Evidence basis:** 215 files in project knowledge (110 JSX components, 29 hooks, 16 lib files, 13 migration files, full documentation set)
 **Supersedes:** STATE_OF_AFFAIRS_L99.pdf, SKYFIRE_BUILD_QUEUE.md (both dated April 19-21, 2026)
 
@@ -778,6 +779,76 @@ These are items that came up yesterday that Frank hasn't answered. Ask before as
 ## Launch
 
 12. **11U Girls as first rollout cohort:** When app hits 95% parent satisfaction, 11U Girls families are invited first. Confirm this is still the plan, or different cohort?
+
+---
+
+# PART 11: APRIL 24-26 SESSION DELTA
+
+## Production state changed
+
+- Production HEAD: 1d6ddce (was 86f5349 Phase 0C end-of-rebrand)
+- Last 16 frontend commits and 10 migrations shipped this session
+- Phases 0B + 0C now both complete (B was 13-28 migrations, C was Ember rebrand)
+- Phase 4 persona infrastructure shipped (Step 4D smoke-tested 16/16 PASS)
+
+## Map fixes session — all 5 surfaces audited
+
+All 5 map URL surfaces (EventLocationTab, NextUpCard, LocationCard, RideCard, OverviewTab + useTournamentBriefing) now either consume google_maps_url OR are intentionally text-based for non-locations data (RideCard pickup_location, useTournamentBriefing event.location).
+
+Apple + Waze removed from EventLocationTab pending format fix (Apple ?daddr=lat,lng reverse-geocodes wrong; Waze cosmetic only). Helper src/lib/mapsUrls.js still exports them for easy re-add.
+
+## All 19 active venues now data-clean
+
+- 18 of 19 venues have google_maps_url populated (placeholder tournament regions intentionally null)
+- 4 wrong addresses corrected (Cardinal Spellman → CYO Spellman 674 Mile Square Rd; St Joseph-Bronxville → 30 Meadow Ave; IC-Tuckahoe → 52 Winter Hill Rd; OLPH → 575 Fowler Ave)
+- 4 entry_instructions populated (St. Patrick's, Rippowam, WCC, CYO Spellman)
+- 3 new venues added (Msgr. Scanlon Gallagher, Msgr. Scanlon Silverberg, Stevenson HS)
+
+## Communications Engine framework — RECOVERED + LOCKED
+
+The 8-hours/weekend manual workflow Frank does. Killer feature of Ember.
+
+5-message weekly cadence per tournament:
+- Wed Preliminary Schedule
+- Thu Final + Game Day Guide
+- Fri RSVP Lock
+- Sat Night Day 1 Recap + Sunday Scenarios
+- Sun Wrap + Week Ahead
+- Plus ad-hoc Schedule Change auto-diff
+
+Schema additions queued for Migration 039:
+- tournament_messages.message_type ENUM (7 values)
+- parent_message_id (multi-team consolidation)
+- message_group_id (deduplication)
+- seasons.circuit_rules JSONB (AAU PD cap +20 etc.)
+
+Audience scoping: tournament_rosters not team rosters. Helper getTournamentRecipients(tournament_id).
+
+## 100% Approval scoreboard (live)
+
+| Persona | April 23 | April 26 | Next milestone |
+|---------|----------|----------|----------------|
+| Parent  | ~75%     | **~85%** | Step 5E NOW Section per child + Tournament Briefing receipt |
+| Coach   | ~80%     | **~82%** | Step 5E coach NowSection + Quick Score (Phase 2) |
+| Admin   | ~50%     | **~55%** | Step 5E Operations Now + Communications Engine (Phase 6) |
+
+## Phase 1 Step 5 NOW Section — DESIGNED, ready to build
+
+Step 5A through 5.5J. ~5 hours total, broken into 10 sub-steps. Design max ideas locked into 5E for each persona.
+
+## Decisions locked this session
+
+1. AAU jersey neutral = Black ("black is our neutral default")
+2. Tournament hide map until schedule_status flips from 'draft'
+3. google_maps_url is the canonical navigation source for all 18 venues
+4. Apple/Waze deferred until format fix
+5. Single Google "Get Directions" button opens in new tab on event detail Location tab
+6. NextUpCard auto-hides map link for "Tournament -" prefixed placeholder venues
+7. CYO Spellman is the canonical name for what was Cardinal Spellman HS
+
+## Outstanding repo hygiene
+
+6 migrations applied via MCP need SQL captured retrospectively into supabase/migrations/. Listed in build queue.
 
 ---
 
