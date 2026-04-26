@@ -8,7 +8,6 @@ import { useAuth } from '../../context/AuthContext';
 export default function Header() {
   const { org, orgName } = useAuth();
   const navigate = useNavigate();
-  const initial = (orgName || 'S').trim().charAt(0).toUpperCase();
   // Future: read unread count from a notifications query. Hardcoded to 0 for
   // now so the dot stays hidden until that feature lands.
   const unread = 0;
@@ -35,8 +34,8 @@ export default function Header() {
     >
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <img
-          src={org?.logo_url || '/skyfire_phoenix.webp'}
-          onError={(e) => { if (e.currentTarget.src.endsWith('/skyfire_phoenix.webp')) return; e.currentTarget.src = '/skyfire_phoenix.webp'; }}
+          src={org?.logo_url || '/phoenix.webp'}
+          onError={(e) => { if (e.currentTarget.src.endsWith('/phoenix.webp')) return; e.currentTarget.src = '/phoenix.webp'; }}
           alt=""
           style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
         />
