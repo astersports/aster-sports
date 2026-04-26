@@ -34,6 +34,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
   }, [event.end_at, onRefresh]);
 
   const directionsUrl = useMapsUrl(event.location);
+  const isPlaceholderLocation = typeof event.location === 'string' && event.location.startsWith('Tournament -');
 
   const teamColor = event.teams?.team_color || event.team_color || 'var(--em-text-tertiary)';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
@@ -82,7 +83,7 @@ export default function NextUpCard({ event, rsvpCount, rideCount, dutyCount, onR
           </div>
           <WhenRow event={event} />
           {event.location && (
-            directionsUrl ? (
+            directionsUrl && !isPlaceholderLocation ? (
               <a href={directionsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
                 style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8, textDecoration: 'none' }}>
                 <MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />

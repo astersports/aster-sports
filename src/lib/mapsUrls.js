@@ -13,12 +13,12 @@ export function getDirectionUrls(address, lat, lng, googleMapsUrl) {
       : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trimmedAddr)}`);
 
   const apple = hasCoords
-    ? `https://maps.apple.com/?q=${lat},${lng}`
-    : trimmedAddr ? `https://maps.apple.com/?q=${encodeURIComponent(trimmedAddr)}` : null;
+    ? `https://maps.apple.com/?daddr=${lat},${lng}`
+    : trimmedAddr ? `https://maps.apple.com/?daddr=${encodeURIComponent(trimmedAddr)}` : null;
 
   const waze = hasCoords
-    ? `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`
-    : trimmedAddr ? `https://waze.com/ul?q=${encodeURIComponent(trimmedAddr)}&navigate=yes` : null;
+    ? `https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes`
+    : trimmedAddr ? `https://www.waze.com/ul?q=${encodeURIComponent(trimmedAddr)}&navigate=yes` : null;
 
   return { google, apple, waze };
 }
