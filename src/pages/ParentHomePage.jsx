@@ -2,15 +2,12 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
-import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
-import { useEventRideCounts } from '../hooks/useEventRideCounts';
-import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
-import NextUpCard from '../components/schedule/NextUpCard';
 import CompactCard from '../components/schedule/CompactCard';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
+import NowSectionParent from '../components/home/NowSectionParent';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
 
@@ -26,10 +23,7 @@ function greetingFor(date = new Date()) {
 
 export default function ParentHomePage() {
   const { user, guardianFirstName, myChildren } = useAuth();
-  const { activities, loading, refetch } = useActivities();
-  const rsvpCounts = useEventRsvpCounts(activities);
-  const rideCounts = useEventRideCounts(activities);
-  const dutyCounts = useEventDutyCounts(activities);
+  const { activities, loading, error, refetch } = useActivities();
   const navigate = useNavigate();
   const [activeKidFilter, setActiveKidFilter] = useState(null);
   const name = guardianFirstName ? guardianFirstName.charAt(0).toUpperCase() + guardianFirstName.slice(1) : firstNameFrom(user);
@@ -49,17 +43,6 @@ export default function ParentHomePage() {
     }
     return [...map.values()].sort((x, y) => x.sort_order - y.sort_order);
   }, [activities]);
-
-  const nextByTeam = useMemo(() => {
-    const out = {};
-    const sorted = [...activities].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
-    for (const a of sorted) {
-      if (!a.team_id || a.status === 'cancelled') continue;
-      if (new Date(a.start_at).getTime() < now) continue;
-      if (!out[a.team_id]) out[a.team_id] = a;
-    }
-    return out;
-  }, [activities, now]);
 
   const nextEventOverall = activities.find((a) => a.start_at && a.status !== 'cancelled' && new Date(a.start_at).getTime() >= now) || null;
   const thisWeek = useMemo(() => activities
@@ -88,19 +71,11 @@ export default function ParentHomePage() {
         <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>{name}</h1>
       </section>
 
-      <section>
-        <SectionHeader>NEXT UP</SectionHeader>
-        {myTeams.length === 0 ? <EmptyLine>No teams yet</EmptyLine> : !Object.keys(nextByTeam).length ? <TextEmptyState heading="All caught up" message="No upcoming events for your teams. Check back when the schedule updates." />
-          : myTeams.map((t) => (
-            nextByTeam[t.id]
-              ? <NextUpCard key={t.id} event={nextByTeam[t.id]} rsvpCount={rsvpCounts[nextByTeam[t.id].id]} rideCount={rideCounts[nextByTeam[t.id].id]} dutyCount={dutyCounts[nextByTeam[t.id].id]} />
-              : <EmptyLine key={t.id}>No upcoming events for {t.name}</EmptyLine>
-          ))}
-      </section>
+      <NowSectionParent activities={activities} loading={loading} error={error} />
 
       {myTeams.length > 0 && (
         <section>
-          <SectionHeader>MY TEAMS</SectionHeader>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>MY TEAMS</div>
           <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 6 }}>
             {myTeams.map((t) => <ParentHomeTeamCard key={t.id} team={t} onClick={() => navigate(`/schedule?team=${t.id}`)} />)}
           </div>
@@ -108,7 +83,7 @@ export default function ParentHomePage() {
       )}
 
       <section>
-        <SectionHeader>THIS WEEK</SectionHeader>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>THIS WEEK</div>
         <ChildFilterChips
           kids={myChildren}
           activeFilter={activeKidFilter}
@@ -131,19 +106,4 @@ export default function ParentHomePage() {
   );
 }
 
-function SectionHeader({ children }) {
-  return (
-    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>
-      {children}
-    </div>
-  );
-}
-
-function EmptyLine({ children }) {
-  return (
-    <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', padding: '8px 12px', marginBottom: 8 }}>
-      {children}
-    </div>
-  );
-}
 
