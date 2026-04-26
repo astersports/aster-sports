@@ -26,7 +26,7 @@ export default function EventLocationTab({ event }) {
     if (!event.location) return;
     const searchName = event.location.replace(/[\u2018\u2019\u2032]/g, "'").split(' - ')[0].split('(')[0].trim();
     if (!searchName) return;
-    supabase.from('locations').select('name, address, city, state, lat, lon')
+    supabase.from('locations').select('name, address, lat, lon, google_maps_url, entry_instructions')
       .ilike('name', `%${searchName}%`)
       .limit(1)
       .then(({ data }) => {
@@ -62,9 +62,8 @@ export default function EventLocationTab({ event }) {
     );
   }
 
-  const resolvedAddress = event.location_address ||
-    (locationData ? `${locationData.address}, ${locationData.city}, ${locationData.state}` : null);
-  const urls = getDirectionUrls(resolvedAddress, locationData?.lat, locationData?.lon);
+  const resolvedAddress = event.location_address || locationData?.address || null;
+  const urls = getDirectionUrls(resolvedAddress, locationData?.lat, locationData?.lon, locationData?.google_maps_url);
 
   return (
     <div style={{
@@ -86,12 +85,22 @@ export default function EventLocationTab({ event }) {
       )}
       {(event.location_address || locationData?.address) && (
         <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 4 }}>
-          {event.location_address || `${locationData.address}, ${locationData.city}, ${locationData.state}`}
+          {event.location_address || locationData.address}
         </div>
       )}
       {event.sub_location && (
         <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
           {event.sub_location}
+        </div>
+      )}
+      {locationData?.entry_instructions && (
+        <div style={{
+          marginTop: 10, padding: 10, borderRadius: 8,
+          backgroundColor: 'var(--em-warning-soft)',
+          color: 'var(--em-warning)',
+          fontSize: 12, fontWeight: 500, lineHeight: 1.4,
+        }}>
+          {locationData.entry_instructions}
         </div>
       )}
       {urls && (

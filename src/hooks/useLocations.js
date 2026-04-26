@@ -24,7 +24,7 @@ export function useLocations({ search = '', showArchived = false } = {}) {
     try {
       let query = supabase
         .from('locations')
-        .select('id, name, address, parking_notes, notes, lat, lon, sub_locations')
+        .select('id, name, address, parking_notes, notes, lat, lon, sub_locations, google_maps_url, entry_instructions')
         .eq('org_id', orgId)
         .order('name', { ascending: true });
       query = showArchived

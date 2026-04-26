@@ -1,7 +1,8 @@
 import { MapPin, ExternalLink } from 'lucide-react';
 import LocationRowMenu from './LocationRowMenu';
 
-function mapsUrl(address, lat, lon) {
+function mapsUrl(address, lat, lon, googleMapsUrl) {
+  if (googleMapsUrl) return googleMapsUrl;
   if (lat && lon) return `https://maps.google.com/?q=${lat},${lon}`;
   return `https://maps.google.com/?q=${encodeURIComponent(address || '')}`;
 }
@@ -58,7 +59,7 @@ export default function LocationCard({ location, isStaff, showArchived, onEdit, 
       )}
 
       <a
-        href={mapsUrl(l.address, l.lat, l.lon)}
+        href={mapsUrl(l.address, l.lat, l.lon, l.google_maps_url)}
         target="_blank" rel="noopener noreferrer"
         aria-label={`Open ${l.name} in Google Maps`}
         style={{

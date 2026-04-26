@@ -30,7 +30,7 @@ export default function OverviewTab({ tournament, isStaff }) {
 
   return (
     <div>
-      {(tournament.primary_venue || hasAddress) && (
+      {tournament.schedule_status !== 'draft' && tournament.schedule_status != null && (tournament.primary_venue || hasAddress) && (
         <div style={card}>
           <div style={sectionLabel}><MapPin size={11} strokeWidth={2} /> Venue</div>
           <div style={value}>{tournament.primary_venue || 'Unnamed venue'}</div>
@@ -40,6 +40,14 @@ export default function OverviewTab({ tournament, isStaff }) {
               Open in Maps <ExternalLink size={12} strokeWidth={2} />
             </a>
           )}
+        </div>
+      )}
+      {(tournament.schedule_status === 'draft' || tournament.schedule_status == null) && (
+        <div style={card}>
+          <div style={sectionLabel}><MapPin size={11} strokeWidth={2} /> Venue</div>
+          <div style={{ ...value, fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.5 }}>
+            Schedule releases Wednesday. Venue, court assignments, and game times will appear once the tournament organizer publishes the bracket.
+          </div>
         </div>
       )}
 
