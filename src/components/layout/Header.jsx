@@ -1,6 +1,7 @@
 import { Bell, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { EMBER_DISPLAY_NAME } from '../../lib/emberDefaults';
 
 // Top app bar: org initial + name on the left, notification bell on the right.
 // Org logo is a future enhancement — for now we always render the initial
@@ -44,7 +45,7 @@ export default function Header() {
           style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}
           title={orgName || ''}
         >
-          {org ? orgName : 'Skyfire'}
+          {org ? orgName : EMBER_DISPLAY_NAME}
         </div>
       </div>
       <button

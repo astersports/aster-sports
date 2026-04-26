@@ -4,9 +4,10 @@ import { ChevronLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { usePrograms } from '../hooks/usePrograms';
+import { EMBER_DISPLAY_NAME } from '../lib/emberDefaults';
 
 const ROLE_LABELS = { admin: 'Admin', coach: 'Coach', parent: 'Parent' };
-const VERSION = 'Skyfire v2.0';
+const VERSION = 'Ember v2.0';
 
 const SectionHeader = ({ children }) => (
   <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>{children}</div>
@@ -41,7 +42,7 @@ export default function AccountPage() {
           <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>
             {ROLE_LABELS[role] || 'User'}
           </span>
-          <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{orgName || 'Skyfire'}</span>
+          <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{orgName || EMBER_DISPLAY_NAME}</span>
         </div>
       </section>
 

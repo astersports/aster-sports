@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skyfire-v3';
+const CACHE_NAME = 'ember-v1';
 const PRECACHE = ['/', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {

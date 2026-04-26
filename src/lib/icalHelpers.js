@@ -29,7 +29,7 @@ export function generateEventIcs(event) {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Skyfire//EN',
+    'PRODID:-//Ember//EN',
     'BEGIN:VEVENT',
     `DTSTART:${toIcsUtc(event.start_at)}`,
     `DTEND:${toIcsUtc(event.end_at)}`,
