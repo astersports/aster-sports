@@ -24,7 +24,7 @@ export default function Header() {
 
   const handleBellTap = () => showToast('Notifications coming soon', 'info');
 
-  const stripeHeight = isViewingAs ? 4 : 0;
+  const stripeHeight = isViewingAs ? 6 : 0;
 
   return (
     <>
@@ -33,7 +33,7 @@ export default function Header() {
           className="fixed left-0 right-0 z-50"
           style={{
             top: 'env(safe-area-inset-top, 0px)',
-            height: 4,
+            height: 6,
             background: 'var(--em-warning, #D97706)',
           }}
         />
