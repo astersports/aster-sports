@@ -4,13 +4,10 @@
 // Per CLAUDE.md anti-pattern #5: full rewrite justified (>50% changes,
 // existing version was non-functional since Migration 025).
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useRideOffers } from '../../hooks/useRideOffers';
-import { useRideClaims } from '../../hooks/useRideClaims';
-import { useDriverNames } from '../../hooks/useDriverNames';
-import { useOfferClaimers } from '../../hooks/useOfferClaimers';
+import { useEventRidesView } from '../../hooks/useEventRidesView';
 import OfferCard from '../ride/OfferCard';
 import PostOfferForm from '../ride/PostOfferForm';
 import ClaimSeatForm from '../ride/ClaimSeatForm';
@@ -24,39 +21,22 @@ export default function EventRidesTab({ event }) {
   const eventId = event?.id;
   const rideEnabled = event?.ride_coordination_enabled !== false;
 
-  const { offers, loading: offersLoading, postOffer, cancelOffer } = useRideOffers(eventId);
-  const { claims, loading: claimsLoading, claimSeat, cancelClaim } = useRideClaims(eventId);
+  const {
+    offers,
+    driverNames,
+    buildOfferClaimers,
+    seatsTakenByOfferId,
+    myActiveClaims,
+    otherOffers,
+    loading,
+    postOffer,
+    claimSeat,
+    cancelOffer,
+    cancelClaim,
+  } = useEventRidesView({ eventId, orgId, userId: user?.id });
 
   const [postOfferOpen, setPostOfferOpen] = useState(false);
   const [claimTargetOffer, setClaimTargetOffer] = useState(null);
-
-  const driverIds = useMemo(() => offers.map((o) => o.driver_user_id), [offers]);
-  const driverNames = useDriverNames(orgId, driverIds);
-  const buildOfferClaimers = useOfferClaimers(orgId, claims);
-
-  const myClaimsByOfferId = useMemo(() => {
-    const result = {};
-    claims.forEach((c) => {
-      if (c.rider_user_id !== user?.id) return;
-      if (c.status === 'cancelled' || c.status === 'declined') return;
-      result[c.offer_id] = c;
-    });
-    return result;
-  }, [claims, user]);
-
-  const seatsTakenByOfferId = useMemo(() => {
-    const result = {};
-    claims.forEach((c) => {
-      if (c.status !== 'pending' && c.status !== 'confirmed') return;
-      result[c.offer_id] = (result[c.offer_id] || 0) + (c.seats_requested || 1);
-    });
-    return result;
-  }, [claims]);
-
-  const myActiveClaims = useMemo(
-    () => claims.filter((c) => c.rider_user_id === user?.id && c.status !== 'cancelled' && c.status !== 'declined'),
-    [claims, user],
-  );
 
   if (!rideEnabled) {
     return (
@@ -65,9 +45,6 @@ export default function EventRidesTab({ event }) {
       </div>
     );
   }
-
-  const loading = offersLoading || claimsLoading;
-  const otherOffers = offers.filter((o) => !myClaimsByOfferId[o.id]);
 
   return (
     <div style={{ padding: '12px 16px 80px' }}>
