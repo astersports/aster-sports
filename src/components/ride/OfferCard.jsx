@@ -92,7 +92,7 @@ export default function OfferCard({
               {formatTime(offer.pickup_time) && <span style={{ color: 'var(--em-text-tertiary)', fontSize: 12 }}>{formatTime(offer.pickup_time)}</span>}
             </div>
           )}
-          {density === 'maximum' && offer.ride_type === 'round_trip' && offer.return_location && (
+          {density !== 'minimal' && offer.ride_type === 'round_trip' && offer.return_location && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Repeat size={13} strokeWidth={1.75} color="var(--em-text-tertiary)" aria-hidden="true" />
               <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{offer.return_location}</span>

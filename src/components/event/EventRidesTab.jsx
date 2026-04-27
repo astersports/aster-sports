@@ -137,6 +137,7 @@ export default function EventRidesTab({ event }) {
         onSubmit={postOffer}
         eventStartAt={event?.start_at ?? null}
         eventEndAt={event?.end_at ?? null}
+        hasActiveOffer={offers.some((o) => o.driver_user_id === user?.id && o.status === 'active')}
       />
       <ClaimSeatForm
         open={!!claimTargetOffer}

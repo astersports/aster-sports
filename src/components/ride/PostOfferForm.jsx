@@ -26,7 +26,7 @@ const isoMinusMinutes = (iso, mins) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = null, eventEndAt = null }) {
+export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = null, eventEndAt = null, hasActiveOffer = false }) {
   const [seats, setSeats] = useState('2');
   const [rideType, setRideType] = useState('round_trip');
   const [pickupLocation, setPickupLocation] = useState('');
@@ -40,19 +40,17 @@ export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = 
   const [error, setError] = useState(null);
   const { user, orgId } = useAuth();
 
-  // Auto-populate phone from current user's guardian record (override allowed).
+  // Auto-populate phone from current user's guardian record, fall back to coaching_assignments.
   useEffect(() => {
     if (!open || !user?.id || !orgId || phone) return undefined;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from('guardians')
-        .select('phone')
-        .eq('org_id', orgId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (cancelled || !data?.phone) return;
-      setPhone(data.phone);
+      const { data: g } = await supabase.from('guardians').select('phone').eq('org_id', orgId).eq('user_id', user.id).maybeSingle();
+      if (cancelled) return;
+      if (g?.phone) { setPhone(g.phone); return; }
+      const { data: c } = await supabase.from('coaching_assignments').select('phone').eq('org_id', orgId).eq('user_id', user.id).not('phone', 'is', null).limit(1).maybeSingle();
+      if (cancelled || !c?.phone) return;
+      setPhone(c.phone);
     })();
     return () => { cancelled = true; };
   }, [open, user?.id, orgId, phone]);
@@ -78,10 +76,12 @@ export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = 
 
   const handleSubmit = useCallback(async (e) => {
     e?.preventDefault();
+    if (hasActiveOffer) { setError('You already have an active offer on this event. Cancel it first to post a new one.'); return; }
     if (!pickupLocation.trim()) { setError('Pickup location is required.'); return; }
     if (!pickupTime) { setError('Pickup time is required so riders know when to be ready.'); return; }
     if (eventStartAt && new Date(pickupTime) > new Date(eventStartAt)) { setError('Pickup time must be before the event starts.'); return; }
-    if (returnTime && new Date(returnTime) < new Date(pickupTime)) { setError('Return time must be after pickup time.'); return; }
+    const isRoundTrip = rideType === 'round_trip';
+    if (isRoundTrip && returnTime && new Date(returnTime) < new Date(pickupTime)) { setError('Return time must be after pickup time.'); return; }
     const seatsNum = Number(seats);
     if (!seatsNum || seatsNum < 1 || seatsNum > 12) { setError('Seats must be between 1 and 12.'); return; }
     setSubmitting(true);
@@ -91,8 +91,8 @@ export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = 
       ride_type: rideType,
       pickup_location: pickupLocation.trim(),
       pickup_time: pickupTime ? new Date(pickupTime).toISOString() : null,
-      return_location: (returnLocation.trim() || pickupLocation.trim()),
-      return_time: returnTime ? new Date(returnTime).toISOString() : null,
+      return_location: isRoundTrip ? (returnLocation.trim() || pickupLocation.trim()) : null,
+      return_time: isRoundTrip && returnTime ? new Date(returnTime).toISOString() : null,
       vehicle_description: vehicle.trim() || null,
       driver_phone: phone.trim() || null,
       notes: notes.trim() || null,
@@ -100,7 +100,7 @@ export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = 
     setSubmitting(false);
     if (result?.ok) handleClose();
     else setError(result?.error?.message || "Looks like that didn't go through. Try again?");
-  }, [seats, rideType, pickupLocation, pickupTime, returnLocation, returnTime, vehicle, phone, notes, eventStartAt, onSubmit, handleClose]);
+  }, [seats, rideType, pickupLocation, pickupTime, returnLocation, returnTime, vehicle, phone, notes, eventStartAt, hasActiveOffer, onSubmit, handleClose]);
 
   return (
     <FullScreenForm
@@ -123,8 +123,8 @@ export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = 
             <option value="return_only">Return only</option>
           </select>
         </div>
-        <div><label style={labelStyle} htmlFor="pickup">Pickup from</label><input id="pickup" type="text" value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} placeholder="e.g., Armonk Town Center" required autoFocus style={inputStyle} /></div>
-        <div><label style={labelStyle} htmlFor="pickupTime">Pickup time</label><input id="pickupTime" type="datetime-local" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} required max={eventStartAt ? isoToLocal(eventStartAt) : undefined} style={inputStyle} /></div>
+        <div><label style={labelStyle} htmlFor="pickup">Pickup from</label><input id="pickup" type="text" value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} placeholder="e.g., Armonk Town Center" autoFocus style={inputStyle} /></div>
+        <div><label style={labelStyle} htmlFor="pickupTime">Pickup time</label><input id="pickupTime" type="datetime-local" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} max={eventStartAt ? isoToLocal(eventStartAt) : undefined} style={inputStyle} /></div>
         {rideType === 'round_trip' && (<>
           <div><label style={labelStyle} htmlFor="returnLoc">Return to (optional)</label><input id="returnLoc" type="text" value={returnLocation} onChange={(e) => setReturnLocation(e.target.value)} placeholder="Defaults to pickup location" style={inputStyle} /></div>
           <div><label style={labelStyle} htmlFor="returnTime">Return time (optional)</label><input id="returnTime" type="datetime-local" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} min={pickupTime || undefined} style={inputStyle} /></div>
