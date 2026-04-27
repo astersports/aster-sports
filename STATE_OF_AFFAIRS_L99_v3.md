@@ -1,7 +1,7 @@
 # STATE OF AFFAIRS L99 — v3
 ## Legacy Hoopers / Ember Platform Build
 **Written:** April 23, 2026
-**Last updated:** April 26, 2026 (Steps 0C complete + Phase 4 persona infra shipped + map fixes shipped + 10 migrations applied)
+**Last updated:** April 26, 2026 EOD (0C/0B complete + Phase 4 persona infra + map fixes + 10 migrations + 5B/5C/5D shipped + 5E-1/5E-2a in flight + Elite Stack design intent locked)
 **Verified against production:** April 26, 2026
 **Evidence basis:** 215 files in project knowledge (110 JSX components, 29 hooks, 16 lib files, 13 migration files, full documentation set)
 **Supersedes:** STATE_OF_AFFAIRS_L99.pdf, SKYFIRE_BUILD_QUEUE.md (both dated April 19-21, 2026)
@@ -851,6 +851,34 @@ Step 5A through 5.5J. ~5 hours total, broken into 10 sub-steps. Design max ideas
 6 migrations applied via MCP need SQL captured retrospectively into supabase/migrations/. Listed in build queue.
 
 ---
+
+---
+
+# PART 12: ELITE STACK DESIGN INTENT (LOCKED APRIL 26, 2026)
+
+## Status
+
+LOCKED as design intent. Not optional polish. 57 items distributed across 6 phases. Future sessions DESIGN against these constraints, not retrofit them later.
+
+## The 14 locked decisions
+
+(Cross-reference SKYFIRE_BUILD_QUEUE_v2.md "ELITE STACK BACKLOG" — full table there.)
+
+## Three rules going forward
+
+**Rule A**: Every new component ships with optimistic UI if it writes data per-row. No exceptions.
+**Rule B**: Every new list/section ships with `useDensity(sectionKey)` consumption. No "we'll add density later."
+**Rule C**: Every new user-facing string is kindness-checked + translation-extractable. "Error 403" is a bug.
+
+## Approval scoreboard delta (recalibrated against elite stack)
+
+| Persona | April 23 | April 26 EOD | Elite-Stack Ceiling | Next milestone |
+|---------|----------|--------------|---------------------|----------------|
+| Parent | ~75% | ~85% | 98% | 5E-2b parent MAX + Phase 1.5 elite stack |
+| Coach | ~80% | ~85% | 96% | 5E-3 coach MAX + Phase 2 elite (50/51/52) |
+| Admin | ~50% | ~58% | 95% | 5E-4 admin MAX + Phase 6 + Phase 2 elite |
+
+Without elite stack, ceiling caps near 88%. Elite stack is the difference.
 
 # END OF DOCUMENT
 

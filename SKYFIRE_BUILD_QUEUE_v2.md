@@ -859,6 +859,198 @@ P2 schema/architecture risks (Phase 3+):
 
 ---
 
+# ELITE STACK BACKLOG (LOCKED APRIL 26, 2026)
+
+**These 57 items are design intent, not optional polish. Future sessions design against these constraints, not retrofit them later.**
+
+## Locked design decisions (14)
+
+| # | Decision | Lock |
+|---|----------|------|
+| 1 | Adaptive density | T-4h pre-event auto-MAX. Manual chevron wins. Idle days = user's last setting. |
+| 2 | Optimistic UI | Per-row writes (RSVPs/rides/duties/scores). Bulk operations stay pessimistic. Cascading admin time-edits stay pessimistic. |
+| 3 | Smart nudge channels | Banner + push at T-4h + T-1h + email digest. SMS for cancellations + admin 'critical' only. |
+| 4 | Sibling conflict | Intra-Ember + iCal/GCal import. Phase 2. |
+| 5 | Quiet Mode 9pm-7am | Only admin 'critical' bypasses. 'High' waits until 7am. |
+| 6 | Translation EN ↔ ES | UI + messages + reverse direction. Phase 3. |
+| 7 | Streak privacy | Family-private only. No leaderboards. |
+| 8 | Yearbook PDF | Auto end-of-season + on-demand. |
+| 9 | First-time tour | 3 dismissible tooltips. |
+| 10 | Birthday auto-wishes | Opt-in. |
+| 11 | Photo wall moderation | Admin pre-approve 30 days, then trusted auto. |
+| 12 | Anonymous suggestion box | Default identifiable, anonymous as escape. |
+| 13 | Kindness microcopy | Codified CLAUDE.md §16. |
+| 14 | Accessibility | Non-negotiable Phase 1.5 Elite Polish. |
+
+## CRITICAL DISTINCTION: Game stats vs engagement stats
+
+Prior lock: "Team-level stats only — no per-player stats in 2026" applies to GAME stats only (points/rebounds/assists). ENGAGEMENT stats (attendance, RSVP timeliness, sessions completed) ARE per-player and power streaks (ELITE-13), yearbook (ELITE-15), YoY comparison (ELITE-16). Different category, no conflict.
+
+## CRITICAL DISTINCTION: Reminders vs RSVP-nudges
+
+Two notification streams run independently, each admin-configurable:
+- **Event reminders** (don't forget your game tomorrow): 3-day · 1-day · 4-hour cadence (prior lock preserved)
+- **RSVP nudges** (you haven't RSVP'd yet): T-4h + T-1h before RSVP-lock deadline (tonight's lock)
+
+## Tier 1: Anticipation (category-defining moats)
+
+| # | Item | Phase | Notes |
+|---|------|-------|-------|
+| ELITE-1 | Adaptive density | 5E-2d (Phase 1) | T-4h trigger; manual override always wins |
+| ELITE-2 | Sibling + family conflict detection | Phase 2 | Intra-Ember + iCal/GCal Phase 2 |
+| ELITE-3 | Multi-team message consolidation | Phase 6 | Communications Engine |
+| ELITE-4 | Smart nudge engine | Phase 1.5 Elite Polish | RSVP locks, ride needed |
+| ELITE-5 | Predictive RSVP suggestion | Phase 2 | "Charlie attended every Tuesday — confirm yes?" |
+| ELITE-6 | Travel time + weather inline | Phase 2 | Google Maps + OpenWeather |
+
+## Tier 2: Speed + responsiveness
+
+| # | Item | Phase | Order dependency |
+|---|------|-------|------------------|
+| ELITE-7 | Optimistic UI for per-row writes | Phase 1.5 Elite Polish | **Must ship before ELITE-1** |
+| ELITE-8 | Realtime presence + activity stream | 5G + Phase 1.5 | Migration 039 publishes event_rsvps |
+| ELITE-9 | Pull-to-refresh on every list | Phase 1.5 | iOS table stakes |
+| ELITE-10 | 60fps scrolling + virtualization | Phase 1.5 | Long-list virtualization |
+| ELITE-11 | Haptic feedback library | Phase 5 | Capacitor unlocks Taptic |
+| ELITE-12 | Voice-to-RSVP via Siri Shortcuts | Phase 5 | Siri Shortcuts API |
+
+## Tier 3: Memory + recognition (the love layer)
+
+| # | Item | Phase | Notes |
+|---|------|-------|-------|
+| ELITE-13 | Streak system (engagement stats) | Phase 2 | Family-private; needs `attendance_streaks` view |
+| ELITE-14 | Attendance trending arrows ↑↓ | Phase 2 | Already locked in userMemories |
+| ELITE-15 | End-of-season yearbook PDF | Phase 3 | Engagement stats; needs `season_summaries` |
+| ELITE-16 | Year-over-year comparison | Phase 3 | Engagement stats only |
+| ELITE-17 | Photo wall per team | Phase 3 | Needs `photo_uploads` table |
+| ELITE-18 | Birthday auto-wishes | Phase 2 | Opt-in via guardian_notification_prefs |
+
+## Tier 4: Trust + transparency
+
+| # | Item | Phase | Notes |
+|---|------|-------|-------|
+| ELITE-19 | Visible audit logs | Phase 2 | Needs `event_rsvp_audit` table; **must ship before ELITE-32** |
+| ELITE-20 | Anonymous coach feedback survey | Phase 3 | `coach_feedback_surveys` |
+| ELITE-21 | Anonymous suggestion box | Phase 3 | `admin_suggestions` table |
+| ELITE-22 | Treasurer transparency breakdown | Phase 6 | Existing payments + categorization |
+| ELITE-23 | Coach office hours visible | Phase 2 | Profile field |
+
+## Tier 5: Inclusion + access (Westchester moat)
+
+| # | Item | Phase | Notes |
+|---|------|-------|-------|
+| ELITE-24 | Translation toggle EN ↔ ES | Phase 3 | UI + messages + reverse |
+| ELITE-25 | Quiet Mode 9pm-7am automatic | Phase 1.5 | **Must ship before ELITE-3** |
+| ELITE-26 | Reduced motion respect | Phase 1.5 | `prefers-reduced-motion` |
+| ELITE-27 | Dynamic Type support | Phase 5 | iOS native |
+| ELITE-28 | VoiceOver compatibility | **Continuous, not Phase 1.5** | Every component ships accessible |
+| ELITE-29 | High-contrast palette mode | Phase 2 | Older grandparents |
+
+## Tier 6: Communications excellence
+
+| # | Item | Phase | Notes |
+|---|------|-------|-------|
+| ELITE-30 | Image OCR for tournament schedules | Phase 6 | Vision LLM; kills TourneyMachine paste |
+| ELITE-31 | Auto-summarize coach notes | Phase 6 | LLM compression |
+| ELITE-32 | Channel preferences per user | Phase 2 | Push/email/SMS/important-only |
+| ELITE-33 | Schedule change diff visualizer | Phase 6 | Auto-generated old-vs-new |
+
+## Tier 7: Tournament weekend dominance
+
+| # | Item | Phase | Notes |
+|---|------|-------|-------|
+| ELITE-34 | Live scores from other courts | Phase 6 | Realtime |
+| ELITE-35 | Bracket visualization | Phase 6 | Winners advance lit up |
+| ELITE-36 | Hotel reservation tracker | Phase 6 | Group code + RSVP "we're staying" |
+| ELITE-37 | Carpool grid optimization | Phase 2 | Existing event_rides + groupings |
+| ELITE-38 | Lost & found per venue | Phase 3 | Small detail, big delight |
+
+## Tier 8: Native superpowers (Phase 5+ unlock)
+
+| # | Item | Phase | Notes |
+|---|------|-------|-------|
+| ELITE-39 | Lock screen widget | Phase 5 | "Next: 11U Girls game in 4h 12m" |
+| ELITE-40 | Apple Watch glance | Phase 5+ | Countdown + venue on wrist |
+| ELITE-41 | Long-press context menus | Phase 5 | iOS muscle memory |
+| ELITE-42 | Swipe gestures | Phase 5 | Mail/Messages pattern |
+| ELITE-43 | Native share sheet | Phase 5 | iMessage/WhatsApp/AirDrop |
+| ELITE-44 | Universal links | Phase 5 | legacyhoopers.org/event/abc → app |
+
+## Tier 9: First impressions + onboarding
+
+| # | Item | Phase | Notes |
+|---|------|-------|-------|
+| ELITE-45 | First-time tour (3 tooltips) | Phase 1.5 | Linear pattern; dismissible |
+| ELITE-46 | "What's new" changelog modal | Phase 1.5 | 3-line summary per ship |
+| ELITE-47 | Empty states with personality | Phase 1.5 | Brand voice |
+| ELITE-48 | Microcopy that's kind | Ongoing (CLAUDE.md §16.3) | Every string |
+| ELITE-49 | Login screen branding fix | 0C polish | Cobalt + phoenix |
+
+## Tier 10: COACH-SPECIFIC ELITE (added by audit)
+
+| # | Item | Phase | Notes |
+|---|------|-------|-------|
+| ELITE-50 | Sub-finder w/ availability ranking | Phase 2 | When call-up needed, sort academy by recent RSVPs |
+| ELITE-51 | Quick-text missing parents | Phase 2 | One-tap "Text 4 missing parents" prefilled |
+| ELITE-52 | Coach game-day briefing card | Phase 2 | 6 AM auto-generated digest |
+
+## Tier 11: ADDITIONAL AUDIT-SURFACED ITEMS
+
+| # | Item | Phase | Notes |
+|---|------|-------|-------|
+| ELITE-53 | Conflict prevention on event create | Phase 3 | Admin sees warnings BEFORE creating |
+| ELITE-54 | Bulk RSVP for siblings on same team | Phase 1.5 | "RSVP both" button for multi-kid parents |
+| ELITE-55 | Game-day "On my way" check-in | Phase 2 | Coach sees parent ETAs |
+| ELITE-56 | Game results auto-share card | Phase 3 | Post-game shareable image |
+| ELITE-57 | Emergency contacts 2-tap access | Phase 2 | Coach long-press player → call any guardian |
+
+## Schema-debt cross-reference
+
+Elite items requiring NEW schema in their target phase:
+
+| Elite # | New schema | Phase migration target |
+|---------|------------|------------------------|
+| ELITE-13 | `attendance_streaks` view | Phase 2 |
+| ELITE-15 | `season_summaries` + photo storage | Phase 3 |
+| ELITE-17 | `photo_uploads` table w/ moderation_status enum | Phase 3 |
+| ELITE-19 | `event_rsvp_audit` table | Phase 2 |
+| ELITE-20 | `coach_feedback_surveys` + responses | Phase 3 |
+| ELITE-21 | `admin_suggestions` table | Phase 3 |
+| ELITE-22 | financial categorization on payments | Phase 6 |
+| ELITE-30 | `tournament_schedule_imports` | Phase 6 |
+| ELITE-39 | iOS widget extension target | Phase 5 |
+| ELITE-50 | computed view on event_rsvps for academy ranking | Phase 2 |
+| ELITE-55 | `event_arrivals` table | Phase 2 |
+
+## Implementation order (must-ship-first)
+
+1. ELITE-7 (optimistic UI) BEFORE ELITE-1 (adaptive density)
+2. ELITE-25 (Quiet Mode) BEFORE ELITE-3 (multi-team consolidation)
+3. ELITE-19 (audit logs) BEFORE ELITE-32 (channel preferences)
+4. ELITE-28 (VoiceOver) ships CONTINUOUSLY, not as a polish step
+
+## Phase distribution (revised — Phase 1 polish renamed)
+
+| Phase | Original work | Elite injections | Total |
+|-------|---------------|------------------|-------|
+| Phase 0C polish | 1 elite (ELITE-49) | 1 |
+| **Phase 1.5 Elite Polish** (new) | 5E-2b/c/d + 5F/G + 5.5H/I/J | 13 elite items | ~22 items |
+| Phase 2 (acknowledged grows from 5-6 to 10-12 sessions) | Quick Score + Rotation Planner + comp tracking | 14 elite items | ~17 items |
+| Phase 3 | Admin features | 8 elite items | ~17 items |
+| Phase 5 | Capacitor + push | 9 elite items | ~16 items |
+| Phase 6 | Communications Engine | 8 elite items | ~14 items |
+
+Total elite stack injection: 57 items across 6 phases.
+
+## Implementation principles
+
+Every Elite Stack item ships against:
+1. Optimistic UI patterns where applicable
+2. Density-aware (`useDensity(sectionKey)`) where applicable
+3. Accessibility from day one (aria-label, keyboard, contrast)
+4. Translation-extractable strings
+5. Kindness microcopy
+
 # END OF BUILD QUEUE v2
 
 **Maintainer note:** When you ship a feature, update this document IMMEDIATELY. Add to the SHIPPED section above with evidence citation. Don't wait for session end.

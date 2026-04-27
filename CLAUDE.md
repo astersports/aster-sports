@@ -412,3 +412,144 @@ If none of the above are present, render a "Location TBD" non-link.
 For tournament events with `tournament.schedule_status='draft'` or null, hide the map UI entirely and render a "Schedule releases Wednesday" placeholder instead. Map appears only after schedule_status advances to preliminary/final/live/complete.
 
 Apple Maps + Waze URL formats are deferred — currently only Google "Get Directions" button renders on event detail Location tab. Helper `src/lib/mapsUrls.js` still exports apple/waze URLs for the day they are re-added.
+
+---
+
+## 16. ELITE DESIGN PRINCIPLES (LOCKED APRIL 26, 2026)
+
+### 16.1 Optimistic UI everywhere — but scope-aware
+
+Per-row writes (RSVPs, rides, duties, score entry one-game-at-a-time) ship optimistic. Bulk operations (TourneyMachine paste import, batch admin actions) stay pessimistic with confirm-after-validate. Cascading admin time-edits (event time change → cascades to RSVPs/rides/duties/notifications) stay pessimistic.
+
+Microcopy on rollback: "Looks like that didn't go through. Try again?"
+
+### 16.2 Density propagates everywhere
+
+Every new list, card, or section component:
+- Reads `useDensity(sectionKey)` from `usePreferences` Context
+- Renders MIN/MED/MAX variants
+- Exposes density chevron via SectionShell.titleAction OR per-card override
+
+**Adaptive density rule (locked):**
+- T-4h before any event: that specific card auto-elevates to MAX
+- Manual chevron tap overrides adaptive elevation for the rest of the session
+- Idle days = user's last manually-set density
+
+**Future enhancement (not in 5E-2d):** Tournament weekends auto-MAX at T-24h instead of T-4h, given parents need lead time for hotels/rides/gear.
+
+### 16.3 Kindness microcopy mandate
+
+| Don't | Do |
+|-------|-----|
+| "Error 403" | "Looks like you don't have access. Contact your admin." |
+| "Network error" | "Couldn't reach the server. Try again in a moment." |
+| "Invalid input" | "That doesn't look right. Check the format and try again." |
+| "Operation failed" | "Looks like that didn't go through. Try again?" |
+| "No data" | "No events here yet — but Coach Kenny is plotting something good." |
+
+Every microcopy decision: warmth + clarity + actionability.
+
+### 16.4 Accessibility is table stakes (Phase 1.5 Elite Polish)
+
+Non-negotiable for every new component:
+- aria-label on every interactive element
+- Live regions on state-changing surfaces
+- prefers-reduced-motion honored
+- Keyboard nav (Tab, Enter, Space, Esc)
+- Color contrast ≥ 4.5:1 body, ≥ 3:1 UI elements
+- Dynamic Type (Phase 5 native)
+- VoiceOver test before any persona's home page passes 95%
+
+ELITE-28 ships CONTINUOUSLY — not a Phase 1.5 step.
+
+### 16.5 Notification cadence — TWO STREAMS (clarified)
+
+**Stream A: Event reminders** (don't forget your event)
+- 3-day · 1-day · 4-hour cadence
+- Admin-configurable per org/team
+- Suppressed by Quiet Mode unless severity 'critical'
+
+**Stream B: RSVP nudges** (you haven't RSVP'd yet)
+- T-4h + T-1h before RSVP-lock deadline
+- Banner + push at both intervals
+- Email weekly digest Sunday 6 PM
+- SMS reserved for cancellations + admin 'critical' only
+
+Both streams run independently. Both are admin-configurable.
+
+### 16.6 Translation scope (Phase 3 lock)
+
+Bidirectional EN ↔ ES:
+- All UI labels translation-routed (Phase 1 strings must be extractable)
+- Admin messages auto-translated before send (admin previews both)
+- Reverse: parent writes Spanish, coach reads auto-translated EN with "view original" toggle ALWAYS visible
+- Never gate features behind language preference
+
+**Anti-pattern reminder:** translation interface uses FullScreenForm, not BottomSheet (per CLAUDE.md anti-pattern #15).
+
+### 16.7 Privacy locks (always-on)
+
+- **Streaks**: family-private. Coach sees own team's aggregate %. No public leaderboard.
+- **Attendance trending arrows**: parent = own child only · coach = own team only · admin = all
+- **Anonymous suggestion box**: default identifiable, anonymous toggle as escape valve
+- **Photo wall**: admin pre-approves first 30 days per user, then trusted-contributor auto
+- **Birthday auto-wishes**: opt-in via guardian_notification_prefs
+
+**Implementation pattern reminder:** streaks UI uses ref-based height for expand/collapse (per anti-pattern #18).
+
+### 16.8 Audit log visibility
+
+Every coach/admin override: timestamped, author-tagged, surfaced to affected parents.
+- Format: "[Override · Coach Kenny · 4:47 PM]"
+- Schema: `event_rsvp_audit` table (Phase 2)
+
+### 16.9 Real-time presence pattern
+
+When data changes that another user might care about:
+- Subtle toast: "Sara K just RSVP'd ✓" (auto-dismiss 4s)
+- Activity stream on event detail (last 10 actions)
+- "Coach Kenny is editing" indicator on concurrent edits
+
+Migration 039 (Phase 1 Step 5G) adds Realtime publication to event_rsvps.
+
+### 16.10 Performance budgets (hard limits)
+
+- Initial bundle: ≤ 350 KB compressed (currently ~102 KB)
+- FCP: ≤ 1.5s on 4G
+- TTI: ≤ 2.5s on 4G
+- 60fps scrolling on iPhone 11
+- Long lists (>30 items) must virtualize
+
+### 16.11 First impressions
+
+- Login: cobalt #4a8fd4 + phoenix mark (ELITE-49)
+- First-time tour: 3 dismissible tooltips on first home visit
+- "What's new" changelog: 3-line summary once per shipped feature
+- Empty states with brand voice
+- Loading states: SectionSkeleton (Step 5B) shape-matched
+
+### 16.12 Game stats vs engagement stats (CRITICAL DISTINCTION)
+
+| Category | Per-player allowed in 2026? | Examples |
+|----------|------------------------------|----------|
+| Game stats | NO (team-level only locked) | Points, rebounds, assists, steals, +/- |
+| Engagement stats | YES (per-player allowed) | Attendance, RSVP timeliness, sessions completed |
+
+ELITE-13 streaks, ELITE-15 yearbook, ELITE-16 YoY are all engagement stats — NOT game stats. No conflict with prior lock.
+
+### 16.13 The Elite Stack — implementation gate
+
+Before merging any feature to main, ask:
+
+1. Optimistic UI applied where applicable? (16.1)
+2. Density-aware? (16.2)
+3. Kindness microcopy passed? (16.3)
+4. Accessibility shipped? (16.4)
+5. Notification cadence followed? (16.5)
+6. Strings translation-extractable? (16.6)
+7. Privacy locks honored? (16.7)
+8. Audit trail if override? (16.8)
+9. Presence toast where appropriate? (16.9)
+10. Performance budget respected? (16.10)
+
+If any answer is no, feature is not ready to merge.
