@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useEventRidesView } from '../../hooks/useEventRidesView';
+import DensityToggle from '../home/DensityToggle';
 import OfferCard from '../ride/OfferCard';
 import PostOfferForm from '../ride/PostOfferForm';
 import ClaimSeatForm from '../ride/ClaimSeatForm';
@@ -48,7 +49,8 @@ export default function EventRidesTab({ event }) {
 
   return (
     <div style={{ padding: '12px 16px 80px' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div>{offers.length > 0 && <DensityToggle sectionKey="rides-list" />}</div>
         <button type="button" onClick={() => setPostOfferOpen(true)} className="sf-press" aria-label="Offer a ride" style={{ minHeight: 36, padding: '0 12px', borderRadius: 8, border: 'none', backgroundColor: 'var(--em-accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <Plus size={14} strokeWidth={2} aria-hidden="true" />
           Offer a ride
