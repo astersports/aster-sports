@@ -9,6 +9,7 @@ import { useCallback } from 'react';
 import { Car, Users, MapPin, Clock, ArrowRight, Repeat, Phone } from 'lucide-react';
 import { useDensity } from '../../hooks/useDensity';
 import ClaimStatusPill from './ClaimStatusPill';
+import ClaimerRow from './ClaimerRow';
 
 const SECTION_KEY = 'rides-list';
 
@@ -30,6 +31,7 @@ export default function OfferCard({
   canModerate = false,
   driverName = 'Driver',
   seatsTaken = 0,
+  offerClaimers = [],
   onClaim,
   onCancelOffer,
   onCancelClaim,
@@ -112,6 +114,16 @@ export default function OfferCard({
         </div>
       )}
 
+      {isDriver && density !== 'minimal' && offerClaimers.length > 0 && (
+        <div style={{ borderTop: '1px solid var(--em-border-subtle)', padding: '8px 14px 6px' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+            {offerClaimers.length} {offerClaimers.length === 1 ? 'rider' : 'riders'}
+          </div>
+          {offerClaimers.map(({ claim, riderName, childName }) => (
+            <ClaimerRow key={claim.id} claim={claim} riderName={riderName} childName={childName} />
+          ))}
+        </div>
+      )}
       <div style={{ padding: '8px 14px 12px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         {isDriver ? (
           <button type="button" onClick={handleCancelOffer} className="sf-press" aria-label="Cancel this ride offer" style={{ minHeight: 36, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-danger)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>

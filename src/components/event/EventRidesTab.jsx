@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useRideOffers } from '../../hooks/useRideOffers';
 import { useRideClaims } from '../../hooks/useRideClaims';
 import { useDriverNames } from '../../hooks/useDriverNames';
+import { useOfferClaimers } from '../../hooks/useOfferClaimers';
 import OfferCard from '../ride/OfferCard';
 import PostOfferForm from '../ride/PostOfferForm';
 import ClaimSeatForm from '../ride/ClaimSeatForm';
@@ -31,6 +32,7 @@ export default function EventRidesTab({ event }) {
 
   const driverIds = useMemo(() => offers.map((o) => o.driver_user_id), [offers]);
   const driverNames = useDriverNames(orgId, driverIds);
+  const buildOfferClaimers = useOfferClaimers(orgId, claims);
 
   const myClaimsByOfferId = useMemo(() => {
     const result = {};
@@ -97,6 +99,7 @@ export default function EventRidesTab({ event }) {
                 canModerate={canModerate}
                 driverName={driverNames[offer.driver_user_id] || 'Driver'}
                 seatsTaken={seatsTakenByOfferId[offer.id] || 0}
+                offerClaimers={buildOfferClaimers(offer.id)}
                 onCancelClaim={cancelClaim}
               />
             );
@@ -120,6 +123,7 @@ export default function EventRidesTab({ event }) {
               canModerate={canModerate}
               driverName={driverNames[offer.driver_user_id] || 'Driver'}
               seatsTaken={seatsTakenByOfferId[offer.id] || 0}
+              offerClaimers={buildOfferClaimers(offer.id)}
               onClaim={(o) => setClaimTargetOffer(o)}
               onCancelOffer={cancelOffer}
             />
