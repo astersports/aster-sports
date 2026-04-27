@@ -88,12 +88,13 @@ export default function ClaimSeatForm({ open, onClose, offer, onSubmit }) {
           <input id="seatsRequested" type="number" min="1" max={offer.seats_offered || 1} value={seatsRequested} onChange={(e) => setSeatsRequested(e.target.value)} required style={inputStyle} autoFocus={eligibleKids.length <= 1} />
         </div>
         <div>
-          <label style={labelStyle} htmlFor="pickupAddress">Pickup address (optional)</label>
-          <input id="pickupAddress" type="text" value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} placeholder="e.g., 12 Main St, Armonk" style={inputStyle} />
+          <label style={labelStyle} htmlFor="pickupAddress">Need door-to-door pickup? (optional)</label>
+          <input id="pickupAddress" type="text" value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} placeholder="Your address, if you need pickup at home" style={inputStyle} />
+          <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4 }}>Most riders meet at the offer's pickup spot. Only fill this in if you've worked out a home pickup with the driver.</div>
         </div>
         <div>
-          <label style={labelStyle} htmlFor="pickupNotes">Pickup notes (optional)</label>
-          <textarea id="pickupNotes" value={pickupNotes} onChange={(e) => setPickupNotes(e.target.value)} rows="2" placeholder="e.g., gate code 1234, ring buzzer" style={{ ...inputStyle, minHeight: 64, padding: '10px 12px' }} />
+          <label style={labelStyle} htmlFor="pickupNotes">Anything the driver should know? (optional)</label>
+          <textarea id="pickupNotes" value={pickupNotes} onChange={(e) => setPickupNotes(e.target.value)} rows="2" placeholder="e.g., car seat needed, will text on arrival" style={{ ...inputStyle, minHeight: 64, padding: '10px 12px' }} />
         </div>
       </form>
     </FullScreenForm>
