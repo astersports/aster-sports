@@ -4,13 +4,11 @@
 // Per CLAUDE.md anti-pattern #5: full rewrite justified (>50% changes,
 // existing version was non-functional since Migration 025).
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useRideOffers } from '../../hooks/useRideOffers';
-import { useRideClaims } from '../../hooks/useRideClaims';
-import { useDriverNames } from '../../hooks/useDriverNames';
-import { useOfferClaimers } from '../../hooks/useOfferClaimers';
+import { useEventRidesView } from '../../hooks/useEventRidesView';
+import DensityToggle from '../home/DensityToggle';
 import OfferCard from '../ride/OfferCard';
 import PostOfferForm from '../ride/PostOfferForm';
 import ClaimSeatForm from '../ride/ClaimSeatForm';
@@ -22,41 +20,24 @@ export default function EventRidesTab({ event }) {
   const { user, orgId, role } = useAuth();
   const canModerate = role === 'admin';
   const eventId = event?.id;
-  const rideEnabled = event?.ride_coordination_enabled !== false;
+  const rideEnabled = event?.enable_rides === true;
 
-  const { offers, loading: offersLoading, postOffer, cancelOffer } = useRideOffers(eventId);
-  const { claims, loading: claimsLoading, claimSeat, cancelClaim } = useRideClaims(eventId);
+  const {
+    offers,
+    driverNames,
+    buildOfferClaimers,
+    seatsTakenByOfferId,
+    myActiveClaims,
+    otherOffers,
+    loading,
+    postOffer,
+    claimSeat,
+    cancelOffer,
+    cancelClaim,
+  } = useEventRidesView({ eventId, orgId, userId: user?.id });
 
   const [postOfferOpen, setPostOfferOpen] = useState(false);
   const [claimTargetOffer, setClaimTargetOffer] = useState(null);
-
-  const driverIds = useMemo(() => offers.map((o) => o.driver_user_id), [offers]);
-  const driverNames = useDriverNames(orgId, driverIds);
-  const buildOfferClaimers = useOfferClaimers(orgId, claims);
-
-  const myClaimsByOfferId = useMemo(() => {
-    const result = {};
-    claims.forEach((c) => {
-      if (c.rider_user_id !== user?.id) return;
-      if (c.status === 'cancelled' || c.status === 'declined') return;
-      result[c.offer_id] = c;
-    });
-    return result;
-  }, [claims, user]);
-
-  const seatsTakenByOfferId = useMemo(() => {
-    const result = {};
-    claims.forEach((c) => {
-      if (c.status !== 'pending' && c.status !== 'confirmed') return;
-      result[c.offer_id] = (result[c.offer_id] || 0) + (c.seats_requested || 1);
-    });
-    return result;
-  }, [claims]);
-
-  const myActiveClaims = useMemo(
-    () => claims.filter((c) => c.rider_user_id === user?.id && c.status !== 'cancelled' && c.status !== 'declined'),
-    [claims, user],
-  );
 
   if (!rideEnabled) {
     return (
@@ -66,12 +47,10 @@ export default function EventRidesTab({ event }) {
     );
   }
 
-  const loading = offersLoading || claimsLoading;
-  const otherOffers = offers.filter((o) => !myClaimsByOfferId[o.id]);
-
   return (
     <div style={{ padding: '12px 16px 80px' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div>{offers.length > 0 && <DensityToggle sectionKey="rides-list" />}</div>
         <button type="button" onClick={() => setPostOfferOpen(true)} className="sf-press" aria-label="Offer a ride" style={{ minHeight: 36, padding: '0 12px', borderRadius: 8, border: 'none', backgroundColor: 'var(--em-accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <Plus size={14} strokeWidth={2} aria-hidden="true" />
           Offer a ride
