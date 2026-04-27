@@ -22,14 +22,21 @@ export function useDriverNames(orgId, driverUserIds) {
     if (ids.length === 0) return undefined;
     let cancelled = false;
     (async () => {
-      const { data, error: fetchError } = await supabase
-        .from('guardians')
-        .select('user_id, first_name, last_name')
-        .eq('org_id', orgId)
-        .in('user_id', ids);
-      if (cancelled || fetchError || !data) return;
+      const [guardiansRes, coachingRes] = await Promise.all([
+        supabase.from('guardians').select('user_id, first_name, last_name').eq('org_id', orgId).in('user_id', ids),
+        supabase.from('coaching_assignments').select('user_id, display_name').eq('org_id', orgId).in('user_id', ids),
+      ]);
+      if (cancelled) return;
       const map = {};
-      data.forEach((g) => {
+      // Coaching first (lower priority — guardians override).
+      (coachingRes.data || []).forEach((c) => {
+        if (!c.user_id || !c.display_name) return;
+        const parts = c.display_name.trim().split(/\s+/);
+        const lastInitial = parts.length > 1 ? ` ${parts[parts.length - 1].charAt(0)}.` : '';
+        map[c.user_id] = `${parts[0]}${lastInitial}`;
+      });
+      // Guardians override.
+      (guardiansRes.data || []).forEach((g) => {
         if (!g.user_id) return;
         const lastInitial = g.last_name ? ` ${g.last_name.charAt(0)}.` : '';
         map[g.user_id] = `${g.first_name}${lastInitial}`;

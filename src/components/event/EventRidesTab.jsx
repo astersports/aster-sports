@@ -103,7 +103,7 @@ export default function EventRidesTab({ event }) {
         </section>
       )}
 
-      {!loading && (
+      {!loading && !(myActiveClaims.length > 0 && otherOffers.length === 0) && (
         <section aria-label="Available rides">
           <h3 style={sectionLabelStyle}>Available rides</h3>
           {otherOffers.length === 0 ? (

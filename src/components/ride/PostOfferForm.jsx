@@ -3,7 +3,9 @@
 // Uses FullScreenForm primitive: Cancel button in header (iOS HIG),
 // Submit button in footer. Optimistic UI happens in the hook.
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
 import FullScreenForm from '../shared/FullScreenForm';
 
 const labelStyle = { fontSize: 12, fontWeight: 600, color: 'var(--em-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'block' };
@@ -21,6 +23,24 @@ export default function PostOfferForm({ open, onClose, onSubmit }) {
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const { user, orgId } = useAuth();
+
+  // Auto-populate phone from current user's guardian record (override allowed).
+  useEffect(() => {
+    if (!open || !user?.id || !orgId || phone) return undefined;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('guardians')
+        .select('phone')
+        .eq('org_id', orgId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (cancelled || !data?.phone) return;
+      setPhone(data.phone);
+    })();
+    return () => { cancelled = true; };
+  }, [open, user?.id, orgId, phone]);
 
   const reset = useCallback(() => {
     setSeats('2'); setRideType('round_trip'); setPickupLocation(''); setPickupTime('');
@@ -33,6 +53,7 @@ export default function PostOfferForm({ open, onClose, onSubmit }) {
   const handleSubmit = useCallback(async (e) => {
     e?.preventDefault();
     if (!pickupLocation.trim()) { setError('Pickup location is required.'); return; }
+    if (!pickupTime) { setError('Pickup time is required so riders know when to be ready.'); return; }
     const seatsNum = Number(seats);
     if (!seatsNum || seatsNum < 1 || seatsNum > 12) { setError('Seats must be between 1 and 12.'); return; }
     setSubmitting(true);
@@ -75,7 +96,7 @@ export default function PostOfferForm({ open, onClose, onSubmit }) {
           </select>
         </div>
         <div><label style={labelStyle} htmlFor="pickup">Pickup from</label><input id="pickup" type="text" value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} placeholder="e.g., Armonk Town Center" required autoFocus style={inputStyle} /></div>
-        <div><label style={labelStyle} htmlFor="pickupTime">Pickup time (optional)</label><input id="pickupTime" type="datetime-local" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} style={inputStyle} /></div>
+        <div><label style={labelStyle} htmlFor="pickupTime">Pickup time</label><input id="pickupTime" type="datetime-local" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} required style={inputStyle} /></div>
         {rideType === 'round_trip' && (<>
           <div><label style={labelStyle} htmlFor="returnLoc">Return to (optional)</label><input id="returnLoc" type="text" value={returnLocation} onChange={(e) => setReturnLocation(e.target.value)} placeholder="Defaults to pickup location" style={inputStyle} /></div>
           <div><label style={labelStyle} htmlFor="returnTime">Return time (optional)</label><input id="returnTime" type="datetime-local" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} style={inputStyle} /></div>
