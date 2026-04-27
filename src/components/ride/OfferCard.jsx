@@ -27,6 +27,7 @@ export default function OfferCard({
   offer,
   myClaim = null,
   isDriver = false,
+  canModerate = false,
   driverName = 'Driver',
   seatsTaken = 0,
   onClaim,
@@ -40,9 +41,12 @@ export default function OfferCard({
   const isFull = seatsAvailable === 0;
 
   const handleCancelOffer = useCallback(() => {
-    const proceed = window.confirm("Cancel this ride offer? Anyone who claimed a seat will need to find another ride.");
+    const message = canModerate && !isDriver
+      ? "Cancel this ride offer as admin override? Anyone who claimed a seat will be auto-cancelled and notified."
+      : "Cancel this ride offer? Anyone who claimed a seat will need to find another ride.";
+    const proceed = window.confirm(message);
     if (proceed) onCancelOffer?.(offer.id);
-  }, [offer.id, onCancelOffer]);
+  }, [offer.id, isDriver, canModerate, onCancelOffer]);
 
   const handleCancelClaim = useCallback(() => {
     if (!myClaim) return;
@@ -93,10 +97,10 @@ export default function OfferCard({
               {formatTime(offer.return_time) && <span style={{ color: 'var(--em-text-tertiary)', fontSize: 12 }}>{formatTime(offer.return_time)}</span>}
             </div>
           )}
-          {density === 'maximum' && offer.vehicle_description && (
+          {density !== 'minimal' && offer.vehicle_description && (
             <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{offer.vehicle_description}</div>
           )}
-          {density === 'maximum' && offer.notes && (
+          {density !== 'minimal' && offer.notes && (
             <div style={{ fontSize: 12, color: 'var(--em-text-secondary)', fontStyle: 'italic' }}>{offer.notes}</div>
           )}
           {showDriverPhone && (
@@ -112,6 +116,10 @@ export default function OfferCard({
         {isDriver ? (
           <button type="button" onClick={handleCancelOffer} className="sf-press" aria-label="Cancel this ride offer" style={{ minHeight: 36, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-danger)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             Cancel offer
+          </button>
+        ) : canModerate ? (
+          <button type="button" onClick={handleCancelOffer} className="sf-press" aria-label="Cancel this ride offer (admin override)" style={{ minHeight: 36, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-danger)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Override · Cancel
           </button>
         ) : myClaim && myClaim.status !== 'cancelled' && myClaim.status !== 'declined' ? (
           <button type="button" onClick={handleCancelClaim} className="sf-press" aria-label="Cancel your claim on this ride" style={{ minHeight: 36, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
