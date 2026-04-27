@@ -20,7 +20,7 @@ export default function EventRidesTab({ event }) {
   const { user, orgId, role } = useAuth();
   const canModerate = role === 'admin';
   const eventId = event?.id;
-  const rideEnabled = event?.ride_coordination_enabled !== false;
+  const rideEnabled = event?.enable_rides === true;
 
   const {
     offers,
