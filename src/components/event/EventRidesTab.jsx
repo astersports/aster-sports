@@ -1,99 +1,150 @@
-import { useEffect, useState } from 'react';
-import { Car, UserRound, Plus } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import { useRides } from '../../hooks/useRides';
+// src/components/event/EventRidesTab.jsx
+// Phase 1.5 rides Phase D — wire-up against new offers/claims model.
+// Replaces broken event_rides queries from prior implementation.
+// Per CLAUDE.md anti-pattern #5: full rewrite justified (>50% changes,
+// existing version was non-functional since Migration 025).
+
+import { useState, useMemo } from 'react';
+import { Plus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/useToast';
-import RideCard from './RideCard';
-import RideFormOverlay from './RideFormOverlay';
+import { useRideOffers } from '../../hooks/useRideOffers';
+import { useRideClaims } from '../../hooks/useRideClaims';
+import { useDriverNames } from '../../hooks/useDriverNames';
+import { useOfferClaimers } from '../../hooks/useOfferClaimers';
+import OfferCard from '../ride/OfferCard';
+import PostOfferForm from '../ride/PostOfferForm';
+import ClaimSeatForm from '../ride/ClaimSeatForm';
 
-const defaultPickupTime = (startAt) => {
-  if (!startAt) return '';
-  const d = new Date(startAt);
-  d.setMinutes(d.getMinutes() - 45);
-  return d.toTimeString().slice(0, 5);
-};
+const sectionLabelStyle = { fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 };
+const emptyStateStyle = { padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13, border: '1px dashed var(--em-border-subtle)', borderRadius: 10 };
 
-export default function EventRidesTab({ eventId, eventStartAt, eventLocation, eventEndAt }) {
-  const { user, guardianId } = useAuth();
-  const { showToast } = useToast();
-  const { rides, loading, create, claim, remove } = useRides(eventId);
-  const [form, setForm] = useState(null);
-  const [draft, setDraft] = useState({ pickup_location: '', departure_time: '', seats: 1, phone: '', notes: '' });
-  const [guardian, setGuardian] = useState(null);
+export default function EventRidesTab({ event }) {
+  const { user, orgId, role } = useAuth();
+  const canModerate = role === 'admin';
+  const eventId = event?.id;
+  const rideEnabled = event?.ride_coordination_enabled !== false;
 
-  useEffect(() => {
-    if (!user?.id) return;
-    supabase.from('guardians').select('first_name, last_name, phone').eq('user_id', user.id).maybeSingle()
-      .then(({ data }) => setGuardian(data || null));
-  }, [user?.id]);
+  const { offers, loading: offersLoading, postOffer, cancelOffer } = useRideOffers(eventId);
+  const { claims, loading: claimsLoading, claimSeat, cancelClaim } = useRideClaims(eventId);
 
-  if (loading) return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 14 }}>Loading rides...</div>;
+  const [postOfferOpen, setPostOfferOpen] = useState(false);
+  const [claimTargetOffer, setClaimTargetOffer] = useState(null);
 
-  const offers = rides.filter((r) => r.ride_type === 'offering');
-  const requests = rides.filter((r) => r.ride_type === 'requesting');
-  const authorName = guardian ? `${guardian.first_name || ''} ${guardian.last_name || ''}`.trim() || null : null;
+  const driverIds = useMemo(() => offers.map((o) => o.driver_user_id), [offers]);
+  const driverNames = useDriverNames(orgId, driverIds);
+  const buildOfferClaimers = useOfferClaimers(orgId, claims);
 
-  const openForm = (kind) => {
-    setDraft({ pickup_location: '', departure_time: defaultPickupTime(eventStartAt), seats: 1, phone: guardian?.phone || '', notes: '' });
-    setForm(kind);
-  };
+  const myClaimsByOfferId = useMemo(() => {
+    const result = {};
+    claims.forEach((c) => {
+      if (c.rider_user_id !== user?.id) return;
+      if (c.status === 'cancelled' || c.status === 'declined') return;
+      result[c.offer_id] = c;
+    });
+    return result;
+  }, [claims, user]);
 
-  const submit = async () => {
-    const ok = await create({ ride_type: form, ...draft, authorName, event_date: eventStartAt?.slice(0, 10) });
-    if (ok) { setForm(null); setDraft({ pickup_location: '', departure_time: '', seats: 1, phone: '', notes: '' }); }
-    else showToast('Could not save ride', 'error');
-  };
+  const seatsTakenByOfferId = useMemo(() => {
+    const result = {};
+    claims.forEach((c) => {
+      if (c.status !== 'pending' && c.status !== 'confirmed') return;
+      result[c.offer_id] = (result[c.offer_id] || 0) + (c.seats_requested || 1);
+    });
+    return result;
+  }, [claims]);
 
-  const handleClaim = async (offer) => {
-    const ok = await claim(offer, authorName, guardian?.phone || null);
-    if (ok) showToast('You claimed a seat', 'success');
-  };
+  const myActiveClaims = useMemo(
+    () => claims.filter((c) => c.rider_user_id === user?.id && c.status !== 'cancelled' && c.status !== 'declined'),
+    [claims, user],
+  );
+
+  if (!rideEnabled) {
+    return (
+      <div style={{ padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 14 }}>
+        Ride coordination is off for this event.
+      </div>
+    );
+  }
+
+  const loading = offersLoading || claimsLoading;
+  const otherOffers = offers.filter((o) => !myClaimsByOfferId[o.id]);
 
   return (
-    <div style={{ padding: '16px 16px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <RideSection title="Drivers offering rides" icon={Car} empty="No drivers yet.">
-        {offers.map((r) => <RideCard key={r.id} ride={r} user={user} currentGuardianId={guardianId} onRemove={remove} onClaim={handleClaim} eventLocation={eventLocation} eventEndAt={eventEndAt} />)}
-      </RideSection>
-      <RideSection title="Riders needing a ride" icon={UserRound} empty="No requests yet.">
-        {requests.map((r) => <RideCard key={r.id} ride={r} user={user} currentGuardianId={guardianId} onRemove={remove} eventLocation={eventLocation} eventEndAt={eventEndAt} />)}
-      </RideSection>
-
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button type="button" onClick={() => openForm('offering')} className="sf-press"
-          style={ghostBtn}><Plus size={16} strokeWidth={1.75} /> Offer ride</button>
-        <button type="button" onClick={() => openForm('requesting')} className="sf-press"
-          style={ghostBtn}><Plus size={16} strokeWidth={1.75} /> Request ride</button>
+    <div style={{ padding: '12px 16px 80px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
+        <button type="button" onClick={() => setPostOfferOpen(true)} className="sf-press" aria-label="Offer a ride" style={{ minHeight: 36, padding: '0 12px', borderRadius: 8, border: 'none', backgroundColor: 'var(--em-accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Plus size={14} strokeWidth={2} aria-hidden="true" />
+          Offer a ride
+        </button>
       </div>
 
-      {form && (
-        <RideFormOverlay
-          form={form}
-          draft={draft}
-          setDraft={setDraft}
-          onClose={() => setForm(null)}
-          onSubmit={submit}
-          eventLocation={eventLocation}
-          eventEndAt={eventEndAt}
-          phoneKnown={!!guardian?.phone}
-        />
+      {loading && (
+        <div style={{ padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13 }} role="status" aria-live="polite">
+          Loading rides…
+        </div>
       )}
+
+      {!loading && myActiveClaims.length > 0 && (
+        <section aria-label="Your claimed seats" style={{ marginBottom: 18 }}>
+          <h3 style={sectionLabelStyle}>Your seats</h3>
+          {myActiveClaims.map((claim) => {
+            const offer = offers.find((o) => o.id === claim.offer_id);
+            if (!offer) return null;
+            return (
+              <OfferCard
+                key={claim.id}
+                offer={offer}
+                myClaim={claim}
+                isDriver={false}
+                canModerate={canModerate}
+                driverName={driverNames[offer.driver_user_id] || 'Driver'}
+                seatsTaken={seatsTakenByOfferId[offer.id] || 0}
+                offerClaimers={buildOfferClaimers(offer.id)}
+                onCancelClaim={cancelClaim}
+              />
+            );
+          })}
+        </section>
+      )}
+
+      {!loading && !(myActiveClaims.length > 0 && otherOffers.length === 0) && (
+        <section aria-label="Available rides">
+          <h3 style={sectionLabelStyle}>Available rides</h3>
+          {otherOffers.length === 0 ? (
+            <div style={emptyStateStyle}>
+              No rides offered yet — be the first to share?
+            </div>
+          ) : otherOffers.map((offer) => (
+            <OfferCard
+              key={offer.id}
+              offer={offer}
+              myClaim={null}
+              isDriver={offer.driver_user_id === user?.id}
+              canModerate={canModerate}
+              driverName={driverNames[offer.driver_user_id] || 'Driver'}
+              seatsTaken={seatsTakenByOfferId[offer.id] || 0}
+              offerClaimers={buildOfferClaimers(offer.id)}
+              onClaim={(o) => setClaimTargetOffer(o)}
+              onCancelOffer={cancelOffer}
+            />
+          ))}
+        </section>
+      )}
+
+      <PostOfferForm
+        open={postOfferOpen}
+        onClose={() => setPostOfferOpen(false)}
+        onSubmit={postOffer}
+        eventStartAt={event?.start_at ?? null}
+        eventEndAt={event?.end_at ?? null}
+        hasActiveOffer={offers.some((o) => o.driver_user_id === user?.id && o.status === 'active')}
+      />
+      <ClaimSeatForm
+        open={!!claimTargetOffer}
+        offer={claimTargetOffer}
+        onClose={() => setClaimTargetOffer(null)}
+        onSubmit={claimSeat}
+      />
     </div>
   );
 }
-
-function RideSection({ title, icon: Icon, empty, children }) {
-  const arr = Array.isArray(children) ? children : [children];
-  return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: 'var(--em-text-secondary)', marginBottom: 8 }}>
-        <Icon size={14} strokeWidth={1.75} /> {title}
-      </div>
-      {arr.filter(Boolean).length === 0
-        ? <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{empty}</div>
-        : <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{children}</div>}
-    </div>
-  );
-}
-
-const ghostBtn = { flex: 1, minHeight: 40, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 };

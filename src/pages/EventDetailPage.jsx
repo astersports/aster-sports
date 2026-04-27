@@ -129,7 +129,7 @@ export default function EventDetailPage() {
       {dutyCount > 0 && (<><SectionHeader>Volunteers</SectionHeader><EventDutiesTab eventId={event.id} /></>)}
 
       <SectionHeader>Rides</SectionHeader>
-      <EventRidesTab eventId={event.id} eventStartAt={event.start_at} eventLocation={event.location} eventEndAt={event.end_at} />
+      <EventRidesTab event={event} />
 
       {(event.notes || event.coach_notes) && (
         <><SectionHeader>Notes</SectionHeader><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></>

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
-export default function FullScreenForm({ open, onClose, title, children }) {
+export default function FullScreenForm({ open, onClose, title, children, footer = null }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -55,6 +55,11 @@ export default function FullScreenForm({ open, onClose, title, children }) {
       }}>
         {children}
       </div>
+      {footer && (
+        <footer style={{ flexShrink: 0, padding: '12px 16px', borderTop: '1px solid var(--em-border-subtle)', backgroundColor: 'var(--em-bg-card)', display: 'flex', justifyContent: 'flex-end', gap: 8, minHeight: 56, paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
+        {footer}
+        </footer>
+      )}
     </div>,
     document.body
   );
