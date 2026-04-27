@@ -14,7 +14,6 @@ export default function InviteButton({ guardianEmail }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not signed in');
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-parent`;
-      console.log('Invite URL:', url, 'email:', guardianEmail);
       const res = await fetch(url, {
         method: 'POST',
         headers: {
