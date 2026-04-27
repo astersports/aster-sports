@@ -11,7 +11,22 @@ import FullScreenForm from '../shared/FullScreenForm';
 const labelStyle = { fontSize: 12, fontWeight: 600, color: 'var(--em-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'block' };
 const inputStyle = { width: '100%', minHeight: 44, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 14, fontFamily: 'inherit' };
 
-export default function PostOfferForm({ open, onClose, onSubmit }) {
+const pad = (n) => String(n).padStart(2, '0');
+const isoToLocal = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const isoMinusMinutes = (iso, mins) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  d.setMinutes(d.getMinutes() - mins);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = null, eventEndAt = null }) {
   const [seats, setSeats] = useState('2');
   const [rideType, setRideType] = useState('round_trip');
   const [pickupLocation, setPickupLocation] = useState('');
@@ -42,11 +57,22 @@ export default function PostOfferForm({ open, onClose, onSubmit }) {
     return () => { cancelled = true; };
   }, [open, user?.id, orgId, phone]);
 
+  // Set time defaults when form opens (only if user hasn't edited).
+  useEffect(() => {
+    if (!open) return;
+    if (!pickupTime && eventStartAt) setPickupTime(isoMinusMinutes(eventStartAt, 45));
+    if (!returnTime && eventEndAt) setReturnTime(isoToLocal(eventEndAt));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, eventStartAt, eventEndAt]);
+
   const reset = useCallback(() => {
-    setSeats('2'); setRideType('round_trip'); setPickupLocation(''); setPickupTime('');
-    setReturnLocation(''); setReturnTime(''); setVehicle(''); setPhone(''); setNotes('');
+    setSeats('2'); setRideType('round_trip'); setPickupLocation('');
+    setPickupTime(eventStartAt ? isoMinusMinutes(eventStartAt, 45) : '');
+    setReturnLocation('');
+    setReturnTime(eventEndAt ? isoToLocal(eventEndAt) : '');
+    setVehicle(''); setPhone(''); setNotes('');
     setSubmitting(false); setError(null);
-  }, []);
+  }, [eventStartAt, eventEndAt]);
 
   const handleClose = useCallback(() => { reset(); onClose?.(); }, [reset, onClose]);
 
@@ -54,6 +80,8 @@ export default function PostOfferForm({ open, onClose, onSubmit }) {
     e?.preventDefault();
     if (!pickupLocation.trim()) { setError('Pickup location is required.'); return; }
     if (!pickupTime) { setError('Pickup time is required so riders know when to be ready.'); return; }
+    if (eventStartAt && new Date(pickupTime) > new Date(eventStartAt)) { setError('Pickup time must be before the event starts.'); return; }
+    if (returnTime && new Date(returnTime) < new Date(pickupTime)) { setError('Return time must be after pickup time.'); return; }
     const seatsNum = Number(seats);
     if (!seatsNum || seatsNum < 1 || seatsNum > 12) { setError('Seats must be between 1 and 12.'); return; }
     setSubmitting(true);
@@ -72,7 +100,7 @@ export default function PostOfferForm({ open, onClose, onSubmit }) {
     setSubmitting(false);
     if (result?.ok) handleClose();
     else setError(result?.error?.message || "Looks like that didn't go through. Try again?");
-  }, [seats, rideType, pickupLocation, pickupTime, returnLocation, returnTime, vehicle, phone, notes, onSubmit, handleClose]);
+  }, [seats, rideType, pickupLocation, pickupTime, returnLocation, returnTime, vehicle, phone, notes, eventStartAt, onSubmit, handleClose]);
 
   return (
     <FullScreenForm
@@ -96,10 +124,10 @@ export default function PostOfferForm({ open, onClose, onSubmit }) {
           </select>
         </div>
         <div><label style={labelStyle} htmlFor="pickup">Pickup from</label><input id="pickup" type="text" value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} placeholder="e.g., Armonk Town Center" required autoFocus style={inputStyle} /></div>
-        <div><label style={labelStyle} htmlFor="pickupTime">Pickup time</label><input id="pickupTime" type="datetime-local" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} required style={inputStyle} /></div>
+        <div><label style={labelStyle} htmlFor="pickupTime">Pickup time</label><input id="pickupTime" type="datetime-local" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} required max={eventStartAt ? isoToLocal(eventStartAt) : undefined} style={inputStyle} /></div>
         {rideType === 'round_trip' && (<>
           <div><label style={labelStyle} htmlFor="returnLoc">Return to (optional)</label><input id="returnLoc" type="text" value={returnLocation} onChange={(e) => setReturnLocation(e.target.value)} placeholder="Defaults to pickup location" style={inputStyle} /></div>
-          <div><label style={labelStyle} htmlFor="returnTime">Return time (optional)</label><input id="returnTime" type="datetime-local" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} style={inputStyle} /></div>
+          <div><label style={labelStyle} htmlFor="returnTime">Return time (optional)</label><input id="returnTime" type="datetime-local" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} min={pickupTime || undefined} style={inputStyle} /></div>
         </>)}
         <div><label style={labelStyle} htmlFor="vehicle">Vehicle (optional)</label><input id="vehicle" type="text" value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="e.g., Black Tesla Model Y" style={inputStyle} /></div>
         <div><label style={labelStyle} htmlFor="phone">Phone (optional, shown to confirmed riders only)</label><input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(914) 555-1234" style={inputStyle} /></div>

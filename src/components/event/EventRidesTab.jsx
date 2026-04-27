@@ -131,6 +131,8 @@ export default function EventRidesTab({ event }) {
         open={postOfferOpen}
         onClose={() => setPostOfferOpen(false)}
         onSubmit={postOffer}
+        eventStartAt={event?.start_at ?? null}
+        eventEndAt={event?.end_at ?? null}
       />
       <ClaimSeatForm
         open={!!claimTargetOffer}
