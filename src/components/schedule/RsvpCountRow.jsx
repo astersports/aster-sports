@@ -1,13 +1,16 @@
 // Shared RSVP count row rendered on NextUpCard, EventCard, CompactCard.
 // Four states: going / maybe / not_going / noResponse. Zero-valued states
 // are hidden to reduce visual noise. Accepts optional `compact` for tighter
-// spacing on the schedule list.
+// type sizing on the schedule list.
+//
+// Inline ` · ` separator between pills (was a flex `gap` previously, which
+// could collapse on certain mobile font/CSS edge cases producing the
+// "1 going12 no response" no-space rendering).
 
 function RsvpCountRow({ rsvpCount, compact = false }) {
   if (!rsvpCount) return null;
 
   const fontSize = compact ? 12 : 13;
-  const gap = compact ? 8 : 10;
 
   const states = [
     { value: rsvpCount.going, label: 'going', color: 'var(--em-success)' },
@@ -19,9 +22,10 @@ function RsvpCountRow({ rsvpCount, compact = false }) {
   if (states.length === 0) return null;
 
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap, fontSize, color: 'var(--em-text-secondary)' }}>
-      {states.map((s) => (
+    <div style={{ fontSize, color: 'var(--em-text-secondary)' }}>
+      {states.map((s, i) => (
         <span key={s.label}>
+          {i > 0 ? <span style={{ margin: '0 6px', color: 'var(--em-text-tertiary)' }}>·</span> : null}
           <strong style={{ color: s.color }}>{s.value}</strong> {s.label}
         </span>
       ))}

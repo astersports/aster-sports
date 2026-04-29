@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Car, Repeat, ExternalLink } from 'lucide-react';
+import { MapPin, Repeat, ExternalLink } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
 import { formatCountdown } from '../../lib/formatters';
 import { WhenRow, GameInfo } from './NextUpCardInfo';
 import NextUpCardRsvpSection from './NextUpCardRsvpSection';
+import NextUpCardStatusRow from './NextUpCardStatusRow';
 import NextUpCardRsvpCounts from './NextUpCardRsvpCounts';
 import NextUpCardMyChild from './NextUpCardMyChild';
 import { useAuth } from '../../context/AuthContext';
@@ -76,13 +77,13 @@ export default function NextUpCardMax({ event, rsvpCount, rideCount, dutyCount, 
             </span>
           </div>
           {(event.teams?.name || event.team_name) && (
-            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginBottom: 4 }}>
-              {event.teams?.name || event.team_name}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+              <span style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>{event.teams?.name || event.team_name}</span>
+              {!isTitleRedundant && event.title && (
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)' }}>{event.title}</span>
+              )}
             </div>
           )}
-          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', marginBottom: 4 }}>
-            {event.title || typeLabel}
-          </div>
           <WhenRow event={event} />
           {event.location && (
             directionsUrl && !isPlaceholderLocation ? (
@@ -109,19 +110,7 @@ export default function NextUpCardMax({ event, rsvpCount, rideCount, dutyCount, 
           )}
           <GameInfo event={event} />
           <NextUpCardRsvpSection eventId={event.id} rsvpCount={rsvpCount} />
-          {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--em-text-secondary)', marginTop: 4 }}>
-              <Car size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />
-              {rideCount.offers > 0 && <span>{rideCount.offers} seat{rideCount.offers !== 1 ? 's' : ''} offered</span>}
-              {rideCount.offers > 0 && rideCount.requests > 0 && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
-              {rideCount.requests > 0 && <span style={{ color: 'var(--em-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>}
-            </div>
-          )}
-          {dutyCount && dutyCount.total > 0 && (
-            <div style={{ fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--em-warning)' : 'var(--em-success)' }}>
-              {dutyCount.claimed}/{dutyCount.total} volunteers filled
-            </div>
-          )}
+          <NextUpCardStatusRow rideCount={rideCount} dutyCount={dutyCount} />
           <NextUpCardRsvpCounts rsvpCount={rsvpCount} rosterTotal={rsvpCount?.total} />
           <NextUpCardMyChild event={event} />
         </div>
