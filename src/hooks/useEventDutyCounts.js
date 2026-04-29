@@ -10,7 +10,7 @@ export function useEventDutyCounts(activities) {
   // Microtask wrap on the early-return setCounts({}) pushes it out of
   // the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => {
-    const ids = (activities || []).map((a) => a.id);
+    const ids = (activities || []).map((a) => a.id).filter(Boolean);
     if (ids.length === 0) {
       Promise.resolve().then(() => setCounts({}));
       lastKeyRef.current = '';

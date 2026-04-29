@@ -17,7 +17,7 @@ export function useEventRsvpCounts(activities) {
       lastKeyRef.current = '';
       return;
     }
-    const eventIds = activities.map((a) => a.id);
+    const eventIds = activities.map((a) => a.id).filter(Boolean);
     const teamIds = [...new Set(activities.map((a) => a.team_id).filter(Boolean))];
     const key = [...eventIds].sort().join(',') + '|' + [...teamIds].sort().join(',');
     if (lastKeyRef.current === key) return;
