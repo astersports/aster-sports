@@ -38,9 +38,9 @@ export function useTeamRecords(teamId) {
           event:events!inner ( id, team_id, opponent, start_at, is_championship_final )
         `)
         .not('published_at', 'is', null)
-        .order('start_at', { foreignTable: 'event', ascending: true });
+        .order('start_at', { foreignTable: 'events', ascending: true });
 
-      if (teamId) q = q.eq('event.team_id', teamId);
+      if (teamId) q = q.eq('events.team_id', teamId);
 
       const { data, error } = await q;
       if (cancelled) return;
