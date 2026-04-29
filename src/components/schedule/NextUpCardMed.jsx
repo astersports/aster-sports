@@ -90,12 +90,12 @@ export default function NextUpCardMed({ event, rsvpCount, rideCount, dutyCount, 
           <WhenRow event={event} />
           {event.location && (
             directionsUrl && !isPlaceholderLocation ? (
-              <a href={directionsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8, textDecoration: 'none' }}>
+              <button type="button" onClick={(e) => { e.stopPropagation(); window.open(directionsUrl, '_blank', 'noopener,noreferrer'); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
                 <MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />
                 <span style={{ color: 'var(--em-text-secondary)' }}>{event.location}</span>
                 <ExternalLink size={10} strokeWidth={1.75} color="var(--em-text-tertiary)" />
-              </a>
+              </button>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8 }}>
                 <MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />
