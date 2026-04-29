@@ -1153,3 +1153,13 @@ Migration 028 LOCKED + DEPLOYED + VERIFIED. Parent role now matches D-roster1 sp
 - Verification: /records-preview matches records-v14_2.html side-by-side
 - Council patches applied: 6/6 (constants move, hero ghost word + glow, dangerouslySetInnerHTML pin, role=row drop, SQL pre-check, build queue auto-update)
 - Next: Wave 3b — wire useTeamRecords into RecordsPreview, replace fixtures
+
+## Wave 3a.1 — SHIPPED 2026-04-29 22:24 UTC
+- File: src/hooks/useTeamRecords.js (full rewrite)
+- Commit: 0d0c998
+- Reason: Supabase MCP schema audit revealed game_results uses event_id
+  (not team_id), published_at timestamp (not is_published boolean), and
+  lacks org_id. Org scoping enforced by RLS through events → teams chain.
+- Hook now: signature useTeamRecords(teamId) — orgId param dropped
+- Query: nested events!inner join, foreignTable order-by, result text W/L
+- Unblocks Wave 3b (hook wire-up to RecordsPreview)
