@@ -15,6 +15,7 @@ import EventDetailPage from './pages/EventDetailPage';
 import AccountPage from './pages/AccountPage';
 import TournamentsPage from './pages/TournamentsPage';
 import TournamentDetailPage from './pages/TournamentDetailPage';
+import RecordsPreview from './pages/RecordsPreview';
 
 const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
 const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
@@ -48,6 +49,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
+      <Route path="/records-preview" element={<RecordsPreview />} />
 
       {/* Authenticated routes */}
       <Route path="/"         element={<Protected><HomePage /></Protected>} />

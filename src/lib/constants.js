@@ -38,3 +38,18 @@ export function buildTitle(type, opponent) {
   if ((type === 'game' || type === 'tournament') && opponent) return `vs. ${opponent}`;
   return TYPE_LABELS[type] || 'Event';
 }
+
+/**
+ * Spring 2026 production v14 palette. Sourced from records-v14_2.html.
+ * Used by broadcast components (left border, badge, record number)
+ * and any other surface that displays a team in its identity color.
+ *
+ * Email templates DO NOT use these — see Decision 68 (cobalt always for email).
+ */
+export const TEAM_COLORS = {
+  '11U Girls': '#a78bfa',
+  '10U Black': '#4a8fd4',
+  '10U Blue':  '#94a3b8',
+  '9U Boys':   '#06b6d4',
+  '8U Boys':   '#f59e0b',
+};

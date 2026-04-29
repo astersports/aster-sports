@@ -10,6 +10,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastProvider';
 import App from './App.jsx';
 import './index.css';
+import './styles/broadcast.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
