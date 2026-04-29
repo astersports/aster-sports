@@ -2,16 +2,20 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 /**
- * Reads game_results for a team. If teamId is null, returns the org-level summary.
- * org_id is scoped via RLS — every query hits org boundary automatically.
+ * Reads published game_results for a team via events join.
  *
- * Note: column name `played_at` is assumed. Wave 3b verifies via Supabase
- * SQL Editor and patches if the actual column is `game_date` or other.
+ * Schema reality (verified Apr 29 via Supabase MCP):
+ *   game_results { id, event_id, our_score, opponent_score, result, published_at, ... }
+ *   events       { id, team_id, opponent, start_at, event_type }
+ *   teams        { id, org_id, name, team_color, ... }
+ *
+ * Org scoping is enforced by RLS on game_results (via teams join) — no
+ * application-layer org_id filter needed.
  *
  * Returns: { loading, error, games, summary }
  *   summary = { record, streak, ppg, allowed, diff, winPct, gamesPlayed }
  */
-export function useTeamRecords(teamId, orgId) {
+export function useTeamRecords(teamId) {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
   const [games, setGames]     = useState([]);
@@ -24,12 +28,19 @@ export function useTeamRecords(teamId, orgId) {
 
       let q = supabase
         .from('game_results')
-        .select('id, team_id, opponent_name, our_score, opponent_score, played_at, is_published')
-        .eq('org_id', orgId)
-        .eq('is_published', true)
-        .order('played_at', { ascending: true });
+        .select(`
+          id,
+          our_score,
+          opponent_score,
+          result,
+          published_at,
+          point_differential,
+          event:events!inner ( id, team_id, opponent, start_at )
+        `)
+        .not('published_at', 'is', null)
+        .order('start_at', { foreignTable: 'event', ascending: true });
 
-      if (teamId) q = q.eq('team_id', teamId);
+      if (teamId) q = q.eq('event.team_id', teamId);
 
       const { data, error } = await q;
       if (cancelled) return;
@@ -37,9 +48,9 @@ export function useTeamRecords(teamId, orgId) {
       setGames(data || []);
       setLoading(false);
     }
-    if (orgId) load();
+    load();
     return () => { cancelled = true; };
-  }, [teamId, orgId]);
+  }, [teamId]);
 
   const summary = computeSummary(games);
   return { loading, error, games, summary };
@@ -53,14 +64,12 @@ function computeSummary(games) {
   for (const g of games) {
     pf += Number(g.our_score) || 0;
     pa += Number(g.opponent_score) || 0;
-    if ((g.our_score ?? 0) > (g.opponent_score ?? 0)) wins += 1; else losses += 1;
+    if (g.result === 'W') wins += 1; else losses += 1;
   }
 
   let streakKind = null, streakLen = 0;
   for (let i = games.length - 1; i >= 0; i -= 1) {
-    const g = games[i];
-    const w = (g.our_score ?? 0) > (g.opponent_score ?? 0);
-    const kind = w ? 'W' : 'L';
+    const kind = games[i].result;
     if (streakKind === null) { streakKind = kind; streakLen = 1; continue; }
     if (kind === streakKind) streakLen += 1; else break;
   }
