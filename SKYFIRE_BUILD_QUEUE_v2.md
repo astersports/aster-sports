@@ -1163,3 +1163,11 @@ Migration 028 LOCKED + DEPLOYED + VERIFIED. Parent role now matches D-roster1 sp
 - Hook now: signature useTeamRecords(teamId) — orgId param dropped
 - Query: nested events!inner join, foreignTable order-by, result text W/L
 - Unblocks Wave 3b (hook wire-up to RecordsPreview)
+
+## Migration 023 — SHIPPED 2026-04-29 23:15 UTC
+- Database: applied via Supabase MCP apply_migration (Apr 29)
+- File: supabase/migrations/023_backfill_opponent_names.sql
+- Commit: b8a456e
+- Verification: 24 opponent NULLs filled, 3 championship finals flagged, post-flight clean
+- Source: records-v14_2.html lines 637-736 (Spring 2026 records page)
+- Unblocks: Wave 3b (real game log data with championship badges)
