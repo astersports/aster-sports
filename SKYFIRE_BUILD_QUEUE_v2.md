@@ -1171,3 +1171,10 @@ Migration 028 LOCKED + DEPLOYED + VERIFIED. Parent role now matches D-roster1 sp
 - Verification: 24 opponent NULLs filled, 3 championship finals flagged, post-flight clean
 - Source: records-v14_2.html lines 637-736 (Spring 2026 records page)
 - Unblocks: Wave 3b (real game log data with championship badges)
+
+## Wave 3b — SHIPPED 2026-04-29 23:25 UTC
+- Files: 2 created (useTeams.js, ChampionshipBadge.jsx), 4 edited (useTeamRecords.js, GameLogRow.jsx, RecordsPreview.jsx, App.jsx, broadcast.css)
+- Commit: 5beeb32
+- Verification: /records-preview now renders live data — 5 team cards with real Spring 2026 records, 11U Girls game log shows real opponents, NY Extreme Black championship final has gold badge
+- Route moved behind <Protected> wrapper (game_results RLS requires authenticated)
+- Unblocks: Wave 3c (per-team filter UI, public /records page with public RLS migration)
