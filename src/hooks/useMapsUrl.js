@@ -10,7 +10,11 @@ const cache = new Map();
 // cached across the session so every NextUpCard on a dashboard doesn't
 // re-query for the same venue.
 export function useMapsUrl(location) {
-  const [url, setUrl] = useState(null);
+  const [url, setUrl] = useState(() => {
+    if (!location || typeof location !== 'string') return null;
+    if (location.startsWith('Tournament -')) return null;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+  });
   useEffect(() => {
     if (!location) return;
     const name = location.replace(/[\u2018\u2019\u2032]/g, "'").split(' - ')[0].split('(')[0].trim();
