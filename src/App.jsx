@@ -49,7 +49,6 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
-      <Route path="/records-preview" element={<RecordsPreview />} />
 
       {/* Authenticated routes */}
       <Route path="/"         element={<Protected><HomePage /></Protected>} />
@@ -62,6 +61,7 @@ export default function App() {
       <Route path="/tournaments/:id" element={<Protected><TournamentDetailPage /></Protected>} />
       <Route path="/messages"        element={<Protected><MessagesPage /></Protected>} />
       <Route path="/account"         element={<Protected><AccountPage /></Protected>} />
+      <Route path="/records-preview" element={<Protected><RecordsPreview /></Protected>} />
 
       {/* Full-screen authenticated routes — auth guard without AppShell chrome */}
       <Route path="/events/:id" element={<RequireAuth><EventDetailPage /></RequireAuth>} />

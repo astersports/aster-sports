@@ -35,7 +35,7 @@ export function useTeamRecords(teamId) {
           result,
           published_at,
           point_differential,
-          event:events!inner ( id, team_id, opponent, start_at )
+          event:events!inner ( id, team_id, opponent, start_at, is_championship_final )
         `)
         .not('published_at', 'is', null)
         .order('start_at', { foreignTable: 'event', ascending: true });

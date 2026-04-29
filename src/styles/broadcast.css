@@ -117,6 +117,51 @@
 .bc-glog-date     { font-size: 12px; color: var(--sf-bc-text-mute); margin-top: 2px; }
 .bc-glog-score    { font-family: var(--sf-bc-display); font-size: 18px; font-weight: 800; color: var(--sf-bc-text); }
 
+.bc-glog-champ {
+  display: inline-block;
+  font-family: var(--sf-bc-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  margin-left: 8px;
+  border-radius: 3px;
+  background: rgba(245,158,11,0.18);
+  border: 1px solid rgba(245,158,11,0.4);
+  color: var(--sf-bc-gold);
+  vertical-align: middle;
+}
+.bc-glog-skeleton {
+  background: linear-gradient(90deg, var(--sf-bc-card-alt), rgba(255,255,255,0.03), var(--sf-bc-card-alt));
+  background-size: 200% 100%;
+  animation: bc-shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+  height: 60px;
+  margin-bottom: 6px;
+}
+.bc-team-skeleton {
+  background: linear-gradient(90deg, var(--sf-bc-card), rgba(255,255,255,0.03), var(--sf-bc-card));
+  background-size: 200% 100%;
+  animation: bc-shimmer 1.4s ease-in-out infinite;
+  border-radius: 10px;
+  height: 140px;
+  margin-bottom: 14px;
+}
+.bc-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--sf-bc-text-mute);
+  font-size: 14px;
+}
+@keyframes bc-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bc-glog-skeleton, .bc-team-skeleton { animation: none; }
+}
+
 /* Section heading inside broadcast pages */
 .bc-sec-eye       { font-family: var(--sf-bc-display); font-size: 14px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sf-bc-cobalt); margin-bottom: 8px; }
 .bc-sec-h2        { font-family: var(--sf-bc-display); font-size: clamp(28px, 5vw, 44px); font-weight: 800; text-transform: uppercase; line-height: 1.05; color: var(--sf-bc-text); margin-bottom: 18px; }
