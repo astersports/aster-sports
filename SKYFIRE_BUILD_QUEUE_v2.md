@@ -1178,3 +1178,15 @@ Migration 028 LOCKED + DEPLOYED + VERIFIED. Parent role now matches D-roster1 sp
 - Verification: /records-preview now renders live data — 5 team cards with real Spring 2026 records, 11U Girls game log shows real opponents, NY Extreme Black championship final has gold badge
 - Route moved behind <Protected> wrapper (game_results RLS requires authenticated)
 - Unblocks: Wave 3c (per-team filter UI, public /records page with public RLS migration)
+
+## Wave 3b.1 — SHIPPED 2026-04-29 23:38 UTC
+- File: src/hooks/useTeamRecords.js (two-line str_replace)
+- Commit: 92198b2
+- Reason: PostgREST/supabase-js requires actual relation name in
+  .eq() and .order({foreignTable}) for embedded resources. Alias
+  only applies to select/response shape. Wave 3b shipped with alias
+  used in filter, returning 0 rows for all team queries.
+- Surfaced: live page testing on /records-preview after Wave 3b
+  deploy showed 0-0 records for every team for both admin and
+  parent accounts.
+- Fix: 'event' → 'events' in two locations
