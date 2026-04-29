@@ -62,6 +62,12 @@ export default function NowSectionParent({ activities = [], loading = false, err
     return out;
   }, [activities, now]);
 
+  const populatedPairs = myTeams
+    .filter((t) => nextByTeam[t.id])
+    .map((t) => ({ team: t, event: nextByTeam[t.id] }))
+    .sort((a, b) => new Date(a.event.start_at) - new Date(b.event.start_at));
+  const emptyTeams = myTeams.filter((t) => !nextByTeam[t.id]);
+
   const teamsWithUpcoming = Object.keys(nextByTeam).length;
   const empty = !loading && !error && (
     myTeams.length === 0
@@ -82,20 +88,19 @@ export default function NowSectionParent({ activities = [], loading = false, err
       skeletonVariant="card"
       skeletonRows={1}
     >
-      {myTeams.map((t) =>
-        nextByTeam[t.id] ? (
-          <NextUpCard
-            key={t.id}
-            event={nextByTeam[t.id]}
-            rsvpCount={rsvpCounts[nextByTeam[t.id].id]}
-            rideCount={rideCounts[nextByTeam[t.id].id]}
-            dutyCount={dutyCounts[nextByTeam[t.id].id]}
-            density={density}
-          />
-        ) : (
-          <EmptyLine key={t.id}>No upcoming events for {t.name}</EmptyLine>
-        )
-      )}
+      {populatedPairs.map(({ event }) => (
+        <NextUpCard
+          key={event.id}
+          event={event}
+          rsvpCount={rsvpCounts[event.id]}
+          rideCount={rideCounts[event.id]}
+          dutyCount={dutyCounts[event.id]}
+          density={density}
+        />
+      ))}
+      {emptyTeams.map((t) => (
+        <EmptyLine key={t.id}>No upcoming events for {t.name}</EmptyLine>
+      ))}
     </SectionShell>
   );
 }

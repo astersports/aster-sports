@@ -12,7 +12,7 @@ import ChildRsvp from './ChildRsvp';
 const urgencyClass = (s) =>
   s < 3600 ? 'sf-urgency-1h' : s < 21600 ? 'sf-urgency-6h' : s < 86400 ? 'sf-urgency-24h' : '';
 
-export default function NextUpCardMin({ event }) {
+export default function NextUpCardMin({ event, rsvpCount }) {
   const navigate = useNavigate();
   const now = useNow();
   const { myChildren } = useAuth();
@@ -44,8 +44,12 @@ export default function NextUpCardMin({ event }) {
         <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
           {teamName} {typeLabel}
         </div>
-        {childOnTeam && (
+        {childOnTeam ? (
           <ChildRsvp child={childOnTeam} eventId={event.id} compact={true} />
+        ) : (
+          <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
+            {rsvpCount ? `${rsvpCount.going} going · ${rsvpCount.noResponse} no response` : 'RSVP status pending'}
+          </div>
         )}
       </div>
     </div>
