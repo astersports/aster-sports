@@ -33,12 +33,10 @@ export function useComments(eventId) {
   const post = async (body) => {
     const trimmed = body.trim();
     if (!trimmed) return false;
-    const emailLocal = (user?.email || '').split('@')[0];
-    const fallbackName = emailLocal ? emailLocal.charAt(0).toUpperCase() + emailLocal.slice(1) : 'User';
     const authorName = guardianFirstName
       || user?.user_metadata?.full_name
       || user?.user_metadata?.name
-      || fallbackName;
+      || 'Anonymous';
     const { error } = await supabase.from('event_comments').insert({
       event_id: eventId,
       body: trimmed,

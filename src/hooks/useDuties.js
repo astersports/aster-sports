@@ -8,7 +8,7 @@ import { useToast } from '../context/useToast';
 // A "Scorekeeper x 2" duty is inserted as 2 rows with the same duty_name,
 // each independently claimable (see useCreateActivity).
 export function useDuties(eventId) {
-  const { user, guardianId } = useAuth();
+  const { user, guardianId, guardianFirstName } = useAuth();
   const { showToast } = useToast();
   const [duties, setDuties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export function useDuties(eventId) {
   useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
 
   const claim = async (dutyId) => {
-    const authorName = user?.user_metadata?.full_name || user?.email || 'User';
+    const authorName = guardianFirstName || user?.user_metadata?.full_name || 'Volunteer';
     const { error } = await supabase.from('event_duties')
       .update({ guardian_id: guardianId ?? null, claimed_by_name: authorName, claimed_at: new Date().toISOString() })
       .eq('id', dutyId).is('guardian_id', null);
