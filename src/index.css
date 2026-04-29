@@ -194,6 +194,13 @@ body {
 .sf-press { transition: transform 200ms ease-out; }
 .sf-press:active { transform: scale(0.97); }
 
+/* Countdown urgency colors per HOME_DESIGN_SPEC §1.1.4 lines 299-303.
+ * Default (24h+) is the org accent; <24h muted; <6h success; <1h danger. */
+.sf-countdown    { color: var(--em-accent); }
+.sf-urgency-24h  { color: var(--em-text-tertiary); }
+.sf-urgency-6h   { color: var(--em-success); }
+.sf-urgency-1h   { color: var(--em-danger); }
+
 /* Hide native scrollbars on horizontal scrollers (day strip, pill rows). */
 .sf-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .sf-no-scrollbar::-webkit-scrollbar { display: none; }

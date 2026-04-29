@@ -18,6 +18,7 @@ import { useEventRsvpCounts } from '../../hooks/useEventRsvpCounts';
 import { useEventRideCounts } from '../../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../../hooks/useEventDutyCounts';
 import { useNow } from '../../hooks/useNow';
+import { useDensity } from '../../hooks/useDensity';
 
 const SECTION_KEY = 'parent-now';
 
@@ -31,6 +32,7 @@ function EmptyLine({ children }) {
 
 export default function NowSectionParent({ activities = [], loading = false, error = null }) {
   const now = useNow();
+  const { density } = useDensity(SECTION_KEY);
   const rsvpCounts = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
   const dutyCounts = useEventDutyCounts(activities);
@@ -88,6 +90,7 @@ export default function NowSectionParent({ activities = [], loading = false, err
             rsvpCount={rsvpCounts[nextByTeam[t.id].id]}
             rideCount={rideCounts[nextByTeam[t.id].id]}
             dutyCount={dutyCounts[nextByTeam[t.id].id]}
+            density={density}
           />
         ) : (
           <EmptyLine key={t.id}>No upcoming events for {t.name}</EmptyLine>
