@@ -57,7 +57,7 @@ export default function NextUpCardMed({ event, rsvpCount, rideCount, dutyCount, 
       }}
     >
       <div
-        onClick={() => navigate(`/events/${event.id}`, { state: { event } })}
+        onClick={(e) => { if (e.target.closest('a, button, [role="link"], [role="button"]')) return; navigate(`/events/${event.id}`, { state: { event } }); }}
         style={{ display: 'flex', cursor: 'pointer' }}
       >
         <div style={{ width: 4, backgroundColor: teamColor, flexShrink: 0 }} />
@@ -90,12 +90,12 @@ export default function NextUpCardMed({ event, rsvpCount, rideCount, dutyCount, 
           <WhenRow event={event} />
           {event.location && (
             directionsUrl && !isPlaceholderLocation ? (
-              <button type="button" onClick={(e) => { e.stopPropagation(); window.open(directionsUrl, '_blank', 'noopener,noreferrer'); }}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
+              <a href={directionsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8, textDecoration: 'none' }}>
                 <MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />
                 <span style={{ color: 'var(--em-text-secondary)' }}>{event.location}</span>
                 <ExternalLink size={10} strokeWidth={1.75} color="var(--em-text-tertiary)" />
-              </button>
+              </a>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2, marginBottom: 8 }}>
                 <MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />
