@@ -46,10 +46,11 @@ export default function EventDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    if (searchParams.get('tab') === 'rsvps' && !rsvpLoading && roster.length > 0) {
-      const el = document.querySelector('[data-section="rsvps"]');
-      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
-    }
+    const tab = searchParams.get('tab');
+    if (!tab) return;
+    if (tab === 'rsvps' && (rsvpLoading || roster.length === 0)) return;
+    const el = document.querySelector(`[data-section="${tab}"]`);
+    if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
   }, [searchParams, rsvpLoading, roster.length]);
 
   if (eventLoading) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100dvh' }} />;
@@ -126,9 +127,9 @@ export default function EventDetailPage() {
       <SectionHeader sectionKey="rsvps">RSVPs</SectionHeader>
       <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} />
 
-      {dutyCount > 0 && (<><SectionHeader>Volunteers</SectionHeader><EventDutiesTab eventId={event.id} /></>)}
+      {dutyCount > 0 && (<><SectionHeader sectionKey="duties">Volunteers</SectionHeader><EventDutiesTab eventId={event.id} /></>)}
 
-      <SectionHeader>Rides</SectionHeader>
+      <SectionHeader sectionKey="rides">Rides</SectionHeader>
       <EventRidesTab event={event} />
 
       {(event.notes || event.coach_notes) && (

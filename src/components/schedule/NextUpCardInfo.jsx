@@ -12,12 +12,12 @@ export function WhenRow({ event }) {
   );
 }
 
-export function GameInfo({ event }) {
+export function GameInfo({ event, skipArrival = false }) {
   const isGame = event.event_type === 'game' || event.event_type === 'tournament';
   const showJerseyOrChip = isGame && (event.jersey || (event.home_away && event.home_away !== 'tbd'));
   return (
     <>
-      {event.arrival_minutes_before > 0 && (
+      {!skipArrival && event.arrival_minutes_before > 0 && (
         <div style={{ fontSize: 12, color: 'var(--em-warning)', fontWeight: 500, marginTop: 2 }}>
           Arrive {event.arrival_minutes_before} min early
         </div>

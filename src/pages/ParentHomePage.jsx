@@ -4,12 +4,16 @@ import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
-import CompactCard from '../components/schedule/CompactCard';
+import { useEventRideCounts } from '../hooks/useEventRideCounts';
+import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
+import { useChildRsvpsForEvents } from '../hooks/useChildRsvpsForEvents';
+import ThisWeekRow from '../components/schedule/ThisWeekRow';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
 import NowSectionParent from '../components/home/NowSectionParent';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
+import { detectConflicts } from '../lib/conflicts';
 
 function firstNameFrom(user) {
   const f = (user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || '').split(/[\s.@]/)[0];
@@ -45,14 +49,15 @@ export default function ParentHomePage() {
   }, [activities]);
 
   const nextEventOverall = activities.find((a) => a.start_at && a.status !== 'cancelled' && new Date(a.start_at).getTime() >= now) || null;
+  const todayStart = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }, []);
   const thisWeek = useMemo(() => activities
     .filter((a) => {
-      if (!a.start_at || a.status === 'cancelled') return false;
+      if (!a.start_at) return false;
       const t = new Date(a.start_at).getTime();
-      return t >= now && t <= weekEnd;
+      return t >= todayStart && t <= weekEnd;
     })
     .sort((a, b) => new Date(a.start_at) - new Date(b.start_at)),
-    [activities, now, weekEnd]);
+    [activities, todayStart, weekEnd]);
 
   const filteredThisWeek = useMemo(() => {
     if (!activeKidFilter) return thisWeek;
@@ -61,6 +66,22 @@ export default function ParentHomePage() {
     if (!teamId) return thisWeek;
     return thisWeek.filter((e) => e.team_id === teamId);
   }, [thisWeek, activeKidFilter, myChildren]);
+
+  const rideCounts = useEventRideCounts(filteredThisWeek);
+  const dutyCounts = useEventDutyCounts(filteredThisWeek);
+  const childRsvpsByEvent = useChildRsvpsForEvents(filteredThisWeek, myChildren);
+  const conflictsByEvent = useMemo(() => detectConflicts(filteredThisWeek), [filteredThisWeek]);
+
+  const [collapsedDates, setCollapsedDates] = useState(() => new Map());
+  const dayMs = 24 * 60 * 60 * 1000;
+  const isCollapsed = (dateStr) => {
+    if (collapsedDates.has(dateStr)) return collapsedDates.get(dateStr);
+    const d = new Date(dateStr + 'T12:00:00').getTime();
+    return Math.floor((d - todayStart) / dayMs) > 2;
+  };
+  const toggleCollapse = (dateStr) => setCollapsedDates((prev) => {
+    const next = new Map(prev); next.set(dateStr, !isCollapsed(dateStr)); return next;
+  });
 
   if (loading) return <div style={{ padding: 24, color: 'var(--em-text-tertiary)' }}>Loading...</div>;
 
@@ -89,16 +110,29 @@ export default function ParentHomePage() {
           activeFilter={activeKidFilter}
           onChange={setActiveKidFilter}
         />
-        {filteredThisWeek.length > 0 ? groupByDate(filteredThisWeek).map(([date, evts]) => (
-          <div key={date}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--em-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
-              {formatDateHeader(date)}
+        {filteredThisWeek.length > 0 ? groupByDate(filteredThisWeek).map(([date, evts]) => {
+          const collapsed = isCollapsed(date);
+          return (
+            <div key={date} style={{ marginTop: 12 }}>
+              <button type="button" onClick={() => toggleCollapse(date)} className="sf-press"
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '4px 0', minHeight: 32, background: 'none', border: 'none', cursor: 'pointer' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{formatDateHeader(date)}</span>
+                {collapsed && <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{evts.length} event{evts.length !== 1 ? 's' : ''}</span>}
+              </button>
+              <div className="sf-collapsible" data-open={collapsed ? 'false' : 'true'}>
+                <div className="sf-collapsible-inner">
+                  <div className="flex flex-col gap-2" style={{ paddingTop: 6 }}>
+                    {evts.map((e) => (
+                      <ThisWeekRow key={e.id} event={e}
+                        rideCount={rideCounts[e.id]} dutyCount={dutyCounts[e.id]}
+                        childRsvps={childRsvpsByEvent[e.id]} conflictWith={conflictsByEvent[e.id]} />
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-col gap-2">
-              {evts.map((e) => <CompactCard key={e.id} event={e} />)}
-            </div>
-          </div>
-        )) : (
+          );
+        }) : (
           <TextEmptyState heading="Nothing this week" message={nextEventOverall ? `Your next event is ${new Date(nextEventOverall.start_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}` : 'No upcoming events scheduled'} />
         )}
       </section>

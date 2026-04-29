@@ -10,13 +10,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useMapsUrl } from '../../hooks/useMapsUrl';
 import { useNow } from '../../hooks/useNow';
 import ChildRsvp from './ChildRsvp';
+import { urgencyClass } from '../../lib/urgency';
 
-const urgencyClass = (secondsUntil) => {
-  if (secondsUntil < 3600) return 'sf-urgency-1h';
-  if (secondsUntil < 21600) return 'sf-urgency-6h';
-  if (secondsUntil < 86400) return 'sf-urgency-24h';
-  return '';
-};
 export default function NextUpCardMed({ event, rsvpCount, rideCount, dutyCount, onRefresh }) {
   const navigate = useNavigate();
   const { role, myChildren } = useAuth();
@@ -45,7 +40,11 @@ export default function NextUpCardMed({ event, rsvpCount, rideCount, dutyCount, 
 
   const teamColor = event.teams?.team_color || event.team_color || 'var(--em-text-tertiary)';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
-  const isTitleRedundant = (event.title || '').trim().toLowerCase() === (typeLabel || '').trim().toLowerCase();
+  const teamName = event.teams?.name || event.team_name || '';
+  const titleNorm = (event.title || '').trim().toLowerCase();
+  const typeLabelNorm = (typeLabel || '').trim().toLowerCase();
+  const teamPlusType = `${teamName} ${typeLabel || ''}`.trim().toLowerCase();
+  const isTitleRedundant = titleNorm === typeLabelNorm || titleNorm === teamPlusType;
   const secondsUntil = (new Date(event.start_at).getTime() - now) / 1000;
   const imminent = secondsUntil > 0 && secondsUntil < 7200;
 
@@ -116,7 +115,7 @@ export default function NextUpCardMed({ event, rsvpCount, rideCount, dutyCount, 
               <span style={{ fontWeight: 600 }}>Notes: </span>{event.notes}
             </div>
           )}
-          <GameInfo event={event} />
+          <GameInfo event={event} skipArrival={!!event.notes} />
           <NextUpCardRsvpSection eventId={event.id} rsvpCount={rsvpCount} />
           <NextUpCardStatusRow rideCount={rideCount} dutyCount={dutyCount} />
         </div>

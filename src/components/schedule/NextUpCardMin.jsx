@@ -8,9 +8,7 @@ import { formatCountdown, formatTime } from '../../lib/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { useNow } from '../../hooks/useNow';
 import ChildRsvp from './ChildRsvp';
-
-const urgencyClass = (s) =>
-  s < 3600 ? 'sf-urgency-1h' : s < 21600 ? 'sf-urgency-6h' : s < 86400 ? 'sf-urgency-24h' : '';
+import { urgencyClass } from '../../lib/urgency';
 
 export default function NextUpCardMin({ event, rsvpCount }) {
   const navigate = useNavigate();
