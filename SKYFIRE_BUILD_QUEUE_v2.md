@@ -1146,3 +1146,10 @@ current_user_teammate_player_ids() SECURITY DEFINER returning uuid[]. Mirrors th
 ## Status
 
 Migration 028 LOCKED + DEPLOYED + VERIFIED. Parent role now matches D-roster1 spec. Ready to start Sprint A.2 next session.
+
+## Wave 3a — SHIPPED 2026-04-29 22:15 UTC
+- Files: 9 created (broadcast/* + RecordsPreview), 3 edited (main.jsx, App.jsx, constants.js)
+- Commit: 3261495
+- Verification: /records-preview matches records-v14_2.html side-by-side
+- Council patches applied: 6/6 (constants move, hero ghost word + glow, dangerouslySetInnerHTML pin, role=row drop, SQL pre-check, build queue auto-update)
+- Next: Wave 3b — wire useTeamRecords into RecordsPreview, replace fixtures
