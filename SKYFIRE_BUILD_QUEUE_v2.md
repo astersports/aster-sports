@@ -1213,3 +1213,32 @@ Migration 028 LOCKED + DEPLOYED + VERIFIED. Parent role now matches D-roster1 sp
 - Verification: 3 new public RLS policies registered (teams_select_public, events_select_public, game_results_select_public). 5 teams + 27 events + 27 published game_results visible to anon for Legacy Hoopers org.
 - Pattern: Hardcoded Legacy Hoopers org_id in policies. TODO: refactor to URL-based scoping when 2nd org joins.
 - Unblocks: Wave 3c-b (per-team filter UI), Wave 3c-c (tournament timeline rebuild against clean tournament data from Migration 026)
+
+## Apr 30, 2026 UTC — Wave 3c-a: Public /records page
+
+**Shipped:** Anonymous + authenticated visitors can now access `/records` at https://skyfire-app.vercel.app/records without login. Team records cards, stats hero bar, and game log all pull live data from Supabase. Tournament timeline section still hardcoded — Wave 3c-a.1 queued to wire it to the live `tournament_teams` join table.
+
+**Migrations applied via Supabase MCP, mirrored to repo this commit:**
+- `025_public_rls_for_records_page.sql` — added `teams_select_public`, `events_select_public`, `game_results_select_public` scoped to Legacy Hoopers org_id
+- `027_hotfix_legacy_rls_restrict_to_authenticated.sql` — restricted 11 legacy policies (`teams_select`, `events_select`, `events_insert`, `locations_select`, `opponents_select`, `seasons_select`, `team_players_select`, `team_staff_select`, `location_rooms_org_isolation`, `ride_offers_select`, `ride_offers_insert`) from `{public}` to `{authenticated}`. Fixed anon hitting `current_user_org_id()` permission error.
+- `028_break_records_rls_cycle.sql` — dropped + recreated `events_select_public` and `game_results_select_public` without cross-table references. Fixed RLS infinite recursion under anon evaluation.
+- `029_public_rls_for_tournaments.sql` — added `tournaments_select_public` for /records timeline section.
+- `030_backfill_tournament_teams.sql` — backfilled 3 missing NY Metro Showdown rows + populated `final_place` (Champions/Finalists) and `final_record_*` for Chase for the Chain. 15 rows total across 7 tournaments.
+
+**Files this commit:**
+- supabase/migrations/025_public_rls_for_records_page.sql (overwrite)
+- supabase/migrations/027_hotfix_legacy_rls_restrict_to_authenticated.sql (new)
+- supabase/migrations/028_break_records_rls_cycle.sql (new)
+- supabase/migrations/029_public_rls_for_tournaments.sql (new)
+- supabase/migrations/030_backfill_tournament_teams.sql (new)
+- SKYFIRE_BUILD_QUEUE_v2.md (this entry)
+
+**Evidence:**
+- Anon SELECT verified via Supabase MCP: 5 teams, 140 events, 27 published game_results, 7 tournaments, 15 tournament_teams rows visible
+- Production /records confirmed loading in incognito with real team records: 11U Girls 5-2, 10U Black 5-4, 10U Blue 1-1, 9U Boys 0-1, 8U Boys 3-5
+- 11U Girls game log shows Migration 023 backfilled opponents (Level Up, Showtime Elite, NY Extreme Black ×2 incl championship, Palisades Elite, NY Gauchos, Rockland Spartans Maroon)
+
+**Known incomplete:**
+- Tournament timeline section in `RecordsPreview.jsx` is still hardcoded (lifted from `records-v14_2.html`). Live page shows 4 rows; database has 7. Wave 3c-a.1 queued to rebuild against `tournament_teams` join.
+
+**Next-wave unlock:** Wave 3c-a.1 (tournament timeline live data wire-up via `useTournaments` hook + `tournament_teams` join), Wave 3c-b (per-team filter UI), Wave 3c-c (any remaining polish).
