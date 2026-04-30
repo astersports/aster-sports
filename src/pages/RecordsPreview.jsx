@@ -6,8 +6,10 @@ import TournamentCard from '../components/broadcast/TournamentCard';
 import GameLogRow from '../components/broadcast/GameLogRow';
 import { useTeams } from '../hooks/useTeams';
 import { useTeamRecords } from '../hooks/useTeamRecords';
+import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { usePublicTournaments } from '../hooks/usePublicTournaments';
 import { useLastPublishedAt } from '../hooks/useLastPublishedAt';
+import { EMPTY_SUMMARY } from '../lib/teamRecords';
 import { LEGACY_HOOPERS_ORG_ID } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 
@@ -26,6 +28,7 @@ function formatGameDate(iso) {
 export default function RecordsPreview() {
   const { loading: teamsLoading, error: teamsError, teams } = useTeams(LEGACY_HOOPERS_ORG_ID);
   const { data: tournaments, loading: tournamentsLoading, error: tournamentsError } = usePublicTournaments(LEGACY_HOOPERS_ORG_ID);
+  const { byTeamId: recordsByTeam } = useOrgTeamRecords(LEGACY_HOOPERS_ORG_ID);
   const { lastPublishedAt } = useLastPublishedAt();
   const lastUpdated = lastPublishedAt
     ? new Date(lastPublishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })
@@ -81,7 +84,7 @@ export default function RecordsPreview() {
           {teamsError && <div className="bc-empty">Could not load teams. {teamsError.message}</div>}
           {teamsLoading && Array.from({ length: 5 }).map((_, i) => <div key={i} className="bc-team-skeleton" />)}
           {!teamsLoading && !teamsError && teams.map((team, idx) => (
-            <TeamCardWithStats key={team.id} team={team} number={idx + 1} />
+            <TeamCardWithStats key={team.id} team={team} number={idx + 1} summary={recordsByTeam[team.id]} />
           ))}
         </section>
 
@@ -106,17 +109,17 @@ export default function RecordsPreview() {
   );
 }
 
-function TeamCardWithStats({ team, number }) {
-  const { summary } = useTeamRecords(team.id);
+function TeamCardWithStats({ team, number, summary }) {
+  const s = summary || EMPTY_SUMMARY;
   return (
     <TeamIdentityCard
       number={number}
       name={team.name}
       meta={buildTeamMeta(team)}
       teamColor={team.team_color}
-      record={summary.record}
-      streak={summary.streak}
-      stats={summary}
+      record={s.record}
+      streak={s.streak}
+      stats={s}
     />
   );
 }

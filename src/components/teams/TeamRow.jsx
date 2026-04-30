@@ -1,18 +1,16 @@
-// Single team row on /teams. Hook lives here so each row fetches its
-// own summary independently — same N+1 pattern as MY TEAMS strip and
-// /records SEASON SNAPSHOT cards. Bundled fix coming in 3d-f via
-// useOrgTeamRecords.
+// Single team row on /teams. Presentational — `summary` (or null while
+// loading) flows in from TeamsPage, which calls useOrgTeamRecords once.
 import { useNavigate } from 'react-router-dom';
-import { useTeamRecords } from '../../hooks/useTeamRecords';
+import { EMPTY_SUMMARY } from '../../lib/teamRecords';
 
 const CIRCUIT_LABELS = { aau: 'AAU', league_play: 'League Play', tournament: 'Tournament' };
 
-export default function TeamRow({ team, idx }) {
+export default function TeamRow({ team, idx, summary, loading }) {
   const navigate = useNavigate();
-  const { summary, loading } = useTeamRecords(team.id);
+  const s = summary || EMPTY_SUMMARY;
   const recordLine = loading
     ? '—'
-    : (summary.streak === '—' ? summary.record : `${summary.record} · ${summary.streak}`);
+    : (s.streak === '—' ? s.record : `${s.record} · ${s.streak}`);
 
   return (
     <button

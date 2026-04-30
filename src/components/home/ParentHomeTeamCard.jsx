@@ -1,14 +1,15 @@
 // Horizontal team pill rendered in the MY TEAMS carousel on ParentHomePage.
 // The colored left stripe uses team.team_color so each team stays
-// visually keyed to its identity across the app. Record + streak
-// pulled live from useTeamRecords (same hook the /records page uses).
-import { useTeamRecords } from '../../hooks/useTeamRecords';
+// visually keyed to its identity across the app. Presentational —
+// `summary` (or null while loading) is passed in by the parent, which
+// calls useOrgTeamRecords once for all team cards.
+import { EMPTY_SUMMARY } from '../../lib/teamRecords';
 
-export default function ParentHomeTeamCard({ team, onClick }) {
-  const { summary, loading } = useTeamRecords(team.id);
+export default function ParentHomeTeamCard({ team, summary, loading, onClick }) {
+  const s = summary || EMPTY_SUMMARY;
   const recordLine = loading
     ? '—'
-    : (summary.streak === '—' ? summary.record : `${summary.record} · ${summary.streak}`);
+    : (s.streak === '—' ? s.record : `${s.record} · ${s.streak}`);
   return (
     <button type="button" onClick={onClick} className="sf-press"
       style={{

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { computeSummary } from '../lib/teamRecords';
 
 /**
  * Reads published game_results for a team via events join.
@@ -64,39 +65,3 @@ export function useTeamRecords(teamId) {
   return { loading, error, games, summary };
 }
 
-function computeSummary(games) {
-  const n = games.length;
-  if (n === 0) return { record: '0-0', ties: 0, streak: '—', ppg: 0, allowed: 0, diff: 0, winPct: 0, gamesPlayed: 0 };
-
-  let wins = 0, losses = 0, ties = 0, pf = 0, pa = 0;
-  for (const g of games) {
-    pf += Number(g.our_score) || 0;
-    pa += Number(g.opponent_score) || 0;
-    if (g.result === 'W') wins += 1;
-    else if (g.result === 'L') losses += 1;
-    else if (g.result === 'T') ties += 1;
-    // null / void / anything else: skip silently rather than miscount
-  }
-
-  // Walk newest → oldest. A T (or any non-W/L) breaks the streak entirely.
-  let streakKind = null, streakLen = 0;
-  for (let i = games.length - 1; i >= 0; i -= 1) {
-    const kind = games[i].result;
-    if (kind !== 'W' && kind !== 'L') break;
-    if (streakKind === null) { streakKind = kind; streakLen = 1; continue; }
-    if (kind === streakKind) streakLen += 1; else break;
-  }
-
-  const ppg     = +(pf / n).toFixed(1);
-  const allowed = +(pa / n).toFixed(1);
-  const diff    = +((pf - pa) / n).toFixed(1);
-  const winPct  = Math.round((wins / n) * 100);
-
-  return {
-    record: ties > 0 ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`,
-    ties,
-    streak: streakKind ? `${streakKind}${streakLen}` : '—',
-    ppg, allowed, diff, winPct,
-    gamesPlayed: n,
-  };
-}

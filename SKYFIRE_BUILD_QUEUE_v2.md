@@ -1696,3 +1696,70 @@ NowSectionParent's existing `loading={loading && myTeams.length === 0}` mask pas
 - NowSectionParent loading-mask cleanup so background-refresh pulsing dot fires — added to 3d-g.
 
 **Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Five tracked files in this commit (4 modified + the build queue).
+
+## Apr 30, 2026 UTC — Wave 3d-f: N+1 collapse via useOrgTeamRecords
+
+**Shipped:** Three N+1 query surfaces collapsed into single-query consumption. Same data, same rendered shape, fewer round-trips.
+
+**Before:** 5 teams × 3 surfaces = up to 15 round-trips on a fully-loaded session (parent home MY TEAMS strip → /teams list → /records SEASON SNAPSHOT).
+**After:** 1 round-trip per surface = 3 total. Each surface caches independently.
+
+### Architecture
+
+- **`src/lib/teamRecords.js` (NEW, 57 lines)** — extracted `computeSummary` from `useTeamRecords` plus `EMPTY_SUMMARY` const for placeholder-state defaults. Single source of truth for the W/L/T branching, streak walk, record formatting, and empty-state shape.
+- **`src/hooks/useOrgTeamRecords.js` (NEW, 66 lines)** — fetches every published `game_results` row for an org via the `events!inner(team_id, teams!inner(org_id))` join chain in one round-trip, groups by `team_id` in JS, returns `{ byTeamId, loading, error }`. RLS chain matches Migrations 025/028 public-readable pattern, so this works for both anon `/records` and authenticated org-internal callers.
+- **`src/hooks/useTeamRecords.js`** — retained for single-team consumers. Now imports `computeSummary` from the shared lib (102 → 67 lines after the extract).
+
+**Single-query verified via MCP:** `27 rows across 5 distinct teams` for Legacy Hoopers (matches yesterday's W=14, L=13, T=0 production sample). Join chain produces correct cardinality.
+
+### Call site swaps
+
+**ParentHomePage + MY TEAMS strip:**
+- ParentHomePage now calls `useOrgTeamRecords(orgId)` once.
+- **MY TEAMS section extracted into `src/components/home/MyTeamsStrip.jsx` (NEW, 27 lines)** — page was at the 150-line cap; extracting net-saved ~5 lines so the new hook destructure + strip prop fit cleanly. Page lands back at 150 exactly.
+- `ParentHomeTeamCard.jsx` is now presentational (28 lines, was 27 — added `summary` + `loading` props, dropped hook call).
+
+**TeamsPage + TeamRow:**
+- TeamsPage now calls `useOrgTeamRecords(orgId)` once, passes `summary={byTeamId[team.id]}` to each `<TeamRow>`.
+- `TeamRow` is presentational (86 lines, was 88 — accepts `summary` + `loading` props, dropped `useTeamRecords` import + hook call).
+
+**RecordsPreview + TeamCardWithStats:**
+- RecordsPreview now calls `useOrgTeamRecords(LEGACY_HOOPERS_ORG_ID)` once and passes `summary={recordsByTeam[team.id]}` into each `<TeamCardWithStats>`.
+- `TeamCardWithStats` (private to the page) defaults missing summaries to `EMPTY_SUMMARY` so a team with zero published results still renders a `0-0` card — same shape it would have produced before via the per-team hook's empty branch.
+- `useTeamRecords(featured.id)` retained for `<FeaturedGameLog>` — it needs the actual game-list, not just summary.
+
+### TeamDetailPage NOT migrated
+
+Single-team page; no N+1 to solve. Still on `useTeamRecords(teamId)`. (Worth flagging: TeamDetailPage now triggers two queries on load — the page-level useTeamRecords AND the page's TeamHeaderCard surface that uses summary. Same hook, both call. Minor; not worth refactoring inline today.)
+
+### Network observation (logical, not run)
+
+Before this commit, opening `/records` (5 teams) issued 5 separate `game_results` queries (one per `<TeamCardWithStats>`) plus 1 for `useTeamRecords(featured.id)` plus 1 for the totalGames count = ~7 queries against `game_results`. After this commit: 1 `useOrgTeamRecords` + 1 `useTeamRecords(featured)` + 1 totalGames = 3 queries. Same on parent home MY TEAMS strip (was 5, now 1) and `/teams` (was 5, now 1).
+
+### Files this commit
+
+- `src/lib/teamRecords.js` (NEW, 57 lines)
+- `src/hooks/useOrgTeamRecords.js` (NEW, 66 lines)
+- `src/components/home/MyTeamsStrip.jsx` (NEW, 27 lines)
+- `src/hooks/useTeamRecords.js` (67 lines, was 102 — `computeSummary` moved to shared lib)
+- `src/components/home/ParentHomeTeamCard.jsx` (28 lines, was 27 — presentational)
+- `src/components/teams/TeamRow.jsx` (86 lines, was 88 — presentational)
+- `src/pages/ParentHomePage.jsx` (150 lines, was 150 — strip extracted, new hook wired; net wash on lines)
+- `src/pages/TeamsPage.jsx` (63 lines, was 61 — new hook wired)
+- `src/pages/RecordsPreview.jsx` (147 lines, was 144 — new hook + EMPTY_SUMMARY default in TeamCardWithStats)
+- `SKYFIRE_BUILD_QUEUE_v2.md` (this entry)
+
+### Structural surprises during inspection
+
+- **Sub-component extraction was needed for ParentHomePage.** The page was at the 150-line cap from prior commits. The MY TEAMS strip was 8 lines of inline JSX; extracting it to `MyTeamsStrip.jsx` net-saved ~5 lines, exactly the room needed for the new `useOrgTeamRecords` destructure. Without the extract the page would have overflowed — the prompt anticipated this.
+- **`AuthContext` already exposed `orgId`.** No context change needed; just had to add `orgId` to the destructure on each consuming page (ParentHomePage and TeamsPage). RecordsPreview uses the hardcoded `LEGACY_HOOPERS_ORG_ID` constant (per the multi-tenant deferral in the records review).
+- **TeamRow's `idx` prop** stays for the `sf-stagger-${idx + 1}` className but is unused for any data purpose now. Kept as-is to preserve the staggered fade-in animation.
+
+### Wave 3d sequence
+
+- 3d-i through 3d-e: ✓ shipped
+- 3d-f: ✓ this commit
+- 3d-g: Polish bundle (filter-aware empty state, titleCount, skeleton initial load, `formatGameDate` + `formatDiff` consolidation, tournament card placement+record, `formatRelativeTime` wrapping `useLastPublishedAt`, NowSectionParent loading-mask cleanup, NEXT 48 HOURS error rendering)
+- 3d-h: /schedule forward-week scrolling
+
+**Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Ten tracked files in this commit (3 new + 6 modified + the build queue).

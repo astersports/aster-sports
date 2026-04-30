@@ -3,6 +3,7 @@ import { usePrograms } from '../hooks/usePrograms';
 import { useSeason } from '../context/SeasonContext';
 import { useAuth } from '../context/AuthContext';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import TeamRow from '../components/teams/TeamRow';
@@ -13,8 +14,9 @@ import TeamRow from '../components/teams/TeamRow';
 // /teams/:teamId where the roster lives.
 export default function TeamsPage() {
   const { activeSeason } = useSeason();
-  const { role, myTeamIds } = useAuth();
+  const { role, myTeamIds, orgId } = useAuth();
   const { programs, loading, refetch } = usePrograms();
+  const { byTeamId, loading: recordsLoading } = useOrgTeamRecords(orgId);
   const { refreshing, onTouchStart, onTouchEnd } = usePullToRefresh(() => refetch?.());
   const visiblePrograms = role === 'parent' ? programs.filter((t) => (myTeamIds || []).includes(t.id)) : programs;
 
@@ -52,7 +54,7 @@ export default function TeamsPage() {
       ) : (
         <div className="flex flex-col gap-3">
           {visiblePrograms.map((team, i) => (
-            <TeamRow key={team.id} team={team} idx={i} />
+            <TeamRow key={team.id} team={team} idx={i} summary={byTeamId[team.id]} loading={recordsLoading} />
           ))}
         </div>
       )}

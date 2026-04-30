@@ -6,9 +6,10 @@ import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
+import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import ThisWeekRow from '../components/schedule/ThisWeekRow';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
-import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
+import MyTeamsStrip from '../components/home/MyTeamsStrip';
 import NowSectionParent from '../components/home/NowSectionParent';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
@@ -25,8 +26,9 @@ function greetingFor() {
 }
 
 export default function ParentHomePage() {
-  const { user, guardianFirstName, myChildren } = useAuth();
+  const { user, guardianFirstName, myChildren, orgId } = useAuth();
   const { activities, loading, error, refetch } = useActivities();
+  const { byTeamId: recordsByTeam, loading: recordsLoading } = useOrgTeamRecords(orgId);
   const navigate = useNavigate();
   const [activeKidFilter, setActiveKidFilter] = useState(null);
   const name = guardianFirstName ? guardianFirstName.charAt(0).toUpperCase() + guardianFirstName.slice(1) : firstNameFrom(user);
@@ -95,14 +97,12 @@ export default function ParentHomePage() {
 
       <NowSectionParent activities={activities} loading={loading} error={error} onRetry={refetch} />
 
-      {myTeams.length > 0 && (
-        <section>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>MY TEAMS</div>
-          <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 6 }}>
-            {myTeams.map((t) => <ParentHomeTeamCard key={t.id} team={t} onClick={() => navigate(`/schedule?team=${t.id}`)} />)}
-          </div>
-        </section>
-      )}
+      <MyTeamsStrip
+        teams={myTeams}
+        byTeamId={recordsByTeam}
+        loading={recordsLoading}
+        onSelect={(teamId) => navigate(`/schedule?team=${teamId}`)}
+      />
 
       <button type="button" onClick={() => navigate('/records')} className="sf-press"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px 16px', minHeight: 56, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>
