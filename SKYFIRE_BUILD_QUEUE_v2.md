@@ -1242,3 +1242,32 @@ Migration 028 LOCKED + DEPLOYED + VERIFIED. Parent role now matches D-roster1 sp
 - Tournament timeline section in `RecordsPreview.jsx` is still hardcoded (lifted from `records-v14_2.html`). Live page shows 4 rows; database has 7. Wave 3c-a.1 queued to rebuild against `tournament_teams` join.
 
 **Next-wave unlock:** Wave 3c-a.1 (tournament timeline live data wire-up via `useTournaments` hook + `tournament_teams` join), Wave 3c-b (per-team filter UI), Wave 3c-c (any remaining polish).
+
+## Apr 30, 2026 UTC — Wave 3c-a.1: Tournament timeline live data wire-up
+
+**Shipped:** Tournament timeline section on /records now consumes live data from `tournaments` + `tournament_teams` + `teams`. Replaced hardcoded array (lifted from records-v14_2.html in Wave 3a) with new `usePublicTournaments(orgId)` hook + rewritten `TournamentCard` component. Page now displays all 7 spring tournaments accurately:
+- **Complete** (2): ZG Chase for the Chain NY (11U Girls Champions 4-0, 10U Black Champions 5-0, 8U Boys Finalists 2-2), ZG NY Metro Showdown (11U Girls 1-2, 10U Black 0-4, 8U Boys 1-3)
+- **Up Next** (1): ZG Rumble for the Ring CT (May 16-17)
+- **Upcoming** (4): Girls Nationals (May 29-31), Boys Nationals (Jun 5-7), BBallShootout: Pre Summer Hoops Jam Classic 1 (Jun 6-7), ZG NY Hoop Festival - Season Finale (Jun 13-14)
+
+**Design decisions:**
+- 3 separate cards for the June nationals/shootout slot (DB has them as 3 distinct rows; old reference HTML collapsed them into one).
+- Past tournaments without placement render team name + tournament W-L (e.g. "11U Girls 1-2"), keeping non-championship runs informative.
+- Future tournaments render team color dot + name only. No "Qualified" chip (per-team season-long status, not per-tournament).
+- Status pill: Complete (gold) | Up Next (cobalt + pulse, honors prefers-reduced-motion) | Upcoming (muted).
+
+**Naming deviation from prompt:** prompt called the new hook `useTournaments` but `src/hooks/useTournaments.js` already exists as a 137-line authenticated admin hook (consumed by `TournamentsPage` + `TournamentFormSheet`) with mutations, pagination, caching. To avoid breaking the admin tournaments page, the new public-records hook is named `usePublicTournaments` instead. Same shape and behavior as spec'd.
+
+**Class-prefix deviation from prompt:** prompt's TournamentCard rewrite used `tcard-*` classes; existing convention in broadcast.css is `bc-tourney-*`. Adapted JSX accordingly. Updated existing `.bc-tourney-pill.next` (was green) and `.bc-tourney-pill.complete` (was muted) to match new spec (cobalt+pulse, gold). New classes added: `.bc-tourney-team-dot`, `.bc-tourney-record`, `.bc-tourney-badge.finalists`, plus `@keyframes bc-tourney-pulse` (broadcast-scoped, doesn't count against cockpit `.sf-*` 10-keyframe budget).
+
+**orgId source:** added `LEGACY_HOOPERS_ORG_ID` to `lib/constants.js` (anti-pattern #7 forbids hardcoding outside constants.js). 6th file in this commit, not 5.
+
+**Files this commit:**
+- src/hooks/usePublicTournaments.js (new, 82 lines)
+- src/components/broadcast/TournamentCard.jsx (full rewrite, 80 lines)
+- src/pages/RecordsPreview.jsx (targeted edit: hardcoded array → hook)
+- src/styles/broadcast.css (updated `.bc-tourney-pill` rules + added team-dot/record/finalists/pulse-keyframe)
+- src/lib/constants.js (added LEGACY_HOOPERS_ORG_ID)
+- SKYFIRE_BUILD_QUEUE_v2.md (this entry)
+
+**Next-wave unlock:** Wave 3c-b (per-team filter UI on /records), Wave 4 (communications architecture / parent message system).

@@ -40,6 +40,14 @@ export function buildTitle(type, opponent) {
 }
 
 /**
+ * Single-org pilot constant. Hardcoded to Legacy Hoopers org_id while we
+ * run as a single tenant. Public RLS policies (Migrations 025/029) match
+ * the same UUID. When 2nd org joins (Phase 6+), refactor to URL-based
+ * routing and source from useAuth.orgId.
+ */
+export const LEGACY_HOOPERS_ORG_ID = 'e3e95e21-3571-4e9a-985a-d5d01480d4a6';
+
+/**
  * Spring 2026 production v14 palette. Sourced from records-v14_2.html.
  * Used by broadcast components (left border, badge, record number)
  * and any other surface that displays a team in its identity color.

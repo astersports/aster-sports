@@ -98,14 +98,24 @@
 .bc-tourney-head  { background: linear-gradient(135deg, var(--sf-bc-stat-from), var(--sf-bc-stat-to)); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .bc-tourney-name  { font-family: var(--sf-bc-display); font-size: 17px; font-weight: 800; text-transform: uppercase; color: var(--sf-bc-text); }
 .bc-tourney-date  { font-size: 13px; color: var(--sf-bc-text-soft); margin-top: 2px; }
-.bc-tourney-pill  { font-family: var(--sf-bc-display); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 11px; border-radius: 4px; background: rgba(74,143,212,0.14); border: 1px solid rgba(74,143,212,0.3); color: var(--sf-bc-cobalt); }
-.bc-tourney-pill.next     { background: rgba(34,197,94,0.14); border-color: rgba(34,197,94,0.3); color: var(--sf-bc-green); }
-.bc-tourney-pill.complete { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.18); color: var(--sf-bc-text-soft); }
+.bc-tourney-pill  { font-family: var(--sf-bc-display); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 11px; border-radius: 4px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: var(--sf-bc-text-mute); }
+.bc-tourney-pill.next     { background: rgba(74,143,212,0.15); border-color: rgba(74,143,212,0.4); color: var(--sf-bc-cobalt); animation: bc-tourney-pulse 2s ease-in-out infinite; }
+.bc-tourney-pill.complete { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.3); color: var(--sf-bc-gold); }
 .bc-tourney-body  { padding: 14px 18px; }
 .bc-tourney-loc   { font-size: 13px; color: var(--sf-bc-text-mute); margin-bottom: 10px; }
 .bc-tourney-row   { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 14px; }
 .bc-tourney-team  { font-weight: 700; color: var(--sf-bc-text); }
 .bc-tourney-badge { font-family: var(--sf-bc-display); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 10px; border-radius: 4px; background: rgba(245,158,11,0.14); border: 1px solid rgba(245,158,11,0.3); color: var(--sf-bc-gold); }
+.bc-tourney-badge.finalists { background: rgba(74,143,212,0.12); border-color: rgba(74,143,212,0.3); color: var(--sf-bc-cobalt); }
+.bc-tourney-team-dot { display: inline-block; width: 8px; height: 8px; border-radius: 9999px; margin-right: 8px; vertical-align: middle; flex-shrink: 0; }
+.bc-tourney-record   { font-family: var(--sf-bc-display); font-size: 12px; font-weight: 700; letter-spacing: 0.02em; color: var(--sf-bc-text-mute); }
+@keyframes bc-tourney-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.65; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bc-tourney-pill.next { animation: none; }
+}
 
 /* Game log row */
 .bc-glog          { display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 8px; margin-bottom: 6px; background: var(--sf-bc-card-alt); border: 1px solid var(--sf-bc-border); }

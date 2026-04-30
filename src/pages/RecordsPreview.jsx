@@ -6,18 +6,10 @@ import TournamentCard from '../components/broadcast/TournamentCard';
 import GameLogRow from '../components/broadcast/GameLogRow';
 import { useTeams } from '../hooks/useTeams';
 import { useTeamRecords } from '../hooks/useTeamRecords';
+import { usePublicTournaments } from '../hooks/usePublicTournaments';
+import { LEGACY_HOOPERS_ORG_ID } from '../lib/constants';
 
 const FEATURED_TEAM_NAME = '11U Girls';
-
-const TOURNAMENTS = [
-  { name: 'ZG Chase for the Chain NY', dateRange: 'Apr 11-12', location: 'Westchester County, NY', status: 'complete',
-    results: [{ team: '11U Girls', badge: 'Champions' }, { team: '10U Black', badge: 'Champions' }, { team: '8U Boys', badge: 'Finalists' }] },
-  { name: 'NY Metro Showdown', dateRange: 'Apr 18-19', location: 'Westchester County, NY', status: 'complete',
-    results: [{ team: '11U Girls' }, { team: '10U Black' }, { team: '8U Boys' }] },
-  { name: 'Rumble for the Ring CT', dateRange: 'May 16-17', location: 'Fairfield County, CT', status: 'next' },
-  { name: 'ZG Nationals', dateRange: 'May 29 - Jun 7', location: 'Massachusetts', status: 'upcoming',
-    results: [{ team: '11U Girls', badge: 'Qualified' }, { team: '10U Black', badge: 'Qualified' }] },
-];
 
 function buildTeamMeta(team) {
   if (team.circuit === 'aau') return 'AAU · Zero Gravity';
@@ -33,6 +25,7 @@ function formatGameDate(iso) {
 
 export default function RecordsPreview() {
   const { loading: teamsLoading, error: teamsError, teams } = useTeams();
+  const { data: tournaments, loading: tournamentsLoading } = usePublicTournaments(LEGACY_HOOPERS_ORG_ID);
   const featured = useMemo(
     () => teams.find((t) => t.name === FEATURED_TEAM_NAME),
     [teams]
@@ -70,7 +63,9 @@ export default function RecordsPreview() {
         <section className="bc-section">
           <div className="bc-sec-eye">Tournaments</div>
           <h2 className="bc-sec-h2">RUN OF <b>PLAY</b></h2>
-          {TOURNAMENTS.map((t) => <TournamentCard key={t.name} {...t} />)}
+          {!tournamentsLoading && tournaments.map((t) => (
+            <TournamentCard key={t.id} tournament={t} />
+          ))}
         </section>
 
         <section className="bc-section" style={{ paddingBottom: 64 }}>
