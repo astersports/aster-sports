@@ -1205,3 +1205,11 @@ Migration 028 LOCKED + DEPLOYED + VERIFIED. Parent role now matches D-roster1 sp
 - Source: Frank's canonical Squarespace season-calendar HTML, Apr 29 2026
 - Pattern: 7 UPDATEs + 2 DELETEs scoped by tournament id (idempotent, row-bound)
 - Unblocks: Wave 3c-c (tournament timeline rebuild against clean DB)
+
+## Wave 3c-a — SHIPPED 2026-04-30 00:43 UTC
+- Database: Migration 025 applied via Supabase MCP apply_migration (Apr 29)
+- File: supabase/migrations/025_public_rls_for_records_page.sql
+- Code: src/App.jsx (1-line route addition for /records public route)
+- Verification: 3 new public RLS policies registered (teams_select_public, events_select_public, game_results_select_public). 5 teams + 27 events + 27 published game_results visible to anon for Legacy Hoopers org.
+- Pattern: Hardcoded Legacy Hoopers org_id in policies. TODO: refactor to URL-based scoping when 2nd org joins.
+- Unblocks: Wave 3c-b (per-team filter UI), Wave 3c-c (tournament timeline rebuild against clean tournament data from Migration 026)
