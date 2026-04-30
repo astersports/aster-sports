@@ -1197,3 +1197,11 @@ Migration 028 LOCKED + DEPLOYED + VERIFIED. Parent role now matches D-roster1 sp
 - Verification: parent fsamaritano now sees 7 games (11U Girls) + 8 games (8U Boys); visual smoke test on /records-preview passed
 - Bug history: game_results_select_parent queried team_players (0 rows). Active roster data lives in roster_members. Surfaced by Wave 3b live-data wiring (first parent-facing surface to query game_results since parent role was created).
 - Unblocks: clean parent RLS chain for any future feature that reads game_results
+
+## Migration 026 — SHIPPED 2026-04-30 00:32 UTC
+- Database: applied via Supabase MCP apply_migration (Apr 29)
+- File: supabase/migrations/026_align_tournaments_to_canonical_schedule.sql
+- Verification: 7 Spring 2026 tournament rows, all with non-empty venue, all canonical names match, 0 events orphaned
+- Source: Frank's canonical Squarespace season-calendar HTML, Apr 29 2026
+- Pattern: 7 UPDATEs + 2 DELETEs scoped by tournament id (idempotent, row-bound)
+- Unblocks: Wave 3c-c (tournament timeline rebuild against clean DB)
