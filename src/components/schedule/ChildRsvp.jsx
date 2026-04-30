@@ -13,12 +13,6 @@ const PILLS = [
   { value: 'not_going', label: 'Not Going', color: 'var(--em-danger)' },
 ];
 
-const CONFIRMED = {
-  going:     { icon: '✓', label: 'Going',     color: 'var(--em-success)' },
-  maybe:     { icon: '?', label: 'Maybe',     color: 'var(--em-warning)' },
-  not_going: { icon: '✗', label: 'Not Going', color: 'var(--em-danger)' },
-};
-
 export default function ChildRsvp({ child, eventId, compact = false }) {
   const { guardianId } = useAuth();
   const { showToast } = useToast();
@@ -57,34 +51,52 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
     }
   };
 
-  const minH = compact ? 36 : 44;
-  const nameSize = compact ? 12 : 14;
-  const pillSize = compact ? 12 : 13;
+  // Clear path: event_rsvps.response is NOT NULL, so cleared = row deleted.
+  // Verified Apr 30 via Supabase MCP information_schema query.
+  const clearRsvp = async () => {
+    setSaving(true);
+    navigator.vibrate?.(10);
+    const { error } = await supabase.from('event_rsvps').delete()
+      .eq('event_id', eventId).eq('player_id', child.playerId);
+    setSaving(false);
+    if (!error) { responseCache.set(cacheKey(eventId, child.playerId), null); setResponse(null); }
+    else {
+      console.error('RSVP clear failed:', error.message);
+      showToast("Couldn't clear RSVP. Try again in a moment.", 'error');
+    }
+  };
 
-  const state = CONFIRMED[response];
-  if (state) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: minH, marginTop: compact ? 4 : 8 }}>
-        <span style={{ fontSize: nameSize, fontWeight: 500, color: state.color }}>
-          {state.icon} {child.firstName} {state.label}
-        </span>
-        <button type="button" onClick={(e) => { e.stopPropagation(); setResponse(null); }}
-          style={{ background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: pillSize, fontWeight: 500, padding: 4 }}>
-          Change
-        </button>
-      </div>
-    );
-  }
+  const handleClick = (e, value) => {
+    e.stopPropagation();
+    if (saving) return;
+    if (value === response) clearRsvp();
+    else save(value);
+  };
+
+  const minH = compact ? 36 : 44;
+  const pillSize = compact ? 12 : 13;
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: compact ? 4 : 8 }}>
       <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--em-text-primary)', minWidth: 60 }}>{child.firstName}</span>
-      {PILLS.map((p) => (
-        <button key={p.value} type="button" onClick={(e) => { e.stopPropagation(); save(p.value); }} disabled={saving} className="sf-press"
-          style={{ flex: 1, minHeight: minH, borderRadius: 10, fontSize: pillSize, fontWeight: 600, border: `1.5px solid ${p.color}`, backgroundColor: 'transparent', color: p.color, opacity: saving ? 0.6 : 1 }}>
-          {p.label}
-        </button>
-      ))}
+      {PILLS.map((p) => {
+        const active = response === p.value;
+        return (
+          <button key={p.value} type="button" onClick={(e) => handleClick(e, p.value)} disabled={saving} className="sf-press"
+            aria-pressed={active}
+            style={{
+              flex: 1, minHeight: minH, borderRadius: 10,
+              fontSize: pillSize, fontWeight: 600,
+              border: `1.5px solid ${p.color}`,
+              backgroundColor: active ? p.color : 'transparent',
+              color: active ? 'var(--em-text-inverse)' : p.color,
+              opacity: saving ? 0.6 : 1,
+              fontFamily: 'inherit',
+            }}>
+            {p.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

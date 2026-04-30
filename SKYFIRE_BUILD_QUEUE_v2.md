@@ -1897,3 +1897,76 @@ Rest is invisible — pure code organization. Two consumers of `formatDiff` now 
 - **NEW: AdminGreeting.jsx duplicates the helpers** (different signatures, missing NY-anchor). Consolidate when touching admin surfaces next.
 
 **Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Seven tracked files in this commit (5 modified + 1 new + the build queue).
+
+## Apr 30, 2026 UTC — Wave 3d-g.2: RSVP tap-to-clear + pulsing-dot diagnostic
+
+**Shipped:** RSVP tap-active-state-to-clear behavior. Pulsing-dot affordance investigated read-only — wiring is correct end-to-end after 3d-g.1; remaining issue is fetch-too-fast-to-perceive, not a bug.
+
+### RSVP tap-to-clear
+
+**Before** — two-mode UI: when `response` was null, ChildRsvp showed three outlined pill buttons. When `response` was set, it swapped to a confirmation row (`"✓ Aiden Going"` + a "Change" button). The "Change" button only flipped local `setResponse(null)` — **never wrote to the DB**, so the next focus-refetch read the prior answer back from the server. **Latent bug**: there was no real path to clear an RSVP from the UI.
+
+**After** — single-mode toggle group: three pills always visible. Active pill renders filled (background = pill color, text = inverse). Inactive pills render outlined. Tapping the active pill DELETES the `event_rsvps` row (verified via Supabase MCP: `event_rsvps.response` is `NOT NULL`, so cleared = row deleted). Tapping an inactive pill upserts that response. Tapping the same pill twice is now the explicit clear path.
+
+| User action | Old behavior | New behavior |
+|---|---|---|
+| Tap "Going" (currently null) | Set to 'going' | Set to 'going' |
+| Tap "Going" (currently 'going') | Hidden by confirm-row mode | **DELETE row → null** |
+| Tap "Going" (currently 'not_going') | Hidden by confirm-row mode | Switch to 'going' |
+| Tap "Maybe" (currently 'maybe') | Hidden by confirm-row mode | **DELETE row → null** |
+| Tap "Not Going" (currently 'not_going') | Hidden by confirm-row mode | **DELETE row → null** |
+| Tap "Change" (legacy button) | Clears local state only (lie) | N/A — button removed |
+
+**Scope adjustment from prompt:** prompt mentioned only Going / Not Going. Reality has **three** values (Going / Maybe / Not Going). Tap-to-clear works on all three identically. The prompt also said "the two pills already exist; they gain new behavior" — but the pills weren't visible in the answered state at all. Required a UI restructure (drop the confirmation-row branch, drop the "Change" button, restructure to always-visible pills with active-state styling). Net component dropped the second render branch and the `CONFIRMED` dictionary; gained a `clearRsvp` async + `handleClick` dispatcher. 102 lines, was 90 — 12 lines net add for the new behavior.
+
+`aria-pressed={active}` added on each pill for screen-reader semantics. `disabled={saving}` preserved with `opacity: 0.6` visual cue.
+
+### Pulsing-dot diagnostic
+
+**Outcome: (a)** — affordance is wired correctly end-to-end after 3d-g.1's mask drop. Likely cause for "I never see the dot" is fetch-too-fast-to-perceive, not a bug.
+
+**Wiring verified:**
+- `useRefetchOnVisible.js` is a working hook: `document.visibilityState === 'visible'` triggers `refetch?.()`.
+- `ParentHomePage.jsx:30` calls `useRefetchOnVisible(refetch)` where `refetch` is from `useActivities`.
+- After 3d-e: `useActivities.refetch()` flips `setLoading(true)` on every call.
+- After 3d-g.1: orgId guard prevents the auth-bootstrap flicker; `NowSectionParent` no longer masks `loading`.
+- `SectionShell.jsx:41`: `const isRefreshing = loading && hasChildren`. Line 52: `{isRefreshing && (<span className="animate-pulse" .../>)}`.
+
+**Chain:** tab focus → useRefetchOnVisible fires → useActivities.refetch → setLoading(true) → NowSectionParent passes truthful `loading={loading}` → SectionShell sees loading=true + hasChildren=true → isRefreshing=true → pulsing dot renders. All correct.
+
+**Why the user reports not seeing it:**
+1. **Fetch is fast.** A warm-cache Supabase round-trip is ~50-200ms. The `animate-pulse` Tailwind animation has a 2-second cycle (0% → 50% opacity → 100%). At 100ms, the dot renders for ~5% of one cycle — barely perceptible. To make it visible the dot needs a minimum-display duration (e.g., "render for at least 400ms even if loading flips false sooner") — that's a separate UX commit.
+2. **MY TEAMS doesn't have a dot at all.** The MY TEAMS strip is rendered inline (via `<MyTeamsStrip>`), not wrapped in SectionShell. So the only place the dot can fire on parent home is NEXT UP. And `useOrgTeamRecords` (which powers MY TEAMS) doesn't have a `useRefetchOnVisible` wiring — it stays stale on tab return entirely. That's audit item E2 from yesterday, now unblocked by 3d-g.1's B1 (refetch export). Logged for next commit.
+3. **NEXT 48 HOURS doesn't have a dot.** Inline `<section>` markup, no SectionShell. Same structural deferral as the 3d-g.1 NEXT 48 HOURS error rendering note.
+
+**No code change in this commit.** Pulsing-dot affordance is correctly wired for the one surface that uses SectionShell (NEXT UP); the other two parent-home sections need structural lifts to participate. Both are logged in the deferred items.
+
+### Files this commit
+
+- `src/components/schedule/ChildRsvp.jsx` (102 lines, was 90 — restructured to always-show-pills + DELETE-row clear path)
+- `SKYFIRE_BUILD_QUEUE_v2.md` (this entry)
+
+### Locked decisions from this session
+
+- **NEXT UP Min variant target:** `"Today · May 3 · 2:00 PM"` (relative + absolute + time)
+- **UPCOMING window:** user-selectable toggle (48h / 7 days) saved in `user_preferences.upcoming_window` — ship in 3d-g.3
+- **/teams list rows:** two-line layout. Line 1: team name. Line 2: `"11U · AAU · 5-2 · W1 · 27.6 PPG · 21.3 PA"`
+- **MY TEAMS strip carousel:** stays one-line (horizontal pill, no room)
+- **Team detail page:** merge TeamRecordsSection into TeamHeaderCard hero block
+
+### Wave 3d sequence
+
+- 3d-i through 3d-g.1: ✓ shipped
+- 3d-g.2: ✓ this commit
+- 3d-g.3: NEXT UP Min date + UPCOMING toggle + user_preferences migration (deferred to tomorrow — DB migration + new UI scope)
+- 3d-g.4: Team detail page merge + /teams list two-line stats (next today)
+- 3d-h: /schedule forward-week scrolling
+
+### Audit items deferred (logged for future)
+
+- **NEW E9: Pulsing-dot minimum-display duration.** Render the dot for at least 400ms even if `loading` flips false sooner. Otherwise sub-200ms refreshes never visibly fire the affordance. Tiny CSS-or-state change.
+- **E2 from yesterday now unblocked by 3d-g.1's B1.** `useOrgTeamRecords` needs `useRefetchOnVisible(refetchRecords)` wiring on parent home + /teams + /records so MY TEAMS / SEASON SNAPSHOT / team list don't stay stale on tab return.
+- **B5 (latent): Change button never wrote to DB.** Pre-existing bug now eliminated by the always-pills restructure.
+- All prior deferred items from 3d-g.1 still standing.
+
+**Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Two tracked files in this commit (1 modified + the build queue).
