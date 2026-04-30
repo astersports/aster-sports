@@ -1339,3 +1339,36 @@ Two-step parent home update consolidating the Records integration:
 **Evidence:** Lint clean (0 errors, 7 pre-existing warnings), build clean (111.65 KB gzipped main, slightly smaller than before due to shorter link text). Verified parent home renders live W-L + streak inline; Records link reworded; navigation to /records still works.
 
 **Known limitation (deferred):** N+1 query pattern (BUG-3 from Wave 3c-a.2 audit) — each ParentHomeTeamCard fires its own Supabase query. Acceptable at parent's typical 1-2 teams. Revisit when admin/coach surfaces consume similar lists at higher counts.
+
+## Backlog — Apr 30, 2026 (for tomorrow's framing session)
+
+Frank flagged: "Teams section also has records that need to be updated. Need to make sure all these pages and schedules and records in multiple tabs make sense and if min/med/max is deployed everywhere. Seems like tons of overlap."
+
+### Concrete backlog items
+- **TeamsPage records integration** — list rows on `/teams` should consume `useTeamRecords(team.id)` and render live W-L + streak (same hook as MY TEAMS strip on parent home, same hook as `/records` page). Likely a single-file edit to whatever sub-component renders each row.
+- **TeamDetailPage records integration** — single team page should show full record + game log, not just schedule + roster. Could reuse `TeamIdentityCard` + `GameLogRow` from broadcast/.
+- **Coach home build (Wave Y per §8)** — `CoachHomePage` TODAY section is still a placeholder ("NowSection coach variant ships next"). Three role-specific homes need parity.
+
+### Density (Min/Med/Max) audit
+Currently deployed on **one** surface: NextUpCard router on parent home (`useDensity('parent-now')`). NOT on: `ThisWeekRow`, `ParentHomeTeamCard`, `TournamentCard`, `TeamIdentityCard`, `GameLogRow`, `EventCard`, `CompactCard`, TeamsPage rows, TeamDetailPage. CLAUDE.md §16.2 says "density propagates everywhere" — currently aspirational. **Decision needed:** extend density to all list/card surfaces (significant work), or scope it to NEXT UP only and update §16.2 to match reality.
+
+### Overlap map (where the same data renders in multiple places)
+
+| Data | Surfaces | Question |
+|------|----------|----------|
+| Team records (W-L, streak) | MY TEAMS strip, `/records` cards, TeamsPage rows (todo), TeamDetailPage (todo) | Which is the source-of-truth view? Others = previews. |
+| Single event (full detail) | NEXT UP card, ScheduleListing row, EventDetailPage | NEXT UP is "the action card", schedule is "the calendar", detail is "the deep view". Roles clear; styling consistent? |
+| Event list | THIS WEEK (parent home, 7-day glance), SchedulePage (full season, filterable) | Mostly redundant. THIS WEEK is a preview; could it deep-link to filtered SchedulePage instead? |
+| Tournament | `/records` timeline, TournamentsPage admin, TeamDetailPage Tournaments tab | Three views, three audiences (parent/admin/coach). Visual unification possible? |
+| Density chevron | `<DensityToggle sectionKey="...">` on NEXT UP | Doesn't exist on other sections. Inconsistency. |
+
+### Navigation metaphor inconsistency
+- `EventDetailPage` uses `?tab=X` query → scroll-to-anchor (not real tabs, just sectioned long-scroll).
+- `RecordsPreview` has no tabs — flat sections.
+- `SchedulePage` has filter chips (kid filter, type filter).
+- `TeamDetailPage` may have its own pattern.
+
+Three different "navigate within a page" patterns. Standardizing or naming them deliberately (tabs vs filters vs anchors) would help mental model.
+
+### Recommended framing question for tomorrow
+**"What does each role see at /, /schedule, /teams, /records, /events/:id, and which surface is canonical for each data type?"** Once that map is locked, density and overlap clean up naturally — preview surfaces shrink, canonical surfaces get full data, redundant surfaces either deep-link or get scoped differently.
