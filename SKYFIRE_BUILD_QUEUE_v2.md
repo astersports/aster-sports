@@ -1763,3 +1763,73 @@ Before this commit, opening `/records` (5 teams) issued 5 separate `game_results
 - 3d-h: /schedule forward-week scrolling
 
 **Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Ten tracked files in this commit (3 new + 6 modified + the build queue).
+
+## Apr 30, 2026 UTC — Wave 3d-g: Helpers consolidation (titleCount + formatGameDate dropped per pre-flight)
+
+**Shipped:** Two of the four planned fixes. Pre-flight surfaced that two were not actually applicable — kept honest by dropping them rather than fake-shipping.
+
+### Fixes (scope reduced after pre-flight)
+
+**1. formatGameDate consolidation — DROPPED.** Pre-flight grep found a single call-site (defined `RecordsPreview.jsx:22`, consumed `:139` by `FeaturedGameLog`). Per the prompt's own guidance ("If grep finds 1 call-site: DROP this fix. Single-use formatter is fine where it lives"), this isn't a duplication — it's a co-located helper. Premature abstraction risk avoided.
+
+**2. formatDiff consolidation — SHIPPED.** Pre-flight confirmed byte-identical duplication: `TeamIdentityCard.jsx:61` and `TeamRecordsSection.jsx:6` defined the same function:
+```js
+function formatDiff(d) {
+  if (d == null) return '—';
+  const n = Number(d);
+  if (Number.isNaN(n)) return '—';
+  return n > 0 ? `+${n}` : `${n}`;
+}
+```
+Canonical now in `src/lib/formatters.js`. Both consumers import from there. Logic preserved verbatim — no behavior change. (Note on `formatDiff(0)` returning `"0"` rather than `"0.0"` or `"+0"`: the code relies on `computeSummary` having pre-applied `.toFixed(1)`. So in practice `diff` is `0` only when wins == losses on n >= 1 with same scores. Edge case but consistent with prior in-place behavior.)
+
+**3. formatRelativeTime helper — SHIPPED.** New pure utility in `src/lib/formatters.js`. NY-anchored. Returns `'Just now'` / `'X minutes ago'` / `'X hours ago'` / `'X days ago'` within 7 days; absolute date string thereafter. Returns `null` on null/undefined input so consumers can suppress rendering. The helper does NOT bake in any "Updated " prefix — `BroadcastHeroHeader` already prepends `"Last updated "` in its JSX (`BroadcastHeroHeader.jsx:38`). RecordsPreview consumes the helper, replacing the inline `toLocaleDateString` call.
+
+**4. titleCount prop on SectionShell — DROPPED.** Pre-flight found that **the prop already exists** in `SectionShell.jsx:24` (destructured) and is rendered at lines 49-51 with `typeof titleCount === 'number' && ...`. Likely added during original Step 5B Phase 1 work. The two wiring sites named in the prompt — `/records` SEASON SNAPSHOT (`<section className="bc-section">`) and `/teams` (inline `<h1>` page header) — **don't use SectionShell at all**. Wiring titleCount there requires lifting those pages onto SectionShell, a structural refactor that doesn't fit this commit's "zero behavior change" framing. Deferred to a future commit that does the lift. The prop is available for any current/future SectionShell consumer that wants to use it.
+
+### What this changes for users
+
+The records-page "Last updated" line now reads relative-time within 7 days instead of an absolute date.
+
+**Before** (3d-d): `Last updated Apr 29, 2026`
+**After** (today, Apr 30): `Last updated 1 day ago` (verified by running `formatRelativeTime('2026-04-29T10:40:58Z')` against current time — returned `"1 day ago"` exactly as expected)
+**After 7+ days**: falls back to absolute date `Last updated Apr 22, 2026`
+
+Helper edge cases verified via node REPL against the production timestamp:
+
+| Input | Output |
+|---|---|
+| `null` | `null` (suppresses rendering) |
+| 30s ago | `"Just now"` |
+| 5min ago | `"5 minutes ago"` |
+| 3hr ago | `"3 hours ago"` |
+| 1d ago | `"1 day ago"` |
+| 2d ago | `"2 days ago"` |
+| 10d ago | `"Apr 20, 2026"` (NY-anchored absolute fallback) |
+| prod (`2026-04-29T10:40:58Z`) | `"1 day ago"` |
+
+Rest is invisible — pure code organization. Two consumers of `formatDiff` now import from one canonical helper.
+
+### Files this commit
+
+- `src/lib/formatters.js` (126 lines, was 95 — added `formatDiff` + `formatRelativeTime`)
+- `src/components/broadcast/TeamIdentityCard.jsx` (61 lines, was 66 — local `formatDiff` removed, import added)
+- `src/components/teams/TeamRecordsSection.jsx` (45 lines, was 51 — local `formatDiff` removed, import added)
+- `src/pages/RecordsPreview.jsx` (146 lines, was 147 — inline `toLocaleDateString` swapped for `formatRelativeTime` call)
+- `SKYFIRE_BUILD_QUEUE_v2.md` (this entry)
+
+### Structural surprises during inspection
+
+- **`titleCount` already existed in SectionShell.** Probably added during original Step 5B work or earlier. The home-page review I wrote on Apr 30 noted this exact thing (E3): "SectionShell supports `titleCount` (line 24, tabular-nums)" — but the prompt was framed as if it needed to be added. Pre-flight caught the discrepancy.
+- **Wiring sites for titleCount don't use SectionShell.** `/records` uses broadcast-style `<section className="bc-section">`; `/teams` uses inline page-level `<h1>`. To wire titleCount on either, those sections would need to be lifted onto SectionShell — a behavior-changing refactor that doesn't belong in this "zero-behavior-change" commit. Logged for the future commit that does the lift.
+- **`formatDiff(0)` returns `"0"`, not `"0.0"`.** Preserved verbatim from the duplicates. Relies on `computeSummary` having pre-applied `.toFixed(1)` so diff is already a 1-decimal float when nonzero. Edge case at exactly 0 is rare in practice and the existing behavior wasn't bugged — just lightly weird.
+
+### Wave 3d sequence
+
+- 3d-i through 3d-f: ✓ shipped
+- 3d-g: ✓ this commit (scope reduced — 2 of 4 fixes shipped honestly)
+- 3d-g.1 (visible UX polish): filter-aware empty state, skeleton initial load, tournament card placement+record, NowSectionParent loading-mask cleanup, NEXT 48 HOURS error rendering
+- 3d-g.2 (titleCount wirings): would need /records SEASON SNAPSHOT and /teams page-header lifts onto SectionShell first
+- 3d-h: /schedule forward-week scrolling
+
+**Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Five tracked files in this commit (4 modified + the build queue).

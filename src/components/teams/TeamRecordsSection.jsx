@@ -2,13 +2,7 @@
 // three-cell stats row pattern, scaled to five (PPG / Allowed / Diff /
 // Win% / Games). Pure presentational; summary comes from the page,
 // which calls useTeamRecords once.
-
-function formatDiff(d) {
-  if (d == null) return '—';
-  const n = Number(d);
-  if (Number.isNaN(n)) return '—';
-  return n > 0 ? `+${n}` : `${n}`;
-}
+import { formatDiff } from '../../lib/formatters';
 
 function Cell({ value, label }) {
   return (

@@ -10,6 +10,7 @@ import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { usePublicTournaments } from '../hooks/usePublicTournaments';
 import { useLastPublishedAt } from '../hooks/useLastPublishedAt';
 import { EMPTY_SUMMARY } from '../lib/teamRecords';
+import { formatRelativeTime } from '../lib/formatters';
 import { LEGACY_HOOPERS_ORG_ID } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 
@@ -30,9 +31,7 @@ export default function RecordsPreview() {
   const { data: tournaments, loading: tournamentsLoading, error: tournamentsError } = usePublicTournaments(LEGACY_HOOPERS_ORG_ID);
   const { byTeamId: recordsByTeam } = useOrgTeamRecords(LEGACY_HOOPERS_ORG_ID);
   const { lastPublishedAt } = useLastPublishedAt();
-  const lastUpdated = lastPublishedAt
-    ? new Date(lastPublishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })
-    : null;
+  const lastUpdated = formatRelativeTime(lastPublishedAt);
   const featured = useMemo(
     () => teams.find((t) => t.sort_order === 1) || teams[0],
     [teams]

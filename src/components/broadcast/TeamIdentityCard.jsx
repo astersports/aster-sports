@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDiff } from '../../lib/formatters';
 
 /**
  * Team identity card. Numbered badge + name + meta + record + streak +
@@ -58,9 +59,3 @@ function Cell({ num, label }) {
   );
 }
 
-function formatDiff(d) {
-  if (d == null) return '—';
-  const n = Number(d);
-  if (Number.isNaN(n)) return '—';
-  return n > 0 ? `+${n}` : `${n}`;
-}

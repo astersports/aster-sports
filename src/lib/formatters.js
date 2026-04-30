@@ -22,6 +22,37 @@ export function formatDateFull(date) {
   });
 }
 
+// "+5.3" / "-2.1" / "0.0" / "—" — point-differential cell. Pre-rounded
+// numerics are passed in (computeSummary already toFixed(1)s); helper
+// only handles the sign prefix + null/NaN guards.
+export function formatDiff(d) {
+  if (d == null) return '—';
+  const n = Number(d);
+  if (Number.isNaN(n)) return '—';
+  return n > 0 ? `+${n}` : `${n}`;
+}
+
+// "Just now" / "5 minutes ago" / "2 hours ago" / "3 days ago" within
+// 7 days; absolute NY-anchored date thereafter. Returns null on
+// null/undefined input so consumers can suppress rendering entirely
+// (matches the lastPublishedAt null-handling pattern from 3d-d). The
+// helper does NOT bake in any "Updated " / "Last updated " prefix —
+// consumers wrap as appropriate (BroadcastHeroHeader already prefixes
+// "Last updated " in JSX).
+export function formatRelativeTime(isoString) {
+  if (!isoString) return null;
+  const then = new Date(isoString);
+  const diffSec = Math.floor((Date.now() - then.getTime()) / 1000);
+  if (diffSec < 60) return 'Just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? '' : 's'} ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr} hour${diffHr === 1 ? '' : 's'} ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay} day${diffDay === 1 ? '' : 's'} ago`;
+  return then.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: NY_TZ });
+}
+
 // "$450.00" — takes integer cents to avoid float drift on pricing math.
 export function formatCurrency(cents) {
   const n = (cents ?? 0) / 100;
