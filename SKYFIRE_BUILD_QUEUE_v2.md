@@ -1314,3 +1314,28 @@ Migration 028 LOCKED + DEPLOYED + VERIFIED. Parent role now matches D-roster1 sp
 - /records anon path verified pre-commit (Migration 031 already live in DB)
 
 **Next-wave unlock:** Wave 3c-b (per-team filter UI on /records, including AbortController per BUG-8), Wave 4 (communications architecture).
+
+## Apr 30, 2026 UTC — Parent home Records integration (anti-drift catch-up)
+
+**Shipped (this commit + retroactively documenting commit 4b74c29):**
+Two-step parent home update consolidating the Records integration:
+
+**Commit 4b74c29 (earlier today):** Added a tappable "Records" link card on the parent home page between MY TEAMS and THIS WEEK sections. Single-line button styled with `--em-*` tokens, navigates to `/records`. Build queue update was skipped on that commit — anti-drift catch-up included here per Rule 18.
+
+**This commit:** Wired MY TEAMS team cards to live `useTeamRecords` data by editing the existing `ParentHomeTeamCard` sub-component in place. Parents now see real W-L + streak (e.g. "5-2 · W1") inline on the home page instead of the placeholder "0-0". Reworded the Records link to "View full season records" — primary record info now lives inline; the link is honest "see more" drill-down to the full /records broadcast view (tournament timeline, all 5 teams, championship badges).
+
+**UX rationale:** Frank flagged that bouncing to /records and hitting back was friction. Inline records solve it: parents don't need to navigate away for basic team standing. /records becomes the rich shareable view, not a required workflow stop.
+
+**Deviation from prompt:** prompt template assumed inline JSX in the MY TEAMS section and proposed creating `src/components/parent/TeamRecordRow.jsx`. The MY TEAMS section already uses a dedicated sub-component (`src/components/home/ParentHomeTeamCard.jsx`, the horizontal pill), so per Step 1's guidance ("prefer editing that file") I edited it in place. No new file, no new directory. `summary.record` and `summary.streak` are pre-formatted strings from useTeamRecords (not separate wins/losses fields), used directly.
+
+**Files this commit:**
+- src/components/home/ParentHomeTeamCard.jsx (added useTeamRecords + live record/streak rendering)
+- src/pages/ParentHomePage.jsx (Records link text reworded)
+- SKYFIRE_BUILD_QUEUE_v2.md (this entry)
+
+**Files in commit 4b74c29 (referenced for completeness):**
+- src/pages/ParentHomePage.jsx (Records link button added)
+
+**Evidence:** Lint clean (0 errors, 7 pre-existing warnings), build clean (111.65 KB gzipped main, slightly smaller than before due to shorter link text). Verified parent home renders live W-L + streak inline; Records link reworded; navigation to /records still works.
+
+**Known limitation (deferred):** N+1 query pattern (BUG-3 from Wave 3c-a.2 audit) — each ParentHomeTeamCard fires its own Supabase query. Acceptable at parent's typical 1-2 teams. Revisit when admin/coach surfaces consume similar lists at higher counts.

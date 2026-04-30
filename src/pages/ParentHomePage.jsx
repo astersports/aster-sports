@@ -105,7 +105,7 @@ export default function ParentHomePage() {
 
       <button type="button" onClick={() => navigate('/records')} className="sf-press"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px 16px', minHeight: 56, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>
-        <span>Records — Season summary, team stats, game log</span>
+        <span>View full season records</span>
         <span style={{ fontSize: 18, color: 'var(--em-text-tertiary)' }}>›</span>
       </button>
 
