@@ -1190,3 +1190,10 @@ Migration 028 LOCKED + DEPLOYED + VERIFIED. Parent role now matches D-roster1 sp
   deploy showed 0-0 records for every team for both admin and
   parent accounts.
 - Fix: 'event' → 'events' in two locations
+
+## Migration 024 — SHIPPED 2026-04-30 00:10 UTC
+- Database: applied via Supabase MCP apply_migration (Apr 29)
+- File: supabase/migrations/024_fix_parent_rls_use_roster_members.sql
+- Verification: parent fsamaritano now sees 7 games (11U Girls) + 8 games (8U Boys); visual smoke test on /records-preview passed
+- Bug history: game_results_select_parent queried team_players (0 rows). Active roster data lives in roster_members. Surfaced by Wave 3b live-data wiring (first parent-facing surface to query game_results since parent role was created).
+- Unblocks: clean parent RLS chain for any future feature that reads game_results
