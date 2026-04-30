@@ -7,6 +7,7 @@ import GameLogRow from '../components/broadcast/GameLogRow';
 import { useTeams } from '../hooks/useTeams';
 import { useTeamRecords } from '../hooks/useTeamRecords';
 import { usePublicTournaments } from '../hooks/usePublicTournaments';
+import { useLastPublishedAt } from '../hooks/useLastPublishedAt';
 import { LEGACY_HOOPERS_ORG_ID } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 
@@ -25,6 +26,10 @@ function formatGameDate(iso) {
 export default function RecordsPreview() {
   const { loading: teamsLoading, error: teamsError, teams } = useTeams(LEGACY_HOOPERS_ORG_ID);
   const { data: tournaments, loading: tournamentsLoading, error: tournamentsError } = usePublicTournaments(LEGACY_HOOPERS_ORG_ID);
+  const { lastPublishedAt } = useLastPublishedAt();
+  const lastUpdated = lastPublishedAt
+    ? new Date(lastPublishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })
+    : null;
   const featured = useMemo(
     () => teams.find((t) => t.sort_order === 1) || teams[0],
     [teams]
@@ -58,7 +63,7 @@ export default function RecordsPreview() {
         accent="RECORDS"
         sub="Five teams. One season. Every result, every streak, every stat."
         tags={['Spring 2026', `${teams.length} Teams`, `${totalGames} Games`]}
-        lastUpdated="Apr 29, 2026"
+        lastUpdated={lastUpdated}
       />
 
       <StatHeroBar

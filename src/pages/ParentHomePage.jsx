@@ -19,8 +19,8 @@ function firstNameFrom(user) {
   return f ? f.charAt(0).toUpperCase() + f.slice(1) : 'there';
 }
 
-function greetingFor(date = new Date()) {
-  const h = date.getHours();
+function greetingFor() {
+  const h = parseInt(new Date().toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }), 10);
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
@@ -56,7 +56,7 @@ export default function ParentHomePage() {
     .filter((a) => {
       if (!a.start_at) return false;
       const startT = new Date(a.start_at).getTime();
-      return (a.end_at ? new Date(a.end_at).getTime() : startT + 90 * 60 * 1000) > now && startT < cutoff;
+      return (a.end_at ? new Date(a.end_at).getTime() : startT + 90 * 60 * 1000) > now && startT < cutoff && a.status !== 'cancelled';
     })
     .sort((a, b) => new Date(a.start_at) - new Date(b.start_at)),
     [activities, now, cutoff]);

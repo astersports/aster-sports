@@ -1568,3 +1568,77 @@ So the 90-min fallback is purely defensive — every event in production today h
 - 3d-h: /schedule forward-week scrolling
 
 **Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Five tracked files in this commit (3 modified + 2 new).
+
+## Apr 30, 2026 UTC — Wave 3d-d: Truth pass
+
+**Shipped:** Five silent data lies fixed in one commit. All surfaced by yesterday's records + home audit and verified via Supabase MCP pre-flight.
+
+### Fixes
+
+**1. groupByDate NY-anchored.** `src/lib/scheduleHelpers.js` was slicing UTC date string. Late-evening ET events grouped into the wrong day on home/schedule. Now uses `new Date(a.start_at).toLocaleDateString('en-CA', { timeZone: 'America/New_York' })`, matching wave 3d-a's formatter pattern. Production today: 1 event affected (9U Boys Game, Apr 17 8:00 PM ET silently grouped to Apr 18 UTC). Fix is in shared lib so home + schedule + future surfaces inherit.
+
+**1.a. formatDateHeader's `today` comparison NY-anchored too.** Inspection surface that wasn't in the prompt: `formatDateHeader` (same file) computed `today = new Date().toISOString().slice(0, 10)` — also UTC. Pre-fix this was internally consistent (key UTC + today UTC); my groupByDate change would have introduced *new* misalignment (key NY-local vs today UTC), making the "TODAY" suffix wrong during late-evening hours. Fixed in the same commit to preserve internal consistency. The prompt's Step 2 explicitly asked me to inspect downstream — this is what surfaced.
+
+**2. Ties + null handling on useTeamRecords.** Three-branch result counting (`'W'` / `'L'` / `'T'`, skip null/void). Summary now exposes `ties`. Record formats as `W-L` when ties=0 (no behavior change for current display), `W-L-T` when ties>0. Streak: a `T` (or any non-W/L) breaks the streak; T-streaks don't render — falsy `streakKind` returns `'—'`. Production today: 0 ties — pure logic hardening. No migration, no CHECK constraint (deferred). `winPct` math left as `wins / n * 100`; with ties present, the standard `(wins + 0.5*ties) / n` formula matters — flagged for future when ties become non-zero.
+
+**3. RecordsPreview lastUpdated derived from MAX(published_at).** Was literal `"Apr 29, 2026"` (already a day stale yesterday). New small hook `src/hooks/useLastPublishedAt.js` queries the latest `published_at` from `game_results` and returns `{ lastPublishedAt, loading }`. RecordsPreview formats NY-anchored. Hook is intentionally separate so 3d-g's relative-time extension wraps cleanly without rewriting this commit's call site. `BroadcastHeroHeader` already suppresses the line on falsy `lastUpdated` (verified at `BroadcastHeroHeader.jsx:37-38`), so passing `null` cleanly hides "Last Updated" until first publish.
+
+**4. ParentHomePage 48h filter excludes cancelled events.** Cancelled events no longer occupy NEXT 48 HOURS real estate. Still visible on `/schedule` where browsing past/cancelled is the job. Production today: 0 cancelled events in the 48h window — pure UX hardening. Implemented as a single AND in the existing return statement to keep the file at the 150-line cap.
+
+**5. greetingFor NY-anchored.** `Good morning/afternoon/evening` greeting now uses NY-local hour via `toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false })` parsed to int. Frank in NY sees no change; admin abroad (or QA from another tz) gets a greeting matching org-local time. Consistency with the NY-anchor pattern established in waves 3d-a, 3d-b.1, 3d-d Fix 1, and now this.
+
+### Pre-flight via Supabase MCP
+
+| Check | Result |
+|---|---|
+| game_results result distribution | W=14, L=13, T=0 |
+| game_results.result column type | text (no CHECK constraint) |
+| MAX(published_at) | 2026-04-29 10:40:58 UTC |
+| Cancelled events in next 48h today | 0 |
+| Events with UTC date ≠ NY date (last 60d) | 1 (9U Boys Apr 17 8 PM game) |
+
+### useTeamRecords summary shape change
+
+Before: `{ record, streak, ppg, allowed, diff, winPct, gamesPlayed }`
+After:  `{ record, ties, streak, ppg, allowed, diff, winPct, gamesPlayed }`
+
+`ties` is the only new field. Existing consumers (`ParentHomeTeamCard`, `TeamRow`, `TeamHeaderCard`, `TeamRecordsSection`, `TeamIdentityCard`, `RecordsPreview` `FeaturedGameLog`) read `record` / `streak` only — backward-compatible.
+
+### lastUpdated rendering
+
+- **With data** (current production: `2026-04-29T10:40:58Z`): renders `Last updated Apr 29, 2026`.
+- **Without data** (e.g., new org pre-first-publish): line suppressed entirely — header omits the trailing `<p class="bc-last-updated">` rather than rendering a placeholder.
+
+### Files this commit
+
+- `src/lib/scheduleHelpers.js` (18 lines, was 16 — groupByDate + formatDateHeader both NY-anchored)
+- `src/hooks/useTeamRecords.js` (99 lines, was 88 — three-branch + ties + tie-breaks-streak)
+- `src/hooks/useLastPublishedAt.js` (NEW, 30 lines)
+- `src/pages/RecordsPreview.jsx` (144 lines, was 139 — useLastPublishedAt + format + prop swap)
+- `src/pages/ParentHomePage.jsx` (150 lines, was 150 — cancelled AND'd into existing return; greetingFor rewritten same-line-count)
+- `SKYFIRE_BUILD_QUEUE_v2.md` (this entry)
+
+### Structural surprise
+
+`formatDateHeader` had its own UTC slice (`new Date().toISOString().slice(0, 10)`) for `today`. The prompt's 5 fixes didn't list it, but my groupByDate change would have *introduced* new misalignment between the (now NY-local) keys and the (still UTC) `today`, breaking the "TODAY" suffix during late-evening hours. The prompt's Step 2 instruction "any other consumer of the date key downstream must be inspected" is exactly what surfaced this. Fixed in the same commit to keep internal consistency.
+
+### Wave 3d sequence
+
+- 3d-i: ✓ shipped (96332ac, IA Map v1 wrap-up)
+- 3d-a: ✓ shipped (4156f73, NEXT UP date display)
+- 3d-b: ✓ shipped (7065c7b, slim THIS WEEK + inline RSVP)
+- 3d-b.1: ✓ shipped (b141a9f, in-progress event hotfix)
+- 3d-c: ✓ shipped (5d8131a, TeamsPage + TeamDetailPage records)
+- 3d-d: ✓ this commit
+- 3d-e: Hook discipline (error surfacing, loading-on-refetch, useTeamRecords microtask wrap)
+- 3d-f: N+1 collapse via useOrgTeamRecords (3 surfaces)
+- 3d-g: Polish bundle (filter-aware empty state, titleCount, skeleton initial load, formatGameDate + formatDiff consolidation, tournament card placement+record, formatRelativeTime wrapping useLastPublishedAt)
+- 3d-h: /schedule forward-week scrolling
+
+### Deferred
+
+- CHECK constraint on `game_results.result` (W/L/T enum) — separate hardening commit, not blocking. Today's data is clean.
+- `winPct` formula update for ties era — not needed today (T=0); flagged for the day a tie lands.
+- Cancelled-event behavior on /schedule — current behavior (visible) is correct for that surface. No action.
+
+**Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Six tracked files in this commit (4 modified + 1 new + the build queue).
