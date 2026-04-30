@@ -103,6 +103,12 @@ export default function ParentHomePage() {
         </section>
       )}
 
+      <button type="button" onClick={() => navigate('/records')} className="sf-press"
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px 16px', minHeight: 56, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>
+        <span>Records — Season summary, team stats, game log</span>
+        <span style={{ fontSize: 18, color: 'var(--em-text-tertiary)' }}>›</span>
+      </button>
+
       <section>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>THIS WEEK</div>
         <ChildFilterChips
