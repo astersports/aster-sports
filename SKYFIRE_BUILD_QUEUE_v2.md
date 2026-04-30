@@ -1489,3 +1489,41 @@ NextUpCardMax.jsx itself was not edited — its rendered output changed via the 
 - 3d-e: /schedule forward-week scrolling
 
 **Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Four files in this commit (3 modified + 1 deleted via `git rm`).
+
+## Apr 30, 2026 UTC — Wave 3d-b.1: NEXT 48 HOURS keeps in-progress events visible until end_at
+
+**Shipped:** Hotfix to Wave 3d-b. NEXT 48 HOURS lower bound moved from `start_at >= now` to `endT > now`, where `endT` defaults to `start_at + 90min` when `end_at` is null.
+
+**Why:** 3d-b's filter was too aggressive. Frank smoke-tested and flagged: a 6 AM practice ending at 7:30 AM disappeared from home at 6:01 AM, leaving a parent at 6:30 AM with no signal that "yes, Charlie's at the gym right now, RSVP was confirmed." In-progress events now stay visible until they actually end, then drop off cleanly.
+
+**Boundary mirrors `ThisWeekRow.isCompleted` exactly.** ThisWeekRow line 32 already used `endMs = event.end_at ? ... : startMs + 90 * 60 * 1000` and line 35 set `isCompleted = endMs < now`. The new filter uses the same 90-min default so the home list never includes an event that ThisWeekRow would render as Completed (greyed out, RSVP suppressed).
+
+**Production data sanity check (events table, last 60 days, 140 rows):**
+
+| Metric | Value |
+|---|---|
+| total events | 140 |
+| `end_at IS NULL` | **0** |
+| practice (n=89) avg duration | 78 min |
+| game (n=17) avg duration | 60 min |
+| tournament (n=34) avg duration | 616 min (multi-game days) |
+| p50 duration across all | 60 min |
+
+So the 90-min fallback is purely defensive — every event in production today has `end_at` populated. If a single-time entry ever does sneak in (manual SQL insert, external sync), 90 min covers practice (78 avg) and game (60 avg) reasonably; tournament (616 avg, multi-game days) would be undersold but the row would just disappear an hour into a 10-hour day, not visually wrong.
+
+**Files this commit:**
+- `src/pages/ParentHomePage.jsx` (150 lines, was 150 — single filter block change)
+- `SKYFIRE_BUILD_QUEUE_v2.md` (this entry)
+
+**Implementation note:** filter logic kept inline-ternary on the `endT` computation to fit at the 150-line cap (file was already at 150 from 3d-b's window-rationale comment). Reads as `return (a.end_at ? new Date(a.end_at).getTime() : startT + 90 * 60 * 1000) > now && startT < cutoff;`. If a future commit lifts unrelated complexity out of this file, the inline ternary can be split back to a named `endT` const for clarity — flagged here for the reader.
+
+**Wave 3d sequence:**
+- 3d-f: ✓ shipped (96332ac, IA Map v1 wrap-up)
+- 3d-a: ✓ shipped (4156f73, NEXT UP date display)
+- 3d-b: ✓ shipped (7065c7b, slim THIS WEEK + inline RSVP)
+- 3d-b.1: ✓ this commit
+- 3d-c: TeamsPage rows wired to useTeamRecords (next)
+- 3d-d: TeamDetailPage records section
+- 3d-e: /schedule forward-week scrolling
+
+**Note: did not use `git add -A`.** Two files explicitly staged.

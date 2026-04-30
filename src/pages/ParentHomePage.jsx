@@ -55,8 +55,8 @@ export default function ParentHomePage() {
   const next48h = useMemo(() => activities
     .filter((a) => {
       if (!a.start_at) return false;
-      const t = new Date(a.start_at).getTime();
-      return t >= now && t < cutoff;
+      const startT = new Date(a.start_at).getTime();
+      return (a.end_at ? new Date(a.end_at).getTime() : startT + 90 * 60 * 1000) > now && startT < cutoff;
     })
     .sort((a, b) => new Date(a.start_at) - new Date(b.start_at)),
     [activities, now, cutoff]);
