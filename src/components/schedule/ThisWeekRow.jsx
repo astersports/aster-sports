@@ -1,30 +1,27 @@
 // src/components/schedule/ThisWeekRow.jsx
-// Y1 tactical-row for the parent THIS WEEK section. Replaces CompactCard.
-// Surfaces child RSVP, ride/duty status, completion + cancellation, and
-// any time conflict with another visible event. Pills fast-path tap to
-// /events/{id}?tab={rides|duties}; row body taps to event detail.
+// Tactical row for the parent NEXT 48 HOURS section. Surfaces ride/duty
+// status, completion + cancellation, time conflicts with another visible
+// event, and inline RSVP for each child on this team. Pills fast-path tap
+// to /events/{id}?tab={rides|duties}; row body taps to event detail.
 import { useNavigate } from 'react-router-dom';
 import { Car, Users } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
 import { formatTime, formatCountdown } from '../../lib/formatters';
+import { useAuth } from '../../context/AuthContext';
 import { useNow } from '../../hooks/useNow';
 import { urgencyClass } from '../../lib/urgency';
+import ChildRsvp from './ChildRsvp';
 
 const PILL = { display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 500, padding: '2px 6px', borderRadius: 8 };
 const WARN = { ...PILL, backgroundColor: 'var(--em-warning-soft)', color: 'var(--em-warning)' };
 const OK   = { ...PILL, backgroundColor: 'var(--em-success-soft)', color: 'var(--em-success)' };
 const NEG  = { ...PILL, backgroundColor: 'var(--em-danger-soft)',  color: 'var(--em-danger)' };
 
-const RSVP_PILL = {
-  going:     { ...OK,   icon: '✓' },
-  maybe:     { ...WARN, icon: '?' },
-  not_going: { ...NEG,  icon: '✕' },
-  null:      { ...PILL, backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-secondary)', icon: '·' },
-};
-
-export default function ThisWeekRow({ event, rideCount, dutyCount, childRsvps, conflictWith }) {
+export default function ThisWeekRow({ event, rideCount, dutyCount, conflictWith }) {
   const navigate = useNavigate();
   const now = useNow();
+  const { myChildren } = useAuth();
+  const childrenOnTeam = (myChildren || []).filter((c) => c.teamId === event.team_id);
   const teamColor = event.teams?.team_color || 'var(--em-text-tertiary)';
   const teamName = event.teams?.name || event.team_name || '';
   const teamAbbr = teamName.split(' ')[0] || teamName;
@@ -65,15 +62,10 @@ export default function ThisWeekRow({ event, rideCount, dutyCount, childRsvps, c
           <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 4, backgroundColor: teamColor, color: 'var(--em-text-inverse)', flexShrink: 0 }}>{teamAbbr}</span>
           <span className="truncate" style={{ flex: 1, fontSize: 13, color: 'var(--em-text-secondary)', minWidth: 0 }}>{titleText}</span>
         </div>
-        {(isCompleted || isCancelled || (childRsvps && childRsvps.length > 0) || ridePill || dutyPill) && (
+        {(isCompleted || isCancelled || ridePill || dutyPill) && (
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
             {isCancelled && <span style={NEG}>✕ Cancelled</span>}
             {isCompleted && <span style={{ ...PILL, backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-secondary)' }}>✓ Completed</span>}
-            {(childRsvps || []).map((c) => {
-              const cfg = RSVP_PILL[c.response] || RSVP_PILL.null;
-              const { icon, ...style } = cfg;
-              return <span key={c.playerId} style={style}>{icon} {c.firstName}</span>;
-            })}
             {ridePill && <button type="button" onClick={(e) => goTo(e, `/events/${event.id}?tab=rides`)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>{ridePill}</button>}
             {dutyPill && <button type="button" onClick={(e) => goTo(e, `/events/${event.id}?tab=duties`)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>{dutyPill}</button>}
           </div>
@@ -83,6 +75,9 @@ export default function ThisWeekRow({ event, rideCount, dutyCount, childRsvps, c
             ⚠ Conflicts with {conflictWith.teamName} at {conflictWith.startTime}
           </div>
         )}
+        {!isCancelled && !isCompleted && childrenOnTeam.map((c) => (
+          <ChildRsvp key={c.playerId} child={c} eventId={event.id} compact={true} />
+        ))}
       </div>
     </div>
   );

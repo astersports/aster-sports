@@ -1453,3 +1453,39 @@ NextUpCardMax.jsx itself was not edited — its rendered output changed via the 
 - 3d-e: /schedule forward-week scrolling
 
 **Note: did not use `git add -A`.** Same untracked items as last commit stay untracked. Five files explicitly staged.
+
+## Apr 30, 2026 UTC — Wave 3d-b: Slim THIS WEEK to 48h + inline RSVP
+
+**Shipped:** Parent home THIS WEEK section reduced to an adaptive 48-hour window with inline RSVP on each row.
+
+**Window logic:** events with `start_at >= now AND start_at < now + 48h`, sorted ascending. Adaptive (not calendar-week-bound) — a Friday 8 PM event appears starting Wednesday 9 PM. Implemented inline in `ParentHomePage.jsx` (no dedicated hook); local var renamed `weekEnd` → `cutoff` and `thisWeek` → `next48h` / `filteredNext48h` so reading the source matches the new mental model. The lower bound moved from `todayStart` (midnight today) to `now` — events earlier today that have already started no longer appear, matching the NextUp "future events only" pattern.
+
+**Section header:** `THIS WEEK` → `NEXT 48 HOURS`. Same 11px uppercase tracking-wide tertiary-color treatment as `MY TEAMS`. No item count was rendered on the prior header — none added.
+
+**Empty state:** kept (matches existing pattern on parent home — `<TextEmptyState>`). Heading reworded `Nothing this week` → `Nothing in the next 48 hours`. The "Your next event is Saturday, May 3" follow-up message is preserved (and is now structurally more useful — the 48h window will be empty more often than the 7-day window was).
+
+**RSVP UI: Case D applied.** Inside `ThisWeekRow`, the read-only RSVP status pills (`✓ Aiden`, `? Mia`) were replaced with `<ChildRsvp child={c} eventId={event.id} compact={true} />` — one per child on the team, rendered below the existing pills row. ChildRsvp at compact=true is the same component already used by `NextUpCardMed` (at compact=false), so the pattern was established. The confirmed-state UI of ChildRsvp (`✓ Aiden Going` + Change button) preserves the at-a-glance status the read-only pills used to provide. RSVP rows are suppressed for cancelled/completed events. The team-children filter (`myChildren.filter(c => c.teamId === event.team_id)`) lives inside `ThisWeekRow` via `useAuth()` directly — same approach NextUpCardMed uses, no prop drilling.
+
+**Why slim:** parent home becomes a decision surface, not a browsing surface. 7-day browsing belongs on `/schedule` (Wave 3d-e). Cuts overlap between home and schedule per IA Map v1 Decision 1.
+
+**Files this commit:**
+- `src/pages/ParentHomePage.jsx` (150 lines, was 150 — window math, header, empty state heading, prop change to ThisWeekRow; net wash on line count thanks to the hook-import drop offsetting the comment block)
+- `src/components/schedule/ThisWeekRow.jsx` (84 lines, was 89 — dropped `childRsvps` prop + `RSVP_PILL` map + read-only pill render; added `useAuth` + `ChildRsvp` imports + interactive RSVP block)
+- `src/hooks/useChildRsvpsForEvents.js` — **DELETED** (orphaned: only consumer was the read-only pills now removed; verified via `grep -rn useChildRsvpsForEvents src/` returning no remaining references)
+- `SKYFIRE_BUILD_QUEUE_v2.md` (this entry)
+
+**Known follow-up (NOT in scope here):** ChildRsvp's `save()` is **not** strictly optimistic — it `setSaving(true)` → `await supabase.upsert` → `setResponse(value)` post-confirm, so during slow networks the user sees button opacity 0.6 but no immediate state flip. The module-level `responseCache` survives unmount/remount, so cross-page navigation feels instant after the first save. The 48h slim means at most a handful of rows visible, so a slow round-trip is now bounded — deferring the optimistic-flip rewrite until a real network-pain report.
+
+**Structural surprise during inspection:** the prompt assumed the THIS WEEK list lived in a dedicated section component or a hook; it's actually inline in `src/pages/ParentHomePage.jsx` (filter + sort + render in one file). The window is computed inline, not via a hook. `useChildRsvpsForEvents` was a single-consumer hook that only existed to feed the read-only pills — Case D made it dead code. Deleting it (vs leaving an unused export) keeps the hook directory honest. Also: `ChildRsvp` already had a `compact={true}` mode that fits exactly this use case — no new component or compact variant needed. The pattern was already there waiting.
+
+**Verification:** lint clean (0 errors, same 7 pre-existing warnings); build clean (111.27 KB gzipped main, down from 111.63 KB — savings from deleting `useChildRsvpsForEvents` and `RSVP_PILL` constants); both modified files ≤150 lines.
+
+**Wave 3d sequence:**
+- 3d-f: ✓ shipped (96332ac, IA Map v1 wrap-up)
+- 3d-a: ✓ shipped (4156f73, NEXT UP date display)
+- 3d-b: ✓ this commit
+- 3d-c: TeamsPage rows wired to useTeamRecords (next)
+- 3d-d: TeamDetailPage records section
+- 3d-e: /schedule forward-week scrolling
+
+**Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Four files in this commit (3 modified + 1 deleted via `git rm`).
