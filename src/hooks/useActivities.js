@@ -25,8 +25,11 @@ export function useActivities() {
   const hasCached = cache.key === key && cache.data;
   const [activities, setActivities] = useState(() => hasCached ? cache.data : []);
   const [loading, setLoading] = useState(() => !hasCached);
+  const [error, setError] = useState(null);
 
   const refetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     if (!orgId) { setLoading(false); return; }
     if (role === 'parent' && (!myTeamIds || myTeamIds.length === 0)) {
       cache.key = key; cache.data = [];
@@ -40,8 +43,8 @@ export function useActivities() {
         .order('start_at', { ascending: true });
       if (seasonId) query = query.eq('teams.season_id', seasonId);
       if (role === 'parent' && myTeamIds?.length) query = query.in('team_id', myTeamIds);
-      const { data, error } = await query;
-      if (error) throw error;
+      const { data, error: fetchErr } = await query;
+      if (fetchErr) throw fetchErr;
       const processed = (data || []).map((e) => ({
         ...e,
         date: e.start_at ? e.start_at.slice(0, 10) : null,
@@ -51,8 +54,11 @@ export function useActivities() {
       cache.key = key; cache.data = processed;
       setActivities(processed);
     } catch (err) {
+      // Preserve last-known-good activities on transient failure. The
+      // error surfaces separately so consumers can render "Couldn't
+      // refresh — retry" without wiping the screen.
       console.error('useActivities:', err.message);
-      setActivities([]);
+      setError(err);
     }
     setLoading(false);
   }, [orgId, seasonId, role, myTeamIds, key]);
@@ -61,5 +67,5 @@ export function useActivities() {
     Promise.resolve().then(refetch);
   }, [refetch]);
 
-  return { activities, loading, refetch };
+  return { activities, loading, error, refetch };
 }

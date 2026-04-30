@@ -53,7 +53,10 @@ export function useTeamRecords(teamId) {
       setGames(data || []);
       setLoading(false);
     }
-    load();
+    // Microtask wrap matches usePublicTournaments / useLastPublishedAt
+    // pattern — defers setLoading(true) out of the effect body to satisfy
+    // react-hooks/set-state-in-effect.
+    Promise.resolve().then(load);
     return () => { cancelled = true; };
   }, [teamId]);
 

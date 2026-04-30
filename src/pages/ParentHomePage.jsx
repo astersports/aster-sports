@@ -93,7 +93,7 @@ export default function ParentHomePage() {
         <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>{name}</h1>
       </section>
 
-      <NowSectionParent activities={activities} loading={loading} error={error} />
+      <NowSectionParent activities={activities} loading={loading} error={error} onRetry={refetch} />
 
       {myTeams.length > 0 && (
         <section>

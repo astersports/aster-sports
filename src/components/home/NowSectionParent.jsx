@@ -30,7 +30,7 @@ function EmptyLine({ children }) {
   );
 }
 
-export default function NowSectionParent({ activities = [], loading = false, error = null }) {
+export default function NowSectionParent({ activities = [], loading = false, error = null, onRetry }) {
   const now = useNow();
   const { density } = useDensity(SECTION_KEY);
   const rsvpCounts = useEventRsvpCounts(activities);
@@ -83,6 +83,7 @@ export default function NowSectionParent({ activities = [], loading = false, err
       titleAction={<DensityToggle sectionKey={SECTION_KEY} />}
       loading={loading && myTeams.length === 0}
       error={error}
+      onRetry={onRetry}
       empty={empty}
       sectionKey={SECTION_KEY}
       skeletonVariant="card"

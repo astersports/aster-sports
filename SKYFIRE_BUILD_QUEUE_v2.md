@@ -1642,3 +1642,57 @@ After:  `{ record, ties, streak, ppg, allowed, diff, winPct, gamesPlayed }`
 - Cancelled-event behavior on /schedule — current behavior (visible) is correct for that surface. No action.
 
 **Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Six tracked files in this commit (4 modified + 1 new + the build queue).
+
+## Apr 30, 2026 UTC — Wave 3d-e: Hook discipline pass
+
+**Shipped:** Three hooks brought into pattern alignment + consumer wiring. Architectural consistency commit — no new features, no new UI surface, but every downstream consumer gets honest error UX from this point forward.
+
+### Fixes
+
+**1. useActivities surfaces errors.** Was catching exceptions and setting `activities = []`, masking transient network failures as empty data. Now exposes `error` state, preserves last-known-good `activities` on failure, and clears the error on each new fetch. A parent on flaky 4G keeps seeing yesterday's events with a "Couldn't refresh" banner instead of seeing the screen wiped to "Nothing in the next 48 hours."
+
+**2. useActivities flips loading on every fetch.** Was only setting `loading = true` on first mount via the `useState` initializer (`!hasCached`); subsequent `refetch()` calls left it false. Now `setLoading(true)` runs at the top of `refetch`, so SectionShell's `isRefreshing` pulsing-dot affordance fires during background refreshes too.
+
+**3. useTeamRecords microtask-wraps the load call.** Inner `async function load()` was called synchronously inside the effect (`load();`), so `setLoading(true)` ran in the effect body — the `react-hooks/set-state-in-effect` shape that `usePublicTournaments` and `useLastPublishedAt` already defend against. Swapped `load()` for `Promise.resolve().then(load)` — minimal-diff fix, same behavior, now consistent with the canonical pattern.
+
+**4. ParentHomePage / NowSectionParent wire the error.** The page already destructured `error` from `useActivities` (today always `undefined`) and passed it to `<NowSectionParent>`. NowSectionParent already forwarded it to `<SectionShell>`. So **CASE A applies for the NEXT UP path** — plumbing was always there; the source just wasn't filling it. Hook fix alone made errors flow. Added one new prop (`onRetry`) on NowSectionParent → SectionShell so the SectionShell's "Try again" button gets wired to `refetch` from the page.
+
+### Structural surprise
+
+The prompt's CASE A/B framing assumed both NEXT UP and NEXT 48 HOURS were SectionShell consumers. **NEXT 48 HOURS is actually inline `<section>` markup in `ParentHomePage.jsx:113-145`, not SectionShell-wrapped.** It has only data/empty branches, no error state. Lifting it into SectionShell is a non-trivial refactor: the section already mixes `<ChildFilterChips>`, collapsible date-grouped lists, and a sub-empty-state with a "next event" follow-up. Out of scope for this commit (anti-drift; ParentHomePage is at the 150-line cap).
+
+**What this means for users on a network failure during NEXT 48 HOURS data:** because Step 2 preserves last-known-good `activities`, the inline section keeps rendering yesterday's data silently while NEXT UP shows the explicit error banner. Stale-but-visible below, error-with-retry above. Reasonable first cut; future commit can lift NEXT 48 HOURS into SectionShell for parallel error rendering.
+
+### Skeleton mask note
+
+NowSectionParent's existing `loading={loading && myTeams.length === 0}` mask passes `loading=false` to SectionShell once `myTeams` is non-empty. Net effect: SectionShell's `isRefreshing` pulsing-dot doesn't fire on background refresh of NEXT UP today, even though Fix 2 makes the underlying `loading` truthful. Removing the mask was tempting but it's a behavior change on the skeleton-during-refresh question, not the error question this commit is about. Flagged for the 3d-g polish bundle.
+
+### What this changes for users
+
+- A 503 from Supabase during the parent home initial load, today: page shows "Nothing in the next 48 hours" (a lie). Tomorrow: page shows last-known data with an explicit error banner on the NEXT UP section, retry button wired.
+- A successful retry: error clears, fresh data loads, no UI scarring.
+
+### Files this commit
+
+- `src/hooks/useActivities.js` (71 lines, was 65 — added error state + setLoading-on-refetch + preserve-last-known-good comment)
+- `src/hooks/useTeamRecords.js` (102 lines, was 99 — `Promise.resolve().then(load)` wrap + 3-line comment)
+- `src/components/home/NowSectionParent.jsx` (107 lines, was 106 — `onRetry` prop accepted + forwarded to SectionShell)
+- `src/pages/ParentHomePage.jsx` (150 lines, was 150 — `onRetry={refetch}` added to existing prop list, same line)
+- `SKYFIRE_BUILD_QUEUE_v2.md` (this entry)
+
+### Wave 3d sequence
+
+- 3d-i through 3d-d: ✓ shipped
+- 3d-e: ✓ this commit
+- 3d-f: N+1 collapse via useOrgTeamRecords (3 surfaces: MY TEAMS, /records, /teams)
+- 3d-g: Polish bundle (filter-aware empty state, titleCount, skeleton initial load, formatGameDate + formatDiff consolidation, tournament card placement+record, formatRelativeTime wrapping useLastPublishedAt, **NowSectionParent loading-mask cleanup**, **NEXT 48 HOURS error rendering**)
+- 3d-h: /schedule forward-week scrolling
+
+### Deferred
+
+- Realtime publication (Migration 039) for cross-tab cache invalidation — Phase 1 Step 5G per CLAUDE.md §16.9. Not a 3d concern.
+- `useActivities` module-level cache invalidation strategy — same Phase 1 Step 5G item.
+- NEXT 48 HOURS error rendering (lift inline section into SectionShell) — added to 3d-g.
+- NowSectionParent loading-mask cleanup so background-refresh pulsing dot fires — added to 3d-g.
+
+**Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Five tracked files in this commit (4 modified + the build queue).
