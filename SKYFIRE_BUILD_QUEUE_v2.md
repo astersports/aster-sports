@@ -1372,3 +1372,35 @@ Three different "navigate within a page" patterns. Standardizing or naming them 
 
 ### Recommended framing question for tomorrow
 **"What does each role see at /, /schedule, /teams, /records, /events/:id, and which surface is canonical for each data type?"** Once that map is locked, density and overlap clean up naturally — preview surfaces shrink, canonical surfaces get full data, redundant surfaces either deep-link or get scoped differently.
+
+## Apr 30, 2026 UTC — IA Map v1 wrap-up
+
+**Shipped:** Two cleanup changes falling out of Ember IA Map v1 (locked this morning):
+
+1. **/records-preview retired** — replaced route with `<Navigate to="/records" replace />`. External links (email templates, archived parent messages) won't 404. RecordsPreview.jsx kept (Case A — same component renders both routes; only the duplicate route path is gone).
+
+2. **CLAUDE.md §16.2 scoped honestly** — density (Min/Med/Max) is now scoped to NowSection on parent + coach home pages. `useDensity` hook + `user_preferences.card_density` JSONB storage stay intact for future extension. Other surfaces ship one well-tuned density. This replaces the prior "everywhere" aspiration that was true on exactly 1 of ~9 candidate surfaces. Heading also renamed from "Density propagates everywhere" → "Density (NowSection-scoped)" so the section title stops contradicting its body.
+
+**IA Map v1 decisions (referenced for next session):**
+- Decision 1: THIS WEEK on parent home → SLIM to today + tomorrow + inline RSVP (Wave 3d-b) — window flavor still pending Frank confirm (2-day strict / 3-day strict / adaptive / count-based)
+- Decision 2: Density → RETREAT (this commit)
+- Decision 3: /records-preview retirement (this commit)
+
+**Wave 3d sequence (recommended momentum order):**
+- 3d-f: this commit ✓
+- 3d-c: TeamsPage rows wired to useTeamRecords
+- 3d-d: TeamDetailPage records section
+- 3d-b: Slim THIS WEEK + inline RSVP (today+tomorrow)
+- 3d-a: NEXT UP card shows date
+- 3d-e: /schedule forward-week scrolling
+
+**Open items deferred:**
+- CLAUDE.md:545 implementation gate checklist still asks "Density-aware? (16.2)" — narrowed in scope by this commit but left as-is since the question is still valid for NowSection features. Reword to "Density-aware where applicable? (16.2)" if you want strictness.
+- IA Map v1 matrix lists `/players/:id` and `/profile` routes that don't exist in src/App.jsx today (closest match: `/account` → AccountPage). Aspirational or strike?
+
+**Files this commit:**
+- src/App.jsx (route redirect + Navigate import)
+- CLAUDE.md (§16.2 replaced)
+- SKYFIRE_BUILD_QUEUE_v2.md (this entry)
+
+**Note: did not use `git add -A`.** Pre-existing untracked items (rides-audit-source.zip, EMBER_MASTER_INDEX_v3.md, WAVE_3A_PROMPT_v2.md) stay untracked per established session pattern. Three files explicitly staged.

@@ -423,19 +423,11 @@ Per-row writes (RSVPs, rides, duties, score entry one-game-at-a-time) ship optim
 
 Microcopy on rollback: "Looks like that didn't go through. Try again?"
 
-### 16.2 Density propagates everywhere
+### 16.2 Density (NowSection-scoped)
 
-Every new list, card, or section component:
-- Reads `useDensity(sectionKey)` from `usePreferences` Context
-- Renders MIN/MED/MAX variants
-- Exposes density chevron via SectionShell.titleAction OR per-card override
+NowSection components on parent and coach home pages read `useDensity` and render MIN/MED/MAX variants. Density may extend to other surfaces when a specific user need is named; the `useDensity` hook + `user_preferences.card_density` JSONB storage are ready for extension. Default density is MED. Other surfaces ship with one well-tuned density.
 
-**Adaptive density rule (locked):**
-- T-4h before any event: that specific card auto-elevates to MAX
-- Manual chevron tap overrides adaptive elevation for the rest of the session
-- Idle days = user's last manually-set density
-
-**Future enhancement (not in 5E-2d):** Tournament weekends auto-MAX at T-24h instead of T-4h, given parents need lead time for hotels/rides/gear.
+Scoped down from "everywhere" on Apr 30, 2026 (IA Map v1, Decision 2). Prior aspiration: every list/card/section reads `useDensity` and exposes a chevron. Reality through Wave 3c-a.2: 1 of ~9 candidate surfaces complies (NextUpCard router on parent home). Cost to extend (~3-4 sessions, threading through 8 components) outweighed marginal payoff at typical 5-10 item list lengths. Storage backbone retained for re-entry when a real user need surfaces.
 
 ### 16.3 Kindness microcopy mandate
 

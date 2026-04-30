@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
 import RequireAuth from './components/layout/RequireAuth';
 import LoginPage from './pages/LoginPage';
@@ -62,7 +62,7 @@ export default function App() {
       <Route path="/tournaments/:id" element={<Protected><TournamentDetailPage /></Protected>} />
       <Route path="/messages"        element={<Protected><MessagesPage /></Protected>} />
       <Route path="/account"         element={<Protected><AccountPage /></Protected>} />
-      <Route path="/records-preview" element={<Protected><RecordsPreview /></Protected>} />
+      <Route path="/records-preview" element={<Navigate to="/records" replace />} />
 
       {/* Full-screen authenticated routes — auth guard without AppShell chrome */}
       <Route path="/events/:id" element={<RequireAuth><EventDetailPage /></RequireAuth>} />
