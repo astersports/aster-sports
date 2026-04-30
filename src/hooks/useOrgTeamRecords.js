@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { computeSummary } from '../lib/teamRecords';
 
@@ -8,7 +8,7 @@ import { computeSummary } from '../lib/teamRecords';
  * game_result for the org's teams in one round-trip and groups by
  * team_id in JS.
  *
- * Returns: { byTeamId, loading, error }
+ * Returns: { byTeamId, loading, error, refetch }
  *   byTeamId — { [teamId]: summary } — same summary shape as
  *              useTeamRecords. Teams with no game_results are absent;
  *              consumers should default via EMPTY_SUMMARY when needed.
@@ -22,45 +22,41 @@ export function useOrgTeamRecords(orgId) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (!orgId) {
-      Promise.resolve().then(() => { setByTeamId({}); setLoading(false); });
-      return;
+  const refetch = useCallback(async () => {
+    if (!orgId) { setLoading(false); return; }
+    setLoading(true);
+    setError(null);
+    const { data, error: fetchErr } = await supabase
+      .from('game_results')
+      .select('result, our_score, opponent_score, events!inner(team_id, start_at, teams!inner(org_id))')
+      .eq('events.teams.org_id', orgId)
+      .not('published_at', 'is', null)
+      .order('start_at', { foreignTable: 'events', ascending: true });
+    if (fetchErr) { setError(fetchErr); setLoading(false); return; }
+
+    const grouped = {};
+    for (const row of (data || [])) {
+      const teamId = row.events?.team_id;
+      if (!teamId) continue;
+      if (!grouped[teamId]) grouped[teamId] = [];
+      grouped[teamId].push({
+        result: row.result,
+        our_score: row.our_score,
+        opponent_score: row.opponent_score,
+      });
     }
-    let cancelled = false;
-    Promise.resolve().then(async () => {
-      setLoading(true);
-      setError(null);
-      const { data, error: fetchErr } = await supabase
-        .from('game_results')
-        .select('result, our_score, opponent_score, events!inner(team_id, start_at, teams!inner(org_id))')
-        .eq('events.teams.org_id', orgId)
-        .not('published_at', 'is', null)
-        .order('start_at', { foreignTable: 'events', ascending: true });
-      if (cancelled) return;
-      if (fetchErr) { setError(fetchErr); setLoading(false); return; }
 
-      const grouped = {};
-      for (const row of (data || [])) {
-        const teamId = row.events?.team_id;
-        if (!teamId) continue;
-        if (!grouped[teamId]) grouped[teamId] = [];
-        grouped[teamId].push({
-          result: row.result,
-          our_score: row.our_score,
-          opponent_score: row.opponent_score,
-        });
-      }
-
-      const summaries = {};
-      for (const [teamId, games] of Object.entries(grouped)) {
-        summaries[teamId] = computeSummary(games);
-      }
-      setByTeamId(summaries);
-      setLoading(false);
-    });
-    return () => { cancelled = true; };
+    const summaries = {};
+    for (const [teamId, games] of Object.entries(grouped)) {
+      summaries[teamId] = computeSummary(games);
+    }
+    setByTeamId(summaries);
+    setLoading(false);
   }, [orgId]);
 
-  return { byTeamId, loading, error };
+  useEffect(() => {
+    Promise.resolve().then(refetch);
+  }, [refetch]);
+
+  return { byTeamId, loading, error, refetch };
 }

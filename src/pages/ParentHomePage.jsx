@@ -14,16 +14,7 @@ import NowSectionParent from '../components/home/NowSectionParent';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
 import { detectConflicts } from '../lib/conflicts';
-
-function firstNameFrom(user) {
-  const f = (user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || '').split(/[\s.@]/)[0];
-  return f ? f.charAt(0).toUpperCase() + f.slice(1) : 'there';
-}
-
-function greetingFor() {
-  const h = parseInt(new Date().toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }), 10);
-  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-}
+import { firstNameFrom, greetingFor } from '../lib/greetings';
 
 export default function ParentHomePage() {
   const { user, guardianFirstName, myChildren, orgId } = useAuth();

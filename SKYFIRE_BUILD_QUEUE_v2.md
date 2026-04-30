@@ -1833,3 +1833,67 @@ Rest is invisible — pure code organization. Two consumers of `formatDiff` now 
 - 3d-h: /schedule forward-week scrolling
 
 **Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Five tracked files in this commit (4 modified + the build queue).
+
+## Apr 30, 2026 UTC — Wave 3d-g.1: Fresh-eyes audit cleanup
+
+**Shipped:** Five fixes from CC's post-3d-g audit. Three real bugs (one CC introduced today via 3d-e), one latent UTC trap eliminated, one line-cap relief refactor.
+
+### Fixes
+
+**B1. useOrgTeamRecords exports refetch.** Hook restructured to canonical `useCallback` + `useEffect` pattern (matches useActivities). Returns `{ byTeamId, loading, error, refetch }`. TeamsPage pull-to-refresh now fires both `refetch()` (team list via usePrograms) AND `refetchRecords()` in parallel via `Promise.all`. ParentHomePage and RecordsPreview consumers unchanged — `refetch` exported but unused on those surfaces, forward-compatible. Dropped the `cancelled` flag for consistency with useActivities.
+
+**B5. useActivities orgId guard before loading flip.** 3d-e moved `setLoading(true)` to the top of `refetch` so background refreshes flip honestly. That fired during the auth-bootstrap window when `orgId` was briefly undefined → instant true→false flicker on the SectionShell skeleton. Fix: check `orgId` first; no-op on loading state if missing. Real fetches still honest. CC introduced this regression today; CC fixed it today.
+
+**B3. NowSectionParent drops the loading mask.** Was `loading={loading && myTeams.length === 0}`, suppressing the SectionShell pulsing-dot affordance on background refresh for users with teams (the dominant case). 3d-e queue called this out as deferred; now landed. SectionShell distinguishes initial-load skeleton (`loading && !hasChildren`) from background-refresh pulsing-dot (`loading && hasChildren`) internally — the consumer doesn't need to mask.
+
+**E3. firstNameFrom + greetingFor extracted to `src/lib/greetings.js`.** Pure-functional helpers, **verbatim relocation** (no edits to behavior). ParentHomePage was at the 150-line cap from prior 3d commits and structurally brittle. Page drops from 150 → **141** — nine lines of headroom restored for future commits.
+
+**B2. event.date / end_date / start_time projections dropped from useActivities.** Pre-flight grep confirmed zero consumers across `src/`. Same UTC-slice anti-pattern fixed in 3d-d for `groupByDate`. Removing the projection entirely eliminates the latent trap a future consumer would inherit. Hook header comment updated to reflect the new reality.
+
+**Scope adjustment from prompt:** prompt instructed "Drop the .map entirely." Pre-flight surfaced that **`.location_name` has 3 active consumers** — `src/lib/icalHelpers.js:38`, `src/components/schedule/EventCard.jsx:86,89,90,93`. Dropping the entire .map would break ical export and event card rendering. Kept the .map but reduced to a single-key projection: `({ ...e, location_name: e.location || null })`. Three other projected keys (`date`, `start_time`, `end_date`) dropped as planned.
+
+### What this changes for users
+
+- Pull-to-refresh on /teams now updates BOTH the team list AND the records summaries (was only the team list).
+- No skeleton flicker on parent home during auth bootstrap.
+- SectionShell pulsing-dot now fires correctly on background refresh of NEXT UP for the dominant case (users with teams).
+- Everything else invisible — pure code organization.
+
+### Files this commit
+
+- `src/hooks/useOrgTeamRecords.js` (62 lines, was 66 — useCallback restructure, refetch export, dropped cancelled-flag scaffolding)
+- `src/hooks/useActivities.js` (66 lines, was 71 — orgId guard reordered + projection trimmed + comment updated)
+- `src/components/home/NowSectionParent.jsx` (107 lines, was 107 — single-line mask change)
+- `src/lib/greetings.js` (NEW, 13 lines — verbatim verbs)
+- `src/pages/ParentHomePage.jsx` (141 lines, was 150 — import greetings, drop inline; **9 lines of headroom restored**)
+- `src/pages/TeamsPage.jsx` (63 lines, was 63 — refetchRecords wired into Promise.all)
+- `SKYFIRE_BUILD_QUEUE_v2.md` (this entry)
+
+### Structural surprises during inspection
+
+- **`firstNameFrom` and `greetingFor` are duplicated in `src/components/admin/AdminGreeting.jsx`** with slightly different signatures (e.g., AdminGreeting's `greetingFor(date = new Date())` is NOT NY-anchored — same bug 3d-d fixed on parent home). E3 only extracted ParentHomePage's verbatim. Anti-drift kept me from touching AdminGreeting; logged as follow-up. Once consolidated, AdminHomePage gets the NY-anchor fix for free.
+- **`.location_name` cannot be dropped from useActivities.** Three downstream consumers (icalHelpers + EventCard). Prompt assumed all .map projections were unused. Kept .map with reduced projection; documented above.
+- **Existing `.start_at` order syntax preserved** in useOrgTeamRecords (`{ foreignTable: 'events', ascending: true }` per useTeamRecords pattern). Prompt suggested `'events(start_at)'` shorthand; kept proven canonical form to avoid risk of breaking the working query.
+
+### Wave 3d sequence
+
+- 3d-i through 3d-g: ✓ shipped
+- 3d-g.1: ✓ this commit
+- 3d-g.2: titleCount wirings (requires SectionShell migration on /records and /teams pages — structural)
+- 3d-h: /schedule forward-week scrolling
+
+### Audit items deferred (logged for future)
+
+- B4 — formatDateHeader('unknown') → "Invalid Date". Cosmetic. Filter upstream.
+- B6 — formatDiff(0) returns "0" not "0.0". Pre-existing quirk; low priority.
+- B7 — useTeamRecords stale JSDoc post-3d-f. Docs only.
+- E1 — Module cache for useOrgTeamRecords + useLastPublishedAt. Real perf win, separate commit.
+- E2 — useRefetchOnVisible symmetry on useOrgTeamRecords. Now unblocked by B1; next commit candidate.
+- E4 — Kindness microcopy on useActivities errors. Separate error-mapping commit.
+- E5 — formatRelativeTime live-tick. Records is drive-by; low priority.
+- E6 — TeamDetailPage double useTeamRecords call.
+- E7 — Build queue file size. Out of scope.
+- E8 — start_at unused-in-projection. PostgREST likely requires it for .order; verify-then-skip.
+- **NEW: AdminGreeting.jsx duplicates the helpers** (different signatures, missing NY-anchor). Consolidate when touching admin surfaces next.
+
+**Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Seven tracked files in this commit (5 modified + 1 new + the build queue).

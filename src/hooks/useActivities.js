@@ -12,11 +12,11 @@ const cache = { key: null, data: null };
 const buildKey = (orgId, seasonId, role, myTeamIds) =>
   `${orgId || ''}:${seasonId || ''}:${role || ''}:${(myTeamIds || []).join(',')}`;
 
-// Queries the events table and normalizes columns for downstream
-// components. The DB stores a single `start_at` timestamptz; we split
-// it into `date` (YYYY-MM-DD) and `start_time` (HH:MM) so DayStrip,
-// EventCard, CompactCard, and CountdownBanner can use simple strings.
-// `location` is aliased to `location_name` for the same reason.
+// Queries the events table and aliases `location` → `location_name` so
+// EventCard and the ical export use a stable column name. Earlier
+// `date` / `start_time` / `end_date` projections removed in 3d-g.1 —
+// they had no consumers and held a UTC-slice anti-pattern that future
+// consumers would have inherited.
 export function useActivities() {
   const { orgId, role, myTeamIds } = useAuth();
   const { activeSeason } = useSeason();
@@ -28,9 +28,9 @@ export function useActivities() {
   const [error, setError] = useState(null);
 
   const refetch = useCallback(async () => {
+    if (!orgId) { setLoading(false); return; }
     setLoading(true);
     setError(null);
-    if (!orgId) { setLoading(false); return; }
     if (role === 'parent' && (!myTeamIds || myTeamIds.length === 0)) {
       cache.key = key; cache.data = [];
       setActivities([]); setLoading(false); return;
@@ -45,12 +45,7 @@ export function useActivities() {
       if (role === 'parent' && myTeamIds?.length) query = query.in('team_id', myTeamIds);
       const { data, error: fetchErr } = await query;
       if (fetchErr) throw fetchErr;
-      const processed = (data || []).map((e) => ({
-        ...e,
-        date: e.start_at ? e.start_at.slice(0, 10) : null,
-        start_time: e.start_at ? new Date(e.start_at).toTimeString().slice(0, 5) : null,
-        location_name: e.location || null,
-      }));
+      const processed = (data || []).map((e) => ({ ...e, location_name: e.location || null }));
       cache.key = key; cache.data = processed;
       setActivities(processed);
     } catch (err) {

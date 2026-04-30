@@ -16,8 +16,8 @@ export default function TeamsPage() {
   const { activeSeason } = useSeason();
   const { role, myTeamIds, orgId } = useAuth();
   const { programs, loading, refetch } = usePrograms();
-  const { byTeamId, loading: recordsLoading } = useOrgTeamRecords(orgId);
-  const { refreshing, onTouchStart, onTouchEnd } = usePullToRefresh(() => refetch?.());
+  const { byTeamId, loading: recordsLoading, refetch: refetchRecords } = useOrgTeamRecords(orgId);
+  const { refreshing, onTouchStart, onTouchEnd } = usePullToRefresh(() => Promise.all([refetch?.(), refetchRecords?.()]));
   const visiblePrograms = role === 'parent' ? programs.filter((t) => (myTeamIds || []).includes(t.id)) : programs;
 
   return (

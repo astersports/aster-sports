@@ -81,7 +81,7 @@ export default function NowSectionParent({ activities = [], loading = false, err
     <SectionShell
       title="NEXT UP"
       titleAction={<DensityToggle sectionKey={SECTION_KEY} />}
-      loading={loading && myTeams.length === 0}
+      loading={loading}
       error={error}
       onRetry={onRetry}
       empty={empty}
