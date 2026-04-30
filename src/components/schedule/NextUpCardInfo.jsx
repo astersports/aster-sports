@@ -2,12 +2,13 @@
 // each piece at the right spot in the visual order:
 //   WhenRow  → above the location line
 //   GameInfo → below the location line (only renders for games)
+import { formatEventDateMax, formatTime } from '../../lib/formatters';
 
 export function WhenRow({ event }) {
   return (
     <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2 }}>
-      {new Date(event.start_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}, {new Date(event.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-      {event.end_at && ` - ${new Date(event.end_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
+      {formatEventDateMax(event.start_at)}
+      {event.end_at && ` - ${formatTime(event.end_at)}`}
     </div>
   );
 }

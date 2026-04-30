@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Repeat, ExternalLink } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
-import { formatCountdown } from '../../lib/formatters';
+import { formatCountdown, formatEventDateMed } from '../../lib/formatters';
 import { GameInfo } from './NextUpCardInfo';
 import NextUpCardRsvpSection from './NextUpCardRsvpSection';
 import NextUpCardStatusRow from './NextUpCardStatusRow';
@@ -87,6 +87,9 @@ export default function NextUpCardMed({ event, rsvpCount, rideCount, dutyCount, 
               )}
             </div>
           )}
+          <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2, marginBottom: 4 }}>
+            {formatEventDateMed(event.start_at)}
+          </div>
           {event.location && (
             directionsUrl && !isPlaceholderLocation ? (
               <a href={directionsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}

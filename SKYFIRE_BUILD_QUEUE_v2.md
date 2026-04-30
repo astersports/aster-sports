@@ -1404,3 +1404,52 @@ Three different "navigate within a page" patterns. Standardizing or naming them 
 - SKYFIRE_BUILD_QUEUE_v2.md (this entry)
 
 **Note: did not use `git add -A`.** Pre-existing untracked items (rides-audit-source.zip, EMBER_MASTER_INDEX_v3.md, WAVE_3A_PROMPT_v2.md) stay untracked per established session pattern. Three files explicitly staged.
+
+## Apr 30, 2026 UTC — Wave 3d-a: NEXT UP date display
+
+**Shipped:** NEXT UP card on parent home now shows the event date in addition to time, with formatting tuned per density variant:
+
+- **MAX:** full date `Thu, Apr 30 · 2:00 PM` (and end-time suffix kept: `… - 4:00 PM` when `event.end_at` is present)
+- **MED:** short date `Thu Apr 30 · 2:00 PM` — newly added; previously MED conveyed when-ness only via the top-right countdown badge
+- **MIN:** relative date `Today · 2:00 PM` / `Tomorrow · 6:30 PM` / `Mon · 5:00 PM` (within 7 days) / `May 14 · 9:00 AM` (beyond) — replaces the previous `{countdown} · {clockTime}` line
+
+**Why per-variant:** MAX is a detail card with room. MED is default density (per §16.2), needs the date compact. MIN is glance — relative dates read fastest when the event is soon, which is the typical "next up" case. The MIN swap retains the `urgencyClass` hue cue (driven by `secondsUntil` from `useNow()`), so visual urgency remains even though the literal countdown text is gone.
+
+**Date helpers (extended file, not new):** added to `src/lib/formatters.js` next to the existing `formatTime` / `formatCountdown`:
+- `formatEventDateMax(startAt)` → `"Sat, May 3 · 2:00 PM"`
+- `formatEventDateMed(startAt)` → `"Sat May 3 · 2:00 PM"`
+- `formatEventDateMin(startAt)` → relative-first per spec above
+
+All three anchored to `America/New_York` via `toLocaleDateString({ timeZone })`, matching the established pattern in `tournamentBriefing.js` and the BUG-7 ET anchor from Wave 3c-a.2. Day-comparison for "Today / Tomorrow" uses `toLocaleDateString('en-CA', { timeZone: NY_TZ })` to get a stable NY-local YYYY-MM-DD key — a parent on Pacific time at 11:30 PM PT still sees the next morning's ET game labelled "Tomorrow."
+
+**Structural surprise during inspection:** prompt assumed files at `src/components/home/NextUpCard*.jsx`; they actually live in `src/components/schedule/` (router `NextUpCard.jsx` + `NextUpCardMin/Med/Max.jsx` + shared `NextUpCardInfo.jsx` for `WhenRow` / `GameInfo`). Density values are `'minimal' | 'medium' | 'maximum'`, not `min/med/max`. MAX already rendered the date via `WhenRow` from `NextUpCardInfo` — so the MAX work was a separator swap (`,` → ` · `) by routing `WhenRow` through `formatEventDateMax`, not a fresh add.
+
+**Files this commit:**
+- src/lib/formatters.js (95 lines, was 46 — added NY_TZ const + 3 helpers)
+- src/components/schedule/NextUpCardInfo.jsx (48 lines, was 47 — WhenRow uses formatEventDateMax)
+- src/components/schedule/NextUpCardMed.jsx (140 lines, was 137 — When row inserted between team row and location row)
+- src/components/schedule/NextUpCardMin.jsx (48 lines, was 55 — countdown state + useEffect + clockTime variable removed; aria-label updated to use the same date label)
+- SKYFIRE_BUILD_QUEUE_v2.md (this entry)
+
+NextUpCardMax.jsx itself was not edited — its rendered output changed via the shared WhenRow.
+
+**Per-variant rendered samples (today = Apr 30, 2026, ET):**
+
+| Horizon | MIN | MED | MAX |
+|---|---|---|---|
+| today 2 PM ET | `Today · 2:00 PM` | `Thu Apr 30 · 2:00 PM` | `Thu, Apr 30 · 2:00 PM` |
+| tomorrow 6:30 PM ET | `Tomorrow · 6:30 PM` | `Fri May 1 · 6:30 PM` | `Fri, May 1 · 6:30 PM` |
+| Mon May 4, 5 PM ET (4 days out) | `Mon · 5:00 PM` | `Mon May 4 · 5:00 PM` | `Mon, May 4 · 5:00 PM` |
+| Thu May 14, 9 AM ET (14 days out) | `May 14 · 9:00 AM` | `Thu May 14 · 9:00 AM` | `Thu, May 14 · 9:00 AM` |
+
+**Verification:** lint clean (0 errors, same 7 pre-existing warnings); build clean (111.63 KB gzipped main, unchanged from prior commit); all touched files ≤150 lines.
+
+**Wave 3d sequence:**
+- 3d-f: ✓ shipped (96332ac, IA Map v1 wrap-up)
+- 3d-a: ✓ this commit
+- 3d-b: Slim THIS WEEK + inline RSVP (next — still pending Frank's window-flavor confirm: 2-day strict / 3-day strict / adaptive / count-based)
+- 3d-c: TeamsPage rows wired to useTeamRecords
+- 3d-d: TeamDetailPage records section
+- 3d-e: /schedule forward-week scrolling
+
+**Note: did not use `git add -A`.** Same untracked items as last commit stay untracked. Five files explicitly staged.
