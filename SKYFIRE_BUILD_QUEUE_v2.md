@@ -1271,3 +1271,46 @@ Migration 028 LOCKED + DEPLOYED + VERIFIED. Parent role now matches D-roster1 sp
 - SKYFIRE_BUILD_QUEUE_v2.md (this entry)
 
 **Next-wave unlock:** Wave 3c-b (per-team filter UI on /records), Wave 4 (communications architecture / parent message system).
+
+## Apr 30, 2026 UTC — Wave 3c-a.2: /records audit fixes + Migration 031 mirror
+
+**Shipped:** 8 audit findings from Wave 3c-a.1 closeout review + Migration 031 file mirror in a single commit. Production /records now hardened against forward risks (XSS pathway, silent failures, timezone display) and computes hero stats from live data.
+
+**Audit fixes (8 of 16 findings — see audit doc for triage):**
+- BUG-1 (P1, security): Replaced `dangerouslySetInnerHTML` in `BroadcastHeroHeader` with a clean two-prop API (`headline` + `accent`). Eliminated the XSS pathway before any non-literal caller surfaces it. Public /records was the trigger — needed it gone now, not "later when Wave 3b ships."
+- BUG-2 (P1, UX): `usePublicTournaments` errors now surface in `RecordsPreview` mirroring the teams error pattern. No more silent empty timeline on RLS/network failures.
+- BUG-4 (P2, defense in depth): `useTeams` accepts optional `orgId` and applies `.eq('org_id', orgId)` when provided. RecordsPreview passes `LEGACY_HOOPERS_ORG_ID`. When Phase 6 generalizes `teams_select_public`, client-side filter prevents cross-org leak.
+- BUG-6 (P2, perf hygiene): `useTeamRecords` summary wrapped in `useMemo`. Avoids the future trap of summary recomputing every render.
+- BUG-7 (P2, correctness): `formatGameDate` anchored to `America/New_York` (venue TZ for both pilot orgs). Game dates now consistent for viewers in any timezone — no more "Apr 12 game showing as Apr 13 to Sydney users."
+- BUG-9 (P3, freshness): Hero stat values and tags now computed from live data — Tournament Champs (sum of Champions placements), Nationals Qualified (sum of teams in tournaments matching /nationals/i), Active Teams (teams.length), Games (count(published game_results)).
+- BUG-10 (P3, brittleness): `FEATURED_TEAM_NAME = '11U Girls'` hardcoded string replaced with `sort_order === 1` lookup + `teams[0]` fallback.
+- BUG-16 (P3, a11y): `document.title` set to "Records — Legacy Hoopers" on mount, restored on unmount.
+
+**Migration 031 file mirror:** Hotfix applied via Supabase MCP earlier today (April 30, 2026 UTC). Closes RLS gap where anon couldn't read `tournament_teams` join rows on /records public page. Repo now in sync with DB.
+
+**Deferred from audit (intentional):**
+- BUG-3 (N+1 hook batching): YAGNI at 5 teams. Revisit at 50+.
+- BUG-5 (Promise.resolve wrap): Cosmetic consistency. Existing hooks pass lint.
+- BUG-8 (AbortController): No rapid prop changes today. Fix in Wave 3c-b filter UI.
+- BUG-11 (placement badge defaults): Schema only has Champions/Finalists/NULL. YAGNI.
+- BUG-12 (hex validation): All teams have valid 6-char hex; DB-side validation belongs at insert time.
+- BUG-13 (.bc-tourney-pill default): Intentional Wave 3c-a.1 redesign, not a bug.
+- BUG-14 (TEAM_COLORS dead code): Sweep separately.
+- BUG-15 (streak null result): Publish workflow blocks NULL result. YAGNI.
+
+**Files this commit:**
+- supabase/migrations/031_public_rls_for_tournament_teams.sql (new)
+- src/components/broadcast/BroadcastHeroHeader.jsx (BUG-1)
+- src/pages/RecordsPreview.jsx (BUG-2, 7, 9, 10, 16)
+- src/hooks/useTeams.js (BUG-4)
+- src/hooks/useTeamRecords.js (BUG-6)
+- SKYFIRE_BUILD_QUEUE_v2.md (this entry)
+
+**Note: broadcast.css not touched.** BUG-1's cobalt accent reuses the existing `.bc-hero-h1 b` rule (already in CSS at line 66). The new component outputs a `<b>` element; no new class needed.
+
+**Evidence:**
+- Lint clean (0 errors, 7 pre-existing warnings)
+- Build clean (111.93 KB gzipped main, +0.18 KB delta)
+- /records anon path verified pre-commit (Migration 031 already live in DB)
+
+**Next-wave unlock:** Wave 3c-b (per-team filter UI on /records, including AbortController per BUG-8), Wave 4 (communications architecture).

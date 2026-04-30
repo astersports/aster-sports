@@ -2,11 +2,16 @@ import React from 'react';
 
 /**
  * Broadcast hero. Eyebrow + headline + sub + tags + last-updated.
- * Headline accepts a string with <b>...</b> for cobalt emphasis.
+ *
+ * The headline accepts plain text. An optional `accent` prop renders one
+ * cobalt-emphasized word/phrase to the right of the headline using a
+ * <b> tag (styled by .bc-hero-h1 b in broadcast.css). No raw HTML, no
+ * dangerouslySetInnerHTML — safe for user-derived content.
  */
 export default function BroadcastHeroHeader({
   eyebrow,
   headline,
+  accent,
   sub,
   tags = [],
   lastUpdated,
@@ -15,13 +20,11 @@ export default function BroadcastHeroHeader({
     <header className="bc-hero">
       <div className="bc-hero-inner">
         {eyebrow && <div className="bc-hero-eye">{eyebrow}</div>}
-        {headline && (
-          // Wave 3a: headline is fixture-controlled. Wave 3b will accept a
-          // tuple-array prop and render <b>cobalt</b> emphasis without raw HTML.
-          <h1
-            className="bc-hero-h1"
-            dangerouslySetInnerHTML={{ __html: headline }}
-          />
+        {(headline || accent) && (
+          <h1 className="bc-hero-h1">
+            {headline}
+            {accent && <> <b>{accent}</b></>}
+          </h1>
         )}
         {sub && <p className="bc-hero-sub">{sub}</p>}
         {tags.length > 0 && (

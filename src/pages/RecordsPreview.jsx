@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import BroadcastHeroHeader from '../components/broadcast/BroadcastHeroHeader';
 import StatHeroBar from '../components/broadcast/StatHeroBar';
 import TeamIdentityCard from '../components/broadcast/TeamIdentityCard';
@@ -8,8 +8,7 @@ import { useTeams } from '../hooks/useTeams';
 import { useTeamRecords } from '../hooks/useTeamRecords';
 import { usePublicTournaments } from '../hooks/usePublicTournaments';
 import { LEGACY_HOOPERS_ORG_ID } from '../lib/constants';
-
-const FEATURED_TEAM_NAME = '11U Girls';
+import { supabase } from '../lib/supabase';
 
 function buildTeamMeta(team) {
   if (team.circuit === 'aau') return 'AAU · Zero Gravity';
@@ -19,33 +18,54 @@ function buildTeamMeta(team) {
 
 function formatGameDate(iso) {
   if (!iso) return '';
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // Anchor to venue TZ — both pilot orgs are Northeast US. TODO Phase 6+: derive from event/venue.
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' });
 }
 
 export default function RecordsPreview() {
-  const { loading: teamsLoading, error: teamsError, teams } = useTeams();
-  const { data: tournaments, loading: tournamentsLoading } = usePublicTournaments(LEGACY_HOOPERS_ORG_ID);
+  const { loading: teamsLoading, error: teamsError, teams } = useTeams(LEGACY_HOOPERS_ORG_ID);
+  const { data: tournaments, loading: tournamentsLoading, error: tournamentsError } = usePublicTournaments(LEGACY_HOOPERS_ORG_ID);
   const featured = useMemo(
-    () => teams.find((t) => t.name === FEATURED_TEAM_NAME),
+    () => teams.find((t) => t.sort_order === 1) || teams[0],
     [teams]
   );
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = 'Records — Legacy Hoopers';
+    return () => { document.title = previousTitle; };
+  }, []);
+
+  // Total published game count across all org teams (via public RLS — Migrations 025/028).
+  const [totalGames, setTotalGames] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    supabase.from('game_results').select('*', { count: 'exact', head: true }).not('published_at', 'is', null)
+      .then(({ count }) => { if (!cancelled) setTotalGames(count || 0); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const tournamentStats = useMemo(() => ({
+    champs: tournaments.reduce((s, t) => s + (t.participants?.filter((p) => p.final_place === 'Champions').length || 0), 0),
+    nationalsQualified: tournaments.filter((t) => /nationals/i.test(t.name)).reduce((s, t) => s + (t.participants?.length || 0), 0),
+  }), [tournaments]);
 
   return (
     <div className="bc-root">
       <BroadcastHeroHeader
         eyebrow="Spring 2026 · Legacy Hoopers"
-        headline="THE <b>RECORDS</b>"
+        headline="THE"
+        accent="RECORDS"
         sub="Five teams. One season. Every result, every streak, every stat."
-        tags={['Spring 2026', '5 Teams', '27 Games']}
+        tags={['Spring 2026', `${teams.length} Teams`, `${totalGames} Games`]}
         lastUpdated="Apr 29, 2026"
       />
 
       <StatHeroBar
         items={[
-          { value: 2, label: 'Tournament Champs',   variant: 'gold' },
-          { value: 2, label: 'Nationals Qualified', variant: 'green' },
-          { value: 5, label: 'Active Teams' },
+          { value: String(tournamentStats.champs),             label: 'Tournament Champs',   variant: 'gold' },
+          { value: String(tournamentStats.nationalsQualified), label: 'Nationals Qualified', variant: 'green' },
+          { value: String(teams.length),                       label: 'Active Teams' },
         ]}
       />
 
@@ -63,13 +83,16 @@ export default function RecordsPreview() {
         <section className="bc-section">
           <div className="bc-sec-eye">Tournaments</div>
           <h2 className="bc-sec-h2">RUN OF <b>PLAY</b></h2>
+          {tournamentsError && (
+            <div className="bc-empty">Could not load tournaments. Refresh to retry.</div>
+          )}
           {!tournamentsLoading && tournaments.map((t) => (
             <TournamentCard key={t.id} tournament={t} />
           ))}
         </section>
 
         <section className="bc-section" style={{ paddingBottom: 64 }}>
-          <div className="bc-sec-eye">Recent Results · {FEATURED_TEAM_NAME}</div>
+          <div className="bc-sec-eye">Recent Results · {featured?.name || ''}</div>
           <h2 className="bc-sec-h2">GAME <b>LOG</b></h2>
           {featured ? <FeaturedGameLog teamId={featured.id} /> : <div className="bc-empty">Loading featured team…</div>}
         </section>

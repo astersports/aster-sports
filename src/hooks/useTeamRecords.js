@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 /**
@@ -52,7 +52,7 @@ export function useTeamRecords(teamId) {
     return () => { cancelled = true; };
   }, [teamId]);
 
-  const summary = computeSummary(games);
+  const summary = useMemo(() => computeSummary(games), [games]);
   return { loading, error, games, summary };
 }
 
