@@ -1527,3 +1527,44 @@ So the 90-min fallback is purely defensive — every event in production today h
 - 3d-e: /schedule forward-week scrolling
 
 **Note: did not use `git add -A`.** Two files explicitly staged.
+
+## Apr 30, 2026 UTC — Wave 3d-c: TeamsPage + TeamDetailPage records wired
+
+**Shipped:** Live W-L · streak on TeamsPage rows + records summary on TeamDetailPage. Same `useTeamRecords` hook used by yesterday's MY TEAMS strip wiring (commit 6cf5538).
+
+**TeamsPage:** extracted the inline row JSX into `src/components/teams/TeamRow.jsx` (88 lines). Hook can't be called inside `.map()` at the page level, so the extract was forced — and it was the right move regardless. Placeholder `0-0` (was at TeamsPage.jsx:95) replaced with live `summary.record · streak` formatted exactly like ParentHomeTeamCard. The page itself dropped from 136 to 61 lines.
+
+**TeamDetailPage:** hybrid Case A + Case B.
+
+- **Case A — TeamHeaderCard pill:** the `TeamHeaderCard.jsx:39` placeholder `0-0` (in the team header pill row) was a quiet placeholder I missed in the prompt-listed spots. Swapped the literal for a `record` prop. TeamHeaderCard stays presentational — TeamDetailPage calls `useTeamRecords(teamId)` once and passes `summary.record` down.
+- **Case B — new `<TeamRecordsSection>`:** added a five-cell stats card (PPG / Allowed / Diff / Win% / Games) directly below the header card. Mirrors TeamHeaderCard's existing three-cell stats row pattern (same typography, tokens, borders). New file `src/components/teams/TeamRecordsSection.jsx` (51 lines). Loading state shows `—` per cell so layout doesn't shift on data arrival.
+
+**`formatDiff` duplication noted, not yet fixed:** the same `formatDiff` helper now lives in `TeamIdentityCard.jsx` (broadcast/) and `TeamRecordsSection.jsx` (teams/). Worth consolidating to `src/lib/formatters.js` next pass — flagged for the 3d-g polish bundle, not this commit.
+
+**Files this commit:**
+- `src/pages/TeamsPage.jsx` (61 lines, was 136 — row extracted, navigate import dropped)
+- `src/pages/TeamDetailPage.jsx` (126 lines, was 121 — useTeamRecords hook + record prop + new section)
+- `src/components/roster/TeamHeaderCard.jsx` (61 lines, was 60 — `record` prop, default `'—'`, comment updated)
+- `src/components/teams/TeamRow.jsx` (NEW, 88 lines)
+- `src/components/teams/TeamRecordsSection.jsx` (NEW, 51 lines)
+- `SKYFIRE_BUILD_QUEUE_v2.md` (this entry)
+
+**N+1 note:** TeamsPage now fires one Supabase query per team row (5 teams = 5 queries). Same N+1 pattern as MY TEAMS strip on parent home (`ParentHomeTeamCard`) and the /records SEASON SNAPSHOT cards. Three surfaces, one shape — single fix coming in 3d-f via `useOrgTeamRecords(orgId)` (one query, JS group, return `{ [teamId]: summary }`). TeamDetailPage uses a single-team hook call so it's not part of the N+1 problem.
+
+**Structural surprise:** `TeamHeaderCard.jsx:39` had its own `0-0` placeholder — pre-flight grep on TeamsPage and TeamDetailPage didn't surface it because the literal lives in the imported component, not in the pages themselves. Caught by reading TeamHeaderCard while planning Case B placement. Worth flagging for future audits: when grepping for placeholders, also include the components a page renders.
+
+**Verification:** lint clean (0 errors, same 7 pre-existing warnings); build clean (111.66 KB gzipped main, +0.39 KB vs prior — TeamRecordsSection adds ~0.4 KB); all touched files ≤150 lines.
+
+**Wave 3d sequence:**
+- 3d-i (renumbered from 3d-f, IA Map wrap-up): ✓ shipped (96332ac)
+- 3d-a: ✓ shipped (4156f73, NEXT UP date display)
+- 3d-b: ✓ shipped (7065c7b, slim THIS WEEK + inline RSVP)
+- 3d-b.1: ✓ shipped (b141a9f, in-progress event hotfix)
+- 3d-c: ✓ this commit
+- 3d-d: Truth-pass (date lies, ties counting, NY-anchor consolidation, cancelled-event filter)
+- 3d-e: Hook discipline (error surfacing, loading-on-refetch)
+- 3d-f: N+1 collapse via useOrgTeamRecords
+- 3d-g: Polish bundle (filter-aware empty state, titleCount, skeleton initial load, formatGameDate + formatDiff consolidation, tournament card placement+record)
+- 3d-h: /schedule forward-week scrolling
+
+**Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Five tracked files in this commit (3 modified + 2 new).
