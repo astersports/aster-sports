@@ -2205,3 +2205,27 @@ Drafting in compliance mode (transcribe Frank's resolutions cleanly) is not the 
 **Did not use `git add -A`** (per Hard Rule #9). Three tracked files explicitly staged.
 
 **Two-gate model preserved:** This docs commit is gate 1. Gate 2 = Frank's separate explicit GO before `apply_migration`. Do NOT auto-apply on docs-commit landing.
+
+---
+
+## May 1, 2026 UTC — Migration 032 applied + repo file landed (Wave 2A closed)
+
+**Shipped:** Three-gate Wave 2A close. **Gate 2** (this entry's first half): `apply_migration` ran the locked text from IA Map v1.2 Decision 23 verbatim against production via Supabase MCP — registered as version `20260501110331`, name `032_game_result_edits_audit_table`. Three read-only post-flight verification queries returned clean: 7-column `game_result_edits` table (all NOT NULL, types match Decision 22), 2 RLS policies (SELECT public-gated by `gr.published_at IS NOT NULL`; INSERT-staff via `user_roles → game_results → events → teams` join with role IN admin/coach), 1 CHECK constraint (`coach_highlight IS NULL OR char_length(coach_highlight) <= 140`). **Gate 3** (this entry's second half): repo file `supabase/migrations/20260501110331_032_game_result_edits_audit_table.sql` written verbatim from IA Map locked text — byte-identical via diff against `WAVE_2_IA_MAP_v1.md` lines 128-175.
+
+**Frank-led independent verification:** Per the "I confirm SHA + Vercel before continuing" calibration locked May 1 mid-day (after the SHA-tracking slip on `945a6b8`), Frank ran `list_migrations` himself between Gate 2 and Gate 3 to confirm version `20260501110331` registered with name `032_game_result_edits_audit_table`. The append-only-by-design property of the audit table is confirmed: no UPDATE/DELETE policies = RLS deny-by-default = audit rows are immutable post-INSERT.
+
+**N9 surfaced (DEFERRED_AUDIT_ITEMS.md, P3, GATE3 audit code):** Three-way migration-naming drift discovered during Gate-3 prep — disk filename, ledger version, and ledger name diverge across three eras (pre-Apr-27 NNN convention; post-Apr-27 timestamp-only convention; transition re-registration with disk↔ledger asymmetry). Migration 032 inherited the legacy NNN convention by accident because pre-flight Item 0 inspected disk-filename prefixes instead of ledger names. Protocol fix for next migration: drop the `NNN_` middle entirely (filenames `YYYYMMDDHHMMSS_topic.sql`; ledger names bare `topic`). Migration 032 is not blocked — timestamp uniquely identifies on disk and in ledger; disk filename matches ledger name to avoid the disk↔ledger drift `rides_lifecycle_and_realtime` already shows. Initial draft of N9 only captured the disk-side prefix collisions; Frank's challenge on the rides-file claim led to ledger-vs-disk verification that surfaced the deeper three-way drift.
+
+**Master index touch:** Decision #106 amended in-place to record migration application status (registered version + verification result). NEXT ACTION QUEUED moved from "Wave 2A migration application" to "Wave 2B-C: Score entry sheet + Save Draft + Publish flow." Pre-flight Item 0 protocol fix referenced inline.
+
+**Files this commit:**
+- `supabase/migrations/20260501110331_032_game_result_edits_audit_table.sql` (NEW, verbatim from IA Map v1.2 Decision 23 — byte-identical)
+- `EMBER_MASTER_INDEX_v3.md` (Decision #106 amendment + NEXT ACTION QUEUED rewrite to Wave 2B-C)
+- `DEFERRED_AUDIT_ITEMS.md` (N9 added to P3, GATE3 audit code)
+- `SKYFIRE_BUILD_QUEUE_v2.md` (this entry)
+
+**Did not use `git add -A`** (per Hard Rule #9). Four files explicitly staged.
+
+**Wave 2A status:** **CLOSED.** Architecture (IA Map v1.2) + migration (`20260501110331`) + repo file all in lock-step. Wave 2B-C is the next session opener.
+
+**Rule 19 gate:** This commit touches RLS (new policies on `game_result_edits`). Awaits separate explicit GO before push per Rule 19 + the established calibration.
