@@ -2040,3 +2040,58 @@ Roster moves up the page — it's now the second section instead of the third. T
 - 3d-h: /schedule forward-week scrolling
 
 **Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Six tracked files in this commit (4 modified + 1 deleted via `git rm` + the build queue).
+
+---
+
+## Wave 2 — Coach Quick-Score (locked Apr 30, 2026)
+
+**Status:** IA Map v1 locked. Pre-flight pending. Code lands across 6 sub-waves at 1-2 commits per session.
+
+**Canonical doc:** `WAVE_2_IA_MAP_v1.md` at repo root.
+**Decisions:** EMBER_MASTER_INDEX_v3.md decisions #69-87.
+
+**Premise:** Today `/records` is read-only. There is no UI to enter game results. 14 already-played Spring 2026 games sit unscored. Wave 2 ships the score-entry pipeline end-to-end — entry sheet, draft + publish, edit + audit, quarter mode, backfill queue, multi-game tournament flow.
+
+### Sub-wave roadmap (6 commits, 4-5 sessions)
+
+| Wave | Scope | Files (est.) |
+|---|---|---|
+| 2A | Migration NNN — `game_result_edits` audit table + column gaps + RLS (incl. public SELECT for audit). Pre-flight item 0 = query MAX(version) before drafting migration text. | 1 migration |
+| 2B-C | Score entry sheet (final-only mode) + Save Draft + Publish flow combined + POG dropdown + result auto-derive + override radio. Coach + admin permission. | 3-4 React + 1 hook |
+| 2D | Edit + audit. "Edit" button on published GameLogRow → opens entry sheet pre-populated → save creates audit row + updates `game_results`. "Updated by X at Y" inline on `/records`. | 2-3 files |
+| 2E | Quarter mode toggle + 4-input quarter UI + auto-sum + JSONB write + GameLogRow quarter display. Single commit: write + display together. | 2 files |
+| 2F | Backfill queue at `/coach/games-to-score`. Lists past unscored games per filter from Decision 76. Each row links to entry sheet. | 2-3 files |
+| 2G | Multi-game tournament "Score next game" button on publish success. Detects `event.tournament_id`, finds next unscored game in same tournament. | 2 files |
+
+(Numbering note: original IA Map roadmap had 2A-2F; the edit+audit wave was 2C and renumbered above as 2D after Frank merged 2B+2C entry+publish into a single commit.)
+
+### Pre-flight checklist before Wave 2A
+
+Run via Supabase MCP. Findings reported before drafting Migration NNN.
+
+0. **Migration number.** `SELECT MAX(version) FROM supabase_migrations.schema_migrations`.
+1. `game_results` columns + constraints + RLS policies. Confirm: `quarter_scores` JSONB, `player_of_game_id`, `coach_highlight`, `published_at`, `our_score`, `opponent_score`, `opponent_name`, `result`.
+2. `coaching_assignments` columns + active rows for Legacy Hoopers org.
+3. `event_type` distinct values (confirm `'game'` is the filter target).
+4. `events.status` distinct values (confirm `'cancelled'` / `'postponed'` are the exclusion targets).
+5. Existing `game_results` row count for Legacy Hoopers + published vs draft split.
+6. Current RLS shape on `game_results` (public SELECT today? match for audit table).
+7. Tournament FK shape: `events.tournament_id` exists? `tournaments` table available for next-game lookup?
+
+### Deferred (explicit non-scope for Wave 2)
+
+- Per-player box score (separate future wave, post-2026 per CLAUDE.md §16.12)
+- Tournament batch-entry view
+- Push notifications (Wave 10)
+- Per-game rule overrides (Migration 015)
+- Statement Win / Run of Play editorial pills (Wave 4)
+- Highlight cards, multi-paragraph game recaps (Wave 4)
+- Rotation Planner integration (Phase 2 separate)
+- Multi-tenant `/records` (Phase 7-B)
+- Coach home page build (separate wave; Wave 2F ships standalone route)
+
+### Open questions
+
+**(none — all 19 load-bearing decisions resolved during IA Map v1 conversation, April 30, 2026)**
+
+If Wave 2A pre-flight surfaces a new question (column missing, RLS shape unexpected, etc.), surface in IA Map's "Open questions" section before shipping any code.
