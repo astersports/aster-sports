@@ -205,6 +205,8 @@ Fresh-eyes audit on the v1 IA Map surfaced 9 holes + 8 enhancements + 4 cross-cu
 
 103. **`.gitignore` enforces the explicit-add discipline.** `rides-audit-source.zip` and `WAVE_3A_PROMPT_v2.md` (the persistent "stay untracked" items from Wave 3d build queue notes) move into `.gitignore`. Discipline is enforced by the file, not by hand. Hard Rule #9 updated to match.
 
+104. **`DEFERRED_AUDIT_ITEMS.md` tracks audit findings that have been logged but not yet shipped.** Replaces the build-queue-scroll pattern where items surfaced in multiple audits and never landed. Created April 30, 2026 in response to B14 (`useOrgTeamRecords` missing `useRefetchOnVisible`) surfacing in 3 separate audits with no canonical home. Tracker uses 5-column format: severity (P0/P1/P2/P3) + origin date + audit code + planned wave slot + one-line description. Initial commit captured 65 items across 4 severity tiers + a Conceded section + an Aliases dedup table. Update protocol: every audit pass appends new findings; closing items move to a Closed section at file bottom (don't delete — historical record matters). For multi-pass audits, pass-distinction is carried by ID prefix (B#, C#, B'/E', B″/E″), not audit-code suffix.
+
 
 
 ---

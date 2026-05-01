@@ -2133,3 +2133,17 @@ Drafting in compliance mode (transcribe Frank's resolutions cleanly) is not the 
 - 2G: Multi-game tournament "Score next game"
 
 **Note: did not use `git add -A`** (per updated Hard Rule #9). Four tracked files explicitly staged. Persistent untracked items (`rides-audit-source.zip`, `WAVE_3A_PROMPT_v2.md`) now in `.gitignore`, no longer surfacing in `git status`.
+
+---
+
+## Apr 30, 2026 UTC — DEFERRED_AUDIT_ITEMS.md tracker created
+
+**Shipped:** New canonical tracker at repo root for audit findings that have been logged but not yet shipped. Replaces the build-queue-scroll pattern where the same items surfaced in multiple audits without ever landing.
+
+**Triggered by:** B14 (`useOrgTeamRecords` missing `useRefetchOnVisible`) surfaced in 3 separate audits across the day with no home outside scrolling commit log. Tracker creation = the structural fix for that pattern.
+
+**Initial population:** 65 items across 4 severity tiers (8 P0 / 25 P1 / 15 P2 / 17 P3) + Conceded section (2 items) + Aliases dedup table (6 entries). Compiled from today's 4 audits (3D-G.1, IA-V1, PARENT × 3 passes) plus PRIOR-session items still standing.
+
+**Master index decision:** #104 added.
+
+**Files this commit:** `DEFERRED_AUDIT_ITEMS.md` (NEW) + `EMBER_MASTER_INDEX_v3.md` (Decision #104) + `SKYFIRE_BUILD_QUEUE_v2.md` (this entry).
