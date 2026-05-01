@@ -14,7 +14,7 @@
 
 import { useDensity } from '../../hooks/useDensity';
 
-const LABELS = { minimal: 'MIN', medium: 'MED', maximum: 'MAX' };
+const LABELS = { minimal: 'Compact', medium: 'Default', maximum: 'Detailed' };
 const NEXT_DENSITY = { minimal: 'medium', medium: 'maximum', maximum: 'minimal' };
 
 function DensityIcon({ density }) {
