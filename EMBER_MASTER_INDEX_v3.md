@@ -221,17 +221,17 @@ Wave 2A pre-flight ran 13 read-only MCP queries against production schema. Six c
 
 109. **IA Map v1.2 column-name corrections (production schema reality vs draft language).** Production column names confirmed via Wave 2B-C pre-flight: events.event_type (not activity_type), game_results.our_score / opponent_score (not home_score / away_score), org scoping via events.team_id → teams.org_id (no direct events.org_id). Wave 2B-C code uses production-correct names from the start. Future IA Map drafts must verify column names against production schema before locking decision text.
 
+110. **Parent-scoped RLS on event_rsvps + event_comments + event_duties (P0 privacy fix).** Three tables shared the same broken RLS pattern: cmd='ALL' policy with qual=event_org_matches(event_id) and with_check=NULL. Any authenticated org member could INSERT/UPDATE/DELETE any row in any of these three tables for any event in their org. Parents could RSVP for other families' children, edit/delete other parents' comments, and claim/release other parents' duty slots. Migration drops 3 broken policies (event_rsvps_org_all, event_comments_org_all, event_duties_org_all), creates helper function current_user_guardian_id(), creates 6 new policies: event_rsvps_write_own_child (player_id = ANY(current_user_player_ids())), event_rsvps_write_staff, event_comments_write_own (author_user_id = auth.uid()), event_comments_write_staff, event_duties_claim_release (UPDATE-only, guardian_id IS NULL OR guardian_id = current_user_guardian_id()), event_duties_write_staff. Parent policies use FOR ALL on rsvps + comments (allows parent DELETE of own rows). Duties parent policy is UPDATE-only (parents claim/release, staff INSERT/DELETE). Data audit pre-migration confirmed 0 cross-family violations in existing data (28 rsvps, 6 comments, 10 duties all clean). Methodology rule M5 added: cmd='ALL' policies must always have explicit with_check. Wave 1H deferred for the remaining ~16 staff-gated cmd='ALL' policies that lack with_check (lower priority, staff-only exploit surface). Migration applied [DATE] as registered version [TIMESTAMP].
+
 
 
 ---
 
 # NEXT ACTION QUEUED
 
-**Wave 2B-C: Coach Quick-Score entry sheet + Save Draft + Publish flow (currently in flight, Gate 1 docs lock this commit).**
+**Wave 1G: P0 privacy fix — parent-scoped RLS on event_rsvps + event_comments + event_duties (Decision #110).** Wave 2B-C paused at Gate 2b (3defbaa) for emergency privacy fix. Three tables had cmd='ALL' + no with_check, allowing any org member to write any row. Migration drops 3 broken policies, creates current_user_guardian_id() helper, creates 6 new policies with explicit with_check constraints. Three-gate model: Gate 1 = this docs commit, Gate 2 = migration apply + verify, Gate 3 = UI scope check (icon render gating on EventDetailPage). Wave 2B-C Gate 2c resumes after Wave 1G closes.
 
-Wave 1F closed 2026-05-01 with SHA 946a3c8 (Phase 1 complete). Wave 2B-C opens with this Gate 1 docs commit. Three-gate model: Gate 1 = this docs commit (architecture lock for Decision #108 + #109). Gate 2 = three sub-gates (2a hook, 2b sheet+form scaffolding, 2c EventDetailPage button + full integration). Gate 3 = close-out commit. No new schema migrations needed — all schema runway laid in Wave 2A (Migration 032) and legacy Migration 014.
-
-Wave 2B-C scope per WAVE_2BC_PLAN.md (this commit) and IA Map v1.2 Wave 2B-C section: 4 new files (ScoreEntrySheet.jsx, QuarterScoreInput.jsx, useScoreDraft.js, PlayerOfGamePicker.jsx) + 1 edit (EventDetailPage.jsx + ~20 lines for Enter Score button). Estimated 2-3 sessions across the three Gate 2 sub-gates.
+Wave 2B-C status: Gate 2a (useScoreDraft, 0b71bdc) + Gate 2b (3 scoring components, 3defbaa) shipped. Gate 2c (EventDetailPage button + split) picks locked (epsilon/P1b/L1/G1). Paused for Wave 1G.
 
 
 
