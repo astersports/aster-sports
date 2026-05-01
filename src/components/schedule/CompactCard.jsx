@@ -33,7 +33,7 @@ export default function CompactCard({ event, stagger }) {
       <div style={{ width: 3, alignSelf: 'stretch', flexShrink: 0, backgroundColor: teamColor }} />
       <div className="flex items-center flex-1 gap-3" style={{ padding: '6px 12px' }}>
         <span className="font-bold" style={{ fontSize: 14, color: 'var(--em-text-primary)', minWidth: 56 }}>
-          {formatTime(event.start_time || '00:00')}
+          {formatTime(event.start_at)}
         </span>
         <span style={{
           fontSize: 10, fontWeight: 600, padding: '1px 5px', borderRadius: 4,

@@ -47,7 +47,7 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
         {/* Row 1: Time · Type + recurring + updated dot + cancelled */}
         <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center' }}>
           <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)' }}>
-            {formatTime(event.start_time || '00:00')}
+            {formatTime(event.start_at)}
           </span>
           {!isTitleRedundant && (
             <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginLeft: 6 }}>
