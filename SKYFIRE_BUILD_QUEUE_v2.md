@@ -2229,3 +2229,33 @@ Drafting in compliance mode (transcribe Frank's resolutions cleanly) is not the 
 **Wave 2A status:** **CLOSED.** Architecture (IA Map v1.2) + migration (`20260501110331`) + repo file all in lock-step. Wave 2B-C is the next session opener.
 
 **Rule 19 gate:** This commit touches RLS (new policies on `game_result_edits`). Awaits separate explicit GO before push per Rule 19 + the established calibration.
+
+---
+
+## May 1, 2026 UTC — Wave 1F closed (4 P1s + Migration locations_admin_notes)
+
+**Shipped:** Phase 1 close-out wave. Four P1 parent-experience fixes plus app-layer privacy boundary for location admin notes.
+
+**Commits:**
+- aad2ba8 — P0: EventCard + CompactCard read event.start_at instead of removed event.start_time (12:00 AM fix)
+- 74f6a78 — P1-1: RSVP "Not Going" pill row no longer clips on small phones (ChildRsvp.jsx)
+- 836dab5 — P1-2: density toggle labels spelled out (Compact/Default/Detailed); P1-3 verified working (Outcome B, /records route live) (DensityToggle.jsx)
+- 903263a — Gate 1 docs lock: Decision #107 + N10 (locations duplicate lat/lon) + N11 (RSVP label inconsistency follow-up to P1-1) + M3 (material decisions need explicit GO)
+- 875563e — Gate 1 fixup: Decision #107 ordering correction (was inverted with #106 in 903263a). First applied invocation of M3.
+- [Gate 3 SHA] — Wave 1F close: migration repo file + LocationCard admin_notes render gate + master index Decision #107 timestamp fill-in + tracker P1-1 through P1-4 close-out. useLocations.js NOT edited (defense layer (a) pre-existing via explicit column list, retroactive safety — surfaced as N12).
+
+**Migration:** locations_admin_notes (registered version 20260501124915, registered name locations_admin_notes — N9 protocol fix applied: bare topic name, no NNN_ prefix; first clean post-Apr-27 convention migration since N9 was documented on edd671d).
+
+**M3 violations + corrections this wave:**
+- aad2ba8 (P0 EventCard fix) — autonomous commit, no GO
+- 836dab5 message — P1-3 closed as Outcome B without separate GO
+- 903263a — committed before verification grep ran, caused Decision #107 ordering inversion
+- 875563e — first applied invocation of M3, fixup with grep verification before stage/commit
+
+**N12 surfaced:** explicit-column-list convention as retroactive safety net for column-additive migrations. useLocations parent query predated admin_notes column and already omits it. Standing pre-flight checklist item proposed for future migrations adding columns to existing tables.
+
+**Wave 1F status:** CLOSED. Phase 1 closes. Wave 2B-C (Coach Quick-Score: score entry sheet + Save Draft + Publish flow) opens on next session GO.
+
+**Did not use git add -A** (per Hard Rule #9). Five files explicitly staged.
+
+**Rule 19 gate:** This commit touches RLS-adjacent code paths (parent query column list convention + render-layer privacy gate). Awaits explicit GO before push per Rule 19.

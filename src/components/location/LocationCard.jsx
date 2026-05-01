@@ -58,6 +58,27 @@ export default function LocationCard({ location, isStaff, showArchived, onEdit, 
         </div>
       )}
 
+      {isStaff && l.admin_notes && (
+        <div
+          aria-label="Internal staff notes, not visible to parents"
+          style={{
+            padding: 12, background: 'var(--em-bg-secondary)',
+            borderLeft: '4px solid var(--em-accent)', borderRadius: 8,
+          }}
+        >
+          <span style={{
+            display: 'inline-block', fontSize: 11, fontWeight: 600,
+            textTransform: 'uppercase', letterSpacing: 0.5,
+            color: 'var(--em-accent)', marginBottom: 4,
+          }}>
+            Internal Notes (admin only)
+          </span>
+          <p style={{ fontSize: 14, color: 'var(--em-text-primary)', margin: 0, whiteSpace: 'pre-wrap' }}>
+            {l.admin_notes}
+          </p>
+        </div>
+      )}
+
       <a
         href={mapsUrl(l.address, l.lat, l.lon, l.google_maps_url)}
         target="_blank" rel="noopener noreferrer"
