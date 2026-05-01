@@ -13,7 +13,6 @@ import TeamHeaderCard from '../components/roster/TeamHeaderCard';
 import RosterSection from '../components/roster/RosterSection';
 import MessageTeamFAB from '../components/roster/MessageTeamFAB';
 import TeamSwitcher from '../components/roster/TeamSwitcher';
-import TeamRecordsSection from '../components/teams/TeamRecordsSection';
 
 // Read-only roster view for a single team. The team lookup piggybacks on
 // usePrograms() — it already queries every team in the active season, so
@@ -78,9 +77,7 @@ export default function TeamDetailPage() {
 
       <TeamSwitcher programs={switcherPrograms} teamId={teamId} navigate={navigate} />
 
-      <TeamHeaderCard team={team} players={players} record={recordsLoading ? '—' : summary.record} />
-
-      <TeamRecordsSection summary={summary} loading={recordsLoading} />
+      <TeamHeaderCard team={team} summary={summary} loading={recordsLoading} />
 
       {rosterLoading ? (
         <LoadingSkeleton variant="list" count={6} />

@@ -16,7 +16,7 @@ export default function TeamsPage() {
   const { activeSeason } = useSeason();
   const { role, myTeamIds, orgId } = useAuth();
   const { programs, loading, refetch } = usePrograms();
-  const { byTeamId, loading: recordsLoading, refetch: refetchRecords } = useOrgTeamRecords(orgId);
+  const { byTeamId, refetch: refetchRecords } = useOrgTeamRecords(orgId);
   const { refreshing, onTouchStart, onTouchEnd } = usePullToRefresh(() => Promise.all([refetch?.(), refetchRecords?.()]));
   const visiblePrograms = role === 'parent' ? programs.filter((t) => (myTeamIds || []).includes(t.id)) : programs;
 
@@ -54,7 +54,7 @@ export default function TeamsPage() {
       ) : (
         <div className="flex flex-col gap-3">
           {visiblePrograms.map((team, i) => (
-            <TeamRow key={team.id} team={team} idx={i} summary={byTeamId[team.id]} loading={recordsLoading} />
+            <TeamRow key={team.id} team={team} idx={i} summary={byTeamId[team.id]} />
           ))}
         </div>
       )}

@@ -1970,3 +1970,73 @@ Rest is invisible — pure code organization. Two consumers of `formatDiff` now 
 - All prior deferred items from 3d-g.1 still standing.
 
 **Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Two tracked files in this commit (1 modified + the build queue).
+
+## Apr 30, 2026 UTC — Wave 3d-g.4: Team detail merge + /teams two-line rows
+
+**Shipped:** Two layout restructures. /teams list rows go two-line with full stats. TeamDetailPage's hero block absorbs the records strip; the standalone TeamRecordsSection card is gone.
+
+### /teams list rows go two-line
+
+**Before:** single-line row with `[color stripe] 11U Girls    11U  AAU  5-2 · W1` pills + hardcoded `[A][S][C]` placeholder avatars + `+7` overflow chip + chevron.
+
+**After:** clean two-line row:
+
+```
+[color stripe] 11U Girls
+               11U · AAU · 5-2 · W1 · 27.6 PPG · 21.3 PA
+```
+
+Line 1: team name (16px, semibold, primary). Line 2: full stats meta (12px, tertiary). Bullet-separated. The placeholder avatars + chevron are gone — they were hardcoded `['A','S','C']` letters with `+7`, not real player data; clearing them frees the row to breathe and removes a year-long lie.
+
+Edge case: teams with `gamesPlayed = 0` show only `11U · AAU` on line 2 (skip the stats portion). Loading state renders the same — meta line populates progressively as data arrives, no skeleton flicker.
+
+Tap target: `minHeight: 56px` preserved on the outer button + `padding: 10px 16px` on inner content. Total row height ~62px in practice. ≥ 44px floor preserved.
+
+### TeamDetailPage hero merge
+
+**Before:** /teams/:id rendered three stacked sections: TeamHeaderCard (identity) → TeamRecordsSection (separate "SEASON STATS" card with 5 cells) → RosterSection. Records were "buried" between the header and roster.
+
+**After:** TeamHeaderCard absorbs the 5-cell strip directly inside the hero. New layout:
+
+```
+┌─[color stripe]─────────────────────────────────┐
+│ 11U Girls                              [11U]   │
+│ 11U · AAU · 5-2 · W1                           │
+│ ──────────────────────────────────             │
+│ 27.6   21.3   +5.3   71%   7                   │
+│ PPG    Allowed Diff  Win%  Games               │
+└────────────────────────────────────────────────┘
+```
+
+Roster moves up the page — it's now the second section instead of the third. The `TeamRecordsSection.jsx` file deleted (was 45 lines, single consumer). Its 5-cell strip + Cell helper inlined into TeamHeaderCard.
+
+**Decision: option (a) — inline cells in TeamHeaderCard, no sub-component extraction.** TeamHeaderCard at 79 lines (was 61) — well under the 150 cap. Sub-component (TeamHeroStats.jsx) wasn't needed.
+
+**Surface change beyond the prompt mockup:** the prior 3-cell roster strip (Players / Roster / Academy) was dropped from TeamHeaderCard. The mockup didn't include it; keeping it would have stacked two cell-strips with two horizontal-rules and visually overloaded the hero. Player counts are still accessible — implicit in the RosterSection's player list right below the hero. (If `players.length` numerics are desired in the hero, separate commit.)
+
+`players` prop also dropped from TeamHeaderCard — no longer computes rosterCount/academyCount. TeamDetailPage passes only `team`, `summary`, `loading`.
+
+### Files this commit
+
+- `src/components/teams/TeamRow.jsx` (51 lines, was 88 — two-line restructure, drop hardcoded avatars + chevron, drop `loading` prop)
+- `src/components/roster/TeamHeaderCard.jsx` (79 lines, was 61 — meta line + 5-cell strip + Cell helper inline + formatDiff import; drop pill row + 3-cell roster strip + `players` prop)
+- `src/components/teams/TeamRecordsSection.jsx` — **DELETED** (45 lines, single consumer; merged into TeamHeaderCard)
+- `src/pages/TeamDetailPage.jsx` (123 lines, was 126 — drop import + render + props swap on TeamHeaderCard)
+- `src/pages/TeamsPage.jsx` (63 lines, was 63 — drop unused `recordsLoading` from destructure; lint cleanup after dropping TeamRow's loading prop)
+- `SKYFIRE_BUILD_QUEUE_v2.md` (this entry)
+
+### Structural surprises during inspection
+
+- **TeamRow had hardcoded placeholder avatars** (literally letters `'A'`, `'S'`, `'C'` + `+7` chip rendered as if they were player initials). Not real data — never were. Dropped during the two-line restructure since the prompt mockup excluded them and they were a year-long visual lie.
+- **CIRCUIT_LABELS still duplicated 3x** (TeamHeaderCard, TeamRow, AdminTeamsPage). Touching two of them in this commit — could have consolidated. Out of scope; flagged for future. Same pattern as the AdminGreeting consolidation note from 3d-g.1.
+- **Roster strip dropped from TeamHeaderCard.** The prompt mockup excluded it, and stacking the new 5-cell records strip below the existing 3-cell roster strip would have been visually heavy. Player count info isn't lost — RosterSection renders the full list right below.
+- **One lint pass needed** after the initial edit: dropping `loading` from TeamRow's signature surfaced an unused-vars error on TeamsPage's destructure (`recordsLoading`). Dropped from destructure too; second lint pass clean.
+
+### Wave 3d sequence
+
+- 3d-i through 3d-g.2: ✓ shipped
+- 3d-g.4: ✓ this commit
+- 3d-g.3: NEXT UP Min date + UPCOMING toggle + user_preferences migration (deferred to tomorrow — DB migration + new UI scope)
+- 3d-h: /schedule forward-week scrolling
+
+**Note: did not use `git add -A`.** Same three pre-existing untracked items stay untracked. Six tracked files in this commit (4 modified + 1 deleted via `git rm` + the build queue).

@@ -1,17 +1,25 @@
-// Single team row on /teams. Presentational — `summary` (or null while
-// loading) flows in from TeamsPage, which calls useOrgTeamRecords once.
+// Single team row on /teams. Two-line layout: name on top, stats meta
+// on bottom. Presentational — `summary` flows from TeamsPage, which
+// calls useOrgTeamRecords once.
 import { useNavigate } from 'react-router-dom';
 import { EMPTY_SUMMARY } from '../../lib/teamRecords';
 
 const CIRCUIT_LABELS = { aau: 'AAU', league_play: 'League Play', tournament: 'Tournament' };
 
-export default function TeamRow({ team, idx, summary, loading }) {
+function buildMetaLine(team, summary) {
+  const parts = [team.age_group, CIRCUIT_LABELS[team.circuit] || team.circuit];
+  if (summary.gamesPlayed > 0) {
+    parts.push(summary.record);
+    if (summary.streak !== '—') parts.push(summary.streak);
+    parts.push(`${summary.ppg} PPG`);
+    parts.push(`${summary.allowed} PA`);
+  }
+  return parts.filter(Boolean).join(' · ');
+}
+
+export default function TeamRow({ team, idx, summary }) {
   const navigate = useNavigate();
   const s = summary || EMPTY_SUMMARY;
-  const recordLine = loading
-    ? '—'
-    : (s.streak === '—' ? s.record : `${s.record} · ${s.streak}`);
-
   return (
     <button
       type="button"
@@ -25,61 +33,18 @@ export default function TeamRow({ team, idx, summary, loading }) {
         border: '1px solid var(--em-border-default)',
         boxShadow: 'var(--em-shadow-sm)',
         overflow: 'hidden',
+        minHeight: 56,
         transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
       }}
     >
       <div style={{ width: 5, flexShrink: 0, backgroundColor: team.team_color || 'var(--em-neutral)' }} />
-      <div style={{ flex: 1, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 16 }}>
-            {team.name}
-          </div>
-          <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
-            <span style={{
-              fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6,
-              backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)',
-            }}>{team.age_group}</span>
-            <span style={{
-              fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6,
-              backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)',
-            }}>{CIRCUIT_LABELS[team.circuit] || team.circuit}</span>
-            <span style={{
-              fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
-              backgroundColor: 'var(--em-neutral-soft)', color: 'var(--em-text-tertiary)',
-            }}>{recordLine}</span>
-          </div>
+      <div style={{ flex: 1, padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+        <div className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 16, lineHeight: 1.3 }}>
+          {team.name}
         </div>
-        <div style={{ display: 'flex', marginLeft: 'auto', marginRight: 12 }}>
-          {['A', 'S', 'C'].map((letter, i) => (
-            <div key={i} style={{
-              width: 24, height: 24, borderRadius: '50%',
-              backgroundColor: team.team_color || 'var(--em-neutral)',
-              border: '2px solid var(--em-bg-card)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--em-text-inverse)', fontSize: 10, fontWeight: 700,
-              marginLeft: i === 0 ? 0 : -8,
-              zIndex: 3 - i,
-              position: 'relative',
-            }}>
-              {letter}
-            </div>
-          ))}
-          <div style={{
-            width: 24, height: 24, borderRadius: '50%',
-            backgroundColor: 'var(--em-bg-secondary)',
-            border: '2px solid var(--em-bg-card)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--em-text-tertiary)', fontSize: 9, fontWeight: 600,
-            marginLeft: -8,
-            zIndex: 0,
-            position: 'relative',
-          }}>
-            +7
-          </div>
+        <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', lineHeight: 1.4 }}>
+          {buildMetaLine(team, s)}
         </div>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--em-text-tertiary)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m9 18 6-6-6-6"/>
-        </svg>
       </div>
     </button>
   );

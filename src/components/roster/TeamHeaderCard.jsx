@@ -1,15 +1,41 @@
+import { formatDiff } from '../../lib/formatters';
+import { EMPTY_SUMMARY } from '../../lib/teamRecords';
+
 const CIRCUIT_LABELS = { aau: 'AAU', league_play: 'League Play', tournament: 'Tournament' };
 
-// Team summary card at the top of TeamDetailPage: full-width color
-// stripe, team name, team-color age-group roundel, grey pill badges,
-// live W-L pill, and a three-stat row (Players / Roster / Academy).
-// The component is presentational — `team`, `players`, and `record`
-// all come from the page (page calls useTeamRecords once and passes
-// summary.record down).
-export default function TeamHeaderCard({ team, players, record = '—' }) {
-  const rosterCount = players.filter((p) => p.member_type === 'roster').length;
-  const academyCount = players.filter((p) => p.member_type === 'futures_academy').length;
+function buildMetaLine(team, summary) {
+  const parts = [team.age_group, CIRCUIT_LABELS[team.circuit] || team.circuit];
+  if (summary.gamesPlayed > 0) {
+    parts.push(summary.record);
+    if (summary.streak !== '—') parts.push(summary.streak);
+  }
+  return parts.filter(Boolean).join(' · ');
+}
 
+function Cell({ value, label }) {
+  return (
+    <div style={{ flex: 1, textAlign: 'center' }}>
+      <div className="font-bold" style={{ fontSize: 18, color: 'var(--em-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+        {value}
+      </div>
+      <div style={{ fontSize: 10, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
+// Hero block on TeamDetailPage. Color stripe, team identity, meta line
+// (age · circuit · record · streak), and a five-cell record strip
+// (PPG / Allowed / Diff / Win% / Games). Pure presentational —
+// `team` and `summary` come from the page, which calls useTeamRecords
+// once. Loading state renders '—' per cell so layout stays stable.
+//
+// Merged from prior TeamHeaderCard + TeamRecordsSection in 3d-g.4 so
+// the records stop being a separate "buried" card below the header.
+export default function TeamHeaderCard({ team, summary, loading }) {
+  const s = summary || EMPTY_SUMMARY;
+  const v = (n) => (loading ? '—' : n);
   return (
     <div className="sf-fade-in" style={{
       backgroundColor: 'var(--em-bg-card)',
@@ -34,26 +60,18 @@ export default function TeamHeaderCard({ team, players, record = '—' }) {
             {team.age_group}
           </div>
         </div>
-        <div className="flex items-center gap-2" style={{ marginTop: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{team.age_group}</span>
-          <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{CIRCUIT_LABELS[team.circuit] || team.circuit}</span>
-          <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--em-neutral-soft)', color: 'var(--em-text-tertiary)' }}>{record}</span>
+        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 4 }}>
+          {buildMetaLine(team, s)}
         </div>
-        <div className="flex items-center gap-4" style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--em-border-subtle)' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div className="font-bold" style={{ fontSize: 20, color: 'var(--em-text-primary)' }}>{players.length}</div>
-            <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Players</div>
-          </div>
-          <div style={{ width: 1, height: 32, backgroundColor: 'var(--em-border-subtle)' }} />
-          <div style={{ textAlign: 'center' }}>
-            <div className="font-bold" style={{ fontSize: 20, color: 'var(--em-text-primary)' }}>{rosterCount}</div>
-            <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Roster</div>
-          </div>
-          <div style={{ width: 1, height: 32, backgroundColor: 'var(--em-border-subtle)' }} />
-          <div style={{ textAlign: 'center' }}>
-            <div className="font-bold" style={{ fontSize: 20, color: 'var(--em-academy)' }}>{academyCount}</div>
-            <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Academy</div>
-          </div>
+        <div style={{
+          marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--em-border-subtle)',
+          display: 'flex', alignItems: 'center', gap: 4,
+        }}>
+          <Cell value={v(s.ppg)} label="PPG" />
+          <Cell value={v(s.allowed)} label="Allowed" />
+          <Cell value={v(formatDiff(s.diff))} label="Diff" />
+          <Cell value={v(`${s.winPct}%`)} label="Win %" />
+          <Cell value={v(s.gamesPlayed)} label="Games" />
         </div>
       </div>
     </div>
