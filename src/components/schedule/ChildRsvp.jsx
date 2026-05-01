@@ -10,7 +10,7 @@ const cacheKey = (eventId, playerId) => `${eventId}:${playerId}`;
 const PILLS = [
   { value: 'going',     label: 'Going',     color: 'var(--em-success)' },
   { value: 'maybe',     label: 'Maybe',     color: 'var(--em-warning)' },
-  { value: 'not_going', label: 'Not Going', color: 'var(--em-danger)' },
+  { value: 'not_going', label: 'No',        color: 'var(--em-danger)' },
 ];
 
 export default function ChildRsvp({ child, eventId, compact = false }) {
@@ -85,7 +85,7 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
           <button key={p.value} type="button" onClick={(e) => handleClick(e, p.value)} disabled={saving} className="sf-press"
             aria-pressed={active}
             style={{
-              flex: 1, minHeight: minH, borderRadius: 10,
+              flex: 1, minWidth: 0, minHeight: minH, borderRadius: 10,
               fontSize: pillSize, fontWeight: 600,
               border: `1.5px solid ${p.color}`,
               backgroundColor: active ? p.color : 'transparent',
