@@ -1,7 +1,7 @@
 # Wave 2B-C — Coach Quick-Score Entry Sheet
 
 **Status:** Architecture locked 2026-05-01 (Gate 1 docs commit this revision).
-**Gate 1 SHA:** [Gate 1 SHA] (substituted forward in next-wave commit per self-healing audit pattern)
+**Gate 1 SHA:** ee9a128 (substituted forward in next-wave commit per self-healing audit pattern)
 **Decision references:** EMBER_MASTER_INDEX_v3.md #108 + #109
 **Build queue entry:** SKYFIRE_BUILD_QUEUE_v2.md "May 1, 2026 UTC — Wave 2B-C Gate 1"
 
