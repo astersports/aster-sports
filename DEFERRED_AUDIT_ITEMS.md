@@ -118,6 +118,19 @@ Items explicitly conceded by Frank during audit triage. Captured for paper-trail
 
 ---
 
+## Process methodology — pending CLAUDE.md promotion
+
+Methodology insights surfaced during audits today that are CLAUDE.md-rule candidates. Frank explicitly deferred the CLAUDE.md edit ("worth promoting to a rule eventually. Not tonight."). Logged here so they're not lost to scroll-back — same anti-drift purpose this tracker serves for surface-level audit findings.
+
+| ID | Origin | Audit | Promotion target | Description |
+|---|---|---|---|---|
+| M1 | 2026-04-30 | 3D-G.1 + IA-V1 | CLAUDE.md §0 anti-drift rules | **Always run the adversarial audit pass on architecture docs.** Drafting in compliance mode (transcribe Frank's resolutions cleanly) is not the same as adversarial mode (find what's missing). Wave 2 IA Map v1 drafted in compliance mode missed 17 holes; the audit pass switched modes and found them. Going forward: every IA Map / architecture doc gets the adversarial pass before commit. Not optional. Same way pre-flight isn't optional before code. |
+| M2 | 2026-04-30 | PARENT (Pass 3) | CLAUDE.md §0 anti-drift rules (paired with M1) | **For cross-surface audits, two adversarial passes minimum.** First pass finds the obvious; second pass, with fresh eyes after the first surfaces the categories, finds the systemic compliance gaps. Specifically applies to: parent profile, coach profile, admin profile, persona-wide compliance reviews. The Pass 3 audit on the parent profile found 25 items the first two passes missed — 8 of which were P0 compliance violations. Single-pass audits on cross-surface scope are structurally undersized. |
+
+When promoted, both rules slot into CLAUDE.md §0 alongside the existing 9 anti-drift rules. Likely as new rules #10 (M1) and #11 (M2), or folded into a new "Audit and architecture-doc discipline" sub-section.
+
+---
+
 ## Aliases — do not double-list
 
 Pass-3 IDs that alias items already captured under canonical IDs above:
@@ -135,7 +148,7 @@ Pass-3 IDs that alias items already captured under canonical IDs above:
 
 ## Stats
 
-- **65 items total** across all severity tiers
+- **65 items total** across all severity tiers, plus **2 process-methodology items** (M1, M2) pending CLAUDE.md promotion
 - **8 P0** compliance violations (1 from Pass 1, 7 from Pass 2/3 — C1-C8 with C3 = E3 alias)
 - **25 P1** real bugs (10 verified bugs + 8 unaudited surfaces from Pass 1, plus 7 verified bugs + 8 unaudited surfaces from Pass 2/3)
 - **15 P2** anti-pattern / drift items
