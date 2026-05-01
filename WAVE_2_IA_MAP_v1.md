@@ -1,8 +1,28 @@
 # Wave 2 — Coach Quick-Score IA Map
 
-**Version:** v1.1 (April 30, 2026)
-**Authors:** Frank + Claude (multi-session conversation, April 30, 2026)
-**Supersedes:** WAVE_2_IA_MAP_v1.md (in-place update; v1 git history preserves the diff)
+**Version:** v1.2 (May 1, 2026)
+**Authors:** Frank + Claude (multi-session conversation, April 30 → May 1, 2026)
+**Supersedes:** v1.1 (in-place update; v1 + v1.1 preserved via git history)
+
+## Changelog: v1.1 → v1.2
+
+Wave 2A pre-flight (May 1, 2026) ran 13 read-only MCP queries against production schema and surfaced 6 corrections to v1.1. Pre-flight stopped at drafted Migration 032 text per CLAUDE.md Rule 7 / two-gate model. v1.2 rolls in the corrections so the migration text can be applied with honest grounding.
+
+Pre-flight corrections baked into v1.2:
+
+1. **Decision 7 — staff auth gate is `user_roles`, NOT `coaching_assignments`.** Production RLS policy `game_results_write_staff` joins `user_roles` (org_id + role IN admin/coach). `coaching_assignments` exists but is a coach-management table (display name, rates, scope, phone), not the auth source. Migration 032 audit table policy + Wave 2B-C permission gates use `user_roles`. `coaching_assignments` may still surface in Wave 5 Tournament UI for coverage displays.
+2. **Decision 16 — `opponent_name` lives on `events.opponent`, NOT on `game_results`.** Production schema is cleaner than v1.1 expected. Decision 27 (opponent pre-fill) flow is unchanged — still pre-fill from `event.opponent`.
+3. **Decision 23 — `result` CHECK constraint already exists in production** (`CHECK (result = ANY (ARRAY['W', 'L', 'T']))`). Migration 032 does NOT need to add it. Wave 3d-d's tie-handling logic in `useTeamRecords` was correctly anticipating production schema.
+4. **Decision 8 — backfill `status NOT IN ('cancelled', 'postponed')` filter is forward-compatible no-op today.** Production has only one status value: `'scheduled'` (140 events). Filter excludes nothing currently; documented as forward-compatible so future readers don't assume cancellation/postponement workflows exist yet.
+5. **Decision 8 — backfill queue actual size is 5 events** (4 games + 1 tournament unscored, past `start_at`), NOT the v1.1 estimate of "14." Wave 2E sizing accordingly. Practices excluded (89 unscored practices in production, but practices don't get game_results — by design).
+6. **Pre-flight Item 8 — `team_achievements` is tournament-keyed, NOT event-keyed.** Achievements have `tournament_id` FK but no `event_id`. The "achievement-without-published-score" inversion check from v1.1 doesn't apply at event-level granularity. Reframed for Wave 4 scope (tournament-level): a tournament can have an achievement with zero published game_results in the same tournament. Not a Wave 2A blocker.
+
+Pre-flight also confirmed (no correction needed):
+- Migration NNN number = **032** (per `MAX(version)` query)
+- All 12 expected `game_results` columns exist (id, event_id, our_score, opponent_score, result, quarter_scores, point_differential, player_of_game_id, coach_highlight, entered_by/at, published_at/by, private_notes)
+- 27 game_results in production, all published, 0 drafts (Wave 2B-C will be the first draft state ever)
+- `events.tournament_id` exists, `tournaments` table exists with rich 25-column schema → **Wave 2G unblocked**
+- `coaching_assignments` has 11 active rows, includes `active` boolean
 
 ## Changelog: v1 → v1.1
 
@@ -34,7 +54,7 @@ Wave 2 does **not** ship per-player box scores, push notifications, or editorial
 
 ### Entry + flow
 
-**1. Entry point.** Coach starts a game-score from the event detail page. Tap an event → "Score game" button. Button visible only to coach (assigned via `coaching_assignments`) + admin.
+**1. Entry point.** Coach starts a game-score from the event detail page. Tap an event → "Score game" button. Button visible only to coach + admin (gate via `user_roles` per v1.2-corrected Decision 7).
 
 **2. Score granularity.** Two-mode toggle on the entry sheet. Default is "final score only" for 5-second entry. Quarter-by-quarter mode available via toggle for coaches who want it.
 
@@ -46,9 +66,9 @@ Wave 2 does **not** ship per-player box scores, push notifications, or editorial
 
 **6. Per-player stats.** NONE for v1. Game stats per-player explicitly out of scope per CLAUDE.md §16.12 ("Game stats per-player allowed in 2026? NO"). Box score is its own future wave (post-2026).
 
-**7. Permission.** Coach (assigned via `coaching_assignments`) + admin. Not assistant coach (Darien) — admin override always works for any coverage gap.
+**7. Permission.** Coach (per `user_roles` — `organization_id` + `role = 'coach'`) + admin (`role = 'admin'`). Not assistant coach (Darien) — admin override always works for any coverage gap. **Corrected v1.2:** production auth gate is `user_roles`, NOT `coaching_assignments` as v1.1 specified. `coaching_assignments` is a coach-management table (display name, rates, scope, phone) — not the auth source. Mirrors the existing `game_results_write_staff` RLS pattern.
 
-**8. Backfill queue.** Already-played games appear in a "Needs scoring" queue at `/coach/games-to-score` (its own route). Filter: `start_at < now AND status NOT IN ('cancelled', 'postponed') AND event_type IN (game-equivalent values per pre-flight 3) AND no game_results row`.
+**8. Backfill queue.** Already-played games appear in a "Needs scoring" queue at `/coach/games-to-score` (its own route). Filter: `start_at < now AND status NOT IN ('cancelled', 'postponed') AND event_type IN ('game', 'tournament') AND no game_results row`. **v1.2 pre-flight findings:** (a) `event_type` confirmed as `'game'` (17) + `'tournament'` (34) + `'practice'` (89, excluded); (b) `events.status` only has `'scheduled'` value in production today — the `NOT IN` filter is forward-compatible no-op until cancellation/postponement workflows ship; (c) actual backfill queue starts with **5 events** (4 games + 1 tournament), not the v1.1 "14" estimate.
 
 **9. Per-game rules.** Defer to the per-game rules migration (number TBD when that wave starts). Wave 2 does not ask the coach about quarter length, FT line, or any rule overrides.
 
@@ -76,7 +96,7 @@ Wave 2 does **not** ship per-player box scores, push notifications, or editorial
 
 ### Data model + migration
 
-**20. Use existing `game_results` table.** Pre-flight verifies the column inventory. Expected: `quarter_scores` JSONB, `player_of_game_id`, `coach_highlight`, `published_at`, `our_score`, `opponent_score`, `opponent_name`, `result`. Any column gaps surface during Wave 2A pre-flight and are added in the same migration.
+**20. Use existing `game_results` table.** Pre-flight verified column inventory. Confirmed columns: `quarter_scores` JSONB, `player_of_game_id`, `coach_highlight`, `published_at`, `published_by`, `our_score`, `opponent_score`, `result`, `point_differential`, `entered_by`, `entered_at`, `private_notes`. **v1.2 correction:** opponent name lives on `events.opponent`, NOT on `game_results` (cleaner per-event normalization than v1.1 expected). Decision 27 (opponent pre-fill) flow unchanged — pulls from `event.opponent`. No column gaps; no schema additions needed beyond the audit table per Decision 22.
 
 **21. `published_at` controls visibility on `/records`.** NULL = draft / unpublished. Set timestamp = published. Existing convention from Migrations 025/028.
 
@@ -96,9 +116,85 @@ CREATE TABLE game_result_edits (
 CREATE INDEX idx_game_result_edits_game_id ON game_result_edits(game_result_id);
 ```
 
-RLS: anon SELECT (per Decision 13). Insert restricted to authenticated coach + admin (via auth.uid() in the policy).
+RLS: anon SELECT (per Decision 13). Insert restricted to authenticated coach + admin via `user_roles` join (`ur.user_id = auth.uid() AND ur.organization_id = teams.org_id AND ur.role IN ('admin', 'coach')`). **v1.2 correction:** mirrors the production `game_results_write_staff` policy shape — NOT a `coaching_assignments` join.
 
-**23. Migration NNN scope.** Adds `game_result_edits` table per Decision 22 + any column gaps in `game_results` surfaced by pre-flight + `CHECK` constraint on `coach_highlight` length per Decision 5 + RLS policies (write for assigned coach + admin on `game_results`; public SELECT on `game_result_edits`). Migration number TBD by pre-flight item 0 — userMemories said "014" but production is past 028 + 14 timestamped migrations (per master index Decision 64). Real number is in the 040s+.
+**23. Migration 032 scope.** Adds: (a) `game_result_edits` table per Decision 22; (b) `CHECK (char_length(coach_highlight) <= 140)` constraint on `game_results.coach_highlight` per Decision 5; (c) RLS policies on the new audit table (public SELECT per Decision 13; INSERT-staff via `user_roles` per Decision 7). **v1.2 corrections (locked from pre-flight):** (i) migration number is **032** (per pre-flight item 0); (ii) does NOT add a `result` CHECK constraint — production already has `CHECK (result = ANY (ARRAY['W', 'L', 'T']))`; (iii) does NOT add an `opponent_name` column to `game_results` — opponent lives on `events.opponent` per Decision 20; (iv) does NOT modify `game_results` write-RLS — production policy `game_results_write_staff` already uses the `user_roles` shape we want. Net Migration 032 is narrower than v1.1 anticipated: one new table + one CHECK + two policies on the new table. Locked text in the section below.
+
+#### Migration 032 — locked text
+
+Filename pattern: `20260501XXXXXX_032_<descriptive_name>.sql` (NNNNNN = HHMMSS at apply time per existing convention). Awaits separate explicit GO before `apply_migration` per two-gate model.
+
+```sql
+-- Migration 032: game_result_edits audit table + coach_highlight length CHECK
+-- Wave 2A — Coach Quick-Score schema
+-- Per IA Map v1.2 Decisions 5, 12, 13, 22, 23
+
+CREATE TABLE game_result_edits (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  game_result_id  uuid NOT NULL REFERENCES game_results(id) ON DELETE CASCADE,
+  editor_user_id  uuid NOT NULL REFERENCES auth.users(id),
+  editor_name     text NOT NULL,
+  edited_at       timestamptz NOT NULL DEFAULT now(),
+  fields_changed  jsonb NOT NULL,
+  prior_values    jsonb NOT NULL
+);
+
+CREATE INDEX idx_game_result_edits_game_id ON game_result_edits(game_result_id);
+
+ALTER TABLE game_result_edits ENABLE ROW LEVEL SECURITY;
+
+-- Public SELECT: audit rows visible to anyone who can see the underlying game_result
+-- (mirrors game_results_select_public — published_at IS NOT NULL gate)
+CREATE POLICY game_result_edits_select_public ON game_result_edits
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM game_results gr
+      WHERE gr.id = game_result_id
+        AND gr.published_at IS NOT NULL
+    )
+  );
+
+-- INSERT restricted to admin + coach for the team owning the underlying event
+-- (mirrors game_results_write_staff shape — user_roles join, NOT coaching_assignments)
+CREATE POLICY game_result_edits_insert_staff ON game_result_edits
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM user_roles ur
+      JOIN game_results gr ON gr.id = game_result_id
+      JOIN events e ON e.id = gr.event_id
+      JOIN teams t ON t.id = e.team_id
+      WHERE ur.user_id = (SELECT auth.uid())
+        AND ur.organization_id = t.org_id
+        AND ur.role = ANY (ARRAY['admin'::text, 'coach'::text])
+    )
+  );
+
+-- coach_highlight length enforcement at DB layer (UI-side limit is for UX only)
+ALTER TABLE game_results
+  ADD CONSTRAINT game_results_coach_highlight_length
+  CHECK (coach_highlight IS NULL OR char_length(coach_highlight) <= 140);
+```
+
+Verification queries (run post-apply, read-only):
+
+```sql
+-- Confirm new table exists with expected columns
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_name = 'game_result_edits'
+ORDER BY ordinal_position;
+
+-- Confirm RLS enabled + policies present
+SELECT policyname, cmd, qual, with_check
+FROM pg_policies
+WHERE tablename = 'game_result_edits';
+
+-- Confirm CHECK constraint added
+SELECT conname, pg_get_constraintdef(oid)
+FROM pg_constraint
+WHERE conrelid = 'game_results'::regclass
+  AND conname = 'game_results_coach_highlight_length';
+```
 
 ### Display
 
@@ -196,10 +292,10 @@ Each commit follows Wave 3d discipline:
 
 ### Wave 2A — Schema + audit table + RLS
 
-- Pre-flight item 0 (migration number) runs first
-- Migration NNN: `game_result_edits` table per Decision 22 schema + any column gaps in `game_results` surfaced by pre-flight + `CHECK (char_length(coach_highlight) <= 140)` per Decision 5
-- RLS policies: coach + admin write on `game_results` for assigned team; public SELECT on `game_result_edits`
-- MCP-verified pre-flight on existing columns + policies before drafting migration text
+- Pre-flight (13 read-only MCP queries) ran May 1, 2026 — see Changelog: v1.1 → v1.2 above
+- **Migration 032** (locked text in Decision 23 section): `game_result_edits` table + `CHECK (char_length(coach_highlight) <= 140)` + 2 RLS policies on the new audit table
+- Wave 2A does NOT touch `game_results` write-RLS — production policy `game_results_write_staff` already enforces the user_roles staff gate we want
+- Wave 2A does NOT add `result` CHECK or `opponent_name` column — pre-flight confirmed result CHECK exists and opponent lives on `events.opponent`
 - Estimated: 1 migration file + 1 build queue entry. No React code.
 
 ### Wave 2B-C — Score entry sheet + Save Draft + Publish + edit (combined)
@@ -211,7 +307,7 @@ Originally split as 2B (entry/publish) + 2C (edit). Combined per Decision 3 + cr
 - Numeric input modes per Decision 26
 - "Save Draft" → writes `game_results` row with `published_at = NULL`
 - "Publish" → sets `published_at = now()`, refreshes `/records`
-- Coach permission gate via `coaching_assignments`; admin override per Decision 7
+- Coach permission gate via `user_roles` (per v1.2-corrected Decision 7); admin via same `user_roles` table with `role = 'admin'`
 - Estimated: 2-3 React components + 1 hook + page wiring. ~3-4 files.
 
 ### Wave 2D — Edit + audit + display
@@ -279,27 +375,26 @@ If drafting Wave 2A pre-flight surfaces a new question (e.g., a column doesn't e
 
 ---
 
-## Expected path from here
+## Expected path from here (v1.2 update)
 
-1. Frank approves IA Map v1.1 (or sends back edits)
-2. CC runs pre-flight queries via Supabase MCP per the checklist above
-3. CC writes Wave 2A prompt (Migration NNN scope locked from pre-flight findings)
-4. Frank approves; migration runs via `apply_migration` with GO from Frank
-5. Wave 2B-C prompt; commit; Vercel verify
-6. Continue 2D → 2E → 2F → 2G
+1. ✅ v1 → v1.1 amendment landed April 30, 2026 (Frank-resolved Q1-Q4)
+2. ✅ Wave 2A pre-flight ran May 1, 2026 (13 read-only MCP queries; 6 corrections surfaced)
+3. ✅ v1.1 → v1.2 amendment locks pre-flight corrections + Migration 032 text (THIS docs commit)
+4. **NEXT:** Frank GO → `apply_migration` runs Migration 032 (per locked text in Decision 23 section)
+5. Post-apply verification queries (in Decision 23 section) confirm new table + policies + CHECK
+6. Wave 2B-C prompt; commit; Vercel verify
+7. Continue 2D → 2E → 2F → 2G
 
 Each wave is its own session opener if needed. Wave 2 is not a single-day shippable feature — pace is 1-2 commits per session, matching Wave 3d's rhythm.
 
 ---
 
-## After this document is committed
+## After this v1.2 docs commit lands
 
-- Decisions #88-104 appended to `EMBER_MASTER_INDEX_v3.md` (next consecutive slot after Decision 87 from v1)
-- Master index `NEXT ACTION QUEUED` updated to point at Wave 2A pre-flight (was stale, pointing at Wave 3a from April 29)
-- Master index Hard Rule #9 updated: `git add` per file (not `-A`); `.gitignore` enforces persistent untracked items
-- `.gitignore` extended with `rides-audit-source.zip` + `WAVE_3A_PROMPT_v2.md` per Decision 33
-- Wave 2 v1.1 amendment note appended to `SKYFIRE_BUILD_QUEUE_v2.md`
-- Single docs commit: `docs: Wave 2 IA Map v1.1; .gitignore + master index updates`
+- EMBER_MASTER_INDEX_v3.md: Decision #106 captures pre-flight findings + v1.2 amendment; NEXT ACTION QUEUED moves from "Wave 2A pre-flight" to "Wave 2A migration application (Migration 032 text locked in IA Map v1.2; awaiting GO for apply_migration)"
+- SKYFIRE_BUILD_QUEUE_v2.md: appended entry for v1.2 amendment + 13-query pre-flight summary + locked Migration 032 text
+- Single docs commit per Hard Rule #9 (explicit `git add` per file): WAVE_2_IA_MAP_v1.md + EMBER_MASTER_INDEX_v3.md + SKYFIRE_BUILD_QUEUE_v2.md
+- Two-gate model preserved: this docs commit lands first; **separate explicit GO required before `apply_migration` runs Migration 032**
 - Each Wave 2 sub-wave verifies §16.13 pre-merge gate before push (per Decision 30)
 
 After the docs commit lands, **Wave 2A pre-flight is the next prompt.**

@@ -2161,3 +2161,47 @@ Drafting in compliance mode (transcribe Frank's resolutions cleanly) is not the 
 **Decision #105 — Wave 5 Tournament UI named.** Captures the 4 stub tabs on TournamentDetailPage (Games / Roster / Messages / Scenarios). Stub microcopy in `TournamentDetailPage.jsx` updated from `Ships in Session 2B-β` etc. to `Ships in Wave 5 — Tournament UI` (stale session names predated the Wave 2 v1.1 amendment).
 
 **Files this commit:** `DEFERRED_AUDIT_ITEMS.md` (closures + new findings + scope expansions + audit code), `EMBER_MASTER_INDEX_v3.md` (Decision #105), `WAVE_2_IA_MAP_v1.md` (deferred-section addendum), `src/pages/TournamentDetailPage.jsx` (stub microcopy: 5-line surgical fix; 86 → 86 lines), `SKYFIRE_BUILD_QUEUE_v2.md` (this entry).
+
+---
+
+## May 1, 2026 UTC — Wave 2A pre-flight + IA Map v1.1 → v1.2 amendment + Migration 032 locked text
+
+**Shipped:** Wave 2A pre-flight (13 read-only Supabase MCP queries against production) and the v1.1 → v1.2 amendment that rolls findings into the IA Map and locks the Migration 032 text. **Pre-flight stopped at drafted text per CLAUDE.md Rule 7 / two-gate model — separate explicit GO required before `apply_migration` runs.**
+
+**Pre-flight queries (13):**
+1. `SELECT MAX(version) FROM supabase_migrations.schema_migrations` → next migration = **032**
+2. `game_results` columns: 14 columns confirmed, all expected fields present, `result` already has W/L/T CHECK
+3. `game_results` constraints: UNIQUE(event_id), FK chain to events/auth.users/players, no `opponent_name` column
+4. `coaching_assignments`: 11 active rows, columns include display_name + rates + scope + phone (coach-management table, NOT auth source)
+5. `event_type` distinct: practice 89, tournament 34, game 17
+6. `events.status` distinct: only `'scheduled'` (140 events) — no cancellation/postponement workflow today
+7. `game_results` count: 27 total, 27 published, 0 drafts (Wave 2B-C will be the first draft state ever)
+8. Backfill queue actual: 4 games + 1 tournament past `start_at` unscored = **5 events** (NOT v1.1's "14")
+9. RLS policies on `game_results`: `select_public` (`published_at IS NOT NULL`), `select_parent` (roster chain), `select_staff` (`user_roles` join), `write_staff` (`user_roles` join — **not** `coaching_assignments`)
+10. `events.tournament_id` exists; `events.tournament_name`, `events.parent_event_id` also exist
+11. `tournaments` table: 25 columns including circuit, primary_venue, schedule_status, game_day_guide jsonb, rules jsonb → Wave 2G unblocked
+12. `team_achievements`: 22 columns, links via `tournament_id` (NOT `event_id`) → pre-flight Item 8 reframed for Wave 4 tournament-level scope
+13. `coaching_assignments` schema confirmation (defensive re-query) — 11 columns including `active` boolean
+
+**Six v1.1 → v1.2 corrections (per IA Map Changelog):**
+1. Decision 7: staff auth gate is `user_roles`, NOT `coaching_assignments`
+2. Decision 20: opponent name lives on `events.opponent`, NOT on `game_results`
+3. Decision 23: production already has `result` W/L/T CHECK — Migration 032 does NOT add it
+4. Decision 8: `events.status` only has `'scheduled'` value today — `NOT IN ('cancelled', 'postponed')` filter is forward-compatible no-op
+5. Decision 8: actual backfill queue starts at 5 events, not 14
+6. Pre-flight Item 8: `team_achievements` is tournament-keyed, inversion check reframed for Wave 4 scope
+
+**Migration 032 locked scope (text in IA Map v1.2 Decision 23 section):**
+- `game_result_edits` table per Decision 22 schema (id, game_result_id FK CASCADE, editor_user_id, editor_name denormalized, edited_at, fields_changed jsonb, prior_values jsonb)
+- Index `idx_game_result_edits_game_id`
+- RLS enabled + 2 policies: `game_result_edits_select_public` (gated by underlying `game_results.published_at IS NOT NULL`), `game_result_edits_insert_staff` (gated by `user_roles` join — admin or coach for the team owning the underlying event)
+- `CHECK (coach_highlight IS NULL OR char_length(coach_highlight) <= 140)` on `game_results.coach_highlight`
+- 3 read-only verification queries (column inventory, RLS policies, constraint existence) provided in same section
+
+**Master index decision:** #106 added (single decision capturing all six corrections + Migration 032 lock). NEXT ACTION QUEUED moved from "Wave 2A pre-flight" to "Wave 2A migration application: Migration 032" with the two-gate-model warning explicit.
+
+**Files this commit:** `WAVE_2_IA_MAP_v1.md` (v1.2 in-place: changelog block + Decisions 1, 7, 8, 20, 22, 23 amended; Migration 032 locked-text section added; Wave 2A roadmap copy + "After this commit" section refreshed), `EMBER_MASTER_INDEX_v3.md` (Decision #106 + NEXT ACTION QUEUED rewrite), `SKYFIRE_BUILD_QUEUE_v2.md` (this entry).
+
+**Did not use `git add -A`** (per Hard Rule #9). Three tracked files explicitly staged.
+
+**Two-gate model preserved:** This docs commit is gate 1. Gate 2 = Frank's separate explicit GO before `apply_migration`. Do NOT auto-apply on docs-commit landing.

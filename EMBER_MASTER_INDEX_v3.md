@@ -209,19 +209,27 @@ Fresh-eyes audit on the v1 IA Map surfaced 9 holes + 8 enhancements + 4 cross-cu
 
 105. **Wave 5 — Tournament UI named.** Captures the four stub tabs on TournamentDetailPage (Games / Roster / Messages / Scenarios) into a deliberately-named future wave. Created May 1, 2026 in response to Tier 1 research finding (audit code TIER1, finding N2) that 4-of-5 tabs render `TabStub` placeholders referencing session names (`2B-β`, `2B-γ`, `2B-δ`, `2C`) that no longer exist on the current roadmap. Those names predated the Wave 2 v1.1 amendment, which narrowed Wave 2 to Coach Quick-Score (5 sub-waves: 2A → 2B-C → 2D → 2E → 2F → 2G; none touch tournament UI). Wave 5 gives the work a home without committing scope or schedule. Stub microcopy updated from `Ships in Session 2B-β` etc. to `Ships in Wave 5 — Tournament UI` so parents see honest "future feature" messaging instead of references to nonexistent sessions. When Wave 5 ships, the four tabs land at minimum (Games, Roster, Messages, Scenarios); detailed scope deferred to a Wave 5 IA Map at planning time. Wave 5 slots after Wave 4 (Communications) per CLAUDE.md §8 wave sequencing.
 
+## DECISIONS LOCKED IN WAVE 2 IA MAP v1.2 AMENDMENT (May 1, 2026) (106)
+
+Wave 2A pre-flight ran 13 read-only MCP queries against production schema. Six corrections to v1.1 surfaced; v1.2 rolls them in plus the locked Migration 032 text. Pre-flight stopped at drafted text per CLAUDE.md Rule 7 / two-gate model — separate explicit GO required before `apply_migration`.
+
+106. **Wave 2A pre-flight findings + Migration 032 lock (six v1.1 corrections).** (a) Staff auth gate is `user_roles` (org_id + role IN admin/coach), NOT `coaching_assignments` — production policy `game_results_write_staff` already uses this shape. `coaching_assignments` is a coach-management table (display name, rates, scope, phone), not the auth source; may resurface in Wave 5 Tournament UI for coverage displays. Decisions 1, 7, 22 in IA Map amended in-place; Wave 2A and 2B-C section copy updated to match. (b) Opponent name lives on `events.opponent`, NOT on `game_results` — Migration 032 does NOT add an `opponent_name` column. Decision 20 amended. Decision 27 (opponent pre-fill flow) unchanged. (c) `game_results.result` already has CHECK constraint (`result = ANY (ARRAY['W', 'L', 'T'])`); Migration 032 does NOT add it. Decision 23 scope narrowed. (d) `events.status` only has `'scheduled'` value in production today; Decision 8's `NOT IN ('cancelled', 'postponed')` filter is forward-compatible no-op. (e) Backfill queue actual size is **5 events** (4 games + 1 tournament past `start_at` unscored), NOT v1.1's "14" estimate. (f) `team_achievements` is tournament-keyed (`tournament_id` FK), NOT event-keyed — pre-flight Item 8 inversion check reframed for Wave 4 scope. Net Migration 032 (text locked in IA Map v1.2 Decision 23 section) is narrower than v1.1 anticipated: `game_result_edits` table + 1 CHECK on `coach_highlight` + 2 RLS policies on the new audit table. **Awaits separate explicit GO before apply_migration runs.**
+
 
 
 ---
 
 # NEXT ACTION QUEUED
 
-**Wave 2A pre-flight: Coach Quick-Score schema + audit table.** Run pre-flight checklist from `WAVE_2_IA_MAP_v1.md` (8 items, MCP queries) to determine the next migration number, verify `game_results` columns, confirm `coaching_assignments` shape, and resolve `event_type` filter values. Findings dictate Migration NNN scope — `game_result_edits` audit table per Decision 22, any column gaps in `game_results`, and the `coach_highlight` 140-char CHECK constraint.
+**Wave 2A migration application: Migration 032.** Migration 032 text is locked in `WAVE_2_IA_MAP_v1.md` v1.2 (Decision 23 section). Pre-flight 9-item checklist (items 0-8) ran May 1, 2026; 13 read-only MCP queries against production; 6 corrections rolled into v1.2 per Decision 106 above.
 
-**End of Wave 2A pre-flight:** All 8 pre-flight items reported. Migration number assigned. Migration text drafted ready for `apply_migration` GO from Frank.
+**Two-gate model:** This docs commit (v1.1 → v1.2) is gate 1. Gate 2 is Frank's separate explicit GO before invoking `apply_migration`. Do NOT auto-apply on docs-commit landing.
 
-**Wave 2B-C next session:** Score entry sheet + Save Draft + Publish flow combined.
+**Apply runs:** create `game_result_edits` table + index + RLS (anon SELECT gated by `published_at IS NOT NULL`; INSERT-staff gated by `user_roles` join) + `CHECK (char_length(coach_highlight) <= 140)` on `game_results.coach_highlight`. Post-apply verification queries (3 read-only) in IA Map v1.2 Decision 23 section.
 
-**Prior queued (shipped):** Wave 3a (broadcast components), Wave 3b (records page), Wave 3c (RLS + tournament data), Wave 3d (parent home + records polish, 13 commits) — all complete as of April 30, 2026. See SKYFIRE_BUILD_QUEUE_v2.md for commit log.
+**Wave 2B-C next session:** Score entry sheet + Save Draft + Publish flow combined (per IA Map Decision 3 + cross-cutting #1).
+
+**Prior queued (shipped):** Wave 3a (broadcast components), Wave 3b (records page), Wave 3c (RLS + tournament data), Wave 3d (parent home + records polish, 13 commits), Wave 2 IA Map v1 + v1.1 (April 30), Tier 1 research closures (May 1, SHA 86d291b) — all complete. See SKYFIRE_BUILD_QUEUE_v2.md for commit log.
 
 
 
