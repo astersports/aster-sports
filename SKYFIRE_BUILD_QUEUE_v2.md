@@ -2295,3 +2295,19 @@ Drafting in compliance mode (transcribe Frank's resolutions cleanly) is not the 
 **M3 verified:** pre-edit verification grep ran before edits. Pre-stage verification grep ran before stage. Explicit GO required before commit.
 
 **Rule 19 not applicable** — no RLS-touching code in this commit.
+
+---
+
+## 2026-05-01 — Wave 1G Gate 1G-1: Docs lock (8df6890)
+
+Files: DEFERRED_AUDIT_ITEMS.md, EMBER_MASTER_INDEX_v3.md, WAVE_1G_PLAN.md (NEW). Decision #110 (parent-scoped RLS on event_rsvps + event_comments + event_duties). M5 methodology rule (cmd='ALL' must have with_check). P0-01 + P1-01 tracker entries. Vercel READY. Unlocks Gate 1G-2.
+
+## 2026-05-01 — Wave 1G Gate 1G-2: parent_scoped_writes migration (5ec2faf)
+
+Files: supabase/migrations/20260501201639_parent_scoped_writes.sql (NEW, 138 lines), EMBER_MASTER_INDEX_v3.md (Decision #110 timestamp). Migration applied to production via Supabase MCP at version 20260501201639. Drops 3 broken cmd='ALL' + NULL with_check policies, creates current_user_guardian_id() helper (cosmetic rewrite of pre-existing), creates 6 new write policies with explicit with_check. Pre-flight: 6 broken policies confirmed, data audit 0 violations, helper pre-existence caught (M2 extension). Post-flight V1-V6 all clean. BUG-03 P0 closed at database layer. Vercel READY. Unlocks Gate 1G-3.
+
+## 2026-05-01 — Wave 1G Gate 1G-3: Wave 1G close-out (this commit)
+
+Files: CLAUDE.md (+anti-pattern #20), DEFERRED_AUDIT_ITEMS.md (P0-01 CLOSED, M2 EXTENDED), SKYFIRE_BUILD_QUEUE_v2.md (3 Wave 1G entries), EMBER_MASTER_INDEX_v3.md (NEXT ACTION updated). UI verification confirmed RsvpPlayerRow (readOnly gate), EventCommentsTab (no edit/delete UI), EventDutiesTab (isMine gate) were already correctly gated. No component edits required. Wave 1G CLOSED. Vercel READY. Unlocks post-Wave-1G sequence.
+
+**Wave 1G status: CLOSED.** P0 privacy boundary fixed at database + verified at UI layer. 3 migrations total today (20260501110331 game_result_edits, 20260501124915 locations_admin_notes, 20260501201639 parent_scoped_writes). Wave 2B-C Gate 2c resumes after DATA-01..04 + BUG-02.

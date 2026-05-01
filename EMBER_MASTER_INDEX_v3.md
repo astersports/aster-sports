@@ -229,9 +229,13 @@ Wave 2A pre-flight ran 13 read-only MCP queries against production schema. Six c
 
 # NEXT ACTION QUEUED
 
-**Wave 1G: P0 privacy fix — parent-scoped RLS on event_rsvps + event_comments + event_duties (Decision #110).** Wave 2B-C paused at Gate 2b (3defbaa) for emergency privacy fix. Three tables had cmd='ALL' + no with_check, allowing any org member to write any row. Migration drops 3 broken policies, creates current_user_guardian_id() helper, creates 6 new policies with explicit with_check constraints. Three-gate model: Gate 1 = this docs commit, Gate 2 = migration apply + verify, Gate 3 = UI scope check (icon render gating on EventDetailPage). Wave 2B-C Gate 2c resumes after Wave 1G closes.
+**Wave 1G CLOSED.** P0 privacy fix shipped (Decision #110, Migration 20260501201639). UI verification confirmed all three surfaces already correctly gated. Post-Wave-1G sequence:
 
-Wave 2B-C status: Gate 2a (useScoreDraft, 0b71bdc) + Gate 2b (3 scoring components, 3defbaa) shipped. Gate 2c (EventDetailPage button + split) picks locked (epsilon/P1b/L1/G1). Paused for Wave 1G.
+1. DATA-01..04 Studio fixes (Kenny + Darien user_metadata, admin_notes content move, duplicate comment cleanup)
+2. BUG-02 hotfix (coach NowSection placeholder)
+3. Wave 2B-C Gate 2c resume (picks locked: epsilon / P1b / L1 / G1)
+4. Wave 2B-C Gate 3 close
+5. Wave 1H + audit triage (deferred items)
 
 
 

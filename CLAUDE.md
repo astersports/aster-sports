@@ -344,6 +344,7 @@ Spring 2026: March 23 – June 14. Grades 2–5.
 17. **Change CSS token values → forbidden**
 18. **CSS % or dvh for overlay heights → JS visualViewport**
 19. **Deploy without merging v2 → main → nothing ships**
+20. **cmd='ALL' RLS policies must always have explicit with_check.** with_check=NULL on a write policy allows any column values that pass the USING qual, with zero constraint on the data being written. P0 anti-pattern by default. Wave 1G (Decision #110) caught this on event_rsvps, event_comments, event_duties. M5 methodology rule.
 
 ---
 
