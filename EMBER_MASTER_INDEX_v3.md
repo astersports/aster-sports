@@ -217,19 +217,21 @@ Wave 2A pre-flight ran 13 read-only MCP queries against production schema. Six c
 
 107. **Location admin_notes — app-layer privacy gating (Postgres column-level RLS unsupported).** locations table has three existing notes-like fields (notes, parking_notes, entry_instructions), all parent-visible. Wave 1F migration adds admin_notes for staff-only operational content (billing disputes, vendor flags, internal coordination). locations_select RLS returns all columns to all org members; Postgres has no column-level RLS. Privacy boundary enforced at app layer in two redundant places: (a) parent queries omit admin_notes from explicit column list; (b) LocationCard renders admin_notes block only when isStaff(role). Defense in depth — a regression in either layer alone still doesn't leak admin_notes to parents. Existing notes content unchanged; admins migrate sensitive existing notes to admin_notes manually post-deploy via Supabase Studio (or Wave 4 admin location-edit UI when shipped). Migration applied 2026-05-01 as registered version 20260501124915.
 
+108. **Coach Quick-Score entry sheet — auto-save with debounced upsert + post-publish-only audit trail.** Wave 2B-C ships ScoreEntrySheet (full-screen overlay over /events/:id, pattern matches CreateActivityWizard) with auto-save on field change (500ms debounce). State machine: idle/dirty/saving/saved/error. First field change creates game_results row with published_at = NULL; subsequent changes update. Coach explicitly taps Publish to set published_at = now(). Audit trail rule (game_result_edits INSERT) fires ONLY when updating a row where prior published_at IS NOT NULL — pre-publish draft writes generate zero audit rows; the publish event itself is not an audit row, only edits AFTER publish are. Enforced in app layer (useScoreDraft hook), not DB. Schema runway laid in Wave 2A (Migration 032 + legacy 014). No new migrations needed for Wave 2B-C.
+
+109. **IA Map v1.2 column-name corrections (production schema reality vs draft language).** Production column names confirmed via Wave 2B-C pre-flight: events.event_type (not activity_type), game_results.our_score / opponent_score (not home_score / away_score), org scoping via events.team_id → teams.org_id (no direct events.org_id). Wave 2B-C code uses production-correct names from the start. Future IA Map drafts must verify column names against production schema before locking decision text.
+
 
 
 ---
 
 # NEXT ACTION QUEUED
 
-**Wave 2B-C: Score entry sheet + Save Draft + Publish flow (combined per IA Map Decision 3 + cross-cutting #1).**
+**Wave 2B-C: Coach Quick-Score entry sheet + Save Draft + Publish flow (currently in flight, Gate 1 docs lock this commit).**
 
-Wave 1F closed 2026-05-01. Phase 1 closes. Migration 032 (game_result_edits, registered 20260501110331) and Migration locations_admin_notes (registered 20260501124915) are the two production schema deltas of the day.
+Wave 1F closed 2026-05-01 with SHA 946a3c8 (Phase 1 complete). Wave 2B-C opens with this Gate 1 docs commit. Three-gate model: Gate 1 = this docs commit (architecture lock for Decision #108 + #109). Gate 2 = three sub-gates (2a hook, 2b sheet+form scaffolding, 2c EventDetailPage button + full integration). Gate 3 = close-out commit. No new schema migrations needed — all schema runway laid in Wave 2A (Migration 032) and legacy Migration 014.
 
-Wave 1F shipped: P0 (12:00 AM times, SHA aad2ba8), P1-1 (RSVP pill clipping, SHA 74f6a78), P1-2 (density labels, SHA 836dab5), P1-3 (verified working, Outcome B), P1-4 (location admin_notes privacy boundary, Gate 3 SHA pending).
-
-**Wave 2B-C scope:** new score-entry sheet at sub-route of `/events/:id`; form fields per Decisions 4 (POG), 5 (coach_highlight), 16 (auto-derive result), 17 (override hidden), 26 (mobile numeric inputs), 27 (opponent pre-fill); "Save Draft" writes `game_results` with `published_at = NULL`; "Publish" sets `published_at = now()`, refreshes `/records`. Coach gate via `user_roles` (Decision 7 v1.2-corrected). Estimated 2-3 React components + 1 hook + page wiring (~3-4 files).
+Wave 2B-C scope per WAVE_2BC_PLAN.md (this commit) and IA Map v1.2 Wave 2B-C section: 4 new files (ScoreEntrySheet.jsx, QuarterScoreInput.jsx, useScoreDraft.js, PlayerOfGamePicker.jsx) + 1 edit (EventDetailPage.jsx + ~20 lines for Enter Score button). Estimated 2-3 sessions across the three Gate 2 sub-gates.
 
 
 

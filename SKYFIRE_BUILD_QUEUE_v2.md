@@ -2242,7 +2242,7 @@ Drafting in compliance mode (transcribe Frank's resolutions cleanly) is not the 
 - 836dab5 — P1-2: density toggle labels spelled out (Compact/Default/Detailed); P1-3 verified working (Outcome B, /records route live) (DensityToggle.jsx)
 - 903263a — Gate 1 docs lock: Decision #107 + N10 (locations duplicate lat/lon) + N11 (RSVP label inconsistency follow-up to P1-1) + M3 (material decisions need explicit GO)
 - 875563e — Gate 1 fixup: Decision #107 ordering correction (was inverted with #106 in 903263a). First applied invocation of M3.
-- [Gate 3 SHA] — Wave 1F close: migration repo file + LocationCard admin_notes render gate + master index Decision #107 timestamp fill-in + tracker P1-1 through P1-4 close-out. useLocations.js NOT edited (defense layer (a) pre-existing via explicit column list, retroactive safety — surfaced as N12).
+- 946a3c8 — Wave 1F close: migration repo file + LocationCard admin_notes render gate + master index Decision #107 timestamp fill-in + tracker P1-1 through P1-4 close-out. useLocations.js NOT edited (defense layer (a) pre-existing via explicit column list, retroactive safety — surfaced as N12).
 
 **Migration:** locations_admin_notes (registered version 20260501124915, registered name locations_admin_notes — N9 protocol fix applied: bare topic name, no NNN_ prefix; first clean post-Apr-27 convention migration since N9 was documented on edd671d).
 
@@ -2259,3 +2259,39 @@ Drafting in compliance mode (transcribe Frank's resolutions cleanly) is not the 
 **Did not use git add -A** (per Hard Rule #9). Five files explicitly staged.
 
 **Rule 19 gate:** This commit touches RLS-adjacent code paths (parent query column list convention + render-layer privacy gate). Awaits explicit GO before push per Rule 19.
+
+---
+
+## May 1, 2026 UTC — Wave 2B-C Gate 1 — Architecture lock
+
+**Shipped:** Wave 2B-C (Coach Quick-Score entry sheet) Gate 1 docs commit. Locks Decision #108 (entry sheet architecture with auto-save + post-publish-only audit trail) and Decision #109 (IA Map v1.2 column-name corrections from production schema reality). No code or schema changes this commit.
+
+**Pre-Wave evidence (Sub-Steps 1-3):**
+- Sub-Step 1: Broadcast --sf-bc-* tokens self-contained in .bc-root scope (not broken). Locked alpha framing, N13 added.
+- Sub-Step 2: 10 pre-flight queries via Supabase MCP. 7 PASS, 3 FLAGS resolved before Gate 1: events.event_type vs IA Map v1.2 "activity_type" (Decision #109 captures), publish_status vs published_at naming collision (N14), audit trail rule reaffirmed (Decision #108 captures).
+- Sub-Step 3: Frontend discovery clean — 0 existing scoring UI/hooks. 4 read-only published-results hooks (no draft-write interference). Sheet pattern matches CreateActivityWizard.
+
+**Decision #108 (Coach Quick-Score architecture):** Auto-save with 500ms debounce. State machine idle/dirty/saving/saved/error. First field change creates game_results draft (published_at = NULL); explicit Publish sets published_at = now(). Audit trail (game_result_edits) INSERT fires only on post-publish edits, not draft writes, not the publish event itself. Enforced in app layer (useScoreDraft hook). Schema runway already in production from Migration 032 + legacy 014.
+
+**Decision #109 (column-name correction):** Production uses events.event_type, game_results.our_score / opponent_score, and org scoping via events.team_id → teams.org_id. IA Map v1.2 used draft-language terms in some places. Wave 2B-C code uses production-correct names from kickoff. Process discipline: future IA Map drafts must verify column names against production schema before locking text.
+
+**Tracker additions this commit:**
+- N13 (P3, GATE3) — broadcast --sf-bc-* cosmetic namespace, Wave 4 cleanup
+- N14 (P3, GATE3) — events.publish_status vs game_results.published_at naming collision, future cleanup
+- M4 — verify consumption pattern before naming broken (alongside M1, M2, M3)
+
+**Self-healing audit trail substitution:** 946a3c8 substituted for the Wave 1F placeholder in two places (DEFERRED_AUDIT_ITEMS.md P1-4 close-out; SKYFIRE_BUILD_QUEUE_v2.md Wave 1F entry). Self-healing complete for Wave 1F.
+
+**Files this commit:**
+- EMBER_MASTER_INDEX_v3.md (+Decision #108, +Decision #109, NEXT ACTION QUEUED rewrite)
+- DEFERRED_AUDIT_ITEMS.md (+N13, +N14, +M4, 946a3c8 placeholder substitution)
+- SKYFIRE_BUILD_QUEUE_v2.md (this entry, 946a3c8 placeholder substitution in Wave 1F entry)
+- WAVE_2BC_PLAN.md (NEW, locked Wave 2B-C plan)
+
+**No code changes.** Gate 2a (useScoreDraft hook) starts after Frank GO on this Gate 1 commit + Vercel verification.
+
+**Did not use git add -A** (Hard Rule #9). Four files explicitly staged.
+
+**M3 verified:** pre-edit verification grep ran before edits. Pre-stage verification grep ran before stage. Explicit GO required before commit.
+
+**Rule 19 not applicable** — no RLS-touching code in this commit.
