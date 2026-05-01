@@ -2092,6 +2092,44 @@ Run via Supabase MCP. Findings reported before drafting Migration NNN.
 
 ### Open questions
 
-**(none — all 19 load-bearing decisions resolved during IA Map v1 conversation, April 30, 2026)**
+**(none — all 28 load-bearing decisions resolved as of v1.1 amendment, April 30, 2026)**
 
 If Wave 2A pre-flight surfaces a new question (column missing, RLS shape unexpected, etc.), surface in IA Map's "Open questions" section before shipping any code.
+
+---
+
+## Wave 2 IA Map v1.1 amendment (April 30, 2026)
+
+Fresh-eyes audit on v1 surfaced 9 holes (B1-B9) + 8 enhancements (E1-E8) + 4 cross-cutting observations. Frank resolved all of them. v1.1 rolled them in. Net result: doc grew from 19 to 28 locked decisions; sub-wave count effectively dropped from 6 to 5 distinct waves (2B and 2C combined per Decision 3).
+
+### Amendments
+
+- **9 bug resolutions:** quarter display format locked (B1), audit batched read pattern locked (B2), POG roster source = all team players including academy (B3), event_type pre-flight item kept (B4), override-result UX hidden by default (B5), 140-char CHECK constraint added to Migration NNN (B6), audit author = denormalized editor_name (B7), live updates = eventual-consistency for v1 (B8), route protection coach+admin (B9).
+- **8 enhancements:** audit table schema proposed in IA Map (E1), POG display = muted line below score (E2), opponent name pre-fill from event (E3), mobile numeric inputs locked (E4), Migration 015 reference de-asserted (E5), concurrent edit = last-write-wins (E6), §16.13 pre-merge gate per wave (E7), backfill achievement-without-score added to pre-flight (E8).
+- **4 cross-cutting:** 2B-C.1 hotfix pattern explicit, backfill POG dropdown = current roster + footer note, master index NEXT ACTION QUEUED updated to Wave 2A pre-flight (was stale at Wave 3a), Hard Rule #9 updated to explicit `git add` per file + `.gitignore` enforcement.
+
+### Master index appends
+
+Decisions #88-103 added to `EMBER_MASTER_INDEX_v3.md` after Wave 2 IA Map v1's #69-87.
+
+### Process learning surfaced by the audit
+
+Drafting in compliance mode (transcribe Frank's resolutions cleanly) is not the same as adversarial mode (find what's missing). The v1 IA Map drafted in compliance mode missed 17 holes; the audit pass switched modes and found them. Going forward: pre-mortem each decision before writing it down (*"if the engineer hits this decision tomorrow, what's the first thing they'd ask?"*) and run MCP queries during draft (not just in pre-flight) to eliminate "pre-flight may surface" hedges.
+
+### Files this commit
+
+- `WAVE_2_IA_MAP_v1.md` (in-place v1 → v1.1 update; 28 decisions, expanded pre-flight, refined commit roadmap)
+- `EMBER_MASTER_INDEX_v3.md` (appended decisions #88-103 + Hard Rule #9 update + NEXT ACTION QUEUED update)
+- `.gitignore` (added persistent untracked items per Decision 103)
+- `SKYFIRE_BUILD_QUEUE_v2.md` (this entry)
+
+### Wave 2 sequence (post-amendment)
+
+- 2A: Schema + audit table + RLS (next prompt — Wave 2A pre-flight)
+- 2B-C: Score entry + Save Draft + Publish + edit (combined per Decision 3)
+- 2D: Edit + audit + display (with batched read per Decision 91)
+- 2E: Quarter mode + display
+- 2F: Backfill queue at /coach/games-to-score
+- 2G: Multi-game tournament "Score next game"
+
+**Note: did not use `git add -A`** (per updated Hard Rule #9). Four tracked files explicitly staged. Persistent untracked items (`rides-audit-source.zip`, `WAVE_3A_PROMPT_v2.md`) now in `.gitignore`, no longer surfacing in `git status`.

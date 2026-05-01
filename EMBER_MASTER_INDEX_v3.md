@@ -169,17 +169,55 @@ See `WAVE_2_IA_MAP_v1.md` at repo root for full architectural context. Numbered 
 
 87. **`EMBER_MASTER_INDEX_v3.md` tracked in git from this commit forward.** Previously untracked per build queue's recurring "stay untracked" footnote. Living untracked is technical debt for the canonical decisions doc. Wave 2 IA Map v1 landing commit is the moment it joins the repo.
 
+## DECISIONS LOCKED IN WAVE 2 IA MAP v1.1 AMENDMENT (April 30, 2026) (88-103)
+
+Fresh-eyes audit on the v1 IA Map surfaced 9 holes + 8 enhancements + 4 cross-cutting observations. Frank resolved all of them. v1.1 rolls them in. See `WAVE_2_IA_MAP_v1.md` (now at v1.1) for full architectural context.
+
+88. **POG dropdown source = all team players including Futures Academy.** Filter is `team_id = event.team_id`, no `roster_type` exclusion. Academy kids playing up should be recognizable as POG; filtering them would create the worst possible edge case (the standout player isn't pickable). Resolution to audit Q1.
+
+89. **`coach_highlight` 140-char limit enforced by DB CHECK constraint, not just UI.** Migration NNN adds `CHECK (char_length(coach_highlight) <= 140)`. UI enforcement is bypassable via direct API; DB enforcement closes the loophole at no extra cost.
+
+90. **Audit row author identity = denormalized `editor_name TEXT NOT NULL` on `game_result_edits`.** Stores the coach/admin's name at edit time. Two reasons: (a) audit semantics specifically want historical snapshots — if Coach Kenny later changes their display name, prior edits should still read "Coach Kenny"; (b) avoids public RLS exposure of `users` / `coaching_assignments` (multi-tenant safe for Phase 7-B).
+
+91. **Audit table read pattern = batched query, not N+1.** Either fold audit metadata into the existing `useOrgTeamRecords` query as a left-join projection, or new `useOrgGameEdits(orgId)` hook returning `{ byGameId: { [game_id]: latestEdit } }`. Decide between the two during Wave 2A migration design — choice depends on RLS shape and audit-row count per game.
+
+92. **Live updates after edit = eventual consistency for Wave 2.** Parent's open `/records` tab shows stale "no edit" state until tab focus refetch. The fix (wire `useRefetchOnVisible(refetchRecords)` for `useOrgTeamRecords`) is post-Wave-2 cleanup, not in scope. Edits aren't invisible — just not real-time.
+
+93. **Override-result UX = hidden by default.** Below the auto-derived result text, a small "Override" link reveals the W/L/T radio. Keeps the form lean for the 99% case (auto-derive is correct).
+
+94. **`game_result_edits` audit table schema (proposed in IA Map; pre-flight may adjust):** `id uuid PK`, `game_result_id uuid FK ON DELETE CASCADE`, `editor_user_id uuid FK auth.users`, `editor_name text NOT NULL` (per Decision 90), `edited_at timestamptz NOT NULL DEFAULT now()`, `fields_changed jsonb NOT NULL`, `prior_values jsonb NOT NULL`. Index on `game_result_id`. RLS: anon SELECT (per master index Decision 80 from v1), insert restricted to authenticated coach + admin via `auth.uid()` policy.
+
+95. **POG display on `/records` GameLogRow = separate muted line below score.** Format: `Player of the Game: Mia Rodriguez`. Renders only when POG is set. Variable row height across the records page is intentional — POG line is a "this game had a standout" signal. Wave 2D should NOT try to "fix" the height variation with placeholders or fixed-height shims. Resolution to audit Q3.
+
+96. **Quarter score display on GameLogRow = inline secondary line below score.** Format: `Q1 8-7 · Q2 12-9 · Q3 6-5 · Q4 6-7` muted. Matches the two-line pattern from 3d-g.4 TeamRow. Renders only when `quarter_scores` JSONB is non-null.
+
+97. **Score input mobile UX.** All score inputs use `<input type="number" inputMode="numeric" pattern="[0-9]*">` so iOS shows the number pad. 44px tap targets minimum on form buttons. Coach is entering scores postgame on a phone in a noisy gym — form has to land shipping-ready for that environment.
+
+98. **Opponent name pre-fill from `event.opponent`, editable.** Score entry sheet pre-fills the opponent name field. Coach can override at game time when "TBD" resolves to a real team name.
+
+99. **Backfill POG dropdown = current roster + footer note.** Backfill queue entry sheets show the team's *current* roster in the POG dropdown, not the historical roster as of event date. Footer note: *"Showing current roster. If a player has since left the team, note them in the highlight field."* Spring 2026 turnover is low; historical-roster temporal queries deferred to 2027-season concern. Resolution to audit Q4.
+
+100. **Concurrent edit handling = last-write-wins.** Two admins editing the same game simultaneously: both edits log to the audit table; second edit overwrites first in `game_results`; audit history reveals the divergence. No optimistic concurrency check, no lock-out warnings — over-engineering for v1.
+
+101. **Pre-merge gate per CLAUDE.md §16.13 verified before each Wave 2 sub-wave push.** 10-item Elite Stack checklist: optimistic UI, density-aware, kindness microcopy, accessibility, notification cadence, translation-extractable, privacy locks, audit trail, presence toast, performance budget. Required for merge.
+
+102. **Wave 2 follows the 3d-b.1 hotfix pattern.** Sub-wave hotfixes (e.g., 2B-C.1, 2D.1) are fine when smoke testing surfaces gaps. Hotfix scope = single-line or single-component fix on the just-shipped wave; anything bigger is its own sub-wave.
+
+103. **`.gitignore` enforces the explicit-add discipline.** `rides-audit-source.zip` and `WAVE_3A_PROMPT_v2.md` (the persistent "stay untracked" items from Wave 3d build queue notes) move into `.gitignore`. Discipline is enforced by the file, not by hand. Hard Rule #9 updated to match.
+
 
 
 ---
 
 # NEXT ACTION QUEUED
 
-**Wave 3a: Broadcast component library foundation.** Single Claude Code prompt. Sets up `src/components/broadcast/*` directory. Loads Barlow Condensed via Google Fonts. Adds CSS tokens for navy gradients (`#070d17 / #0e1e33 / #132845`), glow effects, broadcast theme. Builds 5 highest-leverage components first (Hero header, Team identity card, Stat hero bar, Tournament card, Game log row) with full styling matching `records-v14_2.html`. Renders them on a `/records-preview` route using real data from `game_results` (26 backfilled rows). Each component file ≤150 lines.
+**Wave 2A pre-flight: Coach Quick-Score schema + audit table.** Run pre-flight checklist from `WAVE_2_IA_MAP_v1.md` (8 items, MCP queries) to determine the next migration number, verify `game_results` columns, confirm `coaching_assignments` shape, and resolve `event_type` filter values. Findings dictate Migration NNN scope — `game_result_edits` audit table per Decision 22, any column gaps in `game_results`, and the `coach_highlight` 140-char CHECK constraint.
 
-**End of Wave 3a session:** 5 broadcast components live on `/records-preview`. Visually verified against Squarespace HTML. Foundation locked.
+**End of Wave 2A pre-flight:** All 8 pre-flight items reported. Migration number assigned. Migration text drafted ready for `apply_migration` GO from Frank.
 
-**Wave 3b next session:** Full Records page using all 22 components.
+**Wave 2B-C next session:** Score entry sheet + Save Draft + Publish flow combined.
+
+**Prior queued (shipped):** Wave 3a (broadcast components), Wave 3b (records page), Wave 3c (RLS + tournament data), Wave 3d (parent home + records polish, 13 commits) — all complete as of April 30, 2026. See SKYFIRE_BUILD_QUEUE_v2.md for commit log.
 
 
 
@@ -2457,7 +2495,7 @@ After confirming, ask me one question only: "Ready to write the Wave 3a prompt?"
 6. Number-first naming ("10U Black" not "Boys 10U Black"). Sort oldest to youngest.
 7. Never "CYO" in UI. Always "League Play."
 8. Answer first, then detail. No preamble. No em dashes. No "leverage/utilize/seamless/robust/streamline."
-9. Deploy chain: `git add -A && git commit -m "msg" && git push origin v2 && git checkout main && git merge v2 && git push origin main && git checkout v2`
+9. Deploy chain: explicit `git add` per file (not `-A`), then `git commit -m "msg" && git push origin v2 && git checkout main && git merge v2 && git push origin main && git checkout v2`. Persistent untracked items live in `.gitignore` so the discipline is enforced by the file, not by hand. Updated April 30, 2026 in Wave 2 IA Map v1.1 amendment per Wave 3d session pattern.
 10. Update EMBER_MASTER_INDEX.md immediately after every shipped feature, not at end of session.
 ```
 
