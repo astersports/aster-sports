@@ -1,15 +1,18 @@
 // src/pages/CoachHomePage.jsx
-// Phase 1 Step 5D: Coach home scaffold.
-// Greeting + TODAY (placeholder for 5E NowSection) + MY TEAMS + sign-out.
-// NowSection coach variant lands in Step 5E.
+// Coach home: greeting + NEXT UP (NextUpCard) + MY TEAMS + sign-out.
 
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
+import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
+import { useEventRideCounts } from '../hooks/useEventRideCounts';
+import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
+import { useNow } from '../hooks/useNow';
 import AdminGreeting from '../components/admin/AdminGreeting';
 import SectionShell from '../components/home/SectionShell';
+import NextUpCard from '../components/schedule/NextUpCard';
 import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
 
 export default function CoachHomePage() {
@@ -17,6 +20,11 @@ export default function CoachHomePage() {
   const { activities, loading, error, refetch } = useActivities();
   const navigate = useNavigate();
   useRefetchOnVisible(refetch);
+  const now = useNow();
+  const rsvpCounts = useEventRsvpCounts(activities);
+  const rideCounts = useEventRideCounts(activities);
+  const dutyCounts = useEventDutyCounts(activities);
+  const nextEvent = useMemo(() => activities.find((a) => a.start_at && a.status !== 'cancelled' && new Date(a.start_at).getTime() >= now) || null, [activities, now]);
 
   const myTeams = useMemo(() => {
     const map = new Map();
@@ -42,17 +50,16 @@ export default function CoachHomePage() {
       <AdminGreeting user={user} />
 
       <SectionShell
-        title="TODAY"
-        sectionKey="coach-today"
+        title="NEXT UP"
+        sectionKey="coach-now"
         loading={loading}
         error={error}
         skeletonVariant="card"
         skeletonRows={1}
-        empty={{
-          heading: 'NowSection coach variant ships next',
-          message: 'Step 5E lights this up with per-team rows, Roster Health gauges, and one-tap RSVP overrides.',
-        }}
-      />
+        empty={!nextEvent ? { heading: 'All caught up', message: 'No upcoming events scheduled.' } : null}
+      >
+        {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} dutyCount={dutyCounts[nextEvent.id]} onRefresh={refetch} />}
+      </SectionShell>
 
       <SectionShell
         title="MY TEAMS"
