@@ -63,23 +63,23 @@ export default function TournamentDetailPage() {
 
       <div style={{ padding: 16 }}>
         {activeTab === 'overview' && <OverviewTab tournament={tournament} isStaff={isStaff} onChange={refetch} />}
-        {activeTab === 'games' && <TabStub label="Games" session="2B-β" />}
-        {activeTab === 'roster' && <TabStub label="Roster" session="2B-γ" />}
-        {activeTab === 'messages' && <TabStub label="Messages" session="2C" />}
-        {activeTab === 'scenarios' && <TabStub label="Scenarios" session="2B-δ" />}
+        {activeTab === 'games' && <TabStub label="Games" />}
+        {activeTab === 'roster' && <TabStub label="Roster" />}
+        {activeTab === 'messages' && <TabStub label="Messages" />}
+        {activeTab === 'scenarios' && <TabStub label="Scenarios" />}
       </div>
     </div>
   );
 }
 
-function TabStub({ label, session }) {
+function TabStub({ label }) {
   return (
     <div style={{ padding: 40, textAlign: 'center', backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)' }}>
       <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 6 }}>
         {label} tab
       </div>
       <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
-        Ships in Session {session}.
+        Ships in Wave 5 — Tournament UI.
       </div>
     </div>
   );

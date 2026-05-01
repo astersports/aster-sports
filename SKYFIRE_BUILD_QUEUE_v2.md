@@ -2147,3 +2147,17 @@ Drafting in compliance mode (transcribe Frank's resolutions cleanly) is not the 
 **Master index decision:** #104 added.
 
 **Files this commit:** `DEFERRED_AUDIT_ITEMS.md` (NEW) + `EMBER_MASTER_INDEX_v3.md` (Decision #104) + `SKYFIRE_BUILD_QUEUE_v2.md` (this entry).
+
+---
+
+## May 1, 2026 UTC — Tier 1 research pass + Wave 5 Tournament UI named
+
+**Shipped:** Read-and-verify pass on the 11 unaudited parent surfaces from yesterday's tracker (LocationsPage, ForgotPasswordPage, AppShell, Header, TournamentsPage, TournamentDetailPage, TournamentBriefingBanner, EventCommentsTab, EventRidesTab, EventDutiesTab, EventRsvpTab, AddToCalendarButton, notificationBadgeQueries.js — 12 files, ~864 lines). Tracker-update commit + master-index Decision #105 + Wave 2 IA Map deferred-section addendum + one TournamentDetailPage microcopy fix.
+
+**TIER1 audit code added** to DEFERRED_AUDIT_ITEMS.md.
+
+**10 items closed** (B3, B16, B19, B20, B21, B22, B23, B24, B26 — verified-real-or-resolved via TIER1; N2 — born-closed via Decision #105). **5 new findings added** (N1: TournamentsPage stale comments, N3: notification badge wired without inbox, N4: notificationBadgeQueries N+1 in both paths, N8: no persistent "viewing as" banner; N2 born-closed). **3 scopes expanded** (B4 from EventDetailPage to 3 files, B6 from SchedulePage to 6 surfaces, B28 confirmed across 5+ surfaces). **B25 reframed** as superseded by N3.
+
+**Decision #105 — Wave 5 Tournament UI named.** Captures the 4 stub tabs on TournamentDetailPage (Games / Roster / Messages / Scenarios). Stub microcopy in `TournamentDetailPage.jsx` updated from `Ships in Session 2B-β` etc. to `Ships in Wave 5 — Tournament UI` (stale session names predated the Wave 2 v1.1 amendment).
+
+**Files this commit:** `DEFERRED_AUDIT_ITEMS.md` (closures + new findings + scope expansions + audit code), `EMBER_MASTER_INDEX_v3.md` (Decision #105), `WAVE_2_IA_MAP_v1.md` (deferred-section addendum), `src/pages/TournamentDetailPage.jsx` (stub microcopy: 5-line surgical fix; 86 → 86 lines), `SKYFIRE_BUILD_QUEUE_v2.md` (this entry).

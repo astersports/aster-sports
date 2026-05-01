@@ -12,6 +12,7 @@ Tracker for audit findings that have been logged but not yet shipped. Replaces t
 - **3D-G.1** = April 30 fresh-eyes audit on Wave 3d-g
 - **IA-V1** = April 30 adversarial pass on Wave 2 IA Map v1
 - **PARENT** = April 30 parent profile audit (3 sequential adversarial passes; pass-distinction carried by ID prefix — B# = Pass 1, C# = Pass 2 compliance, B'/E' = Pass 2, B″/E″ = Pass 3)
+- **TIER1** = May 1 Tier 1 research pass on unaudited surfaces (3 originally-flagged + 8 from Pass 2/3 additions). New findings carry the `N#` prefix.
 - **PRIOR** = surfaced in earlier session, still standing
 
 ---
@@ -37,17 +38,15 @@ Tracker for audit findings that have been logged but not yet shipped. Replaces t
 | ID | Origin | Audit | Wave slot | Description |
 |---|---|---|---|---|
 | B1 | 2026-04-30 | PARENT | Tier 5 contingent | MessagesPage is a 10-line stub on bottom nav. Frank conceded: keep slot for Phase 4-A messaging (don't swap), ship branded "Coming late summer 2026" placeholder via E14. |
-| B3 | 2026-04-30 | PARENT | Tier 1 research → Tier 5 | No /account link in BottomNav. No top-nav avatar confirmed. AccountPage well-built; problem is discoverability. Must read AppShell.jsx first — if it has a top-right avatar already, this is a non-issue. |
-| B4 | 2026-04-30 | PARENT | Tier 3 cluster | EventDetailPage uses native `window.confirm()` at lines 68, 80, 87, 92, 112. Recurring-series delete chains 2-3 native confirms. Violates CLAUDE.md §11.15 (Simple dialogs → BottomSheet). Replace with branded BottomSheet pattern. |
-| B6 | 2026-04-30 | PARENT | Tier 2 cluster | SchedulePage uses inline `<div>Loading...</div>` (line 67). Same anti-pattern fixed on parent home in 3d-e/g.1 (SectionShell skeleton). Visible regression on slow loads. |
+| B4 | 2026-04-30 | PARENT (scope expanded by TIER1 2026-05-01) | Tier 3 cluster | `window.confirm()` for destructive actions across **3 files**: EventDetailPage (lines 68, 80, 87, 92, 112 — 5 instances), LocationsPage (line 24 — archive), TournamentsPage (line 30 — archive). Recurring-series delete chains 2-3 native confirms. Violates CLAUDE.md §11.15 (Simple dialogs → BottomSheet). Cluster fix: replace all with branded BottomSheet pattern. |
+| B6 | 2026-04-30 | PARENT (scope expanded by TIER1 2026-05-01) | Tier 2 cluster | Inline `<div>Loading...</div>` anti-pattern across **6 surfaces**: SchedulePage:67, LocationsPage:54-58, TournamentsPage:56-60, TournamentDetailPage:19-25, EventCommentsTab:20, EventDutiesTab via `<Empty text="Loading duties..." />` line 11, EventRsvpTab:9-11. Same anti-pattern fixed on parent home in 3d-e/g.1 (SectionShell skeleton). Cluster fix: canonicalize loading state across all parent-facing surfaces. |
 | B8 | 2026-04-30 | PARENT | Tier 2 cluster | LoginPage REDIRECT_ALLOWLIST omits /records and /account. Parent deep-linked to either while unauthed gets bounced to /login → home, not back to deep link. One-line fix at LoginPage.jsx line 12. |
 | B12 | 2026-04-29 | PRIOR | 3d-g.3 (deferred) | ParentHomePage filter-aware empty state. Empty NEXT 48 HOURS shows "Your next event is X" computed from unfiltered activities — when parent filters to a kid with no events, message refers to a different kid's event. |
 | B13 | 2026-04-30 | 3D-G.1 + PARENT | Tier 4 lift | NEXT 48 HOURS and MY TEAMS not SectionShell-wrapped. No error rendering, no pulsing-dot affordance during refetch. Logged for 3d-g.2; still standing. |
 | B14 | 2026-04-29 | PRIOR (surfaced 3x) | Tier 2 cluster (promoted) | useOrgTeamRecords missing useRefetchOnVisible wiring. Parent's open /records and MY TEAMS strip stay stale on tab return. Unblocked by 3d-g.1's refetch export. **Surfaced in 3 separate audits — the trigger for creating this tracker.** Promoted from Tier 4 to Tier 2 cluster: one-line wiring add, structurally inconsistent to leave the tracker's trigger item buried. |
-| B16 | 2026-04-30 | PARENT | Tier 1 research | LocationsPage state unknown. Sits on parent BottomNav as a primary tab. Could be stub like Messages, could be solid. Must read before any BottomNav restructure decision. |
-| B17 | 2026-04-30 | PARENT | Tier 1 research | ForgotPasswordPage (62 lines) state unknown. Sits on parent auth path. |
-| B5' | 2026-04-30 | PARENT | Tier 1 research → fix | AddToCalendarButton UX unverified across iOS / Android / desktop. EventDetailPage:139 renders it; iCal export via icalHelpers.js. Behavior on iOS Safari likely = download .ics file (user opens in Calendar). Android Chrome differs. Desktop differs. Parents tapping "Add to Calendar" expecting Google quick-add may get a download. Most-likely-complained-about in the parent profile; never audited. |
-| B6' | 2026-04-30 | PARENT | Tier 1 research → fix | TournamentBriefingBanner content + render conditions unknown. EventDetailPage:105 renders unconditionally based on event + team + role. Per master index Decision 57, M2-1 spec was tournament briefing generator that did NOT ship. Banner may be placeholder, partial, or functional. Parents see SOMETHING on every tournament event detail — what is unverified. If placeholder, parents perceive broken state. |
+| B17 | 2026-04-30 | PARENT (verified by TIER1 2026-05-01) | Auth-polish wave (own scope) | ForgotPasswordPage is a **branded stub** — header comment says "Stub — full flow arrives with the auth-polish prompt." User-visible message: "Password reset is coming soon. Ask an admin to send you a new invite." Self-service password reset does not exist; parents must contact admin to reset. Promote to its own auth-polish wave when scheduled. |
+| B5' | 2026-04-30 | PARENT (confirmed by TIER1 2026-05-01) | Polish wave | AddToCalendarButton.jsx is 18 lines — calls `downloadIcs(event)` from icalHelpers.js. iOS Safari downloads .ics → opens Calendar. Android varies. Desktop downloads. **Confirmed: not Google Quick Add; mechanism is platform-default ics handling.** Needs branded explanation OR per-platform branching (iOS/Android-specific button copy or behavior). |
+| B6' | 2026-04-30 | PARENT (re-scoped by TIER1 2026-05-01) | Tier 1 research → fix (staff-side) | TournamentBriefingBanner is **STAFF-ONLY** (line 11: `if (!event?.tournament_name || !isStaff(role) || !team) return null`). Parents never see it. Parent-side worry was wrong — they see nothing. Staff-side concern remains: opens `<TournamentBriefing>` overlay on tap; per master index Decision 57, M2-1 spec was tournament briefing generator that did NOT ship. Verify TournamentBriefing.jsx in next pass to determine if overlay is functional/placeholder/broken. |
 | B7' | 2026-04-30 | PARENT | Small commit | /records Open Graph metadata missing. When parent shares /records URL with grandparents (the explicit "viral moment" surface), link preview renders default Vite favicon + generic title. Should be `<meta og:title>` "Legacy Hoopers Spring 2026 Records" + `<meta og:image>` (records hero or team color block). Without it, the share-out lands flat. |
 | B9' | 2026-04-30 | PARENT | Tier 4 lift (couples with B13) | Loading-state stagger jitter on parent home. ParentHomePage mounts useActivities + useOrgTeamRecords concurrently; sections fade in at different times causing visible reflow. Skeleton shells per section would smooth it; only NEXT UP has one (via SectionShell after 3d-e/g.1). Resolves when B13 lands (NEXT 48 HOURS + MY TEAMS into SectionShell). |
 | B10' | 2026-04-30 | PARENT | Polish wave | Form dirty-check missing on EventRsvpTab + likely other input surfaces. Parent typing RSVP comment, navigates away mid-typing, loses text. No "you have unsaved changes" guard. Per §16.3 kindness mandate (respect the user). |
@@ -55,14 +54,8 @@ Tracker for audit findings that have been logged but not yet shipped. Replaces t
 | B3″ | 2026-04-30 | PARENT | Wave 2.5 (with E3) | Session timeout silent failure. Supabase JWT default ~1 hour. After expiry, next write silently 401s; parent sees generic toast. No proactive refresh, no token rotation, no kindness microcopy. Slot with notification preferences (E3) since both are auth-context features. |
 | B4″ | 2026-04-30 | PARENT | Wave 2.5 (with C4) | Empty-tank first-touch states unhandled. New parent with 0 kids linked sees three empty home sections (MY TEAMS, NEXT UP, NEXT 48 HOURS) — reads like a broken app, not a setup-in-progress state. No "we're setting up your account" message, no "contact your coach" CTA. Couples with C4 (first-time tour). |
 | B11 | 2026-04-30 | PARENT | Tier 7 (defer) | EventDetailPage dutyCount fetched once on mount, never refetched (lines 42-46). Stale until full page refresh if coach adds duty mid-view. Narrow edge case. |
-| B19 | 2026-04-30 | PARENT | Tier 1 research | TournamentsPage state unknown. Parents reach via tournaments nav route. Read before any priority decisions. |
-| B20 | 2026-04-30 | PARENT | Tier 1 research | TournamentDetailPage state unknown. Reached from records timeline + event detail. |
-| B21 | 2026-04-30 | PARENT | Tier 1 research | EventCommentsTab unread. Sub-component of EventDetailPage. Parent surface for per-event comments. |
-| B22 | 2026-04-30 | PARENT | Tier 1 research | EventRidesTab unread. Parents claim ride seats / offer rides — load-bearing for Phase 2-D2 ride coordination already shipped. |
-| B23 | 2026-04-30 | PARENT | Tier 1 research | EventDutiesTab unread. Parents sign up for game-day duties. |
-| B24 | 2026-04-30 | PARENT | Tier 1 research | EventRsvpTab unread (sub-component, distinct from ChildRsvp). |
-| B25 | 2026-04-30 | PARENT | Tier 1 research | notificationBadgeQueries.js + badge-count surface unread. Likely surfaces on BottomNav (Messages tab?) but unverified. |
-| B26 | 2026-04-30 | PARENT | Tier 1 research | /teams/:teamId/tournaments route content unread (per App.jsx:60). |
+| N3 | 2026-05-01 | TIER1 | Tier 2 cluster (badge-disable hide-with-flag) | Notification badge wired without inbox UI. Bell icon in Header.jsx shows real badge count + severity color; tap shows "Notifications coming soon" toast (Header.jsx:25). Badge tells parent "you have 3 unanswered RSVPs" → tap leads nowhere actionable. Borderline-broken trust signal. **Mechanism: hide-with-flag** (Frank-confirmed via "yes" answer 2026-05-01) — wrap Header.jsx:89-96 in a `BADGE_VISIBLE` constant; keep badge query running for cheap re-enable when inbox lands. ~5 min. **Slip clause: if Tier 2 cluster doesn't ship by 2026-05-06, promote N3 to its own hotfix commit independent of cluster.** Trust-signal damage compounds during active Spring 2026 season. |
+| B25 | 2026-04-30 | PARENT (resolved by TIER1 2026-05-01; superseded by N3) | (see N3) | Notification badge surface IS wired in `Header.jsx` (top-right bell icon, lines 83-97) with severity-colored badge (info/warning/danger). `notificationBadgeQueries.js` (77 lines) is real, sophisticated implementation. Badge correctly fires for parents (events in next 48h with no RSVP from kids) and staff (events in next 24h with <50% RSVP). **However:** bell tap shows "Notifications coming soon" toast — badge fires without an inbox UI to receive the tap. Wired-but-incomplete. See N3 below for the trust-signal action item. |
 
 ---
 
@@ -82,7 +75,9 @@ Tracker for audit findings that have been logged but not yet shipped. Replaces t
 | B9″ | 2026-04-30 | PARENT | Phase 5 (per §16.4 explicit deferral) | iOS Dynamic Type / accessibility scaling. Most CSS uses px not rem. Parents who increased font size in iOS Settings see no change. §16.4 marks Dynamic Type as "Phase 5 native" — technically deferred; flag as gap so it's not forgotten when Phase 5 lands. |
 | B10″ | 2026-04-30 | PARENT | Tier 7 (defer) | useNow() device-clock dependency. No SNTP/server-time anchor. Parent with phone clock 5 min off sees countdowns wrong. Edge case; defer until a real complaint surfaces. |
 | B27 | 2026-04-30 | PARENT | Polish wave | Conflict-warning has no action affordance. ThisWeekRow renders "⚠ Conflicts with X at Y" inline; parent reads and... does what? Tap should drill into conflict-resolution view (which kid where, whose ride is whose, priority). Information without action. |
-| B28 | 2026-04-30 | PARENT | Tier 2 cluster | Empty-state component fragmentation: TextEmptyState vs EmptyState vs inline divs across surfaces. Brand voice fragmented. Pick one canonical empty-state component, migrate stragglers. |
+| B28 | 2026-04-30 | PARENT (scope expanded by TIER1 2026-05-01) | Tier 2 cluster (audit + canonicalize) | Empty-state component fragmentation confirmed across **5+ surfaces**: TextEmptyState (MessagesPage, ParentHomePage), `<EmptyState>` shared component (TeamDetailPage, TeamsPage), inline custom (LocationsPage:67-76, TournamentsPage:68-78), inline div (EventCommentsTab:22, EventRsvpTab:10-13), `<Empty>` helper local-to-file (EventDutiesTab:65-67). Three+ distinct empty-state patterns coexist; brand voice fragmented. Audit + canonicalize across all surfaces. |
+| N1 | 2026-05-01 | TIER1 | Tier 2 cluster | TournamentsPage stale comments + microcopy. Header comment line 14: "No + New button yet (ships in 2A-γ with the form sheet)" — but + New IS rendered (line 49) and form sheet IS imported + used (lines 7, 107). Empty-state copy line 75: "Create form ships next." Code shipped, docs/copy never updated. Single-file fix. |
+| N4 | 2026-05-01 | TIER1 | Tier 2 cluster (with C2/C8 batched-write hardening) | `notificationBadgeQueries.js` has N+1 hazards in BOTH paths. `fetchParentBadgeCount` (lines 23-35): one count query per event in next 48h. `fetchStaffBadgeCount` (lines 56-68): two count queries per event in next 24h. Same shape we killed in 3d-f for game results. Batched group-by-event_id query would collapse both. Real perf issue at scale. |
 
 ---
 
@@ -104,6 +99,7 @@ Tracker for audit findings that have been logged but not yet shipped. Replaces t
 | E3″ | 2026-04-30 | PARENT | Future wave (delight) | Day-of-game home page mode. When `now < anyEvent.start_at < now+6h`, parent home re-orders: top becomes "Today's game card" (jersey color, arrival time, location, weather, parking). NEXT 48 HOURS demoted. After game ends, normal layout returns. Context-aware density per §16.13 spirit. |
 | E6″ | 2026-04-30 | PARENT | Polish wave | Print stylesheet for /records. Parents print for grandparents / refrigerator-pinning. CSS `@media print` stripping chrome and laying out clean — low-effort delight. |
 | E7″ | 2026-04-30 | PARENT | Future wave | Dark mode. CSS uses light-mode tokens only. Parents using app at night get blasted with white. Real lift (token system + per-component verification). |
+| N8 | 2026-05-01 | TIER1 | Tier 7 (defer) | No persistent "viewing as" banner for parent-mode admin. Header has yellow safe-area stripe at top when `isViewingAs` (Header.jsx:31-40) but no in-flow text banner ("Viewing as Frank Samaritano · Exit"). Cosmetic for parents (they don't see this); real for admins doing QA on parent surfaces who can lose track of their context. Couples with prior home-review E1 (admin view-as banner). |
 
 ---
 
@@ -148,7 +144,11 @@ Pass-3 IDs that alias items already captured under canonical IDs above:
 
 ## Stats
 
-- **65 items total** across all severity tiers, plus **2 process-methodology items** (M1, M2) pending CLAUDE.md promotion
+- **As of 2026-05-01 TIER1:** 60 active items + 10 closed items + 2 process-methodology items
+  - **60 active** = 65 original + 4 new (N1, N3, N4, N8) + 1 reframed (B17 promoted to auth-polish wave) − 10 closed
+  - **10 closed** = 9 from TIER1 research (B3, B16, B19, B20, B21, B22, B23, B24, B26) + 1 born-closed via Decision #105 (N2)
+  - **B25 reframed** as superseded by N3; remains visible in P1 as a context entry pointing at N3
+  - **B4, B6, B28** scopes expanded by TIER1 findings (B4 → 3 files, B6 → 6 surfaces, B28 → confirmed across 5+ surfaces)
 - **8 P0** compliance violations (1 from Pass 1, 7 from Pass 2/3 — C1-C8 with C3 = E3 alias)
 - **25 P1** real bugs (10 verified bugs + 8 unaudited surfaces from Pass 1, plus 7 verified bugs + 8 unaudited surfaces from Pass 2/3)
 - **15 P2** anti-pattern / drift items
@@ -184,4 +184,17 @@ The shape is heavier on the front-end (P0/P1) than the original draft suggested 
 
 ## Closed
 
-(Items ship here with SHA + date when they land. Empty at file creation; populated as items close.)
+Items resolved by code change (with SHA) or by audit pass (with audit code + date). Don't delete — historical record matters.
+
+| ID | Original | Closed by | Resolution |
+|---|---|---|---|
+| B3 | 2026-04-30 PARENT | 2026-05-01 TIER1 | `Header.jsx:99-105` has Settings gear icon top-right routing to /account. Discoverability exists; gear-vs-avatar is a polish-level preference, not a missing feature. |
+| B16 | 2026-04-30 PARENT | 2026-05-01 TIER1 | LocationsPage is a real 95-line page with search, filter chips, location cards, and create/edit form (staff). Inherits B4 (`window.confirm` line 24) + B6 (inline Loading line 56) anti-patterns — counted in those expanded scopes. |
+| B19 | 2026-04-30 PARENT | 2026-05-01 TIER1 | TournamentsPage is a real 111-line page with status filter, list, pagination, create/edit form (staff). Inherits B4 + B6 anti-patterns. One additional finding (N1: stale comments + microcopy) tracked separately. |
+| B20 | 2026-04-30 PARENT | 2026-05-01 TIER1 + Decision #105 | TournamentDetailPage is a real 86-line page with 5 tabs. Original concern was "state unknown"; TIER1 resolved by reading the page. Sub-finding "4 of 5 tabs are stubs" (originally N2) closed in same commit via master-index Decision #105 (Wave 5 — Tournament UI named) + TournamentDetailPage.jsx microcopy update from `Ships in Session 2B-β` etc. to `Ships in Wave 5 — Tournament UI`. |
+| B21 | 2026-04-30 PARENT | 2026-05-01 TIER1 | EventCommentsTab is real 67-line component. Functional comment thread with pin support, send button + Enter-to-submit. No moderation tools (delete/edit) — flagged as known gap, not a bug. |
+| B22 | 2026-04-30 PARENT | 2026-05-01 TIER1 | EventRidesTab is sophisticated 129-line component. Real ride coordination per Phase 2-D2 (already shipped): PostOffer, ClaimSeat, OfferCard with seats/claimers, DensityToggle wired. Respects per-event `enable_rides` flag. |
+| B23 | 2026-04-30 PARENT | 2026-05-01 TIER1 | EventDutiesTab is real 74-line component. Claim/release per slot, grouped by `duty_name`. Matches CLAUDE.md schema (per-slot rows). |
+| B24 | 2026-04-30 PARENT | 2026-05-01 TIER1 | EventRsvpTab is real 55-line thin wrapper around RsvpSummary + RsvpPlayerRow. Sorts by RSVP status with status headers between groups. |
+| B26 | 2026-04-30 PARENT | 2026-05-01 TIER1 | `/teams/:teamId/tournaments` routes to TournamentsPage with `useParams.teamId` pre-filtering (TournamentsPage.jsx:18). No separate page; reuses tournaments list with team filter. |
+| N2 | 2026-05-01 TIER1 | 2026-05-01 Decision #105 | TournamentDetailPage 4-of-5 tabs are stubs (Games, Roster, Messages, Scenarios). Resolved by naming Wave 5 — Tournament UI in master-index Decision #105 + TournamentDetailPage.jsx microcopy update so stubs read "Ships in Wave 5 — Tournament UI" instead of stale `Ships in Session 2B-β/γ/δ/2C` references that predated the Wave 2 v1.1 amendment. |

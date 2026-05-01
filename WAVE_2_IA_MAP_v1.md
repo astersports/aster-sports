@@ -144,6 +144,7 @@ RLS: anon SELECT (per Decision 13). Insert restricted to authenticated coach + a
 - Tournament rules JSONB column (per-game rules migration)
 - Historical-roster POG dropdown for backfill (per Decision 28; 2027-season concern)
 - `useOrgTeamRecords` `useRefetchOnVisible` wiring (post-Wave 2 cleanup; per Decision 15 + audit item E2)
+- **Tournament UI tabs (Games / Roster / Messages / Scenarios)** — named-deferred to **Wave 5 — Tournament UI** per master-index Decision #105 (May 1, 2026). The 4 stub tabs on TournamentDetailPage previously referenced session names (`2B-β`, `2B-γ`, `2B-δ`, `2C`) that became stale when v1.1 narrowed Wave 2 to Coach Quick-Score; microcopy updated to point at Wave 5 in the same docs commit as this amendment.
 
 ---
 
