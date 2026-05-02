@@ -60,6 +60,11 @@ export function AuthProvider({ children }) {
       if (id !== fetchIdRef.current) return;
       setMyChildren(ctx.myChildren); setMyTeamIds(ctx.myTeamIds); setGuardianId(ctx.guardianId);
       setGuardianFirstName(ctx.guardianFirstName ?? null);
+    } else if (resolvedRole === 'coach') {
+      const { data: staffRows } = await supabase.from('team_staff').select('team_id').eq('user_id', authUser.id);
+      if (id !== fetchIdRef.current) return;
+      setMyTeamIds((staffRows || []).map((r) => r.team_id));
+      setMyChildren([]); setGuardianId(null); setGuardianFirstName(null);
     } else {
       setMyChildren([]); setMyTeamIds([]); setGuardianId(null); setGuardianFirstName(null);
     }

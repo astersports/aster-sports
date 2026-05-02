@@ -35,10 +35,13 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
     { label: 'Schedule your first event', done: hasEvents,   to: '/schedule'      },
   ];
   const remaining = steps.filter((s) => !s.done).length;
+  if (remaining === 0) return null;
 
   return (
-    <div
-      style={{
+    <section className="min-w-0">
+      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>GETTING STARTED</div>
+      <div
+        style={{
         backgroundColor: 'var(--em-bg-card)',
         borderRadius: 10,
         border: '1px solid var(--em-border-default)',
@@ -103,5 +106,6 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
         </div>
       </div>
     </div>
+    </section>
   );
 }

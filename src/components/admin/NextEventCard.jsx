@@ -1,16 +1,8 @@
 import { useNow } from '../../hooks/useNow';
+import { TYPE_LABELS } from '../../lib/constants';
 
-// Default event window when no explicit duration is known. Used as a
-// fallback so a card doesn't stay stuck on "Now" hours (or days) after
-// start. 2h covers both practices and typical games.
 const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
 
-// Live countdown. Re-renders every second via useNow(1000) — used only
-// on the Home dashboard below the Season card so the dashboard has one
-// always-ticking element. Returns:
-//  - null if no date OR the event has ended (now > start + duration)
-//  - 'Now' if the event is in progress (started but not yet ended)
-//  - a formatted "Xd Yh Zm" / "Xh Ym Zs" / "Xm Ys" string otherwise
 function useLiveCountdown(targetDate) {
   const now = useNow(1000);
   if (!targetDate) return null;
@@ -27,12 +19,13 @@ function useLiveCountdown(targetDate) {
   return `${mins}m ${secs}s`;
 }
 
-// Next Event countdown card. Target date + label are hardcoded
-// placeholders — swap for an activities query once the events API
-// is wired up.
-export default function NextEventCard() {
-  // TODO: replace with real next event date from activities query
-  const countdown = useLiveCountdown('2026-04-16T18:30:00');
+export default function NextEventCard({ event }) {
+  const countdown = useLiveCountdown(event?.start_at);
+  if (!event) return null;
+  const typeLabel = TYPE_LABELS[event.event_type] || 'Event';
+  const teamName = event.teams?.name;
+  const title = (event.event_type === 'game' || event.event_type === 'tournament') && event.opponent_name
+    ? `vs. ${event.opponent_name}` : typeLabel;
   return (
     <div
       className="sf-stagger-5"
@@ -53,7 +46,7 @@ export default function NextEventCard() {
           NEXT EVENT
         </div>
         <div className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginTop: 2 }}>
-          Practice · 10U Black
+          {title}{teamName ? ` · ${teamName}` : ''}
         </div>
       </div>
       <div style={{ textAlign: 'right' }}>

@@ -31,7 +31,7 @@ export function useActivities() {
     if (!orgId) { setLoading(false); return; }
     setLoading(true);
     setError(null);
-    if (role === 'parent' && (!myTeamIds || myTeamIds.length === 0)) {
+    if ((role === 'parent' || role === 'coach') && (!myTeamIds || myTeamIds.length === 0)) {
       cache.key = key; cache.data = [];
       setActivities([]); setLoading(false); return;
     }
@@ -42,7 +42,7 @@ export function useActivities() {
         .eq('teams.org_id', orgId)
         .order('start_at', { ascending: true });
       if (seasonId) query = query.eq('teams.season_id', seasonId);
-      if (role === 'parent' && myTeamIds?.length) query = query.in('team_id', myTeamIds);
+      if ((role === 'parent' || role === 'coach') && myTeamIds?.length) query = query.in('team_id', myTeamIds);
       const { data, error: fetchErr } = await query;
       if (fetchErr) throw fetchErr;
       const processed = (data || []).map((e) => ({ ...e, location_name: e.location || null }));

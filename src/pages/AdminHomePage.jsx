@@ -1,9 +1,13 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSeason } from '../context/SeasonContext';
 import { useAdminStats } from '../hooks/useAdminStats';
 import { useSeasons } from '../hooks/useSeasons';
 import { usePrograms } from '../hooks/usePrograms';
+import { useActivities } from '../hooks/useActivities';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
+import { useNow } from '../hooks/useNow';
 import KpiGrid from '../components/admin/KpiGrid';
 import QuickActions from '../components/admin/QuickActions';
 import ActiveSeasonCard from '../components/admin/ActiveSeasonCard';
@@ -18,7 +22,11 @@ export default function AdminHomePage() {
   const stats = useAdminStats();
   const { seasons } = useSeasons();
   const { programs } = usePrograms();
+  const { activities, refetch } = useActivities();
+  useRefetchOnVisible(refetch);
+  const now = useNow();
   const navigate = useNavigate();
+  const nextEvent = useMemo(() => activities.find((a) => a.start_at && a.status !== 'cancelled' && new Date(a.start_at).getTime() >= now) || null, [activities, now]);
 
   // Temporary sign-out affordance until the Account page is built. Lives
   // at the bottom of the admin dashboard so it's reachable without
@@ -68,23 +76,13 @@ export default function AdminHomePage() {
           marginBottom: 8,
         }}>SEASON</div>
         <ActiveSeasonCard season={activeSeason} />
-        <NextEventCard />
+        <NextEventCard event={nextEvent} />
       </section>
 
-      <section className="min-w-0">
-        <div style={{
-          fontSize: 11,
-          fontWeight: 600,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-          color: 'var(--em-text-tertiary)',
-          marginBottom: 8,
-        }}>GETTING STARTED</div>
-        <GettingStarted
-          hasSeasons={seasons.length > 0}
-          hasPrograms={programs.length > 0}
-        />
-      </section>
+      <GettingStarted
+        hasSeasons={seasons.length > 0}
+        hasPrograms={programs.length > 0}
+      />
 
       {/* TEMP: sign-out affordance until the Account page is built. */}
       <div style={{ borderTop: '1px solid var(--em-border-subtle)', paddingTop: 12 }}>
