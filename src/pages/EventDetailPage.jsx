@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/useToast';
 import { useEventDetail } from '../hooks/useEventDetail';
 import { useRsvps } from '../hooks/useRsvps';
+import useEventDelete from '../hooks/useEventDelete';
 import EventDetailHeader from '../components/event/EventDetailHeader';
 import EventDetailTab from '../components/event/EventDetailTab';
 import EventLocationTab from '../components/event/EventLocationTab';
@@ -19,6 +20,7 @@ import EventCancelActions from '../components/event/EventCancelActions';
 import TournamentBriefingBanner from '../components/event/TournamentBriefingBanner';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
+const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
 
 const SectionHeader = ({ children, sectionKey }) => (
   <h2 data-section={sectionKey} style={{ fontSize: 16, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>
@@ -37,6 +39,7 @@ export default function EventDetailPage() {
   const [editing, setEditing] = useState(false);
   const [editMode, setEditMode] = useState('single');
   const [showCheckin, setShowCheckin] = useState(false);
+  const [showScoreSheet, setShowScoreSheet] = useState(false);
   const [dutyCount, setDutyCount] = useState(0);
 
   useEffect(() => {
@@ -62,6 +65,8 @@ export default function EventDetailPage() {
 
   const rsvpMap = {};
   rsvps.forEach((r) => { rsvpMap[r.player_id] = r.response; });
+  const doDelete = useEventDelete(event);
+  const isPastGame = isStaff && (event.event_type === 'game' || event.event_type === 'tournament') && new Date(event.start_at) < new Date();
 
   const openEdit = () => {
     if (event.parent_event_id) {
@@ -73,35 +78,14 @@ export default function EventDetailPage() {
     setEditing(true);
   };
 
-  const doDelete = async () => {
-    try {
-      if (event.parent_event_id) {
-        // Recurring: first ask about the whole series.
-        if (window.confirm('Delete ALL future events in this series?\n\nOK = delete all future\nCancel = delete only this one')) {
-          const { error: serErr } = await supabase.from('events').delete()
-            .eq('parent_event_id', event.parent_event_id)
-            .gte('start_at', event.start_at);
-          if (serErr) throw serErr;
-          await supabase.from('events').delete().eq('id', event.id);
-        } else {
-          if (!window.confirm('Delete just this one event?')) return;
-          const { error } = await supabase.from('events').delete().eq('id', event.id);
-          if (error) throw error;
-        }
-      } else {
-        if (!window.confirm('Delete this event?')) return;
-        const { error } = await supabase.from('events').delete().eq('id', event.id);
-        if (error) throw error;
-      }
-      navigate('/schedule');
-    } catch (err) {
-      showToast(`Delete failed: ${err.message}`, 'error');
-    }
-  };
-
   return (
     <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={doDelete} onCheckin={() => setShowCheckin(true)} />
+      {isPastGame && (
+        <button type="button" onClick={() => setShowScoreSheet(true)} className="sf-press" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: 'calc(100% - 32px)', margin: '12px 16px', minHeight: 44, borderRadius: 10, border: '1px solid var(--em-accent)', backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)', fontSize: 14, fontWeight: 600 }}>
+          Enter Score
+        </button>
+      )}
       <TournamentBriefingBanner event={event} team={team} role={role} />
 
       {event.parent_event_id && (
@@ -145,6 +129,7 @@ export default function EventDetailPage() {
 
       {editing && <Suspense fallback={null}><CreateActivityWizard orgId={orgId} editEvent={event} editMode={editMode} onClose={() => setEditing(false)} onCreated={refetch} /></Suspense>}
       {showCheckin && <Suspense fallback={null}><EventCheckinOverlay eventId={event.id} roster={roster} teamColor={teamColor} onClose={() => setShowCheckin(false)} /></Suspense>}
+      {showScoreSheet && <Suspense fallback={null}><ScoreEntrySheet event={event} team={team} onClose={() => setShowScoreSheet(false)} /></Suspense>}
     </div>
   );
 }
