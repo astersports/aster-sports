@@ -37,7 +37,7 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
             key={opt.key || 'all'}
             label={opt.label}
             active={selectedType === opt.key}
-            onClick={() => onSelectType(opt.key)}
+            onClick={() => onSelectType(selectedType === opt.key ? null : opt.key)}
           />
         ))}
       </div>
