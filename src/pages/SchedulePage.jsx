@@ -11,6 +11,8 @@ import DateGroupedList from '../components/schedule/DateGroupedList';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import ScheduleShowMoreButton from '../components/schedule/ScheduleShowMoreButton';
 import ScheduleFab from '../components/schedule/ScheduleFab';
+import ViewToggle from '../components/schedule/ViewToggle';
+import GamesView from '../components/schedule/GamesView';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import { isStaff } from '../lib/permissions';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
@@ -27,6 +29,7 @@ export default function SchedulePage() {
   const [showAll, setShowAll] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);
+  const [viewMode, setViewMode] = useState('all');
 
   // tick increments every 60s so the upcoming / thisWeek / remaining
   // memos re-evaluate against a fresh `now`. Without this, a user who
@@ -73,56 +76,36 @@ export default function SchedulePage() {
           Schedule
         </h1>
         <div style={{ width: 32, height: 3, backgroundColor: 'var(--em-accent)', borderRadius: 2, marginBottom: 16 }} />
+        <ViewToggle value={viewMode} onChange={setViewMode} />
 
-        {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} dutyCount={dutyCounts[nextEvent.id]} onRefresh={refetch} />}
-
-        <ChildFilterChips
-          kids={myChildren}
-          activeFilter={activeKidFilter}
-          onChange={setActiveKidFilter}
-        />
-
-        <FilterBar
-          teams={activities}
-          selectedTeam={selectedTeam}
-          onSelectTeam={setSelectedTeam}
-          selectedType={selectedType}
-          onSelectType={setSelectedType}
-          showCancelled={showCancelled}
-          onToggleCancelled={() => setShowCancelled((v) => !v)}
-          hideTeamRow={!!activeKidFilter}
-        />
-
-        {filtered.length === 0 ? (
-          <TextEmptyState heading="No events found" message="Try changing your filters or check back later." />
-        ) : thisWeek.length > 0 ? (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              This week
-            </div>
-            <DateGroupedList events={thisWeek} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} />
-          </div>
+        {viewMode === 'games' ? (
+          <GamesView activities={activities} orgId={orgId} />
         ) : (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--em-text-tertiary)' }}>
-            <div style={{ fontSize: 15, fontWeight: 500 }}>No events this week</div>
-            <div style={{ fontSize: 13, marginTop: 4 }}>Tap + to create one</div>
-          </div>
-        )}
-
-        {!showAll && (
-          <ScheduleShowMoreButton
-            remaining={remaining.length}
-            onClick={() => setShowAll(true)}
-          />
-        )}
-
-        {showAll && remaining.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              Upcoming
-            </div>
-            <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} />
-          </div>
+          <>
+            {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} dutyCount={dutyCounts[nextEvent.id]} onRefresh={refetch} />}
+            <ChildFilterChips kids={myChildren} activeFilter={activeKidFilter} onChange={setActiveKidFilter} />
+            <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={!!activeKidFilter} />
+            {filtered.length === 0 ? (
+              <TextEmptyState heading="No events found" message="Try changing your filters or check back later." />
+            ) : thisWeek.length > 0 ? (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>This week</div>
+                <DateGroupedList events={thisWeek} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} />
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--em-text-tertiary)' }}>
+                <div style={{ fontSize: 15, fontWeight: 500 }}>No events this week</div>
+                <div style={{ fontSize: 13, marginTop: 4 }}>Tap + to create one</div>
+              </div>
+            )}
+            {!showAll && <ScheduleShowMoreButton remaining={remaining.length} onClick={() => setShowAll(true)} />}
+            {showAll && remaining.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Upcoming</div>
+                <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} />
+              </div>
+            )}
+          </>
         )}
       </div>
 
