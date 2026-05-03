@@ -63,6 +63,7 @@ export default function SchedulePage() {
   const lookbackMs = isStaff(role) ? 48 * 60 * 60 * 1000 : 0;
   const cutoff = new Date(now.getTime() - lookbackMs);
   const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= cutoff && new Date(a.start_at) <= weekEnd), [filtered, tick, cutoff, weekEnd]);
+  const nextEventId = upcoming.find((a) => new Date(a.start_at).getTime() >= now.getTime())?.id || null;
   const remaining = useMemo(() => filtered.filter((a) => new Date(a.start_at) > weekEnd), [filtered, tick, weekEnd]);
 
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" rows={2} /></div>;
@@ -87,7 +88,7 @@ export default function SchedulePage() {
             ) : (
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Next 7 days</div>
-                <DateGroupedList events={upcoming} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} />
+                <DateGroupedList events={upcoming} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} nextEventId={nextEventId} />
               </div>
             )}
             {remaining.length > 0 && (

@@ -1,13 +1,13 @@
 import { MapPin, Car, Repeat } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { formatTime } from '../../lib/formatters';
+import { formatTime, formatCountdown } from '../../lib/formatters';
 import { TYPE_LABELS } from '../../lib/constants';
 import { useAuth } from '../../context/AuthContext';
 import { useNow } from '../../hooks/useNow';
 import ChildRsvp from './ChildRsvp';
 import RsvpCountRow from './RsvpCountRow';
 
-export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger }) {
+export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext }) {
   const navigate = useNavigate();
   const { role, myChildren } = useAuth();
   const now = useNow();
@@ -19,6 +19,8 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
   const isCancelled = event.status === 'cancelled';
   const isPast = event.end_at ? new Date(event.end_at) < new Date() : false;
   const dimmed = isCancelled || isPast;
+  const msUntil = new Date(event.start_at).getTime() - now;
+  const showCountdown = isNext && msUntil > 0 && msUntil < 24 * 60 * 60 * 1000;
   const rawTitle = event.title || typeLabel;
   const isTitleRedundant = (event.title || '').trim().toLowerCase() === (typeLabel || '').trim().toLowerCase();
   const alreadyPrefixed = rawTitle.startsWith('vs.') || rawTitle.startsWith('vs ') || rawTitle.startsWith('@ ') || rawTitle.startsWith('@');
@@ -53,6 +55,11 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
           <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)' }}>
             {formatTime(event.start_at)}
           </span>
+          {showCountdown && (
+            <span style={{ fontSize: 11, fontWeight: 600, marginLeft: 8, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>
+              {formatCountdown(event.start_at)}
+            </span>
+          )}
           {!isTitleRedundant && (
             <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginLeft: 6 }}>
               {' · '}{typeLabel}
@@ -99,23 +106,19 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
             )}
           </div>
         )}
-        {/* Row 3a: Notes excerpt */}
         {event.notes && (
           <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {event.notes.length > 60 ? event.notes.slice(0, 60) + '...' : event.notes}
           </div>
         )}
-        {/* Row 3b: Jersey color (games/tournaments when set) */}
         {event.jersey && (
           <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
             {event.jersey} jersey
           </div>
         )}
-        {/* Row 4: RSVP counts */}
         <div style={{ marginTop: 4 }}>
           <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
         </div>
-        {/* Row 5: Ride counts */}
         {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4 }}>
             <Car size={12} strokeWidth={1.75} color={rideCount.urgent ? 'var(--em-danger)' : rideCount.requests > 0 ? 'var(--em-warning)' : 'var(--em-text-tertiary)'} />
@@ -128,7 +131,6 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
             )}
           </div>
         )}
-        {/* Row 6: Volunteer counts */}
         {dutyCount && dutyCount.total > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--em-warning)' : 'var(--em-success)' }}>
             {dutyCount.claimed}/{dutyCount.total} volunteers filled
