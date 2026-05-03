@@ -6,9 +6,11 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import FullScreenForm from '../shared/FullScreenForm';
+import Input from '../shared/Input';
+import Button from '../shared/Button';
 
 const labelStyle = { fontSize: 12, fontWeight: 600, color: 'var(--em-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'block' };
-const inputStyle = { width: '100%', minHeight: 44, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 14, fontFamily: 'inherit' };
+const selectStyle = { width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' };
 
 export default function ClaimSeatForm({ open, onClose, offer, onSubmit }) {
   const { myChildren = [] } = useAuth();
@@ -64,9 +66,9 @@ export default function ClaimSeatForm({ open, onClose, offer, onSubmit }) {
       onClose={handleClose}
       title="Claim a seat"
       footer={
-        <button type="submit" form="claim-seat-form" disabled={submitting} className="sf-press" style={{ minHeight: 44, padding: '0 20px', borderRadius: 8, border: 'none', backgroundColor: submitting ? 'var(--em-bg-secondary)' : 'var(--em-accent)', color: submitting ? 'var(--em-text-tertiary)' : 'white', fontSize: 14, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+        <Button type="submit" form="claim-seat-form" disabled={submitting}>
           {submitting ? 'Claiming…' : 'Claim seat'}
-        </button>
+        </Button>
       }
     >
       <form id="claim-seat-form" onSubmit={handleSubmit} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -77,24 +79,20 @@ export default function ClaimSeatForm({ open, onClose, offer, onSubmit }) {
         {eligibleKids.length > 1 && (
           <div>
             <label style={labelStyle} htmlFor="forChild">Which child?</label>
-            <select id="forChild" value={forChildId} onChange={(e) => setForChildId(e.target.value)} required style={inputStyle} autoFocus>
+            <select id="forChild" value={forChildId} onChange={(e) => setForChildId(e.target.value)} required style={selectStyle} autoFocus>
               <option value="">Choose a child…</option>
               {eligibleKids.map((k) => (<option key={k.playerId} value={k.playerId}>{k.firstName}</option>))}
             </select>
           </div>
         )}
+        <Input label="Seats needed" id="seatsRequested" type="number" inputMode="numeric" min="1" max={offer.seats_offered || 1} value={seatsRequested} onChange={(e) => setSeatsRequested(e.target.value)} required autoFocus={eligibleKids.length <= 1} />
         <div>
-          <label style={labelStyle} htmlFor="seatsRequested">Seats needed</label>
-          <input id="seatsRequested" type="number" min="1" max={offer.seats_offered || 1} value={seatsRequested} onChange={(e) => setSeatsRequested(e.target.value)} required style={inputStyle} autoFocus={eligibleKids.length <= 1} />
-        </div>
-        <div>
-          <label style={labelStyle} htmlFor="pickupAddress">Need door-to-door pickup? (optional)</label>
-          <input id="pickupAddress" type="text" value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} placeholder="Your address, if you need pickup at home" style={inputStyle} />
+          <Input label="Need door-to-door pickup? (optional)" id="pickupAddress" type="text" value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} placeholder="Your address, if you need pickup at home" />
           <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4 }}>Most riders meet at the offer's pickup spot. Only fill this in if you've worked out a home pickup with the driver.</div>
         </div>
         <div>
           <label style={labelStyle} htmlFor="pickupNotes">Anything the driver should know? (optional)</label>
-          <textarea id="pickupNotes" value={pickupNotes} onChange={(e) => setPickupNotes(e.target.value)} rows="2" placeholder="e.g., car seat needed, will text on arrival" style={{ ...inputStyle, minHeight: 64, padding: '10px 12px' }} />
+          <textarea id="pickupNotes" value={pickupNotes} onChange={(e) => setPickupNotes(e.target.value)} rows="2" placeholder="e.g., car seat needed, will text on arrival" style={{ width: '100%', minHeight: 64, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' }} />
         </div>
       </form>
     </FullScreenForm>

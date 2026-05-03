@@ -1,5 +1,6 @@
 import { Ban } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import Button from '../shared/Button';
 
 export default function EventCancelActions({ event, onStatusChange }) {
   const doCancel = async () => {
@@ -19,27 +20,14 @@ export default function EventCancelActions({ event, onStatusChange }) {
   return (
     <div style={{ padding: '16px' }}>
       {event.status !== 'cancelled' && (
-        <button type="button" onClick={doCancel} className="sf-press"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            width: '100%', minHeight: 44, borderRadius: 10,
-            border: '1px solid var(--em-warning)', backgroundColor: 'transparent',
-            color: 'var(--em-warning)', fontSize: 14, fontWeight: 500,
-          }}>
-          <Ban size={16} strokeWidth={1.75} />
-          Cancel Event
-        </button>
+        <Button variant="secondary" fullWidth onClick={doCancel} style={{ borderColor: 'var(--em-warning)', color: 'var(--em-warning)' }}>
+          <Ban size={16} strokeWidth={1.75} /> Cancel Event
+        </Button>
       )}
       {event.status === 'cancelled' && (
-        <button type="button" onClick={doReinstate} className="sf-press"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            width: '100%', minHeight: 44, borderRadius: 10,
-            border: '1px solid var(--em-accent)', backgroundColor: 'transparent',
-            color: 'var(--em-accent)', fontSize: 14, fontWeight: 500,
-          }}>
+        <Button variant="secondary" fullWidth onClick={doReinstate}>
           Reinstate Event
-        </button>
+        </Button>
       )}
     </div>
   );

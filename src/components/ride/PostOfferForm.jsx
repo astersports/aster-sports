@@ -7,9 +7,11 @@ import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import FullScreenForm from '../shared/FullScreenForm';
+import Input from '../shared/Input';
+import Button from '../shared/Button';
 
 const labelStyle = { fontSize: 12, fontWeight: 600, color: 'var(--em-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'block' };
-const inputStyle = { width: '100%', minHeight: 44, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 14, fontFamily: 'inherit' };
+const selectStyle = { width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' };
 
 const pad = (n) => String(n).padStart(2, '0');
 const isoToLocal = (iso) => {
@@ -108,30 +110,30 @@ export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = 
       onClose={handleClose}
       title="Offer a ride"
       footer={
-        <button type="submit" form="post-offer-form" disabled={submitting} className="sf-press" style={{ minHeight: 44, padding: '0 20px', borderRadius: 8, border: 'none', backgroundColor: submitting ? 'var(--em-bg-secondary)' : 'var(--em-accent)', color: submitting ? 'var(--em-text-tertiary)' : 'white', fontSize: 14, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+        <Button type="submit" form="post-offer-form" disabled={submitting}>
           {submitting ? 'Posting…' : 'Post offer'}
-        </button>
+        </Button>
       }
     >
       <form id="post-offer-form" onSubmit={handleSubmit} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
         {error && <div role="alert" style={{ padding: 10, borderRadius: 8, backgroundColor: 'color-mix(in srgb, var(--em-danger) 10%, transparent)', color: 'var(--em-danger)', fontSize: 13 }}>{error}</div>}
-        <div><label style={labelStyle} htmlFor="seats">Seats available</label><input id="seats" type="number" min="1" max="12" value={seats} onChange={(e) => setSeats(e.target.value)} required style={inputStyle} /></div>
+        <Input label="Seats available" id="seats" type="number" inputMode="numeric" min="1" max="12" value={seats} onChange={(e) => setSeats(e.target.value)} required />
         <div><label style={labelStyle} htmlFor="rideType">Trip type</label>
-          <select id="rideType" value={rideType} onChange={(e) => setRideType(e.target.value)} style={inputStyle}>
+          <select id="rideType" value={rideType} onChange={(e) => setRideType(e.target.value)} style={selectStyle}>
             <option value="round_trip">Round trip</option>
             <option value="arrival_only">Arrival only</option>
             <option value="return_only">Return only</option>
           </select>
         </div>
-        <div><label style={labelStyle} htmlFor="pickup">Pickup from</label><input id="pickup" type="text" value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} placeholder="e.g., Armonk Town Center" autoFocus style={inputStyle} /></div>
-        <div><label style={labelStyle} htmlFor="pickupTime">Pickup time</label><input id="pickupTime" type="datetime-local" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} max={eventStartAt ? isoToLocal(eventStartAt) : undefined} style={inputStyle} /></div>
+        <Input label="Pickup from" id="pickup" type="text" value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} placeholder="e.g., Armonk Town Center" autoFocus />
+        <Input label="Pickup time" id="pickupTime" type="datetime-local" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} max={eventStartAt ? isoToLocal(eventStartAt) : undefined} />
         {rideType === 'round_trip' && (<>
-          <div><label style={labelStyle} htmlFor="returnLoc">Return to (optional)</label><input id="returnLoc" type="text" value={returnLocation} onChange={(e) => setReturnLocation(e.target.value)} placeholder="Defaults to pickup location" style={inputStyle} /></div>
-          <div><label style={labelStyle} htmlFor="returnTime">Return time (optional)</label><input id="returnTime" type="datetime-local" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} min={pickupTime || undefined} style={inputStyle} /></div>
+          <Input label="Return to (optional)" id="returnLoc" type="text" value={returnLocation} onChange={(e) => setReturnLocation(e.target.value)} placeholder="Defaults to pickup location" />
+          <Input label="Return time (optional)" id="returnTime" type="datetime-local" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} min={pickupTime || undefined} />
         </>)}
-        <div><label style={labelStyle} htmlFor="vehicle">Vehicle (optional)</label><input id="vehicle" type="text" value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="e.g., Black Tesla Model Y" style={inputStyle} /></div>
-        <div><label style={labelStyle} htmlFor="phone">Phone (optional, shown to confirmed riders only)</label><input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(914) 555-1234" style={inputStyle} /></div>
-        <div><label style={labelStyle} htmlFor="notes">Notes (optional)</label><textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows="3" placeholder="e.g., Will swing by Bedford on the way" style={{ ...inputStyle, minHeight: 80, padding: '10px 12px' }} /></div>
+        <Input label="Vehicle (optional)" id="vehicle" type="text" value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="e.g., Black Tesla Model Y" />
+        <Input label="Phone (optional, shown to confirmed riders only)" id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(914) 555-1234" />
+        <div><label style={labelStyle} htmlFor="notes">Notes (optional)</label><textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows="3" placeholder="e.g., Will swing by Bedford on the way" style={{ width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' }} /></div>
       </form>
     </FullScreenForm>
   );

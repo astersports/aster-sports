@@ -12,6 +12,7 @@ import DensityToggle from '../home/DensityToggle';
 import OfferCard from '../ride/OfferCard';
 import PostOfferForm from '../ride/PostOfferForm';
 import ClaimSeatForm from '../ride/ClaimSeatForm';
+import Button from '../shared/Button';
 
 const sectionLabelStyle = { fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 };
 const emptyStateStyle = { padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13, border: '1px dashed var(--em-border-subtle)', borderRadius: 10 };
@@ -51,10 +52,10 @@ export default function EventRidesTab({ event }) {
     <div style={{ padding: '12px 16px 80px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <div>{offers.length > 0 && <DensityToggle sectionKey="rides-list" />}</div>
-        <button type="button" onClick={() => setPostOfferOpen(true)} className="sf-press" aria-label="Offer a ride" style={{ minHeight: 36, padding: '0 12px', borderRadius: 8, border: 'none', backgroundColor: 'var(--em-accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <Button size="sm" onClick={() => setPostOfferOpen(true)} aria-label="Offer a ride">
           <Plus size={14} strokeWidth={2} aria-hidden="true" />
           Offer a ride
-        </button>
+        </Button>
       </div>
 
       {loading && (
