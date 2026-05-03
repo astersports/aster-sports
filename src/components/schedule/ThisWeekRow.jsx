@@ -53,6 +53,8 @@ export default function ThisWeekRow({ event, rideCount, dutyCount, conflictWith 
 
   return (
     <div onClick={onRowClick} role="link" tabIndex={0}
+      aria-label={`${teamName} ${typeLabel}, ${timeText}`}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRowClick(e); } }}
       style={{ display: 'flex', minHeight: 56, backgroundColor: 'var(--em-bg-card)', borderRadius: 8, border: '1px solid var(--em-border-default)', overflow: 'hidden', cursor: 'pointer', opacity, transition: 'box-shadow 150ms ease-out, opacity 150ms ease-out' }}>
       <div style={{ width: 4, alignSelf: 'stretch', flexShrink: 0, backgroundColor: teamColor }} />
       <div style={{ flex: 1, padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>

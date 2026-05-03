@@ -1,10 +1,14 @@
-import TextEmptyState from '../components/shared/TextEmptyState';
+import { MessageSquare } from 'lucide-react';
+import EmptyState from '../components/shared/EmptyState';
 
 export default function MessagesPage() {
   return (
-    <TextEmptyState
-      heading="No messages yet"
-      message="Team announcements and messages will appear here."
-    />
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100dvh - 160px)' }}>
+      <EmptyState
+        icon={MessageSquare}
+        title="Messages launching summer 2026"
+        description="Team announcements, coach updates, and parent conversations will live here. We're building something great."
+      />
+    </div>
   );
 }

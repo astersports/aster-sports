@@ -43,7 +43,12 @@ export default function LoginPage() {
     setSubmitting(true);
     const { error } = await signIn(trimmed, password);
     setSubmitting(false);
-    if (error) return setErrors({ form: error.message || 'Unable to sign in' });
+    if (error) {
+      const msg = (error.message || '').toLowerCase().includes('invalid')
+        ? "Email or password doesn't match. Double-check and try again."
+        : error.message || "Couldn't sign in right now. Try again in a moment.";
+      return setErrors({ form: msg });
+    }
     navigate(from, { replace: true });
   };
 
