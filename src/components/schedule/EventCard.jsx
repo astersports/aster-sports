@@ -7,7 +7,7 @@ import { useNow } from '../../hooks/useNow';
 import ChildRsvp from './ChildRsvp';
 import RsvpCountRow from './RsvpCountRow';
 
-export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext }) {
+export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'medium' }) {
   const navigate = useNavigate();
   const { role, myChildren } = useAuth();
   const now = useNow();
@@ -20,9 +20,8 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
   const isPast = event.end_at ? new Date(event.end_at) < new Date() : false;
   const dimmed = isCancelled || isPast;
   const msUntil = new Date(event.start_at).getTime() - now;
-  const showCountdown = isNext && msUntil > 0 && msUntil < 24 * 60 * 60 * 1000;
+  const showCountdown = isNext && msUntil > 0;
   const rawTitle = event.title || typeLabel;
-  const isTitleRedundant = (event.title || '').trim().toLowerCase() === (typeLabel || '').trim().toLowerCase();
   const alreadyPrefixed = rawTitle.startsWith('vs.') || rawTitle.startsWith('vs ') || rawTitle.startsWith('@ ') || rawTitle.startsWith('@');
   const titlePrefix = !alreadyPrefixed && (event.event_type === 'game' || event.event_type === 'tournament') && event.opponent
     ? (event.home_away === 'away' ? '@ ' : 'vs. ')
@@ -49,99 +48,54 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
       }}
     >
       <div style={{ width: 4, flexShrink: 0, backgroundColor: teamColor }} />
-      <div style={{ flex: 1, padding: '10px 14px' }}>
-        {/* Row 1: Time · Type + recurring + updated dot + cancelled */}
-        <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center' }}>
-          <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)' }}>
+      <div style={{ flex: 1, padding: density === 'minimal' ? '8px 14px' : '10px 14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+          <span className="font-bold" style={{ fontSize: density === 'minimal' ? 13 : 17, color: 'var(--em-text-primary)' }}>
             {formatTime(event.start_at)}
           </span>
           {showCountdown && (
-            <span style={{ fontSize: 11, fontWeight: 600, marginLeft: 8, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>
+            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>
               {formatCountdown(event.start_at)}
             </span>
           )}
-          {!isTitleRedundant && (
-            <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginLeft: 6 }}>
-              {' · '}{typeLabel}
-            </span>
-          )}
-          {event.is_scrimmage && (
-            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginLeft: 4 }}>
-              Scrimmage
-            </span>
-          )}
-          {event.parent_event_id && (
-            <Repeat size={11} strokeWidth={1.75} color="var(--em-text-tertiary)" style={{ marginLeft: 4 }} />
-          )}
-          {event.updated_at && (new Date(event.updated_at).getTime() > now - 86400000) && !isPast && !isCancelled && (
-            <span style={{
-              display: 'inline-block', width: 6, height: 6, borderRadius: 3,
-              backgroundColor: 'var(--em-info)', marginLeft: 6, verticalAlign: 'middle',
-            }} />
-          )}
-          {isCancelled && (
-            <span style={{
-              fontSize: 11, fontWeight: 600, color: 'var(--em-danger)',
-              backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px',
-              borderRadius: 4, marginLeft: 4, textTransform: 'uppercase',
-            }}>
-              Cancelled
-            </span>
-          )}
+          <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}> · {typeLabel}</span>
+          {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
+          {density === 'minimal' && teamName && <span style={{ fontSize: 13, color: teamColor, fontWeight: 500 }}> · {teamName}</span>}
         </div>
-        {/* Row 2: Title */}
-        <div style={{ fontSize: 15, color: 'var(--em-text-primary)', marginBottom: 2, textDecoration: isCancelled ? 'line-through' : 'none' }}>
-          {titlePrefix}{rawTitle}
-        </div>
-        {/* Row 3: Team · pin Location */}
-        {(teamName || event.location_name) && (
-          <div className="flex items-center" style={{ fontSize: 13, gap: 4 }}>
-            {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
-            {teamName && event.location_name && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
-            {event.location_name && (
-              <>
-                <MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" />
-                <span style={{ color: 'var(--em-text-tertiary)' }}>{event.location_name}</span>
-              </>
+        {density !== 'minimal' && (
+          <>
+            <div style={{ fontSize: 15, color: 'var(--em-text-primary)', marginTop: 2, marginBottom: 2, textDecoration: isCancelled ? 'line-through' : 'none' }}>
+              {titlePrefix}{rawTitle}
+            </div>
+            {(teamName || event.location_name) && (
+              <div className="flex items-center" style={{ fontSize: 13, gap: 4 }}>
+                {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
+                {teamName && event.location_name && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
+                {event.location_name && (<><MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" /><span style={{ color: 'var(--em-text-tertiary)' }}>{event.location_name}</span></>)}
+              </div>
             )}
-          </div>
+            <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
+          </>
         )}
-        {event.notes && (
-          <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {event.notes.length > 60 ? event.notes.slice(0, 60) + '...' : event.notes}
-          </div>
-        )}
-        {event.jersey && (
-          <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
-            {event.jersey} jersey
-          </div>
-        )}
-        <div style={{ marginTop: 4 }}>
-          <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
-        </div>
-        {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4 }}>
-            <Car size={12} strokeWidth={1.75} color={rideCount.urgent ? 'var(--em-danger)' : rideCount.requests > 0 ? 'var(--em-warning)' : 'var(--em-text-tertiary)'} />
-            {rideCount.offers > 0 && <span style={{ color: 'var(--em-text-secondary)' }}>{rideCount.offers} seat{rideCount.offers !== 1 ? 's' : ''}</span>}
-            {rideCount.offers > 0 && rideCount.requests > 0 && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
-            {rideCount.requests > 0 && (
-              <span style={{ color: rideCount.urgent ? 'var(--em-danger)' : 'var(--em-warning)', fontWeight: 500 }}>
-                {rideCount.urgent ? 'URGENT: ' : ''}{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed
-              </span>
+        {density === 'maximum' && (
+          <>
+            {event.notes && <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.notes.length > 60 ? event.notes.slice(0, 60) + '...' : event.notes}</div>}
+            {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4 }}>
+                <Car size={12} strokeWidth={1.75} color={rideCount.urgent ? 'var(--em-danger)' : rideCount.requests > 0 ? 'var(--em-warning)' : 'var(--em-text-tertiary)'} />
+                {rideCount.offers > 0 && <span style={{ color: 'var(--em-text-secondary)' }}>{rideCount.offers} seat{rideCount.offers !== 1 ? 's' : ''}</span>}
+                {rideCount.requests > 0 && <span style={{ color: rideCount.urgent ? 'var(--em-danger)' : 'var(--em-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>}
+              </div>
             )}
-          </div>
-        )}
-        {dutyCount && dutyCount.total > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--em-warning)' : 'var(--em-success)' }}>
-            {dutyCount.claimed}/{dutyCount.total} volunteers filled
-          </div>
-        )}
-        {role === 'parent' && childrenOnTeam.length > 0 && (
-          <div style={{ marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
-            {childrenOnTeam.map((child) => (
-              <ChildRsvp key={child.playerId} child={child} eventId={event.id} compact />
-            ))}
-          </div>
+            {dutyCount && dutyCount.total > 0 && (
+              <div style={{ fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--em-warning)' : 'var(--em-success)' }}>{dutyCount.claimed}/{dutyCount.total} volunteers</div>
+            )}
+            {role === 'parent' && childrenOnTeam.length > 0 && (
+              <div style={{ marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
+                {childrenOnTeam.map((child) => (<ChildRsvp key={child.playerId} child={child} eventId={event.id} compact />))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
