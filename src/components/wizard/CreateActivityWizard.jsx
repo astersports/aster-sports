@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useToast } from '../../context/useToast';
 import StepType from './StepType';
 import StepTeam from './StepTeam';
 import StepWhen from './StepWhen';
@@ -16,6 +17,7 @@ const EDIT_STEPS = ['When', 'Details'];
 
 export default function CreateActivityWizard({ orgId, editEvent, editMode = 'single', onClose, onCreated }) {
   const isEdit = !!editEvent;
+  const { showToast } = useToast();
   const [step, setStep] = useState(isEdit ? 2 : 0);
   const [form, setForm] = useState(isEdit ? eventToForm(editEvent) : EMPTY_FORM);
   const conflicts = useConflictCheck(step, form, isEdit ? editEvent.id : null);
@@ -66,7 +68,7 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
       result = await create(form);
     }
     if (result?.data) { onCreated?.(); onClose(); }
-    else if (result?.error) { window.alert(`Save failed: ${result.error}`); }
+    else if (result?.error) { showToast(`Save failed: ${result.error}`, 'error'); }
   };
 
   const canNext = step === 2 ? (form.date && form.startTime && form.endTime) : true;

@@ -1,6 +1,7 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import ConfirmDialog from '../shared/ConfirmDialog';
 import useScoreDraft from '../../hooks/useScoreDraft';
 import QuarterScoreInput from './QuarterScoreInput';
 import PlayerOfGamePicker from './PlayerOfGamePicker';
@@ -33,10 +34,12 @@ const btn44 = { minHeight: 44, borderRadius: 10, fontSize: 15, fontWeight: 600, 
 
 export default function ScoreEntrySheet({ event, team, onClose }) {
   const draft = useScoreDraft(event.id);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const handleDismiss = useCallback(() => {
     if (draft.state === 'dirty' || draft.state === 'saving') {
-      if (!window.confirm('Discard unsaved changes?')) return;
+      setConfirmAction({ type: 'discard' });
+      return;
     }
     onClose();
   }, [draft.state, onClose]);
@@ -101,6 +104,9 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
         {!draft.isPublished && <button type="button" onClick={handlePublish} disabled={!canPublish} className="sf-press" style={{ ...btn44, flex: 1, border: 'none', backgroundColor: canPublish ? 'var(--em-accent)' : 'var(--em-bg-secondary)', color: canPublish ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)' }}>Publish</button>}
         {draft.isPublished && <span style={{ padding: '12px 16px', fontSize: 15, color: 'var(--em-success)', fontWeight: 500 }}>Published {formatRelative(draft.result.published_at)}</span>}
       </footer>
+      {confirmAction?.type === 'discard' && (
+        <ConfirmDialog title="Discard Changes" message="Discard unsaved changes?" confirmLabel="Discard" destructive onConfirm={() => { setConfirmAction(null); onClose(); }} onCancel={() => setConfirmAction(null)} />
+      )}
     </div>,
     document.body,
   );

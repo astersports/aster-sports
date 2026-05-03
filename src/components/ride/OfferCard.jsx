@@ -144,11 +144,8 @@ export default function OfferCard({
           </button>
         )}
       </div>
-      {confirmAction?.type === 'cancelOffer' && (
-        <ConfirmDialog title="Cancel Ride Offer" message={confirmAction.message} confirmLabel="Cancel Offer" destructive onConfirm={() => { setConfirmAction(null); onCancelOffer?.(offer.id); }} onCancel={() => setConfirmAction(null)} />
-      )}
-      {confirmAction?.type === 'cancelClaim' && (
-        <ConfirmDialog title="Cancel Seat" message="Cancel your seat? You can claim again later if a spot opens up." confirmLabel="Cancel Seat" destructive onConfirm={() => { setConfirmAction(null); onCancelClaim?.(myClaim.id); }} onCancel={() => setConfirmAction(null)} />
+      {confirmAction && (
+        <ConfirmDialog title={confirmAction.type === 'cancelOffer' ? 'Cancel Ride Offer' : 'Cancel Seat'} message={confirmAction.type === 'cancelOffer' ? confirmAction.message : "Cancel your seat? You can claim again later if a spot opens up."} confirmLabel={confirmAction.type === 'cancelOffer' ? 'Cancel Offer' : 'Cancel Seat'} destructive onConfirm={() => { const t = confirmAction.type; setConfirmAction(null); t === 'cancelOffer' ? onCancelOffer?.(offer.id) : onCancelClaim?.(myClaim.id); }} onCancel={() => setConfirmAction(null)} />
       )}
     </div>
   );

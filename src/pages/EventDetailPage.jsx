@@ -56,7 +56,7 @@ export default function EventDetailPage() {
     if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
   }, [searchParams, rsvpLoading, roster.length]);
 
-  const doDelete = useEventDelete(event);
+  const { requestDelete, pendingDelete, confirmDelete, cancelDelete } = useEventDelete(event);
 
   if (eventLoading) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100dvh' }} />;
   if (!event) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100dvh', padding: 24, color: 'var(--em-text-tertiary)' }}>We couldn't find this event. It may have been removed.</div>;
@@ -80,7 +80,7 @@ export default function EventDetailPage() {
 
   return (
     <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
-      <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={doDelete} onCheckin={() => setShowCheckin(true)} />
+      <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} />
       {isPastGame && (
         <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>
           Enter Score
@@ -130,6 +130,12 @@ export default function EventDetailPage() {
       )}
       {confirmAction?.type === 'removeSeries' && (
         <ConfirmDialog title="Remove from series" message="This event will become standalone and no longer be part of the recurring series." confirmLabel="Remove" onConfirm={async () => { setConfirmAction(null); await supabase.from('events').update({ parent_event_id: null }).eq('id', event.id); patchEvent({ parent_event_id: null }); refetch(); }} onCancel={() => setConfirmAction(null)} />
+      )}
+      {pendingDelete?.type === 'series' && (
+        <ConfirmDialog title="Delete Recurring Event" message="Delete all future events in this series, or just this one?" confirmLabel="All future" cancelLabel="Just this one" destructive onConfirm={() => confirmDelete('allFuture')} onCancel={() => confirmDelete('single')} />
+      )}
+      {pendingDelete?.type === 'single' && (
+        <ConfirmDialog title="Delete Event" message="Delete this event?" confirmLabel="Delete" destructive onConfirm={() => confirmDelete('single')} onCancel={cancelDelete} />
       )}
     </div>
   );
