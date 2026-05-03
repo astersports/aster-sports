@@ -3,9 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/useToast';
 
-// Module-level cache so response survives component unmount/remount on nav.
-const responseCache = new Map();
-const cacheKey = (eventId, playerId) => `${eventId}:${playerId}`;
+import { responseCache, cacheKey } from '../../lib/rsvpCache';
 
 const PILLS = [
   { value: 'going',     label: 'Going',     color: 'var(--em-success)' },

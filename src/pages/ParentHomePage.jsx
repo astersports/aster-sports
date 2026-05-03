@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
+import { usePrefetchChildRsvps } from '../hooks/usePrefetchChildRsvps';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
@@ -24,9 +25,7 @@ export default function ParentHomePage() {
   const navigate = useNavigate();
   const [activeKidFilter, setActiveKidFilter] = useState(null);
   const name = guardianFirstName ? guardianFirstName.charAt(0).toUpperCase() + guardianFirstName.slice(1) : firstNameFrom(user);
-  // 48-hour adaptive window: doesn't care about calendar week boundaries.
-  // A Friday 8 PM event still appears at Wednesday 9 PM. Honest to "what
-  // needs RSVP attention right now"; 7-day browsing belongs on /schedule.
+  usePrefetchChildRsvps(activities, myChildren);
   const now = useNow(), cutoff = now + 48 * 60 * 60 * 1000;
   useRefetchOnVisible(refetch);
 
@@ -87,7 +86,6 @@ export default function ParentHomePage() {
   const toggleCollapse = (dateStr) => setCollapsedDates((prev) => {
     const next = new Map(prev); next.set(dateStr, !isCollapsed(dateStr)); return next;
   });
-
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" rows={2} /></div>;
 
   return (
@@ -148,5 +146,3 @@ export default function ParentHomePage() {
     </div>
   );
 }
-
-
