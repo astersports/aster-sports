@@ -45,13 +45,13 @@ export default function MatchupCard({ event, gameResult }) {
           </span>
         </div>
         {hasResult ? (
-          <div style={{ textAlign: 'center', padding: '0 12px', flexShrink: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: gr.result === 'W' ? 'var(--em-success)' : gr.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
-              {gr.result === 'W' ? 'W' : gr.result === 'L' ? 'L' : 'T'}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)' }}>
+          <div style={{ padding: '0 12px', flexShrink: 0 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: gr.result === 'W' ? 'var(--em-success)' : gr.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
+              {gr.result}
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)', marginLeft: 4 }}>
               {gr.our_score}-{gr.opponent_score}
-            </div>
+            </span>
           </div>
         ) : (
           <div style={{ textAlign: 'center', padding: '0 12px', flexShrink: 0 }}>
