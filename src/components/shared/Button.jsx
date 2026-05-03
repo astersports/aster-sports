@@ -22,7 +22,7 @@ const VARIANTS = {
 };
 
 const SIZES = {
-  sm: { minHeight: 36, fontSize: 13, padding: '0 12px', borderRadius: 8 },
+  sm: { minHeight: 36, fontSize: 13, padding: '0 12px', borderRadius: 10 },
   md: { minHeight: 44, fontSize: 15, padding: '0 16px', borderRadius: 10 },
   lg: { minHeight: 56, fontSize: 15, padding: '0 20px', borderRadius: 10 },
 };

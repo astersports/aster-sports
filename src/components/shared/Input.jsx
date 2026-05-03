@@ -13,7 +13,7 @@ const Input = forwardRef(function Input({ label, error, style, ...props }, ref) 
         style={{
           width: '100%',
           minHeight: 44,
-          padding: '0 14px',
+          padding: '0 12px',
           borderRadius: 10,
           border: `1.5px solid ${error ? 'var(--em-danger)' : 'var(--em-border-default)'}`,
           backgroundColor: 'var(--em-bg-tertiary)',

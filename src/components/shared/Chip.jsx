@@ -9,7 +9,7 @@ export default function Chip({ label, active, color, onClick }) {
         minHeight: 32,
         padding: '0 12px',
         borderRadius: 999,
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: active ? 600 : 400,
         border: `1.5px solid ${active ? (color || 'var(--em-accent)') : 'var(--em-border-default)'}`,
         backgroundColor: active ? (color ? `${color}15` : 'var(--em-accent-soft)') : 'var(--em-bg-card)',

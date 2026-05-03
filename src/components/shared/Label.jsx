@@ -2,7 +2,7 @@ export default function Label({ children, style }) {
   return (
     <div style={{
       fontSize: 11,
-      fontWeight: 600,
+      fontWeight: 500,
       letterSpacing: '0.05em',
       textTransform: 'uppercase',
       color: 'var(--em-text-tertiary)',

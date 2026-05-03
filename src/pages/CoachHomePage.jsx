@@ -7,6 +7,7 @@ import { useNow } from '../hooks/useNow';
 import AdminGreeting from '../components/admin/AdminGreeting';
 import SectionShell from '../components/home/SectionShell';
 import DateGroupedList from '../components/schedule/DateGroupedList';
+import { useDensity } from '../hooks/useDensity';
 import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
 
 export default function CoachHomePage() {
@@ -21,6 +22,7 @@ export default function CoachHomePage() {
     const t = new Date(a.start_at).getTime();
     return t >= now - 48 * 60 * 60 * 1000 && t <= weekEnd;
   }).sort((a, b) => new Date(a.start_at) - new Date(b.start_at)), [activities, now, weekEnd]);
+  const { density } = useDensity('coach-schedule', 'medium');
 
   const myTeams = useMemo(() => {
     const map = new Map();
@@ -54,7 +56,7 @@ export default function CoachHomePage() {
         skeletonRows={2}
         empty={thisWeek.length === 0 ? { heading: 'All caught up', message: 'No events in the next 7 days.' } : null}
       >
-        {thisWeek.length > 0 && <DateGroupedList events={thisWeek} />}
+        {thisWeek.length > 0 && <DateGroupedList events={thisWeek} density={density} />}
       </SectionShell>
 
       <SectionShell

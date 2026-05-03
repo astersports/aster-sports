@@ -89,7 +89,7 @@ export default function Header() {
           {unread > 0 && (
             <span
               className="absolute top-2 right-2 min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
-              style={{ background: SEVERITY_COLOR[severity] || SEVERITY_COLOR.info, color: '#fff' }}
+              style={{ background: SEVERITY_COLOR[severity] || SEVERITY_COLOR.info, color: 'var(--em-text-inverse)' }}
             >
               {unread > 9 ? '9+' : unread}
             </span>
