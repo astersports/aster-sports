@@ -20,7 +20,7 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
   const isPast = event.end_at ? new Date(event.end_at) < new Date() : false;
   const dimmed = isCancelled || isPast;
   const msUntil = new Date(event.start_at).getTime() - now;
-  const showCountdown = isNext && msUntil > 0;
+  const showCountdown = isNext && msUntil > 0 && msUntil < 24 * 60 * 60 * 1000;
   const rawTitle = event.title || typeLabel;
   const alreadyPrefixed = rawTitle.startsWith('vs.') || rawTitle.startsWith('vs ') || rawTitle.startsWith('@ ') || rawTitle.startsWith('@');
   const titlePrefix = !alreadyPrefixed && (event.event_type === 'game' || event.event_type === 'tournament') && event.opponent
