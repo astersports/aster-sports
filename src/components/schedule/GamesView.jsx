@@ -33,6 +33,7 @@ export default function GamesView({ activities, orgId }) {
   const { activeSeason } = useSeason();
   const seasonStartDate = activeSeason?.start_date;
   const now = useNow();
+  const [selectedTeam, setSelectedTeam] = useState(null);
 
   const gameEvents = useMemo(() =>
     activities
@@ -41,8 +42,21 @@ export default function GamesView({ activities, orgId }) {
     [activities]
   );
 
-  const upcoming = useMemo(() => gameEvents.filter((e) => new Date(e.start_at).getTime() >= now), [gameEvents, now]);
-  const past = useMemo(() => gameEvents.filter((e) => new Date(e.start_at).getTime() < now), [gameEvents, now]);
+  const gameTeams = useMemo(() => {
+    const seen = new Set();
+    const result = [];
+    for (const e of gameEvents) {
+      if (e.team_id && !seen.has(e.team_id) && e.teams) {
+        seen.add(e.team_id);
+        result.push({ id: e.team_id, name: e.teams.name, team_color: e.teams.team_color, sort_order: e.teams.sort_order ?? 999 });
+      }
+    }
+    return result.sort((a, b) => a.sort_order - b.sort_order);
+  }, [gameEvents]);
+
+  const filtered = useMemo(() => selectedTeam ? gameEvents.filter((e) => e.team_id === selectedTeam) : gameEvents, [gameEvents, selectedTeam]);
+  const upcoming = useMemo(() => filtered.filter((e) => new Date(e.start_at).getTime() >= now), [filtered, now]);
+  const past = useMemo(() => filtered.filter((e) => new Date(e.start_at).getTime() < now), [filtered, now]);
   const pastIds = useMemo(() => past.map((e) => e.id), [past]);
   const gameResultsMap = useGameResults(pastIds);
 
@@ -75,6 +89,15 @@ export default function GamesView({ activities, orgId }) {
   return (
     <div style={{ marginTop: 12 }}>
       <StandingsTable teams={allTeams} recordsByTeamId={recordsByTeamId} totalGames={totalGames} />
+
+      {gameTeams.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 6, marginBottom: 8 }}>
+          <Chip label="All" active={!selectedTeam} onClick={() => setSelectedTeam(null)} />
+          {gameTeams.map((t) => (
+            <Chip key={t.id} label={t.name} active={selectedTeam === t.id} color={t.team_color} onClick={() => setSelectedTeam(selectedTeam === t.id ? null : t.id)} />
+          ))}
+        </div>
+      )}
 
       {weekGroups.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--em-text-tertiary)' }}>
@@ -111,5 +134,16 @@ export default function GamesView({ activities, orgId }) {
         </>
       )}
     </div>
+  );
+}
+
+function Chip({ label, active, color, onClick }) {
+  return (
+    <button type="button" onClick={() => { navigator.vibrate?.(10); onClick(); }} className="sf-press" style={{
+      flexShrink: 0, minHeight: 32, padding: '0 12px', borderRadius: 999, fontSize: 12, fontWeight: active ? 600 : 400,
+      border: `1.5px solid ${active ? (color || 'var(--em-accent)') : 'var(--em-border-default)'}`,
+      backgroundColor: active ? (color ? `${color}15` : 'var(--em-accent-soft)') : 'var(--em-bg-card)',
+      color: active ? (color || 'var(--em-accent)') : 'var(--em-text-primary)', whiteSpace: 'nowrap',
+    }}>{label}</button>
   );
 }

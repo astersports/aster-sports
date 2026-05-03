@@ -66,7 +66,7 @@ export default function MatchupCard({ event, gameResult }) {
           </div>
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
+          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>
             {opponent}
           </span>
         </div>
