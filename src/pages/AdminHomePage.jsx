@@ -15,6 +15,7 @@ import NextEventCard from '../components/admin/NextEventCard';
 import TeamPerformanceStrip from '../components/admin/TeamPerformanceStrip';
 import GettingStarted from '../components/admin/GettingStarted';
 import AdminGreeting from '../components/admin/AdminGreeting';
+import Label from '../components/shared/Label';
 
 export default function AdminHomePage() {
   const { user, signOut } = useAuth();
@@ -50,31 +51,17 @@ export default function AdminHomePage() {
       </section>
 
       <section className="min-w-0" aria-label="Quick actions">
-        <div style={{
-          fontSize: 11,
-          fontWeight: 600,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-          color: 'var(--em-text-tertiary)',
-          marginBottom: 8,
-        }}>QUICK ACTIONS</div>
+        <Label>QUICK ACTIONS</Label>
         <QuickActions />
       </section>
 
       <section className="min-w-0">
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>TEAMS</div>
+        <Label>TEAMS</Label>
         <TeamPerformanceStrip programs={programs} navigate={navigate} />
       </section>
 
       <section className="min-w-0" aria-label="Active season">
-        <div style={{
-          fontSize: 11,
-          fontWeight: 600,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-          color: 'var(--em-text-tertiary)',
-          marginBottom: 8,
-        }}>SEASON</div>
+        <Label>SEASON</Label>
         <ActiveSeasonCard season={activeSeason} />
         <NextEventCard event={nextEvent} />
       </section>

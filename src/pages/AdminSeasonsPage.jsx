@@ -3,6 +3,7 @@ import { Plus, Star } from 'lucide-react';
 import { useSeasons } from '../hooks/useSeasons';
 import SeasonFormSheet from '../components/admin/SeasonFormSheet';
 import Badge from '../components/shared/Badge';
+import Button from '../components/shared/Button';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import Toast from '../components/shared/Toast';
@@ -44,17 +45,9 @@ export default function AdminSeasonsPage() {
         <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 22 }}>
           Seasons
         </h1>
-        <button
-          type="button"
-          onClick={openNew}
-          className="flex items-center gap-1 font-semibold sf-press"
-          style={{
-            minHeight: 44, padding: '0 14px', borderRadius: 10,
-            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14,
-          }}
-        >
+        <Button onClick={openNew}>
           <Plus size={18} strokeWidth={1.75} /> New
-        </button>
+        </Button>
       </div>
 
       {loading ? (

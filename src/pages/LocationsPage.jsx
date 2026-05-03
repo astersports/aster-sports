@@ -5,6 +5,7 @@ import { useLocations } from '../hooks/useLocations';
 import LocationFormSheet from '../components/location/LocationFormSheet';
 import LocationCard from '../components/location/LocationCard';
 import SearchToolbar from '../components/location/SearchToolbar';
+import Button from '../components/shared/Button';
 
 export default function LocationsPage() {
   const { role } = useAuth();
@@ -32,14 +33,9 @@ export default function LocationsPage() {
           Locations
         </h1>
         {isStaff && (
-          <button onClick={openCreate} className="sf-press" aria-label="New location" style={{
-            minHeight: 40, padding: '0 14px', borderRadius: 10,
-            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
-            fontSize: 13, fontWeight: 600, border: 'none',
-            display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-          }}>
+          <Button size="sm" onClick={openCreate} aria-label="New location">
             <Plus size={16} strokeWidth={2} /> New
-          </button>
+          </Button>
         )}
       </div>
 

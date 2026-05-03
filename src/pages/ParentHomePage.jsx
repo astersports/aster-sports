@@ -13,6 +13,7 @@ import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import MyTeamsStrip from '../components/home/MyTeamsStrip';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
+import Label from '../components/shared/Label';
 import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
 import { detectConflicts } from '../lib/conflicts';
 import { firstNameFrom, greetingFor } from '../lib/greetings';
@@ -97,7 +98,7 @@ export default function ParentHomePage() {
       </button>
 
       <section>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>NEXT 7 DAYS</div>
+        <Label>NEXT 7 DAYS</Label>
         <ChildFilterChips
           kids={myChildren}
           activeFilter={activeKidFilter}

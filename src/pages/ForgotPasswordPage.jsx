@@ -1,10 +1,12 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { KeyRound } from 'lucide-react';
+import Button from '../components/shared/Button';
 
 // Stub — full flow (email input + resetPasswordForEmail + success state)
 // arrives with the auth-polish prompt. For now we ship a branded page so
 // the /forgot-password link from LoginPage has somewhere to land.
 export default function ForgotPasswordPage() {
+  const navigate = useNavigate();
   return (
     <div
       className="sf-fullscreen flex items-center justify-center p-6"
@@ -42,20 +44,9 @@ export default function ForgotPasswordPage() {
         <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, marginBottom: 20 }}>
           Password reset is coming soon. Ask an admin to send you a new invite.
         </p>
-        <Link
-          to="/login"
-          className="inline-flex items-center justify-center font-semibold sf-press"
-          style={{
-            minHeight: 44,
-            padding: '0 20px',
-            borderRadius: 10,
-            backgroundColor: 'var(--em-accent)',
-            color: 'var(--em-text-inverse)',
-            fontSize: 15,
-          }}
-        >
+        <Button onClick={() => navigate('/login')}>
           Back to sign in
-        </Link>
+        </Button>
       </div>
     </div>
   );

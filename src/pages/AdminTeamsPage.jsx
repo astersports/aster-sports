@@ -4,6 +4,7 @@ import { usePrograms } from '../hooks/usePrograms';
 import { useSeason } from '../context/SeasonContext';
 import TeamFormSheet from '../components/admin/TeamFormSheet';
 import Badge from '../components/shared/Badge';
+import Button from '../components/shared/Button';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import Toast from '../components/shared/Toast';
@@ -64,17 +65,9 @@ export default function AdminTeamsPage() {
             <div style={{ color: 'var(--em-text-secondary)', fontSize: 13 }}>{activeSeason.name}</div>
           )}
         </div>
-        <button
-          type="button"
-          onClick={openNew}
-          className="flex items-center gap-1 font-semibold sf-press"
-          style={{
-            minHeight: 44, padding: '0 14px', borderRadius: 10,
-            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14,
-          }}
-        >
+        <Button onClick={openNew}>
           <Plus size={18} strokeWidth={1.75} /> New
-        </button>
+        </Button>
       </div>
 
       {loading ? (

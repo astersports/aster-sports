@@ -3,6 +3,7 @@ import { Plus, Trophy } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTournaments } from '../hooks/useTournaments';
+import Button from '../components/shared/Button';
 import TournamentListItem from '../components/tournament/TournamentListItem';
 import TournamentFormSheet from '../components/tournament/TournamentFormSheet';
 import TournamentRowMenu from '../components/tournament/TournamentRowMenu';
@@ -40,14 +41,9 @@ export default function TournamentsPage() {
           Tournaments
         </h1>
         {isStaff && (
-          <button type="button" onClick={openCreate} className="sf-press" aria-label="New tournament" style={{
-            minHeight: 40, padding: '0 14px', borderRadius: 10,
-            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
-            fontSize: 13, fontWeight: 600, border: 'none',
-            display: 'flex', alignItems: 'center', gap: 6,
-          }}>
+          <Button size="sm" onClick={openCreate} aria-label="New tournament">
             <Plus size={16} strokeWidth={2} /> New
-          </button>
+          </Button>
         )}
       </div>
 
