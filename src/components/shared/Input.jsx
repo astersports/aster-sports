@@ -1,14 +1,16 @@
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 
 const Input = forwardRef(function Input({ label, error, style, ...props }, ref) {
+  const id = useId();
   return (
     <div>
       {label && (
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)', marginBottom: 4 }}>
+        <label htmlFor={id} style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)', marginBottom: 4 }}>
           {label}
         </label>
       )}
       <input
+        id={id}
         ref={ref}
         style={{
           width: '100%',
@@ -20,7 +22,6 @@ const Input = forwardRef(function Input({ label, error, style, ...props }, ref) 
           color: 'var(--em-text-primary)',
           fontSize: 15,
           fontFamily: 'inherit',
-          outline: 'none',
           ...style,
         }}
         {...props}
