@@ -66,7 +66,9 @@ export default function SchedulePage() {
     return list.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
   }, [activities, selectedTeam, selectedType, showCancelled, activeKidFilter, myChildren]);
 
-  const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= now), [filtered, tick, now]);
+  const lookbackMs = isStaff(role) ? 48 * 60 * 60 * 1000 : 0;
+  const cutoff = new Date(now.getTime() - lookbackMs);
+  const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= cutoff), [filtered, tick, cutoff]);
   const nextEvent = upcoming[0] || null;
   const thisWeek = useMemo(() => upcoming.filter((a) => a !== nextEvent && new Date(a.start_at) <= weekEnd), [upcoming, nextEvent, tick, weekEnd]);
   const remaining = useMemo(() => upcoming.filter((a) => new Date(a.start_at) > weekEnd), [upcoming, tick, weekEnd]);
