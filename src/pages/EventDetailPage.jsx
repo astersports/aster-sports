@@ -18,6 +18,7 @@ import EventRidesTab from '../components/event/EventRidesTab';
 import EventNotes from '../components/event/EventNotes';
 import EventCancelActions from '../components/event/EventCancelActions';
 import MyActionsSection from '../components/event/MyActionsSection';
+import CollapsibleSection from '../components/shared/CollapsibleSection';
 import TournamentBriefingBanner from '../components/event/TournamentBriefingBanner';
 import Button from '../components/shared/Button';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
@@ -107,13 +108,15 @@ export default function EventDetailPage() {
       <SectionHeader>Location</SectionHeader>
       <EventLocationTab event={event} />
 
-      <SectionHeader sectionKey="rsvps">RSVPs</SectionHeader>
-      <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} />
+      <CollapsibleSection title="RSVPs" sectionKey="rsvps" defaultOpen={isStaff} count={`${rsvps.filter((r) => r.response === 'going').length}/${roster.length}`}>
+        <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} />
+      </CollapsibleSection>
 
       {dutyCount > 0 && (<><SectionHeader sectionKey="duties">Volunteers</SectionHeader><EventDutiesTab eventId={event.id} /></>)}
 
-      <SectionHeader sectionKey="rides">Rides</SectionHeader>
-      <EventRidesTab event={event} />
+      <CollapsibleSection title="Rides" sectionKey="rides">
+        <EventRidesTab event={event} />
+      </CollapsibleSection>
 
       {(event.notes || event.coach_notes) && (
         <><SectionHeader>Notes</SectionHeader><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></>
