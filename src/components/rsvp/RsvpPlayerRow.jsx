@@ -70,7 +70,7 @@ export default function RsvpPlayerRow({ player, response, existingNote, teamColo
                   className="sf-press"
                   aria-label={b.label}
                   style={{
-                    width: 36, height: 36, borderRadius: 18,
+                    width: 44, height: 44, borderRadius: 22,
                     border: active ? 'none' : '1px solid var(--em-border-default)',
                     backgroundColor: active ? b.bg : 'transparent',
                     color: active ? b.color : 'var(--em-text-tertiary)',

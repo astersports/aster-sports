@@ -92,9 +92,11 @@ export default function EventDetailPage() {
         <div style={{ padding: '6px 16px', fontSize: 13, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Repeat size={12} strokeWidth={1.75} />
           Part of a recurring series
-          <button type="button" onClick={() => setConfirmAction({ type: 'removeSeries' })} style={{ fontSize: 13, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>
-            Remove from series
-          </button>
+          {isStaff && (
+            <button type="button" onClick={() => setConfirmAction({ type: 'removeSeries' })} style={{ fontSize: 13, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>
+              Remove from series
+            </button>
+          )}
         </div>
       )}
 
