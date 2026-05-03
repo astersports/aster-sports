@@ -12,7 +12,7 @@ import { useOfferClaimers } from './useOfferClaimers';
 
 export function useEventRidesView({ eventId, orgId, userId }) {
   const { offers, postOffer, cancelOffer, loading: offersLoading } = useRideOffers(eventId);
-  const { claims, claimSeat, cancelClaim, loading: claimsLoading } = useRideClaims(eventId);
+  const { claims, claimSeat, cancelClaim, confirmClaim, declineClaim, loading: claimsLoading } = useRideClaims(eventId);
 
   const driverIds = useMemo(() => offers.map((o) => o.driver_user_id), [offers]);
   const driverNames = useDriverNames(orgId, driverIds);
@@ -60,6 +60,8 @@ export function useEventRidesView({ eventId, orgId, userId }) {
     claimSeat,
     cancelOffer,
     cancelClaim,
+    confirmClaim,
+    declineClaim,
     loading: offersLoading || claimsLoading,
   };
 }

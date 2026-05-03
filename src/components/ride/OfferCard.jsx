@@ -1,9 +1,3 @@
-// src/components/ride/OfferCard.jsx
-// Phase 1.5 rides Phase B — display card for a single ride offer.
-// Density-aware (rides-list sectionKey). Renders different CTAs based on
-// viewer role: driver sees Cancel, riders see Claim or claim status + Cancel.
-// Driver phone privacy-gated to confirmed claimers only (§16.7).
-// CTA buttons call props; forms ship in Phase C; wiring lands in Phase D.
 
 import { useCallback, useState } from 'react';
 import { Car, Users, MapPin, Clock, ArrowRight, Repeat, Phone } from 'lucide-react';
@@ -36,6 +30,8 @@ export default function OfferCard({
   onClaim,
   onCancelOffer,
   onCancelClaim,
+  onConfirmClaim,
+  onDeclineClaim,
 }) {
   const { density } = useDensity(SECTION_KEY);
   const rideTypeLabel = RIDE_TYPE_LABEL[offer.ride_type] ?? 'Ride';
@@ -119,7 +115,7 @@ export default function OfferCard({
             {offerClaimers.length} {offerClaimers.length === 1 ? 'rider' : 'riders'}
           </div>
           {offerClaimers.map(({ claim, riderName, childName }) => (
-            <ClaimerRow key={claim.id} claim={claim} riderName={riderName} childName={childName} />
+            <ClaimerRow key={claim.id} claim={claim} riderName={riderName} childName={childName} isDriver={isDriver} onConfirm={onConfirmClaim} onDecline={onDeclineClaim} />
           ))}
         </div>
       )}

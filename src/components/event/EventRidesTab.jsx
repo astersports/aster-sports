@@ -35,6 +35,8 @@ export default function EventRidesTab({ event }) {
     claimSeat,
     cancelOffer,
     cancelClaim,
+    confirmClaim,
+    declineClaim,
   } = useEventRidesView({ eventId, orgId, userId: user?.id });
 
   const [postOfferOpen, setPostOfferOpen] = useState(false);
@@ -81,6 +83,8 @@ export default function EventRidesTab({ event }) {
                 seatsTaken={seatsTakenByOfferId[offer.id] || 0}
                 offerClaimers={buildOfferClaimers(offer.id)}
                 onCancelClaim={cancelClaim}
+                onConfirmClaim={confirmClaim}
+                onDeclineClaim={declineClaim}
               />
             );
           })}
@@ -92,7 +96,7 @@ export default function EventRidesTab({ event }) {
           <h3 style={sectionLabelStyle}>Available rides</h3>
           {otherOffers.length === 0 ? (
             <div style={emptyStateStyle}>
-              No rides offered yet — be the first to share?
+              No rides offered yet. Tap + Offer a ride to help the team get there.
             </div>
           ) : otherOffers.map((offer) => (
             <OfferCard
@@ -106,6 +110,8 @@ export default function EventRidesTab({ event }) {
               offerClaimers={buildOfferClaimers(offer.id)}
               onClaim={(o) => setClaimTargetOffer(o)}
               onCancelOffer={cancelOffer}
+              onConfirmClaim={confirmClaim}
+              onDeclineClaim={declineClaim}
             />
           ))}
         </section>

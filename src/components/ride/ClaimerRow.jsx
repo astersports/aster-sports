@@ -1,13 +1,10 @@
-// src/components/ride/ClaimerRow.jsx
-// Phase D.2 Ship 4 — one claimer row, rendered inside OfferCard for driver's view.
-// Shows: rider name + child (if present) + status pill + pickup address/notes.
-// Pure display — no actions in v1 (Phase D.3 adds confirm/decline buttons).
-
 import { MapPin } from 'lucide-react';
 import ClaimStatusPill from './ClaimStatusPill';
+import Button from '../shared/Button';
 
-export default function ClaimerRow({ claim, riderName, childName }) {
+export default function ClaimerRow({ claim, riderName, childName, isDriver, onConfirm, onDecline }) {
   const showPickup = claim.pickup_address || claim.pickup_notes;
+  const showActions = isDriver && claim.status === 'pending';
   return (
     <div style={{ padding: '6px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -30,6 +27,12 @@ export default function ClaimerRow({ claim, riderName, childName }) {
             {claim.pickup_address && claim.pickup_notes && ' — '}
             {claim.pickup_notes && <span style={{ color: 'var(--em-text-tertiary)', fontStyle: 'italic' }}>{claim.pickup_notes}</span>}
           </span>
+        </div>
+      )}
+      {showActions && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+          <Button size="sm" onClick={() => onConfirm?.(claim.id)} style={{ flex: 1 }}>Confirm</Button>
+          <Button size="sm" variant="ghost" onClick={() => onDecline?.(claim.id)} style={{ flex: 1, color: 'var(--em-danger)' }}>Decline</Button>
         </div>
       )}
     </div>

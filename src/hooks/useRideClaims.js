@@ -101,5 +101,21 @@ export function useRideClaims(eventId) {
     }
   }, [claims, fetchClaims]);
 
-  return { claims, loading, error, claimSeat, cancelClaim, refetch: fetchClaims };
+  const confirmClaim = useCallback(async (claimId) => {
+    const previous = claims;
+    setClaims((prev) => prev.map((c) => c.id === claimId ? { ...c, status: 'confirmed', confirmed_at: new Date().toISOString() } : c));
+    const { error } = await supabase.from('event_ride_claims').update({ status: 'confirmed', confirmed_at: new Date().toISOString() }).eq('id', claimId);
+    if (error) { setClaims(previous); return { ok: false, error }; }
+    return { ok: true };
+  }, [claims]);
+
+  const declineClaim = useCallback(async (claimId) => {
+    const previous = claims;
+    setClaims((prev) => prev.map((c) => c.id === claimId ? { ...c, status: 'declined' } : c));
+    const { error } = await supabase.from('event_ride_claims').update({ status: 'declined' }).eq('id', claimId);
+    if (error) { setClaims(previous); return { ok: false, error }; }
+    return { ok: true };
+  }, [claims]);
+
+  return { claims, loading, error, claimSeat, cancelClaim, confirmClaim, declineClaim, refetch: fetchClaims };
 }
