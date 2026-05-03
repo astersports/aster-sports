@@ -50,8 +50,8 @@ export function useActivities() {
       setActivities(processed);
     } catch (err) {
       // Preserve last-known-good activities on transient failure. The
-      // error surfaces separately so consumers can render "Couldn't
-      // refresh — retry" without wiping the screen.
+      // error surfaces separately so consumers can render \"Couldn't
+      // refresh — retry\" without wiping the screen.
       console.error('useActivities:', err.message);
       setError(err);
     }
