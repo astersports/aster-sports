@@ -30,7 +30,7 @@ export default function NextUpCardRsvpSection({ eventId, rsvpCount }) {
             RSVP Notes
           </div>
           {visible.map((n) => (
-            <div key={n.playerId} style={{ fontSize: 12, marginTop: 5 }}>
+            <div key={n.playerId} style={{ fontSize: 13, marginTop: 5 }}>
               <span style={{ color: 'var(--em-text-secondary)' }}>
                 {n.firstName} ({RESPONSE_LABEL[n.response] || n.response}) —{' '}
               </span>
@@ -38,7 +38,7 @@ export default function NextUpCardRsvpSection({ eventId, rsvpCount }) {
             </div>
           ))}
           {extra > 0 && (
-            <div style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--em-text-tertiary)', marginTop: 5 }}>
+            <div style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--em-text-tertiary)', marginTop: 5 }}>
               +{extra} more
             </div>
           )}

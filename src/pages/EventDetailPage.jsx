@@ -24,7 +24,7 @@ const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActiv
 const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
 
 const SectionHeader = ({ children, sectionKey }) => (
-  <h2 data-section={sectionKey} style={{ fontSize: 16, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>
+  <h2 data-section={sectionKey} style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>
 );
 
 export default function EventDetailPage() {
@@ -89,10 +89,10 @@ export default function EventDetailPage() {
       <TournamentBriefingBanner event={event} team={team} role={role} />
 
       {event.parent_event_id && (
-        <div style={{ padding: '6px 16px', fontSize: 12, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ padding: '6px 16px', fontSize: 13, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Repeat size={12} strokeWidth={1.75} />
           Part of a recurring series
-          <button type="button" onClick={() => setConfirmAction({ type: 'removeSeries' })} style={{ fontSize: 12, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>
+          <button type="button" onClick={() => setConfirmAction({ type: 'removeSeries' })} style={{ fontSize: 13, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>
             Remove from series
           </button>
         </div>

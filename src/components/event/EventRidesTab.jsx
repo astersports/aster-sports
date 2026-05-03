@@ -42,7 +42,7 @@ export default function EventRidesTab({ event }) {
 
   if (!rideEnabled) {
     return (
-      <div style={{ padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 14 }}>
+      <div style={{ padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 15 }}>
         Ride coordination is off for this event.
       </div>
     );

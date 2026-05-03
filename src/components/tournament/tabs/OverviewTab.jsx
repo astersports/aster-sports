@@ -20,7 +20,7 @@ export default function OverviewTab({ tournament, isStaff }) {
     fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase',
     color: 'var(--em-text-secondary)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6,
   };
-  const value = { fontSize: 14, color: 'var(--em-text-primary)', lineHeight: 1.4 };
+  const value = { fontSize: 15, color: 'var(--em-text-primary)', lineHeight: 1.4 };
   const linkButton = {
     display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 40,
     padding: '0 12px', borderRadius: 8, fontSize: 13, fontWeight: 500,
@@ -67,7 +67,7 @@ export default function OverviewTab({ tournament, isStaff }) {
             Book hotel <ExternalLink size={12} strokeWidth={2} />
           </a>
           {tournament.hotel_deadline_at && (
-            <div style={{ fontSize: 12, color: 'var(--em-warning)', marginTop: 8 }}>
+            <div style={{ fontSize: 13, color: 'var(--em-warning)', marginTop: 8 }}>
               Deadline: {new Date(tournament.hotel_deadline_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </div>
           )}

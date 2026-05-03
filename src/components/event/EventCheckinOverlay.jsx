@@ -11,7 +11,7 @@ export default function EventCheckinOverlay({ eventId, roster, teamColor, onClos
         <button type="button" onClick={onClose} className="sf-press" style={iconBtn}>
           <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-primary)" />
         </button>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--em-text-primary)' }}>Take Attendance</h2>
+        <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)' }}>Take Attendance</h2>
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
         <EventCheckinTab eventId={eventId} roster={roster} teamColor={teamColor} />

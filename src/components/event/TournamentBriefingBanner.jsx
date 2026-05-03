@@ -21,7 +21,7 @@ export default function TournamentBriefingBanner({ event, team, role }) {
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-accent)', marginBottom: 2 }}>
             Tournament
           </div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--em-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {event.tournament_name}
           </div>
         </div>

@@ -27,19 +27,19 @@ export default function TournamentBriefing({ event, team, onClose }) {
   const primaryBtn = {
     flex: 1, minHeight: 44, borderRadius: 10,
     backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
-    fontSize: 14, fontWeight: 600, border: 'none',
+    fontSize: 15, fontWeight: 600, border: 'none',
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
   };
   const secondaryBtn = {
     flex: 1, minHeight: 44, borderRadius: 10,
     backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)',
-    fontSize: 14, fontWeight: 600, border: '1.5px solid var(--em-accent)',
+    fontSize: 15, fontWeight: 600, border: '1.5px solid var(--em-accent)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
   };
   const ghostBtn = {
     minHeight: 36, padding: '0 12px', borderRadius: 8,
     backgroundColor: 'transparent', color: 'var(--em-text-secondary)',
-    fontSize: 12, fontWeight: 500, border: '1px solid var(--em-border-default)',
+    fontSize: 13, fontWeight: 500, border: '1px solid var(--em-border-default)',
     display: 'inline-flex', alignItems: 'center', gap: 4,
   };
 
@@ -48,7 +48,7 @@ export default function TournamentBriefing({ event, team, onClose }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)', borderBottom: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)' }}>
         <div>
           <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>Tournament Briefing</div>
-          <div style={{ fontSize: 12, color: 'var(--em-text-secondary)', marginTop: 2 }}>{event?.tournament_name}</div>
+          <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2 }}>{event?.tournament_name}</div>
         </div>
         <button type="button" onClick={onClose} className="sf-press" aria-label="Close" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <X size={20} strokeWidth={1.75} color="var(--em-text-primary)" />
@@ -56,7 +56,7 @@ export default function TournamentBriefing({ event, team, onClose }) {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: 16, backgroundColor: 'var(--em-bg-page)' }}>
-        {loading && <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-secondary)', fontSize: 14 }}>Loading tournament events...</div>}
+        {loading && <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-secondary)', fontSize: 15 }}>Loading tournament events...</div>}
         {error && <div style={{ padding: 16, color: 'var(--em-danger)', fontSize: 13 }}>{error.message}</div>}
 
         {!loading && !error && (
@@ -80,7 +80,7 @@ export default function TournamentBriefing({ event, team, onClose }) {
                   width: '100%', minHeight: 110, padding: 12, borderRadius: 10,
                   border: '1.5px solid var(--em-border-default)',
                   backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)',
-                  fontSize: 14, fontFamily: 'Inter, sans-serif', resize: 'vertical',
+                  fontSize: 15, fontFamily: 'Inter, sans-serif', resize: 'vertical',
                 }}
               />
             </div>

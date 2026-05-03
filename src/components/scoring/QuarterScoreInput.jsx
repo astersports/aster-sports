@@ -2,7 +2,7 @@ import { useCallback, Fragment } from 'react';
 
 const QUARTERS = ['q1', 'q2', 'q3', 'q4'];
 const LABELS = { q1: 'Q1', q2: 'Q2', q3: 'Q3', q4: 'Q4' };
-const qInput = { width: '100%', minHeight: 44, padding: '0 10px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 16, fontWeight: 600, fontFamily: 'inherit', textAlign: 'center' };
+const qInput = { width: '100%', minHeight: 44, padding: '0 10px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 17, fontWeight: 600, fontFamily: 'inherit', textAlign: 'center' };
 
 export default function QuarterScoreInput({ value, onChange, disabled }) {
   const setField = useCallback((q, side, raw) => {
@@ -23,7 +23,7 @@ export default function QuarterScoreInput({ value, onChange, disabled }) {
         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textAlign: 'center' }}>Them</div>
         {QUARTERS.map(q => (
           <Fragment key={q}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--em-text-secondary)' }}>{LABELS[q]}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-secondary)' }}>{LABELS[q]}</span>
             <input type="number" inputMode="numeric" pattern="[0-9]*" value={value?.[q]?.us ?? ''} onChange={e => setField(q, 'us', e.target.value)} disabled={disabled} style={qInput} />
             <input type="number" inputMode="numeric" pattern="[0-9]*" value={value?.[q]?.them ?? ''} onChange={e => setField(q, 'them', e.target.value)} disabled={disabled} style={qInput} />
           </Fragment>

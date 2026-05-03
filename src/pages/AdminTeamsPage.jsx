@@ -58,7 +58,7 @@ export default function AdminTeamsPage() {
     <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 22 }}>
+          <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20 }}>
             Teams
           </h1>
           {activeSeason && (
@@ -95,7 +95,7 @@ export default function AdminTeamsPage() {
                 }}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 16 }}>
+                  <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 17 }}>
                     {p.name}
                   </span>
                   <div className="flex gap-1">

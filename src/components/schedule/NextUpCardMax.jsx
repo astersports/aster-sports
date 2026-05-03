@@ -49,7 +49,7 @@ export default function NextUpCardMax({ event, rsvpCount, rideCount, dutyCount, 
   return (
     <div
       style={{
-        backgroundColor: 'var(--em-bg-card)', borderRadius: 12,
+        backgroundColor: 'var(--em-bg-card)', borderRadius: 10,
         border: '1px solid var(--em-border-default)', overflow: 'hidden',
         marginBottom: 16,
       }}
@@ -103,7 +103,7 @@ export default function NextUpCardMax({ event, rsvpCount, rideCount, dutyCount, 
           )}
           {event.notes && (
             <div style={{
-              fontSize: 12, color: 'var(--em-text-secondary)', marginTop: 6,
+              fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 6,
               display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
             }}>
               <span style={{ fontWeight: 600 }}>Notes: </span>{event.notes}
@@ -122,7 +122,7 @@ export default function NextUpCardMax({ event, rsvpCount, rideCount, dutyCount, 
       ) : (
         <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8 }}>
           <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/events/${event.id}?tab=rsvps`, { state: { event } }); }} className="sf-press"
-            style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'transparent', color: 'var(--em-accent)', fontSize: 14, fontWeight: 500 }}>
+            style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'transparent', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
             Manage RSVPs
           </button>
         </div>

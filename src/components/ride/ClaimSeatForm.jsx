@@ -9,7 +9,7 @@ import FullScreenForm from '../shared/FullScreenForm';
 import Input from '../shared/Input';
 import Button from '../shared/Button';
 
-const labelStyle = { fontSize: 12, fontWeight: 600, color: 'var(--em-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'block' };
+const labelStyle = { fontSize: 13, fontWeight: 600, color: 'var(--em-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'block' };
 const selectStyle = { width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' };
 
 export default function ClaimSeatForm({ open, onClose, offer, onSubmit }) {
@@ -88,7 +88,7 @@ export default function ClaimSeatForm({ open, onClose, offer, onSubmit }) {
         <Input label="Seats needed" id="seatsRequested" type="number" inputMode="numeric" min="1" max={offer.seats_offered || 1} value={seatsRequested} onChange={(e) => setSeatsRequested(e.target.value)} required autoFocus={eligibleKids.length <= 1} />
         <div>
           <Input label="Need door-to-door pickup? (optional)" id="pickupAddress" type="text" value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} placeholder="Your address, if you need pickup at home" />
-          <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4 }}>Most riders meet at the offer's pickup spot. Only fill this in if you've worked out a home pickup with the driver.</div>
+          <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 4 }}>Most riders meet at the offer's pickup spot. Only fill this in if you've worked out a home pickup with the driver.</div>
         </div>
         <div>
           <label style={labelStyle} htmlFor="pickupNotes">Anything the driver should know? (optional)</label>

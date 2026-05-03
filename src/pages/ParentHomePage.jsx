@@ -92,9 +92,9 @@ export default function ParentHomePage() {
       />
 
       <button type="button" onClick={() => navigate('/records')} className="sf-press"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px 16px', minHeight: 56, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px 16px', minHeight: 56, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
         <span>View full season records</span>
-        <span style={{ fontSize: 18, color: 'var(--em-text-tertiary)' }}>›</span>
+        <span style={{ fontSize: 17, color: 'var(--em-text-tertiary)' }}>›</span>
       </button>
 
       <section>
@@ -110,7 +110,7 @@ export default function ParentHomePage() {
             <div key={date} style={{ marginTop: 12 }}>
               <button type="button" onClick={() => toggleCollapse(date)} className="sf-press"
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '4px 0', minHeight: 32, background: 'none', border: 'none', cursor: 'pointer' }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{formatDateHeader(date)}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{formatDateHeader(date)}</span>
                 {collapsed && <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{evts.length} event{evts.length !== 1 ? 's' : ''}</span>}
               </button>
               <div className="sf-collapsible" data-open={collapsed ? 'false' : 'true'}>

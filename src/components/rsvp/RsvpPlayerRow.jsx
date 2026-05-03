@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Check, X, HelpCircle } from 'lucide-react';
+import Input from '../shared/Input';
 import { useAuth } from '../../context/AuthContext';
 
 const BUTTONS = [
@@ -31,7 +32,7 @@ export default function RsvpPlayerRow({ player, response, existingNote, teamColo
         <div style={{
           width: 32, height: 32, borderRadius: 16,
           backgroundColor: teamColor || 'var(--em-bg-tertiary)',
-          color: 'var(--em-text-inverse)', fontSize: 12, fontWeight: 600,
+          color: 'var(--em-text-inverse)', fontSize: 13, fontWeight: 600,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}>
@@ -40,7 +41,7 @@ export default function RsvpPlayerRow({ player, response, existingNote, teamColo
 
         {/* Name */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>
+          <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
             {player.first_name} {player.last_name}
           </div>
           {player.member_type === 'futures_academy' && (
@@ -87,38 +88,37 @@ export default function RsvpPlayerRow({ player, response, existingNote, teamColo
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
           {!showNote && (
             <button type="button" onClick={() => setShowNote(true)}
-              style={{ fontSize: 12, color: 'var(--em-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer' }}>
+              style={{ fontSize: 13, color: 'var(--em-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer' }}>
               {existingNote ? 'Edit note' : 'Add note'}
             </button>
           )}
         </div>
       )}
       {!readOnly && showNote && (
-        <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-          <input
-            type="text"
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
-            placeholder="Out of town, back Thursday..."
-            style={{
-              flex: 1, fontSize: 13, padding: '6px 10px', borderRadius: 8,
-              border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
-              color: 'var(--em-text-primary)',
-            }}
-          />
+        <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'flex-end' }}>
+          <div style={{ flex: 1 }}>
+            <Input
+              type="text"
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Out of town, back Thursday..."
+              style={{ fontSize: 13, padding: '6px 10px', minHeight: 36 }}
+            />
+          </div>
           <button type="button" onClick={() => { onSaveNote?.(player.id, noteText); setShowNote(false); }}
             className="sf-press"
             style={{
               fontSize: 13, fontWeight: 500, color: 'var(--em-accent)',
-              padding: '6px 12px', borderRadius: 8,
+              padding: '6px 12px', borderRadius: 10,
               border: '1px solid var(--em-accent)', backgroundColor: 'transparent',
+              minHeight: 36,
             }}>
             Save
           </button>
         </div>
       )}
       {existingNote && !showNote && (
-        <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', fontStyle: 'italic', marginTop: 2 }}>
+        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', fontStyle: 'italic', marginTop: 2 }}>
           &ldquo;{existingNote}&rdquo;
         </div>
       )}

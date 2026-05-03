@@ -37,7 +37,7 @@ export default function TournamentsPage() {
   return (
     <div style={{ padding: 16, paddingBottom: 80 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0 }}>
           Tournaments
         </h1>
         {isStaff && (
@@ -50,7 +50,7 @@ export default function TournamentsPage() {
       <TournamentStatusChips statusFilter={statusFilter} setStatusFilter={setStatusFilter} />
 
       {loading && tournaments.length === 0 && (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-secondary)', fontSize: 14 }}>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-secondary)', fontSize: 15 }}>
           Loading...
         </div>
       )}
@@ -92,7 +92,7 @@ export default function TournamentsPage() {
             width: '100%', minHeight: 44, marginTop: 8,
             borderRadius: 10, border: '1px solid var(--em-border-default)',
             backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)',
-            fontSize: 14, fontWeight: 500,
+            fontSize: 15, fontWeight: 500,
           }}
         >
           Load more

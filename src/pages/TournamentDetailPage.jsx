@@ -18,7 +18,7 @@ export default function TournamentDetailPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-secondary)', fontSize: 14 }}>
+      <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-secondary)', fontSize: 15 }}>
         Loading tournament…
       </div>
     );
@@ -30,7 +30,7 @@ export default function TournamentDetailPage() {
         <button onClick={() => navigate('/tournaments')} className="sf-press" aria-label="Back to tournaments" style={{
           minHeight: 44, padding: '8px 12px', border: 'none', backgroundColor: 'transparent',
           display: 'flex', alignItems: 'center', gap: 6, color: 'var(--em-accent)',
-          fontSize: 14, fontWeight: 500, cursor: 'pointer', marginBottom: 12,
+          fontSize: 15, fontWeight: 500, cursor: 'pointer', marginBottom: 12,
         }}>
           <ArrowLeft size={16} strokeWidth={1.75} /> Tournaments
         </button>
@@ -52,7 +52,7 @@ export default function TournamentDetailPage() {
         <button onClick={() => navigate('/tournaments')} className="sf-press" aria-label="Back to tournaments" style={{
           minHeight: 44, padding: '8px 0', border: 'none', backgroundColor: 'transparent',
           display: 'flex', alignItems: 'center', gap: 6, color: 'var(--em-accent)',
-          fontSize: 14, fontWeight: 500, cursor: 'pointer',
+          fontSize: 15, fontWeight: 500, cursor: 'pointer',
         }}>
           <ArrowLeft size={16} strokeWidth={1.75} /> Tournaments
         </button>

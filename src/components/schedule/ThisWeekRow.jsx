@@ -59,7 +59,7 @@ export default function ThisWeekRow({ event, rideCount, dutyCount, conflictWith 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <span className={`sf-countdown ${urgencyClass(secondsUntil)}`.trim()}
             style={{ fontSize: 13, fontWeight: 700, minWidth: 56, fontVariantNumeric: 'tabular-nums' }}>{timeText}</span>
-          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 4, backgroundColor: teamColor, color: 'var(--em-text-inverse)', flexShrink: 0 }}>{teamAbbr}</span>
+          <span style={{ fontSize: 11, fontWeight: 700, padding: '1px 5px', borderRadius: 4, backgroundColor: teamColor, color: 'var(--em-text-inverse)', flexShrink: 0 }}>{teamAbbr}</span>
           <span className="truncate" style={{ flex: 1, fontSize: 13, color: 'var(--em-text-secondary)', minWidth: 0 }}>{titleText}</span>
         </div>
         {(isCompleted || isCancelled || ridePill || dutyPill) && (

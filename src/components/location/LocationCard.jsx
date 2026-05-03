@@ -52,7 +52,7 @@ export default function LocationCard({ location, isStaff, showArchived, onEdit, 
       </div>
 
       {(l.parking_notes || l.notes) && (
-        <div style={{ fontSize: 12, color: 'var(--em-text-secondary)', whiteSpace: 'pre-wrap' }}>
+        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', whiteSpace: 'pre-wrap' }}>
           {l.parking_notes && <div><strong>Parking:</strong> {l.parking_notes}</div>}
           {l.notes && <div style={{ marginTop: l.parking_notes ? 4 : 0 }}>{l.notes}</div>}
         </div>
@@ -73,7 +73,7 @@ export default function LocationCard({ location, isStaff, showArchived, onEdit, 
           }}>
             Internal Notes (admin only)
           </span>
-          <p style={{ fontSize: 14, color: 'var(--em-text-primary)', margin: 0, whiteSpace: 'pre-wrap' }}>
+          <p style={{ fontSize: 15, color: 'var(--em-text-primary)', margin: 0, whiteSpace: 'pre-wrap' }}>
             {l.admin_notes}
           </p>
         </div>

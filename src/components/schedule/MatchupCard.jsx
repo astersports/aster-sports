@@ -44,7 +44,7 @@ export default function MatchupCard({ event, gameResult }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: 100, flexShrink: 0 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: teamColor, flexShrink: 0 }} />
-          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)', whiteSpace: 'nowrap' }}>
             {teamName}
           </span>
         </div>
@@ -70,7 +70,7 @@ export default function MatchupCard({ event, gameResult }) {
           </div>
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>
+          <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
             {opponent}
           </span>
           {isPast && (

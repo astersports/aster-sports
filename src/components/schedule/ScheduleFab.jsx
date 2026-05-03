@@ -17,7 +17,7 @@ export default function ScheduleFab({ onClick }) {
         right: 16,
         width: 56,
         height: 56,
-        borderRadius: 28,
+        borderRadius: 9999,
         backgroundColor: 'var(--em-accent)',
         color: 'var(--em-text-inverse)',
         border: 'none',

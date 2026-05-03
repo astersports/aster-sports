@@ -8,10 +8,10 @@ export default function EventCheckinTab({ eventId, roster, teamColor }) {
   const { checkIns, loading, toggle } = useCheckIns(eventId);
 
   if (loading) {
-    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 14 }}>Loading check-ins...</div>;
+    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 15 }}>Loading check-ins...</div>;
   }
   if (roster.length === 0) {
-    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 14 }}>No players on this team yet.</div>;
+    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 15 }}>No players on this team yet.</div>;
   }
 
   const map = {};
@@ -37,13 +37,13 @@ export default function EventCheckinTab({ eventId, roster, teamColor }) {
             <div style={{
               width: 32, height: 32, borderRadius: 16,
               backgroundColor: teamColor || 'var(--em-bg-tertiary)',
-              color: 'var(--em-text-inverse)', fontSize: 12, fontWeight: 600,
+              color: 'var(--em-text-inverse)', fontSize: 13, fontWeight: 600,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}>
               {player.jersey_number || '—'}
             </div>
-            <div style={{ flex: 1, fontSize: 14, color: 'var(--em-text-primary)', fontWeight: 500 }}>
+            <div style={{ flex: 1, fontSize: 15, color: 'var(--em-text-primary)', fontWeight: 500 }}>
               {player.first_name} {player.last_name}
             </div>
             <div style={{

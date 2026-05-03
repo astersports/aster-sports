@@ -39,10 +39,10 @@ export default function TeamRow({ team, idx, summary }) {
     >
       <div style={{ width: 5, flexShrink: 0, backgroundColor: team.team_color || 'var(--em-neutral)' }} />
       <div style={{ flex: 1, padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-        <div className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 16, lineHeight: 1.3 }}>
+        <div className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 17, lineHeight: 1.3 }}>
           {team.name}
         </div>
-        <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', lineHeight: 1.4 }}>
+        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', lineHeight: 1.4 }}>
           {buildMetaLine(team, s)}
         </div>
       </div>

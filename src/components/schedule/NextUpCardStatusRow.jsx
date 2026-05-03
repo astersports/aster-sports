@@ -7,7 +7,7 @@ import { Car, Users } from 'lucide-react';
 
 const PILL = {
   display: 'inline-flex', alignItems: 'center', gap: 4,
-  fontSize: 12, fontWeight: 500,
+  fontSize: 13, fontWeight: 500,
   padding: '2px 6px', borderRadius: 8,
 };
 const WARN = { ...PILL, backgroundColor: 'var(--em-warning-soft)', color: 'var(--em-warning)' };

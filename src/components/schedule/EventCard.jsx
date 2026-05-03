@@ -79,16 +79,16 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
         )}
         {density === 'maximum' && (
           <>
-            {event.notes && <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.notes.length > 60 ? event.notes.slice(0, 60) + '...' : event.notes}</div>}
+            {event.notes && <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.notes.length > 60 ? event.notes.slice(0, 60) + '...' : event.notes}</div>}
             {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 4 }}>
                 <Car size={12} strokeWidth={1.75} color={rideCount.urgent ? 'var(--em-danger)' : rideCount.requests > 0 ? 'var(--em-warning)' : 'var(--em-text-tertiary)'} />
                 {rideCount.offers > 0 && <span style={{ color: 'var(--em-text-secondary)' }}>{rideCount.offers} seat{rideCount.offers !== 1 ? 's' : ''}</span>}
                 {rideCount.requests > 0 && <span style={{ color: rideCount.urgent ? 'var(--em-danger)' : 'var(--em-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>}
               </div>
             )}
             {dutyCount && dutyCount.total > 0 && (
-              <div style={{ fontSize: 12, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--em-warning)' : 'var(--em-success)' }}>{dutyCount.claimed}/{dutyCount.total} volunteers</div>
+              <div style={{ fontSize: 13, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--em-warning)' : 'var(--em-success)' }}>{dutyCount.claimed}/{dutyCount.total} volunteers</div>
             )}
             {role === 'parent' && childrenOnTeam.length > 0 && (
               <div style={{ marginTop: 8 }} onClick={(e) => e.stopPropagation()}>

@@ -32,7 +32,7 @@ export default function TournamentTabs({ active, onChange }) {
               borderBottom: `2px solid ${isActive ? 'var(--em-accent)' : 'transparent'}`,
               backgroundColor: 'transparent',
               color: isActive ? 'var(--em-accent)' : 'var(--em-text-secondary)',
-              fontSize: 14, fontWeight: isActive ? 600 : 500,
+              fontSize: 15, fontWeight: isActive ? 600 : 500,
               cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
             }}
           >

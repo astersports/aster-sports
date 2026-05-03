@@ -27,12 +27,12 @@ export default function StepType({ value, onSelect }) {
               className="sf-press"
               style={{
                 minHeight: t.large ? 88 : 64,
-                borderRadius: 12,
+                borderRadius: 10,
                 border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
                 backgroundColor: sel ? 'var(--em-accent)' : 'var(--em-bg-card)',
                 color: sel ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', gap: 6, fontSize: 14, fontWeight: 500,
+                justifyContent: 'center', gap: 6, fontSize: 15, fontWeight: 500,
               }}
             >
               <Icon size={t.large ? 24 : 20} strokeWidth={1.75} />

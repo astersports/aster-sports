@@ -63,21 +63,21 @@ export default function OfferCard({
       style={{
         backgroundColor: 'var(--em-bg-card)',
         border: '1px solid var(--em-border-default)',
-        borderRadius: 12,
+        borderRadius: 10,
         marginBottom: 10,
         overflow: 'hidden',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', borderBottom: density === 'minimal' ? 'none' : '1px solid var(--em-border-subtle)' }}>
         <Car size={16} strokeWidth={1.75} color="var(--em-text-secondary)" aria-hidden="true" />
-        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--em-text-primary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {driverName}
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', letterSpacing: '0.02em' }}>
           <Users size={11} strokeWidth={1.75} aria-hidden="true" />
           {seatsAvailable}/{offer.seats_offered}
         </span>
-        <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)' }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)' }}>
           {rideTypeLabel}
         </span>
         <ClaimStatusPill claim={myClaim} />
@@ -100,10 +100,10 @@ export default function OfferCard({
             </div>
           )}
           {density !== 'minimal' && offer.vehicle_description && (
-            <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{offer.vehicle_description}</div>
+            <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{offer.vehicle_description}</div>
           )}
           {density !== 'minimal' && offer.notes && (
-            <div style={{ fontSize: 12, color: 'var(--em-text-secondary)', fontStyle: 'italic' }}>{offer.notes}</div>
+            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', fontStyle: 'italic' }}>{offer.notes}</div>
           )}
           {showDriverPhone && (
             <a href={`tel:${offer.driver_phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--em-accent)', textDecoration: 'none', fontWeight: 500 }} aria-label={`Call driver at ${offer.driver_phone}`}>

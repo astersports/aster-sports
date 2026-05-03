@@ -19,13 +19,13 @@ export function GameInfo({ event, skipArrival = false }) {
   return (
     <>
       {!skipArrival && event.arrival_minutes_before > 0 && (
-        <div style={{ fontSize: 12, color: 'var(--em-warning)', fontWeight: 500, marginTop: 2 }}>
+        <div style={{ fontSize: 13, color: 'var(--em-warning)', fontWeight: 500, marginTop: 2 }}>
           Arrive {event.arrival_minutes_before} min early
         </div>
       )}
       {showJerseyOrChip && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
-          {event.jersey && <span style={{ fontSize: 12, color: 'var(--em-text-secondary)' }}>{event.jersey} jersey</span>}
+          {event.jersey && <span style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>{event.jersey} jersey</span>}
           {event.home_away && event.home_away !== 'tbd' && event.home_away !== 'neutral' && (
             <span style={{
               fontSize: 11, fontWeight: 600, textTransform: 'uppercase',

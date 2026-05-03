@@ -98,7 +98,7 @@ export default function EventLocationTab({ event }) {
           marginTop: 10, padding: 10, borderRadius: 8,
           backgroundColor: 'var(--em-warning-soft)',
           color: 'var(--em-warning)',
-          fontSize: 12, fontWeight: 500, lineHeight: 1.4,
+          fontSize: 13, fontWeight: 500, lineHeight: 1.4,
         }}>
           {locationData.entry_instructions}
         </div>

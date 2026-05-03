@@ -22,7 +22,7 @@ function CardSkeleton({ rows }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {Array.from({ length: Math.max(1, rows) }).map((_, i) => (
         <div key={i} aria-hidden="true"
-          style={{ display: 'flex', backgroundColor: 'var(--em-bg-card)', borderRadius: 12, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
+          style={{ display: 'flex', backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
           <div style={STRIPE} />
           <div className="animate-pulse" style={{ flex: 1, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ ...BAR, height: 10, width: '40%' }} />

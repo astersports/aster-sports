@@ -19,7 +19,7 @@ function formatRelative(iso) {
 }
 
 function SaveBadge({ state }) {
-  const s = { fontSize: 12, fontStyle: 'italic' };
+  const s = { fontSize: 13, fontStyle: 'italic' };
   if (state === 'saving') return <span style={{ ...s, color: 'var(--em-text-secondary)' }}>Saving…</span>;
   if (state === 'saved') return <span style={{ ...s, color: 'var(--em-success)' }}>Saved</span>;
   if (state === 'error') return <span style={{ ...s, color: 'var(--em-danger)' }}>Error</span>;
@@ -29,7 +29,7 @@ function SaveBadge({ state }) {
 
 const numInput = { width: '100%', minHeight: 52, padding: '0 14px', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 28, fontWeight: 700, fontFamily: 'inherit', textAlign: 'center' };
 const lbl = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-primary)', marginBottom: 6 };
-const btn44 = { minHeight: 44, borderRadius: 10, fontSize: 14, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' };
+const btn44 = { minHeight: 44, borderRadius: 10, fontSize: 15, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' };
 
 export default function ScoreEntrySheet({ event, team, onClose }) {
   const draft = useScoreDraft(event.id);
@@ -55,7 +55,7 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
           <X size={20} strokeWidth={1.75} color="var(--em-text-primary)" />
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--em-text-primary)' }}>vs {event.opponent || 'Opponent'}</div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>vs {event.opponent || 'Opponent'}</div>
           <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>{formatDate(event.start_at)}</div>
         </div>
         <SaveBadge state={draft.state} />
@@ -85,12 +85,12 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
         <label style={{ display: 'block', marginTop: 24 }}>
           <div style={lbl}>Coach Highlight (optional)</div>
           <textarea maxLength={140} value={draft.result.coach_highlight ?? ''} onChange={e => draft.updateField('coach_highlight', e.target.value || null)} disabled={draft.isPublished} placeholder="One line for parents — what stood out?"
-            style={{ width: '100%', minHeight: 60, padding: 12, border: '1px solid var(--em-border-default)', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: 'var(--em-text-primary)', background: 'var(--em-bg-card)', resize: 'vertical' }} />
+            style={{ width: '100%', minHeight: 60, padding: 12, border: '1px solid var(--em-border-default)', borderRadius: 8, fontFamily: 'inherit', fontSize: 15, color: 'var(--em-text-primary)', background: 'var(--em-bg-card)', resize: 'vertical' }} />
           <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 4, textAlign: 'right' }}>{(draft.result.coach_highlight ?? '').length}/140</div>
         </label>
 
         {draft.state === 'error' && (
-          <div style={{ marginTop: 16, padding: 12, background: 'var(--em-bg-card)', borderLeft: '4px solid var(--em-danger)', borderRadius: 6, fontSize: 14, color: 'var(--em-text-primary)' }}>
+          <div style={{ marginTop: 16, padding: 12, background: 'var(--em-bg-card)', borderLeft: '4px solid var(--em-danger)', borderRadius: 6, fontSize: 15, color: 'var(--em-text-primary)' }}>
             Save failed. <button type="button" onClick={draft.retry} style={{ marginLeft: 12, color: 'var(--em-accent)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Retry</button>
           </div>
         )}
@@ -99,7 +99,7 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
       <footer style={{ display: 'flex', gap: 12, padding: '16px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', borderTop: '1px solid var(--em-border-subtle)' }}>
         <button type="button" onClick={handleDismiss} className="sf-press" style={{ ...btn44, flex: 1, background: 'none', border: '1px solid var(--em-border-default)', color: 'var(--em-text-secondary)' }}>Close</button>
         {!draft.isPublished && <button type="button" onClick={handlePublish} disabled={!canPublish} className="sf-press" style={{ ...btn44, flex: 1, border: 'none', backgroundColor: canPublish ? 'var(--em-accent)' : 'var(--em-bg-secondary)', color: canPublish ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)' }}>Publish</button>}
-        {draft.isPublished && <span style={{ padding: '12px 16px', fontSize: 14, color: 'var(--em-success)', fontWeight: 500 }}>Published {formatRelative(draft.result.published_at)}</span>}
+        {draft.isPublished && <span style={{ padding: '12px 16px', fontSize: 15, color: 'var(--em-success)', fontWeight: 500 }}>Published {formatRelative(draft.result.published_at)}</span>}
       </footer>
     </div>,
     document.body,

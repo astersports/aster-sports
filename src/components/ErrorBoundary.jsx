@@ -30,7 +30,7 @@ export default class ErrorBoundary extends Component {
           >
             Something went wrong
           </h1>
-          <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, marginBottom: 16 }}>
+          <p style={{ color: 'var(--em-text-secondary)', fontSize: 15, marginBottom: 16 }}>
             Please try refreshing the page.
           </p>
           <button

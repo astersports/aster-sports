@@ -55,7 +55,7 @@ function NavItem(tab) {
         <div className="flex flex-col items-center justify-center" style={{ gap: 2, paddingTop: 6, paddingBottom: 2 }}>
           <Icon size={22} strokeWidth={isActive ? 2 : 1.5} />
           <span style={{
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: isActive ? 600 : 400,
             letterSpacing: '0.02em',
             color: isActive ? 'var(--em-accent)' : 'var(--em-text-tertiary)',

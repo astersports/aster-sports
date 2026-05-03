@@ -22,7 +22,7 @@ export default function TeamPerformanceStrip({ programs, navigate }) {
             borderTop: `3px solid ${team.team_color || 'var(--em-neutral)'}`,
           }}
         >
-          <div className="font-semibold truncate" style={{ fontSize: 14, color: 'var(--em-text-primary)' }}>
+          <div className="font-semibold truncate" style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>
             {team.name}
           </div>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', marginTop: 4 }}>

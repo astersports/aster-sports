@@ -22,7 +22,7 @@ export default function ScheduleShowMoreButton({ remaining, onClick }) {
         border: '1px solid var(--em-border-default)',
         backgroundColor: 'var(--em-bg-card)',
         color: 'var(--em-text-secondary)',
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: 500,
         cursor: 'pointer',
         fontFamily: 'inherit',

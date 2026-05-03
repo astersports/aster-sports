@@ -42,7 +42,7 @@ export default function AdminSeasonsPage() {
   return (
     <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 22 }}>
+        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20 }}>
           Seasons
         </h1>
         <Button onClick={openNew}>
@@ -84,7 +84,7 @@ export default function AdminSeasonsPage() {
                   className="w-full text-left p-4 sf-press flex flex-col"
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 16 }}>
+                    <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 17 }}>
                       {s.name}
                     </span>
                     {active ? <Badge variant="success">Active</Badge> : <Badge>Archived</Badge>}

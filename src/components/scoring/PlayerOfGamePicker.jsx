@@ -14,10 +14,10 @@ export default function PlayerOfGamePicker({ teamId, value, onChange, disabled }
         Player of the Game (optional)
       </div>
 
-      {loading && <div style={{ fontSize: 14, color: 'var(--em-text-secondary)' }}>Loading roster…</div>}
+      {loading && <div style={{ fontSize: 15, color: 'var(--em-text-secondary)' }}>Loading roster…</div>}
 
       {!loading && players.length === 0 && (
-        <div style={{ fontSize: 14, color: 'var(--em-text-secondary)' }}>No active roster yet</div>
+        <div style={{ fontSize: 15, color: 'var(--em-text-secondary)' }}>No active roster yet</div>
       )}
 
       {!loading && players.length > 0 && (
@@ -36,7 +36,7 @@ export default function PlayerOfGamePicker({ teamId, value, onChange, disabled }
                   background: selected ? 'var(--em-accent)' : 'var(--em-bg-card)',
                   color: selected ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
                   border: selected ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
-                  fontSize: 14, fontWeight: selected ? 600 : 500,
+                  fontSize: 15, fontWeight: selected ? 600 : 500,
                   cursor: disabled ? 'not-allowed' : 'pointer',
                   fontFamily: 'inherit',
                 }}

@@ -57,7 +57,7 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: isStaff ? 12 : 0 }}>
           {tournament.teams.map((t) => (
             <span key={t.id} style={{
-              fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 999,
+              fontSize: 13, fontWeight: 500, padding: '3px 10px', borderRadius: 999,
               backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)',
               borderLeft: `3px solid ${t.team_color || 'var(--em-text-tertiary)'}`,
             }}>

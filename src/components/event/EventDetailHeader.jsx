@@ -35,18 +35,18 @@ export default function EventDetailHeader({ event, team, isStaff, onEdit, onDele
           </div>
         </div>
         <div style={{ padding: '0 12px', marginTop: 4 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)', backgroundColor: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: 6 }}>{typeLabel}</span>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--em-text-inverse)', margin: '12px 0 0 0' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.85)', backgroundColor: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: 6 }}>{typeLabel}</span>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-inverse)', margin: '12px 0 0 0' }}>
             {event.title || typeLabel}
           </h1>
-          {team && <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>{team.name}</div>}
+          {team && <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>{team.name}</div>}
         </div>
       </div>
       {event.status === 'cancelled' && (
         <div style={{
           backgroundColor: 'var(--em-danger-soft)', padding: '8px 16px',
           display: 'flex', alignItems: 'center', gap: 8,
-          fontSize: 14, fontWeight: 500, color: 'var(--em-danger)',
+          fontSize: 15, fontWeight: 500, color: 'var(--em-danger)',
         }}>
           <Ban size={16} strokeWidth={1.75} />
           This event has been cancelled

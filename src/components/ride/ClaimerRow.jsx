@@ -15,7 +15,7 @@ export default function ClaimerRow({ claim, riderName, childName }) {
           {riderName}
         </span>
         {childName && (
-          <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)', whiteSpace: 'nowrap' }}>
             for {childName}
           </span>
         )}
@@ -23,7 +23,7 @@ export default function ClaimerRow({ claim, riderName, childName }) {
         <ClaimStatusPill claim={claim} />
       </div>
       {showPickup && (
-        <div style={{ marginTop: 4, display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: 12, color: 'var(--em-text-secondary)' }}>
+        <div style={{ marginTop: 4, display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: 13, color: 'var(--em-text-secondary)' }}>
           <MapPin size={11} strokeWidth={1.75} color="var(--em-text-tertiary)" aria-hidden="true" style={{ marginTop: 2, flexShrink: 0 }} />
           <span style={{ flex: 1, minWidth: 0 }}>
             {claim.pickup_address}

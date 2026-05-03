@@ -29,7 +29,7 @@ export default function UnauthorizedPage() {
         >
           You don't have access to this page
         </h1>
-        <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, marginBottom: 20 }}>
+        <p style={{ color: 'var(--em-text-secondary)', fontSize: 15, marginBottom: 20 }}>
           Ask an admin if you think this is a mistake.
         </p>
         <Link

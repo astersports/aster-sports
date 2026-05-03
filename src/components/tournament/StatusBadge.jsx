@@ -16,7 +16,7 @@ export default function StatusBadge({ status }) {
   const s = STATUS_STYLES[status] || STATUS_STYLES.scheduled;
   return (
     <span style={{
-      fontSize: 10, fontWeight: 700, letterSpacing: '1px',
+      fontSize: 11, fontWeight: 700, letterSpacing: '1px',
       padding: '3px 8px', borderRadius: 6,
       backgroundColor: s.bg, color: s.color,
       whiteSpace: 'nowrap', flexShrink: 0,

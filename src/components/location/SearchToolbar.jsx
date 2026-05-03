@@ -9,7 +9,7 @@ export default function SearchToolbar({ search, setSearch, showArchived, setShow
     border: `1.5px solid ${active ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
     backgroundColor: active ? 'var(--em-accent-soft)' : 'var(--em-bg-card)',
     color: active ? 'var(--em-accent)' : 'var(--em-text-primary)',
-    fontSize: 12, fontWeight: active ? 600 : 400, cursor: 'pointer',
+    fontSize: 13, fontWeight: active ? 600 : 400, cursor: 'pointer',
   });
 
   return (
@@ -26,7 +26,7 @@ export default function SearchToolbar({ search, setSearch, showArchived, setShow
             width: '100%', minHeight: 44, padding: '10px 12px 10px 36px', borderRadius: 10,
             border: '1.5px solid var(--em-border-default)',
             backgroundColor: 'var(--em-bg-tertiary)',
-            color: 'var(--em-text-primary)', fontSize: 14, fontFamily: 'Inter, sans-serif',
+            color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'Inter, sans-serif',
           }}
         />
         {search && (

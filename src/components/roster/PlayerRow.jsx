@@ -39,14 +39,14 @@ export default function PlayerRow({ player, teamColor, isLast }) {
             )}
           </div>
           <div className="flex items-center gap-1" style={{ marginTop: 2 }}>
-            {isAcademy && <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-academy-soft)', color: 'var(--em-academy)' }}>Academy</span>}
+            {isAcademy && <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-academy-soft)', color: 'var(--em-academy)' }}>Academy</span>}
             <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{ordinalGrade(player.grade)}</span>
           </div>
           <div className="flex items-center gap-1" style={{ marginTop: 3 }}>
             <div style={{ width: 40, height: 3, borderRadius: 999, backgroundColor: 'var(--em-bg-tertiary)', overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${player.attendance_pct || 85}%`, backgroundColor: (player.attendance_pct || 85) >= 80 ? 'var(--em-success)' : 'var(--em-warning)', borderRadius: 999 }} />
             </div>
-            <span style={{ fontSize: 10, color: 'var(--em-text-tertiary)' }}>{player.attendance_pct || 85}%</span>
+            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{player.attendance_pct || 85}%</span>
           </div>
         </div>
         {player.jersey_number != null && (
@@ -62,7 +62,7 @@ export default function PlayerRow({ player, teamColor, isLast }) {
       {expanded && (
         <div style={{ padding: '4px 16px 12px 68px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {guardians.length === 0
-            ? <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', fontStyle: 'italic' }}>No guardians linked</div>
+            ? <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', fontStyle: 'italic' }}>No guardians linked</div>
             : guardians.map((g) => <GuardianRow key={g.id} guardian={g} role={role} />)}
         </div>
       )}
@@ -85,7 +85,7 @@ function GuardianRow({ guardian, role }) {
         {guardian.phone ? <a href={`sms:${guardian.phone}`} onClick={stop} aria-label="Text" style={iconBtn}><MessageSquare size={14} strokeWidth={1.75} color="var(--em-text-secondary)" /></a> : spacer}
         {guardian.email ? <a href={`mailto:${guardian.email}`} onClick={stop} aria-label="Email" style={iconBtn}><Mail size={14} strokeWidth={1.75} color="var(--em-text-secondary)" /></a> : spacer}
         {canInvite ? <span onClick={stop}><InviteButton guardianEmail={guardian.email} /></span>
-          : linked ? <span style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: 'var(--em-success)' }} title="Account linked">✓</span>
+          : linked ? <span style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color: 'var(--em-success)' }} title="Account linked">✓</span>
           : spacer}
       </div>
     </div>

@@ -52,7 +52,7 @@ export default function TournamentListItem({ tournament, rightSlot }) {
         </div>
       </div>
 
-      <div style={{ fontSize: 12, color: 'var(--em-text-secondary)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <Calendar size={12} strokeWidth={1.75} />
           {dateRange}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import FullScreenForm from '../shared/FullScreenForm';
+import Input from '../shared/Input';
 import TeamMultiSelect from './TeamMultiSelect';
 import { useTournaments } from '../../hooks/useTournaments';
 import { useToast } from '../../context/useToast';
@@ -55,10 +56,15 @@ export default function TournamentFormSheet({ tournament, onClose }) {
   };
 
   const label = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)', marginBottom: 6, display: 'block' };
-  const input = {
+  const selectStyle = {
     width: '100%', minHeight: 44, padding: '10px 12px', borderRadius: 10,
     border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)',
-    color: 'var(--em-text-primary)', fontSize: 14, fontFamily: 'Inter, sans-serif',
+    color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit',
+  };
+  const textareaStyle = {
+    width: '100%', minHeight: 90, padding: '10px 12px', borderRadius: 10,
+    border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)',
+    color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit', resize: 'vertical',
   };
   const section = { marginBottom: 18 };
   const disabled = !valid || saving;
@@ -66,23 +72,20 @@ export default function TournamentFormSheet({ tournament, onClose }) {
   return (
     <FullScreenForm open={true} title={tournament ? 'Edit Tournament' : 'New Tournament'} onClose={onClose}>
       <div style={section}>
-        <label style={label} htmlFor="t-name">Name</label>
-        <input id="t-name" type="text" value={form.name} onChange={(e) => patch({ name: e.target.value })} placeholder="ZG NY Metro Showdown" style={input} />
+        <Input id="t-name" label="Name" type="text" value={form.name} onChange={(e) => patch({ name: e.target.value })} placeholder="ZG NY Metro Showdown" />
       </div>
       <div style={section}>
         <label style={label} htmlFor="t-circuit">Circuit</label>
-        <select id="t-circuit" value={form.circuit} onChange={(e) => patch({ circuit: e.target.value })} style={input}>
+        <select id="t-circuit" value={form.circuit} onChange={(e) => patch({ circuit: e.target.value })} style={selectStyle}>
           {CIRCUITS.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
       <div style={{ ...section, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
-          <label style={label} htmlFor="t-start">Start date</label>
-          <input id="t-start" type="date" value={form.start_date} onChange={(e) => patch({ start_date: e.target.value })} style={input} />
+          <Input id="t-start" label="Start date" type="date" value={form.start_date} onChange={(e) => patch({ start_date: e.target.value })} />
         </div>
         <div>
-          <label style={label} htmlFor="t-end">End date</label>
-          <input id="t-end" type="date" value={form.end_date} onChange={(e) => patch({ end_date: e.target.value })} style={input} />
+          <Input id="t-end" label="End date" type="date" value={form.end_date} onChange={(e) => patch({ end_date: e.target.value })} />
         </div>
       </div>
       <div style={section}>
@@ -90,28 +93,24 @@ export default function TournamentFormSheet({ tournament, onClose }) {
         <TeamMultiSelect selectedIds={form.teamIds} onChange={(ids) => patch({ teamIds: ids })} />
       </div>
       <div style={section}>
-        <label style={label} htmlFor="t-venue">Primary venue</label>
-        <input id="t-venue" type="text" value={form.primary_venue} onChange={(e) => patch({ primary_venue: e.target.value })} placeholder="The Harvey School" style={input} />
+        <Input id="t-venue" label="Primary venue" type="text" value={form.primary_venue} onChange={(e) => patch({ primary_venue: e.target.value })} placeholder="The Harvey School" />
       </div>
       <div style={section}>
-        <label style={label} htmlFor="t-address">Venue address</label>
-        <input id="t-address" type="text" value={form.primary_venue_address} onChange={(e) => patch({ primary_venue_address: e.target.value })} placeholder="260 Jay St, Katonah, NY" style={input} />
+        <Input id="t-address" label="Venue address" type="text" value={form.primary_venue_address} onChange={(e) => patch({ primary_venue_address: e.target.value })} placeholder="260 Jay St, Katonah, NY" />
       </div>
       <div style={section}>
-        <label style={label} htmlFor="t-url">TourneyMachine URL</label>
-        <input id="t-url" type="url" value={form.tourney_url} onChange={(e) => patch({ tourney_url: e.target.value })} placeholder="https://tourneymachine.com/..." style={input} />
+        <Input id="t-url" label="TourneyMachine URL" type="url" value={form.tourney_url} onChange={(e) => patch({ tourney_url: e.target.value })} placeholder="https://tourneymachine.com/..." />
       </div>
       <div style={section}>
-        <label style={label} htmlFor="t-hotel">Hotel URL (optional)</label>
-        <input id="t-hotel" type="url" value={form.hotel_url} onChange={(e) => patch({ hotel_url: e.target.value })} placeholder="https://book.passkey.com/..." style={input} />
+        <Input id="t-hotel" label="Hotel URL (optional)" type="url" value={form.hotel_url} onChange={(e) => patch({ hotel_url: e.target.value })} placeholder="https://book.passkey.com/..." />
       </div>
       <div style={section}>
         <label style={label} htmlFor="t-notes">Parent survival notes</label>
-        <textarea id="t-notes" value={form.survival_notes} onChange={(e) => patch({ survival_notes: e.target.value })} placeholder="Arrive 15 min early. Cash only at the door. Parking $10." rows={4} style={{ ...input, minHeight: 90, resize: 'vertical' }} />
+        <textarea id="t-notes" value={form.survival_notes} onChange={(e) => patch({ survival_notes: e.target.value })} placeholder="Arrive 15 min early. Cash only at the door. Parking $10." rows={4} style={textareaStyle} />
       </div>
       <div style={section}>
         <label style={label} htmlFor="t-status">Status</label>
-        <select id="t-status" value={form.status} onChange={(e) => patch({ status: e.target.value })} style={input}>
+        <select id="t-status" value={form.status} onChange={(e) => patch({ status: e.target.value })} style={selectStyle}>
           {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
       </div>

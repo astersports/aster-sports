@@ -23,7 +23,7 @@ export default function DutyEditor({ value, onChange }) {
               <button type="button" disabled={(d.slots_needed || 1) <= 1}
                 onClick={() => update(i, { slots_needed: Math.max(1, (d.slots_needed || 1) - 1) })}
                 style={stepBtn}>−</button>
-              <span style={{ minWidth: 20, textAlign: 'center', fontSize: 14, fontWeight: 500 }}>
+              <span style={{ minWidth: 20, textAlign: 'center', fontSize: 15, fontWeight: 500 }}>
                 {d.slots_needed || 1}
               </span>
               <button type="button"
@@ -60,7 +60,7 @@ export default function DutyEditor({ value, onChange }) {
 const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)', display: 'block' };
 const inputStyle = {
   minHeight: 40, borderRadius: 10, border: '1px solid var(--em-border-default)',
-  backgroundColor: 'var(--em-bg-card)', padding: '0 10px', fontSize: 14,
+  backgroundColor: 'var(--em-bg-card)', padding: '0 10px', fontSize: 15,
   color: 'var(--em-text-primary)',
 };
 
@@ -68,5 +68,5 @@ const stepBtn = {
   width: 32, height: 32, borderRadius: 8,
   border: '1px solid var(--em-border-default)',
   backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
-  fontSize: 16, fontWeight: 500, cursor: 'pointer',
+  fontSize: 17, fontWeight: 500, cursor: 'pointer',
 };

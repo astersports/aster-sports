@@ -37,7 +37,7 @@ export default function EventDutiesTab({ eventId }) {
                   padding: '12px 14px',
                   borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)',
                 }}>
-                  <div style={{ fontSize: 14, color: claimed ? 'var(--em-text-primary)' : 'var(--em-text-tertiary)' }}>
+                  <div style={{ fontSize: 15, color: claimed ? 'var(--em-text-primary)' : 'var(--em-text-tertiary)' }}>
                     {claimed ? (slot.claimed_by_name || 'Claimed') : 'Open'}
                   </div>
                   {!claimed && (
@@ -63,7 +63,7 @@ export default function EventDutiesTab({ eventId }) {
 }
 
 function Empty({ text }) {
-  return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 14 }}>{text}</div>;
+  return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 15 }}>{text}</div>;
 }
 
 const btnStyle = (bg, color, bordered) => ({

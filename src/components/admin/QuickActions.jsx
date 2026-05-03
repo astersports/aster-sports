@@ -40,7 +40,7 @@ export default function QuickActions() {
               border: '1px solid var(--em-border-default)',
               boxShadow: 'var(--em-shadow-sm)',
               color: 'var(--em-text-primary)',
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: 500,
               transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
             }}

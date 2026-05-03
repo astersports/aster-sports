@@ -83,7 +83,7 @@ export default function AdminHomePage() {
             background: 'none',
             border: 'none',
             color: 'var(--em-danger)',
-            fontSize: 14,
+            fontSize: 15,
             fontWeight: 500,
           }}
         >

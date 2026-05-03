@@ -26,7 +26,7 @@ export default function RosterControls({ search, setSearch, sortBy, setSortBy })
             background: 'none',
             border: 'none',
             outline: 'none',
-            fontSize: 14,
+            fontSize: 15,
             color: 'var(--em-text-primary)',
             marginLeft: 8,
             minHeight: 40,
@@ -47,7 +47,7 @@ export default function RosterControls({ search, setSearch, sortBy, setSortBy })
               minWidth: 36, minHeight: 40, border: 'none',
               backgroundColor: sortBy === opt.key ? 'var(--em-accent)' : 'var(--em-bg-card)',
               color: sortBy === opt.key ? 'var(--em-text-inverse)' : 'var(--em-text-secondary)',
-              fontSize: 12, fontWeight: 600,
+              fontSize: 13, fontWeight: 600,
             }}
           >
             {opt.label}

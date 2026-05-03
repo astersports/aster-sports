@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
         >
           Reset password
         </h1>
-        <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, marginBottom: 20 }}>
+        <p style={{ color: 'var(--em-text-secondary)', fontSize: 15, marginBottom: 20 }}>
           Password reset is coming soon. Ask an admin to send you a new invite.
         </p>
         <Button onClick={() => navigate('/login')}>

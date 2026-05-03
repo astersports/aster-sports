@@ -89,7 +89,7 @@ export default function DensityToggle({ sectionKey = 'default' }) {
           backgroundColor: 'var(--em-bg-secondary)',
           border: '1px solid var(--em-border-subtle)',
           color: 'var(--em-text-tertiary)',
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 600,
           letterSpacing: '0.05em',
         }}

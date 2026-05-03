@@ -58,7 +58,7 @@ export default function StepDetails({ eventType, data, onChange }) {
 
       <label style={fieldStyle}>
         <span style={labelStyle}>Coach notes</span>
-        <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: -4 }}>Not visible to parents</span>
+        <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: -4 }}>Not visible to parents</span>
         <textarea value={data.coachNotes || ''} onChange={(e) => set('coachNotes', e.target.value)}
           placeholder="Internal notes" rows={2}
           style={{ width: '100%', minHeight: 60, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, resize: 'vertical' }} />
@@ -88,7 +88,7 @@ function Toggle({ label, checked, onChange }) {
         transition: 'background-color 0.2s', display: 'flex', alignItems: 'center',
       }}>
         <div style={{
-          width: 24, height: 24, borderRadius: 12, backgroundColor: 'var(--em-text-inverse)',
+          width: 24, height: 24, borderRadius: 10, backgroundColor: 'var(--em-text-inverse)',
           transform: checked ? 'translateX(20px)' : 'translateX(0)',
           transition: 'transform 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
         }} />

@@ -31,7 +31,7 @@ export function ToastProvider({ children }) {
               borderRadius: 10,
               backgroundColor: toast.variant === 'error' ? 'var(--em-danger)' : toast.variant === 'success' ? 'var(--em-success)' : 'var(--em-info)',
               color: 'var(--em-text-inverse)',
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: 500,
               boxShadow: 'var(--em-shadow-lg)',
               maxWidth: 400,
@@ -46,7 +46,7 @@ export function ToastProvider({ children }) {
                 style={{
                   background: 'none', border: 'none',
                   color: 'var(--em-text-inverse)',
-                  fontSize: 14, fontWeight: 700,
+                  fontSize: 15, fontWeight: 700,
                   textDecoration: 'underline',
                   padding: '4px 8px',
                   minHeight: 36,
@@ -61,7 +61,7 @@ export function ToastProvider({ children }) {
               style={{
                 background: 'none', border: 'none',
                 color: 'rgba(255,255,255,0.7)',
-                fontSize: 18, padding: '4px 4px', minHeight: 36,
+                fontSize: 17, padding: '4px 4px', minHeight: 36,
               }}
               aria-label="Dismiss"
             >

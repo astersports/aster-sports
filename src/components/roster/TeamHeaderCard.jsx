@@ -15,10 +15,10 @@ function buildMetaLine(team, summary) {
 function Cell({ value, label }) {
   return (
     <div style={{ flex: 1, textAlign: 'center' }}>
-      <div className="font-bold" style={{ fontSize: 18, color: 'var(--em-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+      <div className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
         {value}
       </div>
-      <div style={{ fontSize: 10, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>
+      <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>
         {label}
       </div>
     </div>

@@ -10,7 +10,7 @@ import FullScreenForm from '../shared/FullScreenForm';
 import Input from '../shared/Input';
 import Button from '../shared/Button';
 
-const labelStyle = { fontSize: 12, fontWeight: 600, color: 'var(--em-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'block' };
+const labelStyle = { fontSize: 13, fontWeight: 600, color: 'var(--em-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'block' };
 const selectStyle = { width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' };
 
 const pad = (n) => String(n).padStart(2, '0');

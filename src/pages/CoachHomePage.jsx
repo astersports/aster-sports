@@ -89,7 +89,7 @@ export default function CoachHomePage() {
             background: 'none',
             border: 'none',
             color: 'var(--em-danger)',
-            fontSize: 14,
+            fontSize: 15,
             fontWeight: 500,
           }}
         >

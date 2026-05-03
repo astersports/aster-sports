@@ -90,7 +90,7 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
                 <Link
                   to={s.to}
                   className="flex items-center gap-3 sf-press"
-                  style={{ minHeight: 44, color: 'var(--em-text-primary)', fontSize: 14 }}
+                  style={{ minHeight: 44, color: 'var(--em-text-primary)', fontSize: 15 }}
                 >
                   {s.done ? (
                     <CheckCircle2 size={20} strokeWidth={1.75} color="var(--em-success)" />

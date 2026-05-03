@@ -29,7 +29,7 @@ export default function LocationsPage() {
   return (
     <div style={{ padding: 16, paddingBottom: 80 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0 }}>
           Locations
         </h1>
         {isStaff && (
@@ -48,7 +48,7 @@ export default function LocationsPage() {
       />
 
       {loading && locations.length === 0 && (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-secondary)', fontSize: 14 }}>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-secondary)', fontSize: 15 }}>
           Loading…
         </div>
       )}

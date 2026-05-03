@@ -38,7 +38,7 @@ export default function ConfirmDialog({
         className="sf-fade-in"
         style={{
           backgroundColor: 'var(--em-bg-card)',
-          borderRadius: 14,
+          borderRadius: 16,
           padding: 20,
           width: '100%',
           maxWidth: 360,

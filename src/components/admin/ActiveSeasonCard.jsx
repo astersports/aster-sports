@@ -30,7 +30,7 @@ export default function ActiveSeasonCard({ season }) {
           boxShadow: 'var(--em-shadow-sm)',
         }}
       >
-        <div style={{ color: 'var(--em-text-secondary)', fontSize: 14, marginBottom: 8 }}>
+        <div style={{ color: 'var(--em-text-secondary)', fontSize: 15, marginBottom: 8 }}>
           No active season
         </div>
         <Link
@@ -38,7 +38,7 @@ export default function ActiveSeasonCard({ season }) {
           className="inline-flex items-center sf-press font-semibold"
           style={{
             minHeight: 44, padding: '0 16px', borderRadius: 10,
-            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14,
+            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15,
           }}
         >
           Create your first season

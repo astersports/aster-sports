@@ -29,7 +29,7 @@ export default function StepTeam({ orgId, value, onSelect }) {
               onClick={() => onSelect(t.id)}
               className="sf-press"
               style={{
-                minHeight: 56, borderRadius: 12,
+                minHeight: 56, borderRadius: 10,
                 border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
                 backgroundColor: sel ? 'var(--em-bg-card-hover)' : 'var(--em-bg-card)',
                 padding: '0 16px', display: 'flex', alignItems: 'center', gap: 12,

@@ -48,7 +48,7 @@ export default function TeamMultiSelect({ selectedIds = [], onChange }) {
               width: '100%', minHeight: 44, padding: '10px 12px 10px 36px', borderRadius: 10,
               border: '1.5px solid var(--em-border-default)',
               backgroundColor: 'var(--em-bg-tertiary)',
-              color: 'var(--em-text-primary)', fontSize: 14, fontFamily: 'Inter, sans-serif',
+              color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'Inter, sans-serif',
             }}
           />
         </div>
@@ -69,7 +69,7 @@ export default function TeamMultiSelect({ selectedIds = [], onChange }) {
                 border: `1.5px solid ${selected ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
                 backgroundColor: selected ? 'var(--em-accent-soft)' : 'var(--em-bg-card)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-                fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)',
+                fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)',
                 cursor: 'pointer', width: '100%',
               }}
             >

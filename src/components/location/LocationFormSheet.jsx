@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import FullScreenForm from '../shared/FullScreenForm';
+import Input from '../shared/Input';
 import { useLocations } from '../../hooks/useLocations';
 import { useToast } from '../../context/useToast';
 import { geocodeAddress } from '../../lib/geocode';
@@ -39,10 +40,10 @@ export default function LocationFormSheet({ location, onClose }) {
   };
 
   const label = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)', marginBottom: 6, display: 'block' };
-  const input = {
-    width: '100%', minHeight: 44, padding: '10px 12px', borderRadius: 10,
+  const textareaStyle = {
+    width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 10,
     border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)',
-    color: 'var(--em-text-primary)', fontSize: 14, fontFamily: 'Inter, sans-serif',
+    color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit', resize: 'vertical',
   };
   const section = { marginBottom: 18 };
   const footerBtn = (primary) => ({
@@ -50,29 +51,27 @@ export default function LocationFormSheet({ location, onClose }) {
     border: primary ? 'none' : '1.5px solid var(--em-border-default)',
     backgroundColor: primary ? 'var(--em-accent)' : 'var(--em-bg-card)',
     color: primary ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
-    fontSize: 14, fontWeight: 600, cursor: 'pointer',
+    fontSize: 15, fontWeight: 600, cursor: 'pointer',
   });
 
   return (
     <FullScreenForm open={true} onClose={onClose} title={location ? 'Edit Location' : 'New Location'}>
       <div style={section}>
-        <label style={label} htmlFor="l-name">Name</label>
-        <input id="l-name" type="text" value={form.name} onChange={(e) => patch({ name: e.target.value })} placeholder="Westchester Community College" style={input} />
+        <Input id="l-name" label="Name" type="text" value={form.name} onChange={(e) => patch({ name: e.target.value })} placeholder="Westchester Community College" />
       </div>
       <div style={section}>
-        <label style={label} htmlFor="l-addr">Address</label>
-        <input id="l-addr" type="text" value={form.address} onChange={(e) => patch({ address: e.target.value })} placeholder="75 Grasslands Rd, Valhalla, NY 10595" style={input} />
+        <Input id="l-addr" label="Address" type="text" value={form.address} onChange={(e) => patch({ address: e.target.value })} placeholder="75 Grasslands Rd, Valhalla, NY 10595" />
         <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 4 }}>
           Coordinates auto-fetched on save.
         </div>
       </div>
       <div style={section}>
         <label style={label} htmlFor="l-parking">Parking notes</label>
-        <textarea id="l-parking" value={form.parking_notes} onChange={(e) => patch({ parking_notes: e.target.value })} placeholder="Lot opens 30 min before. $5 cash only." rows={3} style={{ ...input, minHeight: 80, resize: 'vertical' }} />
+        <textarea id="l-parking" value={form.parking_notes} onChange={(e) => patch({ parking_notes: e.target.value })} placeholder="Lot opens 30 min before. $5 cash only." rows={3} style={textareaStyle} />
       </div>
       <div style={section}>
         <label style={label} htmlFor="l-notes">General notes</label>
-        <textarea id="l-notes" value={form.notes} onChange={(e) => patch({ notes: e.target.value })} placeholder="Concessions on site. Bleacher seating only." rows={3} style={{ ...input, minHeight: 80, resize: 'vertical' }} />
+        <textarea id="l-notes" value={form.notes} onChange={(e) => patch({ notes: e.target.value })} placeholder="Concessions on site. Bleacher seating only." rows={3} style={textareaStyle} />
       </div>
 
       <div style={{

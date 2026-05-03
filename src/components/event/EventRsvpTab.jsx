@@ -7,10 +7,10 @@ import RsvpPlayerRow from '../rsvp/RsvpPlayerRow';
 // the useRsvps hook and pass in the resulting data.
 export default function EventRsvpTab({ roster, rsvps, rsvpMap, teamColor, onSetRsvp, onSaveNote, loading }) {
   if (loading) {
-    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 14 }}>Loading roster...</div>;
+    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 15 }}>Loading roster...</div>;
   }
   if (roster.length === 0) {
-    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 14 }}>No players on this team yet.</div>;
+    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 15 }}>No players on this team yet.</div>;
   }
 
   const statusOrder = { going: 0, maybe: 1, not_going: 2 };

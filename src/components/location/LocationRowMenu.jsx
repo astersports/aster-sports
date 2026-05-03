@@ -32,17 +32,17 @@ export default function LocationRowMenu({ showArchived = false, onEdit, onArchiv
             minWidth: 140, overflow: 'hidden',
           }}>
             <button type="button" onClick={(e) => { stop(e); setOpen(false); onEdit(); }} className="sf-press"
-              style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--em-text-primary)', cursor: 'pointer' }}>
+              style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--em-text-primary)', cursor: 'pointer' }}>
               <Edit2 size={14} strokeWidth={1.75} /> Edit
             </button>
             {showArchived ? (
               <button type="button" onClick={(e) => { stop(e); setOpen(false); onUnarchive && onUnarchive(); }} className="sf-press"
-                style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--em-accent)', cursor: 'pointer' }}>
+                style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--em-accent)', cursor: 'pointer' }}>
                 <RotateCcw size={14} strokeWidth={1.75} /> Unarchive
               </button>
             ) : (
               <button type="button" onClick={(e) => { stop(e); setOpen(false); onArchive(); }} className="sf-press"
-                style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--em-danger)', cursor: 'pointer' }}>
+                style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--em-danger)', cursor: 'pointer' }}>
                 <Archive size={14} strokeWidth={1.75} /> Archive
               </button>
             )}

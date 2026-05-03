@@ -73,12 +73,12 @@ export default function UpcomingEvents({ teamId }) {
                 }}
               >
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div className="font-semibold" style={{ fontSize: 14, color: 'var(--em-text-primary)' }}>{label}</div>
-                  <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
+                  <div className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{label}</div>
+                  <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
                     {dateStr}{location ? ` · ${location}` : ''}
                   </div>
                 </div>
-                <div className="font-semibold" style={{ fontSize: 14, color: 'var(--em-text-primary)', marginLeft: 12, flexShrink: 0 }}>
+                <div className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginLeft: 12, flexShrink: 0 }}>
                   {timeStr}
                 </div>
               </div>
@@ -93,7 +93,7 @@ export default function UpcomingEvents({ teamId }) {
         style={{
           marginTop: 8, minHeight: 44, borderRadius: 10,
           border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
-          color: 'var(--em-accent)', fontSize: 14, fontWeight: 500,
+          color: 'var(--em-accent)', fontSize: 15, fontWeight: 500,
         }}
       >
         View full schedule →

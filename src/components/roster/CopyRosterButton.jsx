@@ -39,7 +39,7 @@ export default function CopyRosterButton({ team, sortedPlayers }) {
         border: '1px solid var(--em-border-default)',
         backgroundColor: 'var(--em-bg-card)',
         color: 'var(--em-text-secondary)',
-        fontSize: 12, fontWeight: 500,
+        fontSize: 13, fontWeight: 500,
       }}
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">

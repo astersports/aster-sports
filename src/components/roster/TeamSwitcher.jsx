@@ -15,7 +15,7 @@ export default function TeamSwitcher({ programs, teamId, navigate }) {
             minHeight: 32,
             padding: '0 12px',
             borderRadius: 999,
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: p.id === teamId ? 600 : 400,
             border: `2px solid ${p.team_color || 'var(--em-border-default)'}`,
             backgroundColor: p.id === teamId ? (p.team_color || 'var(--em-accent)') : 'var(--em-bg-card)',

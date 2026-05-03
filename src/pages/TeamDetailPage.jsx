@@ -92,7 +92,7 @@ export default function TeamDetailPage() {
                 className="flex items-center gap-1 font-semibold sf-press"
                 style={{
                   minHeight: 44, padding: '0 14px', borderRadius: 10,
-                  backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14,
+                  backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15,
                 }}
               >
                 <Plus size={18} strokeWidth={1.75} aria-hidden="true" /> Add Player

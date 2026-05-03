@@ -100,7 +100,7 @@ export default function StepWhen({ data, onChange, orgId }) {
             onChange={(e) => setCustomEndTime(e.target.value)} step="300"
             style={{ ...inputStyle, marginTop: 8 }} />
         ) : (
-          data.endTime && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>Ends at {data.endTime}</span>
+          data.endTime && <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>Ends at {data.endTime}</span>
         )}
       </div>
 
@@ -145,5 +145,5 @@ const chipStyle = (sel) => ({
   border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
   backgroundColor: sel ? 'var(--em-accent)' : 'var(--em-bg-card)',
   color: sel ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
-  fontSize: 14, fontWeight: 500, padding: '0 12px',
+  fontSize: 15, fontWeight: 500, padding: '0 12px',
 });

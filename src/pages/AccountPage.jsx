@@ -34,7 +34,7 @@ export default function AccountPage() {
       </button>
 
       <section style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', boxShadow: 'var(--em-shadow-sm)', padding: 16, marginBottom: 16 }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--em-text-primary)' }}>{displayName}</div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)' }}>{displayName}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
           <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>
             {ROLE_LABELS[role] || 'User'}
@@ -49,7 +49,7 @@ export default function AccountPage() {
           <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
             {myChildren.map((c, i) => (
               <div key={c.playerId} style={{ padding: '12px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
-                <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>{c.firstName} {c.lastName}</span>
+                <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>{c.firstName} {c.lastName}</span>
                 <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{teamName(c.teamId)}</span>
               </div>
             ))}
@@ -65,11 +65,11 @@ export default function AccountPage() {
       </section>
 
       <button type="button" onClick={signOut} className="sf-press"
-        style={{ width: '100%', minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'transparent', color: 'var(--em-danger)', fontSize: 14, fontWeight: 500, marginBottom: 24 }}>
+        style={{ width: '100%', minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'transparent', color: 'var(--em-danger)', fontSize: 15, fontWeight: 500, marginBottom: 24 }}>
         Sign out
       </button>
 
-      <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--em-text-tertiary)' }}>{VERSION}</div>
+      <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--em-text-tertiary)' }}>{VERSION}</div>
     </div>
   );
 }

@@ -20,8 +20,8 @@ export default function ParentHomeTeamCard({ team, summary, loading, onClick }) 
     >
       <div style={{ width: 3, flexShrink: 0, backgroundColor: team.team_color || 'var(--em-neutral)' }} />
       <div style={{ flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--em-text-primary)' }}>{team.name}</span>
-        <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{recordLine}</span>
+        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)' }}>{team.name}</span>
+        <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{recordLine}</span>
       </div>
     </button>
   );

@@ -40,7 +40,7 @@ export default function TournamentRowMenu({ onEdit, onArchive }) {
               type="button"
               onClick={(e) => { stop(e); setOpen(false); onEdit(); }}
               className="sf-press"
-              style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--em-text-primary)', cursor: 'pointer' }}
+              style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--em-text-primary)', cursor: 'pointer' }}
             >
               <Edit2 size={14} strokeWidth={1.75} /> Edit
             </button>
@@ -48,7 +48,7 @@ export default function TournamentRowMenu({ onEdit, onArchive }) {
               type="button"
               onClick={(e) => { stop(e); setOpen(false); onArchive(); }}
               className="sf-press"
-              style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--em-danger)', cursor: 'pointer' }}
+              style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--em-danger)', cursor: 'pointer' }}
             >
               <Archive size={14} strokeWidth={1.75} /> Archive
             </button>
