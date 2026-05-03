@@ -1,50 +1,19 @@
 import { memo } from 'react';
+import Chip from '../shared/Chip';
 
-// Horizontal chip row for filtering a multi-kid parent's event stream
-// by kid. Returns null when the parent has fewer than 2 kids — single-kid
-// parents never see these chips. "All" is first, then one chip per kid
-// in myChildren order. Single-select: tapping any chip sets activeFilter
-// to that playerId; tapping "All" clears it.
 function ChildFilterChips({ kids, activeFilter, onChange }) {
   if (!kids || kids.length < 2) return null;
 
-  const chipStyle = (active) => ({
-    flexShrink: 0,
-    minHeight: 32,
-    padding: '0 12px',
-    borderRadius: 999,
-    border: `1.5px solid ${active ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
-    backgroundColor: active ? 'var(--em-accent-soft)' : 'var(--em-bg-card)',
-    color: active ? 'var(--em-accent)' : 'var(--em-text-primary)',
-    fontSize: 12,
-    fontWeight: active ? 600 : 400,
-    whiteSpace: 'nowrap',
-    fontFamily: 'inherit',
-  });
-
   return (
-    <div
-      className="flex gap-2 overflow-x-auto sf-no-scrollbar"
-      style={{ paddingBottom: 6 }}
-    >
-      <button
-        type="button"
-        onClick={() => onChange(null)}
-        className="sf-press"
-        style={chipStyle(activeFilter === null)}
-      >
-        All
-      </button>
+    <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 6 }}>
+      <Chip label="All" active={activeFilter === null} onClick={() => onChange(null)} />
       {kids.map((kid) => (
-        <button
+        <Chip
           key={kid.playerId}
-          type="button"
+          label={kid.firstName}
+          active={activeFilter === kid.playerId}
           onClick={() => onChange(kid.playerId)}
-          className="sf-press"
-          style={chipStyle(activeFilter === kid.playerId)}
-        >
-          {kid.firstName}
-        </button>
+        />
       ))}
     </div>
   );
