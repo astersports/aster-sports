@@ -9,7 +9,6 @@ lerna-debug.log*
 
 node_modules
 dist
-.env
 dist-ssr
 *.local
 
@@ -23,12 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Supabase CLI local scratch (linked-project refs, version cache)
-supabase/.temp/
-
-# Persistent untracked items per Wave 2 IA Map v1.1 Decision 103.
-# These live alongside the repo but are not part of the canonical project state.
-# Enforces the explicit-add `git add` discipline by file rather than by hand.
-rides-audit-source.zip
-WAVE_3A_PROMPT_v2.md
+.env
+.env.local
+.mcp.json
