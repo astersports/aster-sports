@@ -3,13 +3,16 @@ import { TYPE_OPTIONS } from '../../lib/constants';
 export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedType, onSelectType, showCancelled, onToggleCancelled, hideTeamRow = false }) {
   const uniqueTeams = [];
   const seen = new Set();
+  const activeTypes = new Set();
   (teams || []).forEach((a) => {
+    if (a.event_type) activeTypes.add(a.event_type);
     if (a.team_id && !seen.has(a.team_id) && a.teams) {
       seen.add(a.team_id);
       uniqueTeams.push({ id: a.team_id, name: a.teams.name, team_color: a.teams.team_color, sort_order: a.teams.sort_order });
     }
   });
   uniqueTeams.sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
+  const visibleTypes = TYPE_OPTIONS.filter((opt) => opt.key === null || activeTypes.has(opt.key));
 
   return (
     <div style={{ padding: '8px 0' }}>
@@ -32,7 +35,7 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
       </div>
       )}
       <div className="flex gap-2 overflow-x-auto sf-no-scrollbar">
-        {TYPE_OPTIONS.map((opt) => (
+        {visibleTypes.map((opt) => (
           <Chip
             key={opt.key || 'all'}
             label={opt.label}
