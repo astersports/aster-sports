@@ -1,18 +1,12 @@
-// src/pages/CoachHomePage.jsx
-// Coach home: greeting + NEXT UP (NextUpCard) + MY TEAMS + sign-out.
-
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
-import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
-import { useEventRideCounts } from '../hooks/useEventRideCounts';
-import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
 import { useNow } from '../hooks/useNow';
 import AdminGreeting from '../components/admin/AdminGreeting';
 import SectionShell from '../components/home/SectionShell';
-import NextUpCard from '../components/schedule/NextUpCard';
+import DateGroupedList from '../components/schedule/DateGroupedList';
 import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
 
 export default function CoachHomePage() {
@@ -21,10 +15,12 @@ export default function CoachHomePage() {
   const navigate = useNavigate();
   useRefetchOnVisible(refetch);
   const now = useNow();
-  const rsvpCounts = useEventRsvpCounts(activities);
-  const rideCounts = useEventRideCounts(activities);
-  const dutyCounts = useEventDutyCounts(activities);
-  const nextEvent = useMemo(() => activities.find((a) => a.start_at && a.status !== 'cancelled' && new Date(a.start_at).getTime() >= now) || null, [activities, now]);
+  const weekEnd = useMemo(() => now + 7 * 24 * 60 * 60 * 1000, [now]);
+  const thisWeek = useMemo(() => activities.filter((a) => {
+    if (!a.start_at || a.status === 'cancelled') return false;
+    const t = new Date(a.start_at).getTime();
+    return t >= now - 48 * 60 * 60 * 1000 && t <= weekEnd;
+  }).sort((a, b) => new Date(a.start_at) - new Date(b.start_at)), [activities, now, weekEnd]);
 
   const myTeams = useMemo(() => {
     const map = new Map();
@@ -50,15 +46,15 @@ export default function CoachHomePage() {
       <AdminGreeting user={user} />
 
       <SectionShell
-        title="NEXT UP"
+        title="THIS WEEK"
         sectionKey="coach-now"
         loading={loading}
         error={error}
         skeletonVariant="card"
-        skeletonRows={1}
-        empty={!nextEvent ? { heading: 'All caught up', message: 'No upcoming events scheduled.' } : null}
+        skeletonRows={2}
+        empty={thisWeek.length === 0 ? { heading: 'All caught up', message: 'No events in the next 7 days.' } : null}
       >
-        {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} dutyCount={dutyCounts[nextEvent.id]} onRefresh={refetch} />}
+        {thisWeek.length > 0 && <DateGroupedList events={thisWeek} />}
       </SectionShell>
 
       <SectionShell

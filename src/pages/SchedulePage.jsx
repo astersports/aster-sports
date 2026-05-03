@@ -6,17 +6,13 @@ import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import FilterBar from '../components/schedule/FilterBar';
-import NextUpCard from '../components/schedule/NextUpCard';
 import DateGroupedList from '../components/schedule/DateGroupedList';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
-import ScheduleShowMoreButton from '../components/schedule/ScheduleShowMoreButton';
 import ScheduleFab from '../components/schedule/ScheduleFab';
 import ViewToggle from '../components/schedule/ViewToggle';
 import GamesView from '../components/schedule/GamesView';
-import DensityToggle from '../components/home/DensityToggle';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
-import { useDensity } from '../hooks/useDensity';
 import { isStaff } from '../lib/permissions';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
@@ -29,11 +25,9 @@ export default function SchedulePage() {
   const [selectedTeam, setSelectedTeam] = useState(() => new URLSearchParams(window.location.search).get('team'));
   const [selectedType, setSelectedType] = useState(null);
   const [activeKidFilter, setActiveKidFilter] = useState(null);
-  const [showAll, setShowAll] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);
   const [viewMode, setViewMode] = useState('all');
-  const { density: nextUpDensity } = useDensity('schedule-now', 'minimal');
 
   // tick increments every 60s so the upcoming / thisWeek / remaining
   // memos re-evaluate against a fresh `now`. Without this, a user who
@@ -68,10 +62,8 @@ export default function SchedulePage() {
 
   const lookbackMs = isStaff(role) ? 48 * 60 * 60 * 1000 : 0;
   const cutoff = new Date(now.getTime() - lookbackMs);
-  const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= cutoff), [filtered, tick, cutoff]);
-  const nextEvent = upcoming[0] || null;
-  const thisWeek = useMemo(() => upcoming.filter((a) => a !== nextEvent && new Date(a.start_at) <= weekEnd), [upcoming, nextEvent, tick, weekEnd]);
-  const remaining = useMemo(() => upcoming.filter((a) => new Date(a.start_at) > weekEnd), [upcoming, tick, weekEnd]);
+  const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= cutoff && new Date(a.start_at) <= weekEnd), [filtered, tick, cutoff, weekEnd]);
+  const remaining = useMemo(() => filtered.filter((a) => new Date(a.start_at) > weekEnd), [filtered, tick, weekEnd]);
 
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" rows={2} /></div>;
 
@@ -90,32 +82,17 @@ export default function SchedulePage() {
           <>
             <ChildFilterChips kids={myChildren} activeFilter={activeKidFilter} onChange={setActiveKidFilter} />
             <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={myChildren?.length >= 2} />
-            {nextEvent && (
-              <div style={{ marginTop: 8, marginBottom: 8 }}>
-                <div className="flex items-center justify-between" style={{ marginBottom: 4 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' }}>NEXT UP</div>
-                  <DensityToggle sectionKey="schedule-now" />
-                </div>
-                <NextUpCard event={nextEvent} density={nextUpDensity} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} dutyCount={dutyCounts[nextEvent.id]} onRefresh={refetch} />
-              </div>
-            )}
-            {filtered.length === 0 ? (
-              <TextEmptyState heading="No events found" message="Try changing your filters or check back later." />
-            ) : thisWeek.length > 0 ? (
-              <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>This week</div>
-                <DateGroupedList events={thisWeek} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} />
-              </div>
+            {upcoming.length === 0 ? (
+              <TextEmptyState heading="No events this week" message="Check back later or tap + to create one." />
             ) : (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--em-text-tertiary)' }}>
-                <div style={{ fontSize: 15, fontWeight: 500 }}>No events this week</div>
-                <div style={{ fontSize: 13, marginTop: 4 }}>Tap + to create one</div>
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Next 7 days</div>
+                <DateGroupedList events={upcoming} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} />
               </div>
             )}
-            {!showAll && <ScheduleShowMoreButton remaining={remaining.length} onClick={() => setShowAll(true)} />}
-            {showAll && remaining.length > 0 && (
+            {remaining.length > 0 && (
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Upcoming</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Later</div>
                 <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} />
               </div>
             )}

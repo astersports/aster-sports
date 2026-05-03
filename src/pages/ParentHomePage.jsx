@@ -11,7 +11,6 @@ import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import ThisWeekRow from '../components/schedule/ThisWeekRow';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import MyTeamsStrip from '../components/home/MyTeamsStrip';
-import NowSectionParent from '../components/home/NowSectionParent';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
@@ -20,13 +19,13 @@ import { firstNameFrom, greetingFor } from '../lib/greetings';
 
 export default function ParentHomePage() {
   const { user, guardianFirstName, myChildren, orgId } = useAuth();
-  const { activities, loading, error, refetch } = useActivities();
+  const { activities, loading, refetch } = useActivities();
   const { byTeamId: recordsByTeam, loading: recordsLoading } = useOrgTeamRecords(orgId);
   const navigate = useNavigate();
   const [activeKidFilter, setActiveKidFilter] = useState(null);
   const name = guardianFirstName ? guardianFirstName.charAt(0).toUpperCase() + guardianFirstName.slice(1) : firstNameFrom(user);
   usePrefetchChildRsvps(activities, myChildren);
-  const now = useNow(), cutoff = now + 48 * 60 * 60 * 1000;
+  const now = useNow(), cutoff = now + 7 * 24 * 60 * 60 * 1000;
   useRefetchOnVisible(refetch);
 
   const myTeams = useMemo(() => {
@@ -43,38 +42,27 @@ export default function ParentHomePage() {
     return [...map.values()].sort((x, y) => x.sort_order - y.sort_order);
   }, [activities]);
 
-  const nextEventOverall = activities.find((a) => a.start_at && a.status !== 'cancelled' && new Date(a.start_at).getTime() >= now) || null;
-  const nowSectionIds = useMemo(() => {
-    const ids = new Set();
-    const sorted = [...activities].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
-    const seen = new Set();
-    for (const a of sorted) {
-      if (!a.team_id || a.status === 'cancelled' || new Date(a.start_at).getTime() < now) continue;
-      if (!seen.has(a.team_id)) { seen.add(a.team_id); ids.add(a.id); }
-    }
-    return ids;
-  }, [activities, now]);
   const todayStart = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }, []);
-  const next48h = useMemo(() => activities
+  const next7days = useMemo(() => activities
     .filter((a) => {
-      if (!a.start_at || nowSectionIds.has(a.id)) return false;
+      if (!a.start_at) return false;
       const startT = new Date(a.start_at).getTime();
-      return (a.end_at ? new Date(a.end_at).getTime() : startT + 90 * 60 * 1000) > now && startT < cutoff && a.status !== 'cancelled';
+      return startT >= now && startT < cutoff && a.status !== 'cancelled';
     })
     .sort((a, b) => new Date(a.start_at) - new Date(b.start_at)),
-    [activities, now, cutoff, nowSectionIds]);
+    [activities, now, cutoff]);
 
-  const filteredNext48h = useMemo(() => {
-    if (!activeKidFilter) return next48h;
+  const filteredNext7 = useMemo(() => {
+    if (!activeKidFilter) return next7days;
     const kid = (myChildren || []).find((k) => k.playerId === activeKidFilter);
     const teamId = kid?.teamId ?? null;
-    if (!teamId) return next48h;
-    return next48h.filter((e) => e.team_id === teamId);
-  }, [next48h, activeKidFilter, myChildren]);
+    if (!teamId) return next7days;
+    return next7days.filter((e) => e.team_id === teamId);
+  }, [next7days, activeKidFilter, myChildren]);
 
-  const rideCounts = useEventRideCounts(filteredNext48h);
-  const dutyCounts = useEventDutyCounts(filteredNext48h);
-  const conflictsByEvent = useMemo(() => detectConflicts(filteredNext48h), [filteredNext48h]);
+  const rideCounts = useEventRideCounts(filteredNext7);
+  const dutyCounts = useEventDutyCounts(filteredNext7);
+  const conflictsByEvent = useMemo(() => detectConflicts(filteredNext7), [filteredNext7]);
 
   const [collapsedDates, setCollapsedDates] = useState(() => new Map());
   const dayMs = 24 * 60 * 60 * 1000;
@@ -95,8 +83,6 @@ export default function ParentHomePage() {
         <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>{name}</h1>
       </section>
 
-      <NowSectionParent activities={activities} loading={loading} error={error} onRetry={refetch} />
-
       <MyTeamsStrip
         teams={myTeams}
         byTeamId={recordsByTeam}
@@ -111,13 +97,13 @@ export default function ParentHomePage() {
       </button>
 
       <section>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>NEXT 48 HOURS</div>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>NEXT 7 DAYS</div>
         <ChildFilterChips
           kids={myChildren}
           activeFilter={activeKidFilter}
           onChange={setActiveKidFilter}
         />
-        {filteredNext48h.length > 0 ? groupByDate(filteredNext48h).map(([date, evts]) => {
+        {filteredNext7.length > 0 ? groupByDate(filteredNext7).map(([date, evts]) => {
           const collapsed = isCollapsed(date);
           return (
             <div key={date} style={{ marginTop: 12 }}>
@@ -140,7 +126,7 @@ export default function ParentHomePage() {
             </div>
           );
         }) : (
-          <TextEmptyState heading="Nothing in the next 48 hours" message={nextEventOverall ? `Your next event is ${new Date(nextEventOverall.start_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}` : 'No upcoming events scheduled'} />
+          <TextEmptyState heading="Nothing this week" message="No upcoming events in the next 7 days." />
         )}
       </section>
     </div>
