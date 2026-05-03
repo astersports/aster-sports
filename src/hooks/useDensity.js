@@ -10,7 +10,7 @@ const FALLBACK = 'medium';
  * Per-section density hook. Reads from user_preferences.card_density JSONB.
  * Resolution: card_density[sectionKey] -> card_density.default -> 'medium'.
  */
-export function useDensity(sectionKey) {
+export function useDensity(sectionKey, defaultDensity = FALLBACK) {
   const { preferences, loading, mergePreferenceJson } = usePreferences();
 
   const density = useMemo(() => {
@@ -20,8 +20,8 @@ export function useDensity(sectionKey) {
     if (VALID.includes(sectionValue)) return sectionValue;
     const defaultValue = map.default;
     if (VALID.includes(defaultValue)) return defaultValue;
-    return FALLBACK;
-  }, [preferences, sectionKey]);
+    return defaultDensity;
+  }, [preferences, sectionKey, defaultDensity]);
 
   const setDensity = useCallback(
     async (next) => {

@@ -13,7 +13,9 @@ import ScheduleShowMoreButton from '../components/schedule/ScheduleShowMoreButto
 import ScheduleFab from '../components/schedule/ScheduleFab';
 import ViewToggle from '../components/schedule/ViewToggle';
 import GamesView from '../components/schedule/GamesView';
+import DensityToggle from '../components/home/DensityToggle';
 import TextEmptyState from '../components/shared/TextEmptyState';
+import { useDensity } from '../hooks/useDensity';
 import { isStaff } from '../lib/permissions';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
@@ -30,6 +32,7 @@ export default function SchedulePage() {
   const [showWizard, setShowWizard] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);
   const [viewMode, setViewMode] = useState('all');
+  const { density: nextUpDensity } = useDensity('schedule-now', 'minimal');
 
   // tick increments every 60s so the upcoming / thisWeek / remaining
   // memos re-evaluate against a fresh `now`. Without this, a user who
@@ -82,9 +85,17 @@ export default function SchedulePage() {
           <GamesView activities={activities} orgId={orgId} />
         ) : (
           <>
-            {nextEvent && <NextUpCard event={nextEvent} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} dutyCount={dutyCounts[nextEvent.id]} onRefresh={refetch} />}
+            {nextEvent && (
+              <div style={{ marginBottom: 8 }}>
+                <div className="flex items-center justify-between" style={{ marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' }}>NEXT UP</div>
+                  <DensityToggle sectionKey="schedule-now" />
+                </div>
+                <NextUpCard event={nextEvent} density={nextUpDensity} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} dutyCount={dutyCounts[nextEvent.id]} onRefresh={refetch} />
+              </div>
+            )}
             <ChildFilterChips kids={myChildren} activeFilter={activeKidFilter} onChange={setActiveKidFilter} />
-            <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={!!activeKidFilter} />
+            <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={myChildren?.length >= 2} />
             {filtered.length === 0 ? (
               <TextEmptyState heading="No events found" message="Try changing your filters or check back later." />
             ) : thisWeek.length > 0 ? (
