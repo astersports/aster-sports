@@ -1,10 +1,31 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { supabase } from '../../lib/supabase';
 import { useOrgTeamRecords } from '../../hooks/useOrgTeamRecords';
 import { useTeams } from '../../hooks/useTeams';
 import { useSeason } from '../../context/SeasonContext';
 import { useNow } from '../../hooks/useNow';
 import StandingsTable from './StandingsTable';
 import MatchupCard from './MatchupCard';
+
+function useGameResults(eventIds) {
+  const [byEventId, setByEventId] = useState({});
+  useEffect(() => {
+    if (!eventIds.length) return;
+    let cancelled = false;
+    Promise.resolve().then(async () => {
+      const { data } = await supabase.from('game_results')
+        .select('event_id, result, our_score, opponent_score, published_at')
+        .in('event_id', eventIds)
+        .not('published_at', 'is', null);
+      if (cancelled) return;
+      const map = {};
+      for (const r of (data || [])) map[r.event_id] = r;
+      setByEventId(map);
+    });
+    return () => { cancelled = true; };
+  }, [eventIds]);
+  return byEventId;
+}
 
 export default function GamesView({ activities, orgId }) {
   const { byTeamId: recordsByTeamId } = useOrgTeamRecords(orgId);
@@ -22,6 +43,8 @@ export default function GamesView({ activities, orgId }) {
 
   const upcoming = useMemo(() => gameEvents.filter((e) => new Date(e.start_at).getTime() >= now), [gameEvents, now]);
   const past = useMemo(() => gameEvents.filter((e) => new Date(e.start_at).getTime() < now), [gameEvents, now]);
+  const pastIds = useMemo(() => past.map((e) => e.id), [past]);
+  const gameResultsMap = useGameResults(pastIds);
 
   const totalGames = useMemo(() => {
     let count = 0;
@@ -84,7 +107,7 @@ export default function GamesView({ activities, orgId }) {
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginTop: 24, marginBottom: 8 }}>
             RESULTS
           </div>
-          {past.slice(-10).reverse().map((e) => <MatchupCard key={e.id} event={e} />)}
+          {past.slice(-10).reverse().map((e) => <MatchupCard key={e.id} event={e} gameResult={gameResultsMap[e.id]} />)}
         </>
       )}
     </div>

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../../lib/formatters';
 
-export default function MatchupCard({ event }) {
+export default function MatchupCard({ event, gameResult }) {
   const navigate = useNavigate();
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--em-neutral)';
@@ -10,7 +10,7 @@ export default function MatchupCard({ event }) {
   const isAway = event.home_away === 'away';
   const isCancelled = event.status === 'cancelled';
   const isPast = new Date(event.start_at) < new Date();
-  const gr = event.game_results?.[0];
+  const gr = gameResult || null;
   const hasResult = isPast && gr?.published_at;
 
   return (

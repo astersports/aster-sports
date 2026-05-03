@@ -38,7 +38,7 @@ export function useActivities() {
     try {
       let query = supabase
         .from('events')
-        .select('*, teams!inner(id, name, team_color, age_group, circuit, org_id, season_id, sort_order), game_results!event_id(result, our_score, opponent_score, published_at)')
+        .select('*, teams!inner(id, name, team_color, age_group, circuit, org_id, season_id, sort_order)')
         .eq('teams.org_id', orgId)
         .order('start_at', { ascending: true });
       if (seasonId) query = query.eq('teams.season_id', seasonId);
