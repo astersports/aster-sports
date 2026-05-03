@@ -67,7 +67,7 @@ export default function SchedulePage() {
 
   const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= now), [filtered, tick, now]);
   const nextEvent = upcoming[0] || null;
-  const thisWeek = useMemo(() => upcoming.filter((a) => new Date(a.start_at) <= weekEnd), [upcoming, tick, weekEnd]);
+  const thisWeek = useMemo(() => upcoming.filter((a) => a !== nextEvent && new Date(a.start_at) <= weekEnd), [upcoming, nextEvent, tick, weekEnd]);
   const remaining = useMemo(() => upcoming.filter((a) => new Date(a.start_at) > weekEnd), [upcoming, tick, weekEnd]);
 
   if (loading) return <div style={{ padding: 24, color: 'var(--em-text-tertiary)' }}>Loading...</div>;
