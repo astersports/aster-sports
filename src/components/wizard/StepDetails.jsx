@@ -1,5 +1,6 @@
 import DutyEditor from './DutyEditor';
 import { HOME_AWAY } from '../../lib/constants';
+import Input from '../shared/Input';
 
 export default function StepDetails({ eventType, data, onChange }) {
   const set = (key, val) => onChange({ ...data, [key]: val });
@@ -16,26 +17,17 @@ export default function StepDetails({ eventType, data, onChange }) {
     <div style={{ padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
       <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>Details</h2>
 
-      <label style={fieldStyle}>
-        <span style={labelStyle}>Title (optional)</span>
-        <input type="text" value={data.title || ''} onChange={(e) => set('title', e.target.value)}
-          placeholder={isGame ? 'vs. Storm AAU' : 'Practice'} style={inputStyle} />
-      </label>
+      <Input label="Title (optional)" type="text" value={data.title || ''} onChange={(e) => set('title', e.target.value)}
+        placeholder={isGame ? 'vs. Storm AAU' : 'Practice'} />
 
       {isGame && (
-        <label style={fieldStyle}>
-          <span style={labelStyle}>Opponent</span>
-          <input type="text" value={data.opponent || ''} onChange={(e) => set('opponent', e.target.value)}
-            placeholder="Enter opponent name" style={inputStyle} />
-        </label>
+        <Input label="Opponent" type="text" value={data.opponent || ''} onChange={(e) => set('opponent', e.target.value)}
+          placeholder="Enter opponent name" />
       )}
 
       {isGame && (
-        <label style={fieldStyle}>
-          <span style={labelStyle}>Tournament name</span>
-          <input type="text" value={data.tournamentName || ''} onChange={(e) => set('tournamentName', e.target.value)}
-            placeholder="e.g. ZG NY Metro Showdown" style={inputStyle} />
-        </label>
+        <Input label="Tournament name" type="text" value={data.tournamentName || ''} onChange={(e) => set('tournamentName', e.target.value)}
+          placeholder="e.g. ZG NY Metro Showdown" />
       )}
 
       {isGame && (
@@ -53,18 +45,15 @@ export default function StepDetails({ eventType, data, onChange }) {
       )}
 
       {isGame && (
-        <label style={fieldStyle}>
-          <span style={labelStyle}>Jersey color</span>
-          <input type="text" value={data.jersey || ''} onChange={(e) => set('jersey', e.target.value)}
-            placeholder="e.g. White home, Black away" style={inputStyle} />
-        </label>
+        <Input label="Jersey color" type="text" value={data.jersey || ''} onChange={(e) => set('jersey', e.target.value)}
+          placeholder="e.g. White home, Black away" />
       )}
 
       <label style={fieldStyle}>
         <span style={labelStyle}>Parent instructions</span>
         <textarea value={data.notes || ''} onChange={(e) => set('notes', e.target.value)}
           placeholder="Visible to parents" rows={3}
-          style={{ ...inputStyle, minHeight: 80, padding: '10px 12px', resize: 'vertical' }} />
+          style={{ width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, resize: 'vertical' }} />
       </label>
 
       <label style={fieldStyle}>
@@ -72,7 +61,7 @@ export default function StepDetails({ eventType, data, onChange }) {
         <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: -4 }}>Not visible to parents</span>
         <textarea value={data.coachNotes || ''} onChange={(e) => set('coachNotes', e.target.value)}
           placeholder="Internal notes" rows={2}
-          style={{ ...inputStyle, minHeight: 60, padding: '10px 12px', resize: 'vertical' }} />
+          style={{ width: '100%', minHeight: 60, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, resize: 'vertical' }} />
       </label>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -110,11 +99,6 @@ function Toggle({ label, checked, onChange }) {
 
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 6 };
 const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)' };
-const inputStyle = {
-  minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)',
-  backgroundColor: 'var(--em-bg-card)', padding: '0 12px', fontSize: 15,
-  color: 'var(--em-text-primary)', width: '100%',
-};
 const chipStyle = (sel) => ({
   flex: 1, minHeight: 40, borderRadius: 10,
   border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
