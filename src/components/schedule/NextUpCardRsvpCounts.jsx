@@ -27,8 +27,14 @@ export default function NextUpCardRsvpCounts({ rsvpCount, rosterTotal }) {
   return (
     <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--em-border-subtle)' }}>
       <div style={LABEL_STYLE}>RSVP</div>
-      <div style={SUMMARY_STYLE}>
-        {going} going · {maybe} maybe · {notGoing} not going · {noResponse} awaiting
+      <div style={{ ...SUMMARY_STYLE, display: 'flex', gap: 8, flexWrap: 'nowrap' }}>
+        <span><strong style={{ color: 'var(--em-success)' }}>{going}</strong> going</span>
+        <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>
+        <span><strong style={{ color: 'var(--em-warning)' }}>{maybe}</strong> maybe</span>
+        <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>
+        <span><strong style={{ color: 'var(--em-danger)' }}>{notGoing}</strong> no</span>
+        <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>
+        <span>{noResponse} pending</span>
       </div>
       <div style={BAR_STYLE}>
         <Seg value={going} color="var(--em-success)" />
