@@ -38,14 +38,14 @@ export default function MatchupCard({ event, gameResult }) {
         padding: '12px 14px',
         minHeight: 44,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: 100, flexShrink: 0 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: teamColor, flexShrink: 0 }} />
-          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)', whiteSpace: 'nowrap' }}>
             {teamName}
           </span>
         </div>
         {hasResult ? (
-          <div style={{ padding: '0 12px', flexShrink: 0 }}>
+          <div style={{ width: 72, flexShrink: 0, textAlign: 'center' }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: gr.result === 'W' ? 'var(--em-success)' : gr.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
               {gr.result}
             </span>
@@ -54,7 +54,7 @@ export default function MatchupCard({ event, gameResult }) {
             </span>
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '0 12px', flexShrink: 0 }}>
+          <div style={{ width: 72, flexShrink: 0, textAlign: 'center' }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase' }}>
               {isPast ? '—' : isAway ? '@' : 'VS'}
             </div>
