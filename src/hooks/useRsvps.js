@@ -33,26 +33,28 @@ export function useRsvps(eventId, teamId) {
     setLoading(false);
   }, [eventId, teamId]);
 
-  // Microtask wrap pushes the synchronous setLoading(true) at the top of
-  // fetch() out of the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
 
   const setRsvp = async (playerId, response) => {
+    const prev = rsvps;
+    const existing = rsvps.find((r) => r.player_id === playerId);
+    const optimistic = existing
+      ? rsvps.map((r) => r.player_id === playerId ? { ...r, response } : r)
+      : [...rsvps, { event_id: eventId, player_id: playerId, response, responded_at: new Date().toISOString() }];
+    setRsvps(optimistic);
     const { error } = await supabase.from('event_rsvps').upsert(
       { event_id: eventId, player_id: playerId, response, responded_at: new Date().toISOString() },
       { onConflict: 'event_id,player_id' }
     );
     if (error) {
-      console.error('setRsvp:', error.message);
-      showToast('Could not save RSVP. Check your connection.', 'error');
+      setRsvps(prev);
+      showToast("Looks like that didn't go through. Try again?", 'error');
       return false;
     }
-    await fetch();
     return true;
   };
 
   const saveNote = async (playerId, comment) => {
-    // Only update comment on existing RSVP rows — event_rsvps.response is NOT NULL
     const { data: existing } = await supabase
       .from('event_rsvps')
       .select('id')

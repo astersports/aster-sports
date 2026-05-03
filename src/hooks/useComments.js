@@ -26,8 +26,6 @@ export function useComments(eventId) {
     setLoading(false);
   }, [eventId]);
 
-  // Microtask wrap pushes the synchronous setLoading(true) at the top of
-  // fetch() out of the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
 
   const post = async (body) => {
@@ -37,6 +35,9 @@ export function useComments(eventId) {
       || user?.user_metadata?.full_name
       || user?.user_metadata?.name
       || 'Anonymous';
+    const optimistic = { id: `temp-${Date.now()}`, event_id: eventId, body: trimmed, author_user_id: user.id, author_name: authorName, created_at: new Date().toISOString(), pinned: false };
+    const prev = comments;
+    setComments([...comments, optimistic]);
     const { error } = await supabase.from('event_comments').insert({
       event_id: eventId,
       body: trimmed,
@@ -44,8 +45,8 @@ export function useComments(eventId) {
       author_name: authorName,
     });
     if (error) {
-      console.error('post comment:', error.message);
-      showToast('Could not post comment. Try again.', 'error');
+      setComments(prev);
+      showToast("Looks like that didn't go through. Try again?", 'error');
       return false;
     }
     await fetch();

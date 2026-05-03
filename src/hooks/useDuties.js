@@ -26,35 +26,35 @@ export function useDuties(eventId) {
     setLoading(false);
   }, [eventId]);
 
-  // Microtask wrap pushes the synchronous setLoading(true) at the top of
-  // fetch() out of the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
 
   const claim = async (dutyId) => {
+    const prev = duties;
     const authorName = guardianFirstName || user?.user_metadata?.full_name || 'Volunteer';
+    setDuties(duties.map((d) => d.id === dutyId ? { ...d, guardian_id: guardianId, claimed_by_name: authorName, claimed_at: new Date().toISOString() } : d));
     const { error } = await supabase.from('event_duties')
       .update({ guardian_id: guardianId ?? null, claimed_by_name: authorName, claimed_at: new Date().toISOString() })
       .eq('id', dutyId).is('guardian_id', null);
     if (error) {
-      console.error('claim duty:', error.message);
-      showToast('Could not save assignment. Try again.', 'error');
+      setDuties(prev);
+      showToast("Looks like that didn't go through. Try again?", 'error');
       return false;
     }
-    await fetch();
     return true;
   };
 
   const unclaim = async (dutyId) => {
+    const prev = duties;
+    setDuties(duties.map((d) => d.id === dutyId ? { ...d, guardian_id: null, claimed_by_name: null, claimed_at: null } : d));
     const q = supabase.from('event_duties')
       .update({ guardian_id: null, claimed_by_name: null, claimed_at: null })
       .eq('id', dutyId);
     const { error } = await (guardianId ? q.eq('guardian_id', guardianId) : q);
     if (error) {
-      console.error('unclaim duty:', error.message);
-      showToast('Could not unassign. Try again.', 'error');
+      setDuties(prev);
+      showToast("Looks like that didn't go through. Try again?", 'error');
       return false;
     }
-    await fetch();
     return true;
   };
 
