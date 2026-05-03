@@ -85,8 +85,10 @@ export default function SchedulePage() {
           <GamesView activities={activities} orgId={orgId} />
         ) : (
           <>
+            <ChildFilterChips kids={myChildren} activeFilter={activeKidFilter} onChange={setActiveKidFilter} />
+            <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={myChildren?.length >= 2} />
             {nextEvent && (
-              <div style={{ marginBottom: 8 }}>
+              <div style={{ marginTop: 8, marginBottom: 8 }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: 4 }}>
                   <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' }}>NEXT UP</div>
                   <DensityToggle sectionKey="schedule-now" />
@@ -94,8 +96,6 @@ export default function SchedulePage() {
                 <NextUpCard event={nextEvent} density={nextUpDensity} rsvpCount={rsvpCounts[nextEvent.id]} rideCount={rideCounts[nextEvent.id]} dutyCount={dutyCounts[nextEvent.id]} onRefresh={refetch} />
               </div>
             )}
-            <ChildFilterChips kids={myChildren} activeFilter={activeKidFilter} onChange={setActiveKidFilter} />
-            <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={myChildren?.length >= 2} />
             {filtered.length === 0 ? (
               <TextEmptyState heading="No events found" message="Try changing your filters or check back later." />
             ) : thisWeek.length > 0 ? (

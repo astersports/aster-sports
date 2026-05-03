@@ -17,7 +17,6 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
   const { guardianId } = useAuth();
   const { showToast } = useToast();
   const [response, setResponse] = useState(() => responseCache.get(cacheKey(eventId, child.playerId)) ?? null);
-  const [saving, setSaving] = useState(false);
 
   const fetchRsvp = useCallback(async () => {
     const { data } = await supabase.from('event_rsvps').select('response')
@@ -37,38 +36,37 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
   }, [fetchRsvp]);
 
   const save = async (value) => {
-    setSaving(true);
+    const prev = response;
+    responseCache.set(cacheKey(eventId, child.playerId), value);
+    setResponse(value);
     navigator.vibrate?.(10);
     const { error } = await supabase.from('event_rsvps').upsert({
       event_id: eventId, player_id: child.playerId, guardian_id: guardianId ?? null,
       response: value, responded_at: new Date().toISOString(),
     }, { onConflict: 'event_id,player_id' });
-    setSaving(false);
-    if (!error) { responseCache.set(cacheKey(eventId, child.playerId), value); setResponse(value); }
-    else {
-      console.error('RSVP save failed:', error.message);
-      showToast('Could not save RSVP. Check your connection.', 'error');
+    if (error) {
+      responseCache.set(cacheKey(eventId, child.playerId), prev);
+      setResponse(prev);
+      showToast("Looks like that didn't go through. Try again?", 'error');
     }
   };
 
-  // Clear path: event_rsvps.response is NOT NULL, so cleared = row deleted.
-  // Verified Apr 30 via Supabase MCP information_schema query.
   const clearRsvp = async () => {
-    setSaving(true);
+    const prev = response;
+    responseCache.set(cacheKey(eventId, child.playerId), null);
+    setResponse(null);
     navigator.vibrate?.(10);
     const { error } = await supabase.from('event_rsvps').delete()
       .eq('event_id', eventId).eq('player_id', child.playerId);
-    setSaving(false);
-    if (!error) { responseCache.set(cacheKey(eventId, child.playerId), null); setResponse(null); }
-    else {
-      console.error('RSVP clear failed:', error.message);
-      showToast("Couldn't clear RSVP. Try again in a moment.", 'error');
+    if (error) {
+      responseCache.set(cacheKey(eventId, child.playerId), prev);
+      setResponse(prev);
+      showToast("Looks like that didn't go through. Try again?", 'error');
     }
   };
 
   const handleClick = (e, value) => {
     e.stopPropagation();
-    if (saving) return;
     if (value === response) clearRsvp();
     else save(value);
   };
@@ -82,7 +80,7 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
       {PILLS.map((p) => {
         const active = response === p.value;
         return (
-          <button key={p.value} type="button" onClick={(e) => handleClick(e, p.value)} disabled={saving} className="sf-press"
+          <button key={p.value} type="button" onClick={(e) => handleClick(e, p.value)} className="sf-press"
             aria-pressed={active}
             style={{
               flex: 1, minWidth: 0, minHeight: minH, borderRadius: 10,
@@ -90,7 +88,6 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
               border: `1.5px solid ${p.color}`,
               backgroundColor: active ? p.color : 'transparent',
               color: active ? 'var(--em-text-inverse)' : p.color,
-              opacity: saving ? 0.6 : 1,
               fontFamily: 'inherit',
             }}>
             {p.label}
