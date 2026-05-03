@@ -11,28 +11,21 @@ function ChildFilterChips({ kids, activeFilter, onChange }) {
   const chipStyle = (active) => ({
     flexShrink: 0,
     minHeight: 32,
-    padding: '0 14px',
+    padding: '0 12px',
     borderRadius: 999,
-    border: active ? '1.5px solid var(--em-accent)' : '1.5px solid var(--em-border-default)',
+    border: `1.5px solid ${active ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
     backgroundColor: active ? 'var(--em-accent-soft)' : 'var(--em-bg-card)',
     color: active ? 'var(--em-accent)' : 'var(--em-text-primary)',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: active ? 600 : 400,
-    cursor: 'pointer',
     whiteSpace: 'nowrap',
     fontFamily: 'inherit',
   });
 
   return (
     <div
-      className="sf-no-scrollbar"
-      style={{
-        display: 'flex',
-        gap: 8,
-        overflowX: 'auto',
-        marginBottom: 12,
-        paddingBottom: 2,
-      }}
+      className="flex gap-2 overflow-x-auto sf-no-scrollbar"
+      style={{ paddingBottom: 6 }}
     >
       <button
         type="button"
