@@ -5,8 +5,9 @@
 // Driver phone privacy-gated to confirmed claimers only (§16.7).
 // CTA buttons call props; forms ship in Phase C; wiring lands in Phase D.
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Car, Users, MapPin, Clock, ArrowRight, Repeat, Phone } from 'lucide-react';
+import ConfirmDialog from '../shared/ConfirmDialog';
 import { useDensity } from '../../hooks/useDensity';
 import ClaimStatusPill from './ClaimStatusPill';
 import ClaimerRow from './ClaimerRow';
@@ -42,19 +43,19 @@ export default function OfferCard({
   const showDriverPhone = !isDriver && myClaim?.status === 'confirmed' && offer.driver_phone;
   const isFull = seatsAvailable === 0;
 
+  const [confirmAction, setConfirmAction] = useState(null);
+
   const handleCancelOffer = useCallback(() => {
     const message = canModerate && !isDriver
       ? "Cancel this ride offer as admin override? Anyone who claimed a seat will be auto-cancelled and notified."
       : "Cancel this ride offer? Anyone who claimed a seat will need to find another ride.";
-    const proceed = window.confirm(message);
-    if (proceed) onCancelOffer?.(offer.id);
-  }, [offer.id, isDriver, canModerate, onCancelOffer]);
+    setConfirmAction({ type: 'cancelOffer', message });
+  }, [isDriver, canModerate]);
 
   const handleCancelClaim = useCallback(() => {
     if (!myClaim) return;
-    const proceed = window.confirm("Cancel your seat? You can claim again later if a spot opens up.");
-    if (proceed) onCancelClaim?.(myClaim.id);
-  }, [myClaim, onCancelClaim]);
+    setConfirmAction({ type: 'cancelClaim' });
+  }, [myClaim]);
 
   const handleClaim = useCallback(() => onClaim?.(offer), [offer, onClaim]);
 
@@ -143,6 +144,12 @@ export default function OfferCard({
           </button>
         )}
       </div>
+      {confirmAction?.type === 'cancelOffer' && (
+        <ConfirmDialog title="Cancel Ride Offer" message={confirmAction.message} confirmLabel="Cancel Offer" destructive onConfirm={() => { setConfirmAction(null); onCancelOffer?.(offer.id); }} onCancel={() => setConfirmAction(null)} />
+      )}
+      {confirmAction?.type === 'cancelClaim' && (
+        <ConfirmDialog title="Cancel Seat" message="Cancel your seat? You can claim again later if a spot opens up." confirmLabel="Cancel Seat" destructive onConfirm={() => { setConfirmAction(null); onCancelClaim?.(myClaim.id); }} onCancel={() => setConfirmAction(null)} />
+      )}
     </div>
   );
 }

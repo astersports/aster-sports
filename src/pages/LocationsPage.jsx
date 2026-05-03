@@ -6,6 +6,7 @@ import LocationFormSheet from '../components/location/LocationFormSheet';
 import LocationCard from '../components/location/LocationCard';
 import SearchToolbar from '../components/location/SearchToolbar';
 import Button from '../components/shared/Button';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
 
 export default function LocationsPage() {
   const { role } = useAuth();
@@ -14,6 +15,7 @@ export default function LocationsPage() {
   const { locations, loading, error, archive, unarchive } = useLocations({ search, showArchived });
   const [formOpen, setFormOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const authReady = role !== undefined && role !== null;
   const isStaff = authReady && (role === 'admin' || role === 'coach');
@@ -21,9 +23,8 @@ export default function LocationsPage() {
   const openCreate = () => { setEditingLocation(null); setFormOpen(true); };
   const openEdit = (l) => { setEditingLocation(l); setFormOpen(true); };
   const closeForm = () => { setFormOpen(false); setEditingLocation(null); };
-  const handleArchive = async (l) => {
-    if (!window.confirm(`Archive "${l.name}"? This hides it from the list but preserves all event references.`)) return;
-    await archive(l.id);
+  const handleArchive = (l) => {
+    setConfirmAction({ type: 'archive', location: l });
   };
 
   return (
@@ -85,6 +86,9 @@ export default function LocationsPage() {
 
       {formOpen && (
         <LocationFormSheet location={editingLocation} onClose={closeForm} />
+      )}
+      {confirmAction?.type === 'archive' && (
+        <ConfirmDialog title="Archive Location" message={`Archive "${confirmAction.location.name}"? This hides it from the list but preserves all event references.`} confirmLabel="Archive" destructive onConfirm={async () => { await archive(confirmAction.location.id); setConfirmAction(null); }} onCancel={() => setConfirmAction(null)} />
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTournaments } from '../hooks/useTournaments';
 import Button from '../components/shared/Button';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
 import TournamentListItem from '../components/tournament/TournamentListItem';
 import TournamentFormSheet from '../components/tournament/TournamentFormSheet';
 import TournamentRowMenu from '../components/tournament/TournamentRowMenu';
@@ -24,12 +25,12 @@ export default function TournamentsPage() {
   });
   const [formOpen, setFormOpen] = useState(false);
   const [editingTournament, setEditingTournament] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
   const openCreate = () => { setEditingTournament(null); setFormOpen(true); };
   const openEdit = (t) => { setEditingTournament(t); setFormOpen(true); };
   const closeForm = () => { setFormOpen(false); setEditingTournament(null); };
-  const handleArchive = async (t) => {
-    if (!window.confirm(`Archive "${t.name}"? This hides it from the list but preserves all data.`)) return;
-    await archive(t.id);
+  const handleArchive = (t) => {
+    setConfirmAction({ type: 'archive', tournament: t });
   };
   const authReady = role !== undefined && role !== null;
   const isStaff = authReady && (role === 'admin' || role === 'coach');
@@ -101,6 +102,9 @@ export default function TournamentsPage() {
 
       {formOpen && (
         <TournamentFormSheet tournament={editingTournament} onClose={closeForm} />
+      )}
+      {confirmAction?.type === 'archive' && (
+        <ConfirmDialog title="Archive Tournament" message={`Archive "${confirmAction.tournament.name}"? This hides it from the list but preserves all data.`} confirmLabel="Archive" destructive onConfirm={async () => { await archive(confirmAction.tournament.id); setConfirmAction(null); }} onCancel={() => setConfirmAction(null)} />
       )}
     </div>
   );
