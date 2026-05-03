@@ -17,6 +17,7 @@ import EventCommentsTab from '../components/event/EventCommentsTab';
 import EventRidesTab from '../components/event/EventRidesTab';
 import EventNotes from '../components/event/EventNotes';
 import EventCancelActions from '../components/event/EventCancelActions';
+import MyActionsSection from '../components/event/MyActionsSection';
 import TournamentBriefingBanner from '../components/event/TournamentBriefingBanner';
 import Button from '../components/shared/Button';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
@@ -81,6 +82,7 @@ export default function EventDetailPage() {
   return (
     <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} />
+      {role === 'parent' && <MyActionsSection event={event} />}
       {isPastGame && (
         <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>
           Enter Score
