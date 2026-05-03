@@ -1,4 +1,5 @@
 import { Plus, X } from 'lucide-react';
+import Input from '../shared/Input';
 
 // Inline duty list editor for StepDetails. Returns an array of
 // { name, slots_needed } to the parent form. Each duty will expand
@@ -16,9 +17,9 @@ export default function DutyEditor({ value, onChange }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 }}>
         {duties.map((d, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input type="text" value={d.duty_name || d.name || ''}
+            <Input type="text" value={d.duty_name || d.name || ''}
               onChange={(e) => update(i, { duty_name: e.target.value })}
-              placeholder="e.g. Scorekeeper" style={{ ...inputStyle, flex: 1 }} />
+              placeholder="e.g. Scorekeeper" style={{ flex: 1 }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <button type="button" disabled={(d.slots_needed || 1) <= 1}
                 onClick={() => update(i, { slots_needed: Math.max(1, (d.slots_needed || 1) - 1) })}
@@ -58,11 +59,6 @@ export default function DutyEditor({ value, onChange }) {
 }
 
 const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)', display: 'block' };
-const inputStyle = {
-  minHeight: 40, borderRadius: 10, border: '1px solid var(--em-border-default)',
-  backgroundColor: 'var(--em-bg-card)', padding: '0 10px', fontSize: 15,
-  color: 'var(--em-text-primary)',
-};
 
 const stepBtn = {
   width: 32, height: 32, borderRadius: 8,

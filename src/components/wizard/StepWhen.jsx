@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import RecurrenceSelector from './RecurrenceSelector';
 import { useActiveSeasonEnd } from '../../hooks/useActiveSeasonEnd';
 import { computeDefaultUntil } from '../../lib/recurrenceHelpers';
+import Input from '../shared/Input';
 
 const DURATIONS = [
   { label: '1h', minutes: 60 },
@@ -69,17 +70,15 @@ export default function StepWhen({ data, onChange, orgId }) {
     <div style={{ padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
       <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>When and where?</h2>
 
-      <label style={fieldStyle}>
-        <span style={labelStyle}>Date</span>
-        <input type="date" value={data.date || ''} onChange={(e) => set('date', e.target.value)} style={inputStyle} />
-      </label>
+      <div style={fieldStyle}>
+        <Input type="date" label="Date" value={data.date || ''} onChange={(e) => set('date', e.target.value)} />
+      </div>
 
       <RecurrenceSelector value={data.recurrence} onChange={setRecurrence} />
 
-      <label style={fieldStyle}>
-        <span style={labelStyle}>Start time</span>
-        <input type="time" value={data.startTime || ''} onChange={(e) => setStartTime(e.target.value)} step="300" style={inputStyle} />
-      </label>
+      <div style={fieldStyle}>
+        <Input type="time" label="Start time" value={data.startTime || ''} onChange={(e) => setStartTime(e.target.value)} step="300" />
+      </div>
 
       <div>
         <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>Duration</span>
@@ -96,9 +95,9 @@ export default function StepWhen({ data, onChange, orgId }) {
           </button>
         </div>
         {customMode ? (
-          <input type="time" value={data.endTime || ''}
+          <Input type="time" value={data.endTime || ''}
             onChange={(e) => setCustomEndTime(e.target.value)} step="300"
-            style={{ ...inputStyle, marginTop: 8 }} />
+            style={{ marginTop: 8 }} />
         ) : (
           data.endTime && <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>Ends at {data.endTime}</span>
         )}
@@ -106,17 +105,16 @@ export default function StepWhen({ data, onChange, orgId }) {
 
       <label style={fieldStyle}>
         <span style={labelStyle}>Location</span>
-        <select value={data.location || ''} onChange={(e) => set('location', e.target.value)} style={inputStyle}>
+        <select value={data.location || ''} onChange={(e) => set('location', e.target.value)} style={selectStyle}>
           <option value="">Select location</option>
           {locations.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
         </select>
       </label>
 
-      <label style={fieldStyle}>
-        <span style={labelStyle}>Court / room (optional)</span>
-        <input type="text" value={data.subLocation || ''} onChange={(e) => set('subLocation', e.target.value)}
-          placeholder="e.g. Court 3, Main Gym" style={inputStyle} />
-      </label>
+      <div style={fieldStyle}>
+        <Input type="text" label="Court / room (optional)" value={data.subLocation || ''} onChange={(e) => set('subLocation', e.target.value)}
+          placeholder="e.g. Court 3, Main Gym" />
+      </div>
 
       <div>
         <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>Arrive early</span>
@@ -135,9 +133,9 @@ export default function StepWhen({ data, onChange, orgId }) {
 
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 6 };
 const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)' };
-const inputStyle = {
-  minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)',
-  backgroundColor: 'var(--em-bg-card)', padding: '0 12px', fontSize: 15,
+const selectStyle = {
+  minHeight: 44, borderRadius: 10, border: '1.5px solid var(--em-border-default)',
+  backgroundColor: 'var(--em-bg-tertiary)', padding: '0 12px', fontSize: 15,
   color: 'var(--em-text-primary)', width: '100%',
 };
 const chipStyle = (sel) => ({

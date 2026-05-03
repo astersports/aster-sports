@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import FullScreenForm from '../shared/FullScreenForm';
+import Input from '../shared/Input';
 
 // Maps a preset quarter label to (monthStart, monthEnd) pairs that we'll
 // combine with the chosen year to produce start_date / end_date. Months
@@ -64,12 +65,6 @@ function Body({ season, onSave }) {
     color: active ? 'var(--em-accent)' : 'var(--em-text-primary)',
     fontWeight: 500,
   });
-  const inputStyle = {
-    width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10,
-    border: '1px solid var(--em-border-default)',
-    backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
-    fontSize: 15, outline: 'none',
-  };
   const label = { color: 'var(--em-text-secondary)', fontSize: 13, marginBottom: 6, display: 'block' };
 
   return (
@@ -98,20 +93,17 @@ function Body({ season, onSave }) {
           </div>
         </div>
 
-        <label className="block mb-3">
-          <span style={label}>Name</span>
-          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="Spring 2026" />
-        </label>
+        <div className="block mb-3">
+          <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Spring 2026" />
+        </div>
 
-        <label className="block mb-3">
-          <span style={label}>Start date</span>
-          <input type="date" style={inputStyle} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-        </label>
+        <div className="block mb-3">
+          <Input type="date" label="Start date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+        </div>
 
-        <label className="block mb-5">
-          <span style={label}>End date</span>
-          <input type="date" style={inputStyle} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-        </label>
+        <div className="block mb-5">
+          <Input type="date" label="End date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+        </div>
 
         <button
           type="button"
