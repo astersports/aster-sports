@@ -1,17 +1,16 @@
-// src/components/event/EventRidesTab.jsx
-// Phase 1.5 rides Phase D — wire-up against new offers/claims model.
-// Replaces broken event_rides queries from prior implementation.
-// Per CLAUDE.md anti-pattern #5: full rewrite justified (>50% changes,
-// existing version was non-functional since Migration 025).
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Hand } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useEventRidesView } from '../../hooks/useEventRidesView';
+import { useRideRequests } from '../../hooks/useRideRequests';
+import { useDriverNames } from '../../hooks/useDriverNames';
 import DensityToggle from '../home/DensityToggle';
 import OfferCard from '../ride/OfferCard';
 import PostOfferForm from '../ride/PostOfferForm';
 import ClaimSeatForm from '../ride/ClaimSeatForm';
+import RequestRideForm from '../ride/RequestRideForm';
+import RideRequestCard from '../ride/RideRequestCard';
 import Button from '../shared/Button';
 
 const sectionLabelStyle = { fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 };
@@ -39,7 +38,10 @@ export default function EventRidesTab({ event }) {
     declineClaim,
   } = useEventRidesView({ eventId, orgId, userId: user?.id });
 
+  const { openRequests, myOpenRequest, postRequest, cancelRequest } = useRideRequests(eventId);
+  const requestNames = useDriverNames(openRequests.map((r) => r.requester_user_id));
   const [postOfferOpen, setPostOfferOpen] = useState(false);
+  const [requestFormOpen, setRequestFormOpen] = useState(false);
   const [claimTargetOffer, setClaimTargetOffer] = useState(null);
 
   if (!rideEnabled) {
@@ -52,13 +54,26 @@ export default function EventRidesTab({ event }) {
 
   return (
     <div style={{ padding: '12px 16px 80px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <div>{offers.length > 0 && <DensityToggle sectionKey="rides-list" />}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        <div style={{ flex: 1 }}>{offers.length > 0 && <DensityToggle sectionKey="rides-list" />}</div>
+        {!myOpenRequest && (
+          <Button size="sm" variant="secondary" onClick={() => setRequestFormOpen(true)} aria-label="Request a ride">
+            <Hand size={14} strokeWidth={2} /> Need ride
+          </Button>
+        )}
         <Button size="sm" onClick={() => setPostOfferOpen(true)} aria-label="Offer a ride">
-          <Plus size={14} strokeWidth={2} aria-hidden="true" />
-          Offer a ride
+          <Plus size={14} strokeWidth={2} /> Offer ride
         </Button>
       </div>
+
+      {openRequests.length > 0 && (
+        <section aria-label="Ride requests" style={{ marginBottom: 16 }}>
+          <h3 style={sectionLabelStyle}>Ride requests</h3>
+          {openRequests.map((req) => (
+            <RideRequestCard key={req.id} request={req} requesterName={requestNames[req.requester_user_id] || 'Parent'} childName={null} isMine={req.requester_user_id === user?.id} onCancel={cancelRequest} />
+          ))}
+        </section>
+      )}
 
       {loading && (
         <div style={{ padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13 }} role="status" aria-live="polite">
@@ -125,12 +140,8 @@ export default function EventRidesTab({ event }) {
         eventEndAt={event?.end_at ?? null}
         hasActiveOffer={offers.some((o) => o.driver_user_id === user?.id && o.status === 'active')}
       />
-      <ClaimSeatForm
-        open={!!claimTargetOffer}
-        offer={claimTargetOffer}
-        onClose={() => setClaimTargetOffer(null)}
-        onSubmit={claimSeat}
-      />
+      <ClaimSeatForm open={!!claimTargetOffer} offer={claimTargetOffer} onClose={() => setClaimTargetOffer(null)} onSubmit={claimSeat} />
+      <RequestRideForm open={requestFormOpen} onClose={() => setRequestFormOpen(false)} onSubmit={postRequest} eventTeamId={event?.team_id} />
     </div>
   );
 }
