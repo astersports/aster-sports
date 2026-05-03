@@ -69,6 +69,11 @@ export default function MatchupCard({ event, gameResult }) {
           <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>
             {opponent}
           </span>
+          {isPast && (
+            <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 1 }}>
+              {new Date(event.start_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -6,7 +6,6 @@ import { formatCountdown } from '../../lib/formatters';
 import { WhenRow, GameInfo } from './NextUpCardInfo';
 import NextUpCardRsvpSection from './NextUpCardRsvpSection';
 import NextUpCardStatusRow from './NextUpCardStatusRow';
-import NextUpCardRsvpCounts from './NextUpCardRsvpCounts';
 import NextUpCardMyChild from './NextUpCardMyChild';
 import { useAuth } from '../../context/AuthContext';
 import { useMapsUrl } from '../../hooks/useMapsUrl';
@@ -113,7 +112,6 @@ export default function NextUpCardMax({ event, rsvpCount, rideCount, dutyCount, 
           <GameInfo event={event} />
           <NextUpCardRsvpSection eventId={event.id} rsvpCount={rsvpCount} />
           <NextUpCardStatusRow rideCount={rideCount} dutyCount={dutyCount} />
-          <NextUpCardRsvpCounts rsvpCount={rsvpCount} rosterTotal={rsvpCount?.total} />
           <NextUpCardMyChild event={event} />
         </div>
       </div>
