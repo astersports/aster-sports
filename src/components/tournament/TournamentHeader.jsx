@@ -33,7 +33,7 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
               </span>
             )}
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0, lineHeight: 1.2, wordBreak: 'break-word' }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0, lineHeight: 1.2, wordBreak: 'break-word' }}>
             {tournament.name}
           </h1>
         </div>

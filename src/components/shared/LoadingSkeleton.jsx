@@ -22,7 +22,7 @@ function Card() {
       className="p-4 mb-3"
       style={{
         backgroundColor: 'var(--em-bg-card)',
-        borderRadius: 12,
+        borderRadius: 10,
         border: '1px solid var(--em-border-subtle)',
       }}
     >
