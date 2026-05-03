@@ -14,10 +14,8 @@ import { useConflictCheck } from '../../hooks/useConflictCheck';
 
 const STEPS = ['Type', 'Team', 'When', 'Details'];
 const EDIT_STEPS = ['When', 'Details'];
-
 export default function CreateActivityWizard({ orgId, editEvent, editMode = 'single', onClose, onCreated }) {
-  const isEdit = !!editEvent;
-  const { showToast } = useToast();
+  const isEdit = !!editEvent; const { showToast } = useToast();
   const [step, setStep] = useState(isEdit ? 2 : 0);
   const [form, setForm] = useState(isEdit ? eventToForm(editEvent) : EMPTY_FORM);
   const conflicts = useConflictCheck(step, form, isEdit ? editEvent.id : null);

@@ -42,9 +42,7 @@ export default function OfferCard({
   const seatsAvailable = Math.max(0, (offer.seats_offered ?? 0) - seatsTaken);
   const showDriverPhone = !isDriver && myClaim?.status === 'confirmed' && offer.driver_phone;
   const isFull = seatsAvailable === 0;
-
   const [confirmAction, setConfirmAction] = useState(null);
-
   const handleCancelOffer = useCallback(() => {
     const message = canModerate && !isDriver
       ? "Cancel this ride offer as admin override? Anyone who claimed a seat will be auto-cancelled and notified."
