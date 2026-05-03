@@ -1,6 +1,6 @@
 # Wave 2B-C — Coach Quick-Score Entry Sheet
 
-**Status:** Architecture locked 2026-05-01 (Gate 1 docs commit this revision).
+**Status:** CLOSED 2026-05-03. All gates shipped. Gate 3 close-out commit this revision.
 **Gate 1 SHA:** ee9a128 (substituted forward in next-wave commit per self-healing audit pattern)
 **Decision references:** EMBER_MASTER_INDEX_v3.md #108 + #109
 **Build queue entry:** SKYFIRE_BUILD_QUEUE_v2.md "May 1, 2026 UTC — Wave 2B-C Gate 1"
@@ -122,9 +122,21 @@ ScoreEntrySheet header: background var(--em-bg-page), team color stripe 4px soli
 
 **Gate 2c — EventDetailPage button + full integration:** Enter Score / Edit Score button gated to staff + past game/tournament. Sheet reachable from production. Visual smoke test before push. Rule 19 explicit GO before push.
 
-**Gate 3 — Close-out:** NEXT ACTION QUEUED update, tracker close, build queue entry.
+**Gate 3 — Close-out:** NEXT ACTION QUEUED update, tracker close, build queue entry. **SHIPPED 2026-05-03.**
 
 Each gate gets explicit GO. Each commit gets M3 verification step pre-stage.
+
+---
+
+## GATE LOG
+
+| Gate | SHA | Date | What |
+|------|-----|------|------|
+| 1 | ee9a128 | 2026-05-01 | Docs commit (Decision #108, #109, plan file) |
+| 2a | (within 5d635d5 session) | 2026-05-01 | useScoreDraft hook |
+| 2b | (within 0a1948d session) | 2026-05-01 | ScoreEntrySheet + QuarterScoreInput + PlayerOfGamePicker |
+| 2c | 0a1948d | 2026-05-01 | Enter Score button on EventDetailPage + useEventDelete extraction |
+| 3 | (this commit) | 2026-05-03 | Close-out docs. Smoke test confirmed 2026-05-03. |
 
 ---
 

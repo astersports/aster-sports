@@ -229,13 +229,12 @@ Wave 2A pre-flight ran 13 read-only MCP queries against production schema. Six c
 
 # NEXT ACTION QUEUED
 
-**Wave 1G CLOSED.** P0 privacy fix shipped (Decision #110, Migration 20260501201639). UI verification confirmed all three surfaces already correctly gated. Post-Wave-1G sequence:
+**Wave 2B-C CLOSED.** All gates shipped (Gate 2c smoke-tested 2026-05-03, Gate 3 close-out this commit). Post-close sequence completed: BUG-01 (coach team scoping), BUG-02 (coach home placeholder), admin home fixes, Games tab feature, schedule cleanup. Next:
 
-1. DATA-01..04 Studio fixes (Kenny + Darien user_metadata, admin_notes content move, duplicate comment cleanup)
-2. BUG-02 hotfix (coach NowSection placeholder)
-3. Wave 2B-C Gate 2c resume (picks locked: epsilon / P1b / L1 / G1)
-4. Wave 2B-C Gate 3 close
-5. Wave 1H + audit triage (deferred items)
+1. Wave 2D — Optimistic UI pattern (tracker C2: ChildRsvp first, then expand)
+2. Wave 1H — Staff-gated RLS hygiene (P1-01: ~16 cmd='ALL' policies without with_check)
+3. Games tab polish — past game scores verified, standings PF/PA shipped
+4. Audit triage — remaining DEFERRED_AUDIT_ITEMS.md items
 
 
 

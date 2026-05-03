@@ -2311,3 +2311,43 @@ Files: supabase/migrations/20260501201639_parent_scoped_writes.sql (NEW, 138 lin
 Files: CLAUDE.md (+anti-pattern #20), DEFERRED_AUDIT_ITEMS.md (P0-01 CLOSED, M2 EXTENDED), SKYFIRE_BUILD_QUEUE_v2.md (3 Wave 1G entries), EMBER_MASTER_INDEX_v3.md (NEXT ACTION updated). UI verification confirmed RsvpPlayerRow (readOnly gate), EventCommentsTab (no edit/delete UI), EventDutiesTab (isMine gate) were already correctly gated. No component edits required. Wave 1G CLOSED. Vercel READY. Unlocks post-Wave-1G sequence.
 
 **Wave 1G status: CLOSED.** P0 privacy boundary fixed at database + verified at UI layer. 3 migrations total today (20260501110331 game_result_edits, 20260501124915 locations_admin_notes, 20260501201639 parent_scoped_writes). Wave 2B-C Gate 2c resumes after DATA-01..04 + BUG-02.
+
+---
+
+## May 3, 2026 — Session: Admin home + coach scoping + Games tab
+
+**5 code commits + 2 data operations shipped in one session.**
+
+### Commit 6adbdea — Admin home + coach team scoping (BUG-01)
+- NextEventCard: real data from useActivities (was hardcoded to 2026-04-16)
+- GettingStarted: returns null when all 4 onboarding steps complete
+- AuthContext: coaches get myTeamIds from team_staff query
+- useActivities: team_id filter applies to coach role (same as parent)
+
+### Data: team_staff seed + user_roles INSERT
+- team_staff: 6 rows (Kenny head_coach × 5 teams, Darien assistant_coach × 8U Boys)
+- user_roles: INSERT for Darien (af40a751) as coach in Legacy Hoopers org
+- BUG-01 CLOSED at data layer
+
+### Commit e1a62a1 — Games tab on /schedule
+- ViewToggle (All/Games pill), StandingsTable (W/L/T/PF/PA/PCT), MatchupCard (symmetrical game card), GamesView (standings + week-grouped matchups + results)
+- Inspired by BenefitGames flag football schedule/standings
+
+### Commit 3f83bd7 — Schedule All tab cleanup
+- NextUpCard defaults to minimal density with DensityToggle
+- useDensity accepts defaultDensity parameter
+- Team filter row hidden for multi-kid parents
+
+### Commit 032f38e — Games tab bug fixes
+- BUG-A: PCT format .714 → 71%
+- BUG-B + Q4: Standings show all org teams via useTeams (not parent-scoped)
+- BUG-C/F: MatchupCard past-game variant with W/L badge + score
+- BUG-E: PF/PA total columns in StandingsTable + computeSummary
+- useActivities left-joins game_results for score data
+
+### Wave 2B-C Gate 3 close-out (this entry)
+- Gate 2c smoke-tested and confirmed 2026-05-03
+- WAVE_2BC_PLAN.md marked CLOSED with gate log
+- EMBER_MASTER_INDEX_v3.md NEXT ACTION updated
+
+**Wave 2B-C status: CLOSED.** All gates shipped and verified. Score entry live in production. Games tab live with standings + matchup cards. Coach role production-ready (Kenny + Darien seeded). Next: Wave 2D (optimistic UI), Wave 1H (RLS hygiene).
