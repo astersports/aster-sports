@@ -17,6 +17,8 @@ export const EMPTY_SUMMARY = {
   diff: 0,
   winPct: 0,
   gamesPlayed: 0,
+  pointsFor: 0,
+  pointsAgainst: 0,
 };
 
 export function computeSummary(games) {
@@ -53,5 +55,7 @@ export function computeSummary(games) {
     streak: streakKind ? `${streakKind}${streakLen}` : '—',
     ppg, allowed, diff, winPct,
     gamesPlayed: n,
+    pointsFor: pf,
+    pointsAgainst: pa,
   };
 }

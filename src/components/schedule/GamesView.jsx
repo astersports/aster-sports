@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useOrgTeamRecords } from '../../hooks/useOrgTeamRecords';
+import { useTeams } from '../../hooks/useTeams';
 import { useSeason } from '../../context/SeasonContext';
 import { useNow } from '../../hooks/useNow';
 import StandingsTable from './StandingsTable';
@@ -7,21 +8,10 @@ import MatchupCard from './MatchupCard';
 
 export default function GamesView({ activities, orgId }) {
   const { byTeamId: recordsByTeamId } = useOrgTeamRecords(orgId);
+  const { teams: allTeams } = useTeams(orgId);
   const { activeSeason } = useSeason();
   const seasonStartDate = activeSeason?.start_date;
   const now = useNow();
-
-  const teams = useMemo(() => {
-    const seen = new Set();
-    const result = [];
-    for (const a of activities) {
-      if (a.team_id && !seen.has(a.team_id) && a.teams) {
-        seen.add(a.team_id);
-        result.push({ id: a.team_id, name: a.teams.name, team_color: a.teams.team_color, sort_order: a.teams.sort_order ?? 999 });
-      }
-    }
-    return result.sort((x, y) => x.sort_order - y.sort_order);
-  }, [activities]);
 
   const gameEvents = useMemo(() =>
     activities
@@ -61,7 +51,7 @@ export default function GamesView({ activities, orgId }) {
 
   return (
     <div style={{ marginTop: 12 }}>
-      <StandingsTable teams={teams} recordsByTeamId={recordsByTeamId} totalGames={totalGames} />
+      <StandingsTable teams={allTeams} recordsByTeamId={recordsByTeamId} totalGames={totalGames} />
 
       {weekGroups.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--em-text-tertiary)' }}>

@@ -41,7 +41,9 @@ export default function StandingsTable({ teams, recordsByTeamId, totalGames }) {
             <th style={{ ...thStyle, width: 32, textAlign: 'center' }}>W</th>
             <th style={{ ...thStyle, width: 32, textAlign: 'center' }}>L</th>
             <th style={{ ...thStyle, width: 32, textAlign: 'center' }}>T</th>
-            <th style={{ ...thStyle, width: 52, textAlign: 'right', paddingRight: 16 }}>PCT</th>
+            <th style={{ ...thStyle, width: 36, textAlign: 'center' }}>PF</th>
+            <th style={{ ...thStyle, width: 36, textAlign: 'center' }}>PA</th>
+            <th style={{ ...thStyle, width: 44, textAlign: 'right', paddingRight: 16 }}>PCT</th>
           </tr>
         </thead>
         <tbody>
@@ -51,7 +53,7 @@ export default function StandingsTable({ teams, recordsByTeamId, totalGames }) {
             const w = parseInt(parts[0]) || 0;
             const l = parseInt(parts[1]) || 0;
             const ties = s.ties || 0;
-            const pct = s.gamesPlayed > 0 ? (w / s.gamesPlayed).toFixed(3) : '.000';
+            const pct = s.gamesPlayed > 0 ? Math.round((w / s.gamesPlayed) * 100) + '%' : '0%';
             return (
               <tr key={t.id} style={{ borderBottom: i < rows.length - 1 ? '1px solid var(--em-border-subtle)' : 'none' }}>
                 <td style={{ ...tdStyle, textAlign: 'center', color: 'var(--em-text-tertiary)', fontWeight: 600 }}>{i + 1}</td>
@@ -64,6 +66,8 @@ export default function StandingsTable({ teams, recordsByTeamId, totalGames }) {
                 <td style={{ ...tdStyle, textAlign: 'center' }}>{w}</td>
                 <td style={{ ...tdStyle, textAlign: 'center' }}>{l}</td>
                 <td style={{ ...tdStyle, textAlign: 'center' }}>{ties}</td>
+                <td style={{ ...tdStyle, textAlign: 'center' }}>{s.pointsFor || 0}</td>
+                <td style={{ ...tdStyle, textAlign: 'center' }}>{s.pointsAgainst || 0}</td>
                 <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600, paddingRight: 16 }}>{pct}</td>
               </tr>
             );
@@ -71,7 +75,7 @@ export default function StandingsTable({ teams, recordsByTeamId, totalGames }) {
         </tbody>
       </table>
       <div style={{ padding: '6px 16px 10px', fontSize: 11, color: 'var(--em-text-tertiary)' }}>
-        W = Wins · L = Losses · T = Ties · PCT = Win Percentage
+        W = Wins · L = Losses · T = Ties · PF = Points For · PA = Points Against · PCT = Win %
       </div>
     </div>
   );
