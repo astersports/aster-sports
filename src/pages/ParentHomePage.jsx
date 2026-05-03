@@ -45,15 +45,25 @@ export default function ParentHomePage() {
   }, [activities]);
 
   const nextEventOverall = activities.find((a) => a.start_at && a.status !== 'cancelled' && new Date(a.start_at).getTime() >= now) || null;
+  const nowSectionIds = useMemo(() => {
+    const ids = new Set();
+    const sorted = [...activities].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+    const seen = new Set();
+    for (const a of sorted) {
+      if (!a.team_id || a.status === 'cancelled' || new Date(a.start_at).getTime() < now) continue;
+      if (!seen.has(a.team_id)) { seen.add(a.team_id); ids.add(a.id); }
+    }
+    return ids;
+  }, [activities, now]);
   const todayStart = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }, []);
   const next48h = useMemo(() => activities
     .filter((a) => {
-      if (!a.start_at) return false;
+      if (!a.start_at || nowSectionIds.has(a.id)) return false;
       const startT = new Date(a.start_at).getTime();
       return (a.end_at ? new Date(a.end_at).getTime() : startT + 90 * 60 * 1000) > now && startT < cutoff && a.status !== 'cancelled';
     })
     .sort((a, b) => new Date(a.start_at) - new Date(b.start_at)),
-    [activities, now, cutoff]);
+    [activities, now, cutoff, nowSectionIds]);
 
   const filteredNext48h = useMemo(() => {
     if (!activeKidFilter) return next48h;

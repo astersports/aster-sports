@@ -1,10 +1,10 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import AddToCalendarButton from '../components/event/AddToCalendarButton';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/useToast';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
 import { useEventDetail } from '../hooks/useEventDetail';
 import { useRsvps } from '../hooks/useRsvps';
 import useEventDelete from '../hooks/useEventDelete';
@@ -28,11 +28,9 @@ const SectionHeader = ({ children, sectionKey }) => (
 
 export default function EventDetailPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const { orgId, role } = useAuth();
-  const { showToast } = useToast();
   const { event, loading: eventLoading, refetch, patchEvent } = useEventDetail(id, location.state?.event);
   const teamId = event?.team_id || null;
   const { rsvps, roster, loading: rsvpLoading, setRsvp, saveNote } = useRsvps(id, teamId);
@@ -40,6 +38,7 @@ export default function EventDetailPage() {
   const [editMode, setEditMode] = useState('single');
   const [showCheckin, setShowCheckin] = useState(false);
   const [showScoreSheet, setShowScoreSheet] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
   const [dutyCount, setDutyCount] = useState(0);
 
   useEffect(() => {
@@ -56,8 +55,10 @@ export default function EventDetailPage() {
     if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
   }, [searchParams, rsvpLoading, roster.length]);
 
+  const doDelete = useEventDelete(event);
+
   if (eventLoading) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100dvh' }} />;
-  if (!event) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100dvh', padding: 24, color: 'var(--em-text-tertiary)' }}>Event not found</div>;
+  if (!event) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100dvh', padding: 24, color: 'var(--em-text-tertiary)' }}>We couldn't find this event. It may have been removed.</div>;
 
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--em-text-tertiary)';
@@ -65,17 +66,15 @@ export default function EventDetailPage() {
 
   const rsvpMap = {};
   rsvps.forEach((r) => { rsvpMap[r.player_id] = r.response; });
-  const doDelete = useEventDelete(event);
   const isPastGame = isStaff && (event.event_type === 'game' || event.event_type === 'tournament') && new Date(event.start_at) < new Date();
 
   const openEdit = () => {
     if (event.parent_event_id) {
-      const all = window.confirm('Edit all future events in this series?\n\nOK = all future\nCancel = this event only');
-      setEditMode(all ? 'series' : 'single');
+      setConfirmAction({ type: 'editSeries' });
     } else {
       setEditMode('single');
+      setEditing(true);
     }
-    setEditing(true);
   };
 
   return (
@@ -92,12 +91,7 @@ export default function EventDetailPage() {
         <div style={{ padding: '6px 16px', fontSize: 12, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Repeat size={12} strokeWidth={1.75} />
           Part of a recurring series
-          <button type="button" onClick={async () => {
-            if (!window.confirm('Remove this event from the series? It will become standalone.')) return;
-            await supabase.from('events').update({ parent_event_id: null }).eq('id', event.id);
-            patchEvent({ parent_event_id: null });
-            refetch();
-          }} style={{ fontSize: 12, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>
+          <button type="button" onClick={() => setConfirmAction({ type: 'removeSeries' })} style={{ fontSize: 12, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>
             Remove from series
           </button>
         </div>
@@ -130,6 +124,12 @@ export default function EventDetailPage() {
       {editing && <Suspense fallback={null}><CreateActivityWizard orgId={orgId} editEvent={event} editMode={editMode} onClose={() => setEditing(false)} onCreated={refetch} /></Suspense>}
       {showCheckin && <Suspense fallback={null}><EventCheckinOverlay eventId={event.id} roster={roster} teamColor={teamColor} onClose={() => setShowCheckin(false)} /></Suspense>}
       {showScoreSheet && <Suspense fallback={null}><ScoreEntrySheet event={event} team={team} onClose={() => setShowScoreSheet(false)} /></Suspense>}
+      {confirmAction?.type === 'editSeries' && (
+        <ConfirmDialog title="Edit recurring event" message="Edit all future events in this series, or just this one?" confirmLabel="All future" cancelLabel="This one only" onConfirm={() => { setConfirmAction(null); setEditMode('series'); setEditing(true); }} onCancel={() => { setConfirmAction(null); setEditMode('single'); setEditing(true); }} />
+      )}
+      {confirmAction?.type === 'removeSeries' && (
+        <ConfirmDialog title="Remove from series" message="This event will become standalone and no longer be part of the recurring series." confirmLabel="Remove" onConfirm={async () => { setConfirmAction(null); await supabase.from('events').update({ parent_event_id: null }).eq('id', event.id); patchEvent({ parent_event_id: null }); refetch(); }} onCancel={() => setConfirmAction(null)} />
+      )}
     </div>
   );
 }
