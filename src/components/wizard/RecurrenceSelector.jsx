@@ -31,7 +31,7 @@ export default function RecurrenceSelector({ value, onChange }) {
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)' }}>Until</span>
           <input type="date" value={until || ''} onChange={(e) => setUntil(e.target.value)}
-            style={inputStyle} />
+            style={selectStyle} />
         </label>
       )}
     </div>
@@ -46,8 +46,8 @@ const chipStyle = (sel) => ({
   fontSize: 13, fontWeight: 500, padding: '0 12px',
 });
 
-const inputStyle = {
-  minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)',
-  backgroundColor: 'var(--em-bg-card)', padding: '0 12px', fontSize: 15,
-  color: 'var(--em-text-primary)', width: '100%',
+const selectStyle = {
+  minHeight: 44, borderRadius: 10, border: '1.5px solid var(--em-border-default)',
+  backgroundColor: 'var(--em-bg-tertiary)', padding: '0 14px', fontSize: 15,
+  color: 'var(--em-text-primary)', width: '100%', fontFamily: 'inherit',
 };
