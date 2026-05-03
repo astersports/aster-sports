@@ -1,5 +1,6 @@
 import { useNow } from '../../hooks/useNow';
 import { TYPE_LABELS } from '../../lib/constants';
+import Label from '../shared/Label';
 
 const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
 
@@ -42,9 +43,7 @@ export default function NextEventCard({ event }) {
       }}
     >
       <div>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' }}>
-          NEXT EVENT
-        </div>
+        <Label style={{ marginBottom: 0 }}>NEXT EVENT</Label>
         <div className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginTop: 2 }}>
           {title}{teamName ? ` · ${teamName}` : ''}
         </div>

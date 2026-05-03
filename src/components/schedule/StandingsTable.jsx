@@ -1,4 +1,5 @@
 import { EMPTY_SUMMARY } from '../../lib/teamRecords';
+import Label from '../shared/Label';
 
 const thStyle = { padding: '6px 4px', fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', color: 'var(--em-text-tertiary)' };
 const tdStyle = { padding: '10px 4px', fontSize: 13, color: 'var(--em-text-secondary)' };
@@ -24,9 +25,7 @@ export default function StandingsTable({ teams, recordsByTeamId, totalGames }) {
       marginBottom: 16,
     }}>
       <div style={{ padding: '12px 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' }}>
-          STANDINGS
-        </div>
+        <Label style={{ marginBottom: 0 }}>STANDINGS</Label>
         {totalGames > 0 && (
           <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>
             Through {totalGames} game{totalGames !== 1 ? 's' : ''}

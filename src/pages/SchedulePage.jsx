@@ -12,6 +12,7 @@ import ScheduleFab from '../components/schedule/ScheduleFab';
 import ViewToggle from '../components/schedule/ViewToggle';
 import GamesView from '../components/schedule/GamesView';
 import TextEmptyState from '../components/shared/TextEmptyState';
+import Label from '../components/shared/Label';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import DensityToggle from '../components/home/DensityToggle';
 import { useDensity } from '../hooks/useDensity';
@@ -91,7 +92,7 @@ export default function SchedulePage() {
             ) : (
               <div style={{ marginTop: 12 }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Next 7 days</div>
+                  <Label style={{ marginBottom: 0 }}>Next 7 days</Label>
                   <DensityToggle sectionKey="schedule-list" />
                 </div>
                 <DateGroupedList events={upcoming} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} nextEventId={nextEventId} density={density} />
@@ -99,7 +100,7 @@ export default function SchedulePage() {
             )}
             {remaining.length > 0 && (
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Later</div>
+                <Label>Later</Label>
                 <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} density={density} />
               </div>
             )}

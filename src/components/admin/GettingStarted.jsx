@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { CheckCircle2, Circle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import Label from '../shared/Label';
 
 export default function GettingStarted({ hasSeasons, hasPrograms }) {
   const { orgId } = useAuth();
@@ -39,7 +40,7 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
 
   return (
     <section className="min-w-0">
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>GETTING STARTED</div>
+      <Label>GETTING STARTED</Label>
       <div
         style={{
         backgroundColor: 'var(--em-bg-card)',

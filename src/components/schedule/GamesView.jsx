@@ -7,6 +7,7 @@ import { useNow } from '../../hooks/useNow';
 import StandingsTable from './StandingsTable';
 import MatchupCard from './MatchupCard';
 import Chip from '../shared/Chip';
+import Label from '../shared/Label';
 
 function useGameResults(eventIds) {
   const [byEventId, setByEventId] = useState({});
@@ -128,9 +129,7 @@ export default function GamesView({ activities, orgId }) {
 
       {past.length > 0 && (
         <>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginTop: 24, marginBottom: 8 }}>
-            RESULTS
-          </div>
+          <Label style={{ marginTop: 24 }}>RESULTS</Label>
           {past.slice(-10).reverse().map((e) => <MatchupCard key={e.id} event={e} gameResult={gameResultsMap[e.id]} />)}
         </>
       )}

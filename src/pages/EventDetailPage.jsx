@@ -18,6 +18,7 @@ import EventRidesTab from '../components/event/EventRidesTab';
 import EventNotes from '../components/event/EventNotes';
 import EventCancelActions from '../components/event/EventCancelActions';
 import TournamentBriefingBanner from '../components/event/TournamentBriefingBanner';
+import Button from '../components/shared/Button';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
@@ -81,9 +82,9 @@ export default function EventDetailPage() {
     <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={doDelete} onCheckin={() => setShowCheckin(true)} />
       {isPastGame && (
-        <button type="button" onClick={() => setShowScoreSheet(true)} className="sf-press" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: 'calc(100% - 32px)', margin: '12px 16px', minHeight: 44, borderRadius: 10, border: '1px solid var(--em-accent)', backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)', fontSize: 14, fontWeight: 600 }}>
+        <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>
           Enter Score
-        </button>
+        </Button>
       )}
       <TournamentBriefingBanner event={event} team={team} role={role} />
 

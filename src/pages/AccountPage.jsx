@@ -5,13 +5,10 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { usePrograms } from '../hooks/usePrograms';
 import { EMBER_DISPLAY_NAME } from '../lib/emberDefaults';
+import Label from '../components/shared/Label';
 
 const ROLE_LABELS = { admin: 'Admin', coach: 'Coach', parent: 'Parent' };
 const VERSION = 'Ember v2.0';
-
-const SectionHeader = ({ children }) => (
-  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>{children}</div>
-);
 
 export default function AccountPage() {
   const navigate = useNavigate();
@@ -48,7 +45,7 @@ export default function AccountPage() {
 
       {role === 'parent' && (myChildren?.length > 0) && (
         <section style={{ marginBottom: 16 }}>
-          <SectionHeader>MY CHILDREN</SectionHeader>
+          <Label>MY CHILDREN</Label>
           <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
             {myChildren.map((c, i) => (
               <div key={c.playerId} style={{ padding: '12px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
@@ -61,7 +58,7 @@ export default function AccountPage() {
       )}
 
       <section style={{ marginBottom: 16 }}>
-        <SectionHeader>PREFERENCES</SectionHeader>
+        <Label>PREFERENCES</Label>
         <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', padding: 16, fontSize: 13, color: 'var(--em-text-tertiary)' }}>
           Notification preferences coming soon.
         </div>
