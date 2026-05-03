@@ -15,8 +15,12 @@ export default function MatchupCard({ event, gameResult }) {
 
   return (
     <div
+      role="link"
+      tabIndex={0}
+      aria-label={`${teamName} vs ${opponent}`}
       className="sf-press"
       onClick={() => { navigator.vibrate?.(10); navigate(`/events/${event.id}`, { state: { event } }); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/events/${event.id}`, { state: { event } }); } }}
       style={{
         display: 'flex',
         alignItems: 'stretch',

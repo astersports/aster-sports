@@ -15,6 +15,7 @@ import ViewToggle from '../components/schedule/ViewToggle';
 import GamesView from '../components/schedule/GamesView';
 import DensityToggle from '../components/home/DensityToggle';
 import TextEmptyState from '../components/shared/TextEmptyState';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { useDensity } from '../hooks/useDensity';
 import { isStaff } from '../lib/permissions';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
@@ -70,7 +71,7 @@ export default function SchedulePage() {
   const thisWeek = useMemo(() => upcoming.filter((a) => a !== nextEvent && new Date(a.start_at) <= weekEnd), [upcoming, nextEvent, tick, weekEnd]);
   const remaining = useMemo(() => upcoming.filter((a) => new Date(a.start_at) > weekEnd), [upcoming, tick, weekEnd]);
 
-  if (loading) return <div style={{ padding: 24, color: 'var(--em-text-tertiary)' }}>Loading...</div>;
+  if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" rows={2} /></div>;
 
   return (
     <>

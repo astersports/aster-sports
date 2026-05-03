@@ -15,8 +15,12 @@ export default function CompactCard({ event, stagger }) {
 
   return (
     <div
+      role="link"
+      tabIndex={0}
+      aria-label={`${event.teams?.name || ''} ${TYPE_LABELS[event.event_type] || ''}, ${formatTime(event.start_at)}`}
       className={`sf-press ${isPast ? '' : (stagger || '')}`}
       onClick={() => { navigator.vibrate?.(10); navigate(`/events/${event.id}`, { state: { event } }); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/events/${event.id}`, { state: { event } }); } }}
       style={{
         display: 'flex',
         alignItems: 'center',

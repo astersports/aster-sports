@@ -28,8 +28,12 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
 
   return (
     <div
+      role="link"
+      tabIndex={0}
+      aria-label={`${teamName} ${rawTitle}, ${formatTime(event.start_at)}`}
       className={`sf-press ${dimmed ? '' : (stagger || '')}`}
       onClick={() => { navigator.vibrate?.(10); navigate(`/events/${event.id}`, { state: { event } }); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/events/${event.id}`, { state: { event } }); } }}
       style={{
         display: 'flex',
         alignItems: 'stretch',

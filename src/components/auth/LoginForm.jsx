@@ -8,8 +8,8 @@ const lbl = { color: 'var(--em-text-secondary)', fontSize: 13 };
 const err = { color: 'var(--em-danger)', fontSize: 12, marginTop: 4 };
 const input = (hasErr) => ({
   width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10,
-  border: `1px solid ${hasErr ? 'var(--em-danger)' : 'var(--em-border-default)'}`,
-  backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
+  border: `1.5px solid ${hasErr ? 'var(--em-danger)' : 'var(--em-border-default)'}`,
+  backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)',
   fontSize: 15, outline: 'none',
 });
 

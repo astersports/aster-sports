@@ -12,6 +12,7 @@ import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import MyTeamsStrip from '../components/home/MyTeamsStrip';
 import NowSectionParent from '../components/home/NowSectionParent';
 import TextEmptyState from '../components/shared/TextEmptyState';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
 import { detectConflicts } from '../lib/conflicts';
 import { firstNameFrom, greetingFor } from '../lib/greetings';
@@ -77,7 +78,7 @@ export default function ParentHomePage() {
     const next = new Map(prev); next.set(dateStr, !isCollapsed(dateStr)); return next;
   });
 
-  if (loading) return <div style={{ padding: 24, color: 'var(--em-text-tertiary)' }}>Loading...</div>;
+  if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" rows={2} /></div>;
 
   return (
     <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">

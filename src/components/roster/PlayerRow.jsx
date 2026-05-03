@@ -29,12 +29,14 @@ export default function PlayerRow({ player, teamColor, isLast }) {
             <div className="font-semibold truncate" style={{ color: 'var(--em-text-primary)', fontSize: 15 }}>
               {player.first_name} {player.last_name}
             </div>
-            <div style={{
-              width: 6, height: 6, borderRadius: '50%',
-              backgroundColor: player.payment_status === 'partial' ? 'var(--em-warning)'
-                : player.payment_status === 'overdue' ? 'var(--em-danger)' : 'var(--em-success)',
-              flexShrink: 0,
-            }} title={player.payment_status === 'partial' ? 'Partial payment' : player.payment_status === 'overdue' ? 'Payment overdue' : 'Paid'} />
+            {(role === 'admin' || role === 'coach') && (
+              <div style={{
+                width: 6, height: 6, borderRadius: '50%',
+                backgroundColor: player.payment_status === 'partial' ? 'var(--em-warning)'
+                  : player.payment_status === 'overdue' ? 'var(--em-danger)' : 'var(--em-success)',
+                flexShrink: 0,
+              }} title={player.payment_status === 'partial' ? 'Partial payment' : player.payment_status === 'overdue' ? 'Payment overdue' : 'Paid'} />
+            )}
           </div>
           <div className="flex items-center gap-1" style={{ marginTop: 2 }}>
             {isAcademy && <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-academy-soft)', color: 'var(--em-academy)' }}>Academy</span>}
