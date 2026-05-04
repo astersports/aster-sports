@@ -13,6 +13,7 @@ import TeamHeaderCard from '../components/roster/TeamHeaderCard';
 import RosterSection from '../components/roster/RosterSection';
 import MessageTeamFAB from '../components/roster/MessageTeamFAB';
 import ShareScheduleButton from '../components/schedule/ShareScheduleButton';
+import QrInviteButton from '../components/roster/QrInviteButton';
 import TeamSwitcher from '../components/roster/TeamSwitcher';
 
 export default function TeamDetailPage() {
@@ -46,6 +47,7 @@ export default function TeamDetailPage() {
       <TeamHeaderCard team={team} summary={summary} loading={recordsLoading} />
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         <ShareScheduleButton teamId={teamId} teamName={team.name} />
+        {isStaff(role) && <QrInviteButton teamId={teamId} teamName={team.name} />}
       </div>
       {rosterLoading ? (
         <LoadingSkeleton variant="list" count={6} />
