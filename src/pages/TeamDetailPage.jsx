@@ -12,6 +12,7 @@ import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import TeamHeaderCard from '../components/roster/TeamHeaderCard';
 import RosterSection from '../components/roster/RosterSection';
 import MessageTeamFAB from '../components/roster/MessageTeamFAB';
+import ShareScheduleButton from '../components/schedule/ShareScheduleButton';
 import TeamSwitcher from '../components/roster/TeamSwitcher';
 
 export default function TeamDetailPage() {
@@ -43,6 +44,9 @@ export default function TeamDetailPage() {
       </button>
       <TeamSwitcher programs={switcherPrograms} teamId={teamId} navigate={navigate} />
       <TeamHeaderCard team={team} summary={summary} loading={recordsLoading} />
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <ShareScheduleButton teamId={teamId} teamName={team.name} />
+      </div>
       {rosterLoading ? (
         <LoadingSkeleton variant="list" count={6} />
       ) : players.length === 0 ? (
