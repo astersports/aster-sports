@@ -34,8 +34,8 @@ export default function ThisWeekRow({ event, rideCount, dutyCount, conflictWith 
   const isCancelled = event.status === 'cancelled';
   const isCompleted = !isCancelled && endMs < now;
   const opacity = isCancelled ? 0.4 : isCompleted ? 0.6 : 1;
-  const within6h = secondsUntil > 0 && secondsUntil < 21600;
-  const timeText = within6h ? formatCountdown(event.start_at) : formatTime(event.start_at);
+  const within24h = secondsUntil > 0 && secondsUntil < 86400;
+  const timeText = within24h ? formatCountdown(event.start_at) : formatTime(event.start_at);
 
   const goTo = (e, path) => { e.stopPropagation(); navigator.vibrate?.(10); navigate(path, { state: { event } }); };
   const onRowClick = (e) => {
