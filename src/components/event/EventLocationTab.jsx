@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Navigation, Calendar } from 'lucide-react';
 import { getDirectionUrls } from '../../lib/mapsUrls';
+import Button from '../shared/Button';
 
 export default function EventLocationTab({ event }) {
   const [locationData, setLocationData] = useState(null);
@@ -105,19 +106,10 @@ export default function EventLocationTab({ event }) {
       )}
       {urls && (
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-          <a href={urls.google}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="sf-press"
-            style={{
-              flex: 1, minHeight: 44, borderRadius: 10,
-              border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
-              color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none',
-            }}>
-            <Navigation size={14} strokeWidth={1.75} />
+          <Button variant="secondary" fullWidth onClick={() => window.open(urls.google, '_blank')}>
+            <Navigation size={15} strokeWidth={1.75} />
             Get Directions
-          </a>
+          </Button>
         </div>
       )}
     </div>

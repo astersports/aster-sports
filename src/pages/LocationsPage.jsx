@@ -7,6 +7,8 @@ import LocationCard from '../components/location/LocationCard';
 import SearchToolbar from '../components/location/SearchToolbar';
 import Button from '../components/shared/Button';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
+import DensityToggle from '../components/home/DensityToggle';
+import { useDensity } from '../hooks/useDensity';
 
 export default function LocationsPage() {
   const { role } = useAuth();
@@ -16,6 +18,7 @@ export default function LocationsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
+  const { density } = useDensity('locations-list', 'medium');
 
   const authReady = role !== undefined && role !== null;
   const isStaff = authReady && (role === 'admin' || role === 'coach');
@@ -30,9 +33,10 @@ export default function LocationsPage() {
   return (
     <div style={{ padding: 16, paddingBottom: 80 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0 }}>
-          Locations
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0 }}>Locations</h1>
+          <DensityToggle sectionKey="locations-list" />
+        </div>
         {isStaff && (
           <Button size="sm" onClick={openCreate} aria-label="New location">
             <Plus size={16} strokeWidth={2} /> New
@@ -78,6 +82,7 @@ export default function LocationsPage() {
           location={l}
           isStaff={isStaff}
           showArchived={showArchived}
+          density={density}
           onEdit={() => openEdit(l)}
           onArchive={() => handleArchive(l)}
           onUnarchive={() => unarchive(l.id)}
