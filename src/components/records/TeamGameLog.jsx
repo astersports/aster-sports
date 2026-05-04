@@ -27,7 +27,7 @@ function tourneyRecord(games) {
 
 export default function TeamGameLog({ teamId, teamColor }) {
   const { loading, grouped } = useTeamGamesByTournament(teamId);
-  if (loading) return <div style={{ padding: 12, color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Loading games…</div>;
+  if (loading) return <>{Array.from({ length: 3 }).map((_, i) => <div key={i} className="bc-glog-skeleton" />)}</>;
   if (grouped.tournaments.length === 0 && grouped.standalone.length === 0) {
     return <div style={{ padding: 12, color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>No games published yet.</div>;
   }

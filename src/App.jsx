@@ -49,10 +49,10 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
-      <Route path="/records" element={<Protected><RecordsPage /></Protected>} />
 
       {/* Authenticated routes */}
       <Route path="/"         element={<Protected><HomePage /></Protected>} />
+      <Route path="/records"  element={<Protected><RecordsPage /></Protected>} />
       <Route path="/schedule" element={<Protected><SchedulePage /></Protected>} />
       <Route path="/locations" element={<Protected><LocationsPage /></Protected>} />
       <Route path="/teams"           element={<Protected><TeamsPage /></Protected>} />
