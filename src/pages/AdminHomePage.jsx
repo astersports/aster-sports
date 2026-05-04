@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSeason } from '../context/SeasonContext';
@@ -7,12 +6,11 @@ import { useSeasons } from '../hooks/useSeasons';
 import { usePrograms } from '../hooks/usePrograms';
 import { useActivities } from '../hooks/useActivities';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
-import { useNow } from '../hooks/useNow';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import KpiGrid from '../components/admin/KpiGrid';
 import QuickActions from '../components/admin/QuickActions';
 import ActiveSeasonCard from '../components/admin/ActiveSeasonCard';
-import NextEventCard from '../components/admin/NextEventCard';
+import AdminScheduleSection from '../components/admin/AdminScheduleSection';
 import TeamPerformanceStrip from '../components/admin/TeamPerformanceStrip';
 import GettingStarted from '../components/admin/GettingStarted';
 import AdminGreeting from '../components/admin/AdminGreeting';
@@ -27,9 +25,7 @@ export default function AdminHomePage() {
   const { activities, refetch } = useActivities();
   const { byTeamId: recordsByTeam } = useOrgTeamRecords(orgId);
   useRefetchOnVisible(refetch);
-  const now = useNow();
   const navigate = useNavigate();
-  const nextEvent = useMemo(() => activities.find((a) => a.start_at && a.status !== 'cancelled' && new Date(a.start_at).getTime() >= now) || null, [activities, now]);
 
   // overflow-x-hidden + max-w-full on the page wrapper is defense in
   // depth — even if a child component escapes its box, nothing drags
@@ -57,7 +53,11 @@ export default function AdminHomePage() {
       <section className="min-w-0" aria-label="Active season">
         <Label>SEASON</Label>
         <ActiveSeasonCard season={activeSeason} />
-        <NextEventCard event={nextEvent} />
+      </section>
+
+      <section className="min-w-0">
+        <Label>THIS WEEK</Label>
+        <AdminScheduleSection activities={activities} />
       </section>
 
       <GettingStarted
