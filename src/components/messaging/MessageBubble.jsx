@@ -1,12 +1,23 @@
+import { useState, useRef, useCallback } from 'react';
+import { Trash2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-export default function MessageBubble({ message, isAnnouncement }) {
+export default function MessageBubble({ message, isAnnouncement, onDelete }) {
   const { user } = useAuth();
   const isMine = message.sender_id === user?.id;
+  const [showActions, setShowActions] = useState(false);
+  const timerRef = useRef(null);
 
   const time = new Date(message.created_at).toLocaleString('en-US', {
     hour: 'numeric', minute: '2-digit',
   });
+
+  const startPress = useCallback(() => {
+    if (!isMine || !onDelete) return;
+    timerRef.current = setTimeout(() => { navigator.vibrate?.(20); setShowActions(true); }, 500);
+  }, [isMine, onDelete]);
+
+  const endPress = useCallback(() => { clearTimeout(timerRef.current); }, []);
 
   if (isAnnouncement) {
     return (
@@ -31,16 +42,35 @@ export default function MessageBubble({ message, isAnnouncement }) {
           {message.sender_name}
         </span>
       )}
-      <div style={{
-        maxWidth: '80%', padding: '10px 14px', borderRadius: 14,
-        backgroundColor: isMine ? 'var(--em-accent)' : 'var(--em-bg-card)',
-        border: isMine ? 'none' : '1px solid var(--em-border-default)',
-        boxShadow: 'var(--em-shadow-sm)',
-      }}>
+      <div
+        onPointerDown={startPress} onPointerUp={endPress} onPointerLeave={endPress}
+        style={{
+          maxWidth: '80%', padding: '10px 14px', borderRadius: 14, position: 'relative',
+          backgroundColor: isMine ? 'var(--em-accent)' : 'var(--em-bg-card)',
+          border: isMine ? 'none' : '1px solid var(--em-border-default)',
+          boxShadow: 'var(--em-shadow-sm)', userSelect: 'none',
+        }}
+      >
         <div style={{
           fontSize: 15, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
           color: isMine ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
         }}>{message.body}</div>
+        {showActions && isMine && (
+          <button
+            type="button"
+            onClick={() => { onDelete(message.id); setShowActions(false); }}
+            className="sf-press" aria-label="Delete message"
+            style={{
+              position: 'absolute', top: -12, right: -12,
+              width: 28, height: 28, borderRadius: '50%',
+              backgroundColor: 'var(--em-danger)', border: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', boxShadow: 'var(--em-shadow-md)',
+            }}
+          >
+            <Trash2 size={14} strokeWidth={2} color="var(--em-text-inverse)" />
+          </button>
+        )}
       </div>
       <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 2, paddingLeft: 4, paddingRight: 4 }}>{time}</span>
     </div>

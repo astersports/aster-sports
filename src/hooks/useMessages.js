@@ -63,5 +63,17 @@ export function useMessages(channel, channelId, dmThreadId) {
     return true;
   };
 
-  return { messages, loading, send, refetch: fetch };
+  const deleteMessage = async (messageId) => {
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    const { error } = await supabase.from('messages').delete().eq('id', messageId);
+    if (error) {
+      console.error('delete message:', error.message);
+      showToast("Couldn't delete message. Try again?", 'error');
+      await fetch();
+      return false;
+    }
+    return true;
+  };
+
+  return { messages, loading, send, deleteMessage, refetch: fetch };
 }

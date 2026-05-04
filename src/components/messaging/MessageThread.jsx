@@ -18,7 +18,7 @@ function DateSep({ date }) {
 
 export default function MessageThread({ channel, onBack }) {
   const { role } = useAuth();
-  const { messages, loading, send } = useMessages(channel.channel, channel.teamId, channel.dmThreadId);
+  const { messages, loading, send, deleteMessage } = useMessages(channel.channel, channel.teamId, channel.dmThreadId);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -64,7 +64,7 @@ export default function MessageThread({ channel, onBack }) {
           return (
             <div key={m.id}>
               {showDate && <DateSep date={m.created_at} />}
-              <MessageBubble message={m} isAnnouncement={channel.channel === 'announcement'} />
+              <MessageBubble message={m} isAnnouncement={channel.channel === 'announcement'} onDelete={deleteMessage} />
             </div>
           );
         })}
