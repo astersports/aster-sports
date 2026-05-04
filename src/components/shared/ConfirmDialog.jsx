@@ -5,7 +5,6 @@ import { useEffect } from 'react';
 // `destructive` swaps the confirm button to the danger color — the default
 // is the regular accent for benign confirms.
 export default function ConfirmDialog({
-  open,
   title,
   message,
   confirmLabel = 'Confirm',
@@ -15,13 +14,10 @@ export default function ConfirmDialog({
   onCancel,
 }) {
   useEffect(() => {
-    if (!open) return;
     const onKey = (e) => { if (e.key === 'Escape') onCancel?.(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onCancel]);
-
-  if (!open) return null;
+  }, [onCancel]);
 
   const confirmBg = destructive ? 'var(--em-danger)' : 'var(--em-accent)';
 
