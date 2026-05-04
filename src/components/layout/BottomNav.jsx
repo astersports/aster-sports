@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { House, Calendar, MapPin, Users, MessageSquare } from 'lucide-react';
+import { House, Calendar, MapPin, Users, Trophy } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/permissions';
 
@@ -10,7 +10,7 @@ const ALL_TABS = [
   { to: '/schedule',  label: 'Schedule',  icon: Calendar,      staffOnly: false },
   { to: '/locations', label: 'Locations', icon: MapPin,        staffOnly: false },
   { to: '/teams',     label: 'Teams',     icon: Users,         staffOnly: false },
-  { to: '/messages',  label: 'Messages',  icon: MessageSquare, staffOnly: false },
+  { to: '/records',   label: 'Records',   icon: Trophy,        staffOnly: false },
 ];
 
 export default function BottomNav() {
