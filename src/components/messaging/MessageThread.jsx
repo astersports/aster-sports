@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { ChevronLeft } from 'lucide-react';
 import { useMessages } from '../../hooks/useMessages';
 import MessageBubble from './MessageBubble';
 import ComposeBar from './ComposeBar';
@@ -46,9 +47,9 @@ export default function MessageThread({ channel, onBack }) {
             width: 44, height: 44, borderRadius: 10, border: 'none',
             backgroundColor: 'var(--em-bg-secondary)', display: 'flex',
             alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-            fontSize: 18, color: 'var(--em-text-primary)',
+            color: 'var(--em-accent)',
           }}
-        >←</button>
+        ><ChevronLeft size={22} strokeWidth={2} /></button>
         <div style={{
           width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
           backgroundColor: channel.color || 'var(--em-accent)',

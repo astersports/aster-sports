@@ -52,7 +52,7 @@ export default function MessagesPage() {
 
   if (active) {
     return (
-      <div style={{ position: 'fixed', inset: 0, bottom: 80, display: 'flex', flexDirection: 'column', backgroundColor: 'var(--em-bg-page)' }}>
+      <div style={{ position: 'fixed', inset: 0, bottom: 80, display: 'flex', flexDirection: 'column', backgroundColor: 'var(--em-bg-page)', paddingTop: 'env(safe-area-inset-top)' }}>
         <MessageThread channel={active} onBack={() => setActive(null)} />
       </div>
     );
