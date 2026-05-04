@@ -16,6 +16,7 @@ import Label from '../components/shared/Label';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import DensityToggle from '../components/home/DensityToggle';
 import { useDensity } from '../hooks/useDensity';
+import { useGameResultsMap } from '../hooks/useGameResultsMap';
 import { isStaff } from '../lib/permissions';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
@@ -32,6 +33,7 @@ export default function SchedulePage() {
   const [showCancelled, setShowCancelled] = useState(false);
   const [viewMode, setViewMode] = useState('all');
   const { density } = useDensity('schedule-list', 'medium');
+  const gameResults = useGameResultsMap(activities);
 
   // tick increments every 60s so the upcoming / thisWeek / remaining
   // memos re-evaluate against a fresh `now`. Without this, a user who
@@ -95,13 +97,13 @@ export default function SchedulePage() {
                   <Label style={{ marginBottom: 0 }}>Next 7 days</Label>
                   <DensityToggle sectionKey="schedule-list" />
                 </div>
-                <DateGroupedList events={upcoming} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} nextEventId={nextEventId} density={density} />
+                <DateGroupedList events={upcoming} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} nextEventId={nextEventId} density={density} gameResults={gameResults} />
               </div>
             )}
             {remaining.length > 0 && (
               <div style={{ marginTop: 16 }}>
                 <Label>Later</Label>
-                <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} density={density} />
+                <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} density={density} gameResults={gameResults} />
               </div>
             )}
           </>

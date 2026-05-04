@@ -3,7 +3,7 @@
 // short metadata line. Tapping navigates to the team detail page.
 export default function TeamPerformanceStrip({ programs, recordsByTeam = {}, navigate }) {
   return (
-    <div className="flex gap-3 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 4 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
       {programs.map((team) => (
         <button
           key={team.id}
@@ -11,8 +11,6 @@ export default function TeamPerformanceStrip({ programs, recordsByTeam = {}, nav
           onClick={() => { navigator.vibrate?.(10); navigate(`/teams/${team.id}`); }}
           className="sf-press sf-fade-in"
           style={{
-            flexShrink: 0,
-            width: 140,
             padding: 12,
             borderRadius: 10,
             backgroundColor: 'var(--em-bg-card)',

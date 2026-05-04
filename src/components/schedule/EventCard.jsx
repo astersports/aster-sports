@@ -7,7 +7,7 @@ import { useNow } from '../../hooks/useNow';
 import ChildRsvp from './ChildRsvp';
 import RsvpCountRow from './RsvpCountRow';
 
-export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'medium' }) {
+export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'medium', gameResult }) {
   const navigate = useNavigate();
   const { role, myChildren } = useAuth();
   const now = useNow();
@@ -59,6 +59,11 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
             </span>
           )}
           <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}> · {typeLabel}</span>
+          {gameResult?.published_at && (
+            <span style={{ fontSize: 13, fontWeight: 700, marginLeft: 4, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
+              {gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}
+            </span>
+          )}
           {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
           {density === 'minimal' && teamName && <span style={{ fontSize: 13, color: teamColor, fontWeight: 500 }}> · {teamName}</span>}
         </div>

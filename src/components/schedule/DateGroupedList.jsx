@@ -1,7 +1,7 @@
 import { groupByDate, formatDateHeader } from '../../lib/scheduleHelpers';
 import EventCard from './EventCard';
 
-export default function DateGroupedList({ events, rsvpCounts, rideCounts, dutyCounts, nextEventId, density }) {
+export default function DateGroupedList({ events, rsvpCounts, rideCounts, dutyCounts, nextEventId, density, gameResults }) {
   return groupByDate(events).map(([date, evts]) => (
     <div key={date} data-date-group={date}>
       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
@@ -16,6 +16,7 @@ export default function DateGroupedList({ events, rsvpCounts, rideCounts, dutyCo
           dutyCount={dutyCounts?.[event.id]}
           isNext={event.id === nextEventId}
           density={density}
+          gameResult={gameResults?.[event.id]}
         />
       ))}
     </div>
