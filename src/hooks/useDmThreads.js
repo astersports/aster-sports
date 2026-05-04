@@ -16,27 +16,38 @@ export function useDmThreads() {
       .order('created_at', { ascending: false });
     if (error) console.error('useDmThreads:', error.message);
     const raw = data || [];
-    const enriched = await Promise.all(raw.map(async (t) => {
+    if (raw.length === 0) { setThreads([]); setLoading(false); return; }
+
+    const otherIds = raw.map((t) => t.user_a === user.id ? t.user_b : t.user_a);
+    const threadIds = raw.map((t) => t.id);
+
+    const [guardianRes, roleRes, msgRes] = await Promise.all([
+      supabase.from('guardians').select('user_id, first_name, last_name').in('user_id', otherIds),
+      supabase.from('user_roles').select('user_id, role').in('user_id', otherIds),
+      supabase.from('messages').select('dm_thread_id, sender_name, body, created_at')
+        .in('dm_thread_id', threadIds).eq('channel', 'dm')
+        .order('created_at', { ascending: false }),
+    ]);
+
+    const guardianMap = {};
+    (guardianRes.data || []).forEach((g) => { guardianMap[g.user_id] = `${g.first_name} ${g.last_name}`; });
+    const roleMap = {};
+    (roleRes.data || []).forEach((r) => { roleMap[r.user_id] = r.role; });
+    const lastMsgMap = {};
+    (msgRes.data || []).forEach((m) => {
+      if (!lastMsgMap[m.dm_thread_id]) lastMsgMap[m.dm_thread_id] = m;
+    });
+
+    const enriched = raw.map((t) => {
       const otherId = t.user_a === user.id ? t.user_b : t.user_a;
-      const { data: guardian } = await supabase
-        .from('guardians').select('first_name, last_name')
-        .eq('user_id', otherId).maybeSingle();
-      const otherName = guardian
-        ? `${guardian.first_name} ${guardian.last_name}`
-        : 'Staff';
-      const { data: roleRow } = await supabase
-        .from('user_roles').select('role').eq('user_id', otherId).maybeSingle();
-      const { data: lastMsg } = await supabase
-        .from('messages').select('sender_name, body, created_at')
-        .eq('dm_thread_id', t.id).order('created_at', { ascending: false }).limit(1);
       return {
         ...t,
         otherId,
-        otherName,
-        otherRole: roleRow?.role || 'parent',
-        lastMessage: lastMsg?.[0] || null,
+        otherName: guardianMap[otherId] || (roleMap[otherId] === 'coach' ? 'Coach' : roleMap[otherId] === 'admin' ? 'Admin' : 'User'),
+        otherRole: roleMap[otherId] || 'parent',
+        lastMessage: lastMsgMap[t.id] || null,
       };
-    }));
+    });
     setThreads(enriched);
     setLoading(false);
   }, [user, orgId]);

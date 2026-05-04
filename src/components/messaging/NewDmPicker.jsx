@@ -14,17 +14,18 @@ export default function NewDmPicker({ onSelect, onClose }) {
     (async () => {
       const { data: roles } = await supabase.from('user_roles')
         .select('user_id, role').eq('organization_id', orgId).neq('user_id', user.id);
-      if (!roles) { setLoading(false); return; }
-      const resolved = await Promise.all(roles.map(async (r) => {
-        const { data: g } = await supabase.from('guardians')
-          .select('first_name, last_name').eq('user_id', r.user_id).maybeSingle();
-        return {
-          userId: r.user_id,
-          role: r.role,
-          name: g ? `${g.first_name} ${g.last_name}` : r.role === 'admin' ? 'Admin' : r.role === 'coach' ? 'Coach' : 'User',
-        };
+      if (!roles || roles.length === 0) { setMembers([]); setLoading(false); return; }
+      const userIds = roles.map((r) => r.user_id);
+      const { data: guardians } = await supabase.from('guardians')
+        .select('user_id, first_name, last_name').in('user_id', userIds);
+      const guardianMap = {};
+      (guardians || []).forEach((g) => { guardianMap[g.user_id] = `${g.first_name} ${g.last_name}`; });
+      const resolved = roles.map((r) => ({
+        userId: r.user_id,
+        role: r.role,
+        name: guardianMap[r.user_id] || (r.role === 'admin' ? 'Admin' : r.role === 'coach' ? 'Coach' : 'User'),
       }));
-      setMembers(resolved.filter((m) => m.name && m.name !== 'User'));
+      setMembers(resolved.filter((m) => m.name !== 'User'));
       setLoading(false);
     })();
   }, [orgId, user]);

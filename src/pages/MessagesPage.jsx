@@ -16,7 +16,7 @@ import Label from '../components/shared/Label';
 export default function MessagesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { channels, loading } = useChannels();
-  const { markRead } = useUnreadCounts();
+  const { reads, markRead } = useUnreadCounts();
   const previews = useChannelPreviews(channels);
   const { threads: dmThreads, loading: dmsLoading, refetch: refetchDms } = useDmThreads();
   const getOrCreate = useGetOrCreateDm();
@@ -71,7 +71,7 @@ export default function MessagesPage() {
       </div>
       <div style={{ width: 32, height: 3, backgroundColor: 'var(--em-accent)', borderRadius: 2, marginBottom: 16 }} />
       <Label>Channels</Label>
-      <ChannelList channels={channels} activeKey={active?.key} onSelect={setActive} previews={previews} />
+      <ChannelList channels={channels} activeKey={active?.key} onSelect={setActive} previews={previews} reads={reads} />
       {dmThreads.length > 0 && (
         <div style={{ marginTop: 16 }}>
           <Label>Direct Messages</Label>

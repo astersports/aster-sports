@@ -33,10 +33,18 @@ export function useMessages(channel, channelId, dmThreadId) {
     else if (channel === 'team' && channelId) filter = `team_id=eq.${channelId}`;
     else filter = `channel=eq.${channel}`;
     const ch = supabase.channel(`messages-${channel}-${channelId || dmThreadId || 'all'}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter }, fetch)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter }, (payload) => {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === payload.new.id)) return prev;
+          return [...prev, payload.new];
+        });
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages', filter }, (payload) => {
+        setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
+      })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [channel, channelId, dmThreadId, fetch]);
+  }, [channel, channelId, dmThreadId]);
 
   const send = async (body) => {
     const trimmed = body.trim();
