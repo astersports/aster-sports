@@ -6,6 +6,7 @@ import { usePublicTournaments } from '../hooks/usePublicTournaments';
 import { EMPTY_SUMMARY } from '../lib/teamRecords';
 import { supabase } from '../lib/supabase';
 import StatHeroBar from '../components/broadcast/StatHeroBar';
+import TournamentCard from '../components/broadcast/TournamentCard';
 import TeamAccordion from '../components/records/TeamAccordion';
 
 export default function RecordsPage() {
@@ -71,6 +72,15 @@ export default function RecordsPage() {
             onToggle={() => setExpandedTeam(expandedTeam === team.id ? null : team.id)}
           />
         ))}
+        {tournaments.length > 0 && (
+          <div style={{ marginTop: 32 }}>
+            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>Tournaments</div>
+            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1.05, marginBottom: 16 }}>
+              RUN OF <span style={{ color: 'var(--sf-bc-cobalt)' }}>PLAY</span>
+            </h2>
+            {tournaments.map((t) => <TournamentCard key={t.id} tournament={t} />)}
+          </div>
+        )}
       </div>
     </div>
   );
