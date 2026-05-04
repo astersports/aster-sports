@@ -76,15 +76,13 @@ function Card(props) {
 
   return (
     <div
-      className={`p-4 min-w-0 sf-press ${stagger || ''}`}
+      className={`p-4 min-w-0 ${stagger || ''}`}
       style={{
         backgroundColor: 'var(--em-bg-card)',
         borderRadius: 10,
         border: '1px solid var(--em-border-default)',
         boxShadow: 'var(--em-shadow-sm)',
-        transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
       }}
-      onClick={() => navigator.vibrate?.(10)}
     >
       <div style={{ color: accent || 'var(--em-text-tertiary)', marginBottom: 8 }}>
         <Icon size={20} strokeWidth={1.75} aria-hidden="true" />

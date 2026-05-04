@@ -30,7 +30,7 @@ export default function SchedulePage() {
   const [selectedTeam, setSelectedTeam] = useState(() => new URLSearchParams(window.location.search).get('team'));
   const [selectedType, setSelectedType] = useState(null);
   const [activeKidFilter, setActiveKidFilter] = useState(null);
-  const [showWizard, setShowWizard] = useState(false);
+  const [showWizard, setShowWizard] = useState(() => new URLSearchParams(window.location.search).get('wizard') === '1');
   const [showCancelled, setShowCancelled] = useState(false);
   const [viewMode, setViewMode] = useState('all');
   const { density } = useDensity('schedule-list', 'medium');

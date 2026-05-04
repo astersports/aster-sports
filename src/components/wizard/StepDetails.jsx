@@ -77,9 +77,10 @@ export default function StepDetails({ eventType, data, onChange }) {
 
 function Toggle({ label, checked, onChange }) {
   return (
-    <div onClick={() => onChange(!checked)} style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      minHeight: 44, padding: '0 4px', cursor: 'pointer',
+    <button type="button" role="switch" aria-checked={checked} aria-label={label}
+      onClick={() => onChange(!checked)} className="sf-press" style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+      minHeight: 44, padding: '0 4px', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit',
     }}>
       <span style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{label}</span>
       <div style={{
@@ -88,12 +89,12 @@ function Toggle({ label, checked, onChange }) {
         transition: 'background-color 0.2s', display: 'flex', alignItems: 'center',
       }}>
         <div style={{
-          width: 24, height: 24, borderRadius: 10, backgroundColor: 'var(--em-text-inverse)',
+          width: 24, height: 24, borderRadius: 9999, backgroundColor: 'var(--em-text-inverse)',
           transform: checked ? 'translateX(20px)' : 'translateX(0)',
-          transition: 'transform 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+          transition: 'transform 0.2s', boxShadow: 'var(--em-shadow-sm)',
         }} />
       </div>
-    </div>
+    </button>
   );
 }
 

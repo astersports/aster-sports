@@ -27,7 +27,7 @@ export default function TournamentDetailPage() {
   if (error || !tournament) {
     return (
       <div style={{ padding: 16 }}>
-        <button onClick={() => navigate('/tournaments')} className="sf-press" aria-label="Back to tournaments" style={{
+        <button type="button" onClick={() => navigate('/tournaments')} className="sf-press" aria-label="Back to tournaments" style={{
           minHeight: 44, padding: '8px 12px', border: 'none', backgroundColor: 'transparent',
           display: 'flex', alignItems: 'center', gap: 6, color: 'var(--em-accent)',
           fontSize: 15, fontWeight: 500, cursor: 'pointer', marginBottom: 12,
@@ -49,7 +49,7 @@ export default function TournamentDetailPage() {
   return (
     <div style={{ paddingBottom: 80 }}>
       <div style={{ padding: '8px 16px 0' }}>
-        <button onClick={() => navigate('/tournaments')} className="sf-press" aria-label="Back to tournaments" style={{
+        <button type="button" onClick={() => navigate('/tournaments')} className="sf-press" aria-label="Back to tournaments" style={{
           minHeight: 44, padding: '8px 0', border: 'none', backgroundColor: 'transparent',
           display: 'flex', alignItems: 'center', gap: 6, color: 'var(--em-accent)',
           fontSize: 15, fontWeight: 500, cursor: 'pointer',
@@ -79,7 +79,7 @@ function TabStub({ label }) {
         {label} tab
       </div>
       <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
-        Ships in Wave 5 — Tournament UI.
+        Coming soon — we're building something great.
       </div>
     </div>
   );

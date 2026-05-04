@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Bell, Settings, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/useToast';
 import { useHomeRole } from '../../hooks/useHomeRole';
 import { useNotificationBadge } from '../../hooks/useNotificationBadge';
 import { EMBER_DISPLAY_NAME } from '../../lib/emberDefaults';
@@ -18,11 +17,10 @@ export default function Header() {
   const { org, orgName } = useAuth();
   const { activeRole, isViewingAs, canSwitchRoles } = useHomeRole();
   const { count: unread, severity } = useNotificationBadge();
-  const { showToast } = useToast();
   const navigate = useNavigate();
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const handleBellTap = () => showToast('Notifications coming soon', 'info');
+  const handleBellTap = () => navigate('/account');
 
   const stripeHeight = isViewingAs ? 6 : 0;
 

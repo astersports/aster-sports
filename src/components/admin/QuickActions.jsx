@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 import { CalendarPlus, UserPlus, MessageSquare, Megaphone, Calendar, Trophy } from 'lucide-react';
 
 const ACTIONS = [
-  { label: '+ Event',     icon: CalendarPlus,  to: '/schedule'     },
-  { label: '+ Player',    icon: UserPlus,      to: '/teams'        },
+  { label: '+ Event',     icon: CalendarPlus,  to: '/schedule?wizard=1' },
+  { label: '+ Player',    icon: UserPlus,      to: '/teams'            },
   { label: 'Announce',    icon: Megaphone,     to: '/messages?announce=1' },
   { label: 'Message',     icon: MessageSquare, to: '/messages'     },
   { label: 'Schedule',    icon: Calendar,      to: '/schedule'     },

@@ -73,7 +73,7 @@ export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
     else save(value);
   };
 
-  const minH = compact ? 36 : 44;
+  const minH = compact ? 40 : 44;
   const pillSize = compact ? 12 : 13;
 
   return (

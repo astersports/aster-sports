@@ -45,7 +45,7 @@ export default function AdminHomePage() {
         <QuickActions />
       </section>
 
-      <section className="min-w-0">
+      <section className="min-w-0" aria-label="Teams">
         <Label>TEAMS</Label>
         <TeamPerformanceStrip programs={programs} recordsByTeam={recordsByTeam} navigate={navigate} />
       </section>
@@ -55,7 +55,7 @@ export default function AdminHomePage() {
         <ActiveSeasonCard season={activeSeason} />
       </section>
 
-      <section className="min-w-0">
+      <section className="min-w-0" aria-label="This week">
         <Label>THIS WEEK</Label>
         <AdminScheduleSection activities={activities} />
       </section>

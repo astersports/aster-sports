@@ -34,10 +34,10 @@ export default function RecordsPage() {
   return (
     <div className="bc-root" style={{ minHeight: 'auto', paddingBottom: 80 }}>
       <div style={{ padding: '20px 16px 0' }}>
-        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 4 }}>
+        <div style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 13, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 4 }}>
           Spring 2026 · {org?.display_name || org?.name || ''}
         </div>
-        <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1, marginBottom: 4 }}>
+        <h1 style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 32, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1, marginBottom: 4 }}>
           THE <span style={{ color: 'var(--sf-bc-cobalt)' }}>RECORDS</span>
         </h1>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
@@ -54,8 +54,8 @@ export default function RecordsPage() {
         ]} />
       </div>
       <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>All Teams</div>
-        <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1.05, marginBottom: 16 }}>
+        <div style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>All Teams</div>
+        <h2 style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1.05, marginBottom: 16 }}>
           SEASON <span style={{ color: 'var(--sf-bc-cobalt)' }}>RECORDS</span>
         </h2>
         {teamsLoading && Array.from({ length: 5 }).map((_, i) => <div key={i} className="bc-team-skeleton" />)}
@@ -70,8 +70,8 @@ export default function RecordsPage() {
         ))}
         {tournaments.length > 0 && (
           <div style={{ marginTop: 32 }}>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>Tournaments</div>
-            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1.05, marginBottom: 16 }}>
+            <div style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>Tournaments</div>
+            <h2 style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1.05, marginBottom: 16 }}>
               RUN OF <span style={{ color: 'var(--sf-bc-cobalt)' }}>PLAY</span>
             </h2>
             {tournaments.map((t) => <TournamentCard key={t.id} tournament={t} />)}
