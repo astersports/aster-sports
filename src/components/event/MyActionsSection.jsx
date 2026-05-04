@@ -2,7 +2,7 @@ import { Car } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ChildRsvp from '../schedule/ChildRsvp';
 
-export default function MyActionsSection({ event, myRideClaim }) {
+export default function MyActionsSection({ event, myRideClaim, onRsvpChange }) {
   const { myChildren } = useAuth();
   const childrenOnTeam = (myChildren || []).filter((c) => c.teamId === event.team_id);
   if (childrenOnTeam.length === 0) return null;
@@ -13,7 +13,7 @@ export default function MyActionsSection({ event, myRideClaim }) {
         MY RSVP
       </div>
       {childrenOnTeam.map((child) => (
-        <ChildRsvp key={child.playerId} child={child} eventId={event.id} />
+        <ChildRsvp key={child.playerId} child={child} eventId={event.id} onSave={onRsvpChange} />
       ))}
       {myRideClaim && (
         <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--em-text-secondary)' }}>

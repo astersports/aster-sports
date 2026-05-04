@@ -36,7 +36,7 @@ export default function EventDetailPage() {
   const { orgId, role } = useAuth();
   const { event, loading: eventLoading, refetch, patchEvent } = useEventDetail(id, location.state?.event);
   const teamId = event?.team_id || null;
-  const { rsvps, roster, loading: rsvpLoading, setRsvp, saveNote } = useRsvps(id, teamId);
+  const { rsvps, roster, loading: rsvpLoading, setRsvp, saveNote, refetch: refetchRsvps } = useRsvps(id, teamId);
   const [editing, setEditing] = useState(false);
   const [editMode, setEditMode] = useState('single');
   const [showCheckin, setShowCheckin] = useState(false);
@@ -83,7 +83,7 @@ export default function EventDetailPage() {
   return (
     <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} />
-      {role === 'parent' && <MyActionsSection event={event} />}
+      {role === 'parent' && <MyActionsSection event={event} onRsvpChange={refetchRsvps} />}
       {isPastGame && (
         <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>
           Enter Score

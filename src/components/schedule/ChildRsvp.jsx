@@ -11,7 +11,7 @@ const PILLS = [
   { value: 'not_going', label: 'No',        color: 'var(--em-danger)' },
 ];
 
-export default function ChildRsvp({ child, eventId, compact = false }) {
+export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
   const { guardianId } = useAuth();
   const { showToast } = useToast();
   const [response, setResponse] = useState(() => responseCache.get(cacheKey(eventId, child.playerId)) ?? null);
@@ -46,6 +46,8 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
       responseCache.set(cacheKey(eventId, child.playerId), prev);
       setResponse(prev);
       showToast("Looks like that didn't go through. Try again?", 'error');
+    } else {
+      onSave?.();
     }
   };
 
@@ -60,6 +62,8 @@ export default function ChildRsvp({ child, eventId, compact = false }) {
       responseCache.set(cacheKey(eventId, child.playerId), prev);
       setResponse(prev);
       showToast("Looks like that didn't go through. Try again?", 'error');
+    } else {
+      onSave?.();
     }
   };
 
