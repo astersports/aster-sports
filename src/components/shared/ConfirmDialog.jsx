@@ -1,9 +1,6 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
-// Blocking confirm modal. Used for destructive actions (delete, cancel,
-// revoke) where we want a deliberate second tap before we commit.
-// `destructive` swaps the confirm button to the danger color — the default
-// is the regular accent for benign confirms.
 export default function ConfirmDialog({
   title,
   message,
@@ -14,17 +11,18 @@ export default function ConfirmDialog({
   onCancel,
 }) {
   useEffect(() => {
+    document.body.style.overflow = 'hidden';
     const onKey = (e) => { if (e.key === 'Escape') onCancel?.(); };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => { document.body.style.overflow = ''; window.removeEventListener('keydown', onKey); };
   }, [onCancel]);
 
   const confirmBg = destructive ? 'var(--em-danger)' : 'var(--em-accent)';
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+      className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 9998 }}
       onClick={onCancel}
       role="dialog"
       aria-modal="true"
@@ -43,50 +41,24 @@ export default function ConfirmDialog({
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <h2
-            id="confirm-title"
-            className="font-semibold"
-            style={{ color: 'var(--em-text-primary)', fontSize: 17, marginBottom: 8 }}
-          >
-            {title}
-          </h2>
+          <h2 id="confirm-title" className="font-semibold"
+            style={{ color: 'var(--em-text-primary)', fontSize: 17, marginBottom: 8 }}>{title}</h2>
         )}
         {message && (
-          <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, lineHeight: 1.5 }}>
-            {message}
-          </p>
+          <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, lineHeight: 1.5 }}>{message}</p>
         )}
         <div className="flex gap-2 mt-5">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="flex-1 font-medium sf-press"
-            style={{
-              minHeight: 44,
-              borderRadius: 10,
-              backgroundColor: 'var(--em-bg-secondary)',
-              color: 'var(--em-text-primary)',
-              fontSize: 15,
-            }}
-          >
+          <button type="button" onClick={onCancel} className="flex-1 font-medium sf-press"
+            style={{ minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-primary)', fontSize: 15, border: 'none' }}>
             {cancelLabel}
           </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="flex-1 font-semibold sf-press"
-            style={{
-              minHeight: 44,
-              borderRadius: 10,
-              backgroundColor: confirmBg,
-              color: 'var(--em-text-inverse)',
-              fontSize: 15,
-            }}
-          >
+          <button type="button" onClick={onConfirm} className="flex-1 font-semibold sf-press"
+            style={{ minHeight: 44, borderRadius: 10, backgroundColor: confirmBg, color: 'var(--em-text-inverse)', fontSize: 15, border: 'none' }}>
             {confirmLabel}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
