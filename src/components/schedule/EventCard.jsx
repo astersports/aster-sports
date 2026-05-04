@@ -60,7 +60,7 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
           )}
           <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}> · {typeLabel}</span>
           {weather && !isPast && (
-            <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginLeft: 2 }}>{weather.icon} {weather.temp}°</span>
+            <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginLeft: 'auto', flexShrink: 0 }}>{weather.icon} {weather.temp}°</span>
           )}
           {gameResult?.published_at && (
             <span style={{ fontSize: 13, fontWeight: 700, marginLeft: 4, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
@@ -83,7 +83,7 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
               </div>
             )}
             <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
-            {rideCount?.requests > 0 && (
+            {density !== 'maximum' && rideCount?.requests > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4 }}>
                 <Car size={11} strokeWidth={1.75} color="var(--em-warning)" />
                 <span style={{ color: 'var(--em-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>
