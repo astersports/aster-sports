@@ -24,6 +24,11 @@ export const EMPTY_SUMMARY = {
 export function computeSummary(games) {
   const n = games.length;
   if (n === 0) return EMPTY_SUMMARY;
+  const sorted = [...games].sort((a, b) => {
+    const da = a.event?.start_at || a.start_at || '';
+    const db = b.event?.start_at || b.start_at || '';
+    return da < db ? -1 : da > db ? 1 : 0;
+  });
 
   let wins = 0, losses = 0, ties = 0, pf = 0, pa = 0;
   for (const g of games) {
@@ -37,8 +42,8 @@ export function computeSummary(games) {
 
   // Walk newest → oldest. A T (or any non-W/L) breaks the streak entirely.
   let streakKind = null, streakLen = 0;
-  for (let i = games.length - 1; i >= 0; i -= 1) {
-    const kind = games[i].result;
+  for (let i = sorted.length - 1; i >= 0; i -= 1) {
+    const kind = sorted[i].result;
     if (kind !== 'W' && kind !== 'L') break;
     if (streakKind === null) { streakKind = kind; streakLen = 1; continue; }
     if (kind === streakKind) streakLen += 1; else break;

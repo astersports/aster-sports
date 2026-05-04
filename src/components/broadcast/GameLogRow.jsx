@@ -13,7 +13,7 @@ import ChampionshipBadge from './ChampionshipBadge';
 export default function GameLogRow({ result, date, opponent, score, isChampionship }) {
   return (
     <div className="bc-glog">
-      <div className={`bc-glog-result ${result}`} aria-label={result === 'W' ? 'Win' : 'Loss'}>
+      <div className={`bc-glog-result ${result}`} aria-label={result === 'W' ? 'Win' : result === 'L' ? 'Loss' : 'Tie'}>
         {result}
       </div>
       <div className="bc-glog-mid">

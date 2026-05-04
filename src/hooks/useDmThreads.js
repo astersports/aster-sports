@@ -18,15 +18,21 @@ export function useDmThreads() {
     const raw = data || [];
     const enriched = await Promise.all(raw.map(async (t) => {
       const otherId = t.user_a === user.id ? t.user_b : t.user_a;
+      const { data: guardian } = await supabase
+        .from('guardians').select('first_name, last_name')
+        .eq('user_id', otherId).maybeSingle();
+      const otherName = guardian
+        ? `${guardian.first_name} ${guardian.last_name}`
+        : 'Staff';
+      const { data: roleRow } = await supabase
+        .from('user_roles').select('role').eq('user_id', otherId).maybeSingle();
       const { data: lastMsg } = await supabase
         .from('messages').select('sender_name, body, created_at')
         .eq('dm_thread_id', t.id).order('created_at', { ascending: false }).limit(1);
-      const { data: roleRow } = await supabase
-        .from('user_roles').select('role').eq('user_id', otherId).maybeSingle();
       return {
         ...t,
         otherId,
-        otherName: lastMsg?.[0]?.sender_name || 'User',
+        otherName,
         otherRole: roleRow?.role || 'parent',
         lastMessage: lastMsg?.[0] || null,
       };

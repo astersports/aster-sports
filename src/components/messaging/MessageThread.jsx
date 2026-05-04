@@ -3,7 +3,6 @@ import { useMessages } from '../../hooks/useMessages';
 import MessageBubble from './MessageBubble';
 import ComposeBar from './ComposeBar';
 import { useAuth } from '../../context/AuthContext';
-import { isStaff } from '../../lib/permissions';
 
 function dateKey(iso) { return new Date(iso).toLocaleDateString('en-US', { timeZone: 'America/New_York' }); }
 
@@ -25,7 +24,7 @@ export default function MessageThread({ channel, onBack }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
-  const canPost = channel.channel === 'team' || channel.channel === 'dm' || (channel.channel === 'announcement' && isStaff(role));
+  const canPost = channel.channel === 'team' || channel.channel === 'dm' || (channel.channel === 'announcement' && role === 'admin');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -36,7 +35,7 @@ export default function MessageThread({ channel, onBack }) {
         <button
           type="button" onClick={onBack} className="sf-press" aria-label="Back to channels"
           style={{
-            width: 36, height: 36, borderRadius: 10, border: 'none',
+            width: 44, height: 44, borderRadius: 10, border: 'none',
             backgroundColor: 'var(--em-bg-secondary)', display: 'flex',
             alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
             fontSize: 18, color: 'var(--em-text-primary)',

@@ -122,6 +122,7 @@
 .bc-glog-result   { font-family: var(--sf-bc-display); font-size: 18px; font-weight: 800; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
 .bc-glog-result.W { background: rgba(34,197,94,0.18); color: var(--sf-bc-green); }
 .bc-glog-result.L { background: rgba(239,68,68,0.18); color: var(--sf-bc-red); }
+.bc-glog-result.T { background: rgba(255,255,255,0.08); color: var(--sf-bc-text-mute); }
 .bc-glog-mid      { display: flex; flex-direction: column; min-width: 0; }
 .bc-glog-vs       { font-weight: 700; color: var(--sf-bc-text); font-size: 15px; line-height: 1.2; }
 .bc-glog-date     { font-size: 12px; color: var(--sf-bc-text-mute); margin-top: 2px; }
