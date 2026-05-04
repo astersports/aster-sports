@@ -26,7 +26,6 @@ export default function ComposeBar({ onSend, placeholder, disabled }) {
         onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
         placeholder={placeholder || 'Write a message...'}
         disabled={disabled}
-        aria-label="Message text"
         style={{
           flex: 1, minHeight: 44, padding: '0 14px', borderRadius: 10,
           border: '1px solid var(--em-border-default)',

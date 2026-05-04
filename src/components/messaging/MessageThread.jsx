@@ -1,39 +1,20 @@
 import { useEffect, useRef } from 'react';
-import { ChevronLeft } from 'lucide-react';
 import { useMessages } from '../../hooks/useMessages';
 import MessageBubble from './MessageBubble';
 import ComposeBar from './ComposeBar';
 import { useAuth } from '../../context/AuthContext';
-
-function dateKey(iso) { return new Date(iso).toLocaleDateString('en-US', { timeZone: 'America/New_York' }); }
-
-function DateSep({ date }) {
-  const label = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
-  return (
-    <div style={{ textAlign: 'center', padding: '8px 0', fontSize: 11, fontWeight: 500, color: 'var(--em-text-tertiary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-      {label}
-    </div>
-  );
-}
+import { isStaff } from '../../lib/permissions';
 
 export default function MessageThread({ channel, onBack }) {
   const { role } = useAuth();
-  const { messages, loading, send, deleteMessage } = useMessages(channel.channel, channel.teamId, channel.dmThreadId);
+  const { messages, loading, send } = useMessages(channel.channel, channel.teamId);
   const bottomRef = useRef(null);
-  const scrollRef = useRef(null);
-  const prevLenRef = useRef(0);
 
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || messages.length === 0) return;
-    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-    if (isAtBottom || !prevLenRef.current) {
-      bottomRef.current?.scrollIntoView({ behavior: prevLenRef.current ? 'smooth' : 'instant' });
-    }
-    prevLenRef.current = messages.length;
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
-  const canPost = channel.channel === 'team' || channel.channel === 'dm' || (channel.channel === 'announcement' && role === 'admin');
+  const canPost = channel.channel === 'team' || (channel.channel === 'announcement' && isStaff(role));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -44,12 +25,12 @@ export default function MessageThread({ channel, onBack }) {
         <button
           type="button" onClick={onBack} className="sf-press" aria-label="Back to channels"
           style={{
-            width: 44, height: 44, borderRadius: 10, border: 'none',
+            width: 36, height: 36, borderRadius: 10, border: 'none',
             backgroundColor: 'var(--em-bg-secondary)', display: 'flex',
             alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-            color: 'var(--em-accent)',
+            fontSize: 18, color: 'var(--em-text-primary)',
           }}
-        ><ChevronLeft size={22} strokeWidth={2} /></button>
+        >←</button>
         <div style={{
           width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
           backgroundColor: channel.color || 'var(--em-accent)',
@@ -59,23 +40,14 @@ export default function MessageThread({ channel, onBack }) {
         </span>
       </div>
 
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {loading && <div style={{ color: 'var(--em-text-tertiary)', fontSize: 14, padding: 12 }}>Loading messages…</div>}
         {!loading && messages.length === 0 && (
           <div style={{ color: 'var(--em-text-tertiary)', fontSize: 14, padding: 32, textAlign: 'center' }}>
             No messages yet. Start the conversation.
           </div>
         )}
-        {messages.map((m, i) => {
-          const prev = messages[i - 1];
-          const showDate = !prev || dateKey(m.created_at) !== dateKey(prev.created_at);
-          return (
-            <div key={m.id}>
-              {showDate && <DateSep date={m.created_at} />}
-              <MessageBubble message={m} isAnnouncement={channel.channel === 'announcement'} onDelete={deleteMessage} />
-            </div>
-          );
-        })}
+        {messages.map((m) => <MessageBubble key={m.id} message={m} />)}
         <div ref={bottomRef} />
       </div>
 
