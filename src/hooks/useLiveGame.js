@@ -15,7 +15,7 @@ export function useLiveGame(eventId) {
 
   useEffect(() => {
     if (!eventId) return;
-    supabase.from('game_plays').select('*').eq('event_id', eventId)
+    supabase.from('game_plays').select('*').eq('event_id', eventId).eq('is_voided', false)
       .order('created_at', { ascending: true })
       .then(({ data, error }) => {
         if (error) showToast("Couldn't load plays. Check your connection.", 'error');
@@ -27,11 +27,10 @@ export function useLiveGame(eventId) {
   useEffect(() => {
     if (!eventId) return;
     const ch = supabase.channel(`live-${eventId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_plays', filter: `event_id=eq.${eventId}` }, (payload) => {
-        setPlays((prev) => prev.some((p) => p.id === payload.new.id) ? prev : [...prev, payload.new]);
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'game_plays', filter: `event_id=eq.${eventId}` }, (payload) => {
-        setPlays((prev) => prev.filter((p) => p.id !== payload.old.id));
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'game_plays', filter: `event_id=eq.${eventId}` }, () => {
+        supabase.from('game_plays').select('*').eq('event_id', eventId).eq('is_voided', false)
+          .order('created_at', { ascending: true })
+          .then(({ data }) => { if (data) setPlays(data); });
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
@@ -40,18 +39,19 @@ export function useLiveGame(eventId) {
   const addPlay = useCallback(async (playType, opts = {}) => {
     const tempId = `temp-${Date.now()}-${Math.random()}`;
     const row = {
-      event_id: eventId, team_id: opts.teamId || null, player_id: opts.playerId || null,
-      play_type: playType, points: POINT_MAP[playType] || 0, period,
+      event_id: eventId, player_id: opts.playerId || null,
+      play_type: playType, period,
       is_opponent: opts.isOpponent || false, created_by: user?.id,
     };
-    setPlays((prev) => [...prev, { ...row, id: tempId, created_at: new Date().toISOString() }]);
+    const points = POINT_MAP[playType] || 0;
+    setPlays((prev) => [...prev, { ...row, id: tempId, points, is_voided: false, created_at: new Date().toISOString() }]);
     const { data, error } = await supabase.from('game_plays').insert(row).select().single();
     if (error) {
       showToast("Play didn't save. Check your connection.", 'error');
       setPlays((prev) => prev.filter((p) => p.id !== tempId));
       return null;
     }
-    setPlays((prev) => prev.map((p) => p.id === tempId ? data : p));
+    setPlays((prev) => prev.map((p) => p.id === tempId ? { ...data, points } : p));
     return data;
   }, [eventId, period, user, showToast]);
 
@@ -61,14 +61,14 @@ export function useLiveGame(eventId) {
     setPlays((prev) => {
       if (prev.length === 0) { undoingRef.current = false; return prev; }
       const last = prev[prev.length - 1];
-      supabase.from('game_plays').delete().eq('id', last.id)
+      supabase.from('game_plays').update({ is_voided: true, voided_at: new Date().toISOString(), voided_by: user?.id }).eq('id', last.id)
         .then(({ error }) => {
           undoingRef.current = false;
           if (error) showToast("Couldn't undo. Try again?", 'error');
         });
       return prev.slice(0, -1);
     });
-  }, [showToast]);
+  }, [showToast, user]);
 
   const onCourt = useMemo(() => {
     const court = new Set();
@@ -82,15 +82,16 @@ export function useLiveGame(eventId) {
   const subIn = useCallback((playerId) => { addPlay('sub_in', { playerId }); }, [addPlay]);
   const subOut = useCallback((playerId) => { addPlay('sub_out', { playerId }); }, [addPlay]);
 
-  const ourScore = plays.filter((p) => !p.is_opponent).reduce((s, p) => s + (p.points || 0), 0);
-  const oppScore = plays.filter((p) => p.is_opponent).reduce((s, p) => s + (p.points || 0), 0);
+  const derivePoints = (p) => POINT_MAP[p.play_type] || 0;
+  const ourScore = plays.filter((p) => !p.is_opponent).reduce((s, p) => s + derivePoints(p), 0);
+  const oppScore = plays.filter((p) => p.is_opponent).reduce((s, p) => s + derivePoints(p), 0);
 
   const playerStats = useMemo(() => {
     const stats = {};
     plays.filter((p) => p.player_id && !p.is_opponent).forEach((p) => {
       if (!stats[p.player_id]) stats[p.player_id] = { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, foul: 0 };
       const s = stats[p.player_id];
-      s.pts += (p.points || 0);
+      s.pts += derivePoints(p);
       if (p.play_type === 'rebound') s.reb++;
       if (p.play_type === 'assist') s.ast++;
       if (p.play_type === 'steal') s.stl++;
@@ -105,12 +106,9 @@ export function useLiveGame(eventId) {
     const result = ourScore > oppScore ? 'W' : ourScore < oppScore ? 'L' : 'T';
     const { data: existing } = await supabase.from('game_results').select('id').eq('event_id', eventId).maybeSingle();
     const row = { event_id: eventId, our_score: ourScore, opponent_score: oppScore, result, point_differential: ourScore - oppScore, published_at: new Date().toISOString(), published_by: user?.id };
-    let error;
-    if (existing) {
-      ({ error } = await supabase.from('game_results').update(row).eq('id', existing.id));
-    } else {
-      ({ error } = await supabase.from('game_results').insert(row));
-    }
+    const { error } = existing
+      ? await supabase.from('game_results').update(row).eq('id', existing.id)
+      : await supabase.from('game_results').insert(row);
     if (error) { showToast("Couldn't save final score. Try again?", 'error'); return false; }
     showToast('Final score saved and published.', 'success');
     return true;
