@@ -1,20 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Bell, Moon, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { usePrograms } from '../hooks/usePrograms';
+import { useToast } from '../context/useToast';
 import { EMBER_DISPLAY_NAME } from '../lib/emberDefaults';
 import Label from '../components/shared/Label';
+import NotificationPrefs from '../components/account/NotificationPrefs';
+import QuietHoursCard from '../components/account/QuietHoursCard';
 
 const ROLE_LABELS = { admin: 'Admin', coach: 'Coach', parent: 'Parent' };
 const VERSION = 'Ember v2.0';
 
 export default function AccountPage() {
   const navigate = useNavigate();
-  const { user, role, orgName, myChildren, guardianFirstName, signOut } = useAuth();
+  const { user, role, orgName, orgId, myChildren, guardianFirstName, signOut } = useAuth();
+  const { showToast } = useToast();
   const { programs } = usePrograms();
   const [lastName, setLastName] = useState(null);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     if (role !== 'parent' || !user?.id) return;
@@ -26,16 +31,25 @@ export default function AccountPage() {
   const displayName = (role === 'parent' && parentName) || user?.user_metadata?.full_name || user?.email || 'User';
   const teamName = (teamId) => programs.find((p) => p.id === teamId)?.name || '—';
 
+  const sendPasswordReset = async () => {
+    setResetting(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email);
+    setResetting(false);
+    if (error) showToast("Couldn't send reset email. Try again?", 'error');
+    else showToast('Password reset email sent. Check your inbox.', 'success');
+  };
+
   return (
-    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--em-bg-page)', padding: '16px 16px 32px' }}>
-      <button type="button" onClick={() => navigate(-1)} className="sf-press"
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--em-bg-page)', padding: '16px 16px 32px' }}>
+      <button type="button" onClick={() => navigate(-1)} className="sf-press" aria-label="Go back"
         style={{ display: 'flex', alignItems: 'center', minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12 }}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back
       </button>
 
       <section style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', boxShadow: 'var(--em-shadow-sm)', padding: 16, marginBottom: 16 }}>
         <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)' }}>{displayName}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>{user?.email}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
           <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>
             {ROLE_LABELS[role] || 'User'}
           </span>
@@ -43,9 +57,9 @@ export default function AccountPage() {
         </div>
       </section>
 
-      {role === 'parent' && (myChildren?.length > 0) && (
+      {role === 'parent' && myChildren?.length > 0 && (
         <section style={{ marginBottom: 16 }}>
-          <Label>MY CHILDREN</Label>
+          <Label>My Children</Label>
           <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
             {myChildren.map((c, i) => (
               <div key={c.playerId} style={{ padding: '12px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
@@ -58,10 +72,21 @@ export default function AccountPage() {
       )}
 
       <section style={{ marginBottom: 16 }}>
-        <Label>PREFERENCES</Label>
-        <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', padding: 16, fontSize: 13, color: 'var(--em-text-tertiary)' }}>
-          Notification preferences coming soon.
-        </div>
+        <Label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Bell size={12} strokeWidth={2} /> Notifications</Label>
+        <NotificationPrefs userId={user?.id} orgId={orgId} />
+      </section>
+
+      <section style={{ marginBottom: 16 }}>
+        <Label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Moon size={12} strokeWidth={2} /> Quiet Hours</Label>
+        <QuietHoursCard userId={user?.id} orgId={orgId} />
+      </section>
+
+      <section style={{ marginBottom: 16 }}>
+        <Label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Lock size={12} strokeWidth={2} /> Security</Label>
+        <button type="button" onClick={sendPasswordReset} disabled={resetting} className="sf-press"
+          style={{ width: '100%', minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 15, fontWeight: 500 }}>
+          {resetting ? 'Sending…' : 'Send password reset email'}
+        </button>
       </section>
 
       <button type="button" onClick={signOut} className="sf-press"
