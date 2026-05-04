@@ -5,6 +5,17 @@ import ComposeBar from './ComposeBar';
 import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/permissions';
 
+function dateKey(iso) { return new Date(iso).toLocaleDateString('en-US', { timeZone: 'America/New_York' }); }
+
+function DateSep({ date }) {
+  const label = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
+  return (
+    <div style={{ textAlign: 'center', padding: '8px 0', fontSize: 11, fontWeight: 500, color: 'var(--em-text-tertiary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+      {label}
+    </div>
+  );
+}
+
 export default function MessageThread({ channel, onBack }) {
   const { role } = useAuth();
   const { messages, loading, send } = useMessages(channel.channel, channel.teamId);
@@ -47,7 +58,16 @@ export default function MessageThread({ channel, onBack }) {
             No messages yet. Start the conversation.
           </div>
         )}
-        {messages.map((m) => <MessageBubble key={m.id} message={m} />)}
+        {messages.map((m, i) => {
+          const prev = messages[i - 1];
+          const showDate = !prev || dateKey(m.created_at) !== dateKey(prev.created_at);
+          return (
+            <div key={m.id}>
+              {showDate && <DateSep date={m.created_at} />}
+              <MessageBubble message={m} isAnnouncement={channel.channel === 'announcement'} />
+            </div>
+          );
+        })}
         <div ref={bottomRef} />
       </div>
 

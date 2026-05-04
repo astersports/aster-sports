@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useChannels } from '../hooks/useChannels';
 import { useUnreadCounts } from '../hooks/useUnreadCounts';
 import ChannelList from '../components/messaging/ChannelList';
@@ -7,9 +8,19 @@ import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import Label from '../components/shared/Label';
 
 export default function MessagesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { channels, loading } = useChannels();
   const { markRead } = useUnreadCounts();
   const [active, setActive] = useState(null);
+
+  useEffect(() => {
+    if (loading || active) return;
+    const teamParam = searchParams.get('team');
+    if (teamParam) {
+      const match = channels.find((ch) => ch.teamId === teamParam);
+      if (match) Promise.resolve().then(() => { setActive(match); setSearchParams({}, { replace: true }); });
+    }
+  }, [loading, channels, searchParams, active, setSearchParams]);
 
   useEffect(() => {
     if (active) markRead(active.key);
