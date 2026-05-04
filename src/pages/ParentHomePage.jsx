@@ -109,7 +109,7 @@ export default function ParentHomePage() {
           return (
             <div key={date} style={{ marginTop: 12 }}>
               <button type="button" onClick={() => toggleCollapse(date)} className="sf-press"
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '4px 0', minHeight: 32, background: 'none', border: 'none', cursor: 'pointer' }}>
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '4px 0', minHeight: 44, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{formatDateHeader(date)}</span>
                 {collapsed && <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{evts.length} event{evts.length !== 1 ? 's' : ''}</span>}
               </button>

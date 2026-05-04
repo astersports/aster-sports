@@ -41,9 +41,9 @@ export const LEGACY_HOOPERS_ORG_ID = 'e3e95e21-3571-4e9a-985a-d5d01480d4a6';
 export const MESSAGE_CHANNELS = ['team', 'announcement', 'dm'];
 
 export const TEAM_COLORS = {
-  '11U Girls': '#a78bfa',
-  '10U Black': '#4a8fd4',
-  '10U Blue':  '#94a3b8',
-  '9U Boys':   '#06b6d4',
-  '8U Boys':   '#f59e0b',
+  '11U Girls': '#7C3AED',
+  '10U Black': '#18181B',
+  '10U Blue':  '#2563EB',
+  '9U Boys':   '#DC2626',
+  '8U Boys':   '#EA580C',
 };

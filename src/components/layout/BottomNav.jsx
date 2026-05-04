@@ -60,7 +60,7 @@ function NavItem(tab) {
             }} />
           )}
           <span style={{
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: isActive ? 600 : 400,
             letterSpacing: '0.02em',
             color: isActive ? 'var(--em-accent)' : 'var(--em-text-tertiary)',

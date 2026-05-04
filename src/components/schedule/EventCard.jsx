@@ -49,26 +49,16 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
     >
       <div style={{ width: 4, flexShrink: 0, backgroundColor: teamColor }} />
       <div style={{ flex: 1, padding: density === 'minimal' ? '8px 14px' : '10px 14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
-          <span className="font-bold" style={{ fontSize: density === 'minimal' ? 13 : 17, color: 'var(--em-text-primary)' }}>
-            {formatTime(event.start_at)}
-          </span>
-          {showCountdown && (
-            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>
-              {formatCountdown(event.start_at)}
-            </span>
-          )}
-          <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}> · {typeLabel}</span>
-          {weather && !isPast && (
-            <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginLeft: 'auto', flexShrink: 0 }}>{weather.icon} {weather.temp}°</span>
-          )}
-          {gameResult?.published_at && (
-            <span style={{ fontSize: 13, fontWeight: 700, marginLeft: 4, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
-              {gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}
-            </span>
-          )}
-          {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
-          {density === 'minimal' && teamName && <span style={{ fontSize: 13, color: teamColor, fontWeight: 500 }}> · {teamName}</span>}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+            <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)' }}>{formatTime(event.start_at)}</span>
+            {showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>{formatCountdown(event.start_at)}</span>}
+            <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>· {typeLabel}</span>
+            {gameResult?.published_at && <span style={{ fontSize: 13, fontWeight: 700, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>{gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}</span>}
+            {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
+            {density === 'minimal' && teamName && <span style={{ fontSize: 13, color: teamColor, fontWeight: 500 }}>· {teamName}</span>}
+          </div>
+          {weather && !isPast && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', flexShrink: 0, paddingTop: 3 }}>{weather.icon} {weather.temp}°</span>}
         </div>
         {density !== 'minimal' && (
           <>

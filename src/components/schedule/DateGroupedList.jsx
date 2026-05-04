@@ -8,6 +8,7 @@ export default function DateGroupedList({ events, rsvpCounts, rideCounts, dutyCo
       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' }}>
         {formatDateHeader(date)}
       </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {evts.map((event) => (
         <EventCard
           key={event.id}
@@ -21,6 +22,7 @@ export default function DateGroupedList({ events, rsvpCounts, rideCounts, dutyCo
           weather={getWeatherForTime(weather, event.start_at)}
         />
       ))}
+      </div>
     </div>
   ));
 }

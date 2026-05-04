@@ -4,9 +4,10 @@ export default function Chip({ label, active, color, onClick }) {
       type="button"
       onClick={() => { navigator.vibrate?.(10); onClick(); }}
       className="sf-press"
+      aria-pressed={active}
       style={{
         flexShrink: 0,
-        minHeight: 32,
+        minHeight: 36,
         padding: '0 12px',
         borderRadius: 999,
         fontSize: 13,

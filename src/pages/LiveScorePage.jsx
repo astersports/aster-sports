@@ -60,8 +60,8 @@ export default function LiveScorePage() {
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {tab === 'scoring' && (
           <div style={{ padding: 16 }}>
-            <ActionGrid isOpponent onPlay={handlePlay} teamLabel={event.opponent || 'Opponent'} />
             <ActionGrid isOpponent={false} onPlay={handlePlay} teamLabel={event.teams?.name || 'Home'} />
+            <ActionGrid isOpponent onPlay={handlePlay} teamLabel={event.opponent || 'Opponent'} />
           </div>
         )}
         {tab === 'plays' && <PlayByPlayFeed plays={game.plays} players={players} />}

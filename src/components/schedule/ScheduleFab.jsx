@@ -21,7 +21,7 @@ export default function ScheduleFab({ onClick }) {
         backgroundColor: 'var(--em-accent)',
         color: 'var(--em-text-inverse)',
         border: 'none',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+        boxShadow: 'var(--em-shadow-lg)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
