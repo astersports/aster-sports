@@ -31,7 +31,10 @@ export default function useEventDelete(event) {
       }
       navigate('/schedule');
     } catch (err) {
-      showToast(`Delete failed: ${err.message}`, 'error');
+      const msg = err.message?.includes('foreign key') || err.message?.includes('violates')
+        ? 'This event has scores or data attached. Remove them first, then delete.'
+        : `Delete failed: ${err.message}`;
+      showToast(msg, 'error');
     }
   }, [event?.id, event?.parent_event_id, event?.start_at, navigate, showToast]);
 
