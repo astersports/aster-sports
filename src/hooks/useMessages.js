@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/useToast';
 
-export function useMessages(channel, channelId) {
+export function useMessages(channel, channelId, dmThreadId) {
   const { user, guardianFirstName, orgId } = useAuth();
   const { showToast } = useToast();
   const [messages, setMessages] = useState([]);
@@ -15,26 +15,28 @@ export function useMessages(channel, channelId) {
     if (!didInit.current) setLoading(true);
     let q = supabase.from('messages').select('*').eq('org_id', orgId).eq('channel', channel);
     if (channel === 'team' && channelId) q = q.eq('team_id', channelId);
+    if (channel === 'dm' && dmThreadId) q = q.eq('dm_thread_id', dmThreadId);
     q = q.order('created_at', { ascending: true }).limit(200);
     const { data, error } = await q;
     if (error) console.error('useMessages:', error.message);
     setMessages(data || []);
     didInit.current = true;
     setLoading(false);
-  }, [orgId, channel, channelId]);
+  }, [orgId, channel, channelId, dmThreadId]);
 
   useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
 
   useEffect(() => {
     if (!channel) return;
-    const filter = channel === 'team' && channelId
-      ? `team_id=eq.${channelId}`
-      : `channel=eq.${channel}`;
-    const ch = supabase.channel(`messages-${channel}-${channelId || 'all'}`)
+    let filter;
+    if (channel === 'dm' && dmThreadId) filter = `dm_thread_id=eq.${dmThreadId}`;
+    else if (channel === 'team' && channelId) filter = `team_id=eq.${channelId}`;
+    else filter = `channel=eq.${channel}`;
+    const ch = supabase.channel(`messages-${channel}-${channelId || dmThreadId || 'all'}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter }, fetch)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [channel, channelId, fetch]);
+  }, [channel, channelId, dmThreadId, fetch]);
 
   const send = async (body) => {
     const trimmed = body.trim();
@@ -51,6 +53,7 @@ export function useMessages(channel, channelId) {
       body: trimmed,
     };
     if (channel === 'team' && channelId) row.team_id = channelId;
+    if (channel === 'dm' && dmThreadId) row.dm_thread_id = dmThreadId;
     const { error } = await supabase.from('messages').insert(row);
     if (error) {
       console.error('send message:', error.message);

@@ -9,39 +9,28 @@ export function useDmThreads() {
 
   const fetch = useCallback(async () => {
     if (!user || !orgId) { setLoading(false); return; }
-    const [threadsRes, profilesRes] = await Promise.all([
-      supabase.from('dm_threads').select('*')
-        .eq('org_id', orgId)
-        .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
-        .order('created_at', { ascending: false }),
-      supabase.rpc('get_org_user_profiles', { p_org_id: orgId }),
-    ]);
-    if (threadsRes.error) console.error('useDmThreads:', threadsRes.error.message);
-    const raw = threadsRes.data || [];
-    if (raw.length === 0) { setThreads([]); setLoading(false); return; }
-
-    const profileMap = {};
-    (profilesRes.data || []).forEach((p) => { profileMap[p.user_id] = p; });
-
-    const threadIds = raw.map((t) => t.id);
-    const { data: msgs } = await supabase.from('messages')
-      .select('dm_thread_id, sender_name, body, created_at')
-      .in('dm_thread_id', threadIds).eq('channel', 'dm')
+    const { data, error } = await supabase
+      .from('dm_threads').select('*')
+      .eq('org_id', orgId)
+      .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
       .order('created_at', { ascending: false });
-    const lastMsgMap = {};
-    (msgs || []).forEach((m) => { if (!lastMsgMap[m.dm_thread_id]) lastMsgMap[m.dm_thread_id] = m; });
-
-    const enriched = raw.map((t) => {
+    if (error) console.error('useDmThreads:', error.message);
+    const raw = data || [];
+    const enriched = await Promise.all(raw.map(async (t) => {
       const otherId = t.user_a === user.id ? t.user_b : t.user_a;
-      const profile = profileMap[otherId];
+      const { data: lastMsg } = await supabase
+        .from('messages').select('sender_name, body, created_at')
+        .eq('dm_thread_id', t.id).order('created_at', { ascending: false }).limit(1);
+      const { data: roleRow } = await supabase
+        .from('user_roles').select('role').eq('user_id', otherId).maybeSingle();
       return {
         ...t,
         otherId,
-        otherName: profile?.display_name || 'User',
-        otherRole: profile?.role || 'parent',
-        lastMessage: lastMsgMap[t.id] || null,
+        otherName: lastMsg?.[0]?.sender_name || 'User',
+        otherRole: roleRow?.role || 'parent',
+        lastMessage: lastMsg?.[0] || null,
       };
-    });
+    }));
     setThreads(enriched);
     setLoading(false);
   }, [user, orgId]);

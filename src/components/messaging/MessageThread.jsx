@@ -18,14 +18,14 @@ function DateSep({ date }) {
 
 export default function MessageThread({ channel, onBack }) {
   const { role } = useAuth();
-  const { messages, loading, send } = useMessages(channel.channel, channel.teamId);
+  const { messages, loading, send } = useMessages(channel.channel, channel.teamId, channel.dmThreadId);
   const bottomRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
-  const canPost = channel.channel === 'team' || (channel.channel === 'announcement' && isStaff(role));
+  const canPost = channel.channel === 'team' || channel.channel === 'dm' || (channel.channel === 'announcement' && isStaff(role));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
