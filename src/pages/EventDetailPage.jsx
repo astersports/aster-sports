@@ -82,8 +82,8 @@ export default function EventDetailPage() {
     <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} />
       {role === 'parent' && <MyActionsSection event={event} onRsvpChange={refetchRsvps} />}
-      {isStaff && (event.event_type === 'game' || event.event_type === 'tournament') && !isPastGame && (
-        <Button onClick={() => window.location.assign(`/events/${event.id}/live`)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px' }}>
+      {isStaff && (event.event_type === 'game' || event.event_type === 'tournament') && !isPastGame && event.status !== 'cancelled' && event.team_id && (
+        <Button onClick={() => window.location.href = `/events/${event.id}/live`} style={{ width: 'calc(100% - 32px)', margin: '12px 16px' }}>
           Live Score
         </Button>
       )}
