@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useChannels } from '../hooks/useChannels';
 import { useUnreadCounts } from '../hooks/useUnreadCounts';
+import { useChannelPreviews } from '../hooks/useChannelPreviews';
 import ChannelList from '../components/messaging/ChannelList';
 import MessageThread from '../components/messaging/MessageThread';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
@@ -11,6 +12,7 @@ export default function MessagesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { channels, loading } = useChannels();
   const { markRead } = useUnreadCounts();
+  const previews = useChannelPreviews(channels);
   const [active, setActive] = useState(null);
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function MessagesPage() {
       </h1>
       <div style={{ width: 32, height: 3, backgroundColor: 'var(--em-accent)', borderRadius: 2, marginBottom: 16 }} />
       <Label>Channels</Label>
-      <ChannelList channels={channels} activeKey={active?.key} onSelect={setActive} />
+      <ChannelList channels={channels} activeKey={active?.key} onSelect={setActive} previews={previews} />
     </div>
   );
 }
