@@ -14,7 +14,10 @@ export function formatTime(time) {
 
 // "Monday, April 13, 2026" — full date headers, confirmation dialogs.
 export function formatDateFull(date) {
-  return new Date(date).toLocaleDateString('en-US', {
+  const d = typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
+    ? new Date(date + 'T12:00:00')
+    : new Date(date);
+  return d.toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
