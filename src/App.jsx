@@ -17,6 +17,7 @@ import TournamentsPage from './pages/TournamentsPage';
 import TournamentDetailPage from './pages/TournamentDetailPage';
 import RecordsPage from './pages/RecordsPage';
 import PublicSchedulePage from './pages/PublicSchedulePage';
+import LiveScorePage from './pages/LiveScorePage';
 
 const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
 const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
@@ -65,6 +66,7 @@ export default function App() {
 
       {/* Full-screen authenticated routes — auth guard without AppShell chrome */}
       <Route path="/events/:id" element={<RequireAuth><EventDetailPage /></RequireAuth>} />
+      <Route path="/events/:id/live" element={<RequireAuth><LiveScorePage /></RequireAuth>} />
 
       {/* Admin-only management routes */}
       <Route

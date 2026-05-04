@@ -25,9 +25,7 @@ const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinO
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
 
-const SectionHeader = ({ children, sectionKey }) => (
-  <h2 data-section={sectionKey} style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>
-);
+const SH = ({ children, sectionKey }) => <h2 data-section={sectionKey} style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>;
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -60,8 +58,8 @@ export default function EventDetailPage() {
 
   const { requestDelete, pendingDelete, confirmDelete, cancelDelete } = useEventDelete(event);
 
-  if (eventLoading) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100dvh' }} />;
-  if (!event) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100dvh', padding: 24, color: 'var(--em-text-tertiary)' }}>We couldn't find this event. It may have been removed.</div>;
+  if (eventLoading) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }} />;
+  if (!event) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh', padding: 24, color: 'var(--em-text-tertiary)' }}>Event not found.</div>;
 
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--em-text-tertiary)';
@@ -84,6 +82,11 @@ export default function EventDetailPage() {
     <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} />
       {role === 'parent' && <MyActionsSection event={event} onRsvpChange={refetchRsvps} />}
+      {isStaff && (event.event_type === 'game' || event.event_type === 'tournament') && !isPastGame && (
+        <Button onClick={() => window.location.assign(`/events/${event.id}/live`)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px' }}>
+          Live Score
+        </Button>
+      )}
       {isPastGame && (
         <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>
           Enter Score
@@ -105,26 +108,22 @@ export default function EventDetailPage() {
 
       <EventDetailTab event={event} />
 
-      <SectionHeader>Location</SectionHeader>
+      <SH>Location</SH>
       <EventLocationTab event={event} />
 
       <CollapsibleSection title="RSVPs" sectionKey="rsvps" defaultOpen={isStaff} count={`${rsvps.filter((r) => r.response === 'going').length}/${roster.length}`}>
         <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} />
       </CollapsibleSection>
 
-      {dutyCount > 0 && (<><SectionHeader sectionKey="duties">Volunteers</SectionHeader><EventDutiesTab eventId={event.id} /></>)}
+      {dutyCount > 0 && (<><SH sectionKey="duties">Volunteers</SH><EventDutiesTab eventId={event.id} /></>)}
 
       <CollapsibleSection title="Rides" sectionKey="rides">
         <EventRidesTab event={event} />
       </CollapsibleSection>
 
-      {(event.notes || event.coach_notes) && (
-        <><SectionHeader>Notes</SectionHeader><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></>
-      )}
-
+      {(event.notes || event.coach_notes) && <><SH>Notes</SH><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></>}
       <AddToCalendarButton event={event} />
-
-      <SectionHeader>Comments</SectionHeader>
+      <SH>Comments</SH>
       <EventCommentsTab eventId={event.id} />
 
       {isStaff && <EventCancelActions event={event} onStatusChange={(status) => { patchEvent({ status }); refetch(); }} />}
