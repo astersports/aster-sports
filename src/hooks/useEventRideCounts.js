@@ -17,7 +17,8 @@ export function useEventRideCounts(activities) {
     Promise.all([
       supabase.from('event_ride_offers').select('event_id, seats_offered, status').in('event_id', ids).eq('status', 'active'),
       supabase.from('event_ride_claims').select('event_id, seats_requested, status').in('event_id', ids).in('status', ['pending', 'confirmed']),
-    ]).then(([offersRes, claimsRes]) => {
+      supabase.from('event_ride_requests').select('event_id, seats_needed, status').in('event_id', ids).eq('status', 'open'),
+    ]).then(([offersRes, claimsRes, requestsRes]) => {
       if (offersRes.error) { console.error('useEventRideCounts offers:', offersRes.error.message); return; }
       if (claimsRes.error) { console.error('useEventRideCounts claims:', claimsRes.error.message); return; }
       const map = {};
@@ -28,6 +29,10 @@ export function useEventRideCounts(activities) {
       for (const c of (claimsRes.data || [])) {
         if (!map[c.event_id]) map[c.event_id] = { offers: 0, requests: 0, urgent: false };
         map[c.event_id].requests += (c.seats_requested || 1);
+      }
+      for (const r of (requestsRes?.data || [])) {
+        if (!map[r.event_id]) map[r.event_id] = { offers: 0, requests: 0, urgent: false };
+        map[r.event_id].requests += (r.seats_needed || 1);
       }
       for (const id of Object.keys(map)) {
         if (map[id].requests > 0 && map[id].offers === 0) map[id].urgent = true;

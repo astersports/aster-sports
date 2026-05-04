@@ -1,10 +1,10 @@
-
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Hand } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useEventRidesView } from '../../hooks/useEventRidesView';
 import { useRideRequests } from '../../hooks/useRideRequests';
 import { useDriverNames } from '../../hooks/useDriverNames';
+import { supabase } from '../../lib/supabase';
 import DensityToggle from '../home/DensityToggle';
 import OfferCard from '../ride/OfferCard';
 import PostOfferForm from '../ride/PostOfferForm';
@@ -13,8 +13,8 @@ import RequestRideForm from '../ride/RequestRideForm';
 import RideRequestCard from '../ride/RideRequestCard';
 import Button from '../shared/Button';
 
-const sectionLabelStyle = { fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 };
-const emptyStateStyle = { padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13, border: '1px dashed var(--em-border-subtle)', borderRadius: 10 };
+const lblStyle = { fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 };
+const emptyStyle = { padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13, border: '1px dashed var(--em-border-subtle)', borderRadius: 10 };
 
 export default function EventRidesTab({ event }) {
   const { user, orgId, role } = useAuth();
@@ -39,18 +39,24 @@ export default function EventRidesTab({ event }) {
   } = useEventRidesView({ eventId, orgId, userId: user?.id });
 
   const { openRequests, myOpenRequest, postRequest, cancelRequest } = useRideRequests(eventId);
-  const requestNames = useDriverNames(openRequests.map((r) => r.requester_user_id));
+  const requestNames = useDriverNames(orgId, openRequests.map((r) => r.requester_user_id));
+  const [childNames, setChildNames] = useState({});
   const [postOfferOpen, setPostOfferOpen] = useState(false);
+
+  useEffect(() => {
+    const ids = openRequests.map((r) => r.for_child_id).filter(Boolean);
+    if (ids.length === 0) return;
+    supabase.from('players').select('id, first_name').in('id', ids)
+      .then(({ data }) => {
+        const map = {};
+        (data || []).forEach((p) => { map[p.id] = p.first_name; });
+        Promise.resolve().then(() => setChildNames(map));
+      });
+  }, [openRequests]);
   const [requestFormOpen, setRequestFormOpen] = useState(false);
   const [claimTargetOffer, setClaimTargetOffer] = useState(null);
 
-  if (!rideEnabled) {
-    return (
-      <div style={{ padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 15 }}>
-        Ride coordination is off for this event.
-      </div>
-    );
-  }
+  if (!rideEnabled) return <div style={{ padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 15 }}>Ride coordination is off for this event.</div>;
 
   return (
     <div style={{ padding: '12px 16px 80px' }}>
@@ -68,22 +74,18 @@ export default function EventRidesTab({ event }) {
 
       {openRequests.length > 0 && (
         <section aria-label="Ride requests" style={{ marginBottom: 16 }}>
-          <h3 style={sectionLabelStyle}>Ride requests</h3>
+          <h3 style={lblStyle}>Ride requests</h3>
           {openRequests.map((req) => (
-            <RideRequestCard key={req.id} request={req} requesterName={requestNames[req.requester_user_id] || 'Parent'} childName={null} isMine={req.requester_user_id === user?.id} onCancel={cancelRequest} />
+            <RideRequestCard key={req.id} request={req} requesterName={requestNames[req.requester_user_id] || 'Parent'} childName={childNames[req.for_child_id] || null} isMine={req.requester_user_id === user?.id} onCancel={cancelRequest} />
           ))}
         </section>
       )}
 
-      {loading && (
-        <div style={{ padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13 }} role="status" aria-live="polite">
-          Loading rides…
-        </div>
-      )}
+      {loading && <div style={{ padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13 }} role="status" aria-live="polite">Loading rides…</div>}
 
       {!loading && myActiveClaims.length > 0 && (
         <section aria-label="Your claimed seats" style={{ marginBottom: 18 }}>
-          <h3 style={sectionLabelStyle}>Your seats</h3>
+          <h3 style={lblStyle}>Your seats</h3>
           {myActiveClaims.map((claim) => {
             const offer = offers.find((o) => o.id === claim.offer_id);
             if (!offer) return null;
@@ -108,9 +110,9 @@ export default function EventRidesTab({ event }) {
 
       {!loading && !(myActiveClaims.length > 0 && otherOffers.length === 0) && (
         <section aria-label="Available rides">
-          <h3 style={sectionLabelStyle}>Available rides</h3>
+          <h3 style={lblStyle}>Available rides</h3>
           {otherOffers.length === 0 ? (
-            <div style={emptyStateStyle}>
+            <div style={emptyStyle}>
               No rides offered yet. Tap + Offer a ride to help the team get there.
             </div>
           ) : otherOffers.map((offer) => (

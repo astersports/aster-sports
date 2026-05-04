@@ -3,6 +3,9 @@ import Button from '../shared/Button';
 
 export default function RideRequestCard({ request, requesterName, childName, isMine, onCancel }) {
   if (request.status !== 'open') return null;
+  const label = childName
+    ? `${requesterName} — ${childName}`
+    : requesterName;
   return (
     <div style={{
       padding: '12px 16px', backgroundColor: 'var(--em-bg-card)',
@@ -11,13 +14,12 @@ export default function RideRequestCard({ request, requesterName, childName, isM
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
         <User size={15} strokeWidth={1.75} color="var(--em-warning)" />
         <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)' }}>
-          {requesterName} needs a ride
+          {label} needs a ride
         </span>
         <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginLeft: 'auto' }}>
           {request.seats_needed} seat{request.seats_needed !== 1 ? 's' : ''}
         </span>
       </div>
-      {childName && <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginBottom: 4 }}>For {childName}</div>}
       {request.pickup_address && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--em-text-secondary)' }}>
           <MapPin size={11} strokeWidth={1.75} color="var(--em-text-tertiary)" />
