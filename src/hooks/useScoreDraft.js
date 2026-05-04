@@ -119,6 +119,17 @@ export default function useScoreDraft(eventId) {
     } catch (err) { setState('error'); setError(err); throw err; }
   }, [user]);
 
+  const unpublish = useCallback(async () => {
+    setState('saving');
+    try {
+      const { data, error: e } = await supabase.from('game_results').update({ published_at: null }).eq('id', resultRef.current.id).select().single();
+      if (e) throw e;
+      serverRef.current = data; setResult(data);
+      setState('saved'); setLastSaved(new Date());
+      flashRef.current = setTimeout(() => setState(s => s === 'saved' ? 'idle' : s), SAVED_FLASH_MS);
+    } catch (err) { setState('error'); setError(err); }
+  }, []);
+
   const retry = useCallback(() => { retryRef.current = 0; setError(null); performSave(); }, [performSave]);
 
   useEffect(() => () => {
@@ -126,5 +137,5 @@ export default function useScoreDraft(eventId) {
     if (flashRef.current) clearTimeout(flashRef.current);
   }, []);
 
-  return { result, state, lastSaved, error, isPublished: !!result.published_at, updateField, updateFields, publish, retry };
+  return { result, state, lastSaved, error, isPublished: !!result.published_at, updateField, updateFields, publish, unpublish, retry };
 }

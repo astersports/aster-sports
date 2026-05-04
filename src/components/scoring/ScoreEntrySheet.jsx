@@ -10,15 +10,6 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-function formatRelative(iso) {
-  if (!iso) return '';
-  const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
-  return `${Math.floor(hr / 24)}d ago`;
-}
-
 function SaveBadge({ state }) {
   const s = { fontSize: 13, fontStyle: 'italic' };
   if (state === 'saving') return <span style={{ ...s, color: 'var(--em-text-secondary)' }}>Saving…</span>;
@@ -102,10 +93,15 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
       <footer style={{ display: 'flex', gap: 12, padding: '16px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', borderTop: '1px solid var(--em-border-subtle)' }}>
         <button type="button" onClick={handleDismiss} className="sf-press" style={{ ...btn44, flex: 1, background: 'none', border: '1px solid var(--em-border-default)', color: 'var(--em-text-secondary)' }}>Close</button>
         {!draft.isPublished && <button type="button" onClick={handlePublish} disabled={!canPublish} className="sf-press" style={{ ...btn44, flex: 1, border: 'none', backgroundColor: canPublish ? 'var(--em-accent)' : 'var(--em-bg-secondary)', color: canPublish ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)' }}>Publish</button>}
-        {draft.isPublished && <span style={{ padding: '12px 16px', fontSize: 15, color: 'var(--em-success)', fontWeight: 500 }}>Published {formatRelative(draft.result.published_at)}</span>}
+        {draft.isPublished && (
+          <button type="button" onClick={() => setConfirmAction({ type: 'unpublish' })} className="sf-press" style={{ ...btn44, flex: 1, border: '1px solid var(--em-border-default)', background: 'none', color: 'var(--em-warning)' }}>Unpublish</button>
+        )}
       </footer>
       {confirmAction?.type === 'discard' && (
         <ConfirmDialog title="Discard Changes" message="Discard unsaved changes?" confirmLabel="Discard" destructive onConfirm={() => { setConfirmAction(null); onClose(); }} onCancel={() => setConfirmAction(null)} />
+      )}
+      {confirmAction?.type === 'unpublish' && (
+        <ConfirmDialog title="Unpublish Score" message="This will hide the score from parents. You can edit and re-publish." confirmLabel="Unpublish" destructive onConfirm={async () => { setConfirmAction(null); await draft.unpublish(); }} onCancel={() => setConfirmAction(null)} />
       )}
     </div>,
     document.body,
