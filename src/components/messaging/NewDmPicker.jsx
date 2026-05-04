@@ -11,27 +11,17 @@ export default function NewDmPicker({ onSelect, onClose }) {
 
   useEffect(() => {
     if (!orgId) return;
-    (async () => {
-      const { data: roles } = await supabase.from('user_roles')
-        .select('user_id, role').eq('organization_id', orgId).neq('user_id', user.id);
-      if (!roles || roles.length === 0) { setMembers([]); setLoading(false); return; }
-      const userIds = roles.map((r) => r.user_id);
-      const { data: guardians } = await supabase.from('guardians')
-        .select('user_id, first_name, last_name').in('user_id', userIds);
-      const guardianMap = {};
-      (guardians || []).forEach((g) => { guardianMap[g.user_id] = `${g.first_name} ${g.last_name}`; });
-      const resolved = roles.map((r) => ({
-        userId: r.user_id,
-        role: r.role,
-        name: guardianMap[r.user_id] || (r.role === 'admin' ? 'Admin' : r.role === 'coach' ? 'Coach' : 'User'),
-      }));
-      setMembers(resolved.filter((m) => m.name !== 'User'));
-      setLoading(false);
-    })();
+    supabase.rpc('get_org_user_profiles', { p_org_id: orgId })
+      .then(({ data, error }) => {
+        if (error) console.error('NewDmPicker:', error.message);
+        const others = (data || []).filter((m) => m.user_id !== user.id);
+        setMembers(others);
+        setLoading(false);
+      });
   }, [orgId, user]);
 
   const filtered = search
-    ? members.filter((m) => m.name.toLowerCase().includes(search.toLowerCase()))
+    ? members.filter((m) => m.display_name.toLowerCase().includes(search.toLowerCase()))
     : members;
 
   return (
@@ -51,14 +41,14 @@ export default function NewDmPicker({ onSelect, onClose }) {
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px' }}>
         {loading && <div style={{ padding: 16, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 14 }}>Loading…</div>}
         {!loading && filtered.map((m) => (
-          <button key={m.userId} type="button" onClick={() => onSelect(m.userId)} className="sf-press"
-            aria-label={`Message ${m.name}`}
+          <button key={m.user_id} type="button" onClick={() => onSelect(m.user_id)} className="sf-press"
+            aria-label={`Message ${m.display_name}`}
             style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', border: 'none', width: '100%', textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', backgroundColor: 'transparent', borderBottom: '1px solid var(--em-border-subtle)' }}>
             <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: 'var(--em-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <User size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
             </div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>{m.name}</div>
+              <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>{m.display_name}</div>
               <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', textTransform: 'capitalize' }}>{m.role}</div>
             </div>
           </button>
