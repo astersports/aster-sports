@@ -4,7 +4,7 @@ function Stat({ n, l, color }) {
   return (
     <div>
       <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 800, color, display: 'block' }}>{n}</span>
-      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fff', display: 'block', marginTop: 2 }}>{l}</span>
+      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--sf-bc-text)', display: 'block', marginTop: 2 }}>{l}</span>
     </div>
   );
 }

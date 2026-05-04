@@ -41,7 +41,7 @@ export default function TeamGameLog({ teamId, teamColor }) {
               <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, textTransform: 'uppercase', color: teamColor }}>{tournament.name}</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{formatDateRange(tournament.start_date, tournament.end_date)}</div>
             </div>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, fontWeight: 800, color: '#fff' }}>{tourneyRecord(games)}</div>
+            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, fontWeight: 800, color: 'var(--sf-bc-text)' }}>{tourneyRecord(games)}</div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {games.map((g) => (
