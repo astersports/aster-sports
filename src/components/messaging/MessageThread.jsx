@@ -19,9 +19,17 @@ export default function MessageThread({ channel, onBack }) {
   const { role } = useAuth();
   const { messages, loading, send, deleteMessage } = useMessages(channel.channel, channel.teamId, channel.dmThreadId);
   const bottomRef = useRef(null);
+  const scrollRef = useRef(null);
+  const prevLenRef = useRef(0);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = scrollRef.current;
+    if (!el || messages.length === 0) return;
+    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (isAtBottom || !prevLenRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: prevLenRef.current ? 'smooth' : 'instant' });
+    }
+    prevLenRef.current = messages.length;
   }, [messages.length]);
 
   const canPost = channel.channel === 'team' || channel.channel === 'dm' || (channel.channel === 'announcement' && role === 'admin');
@@ -50,7 +58,7 @@ export default function MessageThread({ channel, onBack }) {
         </span>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {loading && <div style={{ color: 'var(--em-text-tertiary)', fontSize: 14, padding: 12 }}>Loading messages…</div>}
         {!loading && messages.length === 0 && (
           <div style={{ color: 'var(--em-text-tertiary)', fontSize: 14, padding: 32, textAlign: 'center' }}>

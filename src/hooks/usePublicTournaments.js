@@ -41,6 +41,7 @@ export function usePublicTournaments(orgId) {
           )
         `)
         .eq('org_id', orgId)
+        .neq('status', 'archived')
         .order('start_date', { ascending: true });
 
       if (cancelled) return;

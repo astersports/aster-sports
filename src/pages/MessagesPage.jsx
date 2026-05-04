@@ -42,14 +42,17 @@ export default function MessagesPage() {
   const startNewDm = async (otherUserId) => {
     setShowNewDm(false);
     const thread = await getOrCreate(otherUserId);
-    if (thread) { await refetchDms(); openDm({ ...thread, otherName: 'Loading…' }); }
+    if (!thread) return;
+    await refetchDms();
+    const updated = dmThreads.find((t) => t.id === thread.id);
+    openDm({ ...thread, otherName: updated?.otherName || 'Chat' });
   };
 
   if (loading || dmsLoading) return <div style={{ padding: 24 }}><LoadingSkeleton variant="card" rows={3} /></div>;
 
   if (active) {
     return (
-      <div style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'fixed', inset: 0, bottom: 80, display: 'flex', flexDirection: 'column', backgroundColor: 'var(--em-bg-page)' }}>
         <MessageThread channel={active} onBack={() => setActive(null)} />
       </div>
     );

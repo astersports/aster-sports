@@ -4,7 +4,6 @@ import { useTeams } from '../hooks/useTeams';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { usePublicTournaments } from '../hooks/usePublicTournaments';
 import { EMPTY_SUMMARY } from '../lib/teamRecords';
-import { supabase } from '../lib/supabase';
 import StatHeroBar from '../components/broadcast/StatHeroBar';
 import TournamentCard from '../components/broadcast/TournamentCard';
 import TeamAccordion from '../components/records/TeamAccordion';
@@ -22,17 +21,14 @@ export default function RecordsPage() {
     return () => { document.title = prev; };
   }, [org]);
 
-  const [totalGames, setTotalGames] = useState(0);
-  useEffect(() => {
-    let c = false;
-    supabase.from('game_results').select('*', { count: 'exact', head: true }).not('published_at', 'is', null)
-      .then(({ count }) => { if (!c) setTotalGames(count || 0); });
-    return () => { c = true; };
-  }, []);
+  const totalGames = useMemo(() =>
+    Object.values(recordsByTeam).reduce((sum, s) => sum + (s.gamesPlayed || 0), 0),
+  [recordsByTeam]);
 
   const tournamentStats = useMemo(() => ({
     champs: tournaments.reduce((s, t) => s + (t.participants?.filter((p) => p.final_place === 'Champions').length || 0), 0),
-    nationalsQualified: tournaments.filter((t) => /nationals/i.test(t.name)).reduce((s, t) => s + (t.participants?.length || 0), 0),
+    nationalsQualified: tournaments.filter((t) => /nationals/i.test(t.name))
+      .reduce((s, t) => s + (t.participants?.filter((p) => p.final_place).length || 0), 0),
   }), [tournaments]);
 
   return (
