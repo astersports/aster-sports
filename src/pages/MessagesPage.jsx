@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useChannels } from '../hooks/useChannels';
@@ -51,10 +52,11 @@ export default function MessagesPage() {
   if (loading || dmsLoading) return <div style={{ padding: 24 }}><LoadingSkeleton variant="card" rows={3} /></div>;
 
   if (active) {
-    return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 55, display: 'flex', flexDirection: 'column', backgroundColor: 'var(--em-bg-page)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
+    return createPortal(
+      <div style={{ position: 'fixed', inset: 0, zIndex: 9990, display: 'flex', flexDirection: 'column', backgroundColor: 'var(--em-bg-page)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
         <MessageThread channel={active} onBack={() => setActive(null)} />
-      </div>
+      </div>,
+      document.body
     );
   }
 
