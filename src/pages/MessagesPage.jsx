@@ -18,10 +18,11 @@ export default function MessagesPage() {
   useEffect(() => {
     if (loading || active) return;
     const teamParam = searchParams.get('team');
-    if (teamParam) {
-      const match = channels.find((ch) => ch.teamId === teamParam);
-      if (match) Promise.resolve().then(() => { setActive(match); setSearchParams({}, { replace: true }); });
-    }
+    const announce = searchParams.get('announce');
+    let match = null;
+    if (teamParam) match = channels.find((ch) => ch.teamId === teamParam);
+    else if (announce) match = channels.find((ch) => ch.channel === 'announcement');
+    if (match) Promise.resolve().then(() => { setActive(match); setSearchParams({}, { replace: true }); });
   }, [loading, channels, searchParams, active, setSearchParams]);
 
   useEffect(() => {

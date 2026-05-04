@@ -1,19 +1,25 @@
 import { Link } from 'react-router-dom';
-import { CalendarPlus, UserPlus, MessageSquare, Megaphone, Calendar, Trophy, DollarSign } from 'lucide-react';
+import { CalendarPlus, UserPlus, MessageSquare, Megaphone, Calendar, Trophy } from 'lucide-react';
 
 const ACTIONS = [
-  { label: '+ Event',     icon: CalendarPlus,  to: '/schedule?wizard=1' },
-  { label: '+ Player',    icon: UserPlus,      to: '/teams'            },
+  { label: '+ Event',     icon: CalendarPlus,  to: '/schedule'     },
+  { label: '+ Player',    icon: UserPlus,      to: '/teams'        },
   { label: 'Announce',    icon: Megaphone,     to: '/messages?announce=1' },
-  { label: 'Financials',  icon: DollarSign,    to: '/admin/financials' },
+  { label: 'Message',     icon: MessageSquare, to: '/messages'     },
   { label: 'Schedule',    icon: Calendar,      to: '/schedule'     },
   { label: 'Tournaments', icon: Trophy,        to: '/tournaments'  },
 ];
 
 export default function QuickActions() {
+  // Previously used `-mx-4 px-4` to bleed edge-to-edge inside the
+  // parent's px-4 gutter, but the negative margins were blowing out the
+  // page wrapper's computed width on iOS Safari and letting the whole
+  // admin dashboard drag horizontally. A plain scroll row sits inside
+  // the gutter — slightly less chrome-y, no overflow risk.
   return (
     <div
-      style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}
+      className="flex gap-2 overflow-x-auto sf-no-scrollbar"
+      style={{ maxWidth: '100%' }}
       aria-label="Quick actions"
     >
       {ACTIONS.map((action) => {
@@ -32,7 +38,7 @@ export default function QuickActions() {
               border: '1px solid var(--em-border-default)',
               boxShadow: 'var(--em-shadow-sm)',
               color: 'var(--em-text-primary)',
-              fontSize: 15,
+              fontSize: 14,
               fontWeight: 500,
               transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
             }}
