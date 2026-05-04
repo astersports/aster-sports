@@ -1,7 +1,7 @@
 // Horizontal scroll strip of team performance cards on the Admin
 // Home. Each card shows team name, W-L record placeholder, and a
 // short metadata line. Tapping navigates to the team detail page.
-export default function TeamPerformanceStrip({ programs, navigate }) {
+export default function TeamPerformanceStrip({ programs, recordsByTeam = {}, navigate }) {
   return (
     <div className="flex gap-3 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 4 }}>
       {programs.map((team) => (
@@ -26,7 +26,7 @@ export default function TeamPerformanceStrip({ programs, navigate }) {
             {team.name}
           </div>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', marginTop: 4 }}>
-            0-0
+            {recordsByTeam[team.id]?.record || '0-0'}
           </div>
           <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
             {team.age_group} · {team.circuit === 'aau' ? 'AAU' : 'League Play'}

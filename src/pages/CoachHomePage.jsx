@@ -11,7 +11,7 @@ import { useDensity } from '../hooks/useDensity';
 import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
 
 export default function CoachHomePage() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { activities, loading, error, refetch } = useActivities();
   const navigate = useNavigate();
   useRefetchOnVisible(refetch);
@@ -38,10 +38,6 @@ export default function CoachHomePage() {
     return [...map.values()].sort((x, y) => x.sort_order - y.sort_order);
   }, [activities]);
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/login', { replace: true });
-  };
 
   return (
     <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
@@ -77,28 +73,6 @@ export default function CoachHomePage() {
         </div>
       </SectionShell>
 
-      {/* TEMP: sign-out affordance until Account page is built. Parity with AdminHomePage. */}
-      <div style={{ borderTop: '1px solid var(--em-border-subtle)', paddingTop: 12 }}>
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className="w-full sf-press flex items-center justify-between"
-          style={{
-            minHeight: 44,
-            padding: '0 4px',
-            background: 'none',
-            border: 'none',
-            color: 'var(--em-danger)',
-            fontSize: 15,
-            fontWeight: 500,
-          }}
-        >
-          <span>Sign out</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m9 18 6-6-6-6" />
-          </svg>
-        </button>
-      </div>
     </div>
   );
 }

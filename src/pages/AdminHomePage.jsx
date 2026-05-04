@@ -8,6 +8,7 @@ import { usePrograms } from '../hooks/usePrograms';
 import { useActivities } from '../hooks/useActivities';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
+import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import KpiGrid from '../components/admin/KpiGrid';
 import QuickActions from '../components/admin/QuickActions';
 import ActiveSeasonCard from '../components/admin/ActiveSeasonCard';
@@ -18,24 +19,17 @@ import AdminGreeting from '../components/admin/AdminGreeting';
 import Label from '../components/shared/Label';
 
 export default function AdminHomePage() {
-  const { user, signOut } = useAuth();
+  const { user, orgId } = useAuth();
   const { activeSeason } = useSeason();
   const stats = useAdminStats();
   const { seasons } = useSeasons();
   const { programs } = usePrograms();
   const { activities, refetch } = useActivities();
+  const { byTeamId: recordsByTeam } = useOrgTeamRecords(orgId);
   useRefetchOnVisible(refetch);
   const now = useNow();
   const navigate = useNavigate();
   const nextEvent = useMemo(() => activities.find((a) => a.start_at && a.status !== 'cancelled' && new Date(a.start_at).getTime() >= now) || null, [activities, now]);
-
-  // Temporary sign-out affordance until the Account page is built. Lives
-  // at the bottom of the admin dashboard so it's reachable without
-  // needing a top-nav menu yet.
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/login', { replace: true });
-  };
 
   // overflow-x-hidden + max-w-full on the page wrapper is defense in
   // depth — even if a child component escapes its box, nothing drags
@@ -57,7 +51,7 @@ export default function AdminHomePage() {
 
       <section className="min-w-0">
         <Label>TEAMS</Label>
-        <TeamPerformanceStrip programs={programs} navigate={navigate} />
+        <TeamPerformanceStrip programs={programs} recordsByTeam={recordsByTeam} navigate={navigate} />
       </section>
 
       <section className="min-w-0" aria-label="Active season">
@@ -70,27 +64,6 @@ export default function AdminHomePage() {
         hasSeasons={seasons.length > 0}
         hasPrograms={programs.length > 0}
       />
-
-      {/* TEMP: sign-out affordance until the Account page is built. */}
-      <div style={{ borderTop: '1px solid var(--em-border-subtle)', paddingTop: 12 }}>
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className="w-full sf-press flex items-center justify-between"
-          style={{
-            minHeight: 44,
-            padding: '0 4px',
-            background: 'none',
-            border: 'none',
-            color: 'var(--em-danger)',
-            fontSize: 15,
-            fontWeight: 500,
-          }}
-        >
-          <span>Sign out</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-      </div>
     </div>
   );
 }
