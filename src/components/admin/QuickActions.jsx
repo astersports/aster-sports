@@ -1,23 +1,16 @@
 import { Link } from 'react-router-dom';
-import { CalendarPlus, UserPlus, MessageSquare, Calendar, Trophy } from 'lucide-react';
+import { CalendarPlus, UserPlus, MessageSquare, Megaphone, Calendar, Trophy } from 'lucide-react';
 
-// Four-chip horizontal scroll row for the admin home shortcuts. The create
-// routes are placeholders for now — they deep-link into the schedule/roster
-// pages and will gain dedicated /new routes in a later prompt.
 const ACTIONS = [
   { label: '+ Event',     icon: CalendarPlus,  to: '/schedule'     },
   { label: '+ Player',    icon: UserPlus,      to: '/teams'        },
+  { label: 'Announce',    icon: Megaphone,     to: '/messages?announce=1' },
   { label: 'Message',     icon: MessageSquare, to: '/messages'     },
   { label: 'Schedule',    icon: Calendar,      to: '/schedule'     },
   { label: 'Tournaments', icon: Trophy,        to: '/tournaments'  },
 ];
 
 export default function QuickActions() {
-  // Previously used `-mx-4 px-4` to bleed edge-to-edge inside the
-  // parent's px-4 gutter, but the negative margins were blowing out the
-  // page wrapper's computed width on iOS Safari and letting the whole
-  // admin dashboard drag horizontally. A plain scroll row sits inside
-  // the gutter — slightly less chrome-y, no overflow risk.
   return (
     <div
       style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}

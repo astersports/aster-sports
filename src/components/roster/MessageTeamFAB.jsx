@@ -1,7 +1,8 @@
-// Floating action button pinned to the bottom-right of the team
-// detail page. Position is fixed so it doesn't scroll with content;
-// z-index 40 sits below BottomNav (z-50) and above in-page content.
-export default function MessageTeamFAB() {
+import { useNavigate } from 'react-router-dom';
+import { MessageSquare } from 'lucide-react';
+
+export default function MessageTeamFAB({ teamId }) {
+  const navigate = useNavigate();
   return (
     <div style={{
       position: 'fixed',
@@ -11,20 +12,18 @@ export default function MessageTeamFAB() {
     }}>
       <button
         type="button"
-        onClick={() => { navigator.vibrate?.(10); /* TODO: navigate to compose with team pre-selected */ }}
+        onClick={() => { navigator.vibrate?.(10); navigate(`/messages?team=${teamId}`); }}
         className="sf-press sf-bounce-tap"
         style={{
           width: 56, height: 56, borderRadius: '50%',
           backgroundColor: 'var(--em-accent)',
           boxShadow: 'var(--em-shadow-lg)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: 'none',
+          border: 'none', cursor: 'pointer',
         }}
         aria-label="Message team"
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--em-text-inverse)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
+        <MessageSquare size={24} strokeWidth={1.75} color="var(--em-text-inverse)" />
       </button>
     </div>
   );
