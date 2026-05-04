@@ -1,20 +1,20 @@
 import { NavLink } from 'react-router-dom';
-import { House, Calendar, MapPin, Users, Trophy } from 'lucide-react';
+import { House, Calendar, Trophy, Users, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/permissions';
+import { useHasUnread } from '../../hooks/useHasUnread';
 
-// Defining the full tab set in one array keeps the active-state styling and
-// a11y labels consistent across every role.
 const ALL_TABS = [
   { to: '/',          label: 'Home',      icon: House,         staffOnly: false },
   { to: '/schedule',  label: 'Schedule',  icon: Calendar,      staffOnly: false },
-  { to: '/locations', label: 'Locations', icon: MapPin,        staffOnly: false },
-  { to: '/teams',     label: 'Teams',     icon: Users,         staffOnly: false },
   { to: '/records',   label: 'Records',   icon: Trophy,        staffOnly: false },
+  { to: '/teams',     label: 'Teams',     icon: Users,         staffOnly: false },
+  { to: '/messages',  label: 'Messages',  icon: MessageSquare, staffOnly: false },
 ];
 
 export default function BottomNav() {
   const { role } = useAuth();
+  const hasUnread = useHasUnread();
   const tabs = ALL_TABS.filter((t) => !t.staffOnly || isStaff(role));
 
   return (
@@ -28,16 +28,13 @@ export default function BottomNav() {
       aria-label="Primary"
     >
       {tabs.map((tab) => (
-        <NavItem key={tab.to} {...tab} />
+        <NavItem key={tab.to} {...tab} showBadge={tab.to === '/messages' && hasUnread} />
       ))}
     </nav>
   );
 }
 
 function NavItem(tab) {
-  // Destructuring `icon: Icon` defeats the eslint varsIgnorePattern because
-  // the parser checks the original key, not the alias — so we grab the
-  // component via property access instead and alias locally.
   const Icon = tab.icon;
   return (
     <NavLink
@@ -52,10 +49,18 @@ function NavItem(tab) {
       aria-label={tab.label}
     >
       {({ isActive }) => (
-        <div className="flex flex-col items-center justify-center" style={{ gap: 2, paddingTop: 6, paddingBottom: 2 }}>
+        <div className="flex flex-col items-center justify-center" style={{ gap: 2, paddingTop: 6, paddingBottom: 2, position: 'relative' }}>
           <Icon size={22} strokeWidth={isActive ? 2 : 1.5} />
+          {tab.showBadge && (
+            <div style={{
+              position: 'absolute', top: 4, right: '50%', marginRight: -14,
+              width: 8, height: 8, borderRadius: '50%',
+              backgroundColor: 'var(--em-danger)',
+              border: '2px solid var(--em-bg-card)',
+            }} />
+          )}
           <span style={{
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: isActive ? 600 : 400,
             letterSpacing: '0.02em',
             color: isActive ? 'var(--em-accent)' : 'var(--em-text-tertiary)',

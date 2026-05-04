@@ -24,4 +24,11 @@ dist-ssr
 *.sw?
 .env
 .env.local
+
+# Supabase CLI local scratch (linked-project refs, version cache)
+supabase/.temp/
+
+# Persistent untracked items per Wave 2 IA Map v1.1 Decision 103.
+rides-audit-source.zip
+WAVE_3A_PROMPT_v2.md
 .mcp.json

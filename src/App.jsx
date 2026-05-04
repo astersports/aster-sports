@@ -15,16 +15,13 @@ import EventDetailPage from './pages/EventDetailPage';
 import AccountPage from './pages/AccountPage';
 import TournamentsPage from './pages/TournamentsPage';
 import TournamentDetailPage from './pages/TournamentDetailPage';
-import RecordsPreview from './pages/RecordsPreview';
+import RecordsPage from './pages/RecordsPage';
 
 const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
 const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
 
 const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading...</div>;
 
-// Wrap an authenticated route in both the shell and the auth guard. Keeps
-// the route table below flat and readable instead of nesting <RequireAuth>
-// manually on every line.
 const Protected = ({ children, allowedRoles }) => (
   <RequireAuth allowedRoles={allowedRoles}>
     <AppShell>{children}</AppShell>
@@ -49,10 +46,10 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
-      <Route path="/records" element={<RecordsPreview />} />
 
       {/* Authenticated routes */}
       <Route path="/"         element={<Protected><HomePage /></Protected>} />
+      <Route path="/records"  element={<Protected><RecordsPage /></Protected>} />
       <Route path="/schedule" element={<Protected><SchedulePage /></Protected>} />
       <Route path="/locations" element={<Protected><LocationsPage /></Protected>} />
       <Route path="/teams"           element={<Protected><TeamsPage /></Protected>} />
