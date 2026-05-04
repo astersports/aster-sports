@@ -17,6 +17,7 @@ import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import DensityToggle from '../components/home/DensityToggle';
 import { useDensity } from '../hooks/useDensity';
 import { useGameResultsMap } from '../hooks/useGameResultsMap';
+import { useWeather } from '../hooks/useWeather';
 import { isStaff } from '../lib/permissions';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
@@ -34,6 +35,7 @@ export default function SchedulePage() {
   const [viewMode, setViewMode] = useState('all');
   const { density } = useDensity('schedule-list', 'medium');
   const gameResults = useGameResultsMap(activities);
+  const weather = useWeather(41.03, -73.76);
 
   // tick increments every 60s so the upcoming / thisWeek / remaining
   // memos re-evaluate against a fresh `now`. Without this, a user who
@@ -97,13 +99,13 @@ export default function SchedulePage() {
                   <Label style={{ marginBottom: 0 }}>Next 7 days</Label>
                   <DensityToggle sectionKey="schedule-list" />
                 </div>
-                <DateGroupedList events={upcoming} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} nextEventId={nextEventId} density={density} gameResults={gameResults} />
+                <DateGroupedList events={upcoming} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} nextEventId={nextEventId} density={density} gameResults={gameResults} weather={weather} />
               </div>
             )}
             {remaining.length > 0 && (
               <div style={{ marginTop: 16 }}>
                 <Label>Later</Label>
-                <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} density={density} gameResults={gameResults} />
+                <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} density={density} gameResults={gameResults} weather={weather} />
               </div>
             )}
           </>

@@ -7,7 +7,7 @@ import { useNow } from '../../hooks/useNow';
 import ChildRsvp from './ChildRsvp';
 import RsvpCountRow from './RsvpCountRow';
 
-export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'medium', gameResult }) {
+export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'medium', gameResult, weather }) {
   const navigate = useNavigate();
   const { role, myChildren } = useAuth();
   const now = useNow();
@@ -59,6 +59,9 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
             </span>
           )}
           <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}> · {typeLabel}</span>
+          {weather && !isPast && (
+            <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginLeft: 2 }}>{weather.icon} {weather.temp}°</span>
+          )}
           {gameResult?.published_at && (
             <span style={{ fontSize: 13, fontWeight: 700, marginLeft: 4, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
               {gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}
