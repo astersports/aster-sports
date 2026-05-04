@@ -27,7 +27,7 @@ function tourneyRecord(games) {
 
 export default function TeamGameLog({ teamId, teamColor }) {
   const { loading, grouped } = useTeamGamesByTournament(teamId);
-  if (loading) return <>{Array.from({ length: 3 }).map((_, i) => <div key={i} className="bc-glog-skeleton" />)}</>;
+  if (loading) return <div style={{ padding: 12, color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Loading games…</div>;
   if (grouped.tournaments.length === 0 && grouped.standalone.length === 0) {
     return <div style={{ padding: 12, color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>No games published yet.</div>;
   }
@@ -41,7 +41,7 @@ export default function TeamGameLog({ teamId, teamColor }) {
               <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, textTransform: 'uppercase', color: teamColor }}>{tournament.name}</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{formatDateRange(tournament.start_date, tournament.end_date)}</div>
             </div>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, fontWeight: 800, color: 'var(--sf-bc-text)' }}>{tourneyRecord(games)}</div>
+            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, fontWeight: 800, color: '#fff' }}>{tourneyRecord(games)}</div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {games.map((g) => (

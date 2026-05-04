@@ -4,10 +4,9 @@ import { useTeams } from '../hooks/useTeams';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { usePublicTournaments } from '../hooks/usePublicTournaments';
 import { EMPTY_SUMMARY } from '../lib/teamRecords';
+import { supabase } from '../lib/supabase';
 import StatHeroBar from '../components/broadcast/StatHeroBar';
-import TournamentCard from '../components/broadcast/TournamentCard';
 import TeamAccordion from '../components/records/TeamAccordion';
-import StandingsTable from '../components/records/StandingsTable';
 
 export default function RecordsPage() {
   const { orgId, org } = useAuth();
@@ -22,23 +21,26 @@ export default function RecordsPage() {
     return () => { document.title = prev; };
   }, [org]);
 
-  const totalGames = useMemo(() =>
-    Object.values(recordsByTeam).reduce((sum, s) => sum + (s.gamesPlayed || 0), 0),
-  [recordsByTeam]);
+  const [totalGames, setTotalGames] = useState(0);
+  useEffect(() => {
+    let c = false;
+    supabase.from('game_results').select('*', { count: 'exact', head: true }).not('published_at', 'is', null)
+      .then(({ count }) => { if (!c) setTotalGames(count || 0); });
+    return () => { c = true; };
+  }, []);
 
   const tournamentStats = useMemo(() => ({
     champs: tournaments.reduce((s, t) => s + (t.participants?.filter((p) => p.final_place === 'Champions').length || 0), 0),
-    nationalsQualified: tournaments.filter((t) => /nationals/i.test(t.name))
-      .reduce((s, t) => s + (t.participants?.filter((p) => p.final_place).length || 0), 0),
+    nationalsQualified: tournaments.filter((t) => /nationals/i.test(t.name)).reduce((s, t) => s + (t.participants?.length || 0), 0),
   }), [tournaments]);
 
   return (
     <div className="bc-root" style={{ minHeight: 'auto', paddingBottom: 80 }}>
       <div style={{ padding: '20px 16px 0' }}>
-        <div style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 13, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 4 }}>
+        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 4 }}>
           Spring 2026 · {org?.display_name || org?.name || ''}
         </div>
-        <h1 style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 32, fontWeight: 800, textTransform: 'uppercase', color: 'var(--sf-bc-text)', lineHeight: 1, marginBottom: 4 }}>
+        <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1, marginBottom: 4 }}>
           THE <span style={{ color: 'var(--sf-bc-cobalt)' }}>RECORDS</span>
         </h1>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
@@ -55,17 +57,10 @@ export default function RecordsPage() {
         ]} />
       </div>
       <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>Standings</div>
-        <h2 style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: 'var(--sf-bc-text)', lineHeight: 1.05, marginBottom: 16 }}>
-          LEAGUE <span style={{ color: 'var(--sf-bc-cobalt)' }}>TABLE</span>
+        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>All Teams</div>
+        <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1.05, marginBottom: 16 }}>
+          SEASON <span style={{ color: 'var(--sf-bc-cobalt)' }}>RECORDS</span>
         </h2>
-        <StandingsTable teams={teams} recordsByTeam={recordsByTeam} />
-        <div style={{ marginTop: 32 }}>
-          <div style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>All Teams</div>
-          <h2 style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: 'var(--sf-bc-text)', lineHeight: 1.05, marginBottom: 16 }}>
-            SEASON <span style={{ color: 'var(--sf-bc-cobalt)' }}>RECORDS</span>
-          </h2>
-        </div>
         {teamsLoading && Array.from({ length: 5 }).map((_, i) => <div key={i} className="bc-team-skeleton" />)}
         {teams.map((team) => (
           <TeamAccordion
@@ -76,15 +71,6 @@ export default function RecordsPage() {
             onToggle={() => setExpandedTeam(expandedTeam === team.id ? null : team.id)}
           />
         ))}
-        {tournaments.length > 0 && (
-          <div style={{ marginTop: 32 }}>
-            <div style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>Tournaments</div>
-            <h2 style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: 'var(--sf-bc-text)', lineHeight: 1.05, marginBottom: 16 }}>
-              RUN OF <span style={{ color: 'var(--sf-bc-cobalt)' }}>PLAY</span>
-            </h2>
-            {tournaments.map((t) => <TournamentCard key={t.id} tournament={t} />)}
-          </div>
-        )}
       </div>
     </div>
   );

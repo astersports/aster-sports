@@ -16,16 +16,15 @@ import AccountPage from './pages/AccountPage';
 import TournamentsPage from './pages/TournamentsPage';
 import TournamentDetailPage from './pages/TournamentDetailPage';
 import RecordsPage from './pages/RecordsPage';
-import PublicSchedulePage from './pages/PublicSchedulePage';
-import LiveScorePage from './pages/LiveScorePage';
 
 const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
 const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
-const SeasonRolloverPage = lazy(() => import('./pages/SeasonRolloverPage'));
-const FinancialDashboardPage = lazy(() => import('./pages/FinancialDashboardPage'));
 
 const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading...</div>;
 
+// Wrap an authenticated route in both the shell and the auth guard. Keeps
+// the route table below flat and readable instead of nesting <RequireAuth>
+// manually on every line.
 const Protected = ({ children, allowedRoles }) => (
   <RequireAuth allowedRoles={allowedRoles}>
     <AppShell>{children}</AppShell>
@@ -50,11 +49,10 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
-      <Route path="/schedule/:teamId" element={<PublicSchedulePage />} />
+      <Route path="/records" element={<Protected><RecordsPage /></Protected>} />
 
       {/* Authenticated routes */}
       <Route path="/"         element={<Protected><HomePage /></Protected>} />
-      <Route path="/records"  element={<Protected><RecordsPage /></Protected>} />
       <Route path="/schedule" element={<Protected><SchedulePage /></Protected>} />
       <Route path="/locations" element={<Protected><LocationsPage /></Protected>} />
       <Route path="/teams"           element={<Protected><TeamsPage /></Protected>} />
@@ -68,7 +66,6 @@ export default function App() {
 
       {/* Full-screen authenticated routes — auth guard without AppShell chrome */}
       <Route path="/events/:id" element={<RequireAuth><EventDetailPage /></RequireAuth>} />
-      <Route path="/events/:id/live" element={<RequireAuth><LiveScorePage /></RequireAuth>} />
 
       {/* Admin-only management routes */}
       <Route
@@ -87,8 +84,6 @@ export default function App() {
           </Protected>
         }
       />
-      <Route path="/admin/rollover" element={<Protected allowedRoles={['admin']}><SeasonRolloverPage /></Protected>} />
-      <Route path="/admin/financials" element={<Protected allowedRoles={['admin']}><FinancialDashboardPage /></Protected>} />
     </Routes>
       </Suspense>
     </PageTransition>
