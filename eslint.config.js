@@ -24,6 +24,7 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^[A-Z_]' }],
+      'sort-imports': ['warn', { ignoreCase: true, ignoreDeclarationSort: true, allowSeparatedGroups: true }],
     },
   },
 ])
