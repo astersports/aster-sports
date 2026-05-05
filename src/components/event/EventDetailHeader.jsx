@@ -13,7 +13,7 @@ export default function EventDetailHeader({ event, team, isStaff, onEdit, onDele
     <>
       <div style={{ backgroundColor: teamColor, padding: '0 8px 16px 4px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button type="button" onClick={() => navigate(-1)} className="sf-press" style={iconBtn}>
+          <button type="button" onClick={() => navigate(-1)} className="sf-press" aria-label="Go back" style={iconBtn}>
             <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-inverse)" />
           </button>
           <div style={{ display: 'flex', gap: 4 }}>

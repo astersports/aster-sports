@@ -86,7 +86,7 @@ export default function TournamentBriefing({ event, team, onClose }) {
             </div>
 
             {briefing && (
-              <div style={{ backgroundColor: '#ffffff', borderRadius: 10, overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: briefing.html }} />
+              <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: briefing.html }} />
             )}
           </>
         )}

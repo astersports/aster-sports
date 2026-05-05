@@ -47,7 +47,7 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
       </div>
       {onToggleCancelled && (
         <button type="button" onClick={onToggleCancelled}
-          style={{ fontSize: 13, color: 'var(--em-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', marginTop: 4 }}>
+          style={{ fontSize: 13, color: 'var(--em-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', marginTop: 4, minHeight: 44, fontFamily: 'inherit' }}>
           {showCancelled ? 'Hide cancelled' : 'Show cancelled'}
         </button>
       )}

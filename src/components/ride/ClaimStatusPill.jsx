@@ -6,10 +6,10 @@
 import { Check, Clock, AlertCircle, X, Ban } from 'lucide-react';
 
 const STATUS_VARIANTS = {
-  confirmed: { label: 'Confirmed', icon: Check, fg: 'var(--em-success)', bg: 'color-mix(in srgb, var(--em-success) 12%, transparent)' },
-  pending: { label: 'Pending', icon: Clock, fg: 'var(--em-warning)', bg: 'color-mix(in srgb, var(--em-warning) 12%, transparent)' },
-  waitlisted: { label: 'Waitlist', icon: AlertCircle, fg: 'var(--em-accent)', bg: 'color-mix(in srgb, var(--em-accent) 12%, transparent)' },
-  declined: { label: 'Declined', icon: X, fg: 'var(--em-danger)', bg: 'color-mix(in srgb, var(--em-danger) 12%, transparent)' },
+  confirmed: { label: 'Confirmed', icon: Check, fg: 'var(--em-success)', bg: 'var(--em-success-soft)' },
+  pending: { label: 'Pending', icon: Clock, fg: 'var(--em-warning)', bg: 'var(--em-warning-soft)' },
+  waitlisted: { label: 'Waitlist', icon: AlertCircle, fg: 'var(--em-accent)', bg: 'var(--em-accent-soft)' },
+  declined: { label: 'Declined', icon: X, fg: 'var(--em-danger)', bg: 'var(--em-danger-soft)' },
   cancelled: { label: 'Cancelled', icon: Ban, fg: 'var(--em-text-tertiary)', bg: 'var(--em-bg-secondary)' },
 };
 

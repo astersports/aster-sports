@@ -7,7 +7,7 @@ export default function Chip({ label, active, color, onClick }) {
       aria-pressed={active}
       style={{
         flexShrink: 0,
-        minHeight: 36,
+        minHeight: 44,
         padding: '0 12px',
         borderRadius: 999,
         fontSize: 13,

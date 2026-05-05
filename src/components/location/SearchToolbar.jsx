@@ -5,7 +5,7 @@ import { Search, X } from 'lucide-react';
 
 export default function SearchToolbar({ search, setSearch, showArchived, setShowArchived, isStaff }) {
   const chip = (active) => ({
-    minHeight: 32, padding: '0 12px', borderRadius: 999,
+    minHeight: 44, padding: '0 12px', borderRadius: 999,
     border: `1.5px solid ${active ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
     backgroundColor: active ? 'var(--em-accent-soft)' : 'var(--em-bg-card)',
     color: active ? 'var(--em-accent)' : 'var(--em-text-primary)',
@@ -36,7 +36,7 @@ export default function SearchToolbar({ search, setSearch, showArchived, setShow
             aria-label="Clear search"
             style={{
               position: 'absolute', right: 8, top: 8,
-              width: 28, height: 28, borderRadius: 14,
+              width: 36, height: 36, borderRadius: 18,
               border: 'none', backgroundColor: 'var(--em-bg-card)',
               cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',

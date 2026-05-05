@@ -20,7 +20,7 @@ export default function TournamentStatusChips({ statusFilter, setStatusFilter })
             className="sf-press"
             aria-pressed={active}
             style={{
-              minHeight: 32, padding: '0 12px', borderRadius: 999,
+              minHeight: 44, padding: '0 12px', borderRadius: 999,
               border: `1.5px solid ${active ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
               backgroundColor: active ? 'var(--em-accent-soft)' : 'var(--em-bg-card)',
               color: active ? 'var(--em-accent)' : 'var(--em-text-primary)',

@@ -116,7 +116,7 @@ export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = 
       }
     >
       <form id="post-offer-form" onSubmit={handleSubmit} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {error && <div role="alert" style={{ padding: 10, borderRadius: 8, backgroundColor: 'color-mix(in srgb, var(--em-danger) 10%, transparent)', color: 'var(--em-danger)', fontSize: 13 }}>{error}</div>}
+        {error && <div role="alert" style={{ padding: 10, borderRadius: 8, backgroundColor: 'var(--em-danger-soft)', color: 'var(--em-danger)', fontSize: 13 }}>{error}</div>}
         <Input label="Seats available" id="seats" type="number" inputMode="numeric" min="1" max="12" value={seats} onChange={(e) => setSeats(e.target.value)} required />
         <div><label style={labelStyle} htmlFor="rideType">Trip type</label>
           <select id="rideType" value={rideType} onChange={(e) => setRideType(e.target.value)} style={selectStyle}>

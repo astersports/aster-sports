@@ -72,7 +72,7 @@ export default function ClaimSeatForm({ open, onClose, offer, onSubmit }) {
       }
     >
       <form id="claim-seat-form" onSubmit={handleSubmit} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {error && <div role="alert" style={{ padding: 10, borderRadius: 8, backgroundColor: 'color-mix(in srgb, var(--em-danger) 10%, transparent)', color: 'var(--em-danger)', fontSize: 13 }}>{error}</div>}
+        {error && <div role="alert" style={{ padding: 10, borderRadius: 8, backgroundColor: 'var(--em-danger-soft)', color: 'var(--em-danger)', fontSize: 13 }}>{error}</div>}
         <div style={{ padding: 12, borderRadius: 8, backgroundColor: 'var(--em-bg-secondary)', fontSize: 13, color: 'var(--em-text-secondary)' }}>
           {offer.ride_type === 'arrival_only' ? 'This is an arrival-only ride. You will need a separate ride home.' : offer.ride_type === 'return_only' ? 'This is a return-only ride from the venue.' : 'Round trip — pickup and return seats included.'}
         </div>
