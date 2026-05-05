@@ -1,53 +1,45 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
-const POINT_MAP = { fg2_made: 2, fg3_made: 3, ft_made: 1 };
-
 export function usePlayerSeasonStats(teamId) {
-  const [plays, setPlays] = useState(null);
+  const [rows, setRows] = useState(null);
   const fetchIdRef = useRef(0);
 
   const fetch = useCallback(() => {
     if (!teamId) return;
     const id = ++fetchIdRef.current;
     supabase
-      .from('game_plays')
-      .select('player_id, play_type, event_id, events!inner(team_id)')
-      .eq('events.team_id', teamId)
-      .eq('is_voided', false)
-      .eq('is_opponent', false)
-      .not('player_id', 'is', null)
+      .from('player_game_stats')
+      .select('player_id, pts, pf, fg_made, fg_att, three_made, three_att, ft_made, ft_att, to_count, orb, drb, reb, ast, stl, blk, plus_minus')
+      .eq('team_id', teamId)
       .then(({ data, error }) => {
         if (id !== fetchIdRef.current) return;
         if (error) console.error('usePlayerSeasonStats:', error.message);
-        setPlays(data || []);
+        setRows(data || []);
       });
   }, [teamId]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
   const stats = useMemo(() => {
-    if (!plays) return {};
+    if (!rows) return {};
     const map = {};
-    const gamesByPlayer = {};
-    for (const p of plays) {
-      if (!map[p.player_id]) map[p.player_id] = { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, foul: 0, gp: 0 };
-      if (!gamesByPlayer[p.player_id]) gamesByPlayer[p.player_id] = new Set();
-      const s = map[p.player_id];
-      s.pts += POINT_MAP[p.play_type] || 0;
-      if (p.play_type === 'rebound') s.reb++;
-      if (p.play_type === 'assist') s.ast++;
-      if (p.play_type === 'steal') s.stl++;
-      if (p.play_type === 'block') s.blk++;
-      if (p.play_type === 'turnover') s.to++;
-      if (p.play_type === 'foul') s.foul++;
-      gamesByPlayer[p.player_id].add(p.event_id);
-    }
-    for (const [pid, games] of Object.entries(gamesByPlayer)) {
-      map[pid].gp = games.size;
+    for (const r of rows) {
+      if (!map[r.player_id]) {
+        map[r.player_id] = { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, foul: 0, gp: 0,
+          fg_made: 0, fg_att: 0, three_made: 0, three_att: 0, ft_made: 0, ft_att: 0, orb: 0, drb: 0, plus_minus: 0 };
+      }
+      const s = map[r.player_id];
+      s.gp++;
+      s.pts += r.pts; s.reb += r.reb; s.ast += r.ast; s.stl += r.stl; s.blk += r.blk;
+      s.to += r.to_count; s.foul += r.pf; s.plus_minus += r.plus_minus;
+      s.fg_made += r.fg_made; s.fg_att += r.fg_att;
+      s.three_made += r.three_made; s.three_att += r.three_att;
+      s.ft_made += r.ft_made; s.ft_att += r.ft_att;
+      s.orb += r.orb; s.drb += r.drb;
     }
     return map;
-  }, [plays]);
+  }, [rows]);
 
-  return { stats, loading: plays === null };
+  return { stats, loading: rows === null };
 }

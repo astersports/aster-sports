@@ -22,7 +22,7 @@ export default function LiveScorePage() {
   const { showToast } = useToast();
   const [event, setEvent] = useState(null);
   const { players } = useRoster(event?.team_id);
-  const game = useLiveGame(eventId);
+  const game = useLiveGame(eventId, { teamId: event?.team_id, orgId: event?.teams?.org_id });
   const [pendingPlay, setPendingPlay] = useState(null);
   const [tab, setTab] = useState('scoring');
   const [confirmEnd, setConfirmEnd] = useState(false);

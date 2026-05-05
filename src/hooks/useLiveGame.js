@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/useToast';
+import { finalizePlayerStats } from '../lib/finalizePlayerStats';
 
 const POINT_MAP = { fg2_made: 2, fg3_made: 3, ft_made: 1 };
 
-export function useLiveGame(eventId) {
+export function useLiveGame(eventId, { teamId, orgId } = {}) {
   const { user } = useAuth();
   const { showToast } = useToast();
   const [plays, setPlays] = useState([]);
@@ -110,9 +111,16 @@ export function useLiveGame(eventId) {
       ? await supabase.from('game_results').update(row).eq('id', existing.id)
       : await supabase.from('game_results').insert(row);
     if (error) { showToast("Couldn't save final score. Try again?", 'error'); return false; }
-    showToast('Final score saved and published.', 'success');
+    if (teamId && orgId) {
+      const { error: statsErr, count } = await finalizePlayerStats(eventId, teamId, orgId, plays);
+      if (statsErr) showToast("Score saved but player stats failed. Try again?", 'error');
+      else if (count > 0) showToast(`Final score + ${count} player stat lines saved.`, 'success');
+      else showToast('Final score saved and published.', 'success');
+    } else {
+      showToast('Final score saved and published.', 'success');
+    }
     return true;
-  }, [eventId, ourScore, oppScore, user, showToast]);
+  }, [eventId, ourScore, oppScore, user, showToast, teamId, orgId, plays]);
 
   return { plays, loading, period, setPeriod, onCourt, ourScore, oppScore, playerStats, addPlay, undoLast, subIn, subOut, saveToGameResults };
 }

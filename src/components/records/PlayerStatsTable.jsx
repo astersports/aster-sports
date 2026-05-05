@@ -1,39 +1,47 @@
-import Label from '../shared/Label';
+import { useState } from 'react';
 
-const COLS = [
+const BASE_COLS = [
   { key: 'jersey', label: '#', w: 28 },
   { key: 'name', label: 'Player', w: null },
-  { key: 'gp', label: 'GP', w: 30 },
-  { key: 'pts', label: 'PTS', w: 34 },
+  { key: 'gp', label: 'GP', w: 28 },
+  { key: 'pts', label: 'PTS', w: 34, bold: true },
   { key: 'reb', label: 'REB', w: 34 },
   { key: 'ast', label: 'AST', w: 34 },
   { key: 'stl', label: 'STL', w: 34 },
+  { key: 'fg', label: 'FG%', w: 38 },
+  { key: 'tp', label: '3P%', w: 38 },
+  { key: 'ftp', label: 'FT%', w: 38 },
+];
+
+const MORE_COLS = [
   { key: 'blk', label: 'BLK', w: 34 },
   { key: 'to', label: 'TO', w: 28 },
   { key: 'pf', label: 'PF', w: 28 },
+  { key: 'pm', label: '+/-', w: 34 },
 ];
 
 export default function PlayerStatsTable({ players, stats, showAvg }) {
+  const [showMore, setShowMore] = useState(false);
   if (!players?.length) return null;
   const hasStats = Object.keys(stats).length > 0;
+  const cols = showMore ? [...BASE_COLS, ...MORE_COLS] : BASE_COLS;
+
+  const pct = (made, att) => att > 0 ? `${Math.round((made / att) * 100)}` : '—';
+  const avg = (val, gp) => showAvg && gp > 0 ? (val / gp).toFixed(1) : val;
 
   const rows = players
     .map((p) => {
-      const s = stats[p.id] || { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, foul: 0, gp: 0 };
-      const gp = s.gp || 1;
+      const s = stats[p.id] || {};
+      const gp = s.gp || 0;
       return {
-        id: p.id,
-        jersey: p.jersey_number ?? '—',
+        id: p.id, jersey: p.jersey_number ?? '—',
         name: `${p.first_name} ${(p.last_name || '').charAt(0)}.`,
-        gp: s.gp,
-        pts: showAvg ? (s.pts / gp).toFixed(1) : s.pts,
-        reb: showAvg ? (s.reb / gp).toFixed(1) : s.reb,
-        ast: showAvg ? (s.ast / gp).toFixed(1) : s.ast,
-        stl: showAvg ? (s.stl / gp).toFixed(1) : s.stl,
-        blk: showAvg ? (s.blk / gp).toFixed(1) : s.blk,
-        to: showAvg ? (s.to / gp).toFixed(1) : s.to,
-        pf: showAvg ? (s.foul / gp).toFixed(1) : s.foul,
-        sortPts: s.pts,
+        gp, pts: avg(s.pts || 0, gp), reb: avg(s.reb || 0, gp),
+        ast: avg(s.ast || 0, gp), stl: avg(s.stl || 0, gp),
+        fg: pct(s.fg_made, s.fg_att), tp: pct(s.three_made, s.three_att), ftp: pct(s.ft_made, s.ft_att),
+        blk: avg(s.blk || 0, gp), to: avg(s.to || 0, gp), pf: avg(s.foul || 0, gp),
+        pm: s.plus_minus > 0 ? `+${s.plus_minus}` : `${s.plus_minus || 0}`,
+        sortPts: s.pts || 0,
       };
     })
     .sort((a, b) => b.sortPts - a.sortPts);
@@ -47,38 +55,34 @@ export default function PlayerStatsTable({ players, stats, showAvg }) {
   }
 
   return (
-    <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 420 }}>
-        <thead>
-          <tr>
-            {COLS.map((c) => (
-              <th key={c.key} style={{ padding: '8px 4px', textAlign: c.key === 'name' ? 'left' : 'center', fontWeight: 500, fontSize: 11, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--em-border-default)', width: c.w || undefined, whiteSpace: 'nowrap' }}>
-                {c.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id}>
-              <td style={cell('center', true)}>{r.jersey}</td>
-              <td style={{ ...cell('left', false), fontWeight: 500, whiteSpace: 'nowrap' }}>{r.name}</td>
-              <td style={cell('center', false)}>{r.gp}</td>
-              <td style={{ ...cell('center', false), fontWeight: 600 }}>{r.pts}</td>
-              <td style={cell('center', false)}>{r.reb}</td>
-              <td style={cell('center', false)}>{r.ast}</td>
-              <td style={cell('center', false)}>{r.stl}</td>
-              <td style={cell('center', false)}>{r.blk}</td>
-              <td style={cell('center', false)}>{r.to}</td>
-              <td style={cell('center', false)}>{r.pf}</td>
+    <>
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: showMore ? 560 : 420 }}>
+          <thead>
+            <tr>
+              {cols.map((c) => (
+                <th key={c.key} style={{ padding: '8px 4px', textAlign: c.key === 'name' ? 'left' : 'center', fontWeight: 500, fontSize: 11, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--em-border-default)', width: c.w || undefined, whiteSpace: 'nowrap' }}>
+                  {c.label}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id}>
+                {cols.map((c) => (
+                  <td key={c.key} style={{ padding: '10px 4px', textAlign: c.key === 'name' ? 'left' : 'center', fontWeight: c.bold ? 600 : 400, color: c.key === 'jersey' ? 'var(--em-text-tertiary)' : 'var(--em-text-primary)', borderBottom: '1px solid var(--em-border-subtle)', whiteSpace: 'nowrap' }}>
+                    {r[c.key]}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <button type="button" onClick={() => setShowMore((v) => !v)} className="sf-press" style={{ width: '100%', minHeight: 36, background: 'none', border: 'none', fontSize: 13, fontWeight: 500, color: 'var(--em-accent)', padding: '8px 0' }}>
+        {showMore ? 'Hide details' : 'More stats (BLK, TO, PF, +/-)'}
+      </button>
+    </>
   );
-}
-
-function cell(align, dim) {
-  return { padding: '10px 4px', textAlign: align, color: dim ? 'var(--em-text-tertiary)' : 'var(--em-text-primary)', borderBottom: '1px solid var(--em-border-subtle)' };
 }
