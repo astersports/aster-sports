@@ -85,7 +85,7 @@ export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
           <button key={p.value} type="button" onClick={(e) => handleClick(e, p.value)} className="sf-press"
             aria-pressed={active}
             style={{
-              flex: 1, minWidth: 0, minHeight: minH, borderRadius: 8,
+              minHeight: minH, borderRadius: 8, padding: compact ? '0 10px' : '0 14px',
               fontSize: pillSize, fontWeight: 600,
               border: `1px solid ${p.color}`,
               backgroundColor: active ? p.color : 'transparent',
