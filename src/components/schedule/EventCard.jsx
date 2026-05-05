@@ -4,6 +4,7 @@ import { formatTime, formatCountdown } from '../../lib/formatters';
 import { TYPE_LABELS } from '../../lib/constants';
 import { useAuth } from '../../context/AuthContext';
 import { useNow } from '../../hooks/useNow';
+import { useMapsUrl } from '../../hooks/useMapsUrl';
 import ChildRsvp from './ChildRsvp';
 import RsvpCountRow from './RsvpCountRow';
 
@@ -26,6 +27,7 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
   const titlePrefix = !alreadyPrefixed && (event.event_type === 'game' || event.event_type === 'tournament') && event.opponent
     ? (event.home_away === 'away' ? '@ ' : 'vs. ')
     : '';
+  const mapsUrl = useMapsUrl(event.location_name || null);
 
   return (
     <div
@@ -69,7 +71,11 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
               <div className="flex items-center" style={{ fontSize: 13, gap: 4 }}>
                 {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
                 {teamName && event.location_name && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
-                {event.location_name && (<><MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" /><span style={{ color: 'var(--em-text-tertiary)' }}>{event.location_name}</span></>)}
+                {event.location_name && mapsUrl ? (
+                  <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--em-accent)', textDecoration: 'none' }}>
+                    <MapPin size={12} strokeWidth={1.75} /> {event.location_name}
+                  </a>
+                ) : event.location_name ? (<><MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" /><span style={{ color: 'var(--em-text-tertiary)' }}>{event.location_name}</span></>) : null}
               </div>
             )}
             <RsvpCountRow rsvpCount={rsvpCount} compact={true} />

@@ -4,12 +4,13 @@
 // event, and inline RSVP for each child on this team. Pills fast-path tap
 // to /events/{id}?tab={rides|duties}; row body taps to event detail.
 import { useNavigate } from 'react-router-dom';
-import { Car, Users } from 'lucide-react';
+import { Car, Users, MapPin } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
 import { formatTime, formatCountdown } from '../../lib/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { useNow } from '../../hooks/useNow';
 import { urgencyClass } from '../../lib/urgency';
+import { useMapsUrl } from '../../hooks/useMapsUrl';
 import ChildRsvp from './ChildRsvp';
 
 const PILL = { display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 500, padding: '2px 6px', borderRadius: 8 };
@@ -17,10 +18,11 @@ const WARN = { ...PILL, backgroundColor: 'var(--em-warning-soft)', color: 'var(-
 const OK   = { ...PILL, backgroundColor: 'var(--em-success-soft)', color: 'var(--em-success)' };
 const NEG  = { ...PILL, backgroundColor: 'var(--em-danger-soft)',  color: 'var(--em-danger)' };
 
-export default function ThisWeekRow({ event, rideCount, dutyCount, conflictWith }) {
+export default function ThisWeekRow({ event, rideCount, dutyCount, conflictWith, weather }) {
   const navigate = useNavigate();
   const now = useNow();
   const { myChildren } = useAuth();
+  const mapsUrl = useMapsUrl(event.location || null);
   const childrenOnTeam = (myChildren || []).filter((c) => c.teamId === event.team_id);
   const teamColor = event.teams?.team_color || 'var(--em-text-tertiary)';
   const teamName = event.teams?.name || event.team_name || '';
@@ -63,7 +65,17 @@ export default function ThisWeekRow({ event, rideCount, dutyCount, conflictWith 
             style={{ fontSize: 13, fontWeight: 700, minWidth: 56, fontVariantNumeric: 'tabular-nums' }}>{timeText}</span>
           <span style={{ fontSize: 11, fontWeight: 700, padding: '1px 5px', borderRadius: 4, backgroundColor: teamColor, color: 'var(--em-text-inverse)', flexShrink: 0 }}>{teamAbbr}</span>
           <span className="truncate" style={{ flex: 1, fontSize: 13, color: 'var(--em-text-secondary)', minWidth: 0 }}>{titleText}</span>
+          {weather && <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', flexShrink: 0 }}>{weather.icon} {weather.temp}°</span>}
         </div>
+        {event.location && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--em-text-tertiary)' }}>
+            <MapPin size={10} strokeWidth={1.75} />
+            {mapsUrl ? (
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                style={{ color: 'var(--em-accent)', textDecoration: 'none', fontSize: 11 }}>{event.location}</a>
+            ) : <span>{event.location}</span>}
+          </div>
+        )}
         {(isCompleted || isCancelled || ridePill || dutyPill) && (
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
             {isCancelled && <span style={NEG}>✕ Cancelled</span>}

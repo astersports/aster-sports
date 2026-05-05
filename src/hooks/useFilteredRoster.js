@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 // and sorts by the selected key. Memoized so the result is stable
 // across re-renders unless inputs change.
 //
-// sortBy values: 'jersey' (default) | 'name' | 'grade'
+// sortBy values: 'jersey' (default) | 'name' | 'grade' | 'age'
 // Null jerseys always sink to the bottom of the jersey sort.
 export function useFilteredRoster(players, search, sortBy) {
   return useMemo(() => {
@@ -24,6 +24,11 @@ export function useFilteredRoster(players, search, sortBy) {
         return c !== 0 ? c : (a.first_name || '').localeCompare(b.first_name || '');
       }
       if (sortBy === 'grade') return (a.grade || 0) - (b.grade || 0);
+      if (sortBy === 'age') {
+        const aD = a.dob ? new Date(a.dob).getTime() : Infinity;
+        const bD = b.dob ? new Date(b.dob).getTime() : Infinity;
+        return aD - bD;
+      }
       const aJ = a.jersey_number ?? 999;
       const bJ = b.jersey_number ?? 999;
       return aJ - bJ;

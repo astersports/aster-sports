@@ -38,6 +38,7 @@ export default function RosterControls({ search, setSearch, sortBy, setSortBy })
           { key: 'jersey', label: '#' },
           { key: 'name', label: 'A-Z' },
           { key: 'grade', label: 'Gr' },
+          { key: 'age', label: 'Age' },
         ].map((opt) => (
           <button
             key={opt.key}

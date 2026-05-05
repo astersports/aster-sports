@@ -11,7 +11,7 @@ export function useRoster(teamId) {
     try {
       const { data, error } = await supabase
         .from('roster_members')
-        .select('jersey_number, jersey_size, shorts_size, payment_status, players(id, first_name, last_name, grade, member_type, player_guardians(guardian_id, guardians(id, first_name, last_name, email, phone, user_id)))')
+        .select('jersey_number, jersey_size, shorts_size, payment_status, players(id, first_name, last_name, grade, dob, member_type, player_guardians(guardian_id, guardians(id, first_name, last_name, email, phone, user_id)))')
         .eq('team_id', teamId);
       if (error) throw error;
       const mapped = (data || []).map((rm) => ({
@@ -19,6 +19,7 @@ export function useRoster(teamId) {
         first_name: rm.players.first_name,
         last_name: rm.players.last_name,
         grade: rm.players.grade,
+        dob: rm.players.dob || null,
         member_type: rm.players.member_type,
         jersey_number: rm.jersey_number,
         jersey_size: rm.jersey_size,

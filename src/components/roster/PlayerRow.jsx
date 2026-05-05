@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Phone, MessageSquare, Mail, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import InviteButton from './InviteButton';
+
+const NOW = Date.now();
 
 export default function PlayerRow({ player, teamColor, isLast }) {
   const [expanded, setExpanded] = useState(false);
@@ -9,6 +11,8 @@ export default function PlayerRow({ player, teamColor, isLast }) {
   const initial = (player.last_name || player.first_name || '?').charAt(0).toUpperCase();
   const isAcademy = player.member_type === 'futures_academy';
   const guardians = player.guardians || [];
+  const age = useMemo(() => player.dob ? Math.floor((NOW - new Date(player.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null, [player.dob]);
+  const pct = player.attendance_pct;
 
   return (
     <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--em-border-subtle)' }}>
@@ -40,14 +44,17 @@ export default function PlayerRow({ player, teamColor, isLast }) {
           </div>
           <div className="flex items-center gap-1" style={{ marginTop: 2 }}>
             {isAcademy && <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-academy-soft)', color: 'var(--em-academy)' }}>Academy</span>}
-            <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{ordinalGrade(player.grade)}</span>
+            {player.grade && <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{ordinalGrade(player.grade)}</span>}
+            {age != null && <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{age}y</span>}
           </div>
-          <div className="flex items-center gap-1" style={{ marginTop: 3 }}>
-            <div style={{ width: 40, height: 3, borderRadius: 999, backgroundColor: 'var(--em-bg-tertiary)', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${player.attendance_pct || 85}%`, backgroundColor: (player.attendance_pct || 85) >= 80 ? 'var(--em-success)' : 'var(--em-warning)', borderRadius: 999 }} />
+          {pct != null && (
+            <div className="flex items-center gap-1" style={{ marginTop: 3 }}>
+              <div style={{ width: 40, height: 3, borderRadius: 999, backgroundColor: 'var(--em-bg-tertiary)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct >= 80 ? 'var(--em-success)' : 'var(--em-warning)', borderRadius: 999 }} />
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{pct}%</span>
             </div>
-            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{player.attendance_pct || 85}%</span>
-          </div>
+          )}
         </div>
         {player.jersey_number != null && (
           <div style={{

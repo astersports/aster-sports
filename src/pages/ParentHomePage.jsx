@@ -7,6 +7,7 @@ import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
+import { useWeather, getWeatherForTime } from '../hooks/useWeather';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import ThisWeekRow from '../components/schedule/ThisWeekRow';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
@@ -63,6 +64,7 @@ export default function ParentHomePage() {
 
   const rideCounts = useEventRideCounts(filteredNext7);
   const dutyCounts = useEventDutyCounts(filteredNext7);
+  const weather = useWeather(41.03, -73.76);
   const conflictsByEvent = useMemo(() => detectConflicts(filteredNext7), [filteredNext7]);
 
   const [collapsedDates, setCollapsedDates] = useState(() => new Map());
@@ -119,7 +121,8 @@ export default function ParentHomePage() {
                     {evts.map((e) => (
                       <ThisWeekRow key={e.id} event={e}
                         rideCount={rideCounts[e.id]} dutyCount={dutyCounts[e.id]}
-                        conflictWith={conflictsByEvent[e.id]} />
+                        conflictWith={conflictsByEvent[e.id]}
+                        weather={getWeatherForTime(weather, e.start_at)} />
                     ))}
                   </div>
                 </div>

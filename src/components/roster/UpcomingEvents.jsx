@@ -1,7 +1,10 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { MapPin } from 'lucide-react';
 import { useActivities } from '../../hooks/useActivities';
 import { useNow } from '../../hooks/useNow';
+import { useWeather, getWeatherForTime } from '../../hooks/useWeather';
+import { useMapsUrl } from '../../hooks/useMapsUrl';
 import TextEmptyState from '../shared/TextEmptyState';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -17,17 +20,11 @@ function formatRow(event) {
   return { label, dateStr, timeStr, location: event.location || '' };
 }
 
-// Real upcoming events for a single team. Pulls from useActivities (org-scoped),
-// filters to (team_id matches, start_at in [now, now+7d], status != cancelled),
-// takes the first MAX_EVENTS in chronological order. Empty state if none in window.
-//
-// TODO: when admin publish workflow ships, also filter publish_status='published'
-// for parent role. All current events are draft so a published-only filter would
-// show nothing right now.
 export default function UpcomingEvents({ teamId }) {
   const { activities } = useActivities();
   const navigate = useNavigate();
   const now = useNow();
+  const weather = useWeather(41.03, -73.76);
 
   const upcoming = useMemo(() => {
     if (!teamId) return [];
@@ -53,51 +50,54 @@ export default function UpcomingEvents({ teamId }) {
         <TextEmptyState heading="Nothing this week" message="No events scheduled in the next 7 days." />
       ) : (
         <div style={{
-          backgroundColor: 'var(--em-bg-card)',
-          borderRadius: 10,
-          border: '1px solid var(--em-border-default)',
-          boxShadow: 'var(--em-shadow-sm)',
-          overflow: 'hidden',
+          backgroundColor: 'var(--em-bg-card)', borderRadius: 10,
+          border: '1px solid var(--em-border-default)', boxShadow: 'var(--em-shadow-sm)', overflow: 'hidden',
         }}>
-          {upcoming.map((evt, i) => {
-            const { label, dateStr, timeStr, location } = formatRow(evt);
-            return (
-              <div
-                key={evt.id}
-                className="sf-press"
-                onClick={() => navigator.vibrate?.(10)}
-                style={{
-                  padding: '12px 16px',
-                  borderBottom: i < upcoming.length - 1 ? '1px solid var(--em-border-subtle)' : 'none',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 52,
-                }}
-              >
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{label}</div>
-                  <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
-                    {dateStr}{location ? ` · ${location}` : ''}
-                  </div>
-                </div>
-                <div className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginLeft: 12, flexShrink: 0 }}>
-                  {timeStr}
-                </div>
-              </div>
-            );
-          })}
+          {upcoming.map((evt, i) => (
+            <UpcomingRow key={evt.id} evt={evt} i={i} total={upcoming.length} weather={weather} navigate={navigate} />
+          ))}
         </div>
       )}
-      <button
-        type="button"
-        onClick={() => { navigator.vibrate?.(10); navigate(`/schedule?team=${teamId}`); }}
-        className="w-full sf-press"
-        style={{
-          marginTop: 8, minHeight: 44, borderRadius: 10,
+      <button type="button" onClick={() => { navigator.vibrate?.(10); navigate(`/schedule?team=${teamId}`); }}
+        className="w-full sf-press" style={{ marginTop: 8, minHeight: 44, borderRadius: 10,
           border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
-          color: 'var(--em-accent)', fontSize: 15, fontWeight: 500,
-        }}
-      >
+          color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
         View full schedule →
       </button>
     </div>
+  );
+}
+
+function UpcomingRow({ evt, i, total, weather, navigate }) {
+  const { label, dateStr, timeStr, location } = formatRow(evt);
+  const mapsUrl = useMapsUrl(location || null);
+  const w = getWeatherForTime(weather, evt.start_at);
+  return (
+    <button type="button" className="sf-press" onClick={() => { navigator.vibrate?.(10); navigate(`/event/${evt.id}`); }}
+      style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', fontFamily: 'inherit', textAlign: 'left',
+        borderBottom: i < total - 1 ? '1px solid var(--em-border-subtle)' : 'none',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 52 }}>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{label}</span>
+          {w && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{w.icon} {w.temp}°</span>}
+        </div>
+        <div className="flex items-center gap-1" style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
+          <span>{dateStr}</span>
+          {location && (
+            <>
+              <span>·</span>
+              {mapsUrl ? (
+                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                  style={{ color: 'var(--em-accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                  <MapPin size={11} strokeWidth={1.75} /> {location}
+                </a>
+              ) : <span>{location}</span>}
+            </>
+          )}
+        </div>
+      </div>
+      <span className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginLeft: 12, flexShrink: 0 }}>{timeStr}</span>
+    </button>
   );
 }

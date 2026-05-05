@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Plus, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -6,6 +6,7 @@ import { isStaff } from '../lib/permissions';
 import { usePrograms } from '../hooks/usePrograms';
 import { useRoster } from '../hooks/useRoster';
 import { useFilteredRoster } from '../hooks/useFilteredRoster';
+import { useAttendanceData } from '../hooks/useAttendanceData';
 import { useTeamRecords } from '../hooks/useTeamRecords';
 import { usePlayerSeasonStats } from '../hooks/usePlayerSeasonStats';
 import EmptyState from '../components/shared/EmptyState';
@@ -27,12 +28,19 @@ export default function TeamDetailPage() {
   const { programs, loading: teamsLoading } = usePrograms();
   const switcherPrograms = role === 'parent' ? programs.filter((p) => (myTeamIds || []).includes(p.id)) : programs;
   const { players, loading: rosterLoading } = useRoster(teamId);
+  const { grid } = useAttendanceData(teamId);
   const { summary, loading: recordsLoading } = useTeamRecords(teamId);
   const { stats: playerStats, loading: statsLoading } = usePlayerSeasonStats(teamId);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('jersey');
   const [showAvg, setShowAvg] = useState(false);
-  const sortedPlayers = useFilteredRoster(players, search, sortBy);
+  const enrichedPlayers = useMemo(() => {
+    if (!grid?.length) return players;
+    const pctMap = {};
+    grid.forEach((g) => { pctMap[g.player.id] = g.pct; });
+    return players.map((p) => ({ ...p, attendance_pct: pctMap[p.id] ?? null }));
+  }, [players, grid]);
+  const sortedPlayers = useFilteredRoster(enrichedPlayers, search, sortBy);
 
   const team = programs.find((p) => p.id === teamId);
 
