@@ -25,7 +25,7 @@ export default function CopyRosterButton({ team, sortedPlayers }) {
       await navigator.clipboard.writeText(`${team.name} Roster\n\n${text}`);
       showToast('Roster copied');
     } catch {
-      showToast('Copy failed', 'error');
+      showToast("Couldn't copy. Try once more?", 'error');
     }
   };
 

@@ -110,7 +110,7 @@ function EmptyState({ empty }) {
       {actionLabel && onAction && (
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
           <button type="button" onClick={onAction} className="sf-press"
-            style={{ minHeight: 40, padding: '0 16px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ minHeight: 44, padding: '0 16px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             {actionLabel}
           </button>
         </div>

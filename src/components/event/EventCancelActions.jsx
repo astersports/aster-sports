@@ -12,13 +12,13 @@ export default function EventCancelActions({ event, onStatusChange }) {
   const doCancel = async () => {
     setConfirmAction(null);
     const { error } = await supabase.from('events').update({ status: 'cancelled' }).eq('id', event.id);
-    if (error) { showToast(`Cancel failed: ${error.message}`, 'error'); return; }
+    if (error) { console.error('cancelEvent:', error.message); showToast("Couldn't cancel. Try again?", 'error'); return; }
     onStatusChange?.('cancelled');
   };
 
   const doReinstate = async () => {
     const { error } = await supabase.from('events').update({ status: 'scheduled' }).eq('id', event.id);
-    if (error) { showToast(`Reinstate failed: ${error.message}`, 'error'); return; }
+    if (error) { console.error('reinstateEvent:', error.message); showToast("Couldn't reinstate. Try again?", 'error'); return; }
     onStatusChange?.('scheduled');
   };
 

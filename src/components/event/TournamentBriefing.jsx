@@ -27,7 +27,7 @@ export default function TournamentBriefing({ event, team, onClose }) {
       showToast(`${label} copied`);
       setTimeout(() => setCopied(null), 1500);
     } catch {
-      showToast('Copy failed', 'error');
+      showToast("Couldn't copy. Try once more?", 'error');
     }
   }
 

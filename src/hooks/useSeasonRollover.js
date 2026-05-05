@@ -71,7 +71,8 @@ export function useSeasonRollover(fromSeason, orgId) {
       setLoading(false);
       return rollover;
     } catch (err) {
-      showToast(`Rollover failed: ${err.message}`, 'error');
+      console.error('useSeasonRollover:', err.message);
+      showToast("Rollover hit a snag. Check what got created and try again.", 'error');
       setLoading(false);
       return null;
     }

@@ -23,7 +23,7 @@ export function StepPlayers({ plan, setPlan }) {
             <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--em-border-subtle)' }}>
               <span style={{ fontSize: 14, color: 'var(--em-text-primary)' }}>#{p.jersey_number || '—'} {p.first_name} {p.last_name}</span>
               <select value={p.action} onChange={(e) => { const next = [...plan.teams]; next[ti].players[pi].action = e.target.value; setPlan({ ...plan, teams: next }); }}
-                style={{ fontSize: 13, padding: '4px 8px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontFamily: 'inherit', minHeight: 36 }}>
+                style={{ fontSize: 13, padding: '4px 8px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontFamily: 'inherit', minHeight: 44 }}>
                 <option value="keep">Keep</option>
                 <option value="advance">Advance age</option>
                 <option value="drop">Drop</option>
@@ -47,7 +47,7 @@ export function StepCoaches({ plan, setPlan }) {
             <div key={c.user_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--em-border-subtle)' }}>
               <span style={{ fontSize: 14, color: 'var(--em-text-primary)', textTransform: 'capitalize' }}>{c.role.replace('_', ' ')}</span>
               <button type="button" onClick={() => { const next = [...plan.teams]; next[ti].coaches[ci].keep = !c.keep; setPlan({ ...plan, teams: next }); }} className="sf-press"
-                style={{ minHeight: 36, padding: '0 12px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 500, backgroundColor: c.keep ? 'var(--em-success-soft)' : 'var(--em-bg-secondary)', color: c.keep ? 'var(--em-success)' : 'var(--em-text-tertiary)', cursor: 'pointer', fontFamily: 'inherit' }}>{c.keep ? '✓ Keeping' : 'Dropped'}</button>
+                style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 500, backgroundColor: c.keep ? 'var(--em-success-soft)' : 'var(--em-bg-secondary)', color: c.keep ? 'var(--em-success)' : 'var(--em-text-tertiary)', cursor: 'pointer', fontFamily: 'inherit' }}>{c.keep ? '✓ Keeping' : 'Dropped'}</button>
             </div>
           ))}
         </div>

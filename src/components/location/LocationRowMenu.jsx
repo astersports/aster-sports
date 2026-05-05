@@ -13,7 +13,7 @@ export default function LocationRowMenu({ showArchived = false, onEdit, onArchiv
         aria-label="Location actions" aria-expanded={open}
         className="sf-press"
         style={{
-          width: 32, height: 32, borderRadius: 6,
+          width: 44, height: 44, borderRadius: 6,
           border: 'none', backgroundColor: 'transparent',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer',

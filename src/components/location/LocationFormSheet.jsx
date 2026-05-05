@@ -34,7 +34,7 @@ export default function LocationFormSheet({ location, onClose }) {
     }
     const { error } = location ? await update(location.id, payload) : await create(payload);
     setSaving(false);
-    if (error) { showToast(`Save failed: ${error.message}`, 'error'); return; }
+    if (error) { console.error('LocationFormSheet save:', error.message); showToast("Couldn't save. Try again?", 'error'); return; }
     showToast(location ? 'Location updated' : 'Location created');
     onClose();
   };

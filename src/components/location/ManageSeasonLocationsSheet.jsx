@@ -32,7 +32,7 @@ export default function ManageSeasonLocationsSheet({ seasonId, seasonName, onClo
     setSaving(true);
     const { error } = await setSeasonLocations(selected);
     setSaving(false);
-    if (error) { showToast(`Save failed: ${error.message}`, 'error'); return; }
+    if (error) { console.error('ManageSeasonLocationsSheet save:', error.message); showToast("Couldn't save. Try again?", 'error'); return; }
     showToast(`${selected.size} location${selected.size === 1 ? '' : 's'} active for ${seasonName}`);
     onClose();
   };

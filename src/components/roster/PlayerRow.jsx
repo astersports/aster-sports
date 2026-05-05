@@ -81,8 +81,8 @@ function GuardianRow({ guardian, role }) {
   const name = `${guardian.firstName || ''} ${guardian.lastName || ''}`.trim() || 'Guardian';
   const canInvite = role === 'admin' && guardian.email && !guardian.userId;
   const linked = guardian.email && guardian.userId;
-  const iconBtn = { width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--em-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
-  const spacer = <div style={{ width: 32, height: 32, flexShrink: 0 }} />;
+  const iconBtn = { width: 44, height: 44, borderRadius: '50%', backgroundColor: 'var(--em-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+  const spacer = <div style={{ width: 44, height: 44, flexShrink: 0 }} />;
   const stop = (e) => e.stopPropagation();
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 36 }}>

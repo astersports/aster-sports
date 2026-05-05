@@ -50,7 +50,7 @@ export default function TournamentFormSheet({ tournament, onClose }) {
     setSaving(true);
     const { error } = tournament ? await update(tournament.id, form) : await create(form);
     setSaving(false);
-    if (error) { showToast(`Save failed: ${error.message}`, 'error'); return; }
+    if (error) { console.error('TournamentFormSheet save:', error.message); showToast("Couldn't save. Try again?", 'error'); return; }
     showToast(tournament ? 'Tournament updated' : 'Tournament created');
     onClose();
   };

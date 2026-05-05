@@ -66,7 +66,7 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
       result = await create(form);
     }
     if (result?.data) { onCreated?.(); onClose(); }
-    else if (result?.error) { showToast(`Save failed: ${result.error}`, 'error'); }
+    else if (result?.error) { console.error('CreateActivityWizard save:', result.error); showToast("Couldn't save. Try again?", 'error'); }
   };
 
   const canNext = step === 2 ? (form.date && form.startTime && form.endTime) : true;
