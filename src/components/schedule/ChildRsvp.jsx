@@ -78,7 +78,7 @@ export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 4 : 8, marginTop: compact ? 4 : 8 }}>
-      <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--em-text-primary)', flexShrink: 0, minWidth: compact ? 0 : undefined }}>{child.firstName}</span>
+      <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--em-text-primary)', flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: compact ? 56 : 80 }}>{child.firstName}</span>
       {PILLS.map((p) => {
         const active = response === p.value;
         return (
