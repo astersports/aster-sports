@@ -7,12 +7,15 @@ import { usePrograms } from '../hooks/usePrograms';
 import { useRoster } from '../hooks/useRoster';
 import { useFilteredRoster } from '../hooks/useFilteredRoster';
 import { useTeamRecords } from '../hooks/useTeamRecords';
+import { usePlayerSeasonStats } from '../hooks/usePlayerSeasonStats';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import TeamHeaderCard from '../components/roster/TeamHeaderCard';
 import RosterSection from '../components/roster/RosterSection';
 import MessageTeamFAB from '../components/roster/MessageTeamFAB';
 import TeamSwitcher from '../components/roster/TeamSwitcher';
+import PlayerStatsTable from '../components/records/PlayerStatsTable';
+import Label from '../components/shared/Label';
 
 // Read-only roster view for a single team. The team lookup piggybacks on
 // usePrograms() — it already queries every team in the active season, so
@@ -26,8 +29,10 @@ export default function TeamDetailPage() {
   const switcherPrograms = role === 'parent' ? programs.filter((p) => (myTeamIds || []).includes(p.id)) : programs;
   const { players, loading: rosterLoading } = useRoster(teamId);
   const { summary, loading: recordsLoading } = useTeamRecords(teamId);
+  const { stats: playerStats, loading: statsLoading } = usePlayerSeasonStats(teamId);
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('jersey'); // 'jersey' | 'name' | 'grade'
+  const [sortBy, setSortBy] = useState('jersey');
+  const [showAvg, setShowAvg] = useState(false);
   const sortedPlayers = useFilteredRoster(players, search, sortBy);
 
   const team = programs.find((p) => p.id === teamId);
@@ -115,6 +120,20 @@ export default function TeamDetailPage() {
           sortBy={sortBy}
           setSortBy={setSortBy}
         />
+      )}
+
+      {!rosterLoading && players.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <Label>Player Stats</Label>
+            <button type="button" onClick={() => setShowAvg((v) => !v)} className="sf-press" style={{ minHeight: 32, padding: '0 10px', borderRadius: 9999, fontSize: 11, fontWeight: 500, border: '1px solid var(--em-border-default)', backgroundColor: showAvg ? 'var(--em-accent)' : 'var(--em-bg-card)', color: showAvg ? 'var(--em-text-inverse)' : 'var(--em-text-secondary)' }}>
+              {showAvg ? 'Per Game' : 'Totals'}
+            </button>
+          </div>
+          <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
+            {statsLoading ? <LoadingSkeleton variant="list" count={3} /> : <PlayerStatsTable players={players} stats={playerStats} showAvg={showAvg} />}
+          </div>
+        </div>
       )}
 
       <MessageTeamFAB teamId={teamId} />
