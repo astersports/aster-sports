@@ -1,18 +1,27 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import Button from '../shared/Button';
 import Input from '../shared/Input';
 
 export default function RequestRideForm({ open, onClose, onSubmit, eventTeamId }) {
   const { myChildren } = useAuth();
   const kids = (myChildren || []).filter((c) => c.teamIds?.includes(eventTeamId) || c.teamId === eventTeamId);
+  const trapRef = useFocusTrap(open);
   const [seatsNeeded, setSeatsNeeded] = useState('1');
   const [pickupAddress, setPickupAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [forChildId, setForChildId] = useState(kids.length === 1 ? kids[0].playerId : '');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -25,7 +34,8 @@ export default function RequestRideForm({ open, onClose, onSubmit, eventTeamId }
   };
 
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
+    <div ref={trapRef} role="dialog" aria-modal="true" aria-label="Request a ride"
+      style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--em-border-default)' }}>
         <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, cursor: 'pointer' }}>Cancel</button>
         <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>Request a ride</span>

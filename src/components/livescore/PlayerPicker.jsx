@@ -1,13 +1,23 @@
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 export default function PlayerPicker({ open, players, onCourt, playerStats, playLabel, onSelect, onSkip, onClose }) {
+  const trapRef = useFocusTrap(open);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
   if (!open) return null;
   const courtPlayers = players.filter((p) => onCourt.includes(p.id));
   const benchPlayers = players.filter((p) => !onCourt.includes(p.id));
   const fouls = (id) => playerStats?.[id]?.foul || 0;
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9996, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
+    <div ref={trapRef} role="dialog" aria-modal="true" aria-label={playLabel}
+      style={{ position: 'fixed', inset: 0, zIndex: 9996, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', paddingTop: 'calc(env(safe-area-inset-top) + 12px)', borderBottom: '1px solid var(--em-border-default)' }}>
         <button type="button" onClick={onClose} className="sf-press" aria-label="Cancel"
           style={{ width: 44, height: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>

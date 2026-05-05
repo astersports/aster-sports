@@ -2,15 +2,22 @@ import { useEffect, useState } from 'react';
 import { X, Copy, FileText, RefreshCw } from 'lucide-react';
 import { useTournamentBriefing } from '../../hooks/useTournamentBriefing';
 import { useToast } from '../../context/useToast';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 export default function TournamentBriefing({ event, team, onClose }) {
   const { draftKeys, setDraftKeys, briefing, loading, error, loadDraft, generate } =
     useTournamentBriefing({ event, team });
   const [copied, setCopied] = useState(null);
   const { showToast } = useToast();
+  const trapRef = useFocusTrap(true);
 
   useEffect(() => { loadDraft(); }, [loadDraft]);
   useEffect(() => { if (draftKeys !== undefined && !briefing) generate(draftKeys); }, [draftKeys, briefing, generate]);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   async function copyText(text, label) {
     try {
@@ -44,7 +51,8 @@ export default function TournamentBriefing({ event, team, onClose }) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 100, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
+    <div ref={trapRef} role="dialog" aria-modal="true" aria-label="Tournament briefing"
+      style={{ position: 'fixed', inset: 0, zIndex: 100, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)', borderBottom: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)' }}>
         <div>
           <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>Tournament Briefing</div>

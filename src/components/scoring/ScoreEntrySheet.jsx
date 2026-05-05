@@ -1,8 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import ConfirmDialog from '../shared/ConfirmDialog';
 import useScoreDraft from '../../hooks/useScoreDraft';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import QuarterScoreInput from './QuarterScoreInput';
 import PlayerOfGamePicker from './PlayerOfGamePicker';
 
@@ -25,6 +26,7 @@ const btn44 = { minHeight: 44, borderRadius: 10, fontSize: 15, fontWeight: 600, 
 
 export default function ScoreEntrySheet({ event, team, onClose }) {
   const draft = useScoreDraft(event.id);
+  const trapRef = useFocusTrap(true);
   const [confirmAction, setConfirmAction] = useState(null);
 
   const handleDismiss = useCallback(() => {
@@ -35,6 +37,12 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
     onClose();
   }, [draft.state, onClose]);
 
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') handleDismiss(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [handleDismiss]);
+
   const canPublish = draft.result.our_score != null && draft.result.opponent_score != null && !draft.isPublished;
 
   const handlePublish = async () => { try { await draft.publish(); } catch { /* error in draft.error */ } };
@@ -42,7 +50,8 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
   const numChange = (field) => (e) => draft.updateField(field, e.target.value === '' ? null : Number(e.target.value));
 
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, background: 'var(--em-bg-page)', zIndex: 50, display: 'flex', flexDirection: 'column' }}>
+    <div ref={trapRef} role="dialog" aria-modal="true" aria-label={`Score entry vs ${event.opponent || 'opponent'}`}
+      style={{ position: 'fixed', inset: 0, background: 'var(--em-bg-page)', zIndex: 50, display: 'flex', flexDirection: 'column' }}>
       <div style={{ height: 4, background: team?.team_color || 'var(--em-accent)' }} />
       <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)', gap: 12 }}>
         <button type="button" onClick={handleDismiss} aria-label="Close" className="sf-press" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none' }}>

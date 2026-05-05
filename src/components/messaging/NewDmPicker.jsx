@@ -2,11 +2,19 @@ import { useEffect, useState } from 'react';
 import { X, User } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 export default function NewDmPicker({ onSelect, onClose }) {
   const { user, orgId } = useAuth();
+  const trapRef = useFocusTrap(true);
   const [members, setMembers] = useState([]);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   useEffect(() => {
     if (!orgId) return;
@@ -36,10 +44,11 @@ export default function NewDmPicker({ onSelect, onClose }) {
     : members;
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 60,
-      backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column',
-    }}>
+    <div ref={trapRef} role="dialog" aria-modal="true" aria-label="New message"
+      style={{
+        position: 'fixed', inset: 0, zIndex: 60,
+        backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column',
+      }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderBottom: '1px solid var(--em-border-default)' }}>
         <button type="button" onClick={onClose} className="sf-press" aria-label="Close"
           style={{ width: 36, height: 36, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>

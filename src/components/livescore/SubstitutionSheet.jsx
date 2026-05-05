@@ -1,7 +1,16 @@
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 export default function SubstitutionSheet({ open, players, onCourt, playerStats, onSubIn, onSubOut, onClose }) {
+  const trapRef = useFocusTrap(open);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
   if (!open) return null;
   const court = players.filter((p) => onCourt.includes(p.id));
   const bench = players.filter((p) => !onCourt.includes(p.id));
@@ -9,7 +18,8 @@ export default function SubstitutionSheet({ open, players, onCourt, playerStats,
   const fouls = (id) => playerStats[id]?.foul || 0;
 
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9996, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
+    <div ref={trapRef} role="dialog" aria-modal="true" aria-label="Substitutions"
+      style={{ position: 'fixed', inset: 0, zIndex: 9996, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', paddingTop: 'calc(env(safe-area-inset-top) + 12px)', borderBottom: '1px solid var(--em-border-default)' }}>
         <button type="button" onClick={() => { court.forEach((p) => onSubOut(p.id)); }} className="sf-press" aria-label="Bench all players" style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44, padding: '0 8px' }}>Bench All</button>
         <span style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)' }}>Substitutions</span>

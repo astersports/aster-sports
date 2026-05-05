@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useVisualVh } from '../../hooks/useVisualVh';
 
 // Mobile-native bottom sheet. Height is CONTENT-DRIVEN with a cap:
 // the panel is a plain block container (NOT a flex container) that
@@ -50,35 +52,10 @@ function parsePct(s) {
   return m ? Number(m[1]) / 100 : 0.4;
 }
 
-// Tracks the visible viewport height. Subscribes to visualViewport
-// resize on modern browsers (iOS 13+, everything evergreen) and to
-// window resize as a fallback. Intentionally does NOT listen to
-// visualViewport `scroll` — on iOS that fires as the URL bar auto-
-// hides, which would cause the sheet to resize mid-interaction.
-function useVisualVh() {
-  const read = () => {
-    if (typeof window === 'undefined') return 800;
-    return Math.round(window.visualViewport?.height ?? window.innerHeight);
-  };
-  const [vh, setVh] = useState(read);
-  useEffect(() => {
-    const update = () => setVh(read());
-    const vv = window.visualViewport;
-    vv?.addEventListener('resize', update);
-    window.addEventListener('resize', update);
-    window.addEventListener('orientationchange', update);
-    return () => {
-      vv?.removeEventListener('resize', update);
-      window.removeEventListener('resize', update);
-      window.removeEventListener('orientationchange', update);
-    };
-  }, []);
-  return vh;
-}
-
 function Sheet({ onClose, children, initialHeight, expandedHeight }) {
   const [expanded, setExpanded] = useState(false);
   const vh = useVisualVh();
+  const trapRef = useFocusTrap(true);
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
@@ -95,6 +72,7 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
 
   return (
     <div
+      ref={trapRef}
       className="fixed inset-0 z-[60] flex items-end justify-center"
       style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
       onClick={onClose}

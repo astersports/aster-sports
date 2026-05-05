@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 export default function FullScreenForm({ open, onClose, title, children, footer = null }) {
+  const trapRef = useFocusTrap(open);
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -13,6 +15,7 @@ export default function FullScreenForm({ open, onClose, title, children, footer 
 
   return createPortal(
     <div
+      ref={trapRef}
       className="sf-fade-in"
       style={{
         position: 'fixed',
