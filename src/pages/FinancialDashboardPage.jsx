@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { ChevronLeft, Upload } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import Label from '../components/shared/Label';
+import RecordPaymentForm from '../components/admin/RecordPaymentForm';
 
 export default function FinancialDashboardPage() {
   const { orgId } = useAuth();
@@ -11,8 +12,9 @@ export default function FinancialDashboardPage() {
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [payingAccount, setPayingAccount] = useState(null);
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     if (!orgId) return;
     Promise.all([
       supabase.from('financial_accounts').select('*, guardians(first_name, last_name)').eq('org_id', orgId),
@@ -24,13 +26,12 @@ export default function FinancialDashboardPage() {
     });
   }, [orgId]);
 
+  useEffect(() => { fetchData(); }, [fetchData]);
+
   const stats = useMemo(() => {
     let billed = 0, paid = 0;
     const balances = {};
-    accounts.forEach((a) => {
-      billed += a.season_fee_cents - a.discount_cents;
-      balances[a.id] = a.season_fee_cents - a.discount_cents;
-    });
+    accounts.forEach((a) => { billed += a.season_fee_cents - a.discount_cents; balances[a.id] = a.season_fee_cents - a.discount_cents; });
     transactions.forEach((t) => {
       if (t.transaction_type === 'payment') { paid += t.amount_cents; balances[t.account_id] = (balances[t.account_id] || 0) - t.amount_cents; }
       if (t.transaction_type === 'refund') { paid -= t.amount_cents; balances[t.account_id] = (balances[t.account_id] || 0) + t.amount_cents; }
@@ -49,7 +50,12 @@ export default function FinancialDashboardPage() {
       <button type="button" onClick={() => navigate(-1)} className="sf-press" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back
       </button>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', marginBottom: 16 }}>Financials</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)' }}>Financials</h1>
+        <Link to="/admin/financials/import" className="sf-press" style={{ display: 'flex', alignItems: 'center', gap: 4, minHeight: 36, padding: '0 12px', borderRadius: 10, fontSize: 13, fontWeight: 500, color: 'var(--em-accent)', border: '1.5px solid var(--em-accent)', textDecoration: 'none' }}>
+          <Upload size={14} strokeWidth={1.75} /> Import
+        </Link>
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
         <StatCard label="Outstanding" value={fmt(stats.outstanding)} sub={`${stats.families} families`} color="var(--em-danger)" />
@@ -64,18 +70,23 @@ export default function FinancialDashboardPage() {
           const balance = (a.season_fee_cents - a.discount_cents) - paid;
           const name = a.guardians ? `${a.guardians.first_name} ${a.guardians.last_name}` : 'Unknown';
           return (
-            <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)', minHeight: 44 }}>
+            <button key={a.id} type="button" onClick={() => balance > 0 && setPayingAccount(a)} className="sf-press" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)', minHeight: 44, width: '100%', background: 'none', border: 'none', borderTopStyle: i ? 'solid' : 'none', borderTopWidth: i ? 1 : 0, borderTopColor: 'var(--em-border-subtle)', textAlign: 'left', cursor: balance > 0 ? 'pointer' : 'default' }}>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>{name}</div>
                 <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>Fee: {fmt(a.season_fee_cents)}{a.discount_cents > 0 ? ` · Discount: ${fmt(a.discount_cents)}` : ''}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 15, fontWeight: 600, color: balance > 0 ? 'var(--em-danger)' : 'var(--em-success)' }}>{balance > 0 ? fmt(balance) : 'Paid'}</div>
+                {balance > 0 && <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>Tap to record</div>}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
+
+      {payingAccount && (
+        <RecordPaymentForm account={payingAccount} onClose={() => setPayingAccount(null)} onSaved={() => { setPayingAccount(null); fetchData(); }} />
+      )}
     </div>
   );
 }
