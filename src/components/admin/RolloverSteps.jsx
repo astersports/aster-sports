@@ -56,7 +56,7 @@ export function StepCoaches({ plan, setPlan }) {
   );
 }
 
-export function StepDetails({ plan, setPlan }) {
+export function StepDetails({ plan, setPlan, locationCount = 0 }) {
   return (
     <div>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', marginBottom: 12 }}>New Season Details</h2>
@@ -65,7 +65,7 @@ export function StepDetails({ plan, setPlan }) {
         <input type="text" value={plan.newSeasonName} onChange={(e) => setPlan({ ...plan, newSeasonName: e.target.value })}
           style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', fontSize: 15, color: 'var(--em-text-primary)', fontFamily: 'inherit' }} />
       </label>
-      <div style={{ display: 'flex', gap: 12 }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
         <label style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)', marginBottom: 4 }}>Start</div>
           <input type="date" value={plan.startDate} onChange={(e) => setPlan({ ...plan, startDate: e.target.value })}
@@ -77,6 +77,14 @@ export function StepDetails({ plan, setPlan }) {
             style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', fontSize: 15, color: 'var(--em-text-primary)', fontFamily: 'inherit' }} />
         </label>
       </div>
+      <button type="button" onClick={() => setPlan({ ...plan, carryLocations: !plan.carryLocations })} className="sf-press"
+        style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+        <div style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, backgroundColor: plan.carryLocations ? 'var(--em-accent)' : 'transparent', border: plan.carryLocations ? 'none' : '1.5px solid var(--em-border-default)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 700 }}>{plan.carryLocations ? '✓' : ''}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--em-text-primary)' }}>Carry forward locations</div>
+          <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2 }}>Copy {locationCount} active location{locationCount === 1 ? '' : 's'} to the new season</div>
+        </div>
+      </button>
     </div>
   );
 }
@@ -92,6 +100,7 @@ export function StepPreview({ plan, stats }) {
         <Row label="Advanced age group" value={stats.advanced} />
         <Row label="Dropped" value={stats.dropped} color="var(--em-danger)" />
         <Row label="Coaches retained" value={stats.coaches} />
+        <Row label="Locations carried" value={stats.locations} />
       </div>
     </div>
   );

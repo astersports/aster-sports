@@ -26,6 +26,17 @@ export function useSeasonRollover(fromSeason, orgId) {
 
       let playersCarried = 0, playersAdvanced = 0, playersDropped = 0, coachesCarried = 0, teamsRecreated = 0;
 
+      if (plan.carryLocations !== false) {
+        const { data: fromLocs, error: lErr } = await supabase
+          .from('season_locations').select('location_id').eq('season_id', fromSeason.id);
+        if (lErr) console.error('rollover carryLocations read:', lErr.message);
+        else if (fromLocs?.length) {
+          const rows = fromLocs.map((r) => ({ season_id: newSeason.id, location_id: r.location_id }));
+          const { error: insErr } = await supabase.from('season_locations').insert(rows);
+          if (insErr) console.error('rollover carryLocations insert:', insErr.message);
+        }
+      }
+
       for (const t of (plan.teams || [])) {
         const { data: newTeam } = await supabase.from('teams').insert({
           org_id: orgId, name: t.name, team_color: t.team_color, sort_order: t.sort_order,

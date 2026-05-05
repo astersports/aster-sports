@@ -14,7 +14,8 @@ export default function SeasonRolloverPage() {
   const [step, setStep] = useState(1);
   const [season, setSeason] = useState(null);
   const [teams, setTeams] = useState([]);
-  const [plan, setPlan] = useState({ newSeasonName: '', startDate: '', endDate: '', teams: [] });
+  const [plan, setPlan] = useState({ newSeasonName: '', startDate: '', endDate: '', teams: [], carryLocations: true });
+  const [locationCount, setLocationCount] = useState(0);
   const [confirmCommit, setConfirmCommit] = useState(false);
   const { execute, loading } = useSeasonRollover(season, orgId);
 
@@ -31,6 +32,8 @@ export default function SeasonRolloverPage() {
       }));
       setTeams(mapped);
       setPlan((p) => ({ ...p, teams: mapped, newSeasonName: `Fall ${new Date().getFullYear()}` }));
+      const { count } = await supabase.from('season_locations').select('id', { count: 'exact', head: true }).eq('season_id', s.id);
+      setLocationCount(count || 0);
     })();
   }, [orgId]);
 
@@ -41,6 +44,7 @@ export default function SeasonRolloverPage() {
     dropped: plan.teams.reduce((s, t) => s + t.players.filter((p) => p.action === 'drop').length, 0),
     coaches: plan.teams.reduce((s, t) => s + t.coaches.filter((c) => c.keep).length, 0),
     teams: plan.teams.length,
+    locations: plan.carryLocations ? locationCount : 0,
   };
 
   if (!season) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>No active season found.</div>;
@@ -56,7 +60,7 @@ export default function SeasonRolloverPage() {
         {step === 1 && <StepArchive season={season} teams={teams} />}
         {step === 2 && <StepPlayers plan={plan} setPlan={setPlan} />}
         {step === 3 && <StepCoaches plan={plan} setPlan={setPlan} />}
-        {step === 4 && <StepDetails plan={plan} setPlan={setPlan} />}
+        {step === 4 && <StepDetails plan={plan} setPlan={setPlan} locationCount={locationCount} />}
         {step === 5 && <StepPreview plan={plan} stats={stats} />}
       </div>
       <div style={{ display: 'flex', gap: 8, padding: '12px 16px', paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)', borderTop: '1px solid var(--em-border-default)' }}>
