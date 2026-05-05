@@ -23,7 +23,7 @@ export default function LocationRowMenu({ showArchived = false, onEdit, onArchiv
       </button>
       {open && (
         <>
-          <div onClick={(e) => { stop(e); setOpen(false); }} style={{ position: 'fixed', inset: 0, zIndex: 1 }} />
+          <div onClick={(e) => { stop(e); setOpen(false); }} aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 1 }} />
           <div style={{
             position: 'absolute', top: 36, right: 0, zIndex: 2,
             backgroundColor: 'var(--em-bg-card)',

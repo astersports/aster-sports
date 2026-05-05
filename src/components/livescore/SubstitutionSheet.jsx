@@ -11,7 +11,7 @@ export default function SubstitutionSheet({ open, players, onCourt, playerStats,
   return createPortal(
     <div style={{ position: 'fixed', inset: 0, zIndex: 9996, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', paddingTop: 'calc(env(safe-area-inset-top) + 12px)', borderBottom: '1px solid var(--em-border-default)' }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-accent)', cursor: 'pointer' }} onClick={() => { court.forEach((p) => onSubOut(p.id)); }}>Bench All</span>
+        <button type="button" onClick={() => { court.forEach((p) => onSubOut(p.id)); }} aria-label="Bench all players" style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44, padding: '0 8px' }}>Bench All</button>
         <span style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)' }}>Substitutions</span>
         <button type="button" onClick={onClose} className="sf-press" aria-label="Done" style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Done</button>
       </div>

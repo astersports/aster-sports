@@ -26,13 +26,14 @@ export default function EventCheckinTab({ eventId, roster, teamColor }) {
       {roster.map((player) => {
         const on = !!map[player.id];
         return (
-          <div key={player.id} onClick={() => toggle(player.id, on)}
+          <button key={player.id} type="button" onClick={() => toggle(player.id, on)}
             className="sf-press"
+            aria-label={`${on ? 'Uncheck' : 'Check in'} ${player.first_name}`}
             style={{
               display: 'flex', alignItems: 'center', gap: 10,
-              padding: '10px 0',
+              padding: '10px 0', width: '100%', background: 'none', border: 'none',
               borderBottom: '1px solid var(--em-border-subtle)',
-              cursor: 'pointer',
+              cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
             }}>
             <div style={{
               width: 32, height: 32, borderRadius: 16,
@@ -56,7 +57,7 @@ export default function EventCheckinTab({ eventId, roster, teamColor }) {
                 ? <Check size={18} strokeWidth={2.5} color="var(--em-success)" />
                 : <Circle size={18} strokeWidth={1.5} color="var(--em-text-tertiary)" />}
             </div>
-          </div>
+          </button>
         );
       })}
     </div>
