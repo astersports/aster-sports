@@ -2,7 +2,7 @@
 > Single source of truth for all Claude Code sessions.
 > Place at project root: `~/legacy-hoopers-app/CLAUDE.md`
 > Branch: `v2` (clean rebuild) — prototype preserved on `main`
-> Last updated: April 20, 2026
+> Last updated: May 5, 2026
 
 ---
 
@@ -163,7 +163,7 @@ Every table includes `org_id` FK → organizations. All RLS policies scope to us
 
 ---
 
-## 5. DATABASE SCHEMA (v2 — 38 Migrations applied as of April 26, 2026)
+## 5. DATABASE SCHEMA (v2 — 67 Migrations applied as of May 5, 2026)
 
 | # | File | What It Does |
 |---|---|---|
@@ -179,6 +179,26 @@ Every table includes `org_id` FK → organizations. All RLS policies scope to us
 | 010 | scoring.sql | game_results, game_plays |
 | 011 | financials.sql | Phase 7 — TBD |
 | 012 | indexes_views.sql | all performance indexes |
+
+#### Wave migrations (May 4–5, 2026 — canonical version strings)
+| Version | Name | What It Does |
+|---|---|---|
+| 20260504190331 | wave_1h_rls_with_check_hygiene_24_policies | WITH CHECK on 24 ALL/UPDATE policies |
+| 20260504213434 | wave_3b_hardening_anon_column_grants | Column-level anon grants on events/game_results/tournaments |
+| 20260504230402 | wave_5b_game_plays_table | game_plays for live scoring play-by-play |
+| 20260505024916 | wave_2d3_event_arrivals_and_checklist_state | event_arrivals + coach_checklist_state on events |
+| 20260505115253 | wave_7b2_season_rollover_schema | seasons.status + season_rollovers audit table |
+| 20260505120640 | wave_7a_financials_schema | financial_accounts + financial_transactions + coach_payouts |
+| 20260505140316 | wave_7a_add_processing_fee_cents | processing_fee_cents column + family_balances view |
+| 20260505161540 | user_roles_self_privilege_escalation_fix | Split user_roles_self into SELECT + INSERT(parent only) |
+
+#### Ghost migrations (applied via SQL editor, not registered — known divergence)
+5 migrations exist as repo files but are NOT registered in `supabase_migrations.schema_migrations`. Their schemas are live in production. If running `supabase db reset`, these files are needed to recreate the schema.
+- `20260504_messaging.sql` — messages table + message_reads + RLS
+- `20260504_dm_threads.sql` — dm_threads (user_a/user_b) + messages.dm_thread_id + RLS
+- `20260504_ride_requests.sql` — event_ride_requests table + RLS
+- `20260504_game_results_cascade_delete.sql` — FK CASCADE on game_results.event_id
+- `20260504_rls_cleanup_dangling_policies.sql` — drops orphaned org_announcements/message_drafts policies
 
 ### RLS Pattern
 ```sql
@@ -258,26 +278,29 @@ sf-pulse, sf-fade-in, sf-pulse-dot, sf-bounce-tap, sf-fill-grow, card-expand, sh
 | 1-B | Admin home + season mgr + team mgr | ✅ DONE |
 | RESET | Foundation Reset (token + visual fix) | ✅ DONE |
 | 2-A | Roster + player/guardian CRUD | ✅ DONE |
-| 2-B | Schedule + weather + density | ⚠ PARTIAL — schedule + density done; weather not wired |
+| 2-B | Schedule + weather + density | ⚠ PARTIAL — schedule + density done; weather wired to coach/admin home |
 | 2-C | Activity CRUD wizard | ✅ DONE |
 | 2-D | RSVP + event detail + check-in | ✅ DONE |
 | 2-D2 | Ride board + duties + comments | ✅ DONE |
-| 2-D3 | Game day checklist + running late | |
-| 2-E | Availability heatmap | |
+| 2-D3 | Game day checklist + running late | ✅ DONE — arrival board, parent status buttons, coach checklist |
+| 2-E | Availability heatmap | ✅ DONE — per-player attendance grid with streak fire icon |
 | 3-A | Location + opponent mgr | ⚠ PARTIAL — locations seeded (9 venues), no mgmt UI |
-| 3-B | Calendar sync + public schedule + QR | |
+| 3-B | Calendar sync + public schedule + QR | ⚠ PARTIAL — public schedule page done; calendar sync + QR not |
 | 3-C | Home dashboard + inline RSVP | ✅ DONE |
-| 4-A | Team chat + announcements | |
+| 4-A | Team chat + announcements | ✅ DONE — channels, DM threads, unread badges, message deletion |
 | 4-B | Save & Message Team + auto-notifications | |
-| 5-A | Quick score entry + records | |
-| 5-B | Live scoring interface | |
+| 5-A | Quick score entry + records | ✅ DONE — records page with standings + tournament scorebooks |
+| 5-B | Live scoring interface | ✅ DONE — play-by-play, stats tab, subs sheet, fouls, undo toast |
 | 5-C | Player stats + box score | |
 | 6-A | Parent onboarding + QR invites | ⚠ PARTIAL — auto-link guardians done; QR invites not |
-| 7-A | Financial dashboard | |
-| 7-B | Multi-org + season rollover | |
+| 7-A | Financial dashboard | ✅ DONE — season picker, net-to-bank, LeagueApps import, record payment |
+| 7-B | Multi-org + season rollover | ✅ DONE (7-B.2) — 5-step rollover wizard with atomic execution |
 | 7-C | PWA + auth upgrades | ✅ DONE — sw.js, manifest, install prompt, apple-touch-icon |
 
-⬅ NEXT unbuilt items: 2-D3 (game day), 2-E (availability), 3-B (calendar sync), 4-A/B (messaging), 5-A/B/C (scoring), 6-A QR invites, 7-A (finance), 7-B (multi-org). Plus finish partials: 2-B weather, 3-A location mgr UI.
+#### Financial data loaded (May 5, 2026)
+LeagueApps import: 70 families, 100 accounts (40 Fall 2025 + 60 Spring 2026), 105 transactions. $102,765 billed, $97,374 net to bank. Email-first dedup, orphan-merge for 2 families (DeMasi, KHOJASTEH).
+
+⬅ NEXT unbuilt: 4-B (auto-notifications), 5-C (player stats), 3-A location mgr UI, 3-B calendar sync + QR, 6-A QR invites. Plus finish partials: 2-B weather API polish.
 
 ---
 
@@ -311,8 +334,9 @@ sf-pulse, sf-fade-in, sf-pulse-dot, sf-bounce-tap, sf-fill-grow, card-expand, sh
 - "Futures Academy" — never "practice roster"
 - Sort: oldest to youngest always
 
-### Season
-Spring 2026: March 23 – June 14. Grades 2–5.
+### Seasons
+- **Spring 2026** (active): March 23 – June 14. Grades 2–5. 60 families, $70,242 billed.
+- **Fall 2025** (archived): Historical LeagueApps import. 40 families, $32,522 billed.
 
 ### Staff
 | Name | Role | Email |
@@ -345,6 +369,8 @@ Spring 2026: March 23 – June 14. Grades 2–5.
 18. **CSS % or dvh for overlay heights → JS visualViewport**
 19. **Deploy without merging v2 → main → nothing ships**
 20. **cmd='ALL' RLS policies must always have explicit with_check.** with_check=NULL on a write policy allows any column values that pass the USING qual, with zero constraint on the data being written. P0 anti-pattern by default. Wave 1G (Decision #110) caught this on event_rsvps, event_comments, event_duties. M5 methodology rule.
+21. **Migration mirror files must be created in the same turn as MCP apply.** When Claude AI applies a migration via `apply_migration`, the mirror `.sql` file is created immediately with the canonical production version string as the filename prefix (e.g. `20260505161540_wave_7a_...sql`). Claude Code does NOT write migration files for schema applied via MCP — that creates version-string mismatches and duplicate files. The user moves the file into `supabase/migrations/` in the next round-trip.
+22. **Never trust Claude Code's "committed and pushed" reports without verification.** Claude Code may report files as committed when they were actually auto-committed by pre-commit hooks with different content, or when the push targeted a different branch than expected. Always verify with `git log --oneline` + `git diff` after any claimed commit.
 
 ---
 
