@@ -77,16 +77,16 @@ export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
   const pillSize = compact ? 12 : 13;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 6 : 8, marginTop: compact ? 4 : 8 }}>
-      <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--em-text-primary)', flexShrink: 0 }}>{child.firstName}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 6 : 8, marginTop: compact ? 4 : 8, justifyContent: 'flex-end' }}>
+      <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--em-text-primary)', marginRight: 'auto' }}>{child.firstName}</span>
       {PILLS.map((p) => {
         const active = response === p.value;
         return (
           <button key={p.value} type="button" onClick={(e) => handleClick(e, p.value)} className="sf-press"
             aria-pressed={active}
             style={{
-              flex: 1, minWidth: 0, minHeight: minH, borderRadius: 8,
-              fontSize: pillSize, fontWeight: 600, maxWidth: compact ? 72 : undefined,
+              minWidth: compact ? 56 : 64, minHeight: minH, borderRadius: 8,
+              fontSize: pillSize, fontWeight: 600,
               border: `1px solid ${p.color}`,
               backgroundColor: active ? p.color : 'transparent',
               color: active ? 'var(--em-text-inverse)' : p.color,
