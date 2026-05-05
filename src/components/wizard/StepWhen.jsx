@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { useState } from 'react';
 import RecurrenceSelector from './RecurrenceSelector';
 import { useActiveSeasonEnd } from '../../hooks/useActiveSeasonEnd';
+import { useSeason } from '../../context/SeasonContext';
+import { useSeasonScopedLocations } from '../../hooks/useSeasonScopedLocations';
 import { computeDefaultUntil } from '../../lib/recurrenceHelpers';
 import Input from '../shared/Input';
 
@@ -20,17 +21,10 @@ function addMinutes(time, mins) {
 }
 
 export default function StepWhen({ data, onChange, orgId }) {
-  const [locations, setLocations] = useState([]);
   const [customMode, setCustomMode] = useState(false);
   const seasonEnd = useActiveSeasonEnd(orgId);
-
-  useEffect(() => {
-    let query = supabase.from('locations').select('name').order('name');
-    if (orgId) query = query.eq('org_id', orgId);
-    query.then(({ data: rows }) => {
-      setLocations((rows || []).map((r) => r.name));
-    });
-  }, [orgId]);
+  const { activeSeason } = useSeason();
+  const locations = useSeasonScopedLocations(orgId, activeSeason?.id);
 
   const set = (key, val) => onChange({ ...data, [key]: val });
 

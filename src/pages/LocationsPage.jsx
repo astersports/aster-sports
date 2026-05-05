@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Plus, MapPin } from 'lucide-react';
+import { Plus, MapPin, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSeason } from '../context/SeasonContext';
 import { useLocations } from '../hooks/useLocations';
 import LocationFormSheet from '../components/location/LocationFormSheet';
+import ManageSeasonLocationsSheet from '../components/location/ManageSeasonLocationsSheet';
 import LocationCard from '../components/location/LocationCard';
 import SearchToolbar from '../components/location/SearchToolbar';
 import Button from '../components/shared/Button';
@@ -12,10 +14,12 @@ import { useDensity } from '../hooks/useDensity';
 
 export default function LocationsPage() {
   const { role } = useAuth();
+  const { activeSeason } = useSeason();
   const [search, setSearch] = useState('');
   const [showArchived, setShowArchived] = useState(false);
   const { locations, loading, error, archive, unarchive } = useLocations({ search, showArchived });
   const [formOpen, setFormOpen] = useState(false);
+  const [seasonSheetOpen, setSeasonSheetOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
   const { density } = useDensity('locations-list', 'medium');
@@ -38,9 +42,16 @@ export default function LocationsPage() {
           <DensityToggle sectionKey="locations-list" />
         </div>
         {isStaff && (
-          <Button size="sm" onClick={openCreate} aria-label="New location">
-            <Plus size={16} strokeWidth={2} /> New
-          </Button>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {activeSeason && role === 'admin' && (
+              <Button size="sm" onClick={() => setSeasonSheetOpen(true)} aria-label="Manage season locations">
+                <Calendar size={16} strokeWidth={2} /> Season
+              </Button>
+            )}
+            <Button size="sm" onClick={openCreate} aria-label="New location">
+              <Plus size={16} strokeWidth={2} /> New
+            </Button>
+          </div>
         )}
       </div>
 
@@ -91,6 +102,9 @@ export default function LocationsPage() {
 
       {formOpen && (
         <LocationFormSheet location={editingLocation} onClose={closeForm} />
+      )}
+      {seasonSheetOpen && activeSeason && (
+        <ManageSeasonLocationsSheet seasonId={activeSeason.id} seasonName={activeSeason.name} onClose={() => setSeasonSheetOpen(false)} />
       )}
       {confirmAction?.type === 'archive' && (
         <ConfirmDialog title="Archive Location" message={`Archive "${confirmAction.location.name}"? This hides it from the list but preserves all event references.`} confirmLabel="Archive" destructive onConfirm={async () => { await archive(confirmAction.location.id); setConfirmAction(null); }} onCancel={() => setConfirmAction(null)} />
