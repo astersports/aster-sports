@@ -83,7 +83,7 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
         )}
         {density === 'maximum' && (
           <>
-            {event.notes && <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.notes.length > 60 ? event.notes.slice(0, 60) + '...' : event.notes}</div>}
+            {event.notes && <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2, WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', display: '-webkit-box', overflow: 'hidden' }}>{event.notes}</div>}
             {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 4 }}>
                 <Car size={12} strokeWidth={1.75} color={rideCount.urgent ? 'var(--em-danger)' : rideCount.requests > 0 ? 'var(--em-warning)' : 'var(--em-text-tertiary)'} />
