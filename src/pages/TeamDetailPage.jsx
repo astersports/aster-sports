@@ -14,6 +14,7 @@ import RosterSection from '../components/roster/RosterSection';
 import MessageTeamFAB from '../components/roster/MessageTeamFAB';
 import ShareScheduleButton from '../components/schedule/ShareScheduleButton';
 import QrInviteButton from '../components/roster/QrInviteButton';
+import TeamHeatmap from '../components/gameday/TeamHeatmap';
 import TeamSwitcher from '../components/roster/TeamSwitcher';
 
 export default function TeamDetailPage() {
@@ -60,6 +61,7 @@ export default function TeamDetailPage() {
       ) : (
         <RosterSection team={team} sortedPlayers={sortedPlayers} search={search} setSearch={setSearch} sortBy={sortBy} setSortBy={setSortBy} />
       )}
+      {isStaff(role) && team && <TeamHeatmap teamId={teamId} teamColor={team.team_color} />}
       <MessageTeamFAB teamId={teamId} />
     </div>
   );
