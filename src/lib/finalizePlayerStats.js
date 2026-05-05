@@ -1,7 +1,6 @@
 import { supabase } from './supabase';
 
 const POINT_MAP = { fg2_made: 2, fg3_made: 3, ft_made: 1 };
-const SHOT_TYPES = { fg2_made: 'fg', fg2_miss: 'fg', fg3_made: 'three', fg3_miss: 'three', ft_made: 'ft', ft_miss: 'ft' };
 
 export async function finalizePlayerStats(eventId, teamId, orgId, plays) {
   const stats = {};
@@ -23,14 +22,30 @@ export async function finalizePlayerStats(eventId, teamId, orgId, plays) {
     if (p.play_type === 'assist') s.ast++;
     if (p.play_type === 'steal') s.stl++;
     if (p.play_type === 'block') s.blk++;
-    const shot = SHOT_TYPES[p.play_type];
-    if (shot === 'fg') { s.fg_att++; if (p.play_type.endsWith('_made')) s.fg_made++; }
-    if (shot === 'three') { s.three_att++; if (p.play_type.endsWith('_made')) { s.three_made++; s.fg_att++; s.fg_made++; } else { s.fg_att++; } }
-    if (shot === 'ft') { s.ft_att++; if (p.play_type.endsWith('_made')) s.ft_made++; }
+    if (p.play_type === 'fg2_made') { s.fg_made++; s.fg_att++; }
+    if (p.play_type === 'fg2_miss') { s.fg_att++; }
+    if (p.play_type === 'fg3_made') { s.three_made++; s.three_att++; s.fg_made++; s.fg_att++; }
+    if (p.play_type === 'fg3_miss') { s.three_att++; s.fg_att++; }
+    if (p.play_type === 'ft_made') { s.ft_made++; s.ft_att++; }
+    if (p.play_type === 'ft_miss') { s.ft_att++; }
   }
 
-  const rows = Object.values(stats);
-  if (rows.length === 0) return { error: null, count: 0 };
+  const playerIds = Object.keys(stats);
+  if (playerIds.length === 0) return { error: null, count: 0 };
+
+  const { data: jerseys } = await supabase
+    .from('team_players')
+    .select('player_id, jersey_number')
+    .eq('team_id', teamId)
+    .in('player_id', playerIds);
+
+  const jerseyMap = {};
+  (jerseys || []).forEach((j) => { jerseyMap[j.player_id] = j.jersey_number; });
+
+  const rows = playerIds.map((pid) => ({
+    ...stats[pid],
+    jersey_at_time: jerseyMap[pid] || null,
+  }));
 
   const { error } = await supabase.from('player_game_stats').upsert(rows, { onConflict: 'event_id,player_id' });
   if (!error) {
