@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { useParams, useSearchParams, useLocation } from 'react-router-dom';
+import { useParams, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import AddToCalendarButton from '../components/event/AddToCalendarButton';
@@ -34,6 +34,7 @@ export default function EventDetailPage() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { orgId, role } = useAuth();
   const { event, loading: eventLoading, refetch, patchEvent } = useEventDetail(id, location.state?.event);
   const teamId = event?.team_id || null;
@@ -89,7 +90,7 @@ export default function EventDetailPage() {
       {isStaff && !isPastGame && event.team_id && <CoachChecklist event={event} />}
       {isStaff && !isPastGame && event.team_id && <ArrivalBoard event={event} />}
       {isStaff && (event.event_type === 'game' || event.event_type === 'tournament') && !isPastGame && event.status !== 'cancelled' && event.team_id && (
-        <Button onClick={() => window.location.href = `/events/${event.id}/live`} style={{ width: 'calc(100% - 32px)', margin: '12px 16px' }}>
+        <Button onClick={() => navigate(`/events/${event.id}/live`)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px' }}>
           Live Score
         </Button>
       )}
