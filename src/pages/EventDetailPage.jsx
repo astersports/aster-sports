@@ -20,6 +20,9 @@ import EventCancelActions from '../components/event/EventCancelActions';
 import MyActionsSection from '../components/event/MyActionsSection';
 import CollapsibleSection from '../components/shared/CollapsibleSection';
 import TournamentBriefingBanner from '../components/event/TournamentBriefingBanner';
+import ParentArrivalActions from '../components/gameday/ParentArrivalActions';
+import ArrivalBoard from '../components/gameday/ArrivalBoard';
+import CoachChecklist from '../components/gameday/CoachChecklist';
 import Button from '../components/shared/Button';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
@@ -82,6 +85,9 @@ export default function EventDetailPage() {
     <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} />
       {role === 'parent' && <MyActionsSection event={event} onRsvpChange={refetchRsvps} />}
+      {role === 'parent' && <ParentArrivalActions event={event} />}
+      {isStaff && !isPastGame && event.team_id && <CoachChecklist event={event} />}
+      {isStaff && !isPastGame && event.team_id && <ArrivalBoard event={event} />}
       {isStaff && (event.event_type === 'game' || event.event_type === 'tournament') && !isPastGame && event.status !== 'cancelled' && event.team_id && (
         <Button onClick={() => window.location.href = `/events/${event.id}/live`} style={{ width: 'calc(100% - 32px)', margin: '12px 16px' }}>
           Live Score
@@ -96,11 +102,9 @@ export default function EventDetailPage() {
 
       {event.parent_event_id && (
         <div style={{ padding: '6px 16px', fontSize: 13, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Repeat size={12} strokeWidth={1.75} />
-          Part of a recurring series
+          <Repeat size={12} strokeWidth={1.75} /> Part of a recurring series
           {isStaff && (
-            <button type="button" onClick={() => setConfirmAction({ type: 'removeSeries' })} style={{ fontSize: 13, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>
-              Remove from series
+            <button type="button" onClick={() => setConfirmAction({ type: 'removeSeries' })} style={{ fontSize: 13, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>Remove from series
             </button>
           )}
         </div>
@@ -123,8 +127,7 @@ export default function EventDetailPage() {
 
       {(event.notes || event.coach_notes) && <><SH>Notes</SH><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></>}
       <AddToCalendarButton event={event} />
-      <SH>Comments</SH>
-      <EventCommentsTab eventId={event.id} />
+      <SH>Comments</SH><EventCommentsTab eventId={event.id} />
 
       {isStaff && <EventCancelActions event={event} onStatusChange={(status) => { patchEvent({ status }); refetch(); }} />}
 
@@ -134,9 +137,7 @@ export default function EventDetailPage() {
       {confirmAction?.type === 'editSeries' && (
         <ConfirmDialog title="Edit recurring event" message="Edit all future events in this series, or just this one?" confirmLabel="All future" cancelLabel="This one only" onConfirm={() => { setConfirmAction(null); setEditMode('series'); setEditing(true); }} onCancel={() => { setConfirmAction(null); setEditMode('single'); setEditing(true); }} />
       )}
-      {confirmAction?.type === 'removeSeries' && (
-        <ConfirmDialog title="Remove from series" message="This event will become standalone and no longer be part of the recurring series." confirmLabel="Remove" onConfirm={async () => { setConfirmAction(null); await supabase.from('events').update({ parent_event_id: null }).eq('id', event.id); patchEvent({ parent_event_id: null }); refetch(); }} onCancel={() => setConfirmAction(null)} />
-      )}
+      {confirmAction?.type === 'removeSeries' && <ConfirmDialog title="Remove from series" message="This event will become standalone." confirmLabel="Remove" onConfirm={async () => { setConfirmAction(null); await supabase.from('events').update({ parent_event_id: null }).eq('id', event.id); patchEvent({ parent_event_id: null }); refetch(); }} onCancel={() => setConfirmAction(null)} />}
       {pendingDelete?.type === 'series' && (
         <ConfirmDialog title="Delete Recurring Event" message="Delete all future events in this series, or just this one?" confirmLabel="All future" cancelLabel="Just this one" destructive onConfirm={() => confirmDelete('allFuture')} onCancel={() => confirmDelete('single')} />
       )}
