@@ -22,6 +22,7 @@ import LiveScorePage from './pages/LiveScorePage';
 const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
 const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
 const SeasonRolloverPage = lazy(() => import('./pages/SeasonRolloverPage'));
+const FinancialDashboardPage = lazy(() => import('./pages/FinancialDashboardPage'));
 
 const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading...</div>;
 
@@ -87,6 +88,7 @@ export default function App() {
         }
       />
       <Route path="/admin/rollover" element={<Protected allowedRoles={['admin']}><SeasonRolloverPage /></Protected>} />
+      <Route path="/admin/financials" element={<Protected allowedRoles={['admin']}><FinancialDashboardPage /></Protected>} />
     </Routes>
       </Suspense>
     </PageTransition>
