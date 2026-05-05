@@ -29,16 +29,17 @@ export default function FinancialDashboardPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const stats = useMemo(() => {
-    let billed = 0, paid = 0;
+    let billed = 0, paid = 0, fees = 0;
     const balances = {};
     accounts.forEach((a) => { billed += a.season_fee_cents - a.discount_cents; balances[a.id] = a.season_fee_cents - a.discount_cents; });
     transactions.forEach((t) => {
-      if (t.transaction_type === 'payment') { paid += t.amount_cents; balances[t.account_id] = (balances[t.account_id] || 0) - t.amount_cents; }
+      if (t.transaction_type === 'payment') { paid += t.amount_cents; fees += (t.processing_fee_cents || 0); balances[t.account_id] = (balances[t.account_id] || 0) - t.amount_cents; }
       if (t.transaction_type === 'refund') { paid -= t.amount_cents; balances[t.account_id] = (balances[t.account_id] || 0) + t.amount_cents; }
     });
     const outstanding = billed - paid;
+    const net = paid - fees;
     const families = accounts.filter((a) => (balances[a.id] || 0) > 0).length;
-    return { billed, paid, outstanding, families, pct: billed > 0 ? Math.round((paid / billed) * 100) : 0 };
+    return { billed, paid, outstanding, net, fees, families, pct: billed > 0 ? Math.round((paid / billed) * 100) : 0 };
   }, [accounts, transactions]);
 
   const fmt = (cents) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
@@ -60,6 +61,8 @@ export default function FinancialDashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
         <StatCard label="Outstanding" value={fmt(stats.outstanding)} sub={`${stats.families} families`} color="var(--em-danger)" />
         <StatCard label="Collected" value={fmt(stats.paid)} sub={`${stats.pct}% of expected`} color="var(--em-success)" />
+        <StatCard label="Net to Bank" value={fmt(stats.net)} sub={`After ${fmt(stats.fees)} fees`} color="var(--em-text-primary)" />
+        <StatCard label="Families" value={accounts.length} sub="accounts total" color="var(--em-text-primary)" />
       </div>
 
       <Label>Families</Label>

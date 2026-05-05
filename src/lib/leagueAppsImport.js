@@ -11,41 +11,45 @@ export function parseLeagueAppsData(raw) {
 
   const families = new Map();
   for (const r of records) {
-    const guardianName = (r.parentFirstName || r.parent_first_name || '')
-      + ' ' + (r.parentLastName || r.parent_last_name || '');
-    const key = guardianName.trim().toLowerCase();
+    const email = (r.Parent_1_Email || r.parentEmail || r.parent_email || r.email || '').trim().toLowerCase();
+    const phone = (r.Parent_1_Mobile_Number || r.parentPhone || r.parent_phone || r.phone || '').trim();
+    const firstName = r.Parent_1_First_Name || r.parentFirstName || r.parent_first_name || '';
+    const lastName = r.Parent_1_Last_Name || r.parentLastName || r.parent_last_name || '';
+    const key = email || phone || `${firstName} ${lastName}`.trim().toLowerCase();
     if (!key) continue;
 
     if (!families.has(key)) {
       families.set(key, {
-        firstName: r.parentFirstName || r.parent_first_name || '',
-        lastName: r.parentLastName || r.parent_last_name || '',
-        email: r.parentEmail || r.parent_email || r.email || '',
-        phone: r.parentPhone || r.parent_phone || r.phone || '',
+        firstName, lastName, email, phone,
+        dedupKey: email ? 'email' : phone ? 'phone' : 'name',
         players: [],
         totalFeeCents: 0,
         totalPaidCents: 0,
+        totalFeesDeducted: 0,
         payments: [],
       });
     }
     const fam = families.get(key);
-    const feeCents = parseDollars(r.registrationFee || r.registration_fee || r.fee || r.amount || 0);
-    const paidCents = parseDollars(r.amountPaid || r.amount_paid || r.paid || 0);
+    const feeCents = parseDollars(r.registrationFee || r.registration_fee || r.fee || r.amount || r.Amount || 0);
+    const paidCents = parseDollars(r.amountPaid || r.amount_paid || r.paid || r.Amount_Paid || 0);
+    const feeDeducted = parseDollars(r.processingFee || r.processing_fee || r.LeagueApps_Fee || 0);
 
     fam.players.push({
-      firstName: r.firstName || r.first_name || r.playerFirstName || '',
-      lastName: r.lastName || r.last_name || r.playerLastName || '',
-      program: r.programName || r.program_name || r.program || '',
+      firstName: r.Member_First_Name || r.firstName || r.first_name || r.playerFirstName || '',
+      lastName: r.Member_Last_Name || r.lastName || r.last_name || r.playerLastName || '',
+      program: r.Program || r.programName || r.program_name || r.program || '',
     });
     fam.totalFeeCents += feeCents;
     fam.totalPaidCents += paidCents;
+    fam.totalFeesDeducted += feeDeducted;
 
     if (paidCents > 0) {
       fam.payments.push({
         amountCents: paidCents,
-        method: normalizeMethod(r.paymentMethod || r.payment_method || ''),
-        date: r.paymentDate || r.payment_date || r.registrationDate || r.registration_date || null,
-        reference: r.transactionId || r.transaction_id || r.confirmationNumber || '',
+        processingFeeCents: feeDeducted,
+        method: normalizeMethod(r.Payment_Method || r.paymentMethod || r.payment_method || ''),
+        date: r.Invoice_Date || r.paymentDate || r.payment_date || r.registrationDate || null,
+        reference: r.Invoice_Number || r.transactionId || r.transaction_id || '',
       });
     }
   }
@@ -74,22 +78,28 @@ export async function importToFinancials(families, orgId, seasonId, userId) {
 
   const { data: guardians } = await supabase
     .from('guardians')
-    .select('id, first_name, last_name')
+    .select('id, first_name, last_name, email, phone')
     .eq('org_id', orgId);
 
-  const guardianMap = new Map();
+  const byEmail = new Map();
+  const byPhone = new Map();
+  const byName = new Map();
   (guardians || []).forEach((g) => {
-    guardianMap.set(`${g.first_name} ${g.last_name}`.toLowerCase(), g.id);
+    if (g.email) byEmail.set(g.email.trim().toLowerCase(), g.id);
+    if (g.phone) byPhone.set(g.phone.replace(/\D/g, ''), g.id);
+    byName.set(`${g.first_name} ${g.last_name}`.toLowerCase(), g.id);
   });
 
   for (const fam of families) {
-    const nameKey = `${fam.firstName} ${fam.lastName}`.toLowerCase();
-    let guardianId = guardianMap.get(nameKey);
+    let guardianId = null;
+    if (fam.email) guardianId = byEmail.get(fam.email);
+    if (!guardianId && fam.phone) guardianId = byPhone.get(fam.phone.replace(/\D/g, ''));
+    if (!guardianId) guardianId = byName.get(`${fam.firstName} ${fam.lastName}`.toLowerCase());
 
     if (!guardianId) {
       const { data: newG, error: gErr } = await supabase
         .from('guardians')
-        .insert({ org_id: orgId, first_name: fam.firstName, last_name: fam.lastName, email: fam.email, phone: fam.phone })
+        .insert({ org_id: orgId, first_name: fam.firstName, last_name: fam.lastName, email: fam.email || null, phone: fam.phone || null })
         .select('id')
         .single();
       if (gErr) { results.errors.push(`Guardian ${fam.firstName} ${fam.lastName}: ${gErr.message}`); results.skipped++; continue; }
@@ -118,6 +128,7 @@ export async function importToFinancials(families, orgId, seasonId, userId) {
           org_id: orgId,
           transaction_type: 'payment',
           amount_cents: pmt.amountCents,
+          processing_fee_cents: pmt.processingFeeCents || 0,
           payment_method: pmt.method,
           reference: pmt.reference || null,
           occurred_at: pmt.date ? new Date(pmt.date).toISOString() : new Date().toISOString(),
