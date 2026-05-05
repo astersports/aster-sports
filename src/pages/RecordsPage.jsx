@@ -7,6 +7,7 @@ import { EMPTY_SUMMARY } from '../lib/teamRecords';
 import StatHeroBar from '../components/broadcast/StatHeroBar';
 import TournamentCard from '../components/broadcast/TournamentCard';
 import TeamAccordion from '../components/records/TeamAccordion';
+import StandingsTable from '../components/records/StandingsTable';
 
 export default function RecordsPage() {
   const { orgId, org } = useAuth();
@@ -54,10 +55,17 @@ export default function RecordsPage() {
         ]} />
       </div>
       <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>All Teams</div>
+        <div style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>Standings</div>
         <h2 style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: 'var(--sf-bc-text)', lineHeight: 1.05, marginBottom: 16 }}>
-          SEASON <span style={{ color: 'var(--sf-bc-cobalt)' }}>RECORDS</span>
+          LEAGUE <span style={{ color: 'var(--sf-bc-cobalt)' }}>TABLE</span>
         </h2>
+        <StandingsTable teams={teams} recordsByTeam={recordsByTeam} />
+        <div style={{ marginTop: 32 }}>
+          <div style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>All Teams</div>
+          <h2 style={{ fontFamily: "var(--sf-bc-display, 'Barlow Condensed', sans-serif)", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: 'var(--sf-bc-text)', lineHeight: 1.05, marginBottom: 16 }}>
+            SEASON <span style={{ color: 'var(--sf-bc-cobalt)' }}>RECORDS</span>
+          </h2>
+        </div>
         {teamsLoading && Array.from({ length: 5 }).map((_, i) => <div key={i} className="bc-team-skeleton" />)}
         {teams.map((team) => (
           <TeamAccordion
