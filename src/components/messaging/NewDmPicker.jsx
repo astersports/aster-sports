@@ -13,14 +13,17 @@ export default function NewDmPicker({ onSelect, onClose }) {
     supabase.from('user_roles').select('user_id, role')
       .eq('organization_id', orgId)
       .neq('user_id', user.id)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) { console.error('NewDmPicker user_roles:', error.message); return; }
         const rows = (data || []).map((r) => ({ userId: r.user_id, role: r.role, name: '' }));
         Promise.all(rows.map(async (r) => {
           if (r.role === 'parent') {
-            const { data: g } = await supabase.from('guardians').select('first_name, last_name').eq('user_id', r.userId).maybeSingle();
+            const { data: g, error: gErr } = await supabase.from('guardians').select('first_name, last_name').eq('user_id', r.userId).maybeSingle();
+            if (gErr) console.error('NewDmPicker guardians:', gErr.message);
             r.name = g ? `${g.first_name} ${g.last_name}` : 'Parent';
           } else {
-            const { data: m } = await supabase.from('org_members').select('first_name, last_name').eq('user_id', r.userId).maybeSingle();
+            const { data: m, error: mErr } = await supabase.from('org_members').select('first_name, last_name').eq('user_id', r.userId).maybeSingle();
+            if (mErr) console.error('NewDmPicker org_members:', mErr.message);
             r.name = m ? `${m.first_name} ${m.last_name}` : r.role;
           }
           return r;

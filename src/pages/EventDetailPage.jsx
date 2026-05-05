@@ -27,7 +27,6 @@ import Button from '../components/shared/Button';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
-
 const SH = ({ children, sectionKey }) => <h2 data-section={sectionKey} style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>;
 
 export default function EventDetailPage() {
@@ -49,7 +48,10 @@ export default function EventDetailPage() {
   useEffect(() => {
     if (!id) return;
     supabase.from('event_duties').select('id', { count: 'exact', head: true }).eq('event_id', id)
-      .then(({ count }) => setDutyCount(count || 0));
+      .then(({ count, error }) => {
+        if (error) console.error('EventDetailPage dutyCount:', error.message);
+        setDutyCount(count || 0);
+      });
   }, [id]);
 
   useEffect(() => {
@@ -59,12 +61,10 @@ export default function EventDetailPage() {
     const el = document.querySelector(`[data-section="${tab}"]`);
     if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
   }, [searchParams, rsvpLoading, roster.length]);
-
   const { requestDelete, pendingDelete, confirmDelete, cancelDelete } = useEventDelete(event);
 
   if (eventLoading) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }} />;
   if (!event) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh', padding: 24, color: 'var(--em-text-tertiary)' }}>Event not found.</div>;
-
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--em-text-tertiary)';
   const isStaff = role === 'admin' || role === 'coach';

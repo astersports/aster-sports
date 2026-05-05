@@ -24,7 +24,10 @@ export default function AccountPage() {
   useEffect(() => {
     if (role !== 'parent' || !user?.id) return;
     supabase.from('guardians').select('last_name').eq('user_id', user.id).maybeSingle()
-      .then(({ data }) => setLastName(data?.last_name ?? null));
+      .then(({ data, error }) => {
+        if (error) console.error('AccountPage guardianLastName:', error.message);
+        setLastName(data?.last_name ?? null);
+      });
   }, [role, user?.id]);
 
   const parentName = [guardianFirstName, lastName].filter(Boolean).join(' ').trim();

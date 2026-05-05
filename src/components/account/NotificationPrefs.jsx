@@ -22,7 +22,8 @@ export default function NotificationPrefs({ userId, orgId }) {
     supabase.from('user_preferences')
       .select('notification_preferences')
       .eq('user_id', userId).eq('org_id', orgId).maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error('NotificationPrefs:', error.message);
         setPrefs(data?.notification_preferences || {});
         setLoading(false);
       });

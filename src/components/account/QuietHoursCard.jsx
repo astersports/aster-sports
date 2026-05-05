@@ -22,7 +22,8 @@ export default function QuietHoursCard({ userId, orgId }) {
     if (!userId || !orgId) return;
     supabase.from('user_preferences')
       .select('quiet_hours').eq('user_id', userId).eq('org_id', orgId).maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error('QuietHoursCard:', error.message);
         if (data?.quiet_hours) setQuiet({ ...DEFAULT_QUIET, ...data.quiet_hours });
       });
   }, [userId, orgId]);

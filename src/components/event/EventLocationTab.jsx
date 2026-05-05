@@ -16,7 +16,8 @@ export default function EventLocationTab({ event }) {
       return () => { cancelled = true; };
     }
     supabase.from('tournaments').select('schedule_status').eq('id', event.tournament_id).limit(1)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error('EventLocationTab tournamentStatus:', error.message);
         if (cancelled) return;
         setTournamentStatus(data?.[0]?.schedule_status ?? null);
       });
@@ -30,7 +31,8 @@ export default function EventLocationTab({ event }) {
     supabase.from('locations').select('name, address, lat, lon, google_maps_url, entry_instructions')
       .ilike('name', `%${searchName}%`)
       .limit(1)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error('EventLocationTab locationSearch:', error.message);
         if (data && data[0]) setLocationData(data[0]);
       });
   }, [event.location]);

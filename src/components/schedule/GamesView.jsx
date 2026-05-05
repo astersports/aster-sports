@@ -15,10 +15,11 @@ function useGameResults(eventIds) {
     if (!eventIds.length) return;
     let cancelled = false;
     Promise.resolve().then(async () => {
-      const { data } = await supabase.from('game_results')
+      const { data, error } = await supabase.from('game_results')
         .select('event_id, result, our_score, opponent_score, published_at')
         .in('event_id', eventIds)
         .not('published_at', 'is', null);
+      if (error) console.error('useGameResults:', error.message);
       if (cancelled) return;
       const map = {};
       for (const r of (data || [])) map[r.event_id] = r;

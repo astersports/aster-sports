@@ -17,8 +17,9 @@ export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
   const [response, setResponse] = useState(() => responseCache.get(cacheKey(eventId, child.playerId)) ?? null);
 
   const fetchRsvp = useCallback(async () => {
-    const { data } = await supabase.from('event_rsvps').select('response')
+    const { data, error } = await supabase.from('event_rsvps').select('response')
       .eq('event_id', eventId).eq('player_id', child.playerId).maybeSingle();
+    if (error) console.error('fetchRsvp:', error.message);
     const next = data?.response ?? null;
     responseCache.set(cacheKey(eventId, child.playerId), next);
     setResponse((prev) => (prev === next ? prev : next));

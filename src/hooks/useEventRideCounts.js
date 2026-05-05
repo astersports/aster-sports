@@ -38,6 +38,8 @@ export function useEventRideCounts(activities) {
         if (map[id].requests > 0 && map[id].offers === 0) map[id].urgent = true;
       }
       setCounts(map);
+    }).catch((err) => {
+      console.error('useEventRideCounts network error:', err);
     });
   }, [activities]);
   return counts;

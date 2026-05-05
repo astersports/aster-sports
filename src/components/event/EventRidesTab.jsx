@@ -47,7 +47,8 @@ export default function EventRidesTab({ event }) {
     const ids = openRequests.map((r) => r.for_child_id).filter(Boolean);
     if (ids.length === 0) return;
     supabase.from('players').select('id, first_name').in('id', ids)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error('EventRidesTab childNames:', error.message);
         const map = {};
         (data || []).forEach((p) => { map[p.id] = p.first_name; });
         Promise.resolve().then(() => setChildNames(map));

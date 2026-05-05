@@ -11,7 +11,10 @@ export default function StepTeam({ orgId, value, onSelect }) {
       .select('id, name, team_color, sort_order')
       .eq('org_id', orgId)
       .order('sort_order', { ascending: true })
-      .then(({ data }) => setTeams(data || []));
+      .then(({ data, error }) => {
+        if (error) console.error('StepTeam teams:', error.message);
+        setTeams(data || []);
+      });
   }, [orgId]);
 
   return (

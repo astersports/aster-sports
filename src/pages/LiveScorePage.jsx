@@ -30,7 +30,10 @@ export default function LiveScorePage() {
 
   useEffect(() => {
     supabase.from('events').select('*, teams(id, name, team_color, org_id)').eq('id', eventId).maybeSingle()
-      .then(({ data }) => setEvent(data));
+      .then(({ data, error }) => {
+        if (error) console.error('LiveScorePage event:', error.message);
+        setEvent(data);
+      });
   }, [eventId]);
 
   const handlePlay = (type, opts) => {
