@@ -1,11 +1,18 @@
 import { useMemo, useState } from 'react';
 import { useNow } from '../../hooks/useNow';
+import { useEventRsvpCounts } from '../../hooks/useEventRsvpCounts';
+import { useEventRideCounts } from '../../hooks/useEventRideCounts';
+import { useGameResultsMap } from '../../hooks/useGameResultsMap';
+import { useWeather } from '../../hooks/useWeather';
 import { formatCountdown } from '../../lib/formatters';
 import DateGroupedList from '../schedule/DateGroupedList';
-import CollapsibleSection from '../shared/CollapsibleSection';
 import Chip from '../shared/Chip';
 
 export default function AdminScheduleSection({ activities }) {
+  const rsvpCounts = useEventRsvpCounts(activities);
+  const rideCounts = useEventRideCounts(activities);
+  const gameResults = useGameResultsMap(activities);
+  const weather = useWeather(41.03, -73.76);
   const now = useNow();
   const weekEnd = now + 7 * 24 * 60 * 60 * 1000;
   const [selectedTeam, setSelectedTeam] = useState(null);
@@ -57,7 +64,7 @@ export default function AdminScheduleSection({ activities }) {
           No events this week{selectedTeam ? ' for this team' : ''}.
         </div>
       ) : (
-        <DateGroupedList events={filtered} />
+        <DateGroupedList events={filtered} rsvpCounts={rsvpCounts} rideCounts={rideCounts} gameResults={gameResults} weather={weather} />
       )}
     </div>
   );

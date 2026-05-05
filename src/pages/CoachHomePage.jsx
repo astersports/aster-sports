@@ -2,6 +2,10 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
+import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
+import { useEventRideCounts } from '../hooks/useEventRideCounts';
+import { useGameResultsMap } from '../hooks/useGameResultsMap';
+import { useWeather } from '../hooks/useWeather';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
 import AdminGreeting from '../components/admin/AdminGreeting';
@@ -13,6 +17,10 @@ import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
 export default function CoachHomePage() {
   const { user } = useAuth();
   const { activities, loading, error, refetch } = useActivities();
+  const rsvpCounts = useEventRsvpCounts(activities);
+  const rideCounts = useEventRideCounts(activities);
+  const gameResults = useGameResultsMap(activities);
+  const weather = useWeather(41.03, -73.76);
   const navigate = useNavigate();
   useRefetchOnVisible(refetch);
   const now = useNow();
@@ -52,7 +60,7 @@ export default function CoachHomePage() {
         skeletonRows={2}
         empty={thisWeek.length === 0 ? { heading: 'All caught up', message: 'No events in the next 7 days.' } : null}
       >
-        {thisWeek.length > 0 && <DateGroupedList events={thisWeek} density={density} />}
+        {thisWeek.length > 0 && <DateGroupedList events={thisWeek} density={density} rsvpCounts={rsvpCounts} rideCounts={rideCounts} gameResults={gameResults} weather={weather} />}
       </SectionShell>
 
       <SectionShell
