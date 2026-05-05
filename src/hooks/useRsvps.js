@@ -21,7 +21,7 @@ export function useRsvps(eventId, teamId) {
         .order('jersey_number', { ascending: true, nullsFirst: false }),
     ]);
     setRsvps(rsvpRes.data || []);
-    const mapped = (rosterRes.data || []).map((rm) => ({
+    const mapped = (rosterRes.data || []).filter((rm) => rm.players).map((rm) => ({
       id: rm.players.id,
       first_name: rm.players.first_name,
       last_name: rm.players.last_name,

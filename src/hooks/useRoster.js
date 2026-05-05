@@ -14,7 +14,7 @@ export function useRoster(teamId) {
         .select('jersey_number, jersey_size, shorts_size, payment_status, players(id, first_name, last_name, grade, dob, member_type, player_guardians(guardian_id, guardians(id, first_name, last_name, email, phone, user_id)))')
         .eq('team_id', teamId);
       if (error) throw error;
-      const mapped = (data || []).map((rm) => ({
+      const mapped = (data || []).filter((rm) => rm.players).map((rm) => ({
         id: rm.players.id,
         first_name: rm.players.first_name,
         last_name: rm.players.last_name,
