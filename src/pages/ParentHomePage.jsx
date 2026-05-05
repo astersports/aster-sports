@@ -57,9 +57,9 @@ export default function ParentHomePage() {
   const filteredNext7 = useMemo(() => {
     if (!activeKidFilter) return next7days;
     const kid = (myChildren || []).find((k) => k.playerId === activeKidFilter);
-    const teamId = kid?.teamId ?? null;
-    if (!teamId) return next7days;
-    return next7days.filter((e) => e.team_id === teamId);
+    const ids = kid?.teamIds?.length ? kid.teamIds : (kid?.teamId ? [kid.teamId] : []);
+    if (!ids.length) return next7days;
+    return next7days.filter((e) => ids.includes(e.team_id));
   }, [next7days, activeKidFilter, myChildren]);
 
   const rideCounts = useEventRideCounts(filteredNext7);

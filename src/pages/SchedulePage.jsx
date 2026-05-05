@@ -54,8 +54,9 @@ export default function SchedulePage() {
 
   const filtered = useMemo(() => {
     let list = activities;
-    const kidTeamId = activeKidFilter && (myChildren || []).find((k) => k.playerId === activeKidFilter)?.teamId;
-    if (kidTeamId) list = list.filter((a) => a.team_id === kidTeamId);
+    const kid = activeKidFilter && (myChildren || []).find((k) => k.playerId === activeKidFilter);
+    const kidTeamIds = kid?.teamIds?.length ? kid.teamIds : (kid?.teamId ? [kid.teamId] : []);
+    if (kidTeamIds.length) list = list.filter((a) => kidTeamIds.includes(a.team_id));
     if (selectedTeam) list = list.filter((a) => a.team_id === selectedTeam);
     if (selectedType) {
       if (selectedType === 'game') {

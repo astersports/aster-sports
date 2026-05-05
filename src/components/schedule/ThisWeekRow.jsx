@@ -23,7 +23,7 @@ export default function ThisWeekRow({ event, rideCount, dutyCount, conflictWith,
   const now = useNow();
   const { myChildren } = useAuth();
   const mapsUrl = useMapsUrl(event.location || null);
-  const childrenOnTeam = (myChildren || []).filter((c) => c.teamId === event.team_id);
+  const childrenOnTeam = (myChildren || []).filter((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
   const teamColor = event.teams?.team_color || 'var(--em-text-tertiary)';
   const teamName = event.teams?.name || event.team_name || '';
   const teamAbbr = teamName.split(' ')[0] || teamName;

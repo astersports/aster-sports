@@ -7,7 +7,7 @@ import Input from '../shared/Input';
 
 export default function RequestRideForm({ open, onClose, onSubmit, eventTeamId }) {
   const { myChildren } = useAuth();
-  const kids = (myChildren || []).filter((c) => c.teamId === eventTeamId);
+  const kids = (myChildren || []).filter((c) => c.teamIds?.includes(eventTeamId) || c.teamId === eventTeamId);
   const [seatsNeeded, setSeatsNeeded] = useState('1');
   const [pickupAddress, setPickupAddress] = useState('');
   const [notes, setNotes] = useState('');

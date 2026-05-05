@@ -12,7 +12,7 @@ export async function fetchParentContext(userId) {
 
   const { data: guardian, error } = await supabase
     .from('guardians')
-    .select('id, first_name, player_guardians(player_id, players(id, first_name, last_name, roster_members(team_id)))')
+    .select('id, first_name, player_guardians(player_id, players(id, first_name, last_name, roster_members(team_id, left_at)))')
     .eq('user_id', userId)
     .maybeSingle();
   if (error || !guardian) return empty;
@@ -22,15 +22,15 @@ export async function fetchParentContext(userId) {
   for (const link of guardian.player_guardians || []) {
     const p = link.players;
     if (!p) continue;
-    const rosters = p.roster_members || [];
-    for (const rm of rosters) {
-      if (rm.team_id) teamIdSet.add(rm.team_id);
-    }
+    const activeRosters = (p.roster_members || []).filter((rm) => rm.team_id && rm.left_at === null);
+    const teamIds = activeRosters.map((rm) => rm.team_id);
+    teamIds.forEach((id) => teamIdSet.add(id));
     myChildren.push({
       playerId: p.id,
       firstName: p.first_name,
       lastName: p.last_name,
-      teamId: rosters[0]?.team_id ?? null,
+      teamId: teamIds[0] ?? null,
+      teamIds,
     });
   }
   return {
