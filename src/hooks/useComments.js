@@ -31,6 +31,7 @@ export function useComments(eventId) {
   const post = async (body) => {
     const trimmed = body.trim();
     if (!trimmed) return false;
+    if (!user?.id) { showToast('Sign in to post a comment.', 'error'); return false; }
     const authorName = guardianFirstName
       || user?.user_metadata?.full_name
       || user?.user_metadata?.name

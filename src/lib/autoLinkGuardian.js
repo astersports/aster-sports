@@ -7,6 +7,10 @@ import { supabase } from './supabase';
 export async function autoLinkGuardian(user) {
   const email = user?.email?.trim().toLowerCase();
   if (!email || !user?.id) return null;
+  // Refuse to claim a guardian row for an unverified email — prevents
+  // a hostile signup from hijacking another family's account by registering
+  // an auth user with their email before they confirm.
+  if (!user.email_confirmed_at) return null;
 
   const { data: guardian, error: gErr } = await supabase
     .from('guardians')

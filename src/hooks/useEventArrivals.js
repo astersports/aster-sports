@@ -11,10 +11,14 @@ export function useEventArrivals(eventId) {
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
-    const { data } = await supabase.from('event_arrivals').select('*').eq('event_id', eventId);
+    const { data, error } = await supabase.from('event_arrivals').select('*').eq('event_id', eventId);
+    if (error) {
+      console.error('useEventArrivals:', error.message);
+      showToast("Couldn't load arrivals. Try again in a moment.", 'error');
+    }
     setArrivals(data || []);
     setLoading(false);
-  }, [eventId]);
+  }, [eventId, showToast]);
 
   useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
 
