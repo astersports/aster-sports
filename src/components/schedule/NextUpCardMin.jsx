@@ -14,7 +14,7 @@ export default function NextUpCardMin({ event, rsvpCount }) {
   const now = useNow();
   const { myChildren } = useAuth();
 
-  const childOnTeam = (myChildren || []).find((c) => c.teamId === event.team_id);
+  const childOnTeam = (myChildren || []).find((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
   const secondsUntil = (new Date(event.start_at).getTime() - now) / 1000;
   const teamColor = event.teams?.team_color || event.team_color || 'var(--em-text-tertiary)';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;

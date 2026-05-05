@@ -17,7 +17,7 @@ export default function NextUpCardMax({ event, rsvpCount, rideCount, dutyCount, 
   const navigate = useNavigate();
   const { role, myChildren } = useAuth();
   const now = useNow();
-  const childrenOnTeam = (myChildren || []).filter((c) => c.teamId === event.team_id);
+  const childrenOnTeam = (myChildren || []).filter((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
   const [countdown, setCountdown] = useState(() => formatCountdown(event.start_at));
 
   useEffect(() => {

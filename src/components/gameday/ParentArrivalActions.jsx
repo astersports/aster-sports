@@ -9,7 +9,7 @@ export default function ParentArrivalActions({ event }) {
   const { setArrival, getStatus } = useEventArrivals(event.id);
   const [lateChild, setLateChild] = useState(null);
   const now = useNow();
-  const kids = (myChildren || []).filter((c) => c.teamId === event.team_id);
+  const kids = (myChildren || []).filter((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
   const msUntil = new Date(event.start_at).getTime() - now;
   const msAfter = now - new Date(event.start_at).getTime();
   if (msUntil > 2 * 60 * 60 * 1000 || msAfter > 60 * 60 * 1000) return null;

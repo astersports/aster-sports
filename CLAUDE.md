@@ -376,6 +376,34 @@ LeagueApps import: 70 families, 100 accounts (40 Fall 2025 + 60 Spring 2026), 10
 
 ---
 
+## 11.5. GROUND-TRUTH TABLES (CANONICAL SOURCES)
+
+The schema has multiple tables that look like they describe the same thing
+but encode different concerns. Reading from the wrong one creates the bug
+class that produced the "Milo filter" issue. Always read from the canonical
+source for the question you're asking.
+
+| Question | Canonical source | Notes |
+|---|---|---|
+| Which kids are on a team right now? | `team_players` | `roster_type` in rostered/futures, `status` in active/inactive |
+| What jersey does a kid wear on a team? | `team_players.jersey_number` (text) | Keep aligned with `roster_members` via alignment trigger |
+| What size jersey/shorts is the kid wearing? | `roster_members` | Sizes live here and only here |
+| What is the kid's payment status for the season? | `financial_accounts` + `financial_transactions` | Not `roster_members.payment_status` (legacy column) |
+| What teams is the current parent's child on? | `current_user_child_team_ids()` | SECURITY DEFINER; do not query underlying tables |
+| What players can the current parent see in roster lists? | `current_user_teammate_player_ids()` | SECURITY DEFINER |
+| Was the kid eligible for an event on `event_date`? | `roster_members.registered_at` / `left_at` | Date-windowed eligibility for attendance views |
+| What's the parent's app context (kids + teams)? | `parent_context_v` view | Single helper used by AuthContext.parentContext |
+
+**Rules:**
+- Application code never reads from `roster_members` directly except for sizes and historical date windows in the 5 attendance views.
+- RLS policies never reference `roster_members` directly. They go through `current_user_*` helpers.
+- New code that needs "is this kid on this team" reads from `team_players`.
+- New code that needs "is this kid's parent allowed to see this row" reads from `current_user_teammate_player_ids()` or `current_user_child_team_ids()`.
+
+The two tables are kept in alignment by the trigger added in migration `20260505201932_wave4_roster_alignment_lock`. If they ever diverge, the trigger surfaces it as an INSERT/UPDATE failure rather than as silent UI bugs.
+
+---
+
 ## 12. DEVELOPMENT WORKFLOW
 
 ```bash

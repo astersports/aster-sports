@@ -15,7 +15,7 @@ const LABEL_STYLE = {
 export default function NextUpCardMyChild({ event }) {
   const { myChildren } = useAuth();
   const notes = useEventRsvpNotes(event.id);
-  const childOnTeam = (myChildren || []).find((c) => c.teamId === event.team_id);
+  const childOnTeam = (myChildren || []).find((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
   if (!childOnTeam) return null;
   const note = notes.find((n) => n.playerId === childOnTeam.playerId);
   if (!note) return null;

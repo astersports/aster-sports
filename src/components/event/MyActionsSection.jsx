@@ -4,7 +4,7 @@ import ChildRsvp from '../schedule/ChildRsvp';
 
 export default function MyActionsSection({ event, myRideClaim, onRsvpChange }) {
   const { myChildren } = useAuth();
-  const childrenOnTeam = (myChildren || []).filter((c) => c.teamId === event.team_id);
+  const childrenOnTeam = (myChildren || []).filter((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
   if (childrenOnTeam.length === 0) return null;
 
   return (
