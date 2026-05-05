@@ -12,7 +12,6 @@ import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import TeamHeaderCard from '../components/roster/TeamHeaderCard';
 import RosterSection from '../components/roster/RosterSection';
-import MessageTeamFAB from '../components/roster/MessageTeamFAB';
 import TeamSwitcher from '../components/roster/TeamSwitcher';
 import PlayerStatsTable from '../components/records/PlayerStatsTable';
 import Label from '../components/shared/Label';
@@ -135,8 +134,6 @@ export default function TeamDetailPage() {
           </div>
         </div>
       )}
-
-      <MessageTeamFAB teamId={teamId} />
     </div>
   );
 }
