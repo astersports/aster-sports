@@ -1,6 +1,7 @@
 import { useEventArrivals } from '../../hooks/useEventArrivals';
 import { useRoster } from '../../hooks/useRoster';
 import { useNow } from '../../hooks/useNow';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
 
 const STATUS_DISPLAY = {
   on_the_way: { icon: '🏃', label: 'On the way', bg: 'var(--em-warning-soft)', color: 'var(--em-warning)' },
@@ -27,7 +28,7 @@ export default function ArrivalBoard({ event }) {
   arrivals.forEach((a) => { arrivalMap[a.player_id] = a; });
   const arrived = arrivals.filter((a) => a.status === 'arrived').length;
 
-  if (loading) return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 13 }}>Loading arrival board…</div>;
+  if (loading) return <div style={{ padding: 16 }}><LoadingSkeleton variant="list" count={5} /></div>;
 
   return (
     <div style={{ padding: '0 16px 16px' }}>

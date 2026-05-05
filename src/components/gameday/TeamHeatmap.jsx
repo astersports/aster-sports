@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAttendanceData } from '../../hooks/useAttendanceData';
 import Chip from '../shared/Chip';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
 
 const CELL_COLORS = {
   attended: { bg: 'var(--em-success)', border: 'none' },
@@ -17,7 +18,7 @@ export default function TeamHeatmap({ teamId, teamColor }) {
   const [filter, setFilter] = useState('all');
   const { grid, events, loading } = useAttendanceData(teamId, filter);
 
-  if (loading) return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 13 }}>Loading attendance data…</div>;
+  if (loading) return <div style={{ padding: 16 }}><LoadingSkeleton variant="card" count={1} /></div>;
 
   const totalAttended = grid.reduce((s, r) => s + r.attended, 0);
   const totalExpected = grid.reduce((s, r) => s + r.expected, 0);

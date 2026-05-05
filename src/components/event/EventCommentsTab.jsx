@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Send, Pin } from 'lucide-react';
 import Input from '../shared/Input';
 import { useComments } from '../../hooks/useComments';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
 
 // Comments thread for an event. Pinned comments float to the top with
 // a pin icon, then chronological oldest-first like a chat transcript.
@@ -18,7 +19,7 @@ export default function EventCommentsTab({ eventId }) {
 
   return (
     <div style={{ padding: '16px 16px 32px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {loading && <div style={{ color: 'var(--em-text-tertiary)', fontSize: 15 }}>Loading comments...</div>}
+      {loading && <LoadingSkeleton variant="text" count={3} />}
       {!loading && comments.length === 0 && (
         <div style={{ color: 'var(--em-text-tertiary)', fontSize: 15 }}>No comments yet. Start the conversation.</div>
       )}

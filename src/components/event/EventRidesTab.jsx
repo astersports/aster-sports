@@ -8,11 +8,11 @@ import { supabase } from '../../lib/supabase';
 import DensityToggle from '../home/DensityToggle';
 import OfferCard from '../ride/OfferCard';
 import PostOfferForm from '../ride/PostOfferForm';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
 import ClaimSeatForm from '../ride/ClaimSeatForm';
 import RequestRideForm from '../ride/RequestRideForm';
 import RideRequestCard from '../ride/RideRequestCard';
 import Button from '../shared/Button';
-
 const lblStyle = { fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 };
 const emptyStyle = { padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13, border: '1px dashed var(--em-border-subtle)', borderRadius: 10 };
 
@@ -82,7 +82,7 @@ export default function EventRidesTab({ event }) {
         </section>
       )}
 
-      {loading && <div style={{ padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13 }} role="status" aria-live="polite">Loading rides…</div>}
+      {loading && <div style={{ padding: 16 }}><LoadingSkeleton variant="card" count={2} /></div>}
 
       {!loading && myActiveClaims.length > 0 && (
         <section aria-label="Your claimed seats" style={{ marginBottom: 18 }}>

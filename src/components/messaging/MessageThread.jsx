@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useMessages } from '../../hooks/useMessages';
 import MessageBubble from './MessageBubble';
 import ComposeBar from './ComposeBar';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
 import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/permissions';
 
@@ -52,7 +53,7 @@ export default function MessageThread({ channel, onBack }) {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {loading && <div style={{ color: 'var(--em-text-tertiary)', fontSize: 14, padding: 12 }}>Loading messages…</div>}
+        {loading && <div style={{ padding: 12 }}><LoadingSkeleton variant="text" count={3} /></div>}
         {!loading && messages.length === 0 && (
           <div style={{ color: 'var(--em-text-tertiary)', fontSize: 14, padding: 32, textAlign: 'center' }}>
             No messages yet. Start the conversation.

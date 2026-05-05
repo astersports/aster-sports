@@ -1,5 +1,6 @@
 import { Check, Circle } from 'lucide-react';
 import { useCheckIns } from '../../hooks/useCheckIns';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
 
 // Check-in tab — one toggle per player (present / absent). Writes
 // upserts into check_ins with checked_in bool + timestamp. Count
@@ -8,7 +9,7 @@ export default function EventCheckinTab({ eventId, roster, teamColor }) {
   const { checkIns, loading, toggle } = useCheckIns(eventId);
 
   if (loading) {
-    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 15 }}>Loading check-ins...</div>;
+    return <div style={{ padding: 16 }}><LoadingSkeleton variant="list" count={5} /></div>;
   }
   if (roster.length === 0) {
     return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 15 }}>No players on this team yet.</div>;

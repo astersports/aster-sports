@@ -1,5 +1,6 @@
 import RsvpSummary from '../rsvp/RsvpSummary';
 import RsvpPlayerRow from '../rsvp/RsvpPlayerRow';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
 
 // RSVP tab — summary bar + one row per roster player with 3-button
 // going/maybe/not-going selector. Thin wrapper around the existing
@@ -7,7 +8,7 @@ import RsvpPlayerRow from '../rsvp/RsvpPlayerRow';
 // the useRsvps hook and pass in the resulting data.
 export default function EventRsvpTab({ roster, rsvps, rsvpMap, teamColor, onSetRsvp, onSaveNote, loading }) {
   if (loading) {
-    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 15 }}>Loading roster...</div>;
+    return <div style={{ padding: 16 }}><LoadingSkeleton variant="list" count={5} /></div>;
   }
   if (roster.length === 0) {
     return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 15 }}>No players on this team yet.</div>;

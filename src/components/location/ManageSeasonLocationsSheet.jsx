@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
 import FullScreenForm from '../shared/FullScreenForm';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
 import { useLocations } from '../../hooks/useLocations';
 import { useSeasonLocations } from '../../hooks/useSeasonLocations';
 import { useToast } from '../../context/useToast';
@@ -50,7 +51,7 @@ export default function ManageSeasonLocationsSheet({ seasonId, seasonName, onClo
       </div>
 
       {loading ? (
-        <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading…</div>
+        <LoadingSkeleton variant="list" count={4} />
       ) : locations.length === 0 ? (
         <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>
           No locations yet. Add one from the Locations page first.

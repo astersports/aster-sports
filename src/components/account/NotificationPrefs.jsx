@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/useToast';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
 
 const CATEGORIES = [
   { key: 'schedule_change', label: 'Schedule changes' },
@@ -41,7 +42,7 @@ export default function NotificationPrefs({ userId, orgId }) {
     }
   }, [prefs, userId, orgId, showToast]);
 
-  if (loading) return <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', padding: 16, fontSize: 13, color: 'var(--em-text-tertiary)' }}>Loading…</div>;
+  if (loading) return <LoadingSkeleton variant="card" count={1} />;
 
   return (
     <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
