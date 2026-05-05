@@ -37,7 +37,7 @@ export default function TournamentBriefing({ event, team, onClose }) {
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
   };
   const ghostBtn = {
-    minHeight: 36, padding: '0 12px', borderRadius: 8,
+    minHeight: 44, padding: '0 12px', borderRadius: 8,
     backgroundColor: 'transparent', color: 'var(--em-text-secondary)',
     fontSize: 13, fontWeight: 500, border: '1px solid var(--em-border-default)',
     display: 'inline-flex', alignItems: 'center', gap: 4,

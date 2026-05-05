@@ -90,7 +90,7 @@ function ErrorState({ error, onRetry }) {
       <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.4 }}>{msg}</div>
       {onRetry && (
         <button type="button" onClick={onRetry} className="sf-press"
-          style={{ alignSelf: 'flex-start', minHeight: 36, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+          style={{ alignSelf: 'flex-start', minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
           Try again
         </button>
       )}

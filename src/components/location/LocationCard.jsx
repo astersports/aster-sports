@@ -64,7 +64,7 @@ export default function LocationCard({ location, isStaff, showArchived, onEdit, 
       )}
 
       <button type="button" onClick={() => window.open(url, '_blank')} className="sf-press"
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 36, padding: '0 12px', borderRadius: 10, fontSize: 13, fontWeight: 500, alignSelf: 'flex-start', backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, padding: '0 12px', borderRadius: 10, fontSize: 13, fontWeight: 500, alignSelf: 'flex-start', backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
         <Navigation size={13} strokeWidth={1.75} /> Get Directions
       </button>
     </div>

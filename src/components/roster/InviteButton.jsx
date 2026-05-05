@@ -35,7 +35,7 @@ export default function InviteButton({ guardianEmail }) {
     }
   };
 
-  const pill = { minHeight: 32, padding: '0 10px', borderRadius: 9999, fontSize: 13, fontWeight: 500, backgroundColor: 'transparent' };
+  const pill = { minHeight: 44, padding: '0 12px', borderRadius: 9999, fontSize: 13, fontWeight: 500, backgroundColor: 'transparent' };
 
   if (status === 'sent') {
     return <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--em-success)' }}>Invited ✓</span>;
