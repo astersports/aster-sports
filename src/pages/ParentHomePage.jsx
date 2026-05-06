@@ -7,7 +7,7 @@ import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
-import { useWeather, getWeatherForTime } from '../hooks/useWeather';
+import { getWeatherForTime, useWeather } from '../hooks/useWeather';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import ThisWeekRow from '../components/schedule/ThisWeekRow';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
@@ -15,12 +15,12 @@ import MyTeamsStrip from '../components/home/MyTeamsStrip';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import Label from '../components/shared/Label';
-import { groupByDate, formatDateHeader } from '../lib/scheduleHelpers';
+import { formatDateHeader, groupByDate } from '../lib/scheduleHelpers';
 import { detectConflicts } from '../lib/conflicts';
 import { firstNameFrom, greetingFor } from '../lib/greetings';
 
 export default function ParentHomePage() {
-  const { user, guardianFirstName, myChildren, orgId } = useAuth();
+  const { user, guardianFirstName, myChildren, orgId, orgName } = useAuth();
   const { activities, loading, refetch } = useActivities();
   const { byTeamId: recordsByTeam, loading: recordsLoading } = useOrgTeamRecords(orgId);
   const navigate = useNavigate();
@@ -77,27 +77,39 @@ export default function ParentHomePage() {
   const toggleCollapse = (dateStr) => setCollapsedDates((prev) => {
     const next = new Map(prev); next.set(dateStr, !isCollapsed(dateStr)); return next;
   });
-  if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" rows={2} /></div>;
+  if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
     <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
       <section>
         <div style={{ color: 'var(--em-text-tertiary)', fontSize: 13 }}>{greetingFor()},</div>
         <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>{name}</h1>
+        {orgName && <div style={{ color: 'var(--em-text-tertiary)', fontSize: 13, marginTop: 2 }}>{orgName}{myTeams.length > 0 ? ` · ${myTeams.length} team${myTeams.length !== 1 ? 's' : ''}` : ''}</div>}
       </section>
 
-      <MyTeamsStrip
-        teams={myTeams}
-        byTeamId={recordsByTeam}
-        loading={recordsLoading}
-        onSelect={(teamId) => navigate(`/schedule?team=${teamId}`)}
-      />
+      {!loading && myTeams.length === 0 && (
+        <div style={{ padding: 20, backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', textAlign: 'center' }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>🏀</div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 4 }}>Welcome to {orgName || 'the team'}</div>
+          <div style={{ fontSize: 14, color: 'var(--em-text-secondary)', lineHeight: 1.5 }}>Your coach is getting things set up. Once your child is added to a team, their schedule and events will appear here.</div>
+        </div>
+      )}
 
-      <button type="button" onClick={() => navigate('/records')} className="sf-press"
+      {myTeams.length > 0 && (
+        <>
+          <MyTeamsStrip
+            teams={myTeams}
+            byTeamId={recordsByTeam}
+            loading={recordsLoading}
+            onSelect={(teamId) => navigate(`/schedule?team=${teamId}`)}
+          />
+          <button type="button" onClick={() => navigate('/records')} className="sf-press"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px 16px', minHeight: 56, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
-        <span>View full season records</span>
-        <span style={{ fontSize: 17, color: 'var(--em-text-tertiary)' }}>›</span>
-      </button>
+            <span>View full season records</span>
+            <span style={{ fontSize: 17, color: 'var(--em-text-tertiary)' }}>›</span>
+          </button>
+        </>
+      )}
 
       <section>
         <Label>NEXT 7 DAYS</Label>
