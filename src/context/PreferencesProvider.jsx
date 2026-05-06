@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { PreferencesContext } from './PreferencesContext';
@@ -63,10 +63,13 @@ export function PreferencesProvider({ children }) {
     };
   }, [userId, orgId]);
 
+  const prefsRef = useRef(preferences);
+  useEffect(() => { prefsRef.current = preferences; });
+
   const updatePreference = useCallback(
     async (column, value) => {
       if (!userId || !orgId) return;
-      const previous = preferences;
+      const previous = prefsRef.current;
       setPreferences((p) => (p ? { ...p, [column]: value } : p));
 
       const { error: err } = await supabase
@@ -81,17 +84,17 @@ export function PreferencesProvider({ children }) {
         throw err;
       }
     },
-    [userId, orgId, preferences]
+    [userId, orgId]
   );
 
   const mergePreferenceJson = useCallback(
     async (column, partial) => {
-      if (!userId || !orgId || !preferences) return;
-      const current = preferences[column] ?? {};
+      if (!userId || !orgId || !prefsRef.current) return;
+      const current = prefsRef.current[column] ?? {};
       const next = { ...current, ...partial };
       await updatePreference(column, next);
     },
-    [userId, orgId, preferences, updatePreference]
+    [userId, orgId, updatePreference]
   );
 
   const value = useMemo(
