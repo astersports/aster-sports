@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Repeat, ExternalLink } from 'lucide-react';
+import { ExternalLink, MapPin, Repeat } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
 import { formatCountdown } from '../../lib/formatters';
-import { WhenRow, GameInfo } from './NextUpCardInfo';
+import { GameInfo, WhenRow } from './NextUpCardInfo';
 import NextUpCardRsvpSection from './NextUpCardRsvpSection';
 import NextUpCardStatusRow from './NextUpCardStatusRow';
 import NextUpCardMyChild from './NextUpCardMyChild';
@@ -18,20 +18,12 @@ export default function NextUpCardMax({ event, rsvpCount, rideCount, dutyCount, 
   const { role, myChildren } = useAuth();
   const now = useNow();
   const childrenOnTeam = (myChildren || []).filter((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
-  const [countdown, setCountdown] = useState(() => formatCountdown(event.start_at));
-
-  useEffect(() => {
-    const id = setInterval(() => setCountdown(formatCountdown(event.start_at)), 60000);
-    return () => clearInterval(id);
-  }, [event.start_at]);
+  const countdown = useMemo(() => formatCountdown(event.start_at), [event.start_at, now]);
 
   useEffect(() => {
     if (!event.end_at || !onRefresh) return;
-    const id = setInterval(() => {
-      if (new Date(event.end_at) < new Date()) onRefresh();
-    }, 60000);
-    return () => clearInterval(id);
-  }, [event.end_at, onRefresh]);
+    if (new Date(event.end_at) < new Date()) onRefresh();
+  }, [event.end_at, now, onRefresh]);
 
   const directionsUrl = useMapsUrl(event.location);
   const isPlaceholderLocation = typeof event.location === 'string' && event.location.startsWith('Tournament -');

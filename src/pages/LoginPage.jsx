@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LoginForm from '../components/auth/LoginForm';
 
@@ -9,7 +9,7 @@ export default function LoginPage() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const REDIRECT_ALLOWLIST = ['/events/', '/tournaments/', '/teams/', '/schedule'];
+  const REDIRECT_ALLOWLIST = ['/events/', '/tournaments/', '/teams/', '/schedule', '/records', '/account', '/locations', '/messages'];
   const stickyFrom = location.state?.from?.pathname;
   const from = REDIRECT_ALLOWLIST.some(p => stickyFrom?.startsWith(p)) ? stickyFrom : '/';
 

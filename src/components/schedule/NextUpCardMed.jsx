@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Repeat, ExternalLink } from 'lucide-react';
+import { ExternalLink, MapPin, Repeat } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
 import { formatCountdown, formatEventDateMed } from '../../lib/formatters';
 import { GameInfo } from './NextUpCardInfo';
@@ -17,23 +17,12 @@ export default function NextUpCardMed({ event, rsvpCount, rideCount, dutyCount, 
   const { role, myChildren } = useAuth();
   const now = useNow();
   const childrenOnTeam = (myChildren || []).filter((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
-  const [countdown, setCountdown] = useState(() => formatCountdown(event.start_at));
+  const countdown = useMemo(() => formatCountdown(event.start_at), [event.start_at, now]);
 
-  useEffect(() => {
-    const id = setInterval(() => setCountdown(formatCountdown(event.start_at)), 60000);
-    return () => clearInterval(id);
-  }, [event.start_at]);
-
-  // Every 60s, check whether the currently-featured event has ended.
-  // If yes, ask the parent to refresh so nextEvent can advance to the
-  // next upcoming event. Belt-and-suspenders with SchedulePage's tick.
   useEffect(() => {
     if (!event.end_at || !onRefresh) return;
-    const id = setInterval(() => {
-      if (new Date(event.end_at) < new Date()) onRefresh();
-    }, 60000);
-    return () => clearInterval(id);
-  }, [event.end_at, onRefresh]);
+    if (new Date(event.end_at) < new Date()) onRefresh();
+  }, [event.end_at, now, onRefresh]);
 
   const directionsUrl = useMapsUrl(event.location);
   const isPlaceholderLocation = typeof event.location === 'string' && event.location.startsWith('Tournament -');

@@ -29,8 +29,11 @@ export function useFilteredRoster(players, search, sortBy) {
         const bD = b.dob ? new Date(b.dob).getTime() : Infinity;
         return aD - bD;
       }
-      const aJ = a.jersey_number ?? 999;
-      const bJ = b.jersey_number ?? 999;
+      const aJ = a.jersey_number != null ? parseInt(a.jersey_number, 10) : NaN;
+      const bJ = b.jersey_number != null ? parseInt(b.jersey_number, 10) : NaN;
+      if (isNaN(aJ) && isNaN(bJ)) return 0;
+      if (isNaN(aJ)) return 1;
+      if (isNaN(bJ)) return -1;
       return aJ - bJ;
     });
   }, [players, search, sortBy]);
