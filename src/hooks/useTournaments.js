@@ -61,6 +61,7 @@ export function useTournaments({ teamId, statusFilter = 'all', seasonFilter = 'a
           .map((tt) => tt.teams).filter(Boolean)
           .sort((a, b) => a.sort_order - b.sort_order),
       }));
+      const preFilterCount = rows.length;
       if (teamId) rows = rows.filter((t) => t.teams.some((team) => team.id === teamId));
 
       if (append) {
@@ -68,7 +69,7 @@ export function useTournaments({ teamId, statusFilter = 'all', seasonFilter = 'a
       } else {
         setTournaments(rows);
       }
-      setHasMore(rows.length === limit);
+      setHasMore(preFilterCount === limit);
       offsetRef.current += rows.length;
       cache.set(cacheKey(orgId, teamId, statusFilter, seasonFilter), rows);
     } catch (e) {

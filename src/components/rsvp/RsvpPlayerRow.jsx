@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Check, X, HelpCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check, HelpCircle, X } from 'lucide-react';
 import Input from '../shared/Input';
 import { useAuth } from '../../context/AuthContext';
 
@@ -19,6 +19,7 @@ export default function RsvpPlayerRow({ player, response, existingNote, teamColo
   const { role, myChildren } = useAuth();
   const [showNote, setShowNote] = useState(false);
   const [noteText, setNoteText] = useState(existingNote || '');
+  useEffect(() => { Promise.resolve().then(() => setNoteText(existingNote || '')); }, [existingNote]);
   const isMyChild = (myChildren || []).some((c) => c.playerId === player.id);
   const readOnly = role === 'parent' && !isMyChild;
 
