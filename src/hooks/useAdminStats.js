@@ -79,9 +79,26 @@ export function useAdminStats() {
         return count ?? 0;
       });
 
+      const collected = await SAFE(async () => {
+        const { data } = await supabase
+          .from('financial_transactions')
+          .select('amount_cents')
+          .eq('org_id', orgId)
+          .eq('transaction_type', 'payment');
+        return (data || []).reduce((sum, r) => sum + (r.amount_cents || 0), 0) / 100;
+      });
+
+      const outstanding = await SAFE(async () => {
+        const { data } = await supabase
+          .from('financial_accounts')
+          .select('amount_due_cents, amount_paid_cents')
+          .eq('org_id', orgId);
+        const total = (data || []).reduce((sum, r) => sum + ((r.amount_due_cents || 0) - (r.amount_paid_cents || 0)), 0);
+        return Math.max(0, total) / 100;
+      });
+
       if (cancelled) return;
-      // Single authoritative write. loading: false only gets set HERE.
-      setStats({ players, events, collected: 0, outstanding: 0, loading: false });
+      setStats({ players, events, collected, outstanding, loading: false });
     });
 
     return () => { cancelled = true; };
