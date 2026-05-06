@@ -20,9 +20,10 @@ export const EMPTY_FORM = {
 export function eventToForm(event) {
   const startAt = new Date(event.start_at);
   const endAt = event.end_at ? new Date(event.end_at) : startAt;
-  const date = event.start_at.slice(0, 10);
-  const startTime = startAt.toTimeString().slice(0, 5);
-  const endTime = endAt.toTimeString().slice(0, 5);
+  const pad = (n) => String(n).padStart(2, '0');
+  const date = `${startAt.getFullYear()}-${pad(startAt.getMonth() + 1)}-${pad(startAt.getDate())}`;
+  const startTime = `${pad(startAt.getHours())}:${pad(startAt.getMinutes())}`;
+  const endTime = `${pad(endAt.getHours())}:${pad(endAt.getMinutes())}`;
   const durationMinutes = Math.round((endAt - startAt) / 60000);
   return {
     eventType: event.event_type,

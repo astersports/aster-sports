@@ -13,6 +13,7 @@ export function useDuties(eventId) {
   const [duties, setDuties] = useState([]);
   const [loading, setLoading] = useState(true);
   const didInitialLoad = useRef(false);
+  const cancelledRef = useRef(false);
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
@@ -20,13 +21,14 @@ export function useDuties(eventId) {
     const { data, error } = await supabase
       .from('event_duties').select('*').eq('event_id', eventId)
       .order('duty_name', { ascending: true });
+    if (cancelledRef.current) return;
     if (error) console.error('useDuties:', error.message);
     setDuties(data || []);
     didInitialLoad.current = true;
     setLoading(false);
   }, [eventId]);
 
-  useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
+  useEffect(() => { cancelledRef.current = false; Promise.resolve().then(fetch); return () => { cancelledRef.current = true; }; }, [fetch]);
 
   const claim = async (dutyId) => {
     const prev = duties;

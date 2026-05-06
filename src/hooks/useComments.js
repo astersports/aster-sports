@@ -12,6 +12,7 @@ export function useComments(eventId) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const didInitialLoad = useRef(false);
+  const cancelledRef = useRef(false);
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
@@ -20,13 +21,14 @@ export function useComments(eventId) {
       .from('event_comments').select('*').eq('event_id', eventId)
       .order('pinned', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: true });
+    if (cancelledRef.current) return;
     if (error) console.error('useComments:', error.message);
     setComments(data || []);
     didInitialLoad.current = true;
     setLoading(false);
   }, [eventId]);
 
-  useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
+  useEffect(() => { cancelledRef.current = false; Promise.resolve().then(fetch); return () => { cancelledRef.current = true; }; }, [fetch]);
 
   const post = async (body) => {
     const trimmed = body.trim();

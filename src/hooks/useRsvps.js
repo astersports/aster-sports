@@ -8,6 +8,7 @@ export function useRsvps(eventId, teamId) {
   const [roster, setRoster] = useState([]);
   const [loading, setLoading] = useState(true);
   const didInitialLoad = useRef(false);
+  const cancelledRef = useRef(false);
 
   const fetch = useCallback(async () => {
     if (!eventId || !teamId) { setLoading(false); return; }
@@ -21,6 +22,7 @@ export function useRsvps(eventId, teamId) {
         .eq('status', 'active')
         .order('jersey_number', { ascending: true, nullsFirst: false }),
     ]);
+    if (cancelledRef.current) return;
     setRsvps(rsvpRes.data || []);
     const mapped = (rosterRes.data || []).filter((rm) => rm.players).map((rm) => ({
       id: rm.players.id,
@@ -34,7 +36,7 @@ export function useRsvps(eventId, teamId) {
     setLoading(false);
   }, [eventId, teamId]);
 
-  useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
+  useEffect(() => { cancelledRef.current = false; Promise.resolve().then(fetch); return () => { cancelledRef.current = true; }; }, [fetch]);
 
   const setRsvp = async (playerId, response) => {
     const prev = rsvps;
