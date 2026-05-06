@@ -2351,3 +2351,62 @@ Files: CLAUDE.md (+anti-pattern #20), DEFERRED_AUDIT_ITEMS.md (P0-01 CLOSED, M2 
 - EMBER_MASTER_INDEX_v3.md NEXT ACTION updated
 
 **Wave 2B-C status: CLOSED.** All gates shipped and verified. Score entry live in production. Games tab live with standings + matchup cards. Coach role production-ready (Kenny + Darien seeded). Next: Wave 2D (optimistic UI), Wave 1H (RLS hygiene).
+
+---
+
+## 2026-05-06: L99 Audit + Financial Backfill + Unwired Features
+
+### Session summary
+Full-day session. Claude Code (web) + Claude AI (MCP) working in parallel.
+
+### Code-side (Claude Code web — 30+ commits)
+
+**Audit pass (Waves 1-4):**
+- 5-agent audit: JS/JSX, SQL/RLS, UX/A11y, Security, Performance
+- 68 unique findings across 5 surfaces
+- 38 findings closed same-day, rest documented in docs/AUDIT_2026_05_06.md
+
+**Bug fixes shipped:**
+- P0: ClaimSeatForm wrong-kid, Toast auto-dismiss, NextEventCard wrong column, useEventDutyCounts over-count, useNotificationBadge always-0, useRoster/useRsvps null deref
+- P1: Deep-link allowlist, jersey text sort, double timers, timer leaks, cache eviction on sign-out, branding churn, loading flash, UTC date shift, cancelled-flag sweep (4 hooks)
+- P2: PreferencesProvider dep churn, RsvpPlayerRow note desync, useTournaments hasMore, PlayerRow keyboard a11y
+
+**Features shipped:**
+- Block 1 (3-second test): RequireAuth AppShell chrome, value-prop subtitle, empty-tank welcome card, ForgotPasswordPage wired
+- Block 2: Coach MY TEAMS from team_staff
+- Performance: React.memo on EventCard/Scoreboard/PlayByPlayFeed, SchedulePage useNow consolidation, Sentry idle-deferred, 7 pages lazy-loaded
+- Canonical sweep: 6 roster_members → team_players per §11.5
+- Unwired features: Tournament 4 tabs (Games/Roster/Messages/Scenarios), Coach Payouts section, NotificationHistory, TeamAchievements, Quiet Hours edit, financial KPIs wired, Financials quick action, pills wrap instead of scroll
+
+**Architecture:**
+- parent_context_v view (Wave 4, applied via MCP)
+- team_players ↔ roster_members alignment trigger (Wave 4)
+- cacheBuster.js registry for sign-out cache eviction
+- useFocusTrap + useVisualVh shared hooks
+- CLAUDE.md §11.5 ground-truth tables + anti-patterns 23-24
+
+**Bundle: 126 KB → 83 KB gzipped (-34%)**
+
+### Database-side (Claude AI MCP — 14 migrations)
+
+**Path B financial backfill:**
+- Fall 2025 synthesized: 64 accounts / $62,645 billed / $61,370 paid / $1,275 outstanding
+- Winter 2025-26 retagged + waitlist: 40 accounts / $34,022.50
+- Spring 2026 untouched: 60 accounts / $70,242.97
+- Total across 3 seasons: $162,909.50 billed / $161,634.50 paid
+
+**Advisor fixes:**
+- 3 trigger functions: SET search_path added
+- 4 RLS policies: auth.uid() wrapped in (SELECT auth.uid()) for initplan optimization
+
+### Production state
+- Guardians: 176, Players: 115, Financial accounts: 168, Transactions: 244
+- 13 mirror files pending commit (see SESSION_HANDOFF)
+- All production validations passing
+
+### Carry-forward
+- Mirror files: 13 SQL files from Claude AI MCP need to land in supabase/migrations/
+- Remaining unwired: player_activations (waiting on seed data), circuit_rules (already populated)
+- P1: Admin publish workflow (42/42 events are draft), Frank duplicate guardian merge
+- P2: 2 zero-paid tryouts blocked by constraint, react-window virtualization
+- Next session pick: A) Phase 1 parent UX, B) Admin publish workflow, C) Phase 0C Ember rebrand, D) Phone testing pass
