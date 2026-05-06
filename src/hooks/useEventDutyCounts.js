@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 // Per-event duty counts: { [event_id]: { total, claimed } }.
@@ -26,7 +26,7 @@ export function useEventDutyCounts(activities) {
         data.forEach((r) => {
           if (!map[r.event_id]) map[r.event_id] = { total: 0, claimed: 0 };
           map[r.event_id].total += 1;
-          if (r.claimed_by_name || r.guardian_id) map[r.event_id].claimed += 1;
+          if (r.guardian_id) map[r.event_id].claimed += 1;
         });
         setCounts(map);
       });

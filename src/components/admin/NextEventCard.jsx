@@ -25,8 +25,11 @@ export default function NextEventCard({ event }) {
   if (!event) return null;
   const typeLabel = TYPE_LABELS[event.event_type] || 'Event';
   const teamName = event.teams?.name;
-  const title = (event.event_type === 'game' || event.event_type === 'tournament') && event.opponent_name
-    ? `vs. ${event.opponent_name}` : typeLabel;
+  const dt = new Date(event.start_at);
+  const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
+  const timeStr = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
+  const title = (event.event_type === 'game' || event.event_type === 'tournament') && event.opponent
+    ? `vs. ${event.opponent}` : typeLabel;
   return (
     <div
       className="sf-stagger-5"
@@ -46,6 +49,9 @@ export default function NextEventCard({ event }) {
         <Label style={{ marginBottom: 0 }}>NEXT EVENT</Label>
         <div className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginTop: 2 }}>
           {title}{teamName ? ` · ${teamName}` : ''}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2 }}>
+          {dateStr} · {timeStr}{event.location ? ` · ${event.location}` : ''}
         </div>
       </div>
       <div style={{ textAlign: 'right' }}>
