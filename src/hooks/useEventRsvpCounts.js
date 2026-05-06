@@ -25,7 +25,7 @@ export function useEventRsvpCounts(activities) {
 
     Promise.all([
       supabase.from('event_rsvps').select('event_id, response').in('event_id', eventIds),
-      supabase.from('roster_members').select('team_id').in('team_id', teamIds),
+      supabase.from('team_players').select('team_id').in('team_id', teamIds).eq('status', 'active'),
     ]).then(([rsvpRes, rosterRes]) => {
       const counts = {};
       (rsvpRes.data || []).forEach((r) => {
