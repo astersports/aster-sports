@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Phone, MessageSquare, Mail, ChevronDown } from 'lucide-react';
+import { ChevronDown, Mail, MessageSquare, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import InviteButton from './InviteButton';
 
@@ -17,8 +17,10 @@ export default function PlayerRow({ player, teamColor, isLast }) {
   return (
     <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--em-border-subtle)' }}>
       <div
+        role="button" tabIndex={0} aria-expanded={expanded}
         className="flex items-center sf-press"
         onClick={() => { navigator.vibrate?.(10); setExpanded((v) => !v); }}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded((v) => !v); } }}
         onTouchStart={(e) => { e.currentTarget.style.backgroundColor = `${teamColor}08`; }}
         onTouchEnd={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
         style={{ padding: '10px 16px', minHeight: 56, transition: 'background-color 150ms ease-out' }}
