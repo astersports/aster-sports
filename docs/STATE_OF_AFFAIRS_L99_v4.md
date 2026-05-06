@@ -29,6 +29,14 @@ For decisions, environment, and design tokens unchanged since v3, this doc refer
 This is the single most important fact in this document. The April 27 audit (`audit/AUDIT_SYNTHESIS_2026_04_27.md`) confirmed via direct source-code read:
 
 - `AuthContext.jsx` exposes a single `role` value derived from `user_roles.role` for `auth.uid()` at sign-in. There is no `actingAsRole`, no `switchRole()`, no role-impersonation surface anywhere in the codebase.
+
+**⚠️ CORRECTION (May 6, 2026):** The above assertion is now false. A role-switcher WAS added post-April-27 and is currently wired in production:
+- `src/components/RoleSwitcherSheet.jsx` — UI sheet
+- `src/components/RoleSwitcherViews.jsx` — view router
+- `src/hooks/useHomeRole.js` — `canSwitchRoles = isAdmin(realRole)`, writes `user_preferences.role_preferences` with 24h expiry
+- `Header.jsx:72-81` — eye-icon trigger (admin only)
+
+This is an admin-only "view as parent/coach" surface for testing. It does NOT mutate `user_roles.role` (RLS stays real). Decision pending: keep as-is (useful for Frank's testing) or remove if it creates confusion downstream.
 - Frank's two test accounts (`admin@legacyhoopers.org` and `fsamaritano@gmail.com`) are two separate Supabase auth users. They share Frank's name on the guardian record because Frank is genuinely a guardian for Charlie + Milo. They are NOT the same session pretending to be different roles.
 - The "phantom acting-as bugs" reported in earlier sessions (phone autofill leaking into the wrong account, name appearing in offers when it shouldn't, etc.) were **correct behavior across two real accounts**, not a feature flaw.
 
