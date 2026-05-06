@@ -26,7 +26,7 @@ export function useEventDutyCounts(activities) {
         data.forEach((r) => {
           if (!map[r.event_id]) map[r.event_id] = { total: 0, claimed: 0 };
           map[r.event_id].total += 1;
-          if (r.guardian_id) map[r.event_id].claimed += 1;
+          if (r.guardian_id || r.claimed_by_name) map[r.event_id].claimed += 1;
         });
         setCounts(map);
       });
