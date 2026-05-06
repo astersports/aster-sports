@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Users, Calendar, DollarSign, AlertCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertCircle, Calendar, DollarSign, Users } from 'lucide-react';
 import { formatCurrency } from '../../lib/formatters';
 
 // Animates a number from 0 to `target` over `duration` ms with an
@@ -102,7 +102,7 @@ function Card(props) {
           {isNumber ? animated : value}
         </div>
       )}
-      {!loading && isNumber && value > 0 && <Sparkline color={accent} />}
+      {!loading && isNumber && value > 0 && <div style={{ height: 20 }} />}
       <div className="truncate" style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginTop: 2 }}>
         {label}
       </div>

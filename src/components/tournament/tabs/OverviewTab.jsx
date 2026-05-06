@@ -1,12 +1,10 @@
-import { MapPin, ExternalLink, BedDouble, Info, BookOpen } from 'lucide-react';
-import { useToast } from '../../../context/useToast';
+import { BedDouble, BookOpen, ExternalLink, Info, MapPin } from 'lucide-react';
 
 function mapsUrl(address) {
   return `https://maps.google.com/?q=${encodeURIComponent(address)}`;
 }
 
 export default function OverviewTab({ tournament, isStaff }) {
-  const { showToast } = useToast();
   const hasAddress = Boolean(tournament.primary_venue_address);
   const hasHotel = Boolean(tournament.hotel_url);
   const hasTourneyUrl = Boolean(tournament.tourney_url);
@@ -86,14 +84,6 @@ export default function OverviewTab({ tournament, isStaff }) {
         <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
           Structured field guide for parents: arrival, parking, concessions, rules, contacts.
         </div>
-        {isStaff && (
-          <button onClick={() => showToast('Game Day Guide editor ships in Session 2B-β', 'info')} className="sf-press" style={{
-            ...linkButton, backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)',
-            border: 'none', cursor: 'pointer',
-          }} aria-label="Edit Game Day Guide">
-            Edit guide
-          </button>
-        )}
       </div>
 
       {!tournament.primary_venue && !hasAddress && !hasTourneyUrl && !hasHotel && !hasNotes && (

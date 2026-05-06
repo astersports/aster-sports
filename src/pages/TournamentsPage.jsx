@@ -69,7 +69,7 @@ export default function TournamentsPage() {
             No tournaments yet
           </div>
           <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
-            {role === 'admin' || role === 'coach' ? 'Create form ships next.' : 'Check back when your team signs up.'}
+            {role === 'admin' || role === 'coach' ? 'Tap + New to create one.' : 'Check back when your team signs up.'}
           </div>
         </div>
       )}
