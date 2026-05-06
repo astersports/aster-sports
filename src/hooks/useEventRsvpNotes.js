@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { registerCacheBuster } from '../lib/cacheBuster';
 
-// Module-level cache keyed by eventId. Survives component unmount so
-// NextUpCard doesn't re-query every time the parent home re-renders.
 const cache = new Map();
+registerCacheBuster(() => cache.clear());
 
 // Ordering: non-going responses surface first (admins care most about
 // exceptions to "coming"), then going, then anything else. Within each

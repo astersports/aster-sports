@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { seedRosters } from '../lib/tournamentRosters';
 import { useAuth } from '../context/AuthContext';
+import { registerCacheBuster } from '../lib/cacheBuster';
 
-// Module-level cache survives component unmount. Keyed by query params.
 const cache = new Map();
+registerCacheBuster(() => cache.clear());
 const cacheKey = (orgId, teamId, statusFilter, seasonFilter) =>
   `${orgId}:${teamId || 'all'}:${statusFilter || 'all'}:${seasonFilter || 'active'}`;
 
