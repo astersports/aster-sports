@@ -2,30 +2,26 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../context/useToast';
 
-// Fetches check-in rows for an event and exposes a toggle(playerId)
-// that upserts true/false on the (event_id, player_id) unique pair.
-// Requires a unique constraint on (event_id, player_id) for upsert
-// to work — see Supabase schema.
 export function useCheckIns(eventId) {
   const { showToast } = useToast();
   const [checkIns, setCheckIns] = useState([]);
   const [loading, setLoading] = useState(true);
   const didInitialLoad = useRef(false);
+  const cancelledRef = useRef(false);
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
     if (!didInitialLoad.current) setLoading(true);
     const { data, error } = await supabase
       .from('check_ins').select('*').eq('event_id', eventId);
+    if (cancelledRef.current) return;
     if (error) console.error('useCheckIns:', error.message);
     setCheckIns(data || []);
     didInitialLoad.current = true;
     setLoading(false);
   }, [eventId]);
 
-  // Microtask wrap pushes the synchronous setLoading(true) at the top of
-  // fetch() out of the effect body, satisfying react-hooks/set-state-in-effect.
-  useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
+  useEffect(() => { cancelledRef.current = false; Promise.resolve().then(fetch); return () => { cancelledRef.current = true; }; }, [fetch]);
 
   const toggle = async (playerId, current) => {
     const next = !current;
