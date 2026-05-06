@@ -24,7 +24,7 @@ const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActiv
 
 export default function SchedulePage() {
   const { orgId, myChildren, role } = useAuth();
-  const { activities, loading, refetch } = useActivities(orgId);
+  const { activities, loading, refetch } = useActivities();
   const rsvpCounts = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
   const dutyCounts = useEventDutyCounts(activities);
@@ -40,8 +40,6 @@ export default function SchedulePage() {
 
   const nowMs = useNow();
   useRefetchOnVisible(refetch);
-
-  const now = useMemo(() => new Date(nowMs), [nowMs]);
   const weekEnd = useMemo(() => new Date(nowMs + 7 * 24 * 60 * 60 * 1000), [nowMs]);
 
   const filtered = useMemo(() => {
@@ -62,8 +60,10 @@ export default function SchedulePage() {
   }, [activities, selectedTeam, selectedType, showCancelled, activeKidFilter, myChildren]);
 
   const lookbackMs = isStaff(role) ? 48 * 60 * 60 * 1000 : 0;
-  const cutoff = new Date(now.getTime() - lookbackMs);
-  const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= cutoff && new Date(a.start_at) <= weekEnd), [filtered, nowMs, cutoff, weekEnd]);
+  const upcoming = useMemo(() => {
+    const cutoff = new Date(nowMs - lookbackMs);
+    return filtered.filter((a) => new Date(a.start_at) >= cutoff && new Date(a.start_at) <= weekEnd);
+  }, [filtered, nowMs, lookbackMs, weekEnd]);
   const nextEventId = upcoming.find((a) => new Date(a.start_at).getTime() >= nowMs)?.id || null;
   const remaining = useMemo(() => filtered.filter((a) => new Date(a.start_at) > weekEnd), [filtered, nowMs, weekEnd]);
 
