@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
 import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
@@ -18,6 +18,7 @@ import DensityToggle from '../components/home/DensityToggle';
 import { useDensity } from '../hooks/useDensity';
 import { useGameResultsMap } from '../hooks/useGameResultsMap';
 import { useWeather } from '../hooks/useWeather';
+import { useNow } from '../hooks/useNow';
 import { isStaff } from '../lib/permissions';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
@@ -37,20 +38,11 @@ export default function SchedulePage() {
   const gameResults = useGameResultsMap(activities);
   const weather = useWeather(41.03, -73.76);
 
-  // tick increments every 60s so the upcoming / thisWeek / remaining
-  // memos re-evaluate against a fresh `now`. Without this, a user who
-  // leaves the schedule open would see nextEvent stuck on an event
-  // that has already ended.
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 60000);
-    return () => clearInterval(id);
-  }, []);
-
+  const nowMs = useNow();
   useRefetchOnVisible(refetch);
 
-  const now = useMemo(() => new Date(), [tick]);
-  const weekEnd = useMemo(() => new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), [now]);
+  const now = useMemo(() => new Date(nowMs), [nowMs]);
+  const weekEnd = useMemo(() => new Date(nowMs + 7 * 24 * 60 * 60 * 1000), [nowMs]);
 
   const filtered = useMemo(() => {
     let list = activities;
@@ -71,9 +63,9 @@ export default function SchedulePage() {
 
   const lookbackMs = isStaff(role) ? 48 * 60 * 60 * 1000 : 0;
   const cutoff = new Date(now.getTime() - lookbackMs);
-  const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= cutoff && new Date(a.start_at) <= weekEnd), [filtered, tick, cutoff, weekEnd]);
-  const nextEventId = upcoming.find((a) => new Date(a.start_at).getTime() >= now.getTime())?.id || null;
-  const remaining = useMemo(() => filtered.filter((a) => new Date(a.start_at) > weekEnd), [filtered, tick, weekEnd]);
+  const upcoming = useMemo(() => filtered.filter((a) => new Date(a.start_at) >= cutoff && new Date(a.start_at) <= weekEnd), [filtered, nowMs, cutoff, weekEnd]);
+  const nextEventId = upcoming.find((a) => new Date(a.start_at).getTime() >= nowMs)?.id || null;
+  const remaining = useMemo(() => filtered.filter((a) => new Date(a.start_at) > weekEnd), [filtered, nowMs, weekEnd]);
 
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 

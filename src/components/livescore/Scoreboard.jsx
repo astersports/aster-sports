@@ -1,4 +1,5 @@
-export default function Scoreboard({ teamName, opponentName, ourScore, oppScore, period, onPeriodChange, teamColor }) {
+import { memo } from 'react';
+export default memo(function Scoreboard({ teamName, opponentName, ourScore, oppScore, period, onPeriodChange, teamColor }) {
   return (
     <div style={{ backgroundColor: 'var(--em-header)', padding: '12px 16px', paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
@@ -23,4 +24,4 @@ export default function Scoreboard({ teamName, opponentName, ourScore, oppScore,
       </div>
     </div>
   );
-}
+});

@@ -19,7 +19,8 @@ function applyPreset(quarter, year) {
   const p = PRESETS[quarter];
   const start = ymd(year, p.start[0], p.start[1]);
   const endYear = quarter === 'Winter' ? year + 1 : year;
-  const end = ymd(endYear, p.end[0], p.end[1]);
+  const endDay = quarter === 'Winter' ? new Date(endYear, 2, 0).getDate() : p.end[1];
+  const end = ymd(endYear, p.end[0], endDay);
   return { name: `${quarter} ${year}`, start_date: start, end_date: end };
 }
 
