@@ -17,7 +17,7 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
     Promise.resolve().then(async () => {
       try {
         const { count: pc } = await supabase
-          .from('roster_members').select('id', { count: 'exact', head: true });
+          .from('team_players').select('id', { count: 'exact', head: true });
         if (!cancelled) setHasPlayers((pc ?? 0) > 0);
       } catch { /* table may not exist yet */ }
       try {

@@ -15,9 +15,10 @@ export function useRsvps(eventId, teamId) {
     const [rsvpRes, rosterRes] = await Promise.all([
       supabase.from('event_rsvps').select('*').eq('event_id', eventId),
       supabase
-        .from('roster_members')
+        .from('team_players')
         .select('jersey_number, players(id, first_name, last_name, member_type)')
         .eq('team_id', teamId)
+        .eq('status', 'active')
         .order('jersey_number', { ascending: true, nullsFirst: false }),
     ]);
     setRsvps(rsvpRes.data || []);

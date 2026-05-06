@@ -6,10 +6,11 @@ import { supabase } from './supabase';
 export async function seedRosters(tournamentId, teamIds) {
   for (const teamId of teamIds) {
     const { data: roster } = await supabase
-      .from('roster_members')
-      .select('player_id, players!inner(id, member_type)')
+      .from('team_players')
+      .select('player_id')
       .eq('team_id', teamId)
-      .eq('players.member_type', 'roster');
+      .eq('status', 'active')
+      .eq('roster_type', 'rostered');
     if (!roster?.length) continue;
     const rows = roster.map((rm) => ({
       tournament_id: tournamentId,
