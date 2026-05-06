@@ -1,9 +1,6 @@
-import { useEffect } from 'react';
-import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
 
-// One-off toast notification. Renders nothing if `message` is falsy so
-// parents can keep the component mounted and toggle it via a single
-// `setToast(null)` call.
 const VARIANT_META = {
   success: { icon: CheckCircle2, bg: 'var(--em-success)',  fg: 'var(--em-text-inverse)' },
   error:   { icon: AlertCircle,  bg: 'var(--em-danger)',   fg: 'var(--em-text-inverse)' },
@@ -11,11 +8,13 @@ const VARIANT_META = {
 };
 
 export default function Toast({ message, variant = 'info', onDismiss, duration = 3000 }) {
+  const onDismissRef = useRef(onDismiss);
+  useEffect(() => { onDismissRef.current = onDismiss; });
   useEffect(() => {
     if (!message) return;
-    const id = setTimeout(() => onDismiss?.(), duration);
+    const id = setTimeout(() => onDismissRef.current?.(), duration);
     return () => clearTimeout(id);
-  }, [message, duration, onDismiss]);
+  }, [message, duration]);
 
   if (!message) return null;
   const meta = VARIANT_META[variant] || VARIANT_META.info;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Hand } from 'lucide-react';
+import { Hand, Plus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useEventRidesView } from '../../hooks/useEventRidesView';
 import { useRideRequests } from '../../hooks/useRideRequests';
@@ -143,7 +143,7 @@ export default function EventRidesTab({ event }) {
         eventEndAt={event?.end_at ?? null}
         hasActiveOffer={offers.some((o) => o.driver_user_id === user?.id && o.status === 'active')}
       />
-      <ClaimSeatForm open={!!claimTargetOffer} offer={claimTargetOffer} onClose={() => setClaimTargetOffer(null)} onSubmit={claimSeat} />
+      <ClaimSeatForm open={!!claimTargetOffer} offer={claimTargetOffer} eventTeamId={event?.team_id} onClose={() => setClaimTargetOffer(null)} onSubmit={claimSeat} />
       <RequestRideForm open={requestFormOpen} onClose={() => setRequestFormOpen(false)} onSubmit={postRequest} eventTeamId={event?.team_id} />
     </div>
   );

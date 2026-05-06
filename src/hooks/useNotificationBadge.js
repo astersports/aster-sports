@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useHomeRole } from './useHomeRole';
@@ -26,7 +26,7 @@ export function useNotificationBadge() {
   const [loading, setLoading] = useState(true);
 
   const userId = user?.id;
-  const childIdsKey = (myChildren ?? []).map((c) => c.id).join(',');
+  const childIdsKey = (myChildren ?? []).map((c) => c.playerId).join(',');
   const teamIdsKey = (myTeamIds ?? []).join(',');
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export function useNotificationBadge() {
       const in48hIso = new Date(nowMs + 48 * 60 * 60 * 1000).toISOString();
 
       const teams = myTeamIds ?? [];
-      const kids = (myChildren ?? []).map((c) => c.id);
+      const kids = (myChildren ?? []).map((c) => c.playerId);
 
       let result = { count: 0, severity: 'info' };
 

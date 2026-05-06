@@ -3,7 +3,7 @@
 // Q3 lock: child auto-fill if 1 kid, picker if 2+.
 // Q4 lock: return_needed inherited from offer.ride_type, no toggle.
 
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import FullScreenForm from '../shared/FullScreenForm';
 import Input from '../shared/Input';
@@ -12,13 +12,13 @@ import Button from '../shared/Button';
 const labelStyle = { fontSize: 13, fontWeight: 600, color: 'var(--em-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'block' };
 const selectStyle = { width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' };
 
-export default function ClaimSeatForm({ open, onClose, offer, onSubmit }) {
+export default function ClaimSeatForm({ open, onClose, offer, eventTeamId, onSubmit }) {
   const { myChildren = [] } = useAuth();
   const eligibleKids = useMemo(() => {
     const all = myChildren ?? [];
-    if (!offer?.team_id) return all;
-    return all.filter((k) => k.teamId === offer.team_id);
-  }, [myChildren, offer]);
+    if (!eventTeamId) return all;
+    return all.filter((k) => k.teamIds?.includes(eventTeamId) || k.teamId === eventTeamId);
+  }, [myChildren, eventTeamId]);
 
   const [forChildId, setForChildId] = useState('');
   const [seatsRequested, setSeatsRequested] = useState('1');
