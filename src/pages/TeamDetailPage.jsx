@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Plus, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { isStaff } from '../lib/permissions';
@@ -12,6 +12,7 @@ import { usePlayerSeasonStats } from '../hooks/usePlayerSeasonStats';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import TeamHeaderCard from '../components/roster/TeamHeaderCard';
+import TeamAchievements from '../components/roster/TeamAchievements';
 import RosterSection from '../components/roster/RosterSection';
 import TeamSwitcher from '../components/roster/TeamSwitcher';
 import PlayerStatsTable from '../components/records/PlayerStatsTable';
@@ -90,6 +91,7 @@ export default function TeamDetailPage() {
       <TeamSwitcher programs={switcherPrograms} teamId={teamId} navigate={navigate} />
 
       <TeamHeaderCard team={team} summary={summary} loading={recordsLoading} />
+      <TeamAchievements teamId={teamId} />
 
       {rosterLoading ? (
         <LoadingSkeleton variant="list" count={6} />

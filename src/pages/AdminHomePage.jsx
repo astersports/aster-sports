@@ -14,6 +14,7 @@ import AdminScheduleSection from '../components/admin/AdminScheduleSection';
 import TeamPerformanceStrip from '../components/admin/TeamPerformanceStrip';
 import GettingStarted from '../components/admin/GettingStarted';
 import AdminGreeting from '../components/admin/AdminGreeting';
+import NotificationHistory from '../components/admin/NotificationHistory';
 import Label from '../components/shared/Label';
 
 export default function AdminHomePage() {
@@ -58,6 +59,11 @@ export default function AdminHomePage() {
       <section className="min-w-0" aria-label="This week">
         <Label>THIS WEEK</Label>
         <AdminScheduleSection activities={activities} />
+      </section>
+
+      <section className="min-w-0" aria-label="Notification history">
+        <Label>RECENT NOTIFICATIONS</Label>
+        <NotificationHistory orgId={orgId} />
       </section>
 
       <GettingStarted
