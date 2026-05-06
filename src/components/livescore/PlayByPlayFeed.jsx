@@ -1,3 +1,4 @@
+import { memo } from 'react';
 const LABELS = {
   fg2_made: '+2', fg2_miss: '2PT Miss', fg3_made: '+3', fg3_miss: '3PT Miss',
   ft_made: 'FT', ft_miss: 'FT Miss', rebound: 'REB', assist: 'AST',
@@ -11,7 +12,7 @@ const COLORS = {
 };
 const periodLabel = (p) => p <= 2 ? `H${p}` : 'OT';
 
-export default function PlayByPlayFeed({ plays, players }) {
+export default memo(function PlayByPlayFeed({ plays, players }) {
   const nameMap = {};
   (players || []).forEach((p) => { nameMap[p.id] = p.first_name; });
   const recent = [...plays].reverse();
@@ -31,4 +32,4 @@ export default function PlayByPlayFeed({ plays, players }) {
       ))}
     </div>
   );
-}
+});

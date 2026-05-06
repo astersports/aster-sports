@@ -1,6 +1,7 @@
-import { MapPin, Car, Repeat } from 'lucide-react';
+import { memo } from 'react';
+import { Car, MapPin, Repeat } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { formatTime, formatCountdown } from '../../lib/formatters';
+import { formatCountdown, formatTime } from '../../lib/formatters';
 import { TYPE_LABELS } from '../../lib/constants';
 import { useAuth } from '../../context/AuthContext';
 import { useNow } from '../../hooks/useNow';
@@ -8,7 +9,7 @@ import { useMapsUrl } from '../../hooks/useMapsUrl';
 import ChildRsvp from './ChildRsvp';
 import RsvpCountRow from './RsvpCountRow';
 
-export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'medium', gameResult, weather }) {
+export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'medium', gameResult, weather }) {
   const navigate = useNavigate();
   const { role, myChildren } = useAuth();
   const now = useNow();
@@ -114,4 +115,4 @@ export default function EventCard({ event, rsvpCount, rideCount, dutyCount, stag
       </div>
     </div>
   );
-}
+});

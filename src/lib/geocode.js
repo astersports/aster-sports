@@ -6,9 +6,13 @@ export async function geocodeAddress(address) {
   if (!address?.trim()) return null;
   try {
     const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(url, {
       headers: { 'Accept-Language': 'en' },
+      signal: controller.signal,
     });
+    clearTimeout(timer);
     if (!res.ok) return null;
     const data = await res.json();
     if (!data?.length) return null;
