@@ -49,7 +49,7 @@ export default function AdminScheduleSection({ activities }) {
 
   return (
     <div>
-      <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 8 }}>
+      <div className="flex gap-2 flex-wrap" style={{ paddingBottom: 8 }}>
         <Chip label="All Teams" active={!selectedTeam} onClick={() => setSelectedTeam(null)} />
         {teams.map((t) => {
           const next = teamNextEvent[t.id];

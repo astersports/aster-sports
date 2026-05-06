@@ -94,7 +94,7 @@ export default function GamesView({ activities, orgId }) {
       <StandingsTable teams={allTeams} recordsByTeamId={recordsByTeamId} totalGames={totalGames} />
 
       {gameTeams.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 6, marginBottom: 8 }}>
+        <div className="flex gap-2 flex-wrap" style={{ paddingBottom: 6, marginBottom: 8 }}>
           <Chip label="All" active={!selectedTeam} onClick={() => setSelectedTeam(null)} />
           {gameTeams.map((t) => (
             <Chip key={t.id} label={t.name} active={selectedTeam === t.id} color={t.team_color} onClick={() => setSelectedTeam(selectedTeam === t.id ? null : t.id)} />
