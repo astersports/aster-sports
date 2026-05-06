@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useMemo, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
 import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
@@ -75,7 +75,7 @@ export default function SchedulePage() {
   const nextEventId = upcoming.find((a) => new Date(a.start_at).getTime() >= now.getTime())?.id || null;
   const remaining = useMemo(() => filtered.filter((a) => new Date(a.start_at) > weekEnd), [filtered, tick, weekEnd]);
 
-  if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" rows={2} /></div>;
+  if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
     <>

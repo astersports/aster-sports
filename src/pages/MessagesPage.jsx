@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useChannels } from '../hooks/useChannels';
@@ -45,7 +45,7 @@ export default function MessagesPage() {
     if (thread) { await refetchDms(); openDm({ ...thread, otherName: 'Loading…' }); }
   };
 
-  if (loading || dmsLoading) return <div style={{ padding: 24 }}><LoadingSkeleton variant="card" rows={3} /></div>;
+  if (loading || dmsLoading) return <div style={{ padding: 24 }}><LoadingSkeleton variant="card" count={3} /></div>;
 
   if (active) {
     return (
