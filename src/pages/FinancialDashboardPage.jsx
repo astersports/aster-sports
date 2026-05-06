@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Upload } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import Label from '../components/shared/Label';
 import RecordPaymentForm from '../components/admin/RecordPaymentForm';
+import CoachPayoutsSection from '../components/admin/CoachPayoutsSection';
 
 export default function FinancialDashboardPage() {
   const { orgId } = useAuth();
@@ -127,6 +128,8 @@ export default function FinancialDashboardPage() {
           </div>
         </>
       )}
+
+      <CoachPayoutsSection orgId={orgId} />
 
       {payingAccount && (
         <RecordPaymentForm account={payingAccount} onClose={() => setPayingAccount(null)} onSaved={() => { setPayingAccount(null); refetch(); }} />

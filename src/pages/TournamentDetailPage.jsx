@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTournament } from '../hooks/useTournament';
 import TournamentHeader from '../components/tournament/TournamentHeader';
 import TournamentTabs from '../components/tournament/TournamentTabs';
 import OverviewTab from '../components/tournament/tabs/OverviewTab';
+import GamesTab from '../components/tournament/tabs/GamesTab';
+import RosterTab from '../components/tournament/tabs/RosterTab';
+import MessagesTab from '../components/tournament/tabs/MessagesTab';
+import ScenariosTab from '../components/tournament/tabs/ScenariosTab';
 
 export default function TournamentDetailPage() {
   const { id } = useParams();
@@ -63,24 +67,12 @@ export default function TournamentDetailPage() {
 
       <div style={{ padding: 16 }}>
         {activeTab === 'overview' && <OverviewTab tournament={tournament} isStaff={isStaff} onChange={refetch} />}
-        {activeTab === 'games' && <TabStub label="Games" />}
-        {activeTab === 'roster' && <TabStub label="Roster" />}
-        {activeTab === 'messages' && <TabStub label="Messages" />}
-        {activeTab === 'scenarios' && <TabStub label="Scenarios" />}
+        {activeTab === 'games' && <GamesTab tournament={tournament} />}
+        {activeTab === 'roster' && <RosterTab tournament={tournament} />}
+        {activeTab === 'messages' && <MessagesTab tournament={tournament} isStaff={isStaff} />}
+        {activeTab === 'scenarios' && <ScenariosTab tournament={tournament} />}
       </div>
     </div>
   );
 }
 
-function TabStub({ label }) {
-  return (
-    <div style={{ padding: 40, textAlign: 'center', backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)' }}>
-      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 6 }}>
-        {label} tab
-      </div>
-      <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
-        Coming soon — we're building something great.
-      </div>
-    </div>
-  );
-}
