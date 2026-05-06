@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useActivities } from '../hooks/useActivities';
@@ -8,6 +8,7 @@ import { useGameResultsMap } from '../hooks/useGameResultsMap';
 import { useWeather } from '../hooks/useWeather';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
+import { supabase } from '../lib/supabase';
 import AdminGreeting from '../components/admin/AdminGreeting';
 import SectionShell from '../components/home/SectionShell';
 import DateGroupedList from '../components/schedule/DateGroupedList';
@@ -32,19 +33,15 @@ export default function CoachHomePage() {
   }).sort((a, b) => new Date(a.start_at) - new Date(b.start_at)), [activities, now, weekEnd]);
   const { density } = useDensity('coach-schedule', 'medium');
 
-  const myTeams = useMemo(() => {
-    const map = new Map();
-    for (const a of activities) {
-      if (!a.team_id || map.has(a.team_id)) continue;
-      map.set(a.team_id, {
-        id: a.team_id,
-        name: a.teams?.name || '—',
-        team_color: a.teams?.team_color || 'var(--em-neutral)',
-        sort_order: a.teams?.sort_order ?? 999,
-      });
-    }
-    return [...map.values()].sort((x, y) => x.sort_order - y.sort_order);
-  }, [activities]);
+  const [myTeams, setMyTeams] = useState([]);
+  useEffect(() => {
+    if (!user?.id) return;
+    Promise.resolve().then(async () => {
+      const { data } = await supabase.from('team_staff').select('team_id, teams(id, name, team_color, sort_order)').eq('user_id', user.id);
+      const teams = (data || []).filter((r) => r.teams).map((r) => ({ id: r.teams.id, name: r.teams.name, team_color: r.teams.team_color, sort_order: r.teams.sort_order ?? 999 }));
+      setMyTeams(teams.sort((a, b) => a.sort_order - b.sort_order));
+    });
+  }, [user?.id]);
 
 
   return (
