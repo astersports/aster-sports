@@ -10,13 +10,15 @@ import ParentHomePage from './ParentHomePage';
 import PlaceholderPage from './PlaceholderPage';
 import WelcomeOverlay from '../components/shared/WelcomeOverlay';
 import InstallPrompt from '../components/shared/InstallPrompt';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 
 const AdminHomePage = lazy(() => import('./AdminHomePage'));
 const CoachHomePage = lazy(() => import('./CoachHomePage'));
 
 const FALLBACK = (
-  <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>
-    Loading...
+  <div className="p-4">
+    <LoadingSkeleton variant="card" count={1} />
+    <div style={{ marginTop: 12 }}><LoadingSkeleton variant="list" count={3} /></div>
   </div>
 );
 

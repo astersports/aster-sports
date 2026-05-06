@@ -1,19 +1,20 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
+import AppShell from './AppShell';
 
-// Route guard. Blocks children until auth state resolves, then either
-// redirects to /login, /unauthorized, or renders.
-// `allowedRoles` is optional — when omitted, any authenticated user passes.
 export default function RequireAuth({ children, allowedRoles }) {
   const { user, role, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
     return (
-      <div className="p-4">
-        <LoadingSkeleton variant="card" count={3} />
-      </div>
+      <AppShell>
+        <div className="p-4">
+          <LoadingSkeleton variant="card" count={2} />
+          <div style={{ marginTop: 12 }}><LoadingSkeleton variant="list" count={4} /></div>
+        </div>
+      </AppShell>
     );
   }
 
