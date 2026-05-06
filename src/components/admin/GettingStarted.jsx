@@ -17,12 +17,14 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
     Promise.resolve().then(async () => {
       try {
         const { count: pc } = await supabase
-          .from('team_players').select('id', { count: 'exact', head: true });
+          .from('team_players').select('id, teams!inner(org_id)', { count: 'exact', head: true })
+          .eq('teams.org_id', orgId);
         if (!cancelled) setHasPlayers((pc ?? 0) > 0);
       } catch { /* table may not exist yet */ }
       try {
         const { count: ec } = await supabase
-          .from('events').select('id', { count: 'exact', head: true });
+          .from('events').select('id, teams!inner(org_id)', { count: 'exact', head: true })
+          .eq('teams.org_id', orgId);
         if (!cancelled) setHasEvents((ec ?? 0) > 0);
       } catch { /* table may not exist yet */ }
     });
