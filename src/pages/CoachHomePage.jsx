@@ -67,7 +67,7 @@ export default function CoachHomePage() {
         skeletonVariant="row"
         empty={myTeams.length === 0 ? { heading: 'No teams yet', message: 'Once an admin assigns you to a team, it appears here.' } : null}
       >
-        <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 6 }}>
+        <div className="flex gap-2 flex-wrap" style={{ paddingBottom: 6 }}>
           {myTeams.map((t) => (
             <ParentHomeTeamCard
               key={t.id}

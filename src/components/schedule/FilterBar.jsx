@@ -18,7 +18,7 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
   return (
     <div style={{ padding: '8px 0' }}>
       {!hideTeamRow && (
-      <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 6 }}>
+      <div className="flex gap-2 flex-wrap" style={{ paddingBottom: 6 }}>
         <Chip
           label="All Teams"
           active={!selectedTeam}
@@ -35,7 +35,7 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
         ))}
       </div>
       )}
-      <div className="flex gap-2 overflow-x-auto sf-no-scrollbar">
+      <div className="flex gap-2 flex-wrap">
         {visibleTypes.map((opt) => (
           <Chip
             key={opt.key || 'all'}
