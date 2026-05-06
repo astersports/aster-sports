@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { supabase } from '../lib/supabase';
 import { autoLinkGuardian } from '../lib/autoLinkGuardian';
 import { fetchParentContext } from '../lib/parentContext';
-import { setSentryUser, clearSentryUser } from '../lib/sentry';
+import { bustAllCaches } from '../lib/cacheBuster';
+import { clearSentryUser, setSentryUser } from '../lib/sentry';
 import { useOrgBranding } from '../hooks/useOrgBranding';
 
 const AuthContext = createContext(null);
@@ -103,6 +104,7 @@ export function AuthProvider({ children }) {
   const signOut = useCallback(async () => {
     try { await supabase.auth.signOut(); }
     catch (err) { console.error('Sign out failed:', err); }
+    bustAllCaches();
     setUser(null); setRole(null); setOrg(null);
     setMyChildren([]); setMyTeamIds([]); setGuardianId(null); setGuardianFirstName(null);
   }, []);

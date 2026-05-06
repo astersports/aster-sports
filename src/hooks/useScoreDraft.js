@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
@@ -40,6 +40,7 @@ export default function useScoreDraft(eventId) {
   const [error, setError] = useState(null);
   const debounceRef = useRef(null);
   const retryRef = useRef(0);
+  const retryTimerRef = useRef(null);
   const serverRef = useRef(null);
   const flashRef = useRef(null);
   const resultRef = useRef(result);
@@ -85,11 +86,12 @@ export default function useScoreDraft(eventId) {
       serverRef.current = saved;
       retryRef.current = 0;
       setState('saved'); setLastSaved(new Date()); setError(null);
+      if (flashRef.current) clearTimeout(flashRef.current);
       flashRef.current = setTimeout(() => setState(s => s === 'saved' ? 'idle' : s), SAVED_FLASH_MS);
     } catch (err) {
       retryRef.current += 1;
       if (retryRef.current >= 5) { setState('error'); setError(err); return; }
-      setTimeout(() => performSave(), RETRY_DELAYS[retryRef.current - 1] ?? 16000);
+      retryTimerRef.current = setTimeout(() => performSave(), RETRY_DELAYS[retryRef.current - 1] ?? 16000);
     }
   }, [eventId, user]);
 
@@ -115,6 +117,7 @@ export default function useScoreDraft(eventId) {
       if (e) throw e;
       serverRef.current = data; setResult(data);
       setState('saved'); setLastSaved(new Date());
+      if (flashRef.current) clearTimeout(flashRef.current);
       flashRef.current = setTimeout(() => setState(s => s === 'saved' ? 'idle' : s), SAVED_FLASH_MS);
     } catch (err) { setState('error'); setError(err); throw err; }
   }, [user]);
@@ -126,6 +129,7 @@ export default function useScoreDraft(eventId) {
       if (e) throw e;
       serverRef.current = data; setResult(data);
       setState('saved'); setLastSaved(new Date());
+      if (flashRef.current) clearTimeout(flashRef.current);
       flashRef.current = setTimeout(() => setState(s => s === 'saved' ? 'idle' : s), SAVED_FLASH_MS);
     } catch (err) { setState('error'); setError(err); }
   }, []);
@@ -135,6 +139,7 @@ export default function useScoreDraft(eventId) {
   useEffect(() => () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (flashRef.current) clearTimeout(flashRef.current);
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
   }, []);
 
   return { result, state, lastSaved, error, isPublished: !!result.published_at, updateField, updateFields, publish, unpublish, retry };

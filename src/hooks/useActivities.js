@@ -2,12 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useSeason } from '../context/SeasonContext';
+import { registerCacheBuster } from '../lib/cacheBuster';
 
-// Module-level cache. Keyed by (orgId, seasonId, role, myTeamIds) so that
-// navigating between Home / Schedule / Event Detail doesn't refetch on
-// every mount. Second mount reads the cache instantly and refetches
-// silently in the background.
 const cache = { key: null, data: null };
+registerCacheBuster(() => { cache.key = null; cache.data = null; });
 
 const buildKey = (orgId, seasonId, role, myTeamIds) =>
   `${orgId || ''}:${seasonId || ''}:${role || ''}:${(myTeamIds || []).join(',')}`;
@@ -29,7 +27,7 @@ export function useActivities() {
 
   const refetch = useCallback(async () => {
     if (!orgId) { setLoading(false); return; }
-    setLoading(true);
+    if (!cache.data) setLoading(true);
     setError(null);
     if ((role === 'parent' || role === 'coach') && (!myTeamIds || myTeamIds.length === 0)) {
       cache.key = key; cache.data = [];

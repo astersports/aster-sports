@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { EMBER_BRAND, BRAND_CSS_VAR_MAP } from '../lib/emberDefaults';
+import { BRAND_CSS_VAR_MAP, EMBER_BRAND } from '../lib/emberDefaults';
 
 // Validates a hex color string. Accepts #RGB, #RRGGBB, or rgba(...) format.
 // Returns true if the value is safe to inject as a CSS variable.
@@ -43,7 +43,8 @@ export function useOrgBranding(org) {
     return () => {
       appliedKeys.forEach((cssVar) => root.style.removeProperty(cssVar));
     };
-  }, [org]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on org.id to avoid re-apply on object identity churn
+  }, [org?.id]);
 }
 
 // Convenience export for components that need the Ember defaults synchronously.
