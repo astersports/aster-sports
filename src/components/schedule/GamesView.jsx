@@ -4,10 +4,10 @@ import { useOrgTeamRecords } from '../../hooks/useOrgTeamRecords';
 import { useTeams } from '../../hooks/useTeams';
 import { useSeason } from '../../context/SeasonContext';
 import { useNow } from '../../hooks/useNow';
+import { ChevronRight } from 'lucide-react';
 import StandingsTable from './StandingsTable';
 import MatchupCard from './MatchupCard';
 import FilterSelect from '../shared/FilterSelect';
-import Label from '../shared/Label';
 
 function useGameResults(eventIds) {
   const [byEventId, setByEventId] = useState({});
@@ -37,6 +37,7 @@ export default function GamesView({ activities, orgId }) {
   const seasonStartDate = activeSeason?.start_date;
   const now = useNow();
   const [selectedTeam, setSelectedTeam] = useState(null);
+  const [showResults, setShowResults] = useState(false);
 
   const gameEvents = useMemo(() =>
     activities
@@ -131,10 +132,17 @@ export default function GamesView({ activities, orgId }) {
       ))}
 
       {past.length > 0 && (
-        <>
-          <Label style={{ marginTop: 24 }}>RESULTS</Label>
-          {past.slice(-10).reverse().map((e) => <MatchupCard key={e.id} event={e} gameResult={gameResultsMap[e.id]} />)}
-        </>
+        <div style={{ marginTop: 16 }}>
+          <button type="button" onClick={() => setShowResults((v) => !v)} className="sf-press"
+            aria-expanded={showResults}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '4px 0', minHeight: 44, background: 'none', border: 'none', cursor: 'pointer' }}>
+            <ChevronRight size={14} strokeWidth={1.75} color="var(--em-text-tertiary)"
+              style={{ transform: showResults ? 'rotate(90deg)' : 'none', transition: 'transform 200ms ease-out' }} />
+            <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Results</span>
+            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>({past.length})</span>
+          </button>
+          {showResults && past.slice(-10).reverse().map((e) => <MatchupCard key={e.id} event={e} gameResult={gameResultsMap[e.id]} />)}
+        </div>
       )}
     </div>
   );
