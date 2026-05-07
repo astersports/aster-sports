@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import { useEventDetail } from '../hooks/useEventDetail';
 import { useRsvps } from '../hooks/useRsvps';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import useEventDelete from '../hooks/useEventDelete';
 import EventDetailHeader from '../components/event/EventDetailHeader';
 import EventDetailTab from '../components/event/EventDetailTab';
@@ -40,6 +41,8 @@ export default function EventDetailPage() {
   const { event, loading: eventLoading, refetch, patchEvent } = useEventDetail(id, location.state?.event);
   const teamId = event?.team_id || null;
   const { rsvps, roster, loading: rsvpLoading, setRsvp, saveNote, refetch: refetchRsvps } = useRsvps(id, teamId);
+  const refetchAll = useCallback(() => { refetch(); refetchRsvps(); }, [refetch, refetchRsvps]);
+  useRefetchOnVisible(refetchAll);
   const [editing, setEditing] = useState(false);
   const [editMode, setEditMode] = useState('single');
   const [showCheckin, setShowCheckin] = useState(false);

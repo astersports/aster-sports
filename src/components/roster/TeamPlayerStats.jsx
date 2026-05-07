@@ -11,7 +11,7 @@ export default function TeamPlayerStats({ players, stats, loading }) {
     <div style={{ marginTop: 24 }}>
       <CollapsibleSection title="Player Stats" sectionKey="player-stats">
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-          <button type="button" onClick={() => setShowAvg((v) => !v)} className="sf-press" style={{ minHeight: 32, padding: '0 10px', borderRadius: 9999, fontSize: 11, fontWeight: 500, border: '1px solid var(--em-border-default)', backgroundColor: showAvg ? 'var(--em-accent)' : 'var(--em-bg-card)', color: showAvg ? 'var(--em-text-inverse)' : 'var(--em-text-secondary)' }}>
+          <button type="button" onClick={() => setShowAvg((v) => !v)} className="sf-press" style={{ minHeight: 44, padding: '0 10px', borderRadius: 9999, fontSize: 11, fontWeight: 500, border: '1px solid var(--em-border-default)', backgroundColor: showAvg ? 'var(--em-accent)' : 'var(--em-bg-card)', color: showAvg ? 'var(--em-text-inverse)' : 'var(--em-text-secondary)' }}>
             {showAvg ? 'Per Game' : 'Totals'}
           </button>
         </div>

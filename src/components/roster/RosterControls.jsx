@@ -34,7 +34,7 @@ export default function RosterControls({ search, setSearch, sortBy, setSortBy, r
         />
       </div>
       <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--em-border-default)' }}>
-        {(role === 'admin'
+        {(role === 'admin' || role === 'coach'
           ? [{ key: 'jersey', label: '#' }, { key: 'name', label: 'A-Z' }, { key: 'grade', label: 'Gr' }, { key: 'age', label: 'Age' }]
           : [{ key: 'jersey', label: '#' }, { key: 'name', label: 'A-Z' }]
         ).map((opt) => (

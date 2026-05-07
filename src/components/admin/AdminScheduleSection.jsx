@@ -11,7 +11,7 @@ import FilterSelect from '../shared/FilterSelect';
 
 export default function AdminScheduleSection({ activities }) {
   const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(activities);
-  const rideCounts = useEventRideCounts(activities);
+  const { counts: rideCounts } = useEventRideCounts(activities);
   const gameResults = useGameResultsMap(activities);
   const weather = useWeather(41.03, -73.76);
   const now = useNow();

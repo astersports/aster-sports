@@ -51,6 +51,12 @@ export function useEventRsvpCounts(activities) {
     });
   }, [activities, version]);
 
+  useEffect(() => {
+    const onFocus = () => setVersion((v) => v + 1);
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
+
   const refetch = useCallback(() => setVersion((v) => v + 1), []);
 
   return { counts: summary, refetch };

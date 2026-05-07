@@ -34,7 +34,7 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle })
   return (
     <CollapsibleSection title={title} sectionKey="team-pulse">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0 8px' }}>
-        <button type="button" onClick={() => onRangeToggle?.()} style={{ fontSize: 12, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+        <button type="button" onClick={() => onRangeToggle?.()} style={{ fontSize: 12, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', minHeight: 44 }}>
           attendance · {range === 'season' ? 'season to date' : 'last 4 weeks'} ›
         </button>
         {role !== 'parent' && <FilterSelect
@@ -70,7 +70,7 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle })
                 );
               })}
               <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: 17, fontWeight: 800, color: row.pct !== null && row.pct < 60 ? 'var(--em-danger)' : row.pct !== null && row.pct >= 80 ? 'var(--em-success)' : 'var(--em-text-primary)' }}>{row.pct ?? '—'}%</span>
+                <span style={{ fontSize: 17, fontWeight: 800, color: row.pct !== null && row.pct < 60 ? 'var(--em-danger)' : row.pct !== null && row.pct >= 80 ? 'var(--em-success)' : 'var(--em-text-primary)' }}>{row.pct != null ? `${row.pct}%` : '—'}</span>
                 {row.streak >= 3 && <div style={{ fontSize: 11, color: 'var(--em-warning)' }}>🔥 {row.streak}</div>}
               </div>
             </div>
