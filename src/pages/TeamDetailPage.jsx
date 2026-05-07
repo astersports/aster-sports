@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Plus, Users } from 'lucide-react';
+import { ChevronLeft, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { isStaff } from '../lib/permissions';
 import { usePrograms } from '../hooks/usePrograms';
@@ -58,11 +58,7 @@ export default function TeamDetailPage() {
         <LoadingSkeleton variant="list" count={6} />
       ) : players.length === 0 ? (
         isStaff(role) ? (
-          <EmptyState icon={Users} title={`No players on ${team.name} yet`} action={
-            <button type="button" className="flex items-center gap-1 font-semibold sf-press" style={{ minHeight: 44, padding: '0 14px', borderRadius: 10, backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14 }}>
-              <Plus size={18} strokeWidth={1.75} aria-hidden="true" /> Add Player
-            </button>
-          } />
+          <EmptyState icon={Users} title={`No players on ${team.name} yet`} description="Players are added via the admin roster management tools." />
         ) : (
           <EmptyState icon={Users} title="Roster not posted yet" description="The coach is still setting up this team's roster. Check back soon." />
         )

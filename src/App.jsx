@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
 import RequireAuth from './components/layout/RequireAuth';
 import LoginPage from './pages/LoginPage';
@@ -19,6 +19,7 @@ const TournamentsPage = lazy(() => import('./pages/TournamentsPage'));
 const TournamentDetailPage = lazy(() => import('./pages/TournamentDetailPage'));
 const RecordsPage = lazy(() => import('./pages/RecordsPage'));
 const LiveScorePage = lazy(() => import('./pages/LiveScorePage'));
+const PlayerProfilePage = lazy(() => import('./pages/PlayerProfilePage'));
 const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
 const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
 const SeasonRolloverPage = lazy(() => import('./pages/SeasonRolloverPage'));
@@ -60,6 +61,7 @@ export default function App() {
       <Route path="/locations" element={<Protected><LocationsPage /></Protected>} />
       <Route path="/teams"           element={<Protected><TeamsPage /></Protected>} />
       <Route path="/teams/:teamId"   element={<Protected><TeamDetailPage /></Protected>} />
+      <Route path="/teams/:teamId/player/:playerId" element={<Protected><PlayerProfilePage /></Protected>} />
       <Route path="/teams/:teamId/tournaments" element={<Protected><TournamentsPage /></Protected>} />
       <Route path="/tournaments"     element={<Protected><TournamentsPage /></Protected>} />
       <Route path="/tournaments/:id" element={<Protected><TournamentDetailPage /></Protected>} />
