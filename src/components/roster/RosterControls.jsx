@@ -1,7 +1,7 @@
 // Search input + jersey/name/grade sort toggle. Local UI only — state
 // lives in the parent (TeamDetailPage) so the filter/sort results stay
 // in sync with the player list there.
-export default function RosterControls({ search, setSearch, sortBy, setSortBy }) {
+export default function RosterControls({ search, setSearch, sortBy, setSortBy, role }) {
   return (
     <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
       <div style={{
@@ -34,18 +34,16 @@ export default function RosterControls({ search, setSearch, sortBy, setSortBy })
         />
       </div>
       <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--em-border-default)' }}>
-        {[
-          { key: 'jersey', label: '#' },
-          { key: 'name', label: 'A-Z' },
-          { key: 'grade', label: 'Gr' },
-          { key: 'age', label: 'Age' },
-        ].map((opt) => (
+        {(role === 'admin'
+          ? [{ key: 'jersey', label: '#' }, { key: 'name', label: 'A-Z' }, { key: 'grade', label: 'Gr' }, { key: 'age', label: 'Age' }]
+          : [{ key: 'jersey', label: '#' }, { key: 'name', label: 'A-Z' }]
+        ).map((opt) => (
           <button
             key={opt.key}
             type="button"
             onClick={() => { setSortBy(opt.key); navigator.vibrate?.(10); }}
             style={{
-              minWidth: 36, minHeight: 44, border: 'none',
+              minWidth: 40, minHeight: 44, padding: '0 6px', border: 'none',
               backgroundColor: sortBy === opt.key ? 'var(--em-accent)' : 'var(--em-bg-card)',
               color: sortBy === opt.key ? 'var(--em-text-inverse)' : 'var(--em-text-secondary)',
               fontSize: 13, fontWeight: 600,
