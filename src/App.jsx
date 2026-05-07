@@ -37,7 +37,7 @@ const Protected = ({ children, allowedRoles }) => (
 function PageTransition({ children }) {
   const location = useLocation();
   return (
-    <div key={location.pathname} className="sf-fade-in">
+    <div key={location.pathname}>
       {children}
     </div>
   );
