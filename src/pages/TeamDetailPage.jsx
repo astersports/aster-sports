@@ -35,9 +35,13 @@ export default function TeamDetailPage() {
   const [pulseRange, setPulseRange] = useState('season');
   const enrichedPlayers = useMemo(() => {
     if (!grid?.length) return players;
-    const pctMap = {};
-    grid.forEach((g) => { pctMap[g.player.id] = g.pct; });
-    return players.map((p) => ({ ...p, attendance_pct: pctMap[p.id] ?? null }));
+    const statsMap = {};
+    grid.forEach((g) => { statsMap[g.player.id] = g; });
+    return players.map((p) => {
+      const s = statsMap[p.id];
+      if (!s) return p;
+      return { ...p, attendance_pct: s.pct, goingCount: s.goingCount, maybeCount: s.maybeCount, declinedCount: s.declinedCount, noResponseCount: s.noResponseCount, totalPast: s.totalPast, streak: s.streak };
+    });
   }, [players, grid]);
   const sortedPlayers = useFilteredRoster(enrichedPlayers, search, sortBy);
   const team = programs.find((p) => p.id === teamId);

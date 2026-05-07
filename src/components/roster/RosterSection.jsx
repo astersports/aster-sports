@@ -7,7 +7,8 @@ import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/permissions';
 
 export default function RosterSection({ team, sortedPlayers, search, setSearch, sortBy, setSortBy }) {
-  const { role } = useAuth();
+  const { role, myChildren } = useAuth();
+  const myPlayerIds = (myChildren || []).map((c) => c.playerId);
   return (
     <>
       <RosterControls search={search} setSearch={setSearch} sortBy={sortBy} setSortBy={setSortBy} role={role} />
@@ -22,7 +23,7 @@ export default function RosterSection({ team, sortedPlayers, search, setSearch, 
         }}>
           {sortedPlayers.map((player, i) => (
             <div key={player.id} className={`sf-stagger-${Math.min(i + 1, 8)}`}>
-              <PlayerRow player={player} teamColor={team.team_color} isLast={i === sortedPlayers.length - 1} />
+              <PlayerRow player={player} teamColor={team.team_color} isLast={i === sortedPlayers.length - 1} isMyChild={myPlayerIds.includes(player.id)} />
             </div>
           ))}
         </div>

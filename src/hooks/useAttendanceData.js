@@ -73,6 +73,7 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
 
     return players.map((p) => {
       let attended = 0, expected = 0, streak = 0, streakBroken = false;
+      let goingCount = 0, maybeCount = 0, declinedCount = 0, noResponseCount = 0, totalPast = 0;
       const cells = events.map((e) => {
         const key = `${e.id}-${p.id}`;
         const rsvp = rsvpMap[key];
@@ -81,9 +82,11 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
         const isPast = new Date(e.start_at).getTime() < now;
         let state = 'no_response';
         if (isPast) {
-          if (arrival === 'arrived' || checkedIn || rsvp === 'going') { state = 'attended'; attended++; expected++; }
-          else if (rsvp === 'not_going') state = 'declined';
-          else { state = 'no_response_past'; expected++; }
+          totalPast++;
+          if (arrival === 'arrived' || checkedIn || rsvp === 'going') { state = 'attended'; attended++; expected++; goingCount++; }
+          else if (rsvp === 'maybe') { state = 'no_response_past'; maybeCount++; }
+          else if (rsvp === 'not_going') { state = 'declined'; declinedCount++; }
+          else { state = 'no_response_past'; noResponseCount++; }
         } else {
           if (rsvp === 'going') state = 'rsvp_yes';
           else if (rsvp === 'maybe') state = 'rsvp_maybe';
@@ -99,7 +102,9 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
       }
 
       const pct = expected > 0 ? Math.round((attended / expected) * 100) : null;
-      return { player: p, cells, pct, streak, attended, expected };
+      const responded = goingCount + maybeCount + declinedCount;
+      const responseRate = totalPast > 0 ? Math.round((responded / totalPast) * 100) : null;
+      return { player: p, cells, pct, streak, attended, expected, totalPast, goingCount, maybeCount, declinedCount, noResponseCount, responseRate };
     }).sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
   }, [players, events, rsvps, arrivals, checkIns]);
 
