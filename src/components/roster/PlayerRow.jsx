@@ -14,6 +14,7 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
   const guardians = player.guardians || [];
   const age = useMemo(() => player.dob ? Math.floor((NOW - new Date(player.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null, [player.dob]);
   const showRsvp = player.totalPast > 0 && (role !== 'parent' || isMyChild);
+  const useCount = player.totalPast < 5;
 
   return (
     <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--em-border-subtle)' }}>
@@ -52,10 +53,10 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
           </div>
           {showRsvp && (
             <div className="flex items-center gap-1" style={{ marginTop: 3, flexWrap: 'wrap' }}>
-              {player.goingCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-success-soft)', color: 'var(--em-success)' }}>{Math.round((player.goingCount / player.totalPast) * 100)}% Going</span>}
-              {player.maybeCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-warning-soft)', color: 'var(--em-warning)' }}>{Math.round((player.maybeCount / player.totalPast) * 100)}% Maybe</span>}
-              {player.declinedCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-neutral-soft)', color: 'var(--em-text-secondary)' }}>{Math.round((player.declinedCount / player.totalPast) * 100)}% No</span>}
-              {player.noResponseCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-tertiary)' }}>{Math.round((player.noResponseCount / player.totalPast) * 100)}% NR</span>}
+              {player.goingCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-success-soft)', color: 'var(--em-success)' }}>{useCount ? player.goingCount : Math.round((player.goingCount / player.totalPast) * 100) + '%'} Going</span>}
+              {player.maybeCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-warning-soft)', color: 'var(--em-warning)' }}>{useCount ? player.maybeCount : Math.round((player.maybeCount / player.totalPast) * 100) + '%'} Maybe</span>}
+              {player.declinedCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-neutral-soft)', color: 'var(--em-text-secondary)' }}>{useCount ? player.declinedCount : Math.round((player.declinedCount / player.totalPast) * 100) + '%'} No</span>}
+              {player.noResponseCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-tertiary)' }}>{useCount ? player.noResponseCount : Math.round((player.noResponseCount / player.totalPast) * 100) + '%'} NR</span>}
               {player.streak >= 3 && <span style={{ fontSize: 11 }}>🔥 {player.streak}</span>}
             </div>
           )}

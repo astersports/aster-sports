@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { isStaff } from '../lib/permissions';
 import { usePrograms } from '../hooks/usePrograms';
 import { useRoster } from '../hooks/useRoster';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useFilteredRoster } from '../hooks/useFilteredRoster';
 import { useAttendanceData } from '../hooks/useAttendanceData';
 import { useTeamRecords } from '../hooks/useTeamRecords';
@@ -26,7 +27,8 @@ export default function TeamDetailPage() {
   const { role, myTeamIds } = useAuth();
   const { programs, loading: teamsLoading } = usePrograms();
   const switcherPrograms = role === 'parent' ? programs.filter((p) => (myTeamIds || []).includes(p.id)) : programs;
-  const { players, loading: rosterLoading } = useRoster(teamId);
+  const { players, loading: rosterLoading, refetch: rosterRefetch } = useRoster(teamId);
+  useRefetchOnVisible(rosterRefetch);
   const { grid } = useAttendanceData(teamId);
   const { summary, loading: recordsLoading } = useTeamRecords(teamId);
   const { stats: playerStats, loading: statsLoading } = usePlayerSeasonStats(teamId);
@@ -72,7 +74,7 @@ export default function TeamDetailPage() {
       )}
 
       {!rosterLoading && players.length > 0 && <TeamHeatmap teamId={teamId} teamColor={team?.team_color} range={pulseRange} onRangeToggle={() => setPulseRange(r => r === 'season' ? '4weeks' : 'season')} />}
-      {!rosterLoading && players.length > 0 && <TeamPlayerStats players={players} stats={playerStats} loading={statsLoading} />}
+      {isStaff(role) && !rosterLoading && players.length > 0 && <TeamPlayerStats players={players} stats={playerStats} loading={statsLoading} />}
       {isStaff(role) && <MessageTeamFAB teamId={teamId} />}
     </div>
   );

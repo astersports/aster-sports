@@ -28,8 +28,8 @@ export default function SchedulePage() {
   const { orgId, myChildren, role } = useAuth();
   const { activities, loading, refetch } = useActivities();
   const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(activities);
-  const rideCounts = useEventRideCounts(activities);
-  const dutyCounts = useEventDutyCounts(activities);
+  const { counts: rideCounts } = useEventRideCounts(activities);
+  const { counts: dutyCounts } = useEventDutyCounts(activities);
   const [selectedTeam, setSelectedTeam] = useState(() => new URLSearchParams(window.location.search).get('team'));
   const [selectedType, setSelectedType] = useState(null);
   const [activeKidFilter, setActiveKidFilter] = useState(null);

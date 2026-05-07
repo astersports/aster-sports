@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 // Per-event duty counts: { [event_id]: { total, claimed } }.
@@ -6,7 +6,15 @@ import { supabase } from '../lib/supabase';
 // or guardian_id (signed-in guardian pickup) is set.
 export function useEventDutyCounts(activities) {
   const [counts, setCounts] = useState({});
+  const [version, setVersion] = useState(0);
   const lastKeyRef = useRef(null);
+
+  useEffect(() => {
+    const onFocus = () => setVersion((v) => v + 1);
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
+
   // Microtask wrap on the early-return setCounts({}) pushes it out of
   // the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => {
@@ -17,7 +25,7 @@ export function useEventDutyCounts(activities) {
       return;
     }
     const key = [...ids].sort().join(',');
-    if (lastKeyRef.current === key) return;
+    if (version === 0 && lastKeyRef.current === key) return;
     lastKeyRef.current = key;
     supabase.from('event_duties').select('event_id, claimed_by_name, guardian_id').in('event_id', ids)
       .then(({ data, error }) => {
@@ -31,6 +39,8 @@ export function useEventDutyCounts(activities) {
         });
         setCounts(map);
       });
-  }, [activities]);
-  return counts;
+  }, [activities, version]);
+
+  const refetch = useCallback(() => setVersion((v) => v + 1), []);
+  return { counts, refetch };
 }
