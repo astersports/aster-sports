@@ -13,8 +13,7 @@ import { useDensity } from '../../hooks/useDensity';
 import DensityToggle from '../home/DensityToggle';
 import TextEmptyState from '../shared/TextEmptyState';
 
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-const MAX_EVENTS = 5;
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000, MAX_EVENTS = 5;
 
 function formatRow(event) {
   const dt = new Date(event.start_at);
