@@ -2,9 +2,11 @@
 // Step 5E-2b minimal density variant. Three text rows, no card chrome.
 // Per HOME_DESIGN_SPEC.md §1.1.4 lines 252-258.
 import { useNavigate } from 'react-router-dom';
+import { MapPin } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
 import { formatEventDateMin } from '../../lib/formatters';
 import { useAuth } from '../../context/AuthContext';
+import { useMapsUrl } from '../../hooks/useMapsUrl';
 import { useNow } from '../../hooks/useNow';
 import ChildRsvp from './ChildRsvp';
 import { urgencyClass } from '../../lib/urgency';
@@ -15,6 +17,7 @@ export default function NextUpCardMin({ event, rsvpCount }) {
   const { myChildren } = useAuth();
 
   const childOnTeam = (myChildren || []).find((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
+  const directionsUrl = useMapsUrl(event.location);
   const secondsUntil = (new Date(event.start_at).getTime() - now) / 1000;
   const teamColor = event.teams?.team_color || event.team_color || 'var(--em-text-tertiary)';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
@@ -32,8 +35,24 @@ export default function NextUpCardMin({ event, rsvpCount }) {
         <div className={`sf-countdown ${urgencyClass(secondsUntil)}`.trim()} style={{ fontSize: 13, fontWeight: 600 }}>
           {whenLabel}
         </div>
-        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
-          {teamName} {typeLabel}
+        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span>{teamName} {typeLabel}</span>
+          {event.location && (
+            <>
+              <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>
+              {directionsUrl ? (
+                <a href={directionsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--em-text-secondary)', textDecoration: 'none' }}>
+                  <MapPin size={11} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+                  {event.location}
+                </a>
+              ) : (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                  <MapPin size={11} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+                  {event.location}
+                </span>
+              )}
+            </>
+          )}
         </div>
         {childOnTeam ? (
           <ChildRsvp child={childOnTeam} eventId={event.id} compact={true} />
