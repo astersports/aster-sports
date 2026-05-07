@@ -15,6 +15,7 @@ import TextEmptyState from '../components/shared/TextEmptyState';
 import Label from '../components/shared/Label';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import DensityToggle from '../components/home/DensityToggle';
+import PastEventsSection from '../components/schedule/PastEventsSection';
 import { useDensity } from '../hooks/useDensity';
 import { useGameResultsMap } from '../hooks/useGameResultsMap';
 import { useWeather } from '../hooks/useWeather';
@@ -66,7 +67,7 @@ export default function SchedulePage() {
     return filtered.filter((a) => new Date(a.start_at) >= cutoff && new Date(a.start_at) <= weekEnd);
   }, [filtered, nowMs, lookbackMs, weekEnd]);
   const nextEventId = upcoming.find((a) => new Date(a.start_at).getTime() >= nowMs)?.id || null;
-  const remaining = useMemo(() => filtered.filter((a) => new Date(a.start_at) > weekEnd), [filtered, nowMs, weekEnd]);
+  const remaining = useMemo(() => filtered.filter((a) => new Date(a.start_at) > weekEnd), [filtered, weekEnd]);
 
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
@@ -88,6 +89,7 @@ export default function SchedulePage() {
           <>
             <ChildFilterChips kids={myChildren} activeFilter={activeKidFilter} onChange={setActiveKidFilter} />
             <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={myChildren?.length >= 2} />
+            <PastEventsSection activities={filtered} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} />
             {upcoming.length === 0 ? (
               <TextEmptyState heading="No events this week" message="Check back later or tap + to create one." />
             ) : (

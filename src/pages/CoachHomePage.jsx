@@ -12,6 +12,7 @@ import { supabase } from '../lib/supabase';
 import AdminGreeting from '../components/admin/AdminGreeting';
 import SectionShell from '../components/home/SectionShell';
 import DateGroupedList from '../components/schedule/DateGroupedList';
+import PastEventsSection from '../components/schedule/PastEventsSection';
 import { useDensity } from '../hooks/useDensity';
 import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
 
@@ -58,6 +59,7 @@ export default function CoachHomePage() {
         empty={thisWeek.length === 0 ? { heading: 'All caught up', message: 'No events in the next 7 days.' } : null}
       >
         {thisWeek.length > 0 && <DateGroupedList events={thisWeek} density={density} rsvpCounts={rsvpCounts} rideCounts={rideCounts} gameResults={gameResults} weather={weather} />}
+        <PastEventsSection activities={activities} rsvpCounts={rsvpCounts} rideCounts={rideCounts} gameResults={gameResults} weather={weather} />
       </SectionShell>
 
       <SectionShell

@@ -15,6 +15,7 @@ import MyTeamsStrip from '../components/home/MyTeamsStrip';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import Label from '../components/shared/Label';
+import PastEventsSection from '../components/schedule/PastEventsSection';
 import { formatDateHeader, groupByDate } from '../lib/scheduleHelpers';
 import { detectConflicts } from '../lib/conflicts';
 import { firstNameFrom, greetingFor } from '../lib/greetings';
@@ -97,14 +98,9 @@ export default function ParentHomePage() {
 
       {myTeams.length > 0 && (
         <>
-          <MyTeamsStrip
-            teams={myTeams}
-            byTeamId={recordsByTeam}
-            loading={recordsLoading}
-            onSelect={(teamId) => navigate(`/schedule?team=${teamId}`)}
-          />
+          <MyTeamsStrip teams={myTeams} byTeamId={recordsByTeam} loading={recordsLoading} onSelect={(teamId) => navigate(`/schedule?team=${teamId}`)} />
           <button type="button" onClick={() => navigate('/records')} className="sf-press"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 16px', minHeight: 44, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 16px', minHeight: 44, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
             <span>View full season records</span>
             <span style={{ fontSize: 17, color: 'var(--em-text-tertiary)' }}>›</span>
           </button>
@@ -144,6 +140,7 @@ export default function ParentHomePage() {
         }) : (
           <TextEmptyState heading="Nothing this week" message="No upcoming events in the next 7 days." />
         )}
+        <PastEventsSection activities={activities} rsvpCounts={{}} rideCounts={{}} gameResults={{}} weather={weather} />
       </section>
     </div>
   );

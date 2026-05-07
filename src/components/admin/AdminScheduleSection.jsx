@@ -6,6 +6,7 @@ import { useGameResultsMap } from '../../hooks/useGameResultsMap';
 import { useWeather } from '../../hooks/useWeather';
 import { formatCountdown } from '../../lib/formatters';
 import DateGroupedList from '../schedule/DateGroupedList';
+import PastEventsSection from '../schedule/PastEventsSection';
 import FilterSelect from '../shared/FilterSelect';
 
 export default function AdminScheduleSection({ activities }) {
@@ -68,6 +69,7 @@ export default function AdminScheduleSection({ activities }) {
       ) : (
         <DateGroupedList events={filtered} rsvpCounts={rsvpCounts} rideCounts={rideCounts} gameResults={gameResults} weather={weather} />
       )}
+      <PastEventsSection activities={selectedTeam ? activities.filter((a) => a.team_id === selectedTeam) : activities} rsvpCounts={rsvpCounts} rideCounts={rideCounts} gameResults={gameResults} weather={weather} />
     </div>
   );
 }
