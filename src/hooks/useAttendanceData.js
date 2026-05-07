@@ -27,7 +27,7 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
       const [evtRes, plRes] = await Promise.all([
         evtQuery,
         supabase.from('roster_members').select('player_id, players(id, first_name, last_name, jersey_number)')
-          .eq('team_id', teamId).is('left_at', null),
+          .eq('team_id', teamId),
       ]);
 
       const evtIds = (evtRes.data || []).map((e) => e.id);
