@@ -4,6 +4,7 @@ import { useEventRsvpCounts } from '../../hooks/useEventRsvpCounts';
 import { useEventRideCounts } from '../../hooks/useEventRideCounts';
 import { useGameResultsMap } from '../../hooks/useGameResultsMap';
 import { useWeather } from '../../hooks/useWeather';
+import { useDensity } from '../../hooks/useDensity';
 import { formatCountdown } from '../../lib/formatters';
 import DateGroupedList from '../schedule/DateGroupedList';
 import FilterSelect from '../shared/FilterSelect';
@@ -16,6 +17,7 @@ export default function AdminScheduleSection({ activities }) {
   const now = useNow();
   const weekEnd = now + 7 * 24 * 60 * 60 * 1000;
   const [selectedTeam, setSelectedTeam] = useState(null);
+  const { density } = useDensity('admin-schedule', 'medium');
 
   const teams = useMemo(() => {
     const map = new Map();
@@ -66,7 +68,7 @@ export default function AdminScheduleSection({ activities }) {
           No events this week{selectedTeam ? ' for this team' : ''}.
         </div>
       ) : (
-        <DateGroupedList events={filtered} rsvpCounts={rsvpCounts} rideCounts={rideCounts} gameResults={gameResults} weather={weather} />
+        <DateGroupedList events={filtered} rsvpCounts={rsvpCounts} rideCounts={rideCounts} density={density} gameResults={gameResults} weather={weather} />
       )}
     </div>
   );
