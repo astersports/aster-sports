@@ -69,6 +69,10 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
                   ) : event.location_name}
                 </span>
               )}
+              {density === 'minimal' && weather && !isPast && (
+                <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{weather.icon} {weather.temp}°</span>
+              )}
+              {density === 'minimal' && rsvpCount && <RsvpCountRow rsvpCount={rsvpCount} compact={true} />}
             </div>
             {density !== 'minimal' && (
               <>
@@ -95,10 +99,12 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
               </>
             )}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0, textAlign: 'right' }}>
-            {weather && !isPast && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{weather.icon} {weather.temp}°</span>}
-            <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
-          </div>
+          {density !== 'minimal' && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0, textAlign: 'right' }}>
+              {weather && !isPast && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{weather.icon} {weather.temp}°</span>}
+              <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
+            </div>
+          )}
         </div>
         {density === 'maximum' && (
           <>
