@@ -10,9 +10,10 @@ export function useConflictCheck(step, form, excludeEventId) {
   // Microtask wrap on the early-return setConflicts([]) pushes it out of
   // the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => {
+    let cancelled = false;
     if (step !== 2 || !form.teamId || !form.date || !form.startTime || !form.endTime) {
-      Promise.resolve().then(() => setConflicts([]));
-      return;
+      Promise.resolve().then(() => { if (!cancelled) setConflicts([]); });
+      return () => { cancelled = true; };
     }
     const newStart = new Date(`${form.date}T${form.startTime}`);
     const newEnd = new Date(`${form.date}T${form.endTime}`);
@@ -23,6 +24,7 @@ export function useConflictCheck(step, form, excludeEventId) {
       .gte('start_at', `${form.date}T00:00:00`)
       .lte('start_at', `${form.date}T23:59:59`)
       .then(({ data }) => {
+        if (cancelled) return;
         setConflicts((data || []).filter((e) => {
           if (excludeEventId && e.id === excludeEventId) return false;
           const es = new Date(e.start_at);
@@ -30,6 +32,7 @@ export function useConflictCheck(step, form, excludeEventId) {
           return !(newEnd <= es || newStart >= ee);
         }));
       });
+    return () => { cancelled = true; };
   }, [step, form.teamId, form.date, form.startTime, form.endTime, excludeEventId]);
 
   return conflicts;

@@ -7,7 +7,7 @@ export function useDmThreads() {
   const [threads, setThreads] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetch = useCallback(async () => {
+  const fetch = useCallback(async (signal) => {
     if (!user || !orgId) { setLoading(false); return; }
     const { data, error } = await supabase
       .from('dm_threads').select('*')
@@ -15,6 +15,7 @@ export function useDmThreads() {
       .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
       .order('created_at', { ascending: false });
     if (error) console.error('useDmThreads:', error.message);
+    if (signal?.cancelled) return;
     const raw = data || [];
     const enriched = await Promise.all(raw.map(async (t) => {
       const otherId = t.user_a === user.id ? t.user_b : t.user_a;
@@ -31,11 +32,16 @@ export function useDmThreads() {
         lastMessage: lastMsg?.[0] || null,
       };
     }));
+    if (signal?.cancelled) return;
     setThreads(enriched);
     setLoading(false);
   }, [user, orgId]);
 
-  useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
+  useEffect(() => {
+    const signal = { cancelled: false };
+    Promise.resolve().then(() => fetch(signal));
+    return () => { signal.cancelled = true; };
+  }, [fetch]);
 
   return { threads, loading, refetch: fetch };
 }

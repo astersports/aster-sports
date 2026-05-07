@@ -27,6 +27,9 @@ export function useEventRsvpCounts(activities) {
       supabase.from('event_rsvps').select('event_id, response').in('event_id', eventIds),
       supabase.from('team_players').select('team_id').in('team_id', teamIds).eq('status', 'active'),
     ]).then(([rsvpRes, rosterRes]) => {
+      if (rsvpRes.error) { console.warn('useEventRsvpCounts (rsvps):', rsvpRes.error.message); }
+      if (rosterRes.error) { console.warn('useEventRsvpCounts (roster):', rosterRes.error.message); }
+      if (rsvpRes.error && rosterRes.error) return;
       const counts = {};
       (rsvpRes.data || []).forEach((r) => {
         if (!counts[r.event_id]) counts[r.event_id] = { going: 0, not_going: 0, maybe: 0 };

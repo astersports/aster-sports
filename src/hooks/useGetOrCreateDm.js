@@ -8,13 +8,14 @@ export function useGetOrCreateDm() {
   const getOrCreate = useCallback(async (otherUserId) => {
     if (!user || !orgId) return null;
     const [a, b] = [user.id, otherUserId].sort();
-    const { data: existing } = await supabase
+    const { data: existing, error: fetchErr } = await supabase
       .from('dm_threads')
       .select('*')
       .eq('org_id', orgId)
       .eq('user_a', a)
       .eq('user_b', b)
       .maybeSingle();
+    if (fetchErr) { console.warn('getOrCreateDm (fetch):', fetchErr.message); return null; }
     if (existing) return existing;
     const { data: created, error } = await supabase
       .from('dm_threads')
