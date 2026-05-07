@@ -10,7 +10,7 @@ import DateGroupedList from '../schedule/DateGroupedList';
 import FilterSelect from '../shared/FilterSelect';
 
 export default function AdminScheduleSection({ activities }) {
-  const rsvpCounts = useEventRsvpCounts(activities);
+  const { counts: rsvpCounts } = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
   const gameResults = useGameResultsMap(activities);
   const weather = useWeather(41.03, -73.76);

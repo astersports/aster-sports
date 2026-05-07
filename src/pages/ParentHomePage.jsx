@@ -60,7 +60,7 @@ export default function ParentHomePage() {
     return next7days.filter((e) => ids.includes(e.team_id));
   }, [next7days, activeKidFilter, myChildren]);
 
-  const rsvpCounts = useEventRsvpCounts(filteredNext7);
+  const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(filteredNext7);
   const rideCounts = useEventRideCounts(filteredNext7);
   const dutyCounts = useEventDutyCounts(filteredNext7);
   const gameResults = useGameResultsMap(filteredNext7);
@@ -103,7 +103,7 @@ export default function ParentHomePage() {
           <DensityToggle sectionKey="parent-home" />
         </div>
         {filteredNext7.length > 0 ? (
-          <DateGroupedList events={filteredNext7} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} nextEventId={nextEventId} density={density} gameResults={gameResults} weather={weather} />
+          <DateGroupedList events={filteredNext7} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} nextEventId={nextEventId} density={density} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
         ) : (
           <TextEmptyState heading="Nothing this week" message="No upcoming events in the next 7 days." />
         )}

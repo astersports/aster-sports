@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 // Given a list of activities, fetches RSVP counts per event and team
@@ -7,10 +7,9 @@ import { supabase } from '../lib/supabase';
 // noResponse is inferred from (teamSize − sum of responses).
 export function useEventRsvpCounts(activities) {
   const [summary, setSummary] = useState({});
+  const [version, setVersion] = useState(0);
   const lastKeyRef = useRef(null);
 
-  // Microtask wrap on the early-return setSummary({}) pushes it out of
-  // the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => {
     if (!activities || activities.length === 0) {
       Promise.resolve().then(() => setSummary({}));
@@ -20,7 +19,7 @@ export function useEventRsvpCounts(activities) {
     const eventIds = activities.map((a) => a.id).filter(Boolean);
     const teamIds = [...new Set(activities.map((a) => a.team_id).filter(Boolean))];
     const key = [...eventIds].sort().join(',') + '|' + [...teamIds].sort().join(',');
-    if (lastKeyRef.current === key) return;
+    if (version === 0 && lastKeyRef.current === key) return;
     lastKeyRef.current = key;
 
     Promise.all([
@@ -50,7 +49,9 @@ export function useEventRsvpCounts(activities) {
       });
       setSummary(next);
     });
-  }, [activities]);
+  }, [activities, version]);
 
-  return summary;
+  const refetch = useCallback(() => setVersion((v) => v + 1), []);
+
+  return { counts: summary, refetch };
 }

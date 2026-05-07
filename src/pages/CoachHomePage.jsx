@@ -20,7 +20,7 @@ import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
 export default function CoachHomePage() {
   const { user } = useAuth();
   const { activities, loading, error, refetch } = useActivities();
-  const rsvpCounts = useEventRsvpCounts(activities);
+  const { counts: rsvpCounts } = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
   const gameResults = useGameResultsMap(activities);
   const weather = useWeather(41.03, -73.76);

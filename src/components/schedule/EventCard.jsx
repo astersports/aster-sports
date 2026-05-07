@@ -9,7 +9,7 @@ import { useMapsUrl } from '../../hooks/useMapsUrl';
 import ChildRsvp from './ChildRsvp';
 import RsvpCountRow from './RsvpCountRow';
 
-export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'medium', gameResult, weather }) {
+export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'medium', gameResult, weather, onRsvpChange }) {
   const navigate = useNavigate();
   const { role, myChildren } = useAuth();
   const now = useNow();
@@ -115,7 +115,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
             )}
             {role === 'parent' && childrenOnTeam.length > 0 && (
               <div style={{ marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
-                {childrenOnTeam.map((child) => (<ChildRsvp key={child.playerId} child={child} eventId={event.id} compact />))}
+                {childrenOnTeam.map((child) => (<ChildRsvp key={child.playerId} child={child} eventId={event.id} compact onSave={onRsvpChange} />))}
               </div>
             )}
           </>
