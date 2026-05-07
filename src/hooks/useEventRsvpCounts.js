@@ -19,7 +19,7 @@ export function useEventRsvpCounts(activities) {
     const eventIds = activities.map((a) => a.id).filter(Boolean);
     const teamIds = [...new Set(activities.map((a) => a.team_id).filter(Boolean))];
     const key = [...eventIds].sort().join(',') + '|' + [...teamIds].sort().join(',');
-    if (version === 0 && lastKeyRef.current === key) return;
+    if (lastKeyRef.current === key) return;
     lastKeyRef.current = key;
 
     Promise.all([
@@ -52,7 +52,7 @@ export function useEventRsvpCounts(activities) {
   }, [activities, version]);
 
   useEffect(() => {
-    const onFocus = () => setVersion((v) => v + 1);
+    const onFocus = () => { lastKeyRef.current = null; setVersion((v) => v + 1); };
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, []);
