@@ -14,16 +14,18 @@ function jerseyList(events) {
   return items.length ? `Jerseys: ${items.join(', ')}.` : '';
 }
 
-export function renderSurvivalGuide(events) {
+export function renderSurvivalGuide(events, survivalText) {
   const jerseys = jerseyList(events);
   const jerseyLine = jerseys
     ? `<div style="margin-bottom:6px;"><strong style="color:#4a8fd4;">${escapeHtml(jerseys)}</strong></div>`
     : '';
+  const body = (survivalText || '').trim()
+    || 'Arrive 15 min early for every game. Pack water, snacks, and a warm layer for between games. Bring cash for concessions, entry may be cash-only at the door.';
   return '<div style="background:#ffffff;padding:14px 16px;border-top:1px solid #e8e8e8;">'
     + '<div style="font-size:11px;font-weight:bold;letter-spacing:3px;text-transform:uppercase;color:#1a1a2e;text-align:center;margin-bottom:10px;">Parent Survival Guide</div>'
     + '<div style="font-size:13px;color:#1a1a2e;line-height:1.6;">'
     + jerseyLine
-    + '<div>Arrive 15 min early for every game. Pack water, snacks, and a warm layer for between games. Bring cash for concessions, entry may be cash-only at the door.</div>'
+    + `<div>${escapeHtml(body)}</div>`
     + '</div></div>';
 }
 

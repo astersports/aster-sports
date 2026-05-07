@@ -48,6 +48,7 @@ function prefillKeys(events) {
 export function useTournamentBriefing({ event, team }) {
   const [events, setEvents] = useState(null);
   const [draftKeys, setDraftKeys] = useState('');
+  const [survivalText, setSurvivalText] = useState('');
   const [briefing, setBriefing] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -78,7 +79,7 @@ export function useTournamentBriefing({ event, team }) {
     }
   }, [event?.tournament_name, team?.id]);
 
-  const generate = useCallback((coachKeys) => {
+  const generate = useCallback((coachKeys, survival) => {
     if (!events?.length || !team?.name || !event?.tournament_name) return;
     const result = generateTournamentBriefing({
       teamName: team.name,
@@ -86,10 +87,11 @@ export function useTournamentBriefing({ event, team }) {
       dateLabel: formatDateRange(events),
       events,
       coachKeys: coachKeys ?? draftKeys,
+      survivalText: survival ?? survivalText,
       orgName: 'Legacy Hoopers',
     });
     setBriefing(result);
-  }, [events, team?.name, event?.tournament_name, draftKeys]);
+  }, [events, team?.name, event?.tournament_name, draftKeys, survivalText]);
 
-  return { events, draftKeys, setDraftKeys, briefing, loading, error, loadDraft, generate };
+  return { events, draftKeys, setDraftKeys, survivalText, setSurvivalText, briefing, loading, error, loadDraft, generate };
 }

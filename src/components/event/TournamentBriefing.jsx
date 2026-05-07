@@ -15,7 +15,7 @@ const BRIEFING_TYPES = [
 ];
 
 export default function TournamentBriefing({ event, team, onClose }) {
-  const { draftKeys, setDraftKeys, briefing, loading, error, loadDraft, generate } =
+  const { draftKeys, setDraftKeys, survivalText, setSurvivalText, briefing, loading, error, loadDraft, generate } =
     useTournamentBriefing({ event, team });
   const [copied, setCopied] = useState(null);
   const [briefingType, setBriefingType] = useState('schedule');
@@ -24,8 +24,8 @@ export default function TournamentBriefing({ event, team, onClose }) {
 
   useEffect(() => { loadDraft(); }, [loadDraft]);
   useEffect(() => {
-    if (draftKeys !== undefined && !briefing && briefingType === 'schedule') generate(draftKeys);
-  }, [draftKeys, briefing, generate, briefingType]);
+    if (draftKeys !== undefined && !briefing && briefingType === 'schedule') generate(draftKeys, survivalText);
+  }, [draftKeys, survivalText, briefing, generate, briefingType]);
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
     window.addEventListener('keydown', onKey);
@@ -33,7 +33,7 @@ export default function TournamentBriefing({ event, team, onClose }) {
   }, [onClose]);
 
   const handleRefresh = () => {
-    if (briefingType === 'schedule') generate(draftKeys);
+    if (briefingType === 'schedule') generate(draftKeys, survivalText);
     else showToast(`${BRIEFING_TYPES.find((t) => t.key === briefingType)?.label || briefingType} generator coming soon`);
   };
 
@@ -94,6 +94,14 @@ export default function TournamentBriefing({ event, team, onClose }) {
 
         {briefingType === 'schedule' && !loading && !error && (
           <>
+            <div style={{ marginBottom: 16 }}>
+              <label htmlFor="tb-survival" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)', display: 'block', marginBottom: 6 }}>
+                Parent Survival Guide
+              </label>
+              <textarea id="tb-survival" value={survivalText} onChange={(e) => setSurvivalText(e.target.value)}
+                placeholder="Arrival, parking, concessions, rules — customize for this tournament." rows={4}
+                style={{ width: '100%', minHeight: 90, padding: 12, borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'Inter, sans-serif', resize: 'vertical' }} />
+            </div>
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                 <label htmlFor="tb-keys" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)' }}>
