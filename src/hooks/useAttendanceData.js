@@ -13,13 +13,13 @@ export function useAttendanceData(teamId, filter = 'all') {
     if (!teamId) { setLoading(false); return; }
     (async () => {
       const now = new Date();
-      const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+      const seasonStart = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
       const sixEventsAhead = new Date(now.getTime() + 42 * 24 * 60 * 60 * 1000);
 
       let evtQuery = supabase.from('events').select('id, title, event_type, start_at, status')
         .eq('team_id', teamId).neq('status', 'cancelled')
-        .gte('start_at', fourWeeksAgo.toISOString()).lte('start_at', sixEventsAhead.toISOString())
-        .order('start_at', { ascending: true }).limit(20);
+        .gte('start_at', seasonStart.toISOString()).lte('start_at', sixEventsAhead.toISOString())
+        .order('start_at', { ascending: true }).limit(100);
       if (filter === 'practices') evtQuery = evtQuery.eq('event_type', 'practice');
       else if (filter === 'games') evtQuery = evtQuery.in('event_type', ['game', 'tournament']);
 

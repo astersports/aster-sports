@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/useToast';
 
-import { responseCache, cacheKey } from '../../lib/rsvpCache';
+import { cacheKey, responseCache } from '../../lib/rsvpCache';
 
 const PILLS = [
   { value: 'going',     label: 'Going',     color: 'var(--em-success)' },
@@ -11,7 +11,7 @@ const PILLS = [
   { value: 'not_going', label: 'No',        color: 'var(--em-danger)' },
 ];
 
-export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
+export default function ChildRsvp({ child, eventId, compact = false, onSave, disabled = false }) {
   const { guardianId } = useAuth();
   const { showToast } = useToast();
   const [response, setResponse] = useState(() => responseCache.get(cacheKey(eventId, child.playerId)) ?? null);
@@ -70,6 +70,7 @@ export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
 
   const handleClick = (e, value) => {
     e.stopPropagation();
+    if (disabled) return;
     if (value === response) clearRsvp();
     else save(value);
   };
@@ -92,6 +93,7 @@ export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
               backgroundColor: active ? p.color : 'transparent',
               color: active ? 'var(--em-text-inverse)' : p.color,
               fontFamily: 'inherit',
+              ...(disabled ? { opacity: 0.5, pointerEvents: 'none' } : {}),
             }}>
             {p.label}
           </button>

@@ -30,7 +30,7 @@ export default function TeamHeatmap({ teamId, teamColor }) {
         <div>
           <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Team Pulse</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: teamColor || 'var(--em-accent)' }}>{teamPct}%</div>
-          <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>attendance · last 4 weeks</div>
+          <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>attendance · season to date</div>
         </div>
         <FilterSelect
           value={filter}
