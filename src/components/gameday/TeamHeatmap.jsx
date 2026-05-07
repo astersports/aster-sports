@@ -14,9 +14,9 @@ const CELL_COLORS = {
   no_response_past: { bg: 'transparent', border: '1px dashed var(--em-border-default)' },
 };
 
-export default function TeamHeatmap({ teamId, teamColor }) {
+export default function TeamHeatmap({ teamId, teamColor, range = 'season', onRangeToggle }) {
   const [filter, setFilter] = useState('all');
-  const { grid, events, loading } = useAttendanceData(teamId, filter);
+  const { grid, events, loading } = useAttendanceData(teamId, filter, range);
 
   if (loading) return <div style={{ padding: 16 }}><LoadingSkeleton variant="card" count={1} /></div>;
 
@@ -30,7 +30,9 @@ export default function TeamHeatmap({ teamId, teamColor }) {
         <div>
           <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Team Pulse</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: teamColor || 'var(--em-accent)' }}>{teamPct}%</div>
-          <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>attendance · season to date</div>
+          <button type="button" onClick={() => onRangeToggle?.()} style={{ fontSize: 12, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+            attendance · {range === 'season' ? 'season to date' : 'last 4 weeks'} ›
+          </button>
         </div>
         <FilterSelect
           value={filter}

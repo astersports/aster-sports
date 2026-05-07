@@ -78,16 +78,21 @@ function UpcomingRow({ evt, i, total, weather, navigate, density }) {
   const { label, dateStr, timeStr, location } = formatRow(evt);
   const mapsUrl = useMapsUrl(location || null);
   const showLocation = density !== 'minimal';
+  const showWeather = density !== 'minimal';
+  const showTimeBold = density === 'maximum';
+  const pad = density === 'minimal' ? '8px 16px' : '12px 16px';
+  const minH = density === 'minimal' ? 44 : 52;
   const w = getWeatherForTime(weather, evt.start_at);
   return (
     <button type="button" className="sf-press" onClick={() => { navigator.vibrate?.(10); navigate(`/events/${evt.id}`); }}
-      style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', fontFamily: 'inherit', textAlign: 'left',
+      style={{ width: '100%', padding: pad, background: 'none', border: 'none', fontFamily: 'inherit', textAlign: 'left',
         borderBottom: i < total - 1 ? '1px solid var(--em-border-subtle)' : 'none',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 52 }}>
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: minH }}>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div className="flex items-center gap-2">
+          {showTimeBold && <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-accent)' }}>{timeStr} ·</span>}
           <span className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{label}</span>
-          {w && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{w.icon} {w.temp}°</span>}
+          {showWeather && w && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{w.icon} {w.temp}°</span>}
         </div>
         <div className="flex items-center gap-1" style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
           <span>{dateStr}</span>
