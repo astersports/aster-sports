@@ -20,7 +20,7 @@ import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
 export default function CoachHomePage() {
   const { user } = useAuth();
   const { activities, loading, error, refetch } = useActivities();
-  const { counts: rsvpCounts } = useEventRsvpCounts(activities);
+  const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
   const gameResults = useGameResultsMap(activities);
   const weather = useWeather(41.03, -73.76);
@@ -60,10 +60,10 @@ export default function CoachHomePage() {
         skeletonRows={2}
         empty={thisWeek.length === 0 ? { heading: 'All caught up', message: 'No events in the next 7 days.' } : null}
       >
-        {thisWeek.length > 0 && <DateGroupedList events={thisWeek} density={density} rsvpCounts={rsvpCounts} rideCounts={rideCounts} gameResults={gameResults} weather={weather} />}
+        {thisWeek.length > 0 && <DateGroupedList events={thisWeek} density={density} rsvpCounts={rsvpCounts} rideCounts={rideCounts} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />}
       </SectionShell>
 
-      <PastEventsSection activities={activities} rsvpCounts={rsvpCounts} rideCounts={rideCounts} gameResults={gameResults} weather={weather} />
+      <PastEventsSection activities={activities} rsvpCounts={rsvpCounts} rideCounts={rideCounts} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
 
       <SectionShell
         title="MY TEAMS"

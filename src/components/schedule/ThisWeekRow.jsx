@@ -18,7 +18,7 @@ const WARN = { ...PILL, backgroundColor: 'var(--em-warning-soft)', color: 'var(-
 const OK   = { ...PILL, backgroundColor: 'var(--em-success-soft)', color: 'var(--em-success)' };
 const NEG  = { ...PILL, backgroundColor: 'var(--em-danger-soft)',  color: 'var(--em-danger)' };
 
-export default function ThisWeekRow({ event, rideCount, dutyCount, conflictWith, weather }) {
+export default function ThisWeekRow({ event, rideCount, dutyCount, conflictWith, weather, onRsvpChange }) {
   const navigate = useNavigate();
   const now = useNow();
   const { myChildren } = useAuth();
@@ -90,7 +90,7 @@ export default function ThisWeekRow({ event, rideCount, dutyCount, conflictWith,
           </div>
         )}
         {!isCancelled && !isCompleted && childrenOnTeam.map((c) => (
-          <ChildRsvp key={c.playerId} child={c} eventId={event.id} compact={true} />
+          <ChildRsvp key={c.playerId} child={c} eventId={event.id} compact={true} onSave={onRsvpChange} />
         ))}
       </div>
     </div>

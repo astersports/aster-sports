@@ -3,7 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import { useNow } from '../../hooks/useNow';
 import DateGroupedList from './DateGroupedList';
 
-export default function PastEventsSection({ activities, rsvpCounts, rideCounts, dutyCounts, gameResults, weather }) {
+export default function PastEventsSection({ activities, rsvpCounts, rideCounts, dutyCounts, gameResults, weather, onRsvpChange }) {
   const [open, setOpen] = useState(false);
   const now = useNow();
 
@@ -32,7 +32,7 @@ export default function PastEventsSection({ activities, rsvpCounts, rideCounts, 
         </span>
         <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>({past7.length})</span>
       </button>
-      {open && <DateGroupedList events={past7} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} />}
+      {open && <DateGroupedList events={past7} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} onRsvpChange={onRsvpChange} />}
     </div>
   );
 }

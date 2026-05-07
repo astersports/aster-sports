@@ -27,7 +27,7 @@ const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActiv
 export default function SchedulePage() {
   const { orgId, myChildren, role } = useAuth();
   const { activities, loading, refetch } = useActivities();
-  const { counts: rsvpCounts } = useEventRsvpCounts(activities);
+  const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
   const dutyCounts = useEventDutyCounts(activities);
   const [selectedTeam, setSelectedTeam] = useState(() => new URLSearchParams(window.location.search).get('team'));
@@ -89,7 +89,7 @@ export default function SchedulePage() {
           <>
             <ChildFilterChips kids={myChildren} activeFilter={activeKidFilter} onChange={setActiveKidFilter} />
             <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={myChildren?.length >= 2} />
-            <PastEventsSection activities={filtered} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} />
+            <PastEventsSection activities={filtered} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
             {upcoming.length === 0 ? (
               <TextEmptyState heading="No events this week" message="Check back later or tap + to create one." />
             ) : (
@@ -98,13 +98,13 @@ export default function SchedulePage() {
                   <Label style={{ marginBottom: 0 }}>Next 7 days</Label>
                   <DensityToggle sectionKey="schedule-list" />
                 </div>
-                <DateGroupedList events={upcoming} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} nextEventId={nextEventId} density={density} gameResults={gameResults} weather={weather} />
+                <DateGroupedList events={upcoming} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} nextEventId={nextEventId} density={density} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
               </div>
             )}
             {remaining.length > 0 && (
               <div style={{ marginTop: 12 }}>
                 <Label>Later</Label>
-                <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} density={density} gameResults={gameResults} weather={weather} />
+                <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} density={density} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
               </div>
             )}
           </>
