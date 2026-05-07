@@ -107,6 +107,7 @@ export function generateTournamentBriefing({
   dateLabel,
   events,
   coachKeys = '',
+  survivalText = '',
   orgName = 'Legacy Hoopers',
 }) {
   const groups = groupByLocalDate(events);
@@ -126,7 +127,7 @@ export function generateTournamentBriefing({
     + `<div style="display:inline-block;background:#f0d050;color:#1a1a2e;font-size:12px;font-weight:bold;padding:5px 12px;border-radius:4px;border:1px solid rgba(74,143,212,0.4);">${dLabel}</div>`
     + '</div>'
     + `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">${body}</table>`
-    + renderSurvivalGuide(events)
+    + renderSurvivalGuide(events, survivalText)
     + renderCoachKeys(coachKeys)
     + '<div style="background:#f5f7fa;text-align:center;padding:12px;font-size:13px;color:#1a1a2e;font-weight:bold;">Arrive 15 minutes before tip-off</div>'
     + renderContactFooter()
