@@ -29,6 +29,9 @@ export default function AppShell({ children }) {
           You're offline — some features may not work
         </div>
       )}
+      {/* overscroll-behavior: contain kills pull-to-refresh / rubber-band
+          bounce inside main. Padding top/bottom clear the fixed Header
+          and BottomNav (both of which include their safe-area insets). */}
       <main
         className="flex-1 overflow-x-hidden overflow-y-auto"
         style={{

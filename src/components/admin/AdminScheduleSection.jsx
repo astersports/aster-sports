@@ -11,7 +11,7 @@ import FilterSelect from '../shared/FilterSelect';
 
 export default function AdminScheduleSection({ activities }) {
   const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(activities);
-  const { counts: rideCounts } = useEventRideCounts(activities);
+  const rideCounts = useEventRideCounts(activities);
   const gameResults = useGameResultsMap(activities);
   const weather = useWeather(41.03, -73.76);
   const now = useNow();
@@ -33,7 +33,7 @@ export default function AdminScheduleSection({ activities }) {
     .filter((a) => {
       if (!a.start_at || a.status === 'cancelled') return false;
       const t = new Date(a.start_at).getTime();
-      return t >= now && t <= weekEnd;
+      return t >= now - 48 * 60 * 60 * 1000 && t <= weekEnd;
     })
     .sort((a, b) => new Date(a.start_at) - new Date(b.start_at)),
     [activities, now, weekEnd]);

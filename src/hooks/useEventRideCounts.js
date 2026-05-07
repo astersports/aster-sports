@@ -1,17 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 export function useEventRideCounts(activities) {
   const [counts, setCounts] = useState({});
-  const [version, setVersion] = useState(0);
   const lastKeyRef = useRef(null);
-
-  useEffect(() => {
-    const onFocus = () => { lastKeyRef.current = null; setVersion((v) => v + 1); };
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
-  }, []);
-
   useEffect(() => {
     const ids = (activities || []).map((a) => a.id).filter(Boolean);
     if (ids.length === 0) {
@@ -49,8 +41,6 @@ export function useEventRideCounts(activities) {
     }).catch((err) => {
       console.error('useEventRideCounts network error:', err);
     });
-  }, [activities, version]);
-
-  const refetch = useCallback(() => setVersion((v) => v + 1), []);
-  return { counts, refetch };
+  }, [activities]);
+  return counts;
 }

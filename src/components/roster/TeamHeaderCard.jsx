@@ -1,5 +1,4 @@
-import { formatCountdown, formatDiff } from '../../lib/formatters';
-import { TYPE_LABELS } from '../../lib/constants';
+import { formatDiff } from '../../lib/formatters';
 import { EMPTY_SUMMARY } from '../../lib/teamRecords';
 
 const CIRCUIT_LABELS = { aau: 'AAU', league_play: 'League Play', tournament: 'Tournament' };
@@ -34,7 +33,7 @@ function Cell({ value, label }) {
 //
 // Merged from prior TeamHeaderCard + TeamRecordsSection in 3d-g.4 so
 // the records stop being a separate "buried" card below the header.
-export default function TeamHeaderCard({ team, summary, loading, nextEvent }) {
+export default function TeamHeaderCard({ team, summary, loading }) {
   const s = summary || EMPTY_SUMMARY;
   const v = (n) => (loading ? '—' : n);
   return (
@@ -64,23 +63,16 @@ export default function TeamHeaderCard({ team, summary, loading, nextEvent }) {
         <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 4 }}>
           {buildMetaLine(team, s)}
         </div>
-        {nextEvent && (
-          <div style={{ marginTop: 6, fontSize: 13, color: 'var(--em-accent)', fontWeight: 500 }}>
-            Next: {TYPE_LABELS[nextEvent.event_type] || nextEvent.event_type} {formatCountdown(nextEvent.start_at)}
-          </div>
-        )}
-        {s.gamesPlayed > 0 && (
-          <div style={{
-            marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--em-border-subtle)',
-            display: 'flex', alignItems: 'center', gap: 4,
-          }}>
-            <Cell value={v(s.ppg)} label="PPG" />
-            <Cell value={v(s.allowed)} label="Allowed" />
-            <Cell value={v(formatDiff(s.diff))} label="Diff" />
-            <Cell value={v(`${s.winPct}%`)} label="Win %" />
-            <Cell value={v(s.gamesPlayed)} label="Games" />
-          </div>
-        )}
+        <div style={{
+          marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--em-border-subtle)',
+          display: 'flex', alignItems: 'center', gap: 4,
+        }}>
+          <Cell value={v(s.ppg)} label="PPG" />
+          <Cell value={v(s.allowed)} label="Allowed" />
+          <Cell value={v(formatDiff(s.diff))} label="Diff" />
+          <Cell value={v(`${s.winPct}%`)} label="Win %" />
+          <Cell value={v(s.gamesPlayed)} label="Games" />
+        </div>
       </div>
     </div>
   );

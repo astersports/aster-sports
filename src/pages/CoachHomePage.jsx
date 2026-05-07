@@ -21,7 +21,7 @@ export default function CoachHomePage() {
   const { user } = useAuth();
   const { activities, loading, error, refetch } = useActivities();
   const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(activities);
-  const { counts: rideCounts } = useEventRideCounts(activities);
+  const rideCounts = useEventRideCounts(activities);
   const gameResults = useGameResultsMap(activities);
   const weather = useWeather(41.03, -73.76);
   const navigate = useNavigate();

@@ -37,19 +37,8 @@ export async function fetchParentContext(userId) {
     childMap.get(row.player_id).teamIds.push(row.team_id);
   }
 
-  // Enrich children with member_type from players table
-  const playerIds = [...childMap.keys()];
-  if (playerIds.length > 0) {
-    const { data: types } = await supabase.from('players').select('id, member_type').in('id', playerIds);
-    (types || []).forEach((t) => {
-      const child = childMap.get(t.id);
-      if (child) child.memberType = t.member_type;
-    });
-  }
-
   const myChildren = [...childMap.values()].map((c) => ({
     ...c,
-    memberType: c.memberType || 'roster',
     teamId: c.teamIds[0] ?? null,
   }));
 

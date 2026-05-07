@@ -1,25 +1,21 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Mail, MessageSquare, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import InviteButton from './InviteButton';
 
 const NOW = Date.now();
-const PILL = { fontSize: 11, fontWeight: 500, padding: '1px 5px', borderRadius: 4, lineHeight: '16px' };
 
-export default function PlayerRow({ player, teamColor, isLast, isMyChild, teamId }) {
-  const navigate = useNavigate();
-  const [expanded, setExpanded] = useState(isMyChild);
+export default function PlayerRow({ player, teamColor, isLast }) {
+  const [expanded, setExpanded] = useState(false);
   const { role } = useAuth();
   const initial = (player.last_name || player.first_name || '?').charAt(0).toUpperCase();
   const isAcademy = player.member_type === 'futures_academy';
   const guardians = player.guardians || [];
   const age = useMemo(() => player.dob ? Math.floor((NOW - new Date(player.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null, [player.dob]);
-  const showRsvp = player.totalPast > 0 && (role !== 'parent' || isMyChild);
-  const useCount = player.totalPast < 5;
+  const pct = player.attendance_pct;
 
   return (
-    <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--em-border-subtle)', borderLeft: isMyChild ? '3px solid var(--em-accent)' : 'none', backgroundColor: isMyChild ? 'var(--em-accent-soft)' : undefined }}>
+    <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--em-border-subtle)' }}>
       <div
         role="button" tabIndex={0} aria-expanded={expanded}
         className="flex items-center sf-press"
@@ -53,13 +49,12 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild, teamId
             {role === 'admin' && player.grade && <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{ordinalGrade(player.grade)}</span>}
             {role === 'admin' && age != null && <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{age}y</span>}
           </div>
-          {showRsvp && (
-            <div className="flex items-center gap-1" style={{ marginTop: 3, flexWrap: 'wrap' }}>
-              {player.goingCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-success-soft)', color: 'var(--em-success)' }}>{useCount ? player.goingCount : Math.round((player.goingCount / player.totalPast) * 100) + '%'} Going</span>}
-              {player.maybeCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-warning-soft)', color: 'var(--em-warning)' }}>{useCount ? player.maybeCount : Math.round((player.maybeCount / player.totalPast) * 100) + '%'} Maybe</span>}
-              {player.declinedCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-neutral-soft)', color: 'var(--em-text-secondary)' }}>{useCount ? player.declinedCount : Math.round((player.declinedCount / player.totalPast) * 100) + '%'} No</span>}
-              {player.noResponseCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-tertiary)' }}>{useCount ? player.noResponseCount : Math.round((player.noResponseCount / player.totalPast) * 100) + '%'} NR</span>}
-              {player.streak >= 3 && <span style={{ fontSize: 11 }}>🔥 {player.streak}</span>}
+          {pct != null && (
+            <div className="flex items-center gap-1" style={{ marginTop: 3 }}>
+              <div style={{ width: 40, height: 3, borderRadius: 999, backgroundColor: 'var(--em-bg-tertiary)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct >= 80 ? 'var(--em-success)' : 'var(--em-warning)', borderRadius: 999 }} />
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{pct}%</span>
             </div>
           )}
         </div>
@@ -78,12 +73,6 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild, teamId
           {guardians.length === 0
             ? <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', fontStyle: 'italic' }}>No guardians linked</div>
             : guardians.map((g) => <GuardianRow key={g.id} guardian={g} role={role} />)}
-          {teamId && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/teams/${teamId}/player/${player.id}`); }}
-              className="sf-press" style={{ minHeight: 44, width: '100%', marginTop: 4, borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 13, fontWeight: 500 }}>
-              View player profile →
-            </button>
-          )}
         </div>
       )}
     </div>

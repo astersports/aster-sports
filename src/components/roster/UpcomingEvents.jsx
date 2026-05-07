@@ -1,19 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { isStaff } from '../../lib/permissions';
-import { supabase } from '../../lib/supabase';
 import { useActivities } from '../../hooks/useActivities';
-import { useEventRsvpCounts } from '../../hooks/useEventRsvpCounts';
 import { useNow } from '../../hooks/useNow';
 import { getWeatherForTime, useWeather } from '../../hooks/useWeather';
 import { useMapsUrl } from '../../hooks/useMapsUrl';
-import { useDensity } from '../../hooks/useDensity';
-import DensityToggle from '../home/DensityToggle';
 import TextEmptyState from '../shared/TextEmptyState';
 
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000, MAX_EVENTS = 5;
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_EVENTS = 5;
+
 function formatRow(event) {
   const dt = new Date(event.start_at);
   const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
@@ -29,9 +25,6 @@ export default function UpcomingEvents({ teamId }) {
   const navigate = useNavigate();
   const now = useNow();
   const weather = useWeather(41.03, -73.76);
-  const { density } = useDensity('team-upcoming', 'medium');
-  const { role, myChildren } = useAuth();
-  const staff = isStaff(role);
 
   const upcoming = useMemo(() => {
     if (!teamId) return [];
@@ -47,34 +40,12 @@ export default function UpcomingEvents({ teamId }) {
       .slice(0, MAX_EVENTS);
   }, [activities, teamId, now]);
 
-  // Staff: going/total counts via shared hook
-  const { counts } = useEventRsvpCounts(staff ? upcoming : []);
-
-  // Parent: child RSVP responses for these events
-  const [childRsvps, setChildRsvps] = useState({});
-  const childIds = useMemo(() => (myChildren || []).map((c) => c.playerId).filter(Boolean), [myChildren]);
-  const eventIdKey = useMemo(() => upcoming.map((e) => e.id).sort().join(','), [upcoming]);
-  useEffect(() => {
-    if (staff || !childIds.length || !upcoming.length) return;
-    const eIds = upcoming.map((e) => e.id);
-    supabase.from('event_rsvps').select('event_id, player_id, response')
-      .in('event_id', eIds).in('player_id', childIds)
-      .then(({ data }) => {
-        const map = {};
-        (data || []).forEach((r) => { map[`${r.event_id}_${r.player_id}`] = r.response; });
-        setChildRsvps(map);
-      });
-  }, [eventIdKey, childIds.join(','), staff]); // eslint-disable-line react-hooks/exhaustive-deps
-
   return (
     <div style={{ marginTop: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <div style={{
-          fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-          textTransform: 'uppercase', color: 'var(--em-text-tertiary)',
-        }}>UPCOMING (NEXT 7 DAYS)</div>
-        <DensityToggle sectionKey="team-upcoming" />
-      </div>
+      <div style={{
+        fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
+        textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8,
+      }}>UPCOMING (NEXT 7 DAYS)</div>
       {upcoming.length === 0 ? (
         <TextEmptyState heading="Nothing this week" message="No events scheduled in the next 7 days." />
       ) : (
@@ -83,8 +54,7 @@ export default function UpcomingEvents({ teamId }) {
           border: '1px solid var(--em-border-default)', boxShadow: 'var(--em-shadow-sm)', overflow: 'hidden',
         }}>
           {upcoming.map((evt, i) => (
-            <UpcomingRow key={evt.id} evt={evt} i={i} total={upcoming.length} weather={weather} navigate={navigate} density={density}
-              rsvpCount={staff ? counts[evt.id] : null} childRsvps={!staff ? childRsvps : null} childIds={childIds} />
+            <UpcomingRow key={evt.id} evt={evt} i={i} total={upcoming.length} weather={weather} navigate={navigate} />
           ))}
         </div>
       )}
@@ -97,38 +67,24 @@ export default function UpcomingEvents({ teamId }) {
     </div>
   );
 }
-const RSVP_DOT_COLORS = { going: 'var(--em-success)', maybe: 'var(--em-warning)', not_going: 'var(--em-danger)' };
 
-function UpcomingRow({ evt, i, total, weather, navigate, density, rsvpCount, childRsvps, childIds }) {
+function UpcomingRow({ evt, i, total, weather, navigate }) {
   const { label, dateStr, timeStr, location } = formatRow(evt);
   const mapsUrl = useMapsUrl(location || null);
-  const showLocation = density !== 'minimal';
-  const showWeather = density !== 'minimal';
-  const showTimeBold = density === 'maximum';
-  const pad = density === 'minimal' ? '8px 16px' : '12px 16px';
-  const minH = density === 'minimal' ? 44 : 52;
   const w = getWeatherForTime(weather, evt.start_at);
-  // Parent: first child's RSVP status for this event
-  const childStatus = childRsvps && childIds?.length
-    ? childIds.reduce((found, pid) => found || childRsvps[`${evt.id}_${pid}`], null)
-    : null;
   return (
-    <div role="button" tabIndex={0} className="sf-press"
-      onClick={(e) => { if (e.target.closest('button')) return; navigator.vibrate?.(10); navigate(`/events/${evt.id}`); }}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/events/${evt.id}`); } }}
-      style={{ width: '100%', padding: pad, background: 'none', border: 'none', fontFamily: 'inherit', textAlign: 'left',
+    <button type="button" className="sf-press" onClick={() => { navigator.vibrate?.(10); navigate(`/events/${evt.id}`); }}
+      style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', fontFamily: 'inherit', textAlign: 'left',
         borderBottom: i < total - 1 ? '1px solid var(--em-border-subtle)' : 'none',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: minH, cursor: 'pointer' }}>
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 52 }}>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div className="flex items-center gap-2">
-          {showTimeBold && <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-accent)' }}>{timeStr} ·</span>}
           <span className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{label}</span>
-          {showWeather && w && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{w.icon} {w.temp}°</span>}
-          {childStatus && <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: RSVP_DOT_COLORS[childStatus] || 'var(--em-neutral)', display: 'inline-block', flexShrink: 0 }} aria-label={`RSVP: ${childStatus}`} />}
+          {w && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{w.icon} {w.temp}°</span>}
         </div>
         <div className="flex items-center gap-1" style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
           <span>{dateStr}</span>
-          {showLocation && location && (
+          {location && (
             <>
               <span>·</span>
               {mapsUrl ? (
@@ -141,10 +97,7 @@ function UpcomingRow({ evt, i, total, weather, navigate, density, rsvpCount, chi
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2" style={{ marginLeft: 12, flexShrink: 0 }}>
-        {rsvpCount && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-success)' }}>{rsvpCount.going}/{rsvpCount.total}</span>}
-        {!showTimeBold && <span className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{timeStr}</span>}
-      </div>
-    </div>
+      <span className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginLeft: 12, flexShrink: 0 }}>{timeStr}</span>
+    </button>
   );
 }

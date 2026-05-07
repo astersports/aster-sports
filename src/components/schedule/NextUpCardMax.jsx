@@ -109,7 +109,7 @@ export default function NextUpCardMax({ event, rsvpCount, rideCount, dutyCount, 
       </div>
       {role === 'parent' && childrenOnTeam.length > 0 ? (
         <div style={{ padding: '0 16px 16px' }}>
-          {childrenOnTeam.map((c) => <ChildRsvp key={c.playerId} child={c} eventId={event.id} eventType={event.event_type} />)}
+          {childrenOnTeam.map((c) => <ChildRsvp key={c.playerId} child={c} eventId={event.id} />)}
         </div>
       ) : (
         <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8 }}>

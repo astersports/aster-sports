@@ -2,7 +2,6 @@
 // to the Teams list. Renders one pill per team in the active season,
 // styled with the team's color. Active team is filled; others outlined.
 export default function TeamSwitcher({ programs, teamId, navigate }) {
-  if (programs.length <= 1) return null;
   return (
     <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ marginBottom: 8, paddingBottom: 4 }}>
       {programs.map((p) => (

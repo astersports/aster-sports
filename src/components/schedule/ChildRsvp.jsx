@@ -11,23 +11,10 @@ const PILLS = [
   { value: 'not_going', label: 'No',        color: 'var(--em-danger)' },
 ];
 
-export default function ChildRsvp({ child, eventId, eventType, compact = false, onSave, disabled = false }) {
+export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
   const { guardianId } = useAuth();
   const { showToast } = useToast();
   const [response, setResponse] = useState(() => responseCache.get(cacheKey(eventId, child.playerId)) ?? null);
-  const needsActivation = child.memberType === 'futures_academy' && (eventType === 'game' || eventType === 'tournament');
-  const [isActivated, setIsActivated] = useState(!needsActivation);
-
-  // Academy players only see RSVP for games/tournaments if activated
-  useEffect(() => {
-    if (child.memberType !== 'futures_academy') return;
-    if (!eventType || (eventType !== 'game' && eventType !== 'tournament')) return;
-    let cancelled = false;
-    supabase.from('player_activations').select('player_id')
-      .eq('event_id', eventId).eq('player_id', child.playerId).maybeSingle()
-      .then(({ data }) => { if (!cancelled) setIsActivated(!!data); });
-    return () => { cancelled = true; };
-  }, [eventId, child.playerId, child.memberType, eventType]);
 
   const fetchRsvp = useCallback(async () => {
     const { data, error } = await supabase.from('event_rsvps').select('response')
@@ -42,6 +29,9 @@ export default function ChildRsvp({ child, eventId, eventType, compact = false, 
   // setResponse out of the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => {
     Promise.resolve().then(fetchRsvp);
+    const handler = () => fetchRsvp();
+    window.addEventListener('focus', handler);
+    return () => window.removeEventListener('focus', handler);
   }, [fetchRsvp]);
 
   const save = async (value) => {
@@ -80,22 +70,12 @@ export default function ChildRsvp({ child, eventId, eventType, compact = false, 
 
   const handleClick = (e, value) => {
     e.stopPropagation();
-    if (disabled) return;
     if (value === response) clearRsvp();
     else save(value);
   };
 
   const minH = compact ? 32 : 44;
   const pillSize = compact ? 12 : 13;
-
-  if (!isActivated) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: compact ? 4 : 8 }}>
-        <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--em-text-primary)', marginRight: 'auto' }}>{child.firstName}</span>
-        <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 4, backgroundColor: 'var(--em-academy-soft)', color: 'var(--em-academy)' }}>Academy · Not activated</span>
-      </div>
-    );
-  }
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: compact ? 4 : 8 }}>
@@ -112,7 +92,6 @@ export default function ChildRsvp({ child, eventId, eventType, compact = false, 
               backgroundColor: active ? p.color : 'transparent',
               color: active ? 'var(--em-text-inverse)' : p.color,
               fontFamily: 'inherit',
-              ...(disabled ? { opacity: 0.5, pointerEvents: 'none' } : {}),
             }}>
             {p.label}
           </button>
