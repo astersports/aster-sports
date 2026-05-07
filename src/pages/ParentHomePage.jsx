@@ -104,7 +104,7 @@ export default function ParentHomePage() {
             onSelect={(teamId) => navigate(`/schedule?team=${teamId}`)}
           />
           <button type="button" onClick={() => navigate('/records')} className="sf-press"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px 16px', minHeight: 56, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 16px', minHeight: 44, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
             <span>View full season records</span>
             <span style={{ fontSize: 17, color: 'var(--em-text-tertiary)' }}>›</span>
           </button>

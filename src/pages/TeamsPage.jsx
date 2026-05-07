@@ -24,11 +24,8 @@ export default function TeamsPage() {
     <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <div style={{ marginBottom: 4 }}>
         <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20, letterSpacing: '-0.025em' }}>
-          Teams
+          Teams <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--em-text-tertiary)' }}>{activeSeason?.name || ''} · {visiblePrograms.length}</span>
         </h1>
-        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
-          {activeSeason?.name || 'No active season'} · {visiblePrograms.length} teams
-        </div>
         <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: 'var(--em-accent)', marginTop: 6 }} />
       </div>
 

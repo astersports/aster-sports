@@ -46,7 +46,7 @@ export default function TeamHeaderCard({ team, summary, loading }) {
       marginBottom: 16,
     }}>
       <div style={{ height: 6, backgroundColor: team.team_color || 'var(--em-neutral)' }} />
-      <div style={{ padding: 16 }}>
+      <div style={{ padding: 12 }}>
         <div className="flex items-center justify-between">
           <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20, letterSpacing: '-0.025em' }}>
             {team.name}
@@ -64,7 +64,7 @@ export default function TeamHeaderCard({ team, summary, loading }) {
           {buildMetaLine(team, s)}
         </div>
         <div style={{
-          marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--em-border-subtle)',
+          marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--em-border-subtle)',
           display: 'flex', alignItems: 'center', gap: 4,
         }}>
           <Cell value={v(s.ppg)} label="PPG" />

@@ -100,7 +100,7 @@ export default function SchedulePage() {
               </div>
             )}
             {remaining.length > 0 && (
-              <div style={{ marginTop: 16 }}>
+              <div style={{ marginTop: 12 }}>
                 <Label>Later</Label>
                 <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} density={density} gameResults={gameResults} weather={weather} />
               </div>

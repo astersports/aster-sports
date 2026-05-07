@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, MapPin, Edit2, Trophy } from 'lucide-react';
+import { Calendar, Edit2, MapPin, Trophy } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import TournamentFormSheet from './TournamentFormSheet';
 
@@ -22,8 +22,8 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
   const dateRange = formatRange(tournament.start_date, tournament.end_date);
 
   return (
-    <div style={{ padding: '8px 16px 16px', borderBottom: '1px solid var(--em-border-default)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+    <div style={{ padding: '6px 16px 12px', borderBottom: '1px solid var(--em-border-default)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <Trophy size={14} strokeWidth={1.75} color="var(--em-text-tertiary)" />
@@ -40,7 +40,7 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
         <StatusBadge status={tournament.status} />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--em-text-secondary)' }}>
           <Calendar size={13} strokeWidth={1.75} />
           <span>{dateRange}</span>

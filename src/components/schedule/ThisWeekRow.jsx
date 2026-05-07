@@ -4,9 +4,9 @@
 // event, and inline RSVP for each child on this team. Pills fast-path tap
 // to /events/{id}?tab={rides|duties}; row body taps to event detail.
 import { useNavigate } from 'react-router-dom';
-import { Car, Users, MapPin } from 'lucide-react';
+import { Car, MapPin, Users } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
-import { formatTime, formatCountdown } from '../../lib/formatters';
+import { formatCountdown, formatTime } from '../../lib/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { useNow } from '../../hooks/useNow';
 import { urgencyClass } from '../../lib/urgency';
@@ -57,7 +57,7 @@ export default function ThisWeekRow({ event, rideCount, dutyCount, conflictWith,
     <div onClick={onRowClick} role="link" tabIndex={0}
       aria-label={`${teamName} ${typeLabel}, ${timeText}`}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRowClick(e); } }}
-      style={{ display: 'flex', minHeight: 56, backgroundColor: 'var(--em-bg-card)', borderRadius: 8, border: '1px solid var(--em-border-default)', overflow: 'hidden', cursor: 'pointer', opacity, transition: 'box-shadow 150ms ease-out, opacity 150ms ease-out' }}>
+      style={{ display: 'flex', minHeight: 44, backgroundColor: 'var(--em-bg-card)', borderRadius: 8, border: '1px solid var(--em-border-default)', overflow: 'hidden', cursor: 'pointer', opacity, transition: 'box-shadow 150ms ease-out, opacity 150ms ease-out' }}>
       <div style={{ width: 4, alignSelf: 'stretch', flexShrink: 0, backgroundColor: teamColor }} />
       <div style={{ flex: 1, padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>

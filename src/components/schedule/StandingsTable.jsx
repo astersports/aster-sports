@@ -2,7 +2,7 @@ import { EMPTY_SUMMARY } from '../../lib/teamRecords';
 import Label from '../shared/Label';
 
 const thStyle = { padding: '6px 4px', fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', color: 'var(--em-text-tertiary)' };
-const tdStyle = { padding: '10px 4px', fontSize: 13, color: 'var(--em-text-secondary)' };
+const tdStyle = { padding: '8px 4px', fontSize: 13, color: 'var(--em-text-secondary)' };
 
 export default function StandingsTable({ teams, recordsByTeamId, totalGames }) {
   const rows = teams
@@ -24,7 +24,7 @@ export default function StandingsTable({ teams, recordsByTeamId, totalGames }) {
       overflow: 'hidden',
       marginBottom: 16,
     }}>
-      <div style={{ padding: '12px 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+      <div style={{ padding: '8px 16px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <Label style={{ marginBottom: 0 }}>STANDINGS</Label>
         {totalGames > 0 && (
           <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>
@@ -73,7 +73,7 @@ export default function StandingsTable({ teams, recordsByTeamId, totalGames }) {
           })}
         </tbody>
       </table>
-      <div style={{ padding: '6px 16px 10px', fontSize: 11, color: 'var(--em-text-tertiary)' }}>
+      <div style={{ padding: '4px 16px 6px', fontSize: 11, color: 'var(--em-text-tertiary)' }}>
         W = Wins · L = Losses · T = Ties · PF = Points For · PA = Points Against · PCT = Win %
       </div>
     </div>

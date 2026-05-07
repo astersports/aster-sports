@@ -5,7 +5,7 @@
 export default function EmptyState({ icon: Icon, title, description, action }) {
   return (
     <div
-      className="flex flex-col items-center justify-center text-center px-6 py-12"
+      className="flex flex-col items-center justify-center text-center px-6 py-8"
       style={{ color: 'var(--em-text-secondary)' }}
     >
       {Icon && (

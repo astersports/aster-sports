@@ -13,7 +13,7 @@ export default function ParentHomeTeamCard({ team, summary, loading, onClick }) 
   return (
     <button type="button" onClick={onClick} className="sf-press"
       style={{
-        flexShrink: 0, minWidth: 140, minHeight: 80, borderRadius: 10, overflow: 'hidden',
+        flexShrink: 0, minWidth: 140, minHeight: 72, borderRadius: 10, overflow: 'hidden',
         border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
         boxShadow: 'var(--em-shadow-sm)', display: 'flex', alignItems: 'stretch', textAlign: 'left',
       }}

@@ -51,7 +51,7 @@ export default function NotificationHistory({ orgId }) {
 
   if (notifications.length === 0) {
     return (
-      <div style={{ padding: 20, textAlign: 'center', backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)' }}>
+      <div style={{ padding: 16, textAlign: 'center', backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)' }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 4 }}>No notifications sent yet</div>
         <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.5 }}>
           Event reminders, RSVP nudges, and schedule change alerts will appear here once the notification engine is configured.

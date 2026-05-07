@@ -46,7 +46,7 @@ export default function TeamDetailPage() {
 
   return (
     <div className="sf-fade-in overflow-x-hidden" style={{ padding: 16, minHeight: '100%', background: team?.team_color ? `linear-gradient(180deg, ${team.team_color}08 0%, transparent 200px)` : undefined }}>
-      <button type="button" onClick={() => navigate('/teams')} className="flex items-center sf-press mb-3" style={{ minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
+      <button type="button" onClick={() => navigate('/teams')} className="flex items-center sf-press mb-2" style={{ minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
         <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
       </button>
       <TeamSwitcher programs={switcherPrograms} teamId={teamId} navigate={navigate} />

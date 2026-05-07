@@ -10,7 +10,7 @@ export default function MyTeamsStrip({ teams, byTeamId, loading, onSelect }) {
   return (
     <section>
       <Label>MY TEAMS</Label>
-      <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 6 }}>
+      <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ paddingBottom: 4 }}>
         {teams.map((t) => (
           <ParentHomeTeamCard
             key={t.id}
