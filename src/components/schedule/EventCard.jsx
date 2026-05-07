@@ -65,7 +65,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, color: 'var(--em-text-tertiary)' }}>
                   · <MapPin size={11} strokeWidth={1.75} />
                   {mapsUrl ? (
-                    <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: 'var(--em-text-secondary)', textDecoration: 'none' }}>{event.location_name}</a>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }} style={{ color: 'var(--em-text-secondary)', textDecoration: 'none', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}>{event.location_name}</button>
                   ) : event.location_name}
                 </span>
               )}
