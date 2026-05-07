@@ -24,7 +24,7 @@ export default function GamesTab({ tournament }) {
       const ids = evts.map((e) => e.id);
       if (ids.length) {
         const { data: gr } = await supabase.from('game_results')
-          .select('event_id, result, our_score, opponent_score, published_at')
+          .select('event_id, result, our_score, opponent_score, published_at, quarter_scores, coach_highlight')
           .in('event_id', ids).not('published_at', 'is', null);
         if (!cancelled) {
           const map = {};
@@ -67,8 +67,11 @@ export default function GamesTab({ tournament }) {
                   <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2 }}>{e.home_away === 'away' ? '@ ' : 'vs. '}{e.opponent || e.title || 'TBD'}</div>
                 </div>
                 {r && (
-                  <div style={{ fontSize: 15, fontWeight: 700, color: r.result === 'W' ? 'var(--em-success)' : r.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
-                    {r.result} {r.our_score}-{r.opponent_score}
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: r.result === 'W' ? 'var(--em-success)' : r.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
+                      {r.result} {r.our_score}-{r.opponent_score}
+                    </div>
+                    {r.coach_highlight && <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 2, maxWidth: 140 }}>{r.coach_highlight}</div>}
                   </div>
                 )}
               </button>

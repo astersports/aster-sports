@@ -41,7 +41,8 @@ export function useTournaments({ teamId, statusFilter = 'all', seasonFilter = 'a
         .order('start_date', { ascending: false })
         .range(offsetRef.current, offsetRef.current + limit - 1);
 
-      if (statusFilter !== 'all') query = query.eq('status', statusFilter);
+      if (statusFilter === 'upcoming') query = query.in('status', ['planned', 'scheduled']);
+      else if (statusFilter !== 'all') query = query.eq('status', statusFilter);
 
       if (seasonFilter === 'active') {
         const { data: season } = await supabase

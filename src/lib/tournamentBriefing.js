@@ -1,4 +1,4 @@
-import { renderSurvivalGuide, renderCoachKeys, renderContactFooter } from './tournamentBriefingSections';
+import { renderCoachKeys, renderContactFooter, renderSurvivalGuide } from './tournamentBriefingSections';
 
 const NY_TZ = 'America/New_York';
 
@@ -67,8 +67,8 @@ function renderDay(dayEvents, teamName) {
   const dayLabel = escapeHtml(
     dayLabelFmt.format(new Date(dayEvents[0].start_at)).toUpperCase()
   );
-  const regulars = dayEvents.filter((e) => !e.is_bracket);
-  const brackets = dayEvents.filter((e) => e.is_bracket);
+  const regulars = dayEvents.filter((e) => e.event_type !== 'bracket');
+  const brackets = dayEvents.filter((e) => e.event_type === 'bracket');
   let rows = '';
   regulars.forEach((ev, i) => {
     const cell = `<span style="color:#4a8fd4;font-size:20px;font-weight:bold;">${i + 1}</span>`;

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { generateTournamentBriefing } from '../lib/tournamentBriefing';
 
@@ -62,7 +62,7 @@ export function useTournamentBriefing({ event, team }) {
     try {
       const { data, error: err } = await supabase
         .from('events')
-        .select('id, start_at, end_at, event_type, opponent, home_away, location, sub_location, coach_notes, jersey, arrival_minutes_before, is_bracket, tournament_name')
+        .select('id, start_at, end_at, event_type, opponent, home_away, location, sub_location, coach_notes, jersey, arrival_minutes_before, tournament_name')
         .eq('team_id', team.id)
         .eq('tournament_name', event.tournament_name)
         .order('start_at', { ascending: true });
