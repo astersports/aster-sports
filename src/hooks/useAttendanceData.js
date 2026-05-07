@@ -65,8 +65,7 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
         const isPast = new Date(e.start_at).getTime() < now;
         let state = 'no_response';
         if (isPast) {
-          if (arrival === 'arrived' || checkedIn) { state = 'attended'; attended++; expected++; }
-          else if (rsvp === 'going') { state = 'no_show'; expected++; }
+          if (arrival === 'arrived' || checkedIn || rsvp === 'going') { state = 'attended'; attended++; expected++; }
           else if (rsvp === 'not_going') state = 'declined';
           else { state = 'no_response_past'; expected++; }
         } else {
