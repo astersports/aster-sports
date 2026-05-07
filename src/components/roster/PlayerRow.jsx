@@ -52,10 +52,10 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
           </div>
           {showRsvp && (
             <div className="flex items-center gap-1" style={{ marginTop: 3, flexWrap: 'wrap' }}>
-              {player.goingCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-success-soft)', color: 'var(--em-success)' }}>{player.goingCount} Going</span>}
-              {player.maybeCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-warning-soft)', color: 'var(--em-warning)' }}>{player.maybeCount} Maybe</span>}
-              {player.declinedCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-neutral-soft)', color: 'var(--em-text-secondary)' }}>{player.declinedCount} No</span>}
-              {player.noResponseCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-tertiary)' }}>{player.noResponseCount} NR</span>}
+              {player.goingCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-success-soft)', color: 'var(--em-success)' }}>{Math.round((player.goingCount / player.totalPast) * 100)}% Going</span>}
+              {player.maybeCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-warning-soft)', color: 'var(--em-warning)' }}>{Math.round((player.maybeCount / player.totalPast) * 100)}% Maybe</span>}
+              {player.declinedCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-neutral-soft)', color: 'var(--em-text-secondary)' }}>{Math.round((player.declinedCount / player.totalPast) * 100)}% No</span>}
+              {player.noResponseCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-tertiary)' }}>{Math.round((player.noResponseCount / player.totalPast) * 100)}% NR</span>}
               {player.streak >= 3 && <span style={{ fontSize: 11 }}>🔥 {player.streak}</span>}
             </div>
           )}
