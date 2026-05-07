@@ -10,7 +10,7 @@ import GamesTab from '../components/tournament/tabs/GamesTab';
 import RosterTab from '../components/tournament/tabs/RosterTab';
 import MessagesTab from '../components/tournament/tabs/MessagesTab';
 import ScenariosTab from '../components/tournament/tabs/ScenariosTab';
-import Chip from '../components/shared/Chip';
+import FilterSelect from '../components/shared/FilterSelect';
 
 export default function TournamentDetailPage() {
   const { id } = useParams();
@@ -52,11 +52,13 @@ export default function TournamentDetailPage() {
       <TournamentHeader tournament={tournament} isStaff={isStaff} onChange={refetch} />
 
       {teams.length > 1 && (
-        <div style={{ padding: '8px 16px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          <Chip label="All Teams" active={teamFilter === null} onClick={() => setTeamFilter(null)} />
-          {teams.map((t) => (
-            <Chip key={t.id} label={t.name} color={t.team_color} active={teamFilter === t.id} onClick={() => setTeamFilter(teamFilter === t.id ? null : t.id)} />
-          ))}
+        <div style={{ padding: '8px 16px' }}>
+          <FilterSelect
+            value={teamFilter}
+            onChange={setTeamFilter}
+            options={[{ value: null, label: 'All Teams' }, ...teams.map((t) => ({ value: t.id, label: t.name, color: t.team_color }))]}
+            ariaLabel="Filter by team"
+          />
         </div>
       )}
 
