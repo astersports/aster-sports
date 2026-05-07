@@ -10,6 +10,7 @@ export const EMPTY_FORM = {
   title: '', opponent: '', tournamentName: '', homeAway: 'tbd', jersey: '',
   notes: '', coachNotes: '',
   indoor: true, enableRides: false, isScrimmage: false,
+  tournamentId: null, isBracketGame: false, isChampionshipFinal: false, isBonusGame: false,
   recurrence: { pattern: 'once', until: null },
   duties: [],
 };
@@ -43,6 +44,10 @@ export function eventToForm(event) {
     indoor: event.indoor ?? true,
     enableRides: event.enable_rides || false,
     isScrimmage: event.is_scrimmage || false,
+    tournamentId: event.tournament_id || null,
+    isBracketGame: event.is_bracket_game || false,
+    isChampionshipFinal: event.is_championship_final || false,
+    isBonusGame: event.is_bonus_game || false,
     recurrence: { pattern: 'once', until: null },
     duties: [],
   };

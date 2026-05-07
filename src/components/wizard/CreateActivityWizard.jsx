@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/useToast';
@@ -110,7 +110,7 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
         {step === 0 && <StepType value={form.eventType} onSelect={selectType} />}
         {step === 1 && <StepTeam orgId={orgId} value={form.teamId} onSelect={selectTeam} />}
         {step === 2 && <StepWhen data={form} onChange={setForm} isEdit={isEdit} orgId={orgId} />}
-        {step === 3 && <StepDetails eventType={form.eventType} data={form} onChange={setForm} />}
+        {step === 3 && <StepDetails eventType={form.eventType} data={form} onChange={setForm} orgId={orgId} />}
       </div>
 
       {step === 2 && conflicts.length > 0 && (

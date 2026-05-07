@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { reconcileSeries, convertToSeries } from './seriesReconcile';
+import { convertToSeries, reconcileSeries } from './seriesReconcile';
 import { buildTitle } from '../lib/constants';
 
 export function useUpdateActivity() {
@@ -28,6 +28,10 @@ export function useUpdateActivity() {
       is_scrimmage: formData.isScrimmage || false,
       notes: formData.notes || null,
       tournament_name: formData.tournamentName || null,
+      tournament_id: formData.tournamentId || null,
+      is_bracket_game: formData.isBracketGame || false,
+      is_championship_final: formData.isChampionshipFinal || false,
+      is_bonus_game: formData.isBonusGame || false,
       coach_notes: formData.coachNotes || null,
       jersey: formData.jersey || null,
       indoor: formData.indoor ?? true,

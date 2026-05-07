@@ -1,9 +1,17 @@
+import { useEffect, useState } from 'react';
 import DutyEditor from './DutyEditor';
 import { HOME_AWAY } from '../../lib/constants';
+import { supabase } from '../../lib/supabase';
 import Input from '../shared/Input';
 
-export default function StepDetails({ eventType, data, onChange }) {
+export default function StepDetails({ eventType, data, onChange, orgId }) {
   const set = (key, val) => onChange({ ...data, [key]: val });
+  const [tournaments, setTournaments] = useState([]);
+  useEffect(() => {
+    if (!orgId) return;
+    supabase.from('tournaments').select('id, name').eq('org_id', orgId).in('status', ['planned', 'scheduled', 'in_progress']).order('start_date')
+      .then(({ data: t }) => setTournaments(t || []));
+  }, [orgId]);
   const setHomeAway = (val) => {
     onChange({
       ...data,
@@ -25,9 +33,20 @@ export default function StepDetails({ eventType, data, onChange }) {
           placeholder="Enter opponent name" />
       )}
 
-      {isGame && (
-        <Input label="Tournament name" type="text" value={data.tournamentName || ''} onChange={(e) => set('tournamentName', e.target.value)}
-          placeholder="e.g. ZG NY Metro Showdown" />
+      {isGame && tournaments.length > 0 && (
+        <div>
+          <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>Tournament</span>
+          <select value={data.tournamentId || ''} onChange={(e) => {
+            const tid = e.target.value || null;
+            const t = tournaments.find((x) => x.id === tid);
+            set('tournamentId', tid);
+            if (t) onChange({ ...data, tournamentId: tid, tournamentName: t.name });
+            else onChange({ ...data, tournamentId: null, tournamentName: '' });
+          }} style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' }}>
+            <option value="">No tournament</option>
+            {tournaments.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+        </div>
       )}
 
       {isGame && (
@@ -68,6 +87,9 @@ export default function StepDetails({ eventType, data, onChange }) {
         <Toggle label="Indoor" checked={data.indoor ?? true} onChange={(v) => set('indoor', v)} />
         <Toggle label="Enable rides" checked={data.enableRides || false} onChange={(v) => set('enableRides', v)} />
         {isGame && <Toggle label="Scrimmage" checked={data.isScrimmage || false} onChange={(v) => set('isScrimmage', v)} />}
+        {isGame && data.tournamentId && <Toggle label="Playoff / bracket game" checked={data.isBracketGame || false} onChange={(v) => set('isBracketGame', v)} />}
+        {isGame && data.tournamentId && <Toggle label="Championship final" checked={data.isChampionshipFinal || false} onChange={(v) => set('isChampionshipFinal', v)} />}
+        {isGame && data.tournamentId && <Toggle label="Bonus game (doesn't affect seeding)" checked={data.isBonusGame || false} onChange={(v) => set('isBonusGame', v)} />}
       </div>
 
       <DutyEditor value={data.duties} onChange={(duties) => set('duties', duties)} />
