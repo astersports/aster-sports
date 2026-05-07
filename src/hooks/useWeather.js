@@ -35,15 +35,17 @@ export function useWeather(lat, lon) {
         if (Date.now() - parsed.ts < CACHE_TTL) { Promise.resolve().then(() => setWeather(parsed.data)); return; }
       } catch { /* ignore */ }
     }
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weathercode&temperature_unit=fahrenheit&timezone=America%2FNew_York&forecast_days=2`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=America%2FNew_York&forecast_days=7`;
     fetch(url).then((r) => r.json()).then((json) => {
       if (!json.hourly) return;
+      const codes = json.hourly.weather_code || json.hourly.weathercode;
+      if (!codes) return;
       const hours = json.hourly.time.map((t, i) => ({
         time: t,
         temp: Math.round(json.hourly.temperature_2m[i]),
-        code: json.hourly.weathercode[i],
-        icon: WMO_ICONS[json.hourly.weathercode[i]] || '🌡️',
-        label: WMO_LABELS[json.hourly.weathercode[i]] || 'Unknown',
+        code: codes[i],
+        icon: WMO_ICONS[codes[i]] || '🌡️',
+        label: WMO_LABELS[codes[i]] || 'Unknown',
       }));
       const data = { hours, fetchedAt: Date.now() };
       sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
@@ -63,12 +65,10 @@ export function useWeather(lat, lon) {
 export function getWeatherForTime(weather, isoTime) {
   if (!weather?.hours || !isoTime) return null;
   const target = new Date(isoTime);
-  const targetHour = target.toISOString().slice(0, 13);
-  const match = weather.hours.find((h) => h.time.startsWith(targetHour));
-  if (match) return match;
+  if (isNaN(target.getTime())) return null;
   const closest = weather.hours.reduce((best, h) => {
     const diff = Math.abs(new Date(h.time) - target);
     return diff < best.diff ? { ...h, diff } : best;
   }, { diff: Infinity });
-  return closest.diff < 3 * 60 * 60 * 1000 ? closest : null;
+  return closest.diff < 2 * 60 * 60 * 1000 ? closest : null;
 }

@@ -20,7 +20,7 @@ function useLiveCountdown(targetDate) {
   return `${mins}m ${secs}s`;
 }
 
-export default function NextEventCard({ event }) {
+export default function NextEventCard({ event, weather }) {
   const countdown = useLiveCountdown(event?.start_at);
   if (!event) return null;
   const typeLabel = TYPE_LABELS[event.event_type] || 'Event';
@@ -55,6 +55,7 @@ export default function NextEventCard({ event }) {
         </div>
       </div>
       <div style={{ textAlign: 'right' }}>
+        {weather && <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginBottom: 2 }}>{weather.icon} {weather.temp}°</div>}
         <div className="font-bold" style={{ fontSize: 20, color: 'var(--em-accent)', fontVariantNumeric: 'tabular-nums' }}>
           {countdown || '—'}
         </div>
