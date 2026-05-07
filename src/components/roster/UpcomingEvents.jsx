@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import { useActivities } from '../../hooks/useActivities';
 import { useNow } from '../../hooks/useNow';
-import { useWeather, getWeatherForTime } from '../../hooks/useWeather';
+import { getWeatherForTime, useWeather } from '../../hooks/useWeather';
 import { useMapsUrl } from '../../hooks/useMapsUrl';
 import TextEmptyState from '../shared/TextEmptyState';
 
@@ -73,7 +73,7 @@ function UpcomingRow({ evt, i, total, weather, navigate }) {
   const mapsUrl = useMapsUrl(location || null);
   const w = getWeatherForTime(weather, evt.start_at);
   return (
-    <button type="button" className="sf-press" onClick={() => { navigator.vibrate?.(10); navigate(`/event/${evt.id}`); }}
+    <button type="button" className="sf-press" onClick={() => { navigator.vibrate?.(10); navigate(`/events/${evt.id}`); }}
       style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', fontFamily: 'inherit', textAlign: 'left',
         borderBottom: i < total - 1 ? '1px solid var(--em-border-subtle)' : 'none',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 52 }}>
