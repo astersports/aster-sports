@@ -5,7 +5,7 @@ import { useToast } from '../../context/useToast';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 const BRIEFING_TYPES = [
-  { key: 'schedule', label: 'Schedule' },
+  { key: 'schedule', label: 'Preliminary Schedule' },
   { key: 'final_schedule', label: 'Final Schedule' },
   { key: 'rsvp_lock', label: 'RSVP Lock' },
   { key: 'saturday_scenarios', label: 'Saturday Scenarios' },
