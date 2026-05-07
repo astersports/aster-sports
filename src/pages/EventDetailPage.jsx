@@ -27,6 +27,7 @@ import Button from '../components/shared/Button';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
+const FinalizedGameView = lazy(() => import('../components/livescore/FinalizedGameView'));
 const SH = ({ children, sectionKey }) => <h2 data-section={sectionKey} style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>;
 
 export default function EventDetailPage() {
@@ -89,16 +90,15 @@ export default function EventDetailPage() {
       {role === 'parent' && <ParentArrivalActions event={event} />}
       {isStaff && !isPastGame && event.team_id && <CoachChecklist event={event} />}
       {isStaff && !isPastGame && event.team_id && <ArrivalBoard event={event} />}
-      {isStaff && (event.event_type === 'game' || event.event_type === 'tournament') && !isPastGame && event.status !== 'cancelled' && event.team_id && (
-        <Button onClick={() => navigate(`/events/${event.id}/live`)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px' }}>
-          Live Score
-        </Button>
+      {isStaff && isGameType && !isPastGame && event.status !== 'cancelled' && event.team_id && (
+        <Button onClick={() => navigate(`/events/${event.id}/live`)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px' }}>Live Score</Button>
       )}
       {isPastGame && (
         <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>
           Enter Score
         </Button>
       )}
+      {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
       <TournamentBriefingBanner event={event} team={team} role={role} />
 
       {event.parent_event_id && (
