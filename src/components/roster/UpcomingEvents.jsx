@@ -14,7 +14,6 @@ import DensityToggle from '../home/DensityToggle';
 import TextEmptyState from '../shared/TextEmptyState';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000, MAX_EVENTS = 5;
-
 function formatRow(event) {
   const dt = new Date(event.start_at);
   const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
@@ -98,7 +97,6 @@ export default function UpcomingEvents({ teamId }) {
     </div>
   );
 }
-
 const RSVP_DOT_COLORS = { going: 'var(--em-success)', maybe: 'var(--em-warning)', not_going: 'var(--em-danger)' };
 
 function UpcomingRow({ evt, i, total, weather, navigate, density, rsvpCount, childRsvps, childIds }) {
@@ -115,10 +113,12 @@ function UpcomingRow({ evt, i, total, weather, navigate, density, rsvpCount, chi
     ? childIds.reduce((found, pid) => found || childRsvps[`${evt.id}_${pid}`], null)
     : null;
   return (
-    <button type="button" className="sf-press" onClick={() => { navigator.vibrate?.(10); navigate(`/events/${evt.id}`); }}
+    <div role="button" tabIndex={0} className="sf-press"
+      onClick={(e) => { if (e.target.closest('button')) return; navigator.vibrate?.(10); navigate(`/events/${evt.id}`); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/events/${evt.id}`); } }}
       style={{ width: '100%', padding: pad, background: 'none', border: 'none', fontFamily: 'inherit', textAlign: 'left',
         borderBottom: i < total - 1 ? '1px solid var(--em-border-subtle)' : 'none',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: minH }}>
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: minH, cursor: 'pointer' }}>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div className="flex items-center gap-2">
           {showTimeBold && <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-accent)' }}>{timeStr} ·</span>}
@@ -145,6 +145,6 @@ function UpcomingRow({ evt, i, total, weather, navigate, density, rsvpCount, chi
         {rsvpCount && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-success)' }}>{rsvpCount.going}/{rsvpCount.total}</span>}
         {!showTimeBold && <span className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{timeStr}</span>}
       </div>
-    </button>
+    </div>
   );
 }
