@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-export function useAttendanceData(teamId, filter = 'all') {
+export function useAttendanceData(teamId, filter = 'all', range = 'season') {
   const [events, setEvents] = useState([]);
   const [rsvps, setRsvps] = useState([]);
   const [arrivals, setArrivals] = useState([]);
@@ -13,7 +13,8 @@ export function useAttendanceData(teamId, filter = 'all') {
     if (!teamId) { setLoading(false); return; }
     (async () => {
       const now = new Date();
-      const seasonStart = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+      const lookbackDays = range === '4weeks' ? 28 : 180;
+      const seasonStart = new Date(now.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
       const sixEventsAhead = new Date(now.getTime() + 42 * 24 * 60 * 60 * 1000);
 
       let evtQuery = supabase.from('events').select('id, title, event_type, start_at, status')
@@ -43,7 +44,7 @@ export function useAttendanceData(teamId, filter = 'all') {
       setCheckIns(ciRes.data || []);
       setLoading(false);
     })();
-  }, [teamId, filter]);
+  }, [teamId, filter, range]);
 
   const grid = useMemo(() => {
     const now = Date.now();
