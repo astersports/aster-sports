@@ -20,6 +20,7 @@ import { useGameResultsMap } from '../hooks/useGameResultsMap';
 import { useWeather } from '../hooks/useWeather';
 import { useNow } from '../hooks/useNow';
 import { isStaff } from '../lib/permissions';
+import ShareScheduleButton from '../components/schedule/ShareScheduleButton';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
 export default function SchedulePage() {
@@ -72,9 +73,10 @@ export default function SchedulePage() {
   return (
     <>
       <div className="px-4 py-4">
-        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20, marginBottom: 4 }}>
-          Schedule
-        </h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20 }}>Schedule</h1>
+          {isStaff(role) && selectedTeam && <ShareScheduleButton teamId={selectedTeam} teamName="" />}
+        </div>
         <div style={{ width: 32, height: 3, backgroundColor: 'var(--em-accent)', borderRadius: 2, marginBottom: 16 }} />
         <ViewToggle value={viewMode} onChange={setViewMode} />
 
