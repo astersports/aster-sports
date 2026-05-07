@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Trophy } from 'lucide-react';
 import { useGameDetail } from './useGameDetail';
-import { useRoster } from '../../hooks/useRoster';
 import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/permissions';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
@@ -10,8 +9,7 @@ import PlayByPlayFeed from './PlayByPlayFeed';
 
 export default function FinalizedGameView({ event }) {
   const { role } = useAuth();
-  const { result, plays, playerStats, quarterScores, loading, update } = useGameDetail(event.id);
-  const { players } = useRoster(event.team_id);
+  const { result, plays, stats, quarterScores, loading, update } = useGameDetail(event.id);
   const [showPlays, setShowPlays] = useState(false);
   const [highlight, setHighlight] = useState('');
   const staff = isStaff(role);
@@ -21,8 +19,7 @@ export default function FinalizedGameView({ event }) {
   if (!result?.published_at) return null;
 
   const diff = result.our_score - result.opponent_score;
-  const potg = result.player_of_game_id ? players.find((p) => p.id === result.player_of_game_id) : null;
-  const potgStats = potg ? playerStats[potg.id] : null;
+  const potgStat = result.player_of_game_id ? stats.find((s) => s.player_id === result.player_of_game_id) : null;
   const dt = new Date(event.start_at);
   const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
   const qKeys = Object.keys(quarterScores).sort((a, b) => a - b);
@@ -56,10 +53,10 @@ export default function FinalizedGameView({ event }) {
             <div style={{ marginBottom: 8 }}>
               <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginBottom: 4 }}>Player of the Game</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {players.filter((p) => playerStats[p.id]).map((p) => (
-                  <button key={p.id} type="button" onClick={() => update({ player_of_game_id: p.id })} className="sf-press"
+                {stats.filter((s) => s.pts > 0).map((s) => (
+                  <button key={s.player_id} type="button" onClick={() => update({ player_of_game_id: s.player_id })} className="sf-press"
                     style={{ minHeight: 36, padding: '0 10px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', fontSize: 13, fontWeight: 500, color: 'var(--em-text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>
-                    {p.first_name} #{p.jersey_number || '—'}
+                    {s.players?.first_name || '—'} #{s.jersey_at_time || '—'}
                   </button>
                 ))}
               </div>
@@ -77,12 +74,12 @@ export default function FinalizedGameView({ event }) {
         </div>
       )}
 
-      {potg && (
+      {potgStat && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14, borderRadius: 10, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', marginBottom: 16 }}>
           <Trophy size={20} strokeWidth={1.75} color="#FFD700" />
           <div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)' }}>{potg.first_name} {potg.last_name} #{potg.jersey_number || ''}</div>
-            {potgStats && <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>{potgStats.pts} pts · {potgStats.fgm}/{potgStats.fga} FG{potgStats.blk ? ` · ${potgStats.blk} BLK` : ''}{potgStats.reb ? ` · ${potgStats.reb} REB` : ''}</div>}
+            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)' }}>{potgStat.players?.first_name} {potgStat.players?.last_name} #{potgStat.jersey_at_time || ''}</div>
+            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>{potgStat.pts} pts · {potgStat.fg_made}/{potgStat.fg_att} FG{potgStat.blk ? ` · ${potgStat.blk} BLK` : ''}{potgStat.reb ? ` · ${potgStat.reb} REB` : ''}</div>
           </div>
         </div>
       )}
@@ -93,13 +90,13 @@ export default function FinalizedGameView({ event }) {
         </div>
       )}
 
-      <GameBoxScore playerStats={playerStats} players={players} />
+      <GameBoxScore stats={stats} teamId={event.team_id} />
 
       <button type="button" onClick={() => setShowPlays((v) => !v)} className="sf-press"
         style={{ width: '100%', minHeight: 44, marginTop: 16, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-secondary)', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
         {showPlays ? 'Hide plays' : `View ${plays.length} plays`}
       </button>
-      {showPlays && <PlayByPlayFeed plays={plays} players={players} />}
+      {showPlays && <PlayByPlayFeed plays={plays} players={stats.map((s) => ({ id: s.player_id, first_name: s.players?.first_name, last_name: s.players?.last_name, jersey_number: s.jersey_at_time }))} />}
     </div>
   );
 }
