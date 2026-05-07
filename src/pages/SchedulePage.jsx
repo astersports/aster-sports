@@ -27,7 +27,7 @@ const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActiv
 export default function SchedulePage() {
   const { orgId, myChildren, role } = useAuth();
   const { activities, loading, refetch } = useActivities();
-  const rsvpCounts = useEventRsvpCounts(activities);
+  const { counts: rsvpCounts } = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
   const dutyCounts = useEventDutyCounts(activities);
   const [selectedTeam, setSelectedTeam] = useState(() => new URLSearchParams(window.location.search).get('team'));
