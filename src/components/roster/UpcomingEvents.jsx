@@ -5,6 +5,8 @@ import { useActivities } from '../../hooks/useActivities';
 import { useNow } from '../../hooks/useNow';
 import { getWeatherForTime, useWeather } from '../../hooks/useWeather';
 import { useMapsUrl } from '../../hooks/useMapsUrl';
+import { useDensity } from '../../hooks/useDensity';
+import DensityToggle from '../home/DensityToggle';
 import TextEmptyState from '../shared/TextEmptyState';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -25,6 +27,7 @@ export default function UpcomingEvents({ teamId }) {
   const navigate = useNavigate();
   const now = useNow();
   const weather = useWeather(41.03, -73.76);
+  const { density } = useDensity('team-upcoming', 'medium');
 
   const upcoming = useMemo(() => {
     if (!teamId) return [];
@@ -42,10 +45,13 @@ export default function UpcomingEvents({ teamId }) {
 
   return (
     <div style={{ marginTop: 24 }}>
-      <div style={{
-        fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-        textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8,
-      }}>UPCOMING (NEXT 7 DAYS)</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
+          textTransform: 'uppercase', color: 'var(--em-text-tertiary)',
+        }}>UPCOMING (NEXT 7 DAYS)</div>
+        <DensityToggle sectionKey="team-upcoming" />
+      </div>
       {upcoming.length === 0 ? (
         <TextEmptyState heading="Nothing this week" message="No events scheduled in the next 7 days." />
       ) : (
@@ -54,7 +60,7 @@ export default function UpcomingEvents({ teamId }) {
           border: '1px solid var(--em-border-default)', boxShadow: 'var(--em-shadow-sm)', overflow: 'hidden',
         }}>
           {upcoming.map((evt, i) => (
-            <UpcomingRow key={evt.id} evt={evt} i={i} total={upcoming.length} weather={weather} navigate={navigate} />
+            <UpcomingRow key={evt.id} evt={evt} i={i} total={upcoming.length} weather={weather} navigate={navigate} density={density} />
           ))}
         </div>
       )}
@@ -68,9 +74,10 @@ export default function UpcomingEvents({ teamId }) {
   );
 }
 
-function UpcomingRow({ evt, i, total, weather, navigate }) {
+function UpcomingRow({ evt, i, total, weather, navigate, density }) {
   const { label, dateStr, timeStr, location } = formatRow(evt);
   const mapsUrl = useMapsUrl(location || null);
+  const showLocation = density !== 'minimal';
   const w = getWeatherForTime(weather, evt.start_at);
   return (
     <button type="button" className="sf-press" onClick={() => { navigator.vibrate?.(10); navigate(`/events/${evt.id}`); }}
@@ -84,7 +91,7 @@ function UpcomingRow({ evt, i, total, weather, navigate }) {
         </div>
         <div className="flex items-center gap-1" style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
           <span>{dateStr}</span>
-          {location && (
+          {showLocation && location && (
             <>
               <span>·</span>
               {mapsUrl ? (

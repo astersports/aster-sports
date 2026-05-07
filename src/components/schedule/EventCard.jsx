@@ -117,7 +117,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
         )}
         {role === 'parent' && childrenOnTeam.length > 0 && (
           <div style={{ marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
-            {childrenOnTeam.map((child) => (<ChildRsvp key={child.playerId} child={child} eventId={event.id} compact onSave={onRsvpChange} />))}
+            {childrenOnTeam.map((child) => (<ChildRsvp key={child.playerId} child={child} eventId={event.id} compact onSave={onRsvpChange} disabled={isPast} />))}
           </div>
         )}
       </div>
