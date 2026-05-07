@@ -62,18 +62,12 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
               {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
               {density === 'minimal' && teamName && <span style={{ fontSize: 13, color: teamColor, fontWeight: 500 }}>· {teamName}</span>}
               {density === 'minimal' && event.location_name && (
-                <>
-                  <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>·</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, color: 'var(--em-text-tertiary)' }}>
+                  · <MapPin size={11} strokeWidth={1.75} />
                   {mapsUrl ? (
-                    <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, color: 'var(--em-text-secondary)', textDecoration: 'none' }}>
-                      <MapPin size={11} strokeWidth={1.75} color="var(--em-text-tertiary)" /> {event.location_name}
-                    </a>
-                  ) : (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, color: 'var(--em-text-tertiary)' }}>
-                      <MapPin size={11} strokeWidth={1.75} /> {event.location_name}
-                    </span>
-                  )}
-                </>
+                    <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: 'var(--em-text-secondary)', textDecoration: 'none' }}>{event.location_name}</a>
+                  ) : event.location_name}
+                </span>
               )}
             </div>
             {density !== 'minimal' && (
