@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Mail, MessageSquare, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import InviteButton from './InviteButton';
@@ -6,8 +7,9 @@ import InviteButton from './InviteButton';
 const NOW = Date.now();
 const PILL = { fontSize: 11, fontWeight: 500, padding: '1px 5px', borderRadius: 4, lineHeight: '16px' };
 
-export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
-  const [expanded, setExpanded] = useState(false);
+export default function PlayerRow({ player, teamColor, isLast, isMyChild, teamId }) {
+  const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(isMyChild);
   const { role } = useAuth();
   const initial = (player.last_name || player.first_name || '?').charAt(0).toUpperCase();
   const isAcademy = player.member_type === 'futures_academy';
@@ -17,7 +19,7 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
   const useCount = player.totalPast < 5;
 
   return (
-    <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--em-border-subtle)' }}>
+    <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--em-border-subtle)', borderLeft: isMyChild ? '3px solid var(--em-accent)' : 'none', backgroundColor: isMyChild ? 'var(--em-accent-soft)' : undefined }}>
       <div
         role="button" tabIndex={0} aria-expanded={expanded}
         className="flex items-center sf-press"
@@ -76,6 +78,12 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
           {guardians.length === 0
             ? <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', fontStyle: 'italic' }}>No guardians linked</div>
             : guardians.map((g) => <GuardianRow key={g.id} guardian={g} role={role} />)}
+          {teamId && (
+            <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/teams/${teamId}/player/${player.id}`); }}
+              className="sf-press" style={{ minHeight: 44, width: '100%', marginTop: 4, borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 13, fontWeight: 500 }}>
+              View player profile →
+            </button>
+          )}
         </div>
       )}
     </div>
