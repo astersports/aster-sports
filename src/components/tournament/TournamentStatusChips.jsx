@@ -1,6 +1,6 @@
 const STATUS_CHIPS = [
   { value: 'all', label: 'All' },
-  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'upcoming', label: 'Upcoming' },
   { value: 'in_progress', label: 'Live' },
   { value: 'complete', label: 'Complete' },
 ];
