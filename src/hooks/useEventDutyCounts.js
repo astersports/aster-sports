@@ -20,7 +20,8 @@ export function useEventDutyCounts(activities) {
     if (lastKeyRef.current === key) return;
     lastKeyRef.current = key;
     supabase.from('event_duties').select('event_id, claimed_by_name, guardian_id').in('event_id', ids)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) { console.warn('useEventDutyCounts:', error.message); return; }
         if (!data) return;
         const map = {};
         data.forEach((r) => {

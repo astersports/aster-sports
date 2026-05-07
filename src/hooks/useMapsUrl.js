@@ -17,8 +17,9 @@ export function useMapsUrl(location) {
   });
   useEffect(() => {
     if (!location) return;
+    let cancelled = false;
     const name = location.replace(/[\u2018\u2019\u2032]/g, "'").split(' - ')[0].split('(')[0].trim();
-    if (!name) return;
+    if (!name) return () => { cancelled = true; };
     // Priority: google_maps_url (Frank-verified pin) > coords > address text.
     const toUrl = (r) => {
       if (!r) return null;
@@ -31,15 +32,17 @@ export function useMapsUrl(location) {
     // Microtask wrap on the cache-hit setUrl pushes it out of the
     // effect body, satisfying react-hooks/set-state-in-effect.
     if (hit !== undefined) {
-      Promise.resolve().then(() => setUrl(toUrl(hit)));
-      return;
+      Promise.resolve().then(() => { if (!cancelled) setUrl(toUrl(hit)); });
+      return () => { cancelled = true; };
     }
     supabase.from('locations').select('lat, lon, address, google_maps_url').ilike('name', `%${name}%`).limit(1)
       .then(({ data }) => {
+        if (cancelled) return;
         const r = data?.[0] || null;
         cache.set(name, r);
         setUrl(toUrl(r));
       });
+    return () => { cancelled = true; };
   }, [location]);
   return url;
 }

@@ -27,6 +27,7 @@ export function useChannelPreviews(channels) {
     const results = await Promise.all(queries);
     const map = {};
     results.forEach((r) => {
+      if (r.error) { console.warn('useChannelPreviews:', r.error.message); return; }
       const msg = r.data?.[0];
       if (!msg) return;
       const key = msg.channel === 'team' ? `team-${msg.team_id}` : 'announcements';

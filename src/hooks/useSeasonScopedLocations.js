@@ -9,6 +9,7 @@ export function useSeasonScopedLocations(orgId, seasonId) {
 
   useEffect(() => {
     if (!orgId) return;
+    let cancelled = false;
     (async () => {
       let names = [];
       if (seasonId) {
@@ -28,8 +29,10 @@ export function useSeasonScopedLocations(orgId, seasonId) {
         if (error) console.error('useSeasonScopedLocations all:', error.message);
         names = (data || []).map((r) => r.name);
       }
+      if (cancelled) return;
       setLocations(names);
     })();
+    return () => { cancelled = true; };
   }, [orgId, seasonId]);
 
   return locations;
