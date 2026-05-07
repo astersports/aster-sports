@@ -61,12 +61,14 @@ export function useTournamentBriefing({ event, team }) {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: err } = await supabase
+      let query = supabase
         .from('events')
-        .select('id, start_at, end_at, event_type, opponent, home_away, location, sub_location, coach_notes, jersey, arrival_minutes_before, tournament_name')
+        .select('id, start_at, end_at, event_type, opponent, home_away, location, sub_location, coach_notes, jersey, arrival_minutes_before, tournament_name, tournament_id')
         .eq('team_id', team.id)
-        .eq('tournament_name', event.tournament_name)
         .order('start_at', { ascending: true });
+      if (event.tournament_id) query = query.eq('tournament_id', event.tournament_id);
+      else if (event.tournament_name) query = query.eq('tournament_name', event.tournament_name);
+      const { data, error: err } = await query;
       if (err) throw err;
       if (!data?.length) throw new Error('No events found for this tournament');
       const enriched = data.map((ev) => ({ ...ev, maps_url: buildMapsUrl(ev) }));
