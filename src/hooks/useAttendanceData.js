@@ -6,6 +6,7 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
   const [rsvps, setRsvps] = useState([]);
   const [arrivals, setArrivals] = useState([]);
   const [checkIns, setCheckIns] = useState([]);
+  const [activations, setActivations] = useState([]);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,17 +41,18 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
       let playerRows = [];
       if (playerIds.length > 0) {
         const { data: plData, error: plErr } = await supabase
-          .from('players').select('id, first_name, last_name')
+          .from('players').select('id, first_name, last_name, member_type')
           .in('id', playerIds);
         if (plErr) console.warn('useAttendanceData players:', plErr.message);
         playerRows = (plData || []).map((p) => ({ ...p, jersey_number: jerseyMap[p.id] ?? null }));
       }
 
       const evtIds = (evtRes.data || []).map((e) => e.id);
-      const [rsvpRes, arrRes, ciRes] = await Promise.all([
+      const [rsvpRes, arrRes, ciRes, actRes] = await Promise.all([
         evtIds.length > 0 ? supabase.from('event_rsvps').select('event_id, player_id, response').in('event_id', evtIds) : { data: [] },
         evtIds.length > 0 ? supabase.from('event_arrivals').select('event_id, player_id, status').in('event_id', evtIds) : { data: [] },
         evtIds.length > 0 ? supabase.from('check_ins').select('event_id, player_id, checked_in').in('event_id', evtIds).eq('checked_in', true) : { data: [] },
+        evtIds.length > 0 ? supabase.from('player_activations').select('event_id, player_id').in('event_id', evtIds) : { data: [] },
       ]);
 
       setEvents(evtRes.data || []);
@@ -58,6 +60,7 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
       setRsvps(rsvpRes.data || []);
       setArrivals(arrRes.data || []);
       setCheckIns(ciRes.data || []);
+      setActivations(actRes.data || []);
       setLoading(false);
     })();
   }, [teamId, filter, range]);
@@ -70,33 +73,47 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
     arrivals.forEach((a) => { arrMap[`${a.event_id}-${a.player_id}`] = a.status; });
     const ciMap = {};
     checkIns.forEach((c) => { ciMap[`${c.event_id}-${c.player_id}`] = true; });
+    const actSet = new Set();
+    activations.forEach((a) => { actSet.add(`${a.event_id}-${a.player_id}`); });
 
     return players.map((p) => {
       let attended = 0, expected = 0, streak = 0, streakBroken = false;
       let goingCount = 0, maybeCount = 0, declinedCount = 0, noResponseCount = 0, totalPast = 0;
+      const isAcademy = p.member_type === 'futures_academy';
       const cells = events.map((e) => {
         const key = `${e.id}-${p.id}`;
         const rsvp = rsvpMap[key];
         const arrival = arrMap[key];
         const checkedIn = ciMap[key];
         const isPast = new Date(e.start_at).getTime() < now;
+        const isGameType = e.event_type === 'game' || e.event_type === 'tournament';
+        const isActivated = actSet.has(key);
         let state = 'no_response';
         if (isPast) {
-          totalPast++;
-          if (arrival === 'arrived' || checkedIn || rsvp === 'going') { state = 'attended'; attended++; expected++; goingCount++; }
-          else if (rsvp === 'maybe') { state = 'no_response_past'; maybeCount++; }
-          else if (rsvp === 'not_going') { state = 'declined'; declinedCount++; }
-          else { state = 'no_response_past'; noResponseCount++; }
+          if (isAcademy && isGameType && !isActivated) {
+            state = 'not_applicable';
+          } else {
+            totalPast++;
+            if (arrival === 'arrived' || checkedIn || rsvp === 'going') { state = 'attended'; attended++; expected++; goingCount++; }
+            else if (rsvp === 'maybe') { state = 'no_response_past'; maybeCount++; }
+            else if (rsvp === 'not_going') { state = 'declined'; declinedCount++; }
+            else { state = 'no_response_past'; noResponseCount++; }
+          }
         } else {
-          if (rsvp === 'going') state = 'rsvp_yes';
-          else if (rsvp === 'maybe') state = 'rsvp_maybe';
-          else if (rsvp === 'not_going') state = 'rsvp_no';
+          if (isAcademy && isGameType && !isActivated) {
+            state = 'not_applicable';
+          } else {
+            if (rsvp === 'going') state = 'rsvp_yes';
+            else if (rsvp === 'maybe') state = 'rsvp_maybe';
+            else if (rsvp === 'not_going') state = 'rsvp_no';
+          }
         }
         return { eventId: e.id, state };
       });
 
       const pastCells = cells.filter((_, i) => new Date(events[i]?.start_at).getTime() < now).reverse();
       for (const c of pastCells) {
+        if (c.state === 'not_applicable') continue;
         if (c.state === 'attended') { if (!streakBroken) streak++; }
         else { streakBroken = true; }
       }
@@ -106,7 +123,7 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
       const responseRate = totalPast > 0 ? Math.round((responded / totalPast) * 100) : null;
       return { player: p, cells, pct, streak, attended, expected, totalPast, goingCount, maybeCount, declinedCount, noResponseCount, responseRate };
     }).sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
-  }, [players, events, rsvps, arrivals, checkIns]);
+  }, [players, events, rsvps, arrivals, checkIns, activations]);
 
   return { grid, events, loading };
 }

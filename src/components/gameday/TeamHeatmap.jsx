@@ -14,6 +14,7 @@ const CELL_COLORS = {
   rsvp_no: { bg: 'var(--em-bg-tertiary)', border: 'none' },
   no_response: { bg: 'transparent', border: '1px solid var(--em-border-default)' },
   no_response_past: { bg: 'transparent', border: '1px dashed var(--em-border-default)' },
+  not_applicable: { bg: 'transparent', border: 'none' },
 };
 
 export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle }) {
