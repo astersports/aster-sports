@@ -7,6 +7,7 @@ import { usePrograms } from '../hooks/usePrograms';
 import { useActivities } from '../hooks/useActivities';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
+import { getWeatherForTime, useWeather } from '../hooks/useWeather';
 import KpiGrid from '../components/admin/KpiGrid';
 import QuickActions from '../components/admin/QuickActions';
 import ActiveSeasonCard from '../components/admin/ActiveSeasonCard';
@@ -26,8 +27,10 @@ export default function AdminHomePage() {
   const { programs } = usePrograms();
   const { activities, refetch } = useActivities();
   const { byTeamId: recordsByTeam } = useOrgTeamRecords(orgId);
+  const weather = useWeather(41.03, -73.76);
   useRefetchOnVisible(refetch);
   const navigate = useNavigate();
+  const nextEvent = activities.find((a) => new Date(a.start_at) >= new Date() && a.status !== 'cancelled');
 
   // overflow-x-hidden + max-w-full on the page wrapper is defense in
   // depth — even if a child component escapes its box, nothing drags
@@ -42,7 +45,7 @@ export default function AdminHomePage() {
         <KpiGrid stats={stats} />
       </section>
 
-      {activities.length > 0 && <NextEventCard event={activities.find((a) => new Date(a.start_at) >= new Date() && a.status !== 'cancelled')} />}
+      {nextEvent && <NextEventCard event={nextEvent} weather={getWeatherForTime(weather, nextEvent.start_at)} />}
 
       <section className="min-w-0" aria-label="Quick actions">
         <Label>QUICK ACTIONS</Label>

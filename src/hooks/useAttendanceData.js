@@ -5,6 +5,7 @@ export function useAttendanceData(teamId, filter = 'all') {
   const [events, setEvents] = useState([]);
   const [rsvps, setRsvps] = useState([]);
   const [arrivals, setArrivals] = useState([]);
+  const [checkIns, setCheckIns] = useState([]);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,15 +30,17 @@ export function useAttendanceData(teamId, filter = 'all') {
       ]);
 
       const evtIds = (evtRes.data || []).map((e) => e.id);
-      const [rsvpRes, arrRes] = await Promise.all([
+      const [rsvpRes, arrRes, ciRes] = await Promise.all([
         evtIds.length > 0 ? supabase.from('event_rsvps').select('event_id, player_id, response').in('event_id', evtIds) : { data: [] },
         evtIds.length > 0 ? supabase.from('event_arrivals').select('event_id, player_id, status').in('event_id', evtIds) : { data: [] },
+        evtIds.length > 0 ? supabase.from('check_ins').select('event_id, player_id, checked_in').in('event_id', evtIds).eq('checked_in', true) : { data: [] },
       ]);
 
       setEvents(evtRes.data || []);
       setPlayers((plRes.data || []).map((r) => r.players).filter(Boolean));
       setRsvps(rsvpRes.data || []);
       setArrivals(arrRes.data || []);
+      setCheckIns(ciRes.data || []);
       setLoading(false);
     })();
   }, [teamId, filter]);
@@ -48,6 +51,8 @@ export function useAttendanceData(teamId, filter = 'all') {
     rsvps.forEach((r) => { rsvpMap[`${r.event_id}-${r.player_id}`] = r.response; });
     const arrMap = {};
     arrivals.forEach((a) => { arrMap[`${a.event_id}-${a.player_id}`] = a.status; });
+    const ciMap = {};
+    checkIns.forEach((c) => { ciMap[`${c.event_id}-${c.player_id}`] = true; });
 
     return players.map((p) => {
       let attended = 0, expected = 0, streak = 0, streakBroken = false;
@@ -55,10 +60,11 @@ export function useAttendanceData(teamId, filter = 'all') {
         const key = `${e.id}-${p.id}`;
         const rsvp = rsvpMap[key];
         const arrival = arrMap[key];
+        const checkedIn = ciMap[key];
         const isPast = new Date(e.start_at).getTime() < now;
         let state = 'no_response';
         if (isPast) {
-          if (arrival === 'arrived') { state = 'attended'; attended++; expected++; }
+          if (arrival === 'arrived' || checkedIn) { state = 'attended'; attended++; expected++; }
           else if (rsvp === 'going') { state = 'no_show'; expected++; }
           else if (rsvp === 'not_going') state = 'declined';
           else { state = 'no_response_past'; expected++; }
@@ -79,7 +85,7 @@ export function useAttendanceData(teamId, filter = 'all') {
       const pct = expected > 0 ? Math.round((attended / expected) * 100) : null;
       return { player: p, cells, pct, streak, attended, expected };
     }).sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
-  }, [players, events, rsvps, arrivals]);
+  }, [players, events, rsvps, arrivals, checkIns]);
 
   return { grid, events, loading };
 }
