@@ -10,7 +10,7 @@ export function useEventDutyCounts(activities) {
   const lastKeyRef = useRef(null);
 
   useEffect(() => {
-    const onFocus = () => setVersion((v) => v + 1);
+    const onFocus = () => { lastKeyRef.current = null; setVersion((v) => v + 1); };
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, []);
@@ -25,7 +25,7 @@ export function useEventDutyCounts(activities) {
       return;
     }
     const key = [...ids].sort().join(',');
-    if (version === 0 && lastKeyRef.current === key) return;
+    if (lastKeyRef.current === key) return;
     lastKeyRef.current = key;
     supabase.from('event_duties').select('event_id, claimed_by_name, guardian_id').in('event_id', ids)
       .then(({ data, error }) => {

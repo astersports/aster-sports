@@ -31,7 +31,6 @@ export default function AppShell({ children }) {
       )}
       <main
         className="flex-1 overflow-x-hidden overflow-y-auto"
-        onClickCapture={() => { document.title = 'CLICK ' + Date.now(); }}
         style={{
           paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))',
           paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',

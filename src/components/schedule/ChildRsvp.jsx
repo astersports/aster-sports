@@ -42,9 +42,6 @@ export default function ChildRsvp({ child, eventId, eventType, compact = false, 
   // setResponse out of the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => {
     Promise.resolve().then(fetchRsvp);
-    const handler = () => fetchRsvp();
-    window.addEventListener('focus', handler);
-    return () => window.removeEventListener('focus', handler);
   }, [fetchRsvp]);
 
   const save = async (value) => {
