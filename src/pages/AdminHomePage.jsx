@@ -18,6 +18,7 @@ import GettingStarted from '../components/admin/GettingStarted';
 import AdminGreeting from '../components/admin/AdminGreeting';
 import NotificationHistory from '../components/admin/NotificationHistory';
 import PastEventsSection from '../components/schedule/PastEventsSection';
+import DensityToggle from '../components/home/DensityToggle';
 import Label from '../components/shared/Label';
 
 export default function AdminHomePage() {
@@ -63,8 +64,11 @@ export default function AdminHomePage() {
         <ActiveSeasonCard season={activeSeason} />
       </section>
 
-      <section className="min-w-0" aria-label="This week">
-        <Label>THIS WEEK</Label>
+      <section className="min-w-0" aria-label="Next 7 days">
+        <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+          <Label style={{ marginBottom: 0 }}>NEXT 7 DAYS</Label>
+          <DensityToggle sectionKey="admin-schedule" />
+        </div>
         <AdminScheduleSection activities={activities} />
         <PastEventsSection activities={activities} gameResults={{}} weather={weather} />
       </section>

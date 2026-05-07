@@ -5,19 +5,21 @@ import { useActivities } from '../hooks/useActivities';
 import { usePrefetchChildRsvps } from '../hooks/usePrefetchChildRsvps';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
+import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
-import { getWeatherForTime, useWeather } from '../hooks/useWeather';
+import { useGameResultsMap } from '../hooks/useGameResultsMap';
+import { useWeather } from '../hooks/useWeather';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
-import ThisWeekRow from '../components/schedule/ThisWeekRow';
+import { useDensity } from '../hooks/useDensity';
+import DateGroupedList from '../components/schedule/DateGroupedList';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
+import PastEventsSection from '../components/schedule/PastEventsSection';
 import MyTeamsStrip from '../components/home/MyTeamsStrip';
+import DensityToggle from '../components/home/DensityToggle';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import Label from '../components/shared/Label';
-import PastEventsSection from '../components/schedule/PastEventsSection';
-import { formatDateHeader, groupByDate } from '../lib/scheduleHelpers';
-import { detectConflicts } from '../lib/conflicts';
 import { firstNameFrom, greetingFor } from '../lib/greetings';
 
 export default function ParentHomePage() {
@@ -30,22 +32,17 @@ export default function ParentHomePage() {
   usePrefetchChildRsvps(activities, myChildren);
   const now = useNow(), cutoff = now + 7 * 24 * 60 * 60 * 1000;
   useRefetchOnVisible(refetch);
+  const { density } = useDensity('parent-home', 'medium');
 
   const myTeams = useMemo(() => {
     const map = new Map();
     for (const a of activities) {
       if (!a.team_id || map.has(a.team_id)) continue;
-      map.set(a.team_id, {
-        id: a.team_id,
-        name: a.teams?.name || '—',
-        team_color: a.teams?.team_color || 'var(--em-neutral)',
-        sort_order: a.teams?.sort_order ?? 999,
-      });
+      map.set(a.team_id, { id: a.team_id, name: a.teams?.name || '—', team_color: a.teams?.team_color || 'var(--em-neutral)', sort_order: a.teams?.sort_order ?? 999 });
     }
     return [...map.values()].sort((x, y) => x.sort_order - y.sort_order);
   }, [activities]);
 
-  const todayStart = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }, []);
   const next7days = useMemo(() => activities
     .filter((a) => {
       if (!a.start_at) return false;
@@ -63,21 +60,13 @@ export default function ParentHomePage() {
     return next7days.filter((e) => ids.includes(e.team_id));
   }, [next7days, activeKidFilter, myChildren]);
 
+  const rsvpCounts = useEventRsvpCounts(filteredNext7);
   const rideCounts = useEventRideCounts(filteredNext7);
   const dutyCounts = useEventDutyCounts(filteredNext7);
+  const gameResults = useGameResultsMap(filteredNext7);
   const weather = useWeather(41.03, -73.76);
-  const conflictsByEvent = useMemo(() => detectConflicts(filteredNext7), [filteredNext7]);
+  const nextEventId = filteredNext7.find((a) => new Date(a.start_at).getTime() >= now)?.id || null;
 
-  const [collapsedDates, setCollapsedDates] = useState(() => new Map());
-  const dayMs = 24 * 60 * 60 * 1000;
-  const isCollapsed = (dateStr) => {
-    if (collapsedDates.has(dateStr)) return collapsedDates.get(dateStr);
-    const d = new Date(dateStr + 'T12:00:00').getTime();
-    return Math.floor((d - todayStart) / dayMs) > 2;
-  };
-  const toggleCollapse = (dateStr) => setCollapsedDates((prev) => {
-    const next = new Map(prev); next.set(dateStr, !isCollapsed(dateStr)); return next;
-  });
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
@@ -108,39 +97,17 @@ export default function ParentHomePage() {
       )}
 
       <section>
-        <Label>NEXT 7 DAYS</Label>
-        <ChildFilterChips
-          kids={myChildren}
-          activeFilter={activeKidFilter}
-          onChange={setActiveKidFilter}
-        />
-        {filteredNext7.length > 0 ? groupByDate(filteredNext7).map(([date, evts]) => {
-          const collapsed = isCollapsed(date);
-          return (
-            <div key={date} style={{ marginTop: 12 }}>
-              <button type="button" onClick={() => toggleCollapse(date)} className="sf-press"
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '4px 0', minHeight: 44, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{formatDateHeader(date)}</span>
-                {collapsed && <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{evts.length} event{evts.length !== 1 ? 's' : ''}</span>}
-              </button>
-              <div className="sf-collapsible" data-open={collapsed ? 'false' : 'true'}>
-                <div className="sf-collapsible-inner">
-                  <div className="flex flex-col gap-2" style={{ paddingTop: 6 }}>
-                    {evts.map((e) => (
-                      <ThisWeekRow key={e.id} event={e}
-                        rideCount={rideCounts[e.id]} dutyCount={dutyCounts[e.id]}
-                        conflictWith={conflictsByEvent[e.id]}
-                        weather={getWeatherForTime(weather, e.start_at)} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        }) : (
+        <ChildFilterChips kids={myChildren} activeFilter={activeKidFilter} onChange={setActiveKidFilter} />
+        <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+          <Label style={{ marginBottom: 0 }}>NEXT 7 DAYS</Label>
+          <DensityToggle sectionKey="parent-home" />
+        </div>
+        {filteredNext7.length > 0 ? (
+          <DateGroupedList events={filteredNext7} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} nextEventId={nextEventId} density={density} gameResults={gameResults} weather={weather} />
+        ) : (
           <TextEmptyState heading="Nothing this week" message="No upcoming events in the next 7 days." />
         )}
-        <PastEventsSection activities={activities} rsvpCounts={{}} rideCounts={{}} gameResults={{}} weather={weather} />
+        <PastEventsSection activities={activities} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} />
       </section>
     </div>
   );

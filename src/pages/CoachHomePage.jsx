@@ -13,6 +13,7 @@ import AdminGreeting from '../components/admin/AdminGreeting';
 import SectionShell from '../components/home/SectionShell';
 import DateGroupedList from '../components/schedule/DateGroupedList';
 import PastEventsSection from '../components/schedule/PastEventsSection';
+import DensityToggle from '../components/home/DensityToggle';
 import { useDensity } from '../hooks/useDensity';
 import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
 
@@ -50,7 +51,8 @@ export default function CoachHomePage() {
       <AdminGreeting user={user} />
 
       <SectionShell
-        title="THIS WEEK"
+        title="NEXT 7 DAYS"
+        titleAction={<DensityToggle sectionKey="coach-schedule" />}
         sectionKey="coach-now"
         loading={loading}
         error={error}
