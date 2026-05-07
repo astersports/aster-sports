@@ -107,7 +107,7 @@ export default function ParentHomePage() {
         ) : (
           <TextEmptyState heading="Nothing this week" message="No upcoming events in the next 7 days." />
         )}
-        <PastEventsSection activities={activities} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} />
+        <PastEventsSection activities={activities} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
       </section>
     </div>
   );

@@ -10,7 +10,7 @@ import DateGroupedList from '../schedule/DateGroupedList';
 import FilterSelect from '../shared/FilterSelect';
 
 export default function AdminScheduleSection({ activities }) {
-  const { counts: rsvpCounts } = useEventRsvpCounts(activities);
+  const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(activities);
   const rideCounts = useEventRideCounts(activities);
   const gameResults = useGameResultsMap(activities);
   const weather = useWeather(41.03, -73.76);
@@ -68,7 +68,7 @@ export default function AdminScheduleSection({ activities }) {
           No events this week{selectedTeam ? ' for this team' : ''}.
         </div>
       ) : (
-        <DateGroupedList events={filtered} rsvpCounts={rsvpCounts} rideCounts={rideCounts} density={density} gameResults={gameResults} weather={weather} />
+        <DateGroupedList events={filtered} rsvpCounts={rsvpCounts} rideCounts={rideCounts} density={density} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
       )}
     </div>
   );
