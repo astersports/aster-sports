@@ -52,11 +52,14 @@ export default function FinalizedGameView({ event }) {
           {!result.player_of_game_id && (
             <div style={{ marginBottom: 8 }}>
               <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginBottom: 4 }}>Player of the Game</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {stats.filter((s) => s.pts > 0).map((s) => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {stats.filter((s) => s.pts || s.fg_att || s.ft_att || s.reb || s.ast || s.stl || s.blk || s.pf)
+                  .sort((a, b) => (b.pts || 0) - (a.pts || 0) || ((b.reb || 0) + (b.ast || 0) + (b.stl || 0) + (b.blk || 0)) - ((a.reb || 0) + (a.ast || 0) + (a.stl || 0) + (a.blk || 0)))
+                  .map((s) => (
                   <button key={s.player_id} type="button" onClick={() => update({ player_of_game_id: s.player_id })} className="sf-press"
-                    style={{ minHeight: 36, padding: '0 10px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', fontSize: 13, fontWeight: 500, color: 'var(--em-text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>
-                    {s.players?.first_name || '—'} #{s.jersey_at_time || '—'}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 40, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', fontSize: 13, fontWeight: 500, color: 'var(--em-text-primary)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', width: '100%' }}>
+                    <span style={{ fontWeight: 600 }}>#{s.jersey_at_time || '—'} {s.players?.first_name || '—'}</span>
+                    <span style={{ color: 'var(--em-text-tertiary)', fontSize: 12 }}>{s.pts}p {s.reb}r {s.ast}a {s.fg_made}/{s.fg_att}FG{s.stl ? ` ${s.stl}s` : ''}{s.blk ? ` ${s.blk}b` : ''}</span>
                   </button>
                 ))}
               </div>
