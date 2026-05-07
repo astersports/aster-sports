@@ -34,6 +34,7 @@ export default function TeamDetailPage() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('jersey');
   const [pulseRange, setPulseRange] = useState('season');
+  const [testCount, setTestCount] = useState(0);
   const enrichedPlayers = useMemo(() => {
     if (!grid?.length) return players;
     const statsMap = {};
@@ -51,7 +52,13 @@ export default function TeamDetailPage() {
   if (!team) return <div className="px-4 py-4"><EmptyState icon={Users} title="Team not found" description="This team doesn't exist or has been removed." /></div>;
 
   return (
-    <div className="sf-fade-in overflow-x-hidden" style={{ padding: 16, minHeight: '100%', background: team?.team_color ? `linear-gradient(180deg, ${team.team_color}08 0%, transparent 200px)` : undefined }}>
+    <div style={{ padding: 16, minHeight: '100%' }}>
+      <div style={{ padding: 16, marginBottom: 16, backgroundColor: 'var(--em-danger-soft)', borderRadius: 10, border: '2px solid var(--em-danger)' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--em-danger)', marginBottom: 8 }}>DEBUG: Click test (tap count: {testCount})</div>
+        <button type="button" onClick={() => setTestCount((c) => c + 1)} style={{ minHeight: 44, padding: '0 24px', borderRadius: 10, border: '2px solid var(--em-danger)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-danger)', fontSize: 15, fontWeight: 600 }}>
+          TAP ME
+        </button>
+      </div>
       <button type="button" onClick={() => navigate('/teams')} className="flex items-center sf-press mb-2" style={{ minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
         <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
       </button>
