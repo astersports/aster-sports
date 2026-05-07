@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 const CACHE_KEY = 'ember-weather-cache';
+const FALLBACK_KEY = 'ember-weather-fallback';
 const CACHE_TTL = 30 * 60 * 1000;
 
 const WMO_ICONS = {
@@ -46,8 +47,14 @@ export function useWeather(lat, lon) {
       }));
       const data = { hours, fetchedAt: Date.now() };
       sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+      try { localStorage.setItem(FALLBACK_KEY, JSON.stringify(data)); } catch { /* quota */ }
       setWeather(data);
-    }).catch(() => {});
+    }).catch(() => {
+      try {
+        const fallback = localStorage.getItem(FALLBACK_KEY);
+        if (fallback) setWeather(JSON.parse(fallback));
+      } catch { /* ignore */ }
+    });
   }, [lat, lon]);
 
   return weather;
