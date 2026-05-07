@@ -17,6 +17,7 @@ import TeamPerformanceStrip from '../components/admin/TeamPerformanceStrip';
 import GettingStarted from '../components/admin/GettingStarted';
 import AdminGreeting from '../components/admin/AdminGreeting';
 import NotificationHistory from '../components/admin/NotificationHistory';
+import PastEventsSection from '../components/schedule/PastEventsSection';
 import Label from '../components/shared/Label';
 
 export default function AdminHomePage() {
@@ -65,6 +66,7 @@ export default function AdminHomePage() {
       <section className="min-w-0" aria-label="This week">
         <Label>THIS WEEK</Label>
         <AdminScheduleSection activities={activities} />
+        <PastEventsSection activities={activities} gameResults={{}} weather={weather} />
       </section>
 
       <section className="min-w-0" aria-label="Notification history">
