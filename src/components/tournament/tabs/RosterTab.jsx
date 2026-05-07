@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import LoadingSkeleton from '../../shared/LoadingSkeleton';
 
-export default function RosterTab({ tournament }) {
+export default function RosterTab({ tournament, teamFilter }) {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,11 +30,12 @@ export default function RosterTab({ tournament }) {
   }, [tournament?.id]);
 
   if (loading) return <LoadingSkeleton variant="list" count={5} />;
-  if (teams.length === 0) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 14 }}>No rosters submitted yet.</div>;
+  const display = teamFilter ? teams.filter((t) => t.team.id === teamFilter) : teams;
+  if (display.length === 0) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 14 }}>No rosters submitted yet.</div>;
 
   return (
     <div>
-      {teams.map(({ team, players }) => (
+      {display.map(({ team, players }) => (
         <div key={team.id} style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <div style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: team.team_color || 'var(--em-neutral)' }} />

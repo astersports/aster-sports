@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import LoadingSkeleton from '../../shared/LoadingSkeleton';
 
-export default function ScenariosTab({ tournament }) {
+export default function ScenariosTab({ tournament, teamFilter }) {
   const [scenarios, setScenarios] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,9 +37,11 @@ export default function ScenariosTab({ tournament }) {
 
   const COLOR_MAP = { green: 'var(--em-success)', red: 'var(--em-danger)', yellow: 'var(--em-warning)', blue: 'var(--em-info)', gray: 'var(--em-neutral)' };
 
+  const display = teamFilter ? scenarios.filter((s) => s.team_id === teamFilter) : scenarios;
+
   return (
     <div>
-      {scenarios.map((s) => {
+      {display.map((s) => {
         const color = COLOR_MAP[s.outcome_color] || 'var(--em-text-primary)';
         return (
           <div key={s.id} style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', padding: 14, marginBottom: 10, borderLeft: `4px solid ${color}` }}>
