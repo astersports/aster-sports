@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { useParams, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import AddToCalendarButton from '../components/event/AddToCalendarButton';
@@ -68,10 +68,10 @@ export default function EventDetailPage() {
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--em-text-tertiary)';
   const isStaff = role === 'admin' || role === 'coach';
-
   const rsvpMap = {};
   rsvps.forEach((r) => { rsvpMap[r.player_id] = r.response; });
-  const isPastGame = isStaff && (event.event_type === 'game' || event.event_type === 'tournament') && new Date(event.start_at) < new Date();
+  const isGameType = event.event_type === 'game' || event.event_type === 'tournament';
+  const isPastGame = isStaff && isGameType && (event.end_at ? new Date(event.end_at) < new Date() : new Date(event.start_at).getTime() + 14400000 < new Date().getTime());
 
   const openEdit = () => {
     if (event.parent_event_id) {

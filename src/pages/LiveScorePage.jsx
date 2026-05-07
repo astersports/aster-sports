@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { useRoster } from '../hooks/useRoster';
@@ -59,7 +59,7 @@ export default function LiveScorePage() {
     showToast(`Undid ${label}${name ? ` by ${name}` : ''}`, 'info');
   };
 
-  const endGame = async () => { setConfirmEnd(false); await game.saveToGameResults(); navigate(`/events/${eventId}`); };
+  const endGame = async () => { setConfirmEnd(false); await game.saveToGameResults(); navigate(`/events/${eventId}`, { replace: true }); };
 
   if (!event) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading…</div>;
 
@@ -67,7 +67,7 @@ export default function LiveScorePage() {
 
   return createPortal(
     <div style={{ position: 'fixed', inset: 0, zIndex: 9995, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
-      <Scoreboard teamName={event.teams?.name} opponentName={event.opponent} ourScore={game.ourScore} oppScore={game.oppScore} period={game.period} onPeriodChange={game.setPeriod} teamColor={event.teams?.team_color} />
+      <Scoreboard teamName={event.teams?.name} opponentName={event.opponent} ourScore={game.ourScore} oppScore={game.oppScore} period={game.period} onPeriodChange={game.setPeriod} teamColor={event.teams?.team_color} onBack={() => navigate(`/events/${eventId}`, { replace: true })} />
       <div style={{ display: 'flex', borderBottom: '2px solid var(--em-border-default)' }}>
         {tabs.map((t) => (
           <button key={t} type="button" onClick={() => setTab(t)} role="tab" aria-selected={tab === t} style={{ flex: 1, minHeight: 44, border: 'none', backgroundColor: 'transparent', fontSize: 13, fontWeight: tab === t ? 700 : 400, color: tab === t ? 'var(--em-accent)' : 'var(--em-text-tertiary)', borderBottom: tab === t ? '2px solid var(--em-accent)' : 'none', cursor: 'pointer', fontFamily: 'inherit', textTransform: 'capitalize' }}>{t === 'plays' ? 'Plays' : t === 'stats' ? 'Stats' : 'Scoring'}</button>
@@ -88,7 +88,7 @@ export default function LiveScorePage() {
         {tab === 'plays' && <PlayByPlayFeed plays={game.plays} players={players} />}
       </div>
       <div style={{ display: 'flex', gap: 8, padding: '8px 16px', paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)', borderTop: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)' }}>
-        <button type="button" onClick={handleUndo} className="sf-press" disabled={game.plays.length === 0} style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'transparent', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' }}>Undo</button>
+        <button type="button" onClick={handleUndo} className="sf-press" disabled={game.plays.length === 0} style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'transparent', color: game.plays.length === 0 ? 'var(--em-text-tertiary)' : 'var(--em-accent)', fontSize: 15, fontWeight: 500, fontFamily: 'inherit', cursor: game.plays.length === 0 ? 'not-allowed' : 'pointer', opacity: game.plays.length === 0 ? 0.5 : 1 }}>Undo</button>
         <button type="button" onClick={() => setConfirmEnd(true)} className="sf-press" style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>End Game</button>
       </div>
       <PlayerPicker open={!!pendingPlay} players={players} onCourt={game.onCourt} playerStats={game.playerStats} playLabel={pendingPlay ? (LABELS[pendingPlay.type] || pendingPlay.type) + ' by' : ''} onSelect={assignPlayer} onSkip={() => { if (pendingPlay) game.addPlay(pendingPlay.type, { ...pendingPlay.opts, teamId: event?.team_id }); setPendingPlay(null); }} onClose={() => setPendingPlay(null)} />
