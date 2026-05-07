@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
 const DEBOUNCE_MS = 500;
-const SAVED_FLASH_MS = 200;
+const SAVED_FLASH_MS = 1500;
 const RETRY_DELAYS = [1000, 2000, 4000, 8000, 16000];
 const AUDIT_FIELDS = ['our_score', 'opponent_score', 'quarter_scores', 'player_of_game_id', 'coach_highlight', 'result', 'point_differential'];
 

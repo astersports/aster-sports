@@ -10,7 +10,7 @@ const STATUS_DISPLAY = {
 };
 
 export default function ArrivalBoard({ event }) {
-  const { arrivals, loading } = useEventArrivals(event.id);
+  const { arrivals, loading, setArrival } = useEventArrivals(event.id);
   const { players } = useRoster(event.team_id);
   const now = useNow();
   const msUntil = new Date(event.start_at).getTime() - now;
@@ -41,11 +41,14 @@ export default function ArrivalBoard({ event }) {
           const a = arrivalMap[p.id];
           const s = a ? STATUS_DISPLAY[a.status] : null;
           const time = a?.status_changed_at ? new Date(a.status_changed_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
+          const nextStatus = !a ? 'arrived' : a.status === 'arrived' ? null : 'arrived';
           return (
-            <div key={p.id} style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10,
+            <button key={p.id} type="button" onClick={() => nextStatus && setArrival(p.id, nextStatus)} className="sf-press"
+              aria-label={`${p.first_name} ${p.last_name} — ${s ? s.label : 'tap to mark arrived'}`}
+              style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10,
               backgroundColor: s?.bg || 'var(--em-bg-card)', border: '1px solid var(--em-border-subtle)',
-              transition: 'background-color 300ms',
+              transition: 'background-color 300ms', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer',
             }}>
               <div style={{
                 width: 32, height: 32, borderRadius: 9999, backgroundColor: event.teams?.team_color || 'var(--em-accent)',
@@ -66,7 +69,7 @@ export default function ArrivalBoard({ event }) {
                   <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>—</div>
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
