@@ -24,11 +24,27 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
       if (filter === 'practices') evtQuery = evtQuery.eq('event_type', 'practice');
       else if (filter === 'games') evtQuery = evtQuery.in('event_type', ['game', 'tournament']);
 
-      const [evtRes, plRes] = await Promise.all([
+      const [evtRes, rmRes] = await Promise.all([
         evtQuery,
-        supabase.from('roster_members').select('player_id, players(id, first_name, last_name, jersey_number)')
+        supabase.from('roster_members').select('player_id, jersey_number')
           .eq('team_id', teamId),
       ]);
+
+      if (evtRes.error) console.warn('useAttendanceData events:', evtRes.error.message);
+      if (rmRes.error) console.warn('useAttendanceData roster:', rmRes.error.message);
+
+      const playerIds = [...new Set((rmRes.data || []).map((r) => r.player_id).filter(Boolean))];
+      const jerseyMap = {};
+      (rmRes.data || []).forEach((r) => { jerseyMap[r.player_id] = r.jersey_number; });
+
+      let playerRows = [];
+      if (playerIds.length > 0) {
+        const { data: plData, error: plErr } = await supabase
+          .from('players').select('id, first_name, last_name')
+          .in('id', playerIds);
+        if (plErr) console.warn('useAttendanceData players:', plErr.message);
+        playerRows = (plData || []).map((p) => ({ ...p, jersey_number: jerseyMap[p.id] ?? null }));
+      }
 
       const evtIds = (evtRes.data || []).map((e) => e.id);
       const [rsvpRes, arrRes, ciRes] = await Promise.all([
@@ -38,7 +54,7 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
       ]);
 
       setEvents(evtRes.data || []);
-      setPlayers((plRes.data || []).map((r) => r.players).filter(Boolean));
+      setPlayers(playerRows);
       setRsvps(rsvpRes.data || []);
       setArrivals(arrRes.data || []);
       setCheckIns(ciRes.data || []);

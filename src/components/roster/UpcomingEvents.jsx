@@ -109,7 +109,7 @@ function UpcomingRow({ evt, i, total, weather, navigate, density }) {
           )}
         </div>
       </div>
-      <span className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginLeft: 12, flexShrink: 0 }}>{timeStr}</span>
+      {!showTimeBold && <span className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginLeft: 12, flexShrink: 0 }}>{timeStr}</span>}
     </button>
   );
 }
