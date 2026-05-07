@@ -10,7 +10,7 @@ export default function RosterSection({ team, sortedPlayers, search, setSearch, 
   const { role } = useAuth();
   return (
     <>
-      <RosterControls search={search} setSearch={setSearch} sortBy={sortBy} setSortBy={setSortBy} />
+      <RosterControls search={search} setSearch={setSearch} sortBy={sortBy} setSortBy={setSortBy} role={role} />
       <CollapsibleSection title="Roster" sectionKey="roster" count={`${sortedPlayers.length}`}>
         <div className="flex items-center justify-end" style={{ marginBottom: 8 }}>
           {isStaff(role) && <CopyRosterButton team={team} sortedPlayers={sortedPlayers} />}

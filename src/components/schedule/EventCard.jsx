@@ -80,9 +80,9 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
                     {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
                     {teamName && event.location_name && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
                     {event.location_name && mapsUrl ? (
-                      <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--em-accent)', textDecoration: 'none' }}>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--em-accent)', textDecoration: 'none', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}>
                         <MapPin size={12} strokeWidth={1.75} /> {event.location_name}
-                      </a>
+                      </button>
                     ) : event.location_name ? (<><MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" /><span style={{ color: 'var(--em-text-tertiary)' }}>{event.location_name}</span></>) : null}
                   </div>
                 )}
@@ -113,12 +113,12 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
             {dutyCount && dutyCount.total > 0 && (
               <div style={{ fontSize: 13, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--em-warning)' : 'var(--em-success)' }}>{dutyCount.claimed}/{dutyCount.total} volunteers</div>
             )}
-            {role === 'parent' && childrenOnTeam.length > 0 && (
-              <div style={{ marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
-                {childrenOnTeam.map((child) => (<ChildRsvp key={child.playerId} child={child} eventId={event.id} compact onSave={onRsvpChange} />))}
-              </div>
-            )}
           </>
+        )}
+        {role === 'parent' && childrenOnTeam.length > 0 && (
+          <div style={{ marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
+            {childrenOnTeam.map((child) => (<ChildRsvp key={child.playerId} child={child} eventId={event.id} compact onSave={onRsvpChange} />))}
+          </div>
         )}
       </div>
     </div>

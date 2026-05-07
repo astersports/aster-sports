@@ -88,10 +88,10 @@ function UpcomingRow({ evt, i, total, weather, navigate }) {
             <>
               <span>·</span>
               {mapsUrl ? (
-                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                  style={{ color: 'var(--em-accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }}
+                  style={{ color: 'var(--em-accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 2, background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}>
                   <MapPin size={11} strokeWidth={1.75} /> {location}
-                </a>
+                </button>
               ) : <span>{location}</span>}
             </>
           )}
