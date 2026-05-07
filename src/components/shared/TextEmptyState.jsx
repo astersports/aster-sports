@@ -4,7 +4,7 @@ export default function TextEmptyState({ heading, message }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      textAlign: 'center', padding: '40px 16px', minHeight: 120,
+      textAlign: 'center', padding: '24px 16px', minHeight: 80,
     }}>
       {heading && (
         <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 6 }}>

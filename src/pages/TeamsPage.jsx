@@ -29,7 +29,7 @@ export default function TeamsPage() {
         <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
           {activeSeason?.name || 'No active season'} · {visiblePrograms.length} teams
         </div>
-        <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: 'var(--em-accent)', marginTop: 8 }} />
+        <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: 'var(--em-accent)', marginTop: 6 }} />
       </div>
 
       {refreshing && (
