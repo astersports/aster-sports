@@ -47,7 +47,7 @@ function renderRow(ev, leftCell, teamName) {
   const { digits, meridiem } = splitTime(ev.start_at);
   const mText = escapeHtml(matchup(teamName, ev.opponent, ev.home_away).toUpperCase());
   const loc = escapeHtml(ev.location || 'TBD');
-  const courtPart = ev.sub_location ? `, Court ${escapeHtml(ev.sub_location)}` : '';
+  const courtPart = ev.sub_location ? `, ${escapeHtml(ev.sub_location)}` : '';
   const mapLink = ev.maps_url
     ? ` <a href="${escapeHtml(ev.maps_url)}" style="color:#4a8fd4;font-weight:bold;text-decoration:none;">Map</a>`
     : '';
@@ -92,7 +92,7 @@ function renderPlain(groups, teamName) {
       const t = timeFmt.format(new Date(ev.start_at));
       const m = matchup(teamName, ev.opponent, ev.home_away);
       const loc = ev.location || 'TBD';
-      const court = ev.sub_location ? `, Court ${ev.sub_location}` : '';
+      const court = ev.sub_location ? `, ${ev.sub_location}` : '';
       lines.push(`\u2022 ${t} \u2014 ${m} \u2014 ${loc}${court}`);
     }
     lines.push('');
