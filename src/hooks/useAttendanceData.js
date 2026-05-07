@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 export function useAttendanceData(teamId, filter = 'all', range = 'season') {
@@ -9,28 +9,29 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
   const [activations, setActivations] = useState([]);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     if (!teamId) { setLoading(false); return; }
+    let cancelled = false;
     (async () => {
       const now = new Date();
       const lookbackDays = range === '4weeks' ? 28 : 180;
       const seasonStart = new Date(now.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
-      const sixEventsAhead = new Date(now.getTime() + 42 * 24 * 60 * 60 * 1000);
+      const sixWeeksAhead = new Date(now.getTime() + 42 * 24 * 60 * 60 * 1000);
 
       let evtQuery = supabase.from('events').select('id, title, event_type, start_at, status')
         .eq('team_id', teamId).neq('status', 'cancelled')
-        .gte('start_at', seasonStart.toISOString()).lte('start_at', sixEventsAhead.toISOString())
+        .gte('start_at', seasonStart.toISOString()).lte('start_at', sixWeeksAhead.toISOString())
         .order('start_at', { ascending: false }).limit(100);
       if (filter === 'practices') evtQuery = evtQuery.eq('event_type', 'practice');
       else if (filter === 'games') evtQuery = evtQuery.in('event_type', ['game', 'tournament']);
 
       const [evtRes, rmRes] = await Promise.all([
         evtQuery,
-        supabase.from('roster_members').select('player_id, jersey_number')
-          .eq('team_id', teamId),
+        supabase.from('roster_members').select('player_id, jersey_number').eq('team_id', teamId),
       ]);
-
+      if (cancelled) return;
       if (evtRes.error) console.warn('useAttendanceData events:', evtRes.error.message);
       if (rmRes.error) console.warn('useAttendanceData roster:', rmRes.error.message);
 
@@ -41,8 +42,8 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
       let playerRows = [];
       if (playerIds.length > 0) {
         const { data: plData, error: plErr } = await supabase
-          .from('players').select('id, first_name, last_name, member_type')
-          .in('id', playerIds);
+          .from('players').select('id, first_name, last_name, member_type').in('id', playerIds);
+        if (cancelled) return;
         if (plErr) console.warn('useAttendanceData players:', plErr.message);
         playerRows = (plData || []).map((p) => ({ ...p, jersey_number: jerseyMap[p.id] ?? null }));
       }
@@ -54,6 +55,7 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
         evtIds.length > 0 ? supabase.from('check_ins').select('event_id, player_id, checked_in').in('event_id', evtIds).eq('checked_in', true) : { data: [] },
         evtIds.length > 0 ? supabase.from('player_activations').select('event_id, player_id').in('event_id', evtIds) : { data: [] },
       ]);
+      if (cancelled) return;
 
       setEvents(evtRes.data || []);
       setPlayers(playerRows);
@@ -63,7 +65,16 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
       setActivations(actRes.data || []);
       setLoading(false);
     })();
-  }, [teamId, filter, range]);
+    return () => { cancelled = true; };
+  }, [teamId, filter, range, version]);
+
+  useEffect(() => {
+    const onFocus = () => setVersion((v) => v + 1);
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
+
+  const refetch = useCallback(() => setVersion((v) => v + 1), []);
 
   const grid = useMemo(() => {
     const now = Date.now();
@@ -125,5 +136,5 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
     }).sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
   }, [players, events, rsvps, arrivals, checkIns, activations]);
 
-  return { grid, events, loading };
+  return { grid, events, loading, refetch };
 }

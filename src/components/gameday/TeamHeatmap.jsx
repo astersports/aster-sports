@@ -26,9 +26,9 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle })
 
   const myPlayerIds = role === 'parent' ? (myChildren || []).map((c) => c.playerId) : null;
   const visibleGrid = myPlayerIds ? grid.filter((r) => myPlayerIds.includes(r.player.id)) : grid;
-  const totalAttended = visibleGrid.reduce((s, r) => s + r.attended, 0);
-  const totalExpected = visibleGrid.reduce((s, r) => s + r.expected, 0);
-  const pct = totalExpected > 0 ? Math.round((totalAttended / totalExpected) * 100) : 0;
+  const totalGoing = visibleGrid.reduce((s, r) => s + r.goingCount, 0);
+  const totalPastEvents = visibleGrid.reduce((s, r) => s + r.totalPast, 0);
+  const pct = totalPastEvents > 0 ? Math.round((totalGoing / totalPastEvents) * 100) : 0;
   const title = role === 'parent' ? `My Player · ${pct}%` : `Team Pulse · ${pct}%`;
 
   return (
