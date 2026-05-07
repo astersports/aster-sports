@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAttendanceData } from '../../hooks/useAttendanceData';
-import Chip from '../shared/Chip';
+import FilterSelect from '../shared/FilterSelect';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
 
 const CELL_COLORS = {
@@ -32,11 +32,12 @@ export default function TeamHeatmap({ teamId, teamColor }) {
           <div style={{ fontSize: 24, fontWeight: 800, color: teamColor || 'var(--em-accent)' }}>{teamPct}%</div>
           <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>attendance · last 4 weeks</div>
         </div>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {['all', 'practices', 'games'].map((f) => (
-            <Chip key={f} label={f === 'all' ? 'All' : f === 'practices' ? 'Practice' : 'Games'} active={filter === f} onClick={() => setFilter(f)} />
-          ))}
-        </div>
+        <FilterSelect
+          value={filter}
+          onChange={(v) => setFilter(v || 'all')}
+          options={[{ value: 'all', label: 'All' }, { value: 'practices', label: 'Practice' }, { value: 'games', label: 'Games' }]}
+          ariaLabel="Filter event type"
+        />
       </div>
 
       <div style={{ overflowX: 'auto', padding: '0 16px 16px' }}>

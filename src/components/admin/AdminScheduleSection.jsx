@@ -6,7 +6,7 @@ import { useGameResultsMap } from '../../hooks/useGameResultsMap';
 import { useWeather } from '../../hooks/useWeather';
 import { formatCountdown } from '../../lib/formatters';
 import DateGroupedList from '../schedule/DateGroupedList';
-import Chip from '../shared/Chip';
+import FilterSelect from '../shared/FilterSelect';
 
 export default function AdminScheduleSection({ activities }) {
   const rsvpCounts = useEventRsvpCounts(activities);
@@ -49,15 +49,17 @@ export default function AdminScheduleSection({ activities }) {
 
   return (
     <div>
-      <div className="flex gap-2 flex-wrap" style={{ paddingBottom: 8 }}>
-        <Chip label="All Teams" active={!selectedTeam} onClick={() => setSelectedTeam(null)} />
-        {teams.map((t) => {
-          const next = teamNextEvent[t.id];
-          const countdown = next ? formatCountdown(next.start_at) : null;
-          return (
-            <Chip key={t.id} label={`${t.name}${countdown ? ` · ${countdown}` : ''}`} active={selectedTeam === t.id} color={t.team_color} onClick={() => setSelectedTeam(selectedTeam === t.id ? null : t.id)} />
-          );
-        })}
+      <div style={{ paddingBottom: 8 }}>
+        <FilterSelect
+          value={selectedTeam}
+          onChange={setSelectedTeam}
+          options={[{ value: null, label: 'All Teams' }, ...teams.map((t) => {
+            const next = teamNextEvent[t.id];
+            const countdown = next ? formatCountdown(next.start_at) : null;
+            return { value: t.id, label: `${t.name}${countdown ? ` · ${countdown}` : ''}`, color: t.team_color };
+          })]}
+          ariaLabel="Filter by team"
+        />
       </div>
       {filtered.length === 0 ? (
         <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13 }}>

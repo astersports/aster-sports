@@ -19,8 +19,8 @@ export default function QuickActions() {
   // the gutter — slightly less chrome-y, no overflow risk.
   return (
     <div
-      className="flex gap-2 flex-wrap"
-      style={{ maxWidth: '100%' }}
+      className="flex gap-2"
+      style={{ overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}
       aria-label="Quick actions"
     >
       {ACTIONS.map((action) => {
