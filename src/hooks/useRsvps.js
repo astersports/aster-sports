@@ -16,10 +16,10 @@ export function useRsvps(eventId, teamId) {
     const [rsvpRes, rosterRes] = await Promise.all([
       supabase.from('event_rsvps').select('*').eq('event_id', eventId),
       supabase
-        .from('team_players')
+        .from('roster_members')
         .select('jersey_number, players(id, first_name, last_name, member_type)')
         .eq('team_id', teamId)
-        .eq('status', 'active')
+        .is('left_at', null)
         .order('jersey_number', { ascending: true, nullsFirst: false }),
     ]);
     if (cancelledRef.current) return;

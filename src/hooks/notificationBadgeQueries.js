@@ -56,10 +56,10 @@ export async function fetchStaffBadgeCount(supabase, { activeRole, teams, nowMs,
   for (const ev of events ?? []) {
     const [{ count: rosterSize }, { count: rsvpCount }] = await Promise.all([
       supabase
-        .from('team_players')
+        .from('roster_members')
         .select('id', { count: 'exact', head: true })
         .eq('team_id', ev.team_id)
-        .eq('status', 'active'),
+        .is('left_at', null),
       supabase
         .from('event_rsvps')
         .select('id', { count: 'exact', head: true })
