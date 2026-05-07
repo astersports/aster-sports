@@ -20,7 +20,7 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
       let evtQuery = supabase.from('events').select('id, title, event_type, start_at, status')
         .eq('team_id', teamId).neq('status', 'cancelled')
         .gte('start_at', seasonStart.toISOString()).lte('start_at', sixEventsAhead.toISOString())
-        .order('start_at', { ascending: true }).limit(100);
+        .order('start_at', { ascending: false }).limit(100);
       if (filter === 'practices') evtQuery = evtQuery.eq('event_type', 'practice');
       else if (filter === 'games') evtQuery = evtQuery.in('event_type', ['game', 'tournament']);
 
