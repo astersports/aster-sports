@@ -11,6 +11,7 @@ import KpiGrid from '../components/admin/KpiGrid';
 import QuickActions from '../components/admin/QuickActions';
 import ActiveSeasonCard from '../components/admin/ActiveSeasonCard';
 import AdminScheduleSection from '../components/admin/AdminScheduleSection';
+import NextEventCard from '../components/admin/NextEventCard';
 import TeamPerformanceStrip from '../components/admin/TeamPerformanceStrip';
 import GettingStarted from '../components/admin/GettingStarted';
 import AdminGreeting from '../components/admin/AdminGreeting';
@@ -40,6 +41,8 @@ export default function AdminHomePage() {
       <section className="min-w-0" aria-label="Key metrics">
         <KpiGrid stats={stats} />
       </section>
+
+      {activities.length > 0 && <NextEventCard event={activities.find((a) => new Date(a.start_at) >= new Date() && a.status !== 'cancelled')} />}
 
       <section className="min-w-0" aria-label="Quick actions">
         <Label>QUICK ACTIONS</Label>
