@@ -23,7 +23,7 @@ export default function RosterSection({ team, sortedPlayers, search, setSearch, 
         }}>
           {sortedPlayers.map((player, i) => (
             <div key={player.id} className={`sf-stagger-${Math.min(i + 1, 8)}`}>
-              <PlayerRow player={player} teamColor={team.team_color} isLast={i === sortedPlayers.length - 1} isMyChild={myPlayerIds.includes(player.id)} />
+              <PlayerRow player={player} teamColor={team.team_color} isLast={i === sortedPlayers.length - 1} isMyChild={myPlayerIds.includes(player.id)} teamId={team.id} />
             </div>
           ))}
         </div>
