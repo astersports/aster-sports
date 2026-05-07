@@ -101,7 +101,7 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
         else { streakBroken = true; }
       }
 
-      const pct = expected > 0 ? Math.round((attended / expected) * 100) : null;
+      const pct = totalPast > 0 ? Math.round((goingCount / totalPast) * 100) : null;
       const responded = goingCount + maybeCount + declinedCount;
       const responseRate = totalPast > 0 ? Math.round((responded / totalPast) * 100) : null;
       return { player: p, cells, pct, streak, attended, expected, totalPast, goingCount, maybeCount, declinedCount, noResponseCount, responseRate };
