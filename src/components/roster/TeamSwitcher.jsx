@@ -3,7 +3,7 @@
 // styled with the team's color. Active team is filled; others outlined.
 export default function TeamSwitcher({ programs, teamId, navigate }) {
   return (
-    <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ marginBottom: 12, paddingBottom: 4 }}>
+    <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ marginBottom: 8, paddingBottom: 4 }}>
       {programs.map((p) => (
         <button
           key={p.id}

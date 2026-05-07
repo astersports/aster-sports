@@ -6,7 +6,7 @@ import { useSeason } from '../../context/SeasonContext';
 import { useNow } from '../../hooks/useNow';
 import StandingsTable from './StandingsTable';
 import MatchupCard from './MatchupCard';
-import Chip from '../shared/Chip';
+import FilterSelect from '../shared/FilterSelect';
 import Label from '../shared/Label';
 
 function useGameResults(eventIds) {
@@ -94,11 +94,13 @@ export default function GamesView({ activities, orgId }) {
       <StandingsTable teams={allTeams} recordsByTeamId={recordsByTeamId} totalGames={totalGames} />
 
       {gameTeams.length > 1 && (
-        <div className="flex gap-2 flex-wrap" style={{ paddingBottom: 6, marginBottom: 8 }}>
-          <Chip label="All" active={!selectedTeam} onClick={() => setSelectedTeam(null)} />
-          {gameTeams.map((t) => (
-            <Chip key={t.id} label={t.name} active={selectedTeam === t.id} color={t.team_color} onClick={() => setSelectedTeam(selectedTeam === t.id ? null : t.id)} />
-          ))}
+        <div style={{ marginBottom: 8 }}>
+          <FilterSelect
+            value={selectedTeam}
+            onChange={setSelectedTeam}
+            options={[{ value: null, label: 'All Teams' }, ...gameTeams.map((t) => ({ value: t.id, label: t.name, color: t.team_color }))]}
+            ariaLabel="Filter by team"
+          />
         </div>
       )}
 

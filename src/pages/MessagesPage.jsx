@@ -66,7 +66,7 @@ export default function MessagesPage() {
           <Plus size={18} strokeWidth={2} color="var(--em-text-inverse)" />
         </button>
       </div>
-      <div style={{ width: 32, height: 3, backgroundColor: 'var(--em-accent)', borderRadius: 2, marginBottom: 16 }} />
+      <div style={{ width: 32, height: 3, backgroundColor: 'var(--em-accent)', borderRadius: 2, marginBottom: 8 }} />
       <Label>Channels</Label>
       <ChannelList channels={channels} activeKey={active?.key} onSelect={setActive} previews={previews} />
       {dmThreads.length > 0 && (

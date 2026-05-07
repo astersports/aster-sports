@@ -63,7 +63,7 @@ export default function ActiveSeasonCard({ season }) {
       <div style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginBottom: 10 }}>
         {formatDateFull(season.start_date)} – {formatDateFull(season.end_date)}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8 }}>
         <svg width="48" height="48" viewBox="0 0 48 48" style={{ flexShrink: 0, transform: 'rotate(-90deg)' }}>
           <circle cx="24" cy="24" r="20" fill="none" stroke="var(--em-bg-tertiary)" strokeWidth="3" />
           <circle

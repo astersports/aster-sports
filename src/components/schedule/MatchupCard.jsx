@@ -39,7 +39,7 @@ export default function MatchupCard({ event, gameResult }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '12px 14px',
+        padding: '10px 14px',
         minHeight: 44,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: 100, flexShrink: 0 }}>

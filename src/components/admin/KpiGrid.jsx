@@ -76,7 +76,7 @@ function Card(props) {
 
   return (
     <div
-      className={`p-4 min-w-0 ${stagger || ''}`}
+      className={`p-3 min-w-0 ${stagger || ''}`}
       style={{
         backgroundColor: 'var(--em-bg-card)',
         borderRadius: 10,
@@ -102,7 +102,7 @@ function Card(props) {
           {isNumber ? animated : value}
         </div>
       )}
-      {!loading && isNumber && value > 0 && <div style={{ height: 20 }} />}
+      {!loading && isNumber && value > 0 && <div style={{ height: 8 }} />}
       <div className="truncate" style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginTop: 2 }}>
         {label}
       </div>
@@ -114,7 +114,7 @@ export default function KpiGrid({ stats }) {
   const { players, events, collected, outstanding, loading } = stats;
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-2">
       <Card icon={Users} label="Players" value={players} loading={loading} stagger="sf-stagger-1" />
       <Card icon={Calendar} label="Events" value={events} loading={loading} accent="var(--em-info)" stagger="sf-stagger-2" />
       <Card

@@ -71,7 +71,7 @@ export default function PlayerStatsTable({ players, stats, showAvg }) {
             {rows.map((r) => (
               <tr key={r.id}>
                 {cols.map((c) => (
-                  <td key={c.key} style={{ padding: '10px 4px', textAlign: c.key === 'name' ? 'left' : 'center', fontWeight: c.bold ? 600 : 400, color: c.key === 'jersey' ? 'var(--em-text-tertiary)' : 'var(--em-text-primary)', borderBottom: '1px solid var(--em-border-subtle)', whiteSpace: 'nowrap' }}>
+                  <td key={c.key} style={{ padding: '8px 4px', textAlign: c.key === 'name' ? 'left' : 'center', fontWeight: c.bold ? 600 : 400, color: c.key === 'jersey' ? 'var(--em-text-tertiary)' : 'var(--em-text-primary)', borderBottom: '1px solid var(--em-border-subtle)', whiteSpace: 'nowrap' }}>
                     {r[c.key]}
                   </td>
                 ))}

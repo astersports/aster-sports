@@ -38,7 +38,7 @@ export default function TeamAchievements({ teamId }) {
   if (achievements.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div style={{ marginBottom: 12 }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {achievements.map((a) => {
           const color = TYPE_COLORS[a.achievement_type] || 'var(--em-accent)';

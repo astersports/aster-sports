@@ -75,10 +75,12 @@ export default function SchedulePage() {
       <div className="px-4 py-4">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20 }}>Schedule</h1>
-          {isStaff(role) && selectedTeam && <ShareScheduleButton teamId={selectedTeam} teamName="" />}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ViewToggle value={viewMode} onChange={setViewMode} />
+            {isStaff(role) && selectedTeam && <ShareScheduleButton teamId={selectedTeam} teamName="" />}
+          </div>
         </div>
-        <div style={{ width: 32, height: 3, backgroundColor: 'var(--em-accent)', borderRadius: 2, marginBottom: 16 }} />
-        <ViewToggle value={viewMode} onChange={setViewMode} />
+        <div style={{ width: 32, height: 3, backgroundColor: 'var(--em-accent)', borderRadius: 2, marginBottom: 8 }} />
 
         {viewMode === 'games' ? (
           <GamesView activities={activities} orgId={orgId} />
@@ -89,7 +91,7 @@ export default function SchedulePage() {
             {upcoming.length === 0 ? (
               <TextEmptyState heading="No events this week" message="Check back later or tap + to create one." />
             ) : (
-              <div style={{ marginTop: 12 }}>
+              <div style={{ marginTop: 8 }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
                   <Label style={{ marginBottom: 0 }}>Next 7 days</Label>
                   <DensityToggle sectionKey="schedule-list" />
@@ -98,7 +100,7 @@ export default function SchedulePage() {
               </div>
             )}
             {remaining.length > 0 && (
-              <div style={{ marginTop: 16 }}>
+              <div style={{ marginTop: 12 }}>
                 <Label>Later</Label>
                 <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} density={density} gameResults={gameResults} weather={weather} />
               </div>
