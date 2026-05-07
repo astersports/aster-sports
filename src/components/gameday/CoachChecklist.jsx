@@ -21,23 +21,29 @@ export default function CoachChecklist({ event }) {
   }, [state, event.id]);
 
   return (
-    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '0 16px 12px' }} className="sf-no-scrollbar">
-      {items.map((item) => {
-        const done = state[item.key];
-        return (
-          <button key={item.key} type="button" onClick={() => toggle(item.key)} className="sf-press"
-            style={{
-              flexShrink: 0, minHeight: 36, padding: '0 12px', borderRadius: 999,
-              fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
-              border: done ? 'none' : '1px solid var(--em-border-default)',
-              backgroundColor: done ? 'var(--em-success)' : 'var(--em-bg-card)',
-              color: done ? 'var(--em-text-inverse)' : 'var(--em-text-secondary)',
-              whiteSpace: 'nowrap',
-            }}>
-            {done ? '✓ ' : ''}{item.label}
-          </button>
-        );
-      })}
+    <div style={{ padding: '0 16px 12px' }}>
+      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8 }}>Pre-Game Checklist</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {items.map((item) => {
+          const done = state[item.key];
+          return (
+            <button key={item.key} type="button" onClick={() => toggle(item.key)} className="sf-press"
+              role="checkbox" aria-checked={done} aria-label={item.label}
+              style={{
+                flexShrink: 0, minHeight: 40, padding: '0 14px', borderRadius: 10,
+                fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 8,
+                border: done ? 'none' : '1px solid var(--em-border-default)',
+                backgroundColor: done ? 'var(--em-success-soft)' : 'var(--em-bg-card)',
+                color: done ? 'var(--em-success)' : 'var(--em-text-secondary)',
+                whiteSpace: 'nowrap',
+              }}>
+              <span style={{ width: 18, height: 18, borderRadius: 4, border: done ? 'none' : '1.5px solid var(--em-border-default)', backgroundColor: done ? 'var(--em-success)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--em-text-inverse)', fontWeight: 700 }}>{done ? '✓' : ''}</span>
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

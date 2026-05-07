@@ -40,8 +40,8 @@ export default function StepDetails({ eventType, data, onChange, orgId }) {
             const tid = e.target.value || null;
             const t = tournaments.find((x) => x.id === tid);
             set('tournamentId', tid);
-            if (t) onChange({ ...data, tournamentId: tid, tournamentName: t.name });
-            else onChange({ ...data, tournamentId: null, tournamentName: '' });
+            if (t) onChange({ ...data, tournamentId: tid, tournamentName: t.name, eventType: 'tournament' });
+            else onChange({ ...data, tournamentId: null, tournamentName: '', eventType: 'game' });
           }} style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' }}>
             <option value="">No tournament</option>
             {tournaments.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}

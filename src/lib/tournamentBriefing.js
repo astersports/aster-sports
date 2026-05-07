@@ -122,7 +122,7 @@ export function generateTournamentBriefing({
 
   const html = '<div style="max-width:520px;margin:0 auto;border:3px solid #1a1a2e;border-radius:6px;font-family:Arial,sans-serif;background:#ffffff;overflow:hidden;">'
     + '<div style="background:#1a1a2e;border-bottom:5px solid #4a8fd4;text-align:center;padding:20px 16px;">'
-    + `<div style="color:#4a8fd4;font-size:11px;text-transform:uppercase;letter-spacing:2px;font-weight:bold;">${org} Presents</div>`
+    + `<div style="color:#4a8fd4;font-size:11px;text-transform:uppercase;letter-spacing:2px;font-weight:bold;">${org} — Preliminary Schedule</div>`
     + `<div style="color:#ffffff;font-size:26px;text-transform:uppercase;font-weight:bold;margin:10px 0;line-height:1.2;">${title}</div>`
     + `<div style="display:inline-block;background:#f0d050;color:#1a1a2e;font-size:12px;font-weight:bold;padding:5px 12px;border-radius:4px;border:1px solid rgba(74,143,212,0.4);">${dLabel}</div>`
     + '</div>'
