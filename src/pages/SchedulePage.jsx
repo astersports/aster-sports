@@ -28,8 +28,8 @@ export default function SchedulePage() {
   const { orgId, myChildren, role } = useAuth();
   const { activities, loading, refetch } = useActivities();
   const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(activities);
-  const { counts: rideCounts } = useEventRideCounts(activities);
-  const { counts: dutyCounts } = useEventDutyCounts(activities);
+  const rideCounts = useEventRideCounts(activities);
+  const dutyCounts = useEventDutyCounts(activities);
   const [selectedTeam, setSelectedTeam] = useState(() => new URLSearchParams(window.location.search).get('team'));
   const [selectedType, setSelectedType] = useState(null);
   const [activeKidFilter, setActiveKidFilter] = useState(null);
@@ -51,7 +51,11 @@ export default function SchedulePage() {
     if (kidTeamIds.length) list = list.filter((a) => kidTeamIds.includes(a.team_id));
     if (selectedTeam) list = list.filter((a) => a.team_id === selectedTeam);
     if (selectedType) {
-      list = list.filter((a) => a.event_type === selectedType);
+      if (selectedType === 'game') {
+        list = list.filter((a) => a.event_type === 'game' || a.event_type === 'tournament');
+      } else {
+        list = list.filter((a) => a.event_type === selectedType);
+      }
     }
     if (!showCancelled) list = list.filter((a) => a.status !== 'cancelled');
     return list.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ember-v2-2026-05-07b';
+const CACHE_NAME = 'ember-v2-2026-04-28';
 const PRECACHE = ['/', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {

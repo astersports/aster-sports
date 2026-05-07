@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -7,7 +7,6 @@ import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import { useEventDetail } from '../hooks/useEventDetail';
 import { useRsvps } from '../hooks/useRsvps';
-import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import useEventDelete from '../hooks/useEventDelete';
 import EventDetailHeader from '../components/event/EventDetailHeader';
 import EventDetailTab from '../components/event/EventDetailTab';
@@ -29,7 +28,6 @@ const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinO
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
 const FinalizedGameView = lazy(() => import('../components/livescore/FinalizedGameView'));
-const AcademyActivationPanel = lazy(() => import('../components/event/AcademyActivationPanel'));
 const SH = ({ children, sectionKey }) => <h2 data-section={sectionKey} style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>;
 
 export default function EventDetailPage() {
@@ -41,8 +39,6 @@ export default function EventDetailPage() {
   const { event, loading: eventLoading, refetch, patchEvent } = useEventDetail(id, location.state?.event);
   const teamId = event?.team_id || null;
   const { rsvps, roster, loading: rsvpLoading, setRsvp, saveNote, refetch: refetchRsvps } = useRsvps(id, teamId);
-  const refetchAll = useCallback(() => { refetch(); refetchRsvps(); }, [refetch, refetchRsvps]);
-  useRefetchOnVisible(refetchAll);
   const [editing, setEditing] = useState(false);
   const [editMode, setEditMode] = useState('single');
   const [showCheckin, setShowCheckin] = useState(false);
@@ -97,7 +93,11 @@ export default function EventDetailPage() {
       {isStaff && isGameType && !isPastGame && event.status !== 'cancelled' && event.team_id && (
         <Button onClick={() => navigate(`/events/${event.id}/live`)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px' }}>Live Score</Button>
       )}
-      {isPastGame && <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>Enter Score</Button>}
+      {isPastGame && (
+        <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>
+          Enter Score
+        </Button>
+      )}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
       <TournamentBriefingBanner event={event} team={team} role={role} />
 
@@ -120,8 +120,6 @@ export default function EventDetailPage() {
         <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} />
       </CollapsibleSection>
 
-      {isStaff && isGameType && teamId && <Suspense fallback={null}><AcademyActivationPanel eventId={event.id} teamId={teamId} /></Suspense>}
-
       {dutyCount > 0 && (<><SH sectionKey="duties">Volunteers</SH><EventDutiesTab eventId={event.id} /></>)}
 
       <CollapsibleSection title="Rides" sectionKey="rides">
@@ -141,8 +139,12 @@ export default function EventDetailPage() {
         <ConfirmDialog title="Edit recurring event" message="Edit all future events in this series, or just this one?" confirmLabel="All future" cancelLabel="This one only" onConfirm={() => { setConfirmAction(null); setEditMode('series'); setEditing(true); }} onCancel={() => { setConfirmAction(null); setEditMode('single'); setEditing(true); }} />
       )}
       {confirmAction?.type === 'removeSeries' && <ConfirmDialog title="Remove from series" message="This event will become standalone." confirmLabel="Remove" onConfirm={async () => { setConfirmAction(null); await supabase.from('events').update({ parent_event_id: null }).eq('id', event.id); patchEvent({ parent_event_id: null }); refetch(); }} onCancel={() => setConfirmAction(null)} />}
-      {pendingDelete?.type === 'series' && <ConfirmDialog title="Delete Recurring Event" message="Delete all future events in this series, or just this one?" confirmLabel="All future" cancelLabel="Just this one" destructive onConfirm={() => confirmDelete('allFuture')} onCancel={() => confirmDelete('single')} />}
-      {pendingDelete?.type === 'single' && <ConfirmDialog title="Delete Event" message="Delete this event?" confirmLabel="Delete" destructive onConfirm={() => confirmDelete('single')} onCancel={cancelDelete} />}
+      {pendingDelete?.type === 'series' && (
+        <ConfirmDialog title="Delete Recurring Event" message="Delete all future events in this series, or just this one?" confirmLabel="All future" cancelLabel="Just this one" destructive onConfirm={() => confirmDelete('allFuture')} onCancel={() => confirmDelete('single')} />
+      )}
+      {pendingDelete?.type === 'single' && (
+        <ConfirmDialog title="Delete Event" message="Delete this event?" confirmLabel="Delete" destructive onConfirm={() => confirmDelete('single')} onCancel={cancelDelete} />
+      )}
     </div>
   );
 }

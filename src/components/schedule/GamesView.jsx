@@ -4,12 +4,10 @@ import { useOrgTeamRecords } from '../../hooks/useOrgTeamRecords';
 import { useTeams } from '../../hooks/useTeams';
 import { useSeason } from '../../context/SeasonContext';
 import { useNow } from '../../hooks/useNow';
-import { useDensity } from '../../hooks/useDensity';
 import { ChevronRight } from 'lucide-react';
 import StandingsTable from './StandingsTable';
-import EventCard from './EventCard';
+import MatchupCard from './MatchupCard';
 import FilterSelect from '../shared/FilterSelect';
-import DensityToggle from '../home/DensityToggle';
 
 function useGameResults(eventIds) {
   const [byEventId, setByEventId] = useState({});
@@ -40,7 +38,6 @@ export default function GamesView({ activities, orgId }) {
   const now = useNow();
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [showResults, setShowResults] = useState(false);
-  const { density } = useDensity('games-view', 'medium');
 
   const gameEvents = useMemo(() =>
     activities
@@ -64,9 +61,13 @@ export default function GamesView({ activities, orgId }) {
   const filtered = useMemo(() => selectedTeam ? gameEvents.filter((e) => e.team_id === selectedTeam) : gameEvents, [gameEvents, selectedTeam]);
   const upcoming = useMemo(() => filtered.filter((e) => new Date(e.start_at).getTime() >= now), [filtered, now]);
   const past = useMemo(() => filtered.filter((e) => new Date(e.start_at).getTime() < now), [filtered, now]);
-  const gameResultsMap = useGameResults(useMemo(() => past.map((e) => e.id), [past]));
+  const pastIds = useMemo(() => past.map((e) => e.id), [past]);
+  const gameResultsMap = useGameResults(pastIds);
+
   const totalGames = useMemo(() => {
-    let c = 0; for (const s of Object.values(recordsByTeamId)) c += s.gamesPlayed || 0; return c;
+    let count = 0;
+    for (const s of Object.values(recordsByTeamId)) count += s.gamesPlayed || 0;
+    return count;
   }, [recordsByTeamId]);
 
   const weekGroups = useMemo(() => {
@@ -93,20 +94,23 @@ export default function GamesView({ activities, orgId }) {
     <div style={{ marginTop: 12 }}>
       <StandingsTable teams={allTeams} recordsByTeamId={recordsByTeamId} totalGames={totalGames} />
 
-      {gameTeams.length > 1 && <div style={{ marginBottom: 8 }}>
-        <FilterSelect value={selectedTeam} onChange={setSelectedTeam}
-          options={[{ value: null, label: 'All Teams' }, ...gameTeams.map((t) => ({ value: t.id, label: t.name, color: t.team_color }))]}
-          ariaLabel="Filter by team" />
-      </div>}
+      {gameTeams.length > 1 && (
+        <div style={{ marginBottom: 8 }}>
+          <FilterSelect
+            value={selectedTeam}
+            onChange={setSelectedTeam}
+            options={[{ value: null, label: 'All Teams' }, ...gameTeams.map((t) => ({ value: t.id, label: t.name, color: t.team_color }))]}
+            ariaLabel="Filter by team"
+          />
+        </div>
+      )}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-        <DensityToggle sectionKey="games-view" />
-      </div>
-
-      {weekGroups.length === 0 && <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--em-text-tertiary)' }}>
-        <div style={{ fontSize: 15, fontWeight: 500 }}>No upcoming games</div>
-        <div style={{ fontSize: 13, marginTop: 4 }}>Check back when the schedule is posted.</div>
-      </div>}
+      {weekGroups.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--em-text-tertiary)' }}>
+          <div style={{ fontSize: 15, fontWeight: 500 }}>No upcoming games</div>
+          <div style={{ fontSize: 13, marginTop: 4 }}>Check back when the schedule is posted.</div>
+        </div>
+      )}
 
       {weekGroups.map((group, i) => (
         <div key={i} style={{ marginBottom: 16 }}>
@@ -123,7 +127,7 @@ export default function GamesView({ activities, orgId }) {
               {group.dateLabel}
             </span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{group.events.map((e) => <EventCard key={e.id} event={e} density={density} />)}</div>
+          {group.events.map((e) => <MatchupCard key={e.id} event={e} />)}
         </div>
       ))}
 
@@ -137,7 +141,7 @@ export default function GamesView({ activities, orgId }) {
             <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Results</span>
             <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>({past.length})</span>
           </button>
-          {showResults && <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{past.slice(-10).reverse().map((e) => <EventCard key={e.id} event={e} density={density} gameResult={gameResultsMap[e.id]} />)}</div>}
+          {showResults && past.slice(-10).reverse().map((e) => <MatchupCard key={e.id} event={e} gameResult={gameResultsMap[e.id]} />)}
         </div>
       )}
     </div>

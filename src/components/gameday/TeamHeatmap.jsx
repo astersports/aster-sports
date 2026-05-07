@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { useAttendanceData } from '../../hooks/useAttendanceData';
-import { useAuth } from '../../context/AuthContext';
-import CollapsibleSection from '../shared/CollapsibleSection';
 import FilterSelect from '../shared/FilterSelect';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
 
@@ -14,35 +12,32 @@ const CELL_COLORS = {
   rsvp_no: { bg: 'var(--em-bg-tertiary)', border: 'none' },
   no_response: { bg: 'transparent', border: '1px solid var(--em-border-default)' },
   no_response_past: { bg: 'transparent', border: '1px dashed var(--em-border-default)' },
-  not_applicable: { bg: 'transparent', border: 'none' },
 };
 
-export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle }) {
+export default function TeamHeatmap({ teamId, teamColor }) {
   const [filter, setFilter] = useState('all');
-  const { role, myChildren } = useAuth();
-  const { grid, events, loading } = useAttendanceData(teamId, filter, range);
+  const { grid, events, loading } = useAttendanceData(teamId, filter);
 
   if (loading) return <div style={{ padding: 16 }}><LoadingSkeleton variant="card" count={1} /></div>;
 
-  const myPlayerIds = role === 'parent' ? (myChildren || []).map((c) => c.playerId) : null;
-  const visibleGrid = myPlayerIds ? grid.filter((r) => myPlayerIds.includes(r.player.id)) : grid;
-  const totalGoing = visibleGrid.reduce((s, r) => s + r.goingCount, 0);
-  const totalPastEvents = visibleGrid.reduce((s, r) => s + r.totalPast, 0);
-  const pct = totalPastEvents > 0 ? Math.round((totalGoing / totalPastEvents) * 100) : 0;
-  const title = role === 'parent' ? `My Player · ${pct}%` : `Team Pulse · ${pct}%`;
+  const totalAttended = grid.reduce((s, r) => s + r.attended, 0);
+  const totalExpected = grid.reduce((s, r) => s + r.expected, 0);
+  const teamPct = totalExpected > 0 ? Math.round((totalAttended / totalExpected) * 100) : 0;
 
   return (
-    <CollapsibleSection title={title} sectionKey="team-pulse">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0 8px' }}>
-        <button type="button" onClick={() => onRangeToggle?.()} style={{ fontSize: 12, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', minHeight: 44 }}>
-          attendance · {range === 'season' ? 'season to date' : 'last 4 weeks'} ›
-        </button>
-        {role !== 'parent' && <FilterSelect
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 8px' }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Team Pulse</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: teamColor || 'var(--em-accent)' }}>{teamPct}%</div>
+          <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>attendance · last 4 weeks</div>
+        </div>
+        <FilterSelect
           value={filter}
           onChange={(v) => setFilter(v || 'all')}
           options={[{ value: 'all', label: 'All' }, { value: 'practices', label: 'Practice' }, { value: 'games', label: 'Games' }]}
           ariaLabel="Filter event type"
-        />}
+        />
       </div>
 
       <div style={{ overflowX: 'auto', padding: '0 16px 16px' }}>
@@ -55,7 +50,7 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle })
           ))}
           <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--em-text-tertiary)', textAlign: 'right' }}>ATT%</div>
 
-          {visibleGrid.map((row) => (
+          {grid.map((row) => (
             <div key={row.player.id} style={{ display: 'contents' }}>
               <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--em-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginRight: 4 }}>#{row.player.jersey_number || '—'}</span>
@@ -70,13 +65,13 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle })
                 );
               })}
               <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: 17, fontWeight: 800, color: row.pct !== null && row.pct < 60 ? 'var(--em-danger)' : row.pct !== null && row.pct >= 80 ? 'var(--em-success)' : 'var(--em-text-primary)' }}>{row.pct != null ? `${row.pct}%` : '—'}</span>
+                <span style={{ fontSize: 17, fontWeight: 800, color: row.pct !== null && row.pct < 60 ? 'var(--em-danger)' : row.pct !== null && row.pct >= 80 ? 'var(--em-success)' : 'var(--em-text-primary)' }}>{row.pct ?? '—'}%</span>
                 {row.streak >= 3 && <div style={{ fontSize: 11, color: 'var(--em-warning)' }}>🔥 {row.streak}</div>}
               </div>
             </div>
           ))}
         </div>
       </div>
-    </CollapsibleSection>
+    </div>
   );
 }
