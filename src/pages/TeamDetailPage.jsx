@@ -5,13 +5,11 @@ import { useAuth } from '../context/AuthContext';
 import { isStaff } from '../lib/permissions';
 import { usePrograms } from '../hooks/usePrograms';
 import { useRoster } from '../hooks/useRoster';
-import { useActivities } from '../hooks/useActivities';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useFilteredRoster } from '../hooks/useFilteredRoster';
 import { useAttendanceData } from '../hooks/useAttendanceData';
 import { useTeamRecords } from '../hooks/useTeamRecords';
 import { usePlayerSeasonStats } from '../hooks/usePlayerSeasonStats';
-import { useNow } from '../hooks/useNow';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import TeamHeaderCard from '../components/roster/TeamHeaderCard';
@@ -21,14 +19,11 @@ import TeamSwitcher from '../components/roster/TeamSwitcher';
 import TeamPlayerStats from '../components/roster/TeamPlayerStats';
 import TeamHeatmap from '../components/gameday/TeamHeatmap';
 import MessageTeamFAB from '../components/roster/MessageTeamFAB';
-import CoachQuickActions from '../components/roster/CoachQuickActions';
-import MyChildSpotlight from '../components/roster/MyChildSpotlight';
 
 export default function TeamDetailPage() {
   const { teamId } = useParams();
   const navigate = useNavigate();
-  const { role, myTeamIds, myChildren } = useAuth();
-  const { activities } = useActivities();
+  const { role, myTeamIds } = useAuth();
   const { programs, loading: teamsLoading } = usePrograms();
   const switcherPrograms = role === 'parent' ? programs.filter((p) => (myTeamIds || []).includes(p.id)) : programs;
   const { players, loading: rosterLoading, refetch: rosterRefetch } = useRoster(teamId);
@@ -51,14 +46,6 @@ export default function TeamDetailPage() {
   }, [players, grid]);
   const sortedPlayers = useFilteredRoster(enrichedPlayers, search, sortBy);
   const team = programs.find((p) => p.id === teamId);
-  const now = useNow();
-  const nextEvent = useMemo(() =>
-    activities.filter(a => a.team_id === teamId && a.status !== 'cancelled' && a.start_at)
-      .sort((a, b) => new Date(a.start_at) - new Date(b.start_at))
-      .find(a => new Date(a.start_at).getTime() >= now),
-    [activities, teamId, now]);
-  const myChild = role === 'parent' ? (myChildren || []).find((c) => c.teamIds?.includes(teamId) || c.teamId === teamId) : null;
-  const myChildPlayer = myChild ? enrichedPlayers.find((p) => p.id === myChild.playerId) : null;
 
   if (teamsLoading) return <div className="px-4 py-4"><LoadingSkeleton variant="card" count={3} /></div>;
   if (!team) return <div className="px-4 py-4"><EmptyState icon={Users} title="Team not found" description="This team doesn't exist or has been removed." /></div>;
@@ -69,10 +56,8 @@ export default function TeamDetailPage() {
         <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
       </button>
       <TeamSwitcher programs={switcherPrograms} teamId={teamId} navigate={navigate} />
-      <TeamHeaderCard team={team} summary={summary} loading={recordsLoading} nextEvent={nextEvent} />
-      {myChildPlayer && <MyChildSpotlight player={myChildPlayer} team={team} teamId={teamId} child={myChild} />}
+      <TeamHeaderCard team={team} summary={summary} loading={recordsLoading} />
       <TeamAchievements teamId={teamId} />
-      {isStaff(role) && <CoachQuickActions teamId={teamId} />}
 
       {rosterLoading ? (
         <LoadingSkeleton variant="list" count={6} />
@@ -86,7 +71,7 @@ export default function TeamDetailPage() {
         <RosterSection team={team} sortedPlayers={sortedPlayers} search={search} setSearch={setSearch} sortBy={sortBy} setSortBy={setSortBy} />
       )}
 
-      {!rosterLoading && players.length > 0 && <TeamHeatmap teamId={teamId} teamColor={team?.team_color} range={pulseRange} onRangeToggle={() => setPulseRange(r => r === 'season' ? '4weeks' : 'season')} />}
+      {!rosterLoading && players.length > 0 && <TeamHeatmap teamId={teamId} range={pulseRange} onRangeToggle={() => setPulseRange(r => r === 'season' ? '4weeks' : 'season')} />}
       {isStaff(role) && !rosterLoading && players.length > 0 && <TeamPlayerStats players={players} stats={playerStats} loading={statsLoading} />}
       {isStaff(role) && <MessageTeamFAB teamId={teamId} />}
     </div>
