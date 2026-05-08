@@ -33,8 +33,8 @@ export default function TournamentBriefing({ event, team, onClose }) {
 
   useEffect(() => { loadDraft(); }, [loadDraft]);
   useEffect(() => {
-    if (draftKeys !== undefined && !briefing && isSchedule) generate(draftKeys, survivalText);
-  }, [draftKeys, survivalText, briefing, generate, isSchedule]);
+    if (draftKeys !== undefined && isSchedule) generate(draftKeys, survivalText);
+  }, [draftKeys, survivalText, generate, isSchedule]);
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape' && !sending) onClose?.(); };
     window.addEventListener('keydown', onKey);
