@@ -1,20 +1,17 @@
 import { memo } from 'react';
-import Chip from '../shared/Chip';
+import FilterSelect from '../shared/FilterSelect';
 
 function ChildFilterChips({ kids, activeFilter, onChange }) {
   if (!kids || kids.length < 2) return null;
 
   return (
-    <div className="flex gap-2 flex-wrap" style={{ paddingBottom: 6 }}>
-      <Chip label="All" active={activeFilter === null} onClick={() => onChange(null)} />
-      {kids.map((kid) => (
-        <Chip
-          key={kid.playerId}
-          label={kid.firstName}
-          active={activeFilter === kid.playerId}
-          onClick={() => onChange(kid.playerId)}
-        />
-      ))}
+    <div style={{ paddingBottom: 6 }}>
+      <FilterSelect
+        value={activeFilter}
+        onChange={onChange}
+        options={[{ value: null, label: 'All Children' }, ...kids.map(k => ({ value: k.playerId, label: k.firstName }))]}
+        ariaLabel="Filter by child"
+      />
     </div>
   );
 }

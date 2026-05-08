@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calendar, CalendarPlus, DollarSign, Megaphone, MessageSquare, Trophy, UserPlus } from 'lucide-react';
+import { CalendarPlus, DollarSign, Megaphone, MessageSquare, Trophy, UserPlus } from 'lucide-react';
 
 const ACTIONS = [
   { label: '+ Event',     icon: CalendarPlus,  to: '/schedule'     },
@@ -7,20 +7,13 @@ const ACTIONS = [
   { label: 'Financials',  icon: DollarSign,    to: '/admin/financials' },
   { label: 'Announce',    icon: Megaphone,     to: '/messages?announce=1' },
   { label: 'Message',     icon: MessageSquare, to: '/messages'     },
-  { label: 'Schedule',    icon: Calendar,      to: '/schedule'     },
   { label: 'Tournaments', icon: Trophy,        to: '/tournaments'  },
 ];
 
 export default function QuickActions() {
-  // Previously used `-mx-4 px-4` to bleed edge-to-edge inside the
-  // parent's px-4 gutter, but the negative margins were blowing out the
-  // page wrapper's computed width on iOS Safari and letting the whole
-  // admin dashboard drag horizontally. A plain scroll row sits inside
-  // the gutter — slightly less chrome-y, no overflow risk.
   return (
     <div
-      className="flex gap-2 sf-no-scrollbar"
-      style={{ overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}
+      style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}
       aria-label="Quick actions"
     >
       {ACTIONS.map((action) => {
@@ -30,7 +23,7 @@ export default function QuickActions() {
             key={action.label}
             to={action.to}
             onClick={() => navigator.vibrate?.(10)}
-            className="flex items-center gap-2 sf-press whitespace-nowrap"
+            className="flex items-center gap-2 sf-press"
             style={{
               minHeight: 44,
               padding: '0 16px',
