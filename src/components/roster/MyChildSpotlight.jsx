@@ -1,7 +1,4 @@
-import { useMemo } from 'react';
 import { Calendar } from 'lucide-react';
-import { useActivities } from '../../hooks/useActivities';
-import { useNow } from '../../hooks/useNow';
 import { TYPE_LABELS } from '../../lib/constants';
 import ChildRsvp from '../schedule/ChildRsvp';
 
@@ -16,15 +13,7 @@ function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
-export default function MyChildSpotlight({ player, team, teamId, child }) {
-  const { activities } = useActivities();
-  const now = useNow();
-
-  const nextEvent = useMemo(() =>
-    (activities || []).find(a => a.team_id === teamId && a.status !== 'cancelled' && new Date(a.start_at).getTime() >= now),
-    [activities, teamId, now]
-  );
-
+export default function MyChildSpotlight({ player, team, child, nextEvent }) {
   if (!player) return null;
   const initial = (player.last_name || player.first_name || '?').charAt(0).toUpperCase();
   const tc = team?.team_color || 'var(--em-neutral)';

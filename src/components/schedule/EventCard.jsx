@@ -53,55 +53,72 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
     >
       <div style={{ width: (event.event_type === 'game' || event.event_type === 'tournament') ? 6 : 4, flexShrink: 0, backgroundColor: teamColor }} />
       <div style={{ flex: 1, padding: density === 'minimal' ? '8px 14px' : '10px 14px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
-              <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)' }}>{formatTime(event.start_at)}</span>
-              {showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>{formatCountdown(event.start_at)}</span>}
-              {isToday && !showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-info-soft)', color: 'var(--em-info)' }}>Today</span>}
-              <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>· {typeLabel}</span>
-              {gameResult?.published_at && <span style={{ fontSize: 13, fontWeight: 700, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>{gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}</span>}
-              {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
-              {density === 'minimal' && teamName && <span style={{ fontSize: 13, color: teamColor, fontWeight: 500 }}>· {teamName}</span>}
-              {density === 'minimal' && event.location_name && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, color: 'var(--em-text-tertiary)' }}>
-                  · <MapPin size={11} strokeWidth={1.75} />
+        {density === 'minimal' ? (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: 1 }}>
+                <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)' }}>{formatTime(event.start_at)}</span>
+                <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>· {typeLabel}</span>
+                {isToday && !showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-info-soft)', color: 'var(--em-info)' }}>Today</span>}
+                {gameResult?.published_at && <span style={{ fontSize: 13, fontWeight: 700, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)', marginLeft: 'auto' }}>{gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}</span>}
+                {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                {weather && !isPast && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{weather.icon} {weather.temp}°</span>}
+                <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2 }}>
+              {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
+              {teamName && event.location_name && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
+              {event.location_name && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--em-text-tertiary)' }}>
+                  <MapPin size={11} strokeWidth={1.75} />
                   {mapsUrl ? (
                     <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }} style={{ color: 'var(--em-text-secondary)', textDecoration: 'none', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}>{event.location_name}</button>
                   ) : event.location_name}
                 </span>
               )}
             </div>
-            {density !== 'minimal' && (
-              <>
-                <div style={{ fontSize: 15, color: 'var(--em-text-primary)', marginTop: 2, marginBottom: 2, textDecoration: isCancelled ? 'line-through' : 'none' }}>
-                  {titlePrefix}{rawTitle}
+          </>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+                <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)' }}>{formatTime(event.start_at)}</span>
+                {showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>{formatCountdown(event.start_at)}</span>}
+                {isToday && !showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-info-soft)', color: 'var(--em-info)' }}>Today</span>}
+                <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>· {typeLabel}</span>
+                {gameResult?.published_at && <span style={{ fontSize: 13, fontWeight: 700, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>{gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}</span>}
+                {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
+              </div>
+              <div style={{ fontSize: 15, color: 'var(--em-text-primary)', marginTop: 2, marginBottom: 2, textDecoration: isCancelled ? 'line-through' : 'none' }}>
+                {titlePrefix}{rawTitle}
+              </div>
+              {(teamName || event.location_name) && (
+                <div className="flex items-center" style={{ fontSize: 13, gap: 4 }}>
+                  {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
+                  {teamName && event.location_name && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
+                  {event.location_name && mapsUrl ? (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--em-accent)', textDecoration: 'none', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}>
+                      <MapPin size={12} strokeWidth={1.75} /> {event.location_name}
+                    </button>
+                  ) : event.location_name ? (<><MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" /><span style={{ color: 'var(--em-text-tertiary)' }}>{event.location_name}</span></>) : null}
                 </div>
-                {(teamName || event.location_name) && (
-                  <div className="flex items-center" style={{ fontSize: 13, gap: 4 }}>
-                    {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
-                    {teamName && event.location_name && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
-                    {event.location_name && mapsUrl ? (
-                      <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--em-accent)', textDecoration: 'none', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}>
-                        <MapPin size={12} strokeWidth={1.75} /> {event.location_name}
-                      </button>
-                    ) : event.location_name ? (<><MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" /><span style={{ color: 'var(--em-text-tertiary)' }}>{event.location_name}</span></>) : null}
-                  </div>
-                )}
-                {density !== 'maximum' && rideCount?.requests > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4 }}>
-                    <Car size={11} strokeWidth={1.75} color="var(--em-warning)" />
-                    <span style={{ color: 'var(--em-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>
-                  </div>
-                )}
-              </>
-            )}
+              )}
+              {density !== 'maximum' && rideCount?.requests > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4 }}>
+                  <Car size={11} strokeWidth={1.75} color="var(--em-warning)" />
+                  <span style={{ color: 'var(--em-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0, textAlign: 'right' }}>
+              {weather && !isPast && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{weather.icon} {weather.temp}°</span>}
+              <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
+            </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0, textAlign: 'right' }}>
-            {weather && !isPast && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{weather.icon} {weather.temp}°</span>}
-            <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
-          </div>
-        </div>
+        )}
         {density === 'maximum' && (
           <>
             {event.notes && <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2, WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', display: '-webkit-box', overflow: 'hidden' }}>{event.notes}</div>}
