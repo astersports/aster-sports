@@ -32,6 +32,7 @@ export default function TeamDetailPage() {
   const { stats: playerStats, loading: statsLoading } = usePlayerSeasonStats(teamId);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('jersey');
+  const [pulseRange, setPulseRange] = useState('season');
   const enrichedPlayers = useMemo(() => {
     if (!grid?.length) return players;
     const pctMap = {};
@@ -66,7 +67,7 @@ export default function TeamDetailPage() {
         <RosterSection team={team} sortedPlayers={sortedPlayers} search={search} setSearch={setSearch} sortBy={sortBy} setSortBy={setSortBy} />
       )}
 
-      {!rosterLoading && players.length > 0 && <TeamHeatmap teamId={teamId} />}
+      {!rosterLoading && players.length > 0 && <TeamHeatmap teamId={teamId} range={pulseRange} onRangeToggle={() => setPulseRange((r) => r === 'season' ? '4weeks' : 'season')} />}
       {!rosterLoading && players.length > 0 && isStaff(role) && <TeamPlayerStats players={players} stats={playerStats} loading={statsLoading} />}
       {isStaff(role) && <MessageTeamFAB teamId={teamId} />}
     </div>
