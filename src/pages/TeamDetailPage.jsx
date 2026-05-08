@@ -49,7 +49,7 @@ export default function TeamDetailPage() {
       <button type="button" onClick={() => navigate('/teams')} className="flex items-center sf-press mb-2" style={{ minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
         <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
       </button>
-      <TeamSwitcher programs={switcherPrograms} teamId={teamId} navigate={navigate} />
+      {switcherPrograms.length > 1 && <TeamSwitcher programs={switcherPrograms} teamId={teamId} navigate={navigate} />}
       <TeamHeaderCard team={team} summary={summary} loading={recordsLoading} />
       <TeamAchievements teamId={teamId} />
       {isStaff(role) && <QrInviteButton teamId={teamId} teamName={team.name} />}
@@ -67,7 +67,7 @@ export default function TeamDetailPage() {
       )}
 
       {!rosterLoading && players.length > 0 && <TeamHeatmap teamId={teamId} />}
-      {!rosterLoading && players.length > 0 && <TeamPlayerStats players={players} stats={playerStats} loading={statsLoading} />}
+      {!rosterLoading && players.length > 0 && isStaff(role) && <TeamPlayerStats players={players} stats={playerStats} loading={statsLoading} />}
       {isStaff(role) && <MessageTeamFAB teamId={teamId} />}
     </div>
   );

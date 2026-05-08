@@ -29,6 +29,10 @@ export function useFilteredRoster(players, search, sortBy) {
         const bD = b.dob ? new Date(b.dob).getTime() : Infinity;
         return aD - bD;
       }
+      if (sortBy === 'attendance') {
+        const getPct = (p) => p.attendance_pct ?? (p.totalPast > 0 ? (p.goingCount || 0) / p.totalPast : -1);
+        return getPct(b) - getPct(a);
+      }
       const aJ = a.jersey_number != null ? parseInt(a.jersey_number, 10) : NaN;
       const bJ = b.jersey_number != null ? parseInt(b.jersey_number, 10) : NaN;
       if (isNaN(aJ) && isNaN(bJ)) return 0;

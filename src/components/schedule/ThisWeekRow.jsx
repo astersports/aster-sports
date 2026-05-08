@@ -90,7 +90,7 @@ export default function ThisWeekRow({ event, rideCount, dutyCount, conflictWith,
           </div>
         )}
         {!isCancelled && !isCompleted && childrenOnTeam.map((c) => (
-          <ChildRsvp key={c.playerId} child={c} eventId={event.id} compact={true} onSave={onRsvpChange} />
+          <ChildRsvp key={c.playerId} child={c} eventId={event.id} eventType={event.event_type} compact={true} onSave={onRsvpChange} />
         ))}
       </div>
     </div>
