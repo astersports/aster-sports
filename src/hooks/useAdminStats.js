@@ -79,23 +79,32 @@ export function useAdminStats() {
         return count ?? 0;
       });
 
-      const collected = await SAFE(async () => {
-        const { data } = await supabase
-          .from('financial_transactions')
-          .select('amount_cents')
-          .eq('org_id', orgId)
-          .eq('transaction_type', 'payment');
-        return (data || []).reduce((sum, r) => sum + (r.amount_cents || 0), 0) / 100;
-      });
-
-      const outstanding = await SAFE(async () => {
-        const { data } = await supabase
+      // Financial stats mirror FinancialDashboardPage logic:
+      // 1. Query accounts for this season to get billed totals
+      // 2. Query transactions scoped to those accounts for collected
+      // 3. Outstanding = billed - collected
+      const { collected, outstanding } = await SAFE(async () => {
+        if (!seasonId) return { collected: 0, outstanding: 0 };
+        const { data: accts } = await supabase
           .from('financial_accounts')
-          .select('amount_due_cents, amount_paid_cents')
-          .eq('org_id', orgId);
-        const total = (data || []).reduce((sum, r) => sum + ((r.amount_due_cents || 0) - (r.amount_paid_cents || 0)), 0);
-        return Math.max(0, total) / 100;
-      });
+          .select('id, season_fee_cents, discount_cents')
+          .eq('org_id', orgId)
+          .eq('season_id', seasonId);
+        const accounts = accts || [];
+        if (accounts.length === 0) return { collected: 0, outstanding: 0 };
+        const billed = accounts.reduce((s, a) => s + (a.season_fee_cents || 0) - (a.discount_cents || 0), 0);
+        const acctIds = accounts.map((a) => a.id);
+        const { data: txns } = await supabase
+          .from('financial_transactions')
+          .select('amount_cents, transaction_type')
+          .in('account_id', acctIds);
+        let paid = 0;
+        (txns || []).forEach((t) => {
+          if (t.transaction_type === 'payment') paid += t.amount_cents || 0;
+          if (t.transaction_type === 'refund') paid -= t.amount_cents || 0;
+        });
+        return { collected: paid / 100, outstanding: Math.max(0, billed - paid) / 100 };
+      }) || { collected: 0, outstanding: 0 };
 
       if (cancelled) return;
       setStats({ players, events, collected, outstanding, loading: false });
