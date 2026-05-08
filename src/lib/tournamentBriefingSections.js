@@ -44,10 +44,18 @@ export function renderCoachKeys(keysText) {
     + '</div>';
 }
 
-export function renderContactFooter() {
+export function renderContactFooter(coaches = []) {
+  const list = (coaches || []).filter((c) => c && (c.display_name || c.name));
+  if (list.length === 0) return '';
+  const inner = list
+    .map((c) => {
+      const name = `<strong>${escapeHtml(c.display_name || c.name)}</strong>`;
+      const phone = c.phone ? ` ${escapeHtml(c.phone)}` : '';
+      return `${name}${phone}`;
+    })
+    .join(' \u00b7 ');
   return '<div style="background:#ffffff;padding:12px 16px;text-align:center;border-top:1px solid #e8e8e8;">'
     + '<div style="font-size:10px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#666;margin-bottom:4px;">Questions?</div>'
-    + '<div style="font-size:12px;color:#1a1a2e;line-height:1.5;">'
-    + '<strong>Frank Samaritano</strong> 914-555-0100 \u00b7 <strong>Coach Kenny</strong> 914-555-0101'
-    + '</div></div>';
+    + `<div style="font-size:12px;color:#1a1a2e;line-height:1.5;">${inner}</div>`
+    + '</div>';
 }
