@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useToast } from '../../context/useToast';
 import FullScreenForm from '../shared/FullScreenForm';
 import Toggle from '../shared/Toggle';
 
 export default function AutoNotificationSettingsSheet({ open, onClose, orgId }) {
+  const { showToast } = useToast();
   const [reminders, setReminders] = useState(true);
   const [nudges, setNudges] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -30,11 +32,12 @@ export default function AutoNotificationSettingsSheet({ open, onClose, orgId }) 
     }).eq('id', orgId);
     setSaving(false);
     if (error) {
-      console.error('AutoNotificationSettings save:', error.message);
+      showToast("Couldn't save settings. The auto_notifications column may need to be added to the organizations table.", 'error');
       return;
     }
+    showToast('Notification settings saved', 'success');
     onClose();
-  }, [reminders, nudges, orgId, onClose]);
+  }, [reminders, nudges, orgId, onClose, showToast]);
 
   const footer = (
     <button type="button" onClick={handleSave} disabled={saving} className="sf-press"
