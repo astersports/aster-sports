@@ -20,6 +20,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
   const isCancelled = event.status === 'cancelled';
   const isPast = event.end_at ? new Date(event.end_at) < new Date() : false;
+  const isToday = new Date(event.start_at).toDateString() === new Date().toDateString();
   const dimmed = isCancelled || isPast;
   const msUntil = new Date(event.start_at).getTime() - now;
   const showCountdown = isNext && msUntil > 0 && msUntil < 24 * 60 * 60 * 1000;
@@ -57,6 +58,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
             <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
               <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)' }}>{formatTime(event.start_at)}</span>
               {showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>{formatCountdown(event.start_at)}</span>}
+              {isToday && !showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-info-soft)', color: 'var(--em-info)' }}>Today</span>}
               <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>· {typeLabel}</span>
               {gameResult?.published_at && <span style={{ fontSize: 13, fontWeight: 700, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>{gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}</span>}
               {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
@@ -117,7 +119,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
         )}
         {role === 'parent' && childrenOnTeam.length > 0 && (
           <div style={{ marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
-            {childrenOnTeam.map((child) => (<ChildRsvp key={child.playerId} child={child} eventId={event.id} compact onSave={onRsvpChange} />))}
+            {childrenOnTeam.map((child) => (<ChildRsvp key={child.playerId} child={child} eventId={event.id} compact disabled={isPast} onSave={onRsvpChange} />))}
           </div>
         )}
       </div>

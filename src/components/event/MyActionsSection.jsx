@@ -5,6 +5,7 @@ import ChildRsvp from '../schedule/ChildRsvp';
 export default function MyActionsSection({ event, myRideClaim, onRsvpChange }) {
   const { myChildren } = useAuth();
   const childrenOnTeam = (myChildren || []).filter((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
+  const isPast = event.end_at ? new Date(event.end_at) < new Date() : false;
   if (childrenOnTeam.length === 0) return null;
 
   return (
@@ -13,7 +14,7 @@ export default function MyActionsSection({ event, myRideClaim, onRsvpChange }) {
         MY RSVP
       </div>
       {childrenOnTeam.map((child) => (
-        <ChildRsvp key={child.playerId} child={child} eventId={event.id} onSave={onRsvpChange} />
+        <ChildRsvp key={child.playerId} child={child} eventId={event.id} disabled={isPast} onSave={onRsvpChange} />
       ))}
       {myRideClaim && (
         <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--em-text-secondary)' }}>
