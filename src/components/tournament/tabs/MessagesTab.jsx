@@ -39,10 +39,12 @@ export default function MessagesTab({ tournament, isStaff }) {
     preliminary_schedule: 'Preliminary Schedule',
     final_schedule: 'Final Schedule',
     rsvp_lock: 'RSVP Lock',
-    saturday_night_scenarios: 'Saturday Scenarios',
+    saturday_scenarios: 'Saturday Scenarios',
+    day1_recap: 'Day 1 Recap',
     weekend_recap: 'Weekend Recap',
-    week_ahead: 'Week Ahead',
     schedule_change: 'Schedule Change',
+    multi_team_notice: 'Multi-team Notice',
+    custom: 'Custom',
   };
 
   return (
