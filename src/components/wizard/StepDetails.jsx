@@ -3,14 +3,18 @@ import DutyEditor from './DutyEditor';
 import { HOME_AWAY } from '../../lib/constants';
 import { supabase } from '../../lib/supabase';
 import Input from '../shared/Input';
+import Toggle from '../shared/Toggle';
 
 export default function StepDetails({ eventType, data, onChange, orgId }) {
   const set = (key, val) => onChange({ ...data, [key]: val });
   const [tournaments, setTournaments] = useState([]);
+  const [opponents, setOpponents] = useState([]);
   useEffect(() => {
     if (!orgId) return;
     supabase.from('tournaments').select('id, name').eq('org_id', orgId).in('status', ['planned', 'scheduled', 'in_progress']).order('start_date')
       .then(({ data: t }) => setTournaments(t || []));
+    supabase.from('opponents').select('id, name').eq('org_id', orgId).order('name')
+      .then(({ data: o }) => setOpponents(o || []));
   }, [orgId]);
   const setHomeAway = (val) => {
     onChange({
@@ -29,8 +33,15 @@ export default function StepDetails({ eventType, data, onChange, orgId }) {
         placeholder={isGame ? 'vs. Storm AAU' : 'Practice'} />
 
       {isGame && (
-        <Input label="Opponent" type="text" value={data.opponent || ''} onChange={(e) => set('opponent', e.target.value)}
-          placeholder="Enter opponent name" />
+        <div>
+          <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>Opponent</span>
+          <input list="opponent-list" value={data.opponent || ''} onChange={(e) => set('opponent', e.target.value)}
+            placeholder="Search or type opponent name" aria-label="Opponent"
+            style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' }} />
+          <datalist id="opponent-list">
+            {opponents.map((o) => <option key={o.id} value={o.name} />)}
+          </datalist>
+        </div>
       )}
 
       {isGame && tournaments.length > 0 && (
@@ -94,29 +105,6 @@ export default function StepDetails({ eventType, data, onChange, orgId }) {
 
       <DutyEditor value={data.duties} onChange={(duties) => set('duties', duties)} />
     </div>
-  );
-}
-
-function Toggle({ label, checked, onChange }) {
-  return (
-    <button type="button" role="switch" aria-checked={checked} aria-label={label}
-      onClick={() => onChange(!checked)} className="sf-press" style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
-      minHeight: 44, padding: '0 4px', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit',
-    }}>
-      <span style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{label}</span>
-      <div style={{
-        width: 48, height: 28, borderRadius: 14, padding: 2,
-        backgroundColor: checked ? 'var(--em-accent)' : 'var(--em-bg-tertiary)',
-        transition: 'background-color 0.2s', display: 'flex', alignItems: 'center',
-      }}>
-        <div style={{
-          width: 24, height: 24, borderRadius: 9999, backgroundColor: 'var(--em-text-inverse)',
-          transform: checked ? 'translateX(20px)' : 'translateX(0)',
-          transition: 'transform 0.2s', boxShadow: 'var(--em-shadow-sm)',
-        }} />
-      </div>
-    </button>
   );
 }
 

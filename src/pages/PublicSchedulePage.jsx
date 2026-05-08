@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { formatTime } from '../lib/formatters';
 import { TYPE_LABELS } from '../lib/constants';
 import { downloadTeamIcs } from '../lib/icalHelpers';
+import BottomSheet from '../components/shared/BottomSheet';
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -18,6 +19,7 @@ export default function PublicSchedulePage() {
   const [team, setTeam] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showSubscribe, setShowSubscribe] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -94,9 +96,44 @@ export default function PublicSchedulePage() {
         </button>
       )}
 
+      {events.length > 0 && (
+        <button type="button" onClick={() => setShowSubscribe(true)} className="sf-press"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            width: '100%', minHeight: 44, marginTop: 8, borderRadius: 10,
+            border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+            color: 'var(--em-accent)', fontSize: 15, fontWeight: 500,
+          }}>
+          <Calendar size={16} strokeWidth={1.75} />
+          Subscribe to Calendar
+        </button>
+      )}
+
+      <BottomSheet open={showSubscribe} onClose={() => setShowSubscribe(false)} initialHeight="30%">
+        <h3 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 16 }}>Subscribe to Calendar</h3>
+        <a href={`webcal://${window.location.host}/api/calendar?team=${teamId}`}
+          style={calOptStyle} aria-label="Subscribe via Apple Calendar">
+          <Calendar size={20} strokeWidth={1.75} style={{ color: 'var(--em-accent)' }} />
+          <span>Apple Calendar</span>
+        </a>
+        <a href={`https://calendar.google.com/calendar/r?cid=webcal://${window.location.host}/api/calendar?team=${teamId}`}
+          target="_blank" rel="noopener noreferrer" style={calOptStyle} aria-label="Subscribe via Google Calendar">
+          <Calendar size={20} strokeWidth={1.75} style={{ color: 'var(--em-accent)' }} />
+          <span>Google Calendar</span>
+        </a>
+      </BottomSheet>
+
       <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--em-text-tertiary)' }}>
         Powered by Ember
       </div>
     </div>
   );
 }
+
+const calOptStyle = {
+  display: 'flex', alignItems: 'center', gap: 12,
+  width: '100%', minHeight: 44, padding: '0 16px', borderRadius: 10,
+  border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+  color: 'var(--em-text-primary)', fontSize: 15, fontWeight: 500,
+  textDecoration: 'none', marginBottom: 8,
+};
