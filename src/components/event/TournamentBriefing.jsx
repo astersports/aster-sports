@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react';
-import { Pencil, RefreshCw, Send, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { RefreshCw, Send, X } from 'lucide-react';
 import { useTournamentBriefing } from '../../hooks/useTournamentBriefing';
 import { useTeamRecipients } from '../../hooks/useTeamRecipients';
+import { useTeamCoaches } from '../../hooks/useTeamCoaches';
 import { useComposeBriefing } from '../../hooks/useComposeBriefing';
 import { useToast } from '../../context/useToast';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useAuth } from '../../context/AuthContext';
 import { TOURNAMENT_MESSAGE_TYPES } from '../../lib/constants';
 import {
-  ENGINE_SUPPORTED_TYPES, inferMessageType, messageTypeLabel, whyLabel,
+  ENGINE_SUPPORTED_TYPES, inferMessageType, messageTypeLabel,
 } from '../../lib/inferMessageType';
+import BriefingTypeSelector from './BriefingTypeSelector';
+import CoachPicker from '../briefings/CoachPicker';
 import SendConfirmDialog from '../compose/SendConfirmDialog';
 
 const PICKABLE_TYPES = TOURNAMENT_MESSAGE_TYPES.filter((t) => t.value !== 'multi_team_notice');
@@ -18,32 +21,44 @@ export default function TournamentBriefing({ event, team, onClose }) {
   const { draftKeys, setDraftKeys, survivalText, setSurvivalText, briefing, loading, error, loadDraft, generate } =
     useTournamentBriefing({ event, team });
   const { recipients, loading: recipientsLoading } = useTeamRecipients(team?.id);
+  const { coaches: teamCoaches, loading: coachesLoading } = useTeamCoaches(team?.id);
   const { send, sending, result, error: sendError, reset } = useComposeBriefing();
   const [briefingType, setBriefingType] = useState(() => inferMessageType({
     start_date: event?.tournament_start_date, end_date: event?.tournament_end_date,
   }));
   const [editingType, setEditingType] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedCoachIds, setSelectedCoachIds] = useState(new Set());
   const { showToast } = useToast();
   const { orgId } = useAuth();
   const trapRef = useFocusTrap(true);
 
   const isEngineSupported = ENGINE_SUPPORTED_TYPES.has(briefingType);
   const isSchedule = briefingType === 'preliminary_schedule';
+  const footerCoaches = useMemo(
+    () => (teamCoaches || []).filter((c) => selectedCoachIds.has(c.user_id) && c.display_name && c.phone),
+    [teamCoaches, selectedCoachIds],
+  );
 
   useEffect(() => { loadDraft(); }, [loadDraft]);
   useEffect(() => {
-    if (draftKeys !== undefined && isSchedule) generate(draftKeys, survivalText);
-  }, [draftKeys, survivalText, generate, isSchedule]);
+    Promise.resolve().then(() => setSelectedCoachIds(new Set((teamCoaches || []).map((c) => c.user_id))));
+  }, [teamCoaches]);
+  useEffect(() => {
+    if (draftKeys !== undefined && isSchedule) generate(draftKeys, survivalText, footerCoaches);
+  }, [draftKeys, survivalText, footerCoaches, generate, isSchedule]);
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape' && !sending) onClose?.(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose, sending]);
 
-  const handleRefresh = () => generate(draftKeys, survivalText);
+  const toggleCoach = (id) => setSelectedCoachIds((s) => {
+    const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n;
+  });
+  const handleRefresh = () => generate(draftKeys, survivalText, footerCoaches);
   const handleSend = async (effectiveRecipients) => {
-    try { await send({ orgId, tournamentId: event?.tournament_id, messageType: briefingType, subject: briefing?.subject, html: briefing?.html, plainText: briefing?.plainText, recipients: effectiveRecipients }); }
+    try { await send({ orgId, tournamentId: event?.tournament_id, teamId: team?.id, messageType: briefingType, subject: briefing?.subject, html: briefing?.html, plainText: briefing?.plainText, recipients: effectiveRecipients, coachUserIds: [...selectedCoachIds] }); }
     catch { /* SendConfirmDialog renders the error inline */ }
   };
   const closeDialog = () => {
@@ -55,7 +70,6 @@ export default function TournamentBriefing({ event, team, onClose }) {
 
   const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)' };
   const taStyle = { width: '100%', padding: 12, borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'Inter, sans-serif', resize: 'vertical' };
-  const dropdownStyle = { width: '100%', minHeight: 44, padding: '0 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 15, fontWeight: 500, fontFamily: 'inherit', appearance: 'none' };
   const sendBtn = { flex: 1, minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: canSend ? 1 : 0.5, cursor: canSend ? 'pointer' : 'default' };
   const ghostBtn = { minHeight: 32, padding: '0 10px', borderRadius: 8, backgroundColor: 'transparent', color: 'var(--em-text-secondary)', fontSize: 12, fontWeight: 500, border: '1px solid var(--em-border-default)', display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontFamily: 'inherit' };
 
@@ -72,21 +86,8 @@ export default function TournamentBriefing({ event, team, onClose }) {
         </button>
       </div>
 
-      <div style={{ padding: '12px 16px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
-            Sending as: <strong style={{ color: 'var(--em-text-primary)' }}>{messageTypeLabel(briefingType)}</strong> <span style={{ color: 'var(--em-text-tertiary)' }}>({whyLabel(briefingType)})</span>
-          </div>
-          <button type="button" onClick={() => setEditingType((v) => !v)} className="sf-press" style={ghostBtn} aria-label="Edit message type">
-            <Pencil size={12} strokeWidth={1.75} /> {editingType ? 'Done' : 'edit'}
-          </button>
-        </div>
-        {editingType && (
-          <select value={briefingType} onChange={(e) => setBriefingType(e.target.value)} style={{ ...dropdownStyle, marginTop: 8 }} aria-label="Message type">
-            {PICKABLE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-        )}
-      </div>
+      <BriefingTypeSelector value={briefingType} onChange={setBriefingType} options={PICKABLE_TYPES}
+        editing={editingType} onToggleEditing={() => setEditingType((v) => !v)} />
 
       <div style={{ flex: 1, overflowY: 'auto', padding: 16, backgroundColor: 'var(--em-bg-page)' }}>
         {loading && <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-secondary)', fontSize: 15 }}>Loading tournament events...</div>}
@@ -104,20 +105,19 @@ export default function TournamentBriefing({ event, team, onClose }) {
             <div style={{ marginBottom: 16 }}>
               <label htmlFor="tb-survival" style={{ ...labelStyle, display: 'block', marginBottom: 6 }}>Parent Survival Guide</label>
               <textarea id="tb-survival" value={survivalText} onChange={(e) => setSurvivalText(e.target.value)}
-                placeholder="Arrival, parking, concessions, rules — customize for this tournament." rows={4}
-                style={{ ...taStyle, minHeight: 90 }} />
+                placeholder="Arrival, parking, concessions, rules — customize for this tournament." rows={4} style={{ ...taStyle, minHeight: 90 }} />
             </div>
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <label htmlFor="tb-keys" style={labelStyle}>Coach Kenny&rsquo;s Keys</label>
+                <label htmlFor="tb-keys" style={labelStyle}>Coach&rsquo;s Keys to the Game</label>
                 <button type="button" onClick={handleRefresh} className="sf-press" style={ghostBtn}>
                   <RefreshCw size={12} strokeWidth={1.75} /> Refresh
                 </button>
               </div>
               <textarea id="tb-keys" value={draftKeys} onChange={(e) => setDraftKeys(e.target.value)}
-                placeholder="One key per line. Pre-filled from coach_notes on each game." rows={5}
-                style={{ ...taStyle, minHeight: 110 }} />
+                placeholder="One key per line. Pre-filled from coach_notes on each game." rows={5} style={{ ...taStyle, minHeight: 110 }} />
             </div>
+            <CoachPicker coaches={teamCoaches} selectedIds={selectedCoachIds} onToggle={toggleCoach} loading={coachesLoading} />
             {briefing && (
               <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: briefing.html }} />
             )}

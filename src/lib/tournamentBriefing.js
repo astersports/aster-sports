@@ -109,6 +109,7 @@ export function generateTournamentBriefing({
   coachKeys = '',
   survivalText = '',
   orgName = 'Legacy Hoopers',
+  coaches = [],
 }) {
   const groups = groupByLocalDate(events);
   const tName = escapeHtml(teamName);
@@ -130,7 +131,7 @@ export function generateTournamentBriefing({
     + renderSurvivalGuide(events, survivalText)
     + renderCoachKeys(coachKeys)
     + '<div style="background:#f5f7fa;text-align:center;padding:12px;font-size:13px;color:#1a1a2e;font-weight:bold;">Arrive 15 minutes before tip-off</div>'
-    + renderContactFooter()
+    + renderContactFooter(coaches)
     + `<div style="background:#1a1a2e;text-align:center;padding:10px;font-size:11px;color:#666;">${org} \u2014 Westchester, NY</div>`
     + '</div>';
 

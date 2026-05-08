@@ -39,7 +39,7 @@ export function renderCoachKeys(keysText) {
     .map((line) => `<div style="margin:6px 0;">\u2022 ${escapeHtml(line)}</div>`)
     .join('');
   return '<div style="background:#1a1a2e;padding:14px 16px;border-top:1px solid #e8e8e8;">'
-    + '<div style="font-size:11px;font-weight:bold;letter-spacing:3px;text-transform:uppercase;color:#4a8fd4;text-align:center;margin-bottom:10px;">Coach Kenny\u2019s Keys</div>'
+    + '<div style="font-size:11px;font-weight:bold;letter-spacing:3px;text-transform:uppercase;color:#4a8fd4;text-align:center;margin-bottom:10px;">Coach\u2019s Keys to the Game</div>'
     + `<div style="font-size:13px;color:#ffffff;line-height:1.6;">${body}</div>`
     + '</div>';
 }
