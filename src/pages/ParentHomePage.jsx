@@ -61,8 +61,8 @@ export default function ParentHomePage() {
   }, [next7days, activeKidFilter, myChildren]);
 
   const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(filteredNext7);
-  const rideCounts = useEventRideCounts(filteredNext7);
-  const dutyCounts = useEventDutyCounts(filteredNext7);
+  const { counts: rideCounts } = useEventRideCounts(filteredNext7);
+  const { counts: dutyCounts } = useEventDutyCounts(filteredNext7);
   const gameResults = useGameResultsMap(filteredNext7);
   const weather = useWeather(41.03, -73.76);
   const nextEventId = filteredNext7.find((a) => new Date(a.start_at).getTime() >= now)?.id || null;
