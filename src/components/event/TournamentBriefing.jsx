@@ -1,63 +1,67 @@
 import { useEffect, useState } from 'react';
-import { Copy, FileText, RefreshCw, X } from 'lucide-react';
+import { RefreshCw, Send, X } from 'lucide-react';
 import { useTournamentBriefing } from '../../hooks/useTournamentBriefing';
+import { useTeamRecipients } from '../../hooks/useTeamRecipients';
+import { useComposeBriefing } from '../../hooks/useComposeBriefing';
 import { useToast } from '../../context/useToast';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useAuth } from '../../context/AuthContext';
+import { TOURNAMENT_MESSAGE_TYPES } from '../../lib/constants';
+import SendConfirmDialog from '../compose/SendConfirmDialog';
 
-const BRIEFING_TYPES = [
-  { key: 'schedule', label: 'Preliminary Schedule' },
-  { key: 'final_schedule', label: 'Final Schedule' },
-  { key: 'rsvp_lock', label: 'RSVP Lock' },
-  { key: 'saturday_scenarios', label: 'Saturday Scenarios' },
-  { key: 'weekend_recap', label: 'Weekend Recap' },
-  { key: 'week_ahead', label: 'Week Ahead' },
-  { key: 'schedule_change', label: 'Schedule Change' },
-];
+// Briefing message types that have user-composable narrative. Excludes
+// multi_team_notice + custom (programmatic / catch-all).
+const BRIEFING_TYPES = TOURNAMENT_MESSAGE_TYPES.filter(
+  (t) => !['multi_team_notice', 'custom'].includes(t.value),
+);
+const SCHEDULE_TYPE = 'preliminary_schedule';
 
 export default function TournamentBriefing({ event, team, onClose }) {
   const { draftKeys, setDraftKeys, survivalText, setSurvivalText, briefing, loading, error, loadDraft, generate } =
     useTournamentBriefing({ event, team });
-  const [copied, setCopied] = useState(null);
-  const [briefingType, setBriefingType] = useState('schedule');
+  const { recipients } = useTeamRecipients(team?.id);
+  const { send, sending, result, error: sendError, reset } = useComposeBriefing();
+  const [briefingType, setBriefingType] = useState(SCHEDULE_TYPE);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const { showToast } = useToast();
+  const { user, orgId } = useAuth();
   const trapRef = useFocusTrap(true);
 
   useEffect(() => { loadDraft(); }, [loadDraft]);
   useEffect(() => {
-    if (draftKeys !== undefined && !briefing && briefingType === 'schedule') generate(draftKeys, survivalText);
+    if (draftKeys !== undefined && !briefing && briefingType === SCHEDULE_TYPE) generate(draftKeys, survivalText);
   }, [draftKeys, survivalText, briefing, generate, briefingType]);
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
+    const onKey = (e) => { if (e.key === 'Escape' && !sending) onClose?.(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, sending]);
 
+  const isSchedule = briefingType === SCHEDULE_TYPE;
   const handleRefresh = () => {
-    if (briefingType === 'schedule') generate(draftKeys, survivalText);
-    else showToast(`${BRIEFING_TYPES.find((t) => t.key === briefingType)?.label || briefingType} generator coming soon`);
+    if (isSchedule) generate(draftKeys, survivalText);
+    else showToast(`${BRIEFING_TYPES.find((t) => t.value === briefingType)?.label || briefingType} generator coming soon`);
   };
-
-  async function copyText(text, label) {
+  const handleSend = async (effectiveRecipients) => {
     try {
-      await navigator.clipboard.writeText(text);
-      navigator.vibrate?.(10);
-      setCopied(label);
-      showToast(`${label} copied`);
-      setTimeout(() => setCopied(null), 1500);
-    } catch {
-      showToast("Couldn't copy. Try once more?", 'error');
-    }
-  }
+      await send({
+        orgId, tournamentId: event?.tournament_id, messageType: briefingType,
+        subject: briefing?.subject, html: briefing?.html, plainText: briefing?.plainText,
+        recipients: effectiveRecipients,
+      });
+    } catch { /* SendConfirmDialog renders the error inline */ }
+  };
+  const closeDialog = () => {
+    if (sending) return;
+    if (result) showToast(`Sent ${result.sent ?? 0}, ${result.failed ?? 0} failed`);
+    setConfirmOpen(false); reset();
+  };
+  const canSend = Boolean(briefing && isSchedule && event?.tournament_id);
 
-  const chipStyle = (active) => ({
-    minHeight: 36, padding: '0 12px', borderRadius: 9999, fontSize: 12, fontWeight: active ? 600 : 400,
-    border: active ? 'none' : '1px solid var(--em-border-default)',
-    backgroundColor: active ? 'var(--em-accent)' : 'var(--em-bg-card)',
-    color: active ? 'var(--em-text-inverse)' : 'var(--em-text-secondary)',
-    cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-  });
-  const primaryBtn = { flex: 1, minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 };
-  const secondaryBtn = { flex: 1, minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 15, fontWeight: 600, border: '1.5px solid var(--em-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 };
+  const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)' };
+  const taStyle = { width: '100%', padding: 12, borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'Inter, sans-serif', resize: 'vertical' };
+  const dropdownStyle = { width: '100%', minHeight: 44, padding: '0 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 15, fontWeight: 500, fontFamily: 'inherit', appearance: 'none' };
+  const sendBtn = { flex: 1, minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: canSend ? 1 : 0.5, cursor: canSend ? 'pointer' : 'default' };
   const ghostBtn = { minHeight: 44, padding: '0 12px', borderRadius: 8, backgroundColor: 'transparent', color: 'var(--em-text-secondary)', fontSize: 13, fontWeight: 500, border: '1px solid var(--em-border-default)', display: 'inline-flex', alignItems: 'center', gap: 4 };
 
   return (
@@ -73,47 +77,42 @@ export default function TournamentBriefing({ event, team, onClose }) {
         </button>
       </div>
 
-      <div style={{ padding: '12px 16px 0', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        {BRIEFING_TYPES.map((t) => (
-          <button key={t.key} type="button" onClick={() => setBriefingType(t.key)} className="sf-press" style={chipStyle(briefingType === t.key)}>
-            {t.label}
-          </button>
-        ))}
+      <div style={{ padding: '12px 16px 0' }}>
+        <label htmlFor="tb-type" style={{ ...labelStyle, display: 'block', marginBottom: 6 }}>Message type</label>
+        <select id="tb-type" value={briefingType} onChange={(e) => setBriefingType(e.target.value)} style={dropdownStyle} aria-label="Message type">
+          {BRIEFING_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: 16, backgroundColor: 'var(--em-bg-page)' }}>
         {loading && <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-secondary)', fontSize: 15 }}>Loading tournament events...</div>}
         {error && <div style={{ padding: 16, color: 'var(--em-danger)', fontSize: 13 }}>{error.message}</div>}
 
-        {briefingType !== 'schedule' && !loading && !error && (
+        {!isSchedule && !loading && !error && (
           <div style={{ padding: 32, textAlign: 'center', backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)' }}>
-            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 6 }}>{BRIEFING_TYPES.find((t) => t.key === briefingType)?.label}</div>
-            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.5 }}>This briefing type is coming soon. The schedule briefing is available now.</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 6 }}>{BRIEFING_TYPES.find((t) => t.value === briefingType)?.label}</div>
+            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.5 }}>This briefing type is coming soon. Preliminary schedule is available now.</div>
           </div>
         )}
 
-        {briefingType === 'schedule' && !loading && !error && (
+        {isSchedule && !loading && !error && (
           <>
             <div style={{ marginBottom: 16 }}>
-              <label htmlFor="tb-survival" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)', display: 'block', marginBottom: 6 }}>
-                Parent Survival Guide
-              </label>
+              <label htmlFor="tb-survival" style={{ ...labelStyle, display: 'block', marginBottom: 6 }}>Parent Survival Guide</label>
               <textarea id="tb-survival" value={survivalText} onChange={(e) => setSurvivalText(e.target.value)}
                 placeholder="Arrival, parking, concessions, rules — customize for this tournament." rows={4}
-                style={{ width: '100%', minHeight: 90, padding: 12, borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'Inter, sans-serif', resize: 'vertical' }} />
+                style={{ ...taStyle, minHeight: 90 }} />
             </div>
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <label htmlFor="tb-keys" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)' }}>
-                  Coach Kenny's Keys
-                </label>
+                <label htmlFor="tb-keys" style={labelStyle}>Coach Kenny&rsquo;s Keys</label>
                 <button type="button" onClick={handleRefresh} className="sf-press" style={ghostBtn}>
                   <RefreshCw size={12} strokeWidth={1.75} /> Refresh
                 </button>
               </div>
               <textarea id="tb-keys" value={draftKeys} onChange={(e) => setDraftKeys(e.target.value)}
                 placeholder="One key per line. Pre-filled from coach_notes on each game." rows={5}
-                style={{ width: '100%', minHeight: 110, padding: 12, borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'Inter, sans-serif', resize: 'vertical' }} />
+                style={{ ...taStyle, minHeight: 110 }} />
             </div>
             {briefing && (
               <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: briefing.html }} />
@@ -122,16 +121,19 @@ export default function TournamentBriefing({ event, team, onClose }) {
         )}
       </div>
 
-      {briefing && briefingType === 'schedule' && (
-        <div style={{ display: 'flex', gap: 8, padding: 16, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)' }}>
-          <button type="button" onClick={() => copyText(briefing.html, 'HTML')} className="sf-press" style={primaryBtn}>
-            <Copy size={16} strokeWidth={1.75} /> {copied === 'HTML' ? 'Copied' : 'Copy HTML'}
-          </button>
-          <button type="button" onClick={() => copyText(briefing.plainText, 'Plain text')} className="sf-press" style={secondaryBtn}>
-            <FileText size={16} strokeWidth={1.75} /> {copied === 'Plain text' ? 'Copied' : 'Copy Text'}
-          </button>
-        </div>
-      )}
+      <div style={{ display: 'flex', gap: 8, padding: 16, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)' }}>
+        <button type="button" onClick={() => setConfirmOpen(true)} disabled={!canSend} className="sf-press" style={sendBtn}>
+          <Send size={16} strokeWidth={1.75} /> Send
+        </button>
+      </div>
+
+      <SendConfirmDialog
+        open={confirmOpen} onClose={closeDialog} onConfirm={handleSend}
+        sending={sending} result={result} error={sendError}
+        recipients={recipients} adminEmail={user?.email}
+        tournamentName={event?.tournament_name || ''} teamName={team?.name || ''}
+        messageTypeLabel={BRIEFING_TYPES.find((t) => t.value === briefingType)?.label || briefingType}
+      />
     </div>
   );
 }
