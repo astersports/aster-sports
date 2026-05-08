@@ -6,8 +6,19 @@ import { supabase } from '../lib/supabase';
 // guardians with a non-empty email. Dedupes by guardian.id (one
 // guardian can have multiple kids on the same team).
 //
+// Always appends admin@legacyhoopers.org as a BCC safety copy so the
+// operator inbox holds an audit copy of every real send. Deduped if
+// admin email already appears in the real recipient set (can happen
+// if an admin is also a guardian). The is_admin_copy flag is consumed
+// downstream by the count UI (excluded from "Send to N families") and
+// by the test-toggle override (replaced wholesale).
+//
 // Shape returned per recipient:
-// { guardian_id, email, name, children: [{ first_name, last_name }] }
+// { guardian_id, email, name, children: [{ first_name, last_name }],
+//   is_admin_copy?: true }
+
+const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
+
 export function useTeamRecipients(teamId) {
   const [recipients, setRecipients] = useState([]);
   const [loading, setLoading]       = useState(false);
@@ -62,7 +73,10 @@ export function useTeamRecipients(teamId) {
         }
       }
       const sorted = [...byGuardian.values()].sort((a, b) => a.name.localeCompare(b.name));
-      setRecipients(sorted);
+      const withAdminBcc = sorted.some((r) => r.email === ADMIN_BCC_EMAIL)
+        ? sorted
+        : [...sorted, { guardian_id: 'admin-bcc', email: ADMIN_BCC_EMAIL, name: 'Admin (audit copy)', children: [], is_admin_copy: true }];
+      setRecipients(withAdminBcc);
       setLoading(false);
     });
     return () => { cancelled = true; };

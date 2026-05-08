@@ -35,6 +35,7 @@ export default function TournamentBriefing({ event, team, onClose }) {
 
   const isEngineSupported = ENGINE_SUPPORTED_TYPES.has(briefingType);
   const isSchedule = briefingType === 'preliminary_schedule';
+  const familyCount = recipients.filter((r) => !r.is_admin_copy).length;
   const footerCoaches = useMemo(
     () => (teamCoaches || []).filter((c) => selectedCoachIds.has(c.user_id) && c.display_name && c.phone),
     [teamCoaches, selectedCoachIds],
@@ -128,7 +129,7 @@ export default function TournamentBriefing({ event, team, onClose }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 16, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)' }}>
         {team?.name && (
           <div style={{ fontSize: 12, color: 'var(--em-text-secondary)', textAlign: 'center' }}>
-            {recipientsLoading ? `Loading recipients for ${team.name}…` : recipients.length === 0 ? `No active families on ${team.name}` : `Sending to ${recipients.length} ${recipients.length === 1 ? 'family' : 'families'} on ${team.name}`}
+            {recipientsLoading ? `Loading recipients for ${team.name}…` : familyCount === 0 ? `No active families on ${team.name}` : `Sending to ${familyCount} ${familyCount === 1 ? 'family' : 'families'} on ${team.name}`}
           </div>
         )}
         <button type="button" onClick={() => setConfirmOpen(true)} disabled={!canSend} className="sf-press" style={sendBtn}>
