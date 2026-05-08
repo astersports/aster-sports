@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { daysUntil, inferMessageType, urgencyForRow } from '../lib/inferMessageType';
+import { daysUntil, inferMessageType, tournamentStateFor, urgencyForRow } from '../lib/inferMessageType';
 
 const POLL_INTERVAL_MS = 30000;
 const SENT_WITHIN_DAYS = 14;
@@ -34,15 +34,18 @@ export function useBriefingQueue() {
       });
       const lastSentAt = sentHistory.length > 0 ? sentHistory[0].sent_at : null;
       const daysUntilStart = daysUntil(tournament, now);
+      const tournamentState = tournamentStateFor(tournament, now);
       const urgency = urgencyForRow({
         hasSentInferred: Boolean(recentInferredSend),
         daysUntilStart,
+        tournamentState,
       });
       return {
         ...r,
         inferredType,
         lastSentAt,
         daysUntilStart,
+        tournamentState,
         status: recentInferredSend ? 'sent' : 'pending',
         urgency,
       };

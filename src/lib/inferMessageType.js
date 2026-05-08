@@ -71,12 +71,23 @@ export function daysUntil(tournament, now = new Date()) {
 
 // Inbox row urgency dot color.
 //   sent   = green check
+//   post   = completed tournament, recap not yet sent (no time pressure)
 //   red    = within 24h of start, no send yet
 //   amber  = 2-5 days out, no send yet
 //   normal = >5 days out, no send yet
-export function urgencyForRow({ hasSentInferred, daysUntilStart }) {
+export function urgencyForRow({ hasSentInferred, daysUntilStart, tournamentState }) {
   if (hasSentInferred) return 'sent';
+  if (tournamentState === 'completed') return 'post';
   if (daysUntilStart < 1) return 'red';
   if (daysUntilStart <= 5) return 'amber';
   return 'normal';
+}
+
+// Tournament timeline state derived from start/end dates.
+//   pending   = upcoming or in-progress (today <= end_date)
+//   completed = past (today > end_date)
+export function tournamentStateFor(tournament, now = new Date()) {
+  if (!tournament?.end_date && !tournament?.start_date) return 'pending';
+  const endMs = new Date(`${tournament.end_date || tournament.start_date}T23:59:59`).getTime();
+  return now.getTime() > endMs ? 'completed' : 'pending';
 }

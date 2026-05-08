@@ -6,6 +6,7 @@ const URGENCY_COLOR = {
   amber:  'var(--em-warning)',
   normal: 'var(--em-text-tertiary)',
   sent:   'var(--em-success)',
+  post:   'var(--em-info)',
 };
 
 function relativeFromNow(iso) {
@@ -22,6 +23,10 @@ function statusText(row) {
   if (row.status === 'sent') {
     const label = messageTypeLabel(row.inferredType).toLowerCase();
     return `${label} sent ${relativeFromNow(row.lastSentAt)}`;
+  }
+  if (row.urgency === 'post') {
+    const label = messageTypeLabel(row.inferredType).toLowerCase();
+    return `${label} pending`;
   }
   if (row.urgency === 'red') return 'URGENT · less than 24h';
   if (row.urgency === 'amber') {
