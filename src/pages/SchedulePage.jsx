@@ -61,7 +61,7 @@ export default function SchedulePage() {
     return list.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
   }, [activities, selectedTeam, selectedType, showCancelled, activeKidFilter, myChildren]);
 
-  const lookbackMs = isStaff(role) ? 48 * 60 * 60 * 1000 : 0;
+  const lookbackMs = 0;
   const upcoming = useMemo(() => {
     const cutoff = new Date(nowMs - lookbackMs);
     return filtered.filter((a) => new Date(a.start_at) >= cutoff && new Date(a.start_at) <= weekEnd);

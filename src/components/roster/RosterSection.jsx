@@ -12,7 +12,7 @@ export default function RosterSection({ team, sortedPlayers, search, setSearch, 
   return (
     <>
       <RosterControls search={search} setSearch={setSearch} sortBy={sortBy} setSortBy={setSortBy} role={role} />
-      <CollapsibleSection title="Roster" sectionKey="roster" count={`${sortedPlayers.length}`}>
+      <CollapsibleSection title="Roster" sectionKey="roster" count={`${sortedPlayers.length}`} defaultOpen={isStaff(role)}>
         <div className="flex items-center justify-end" style={{ marginBottom: 8 }}>
           {isStaff(role) && <CopyRosterButton team={team} sortedPlayers={sortedPlayers} />}
         </div>
