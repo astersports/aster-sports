@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Repeat } from 'lucide-react';
+import { Repeat, Send } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
@@ -19,7 +19,6 @@ import EventNotes from '../components/event/EventNotes';
 import EventCancelActions from '../components/event/EventCancelActions';
 import MyActionsSection from '../components/event/MyActionsSection';
 import CollapsibleSection from '../components/shared/CollapsibleSection';
-import TournamentBriefingBanner from '../components/event/TournamentBriefingBanner';
 import ParentArrivalActions from '../components/gameday/ParentArrivalActions';
 import ArrivalBoard from '../components/gameday/ArrivalBoard';
 import CoachChecklist from '../components/gameday/CoachChecklist';
@@ -98,7 +97,15 @@ export default function EventDetailPage() {
       )}
       {isPastGame && <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>Enter Score</Button>}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
-      <TournamentBriefingBanner event={event} team={team} role={role} />
+      {isStaff && event.tournament_id && team?.id && (
+        <Button
+          variant="secondary"
+          onClick={() => navigate(`/admin/briefings?tournament=${event.tournament_id}&team=${team.id}`)}
+          style={{ width: 'calc(100% - 32px)', margin: '12px 16px' }}
+        >
+          <Send size={16} strokeWidth={1.75} /> Send briefing for {team.name}
+        </Button>
+      )}
       {event.parent_event_id && (
         <div style={{ padding: '6px 16px', fontSize: 13, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Repeat size={12} strokeWidth={1.75} /> Part of a recurring series
