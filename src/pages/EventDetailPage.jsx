@@ -29,6 +29,7 @@ const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinO
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
 const FinalizedGameView = lazy(() => import('../components/livescore/FinalizedGameView'));
+const AcademyActivationPanel = lazy(() => import('../components/event/AcademyActivationPanel'));
 const SH = ({ children, sectionKey }) => <h2 data-section={sectionKey} style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 24, marginBottom: 8 }}>{children}</h2>;
 
 export default function EventDetailPage() {
@@ -99,7 +100,6 @@ export default function EventDetailPage() {
       {isPastGame && <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>Enter Score</Button>}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
       <TournamentBriefingBanner event={event} team={team} role={role} />
-
       {event.parent_event_id && (
         <div style={{ padding: '6px 16px', fontSize: 13, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Repeat size={12} strokeWidth={1.75} /> Part of a recurring series
@@ -119,6 +119,7 @@ export default function EventDetailPage() {
         <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} />
       </CollapsibleSection>
 
+      {isStaff && isGameType && teamId && <Suspense fallback={null}><AcademyActivationPanel eventId={event.id} teamId={teamId} /></Suspense>}
       {dutyCount > 0 && (<><SH sectionKey="duties">Volunteers</SH><EventDutiesTab eventId={event.id} /></>)}
 
       <CollapsibleSection title="Rides" sectionKey="rides">
