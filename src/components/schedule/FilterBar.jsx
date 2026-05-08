@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
 import { TYPE_OPTIONS } from '../../lib/constants';
 import FilterSelect from '../shared/FilterSelect';
-import Chip from '../shared/Chip';
 
 export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedType, onSelectType, showCancelled, onToggleCancelled, hideTeamRow = false }) {
-  const teamChips = useMemo(() => {
+  const teamOptions = useMemo(() => {
     const unique = [];
     const seen = new Set();
     (teams || []).forEach((a) => {
@@ -14,7 +13,10 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
       }
     });
     unique.sort((a, b) => a.sort - b.sort);
-    return unique;
+    return [
+      { value: null, label: 'All Teams' },
+      ...unique.map((t) => ({ value: t.id, label: t.name, color: t.color })),
+    ];
   }, [teams]);
 
   const typeOptions = useMemo(() => {
@@ -26,13 +28,13 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '8px 0' }}>
-      {!hideTeamRow && teamChips.length > 0 && (
-        <div className="sf-no-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-          <Chip label="All" active={!selectedTeam} onClick={() => onSelectTeam(null)} />
-          {teamChips.map((t) => (
-            <Chip key={t.id} label={t.name} color={t.color} active={selectedTeam === t.id} onClick={() => onSelectTeam(t.id)} />
-          ))}
-        </div>
+      {!hideTeamRow && teamOptions.length > 1 && (
+        <FilterSelect
+          value={selectedTeam}
+          onChange={onSelectTeam}
+          options={teamOptions}
+          ariaLabel="Filter by team"
+        />
       )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <FilterSelect value={selectedType} onChange={onSelectType} options={typeOptions} ariaLabel="Filter by type" />
