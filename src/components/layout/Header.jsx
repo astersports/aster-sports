@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Settings, Eye } from 'lucide-react';
+import { Bell, Eye, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useHomeRole } from '../../hooks/useHomeRole';
@@ -8,9 +8,9 @@ import { EMBER_DISPLAY_NAME } from '../../lib/emberDefaults';
 import RoleSwitcherSheet from '../RoleSwitcherSheet';
 
 const SEVERITY_COLOR = {
-  info: 'var(--em-accent, #1E3A5F)',
-  warning: 'var(--em-warning, #D97706)',
-  danger: 'var(--em-danger, #DC2626)',
+  info: 'var(--em-accent)',
+  warning: 'var(--em-warning)',
+  danger: 'var(--em-danger)',
 };
 
 export default function Header() {
@@ -32,7 +32,7 @@ export default function Header() {
           style={{
             top: 'env(safe-area-inset-top, 0px)',
             height: 6,
-            background: 'var(--em-warning, #D97706)',
+            background: 'var(--em-warning)',
           }}
         />
       )}
@@ -41,8 +41,8 @@ export default function Header() {
         style={{
           top: `calc(env(safe-area-inset-top, 0px) + ${stripeHeight}px)`,
           height: 56,
-          background: 'var(--em-header, #1E3A5F)',
-          color: 'var(--em-text-on-dark, #FFFFFF)',
+          background: 'var(--em-header)',
+          color: 'var(--em-text-on-dark)',
         }}
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -72,7 +72,7 @@ export default function Header() {
             onClick={() => setSheetOpen(true)}
             aria-label="Switch role view"
             className="relative w-11 h-11 flex items-center justify-center"
-            style={{ color: isViewingAs ? 'var(--em-warning, #D97706)' : 'inherit' }}
+            style={{ color: isViewingAs ? 'var(--em-warning)' : 'inherit' }}
           >
             <Eye className="w-5 h-5" />
           </button>
