@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { Trophy } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import { useGameDetail } from './useGameDetail';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/useToast';
 import { isStaff } from '../../lib/permissions';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
 import GameBoxScore from './GameBoxScore';
 import PlayByPlayFeed from './PlayByPlayFeed';
 
 export default function FinalizedGameView({ event }) {
-  const { role } = useAuth();
+  const { role, user, orgId } = useAuth();
+  const { showToast } = useToast();
   const { result, plays, stats, quarterScores, loading, update } = useGameDetail(event.id);
   const [showPlays, setShowPlays] = useState(false);
   const [highlight, setHighlight] = useState('');
@@ -24,6 +27,15 @@ export default function FinalizedGameView({ event }) {
   const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
   const qKeys = Object.keys(quarterScores).sort((a, b) => a - b);
   const needsCapture = staff && (!result.player_of_game_id || !result.coach_highlight);
+
+  const shareToChat = async () => {
+    const msg = `${result.result === 'W' ? '🏆' : ''} Final: ${event.teams?.name || 'Us'} ${result.our_score} - ${result.opponent_score} ${event.opponent || 'Opponent'}${result.coach_highlight ? `\n\n${result.coach_highlight}` : ''}`;
+    const { error } = await supabase.from('messages').insert({
+      org_id: orgId, team_id: event.team_id, channel: 'chat', sender_id: user?.id, body: msg,
+    });
+    if (error) showToast("Couldn't share to chat. Try again?", 'error');
+    else showToast('Shared to team chat!', 'success');
+  };
 
   return (
     <div style={{ padding: '0 16px 24px' }}>
@@ -100,6 +112,13 @@ export default function FinalizedGameView({ event }) {
         {showPlays ? 'Hide plays' : `View ${plays.length} plays`}
       </button>
       {showPlays && <PlayByPlayFeed plays={plays} players={stats.map((s) => ({ id: s.player_id, first_name: s.players?.first_name, last_name: s.players?.last_name, jersey_number: s.jersey_at_time }))} />}
+
+      {staff && (
+        <button type="button" onClick={shareToChat} className="sf-press"
+          style={{ width: '100%', minHeight: 44, marginTop: 8, padding: '0 16px', borderRadius: 10, border: '1px solid var(--em-accent)', backgroundColor: 'transparent', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+          Share to Chat
+        </button>
+      )}
     </div>
   );
 }
