@@ -5,7 +5,7 @@
 // calls useOrgTeamRecords once for all team cards.
 import { EMPTY_SUMMARY } from '../../lib/teamRecords';
 
-export default function ParentHomeTeamCard({ team, summary, loading, onClick }) {
+export default function ParentHomeTeamCard({ team, summary, loading, nextEvent, onClick }) {
   const s = summary || EMPTY_SUMMARY;
   const recordLine = loading
     ? '—'
@@ -22,6 +22,11 @@ export default function ParentHomeTeamCard({ team, summary, loading, onClick }) 
       <div style={{ flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
         <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)' }}>{team.name}</span>
         <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{recordLine}</span>
+        {nextEvent && (
+          <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
+            Next: {new Date(nextEvent.start_at).toLocaleDateString('en-US', { weekday: 'short' })} {new Date(nextEvent.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+          </div>
+        )}
       </div>
     </button>
   );

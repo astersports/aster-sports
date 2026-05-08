@@ -89,7 +89,6 @@ export default function SchedulePage() {
           <>
             <ChildFilterChips kids={myChildren} activeFilter={activeKidFilter} onChange={setActiveKidFilter} />
             <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={myChildren?.length >= 2} />
-            <PastEventsSection activities={filtered} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
             {upcoming.length === 0 ? (
               <TextEmptyState heading="No events this week" message={isStaff(role) ? "Tap + to get something on the books." : "Check back — Coach has something in the works."} />
             ) : (
@@ -107,6 +106,7 @@ export default function SchedulePage() {
                 <DateGroupedList events={remaining} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} density={density} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
               </div>
             )}
+            <PastEventsSection activities={filtered} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
           </>
         )}
       </div>
