@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 import LoginForm from '../components/auth/LoginForm';
 
 // Skyfire brand landing + sign-in. Email auto-trims on submit. Inline field
@@ -13,11 +14,23 @@ export default function LoginPage() {
   const stickyFrom = location.state?.from?.pathname;
   const from = REDIRECT_ALLOWLIST.some(p => stickyFrom?.startsWith(p)) ? stickyFrom : '/';
 
+  const [searchParams] = useSearchParams();
+  const teamParam = searchParams.get('team');
+  const [teamContext, setTeamContext] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!teamParam) return;
+    supabase.from('teams').select('name, organizations(name)')
+      .eq('id', teamParam).maybeSingle()
+      .then(({ data }) => {
+        if (data) setTeamContext({ teamName: data.name, orgName: data.organizations?.name });
+      });
+  }, [teamParam]);
 
   // Reset brand tokens to Skyfire defaults on mount so the login page
   // always shows dark navy regardless of cached org colors.
@@ -68,6 +81,17 @@ export default function LoginPage() {
           <img src="/phoenix.webp" alt="Ember"
             style={{ width: 120, height: 120, objectFit: 'contain', borderRadius: 16 }} />
         </div>
+
+        {teamContext && (
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>
+              Welcome to {teamContext.teamName}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 4 }}>
+              Sign in to access your child&#39;s schedule
+            </div>
+          </div>
+        )}
 
         <LoginForm
           email={email} setEmail={setEmail}

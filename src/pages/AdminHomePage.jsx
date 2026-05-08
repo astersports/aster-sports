@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSeason } from '../context/SeasonContext';
 import { useAdminStats } from '../hooks/useAdminStats';
@@ -17,6 +19,7 @@ import TeamPerformanceStrip from '../components/admin/TeamPerformanceStrip';
 import GettingStarted from '../components/admin/GettingStarted';
 import AdminGreeting from '../components/admin/AdminGreeting';
 import NotificationHistory from '../components/admin/NotificationHistory';
+import AutoNotificationSettingsSheet from '../components/admin/AutoNotificationSettingsSheet';
 import PastEventsSection from '../components/schedule/PastEventsSection';
 import DensityToggle from '../components/home/DensityToggle';
 import Label from '../components/shared/Label';
@@ -33,6 +36,7 @@ export default function AdminHomePage() {
   useRefetchOnVisible(refetch);
   const navigate = useNavigate();
   const nextEvent = activities.find((a) => new Date(a.start_at) >= new Date() && a.status !== 'cancelled');
+  const [notifSettingsOpen, setNotifSettingsOpen] = useState(false);
 
   // overflow-x-hidden + max-w-full on the page wrapper is defense in
   // depth — even if a child component escapes its box, nothing drags
@@ -74,8 +78,15 @@ export default function AdminHomePage() {
       </section>
 
       <section className="min-w-0" aria-label="Notification history">
-        <Label>RECENT NOTIFICATIONS</Label>
+        <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+          <Label style={{ marginBottom: 0 }}>RECENT NOTIFICATIONS</Label>
+          <button type="button" aria-label="Notification settings" onClick={() => setNotifSettingsOpen(true)}
+            className="sf-press" style={{ minHeight: 44, minWidth: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <Settings size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+          </button>
+        </div>
         <NotificationHistory orgId={orgId} />
+        <AutoNotificationSettingsSheet open={notifSettingsOpen} onClose={() => setNotifSettingsOpen(false)} orgId={orgId} />
       </section>
 
       <GettingStarted
