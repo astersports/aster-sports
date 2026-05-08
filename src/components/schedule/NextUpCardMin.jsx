@@ -55,7 +55,7 @@ export default function NextUpCardMin({ event, rsvpCount }) {
           )}
         </div>
         {childOnTeam ? (
-          <ChildRsvp child={childOnTeam} eventId={event.id} compact={true} />
+          <ChildRsvp child={childOnTeam} eventId={event.id} eventType={event.event_type} compact={true} />
         ) : (
           <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
             {rsvpCount ? `${rsvpCount.going} going · ${rsvpCount.noResponse} no response` : 'RSVP status pending'}

@@ -14,7 +14,7 @@ export default function MyActionsSection({ event, myRideClaim, onRsvpChange }) {
         MY RSVP
       </div>
       {childrenOnTeam.map((child) => (
-        <ChildRsvp key={child.playerId} child={child} eventId={event.id} disabled={isPast} onSave={onRsvpChange} />
+        <ChildRsvp key={child.playerId} child={child} eventId={event.id} eventType={event.event_type} disabled={isPast} onSave={onRsvpChange} />
       ))}
       {myRideClaim && (
         <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--em-text-secondary)' }}>

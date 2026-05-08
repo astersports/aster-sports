@@ -63,16 +63,18 @@ export default function TeamHeaderCard({ team, summary, loading }) {
         <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 4 }}>
           {buildMetaLine(team, s)}
         </div>
-        <div style={{
-          marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--em-border-subtle)',
-          display: 'flex', alignItems: 'center', gap: 4,
-        }}>
-          <Cell value={v(s.ppg)} label="PPG" />
-          <Cell value={v(s.allowed)} label="Allowed" />
-          <Cell value={v(formatDiff(s.diff))} label="Diff" />
-          <Cell value={v(`${s.winPct}%`)} label="Win %" />
-          <Cell value={v(s.gamesPlayed)} label="Games" />
-        </div>
+        {s.gamesPlayed > 0 && (
+          <div style={{
+            marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--em-border-subtle)',
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}>
+            <Cell value={v(s.ppg)} label="PPG" />
+            <Cell value={v(s.allowed)} label="Allowed" />
+            <Cell value={v(formatDiff(s.diff))} label="Diff" />
+            <Cell value={v(`${s.winPct}%`)} label="Win %" />
+            <Cell value={v(s.gamesPlayed)} label="Games" />
+          </div>
+        )}
       </div>
     </div>
   );
