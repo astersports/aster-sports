@@ -32,7 +32,7 @@ export default function FinancialDashboardPage() {
     if (!orgId || !seasonId) return;
     const id = ++fetchIdRef.current;
     Promise.all([
-      supabase.from('financial_accounts').select('*, guardians(first_name, last_name)').eq('org_id', orgId).eq('season_id', seasonId),
+      supabase.from('financial_accounts').select('*, guardians(first_name, last_name, user_id)').eq('org_id', orgId).eq('season_id', seasonId),
       supabase.from('financial_transactions').select('*').eq('org_id', orgId).order('occurred_at', { ascending: false }),
     ]).then(([aRes, tRes]) => {
       if (id !== fetchIdRef.current) return;
@@ -111,7 +111,11 @@ export default function FinancialDashboardPage() {
             <StatCard label="Families" value={accounts.length} sub={currentSeason?.name || ''} color="var(--em-text-primary)" />
           </div>
 
-          <FamilyBalanceList accounts={accounts} transactions={transactions} fmt={fmt} onRecordPayment={setPayingAccount} />
+          <FamilyBalanceList accounts={accounts} transactions={transactions} fmt={fmt} onRecordPayment={setPayingAccount}
+            onNudge={(family) => {
+              const uid = family.guardians?.user_id;
+              navigate(uid ? `/messages?dm=${uid}` : '/messages');
+            }} />
         </>
       )}
 
