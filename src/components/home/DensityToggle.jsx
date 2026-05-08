@@ -14,8 +14,8 @@
 
 import { useDensity } from '../../hooks/useDensity';
 
-const LABELS = { minimal: 'Compact', medium: 'Default', maximum: 'Detailed' };
-const NEXT_DENSITY = { minimal: 'medium', medium: 'maximum', maximum: 'minimal' };
+const LABELS = { minimal: 'Compact', maximum: 'Detailed' };
+const NEXT_DENSITY = { minimal: 'maximum', maximum: 'minimal' };
 
 function DensityIcon({ density }) {
   const lineCount = density === 'minimal' ? 4 : density === 'medium' ? 3 : 2;
