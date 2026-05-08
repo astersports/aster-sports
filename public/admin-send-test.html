@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Edge Function Smoke Test</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; max-width: 480px; margin: 40px auto; padding: 20px; color: #1a1d23; }
+  h1 { font-size: 18px; margin-bottom: 8px; }
+  p { font-size: 14px; color: #4a5568; line-height: 1.5; margin: 4px 0; }
+  code { font-size: 12px; background: #f1f3f5; padding: 2px 6px; border-radius: 4px; word-break: break-all; }
+  button { display: block; width: 100%; padding: 16px; font-size: 16px; font-weight: 600; background: #4a8fd4; color: white; border: none; border-radius: 8px; margin-top: 24px; }
+  button:disabled { opacity: 0.5; }
+  pre { background: #f1f3f5; padding: 12px; border-radius: 6px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; margin-top: 16px; }
+  .ok { color: #16A34A; }
+  .err { color: #DC2626; }
+</style>
+</head>
+<body>
+<h1>send-tournament-message smoke test</h1>
+<p>Message ID: <code>1b7be1bf-ca56-4239-9589-0f19c4b6857d</code></p>
+<p>Recipient: <code>fsamaritano@gmail.com</code></p>
+<p id="boot-status">Booting...</p>
+<p id="auth-status"></p>
+<button id="send" disabled>Send Test Email</button>
+<pre id="result"></pre>
+
+<script>
+const SUPABASE_URL = 'https://vrwwpsbfbnveawqwbdmj.supabase.co';
+const MESSAGE_ID = '1b7be1bf-ca56-4239-9589-0f19c4b6857d';
+const JWT_RE = /eyJ[A-Za-z0-9_-]+?\.eyJ[A-Za-z0-9_-]+?\.[A-Za-z0-9_-]+/g;
+
+const bootStatus = document.getElementById('boot-status');
+const authStatus = document.getElementById('auth-status');
+const sendBtn = document.getElementById('send');
+const resultPre = document.getElementById('result');
+
+let anonKey = null;
+let token = null;
+
+async function extractAnonKey() {
+  const indexHtml = await fetch('/', { cache: 'no-store' }).then(r => r.text());
+  const match = indexHtml.match(/\/assets\/index-[A-Za-z0-9_-]+\.js/);
+  if (!match) throw new Error('Could not find /assets/index-*.js in index.html');
+  const bundleJs = await fetch(match[0], { cache: 'no-store' }).then(r => r.text());
+  const jwts = bundleJs.match(JWT_RE);
+  if (!jwts || jwts.length === 0) throw new Error('No JWT-shaped string found in bundle');
+  for (const j of jwts) {
+    try {
+      const payload = JSON.parse(atob(j.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      if (payload.role === 'anon') return j;
+    } catch {}
+  }
+  return jwts[0];
+}
+
+function loadAuthToken() {
+  const authKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+  if (!authKey) return null;
+  try { return JSON.parse(localStorage.getItem(authKey))?.access_token ?? null; }
+  catch { return null; }
+}
+
+(async () => {
+  try {
+    anonKey = await extractAnonKey();
+    bootStatus.textContent = '✓ Anon key loaded from bundle (' + anonKey.slice(0, 12) + '...).';
+    bootStatus.className = 'ok';
+  } catch (e) {
+    bootStatus.textContent = '✗ Failed to load anon key: ' + e.message;
+    bootStatus.className = 'err';
+    return;
+  }
+
+  token = loadAuthToken();
+  if (token) {
+    authStatus.textContent = '✓ Logged in. Token loaded from localStorage.';
+    authStatus.className = 'ok';
+    sendBtn.disabled = false;
+  } else {
+    authStatus.textContent = '✗ Not logged in. Open app.legacyhoopers.org in another tab, log in, then refresh this page.';
+    authStatus.className = 'err';
+  }
+})();
+
+sendBtn.addEventListener('click', async () => {
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Sending...';
+  resultPre.textContent = '';
+  resultPre.className = '';
+  try {
+    const res = await fetch(SUPABASE_URL + '/functions/v1/send-tournament-message', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'apikey': anonKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message_id: MESSAGE_ID })
+    });
+    const data = await res.json();
+    resultPre.textContent = 'STATUS: ' + res.status + '\n\n' + JSON.stringify(data, null, 2);
+    resultPre.className = res.ok ? 'ok' : 'err';
+  } catch (e) {
+    resultPre.textContent = 'NETWORK ERROR: ' + e.message;
+    resultPre.className = 'err';
+  } finally {
+    sendBtn.textContent = 'Send Again';
+    sendBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
