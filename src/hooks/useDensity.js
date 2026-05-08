@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { usePreferences } from './usePreferences';
 
-const VALID = ['minimal', 'medium', 'maximum'];
-const NEXT_IN_CYCLE = { minimal: 'medium', medium: 'maximum', maximum: 'minimal' };
+const VALID = ['minimal', 'maximum'];
+const NEXT_IN_CYCLE = { minimal: 'maximum', maximum: 'minimal' };
 const FALLBACK = 'minimal';
 
 /**
