@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
-import { CalendarPlus, DollarSign, Megaphone, MessageSquare, Trophy, UserPlus } from 'lucide-react';
+import { CalendarPlus, DollarSign, Inbox, Megaphone, MessageSquare, Trophy, UserPlus } from 'lucide-react';
 
 const ACTIONS = [
   { label: '+ Event',     icon: CalendarPlus,  to: '/schedule'     },
   { label: '+ Player',    icon: UserPlus,      to: '/teams'        },
+  { label: 'Briefings',   icon: Inbox,         to: '/admin/briefings' },
   { label: 'Financials',  icon: DollarSign,    to: '/admin/financials' },
   { label: 'Announce',    icon: Megaphone,     to: '/messages?announce=1' },
   { label: 'Message',     icon: MessageSquare, to: '/messages'     },
