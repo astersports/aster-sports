@@ -63,3 +63,17 @@ export const TEAM_COLORS = {
   '9U Boys':   '#06b6d4',
   '8U Boys':   '#f59e0b',
 };
+
+// Tournament message types — must stay in sync with the
+// tournament_messages.message_type CHECK constraint in production.
+export const TOURNAMENT_MESSAGE_TYPES = [
+  { value: 'preliminary_schedule', label: 'Preliminary schedule' },
+  { value: 'final_schedule',       label: 'Final schedule' },
+  { value: 'rsvp_lock',            label: 'RSVP lock reminder' },
+  { value: 'saturday_scenarios',   label: 'Saturday-night scenarios' },
+  { value: 'day1_recap',           label: 'Day 1 recap' },
+  { value: 'weekend_recap',        label: 'Weekend recap' },
+  { value: 'schedule_change',      label: 'Schedule change' },
+  { value: 'multi_team_notice',    label: 'Multi-team notice' },
+  { value: 'custom',               label: 'Custom' },
+];
