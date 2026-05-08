@@ -1,7 +1,18 @@
-// Horizontal pill strip for quick team switching without going back
-// to the Teams list. Renders one pill per team in the active season,
-// styled with the team's color. Active team is filled; others outlined.
+import FilterSelect from '../shared/FilterSelect';
+
 export default function TeamSwitcher({ programs, teamId, navigate }) {
+  if (programs.length > 6) {
+    return (
+      <div style={{ marginBottom: 8 }}>
+        <FilterSelect
+          value={teamId}
+          onChange={(v) => { if (v && v !== teamId) { navigator.vibrate?.(10); navigate(`/teams/${v}`); } }}
+          options={programs.map((p) => ({ value: p.id, label: p.name, color: p.team_color }))}
+          ariaLabel="Switch team"
+        />
+      </div>
+    );
+  }
   return (
     <div className="flex gap-2 overflow-x-auto sf-no-scrollbar" style={{ marginBottom: 8, paddingBottom: 4 }}>
       {programs.map((p) => (
