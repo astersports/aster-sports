@@ -1,24 +1,13 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin } from 'lucide-react';
 import { useActivities } from '../../hooks/useActivities';
 import { useNow } from '../../hooks/useNow';
 import { getWeatherForTime, useWeather } from '../../hooks/useWeather';
-import { useMapsUrl } from '../../hooks/useMapsUrl';
 import TextEmptyState from '../shared/TextEmptyState';
+import EventCard from '../schedule/EventCard';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_EVENTS = 5;
-
-function formatRow(event) {
-  const dt = new Date(event.start_at);
-  const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-  const timeStr = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-  const label = event.event_type === 'game' || event.event_type === 'tournament'
-    ? (event.opponent ? `vs ${event.opponent}` : (event.title || 'Game'))
-    : (event.title || event.event_type);
-  return { label, dateStr, timeStr, location: event.location || '' };
-}
 
 export default function UpcomingEvents({ teamId }) {
   const { activities } = useActivities();
@@ -49,14 +38,11 @@ export default function UpcomingEvents({ teamId }) {
       {upcoming.length === 0 ? (
         <TextEmptyState heading="Clear week ahead" message="Time to work on those crossovers." />
       ) : (
-        <div style={{
-          backgroundColor: 'var(--em-bg-card)', borderRadius: 10,
-          border: '1px solid var(--em-border-default)', boxShadow: 'var(--em-shadow-sm)', overflow: 'hidden',
-        }}>
-          {upcoming.map((evt, i) => (
-            <UpcomingRow key={evt.id} evt={evt} i={i} total={upcoming.length} weather={weather} navigate={navigate} />
-          ))}
-        </div>
+        upcoming.map((evt, i) => (
+          <div key={evt.id} style={{ marginBottom: i < upcoming.length - 1 ? 6 : 0 }}>
+            <EventCard event={evt} density="minimal" weather={getWeatherForTime(weather, evt.start_at)} />
+          </div>
+        ))
       )}
       <button type="button" onClick={() => { navigator.vibrate?.(10); navigate(`/schedule?team=${teamId}`); }}
         className="w-full sf-press" style={{ marginTop: 8, minHeight: 44, borderRadius: 10,
@@ -64,42 +50,6 @@ export default function UpcomingEvents({ teamId }) {
           color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
         View full schedule →
       </button>
-    </div>
-  );
-}
-
-function UpcomingRow({ evt, i, total, weather, navigate }) {
-  const { label, dateStr, timeStr, location } = formatRow(evt);
-  const mapsUrl = useMapsUrl(location || null);
-  const w = getWeatherForTime(weather, evt.start_at);
-  return (
-    <div role="link" tabIndex={0} className="sf-press"
-      onClick={(e) => { if (e.target.closest('button')) return; navigator.vibrate?.(10); navigate(`/events/${evt.id}`); }}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/events/${evt.id}`); } }}
-      style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', fontFamily: 'inherit', textAlign: 'left',
-        borderBottom: i < total - 1 ? '1px solid var(--em-border-subtle)' : 'none',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 52, cursor: 'pointer' }}>
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div className="flex items-center gap-2">
-          <span className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{label}</span>
-          {w && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{w.icon} {w.temp}°</span>}
-        </div>
-        <div className="flex items-center gap-1" style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
-          <span>{dateStr}</span>
-          {location && (
-            <>
-              <span>·</span>
-              {mapsUrl ? (
-                <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }}
-                  style={{ color: 'var(--em-accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 2, background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}>
-                  <MapPin size={11} strokeWidth={1.75} /> {location}
-                </button>
-              ) : <span>{location}</span>}
-            </>
-          )}
-        </div>
-      </div>
-      <span className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginLeft: 12, flexShrink: 0 }}>{timeStr}</span>
     </div>
   );
 }
