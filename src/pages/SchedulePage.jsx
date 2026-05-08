@@ -53,7 +53,12 @@ export default function SchedulePage() {
   const handleDaySelect = (dateStr) => {
     setSelectedDate(dateStr);
     if (dateStr) {
-      setTimeout(() => { document.querySelector(`[data-date-group="${dateStr}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+      setTimeout(() => {
+        const el = document.querySelector(`[data-date-group="${dateStr}"]`);
+        if (!el) return;
+        const main = document.querySelector('main');
+        if (main) { main.scrollTo({ top: el.offsetTop - 120, behavior: 'smooth' }); }
+      }, 50);
     }
   };
 
