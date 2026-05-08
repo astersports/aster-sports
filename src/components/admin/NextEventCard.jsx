@@ -56,7 +56,7 @@ export default function NextEventCard({ event, weather }) {
       </div>
       <div style={{ textAlign: 'right' }}>
         {weather && <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginBottom: 2 }}>{weather.icon} {weather.temp}°</div>}
-        <div className="font-bold" style={{ fontSize: 20, color: 'var(--em-accent)', fontVariantNumeric: 'tabular-nums' }}>
+        <div className="font-bold" style={{ fontSize: 17, color: 'var(--em-accent)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
           {countdown || '—'}
         </div>
         {countdown === 'Now' && (
