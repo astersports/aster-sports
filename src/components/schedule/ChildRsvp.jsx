@@ -8,7 +8,7 @@ import { cacheKey, responseCache } from '../../lib/rsvpCache';
 const PILLS = [
   { value: 'going',     label: 'Going',     color: 'var(--em-success)' },
   { value: 'maybe',     label: 'Maybe',     color: 'var(--em-warning)' },
-  { value: 'not_going', label: 'No',        color: 'var(--em-danger)' },
+  { value: 'not_going', label: "Can't",      color: 'var(--em-danger)' },
 ];
 
 export default function ChildRsvp({ child, eventId, compact = false, onSave }) {

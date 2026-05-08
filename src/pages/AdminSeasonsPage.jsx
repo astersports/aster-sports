@@ -122,14 +122,13 @@ export default function AdminSeasonsPage() {
         onClose={() => setSheetOpen(false)}
         onSave={handleSave}
       />
-      <ConfirmDialog
-        open={!!confirmSwitch}
+      {confirmSwitch && <ConfirmDialog
         title="Switch active season?"
         message={`Only one season can be active at a time. ${confirmSwitch?.name} will become active and the current one will move to archived.`}
         confirmLabel="Switch"
         onCancel={() => setConfirmSwitch(null)}
         onConfirm={() => handleSetActive(confirmSwitch.id)}
-      />
+      />}
       <Toast
         message={toast?.message}
         variant={toast?.variant}

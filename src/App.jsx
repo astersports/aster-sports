@@ -71,7 +71,7 @@ export default function App() {
 
       {/* Full-screen authenticated routes — auth guard without AppShell chrome */}
       <Route path="/events/:id" element={<RequireAuth><EventDetailPage /></RequireAuth>} />
-      <Route path="/events/:id/live" element={<RequireAuth><LiveScorePage /></RequireAuth>} />
+      <Route path="/events/:id/live" element={<RequireAuth allowedRoles={['admin', 'coach']}><LiveScorePage /></RequireAuth>} />
 
       {/* Admin-only management routes */}
       <Route path="/admin/seasons" element={<Protected allowedRoles={['admin']}><AdminSeasonsPage /></Protected>} />
