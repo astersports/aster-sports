@@ -27,6 +27,8 @@ export default function ArrivalBoard({ event }) {
   const arrivalMap = {};
   arrivals.forEach((a) => { arrivalMap[a.player_id] = a; });
   const arrived = arrivals.filter((a) => a.status === 'arrived').length;
+  const STATUS_ORDER = { undefined: 0, running_late: 1, on_the_way: 2, arrived: 3 };
+  const sortedPlayers = [...players].sort((a, b) => (STATUS_ORDER[arrivalMap[a.id]?.status] ?? 0) - (STATUS_ORDER[arrivalMap[b.id]?.status] ?? 0));
 
   if (loading) return <div style={{ padding: 16 }}><LoadingSkeleton variant="list" count={5} /></div>;
 
@@ -37,7 +39,7 @@ export default function ArrivalBoard({ event }) {
         <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{arrived}/{players.length} arrived</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {players.map((p) => {
+        {sortedPlayers.map((p) => {
           const a = arrivalMap[p.id];
           const s = a ? STATUS_DISPLAY[a.status] : null;
           const time = a?.status_changed_at ? new Date(a.status_changed_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;

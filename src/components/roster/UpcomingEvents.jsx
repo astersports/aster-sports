@@ -47,7 +47,7 @@ export default function UpcomingEvents({ teamId }) {
         textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8,
       }}>UPCOMING (NEXT 7 DAYS)</div>
       {upcoming.length === 0 ? (
-        <TextEmptyState heading="Nothing this week" message="No events scheduled in the next 7 days." />
+        <TextEmptyState heading="Clear week ahead" message="Time to work on those crossovers." />
       ) : (
         <div style={{
           backgroundColor: 'var(--em-bg-card)', borderRadius: 10,

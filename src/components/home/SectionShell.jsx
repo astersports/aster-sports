@@ -100,7 +100,7 @@ function ErrorState({ error, onRetry }) {
 
 function EmptyState({ empty }) {
   const obj = typeof empty === 'object' ? empty : {};
-  const heading = obj.heading || 'Nothing here yet';
+  const heading = obj.heading || 'Nothing here yet — but something good is coming';
   const message = obj.message || '';
   const actionLabel = obj.actionLabel;
   const onAction = obj.onAction;

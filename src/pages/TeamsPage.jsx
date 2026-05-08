@@ -46,7 +46,7 @@ export default function TeamsPage() {
         <EmptyState
           icon={Users}
           title="No teams yet"
-          description="Teams will appear here once an admin adds them."
+          description="Teams will show up here once your admin gets things rolling."
         />
       ) : (
         <div className="flex flex-col gap-3">

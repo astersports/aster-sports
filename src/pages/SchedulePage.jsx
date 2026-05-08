@@ -91,7 +91,7 @@ export default function SchedulePage() {
             <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={myChildren?.length >= 2} />
             <PastEventsSection activities={filtered} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
             {upcoming.length === 0 ? (
-              <TextEmptyState heading="No events this week" message={isStaff(role) ? "Check back later or tap + to create one." : "No events this week. Check back — Coach has something in the works."} />
+              <TextEmptyState heading="No events this week" message={isStaff(role) ? "Tap + to get something on the books." : "Check back — Coach has something in the works."} />
             ) : (
               <div style={{ marginTop: 8 }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>

@@ -11,7 +11,7 @@ export default function EventDutiesTab({ eventId }) {
   const staff = isStaff(role);
 
   if (loading) return <Empty text="Loading duties..." />;
-  if (duties.length === 0) return <Empty text="No duties assigned yet. Check back closer to game day." />;
+  if (duties.length === 0) return <Empty text="No volunteer duties yet — check back closer to game day." />;
 
   const groups = {};
   duties.forEach((d) => {
@@ -32,6 +32,7 @@ export default function EventDutiesTab({ eventId }) {
           }}>
             {slots.map((slot, i) => {
               const claimed = !!slot.guardian_id || !!slot.claimed_by_name;
+              // Parents match by guardianId; staff can release any claimed duty
               const isMine = claimed && (guardianId ? slot.guardian_id === guardianId : staff);
               return (
                 <div key={slot.id} style={{

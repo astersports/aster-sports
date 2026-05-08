@@ -42,7 +42,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
       style={{
         display: 'flex',
         alignItems: 'stretch',
-        backgroundColor: (event.event_type === 'game' || event.event_type === 'tournament') ? 'rgba(74, 143, 212, 0.06)' : 'var(--em-bg-card)',
+        backgroundColor: (event.event_type === 'game' || event.event_type === 'tournament') ? 'rgba(74, 143, 212, 0.10)' : 'var(--em-bg-card)',
         borderRadius: 10,
         border: '1px solid var(--em-border-default)',
         boxShadow: 'var(--em-shadow-sm)',
@@ -51,7 +51,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
         transition: 'box-shadow 150ms ease-out, transform 150ms ease-out, opacity 150ms ease-out',
       }}
     >
-      <div style={{ width: 4, flexShrink: 0, backgroundColor: teamColor }} />
+      <div style={{ width: (event.event_type === 'game' || event.event_type === 'tournament') ? 6 : 4, flexShrink: 0, backgroundColor: teamColor }} />
       <div style={{ flex: 1, padding: density === 'minimal' ? '8px 14px' : '10px 14px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
