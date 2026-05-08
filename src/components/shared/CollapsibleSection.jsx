@@ -15,7 +15,7 @@ export default function CollapsibleSection({ title, sectionKey, defaultOpen = tr
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           width: '100%', padding: '0 16px', minHeight: 44,
           background: 'none', border: 'none', cursor: 'pointer',
-          marginTop: 16, marginBottom: 8,
+          marginTop: 8, marginBottom: 4,
         }}
       >
         <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)' }}>
