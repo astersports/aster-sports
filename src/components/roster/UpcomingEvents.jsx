@@ -73,10 +73,12 @@ function UpcomingRow({ evt, i, total, weather, navigate }) {
   const mapsUrl = useMapsUrl(location || null);
   const w = getWeatherForTime(weather, evt.start_at);
   return (
-    <button type="button" className="sf-press" onClick={() => { navigator.vibrate?.(10); navigate(`/events/${evt.id}`); }}
+    <div role="link" tabIndex={0} className="sf-press"
+      onClick={(e) => { if (e.target.closest('button')) return; navigator.vibrate?.(10); navigate(`/events/${evt.id}`); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/events/${evt.id}`); } }}
       style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', fontFamily: 'inherit', textAlign: 'left',
         borderBottom: i < total - 1 ? '1px solid var(--em-border-subtle)' : 'none',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 52 }}>
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 52, cursor: 'pointer' }}>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div className="flex items-center gap-2">
           <span className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{label}</span>
@@ -98,6 +100,6 @@ function UpcomingRow({ evt, i, total, weather, navigate }) {
         </div>
       </div>
       <span className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginLeft: 12, flexShrink: 0 }}>{timeStr}</span>
-    </button>
+    </div>
   );
 }
