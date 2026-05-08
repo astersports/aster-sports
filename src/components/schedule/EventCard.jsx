@@ -52,7 +52,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
       }}
     >
       <div style={{ width: (event.event_type === 'game' || event.event_type === 'tournament') ? 6 : 4, flexShrink: 0, backgroundColor: teamColor }} />
-      <div style={{ flex: 1, padding: density === 'minimal' ? '8px 14px' : '10px 14px' }}>
+      <div style={{ flex: 1, padding: density === 'minimal' ? '6px 12px' : '10px 14px' }}>
         {density === 'minimal' ? (
           <>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -134,7 +134,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
             )}
           </>
         )}
-        {role === 'parent' && childrenOnTeam.length > 0 && (
+        {density !== 'minimal' && role === 'parent' && childrenOnTeam.length > 0 && (
           <div style={{ marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
             {childrenOnTeam.map((child) => (<ChildRsvp key={child.playerId} child={child} eventId={event.id} eventType={event.event_type} compact disabled={isPast} onSave={onRsvpChange} />))}
           </div>
