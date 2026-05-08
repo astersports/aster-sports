@@ -1,0 +1,36 @@
+name: Deploy Supabase Edge Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'supabase/functions/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy all edge functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          for dir in supabase/functions/*/; do
+            func_name=$(basename "$dir")
+            # Skip _shared/ (Deno convention) and hidden dirs
+            if [[ "$func_name" == _* ]] || [[ "$func_name" == .* ]]; then
+              continue
+            fi
+            echo "Deploying $func_name..."
+            supabase functions deploy "$func_name" \
+              --project-ref vrwwpsbfbnveawqwbdmj
+          done
