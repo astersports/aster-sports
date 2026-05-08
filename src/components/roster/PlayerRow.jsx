@@ -48,8 +48,8 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
           </div>
           <div className="flex items-center gap-1" style={{ marginTop: 2 }}>
             {isAcademy && <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-academy-soft)', color: 'var(--em-academy)' }}>Academy</span>}
-            {role === 'admin' && player.grade && <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{ordinalGrade(player.grade)}</span>}
-            {role === 'admin' && age != null && <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{age}y</span>}
+            {(role === 'admin' || role === 'coach') && player.grade && <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{ordinalGrade(player.grade)}</span>}
+            {(role === 'admin' || role === 'coach') && age != null && <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{age}y</span>}
           </div>
           {showRsvp && (
             <div className="flex items-center gap-1" style={{ marginTop: 3, flexWrap: 'wrap' }}>

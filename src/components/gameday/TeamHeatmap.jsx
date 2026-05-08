@@ -33,7 +33,7 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle })
   const rangeLabel = range === '4weeks' ? 'last 4 weeks' : 'season';
 
   return (
-    <CollapsibleSection title={`Team Pulse · ${teamPct}%`} sectionKey="heatmap" defaultOpen>
+    <CollapsibleSection title={`Team Pulse · ${teamPct}%`} sectionKey="heatmap" defaultOpen={false}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 16px 8px' }}>
         <button type="button" onClick={onRangeToggle} className="sf-press" style={{
           fontSize: 12, fontWeight: 500, color: 'var(--em-accent)', background: 'var(--em-accent-soft)',
