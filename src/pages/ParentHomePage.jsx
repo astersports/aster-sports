@@ -43,6 +43,16 @@ export default function ParentHomePage() {
     return [...map.values()].sort((x, y) => x.sort_order - y.sort_order);
   }, [activities]);
 
+  const nextEventByTeam = useMemo(() => {
+    const map = {};
+    for (const a of activities) {
+      if (!a.team_id || a.status === 'cancelled' || !a.start_at) continue;
+      if (new Date(a.start_at).getTime() < now) continue;
+      if (!map[a.team_id]) map[a.team_id] = a;
+    }
+    return map;
+  }, [activities, now]);
+
   const next7days = useMemo(() => activities
     .filter((a) => {
       if (!a.start_at) return false;
@@ -87,7 +97,7 @@ export default function ParentHomePage() {
 
       {myTeams.length > 0 && (
         <>
-          <MyTeamsStrip teams={myTeams} byTeamId={recordsByTeam} loading={recordsLoading} onSelect={(teamId) => navigate(`/teams/${teamId}`)} />
+          <MyTeamsStrip teams={myTeams} byTeamId={recordsByTeam} loading={recordsLoading} nextEventByTeam={nextEventByTeam} onSelect={(teamId) => navigate(`/teams/${teamId}`)} />
           <button type="button" onClick={() => navigate('/records')} className="sf-press"
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 16px', minHeight: 44, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
             <span>View full season records</span>

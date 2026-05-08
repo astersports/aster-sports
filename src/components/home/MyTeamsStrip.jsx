@@ -5,7 +5,7 @@
 import ParentHomeTeamCard from './ParentHomeTeamCard';
 import Label from '../shared/Label';
 
-export default function MyTeamsStrip({ teams, byTeamId, loading, onSelect }) {
+export default function MyTeamsStrip({ teams, byTeamId, loading, nextEventByTeam, onSelect }) {
   if (!teams || teams.length === 0) return null;
   return (
     <section>
@@ -17,6 +17,7 @@ export default function MyTeamsStrip({ teams, byTeamId, loading, onSelect }) {
             team={t}
             summary={byTeamId[t.id]}
             loading={loading}
+            nextEvent={nextEventByTeam?.[t.id]}
             onClick={() => onSelect(t.id)}
           />
         ))}

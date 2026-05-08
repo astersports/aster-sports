@@ -1,13 +1,14 @@
 import { Megaphone, Users } from 'lucide-react';
 import { formatRelativeTime } from '../../lib/formatters';
 
-export default function ChannelList({ channels, activeKey, onSelect, previews }) {
+export default function ChannelList({ channels, activeKey, onSelect, previews, reads }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {channels.map((ch) => {
         const active = ch.key === activeKey;
         const Icon = ch.channel === 'announcement' ? Megaphone : Users;
         const preview = previews?.[ch.key];
+        const hasUnread = preview?.time && (!reads?.[ch.key] || preview.time > reads[ch.key]);
         return (
           <button
             key={ch.key}
@@ -32,10 +33,13 @@ export default function ChannelList({ channels, activeKey, onSelect, previews })
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{
-                  fontSize: 15, fontWeight: active ? 600 : 500,
-                  color: active ? 'var(--em-accent)' : 'var(--em-text-primary)',
-                }}>{ch.label}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{
+                    fontSize: 15, fontWeight: active ? 600 : (hasUnread ? 600 : 500),
+                    color: active ? 'var(--em-accent)' : 'var(--em-text-primary)',
+                  }}>{ch.label}</span>
+                  {hasUnread && !active && <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--em-accent)', flexShrink: 0 }} />}
+                </div>
                 {preview && (
                   <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', flexShrink: 0 }}>
                     {formatRelativeTime(preview.time)}
