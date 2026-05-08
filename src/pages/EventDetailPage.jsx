@@ -30,7 +30,7 @@ const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActiv
 const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
 const FinalizedGameView = lazy(() => import('../components/livescore/FinalizedGameView'));
 const AcademyActivationPanel = lazy(() => import('../components/event/AcademyActivationPanel'));
-const SH = ({ children, sectionKey }) => <h2 data-section={sectionKey} style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 24, marginBottom: 8 }}>{children}</h2>;
+const SH = ({ children, sectionKey }) => <h2 data-section={sectionKey} style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 6 }}>{children}</h2>;
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -120,11 +120,10 @@ export default function EventDetailPage() {
         <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} />
       </CollapsibleSection>
       {isStaff && isGameType && teamId && <Suspense fallback={null}><AcademyActivationPanel eventId={event.id} teamId={teamId} /></Suspense>}
-      {dutyCount > 0 && (<><SH sectionKey="duties">Volunteers</SH><EventDutiesTab eventId={event.id} /></>)}
-
-      {(event.notes || event.coach_notes) && <><SH>Notes</SH><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></>}
+      {dutyCount > 0 && <CollapsibleSection title="Volunteers" sectionKey="duties" defaultOpen={false} count={`${dutyCount}`}><EventDutiesTab eventId={event.id} /></CollapsibleSection>}
+      {(event.notes || event.coach_notes) && <CollapsibleSection title="Notes" sectionKey="notes" defaultOpen={false}><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></CollapsibleSection>}
+      <CollapsibleSection title="Comments" sectionKey="comments" defaultOpen={false}><EventCommentsTab eventId={event.id} /></CollapsibleSection>
       <AddToCalendarButton event={event} />
-      <SH>Comments</SH><EventCommentsTab eventId={event.id} />
 
       {isStaff && <EventCancelActions event={event} onStatusChange={(status) => { patchEvent({ status }); refetch(); }} />}
 
