@@ -11,7 +11,7 @@ const PILLS = [
   { value: 'not_going', label: "Can't",      color: 'var(--em-danger)' },
 ];
 
-export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
+export default function ChildRsvp({ child, eventId, compact = false, disabled = false, onSave }) {
   const { guardianId } = useAuth();
   const { showToast } = useToast();
   const [response, setResponse] = useState(() => responseCache.get(cacheKey(eventId, child.playerId)) ?? null);
@@ -29,9 +29,6 @@ export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
   // setResponse out of the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => {
     Promise.resolve().then(fetchRsvp);
-    const handler = () => fetchRsvp();
-    window.addEventListener('focus', handler);
-    return () => window.removeEventListener('focus', handler);
   }, [fetchRsvp]);
 
   const save = async (value) => {
@@ -70,6 +67,7 @@ export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
 
   const handleClick = (e, value) => {
     e.stopPropagation();
+    if (disabled) return;
     if (value === response) clearRsvp();
     else save(value);
   };
@@ -92,6 +90,7 @@ export default function ChildRsvp({ child, eventId, compact = false, onSave }) {
               backgroundColor: active ? p.color : 'transparent',
               color: active ? 'var(--em-text-inverse)' : p.color,
               fontFamily: 'inherit',
+              ...(disabled ? { opacity: 0.5, pointerEvents: 'none' } : {}),
             }}>
             {p.label}
           </button>
