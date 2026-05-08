@@ -426,6 +426,18 @@ git add -A && git commit -m "description" && git push origin v2 && git checkout 
 
 14. **Accessibility is non-negotiable.** All interactive elements must have aria-label or visible text. All form inputs must have associated <label>. Tab order must be logical. Run `npx @axe-core/cli` before parent rollout.
 
+15. **Claude Code may auto-merge its own PRs** once ALL of the following hold:
+    - All required CI checks are completed and green (no pending, no failures)
+    - Zero unresolved review comments
+    - PR is not in `draft` state (Claude Code marks ready before merging)
+    - Default merge method is `squash` for single-commit PRs, `merge` for multi-commit feature PRs
+    - PR base is `main` and `mergeable_state` is `clean`
+    Exceptions that REQUIRE Frank's explicit approval before merging:
+    - Any PR touching `CLAUDE.md`, `supabase/migrations/`, RLS policies, edge function deploys to prod, or financial schemas
+    - Any PR with reviewers other than Claude Code requested
+    - Any PR labeled `do-not-auto-merge`
+    Goal: Frank stays low/no-touch. Claude Code is responsible for verifying CI green + zero review comments before pressing merge. Anti-pattern #22 still applies — verify the merge with a follow-up `pull_request_read` after.
+
 ---
 
 ## 13. COMMUNICATIONS ENGINE HTML RULES (Phase 6)
