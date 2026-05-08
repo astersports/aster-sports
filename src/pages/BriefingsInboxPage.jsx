@@ -9,9 +9,9 @@ import EmptyState from '../components/shared/EmptyState';
 import TournamentBriefing from '../components/event/TournamentBriefing';
 
 const FILTERS = [
-  { key: 'all',     label: 'All' },
-  { key: 'pending', label: 'Pending' },
-  { key: 'sent',    label: 'Sent' },
+  { key: 'all',       label: 'All' },
+  { key: 'pending',   label: 'Pending' },
+  { key: 'completed', label: 'Completed' },
 ];
 
 function chipStyle(active) {
@@ -53,7 +53,7 @@ export default function BriefingsInboxPage() {
 
   const filtered = useMemo(() => {
     if (filter === 'all') return rows;
-    return rows.filter((r) => r.status === filter);
+    return rows.filter((r) => r.tournamentState === filter);
   }, [rows, filter]);
 
   const grouped = useMemo(() => {
@@ -94,7 +94,7 @@ export default function BriefingsInboxPage() {
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', letterSpacing: '-0.01em' }}>Briefings</h1>
-          <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>One row per tournament-team decision in the next 90 days.</div>
+          <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>One row per tournament-team decision in the active season.</div>
         </div>
         <div className="flex items-center gap-2">
           {FILTERS.map((f) => (
@@ -115,8 +115,8 @@ export default function BriefingsInboxPage() {
       {!loading && !error && grouped.length === 0 && (
         <EmptyState
           icon={Inbox}
-          title="No upcoming briefings"
-          description="Briefings appear here once tournaments are scheduled within the next 90 days."
+          title={filter === 'all' ? 'No briefings this season' : `No ${filter} briefings`}
+          description={filter === 'all' ? 'Briefings appear here once tournaments are scheduled in the active season.' : `Switch to All to see other tournament states.`}
         />
       )}
 
