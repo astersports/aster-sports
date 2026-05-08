@@ -39,7 +39,7 @@ export function useSeasonRollover(fromSeason, orgId) {
 
       for (const t of (plan.teams || [])) {
         const { data: newTeam } = await supabase.from('teams').insert({
-          org_id: orgId, name: t.name, team_color: t.team_color, sort_order: t.sort_order,
+          org_id: orgId, season_id: newSeason.id, name: t.name, team_color: t.team_color, sort_order: t.sort_order,
           age_group: t.age_group, division: t.division, circuit: t.circuit,
         }).select().single();
         if (newTeam) teamsRecreated++;

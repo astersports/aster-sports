@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSeasonRollover } from '../hooks/useSeasonRollover';
 import Button from '../components/shared/Button';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
-import { StepArchive, StepPlayers, StepCoaches, StepDetails, StepPreview } from '../components/admin/RolloverSteps';
+import { StepArchive, StepCoaches, StepDetails, StepPlayers, StepPreview } from '../components/admin/RolloverSteps';
 
 export default function SeasonRolloverPage() {
   const { orgId } = useAuth();
@@ -25,7 +25,7 @@ export default function SeasonRolloverPage() {
       const { data: s } = await supabase.from('seasons').select('*').eq('org_id', orgId).eq('status', 'active').maybeSingle();
       setSeason(s);
       if (!s) return;
-      const { data: t } = await supabase.from('teams').select('*, roster_members(player_id, players(id, first_name, last_name, jersey_number, grad_year)), team_staff(user_id, role)').eq('org_id', orgId).order('sort_order');
+      const { data: t } = await supabase.from('teams').select('*, roster_members(player_id, players(id, first_name, last_name, jersey_number, grad_year)), team_staff(user_id, role)').eq('org_id', orgId).eq('season_id', s.id).order('sort_order');
       const mapped = (t || []).map((tm) => ({
         ...tm, players: (tm.roster_members || []).filter((r) => r.players).map((r) => ({ ...r.players, action: 'keep' })),
         coaches: (tm.team_staff || []).map((s) => ({ ...s, keep: true })),

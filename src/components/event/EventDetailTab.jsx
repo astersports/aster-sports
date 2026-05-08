@@ -14,7 +14,7 @@ export default function EventDetailTab({ event }) {
       {date && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--em-text-primary)' }}>
           <Calendar size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
-          <span>{fmt(date)}{endDate ? ` · ${fmtTime(date)} – ${fmtTime(endDate)}` : ''}</span>
+          <span>{fmt(date)}{endDate ? ` · ${fmtTime(date)} – ${fmtTime(endDate)}` : ` · ${fmtTime(date)}`}</span>
         </div>
       )}
       {event.arrival_minutes_before > 0 && (

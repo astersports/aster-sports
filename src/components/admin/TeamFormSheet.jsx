@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import FullScreenForm from '../shared/FullScreenForm';
 import ConfirmDialog from '../shared/ConfirmDialog';
-import { Field, Input, ChipField } from './FormControls';
+import { ChipField, Field, Input } from './FormControls';
 
 const AGE_GROUPS = ['8U', '9U', '10U', '11U', '12U'].map((a) => ({ key: a, label: a }));
 const GENDERS = [
@@ -130,15 +130,14 @@ function Body({ program, onSave, onDelete }) {
         </div>
       </div>
 
-      <ConfirmDialog
-        open={confirmDel}
+      {confirmDel && <ConfirmDialog
         title="Delete this team?"
         message="Events, roster assignments, and RSVPs for this team will also be removed."
         confirmLabel="Delete"
         destructive
         onCancel={() => setConfirmDel(false)}
         onConfirm={() => { setConfirmDel(false); onDelete?.(program.id); }}
-      />
+      />}
     </>
   );
 }
