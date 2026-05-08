@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useAuth } from '../../context/AuthContext';
 
 const baseBtnStyle = {
   flex: 1, minHeight: 44, borderRadius: 10, fontSize: 15, fontWeight: 600,
@@ -14,9 +15,11 @@ const baseBtnStyle = {
 export default function SendConfirmDialog({
   open, onClose, onConfirm,
   sending, result, error,
-  recipients = [], adminEmail,
+  recipients = [],
   tournamentName, teamName, messageTypeLabel,
 }) {
+  const { user } = useAuth();
+  const adminEmail = user?.email;
   const trapRef = useFocusTrap(open);
   const [testSendOnly, setTestSendOnly] = useState(false);
 
@@ -75,7 +78,7 @@ export default function SendConfirmDialog({
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--em-text-primary)' }}>Send to me only (test)</div>
                 <div style={{ fontSize: 12, color: 'var(--em-text-secondary)', marginTop: 2 }}>
-                  {testSendOnly ? `Only ${adminEmail || 'your account email'} will receive this.` : 'Override the recipient list — useful for a smoke test before the real send.'}
+                  {testSendOnly ? `Only ${adminEmail ?? 'you'} will receive this.` : 'Override the recipient list — useful for a smoke test before the real send.'}
                 </div>
               </div>
             </label>
