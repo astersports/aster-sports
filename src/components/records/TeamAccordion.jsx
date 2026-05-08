@@ -1,4 +1,5 @@
 import TeamDetail from './TeamDetail';
+import FormGuide from './FormGuide';
 
 function buildMeta(team) {
   if (team.circuit === 'aau') return 'AAU · Zero Gravity';
@@ -27,7 +28,10 @@ export default function TeamAccordion({ team, summary, expanded, onToggle }) {
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 24, fontWeight: 800, color: team.team_color, textShadow: `0 0 14px ${team.team_color}40` }}>{s.record}</div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fff' }}>{s.streak !== '—' ? s.streak : ''}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+            {s.streak !== '—' && <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fff' }}>{s.streak}</span>}
+            <FormGuide results={s.last5} />
+          </div>
         </div>
         <span style={{ fontSize: 15, color: team.team_color, transition: 'transform 200ms', transform: expanded ? 'rotate(180deg)' : 'rotate(0)' }}>▾</span>
       </button>

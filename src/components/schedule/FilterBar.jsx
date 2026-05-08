@@ -1,19 +1,20 @@
 import { useMemo } from 'react';
 import { TYPE_OPTIONS } from '../../lib/constants';
 import FilterSelect from '../shared/FilterSelect';
+import Chip from '../shared/Chip';
 
 export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedType, onSelectType, showCancelled, onToggleCancelled, hideTeamRow = false }) {
-  const teamOptions = useMemo(() => {
+  const teamChips = useMemo(() => {
     const unique = [];
     const seen = new Set();
     (teams || []).forEach((a) => {
       if (a.team_id && !seen.has(a.team_id) && a.teams) {
         seen.add(a.team_id);
-        unique.push({ value: a.team_id, label: a.teams.name, color: a.teams.team_color, sort: a.teams.sort_order ?? 999 });
+        unique.push({ id: a.team_id, name: a.teams.name, color: a.teams.team_color, sort: a.teams.sort_order ?? 999 });
       }
     });
     unique.sort((a, b) => a.sort - b.sort);
-    return [{ value: null, label: 'All Teams' }, ...unique];
+    return unique;
   }, [teams]);
 
   const typeOptions = useMemo(() => {
@@ -24,17 +25,24 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
   }, [teams]);
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', flexWrap: 'wrap' }}>
-      {!hideTeamRow && (
-        <FilterSelect value={selectedTeam} onChange={onSelectTeam} options={teamOptions} ariaLabel="Filter by team" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '8px 0' }}>
+      {!hideTeamRow && teamChips.length > 0 && (
+        <div className="sf-no-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+          <Chip label="All" active={!selectedTeam} onClick={() => onSelectTeam(null)} />
+          {teamChips.map((t) => (
+            <Chip key={t.id} label={t.name} color={t.color} active={selectedTeam === t.id} onClick={() => onSelectTeam(t.id)} />
+          ))}
+        </div>
       )}
-      <FilterSelect value={selectedType} onChange={onSelectType} options={typeOptions} ariaLabel="Filter by type" />
-      {onToggleCancelled && (
-        <button type="button" onClick={onToggleCancelled}
-          style={{ fontSize: 13, color: 'var(--em-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', minHeight: 44, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-          {showCancelled ? 'Hide cancelled' : 'Show cancelled'}
-        </button>
-      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <FilterSelect value={selectedType} onChange={onSelectType} options={typeOptions} ariaLabel="Filter by type" />
+        {onToggleCancelled && (
+          <button type="button" onClick={onToggleCancelled}
+            style={{ fontSize: 13, color: 'var(--em-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', minHeight: 44, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+            {showCancelled ? 'Hide cancelled' : 'Show cancelled'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

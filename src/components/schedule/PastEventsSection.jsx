@@ -18,6 +18,13 @@ export default function PastEventsSection({ activities, rsvpCounts, rideCounts, 
       .sort((a, b) => new Date(b.start_at) - new Date(a.start_at));
   }, [activities, now]);
 
+  const summary = useMemo(() => {
+    if (!gameResults) return null;
+    const wCount = past7.filter(a => gameResults[a.id]?.result === 'W').length;
+    const lCount = past7.filter(a => gameResults[a.id]?.result === 'L').length;
+    return wCount + lCount > 0 ? `${wCount}W-${lCount}L` : null;
+  }, [past7, gameResults]);
+
   if (past7.length === 0) return null;
 
   return (
@@ -30,7 +37,7 @@ export default function PastEventsSection({ activities, rsvpCounts, rideCounts, 
         <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Past 7 days
         </span>
-        <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>({past7.length})</span>
+        <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>({past7.length}){!open && summary ? ` · ${summary}` : ''}</span>
       </button>
       {open && <DateGroupedList events={past7} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} onRsvpChange={onRsvpChange} />}
     </div>
