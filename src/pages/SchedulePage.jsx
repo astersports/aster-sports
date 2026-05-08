@@ -38,7 +38,7 @@ export default function SchedulePage() {
   const [showCancelled, setShowCancelled] = useState(false);
   const [viewMode, setViewMode] = useState('all');
   const [selectedDate, setSelectedDate] = useState(null);
-  const { density } = useDensity('schedule-list', 'medium');
+  const { density } = useDensity('schedule-list');
   const gameResults = useGameResultsMap(activities);
   const weather = useWeather(41.03, -73.76);
 

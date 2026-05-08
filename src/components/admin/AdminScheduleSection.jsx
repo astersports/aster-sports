@@ -17,7 +17,7 @@ export default function AdminScheduleSection({ activities }) {
   const now = useNow();
   const weekEnd = now + 7 * 24 * 60 * 60 * 1000;
   const [selectedTeam, setSelectedTeam] = useState(null);
-  const { density } = useDensity('admin-schedule', 'medium');
+  const { density } = useDensity('admin-schedule');
 
   const teams = useMemo(() => {
     const map = new Map();

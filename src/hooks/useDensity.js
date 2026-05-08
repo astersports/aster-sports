@@ -3,7 +3,7 @@ import { usePreferences } from './usePreferences';
 
 const VALID = ['minimal', 'medium', 'maximum'];
 const NEXT_IN_CYCLE = { minimal: 'medium', medium: 'maximum', maximum: 'minimal' };
-const FALLBACK = 'medium';
+const FALLBACK = 'minimal';
 
 /**
  * useDensity(sectionKey)

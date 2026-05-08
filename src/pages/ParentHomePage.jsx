@@ -32,7 +32,7 @@ export default function ParentHomePage() {
   usePrefetchChildRsvps(activities, myChildren);
   const now = useNow(), cutoff = now + 7 * 24 * 60 * 60 * 1000;
   useRefetchOnVisible(refetch);
-  const { density } = useDensity('parent-home', 'medium');
+  const { density } = useDensity('parent-home');
 
   const myTeams = useMemo(() => {
     const map = new Map();
