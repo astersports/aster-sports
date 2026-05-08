@@ -31,7 +31,7 @@ export default function CoachHomePage() {
   const thisWeek = useMemo(() => activities.filter((a) => {
     if (!a.start_at || a.status === 'cancelled') return false;
     const t = new Date(a.start_at).getTime();
-    return t >= now - 48 * 60 * 60 * 1000 && t <= weekEnd;
+    return t >= now && t <= weekEnd;
   }).sort((a, b) => new Date(a.start_at) - new Date(b.start_at)), [activities, now, weekEnd]);
   const { density } = useDensity('coach-schedule', 'medium');
 
