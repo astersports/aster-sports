@@ -33,10 +33,10 @@ export function useDuties(eventId) {
   const claim = async (dutyId) => {
     const prev = duties;
     const authorName = guardianFirstName || user?.user_metadata?.full_name || 'Volunteer';
-    setDuties(duties.map((d) => d.id === dutyId ? { ...d, guardian_id: guardianId, claimed_by_name: authorName, claimed_at: new Date().toISOString() } : d));
+    setDuties(duties.map((d) => d.id === dutyId ? { ...d, guardian_id: guardianId || null, claimed_by_name: authorName, claimed_at: new Date().toISOString() } : d));
     const { error } = await supabase.from('event_duties')
-      .update({ guardian_id: guardianId ?? null, claimed_by_name: authorName, claimed_at: new Date().toISOString() })
-      .eq('id', dutyId).is('guardian_id', null);
+      .update({ guardian_id: guardianId || null, claimed_by_name: authorName, claimed_at: new Date().toISOString() })
+      .eq('id', dutyId).is('claimed_at', null);
     if (error) {
       setDuties(prev);
       showToast("Looks like that didn't go through. Try again?", 'error');

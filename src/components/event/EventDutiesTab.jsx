@@ -1,15 +1,17 @@
 import { useDuties } from '../../hooks/useDuties';
 import { useAuth } from '../../context/AuthContext';
+import { isStaff } from '../../lib/permissions';
 
 // Duties tab — grouped by duty_name. Each row in event_duties is one
 // claimable slot (guardian_id nullable). Users tap Claim to take an
-// open slot; Release if it's theirs.
+// open slot; Release if it's theirs. Staff can release any duty.
 export default function EventDutiesTab({ eventId }) {
-  const { guardianId } = useAuth();
+  const { guardianId, role } = useAuth();
   const { duties, loading, claim, unclaim } = useDuties(eventId);
+  const staff = isStaff(role);
 
   if (loading) return <Empty text="Loading duties..." />;
-  if (duties.length === 0) return <Empty text="No duties set for this event." />;
+  if (duties.length === 0) return <Empty text="No duties assigned yet. Check back closer to game day." />;
 
   const groups = {};
   duties.forEach((d) => {
@@ -29,8 +31,8 @@ export default function EventDutiesTab({ eventId }) {
             border: '1px solid var(--em-border-default)', overflow: 'hidden',
           }}>
             {slots.map((slot, i) => {
-              const claimed = !!slot.guardian_id;
-              const isMine = claimed && guardianId && slot.guardian_id === guardianId;
+              const claimed = !!slot.guardian_id || !!slot.claimed_by_name;
+              const isMine = claimed && (guardianId ? slot.guardian_id === guardianId : staff);
               return (
                 <div key={slot.id} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
