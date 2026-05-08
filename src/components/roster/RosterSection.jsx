@@ -1,7 +1,6 @@
 import RosterControls from './RosterControls';
 import CopyRosterButton from './CopyRosterButton';
 import PlayerRow from './PlayerRow';
-import UpcomingEvents from './UpcomingEvents';
 import CollapsibleSection from '../shared/CollapsibleSection';
 import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/permissions';
@@ -28,7 +27,6 @@ export default function RosterSection({ team, sortedPlayers, search, setSearch, 
           ))}
         </div>
       </CollapsibleSection>
-      <UpcomingEvents teamId={team.id} />
     </>
   );
 }

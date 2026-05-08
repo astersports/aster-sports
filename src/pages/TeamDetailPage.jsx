@@ -23,6 +23,7 @@ import TeamHeatmap from '../components/gameday/TeamHeatmap';
 import MessageTeamFAB from '../components/roster/MessageTeamFAB';
 import CoachQuickActions from '../components/roster/CoachQuickActions';
 import MyChildSpotlight from '../components/roster/MyChildSpotlight';
+import UpcomingEvents from '../components/roster/UpcomingEvents';
 
 export default function TeamDetailPage() {
   const { teamId } = useParams();
@@ -71,8 +72,8 @@ export default function TeamDetailPage() {
       {switcherPrograms.length > 1 && <TeamSwitcher programs={switcherPrograms} teamId={teamId} navigate={navigate} />}
       <TeamHeaderCard team={team} summary={summary} loading={recordsLoading} nextEvent={nextEvent} />
       {myChildPlayer && <MyChildSpotlight player={myChildPlayer} team={team} child={myChild} nextEvent={nextEvent} />}
-      <TeamAchievements teamId={teamId} />
       {isStaff(role) && <CoachQuickActions teamId={teamId} />}
+      <UpcomingEvents teamId={teamId} />
 
       {rosterLoading ? (
         <LoadingSkeleton variant="list" count={6} />
@@ -88,6 +89,7 @@ export default function TeamDetailPage() {
 
       {!rosterLoading && players.length > 0 && <TeamHeatmap teamId={teamId} range={pulseRange} onRangeToggle={() => setPulseRange((r) => r === 'season' ? '4weeks' : 'season')} />}
       {!rosterLoading && players.length > 0 && isStaff(role) && <TeamPlayerStats players={players} stats={playerStats} loading={statsLoading} />}
+      <TeamAchievements teamId={teamId} />
       {isStaff(role) && <MessageTeamFAB teamId={teamId} />}
     </div>
   );
