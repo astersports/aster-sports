@@ -1,14 +1,13 @@
 import { Link } from 'react-router-dom';
-import { CalendarPlus, DollarSign, Megaphone, MessageSquare, Send, Trophy, UserPlus } from 'lucide-react';
+import { CalendarPlus, DollarSign, Megaphone, MessageSquare, Trophy, UserPlus } from 'lucide-react';
 
 const ACTIONS = [
-  { label: '+ Event',        icon: CalendarPlus,  to: '/schedule'     },
-  { label: '+ Player',       icon: UserPlus,      to: '/teams'        },
-  { label: 'Financials',     icon: DollarSign,    to: '/admin/financials' },
-  { label: 'Send Briefing',  icon: Send,          to: '/admin/compose-briefing' },
-  { label: 'Announce',       icon: Megaphone,     to: '/messages?announce=1' },
-  { label: 'Message',        icon: MessageSquare, to: '/messages'     },
-  { label: 'Tournaments',    icon: Trophy,        to: '/tournaments'  },
+  { label: '+ Event',     icon: CalendarPlus,  to: '/schedule'     },
+  { label: '+ Player',    icon: UserPlus,      to: '/teams'        },
+  { label: 'Financials',  icon: DollarSign,    to: '/admin/financials' },
+  { label: 'Announce',    icon: Megaphone,     to: '/messages?announce=1' },
+  { label: 'Message',     icon: MessageSquare, to: '/messages'     },
+  { label: 'Tournaments', icon: Trophy,        to: '/tournaments'  },
 ];
 
 export default function QuickActions() {
