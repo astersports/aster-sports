@@ -23,7 +23,7 @@
 <p id="boot-status">Booting...</p>
 <div id="manual-key" style="display:none; margin-top:12px;">
   <p style="font-size:13px;">Auto-extract failed. Paste the anon key (eyJ...) below:</p>
-  <input id="manual-key-input" type="text" style="width:100%; padding:10px; font-size:12px; border:1px solid #E2E8F0; border-radius:6px; box-sizing:border-box;" placeholder="eyJhbGciOi...">
+  <input id="manual-key-input" type="text" style="width:100%; padding:10px; font-size:12px; border:1px solid #E2E8F0; border-radius:6px; box-sizing:border-box;" placeholder="eyJhbGciOi... or sb_publishable_...">
   <button id="manual-key-set" type="button" style="margin-top:8px; padding:10px; background:#4A5568;">Use this key</button>
 </div>
 <p id="auth-status"></p>
@@ -33,7 +33,7 @@
 <script>
 const SUPABASE_URL = 'https://vrwwpsbfbnveawqwbdmj.supabase.co';
 const MESSAGE_ID = '1b7be1bf-ca56-4239-9589-0f19c4b6857d';
-const JWT_RE = /eyJ[A-Za-z0-9_-]+?\.eyJ[A-Za-z0-9_-]+?\.[A-Za-z0-9_-]+/g;
+const KEY_PATTERN = /(eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+|sb_publishable_[A-Za-z0-9_-]+)/g;
 
 const bootStatus = document.getElementById('boot-status');
 const authStatus = document.getElementById('auth-status');
@@ -43,33 +43,37 @@ const resultPre = document.getElementById('result');
 let anonKey = null;
 let token = null;
 
-function pickAnonJwt(jwts) {
-  for (const j of jwts) {
+function pickKey(keys) {
+  // Prefer sb_publishable_* (new format), then JWT with role=anon, then first match.
+  const pub = keys.find(k => k.startsWith('sb_publishable_'));
+  if (pub) return pub;
+  for (const k of keys) {
+    if (!k.startsWith('eyJ')) continue;
     try {
-      const payload = JSON.parse(atob(j.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-      if (payload.role === 'anon') return j;
+      const payload = JSON.parse(atob(k.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      if (payload.role === 'anon') return k;
     } catch {}
   }
-  return jwts[0] ?? null;
+  return keys[0] ?? null;
 }
 
 async function extractAnonKey() {
   const indexHtml = await fetch('/', { cache: 'no-store' }).then(r => r.text());
   const jsPaths = [...new Set(indexHtml.match(/\/assets\/[^"'\s]+\.js/g) ?? [])];
   if (jsPaths.length === 0) throw new Error('No /assets/*.js files referenced in index.html');
-  const allJwts = [];
+  const allKeys = [];
   for (const path of jsPaths) {
     try {
       const js = await fetch(path, { cache: 'no-store' }).then(r => r.text());
-      const matches = js.match(JWT_RE);
-      if (matches) allJwts.push(...matches);
+      const matches = js.match(KEY_PATTERN);
+      if (matches) allKeys.push(...matches);
     } catch {}
   }
-  if (allJwts.length === 0) {
-    throw new Error('No JWT-shaped string found across ' + jsPaths.length + ' chunk(s)');
+  if (allKeys.length === 0) {
+    throw new Error('No anon key found across ' + jsPaths.length + ' chunk(s)');
   }
-  const picked = pickAnonJwt(allJwts);
-  if (!picked) throw new Error('JWTs found but none decodable');
+  const picked = pickKey(allKeys);
+  if (!picked) throw new Error('Keys found but none usable');
   return picked;
 }
 
@@ -94,9 +98,11 @@ function checkAuthAndEnable() {
 
 document.getElementById('manual-key-set').addEventListener('click', () => {
   const v = document.getElementById('manual-key-input').value.trim();
-  if (!v.match(/^eyJ/)) { alert('Key must start with "eyJ"'); return; }
+  if (!v.match(/^(eyJ|sb_publishable_)/)) {
+    alert('Key must start with "eyJ" or "sb_publishable_"'); return;
+  }
   anonKey = v;
-  bootStatus.textContent = '✓ Anon key set manually (' + v.slice(0, 12) + '...).';
+  bootStatus.textContent = '✓ Anon key set manually (' + v.slice(0, 16) + '...).';
   bootStatus.className = 'ok';
   document.getElementById('manual-key').style.display = 'none';
   if (token) sendBtn.disabled = false;
@@ -105,7 +111,7 @@ document.getElementById('manual-key-set').addEventListener('click', () => {
 (async () => {
   try {
     anonKey = await extractAnonKey();
-    bootStatus.textContent = '✓ Anon key loaded from bundle (' + anonKey.slice(0, 12) + '...).';
+    bootStatus.textContent = '✓ Anon key loaded from bundle (' + anonKey.slice(0, 16) + '...).';
     bootStatus.className = 'ok';
   } catch (e) {
     bootStatus.textContent = '✗ Auto-extract failed: ' + e.message;
