@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import Label from '../shared/Label';
 
-export default function FamilyBalanceList({ accounts, transactions, fmt, onRecordPayment }) {
+export default function FamilyBalanceList({ accounts, transactions, fmt, onRecordPayment, onNudge }) {
   const [search, setSearch] = useState('');
 
   const families = useMemo(() => {
@@ -63,11 +63,19 @@ export default function FamilyBalanceList({ accounts, transactions, fmt, onRecor
                 Fee: {fmt(f.season_fee_cents)}{f.discount_cents > 0 ? ` · Discount: ${fmt(f.discount_cents)}` : ''}
               </div>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: f.balance > 0 ? 'var(--em-danger)' : 'var(--em-success)' }}>
-                {f.balance > 0 ? fmt(f.balance) : 'Paid'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {f.balance > 0 && onNudge && (
+                <button type="button" onClick={(e) => { e.stopPropagation(); onNudge(f); }} className="sf-press"
+                  style={{ minHeight: 32, padding: '0 10px', borderRadius: 8, border: '1px solid var(--em-accent)', backgroundColor: 'transparent', color: 'var(--em-accent)', fontSize: 11, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' }}>
+                  Message
+                </button>
+              )}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: f.balance > 0 ? 'var(--em-danger)' : 'var(--em-success)' }}>
+                  {f.balance > 0 ? fmt(f.balance) : 'Paid'}
+                </div>
+                {f.balance > 0 && <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>Tap to record</div>}
               </div>
-              {f.balance > 0 && <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>Tap to record</div>}
             </div>
           </button>
         ))}

@@ -36,7 +36,7 @@ export default function PlayerPicker({ open, players, onCourt, playerStats, play
           <>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-accent)', marginBottom: 8 }}>On Court ({courtPlayers.length})</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
-              {courtPlayers.map((p) => <PlayerCard key={p.id} player={p} onTap={() => onSelect(p.id)} active fouls={fouls(p.id)} />)}
+              {courtPlayers.map((p) => <PlayerCard key={p.id} player={p} onTap={() => { if (fouls(p.id) >= 5) return; onSelect(p.id); }} active fouls={fouls(p.id)} />)}
             </div>
           </>
         )}
@@ -44,7 +44,7 @@ export default function PlayerPicker({ open, players, onCourt, playerStats, play
           {courtPlayers.length > 0 ? `Bench (${benchPlayers.length})` : `All Players (${players.length})`}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-          {benchPlayers.map((p) => <PlayerCard key={p.id} player={p} onTap={() => onSelect(p.id)} fouls={fouls(p.id)} />)}
+          {benchPlayers.map((p) => <PlayerCard key={p.id} player={p} onTap={() => { if (fouls(p.id) >= 5) return; onSelect(p.id); }} fouls={fouls(p.id)} />)}
         </div>
       </div>
     </div>,
@@ -53,17 +53,23 @@ export default function PlayerPicker({ open, players, onCourt, playerStats, play
 }
 
 function PlayerCard({ player, onTap, active, fouls = 0 }) {
+  const fouledOut = fouls >= 5;
   return (
     <button type="button" onClick={onTap} className="sf-press"
-      aria-label={`${player.first_name} number ${player.jersey_number || 'none'}, ${fouls} fouls`}
+      aria-label={`${player.first_name} number ${player.jersey_number || 'none'}, ${fouledOut ? 'fouled out' : fouls + ' fouls'}`}
+      aria-disabled={fouledOut}
       style={{
         padding: '10px 8px', minHeight: 44, borderRadius: 10,
         border: active ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
-        backgroundColor: 'var(--em-bg-card)', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit',
+        backgroundColor: 'var(--em-bg-card)', textAlign: 'center',
+        cursor: fouledOut ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+        opacity: fouledOut ? 0.4 : 1,
       }}>
       <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--em-text-primary)' }}>{player.jersey_number || '—'}</div>
       <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--em-text-primary)', marginTop: 2 }}>{player.first_name}</div>
-      <div style={{ fontSize: 10, fontWeight: 600, color: fouls >= 4 ? 'var(--em-danger)' : 'var(--em-text-tertiary)', marginTop: 2 }}>{fouls} PF</div>
+      <div style={{ fontSize: 10, fontWeight: 600, color: fouledOut ? 'var(--em-danger)' : fouls >= 4 ? 'var(--em-danger)' : 'var(--em-text-tertiary)', marginTop: 2 }}>
+        {fouledOut ? 'FOULED OUT' : `${fouls} PF`}
+      </div>
     </button>
   );
 }

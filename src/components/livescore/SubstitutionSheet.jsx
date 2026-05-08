@@ -43,14 +43,21 @@ export default function SubstitutionSheet({ open, players, onCourt, playerStats,
           </div>
         )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-          {bench.map((p) => (
-            <button key={p.id} type="button" onClick={() => onSubIn(p.id)} className="sf-press" aria-label={`Sub in ${p.first_name}`}
-              style={{ padding: '10px 8px', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--em-text-primary)' }}>{p.jersey_number || '—'}</div>
-              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--em-text-primary)', marginTop: 2 }}>{p.first_name}</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: fouls(p.id) >= 4 ? 'var(--em-danger)' : 'var(--em-text-tertiary)', marginTop: 2 }}>{fouls(p.id)} PF</div>
-            </button>
-          ))}
+          {bench.map((p) => {
+            const pf = fouls(p.id);
+            const fouledOut = pf >= 5;
+            return (
+              <button key={p.id} type="button" onClick={() => { if (fouledOut) return; onSubIn(p.id); }} className="sf-press"
+                aria-label={fouledOut ? `${p.first_name} fouled out` : `Sub in ${p.first_name}`} aria-disabled={fouledOut}
+                style={{ padding: '10px 8px', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', textAlign: 'center', cursor: fouledOut ? 'not-allowed' : 'pointer', fontFamily: 'inherit', minHeight: 44, opacity: fouledOut ? 0.4 : 1 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--em-text-primary)' }}>{p.jersey_number || '—'}</div>
+                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--em-text-primary)', marginTop: 2 }}>{p.first_name}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: fouledOut ? 'var(--em-danger)' : pf >= 4 ? 'var(--em-danger)' : 'var(--em-text-tertiary)', marginTop: 2 }}>
+                  {fouledOut ? 'FOULED OUT' : `${pf} PF`}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>,
