@@ -111,20 +111,16 @@ export default function EventDetailPage() {
       )}
 
       <EventDetailTab event={event} />
-
       <SH>Location</SH>
       <EventLocationTab event={event} />
-
+      <CollapsibleSection title="Rides" sectionKey="rides" defaultOpen={false}>
+        <EventRidesTab event={event} />
+      </CollapsibleSection>
       <CollapsibleSection title="RSVPs" sectionKey="rsvps" defaultOpen={isStaff} count={`${rsvps.filter((r) => r.response === 'going').length}/${roster.length}`}>
         <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} />
       </CollapsibleSection>
-
       {isStaff && isGameType && teamId && <Suspense fallback={null}><AcademyActivationPanel eventId={event.id} teamId={teamId} /></Suspense>}
       {dutyCount > 0 && (<><SH sectionKey="duties">Volunteers</SH><EventDutiesTab eventId={event.id} /></>)}
-
-      <CollapsibleSection title="Rides" sectionKey="rides">
-        <EventRidesTab event={event} />
-      </CollapsibleSection>
 
       {(event.notes || event.coach_notes) && <><SH>Notes</SH><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></>}
       <AddToCalendarButton event={event} />
