@@ -1,13 +1,27 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Pencil, Trash2, UserCheck, Ban } from 'lucide-react';
+import { ArrowLeft, Ban, Pencil, Trash2, UserCheck } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
 
 const iconBtn = { minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' };
+
+const dateFmt = new Intl.DateTimeFormat('en-US', {
+  weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York',
+});
+
+function buildSummary({ event, team, typeLabel }) {
+  const parts = [];
+  if (team?.name) parts.push(team.name);
+  parts.push(typeLabel);
+  if (event.start_at) parts.push(dateFmt.format(new Date(event.start_at)).replace(',', ''));
+  if (event.home_away && event.home_away !== 'tbd') parts.push(event.home_away.toUpperCase());
+  return parts.join(' · ');
+}
 
 export default function EventDetailHeader({ event, team, isStaff, onEdit, onDelete, onCheckin }) {
   const navigate = useNavigate();
   const teamColor = team?.team_color || 'var(--em-text-tertiary)';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
+  const summary = buildSummary({ event, team, typeLabel });
 
   return (
     <>
@@ -35,11 +49,9 @@ export default function EventDetailHeader({ event, team, isStaff, onEdit, onDele
           </div>
         </div>
         <div style={{ padding: '0 12px', marginTop: 4 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.85)', backgroundColor: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: 6 }}>{typeLabel}</span>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-inverse)', margin: '12px 0 0 0' }}>
-            {event.title || typeLabel}
+          <h1 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-inverse)', margin: 0, lineHeight: 1.3 }}>
+            {summary}
           </h1>
-          {team && <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>{team.name}</div>}
         </div>
       </div>
       {event.status === 'cancelled' && (

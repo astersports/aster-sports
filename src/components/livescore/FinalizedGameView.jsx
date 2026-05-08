@@ -107,11 +107,15 @@ export default function FinalizedGameView({ event }) {
 
       <GameBoxScore stats={stats} teamId={event.team_id} />
 
-      <button type="button" onClick={() => setShowPlays((v) => !v)} className="sf-press"
-        style={{ width: '100%', minHeight: 44, marginTop: 16, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-secondary)', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
-        {showPlays ? 'Hide plays' : `View ${plays.length} plays`}
-      </button>
-      {showPlays && <PlayByPlayFeed plays={plays} players={stats.map((s) => ({ id: s.player_id, first_name: s.players?.first_name, last_name: s.players?.last_name, jersey_number: s.jersey_at_time }))} />}
+      {plays.length > 0 && (
+        <>
+          <button type="button" onClick={() => setShowPlays((v) => !v)} className="sf-press"
+            style={{ width: '100%', minHeight: 44, marginTop: 16, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-secondary)', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+            {showPlays ? 'Hide plays' : `View ${plays.length} plays`}
+          </button>
+          {showPlays && <PlayByPlayFeed plays={plays} players={stats.map((s) => ({ id: s.player_id, first_name: s.players?.first_name, last_name: s.players?.last_name, jersey_number: s.jersey_at_time }))} />}
+        </>
+      )}
 
       {staff && (
         <button type="button" onClick={shareToChat} className="sf-press"
