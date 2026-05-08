@@ -39,6 +39,10 @@ export default function SendConfirmDialog({
   const effective = testSendOnly
     ? (adminEmail ? [{ guardian_id: 'test', email: adminEmail, name: 'Me (test)', children: [] }] : [])
     : recipients;
+  // Family count excludes the admin BCC audit copy. Test mode is always
+  // a single send to the operator. Real send: families + 1 admin BCC,
+  // but the count shown to the operator is the family count.
+  const familyCount = testSendOnly ? 0 : effective.filter((r) => !r.is_admin_copy).length;
   const count = effective.length;
   const canSend = count > 0 && !sending && !showResult;
 
@@ -59,7 +63,7 @@ export default function SendConfirmDialog({
         }}
       >
         <h2 id="send-confirm-title" style={{ fontSize: 18, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 12 }}>
-          {showResult ? (error ? 'Send failed' : 'Sent') : (testSendOnly ? 'Send test to yourself?' : `Send to ${count} ${count === 1 ? 'family' : 'families'}?`)}
+          {showResult ? (error ? 'Send failed' : 'Sent') : (testSendOnly ? 'Send test to yourself?' : `Send to ${familyCount} ${familyCount === 1 ? 'family' : 'families'} on ${teamName || 'this team'}?`)}
         </h2>
 
         {!showResult && (
@@ -82,6 +86,11 @@ export default function SendConfirmDialog({
                 </div>
               </div>
             </label>
+            {!testSendOnly && effective.some((r) => r.is_admin_copy) && (
+              <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 8, textAlign: 'center' }}>
+                admin@legacyhoopers.org also receives a BCC audit copy.
+              </div>
+            )}
           </>
         )}
 
