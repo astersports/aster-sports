@@ -121,7 +121,12 @@ export default function TournamentBriefing({ event, team, onClose }) {
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 8, padding: 16, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 16, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)' }}>
+        {canSend && recipients.length > 0 && (
+          <div style={{ fontSize: 12, color: 'var(--em-text-secondary)', textAlign: 'center' }}>
+            Sending to {recipients.length} {recipients.length === 1 ? 'family' : 'families'} on {team?.name}
+          </div>
+        )}
         <button type="button" onClick={() => setConfirmOpen(true)} disabled={!canSend} className="sf-press" style={sendBtn}>
           <Send size={16} strokeWidth={1.75} /> Send
         </button>
