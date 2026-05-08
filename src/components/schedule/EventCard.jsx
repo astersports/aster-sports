@@ -95,15 +95,13 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
               <div style={{ fontSize: 15, color: 'var(--em-text-primary)', marginTop: 2, marginBottom: 2, textDecoration: isCancelled ? 'line-through' : 'none' }}>
                 {titlePrefix}{rawTitle}
               </div>
-              {(teamName || event.location_name) && (
-                <div className="flex items-center" style={{ fontSize: 13, gap: 4 }}>
-                  {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
-                  {teamName && event.location_name && <span style={{ color: 'var(--em-text-tertiary)' }}>·</span>}
-                  {event.location_name && mapsUrl ? (
-                    <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--em-accent)', textDecoration: 'none', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}>
-                      <MapPin size={12} strokeWidth={1.75} /> {event.location_name}
-                    </button>
-                  ) : event.location_name ? (<><MapPin size={12} strokeWidth={1.75} color="var(--em-text-tertiary)" /><span style={{ color: 'var(--em-text-tertiary)' }}>{event.location_name}</span></>) : null}
+              {teamName && <div style={{ fontSize: 13, color: teamColor, fontWeight: 500 }}>{teamName}</div>}
+              {event.location_name && (
+                <div style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 2, marginTop: 1 }}>
+                  <MapPin size={11} strokeWidth={1.75} color="var(--em-text-tertiary)" style={{ flexShrink: 0 }} />
+                  {mapsUrl ? (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }} style={{ color: 'var(--em-accent)', textDecoration: 'none', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer', textAlign: 'left' }}>{event.location_name}</button>
+                  ) : <span style={{ color: 'var(--em-text-tertiary)' }}>{event.location_name}</span>}
                 </div>
               )}
               {density !== 'maximum' && rideCount?.requests > 0 && (
