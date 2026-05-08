@@ -7,11 +7,13 @@ export default function FilterSelect({ value, onChange, options, ariaLabel }) {
       onChange={(e) => { navigator.vibrate?.(10); onChange(e.target.value || null); }}
       aria-label={ariaLabel}
       style={{
-        minHeight: 44,
-        padding: '0 28px 0 12px',
-        borderRadius: 999,
+        minHeight: 36,
+        padding: '0 26px 0 10px',
+        borderRadius: 8,
         fontSize: 13,
         fontWeight: 500,
+        width: 'auto',
+        maxWidth: '100%',
         border: `1.5px solid ${color || 'var(--em-border-default)'}`,
         backgroundColor: color ? `${color}15` : 'var(--em-bg-card)',
         color: color || 'var(--em-text-primary)',
