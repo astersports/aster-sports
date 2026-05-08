@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Bell, Moon, Lock } from 'lucide-react';
+import { Bell, ChevronLeft, Lock, Moon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { usePrograms } from '../hooks/usePrograms';
@@ -9,6 +9,7 @@ import { EMBER_DISPLAY_NAME } from '../lib/emberDefaults';
 import Label from '../components/shared/Label';
 import NotificationPrefs from '../components/account/NotificationPrefs';
 import QuietHoursCard from '../components/account/QuietHoursCard';
+import StaffProfileCard from '../components/account/StaffProfileCard';
 
 const ROLE_LABELS = { admin: 'Admin', coach: 'Coach', parent: 'Parent' };
 const VERSION = 'Ember v2.0';
@@ -59,6 +60,10 @@ export default function AccountPage() {
           <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{orgName || EMBER_DISPLAY_NAME}</span>
         </div>
       </section>
+
+      {(role === 'admin' || role === 'coach') && (
+        <StaffProfileCard defaultDisplayName={user?.user_metadata?.full_name} />
+      )}
 
       {role === 'parent' && myChildren?.length > 0 && (
         <section style={{ marginBottom: 16 }}>

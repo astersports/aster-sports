@@ -39,15 +39,23 @@ export function renderCoachKeys(keysText) {
     .map((line) => `<div style="margin:6px 0;">\u2022 ${escapeHtml(line)}</div>`)
     .join('');
   return '<div style="background:#1a1a2e;padding:14px 16px;border-top:1px solid #e8e8e8;">'
-    + '<div style="font-size:11px;font-weight:bold;letter-spacing:3px;text-transform:uppercase;color:#4a8fd4;text-align:center;margin-bottom:10px;">Coach Kenny\u2019s Keys</div>'
+    + '<div style="font-size:11px;font-weight:bold;letter-spacing:3px;text-transform:uppercase;color:#4a8fd4;text-align:center;margin-bottom:10px;">Coach\u2019s Keys to the Game</div>'
     + `<div style="font-size:13px;color:#ffffff;line-height:1.6;">${body}</div>`
     + '</div>';
 }
 
-export function renderContactFooter() {
+export function renderContactFooter(coaches = []) {
+  const list = (coaches || []).filter((c) => c && (c.display_name || c.name));
+  if (list.length === 0) return '';
+  const inner = list
+    .map((c) => {
+      const name = `<strong>${escapeHtml(c.display_name || c.name)}</strong>`;
+      const phone = c.phone ? ` ${escapeHtml(c.phone)}` : '';
+      return `${name}${phone}`;
+    })
+    .join(' \u00b7 ');
   return '<div style="background:#ffffff;padding:12px 16px;text-align:center;border-top:1px solid #e8e8e8;">'
     + '<div style="font-size:10px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#666;margin-bottom:4px;">Questions?</div>'
-    + '<div style="font-size:12px;color:#1a1a2e;line-height:1.5;">'
-    + '<strong>Frank Samaritano</strong> 914-555-0100 \u00b7 <strong>Coach Kenny</strong> 914-555-0101'
-    + '</div></div>';
+    + `<div style="font-size:12px;color:#1a1a2e;line-height:1.5;">${inner}</div>`
+    + '</div>';
 }

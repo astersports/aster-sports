@@ -14,11 +14,13 @@ export function useComposeBriefing() {
   const send = useCallback(async ({
     orgId,
     tournamentId,
+    teamId,
     messageType,
     subject,
     html,
     plainText,
     recipients,
+    coachUserIds,
   }) => {
     setSending(true); setError(null); setResult(null);
     try {
@@ -32,6 +34,7 @@ export function useComposeBriefing() {
         .insert({
           org_id: orgId,
           tournament_id: tournamentId,
+          team_id: teamId || null,
           subject,
           body_html: html,
           body_plain: plainText,
@@ -39,6 +42,7 @@ export function useComposeBriefing() {
           language_code: 'en',
           delivery_method: 'queued',
           sent_at: null,
+          coach_user_ids: coachUserIds && coachUserIds.length ? coachUserIds : null,
         })
         .select('id')
         .single();

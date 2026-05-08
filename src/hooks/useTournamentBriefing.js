@@ -81,7 +81,7 @@ export function useTournamentBriefing({ event, team }) {
     }
   }, [event?.tournament_name, team?.id]);
 
-  const generate = useCallback((coachKeys, survival) => {
+  const generate = useCallback((coachKeys, survival, coaches) => {
     if (!events?.length || !team?.name || !event?.tournament_name) return;
     const result = generateTournamentBriefing({
       teamName: team.name,
@@ -91,6 +91,7 @@ export function useTournamentBriefing({ event, team }) {
       coachKeys: coachKeys ?? draftKeys,
       survivalText: survival ?? survivalText,
       orgName: 'Legacy Hoopers',
+      coaches: coaches ?? [],
     });
     setBriefing(result);
   }, [events, team?.name, event?.tournament_name, draftKeys, survivalText]);
