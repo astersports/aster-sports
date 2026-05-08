@@ -29,7 +29,7 @@ const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinO
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
 const FinalizedGameView = lazy(() => import('../components/livescore/FinalizedGameView'));
-const SH = ({ children, sectionKey }) => <h2 data-section={sectionKey} style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 8 }}>{children}</h2>;
+const SH = ({ children, sectionKey }) => <h2 data-section={sectionKey} style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 24, marginBottom: 8 }}>{children}</h2>;
 
 export default function EventDetailPage() {
   const { id } = useParams();

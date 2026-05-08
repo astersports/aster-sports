@@ -51,6 +51,7 @@ export function useDuties(eventId) {
     const q = supabase.from('event_duties')
       .update({ guardian_id: null, claimed_by_name: null, claimed_at: null })
       .eq('id', dutyId);
+    // Staff can release any duty; parents only their own (guardian_id match)
     const { error } = await (guardianId ? q.eq('guardian_id', guardianId) : q);
     if (error) {
       setDuties(prev);

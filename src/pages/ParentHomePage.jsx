@@ -105,7 +105,7 @@ export default function ParentHomePage() {
         {filteredNext7.length > 0 ? (
           <DateGroupedList events={filteredNext7} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} nextEventId={nextEventId} density={density} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
         ) : (
-          <TextEmptyState heading="Nothing this week" message="No upcoming events in the next 7 days." />
+          <TextEmptyState heading="Clear week ahead" message="No events coming up. Time to work on those crossovers." />
         )}
         <PastEventsSection activities={activities} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
       </section>
