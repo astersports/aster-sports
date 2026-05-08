@@ -19,12 +19,12 @@ const SCHEDULE_TYPE = 'preliminary_schedule';
 export default function TournamentBriefing({ event, team, onClose }) {
   const { draftKeys, setDraftKeys, survivalText, setSurvivalText, briefing, loading, error, loadDraft, generate } =
     useTournamentBriefing({ event, team });
-  const { recipients } = useTeamRecipients(team?.id);
+  const { recipients, loading: recipientsLoading } = useTeamRecipients(team?.id);
   const { send, sending, result, error: sendError, reset } = useComposeBriefing();
   const [briefingType, setBriefingType] = useState(SCHEDULE_TYPE);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { showToast } = useToast();
-  const { user, orgId } = useAuth();
+  const { orgId } = useAuth();
   const trapRef = useFocusTrap(true);
 
   useEffect(() => { loadDraft(); }, [loadDraft]);
@@ -122,9 +122,13 @@ export default function TournamentBriefing({ event, team, onClose }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 16, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)' }}>
-        {canSend && recipients.length > 0 && (
+        {team?.name && (
           <div style={{ fontSize: 12, color: 'var(--em-text-secondary)', textAlign: 'center' }}>
-            Sending to {recipients.length} {recipients.length === 1 ? 'family' : 'families'} on {team?.name}
+            {recipientsLoading
+              ? `Loading recipients for ${team.name}…`
+              : recipients.length === 0
+                ? `No active families on ${team.name}`
+                : `Sending to ${recipients.length} ${recipients.length === 1 ? 'family' : 'families'} on ${team.name}`}
           </div>
         )}
         <button type="button" onClick={() => setConfirmOpen(true)} disabled={!canSend} className="sf-press" style={sendBtn}>
@@ -135,7 +139,7 @@ export default function TournamentBriefing({ event, team, onClose }) {
       <SendConfirmDialog
         open={confirmOpen} onClose={closeDialog} onConfirm={handleSend}
         sending={sending} result={result} error={sendError}
-        recipients={recipients} adminEmail={user?.email}
+        recipients={recipients}
         tournamentName={event?.tournament_name || ''} teamName={team?.name || ''}
         messageTypeLabel={BRIEFING_TYPES.find((t) => t.value === briefingType)?.label || briefingType}
       />
