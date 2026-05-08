@@ -33,7 +33,7 @@ export default function CoachHomePage() {
     const t = new Date(a.start_at).getTime();
     return t >= now && t <= weekEnd;
   }).sort((a, b) => new Date(a.start_at) - new Date(b.start_at)), [activities, now, weekEnd]);
-  const { density } = useDensity('coach-schedule', 'medium');
+  const { density } = useDensity('coach-schedule');
 
   const [myTeams, setMyTeams] = useState([]);
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, MapPin, Calendar } from 'lucide-react';
+import { Calendar, MapPin, Plus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSeason } from '../context/SeasonContext';
 import { useLocations } from '../hooks/useLocations';
@@ -22,7 +22,7 @@ export default function LocationsPage() {
   const [seasonSheetOpen, setSeasonSheetOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
-  const { density } = useDensity('locations-list', 'medium');
+  const { density } = useDensity('locations-list');
 
   const authReady = role !== undefined && role !== null;
   const isStaff = authReady && (role === 'admin' || role === 'coach');
