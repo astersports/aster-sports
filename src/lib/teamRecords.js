@@ -12,6 +12,7 @@ export const EMPTY_SUMMARY = {
   record: '0-0',
   ties: 0,
   streak: '—',
+  last5: [],
   ppg: 0,
   allowed: 0,
   diff: 0,
@@ -54,10 +55,14 @@ export function computeSummary(games) {
   const diff    = +((pf - pa) / n).toFixed(1);
   const winPct  = Math.round((wins / n) * 100);
 
+  // Last 5 results in chronological order (oldest → newest)
+  const last5 = sorted.slice(-5).map((g) => g.result).filter((r) => r === 'W' || r === 'L' || r === 'T');
+
   return {
     record: ties > 0 ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`,
     ties,
     streak: streakKind ? `${streakKind}${streakLen}` : '—',
+    last5,
     ppg, allowed, diff, winPct,
     gamesPlayed: n,
     pointsFor: pf,

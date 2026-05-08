@@ -8,6 +8,7 @@ import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import FilterBar from '../components/schedule/FilterBar';
 import DateGroupedList from '../components/schedule/DateGroupedList';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
+import WeekStrip from '../components/schedule/WeekStrip';
 import ScheduleFab from '../components/schedule/ScheduleFab';
 import ViewToggle from '../components/schedule/ViewToggle';
 import GamesView from '../components/schedule/GamesView';
@@ -36,6 +37,7 @@ export default function SchedulePage() {
   const [showWizard, setShowWizard] = useState(() => new URLSearchParams(window.location.search).get('wizard') === '1');
   const [showCancelled, setShowCancelled] = useState(false);
   const [viewMode, setViewMode] = useState('all');
+  const [selectedDate, setSelectedDate] = useState(null);
   const { density } = useDensity('schedule-list', 'medium');
   const gameResults = useGameResultsMap(activities);
   const weather = useWeather(41.03, -73.76);
@@ -43,6 +45,17 @@ export default function SchedulePage() {
   const nowMs = useNow();
   useRefetchOnVisible(refetch);
   const weekEnd = useMemo(() => new Date(nowMs + 7 * 24 * 60 * 60 * 1000), [nowMs]);
+
+  const eventDates = useMemo(() => {
+    return activities.map((a) => a.start_at ? new Date(a.start_at).toLocaleDateString('en-CA', { timeZone: 'America/New_York' }) : null).filter(Boolean);
+  }, [activities]);
+
+  const handleDaySelect = (dateStr) => {
+    setSelectedDate(dateStr);
+    if (dateStr) {
+      setTimeout(() => { document.querySelector(`[data-date-group="${dateStr}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+    }
+  };
 
   const filtered = useMemo(() => {
     let list = activities;
@@ -82,6 +95,8 @@ export default function SchedulePage() {
           </div>
         </div>
         <div style={{ width: 32, height: 3, backgroundColor: 'var(--em-accent)', borderRadius: 2, marginBottom: 8 }} />
+
+        <WeekStrip eventDates={eventDates} selectedDate={selectedDate} onSelect={handleDaySelect} />
 
         {viewMode === 'games' ? (
           <GamesView activities={activities} orgId={orgId} />
