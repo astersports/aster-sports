@@ -1,0 +1,1612 @@
+=== IMPORT MAP ===
+
+--- src/App.jsx ---
+import { lazy, Suspense } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import AppShell from './components/layout/AppShell';
+import RequireAuth from './components/layout/RequireAuth';
+import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import UnauthorizedPage from './pages/UnauthorizedPage';
+import HomePage from './pages/HomePage';
+import SchedulePage from './pages/SchedulePage';
+import TeamsPage from './pages/TeamsPage';
+import TeamDetailPage from './pages/TeamDetailPage';
+import AccountPage from './pages/AccountPage';
+import PublicSchedulePage from './pages/PublicSchedulePage';
+const LocationsPage = lazy(() => import('./pages/LocationsPage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const EventDetailPage = lazy(() => import('./pages/EventDetailPage'));
+const TournamentsPage = lazy(() => import('./pages/TournamentsPage'));
+const TournamentDetailPage = lazy(() => import('./pages/TournamentDetailPage'));
+const RecordsPage = lazy(() => import('./pages/RecordsPage'));
+const LiveScorePage = lazy(() => import('./pages/LiveScorePage'));
+const PlayerProfilePage = lazy(() => import('./pages/PlayerProfilePage'));
+const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
+const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
+const SeasonRolloverPage = lazy(() => import('./pages/SeasonRolloverPage'));
+const FinancialDashboardPage = lazy(() => import('./pages/FinancialDashboardPage'));
+const FinancialImportPage = lazy(() => import('./pages/FinancialImportPage'));
+
+--- src/components/ErrorBoundary.jsx ---
+import { Component } from 'react';
+
+--- src/components/RoleSwitcherSheet.jsx ---
+import { useState, useMemo } from 'react';
+import BottomSheet from './shared/BottomSheet';
+import { useHomeRole } from '../hooks/useHomeRole';
+import { useOrgGuardians } from '../hooks/useOrgGuardians';
+import { useToast } from '../context/useToast';
+import { MainView, PickerView } from './RoleSwitcherViews';
+
+--- src/components/RoleSwitcherViews.jsx ---
+import { ChevronRight, ChevronLeft, Users, User, RotateCcw, X, Search } from 'lucide-react';
+
+--- src/components/account/NotificationPrefs.jsx ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+import { useToast } from '../../context/useToast';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+
+--- src/components/account/QuietHoursCard.jsx ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+import { useToast } from '../../context/useToast';
+
+--- src/components/admin/ActiveSeasonCard.jsx ---
+import { Link } from 'react-router-dom';
+import { formatDateFull } from '../../lib/formatters';
+
+--- src/components/admin/AdminScheduleSection.jsx ---
+import { useMemo, useState } from 'react';
+import { useNow } from '../../hooks/useNow';
+import { useEventRsvpCounts } from '../../hooks/useEventRsvpCounts';
+import { useEventRideCounts } from '../../hooks/useEventRideCounts';
+import { useGameResultsMap } from '../../hooks/useGameResultsMap';
+import { useWeather } from '../../hooks/useWeather';
+import { useDensity } from '../../hooks/useDensity';
+import { formatCountdown } from '../../lib/formatters';
+import DateGroupedList from '../schedule/DateGroupedList';
+import FilterSelect from '../shared/FilterSelect';
+
+--- src/components/admin/CoachPayoutsSection.jsx ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+import { formatCurrency } from '../../lib/formatters';
+import Label from '../shared/Label';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+
+--- src/components/admin/FamilyBalanceList.jsx ---
+import { useMemo, useState } from 'react';
+import { Search } from 'lucide-react';
+import Label from '../shared/Label';
+
+--- src/components/admin/GettingStarted.jsx ---
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { CheckCircle2, Circle } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
+import Label from '../shared/Label';
+
+--- src/components/admin/KpiGrid.jsx ---
+import { useEffect, useState } from 'react';
+import { AlertCircle, Calendar, DollarSign, Users } from 'lucide-react';
+import { formatCurrency } from '../../lib/formatters';
+
+--- src/components/admin/NextEventCard.jsx ---
+import { useNow } from '../../hooks/useNow';
+import { TYPE_LABELS } from '../../lib/constants';
+import Label from '../shared/Label';
+
+--- src/components/admin/NotificationHistory.jsx ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+import Label from '../shared/Label';
+
+--- src/components/admin/QuickActions.jsx ---
+import { Link } from 'react-router-dom';
+import { Calendar, CalendarPlus, DollarSign, Megaphone, MessageSquare, Trophy, UserPlus } from 'lucide-react';
+
+--- src/components/admin/RecordPaymentForm.jsx ---
+import { useState } from 'react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
+import FullScreenForm from '../shared/FullScreenForm';
+import Button from '../shared/Button';
+import Label from '../shared/Label';
+
+--- src/components/admin/SeasonFormSheet.jsx ---
+import { useState } from 'react';
+import FullScreenForm from '../shared/FullScreenForm';
+import Input from '../shared/Input';
+
+--- src/components/admin/TeamFormSheet.jsx ---
+import { useState } from 'react';
+import FullScreenForm from '../shared/FullScreenForm';
+import ConfirmDialog from '../shared/ConfirmDialog';
+import { ChipField, Field, Input } from './FormControls';
+
+--- src/components/auth/LoginForm.jsx ---
+import { Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
+import Input from '../shared/Input';
+import Button from '../shared/Button';
+
+--- src/components/broadcast/BroadcastHeroHeader.jsx ---
+import React from 'react';
+
+--- src/components/broadcast/ChampionshipBadge.jsx ---
+import React from 'react';
+
+--- src/components/broadcast/GameLogRow.jsx ---
+import React from 'react';
+import ChampionshipBadge from './ChampionshipBadge';
+
+--- src/components/broadcast/StatHeroBar.jsx ---
+import React from 'react';
+
+--- src/components/broadcast/TeamIdentityCard.jsx ---
+import React from 'react';
+import { formatDiff } from '../../lib/formatters';
+
+--- src/components/broadcast/TournamentCard.jsx ---
+import React from 'react';
+
+--- src/components/event/AcademyActivationPanel.jsx ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+import CollapsibleSection from '../shared/CollapsibleSection';
+import Badge from '../shared/Badge';
+
+--- src/components/event/AddToCalendarButton.jsx ---
+import { Calendar } from 'lucide-react';
+import { downloadIcs } from '../../lib/icalHelpers';
+
+--- src/components/event/EventCancelActions.jsx ---
+import { useState } from 'react';
+import { Ban } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import Button from '../shared/Button';
+import ConfirmDialog from '../shared/ConfirmDialog';
+import { useToast } from '../../context/useToast';
+
+--- src/components/event/EventCheckinOverlay.jsx ---
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { ArrowLeft } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import EventCheckinTab from './EventCheckinTab';
+
+--- src/components/event/EventCheckinTab.jsx ---
+import { Check, Circle } from 'lucide-react';
+import { useCheckIns } from '../../hooks/useCheckIns';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+
+--- src/components/event/EventCommentsTab.jsx ---
+import { useState } from 'react';
+import { Send, Pin } from 'lucide-react';
+import Input from '../shared/Input';
+import { useComments } from '../../hooks/useComments';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+
+--- src/components/event/EventDetailHeader.jsx ---
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Pencil, Trash2, UserCheck, Ban } from 'lucide-react';
+import { TYPE_LABELS } from '../../lib/constants';
+
+--- src/components/event/EventDetailTab.jsx ---
+import { Calendar, Clock } from 'lucide-react';
+
+--- src/components/event/EventDutiesTab.jsx ---
+import { useDuties } from '../../hooks/useDuties';
+import { useAuth } from '../../context/AuthContext';
+import { isStaff } from '../../lib/permissions';
+
+--- src/components/event/EventLocationTab.jsx ---
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+import { Navigation, Calendar } from 'lucide-react';
+import { getDirectionUrls } from '../../lib/mapsUrls';
+import Button from '../shared/Button';
+
+--- src/components/event/EventNotes.jsx ---
+import { useAuth } from '../../context/AuthContext';
+
+--- src/components/event/EventRidesTab.jsx ---
+import { useEffect, useState } from 'react';
+import { Hand, Plus } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { useEventRidesView } from '../../hooks/useEventRidesView';
+import { useRideRequests } from '../../hooks/useRideRequests';
+import { useDriverNames } from '../../hooks/useDriverNames';
+import { supabase } from '../../lib/supabase';
+import DensityToggle from '../home/DensityToggle';
+import OfferCard from '../ride/OfferCard';
+import PostOfferForm from '../ride/PostOfferForm';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+import ClaimSeatForm from '../ride/ClaimSeatForm';
+import RequestRideForm from '../ride/RequestRideForm';
+import RideRequestCard from '../ride/RideRequestCard';
+import Button from '../shared/Button';
+
+--- src/components/event/EventRsvpTab.jsx ---
+import RsvpSummary from '../rsvp/RsvpSummary';
+import RsvpPlayerRow from '../rsvp/RsvpPlayerRow';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+
+--- src/components/event/MyActionsSection.jsx ---
+import { Car } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import ChildRsvp from '../schedule/ChildRsvp';
+
+--- src/components/event/TournamentBriefing.jsx ---
+import { useEffect, useState } from 'react';
+import { Copy, FileText, RefreshCw, X } from 'lucide-react';
+import { useTournamentBriefing } from '../../hooks/useTournamentBriefing';
+import { useToast } from '../../context/useToast';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+
+--- src/components/event/TournamentBriefingBanner.jsx ---
+import { useState } from 'react';
+import { FileText } from 'lucide-react';
+import { isStaff } from '../../lib/permissions';
+import TournamentBriefing from './TournamentBriefing';
+
+--- src/components/gameday/ArrivalBoard.jsx ---
+import { useEventArrivals } from '../../hooks/useEventArrivals';
+import { useRoster } from '../../hooks/useRoster';
+import { useNow } from '../../hooks/useNow';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+
+--- src/components/gameday/CoachChecklist.jsx ---
+import { useCallback, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+
+--- src/components/gameday/ParentArrivalActions.jsx ---
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useAuth } from '../../context/AuthContext';
+import { useEventArrivals } from '../../hooks/useEventArrivals';
+import { useNow } from '../../hooks/useNow';
+
+--- src/components/gameday/TeamHeatmap.jsx ---
+import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useAttendanceData } from '../../hooks/useAttendanceData';
+import CollapsibleSection from '../shared/CollapsibleSection';
+import FilterSelect from '../shared/FilterSelect';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+
+--- src/components/home/DensityToggle.jsx ---
+import { useDensity } from '../../hooks/useDensity';
+
+--- src/components/home/MyTeamsStrip.jsx ---
+import ParentHomeTeamCard from './ParentHomeTeamCard';
+import Label from '../shared/Label';
+
+--- src/components/home/ParentHomeTeamCard.jsx ---
+import { EMPTY_SUMMARY } from '../../lib/teamRecords';
+
+--- src/components/home/SectionShell.jsx ---
+import { AlertCircle } from 'lucide-react';
+import TextEmptyState from '../shared/TextEmptyState';
+import { useDensity } from '../../hooks/useDensity';
+import SectionSkeleton from './SectionSkeleton';
+
+--- src/components/layout/AppShell.jsx ---
+import Header from './Header';
+import BottomNav from './BottomNav';
+import { useOnlineStatus } from '../../hooks/useOnlineStatus';
+
+--- src/components/layout/BottomNav.jsx ---
+import { NavLink } from 'react-router-dom';
+import { House, Calendar, Trophy, Users, MessageSquare } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { isStaff } from '../../lib/permissions';
+import { useHasUnread } from '../../hooks/useHasUnread';
+
+--- src/components/layout/Header.jsx ---
+import { useState } from 'react';
+import { Bell, Settings, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { useHomeRole } from '../../hooks/useHomeRole';
+import { useNotificationBadge } from '../../hooks/useNotificationBadge';
+import { EMBER_DISPLAY_NAME } from '../../lib/emberDefaults';
+import RoleSwitcherSheet from '../RoleSwitcherSheet';
+
+--- src/components/layout/RequireAuth.jsx ---
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+import AppShell from './AppShell';
+
+--- src/components/livescore/FinalizedGameView.jsx ---
+import { useState } from 'react';
+import { Trophy } from 'lucide-react';
+import { useGameDetail } from './useGameDetail';
+import { useAuth } from '../../context/AuthContext';
+import { isStaff } from '../../lib/permissions';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+import GameBoxScore from './GameBoxScore';
+import PlayByPlayFeed from './PlayByPlayFeed';
+
+--- src/components/livescore/GameBoxScore.jsx ---
+import { useNavigate } from 'react-router-dom';
+
+--- src/components/livescore/PlayByPlayFeed.jsx ---
+import { memo } from 'react';
+
+--- src/components/livescore/PlayerPicker.jsx ---
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+
+--- src/components/livescore/Scoreboard.jsx ---
+import { memo } from 'react';
+import { ArrowLeft } from 'lucide-react';
+
+--- src/components/livescore/SubstitutionSheet.jsx ---
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+
+--- src/components/livescore/useGameDetail.js ---
+import { useEffect, useMemo, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+
+--- src/components/location/LocationCard.jsx ---
+import { MapPin, ExternalLink, Navigation } from 'lucide-react';
+import LocationRowMenu from './LocationRowMenu';
+
+--- src/components/location/LocationFormSheet.jsx ---
+import { useState } from 'react';
+import FullScreenForm from '../shared/FullScreenForm';
+import Input from '../shared/Input';
+import { useLocations } from '../../hooks/useLocations';
+import { useToast } from '../../context/useToast';
+import { geocodeAddress } from '../../lib/geocode';
+
+--- src/components/location/LocationRowMenu.jsx ---
+import { useState } from 'react';
+import { MoreVertical, Edit2, Archive, RotateCcw } from 'lucide-react';
+
+--- src/components/location/ManageSeasonLocationsSheet.jsx ---
+import { useEffect, useState } from 'react';
+import { Check } from 'lucide-react';
+import FullScreenForm from '../shared/FullScreenForm';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+import { useLocations } from '../../hooks/useLocations';
+import { useSeasonLocations } from '../../hooks/useSeasonLocations';
+import { useToast } from '../../context/useToast';
+
+--- src/components/location/SearchToolbar.jsx ---
+import { Search, X } from 'lucide-react';
+
+--- src/components/messaging/ChannelList.jsx ---
+import { Megaphone, Users } from 'lucide-react';
+import { formatRelativeTime } from '../../lib/formatters';
+
+--- src/components/messaging/ComposeBar.jsx ---
+import { useState } from 'react';
+import { Send } from 'lucide-react';
+
+--- src/components/messaging/DmList.jsx ---
+import { User } from 'lucide-react';
+import { formatRelativeTime } from '../../lib/formatters';
+
+--- src/components/messaging/MessageBubble.jsx ---
+import { useState, useRef, useCallback } from 'react';
+import { Trash2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+
+--- src/components/messaging/MessageThread.jsx ---
+import { useEffect, useRef } from 'react';
+import { useMessages } from '../../hooks/useMessages';
+import MessageBubble from './MessageBubble';
+import ComposeBar from './ComposeBar';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+import { useAuth } from '../../context/AuthContext';
+import { isStaff } from '../../lib/permissions';
+
+--- src/components/messaging/NewDmPicker.jsx ---
+import { useEffect, useState } from 'react';
+import { X, User } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+
+--- src/components/records/PlayerStatsTable.jsx ---
+import { useState } from 'react';
+
+--- src/components/records/TeamAccordion.jsx ---
+import TeamDetail from './TeamDetail';
+
+--- src/components/records/TeamDetail.jsx ---
+import TeamGameLog from './TeamGameLog';
+
+--- src/components/records/TeamGameLog.jsx ---
+import { useTeamGamesByTournament } from '../../hooks/useTeamGamesByTournament';
+import GameLogRow from '../broadcast/GameLogRow';
+
+--- src/components/ride/ClaimSeatForm.jsx ---
+import { useCallback, useMemo, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import FullScreenForm from '../shared/FullScreenForm';
+import Input from '../shared/Input';
+import Button from '../shared/Button';
+
+--- src/components/ride/ClaimStatusPill.jsx ---
+import { Check, Clock, AlertCircle, X, Ban } from 'lucide-react';
+
+--- src/components/ride/ClaimerRow.jsx ---
+import { MapPin } from 'lucide-react';
+import ClaimStatusPill from './ClaimStatusPill';
+import Button from '../shared/Button';
+
+--- src/components/ride/OfferCard.jsx ---
+import { useCallback, useState } from 'react';
+import { Car, Users, MapPin, Clock, ArrowRight, Repeat, Phone } from 'lucide-react';
+import ConfirmDialog from '../shared/ConfirmDialog';
+import { useDensity } from '../../hooks/useDensity';
+import ClaimStatusPill from './ClaimStatusPill';
+import ClaimerRow from './ClaimerRow';
+
+--- src/components/ride/PostOfferForm.jsx ---
+import { useState, useCallback, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
+import FullScreenForm from '../shared/FullScreenForm';
+import Input from '../shared/Input';
+import Button from '../shared/Button';
+
+--- src/components/ride/RequestRideForm.jsx ---
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import Button from '../shared/Button';
+import Input from '../shared/Input';
+
+--- src/components/ride/RideRequestCard.jsx ---
+import { MapPin, User } from 'lucide-react';
+import Button from '../shared/Button';
+
+--- src/components/roster/CoachQuickActions.jsx ---
+import { MessageSquare, Share } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+--- src/components/roster/CopyRosterButton.jsx ---
+import { useToast } from '../../context/useToast';
+
+--- src/components/roster/InviteButton.jsx ---
+import { useState } from 'react';
+import { supabase } from '../../lib/supabase';
+
+--- src/components/roster/MessageTeamFAB.jsx ---
+import { useNavigate } from 'react-router-dom';
+import { MessageSquare } from 'lucide-react';
+
+--- src/components/roster/MyChildSpotlight.jsx ---
+import { Calendar } from 'lucide-react';
+import { TYPE_LABELS } from '../../lib/constants';
+import ChildRsvp from '../schedule/ChildRsvp';
+
+--- src/components/roster/PlayerRow.jsx ---
+import { useMemo, useState } from 'react';
+import { ChevronDown, Mail, MessageSquare, Phone } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import InviteButton from './InviteButton';
+
+--- src/components/roster/QrInviteButton.jsx ---
+import { useState } from 'react';
+import { QrCode, Copy, Check, Download } from 'lucide-react';
+import { createPortal } from 'react-dom';
+
+--- src/components/roster/RosterSection.jsx ---
+import RosterControls from './RosterControls';
+import CopyRosterButton from './CopyRosterButton';
+import PlayerRow from './PlayerRow';
+import UpcomingEvents from './UpcomingEvents';
+import CollapsibleSection from '../shared/CollapsibleSection';
+import { useAuth } from '../../context/AuthContext';
+import { isStaff } from '../../lib/permissions';
+
+--- src/components/roster/TeamAchievements.jsx ---
+import { useEffect, useState } from 'react';
+import { Trophy } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+
+--- src/components/roster/TeamHeaderCard.jsx ---
+import { formatDiff } from '../../lib/formatters';
+import { EMPTY_SUMMARY } from '../../lib/teamRecords';
+
+--- src/components/roster/TeamPlayerStats.jsx ---
+import { useState } from 'react';
+import Label from '../shared/Label';
+import LoadingSkeleton from '../shared/LoadingSkeleton';
+import PlayerStatsTable from '../records/PlayerStatsTable';
+
+--- src/components/roster/UpcomingEvents.jsx ---
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { MapPin } from 'lucide-react';
+import { useActivities } from '../../hooks/useActivities';
+import { useNow } from '../../hooks/useNow';
+import { getWeatherForTime, useWeather } from '../../hooks/useWeather';
+import { useMapsUrl } from '../../hooks/useMapsUrl';
+import TextEmptyState from '../shared/TextEmptyState';
+
+--- src/components/rsvp/RsvpPlayerRow.jsx ---
+import { useEffect, useState } from 'react';
+import { Check, HelpCircle, X } from 'lucide-react';
+import Input from '../shared/Input';
+import { useAuth } from '../../context/AuthContext';
+
+--- src/components/schedule/ChildFilterChips.jsx ---
+import { memo } from 'react';
+import Chip from '../shared/Chip';
+
+--- src/components/schedule/ChildRsvp.jsx ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/useToast';
+import { cacheKey, responseCache } from '../../lib/rsvpCache';
+
+--- src/components/schedule/DateGroupedList.jsx ---
+import { formatDateHeader, groupByDate } from '../../lib/scheduleHelpers';
+import { getWeatherForTime } from '../../hooks/useWeather';
+import EventCard from './EventCard';
+
+--- src/components/schedule/EventCard.jsx ---
+import { memo } from 'react';
+import { Car, MapPin, Repeat } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { formatCountdown, formatTime } from '../../lib/formatters';
+import { TYPE_LABELS } from '../../lib/constants';
+import { useAuth } from '../../context/AuthContext';
+import { useNow } from '../../hooks/useNow';
+import { useMapsUrl } from '../../hooks/useMapsUrl';
+import ChildRsvp from './ChildRsvp';
+import RsvpCountRow from './RsvpCountRow';
+
+--- src/components/schedule/FilterBar.jsx ---
+import { useMemo } from 'react';
+import { TYPE_OPTIONS } from '../../lib/constants';
+import FilterSelect from '../shared/FilterSelect';
+
+--- src/components/schedule/GamesView.jsx ---
+import { useEffect, useMemo, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+import { useOrgTeamRecords } from '../../hooks/useOrgTeamRecords';
+import { useTeams } from '../../hooks/useTeams';
+import { useSeason } from '../../context/SeasonContext';
+import { useNow } from '../../hooks/useNow';
+import { ChevronRight } from 'lucide-react';
+import StandingsTable from './StandingsTable';
+import MatchupCard from './MatchupCard';
+import FilterSelect from '../shared/FilterSelect';
+
+--- src/components/schedule/MatchupCard.jsx ---
+import { useNavigate } from 'react-router-dom';
+import { formatTime } from '../../lib/formatters';
+
+--- src/components/schedule/NextUpCard.jsx ---
+import NextUpCardMin from './NextUpCardMin';
+import NextUpCardMed from './NextUpCardMed';
+import NextUpCardMax from './NextUpCardMax';
+
+--- src/components/schedule/NextUpCardInfo.jsx ---
+import { formatEventDateMax, formatTime } from '../../lib/formatters';
+
+--- src/components/schedule/NextUpCardMax.jsx ---
+import { useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ExternalLink, MapPin, Repeat } from 'lucide-react';
+import { TYPE_LABELS } from '../../lib/constants';
+import { formatCountdown } from '../../lib/formatters';
+import { GameInfo, WhenRow } from './NextUpCardInfo';
+import NextUpCardRsvpSection from './NextUpCardRsvpSection';
+import NextUpCardStatusRow from './NextUpCardStatusRow';
+import NextUpCardMyChild from './NextUpCardMyChild';
+import { useAuth } from '../../context/AuthContext';
+import { useMapsUrl } from '../../hooks/useMapsUrl';
+import { useNow } from '../../hooks/useNow';
+import ChildRsvp from './ChildRsvp';
+import { urgencyClass } from '../../lib/urgency';
+
+--- src/components/schedule/NextUpCardMed.jsx ---
+import { useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ExternalLink, MapPin, Repeat } from 'lucide-react';
+import { TYPE_LABELS } from '../../lib/constants';
+import { formatCountdown, formatEventDateMed } from '../../lib/formatters';
+import { GameInfo } from './NextUpCardInfo';
+import NextUpCardRsvpSection from './NextUpCardRsvpSection';
+import NextUpCardStatusRow from './NextUpCardStatusRow';
+import { useAuth } from '../../context/AuthContext';
+import { useMapsUrl } from '../../hooks/useMapsUrl';
+import { useNow } from '../../hooks/useNow';
+import ChildRsvp from './ChildRsvp';
+import { urgencyClass } from '../../lib/urgency';
+
+--- src/components/schedule/NextUpCardMin.jsx ---
+import { useNavigate } from 'react-router-dom';
+import { MapPin } from 'lucide-react';
+import { TYPE_LABELS } from '../../lib/constants';
+import { formatEventDateMin } from '../../lib/formatters';
+import { useAuth } from '../../context/AuthContext';
+import { useMapsUrl } from '../../hooks/useMapsUrl';
+import { useNow } from '../../hooks/useNow';
+import ChildRsvp from './ChildRsvp';
+import { urgencyClass } from '../../lib/urgency';
+
+--- src/components/schedule/NextUpCardMyChild.jsx ---
+import { useAuth } from '../../context/AuthContext';
+import { useEventRsvpNotes } from '../../hooks/useEventRsvpNotes';
+
+--- src/components/schedule/NextUpCardRsvpSection.jsx ---
+import { useEventRsvpNotes } from '../../hooks/useEventRsvpNotes';
+import RsvpCountRow from './RsvpCountRow';
+
+--- src/components/schedule/NextUpCardStatusRow.jsx ---
+import { Car, Users } from 'lucide-react';
+
+--- src/components/schedule/PastEventsSection.jsx ---
+import { useMemo, useState } from 'react';
+import { ChevronRight } from 'lucide-react';
+import { useNow } from '../../hooks/useNow';
+import DateGroupedList from './DateGroupedList';
+
+--- src/components/schedule/ScheduleFab.jsx ---
+import { Plus } from 'lucide-react';
+
+--- src/components/schedule/ShareScheduleButton.jsx ---
+import { useState } from 'react';
+import { Share2, Copy, Check } from 'lucide-react';
+import { createPortal } from 'react-dom';
+
+--- src/components/schedule/StandingsTable.jsx ---
+import { EMPTY_SUMMARY } from '../../lib/teamRecords';
+import Label from '../shared/Label';
+
+--- src/components/schedule/ThisWeekRow.jsx ---
+import { useNavigate } from 'react-router-dom';
+import { Car, MapPin, Users } from 'lucide-react';
+import { TYPE_LABELS } from '../../lib/constants';
+import { formatCountdown, formatTime } from '../../lib/formatters';
+import { useAuth } from '../../context/AuthContext';
+import { useNow } from '../../hooks/useNow';
+import { urgencyClass } from '../../lib/urgency';
+import { useMapsUrl } from '../../hooks/useMapsUrl';
+import ChildRsvp from './ChildRsvp';
+
+--- src/components/scoring/PlayerOfGamePicker.jsx ---
+import { useRoster } from '../../hooks/useRoster';
+
+--- src/components/scoring/QuarterScoreInput.jsx ---
+import { useCallback, Fragment } from 'react';
+
+--- src/components/scoring/ScoreEntrySheet.jsx ---
+import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
+import ConfirmDialog from '../shared/ConfirmDialog';
+import useScoreDraft from '../../hooks/useScoreDraft';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import QuarterScoreInput from './QuarterScoreInput';
+import PlayerOfGamePicker from './PlayerOfGamePicker';
+
+--- src/components/shared/BottomSheet.jsx ---
+import { useEffect, useState } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useVisualVh } from '../../hooks/useVisualVh';
+
+--- src/components/shared/CollapsibleSection.jsx ---
+import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+
+--- src/components/shared/ConfirmDialog.jsx ---
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+
+--- src/components/shared/FullScreenForm.jsx ---
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+
+--- src/components/shared/Input.jsx ---
+import { forwardRef, useId } from 'react';
+
+--- src/components/shared/Toast.jsx ---
+import { useEffect, useRef } from 'react';
+import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
+
+--- src/components/teams/TeamRow.jsx ---
+import { useNavigate } from 'react-router-dom';
+import { EMPTY_SUMMARY } from '../../lib/teamRecords';
+
+--- src/components/tournament/TeamMultiSelect.jsx ---
+import { useEffect, useState, useMemo } from 'react';
+import { Check, Search } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
+
+--- src/components/tournament/TournamentFormSheet.jsx ---
+import { useState } from 'react';
+import FullScreenForm from '../shared/FullScreenForm';
+import Input from '../shared/Input';
+import TeamMultiSelect from './TeamMultiSelect';
+import { useTournaments } from '../../hooks/useTournaments';
+import { useToast } from '../../context/useToast';
+
+--- src/components/tournament/TournamentHeader.jsx ---
+import { useState } from 'react';
+import { Calendar, Edit2, MapPin, Trophy } from 'lucide-react';
+import StatusBadge from './StatusBadge';
+import TournamentFormSheet from './TournamentFormSheet';
+
+--- src/components/tournament/TournamentListItem.jsx ---
+import { useNavigate } from 'react-router-dom';
+import { MapPin, Calendar } from 'lucide-react';
+import StatusBadge from './StatusBadge';
+
+--- src/components/tournament/TournamentRowMenu.jsx ---
+import { useState } from 'react';
+import { MoreVertical, Edit2, Archive } from 'lucide-react';
+
+--- src/components/tournament/TournamentStatusChips.jsx ---
+import FilterSelect from '../shared/FilterSelect';
+
+--- src/components/tournament/tabs/GamesTab.jsx ---
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Trophy } from 'lucide-react';
+import { supabase } from '../../../lib/supabase';
+import { formatTime } from '../../../lib/formatters';
+import LoadingSkeleton from '../../shared/LoadingSkeleton';
+
+--- src/components/tournament/tabs/MessagesTab.jsx ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../../../lib/supabase';
+import LoadingSkeleton from '../../shared/LoadingSkeleton';
+
+--- src/components/tournament/tabs/OverviewTab.jsx ---
+import { BedDouble, BookOpen, ExternalLink, Info, MapPin } from 'lucide-react';
+
+--- src/components/tournament/tabs/RosterTab.jsx ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../../../lib/supabase';
+import LoadingSkeleton from '../../shared/LoadingSkeleton';
+
+--- src/components/tournament/tabs/ScenariosTab.jsx ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../../../lib/supabase';
+import LoadingSkeleton from '../../shared/LoadingSkeleton';
+
+--- src/components/wizard/CreateActivityWizard.jsx ---
+import { createPortal } from 'react-dom';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, X } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useToast } from '../../context/useToast';
+import StepType from './StepType';
+import StepTeam from './StepTeam';
+import StepWhen from './StepWhen';
+import StepDetails from './StepDetails';
+import { EMPTY_FORM, eventToForm } from './wizardForm';
+import { useCreateActivity } from '../../hooks/useCreateActivity';
+import { useUpdateActivity } from '../../hooks/useUpdateActivity';
+import { useConflictCheck } from '../../hooks/useConflictCheck';
+
+--- src/components/wizard/DutyEditor.jsx ---
+import { Plus, X } from 'lucide-react';
+import Input from '../shared/Input';
+
+--- src/components/wizard/StepDetails.jsx ---
+import { useEffect, useState } from 'react';
+import DutyEditor from './DutyEditor';
+import { HOME_AWAY } from '../../lib/constants';
+import { supabase } from '../../lib/supabase';
+import Input from '../shared/Input';
+
+--- src/components/wizard/StepTeam.jsx ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+
+--- src/components/wizard/StepType.jsx ---
+import { Trophy, Dumbbell, Target, Users, Medal, Calendar } from 'lucide-react';
+
+--- src/components/wizard/StepWhen.jsx ---
+import { useState } from 'react';
+import RecurrenceSelector from './RecurrenceSelector';
+import { useActiveSeasonEnd } from '../../hooks/useActiveSeasonEnd';
+import { useSeason } from '../../context/SeasonContext';
+import { useSeasonScopedLocations } from '../../hooks/useSeasonScopedLocations';
+import { computeDefaultUntil } from '../../lib/recurrenceHelpers';
+import Input from '../shared/Input';
+
+--- src/context/AuthContext.jsx ---
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { autoLinkGuardian } from '../lib/autoLinkGuardian';
+import { fetchParentContext } from '../lib/parentContext';
+import { bustAllCaches } from '../lib/cacheBuster';
+import { clearSentryUser, setSentryUser } from '../lib/sentry';
+import { useOrgBranding } from '../hooks/useOrgBranding';
+
+--- src/context/PreferencesContext.js ---
+import { createContext } from 'react';
+
+--- src/context/PreferencesProvider.jsx ---
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
+import { PreferencesContext } from './PreferencesContext';
+
+--- src/context/SeasonContext.jsx ---
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
+
+--- src/context/ToastContext.js ---
+import { createContext } from 'react';
+
+--- src/context/ToastProvider.jsx ---
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ToastContext } from './ToastContext';
+
+--- src/context/useToast.js ---
+import { useContext } from 'react';
+import { ToastContext } from './ToastContext';
+
+--- src/hooks/notificationBadgeQueries.js ---
+import { isAdmin } from '../lib/permissions';
+
+--- src/hooks/seriesReconcile.js ---
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useActiveSeasonEnd.js ---
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useActivities.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useSeason } from '../context/SeasonContext';
+import { registerCacheBuster } from '../lib/cacheBuster';
+
+--- src/hooks/useAdminStats.js ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useSeason } from '../context/SeasonContext';
+
+--- src/hooks/useAttendanceData.js ---
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useRefetchOnVisible } from './useRefetchOnVisible';
+
+--- src/hooks/useChannelPreviews.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+
+--- src/hooks/useChannels.js ---
+import { useMemo } from 'react';
+import { useTeams } from './useTeams';
+import { useAuth } from '../context/AuthContext';
+import { isStaff } from '../lib/permissions';
+
+--- src/hooks/useCheckIns.js ---
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useToast } from '../context/useToast';
+
+--- src/hooks/useComments.js ---
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/useToast';
+
+--- src/hooks/useConflictCheck.js ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useCreateActivity.js ---
+import { useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { computeDefaultUntil } from '../lib/recurrenceHelpers';
+import { buildTitle } from '../lib/constants';
+
+--- src/hooks/useDensity.js ---
+import { useCallback, useMemo } from 'react';
+import { usePreferences } from './usePreferences';
+
+--- src/hooks/useDmThreads.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+
+--- src/hooks/useDriverNames.js ---
+import { useEffect, useState, useMemo } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useDuties.js ---
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/useToast';
+
+--- src/hooks/useEventArrivals.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/useToast';
+
+--- src/hooks/useEventDelete.js ---
+import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useToast } from '../context/useToast';
+
+--- src/hooks/useEventDetail.js ---
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useEventDutyCounts.js ---
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useEventRideCounts.js ---
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useEventRidesView.js ---
+import { useMemo } from 'react';
+import { useRideOffers } from './useRideOffers';
+import { useRideClaims } from './useRideClaims';
+import { useDriverNames } from './useDriverNames';
+import { useOfferClaimers } from './useOfferClaimers';
+
+--- src/hooks/useEventRsvpCounts.js ---
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useEventRsvpNotes.js ---
+import { useEffect, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { registerCacheBuster } from '../lib/cacheBuster';
+
+--- src/hooks/useFilteredRoster.js ---
+import { useMemo } from 'react';
+
+--- src/hooks/useFocusTrap.js ---
+import { useEffect, useRef } from 'react';
+
+--- src/hooks/useGameResultsMap.js ---
+import { useEffect, useMemo, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useGetOrCreateDm.js ---
+import { useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+
+--- src/hooks/useHasUnread.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+
+--- src/hooks/useHomeRole.js ---
+import { useCallback, useMemo } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { usePreferences } from './usePreferences';
+import { isAdmin, isViewAsExpired, VIEW_AS_EXPIRY_HOURS } from '../lib/permissions';
+
+--- src/hooks/useLiveGame.js ---
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/useToast';
+import { finalizePlayerStats } from '../lib/finalizePlayerStats';
+
+--- src/hooks/useLocations.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { registerCacheBuster } from '../lib/cacheBuster';
+
+--- src/hooks/useMapsUrl.js ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useMessages.js ---
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/useToast';
+
+--- src/hooks/useNotificationBadge.js ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useHomeRole } from './useHomeRole';
+import { fetchParentBadgeCount, fetchStaffBadgeCount } from './notificationBadgeQueries';
+
+--- src/hooks/useNow.js ---
+import { useState, useEffect } from 'react';
+
+--- src/hooks/useOfferClaimers.js ---
+import { useMemo, useCallback } from 'react';
+import { useDriverNames } from './useDriverNames';
+import { usePlayerNamesByIds } from './usePlayerNamesByIds';
+
+--- src/hooks/useOnlineStatus.js ---
+import { useState, useEffect } from 'react';
+
+--- src/hooks/useOrgBranding.js ---
+import { useEffect } from 'react';
+import { BRAND_CSS_VAR_MAP, EMBER_BRAND } from '../lib/emberDefaults';
+
+--- src/hooks/useOrgGuardians.js ---
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+
+--- src/hooks/useOrgTeamRecords.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { computeSummary } from '../lib/teamRecords';
+
+--- src/hooks/usePlayerNamesByIds.js ---
+import { useEffect, useState, useMemo } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/usePlayerSeasonStats.js ---
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/usePreferences.js ---
+import { useContext } from 'react';
+import { PreferencesContext } from '../context/PreferencesContext';
+
+--- src/hooks/usePrefetchChildRsvps.js ---
+import { useEffect, useMemo } from 'react';
+import { supabase } from '../lib/supabase';
+import { responseCache, cacheKey } from '../lib/rsvpCache';
+
+--- src/hooks/usePrograms.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useSeason } from '../context/SeasonContext';
+
+--- src/hooks/usePublicTournaments.js ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/usePullToRefresh.js ---
+import { useState, useRef, useCallback } from 'react';
+
+--- src/hooks/useRefetchOnVisible.js ---
+import { useEffect } from 'react';
+
+--- src/hooks/useRideClaims.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+
+--- src/hooks/useRideOffers.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+
+--- src/hooks/useRideRequests.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/useToast';
+
+--- src/hooks/useRoster.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useRsvps.js ---
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useToast } from '../context/useToast';
+
+--- src/hooks/useScoreDraft.js ---
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+
+--- src/hooks/useSeasonLocations.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useSeasonRollover.js ---
+import { useCallback, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/useToast';
+
+--- src/hooks/useSeasonScopedLocations.js ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useSeasons.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+
+--- src/hooks/useTeamGamesByTournament.js ---
+import { useEffect, useMemo, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useTeamRecords.js ---
+import { useEffect, useMemo, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { computeSummary } from '../lib/teamRecords';
+
+--- src/hooks/useTeams.js ---
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+--- src/hooks/useTournament.js ---
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+
+--- src/hooks/useTournamentBriefing.js ---
+import { useCallback, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { generateTournamentBriefing } from '../lib/tournamentBriefing';
+
+--- src/hooks/useTournaments.js ---
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { seedRosters } from '../lib/tournamentRosters';
+import { useAuth } from '../context/AuthContext';
+import { registerCacheBuster } from '../lib/cacheBuster';
+
+--- src/hooks/useUnreadCounts.js ---
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+
+--- src/hooks/useUpdateActivity.js ---
+import { useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { convertToSeries, reconcileSeries } from './seriesReconcile';
+import { buildTitle } from '../lib/constants';
+
+--- src/hooks/useVisualVh.js ---
+import { useEffect, useState } from 'react';
+
+--- src/hooks/useWeather.js ---
+import { useEffect, useState } from 'react';
+
+--- src/lib/autoLinkGuardian.js ---
+import { supabase } from './supabase';
+
+--- src/lib/design-tokens.js ---
+import { TEAM_COLORS } from './constants';
+
+--- src/lib/finalizePlayerStats.js ---
+import { supabase } from './supabase';
+
+--- src/lib/leagueAppsImport.js ---
+import { supabase } from './supabase';
+
+--- src/lib/parentContext.js ---
+import { supabase } from './supabase';
+
+--- src/lib/rsvpCache.js ---
+import { registerCacheBuster } from './cacheBuster';
+
+--- src/lib/sentry.js ---
+import * as Sentry from '@sentry/react';
+
+--- src/lib/supabase.js ---
+import { createClient } from '@supabase/supabase-js';
+
+--- src/lib/tournamentBriefing.js ---
+import { renderCoachKeys, renderContactFooter, renderSurvivalGuide } from './tournamentBriefingSections';
+
+--- src/lib/tournamentRosters.js ---
+import { supabase } from './supabase';
+
+--- src/main.jsx ---
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { PreferencesProvider } from './context/PreferencesProvider';
+import { SeasonProvider } from './context/SeasonContext';
+import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './context/ToastProvider';
+import App from './App.jsx';
+
+--- src/pages/AccountPage.jsx ---
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, Bell, Moon, Lock } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { usePrograms } from '../hooks/usePrograms';
+import { useToast } from '../context/useToast';
+import { EMBER_DISPLAY_NAME } from '../lib/emberDefaults';
+import Label from '../components/shared/Label';
+import NotificationPrefs from '../components/account/NotificationPrefs';
+import QuietHoursCard from '../components/account/QuietHoursCard';
+
+--- src/pages/AdminHomePage.jsx ---
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useSeason } from '../context/SeasonContext';
+import { useAdminStats } from '../hooks/useAdminStats';
+import { useSeasons } from '../hooks/useSeasons';
+import { usePrograms } from '../hooks/usePrograms';
+import { useActivities } from '../hooks/useActivities';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
+import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
+import { getWeatherForTime, useWeather } from '../hooks/useWeather';
+import KpiGrid from '../components/admin/KpiGrid';
+import QuickActions from '../components/admin/QuickActions';
+import ActiveSeasonCard from '../components/admin/ActiveSeasonCard';
+import AdminScheduleSection from '../components/admin/AdminScheduleSection';
+import NextEventCard from '../components/admin/NextEventCard';
+import TeamPerformanceStrip from '../components/admin/TeamPerformanceStrip';
+import GettingStarted from '../components/admin/GettingStarted';
+import AdminGreeting from '../components/admin/AdminGreeting';
+import NotificationHistory from '../components/admin/NotificationHistory';
+import PastEventsSection from '../components/schedule/PastEventsSection';
+import DensityToggle from '../components/home/DensityToggle';
+import Label from '../components/shared/Label';
+
+--- src/pages/AdminSeasonsPage.jsx ---
+import { useState } from 'react';
+import { Plus, Star } from 'lucide-react';
+import { useSeasons } from '../hooks/useSeasons';
+import SeasonFormSheet from '../components/admin/SeasonFormSheet';
+import Badge from '../components/shared/Badge';
+import Button from '../components/shared/Button';
+import EmptyState from '../components/shared/EmptyState';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
+import Toast from '../components/shared/Toast';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
+import { formatDateFull } from '../lib/formatters';
+import { Calendar } from 'lucide-react';
+
+--- src/pages/AdminTeamsPage.jsx ---
+import { useState } from 'react';
+import { Plus, Users } from 'lucide-react';
+import { usePrograms } from '../hooks/usePrograms';
+import { useSeason } from '../context/SeasonContext';
+import TeamFormSheet from '../components/admin/TeamFormSheet';
+import Badge from '../components/shared/Badge';
+import Button from '../components/shared/Button';
+import EmptyState from '../components/shared/EmptyState';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
+import Toast from '../components/shared/Toast';
+
+--- src/pages/CoachHomePage.jsx ---
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useActivities } from '../hooks/useActivities';
+import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
+import { useEventRideCounts } from '../hooks/useEventRideCounts';
+import { useGameResultsMap } from '../hooks/useGameResultsMap';
+import { useWeather } from '../hooks/useWeather';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
+import { useNow } from '../hooks/useNow';
+import { supabase } from '../lib/supabase';
+import AdminGreeting from '../components/admin/AdminGreeting';
+import SectionShell from '../components/home/SectionShell';
+import DateGroupedList from '../components/schedule/DateGroupedList';
+import PastEventsSection from '../components/schedule/PastEventsSection';
+import DensityToggle from '../components/home/DensityToggle';
+import { useDensity } from '../hooks/useDensity';
+import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
+
+--- src/pages/EventDetailPage.jsx ---
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Repeat } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import AddToCalendarButton from '../components/event/AddToCalendarButton';
+import { useAuth } from '../context/AuthContext';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
+import { useEventDetail } from '../hooks/useEventDetail';
+import { useRsvps } from '../hooks/useRsvps';
+import useEventDelete from '../hooks/useEventDelete';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
+import EventDetailHeader from '../components/event/EventDetailHeader';
+import EventDetailTab from '../components/event/EventDetailTab';
+import EventLocationTab from '../components/event/EventLocationTab';
+import EventRsvpTab from '../components/event/EventRsvpTab';
+import EventDutiesTab from '../components/event/EventDutiesTab';
+import EventCommentsTab from '../components/event/EventCommentsTab';
+import EventRidesTab from '../components/event/EventRidesTab';
+import EventNotes from '../components/event/EventNotes';
+import EventCancelActions from '../components/event/EventCancelActions';
+import MyActionsSection from '../components/event/MyActionsSection';
+import CollapsibleSection from '../components/shared/CollapsibleSection';
+import TournamentBriefingBanner from '../components/event/TournamentBriefingBanner';
+import ParentArrivalActions from '../components/gameday/ParentArrivalActions';
+import ArrivalBoard from '../components/gameday/ArrivalBoard';
+import CoachChecklist from '../components/gameday/CoachChecklist';
+import Button from '../components/shared/Button';
+const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
+const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
+const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
+const FinalizedGameView = lazy(() => import('../components/livescore/FinalizedGameView'));
+
+--- src/pages/FinancialDashboardPage.jsx ---
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronLeft, Upload } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import FamilyBalanceList from '../components/admin/FamilyBalanceList';
+import RecordPaymentForm from '../components/admin/RecordPaymentForm';
+import CoachPayoutsSection from '../components/admin/CoachPayoutsSection';
+
+--- src/pages/FinancialImportPage.jsx ---
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, Upload, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { parseLeagueAppsData, importToFinancials } from '../lib/leagueAppsImport';
+import Button from '../components/shared/Button';
+import Label from '../components/shared/Label';
+
+--- src/pages/ForgotPasswordPage.jsx ---
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { CheckCircle2, KeyRound } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import Button from '../components/shared/Button';
+import Input from '../components/shared/Input';
+
+--- src/pages/HomePage.jsx ---
+import { lazy, Suspense } from 'react';
+import { House } from 'lucide-react';
+import { useHomeRole } from '../hooks/useHomeRole';
+import ParentHomePage from './ParentHomePage';
+import PlaceholderPage from './PlaceholderPage';
+import WelcomeOverlay from '../components/shared/WelcomeOverlay';
+import InstallPrompt from '../components/shared/InstallPrompt';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
+const AdminHomePage = lazy(() => import('./AdminHomePage'));
+const CoachHomePage = lazy(() => import('./CoachHomePage'));
+
+--- src/pages/LiveScorePage.jsx ---
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { supabase } from '../lib/supabase';
+import { useRoster } from '../hooks/useRoster';
+import { useLiveGame } from '../hooks/useLiveGame';
+import { useToast } from '../context/useToast';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
+import Scoreboard from '../components/livescore/Scoreboard';
+import ActionGrid from '../components/livescore/ActionGrid';
+import PlayerPicker from '../components/livescore/PlayerPicker';
+import PlayByPlayFeed from '../components/livescore/PlayByPlayFeed';
+import BoxScore from '../components/livescore/BoxScore';
+import SubstitutionSheet from '../components/livescore/SubstitutionSheet';
+
+--- src/pages/LocationsPage.jsx ---
+import { useState } from 'react';
+import { Plus, MapPin, Calendar } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useSeason } from '../context/SeasonContext';
+import { useLocations } from '../hooks/useLocations';
+import LocationFormSheet from '../components/location/LocationFormSheet';
+import ManageSeasonLocationsSheet from '../components/location/ManageSeasonLocationsSheet';
+import LocationCard from '../components/location/LocationCard';
+import SearchToolbar from '../components/location/SearchToolbar';
+import Button from '../components/shared/Button';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
+import DensityToggle from '../components/home/DensityToggle';
+import { useDensity } from '../hooks/useDensity';
+
+--- src/pages/LoginPage.jsx ---
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import LoginForm from '../components/auth/LoginForm';
+
+--- src/pages/MessagesPage.jsx ---
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Plus } from 'lucide-react';
+import { useChannels } from '../hooks/useChannels';
+import { useUnreadCounts } from '../hooks/useUnreadCounts';
+import { useChannelPreviews } from '../hooks/useChannelPreviews';
+import { useDmThreads } from '../hooks/useDmThreads';
+import { useGetOrCreateDm } from '../hooks/useGetOrCreateDm';
+import ChannelList from '../components/messaging/ChannelList';
+import DmList from '../components/messaging/DmList';
+import MessageThread from '../components/messaging/MessageThread';
+import NewDmPicker from '../components/messaging/NewDmPicker';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
+import Label from '../components/shared/Label';
+
+--- src/pages/ParentHomePage.jsx ---
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useActivities } from '../hooks/useActivities';
+import { usePrefetchChildRsvps } from '../hooks/usePrefetchChildRsvps';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
+import { useNow } from '../hooks/useNow';
+import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
+import { useEventRideCounts } from '../hooks/useEventRideCounts';
+import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
+import { useGameResultsMap } from '../hooks/useGameResultsMap';
+import { useWeather } from '../hooks/useWeather';
+import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
+import { useDensity } from '../hooks/useDensity';
+import DateGroupedList from '../components/schedule/DateGroupedList';
+import ChildFilterChips from '../components/schedule/ChildFilterChips';
+import PastEventsSection from '../components/schedule/PastEventsSection';
+import MyTeamsStrip from '../components/home/MyTeamsStrip';
+import DensityToggle from '../components/home/DensityToggle';
+import TextEmptyState from '../components/shared/TextEmptyState';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
+import Label from '../components/shared/Label';
+import { firstNameFrom, greetingFor } from '../lib/greetings';
+
+--- src/pages/PlaceholderPage.jsx ---
+import EmptyState from '../components/shared/EmptyState';
+
+--- src/pages/PlayerProfilePage.jsx ---
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { usePlayerSeasonStats } from '../hooks/usePlayerSeasonStats';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
+import Label from '../components/shared/Label';
+
+--- src/pages/PublicSchedulePage.jsx ---
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { Calendar, Download, MapPin } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { formatTime } from '../lib/formatters';
+import { TYPE_LABELS } from '../lib/constants';
+import { downloadTeamIcs } from '../lib/icalHelpers';
+
+--- src/pages/RecordsPage.jsx ---
+import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useTeams } from '../hooks/useTeams';
+import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
+import { usePublicTournaments } from '../hooks/usePublicTournaments';
+import { EMPTY_SUMMARY } from '../lib/teamRecords';
+import { supabase } from '../lib/supabase';
+import StatHeroBar from '../components/broadcast/StatHeroBar';
+import TournamentCard from '../components/broadcast/TournamentCard';
+import TeamAccordion from '../components/records/TeamAccordion';
+
+--- src/pages/SchedulePage.jsx ---
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useActivities } from '../hooks/useActivities';
+import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
+import { useEventRideCounts } from '../hooks/useEventRideCounts';
+import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
+import FilterBar from '../components/schedule/FilterBar';
+import DateGroupedList from '../components/schedule/DateGroupedList';
+import ChildFilterChips from '../components/schedule/ChildFilterChips';
+import ScheduleFab from '../components/schedule/ScheduleFab';
+import ViewToggle from '../components/schedule/ViewToggle';
+import GamesView from '../components/schedule/GamesView';
+import TextEmptyState from '../components/shared/TextEmptyState';
+import Label from '../components/shared/Label';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
+import DensityToggle from '../components/home/DensityToggle';
+import PastEventsSection from '../components/schedule/PastEventsSection';
+import { useDensity } from '../hooks/useDensity';
+import { useGameResultsMap } from '../hooks/useGameResultsMap';
+import { useWeather } from '../hooks/useWeather';
+import { useNow } from '../hooks/useNow';
+import { isStaff } from '../lib/permissions';
+import ShareScheduleButton from '../components/schedule/ShareScheduleButton';
+const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
+
+--- src/pages/SeasonRolloverPage.jsx ---
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useSeasonRollover } from '../hooks/useSeasonRollover';
+import Button from '../components/shared/Button';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
+import { StepArchive, StepCoaches, StepDetails, StepPlayers, StepPreview } from '../components/admin/RolloverSteps';
+
+--- src/pages/TeamDetailPage.jsx ---
+import { useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ChevronLeft, Users } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { isStaff } from '../lib/permissions';
+import { usePrograms } from '../hooks/usePrograms';
+import { useRoster } from '../hooks/useRoster';
+import { useFilteredRoster } from '../hooks/useFilteredRoster';
+import { useAttendanceData } from '../hooks/useAttendanceData';
+import { useTeamRecords } from '../hooks/useTeamRecords';
+import { usePlayerSeasonStats } from '../hooks/usePlayerSeasonStats';
+import { useActivities } from '../hooks/useActivities';
+import { useNow } from '../hooks/useNow';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
+import EmptyState from '../components/shared/EmptyState';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
+import TeamHeaderCard from '../components/roster/TeamHeaderCard';
+import TeamAchievements from '../components/roster/TeamAchievements';
+import RosterSection from '../components/roster/RosterSection';
+import TeamSwitcher from '../components/roster/TeamSwitcher';
+import TeamPlayerStats from '../components/roster/TeamPlayerStats';
+import TeamHeatmap from '../components/gameday/TeamHeatmap';
+import MessageTeamFAB from '../components/roster/MessageTeamFAB';
+import CoachQuickActions from '../components/roster/CoachQuickActions';
+import MyChildSpotlight from '../components/roster/MyChildSpotlight';
+
+--- src/pages/TeamsPage.jsx ---
+import { Users } from 'lucide-react';
+import { usePrograms } from '../hooks/usePrograms';
+import { useSeason } from '../context/SeasonContext';
+import { useAuth } from '../context/AuthContext';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
+import EmptyState from '../components/shared/EmptyState';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
+import TeamRow from '../components/teams/TeamRow';
+
+--- src/pages/TournamentDetailPage.jsx ---
+import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useTournament } from '../hooks/useTournament';
+import TournamentHeader from '../components/tournament/TournamentHeader';
+import TournamentTabs from '../components/tournament/TournamentTabs';
+import OverviewTab from '../components/tournament/tabs/OverviewTab';
+import GamesTab from '../components/tournament/tabs/GamesTab';
+import RosterTab from '../components/tournament/tabs/RosterTab';
+import MessagesTab from '../components/tournament/tabs/MessagesTab';
+import ScenariosTab from '../components/tournament/tabs/ScenariosTab';
+import FilterSelect from '../components/shared/FilterSelect';
+
+--- src/pages/TournamentsPage.jsx ---
+import { useState } from 'react';
+import { Plus, Trophy } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useTournaments } from '../hooks/useTournaments';
+import Button from '../components/shared/Button';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
+import TournamentListItem from '../components/tournament/TournamentListItem';
+import TournamentFormSheet from '../components/tournament/TournamentFormSheet';
+import TournamentRowMenu from '../components/tournament/TournamentRowMenu';
+import TournamentStatusChips from '../components/tournament/TournamentStatusChips';
+
+--- src/pages/UnauthorizedPage.jsx ---
+import { Link } from 'react-router-dom';
+import { ShieldAlert } from 'lucide-react';
