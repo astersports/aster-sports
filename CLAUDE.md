@@ -454,7 +454,7 @@ When generating tournament briefing HTML for LeagueApps + email delivery:
    - Game-day arrival callout: orange #e05c2a
 6. **Audience scoping for tournament messages:** scope to `tournament_rosters` table, NOT team roster. Use `getTournamentRecipients(tournament_id)` helper.
 7. **Recipient preview before send:** show "Active: X · Futures: Y · Recipients: Z guardians" chip.
-8. **7 message types in `tournament_messages.message_type` ENUM:** preliminary_schedule, final_schedule, rsvp_lock, saturday_night_scenarios, weekend_recap, week_ahead, schedule_change.
+8. **9 message types in `tournament_messages.message_type` CHECK constraint:** preliminary_schedule, final_schedule, rsvp_lock, saturday_scenarios, day1_recap, weekend_recap, schedule_change, multi_team_notice, custom. Verified against production via Supabase MCP, May 8, 2026.
 
 ---
 

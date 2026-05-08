@@ -788,7 +788,7 @@ This is THE killer feature of Ember. Frank currently spends ~8 hours every weeke
 
 ### Schema additions needed (Migration 039 future)
 
-- tournament_messages.message_type ENUM: preliminary_schedule | final_schedule | rsvp_lock | saturday_night_scenarios | weekend_recap | week_ahead | schedule_change
+- tournament_messages.message_type ENUM: preliminary_schedule | final_schedule | rsvp_lock | saturday_scenarios | day1_recap | weekend_recap | schedule_change | multi_team_notice | custom
 - parent_message_id (uuid, FK self-ref) for multi-team consolidation
 - message_group_id (uuid) for deduplication
 - seasons.circuit_rules (jsonb) for AAU PD cap +20 etc.
