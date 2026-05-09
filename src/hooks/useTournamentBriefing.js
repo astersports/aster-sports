@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { generateTournamentBriefing } from '../lib/tournamentBriefing';
+import { compose } from '../lib/engine/composer';
 
 // Two-phase API: loadDraft fetches tournament events + pre-fills coachKeys
 // from each game's coach_notes. generate(coachKeys) produces the final
@@ -83,15 +83,18 @@ export function useTournamentBriefing({ event, team }) {
 
   const generate = useCallback((coachKeys, survival, coaches) => {
     if (!events?.length || !team?.name || !event?.tournament_name) return;
-    const result = generateTournamentBriefing({
-      teamName: team.name,
-      tournamentName: event.tournament_name,
-      dateLabel: formatDateRange(events),
-      events,
-      coachKeys: coachKeys ?? draftKeys,
-      survivalText: survival ?? survivalText,
-      orgName: 'Legacy Hoopers',
-      coaches: coaches ?? [],
+    const result = compose({
+      kind: 'tournament_preliminary',
+      data: {
+        teamName: team.name,
+        tournamentName: event.tournament_name,
+        dateLabel: formatDateRange(events),
+        events,
+        coachKeys: coachKeys ?? draftKeys,
+        survivalText: survival ?? survivalText,
+        orgName: 'Legacy Hoopers',
+        coaches: coaches ?? [],
+      },
     });
     setBriefing(result);
   }, [events, team?.name, event?.tournament_name, draftKeys, survivalText]);

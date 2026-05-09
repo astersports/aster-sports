@@ -1,7 +1,12 @@
-import { renderCoachKeys, renderContactFooter, renderSurvivalGuide } from './tournamentBriefingSections';
+// Kind composer — tournament_preliminary. Direct port of the legacy
+// generateTournamentBriefing renderer. Visual output is byte-for-byte preserved
+// per scope: existing dispatcher behavior is kept for tournament_preliminary
+// while atomic renderers (#1 header, #3 game card, #8 scenarios) are reserved
+// for new kinds in this wave (academy_callup_notice) and later waves.
+
+import { renderCoachKeys, renderContactFooter, renderSurvivalGuide } from '../../tournamentBriefingSections';
 
 const NY_TZ = 'America/New_York';
-
 const dateKeyFmt = new Intl.DateTimeFormat('en-US', {
   timeZone: NY_TZ, year: 'numeric', month: 'numeric', day: 'numeric',
 });
@@ -14,11 +19,8 @@ const timeFmt = new Intl.DateTimeFormat('en-US', {
 
 function escapeHtml(str) {
   return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function matchup(teamName, opponent, homeAway) {
@@ -55,7 +57,7 @@ function renderRow(ev, leftCell, teamName) {
     + `<td style="width:46px;background:#1a1a2e;text-align:center;vertical-align:middle;padding:12px 0;">${leftCell}</td>`
     + '<td style="padding:12px 14px;vertical-align:middle;">'
     + `<div style="font-size:18px;font-weight:bold;text-transform:uppercase;color:#1a1a2e;">${mText}</div>`
-    + `<div style="font-size:12px;color:#666;margin-top:4px;">\u25cf ${loc}${courtPart}${mapLink}</div>`
+    + `<div style="font-size:12px;color:#666;margin-top:4px;">● ${loc}${courtPart}${mapLink}</div>`
     + '</td>'
     + '<td style="width:80px;background:#1a1a2e;text-align:center;vertical-align:middle;padding:8px 0;">'
     + `<div style="color:#ffffff;font-size:24px;font-weight:bold;">${escapeHtml(digits)}</div>`
@@ -77,7 +79,7 @@ function renderDay(dayEvents, teamName) {
   if (brackets.length) {
     rows += '<tr><td colspan="3" style="background:#f0d050;color:#1a1a2e;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:2px;text-align:center;padding:6px 0;">Bracket Game</td></tr>';
     brackets.forEach((ev) => {
-      const star = '<span style="color:#f0d050;font-size:20px;">\u2605</span>';
+      const star = '<span style="color:#f0d050;font-size:20px;">★</span>';
       rows += renderRow(ev, star, teamName);
     });
   }
@@ -93,7 +95,7 @@ function renderPlain(groups, teamName) {
       const m = matchup(teamName, ev.opponent, ev.home_away);
       const loc = ev.location || 'TBD';
       const court = ev.sub_location ? `, ${ev.sub_location}` : '';
-      lines.push(`\u2022 ${t} \u2014 ${m} \u2014 ${loc}${court}`);
+      lines.push(`• ${t} — ${m} — ${loc}${court}`);
     }
     lines.push('');
   }
@@ -101,26 +103,19 @@ function renderPlain(groups, teamName) {
   return lines.join('\n');
 }
 
-export function generateTournamentBriefing({
-  teamName,
-  tournamentName,
-  dateLabel,
-  events,
-  coachKeys = '',
-  survivalText = '',
-  orgName = 'Legacy Hoopers',
-  coaches = [],
-}) {
-  const groups = groupByLocalDate(events);
+export function composeTournamentPreliminary({
+  teamName, tournamentName, dateLabel, events,
+  coachKeys = '', survivalText = '',
+  orgName = 'Legacy Hoopers', coaches = [],
+} = {}) {
+  const groups = groupByLocalDate(events || []);
   const tName = escapeHtml(teamName);
   const tourn = escapeHtml(tournamentName);
   const dLabel = escapeHtml(dateLabel);
   const org = escapeHtml(orgName);
-  const title = `${tName} \u2014 ${tourn}`.toUpperCase();
-
+  const title = `${tName} — ${tourn}`.toUpperCase();
   let body = '';
   for (const [, evs] of groups) body += renderDay(evs, teamName);
-
   const html = '<div style="max-width:520px;margin:0 auto;border:3px solid #1a1a2e;border-radius:6px;font-family:Arial,sans-serif;background:#ffffff;overflow:hidden;">'
     + '<div style="background:#1a1a2e;border-bottom:5px solid #4a8fd4;text-align:center;padding:20px 16px;">'
     + `<div style="color:#4a8fd4;font-size:11px;text-transform:uppercase;letter-spacing:2px;font-weight:bold;">${org} — Preliminary Schedule</div>`
@@ -132,11 +127,9 @@ export function generateTournamentBriefing({
     + renderCoachKeys(coachKeys)
     + '<div style="background:#f5f7fa;text-align:center;padding:12px;font-size:13px;color:#1a1a2e;font-weight:bold;">Arrive 15 minutes before tip-off</div>'
     + renderContactFooter(coaches)
-    + `<div style="background:#1a1a2e;text-align:center;padding:10px;font-size:11px;color:#666;">${org} \u2014 Westchester, NY</div>`
+    + `<div style="background:#1a1a2e;text-align:center;padding:10px;font-size:11px;color:#666;">${org} — Westchester, NY</div>`
     + '</div>';
-
   const plainText = renderPlain(groups, teamName);
-  const subject = `${teamName} \u2014 ${tournamentName} Weekend`;
-
+  const subject = `${teamName} — ${tournamentName} Weekend`;
   return { html, plainText, subject };
 }

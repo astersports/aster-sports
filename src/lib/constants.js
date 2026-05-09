@@ -75,5 +75,6 @@ export const TOURNAMENT_MESSAGE_TYPES = [
   { value: 'tournament_recap_final',   label: 'Tournament weekend recap' },
   { value: 'schedule_change',          label: 'Schedule change' },
   { value: 'multi_team_notice',        label: 'Multi-team notice' },
+  { value: 'academy_callup_notice',    label: 'Academy call-up' },
   { value: 'custom',                   label: 'Custom' },
 ];
