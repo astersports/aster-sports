@@ -12,9 +12,14 @@
 // organization_settings.pilot_mode_enabled. When TRUE, every queued
 // recipient with a non-null guardian_id MUST be flagged is_pilot_family.
 // Admin BCC rows have guardian_id=null and are always allowed. Any
-// non-pilot guardian in the queue aborts the entire dispatch with 403
-// — defense against client-side bugs that might queue a non-pilot
-// recipient while the org gate is still on.
+// non-pilot guardian in the queue aborts the entire dispatch with 403.
+//
+// Wave 3.5 §B5.8 (v8): reply_to corrected from personal Gmail to
+// info@legacyhoopers.org per spec.
+//
+// Wave 3.6 §D6 (v9): reply_to is now read from
+// organization_settings.reply_to_email (per-org configurable for
+// multi-tenant). Falls back to REPLY_TO_FALLBACK when row/column null.
 //
 // Caller must be admin or coach in the message's org_id.
 // Body: { message_id: uuid, dry_run?: boolean }
@@ -31,7 +36,7 @@ const corsHeaders = {
 
 const FROM_EMAIL = "briefings@legacyhoopers.org";
 const FROM_NAME = "Coach Frank · Legacy Hoopers";
-const REPLY_TO = "fsamaritano@gmail.com";
+const REPLY_TO_FALLBACK = "info@legacyhoopers.org";
 const RESEND_BATCH_LIMIT = 100;
 
 function json(body: unknown, status = 200) {
@@ -95,14 +100,14 @@ Deno.serve(async (req) => {
   if (recErr) return json({ error: recErr.message }, 500);
   if (!recipients || recipients.length === 0) return json({ error: "No queued recipients" }, 400);
 
-  // Pilot-mode defense in depth (Wave 3.5 §B5.1). Fail closed: a missing
-  // organization_settings row defaults pilotMode=true.
+  // Pilot-mode defense in depth + reply-to lookup (Wave 3.5 §B5.1 + 3.6 §D6).
   const { data: orgSettings } = await sb
     .from("organization_settings")
-    .select("pilot_mode_enabled")
+    .select("pilot_mode_enabled, reply_to_email")
     .eq("organization_id", message.org_id)
     .maybeSingle();
   const pilotMode = orgSettings?.pilot_mode_enabled ?? true;
+  const replyTo = orgSettings?.reply_to_email ?? REPLY_TO_FALLBACK;
   if (pilotMode) {
     const guardianIds = recipients.map((r) => r.guardian_id).filter(Boolean);
     if (guardianIds.length) {
@@ -120,7 +125,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  if (body.dry_run) return json({ ok: true, dry_run: true, would_send: recipients.length, pilot_mode_active: pilotMode });
+  if (body.dry_run) return json({ ok: true, dry_run: true, would_send: recipients.length, pilot_mode_active: pilotMode, reply_to: replyTo });
 
   const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
   const fromHeader = `${FROM_NAME} <${FROM_EMAIL}>`;
@@ -135,7 +140,7 @@ Deno.serve(async (req) => {
       subject: r.subject_rendered ?? message.subject,
       html: r.body_html_rendered ?? message.body_html,
       text: r.body_plain_rendered ?? message.body_plain,
-      reply_to: REPLY_TO,
+      reply_to: replyTo,
     }));
     const { data: batchData, error: batchErr } = await resend.batch.send(batch);
     if (batchErr) {
@@ -172,5 +177,5 @@ Deno.serve(async (req) => {
     })
     .eq("id", body.message_id);
 
-  return json({ ok: failed === 0, sent, failed, errors, pilot_mode_active: pilotMode });
+  return json({ ok: failed === 0, sent, failed, errors, pilot_mode_active: pilotMode, reply_to: replyTo });
 });

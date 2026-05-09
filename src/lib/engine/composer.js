@@ -13,6 +13,7 @@
 import { renderHeader } from './renderers/header';
 import { renderGameCard } from './renderers/gameCard';
 import { renderChampionshipScenarios } from './renderers/championshipScenarios';
+import { renderFooter } from './renderers/footer';
 import { composeAcademyCallupNotice } from './renderers/academyCallupNotice';
 import { composeTournamentPreliminary } from './renderers/tournamentPreliminary';
 import { composeWeeklyDigest } from './renderers/weeklyDigest';
@@ -34,6 +35,7 @@ const SECTION_RENDERERS = {
   header: renderHeader,
   game_card: renderGameCard,
   championship_scenarios: renderChampionshipScenarios,
+  footer: renderFooter,
   stat_grid: statGrid,
   pool_standings: poolStandings,
   results_table: resultsTable,

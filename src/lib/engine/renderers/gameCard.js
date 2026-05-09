@@ -3,19 +3,22 @@
 // Map link is inline (not standalone button) per locked decision.
 
 import { escapeHtml } from './_util';
+import { AMBER_DEEP, COBALT, TEXT_NAVY, TEXT_SLATE, TEXT_SLATE_DARK } from '../colors';
 
 const STAKE_TONES = {
   green: { color: '#16a34a', weight: '500' },
   red:   { color: '#dc2626', weight: '600' },
   amber: { color: '#d97706', weight: '600' },
-  muted: { color: '#94a3b8', weight: null, italic: true },
+  muted: { color: TEXT_SLATE, weight: null, italic: true },
 };
 
+// Wave 3.6 §D2: regular/mandatory/bonus suffixColor #94a3b8 → TEXT_SLATE_DARK
+// (#334155, 11.7:1) so 11px rail timeSuffix passes WCAG AA on white.
 const VARIANT_STYLES = {
-  regular:      { border: '#d1d5db', bg: '',                       railBg: '#f8fafc', railBorder: '#e5e7eb', suffixColor: '#94a3b8' },
-  mandatory:    { border: '#d1d5db', bg: '',                       railBg: '#f8fafc', railBorder: '#e5e7eb', suffixColor: '#94a3b8' },
-  bonus:        { border: '#d1d5db', bg: '',                       railBg: '#f8fafc', railBorder: '#e5e7eb', suffixColor: '#94a3b8' },
-  championship: { border: '#fbbf24', bg: 'background-color:#fffbeb;', railBg: '#fef3c7', railBorder: '#fbbf24', suffixColor: '#92400e' },
+  regular:      { border: '#d1d5db', bg: '',                       railBg: '#f8fafc', railBorder: '#e5e7eb', suffixColor: TEXT_SLATE_DARK },
+  mandatory:    { border: '#d1d5db', bg: '',                       railBg: '#f8fafc', railBorder: '#e5e7eb', suffixColor: TEXT_SLATE_DARK },
+  bonus:        { border: '#d1d5db', bg: '',                       railBg: '#f8fafc', railBorder: '#e5e7eb', suffixColor: TEXT_SLATE_DARK },
+  championship: { border: '#fbbf24', bg: 'background-color:#fffbeb;', railBg: '#fef3c7', railBorder: '#fbbf24', suffixColor: AMBER_DEEP },
 };
 
 function renderRail(rail, vs) {

@@ -11,7 +11,7 @@ describe('renderer #6 — weeklySchedule', () => {
     const { html } = render(fixture);
     expect(html).toContain('MON · MAY 18');
     expect(html).toContain('SAT · MAY 23');
-    expect(html).toContain('color:#4a8fd4');
+    expect(html).toContain('color:#2563eb');
   });
   it('standard event uses team color left border', () => {
     const { html } = render(fixture);
