@@ -3,13 +3,10 @@
 // sub_context (optional). Optional gold accent stripe under the cobalt rule.
 // Color hierarchy locked: cobalt + navy are load-bearing; gray sets mood.
 
-function escapeHtml(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
+import { escapeHtml } from './_util';
 
-export function renderHeader({ eyebrow, headline, sub_context, goldStripe }) {
+export function renderHeader(section) {
+  const { eyebrow, headline, sub_context, goldStripe } = section || {};
   const eyebrowHtml = eyebrow
     ? `<div style="font-size:11px;font-weight:600;color:#4a8fd4;letter-spacing:3px;text-transform:uppercase;line-height:1.4;margin:0 0 10px 0;">${escapeHtml(eyebrow)}</div>`
     : '';
@@ -32,5 +29,16 @@ export function renderHeader({ eyebrow, headline, sub_context, goldStripe }) {
       + '<tr><td style="height:3px;background-color:#fbbf24;line-height:3px;font-size:0;">&nbsp;</td></tr>'
       + '</table>'
     : '';
-  return headerTable + goldHtml;
+  const html = headerTable + goldHtml;
+  const plainLines = [
+    eyebrow ? String(eyebrow).toUpperCase() : '',
+    headline ? String(headline).toUpperCase() : '',
+    sub_context || '',
+    '────────────────────────',
+  ].filter(Boolean);
+  return { html, plainText: plainLines.join('\n') };
 }
+
+// Default export so wave-2-style dispatch (default fn) and wave-1 named-import
+// (renderHeader) callers both keep working.
+export default renderHeader;

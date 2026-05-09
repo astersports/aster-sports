@@ -2,11 +2,7 @@
 // Variant determines container + rail styling. Tone of stake line is operator-picked.
 // Map link is inline (not standalone button) per locked decision.
 
-function escapeHtml(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
+import { escapeHtml } from './_util';
 
 const STAKE_TONES = {
   green: { color: '#16a34a', weight: '500' },
@@ -24,8 +20,7 @@ const VARIANT_STYLES = {
 
 function renderRail(rail, vs) {
   if (rail.label) {
-    const padding = '14px 12px';
-    return `<td width="80" valign="top" align="center" style="padding:${padding};background-color:${vs.railBg};border-right:1px solid ${vs.railBorder};border-radius:8px 0 0 8px;font-family:Inter,system-ui,sans-serif;">`
+    return `<td width="80" valign="top" align="center" style="padding:14px 12px;background-color:${vs.railBg};border-right:1px solid ${vs.railBorder};border-radius:8px 0 0 8px;font-family:Inter,system-ui,sans-serif;">`
       + `<div style="font-size:11px;font-weight:600;letter-spacing:1px;color:#4a8fd4;text-transform:uppercase;line-height:1.4;">${escapeHtml(rail.label)}</div>`
       + `<div style="font-size:18px;font-weight:700;color:#0f172a;line-height:1.2;margin-top:2px;">${escapeHtml(rail.timePrimary || '')}</div>`
       + '</td>';
@@ -67,11 +62,28 @@ function renderBody({ primary, secondary, stakeLine, bonusBadge }) {
     + '</td>';
 }
 
-export function renderGameCard(section) {
-  const variant = section.variant || 'regular';
-  const vs = VARIANT_STYLES[variant] || VARIANT_STYLES.regular;
-  return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
-    + ` style="border-collapse:collapse;margin:8px 0;border:1px solid ${vs.border};border-radius:8px;${vs.bg}">`
-    + '<tr>' + renderRail(section.rail || {}, vs) + renderBody(section) + '</tr>'
-    + '</table>';
+function buildPlain(section) {
+  const rail = section.rail || {};
+  const railText = rail.label || `${rail.timePrimary || ''}${rail.timeSuffix ? ' ' + rail.timeSuffix : ''}`.trim();
+  const lines = [];
+  const badge = section.bonusBadge ? ' [BONUS]' : '';
+  lines.push(`${railText ? railText + ': ' : ''}${section.primary || ''}${badge}`);
+  if (section.secondary?.text) {
+    const linkPart = section.secondary.link?.url ? ` [${section.secondary.link.url}]` : '';
+    lines.push(`  ${section.secondary.text}${linkPart}`);
+  }
+  if (section.stakeLine?.text) lines.push(`  ${section.stakeLine.text}`);
+  return lines.join('\n');
 }
+
+export function renderGameCard(section) {
+  const variant = section?.variant || 'regular';
+  const vs = VARIANT_STYLES[variant] || VARIANT_STYLES.regular;
+  const html = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
+    + ` style="border-collapse:collapse;margin:8px 0;border:1px solid ${vs.border};border-radius:8px;${vs.bg}">`
+    + '<tr>' + renderRail(section?.rail || {}, vs) + renderBody(section || {}) + '</tr>'
+    + '</table>';
+  return { html, plainText: buildPlain(section || {}) };
+}
+
+export default renderGameCard;

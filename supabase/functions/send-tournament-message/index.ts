@@ -1,6 +1,12 @@
 // Drains queued recipients for a comms_messages row and dispatches
-// via Resend in a single batch call. Per-recipient status updates so a
-// single bounce doesn't fail the whole send.
+// via Resend. Per-recipient status updates so a single bounce doesn't
+// fail the whole send.
+//
+// Wave 3: per-recipient body capture (body_html_rendered, body_plain_rendered,
+// subject_rendered) for kinds like weekly_digest where each family gets a
+// personalized body. Falls back to message-level body when per-recipient
+// columns are null. Chunks into batches of 100 (Resend's batch limit) so
+// digests with >100 recipients dispatch in multiple calls.
 //
 // Caller must be admin or coach in the message's org_id.
 // Body: { message_id: uuid, dry_run?: boolean }
@@ -18,12 +24,19 @@ const corsHeaders = {
 const FROM_EMAIL = "briefings@legacyhoopers.org";
 const FROM_NAME = "Coach Frank · Legacy Hoopers";
 const REPLY_TO = "fsamaritano@gmail.com";
+const RESEND_BATCH_LIMIT = 100;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
 }
 
 Deno.serve(async (req) => {
@@ -68,54 +81,51 @@ Deno.serve(async (req) => {
 
   const { data: recipients, error: recErr } = await sb
     .from("comms_message_recipients")
-    .select("id, email_at_send")
+    .select("id, email_at_send, body_html_rendered, body_plain_rendered, subject_rendered")
     .eq("message_id", body.message_id)
     .eq("delivery_status", "queued");
   if (recErr) return json({ error: recErr.message }, 500);
   if (!recipients || recipients.length === 0) return json({ error: "No queued recipients" }, 400);
-  if (recipients.length > 100) return json({ error: "Batch limit 100; chunk required" }, 400);
 
   if (body.dry_run) return json({ ok: true, dry_run: true, would_send: recipients.length });
 
   const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
   const fromHeader = `${FROM_NAME} <${FROM_EMAIL}>`;
-
-  const batch = recipients.map((r) => ({
-    from: fromHeader,
-    to: [r.email_at_send],
-    subject: message.subject,
-    html: message.body_html,
-    text: message.body_plain,
-    reply_to: REPLY_TO,
-  }));
-
-  const { data: batchData, error: batchErr } = await resend.batch.send(batch);
-
   const errors: string[] = [];
   let sent = 0;
   let failed = 0;
 
-  if (batchErr) {
-    failed = recipients.length;
-    errors.push(batchErr.message ?? "Batch rejected");
-    await sb.from("comms_message_recipients")
-      .update({ delivery_status: "failed", delivery_method: "resend_api" })
-      .in("id", recipients.map((r) => r.id));
-  } else {
+  for (const group of chunk(recipients, RESEND_BATCH_LIMIT)) {
+    const batch = group.map((r) => ({
+      from: fromHeader,
+      to: [r.email_at_send],
+      subject: r.subject_rendered ?? message.subject,
+      html: r.body_html_rendered ?? message.body_html,
+      text: r.body_plain_rendered ?? message.body_plain,
+      reply_to: REPLY_TO,
+    }));
+    const { data: batchData, error: batchErr } = await resend.batch.send(batch);
+    if (batchErr) {
+      failed += group.length;
+      errors.push(batchErr.message ?? "Batch rejected");
+      await sb.from("comms_message_recipients")
+        .update({ delivery_status: "failed", delivery_method: "resend_api" })
+        .in("id", group.map((r) => r.id));
+      continue;
+    }
     const updates = (batchData?.data ?? []).map((res: any, i: number) => {
-      const recipientId = recipients[i].id;
+      const recipientId = group[i].id;
       if (res?.id) {
         sent++;
         return sb.from("comms_message_recipients")
           .update({ delivery_status: "sent", delivery_method: "resend_api" })
           .eq("id", recipientId);
-      } else {
-        failed++;
-        errors.push(`${recipients[i].email_at_send}: ${res?.error ?? "unknown"}`);
-        return sb.from("comms_message_recipients")
-          .update({ delivery_status: "failed", delivery_method: "resend_api" })
-          .eq("id", recipientId);
       }
+      failed++;
+      errors.push(`${group[i].email_at_send}: ${res?.error ?? "unknown"}`);
+      return sb.from("comms_message_recipients")
+        .update({ delivery_status: "failed", delivery_method: "resend_api" })
+        .eq("id", recipientId);
     });
     await Promise.all(updates);
   }

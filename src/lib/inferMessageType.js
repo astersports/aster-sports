@@ -63,12 +63,14 @@ export function whyLabel(type) {
   return map[type] || 'manual override';
 }
 
-// Engine support today: tournament_preliminary (legacy port) +
-// academy_callup_notice (new in renderer wave 1). Other kinds remain
-// stubs in the dropdown until later waves land their renderers.
+// Engine support: tournament_preliminary (legacy port) +
+// academy_callup_notice (new in renderer wave 1) + weekly_digest (wave 3).
+// Other kinds remain stubs in the dropdown until later waves land their
+// renderers.
 export const ENGINE_SUPPORTED_TYPES = new Set([
   'tournament_preliminary',
   'academy_callup_notice',
+  'weekly_digest',
 ]);
 
 // Days out of the tournament's start_date used for urgency classification.

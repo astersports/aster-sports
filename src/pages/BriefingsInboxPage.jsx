@@ -7,6 +7,7 @@ import BriefingRow from '../components/briefings/BriefingRow';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import EmptyState from '../components/shared/EmptyState';
 import TournamentBriefing from '../components/event/TournamentBriefing';
+import DigestComposeButton from '../components/admin/briefings/DigestComposeButton';
 
 const FILTERS = [
   { key: 'all',       label: 'All' },
@@ -96,12 +97,13 @@ export default function BriefingsInboxPage() {
           <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', letterSpacing: '-0.01em' }}>Briefings</h1>
           <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>One row per tournament-team decision in the active season.</div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {FILTERS.map((f) => (
             <button key={f.key} type="button" onClick={() => setFilter(f.key)} className="sf-press" style={chipStyle(filter === f.key)}>
               {f.label}
             </button>
           ))}
+          <DigestComposeButton />
         </div>
       </div>
 
