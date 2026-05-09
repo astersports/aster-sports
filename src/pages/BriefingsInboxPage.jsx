@@ -1,144 +1,86 @@
-import { useEffect, useMemo, useState } from 'react';
+// Wave 3.12 — unified inbox shell. 3-tab layout (Active / History /
+// Compose). URL ?tab= drives selection. Hosts hero, tabs, search,
+// filters, and the active tab's content. Mobile FAB persistent.
+//
+// Replaces the prior tournament-team grouped view. The old
+// BriefingTournamentGroup / BriefingRow / DigestComposeButton
+// components are kept in repo for reference but no longer routed.
+
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Inbox } from 'lucide-react';
-import { useBriefingQueue } from '../hooks/useBriefingQueue';
-import BriefingTournamentGroup from '../components/briefings/BriefingTournamentGroup';
-import BriefingRow from '../components/briefings/BriefingRow';
-import LoadingSkeleton from '../components/shared/LoadingSkeleton';
-import EmptyState from '../components/shared/EmptyState';
-import TournamentBriefing from '../components/event/TournamentBriefing';
-import BriefingComposeButton from '../components/admin/briefings/BriefingComposeButton';
+import { useAuth } from '../context/AuthContext';
+import { useInboxQueue } from '../hooks/useInboxQueue';
+import { useNeedsBriefing } from '../hooks/useNeedsBriefing';
+import { useBriefingFilters } from '../hooks/useBriefingFilters';
+import { isActiveBadgeItem } from '../lib/briefings/statusTable';
+import BriefingsHero from '../components/briefings/inbox/BriefingsHero';
+import InboxTabs from '../components/briefings/inbox/InboxTabs';
+import InboxSearch from '../components/briefings/inbox/InboxSearch';
+import InboxFilters from '../components/briefings/inbox/InboxFilters';
+import ActiveQueue from '../components/briefings/inbox/ActiveQueue';
+import HistoryView from '../components/briefings/inbox/HistoryView';
+import ComposeFab from '../components/briefings/inbox/ComposeFab';
 
-// Wave 3.5 §C1: tabs replace the old client-side All/Pending/Completed
-// chips. RPC tab param drives the date window:
-//   active → end_date >= today OR status='active' (lookahead 90d, archived hidden)
-//   past   → end_date < today OR status='complete' (lookback 365d, includes archived)
-//   all    → both windows merged (365 each direction)
-// State is URL-bound via ?tab= so a shareable link reproduces the view.
-const TABS = [
-  { key: 'active', label: 'Active' },
-  { key: 'past',   label: 'Past' },
-  { key: 'all',    label: 'All' },
-];
+const BriefingComposer = lazy(() => import('../components/briefings/BriefingComposer'));
 
-function chipStyle(active) {
-  return {
-    minHeight: 32,
-    padding: '0 12px',
-    borderRadius: 9999,
-    border: 'none',
-    fontSize: 12,
-    fontWeight: 600,
-    fontFamily: 'inherit',
-    cursor: 'pointer',
-    backgroundColor: active ? 'var(--em-accent)' : 'var(--em-bg-secondary)',
-    color: active ? 'var(--em-text-inverse)' : 'var(--em-text-secondary)',
-  };
-}
+const wrap = { backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' };
+const inner = { maxWidth: 760, margin: '0 auto', padding: '0 16px 80px', display: 'flex', flexDirection: 'column', gap: 12 };
 
 export default function BriefingsInboxPage() {
-  const [params, setParams] = useSearchParams();
-  const tab = TABS.some((t) => t.key === params.get('tab')) ? params.get('tab') : 'active';
-  const { rows, loading, error, refresh } = useBriefingQueue({ tab });
-  const [composerRow, setComposerRow] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { orgId } = useAuth();
+  const tab = searchParams.get('tab') || 'active';
+  const { filters, update: updateFilters, clear: clearFilters } = useBriefingFilters();
+  const [search, setSearch] = useState('');
+  const [composer, setComposer] = useState(null); // null | { kind, anchor_kind, anchor_id, draft_id }
+
+  // For active count badge — same data ActiveQueue uses, computed up
+  // here so InboxTabs can show a count without re-fetching.
+  const { rows: dbRows } = useInboxQueue({ orgId });
+  const { items: synthetic } = useNeedsBriefing({ orgId });
+  const activeCount = useMemo(() => {
+    const all = [...(dbRows || []), ...(synthetic || [])];
+    return all.filter(isActiveBadgeItem).length;
+  }, [dbRows, synthetic]);
+
   const setTab = (next) => {
-    const p = new URLSearchParams(params);
-    if (next === 'active') p.delete('tab'); else p.set('tab', next);
-    setParams(p, { replace: true });
+    if (next === 'compose') { setComposer({}); return; }
+    const sp = new URLSearchParams(searchParams);
+    sp.set('tab', next);
+    setSearchParams(sp, { replace: true });
   };
 
-  // Deep-link: ?tournament=ID&team=ID auto-opens the matching row's composer
-  useEffect(() => {
-    const tId = params.get('tournament');
-    const teamId = params.get('team');
-    if (!tId || !teamId || !rows.length || composerRow) return undefined;
-    const match = rows.find((r) => r.tournament_id === tId && r.team_id === teamId);
-    if (!match) return undefined;
-    Promise.resolve().then(() => {
-      setComposerRow(match);
-      const next = new URLSearchParams(params);
-      next.delete('tournament'); next.delete('team');
-      setParams(next, { replace: true });
-    });
-    return undefined;
-  }, [rows, params, composerRow, setParams]);
-
-  // Filtering happens server-side via the tab RPC param; client just groups.
-  const grouped = useMemo(() => {
-    const map = new Map();
-    for (const row of rows) {
-      if (!map.has(row.tournament_id)) {
-        map.set(row.tournament_id, {
-          tournament_id: row.tournament_id,
-          tournament_name: row.tournament_name,
-          tournament_start_date: row.tournament_start_date,
-          rows: [],
-        });
-      }
-      map.get(row.tournament_id).rows.push(row);
+  const onAction = (row, status) => {
+    if (status === 'clear_filters') { clearFilters(); setSearch(''); return; }
+    if (!row) return;
+    if (row.synthetic_id) {
+      setComposer({ kind: row.kind, anchor_kind: row.anchor_kind, anchor_id: row.anchor_id });
+    } else {
+      setComposer({ draft_id: row.id });
     }
-    return [...map.values()];
-  }, [rows]);
-
-  const composerEvent = composerRow ? {
-    tournament_id: composerRow.tournament_id,
-    tournament_name: composerRow.tournament_name,
-    team_id: composerRow.team_id,
-  } : null;
-  const composerTeam = composerRow ? {
-    id: composerRow.team_id,
-    name: composerRow.team_name,
-    team_color: composerRow.team_color,
-    sort_order: composerRow.team_sort_order,
-  } : null;
-
-  const handleClose = () => {
-    setComposerRow(null);
-    refresh();
   };
 
   return (
-    <div className="px-4 py-4 sf-fade-in" style={{ maxWidth: 720, margin: '0 auto' }}>
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', letterSpacing: '-0.01em' }}>Briefings</h1>
-          <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>One row per tournament-team decision in the active season.</div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {TABS.map((t) => (
-            <button key={t.key} type="button" onClick={() => setTab(t.key)} className="sf-press" style={chipStyle(tab === t.key)}>
-              {t.label}
-            </button>
-          ))}
-          <BriefingComposeButton />
-        </div>
+    <div style={wrap}>
+      <div style={inner}>
+        <BriefingsHero activeCount={activeCount} onCompose={() => setComposer({})} />
+        <InboxTabs activeTab={tab} activeCount={activeCount} historyCount={0} onChange={setTab} />
+        <InboxSearch value={search} onChange={setSearch} placeholder={tab === 'history' ? 'Search subject + body…' : 'Search briefings…'} />
+        <InboxFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
+        {tab === 'active' && <ActiveQueue filters={filters} search={search} onAction={onAction} onCompose={() => setComposer({})} onViewHistory={() => setTab('history')} />}
+        {tab === 'history' && <HistoryView filters={filters} search={search} onCompose={() => setComposer({})} />}
       </div>
-
-      {loading && <LoadingSkeleton variant="card" count={4} />}
-      {error && (
-        <div style={{ padding: 16, borderRadius: 10, backgroundColor: 'var(--em-danger-soft)', color: 'var(--em-text-primary)', fontSize: 14 }}>
-          Couldn&rsquo;t load the briefing queue. {error.message || 'Try again in a moment.'}
-          <button type="button" onClick={refresh} style={{ marginLeft: 12, fontSize: 13, fontWeight: 600, color: 'var(--em-accent)', background: 'none', border: 'none', cursor: 'pointer' }}>Retry</button>
-        </div>
-      )}
-      {!loading && !error && grouped.length === 0 && (
-        <EmptyState
-          icon={Inbox}
-          title={tab === 'all' ? 'No briefings this season' : `No ${tab} briefings`}
-          description={tab === 'all' ? 'Briefings appear here once tournaments are scheduled in the active season.' : 'Switch to All to see other tournament states.'}
-        />
-      )}
-
-      {!loading && !error && grouped.map((g) => (
-        <BriefingTournamentGroup key={g.tournament_id} startDate={g.tournament_start_date} name={g.tournament_name}>
-          {g.rows.map((row) => (
-            <BriefingRow key={`${row.tournament_id}-${row.team_id}`} row={row} onOpen={setComposerRow} />
-          ))}
-        </BriefingTournamentGroup>
-      ))}
-
-      {composerRow && (
-        <TournamentBriefing event={composerEvent} team={composerTeam} onClose={handleClose} />
+      <ComposeFab onClick={() => setComposer({})} />
+      {composer && (
+        <Suspense fallback={null}>
+          <BriefingComposer
+            initialKind={composer.kind}
+            initialAnchorKind={composer.anchor_kind}
+            initialAnchorId={composer.anchor_id}
+            initialDraftId={composer.draft_id}
+            onClose={() => setComposer(null)}
+          />
+        </Suspense>
       )}
     </div>
   );
