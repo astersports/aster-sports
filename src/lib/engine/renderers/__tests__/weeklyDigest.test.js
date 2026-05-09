@@ -43,11 +43,17 @@ describe('composeWeeklyDigest', () => {
     expect(out.plainText).toContain('https://maps.google.com/?q=WCC');
   });
 
-  it('rsvp_counts render as "N going · M maybe · K out", zero-state shows "no RSVPs yet"', () => {
+  it('rsvp_counts render with color-coded spans, zero-state shows muted "no RSVPs yet"', () => {
     const out = composeWeeklyDigest(multiTeam);
-    expect(out.html).toContain('8 going · 2 maybe · 1 out');   // e1
-    expect(out.html).toContain('12 going · 1 maybe · 0 out');  // e3
-    expect(out.html).toContain('no RSVPs yet');                // e2 (all zero)
+    // Wave 3.7 §D-RSVP-1: each count colored to its tone, separators
+    // remain in TEXT_GRAPHITE (#475569).
+    expect(out.html).toContain('color:#16a34a;font-weight:500;">8 going');
+    expect(out.html).toContain('color:#d97706;font-weight:500;">2 maybe');
+    expect(out.html).toContain('color:#dc2626;font-weight:500;">1 out');
+    expect(out.html).toContain('color:#16a34a;font-weight:500;">12 going');
+    expect(out.html).toContain('color:#dc2626;font-weight:500;">0 out');
+    expect(out.html).toContain('no RSVPs yet'); // e2 (all zero)
+    // Plain-text path stays uncolored, just words + separators.
     expect(out.plainText).toContain('8 going · 2 maybe · 1 out');
   });
 
