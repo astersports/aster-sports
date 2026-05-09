@@ -134,7 +134,7 @@ export default function EventDetailPage() {
       {showCheckin && <Suspense fallback={null}><EventCheckinOverlay eventId={event.id} roster={roster} teamColor={teamColor} onClose={() => setShowCheckin(false)} /></Suspense>}
       {showScoreSheet && <Suspense fallback={null}><ScoreEntrySheet event={event} team={team} onClose={() => setShowScoreSheet(false)} /></Suspense>}
       {confirmAction?.type === 'editScopeChoice' && (
-        <ScopeChoiceDialog onChoose={(scope) => { setConfirmAction(null); setEditMode(scope); setEditing(true); }} onCancel={() => setConfirmAction(null)} />
+        <ScopeChoiceDialog event={event} onChoose={(scope) => { setConfirmAction(null); setEditMode(scope); setEditing(true); }} onCancel={() => setConfirmAction(null)} />
       )}
       {confirmAction?.type === 'removeSeries' && <ConfirmDialog title="Remove from series" message="This event will become standalone." confirmLabel="Remove" onConfirm={async () => { setConfirmAction(null); await supabase.from('events').update({ parent_event_id: null }).eq('id', event.id); patchEvent({ parent_event_id: null }); refetch(); }} onCancel={() => setConfirmAction(null)} />}
       {pendingDelete?.type === 'series' && (
