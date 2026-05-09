@@ -1,7 +1,7 @@
 // Visual group header for a tournament's row list. Format:
 //   "Sat May 16 · ZG Rumble for the Ring CT · in 8 days"
 // Uses NY timezone for date label so it matches the briefing engine's
-// rendering rules (per CLAUDE.md §13 and tournamentBriefing.js).
+// rendering rules (per CLAUDE.md §13 and src/lib/engine/renderers/tournamentPreliminary.js).
 
 const dateFmt = new Intl.DateTimeFormat('en-US', {
   timeZone: 'America/New_York',

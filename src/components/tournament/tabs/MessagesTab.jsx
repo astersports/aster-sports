@@ -44,6 +44,7 @@ export default function MessagesTab({ tournament, isStaff }) {
     tournament_recap_final: 'Tournament Final Recap',
     schedule_change: 'Schedule Change',
     multi_team_notice: 'Multi-Team Notice',
+    academy_callup_notice: 'Academy Call-Up',
     custom: 'Custom',
   };
 

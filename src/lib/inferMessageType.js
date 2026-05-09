@@ -40,6 +40,7 @@ export function messageTypeLabel(type) {
     tournament_recap_final:   'Tournament Final Recap',
     schedule_change:          'Schedule Change',
     multi_team_notice:        'Multi-Team Notice',
+    academy_callup_notice:    'Academy Call-Up',
     custom:                   'Custom',
   };
   return map[type] || type;
@@ -56,15 +57,19 @@ export function whyLabel(type) {
     tournament_recap_final:   'after tournament',
     schedule_change:          'manual override',
     multi_team_notice:        'manual override',
+    academy_callup_notice:    'roster locked',
     custom:                   'manual override',
   };
   return map[type] || 'manual override';
 }
 
-// Engine support today: only tournament_preliminary renders. Other types
-// are stubs in the dropdown; Send button stays disabled until the engine
-// for each ships.
-export const ENGINE_SUPPORTED_TYPES = new Set(['tournament_preliminary']);
+// Engine support today: tournament_preliminary (legacy port) +
+// academy_callup_notice (new in renderer wave 1). Other kinds remain
+// stubs in the dropdown until later waves land their renderers.
+export const ENGINE_SUPPORTED_TYPES = new Set([
+  'tournament_preliminary',
+  'academy_callup_notice',
+]);
 
 // Days out of the tournament's start_date used for urgency classification.
 export function daysUntil(tournament, now = new Date()) {
