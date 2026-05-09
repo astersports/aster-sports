@@ -1,0 +1,27 @@
+# Supabase project config. Locks per-function flags for repo-tracked
+# edge functions so CI deploys preserve them.
+#
+# Wave 4.0.1 — without these declarations, `supabase functions deploy`
+# defaults to verify_jwt:true on every CI run, regressing the three
+# shared-secret functions below. Three regressions in production
+# this week (PR #48 briefing-cron-dispatch, PR #51 redeployed
+# briefing-cron-dispatch + rsvp-token-handler) all manifested as
+# 401 UNAUTHORIZED_INVALID_JWT_FORMAT at the platform layer because
+# the platform rejects non-JWT Bearer tokens before the function
+# code can run its own shared-secret check.
+#
+# Functions intentionally omitted from this file (default
+# verify_jwt:true preserves correct behavior):
+#   send-tournament-message — requires user JWT for user_roles check
+#   rapid-processor         — JWT-authenticated
+
+project_id = "vrwwpsbfbnveawqwbdmj"
+
+[functions.briefing-cron-dispatch]
+verify_jwt = false
+
+[functions.rsvp-token-handler]
+verify_jwt = false
+
+[functions.invite-parent]
+verify_jwt = false
