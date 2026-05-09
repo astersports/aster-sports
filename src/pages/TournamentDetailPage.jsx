@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { useTournament } from '../hooks/useTournament';
 import TournamentHeader from '../components/tournament/TournamentHeader';
 import TournamentTabs from '../components/tournament/TournamentTabs';
+import AggregateRsvpBlock from '../components/tournament/AggregateRsvpBlock';
+import TournamentBriefingHistory from '../components/tournament/TournamentBriefingHistory';
 import OverviewTab from '../components/tournament/tabs/OverviewTab';
 import GamesTab from '../components/tournament/tabs/GamesTab';
 import RosterTab from '../components/tournament/tabs/RosterTab';
@@ -51,6 +53,8 @@ export default function TournamentDetailPage() {
 
       <TournamentHeader tournament={tournament} isStaff={isStaff} onChange={refetch} />
 
+      {isStaff && <AggregateRsvpBlock tournamentId={tournament.id} />}
+
       {teams.length > 1 && (
         <div style={{ padding: '8px 16px' }}>
           <FilterSelect
@@ -71,6 +75,8 @@ export default function TournamentDetailPage() {
         {activeTab === 'messages' && <MessagesTab tournament={tournament} isStaff={isStaff} />}
         {activeTab === 'scenarios' && <ScenariosTab tournament={tournament} teamFilter={teamFilter} />}
       </div>
+
+      {isStaff && <TournamentBriefingHistory tournamentId={tournament.id} />}
     </div>
   );
 }

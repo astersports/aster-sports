@@ -13,11 +13,11 @@ const drawer = { marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6
 const familyRow = { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: '1px solid var(--em-border-subtle)', fontSize: 14, color: 'var(--em-text-secondary)' };
 const pillStyle = (color) => ({ marginLeft: 'auto', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 9999, color });
 
-const TONE = { going: 'var(--em-success)', maybe: 'var(--em-warning)', out: 'var(--em-danger)' };
-const LABEL = { going: 'going', maybe: 'maybe', out: 'out' };
+const TONE = { going: 'var(--em-success)', maybe: 'var(--em-warning)', not_going: 'var(--em-danger)' };
+const LABEL = { going: 'going', maybe: 'maybe', not_going: 'out' };
 
 function tally(rsvps) {
-  const t = { going: 0, maybe: 0, out: 0 };
+  const t = { going: 0, maybe: 0, not_going: 0 };
   (rsvps || []).forEach((r) => { if (t[r.response] != null) t[r.response] += 1; });
   return t;
 }
@@ -25,7 +25,7 @@ function tally(rsvps) {
 export default function RsvpSummaryBlock({ rsvps, roster }) {
   const [expanded, setExpanded] = useState(false);
   const counts = useMemo(() => tally(rsvps), [rsvps]);
-  const total = counts.going + counts.maybe + counts.out;
+  const total = counts.going + counts.maybe + counts.not_going;
   const rosterMap = useMemo(() => {
     const m = new Map();
     (roster || []).forEach((p) => m.set(p.id, p));
@@ -46,7 +46,7 @@ export default function RsvpSummaryBlock({ rsvps, roster }) {
         <span style={countsLine}>
           <span style={{ color: TONE.going }}>{counts.going} {LABEL.going}</span>
           {counts.maybe > 0 && (<><span style={sep}>·</span><span style={{ color: TONE.maybe }}>{counts.maybe} {LABEL.maybe}</span></>)}
-          {counts.out > 0 && (<><span style={sep}>·</span><span style={{ color: TONE.out }}>{counts.out} {LABEL.out}</span></>)}
+          {counts.not_going > 0 && (<><span style={sep}>·</span><span style={{ color: TONE.not_going }}>{counts.not_going} {LABEL.not_going}</span></>)}
         </span>
         {expanded ? <ChevronDown size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" /> : <ChevronRight size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />}
       </button>
