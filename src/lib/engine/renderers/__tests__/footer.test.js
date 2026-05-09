@@ -4,7 +4,7 @@ import { renderFooter } from '../footer';
 describe('renderer — footer (Wave 3.6 §D4)', () => {
   const fixture = {
     kind: 'footer',
-    logoUrl: 'https://skyfire-app.vercel.app/apple-touch-icon.png',
+    logoUrl: 'https://skyfire-app.vercel.app/knight-logo-240.png',
     orgName: 'Legacy Hoopers',
     websiteUrl: 'https://www.legacyhoopers.org/',
     contactEmail: 'info@legacyhoopers.org',
@@ -17,10 +17,17 @@ describe('renderer — footer (Wave 3.6 §D4)', () => {
 
   it('renders 120x120 logo image with alt text', () => {
     const { html } = renderFooter(fixture);
-    expect(html).toContain('src="https://skyfire-app.vercel.app/apple-touch-icon.png"');
+    expect(html).toContain('src="https://skyfire-app.vercel.app/knight-logo-240.png"');
     expect(html).toContain('width="120"');
     expect(html).toContain('height="120"');
     expect(html).toContain('alt="Legacy Hoopers"');
+  });
+
+  it('uses Knight logo (post-auth org brand), NOT Phoenix apple-touch-icon (PWA shell)', () => {
+    const { html } = renderFooter(fixture);
+    expect(html).toContain('knight-logo');
+    expect(html).not.toContain('apple-touch-icon');
+    expect(html).not.toContain('phoenix');
   });
 
   it('renders website link with bare-host display + target=_blank rel=noopener', () => {
