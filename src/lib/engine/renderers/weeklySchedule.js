@@ -13,7 +13,7 @@
 //                          back-compat (no third line rendered at all).
 
 import { escapeHtml } from './_util';
-import { AMBER_DEEP, BG_PAGE, BORDER_DEFAULT, COBALT, COBALT_DEEP, CREAM, GOLD, TEXT_GRAPHITE, TEXT_NAVY, TEXT_SLATE, TEXT_SLATE_DARK } from '../colors';
+import { AMBER_DEEP, BG_PAGE, BORDER_DEFAULT, COBALT, COBALT_DEEP, CREAM, GOLD, RSVP_GOING_GREEN, RSVP_MAYBE_AMBER, RSVP_OUT_RED, TEXT_GRAPHITE, TEXT_NAVY, TEXT_SLATE, TEXT_SLATE_DARK } from '../colors';
 
 function renderDayHeader(label) {
   return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
@@ -37,11 +37,19 @@ function renderMapLink(url) {
 function rsvpLine(counts) {
   if (!counts) return '';
   const { going = 0, maybe = 0, out = 0 } = counts;
-  const text = (going + maybe + out) === 0
-    ? 'no RSVPs yet'
-    : `${going} going · ${maybe} maybe · ${out} out`;
-  // Wave 3.6 §D2: bumped 12px→13px, color #94a3b8→TEXT_GRAPHITE (7.5:1).
-  return `<div style="font-size:13px;color:${TEXT_GRAPHITE};line-height:1.5;margin-top:4px;">${escapeHtml(text)}</div>`;
+  // Wave 3.7 hotfix §D-RSVP-1: zero state stays muted; populated counts
+  // get color-coded per response (going green, maybe amber, out red),
+  // separators stay in graphite for breathing room.
+  if ((going + maybe + out) === 0) {
+    return `<div style="font-size:13px;color:${TEXT_GRAPHITE};line-height:1.5;margin-top:4px;">no RSVPs yet</div>`;
+  }
+  return `<div style="font-size:13px;line-height:1.5;margin-top:4px;">`
+    + `<span style="color:${RSVP_GOING_GREEN};font-weight:500;">${going} going</span>`
+    + `<span style="color:${TEXT_GRAPHITE};"> · </span>`
+    + `<span style="color:${RSVP_MAYBE_AMBER};font-weight:500;">${maybe} maybe</span>`
+    + `<span style="color:${TEXT_GRAPHITE};"> · </span>`
+    + `<span style="color:${RSVP_OUT_RED};font-weight:500;">${out} out</span>`
+    + `</div>`;
 }
 
 function renderEvent(ev) {

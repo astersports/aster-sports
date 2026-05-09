@@ -32,3 +32,10 @@ export const BG_WHITE         = '#ffffff';
 export const STATUS_WIN       = '#16a34a';
 export const STATUS_LOSS      = '#dc2626';
 export const STATUS_NEUTRAL   = '#94a3b8';
+
+// Wave 3.7 hotfix §D-RSVP-1 — RSVP count tones in renderer #6.
+// Compound visual: each count + label colored to its status. Separators
+// remain in TEXT_GRAPHITE for visual breathing room.
+export const RSVP_GOING_GREEN = '#16a34a';   //  4.6:1 — going (positive)
+export const RSVP_MAYBE_AMBER = '#d97706';   //  4.5:1 — maybe (caution)
+export const RSVP_OUT_RED     = '#dc2626';   //  4.7:1 — out (negative)
