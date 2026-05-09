@@ -13,6 +13,10 @@ import { formatPeriodLabel, formatSubject } from '../digestPeriod';
 const ORG_NAME_DEFAULT = 'Legacy Hoopers';
 const HEADLINE_DEFAULT = 'WEEK AHEAD';
 const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
+const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
+// Vercel-hosted apple-touch-icon (180x180 PNG, 18 KB) — knight mark.
+// Multi-tenant follow-up: replace with per-org Supabase storage upload.
+const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/apple-touch-icon.png';
 
 function buildHeader(period, orgName, eyebrowLink) {
   return {
@@ -22,6 +26,16 @@ function buildHeader(period, orgName, eyebrowLink) {
     headline: HEADLINE_DEFAULT,
     sub_context: formatPeriodLabel(period),
     goldStripe: true,
+  };
+}
+
+function buildFooter(orgName, websiteUrl, contactEmail, logoUrl) {
+  return {
+    kind: 'footer',
+    logoUrl,
+    orgName,
+    websiteUrl,
+    contactEmail,
   };
 }
 
@@ -68,6 +82,8 @@ export function composeWeeklyDigest(data = {}) {
     orgName = ORG_NAME_DEFAULT,
     rsvpCountsByEvent,
     eyebrowLink = ORG_WEBSITE_DEFAULT,
+    contactEmail = ORG_CONTACT_DEFAULT,
+    logoUrl = ORG_LOGO_DEFAULT,
   } = data;
 
   const sections = [];
@@ -80,6 +96,7 @@ export function composeWeeklyDigest(data = {}) {
   if (opsSection) sections.push(opsSection);
   const signoffSection = buildSignoff(signoff_message, coaches);
   if (signoffSection) sections.push(signoffSection);
+  sections.push(buildFooter(orgName, eyebrowLink, contactEmail, logoUrl));
 
   const html = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">'
     + renderSections(sections)
