@@ -1,10 +1,11 @@
 // Wave 3.11 follow-up — step 3 host. Kind-branched body editor +
 // shared signoff textarea + send options.
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { Send } from 'lucide-react';
 import { labelStyle, textareaStyle } from './bodies/_styles';
 import TemplatePicker from './TemplatePicker';
+import ScheduleForLaterPicker from './ScheduleForLaterPicker';
 
 const BODY_LAZY = {
   weekly_digest: lazy(() => import('./bodies/WeeklyDigestBody.jsx')),
@@ -22,10 +23,22 @@ const btnGhost = { width: '100%', minHeight: 40, borderRadius: 10, backgroundCol
 
 export default function StepBodySignoff({ state, dispatch, recipientCount, onSend, onSaveDraft, onCancel, busy }) {
   const Body = BODY_LAZY[state.kind] || BODY_LAZY.custom_message;
-  const sendBlocked = busy || (recipientCount === 0 && !state.test_only);
-  const sendLabel = state.test_only
-    ? 'Send test to admin@'
-    : `Send to ${recipientCount ?? '…'} ${recipientCount === 1 ? 'family' : 'families'}`;
+  const isScheduled = state.send_mode === 'scheduled';
+  // Memoize on scheduled_for so Date.now() at render is captured once
+  // per relevant change (admin updates the picker, validation refreshes).
+  const scheduleInvalid = useMemo(() => {
+    if (!isScheduled) return false;
+    if (!state.scheduled_for) return true;
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now();
+    return new Date(state.scheduled_for).getTime() - now < 5 * 60 * 1000;
+  }, [isScheduled, state.scheduled_for]);
+  const sendBlocked = busy || (recipientCount === 0 && !state.test_only) || scheduleInvalid;
+  const sendLabel = isScheduled
+    ? 'Schedule send'
+    : (state.test_only
+      ? 'Send test to admin@'
+      : `Send to ${recipientCount ?? '…'} ${recipientCount === 1 ? 'family' : 'families'}`);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -48,6 +61,11 @@ export default function StepBodySignoff({ state, dispatch, recipientCount, onSen
         <input type="checkbox" checked={state.test_only} onChange={(e) => dispatch({ type: 'TOGGLE_TEST', value: e.target.checked })} />
         Send test to admin@ only (recommended first)
       </label>
+      <ScheduleForLaterPicker
+        mode={state.send_mode === 'scheduled' ? 'schedule_for_later' : 'send_now'}
+        scheduledFor={state.scheduled_for}
+        onChange={(payload) => dispatch({ type: 'SET_SCHEDULE', payload })}
+      />
       <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>
         Audience: {recipientCount ?? '…'} {recipientCount === 1 ? 'family' : 'families'}
       </div>
