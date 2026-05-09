@@ -87,7 +87,15 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
     setBusy(true);
     try {
       const composed = compose({ kind: state.kind, data: { ...state.body, signoff_message: state.signoff_message, coaches } });
-      const r = await draft.submitSend({ kind: state.kind, anchor_kind: state.anchor_kind, anchor_id: state.anchor_id, audience_type: state.audience_type, audience_filter: state.audience_filter, content_sections: { body: state.body, sections: composed.sections }, signoff_message: state.signoff_message, subject: composed.subject, body_html: composed.html, body_plain: composed.plainText });
+      const draftPayload = { kind: state.kind, anchor_kind: state.anchor_kind, anchor_id: state.anchor_id, audience_type: state.audience_type, audience_filter: state.audience_filter, content_sections: { body: state.body, sections: composed.sections }, signoff_message: state.signoff_message, subject: composed.subject, body_html: composed.html, body_plain: composed.plainText };
+      if (state.send_mode === 'scheduled' && state.scheduled_for) {
+        const r = await draft.submitSchedule(draftPayload, state.scheduled_for);
+        if (r?.error) throw r.error;
+        showToast(`Scheduled for ${new Date(state.scheduled_for).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}.`, 'success');
+        onClose?.();
+        return;
+      }
+      const r = await draft.submitSend(draftPayload);
       if (r?.error) throw r.error;
       const dispatchInvoke = await supabase.functions.invoke('send-tournament-message', { body: { message_id: r.id } });
       if (dispatchInvoke.error) throw dispatchInvoke.error;

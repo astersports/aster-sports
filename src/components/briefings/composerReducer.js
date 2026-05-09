@@ -37,6 +37,10 @@ export function composerReducer(state, action) {
       return { ...state, kindFilter: action.payload || null };
     case 'SET_ACTIVE_TEMPLATE':
       return { ...state, activeTemplateId: action.payload?.templateId ?? null };
+    case 'SET_SCHEDULE':
+      // Wave 3.17: schedule mode + ISO timestamp. mode=='send_now' clears
+      // scheduledFor so submit path stays consistent.
+      return { ...state, send_mode: action.payload?.mode === 'schedule_for_later' ? 'scheduled' : 'now', scheduled_for: action.payload?.mode === 'schedule_for_later' ? (action.payload?.scheduledFor || null) : null };
     case 'SET_AUDIENCE':
       return { ...state, audience_type: action.audience_type, audience_filter: action.audience_filter ?? null };
     case 'UPDATE_BODY':
