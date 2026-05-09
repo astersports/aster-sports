@@ -52,3 +52,27 @@ export function eventToForm(event) {
     duties: [],
   };
 }
+
+// Wave 3.8 §5.2: builds the schedule_change diff payload that
+// EventDetailPage uses to decide whether to prompt notify-families.
+// Returns null when neither time nor location changed (no prompt fires).
+export function buildSaveDiff({ editEvent, form, editMode }) {
+  if (!editEvent) return null;
+  const isInstance = editMode === 'instance' || editMode === 'single';
+  const oldStart = editEvent.start_at;
+  const oldEnd = editEvent.end_at;
+  const oldLoc = editEvent.location || null;
+  const newStart = new Date(`${form.date}T${form.startTime}`).toISOString();
+  const newEnd = new Date(`${form.date}T${form.endTime}`).toISOString();
+  const newLoc = form.location || null;
+  const timeChanged = newStart !== oldStart || newEnd !== oldEnd;
+  const locChanged = newLoc !== oldLoc;
+  if (!timeChanged && !locChanged) return null;
+  return {
+    eventId: editEvent.id,
+    scope: isInstance ? 'instance' : editMode,
+    changeKind: timeChanged ? 'time' : 'location',
+    before: { start_at: oldStart, end_at: oldEnd, location: oldLoc },
+    after: { start_at: newStart, end_at: newEnd, location: newLoc },
+  };
+}

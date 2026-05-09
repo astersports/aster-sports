@@ -7,13 +7,12 @@ import StepType from './StepType';
 import StepTeam from './StepTeam';
 import StepWhen from './StepWhen';
 import StepDetails from './StepDetails';
-import { EMPTY_FORM, eventToForm } from './wizardForm';
+import { buildSaveDiff, EMPTY_FORM, eventToForm } from './wizardForm';
 import { useCreateActivity } from '../../hooks/useCreateActivity';
 import { useUpdateActivity } from '../../hooks/useUpdateActivity';
 import { useConflictCheck } from '../../hooks/useConflictCheck';
 
-const STEPS = ['Type', 'Team', 'When', 'Details'];
-const EDIT_STEPS = ['When', 'Details'];
+const STEPS = ['Type', 'Team', 'When', 'Details']; const EDIT_STEPS = ['When', 'Details'];
 export default function CreateActivityWizard({ orgId, editEvent, editMode = 'single', onClose, onCreated }) {
   const isEdit = !!editEvent; const { showToast } = useToast();
   const [step, setStep] = useState(isEdit ? 2 : 0);
@@ -58,17 +57,18 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
   }, [isEdit, editEvent?.id]);
   const handleSave = async () => {
     let result;
+    const diff = isEdit ? buildSaveDiff({ editEvent, form, editMode }) : null;
     if (isEdit) {
-      result = editMode === 'series'
-        ? await updateSeries(editEvent.id, editEvent.parent_event_id, editEvent.start_at, form)
-        : await update(editEvent.id, form);
+      const isInstance = editMode === 'instance' || editMode === 'single';
+      result = isInstance
+        ? await update(editEvent.id, form)
+        : await updateSeries(editEvent.id, editEvent.parent_event_id, editEvent.start_at, form, editMode);
     } else {
       result = await create(form);
     }
-    if (result?.data) { onCreated?.(); onClose(); }
+    if (result?.data) { onCreated?.(diff); onClose(); }
     else if (result?.error) { console.error('CreateActivityWizard save:', result.error); showToast("Couldn't save. Try again?", 'error'); }
   };
-
   const canNext = step === 2 ? (form.date && form.startTime && form.endTime) : true;
   const backStop = isEdit ? 2 : 0;
   const dots = isEdit ? EDIT_STEPS : STEPS;

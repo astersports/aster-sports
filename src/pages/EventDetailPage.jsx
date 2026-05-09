@@ -19,6 +19,7 @@ import EventNotes from '../components/event/EventNotes';
 import EventCancelActions from '../components/event/EventCancelActions';
 import EventRosterLockSection from '../components/event/EventRosterLockSection';
 import MyActionsSection from '../components/event/MyActionsSection';
+import ScopeChoiceDialog from '../components/event/ScopeChoiceDialog';
 import CollapsibleSection from '../components/shared/CollapsibleSection';
 import ParentArrivalActions from '../components/gameday/ParentArrivalActions';
 import ArrivalBoard from '../components/gameday/ArrivalBoard';
@@ -26,6 +27,7 @@ import CoachChecklist from '../components/gameday/CoachChecklist';
 import Button from '../components/shared/Button';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
+const ScheduleChangeComposer = lazy(() => import('../components/event/ScheduleChangeComposer'));
 const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
 const FinalizedGameView = lazy(() => import('../components/livescore/FinalizedGameView'));
 const AcademyActivationPanel = lazy(() => import('../components/event/AcademyActivationPanel'));
@@ -43,11 +45,12 @@ export default function EventDetailPage() {
   const refetchAll = useCallback(() => { refetch(); refetchRsvps(); }, [refetch, refetchRsvps]);
   useRefetchOnVisible(refetchAll);
   const [editing, setEditing] = useState(false);
-  const [editMode, setEditMode] = useState('single');
+  const [editMode, setEditMode] = useState('instance');
   const [showCheckin, setShowCheckin] = useState(false);
   const [showScoreSheet, setShowScoreSheet] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [dutyCount, setDutyCount] = useState(0);
+  const [pendingDiff, setPendingDiff] = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -79,12 +82,13 @@ export default function EventDetailPage() {
 
   const openEdit = () => {
     if (event.parent_event_id) {
-      setConfirmAction({ type: 'editSeries' });
+      setConfirmAction({ type: 'editScopeChoice' });
     } else {
-      setEditMode('single');
+      setEditMode('instance');
       setEditing(true);
     }
   };
+  const onWizardCreated = (diff) => { refetch(); if (diff) setPendingDiff(diff); };
 
   return (
     <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
@@ -125,11 +129,12 @@ export default function EventDetailPage() {
 
       {isStaff && <EventCancelActions event={event} onStatusChange={(status) => { patchEvent({ status }); refetch(); }} />}
 
-      {editing && <Suspense fallback={null}><CreateActivityWizard orgId={orgId} editEvent={event} editMode={editMode} onClose={() => setEditing(false)} onCreated={refetch} /></Suspense>}
+      {editing && <Suspense fallback={null}><CreateActivityWizard orgId={orgId} editEvent={event} editMode={editMode} onClose={() => setEditing(false)} onCreated={onWizardCreated} /></Suspense>}
+      {pendingDiff && <Suspense fallback={null}><ScheduleChangeComposer event={event} diff={pendingDiff} onClose={() => setPendingDiff(null)} onDone={refetch} /></Suspense>}
       {showCheckin && <Suspense fallback={null}><EventCheckinOverlay eventId={event.id} roster={roster} teamColor={teamColor} onClose={() => setShowCheckin(false)} /></Suspense>}
       {showScoreSheet && <Suspense fallback={null}><ScoreEntrySheet event={event} team={team} onClose={() => setShowScoreSheet(false)} /></Suspense>}
-      {confirmAction?.type === 'editSeries' && (
-        <ConfirmDialog title="Edit recurring event" message="Edit all future events in this series, or just this one?" confirmLabel="All future" cancelLabel="This one only" onConfirm={() => { setConfirmAction(null); setEditMode('series'); setEditing(true); }} onCancel={() => { setConfirmAction(null); setEditMode('single'); setEditing(true); }} />
+      {confirmAction?.type === 'editScopeChoice' && (
+        <ScopeChoiceDialog onChoose={(scope) => { setConfirmAction(null); setEditMode(scope); setEditing(true); }} onCancel={() => setConfirmAction(null)} />
       )}
       {confirmAction?.type === 'removeSeries' && <ConfirmDialog title="Remove from series" message="This event will become standalone." confirmLabel="Remove" onConfirm={async () => { setConfirmAction(null); await supabase.from('events').update({ parent_event_id: null }).eq('id', event.id); patchEvent({ parent_event_id: null }); refetch(); }} onCancel={() => setConfirmAction(null)} />}
       {pendingDelete?.type === 'series' && (
