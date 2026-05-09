@@ -1,0 +1,10 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`template T1 — hotelBlock > matches snapshot 1`] = `
+{
+  "html": "<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;margin:16px 0;"><tr><td style="padding:14px 16px;background-color:#fef2f2;border:1px solid #fecaca;border-left:4px solid #dc2626;border-radius:6px;font-family:Inter,system-ui,sans-serif;"><div style="font-size:11px;font-weight:700;color:#dc2626;letter-spacing:1.5px;text-transform:uppercase;line-height:1.4;margin-bottom:6px;">HOTEL BLOCK CLOSES IN 3 DAYS</div><div style="font-size:14px;color:#0f172a;line-height:1.5;">Hampton Inn Stamford CT, $159/night, code LEGACY26</div><div style="font-size:13px;font-weight:700;color:#dc2626;line-height:1.5;margin-top:6px;">Deadline: Fri, May 22</div></td></tr></table>",
+  "plainText": "HOTEL BLOCK CLOSES IN 3 DAYS
+Hampton Inn Stamford CT, $159/night, code LEGACY26
+Deadline: Fri, May 22",
+}
+`;
