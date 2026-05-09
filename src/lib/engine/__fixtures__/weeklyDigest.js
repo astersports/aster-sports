@@ -11,10 +11,12 @@ const PERIOD = {
   end:   new Date('2026-05-17T12:00:00Z'),
 };
 
+// Production v14 palette — sourced from constants.js TEAM_COLORS.
+// Renderer reads team_color inline from this prop; never hardcoded.
 const TEAMS = [
-  { id: 't-11u', name: '11U Girls',  team_color: '#7C3AED', sort_order: 1 },
-  { id: 't-10b', name: '10U Black',  team_color: '#18181B', sort_order: 2 },
-  { id: 't-8u',  name: '8U Boys',    team_color: '#EA580C', sort_order: 5 },
+  { id: 't-11u', name: '11U Girls',  team_color: '#a78bfa', sort_order: 1 }, // violet
+  { id: 't-10b', name: '10U Black',  team_color: '#4a8fd4', sort_order: 2 }, // cobalt
+  { id: 't-8u',  name: '8U Boys',    team_color: '#f59e0b', sort_order: 5 }, // amber
 ];
 
 const COACHES = [
@@ -34,17 +36,27 @@ export const singleTeam = {
   coaches: COACHES,
 };
 
+// Embedded `locations` mimics the PostgREST join in useDigestEvents.
+// rsvpCountsByEvent is a Map keyed by event_id with { going, maybe, out }
+// shape — exercises §B3 "N going · M maybe · K out" line in renderer #6.
+const RSVP_COUNTS = new Map([
+  ['e1', { going: 8, maybe: 2, out: 1 }],
+  ['e2', { going: 0, maybe: 0, out: 0 }],
+  ['e3', { going: 12, maybe: 1, out: 0 }],
+]);
+
 export const multiTeam = {
   family: { guardian_id: 'g-stephanie', email: 'stephanie@example.com', full_name: 'Stephanie Samaritano', team_ids: ['t-11u', 't-8u'], team_names: ['11U Girls', '8U Boys'] },
   events: [
-    { id: 'e1', team_id: 't-11u', event_type: 'practice', start_at: '2026-05-13T22:30:00Z', end_at: '2026-05-14T00:00:00Z', location: 'WCC', sub_location: null, status: 'scheduled' },
-    { id: 'e2', team_id: 't-8u',  event_type: 'practice', start_at: '2026-05-12T22:30:00Z', end_at: '2026-05-13T00:00:00Z', location: 'WCC', sub_location: null, status: 'scheduled' },
-    { id: 'e3', team_id: 't-11u', event_type: 'game',     start_at: '2026-05-16T14:00:00Z', end_at: '2026-05-16T15:30:00Z', location: 'Stamford Sportsplex', sub_location: 'Court 1', opponent: 'Wave', status: 'scheduled' },
+    { id: 'e1', team_id: 't-11u', event_type: 'practice', start_at: '2026-05-13T22:30:00Z', end_at: '2026-05-14T00:00:00Z', location: 'WCC', sub_location: null, status: 'scheduled', locations: { id: 'loc-wcc', name: 'WCC', google_maps_url: 'https://maps.google.com/?q=WCC' } },
+    { id: 'e2', team_id: 't-8u',  event_type: 'practice', start_at: '2026-05-12T22:30:00Z', end_at: '2026-05-13T00:00:00Z', location: 'WCC', sub_location: null, status: 'scheduled', locations: { id: 'loc-wcc', name: 'WCC', google_maps_url: 'https://maps.google.com/?q=WCC' } },
+    { id: 'e3', team_id: 't-11u', event_type: 'game',     start_at: '2026-05-16T14:00:00Z', end_at: '2026-05-16T15:30:00Z', location: 'Stamford Sportsplex', sub_location: 'Court 1', opponent: 'Wave', status: 'scheduled', locations: { id: 'loc-ssx', name: 'Stamford Sportsplex', google_maps_url: 'https://maps.google.com/?q=Stamford+Sportsplex' } },
   ],
   period: PERIOD, teams: TEAMS, tournaments: [],
   body_notes: 'Two teams running this week — 11U Girls + 8U Boys. Stagger your snack runs!',
   signoff_message: 'Coach Frank',
   coaches: COACHES,
+  rsvpCountsByEvent: RSVP_COUNTS,
 };
 
 export const tournamentWeekend = {

@@ -12,11 +12,13 @@ import { formatPeriodLabel, formatSubject } from '../digestPeriod';
 
 const ORG_NAME_DEFAULT = 'Legacy Hoopers';
 const HEADLINE_DEFAULT = 'WEEK AHEAD';
+const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
 
-function buildHeader(period, orgName) {
+function buildHeader(period, orgName, eyebrowLink) {
   return {
     kind: 'header',
     eyebrow: `${orgName} · WEEKLY DIGEST`,
+    eyebrow_link: eyebrowLink,
     headline: HEADLINE_DEFAULT,
     sub_context: formatPeriodLabel(period),
     goldStripe: true,
@@ -64,13 +66,15 @@ export function composeWeeklyDigest(data = {}) {
     ops_notes = '',
     coaches = [],
     orgName = ORG_NAME_DEFAULT,
+    rsvpCountsByEvent,
+    eyebrowLink = ORG_WEBSITE_DEFAULT,
   } = data;
 
   const sections = [];
-  sections.push(buildHeader(period, orgName));
+  sections.push(buildHeader(period, orgName, eyebrowLink));
   const bodySection = buildBodyNotes(body_notes);
   if (bodySection) sections.push(bodySection);
-  const scheduleSection = buildScheduleSection({ events, teams, tournaments });
+  const scheduleSection = buildScheduleSection({ events, teams, tournaments, rsvpCountsByEvent });
   if (scheduleSection) sections.push(scheduleSection);
   const opsSection = buildOpsNotes(ops_notes);
   if (opsSection) sections.push(opsSection);

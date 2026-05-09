@@ -35,12 +35,16 @@ function PeriodPicker({ period, onPrev, onNext }) {
 export default function DigestComposerForm({
   period, onPrevPeriod, onNextPeriod,
   recipientCount, skippedCount, recipientLoading, eventsLoading,
-  outOfSeason,
+  outOfSeason, pilotModeEnabled,
   bodyNotes, setBodyNotes,
   opsEnabled, setOpsEnabled, opsNotes, setOpsNotes,
   signoffMessage, setSignoffMessage,
   testOnly, setTestOnly,
 }) {
+  const noun = pilotModeEnabled
+    ? (recipientCount === 1 ? 'pilot recipient' : 'pilot recipients')
+    : (recipientCount === 1 ? 'family' : 'families');
+  const skipNoun = skippedCount === 1 ? 'family has' : 'families have';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PeriodPicker period={period} onPrev={onPrevPeriod} onNext={onNextPeriod} />
@@ -61,7 +65,7 @@ export default function DigestComposerForm({
       <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.5 }}>
         {recipientLoading || eventsLoading
           ? 'Loading recipient counts…'
-          : <>Sending to <strong style={{ color: 'var(--em-text-primary)' }}>{recipientCount}</strong> {recipientCount === 1 ? 'family' : 'families'}{skippedCount > 0 && <span style={{ color: 'var(--em-text-tertiary)' }}> · {skippedCount} {skippedCount === 1 ? 'family has' : 'families have'} no events this week — will be skipped</span>}</>}
+          : <>Sending to <strong style={{ color: 'var(--em-text-primary)' }}>{recipientCount}</strong> {noun}{skippedCount > 0 && <span style={{ color: 'var(--em-text-tertiary)' }}> · {skippedCount} {skipNoun} no events this week — will be skipped</span>}</>}
       </div>
 
       <div>
