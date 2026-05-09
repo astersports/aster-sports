@@ -25,7 +25,6 @@ export function useComposeBriefing() {
     setSending(true); setError(null); setResult(null);
     try {
       if (!orgId)         throw new Error('Missing orgId.');
-      if (!tournamentId)  throw new Error('Pick a tournament before sending.');
       if (!messageType)   throw new Error('Pick a message type before sending.');
       if (!recipients?.length) throw new Error('No recipients selected.');
 
@@ -33,7 +32,7 @@ export function useComposeBriefing() {
         .from('comms_messages')
         .insert({
           org_id: orgId,
-          tournament_id: tournamentId,
+          tournament_id: tournamentId || null,
           team_id: teamId || null,
           subject,
           body_html: html,

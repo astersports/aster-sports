@@ -17,6 +17,7 @@ import EventCommentsTab from '../components/event/EventCommentsTab';
 import EventRidesTab from '../components/event/EventRidesTab';
 import EventNotes from '../components/event/EventNotes';
 import EventCancelActions from '../components/event/EventCancelActions';
+import EventRosterLockSection from '../components/event/EventRosterLockSection';
 import MyActionsSection from '../components/event/MyActionsSection';
 import CollapsibleSection from '../components/shared/CollapsibleSection';
 import ParentArrivalActions from '../components/gameday/ParentArrivalActions';
@@ -97,6 +98,7 @@ export default function EventDetailPage() {
       )}
       {isPastGame && <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>Enter Score</Button>}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
+      {isStaff && <EventRosterLockSection event={event} team={team} isStaff={isStaff} rsvps={rsvps} roster={roster} onChange={refetchAll} />}
       {event.parent_event_id && (
         <div style={{ padding: '6px 16px', fontSize: 13, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Repeat size={12} strokeWidth={1.75} /> Part of a recurring series
