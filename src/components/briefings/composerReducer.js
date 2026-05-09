@@ -16,6 +16,7 @@ export const INITIAL_STATE = {
   scheduled_for: null,
   draft_id: null,
   preview_family_id: null,
+  activeTemplateId: null,   // wave 3.16: tracks which starter template is applied
 };
 
 export function canAdvance(state) {
@@ -34,6 +35,8 @@ export function composerReducer(state, action) {
       return { ...state, anchor_kind: null, anchor_id: null };
     case 'SET_KIND_FILTER':
       return { ...state, kindFilter: action.payload || null };
+    case 'SET_ACTIVE_TEMPLATE':
+      return { ...state, activeTemplateId: action.payload?.templateId ?? null };
     case 'SET_AUDIENCE':
       return { ...state, audience_type: action.audience_type, audience_filter: action.audience_filter ?? null };
     case 'UPDATE_BODY':
