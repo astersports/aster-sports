@@ -1,10 +1,15 @@
 /* eslint-disable react-refresh/only-export-components */
 // Wave 3.11 follow-up — tournament_recap body editor.
+// Wave 3.16.1 — added optional tourney_link_label. The URL itself is
+// resolved at compose/render time from the anchored tournament's
+// tourney_url column (NOT stored on the body). Empty label hides the
+// CTA; non-empty label + non-null tourney_url renders a primary CTA.
 
 import { fieldGap, inputStyle, labelStyle, textareaStyle } from './_styles';
 
 export const defaultValue = {
   final_standing: '', game_results: '', mvp_name: '', takeaways: '',
+  tourney_link_label: '',
 };
 
 export function validate(v) {
@@ -32,6 +37,13 @@ export default function TournamentRecapBody({ value, onChange }) {
       <label>
         <span style={labelStyle}>Coach takeaways</span>
         <textarea value={v.takeaways} onChange={(e) => set({ takeaways: e.target.value })} style={textareaStyle} placeholder="Defense in the second half was the difference in the bracket win." />
+      </label>
+      <label>
+        <span style={labelStyle}>Bracket/schedule CTA label (optional)</span>
+        <input type="text" value={v.tourney_link_label} onChange={(e) => set({ tourney_link_label: e.target.value })} style={inputStyle} placeholder="VIEW BRACKET ON SE TOURNEY" />
+        <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>
+          URL is pulled from this tournament's SE Tourney link in tournament settings.
+        </span>
       </label>
     </div>
   );

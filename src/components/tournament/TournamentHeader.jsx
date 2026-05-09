@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Calendar, Edit2, MapPin, Trophy } from 'lucide-react';
+import { Calendar, Edit2, ExternalLink, MapPin, Trophy } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import TournamentFormSheet from './TournamentFormSheet';
 import SendBriefingButton from '../briefings/SendBriefingButton';
@@ -54,6 +54,12 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
           <Calendar size={13} strokeWidth={1.75} />
           <span>{dateRange}</span>
         </div>
+        {tournament.tourney_url && (
+          <a href={tournament.tourney_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--em-accent)', textDecoration: 'none' }}>
+            <ExternalLink size={13} strokeWidth={1.75} />
+            <span>View on SE Tourney</span>
+          </a>
+        )}
         {tournament.primary_venue && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--em-text-secondary)' }}>
             <MapPin size={13} strokeWidth={1.75} />

@@ -1,11 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 // Wave 3.11 follow-up — tournament_prelim body editor.
 
-import { fieldGap, labelStyle, textareaStyle } from './_styles';
+import { fieldGap, inputStyle, labelStyle, textareaStyle } from './_styles';
 
 export const defaultValue = {
   hotel_block: '', sat_notes: '', sun_notes: '',
   opponent_scouting: '', lineup_notes: '',
+  // Wave 3.16.1: URL resolved from tournament.tourney_url at render.
+  tourney_link_label: '',
 };
 
 export function validate(v) {
@@ -32,6 +34,13 @@ export default function TournamentPrelimBody({ value, onChange }) {
           <textarea value={v[f.key]} onChange={(e) => set({ [f.key]: e.target.value })} style={textareaStyle} placeholder={f.placeholder} />
         </label>
       ))}
+      <label>
+        <span style={labelStyle}>Bracket/schedule CTA label (optional)</span>
+        <input type="text" value={v.tourney_link_label} onChange={(e) => set({ tourney_link_label: e.target.value })} style={inputStyle} placeholder="VIEW SCHEDULE ON SE TOURNEY" />
+        <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>
+          URL is pulled from this tournament's SE Tourney link in tournament settings.
+        </span>
+      </label>
     </div>
   );
 }

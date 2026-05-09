@@ -44,6 +44,7 @@ export default [
         '',
         'Next up: RUMBLE FOR THE RING — May 16-17 — Fairfield, CT (27 days)',
       ].join('\n'),
+      tourney_link_label: 'VIEW FULL TOURNEY BRACKET',
     },
     preview_summary: 'Champ banner · per-game blurbs · countdown to next event',
   },

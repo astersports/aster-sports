@@ -28,4 +28,18 @@ export default [
     },
     preview_summary: 'Home-game narrative starter',
   },
+  {
+    id: 'gr-league-game',
+    name: 'League game recap',
+    description: 'For 10U Blue / 9U Boys league games — auto-surfaces the WPCYO link when game is parented to the league',
+    body: {
+      score: { ours: '', theirs: '' },
+      our_highlights: '',
+      opp_highlights: '',
+      player_of_game_name: '',
+      coach_note: '',
+      tourney_link_label: 'VIEW LEAGUE STANDINGS',
+    },
+    preview_summary: 'League game · CTA inherits parent league link',
+  },
 ];

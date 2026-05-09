@@ -40,6 +40,10 @@ export function composeGameRecap(data = {}) {
   const {
     teamName, opponent, our_highlights = '', opp_highlights = '',
     player_of_game_name = '', coach_note = '',
+    // Wave 3.16.1: tourney_url resolved by caller from event's
+    // tournament_id (LEFT JOIN). Null for non-league/non-tournament
+    // games — CTA hides regardless of label.
+    tourney_link_label = '', tourney_url = null,
     signoff_message = '', coaches = [],
     orgName = ORG_NAME_DEFAULT, eyebrowLink = ORG_WEBSITE_DEFAULT,
     contactEmail = ORG_CONTACT_DEFAULT, logoUrl = ORG_LOGO_DEFAULT,
@@ -54,6 +58,9 @@ export function composeGameRecap(data = {}) {
   if (opp_highlights?.trim()) sections.push({ kind: 'stats_narrative', body: opp_highlights.trim() });
   if (player_of_game_name?.trim()) sections.push({ kind: 'stats_narrative', body: `Player of the game: ${player_of_game_name.trim()}` });
   if (coach_note?.trim()) sections.push({ kind: 'stats_narrative', body: coach_note.trim() });
+  if (tourney_link_label?.trim() && tourney_url) {
+    sections.push({ kind: 'cta_buttons', buttons: [{ text: tourney_link_label.trim(), url: tourney_url }] });
+  }
   if (signoff_message?.trim() || coaches.length) {
     sections.push({ kind: 'signoff', prose: signoff_message?.trim() || '', coaches: coaches.map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' })) });
   }
