@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -19,11 +19,12 @@ import EventNotes from '../components/event/EventNotes';
 import EventCancelActions from '../components/event/EventCancelActions';
 import EventRosterLockSection from '../components/event/EventRosterLockSection';
 import MyActionsSection from '../components/event/MyActionsSection';
+import RsvpSummaryBlock from '../components/event/RsvpSummaryBlock';
+import GameDayMode from '../components/event/GameDayMode';
+import EventBriefingHistory from '../components/event/EventBriefingHistory';
 import ScopeChoiceDialog from '../components/event/ScopeChoiceDialog';
 import CollapsibleSection from '../components/shared/CollapsibleSection';
 import ParentArrivalActions from '../components/gameday/ParentArrivalActions';
-import ArrivalBoard from '../components/gameday/ArrivalBoard';
-import CoachChecklist from '../components/gameday/CoachChecklist';
 import Button from '../components/shared/Button';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
@@ -37,7 +38,6 @@ export default function EventDetailPage() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const navigate = useNavigate();
   const { orgId, role } = useAuth();
   const { event, loading: eventLoading, refetch, patchEvent } = useEventDetail(id, location.state?.event);
   const teamId = event?.team_id || null;
@@ -95,11 +95,8 @@ export default function EventDetailPage() {
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} />
       {role === 'parent' && <MyActionsSection event={event} onRsvpChange={refetchRsvps} />}
       {role === 'parent' && <ParentArrivalActions event={event} />}
-      {isStaff && !isPastGame && event.team_id && <CoachChecklist event={event} />}
-      {isStaff && !isPastGame && event.team_id && <ArrivalBoard event={event} />}
-      {isStaff && isGameType && !isPastGame && event.status !== 'cancelled' && event.team_id && (
-        <Button onClick={() => navigate(`/events/${event.id}/live`)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px' }}>Live Score</Button>
-      )}
+      {isStaff && <RsvpSummaryBlock rsvps={rsvps} roster={roster} />}
+      {isStaff && <GameDayMode event={event} isStaff={isStaff} isGameType={isGameType} />}
       {isPastGame && <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>Enter Score</Button>}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
       {isStaff && <EventRosterLockSection event={event} team={team} isStaff={isStaff} rsvps={rsvps} roster={roster} onChange={refetchAll} />}
@@ -126,6 +123,7 @@ export default function EventDetailPage() {
       {dutyCount > 0 && <CollapsibleSection title="Volunteers" sectionKey="duties" defaultOpen={false} count={`${dutyCount}`}><EventDutiesTab eventId={event.id} /></CollapsibleSection>}
       {(event.notes || event.coach_notes) && <CollapsibleSection title="Notes" sectionKey="notes" defaultOpen={false}><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></CollapsibleSection>}
       <CollapsibleSection title="Comments" sectionKey="comments" defaultOpen={false}><EventCommentsTab eventId={event.id} /></CollapsibleSection>
+      {isStaff && <EventBriefingHistory eventId={event.id} />}
 
       {isStaff && <EventCancelActions event={event} onStatusChange={(status) => { patchEvent({ status }); refetch(); }} />}
 
