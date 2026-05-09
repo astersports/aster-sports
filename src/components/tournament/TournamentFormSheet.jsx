@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import FullScreenForm from '../shared/FullScreenForm';
 import Input from '../shared/Input';
 import TeamMultiSelect from './TeamMultiSelect';
 import { useTournaments } from '../../hooks/useTournaments';
 import { useToast } from '../../context/useToast';
+import { hasWeekendDays } from '../../lib/tournamentWeekend';
+
+// §C3: weekend-spanning new tournaments open the placeholder modal before close.
+const TournamentPlaceholderEventsModal = lazy(() => import('./TournamentPlaceholderEventsModal'));
 
 const CIRCUITS = ['AAU Zero Gravity', 'League Play', 'Independent', 'Other'];
 const STATUSES = [
@@ -24,6 +28,7 @@ export default function TournamentFormSheet({ tournament, onClose }) {
   const { create, update } = useTournaments();
   const { showToast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [placeholderForTournament, setPlaceholderForTournament] = useState(null);
   const [form, setForm] = useState(() => {
     if (!tournament) return emptyForm;
     return {
@@ -48,10 +53,13 @@ export default function TournamentFormSheet({ tournament, onClose }) {
   const save = async () => {
     if (!valid || saving) return;
     setSaving(true);
-    const { error } = tournament ? await update(tournament.id, form) : await create(form);
+    const result = tournament ? await update(tournament.id, form) : await create(form);
     setSaving(false);
-    if (error) { console.error('TournamentFormSheet save:', error.message); showToast("Couldn't save. Try again?", 'error'); return; }
+    if (result?.error) { console.error('TournamentFormSheet save:', result.error.message); showToast("Couldn't save. Try again?", 'error'); return; }
     showToast(tournament ? 'Tournament updated' : 'Tournament created');
+    if (!tournament && result?.data && form.teamIds.length && hasWeekendDays(form.start_date, form.end_date)) {
+      setPlaceholderForTournament(result.data); return;
+    }
     onClose();
   };
 
@@ -114,27 +122,21 @@ export default function TournamentFormSheet({ tournament, onClose }) {
           {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
       </div>
-      <div style={{
-        position: 'sticky', bottom: -16, margin: '8px -16px -16px',
-        padding: '12px 16px',
-        paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-        backgroundColor: 'var(--em-bg-card)',
-        borderTop: '1px solid var(--em-border-default)',
-        display: 'flex', gap: 10,
-      }}>
-        <button type="button" onClick={onClose} className="sf-press" aria-label="Cancel" style={{
-          flex: 1, minHeight: 44, borderRadius: 10,
-          border: '1.5px solid var(--em-accent)', backgroundColor: 'var(--em-bg-card)',
-          color: 'var(--em-accent)', fontSize: 15, fontWeight: 600, cursor: 'pointer',
-        }}>Cancel</button>
-        <button type="button" onClick={save} disabled={disabled} className="sf-press" aria-label={saving ? 'Saving' : 'Save'} style={{
-          flex: 1, minHeight: 44, borderRadius: 10, border: 'none',
-          backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
-          fontSize: 15, fontWeight: 600,
-          opacity: disabled ? 0.5 : 1,
-          cursor: disabled ? 'not-allowed' : 'pointer',
-        }}>{saving ? 'Saving…' : 'Save'}</button>
+      <div style={{ position: 'sticky', bottom: -16, margin: '8px -16px -16px', padding: '12px 16px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)', display: 'flex', gap: 10 }}>
+        <button type="button" onClick={onClose} className="sf-press" aria-label="Cancel"
+          style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1.5px solid var(--em-accent)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+        <button type="button" onClick={save} disabled={disabled} className="sf-press" aria-label={saving ? 'Saving' : 'Save'}
+          style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, opacity: disabled ? 0.5 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}>{saving ? 'Saving…' : 'Save'}</button>
       </div>
+      {placeholderForTournament && (
+        <Suspense fallback={null}>
+          <TournamentPlaceholderEventsModal
+            tournament={placeholderForTournament}
+            teamIds={form.teamIds}
+            onClose={() => { setPlaceholderForTournament(null); onClose(); }}
+          />
+        </Suspense>
+      )}
     </FullScreenForm>
   );
 }
