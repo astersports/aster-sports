@@ -4,6 +4,7 @@
 import { lazy, Suspense } from 'react';
 import { Send } from 'lucide-react';
 import { labelStyle, textareaStyle } from './bodies/_styles';
+import TemplatePicker from './TemplatePicker';
 
 const BODY_LAZY = {
   weekly_digest: lazy(() => import('./bodies/WeeklyDigestBody.jsx')),
@@ -28,6 +29,14 @@ export default function StepBodySignoff({ state, dispatch, recipientCount, onSen
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <TemplatePicker
+        kind={state.kind}
+        currentTemplateId={state.activeTemplateId}
+        onSelect={(template) => {
+          dispatch({ type: 'SET_ACTIVE_TEMPLATE', payload: { templateId: template?.id || null } });
+          if (template) dispatch({ type: 'UPDATE_BODY', patch: template.body });
+        }}
+      />
       <Suspense fallback={<div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>Loading editor…</div>}>
         <Body value={state.body} onChange={(patch) => dispatch({ type: 'UPDATE_BODY', patch })} />
       </Suspense>
