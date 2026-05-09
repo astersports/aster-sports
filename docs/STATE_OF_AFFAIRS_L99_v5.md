@@ -213,6 +213,39 @@ v4 listed principles 1-16. Three new lessons from this session:
 
 **19. PWA service-worker cache invalidation is a real test-deploy gap.** Multiple times this session, Frank's iOS PWA served the previous bundle for ~30-90 seconds after a Vercel deploy completed. Test sends composed during that window rendered with stale code — looked like a bug but was actually cached client. Solution: when verifying a UI-rendering change post-deploy, force-quit the PWA + Safari hard-reload before the verification compose. Future waves should bake this into the verification checklist explicitly.
 
+**20. PostgREST `.upsert(..., { onConflict: 'col' })` requires a real UNIQUE/PK on the named column(s).** Single-column conflict targets fail with `42P10` when the table only has a composite UNIQUE/PK. PR #38 fixed `staff_profiles` upsert by switching `'user_id'` → `'user_id,org_id'` (the PK is composite). Always cross-check `pg_constraint` for `contype IN ('u','p')` before writing onConflict. Combine with #18 and you can land two separate-cause PRs against the same line — defensive grep confirmed all 9 remaining upsert sites in `src/` target real composite UNIQUEs. Codified as CLAUDE.md anti-pattern #25.
+
+**21. Diagnostic protocol: replay failing operations via MCP `execute_sql` before shipping the fix PR.** PR #37 fixed half the staff_profiles bug; PR #38 fixed the other half. One MCP replay between them would have surfaced both at once because Postgres error codes (42501, 42P10, 23502, 23505) name the failure category instantly. Codified as CLAUDE.md anti-pattern #26. Wave 3.8 §5.2 baked this into the schema migration step (RLS smoke + admin/parent insert before merge).
+
+---
+
+# PART 9: WAVE 3.8 §5.2 — SCHEDULE_CHANGE UX REBUILD (May 9, 2026)
+
+Closes the "Wed→Fri move silently no-op" diagnosis from PR #33 (`docs/SCHEDULE_CHANGE_DIAGNOSIS.md`). Two compounding bugs:
+
+1. `useUpdateActivity.updateSeries()` deleted `start_at`/`end_at` from the payload unconditionally — every date/time change in series mode silently failed to persist.
+2. `schedule_change` enum existed in `comms_messages.kind` CHECK + label maps but had **zero producers** in the codebase. Even when single-mode persisted, families were never notified.
+
+### Shipped
+
+- **Migration `20260509144639_schedule_change_audit_table`** — `event_change_audit` (id, org_id, event_id, changed_by, changed_at, change_kind {time/location/cancelled/other}, recurrence_scope {instance/this_and_future/series}, before_jsonb, after_jsonb, dispatch_email_id FK to comms_messages). RLS smoke verified pre-merge (admin insert succeeds, parent insert rejected 42501).
+- **`src/lib/engine/renderers/scheduleChange.js`** — kind composer with header / summary / diff block / signoff / footer sections. Subject auto-derived from after.label.
+- **`src/lib/engine/renderers/scheduleChangeDiff.js`** — section renderer for the strikethrough-old / bold-new diff block. Plain-text path uses uppercase `PREVIOUS` / `UPDATED` prefixes.
+- **`src/hooks/useUpdateActivity.js`** — `updateSeries(eventId, parentId, oldStartAt, formData, scope)`. Three scopes; offset math (`newStart - oldStart`) preserves day-of-week pattern when shifting siblings. No more unconditional date strip.
+- **`src/components/event/ScopeChoiceDialog.jsx`** — three-option bottom sheet replacing the old 2-option ConfirmDialog.
+- **`src/components/event/ScheduleChangeComposer.jsx`** — pre-populated composer (FullScreenForm) with diff preview, signoff textarea, audience count, test-only toggle, Send + Skip paths.
+- **`src/hooks/useScheduleChangeAudit.js`** — `recordSkip(diff)` writes audit row only; `recordAndDispatch(diff, opts)` dispatches via `send-tournament-message` v13 then writes audit row with `dispatch_email_id` populated. Pilot mode gate inherited from v13.
+- **`src/lib/scheduleChangeSend.js`** — schedule_change send pipeline (mirrors `digestSend.js` shape).
+- **`src/components/wizard/wizardForm.js`** — `buildSaveDiff()` helper extracted to keep wizard ≤150 lines.
+
+### Defensive grep result
+
+All 9 `.upsert()` call sites in `src/` audited: every composite-PK or composite-UNIQUE table has a matching comma-separated onConflict spec. Zero remaining anti-pattern #25 traps.
+
+### Edge function
+
+v13 unchanged. schedule_change routes through the same dispatch path — pilot mode gate applies automatically.
+
 ---
 
 # END OF DOCUMENT

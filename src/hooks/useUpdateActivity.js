@@ -12,7 +12,6 @@ export function useUpdateActivity() {
     // See useCreateActivity.withTime for the local-time contract.
     const startAt = new Date(`${formData.date}T${formData.startTime}`);
     const endAt = new Date(`${formData.date}T${formData.endTime}`);
-    // Midnight-crossover: if end is earlier than start, bump end one day.
     if (endAt <= startAt) endAt.setDate(endAt.getDate() + 1);
     return {
       team_id: formData.teamId,
@@ -46,22 +45,16 @@ export function useUpdateActivity() {
       const { data, error: err } = await supabase
         .from('events').update(buildRow(formData)).eq('id', eventId).select().single();
       if (err) throw err;
-      // Additively insert any new duties from the form. Does NOT delete or
-      // modify existing event_duties — those are safe from overwrites.
-      // eventToForm initializes duties: [] so an untouched edit is a no-op.
       const newDuties = (formData.duties || []).filter((d) => d.duty_name?.trim() || d.name?.trim());
       if (newDuties.length > 0) {
         const dutyRows = [];
         newDuties.forEach((d) => {
           const label = (d.duty_name || d.name).trim();
-          for (let i = 0; i < (d.slots_needed || 1); i++) {
-            dutyRows.push({ event_id: eventId, duty_name: label });
-          }
+          for (let i = 0; i < (d.slots_needed || 1); i++) dutyRows.push({ event_id: eventId, duty_name: label });
         });
         const { error: dErr } = await supabase.from('event_duties').insert(dutyRows);
         if (dErr) throw new Error(`Volunteers failed to save: ${dErr.message}`);
       }
-      // Convert standalone → recurring if user changed Once → Weekly/Biweekly.
       const pattern = formData.recurrence?.pattern;
       if (pattern && pattern !== 'once' && !data.parent_event_id) {
         await convertToSeries({ eventId, formData, row: buildRow(formData) });
@@ -75,23 +68,35 @@ export function useUpdateActivity() {
     finally { setLoading(false); }
   };
 
-  // Updates this event and all siblings in the same recurring series
-  // (sharing the same parent_event_id) whose start_at is >= the current
-  // event's start_at. Excludes date/time so each instance keeps its
-  // own schedule; only location, notes, duties, toggles etc. propagate.
-  const updateSeries = async (eventId, parentEventId, startAt, formData) => {
+  // Wave 3.8 §5.2 rebuild: scope-aware series update.
+  // scope='instance' → caller should use update() instead (single event).
+  // scope='this_and_future' → propagate metadata + apply (newStart - oldStart)
+  //   offset to every sibling whose start_at >= the edited event's old start_at.
+  //   Preserves day-of-week pattern (move Wed→Fri shifts every future Wed by +2d).
+  // scope='series' → same offset math but applied to ALL siblings (no gte filter).
+  // Anti-pattern fix: previously deleted row.start_at/end_at unconditionally,
+  // silently no-op'ing every date/time change in series mode.
+  const updateSeries = async (eventId, parentEventId, oldStartAt, formData, scope = 'this_and_future') => {
     setLoading(true); setError(null);
     try {
       const row = buildRow(formData);
-      delete row.start_at; delete row.end_at;
       const seriesId = parentEventId || eventId;
-      const parentUp = await supabase.from('events').update(row)
-        .eq('id', seriesId).gte('start_at', startAt);
-      if (parentUp.error) throw parentUp.error;
-      const sibUp = await supabase.from('events').update(row)
-        .eq('parent_event_id', seriesId).gte('start_at', startAt);
-      if (sibUp.error) throw sibUp.error;
-      // Grow/shrink series to match formData.recurrence.until.
+      const newStartMs = new Date(row.start_at).getTime();
+      const oldStartMs = new Date(oldStartAt).getTime();
+      const offsetMs = newStartMs - oldStartMs;
+      const metadataRow = { ...row };
+      delete metadataRow.start_at; delete metadataRow.end_at;
+      const filterStart = scope === 'series' ? null : oldStartAt;
+      const siblings = await fetchSeriesRows(seriesId, filterStart);
+      for (const sib of siblings) {
+        const patch = { ...metadataRow };
+        if (offsetMs !== 0 && sib.start_at && sib.end_at) {
+          patch.start_at = new Date(new Date(sib.start_at).getTime() + offsetMs).toISOString();
+          patch.end_at = new Date(new Date(sib.end_at).getTime() + offsetMs).toISOString();
+        }
+        const up = await supabase.from('events').update(patch).eq('id', sib.id);
+        if (up.error) throw up.error;
+      }
       await reconcileSeries({ seriesId, eventId, formData, row });
       return { data: true };
     } catch (err) {
@@ -105,3 +110,14 @@ export function useUpdateActivity() {
   return { update, updateSeries, loading, error };
 }
 
+async function fetchSeriesRows(seriesId, gteStartAt) {
+  let parentQ = supabase.from('events').select('id,start_at,end_at').eq('id', seriesId);
+  if (gteStartAt) parentQ = parentQ.gte('start_at', gteStartAt);
+  let sibQ = supabase.from('events').select('id,start_at,end_at').eq('parent_event_id', seriesId);
+  if (gteStartAt) sibQ = sibQ.gte('start_at', gteStartAt);
+  const [parent, sib] = await Promise.all([parentQ, sibQ]);
+  if (parent.error) throw parent.error;
+  if (sib.error) throw sib.error;
+  const seen = new Set();
+  return [...(parent.data || []), ...(sib.data || [])].filter((r) => !seen.has(r.id) && seen.add(r.id));
+}

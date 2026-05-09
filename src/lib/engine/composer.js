@@ -17,6 +17,8 @@ import { renderFooter } from './renderers/footer';
 import { composeAcademyCallupNotice } from './renderers/academyCallupNotice';
 import { composeTournamentPreliminary } from './renderers/tournamentPreliminary';
 import { composeWeeklyDigest } from './renderers/weeklyDigest';
+import { composeScheduleChange } from './renderers/scheduleChange';
+import scheduleChangeDiff from './renderers/scheduleChangeDiff';
 import statGrid from './renderers/statGrid';
 import poolStandings from './renderers/poolStandings';
 import resultsTable from './renderers/resultsTable';
@@ -49,12 +51,14 @@ const SECTION_RENDERERS = {
   cta_buttons: ctaButtons,
   stats_narrative: statsNarrative,
   signoff,
+  schedule_change_diff: scheduleChangeDiff,
 };
 
 const KIND_COMPOSERS = {
   academy_callup_notice: composeAcademyCallupNotice,
   tournament_preliminary: composeTournamentPreliminary,
   weekly_digest: composeWeeklyDigest,
+  schedule_change: composeScheduleChange,
 };
 
 export function renderSections(sections = []) {
