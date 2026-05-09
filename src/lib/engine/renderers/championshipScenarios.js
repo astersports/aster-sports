@@ -2,11 +2,7 @@
 // Outcome boxes color-coded by left border + label color (positive/negative/neutral).
 // Tiebreaker explainer: light gray bg, no left-color stripe — visually an aside.
 
-function escapeHtml(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
+import { escapeHtml } from './_util';
 
 const OUTCOME_TONES = {
   positive: '#16a34a',
@@ -35,7 +31,23 @@ function renderTiebreaker({ label, body }) {
     + '</td></tr></table>';
 }
 
-export function renderChampionshipScenarios({ outcomes = [], tiebreaker }) {
+function buildPlain({ outcomes = [], tiebreaker }) {
+  const parts = ['CHAMPIONSHIP SCENARIOS'];
+  outcomes.forEach((o) => {
+    parts.push('');
+    parts.push(`— ${o?.label || ''}`);
+    if (o?.body) parts.push(`  ${o.body}`);
+  });
+  if (tiebreaker) {
+    parts.push('');
+    parts.push(`How tiebreakers work:`);
+    parts.push(`  ${tiebreaker.body || ''}`);
+  }
+  return parts.join('\n');
+}
+
+export function renderChampionshipScenarios(section) {
+  const { outcomes = [], tiebreaker } = section || {};
   const sectionHeader = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
     + ' style="border-collapse:collapse;font-family:Inter,system-ui,sans-serif;margin:24px 0 8px 0;">'
     + '<tr><td align="center" style="padding:0 0 12px 0;">'
@@ -43,5 +55,7 @@ export function renderChampionshipScenarios({ outcomes = [], tiebreaker }) {
     + '</td></tr></table>';
   const outcomesHtml = (outcomes || []).map(renderOutcome).join('');
   const tiebreakerHtml = tiebreaker ? renderTiebreaker(tiebreaker) : '';
-  return sectionHeader + outcomesHtml + tiebreakerHtml;
+  return { html: sectionHeader + outcomesHtml + tiebreakerHtml, plainText: buildPlain({ outcomes, tiebreaker }) };
 }
+
+export default renderChampionshipScenarios;

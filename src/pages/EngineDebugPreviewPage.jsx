@@ -12,6 +12,8 @@ import opsNotes from '../lib/engine/renderers/opsNotes';
 import ctaButtons from '../lib/engine/renderers/ctaButtons';
 import statsNarrative from '../lib/engine/renderers/statsNarrative';
 import signoff from '../lib/engine/renderers/signoff';
+import { composeWeeklyDigest } from '../lib/engine/renderers/weeklyDigest';
+import { multiTeam as multiTeamDigestFixture } from '../lib/engine/__fixtures__/weeklyDigest';
 import statGridFixture from '../lib/engine/__fixtures__/statGrid';
 import poolStandingsFixture from '../lib/engine/__fixtures__/poolStandings';
 import resultsTableFixture from '../lib/engine/__fixtures__/resultsTable';
@@ -40,6 +42,7 @@ const REGISTRY = [
   { key: 'cta_buttons',          label: 'T6 — CTA Buttons',         render: ctaButtons,          fixture: ctaButtonsFixture },
   { key: 'stats_narrative',      label: 'F1 — Stats Narrative',     render: statsNarrative,      fixture: statsNarrativeFixture },
   { key: 'signoff',              label: 'F2 — Signoff',             render: signoff,             fixture: signoffFixture },
+  { key: 'weekly_digest',        label: 'K — Weekly Digest (kind)', render: composeWeeklyDigest, fixture: multiTeamDigestFixture },
 ];
 
 const sidebarStyle = {
