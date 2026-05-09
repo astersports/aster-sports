@@ -2410,3 +2410,51 @@ Full-day session. Claude Code (web) + Claude AI (MCP) working in parallel.
 - P1: Admin publish workflow (42/42 events are draft), Frank duplicate guardian merge
 - P2: 2 zero-paid tryouts blocked by constraint, react-window virtualization
 - Next session pick: A) Phase 1 parent UX, B) Admin publish workflow, C) Phase 0C Ember rebrand, D) Phone testing pass
+
+---
+
+## 🚀 May 8–9, 2026 — Engine + Digest Build Sweep (Waves 3 → 3.8)
+
+15 PRs merged across two days. Wave 3 → 3.8 covers the full digest engine + accessibility + per-tenant config + housekeeping arc.
+
+### What shipped end-to-end
+
+- **Engine renderer waves 1 + 2** (PRs #26, #28) — 16 atomic renderers, 2 kind composers (academy_callup_notice, tournament_preliminary), shared `_util.js` escapeHtml helper, single `{ html, plainText }` signature locked
+- **Wave 3 weekly digest engine** (PR #29) — `composeWeeklyDigest` per-family, `useDigestRecipients` + `useDigestEvents` + `useOrgSettings` hooks, `digestSend.js` queue-then-dispatch pipeline, `DigestComposer` FullScreenForm + `DigestComposerForm` + `DigestRecipientPreview` + `DigestComposeButton` UI, `EngineDebugPreviewPage` admin route
+- **Wave 3.5** (PRs #32, #33) — digest polish (map links, website link, RSVP counts), pilot mode infrastructure (org flag + guardian flag + RPC overload + edge function defense in depth), inbox tabs (Active/Past/All), schedule_change diagnosis doc, tournament Sat+Sun auto-create modal
+- **Wave 3.6** (PR #34) — WCAG accessibility per-surface contrast pass, footer block (logo + wordmark + website + mailto), `reply_to_email` column + edge function v9 column-read with fallback
+- **Wave 3.7 + hotfix** (PRs #35, #36) — Phoenix → Knight logo swap, transparent PNG re-export (alpha channel), color-coded RSVP counts (green/amber/red), migration 20260509124926 mirror
+- **Wave 3.8 §5.1 + §5.3** (PR #37) — staff_profiles `org_id` upsert fix, STATE_OF_AFFAIRS v5, this BUILD_QUEUE update
+
+### Schema migrations (all mirrored in repo)
+
+`20260509004510` roster_lock_kind_extension_and_rpcs · `20260509004550` roster_lock_revoke_anon_execute · `20260509021709` digest_recipients_function · `20260509031540` comms_messages_rls_org_scoped · `20260509101739` pilot_mode_infrastructure · `20260509103700` briefing_queue_tab_filter · `20260509103810` briefing_queue_archived_in_past_all · `20260509112704` org_settings_reply_to_email · `20260509124926` org_settings_from_name_email
+
+### Edge function `send-tournament-message`
+
+v7 → v13 over the session. v13 ACTIVE in production, sha256 `83bd9d0d3ed86860a0bb4218f82dacf8e963336ea1bd531287bd5b0036e9515f`. Reads `from_name` / `from_email` / `reply_to_email` from `organization_settings` columns with safe constant fallbacks. Pilot mode defense in depth: 403 on any non-pilot guardian leak when `pilot_mode_enabled=TRUE`.
+
+### Pilot state (locked)
+
+- `pilot_mode_enabled = TRUE`
+- 2 flagged guardians: Frank + Stephanie Samaritano
+- Pilot send PAUSED indefinitely per D-PILOT-1 (see STATE_OF_AFFAIRS v5)
+- Restore to 6 (add Alexander + Dodaro) is one UPDATE on Frank's signal
+
+### Bug closures this session
+
+Bug 1 recipient count + admin@ BCC · `comms_messages_write` RLS blocked digest INSERT · briefings inbox missing past tournaments · Phoenix logo in footer · Knight logo white box · RSVP counts low contrast · eyebrow + day header low contrast · reply-to was personal Gmail · profile editor save fails
+
+### New anti-patterns codified (v5 §8)
+
+- **#17** Email HTML cannot use CSS variables — use JS constants module
+- **#18** PostgREST upsert validates NOT NULL columns at INSERT phase even when the conflict path resolves to UPDATE
+- **#19** PWA service-worker cache invalidation lag (~30-90s post-deploy) — force-quit + hard-refresh before any post-deploy UI verification
+
+### Wave 3.8 §5.2 + Wave 4 backlog
+
+- **3.8 §5.2** schedule_change UX rebuild (3-option dialog + composer + audit table) — spec pending Claude.ai lock
+- **Wave 4a** RSVP one-tap tokens (HMAC + edge function + per-event anchors) — 8-10h + security pass
+- **Wave 4b** Weather forecast (OpenWeatherMap + 6h cache + outdoor/indoor gating) — 4-6h
+- **Wave 4c** Detailed compose toggle (`{ detailed: bool }` flag on weekly_digest kind) — 4-6h
+- **Wave 4.5** Circuit-aware composer split (weekly_digest_aau vs weekly_digest_league)
