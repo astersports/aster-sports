@@ -4,6 +4,7 @@
 export const INITIAL_STATE = {
   step: 1,
   kind: null,
+  kindFilter: null,         // string[]|null — when non-null, picker shows only these
   anchor_kind: null,
   anchor_id: null,
   audience_type: null,
@@ -29,6 +30,10 @@ export function composerReducer(state, action) {
       return { ...state, kind: action.kind, body: action.defaultBody || {}, anchor_kind: action.anchor_kind || state.anchor_kind, anchor_id: action.anchor_id || state.anchor_id, audience_type: action.audience_type || state.audience_type };
     case 'SET_ANCHOR':
       return { ...state, anchor_kind: action.anchor_kind, anchor_id: action.anchor_id };
+    case 'CLEAR_ANCHOR':
+      return { ...state, anchor_kind: null, anchor_id: null };
+    case 'SET_KIND_FILTER':
+      return { ...state, kindFilter: action.payload || null };
     case 'SET_AUDIENCE':
       return { ...state, audience_type: action.audience_type, audience_filter: action.audience_filter ?? null };
     case 'UPDATE_BODY':

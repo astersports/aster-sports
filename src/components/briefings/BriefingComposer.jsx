@@ -26,21 +26,37 @@ import PreviewPanel from './PreviewPanel';
 
 const STEPS = ['Kind', 'Audience', 'Body'];
 
-function buildInitial(initialKind, initialAnchorKind, initialAnchorId) {
-  if (!initialKind) return INITIAL_STATE;
+function buildInitial({ initialKind, initialAnchorKind, initialAnchorId, initialKindFilter }) {
+  const base = { ...INITIAL_STATE, kindFilter: initialKindFilter?.length ? initialKindFilter : null };
+  if (!initialKind && !initialAnchorId) return base;
   const meta = KIND_METADATA[initialKind] || {};
-  return { ...INITIAL_STATE, step: initialAnchorId ? 2 : 1, kind: initialKind, anchor_kind: initialAnchorKind || meta.defaultAnchorKind, anchor_id: initialAnchorId || null, audience_type: meta.defaultAudienceType };
+  return { ...base, step: initialAnchorId ? 2 : 1, kind: initialKind || null, anchor_kind: initialAnchorKind || meta.defaultAnchorKind || null, anchor_id: initialAnchorId || null, audience_type: meta.defaultAudienceType || null };
 }
 
-export default function BriefingComposer({ onClose, initialKind, initialAnchorKind, initialAnchorId, initialDraftId }) {
+export default function BriefingComposer({ onClose, initialKind, initialAnchorKind, initialAnchorId, initialDraftId, initialKindFilter }) {
   const { orgId } = useAuth();
   const { showToast } = useToast();
   const { pilotModeEnabled } = useOrgSettings(orgId);
   const { recipients } = useDigestRecipients({ orgId, pilotOnly: pilotModeEnabled });
   const { staff: coaches } = useOrgStaff(orgId);
   const draft = useBriefingDraft(initialDraftId);
-  const [state, dispatch] = useReducer(composerReducer, buildInitial(initialKind, initialAnchorKind, initialAnchorId));
+  const [state, dispatch] = useReducer(composerReducer, buildInitial({ initialKind, initialAnchorKind, initialAnchorId, initialKindFilter }));
   const [busy, setBusy] = useState(false);
+
+  // Auto-advance step 1 when the kind filter narrows to exactly one
+  // kind and admin hasn't picked yet. react-hooks v7: wrap dispatch
+  // in Promise.resolve so the effect doesn't trigger setState
+  // synchronously during render.
+  useEffect(() => {
+    if (state.kind || !state.kindFilter || state.kindFilter.length !== 1 || state.step !== 1) return undefined;
+    const [only] = state.kindFilter;
+    const meta = KIND_METADATA[only] || {};
+    Promise.resolve().then(() => {
+      dispatch({ type: 'SET_KIND', kind: only, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType });
+      dispatch({ type: 'GO_FORWARD' });
+    });
+    return undefined;
+  }, [state.kindFilter, state.kind, state.step, state.anchor_kind, state.audience_type]);
 
   // Hydrate existing draft
   useEffect(() => {
@@ -90,7 +106,7 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
           <span>{`Step ${state.step} of 3`}</span>
           {draft.savedAt && <span style={{ marginLeft: 'auto' }}>Saved {new Date(draft.savedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>}
         </div>
-        {state.step === 1 && <StepKindPicker onPick={(kind, meta) => dispatch({ type: 'SET_KIND', kind, anchor_kind: meta.defaultAnchorKind, audience_type: meta.defaultAudienceType, defaultBody: {} }) || dispatch({ type: 'GO_FORWARD' })} />}
+        {state.step === 1 && <StepKindPicker visibleKinds={state.kindFilter} onPick={(kind, meta) => dispatch({ type: 'SET_KIND', kind, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType, defaultBody: {} }) || dispatch({ type: 'GO_FORWARD' })} />}
         {state.step === 2 && <StepAnchorAudience state={state} dispatch={dispatch} />}
         {state.step === 3 && <StepBodySignoff state={state} dispatch={dispatch} recipientCount={recipientCount} onSend={onSend} onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose} busy={busy} />}
         {state.step < 3 && (

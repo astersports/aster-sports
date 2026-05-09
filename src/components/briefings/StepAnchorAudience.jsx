@@ -4,6 +4,7 @@
 import { useMemo } from 'react';
 import AnchorPicker from './AnchorPicker';
 import AudiencePicker from './AudiencePicker';
+import LockedAnchorChip from './LockedAnchorChip';
 import { useDigestRecipients } from '../../hooks/useDigestRecipients';
 import { useAuth } from '../../context/AuthContext';
 import { useOrgSettings } from '../../hooks/useOrgSettings';
@@ -41,9 +42,13 @@ export default function StepAnchorAudience({ state, dispatch }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <section>
         <span style={labelStyle}>Anchor</span>
-        <AnchorPicker
-          kind={state.kind} anchorKind={state.anchor_kind} anchorId={state.anchor_id}
-          onPick={(anchor_kind, anchor_id) => dispatch({ type: 'SET_ANCHOR', anchor_kind, anchor_id })} />
+        {state.anchor_id ? (
+          <LockedAnchorChip anchorKind={state.anchor_kind} anchorId={state.anchor_id} onUnlock={() => dispatch({ type: 'CLEAR_ANCHOR' })} />
+        ) : (
+          <AnchorPicker
+            kind={state.kind} anchorKind={state.anchor_kind} anchorId={state.anchor_id}
+            onPick={(anchor_kind, anchor_id) => dispatch({ type: 'SET_ANCHOR', anchor_kind, anchor_id })} />
+        )}
       </section>
       <section>
         <span style={labelStyle}>Audience</span>
