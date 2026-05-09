@@ -9,10 +9,16 @@ import EmptyState from '../components/shared/EmptyState';
 import TournamentBriefing from '../components/event/TournamentBriefing';
 import DigestComposeButton from '../components/admin/briefings/DigestComposeButton';
 
-const FILTERS = [
-  { key: 'all',       label: 'All' },
-  { key: 'pending',   label: 'Pending' },
-  { key: 'completed', label: 'Completed' },
+// Wave 3.5 §C1: tabs replace the old client-side All/Pending/Completed
+// chips. RPC tab param drives the date window:
+//   active → end_date >= today OR status='active' (lookahead 90d, archived hidden)
+//   past   → end_date < today OR status='complete' (lookback 365d, includes archived)
+//   all    → both windows merged (365 each direction)
+// State is URL-bound via ?tab= so a shareable link reproduces the view.
+const TABS = [
+  { key: 'active', label: 'Active' },
+  { key: 'past',   label: 'Past' },
+  { key: 'all',    label: 'All' },
 ];
 
 function chipStyle(active) {
@@ -31,10 +37,15 @@ function chipStyle(active) {
 }
 
 export default function BriefingsInboxPage() {
-  const { rows, loading, error, refresh } = useBriefingQueue();
-  const [filter, setFilter] = useState('all');
-  const [composerRow, setComposerRow] = useState(null);
   const [params, setParams] = useSearchParams();
+  const tab = TABS.some((t) => t.key === params.get('tab')) ? params.get('tab') : 'active';
+  const { rows, loading, error, refresh } = useBriefingQueue({ tab });
+  const [composerRow, setComposerRow] = useState(null);
+  const setTab = (next) => {
+    const p = new URLSearchParams(params);
+    if (next === 'active') p.delete('tab'); else p.set('tab', next);
+    setParams(p, { replace: true });
+  };
 
   // Deep-link: ?tournament=ID&team=ID auto-opens the matching row's composer
   useEffect(() => {
@@ -52,14 +63,10 @@ export default function BriefingsInboxPage() {
     return undefined;
   }, [rows, params, composerRow, setParams]);
 
-  const filtered = useMemo(() => {
-    if (filter === 'all') return rows;
-    return rows.filter((r) => r.tournamentState === filter);
-  }, [rows, filter]);
-
+  // Filtering happens server-side via the tab RPC param; client just groups.
   const grouped = useMemo(() => {
     const map = new Map();
-    for (const row of filtered) {
+    for (const row of rows) {
       if (!map.has(row.tournament_id)) {
         map.set(row.tournament_id, {
           tournament_id: row.tournament_id,
@@ -71,7 +78,7 @@ export default function BriefingsInboxPage() {
       map.get(row.tournament_id).rows.push(row);
     }
     return [...map.values()];
-  }, [filtered]);
+  }, [rows]);
 
   const composerEvent = composerRow ? {
     tournament_id: composerRow.tournament_id,
@@ -98,9 +105,9 @@ export default function BriefingsInboxPage() {
           <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>One row per tournament-team decision in the active season.</div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {FILTERS.map((f) => (
-            <button key={f.key} type="button" onClick={() => setFilter(f.key)} className="sf-press" style={chipStyle(filter === f.key)}>
-              {f.label}
+          {TABS.map((t) => (
+            <button key={t.key} type="button" onClick={() => setTab(t.key)} className="sf-press" style={chipStyle(tab === t.key)}>
+              {t.label}
             </button>
           ))}
           <DigestComposeButton />
@@ -117,8 +124,8 @@ export default function BriefingsInboxPage() {
       {!loading && !error && grouped.length === 0 && (
         <EmptyState
           icon={Inbox}
-          title={filter === 'all' ? 'No briefings this season' : `No ${filter} briefings`}
-          description={filter === 'all' ? 'Briefings appear here once tournaments are scheduled in the active season.' : `Switch to All to see other tournament states.`}
+          title={tab === 'all' ? 'No briefings this season' : `No ${tab} briefings`}
+          description={tab === 'all' ? 'Briefings appear here once tournaments are scheduled in the active season.' : 'Switch to All to see other tournament states.'}
         />
       )}
 

@@ -6,10 +6,13 @@ import { daysUntil, inferMessageType, tournamentStateFor, urgencyForRow } from '
 const POLL_INTERVAL_MS = 30000;
 const SENT_WITHIN_DAYS = 14;
 
-// Calls public.get_briefing_queue(p_org_id) and decorates each row with
-// computed inferredType / status / urgency / lastSentAt. Polls every 30s
-// so the inbox flips ●→✓ shortly after a send completes.
-export function useBriefingQueue() {
+// Calls public.get_briefing_queue(p_org_id, p_tab) and decorates each
+// row with computed inferredType / status / urgency / lastSentAt. Polls
+// every 30s so the inbox flips ●→✓ shortly after a send completes.
+//
+// Wave 3.5 §C1: the RPC now requires a tab parameter (active|past|all).
+// The single-arg signature was dropped in migration 20260509103700.
+export function useBriefingQueue({ tab = 'active' } = {}) {
   const { orgId } = useAuth();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +22,7 @@ export function useBriefingQueue() {
   const refresh = useCallback(async () => {
     if (!orgId) return;
     setError(null);
-    const { data, error: err } = await supabase.rpc('get_briefing_queue', { p_org_id: orgId });
+    const { data, error: err } = await supabase.rpc('get_briefing_queue', { p_org_id: orgId, p_tab: tab });
     if (cancelledRef.current) return;
     if (err) { setError(err); setLoading(false); return; }
     const now = new Date();
@@ -52,7 +55,7 @@ export function useBriefingQueue() {
     });
     setRows(decorated);
     setLoading(false);
-  }, [orgId]);
+  }, [orgId, tab]);
 
   useEffect(() => {
     cancelledRef.current = false;
