@@ -28,7 +28,7 @@ export function useBriefingQueue() {
       const inferredType = inferMessageType(tournament, now);
       const sentHistory = Array.isArray(r.sent_history) ? r.sent_history : [];
       const recentInferredSend = sentHistory.find((s) => {
-        if (s.message_type !== inferredType) return false;
+        if (s.kind !== inferredType) return false;
         const sentMs = new Date(s.sent_at).getTime();
         return (now.getTime() - sentMs) / 86400000 <= SENT_WITHIN_DAYS;
       });

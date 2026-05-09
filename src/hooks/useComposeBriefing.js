@@ -2,8 +2,8 @@ import { useCallback, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 // Orchestrates the queue-then-dispatch flow:
-//   1. INSERT one tournament_messages row (delivery_method='queued', sent_at=null)
-//   2. INSERT one tournament_message_recipients row per address (status='queued')
+//   1. INSERT one comms_messages row (delivery_method='queued', sent_at=null)
+//   2. INSERT one comms_message_recipients row per address (status='queued')
 //   3. POST { message_id } to the send-tournament-message edge function
 // On success the dispatcher flips sent_at and recipient.delivery_status.
 export function useComposeBriefing() {
@@ -30,7 +30,7 @@ export function useComposeBriefing() {
       if (!recipients?.length) throw new Error('No recipients selected.');
 
       const { data: msg, error: msgErr } = await supabase
-        .from('tournament_messages')
+        .from('comms_messages')
         .insert({
           org_id: orgId,
           tournament_id: tournamentId,
@@ -38,7 +38,7 @@ export function useComposeBriefing() {
           subject,
           body_html: html,
           body_plain: plainText,
-          message_type: messageType,
+          kind: messageType,
           language_code: 'en',
           delivery_method: 'queued',
           sent_at: null,
@@ -55,7 +55,7 @@ export function useComposeBriefing() {
         delivery_status: 'queued',
       }));
       const { error: recErr } = await supabase
-        .from('tournament_message_recipients')
+        .from('comms_message_recipients')
         .insert(recipientRows);
       if (recErr) throw recErr;
 

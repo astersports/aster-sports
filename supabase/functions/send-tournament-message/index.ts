@@ -1,4 +1,4 @@
-// Drains queued recipients for a tournament_messages row and dispatches
+// Drains queued recipients for a comms_messages row and dispatches
 // via Resend in a single batch call. Per-recipient status updates so a
 // single bounce doesn't fail the whole send.
 //
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
   );
 
   const { data: message, error: msgErr } = await sb
-    .from("tournament_messages")
+    .from("comms_messages")
     .select("id, org_id, subject, body_html, body_plain, sent_at")
     .eq("id", body.message_id).single();
   if (msgErr || !message) return json({ error: "Message not found" }, 404);
@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
   if (!roles || roles.length === 0) return json({ error: "Not authorized" }, 403);
 
   const { data: recipients, error: recErr } = await sb
-    .from("tournament_message_recipients")
+    .from("comms_message_recipients")
     .select("id, email_at_send")
     .eq("message_id", body.message_id)
     .eq("delivery_status", "queued");
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
   if (batchErr) {
     failed = recipients.length;
     errors.push(batchErr.message ?? "Batch rejected");
-    await sb.from("tournament_message_recipients")
+    await sb.from("comms_message_recipients")
       .update({ delivery_status: "failed", delivery_method: "resend_api" })
       .in("id", recipients.map((r) => r.id));
   } else {
@@ -106,13 +106,13 @@ Deno.serve(async (req) => {
       const recipientId = recipients[i].id;
       if (res?.id) {
         sent++;
-        return sb.from("tournament_message_recipients")
+        return sb.from("comms_message_recipients")
           .update({ delivery_status: "sent", delivery_method: "resend_api" })
           .eq("id", recipientId);
       } else {
         failed++;
         errors.push(`${recipients[i].email_at_send}: ${res?.error ?? "unknown"}`);
-        return sb.from("tournament_message_recipients")
+        return sb.from("comms_message_recipients")
           .update({ delivery_status: "failed", delivery_method: "resend_api" })
           .eq("id", recipientId);
       }
@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
     await Promise.all(updates);
   }
 
-  await sb.from("tournament_messages")
+  await sb.from("comms_messages")
     .update({
       sent_at: new Date().toISOString(),
       sent_by: user.id,

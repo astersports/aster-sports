@@ -1,10 +1,13 @@
-// Pure helpers for the Briefings inbox: timing-based message_type inference,
+// Pure helpers for the Briefings inbox: timing-based kind inference,
 // human-readable labels, why-strings for the "Sending as: X (why)" UX, and
 // row urgency classification. No React or Supabase coupling.
+//
+// Kind values must match the comms_messages.kind CHECK constraint
+// (see foundation migration 20260508234920).
 
 const DAY_MS = 86400000;
 
-// Returns one of the production message_type CHECK values based on
+// Returns one of the production kind CHECK values based on
 // where "now" sits relative to the tournament window.
 export function inferMessageType(tournament, now = new Date()) {
   if (!tournament?.start_date) return 'custom';
@@ -14,30 +17,30 @@ export function inferMessageType(tournament, now = new Date()) {
   const daysUntilStart = (startMs - nowMs) / DAY_MS;
   const daysAfterEnd = (nowMs - endMs) / DAY_MS;
 
-  if (daysAfterEnd > 0) return 'weekend_recap';
+  if (daysAfterEnd > 0) return 'tournament_recap_final';
   if (nowMs >= startMs && nowMs <= endMs) {
     const hour = now.getHours();
     const isMultiDay = endMs - startMs > DAY_MS;
-    if (isMultiDay && hour >= 18) return 'day1_recap';
-    if (isMultiDay) return 'saturday_scenarios';
-    return 'final_schedule';
+    if (isMultiDay && hour >= 18) return 'tournament_recap_interim';
+    if (isMultiDay) return 'tournament_recap_interim';
+    return 'tournament_final';
   }
-  if (daysUntilStart < 1) return 'rsvp_lock';
-  if (daysUntilStart <= 5) return 'final_schedule';
-  return 'preliminary_schedule';
+  if (daysUntilStart < 1) return 'tournament_rsvp_lock';
+  if (daysUntilStart <= 5) return 'tournament_final';
+  return 'tournament_preliminary';
 }
 
 export function messageTypeLabel(type) {
   const map = {
-    preliminary_schedule: 'Preliminary Schedule',
-    final_schedule:       'Final Schedule',
-    rsvp_lock:            'RSVP Lock',
-    saturday_scenarios:   'Saturday Scenarios',
-    day1_recap:           'Day 1 Recap',
-    weekend_recap:        'Weekend Recap',
-    schedule_change:      'Schedule Change',
-    multi_team_notice:    'Multi-Team Notice',
-    custom:               'Custom',
+    weekly_digest:            'Weekly Digest',
+    tournament_preliminary:   'Tournament Preliminary',
+    tournament_final:         'Tournament Final',
+    tournament_rsvp_lock:     'Tournament RSVP Lock',
+    tournament_recap_interim: 'Tournament Interim Recap',
+    tournament_recap_final:   'Tournament Final Recap',
+    schedule_change:          'Schedule Change',
+    multi_team_notice:        'Multi-Team Notice',
+    custom:                   'Custom',
   };
   return map[type] || type;
 }
@@ -45,22 +48,23 @@ export function messageTypeLabel(type) {
 // Short rationale for the operator: what the system used to pick this type.
 export function whyLabel(type) {
   const map = {
-    preliminary_schedule: '5+ days out',
-    final_schedule:       '2-5 days out',
-    rsvp_lock:            'less than 24 hours',
-    saturday_scenarios:   'mid-tournament',
-    day1_recap:           'end of day 1',
-    weekend_recap:        'after tournament',
-    schedule_change:      'manual override',
-    multi_team_notice:    'manual override',
-    custom:               'manual override',
+    weekly_digest:            'weekly cadence',
+    tournament_preliminary:   '5+ days out',
+    tournament_final:         '2-5 days out',
+    tournament_rsvp_lock:     'less than 24 hours',
+    tournament_recap_interim: 'mid-tournament',
+    tournament_recap_final:   'after tournament',
+    schedule_change:          'manual override',
+    multi_team_notice:        'manual override',
+    custom:                   'manual override',
   };
   return map[type] || 'manual override';
 }
 
-// Engine support today: only preliminary_schedule renders. Other types are
-// stubs in the dropdown; Send button stays disabled until the engine ships.
-export const ENGINE_SUPPORTED_TYPES = new Set(['preliminary_schedule']);
+// Engine support today: only tournament_preliminary renders. Other types
+// are stubs in the dropdown; Send button stays disabled until the engine
+// for each ships.
+export const ENGINE_SUPPORTED_TYPES = new Set(['tournament_preliminary']);
 
 // Days out of the tournament's start_date used for urgency classification.
 export function daysUntil(tournament, now = new Date()) {
