@@ -8,6 +8,14 @@
 // columns are null. Chunks into batches of 100 (Resend's batch limit) so
 // digests with >100 recipients dispatch in multiple calls.
 //
+// Wave 3.5 §B5.1: pilot-mode defense in depth. Before dispatch, fetch
+// organization_settings.pilot_mode_enabled. When TRUE, every queued
+// recipient with a non-null guardian_id MUST be flagged is_pilot_family.
+// Admin BCC rows have guardian_id=null and are always allowed. Any
+// non-pilot guardian in the queue aborts the entire dispatch with 403
+// — defense against client-side bugs that might queue a non-pilot
+// recipient while the org gate is still on.
+//
 // Caller must be admin or coach in the message's org_id.
 // Body: { message_id: uuid, dry_run?: boolean }
 // Returns: { ok: boolean, sent: int, failed: int, errors: string[] }
@@ -81,13 +89,38 @@ Deno.serve(async (req) => {
 
   const { data: recipients, error: recErr } = await sb
     .from("comms_message_recipients")
-    .select("id, email_at_send, body_html_rendered, body_plain_rendered, subject_rendered")
+    .select("id, email_at_send, guardian_id, body_html_rendered, body_plain_rendered, subject_rendered")
     .eq("message_id", body.message_id)
     .eq("delivery_status", "queued");
   if (recErr) return json({ error: recErr.message }, 500);
   if (!recipients || recipients.length === 0) return json({ error: "No queued recipients" }, 400);
 
-  if (body.dry_run) return json({ ok: true, dry_run: true, would_send: recipients.length });
+  // Pilot-mode defense in depth (Wave 3.5 §B5.1). Fail closed: a missing
+  // organization_settings row defaults pilotMode=true.
+  const { data: orgSettings } = await sb
+    .from("organization_settings")
+    .select("pilot_mode_enabled")
+    .eq("organization_id", message.org_id)
+    .maybeSingle();
+  const pilotMode = orgSettings?.pilot_mode_enabled ?? true;
+  if (pilotMode) {
+    const guardianIds = recipients.map((r) => r.guardian_id).filter(Boolean);
+    if (guardianIds.length) {
+      const { data: guardians, error: gErr } = await sb
+        .from("guardians").select("id, is_pilot_family, email").in("id", guardianIds);
+      if (gErr) return json({ error: `Pilot check failed: ${gErr.message}` }, 500);
+      const nonPilot = (guardians || []).filter((g) => !g.is_pilot_family);
+      if (nonPilot.length) {
+        const offending = nonPilot.map((g) => g.email).join(", ");
+        return json({
+          error: `PILOT MODE: ${nonPilot.length} non-pilot guardians in queue (${offending}). Aborting. Toggle organization_settings.pilot_mode_enabled=FALSE to allow production sends.`,
+          non_pilot_count: nonPilot.length, pilot_mode_active: true,
+        }, 403);
+      }
+    }
+  }
+
+  if (body.dry_run) return json({ ok: true, dry_run: true, would_send: recipients.length, pilot_mode_active: pilotMode });
 
   const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
   const fromHeader = `${FROM_NAME} <${FROM_EMAIL}>`;
@@ -139,5 +172,5 @@ Deno.serve(async (req) => {
     })
     .eq("id", body.message_id);
 
-  return json({ ok: failed === 0, sent, failed, errors });
+  return json({ ok: failed === 0, sent, failed, errors, pilot_mode_active: pilotMode });
 });

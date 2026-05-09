@@ -6,10 +6,12 @@ import { useToast } from '../../../context/useToast';
 import { useDigestRecipients } from '../../../hooks/useDigestRecipients';
 import { useDigestEvents } from '../../../hooks/useDigestEvents';
 import { useOrgStaff } from '../../../hooks/useOrgStaff';
+import { useOrgSettings } from '../../../hooks/useOrgSettings';
 import { defaultPeriod } from '../../../lib/engine/digestPeriod';
 import { sendWeeklyDigest } from '../../../lib/digestSend';
 import DigestComposerForm from './DigestComposerForm';
 import DigestRecipientPreview from './DigestRecipientPreview';
+import PilotModeBanner from './PilotModeBanner';
 
 const sendBtn = { width: '100%', minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' };
 
@@ -31,7 +33,8 @@ export default function DigestComposer({ onClose }) {
   const [previewIndex, setPreviewIndex] = useState(0);
   const [sending, setSending] = useState(false);
 
-  const { recipients, loading: recipientLoading } = useDigestRecipients(orgId);
+  const { pilotModeEnabled } = useOrgSettings(orgId);
+  const { recipients, loading: recipientLoading } = useDigestRecipients({ orgId, pilotOnly: pilotModeEnabled });
   const { events, tournaments, teams, rsvpCountsByEvent, loading: eventsLoading } = useDigestEvents({ orgId, period });
   const { staff: coaches } = useOrgStaff(orgId);
 
@@ -58,8 +61,6 @@ export default function DigestComposer({ onClose }) {
   const sendable = useMemo(() => familiesWithEvents.filter((f) => f.events.length > 0), [familiesWithEvents]);
   const skipped = familiesWithEvents.length - sendable.length;
 
-  // Preview defaults to first multi-team family with events. Deferred to a
-  // microtask so the setState happens after render commits (codebase convention).
   useEffect(() => {
     Promise.resolve().then(() => {
       if (!sendable.length) { setPreviewIndex(0); return; }
@@ -84,8 +85,8 @@ export default function DigestComposer({ onClose }) {
         testOnly,
       });
       showToast(testOnly
-        ? `Test sent to admin@. Composed ${result.composedFamilies} family digests.`
-        : `Sent to ${result.sent || result.composedFamilies} families.`,
+        ? `Test sent to admin@. Composed ${result.composedFamilies} ${pilotModeEnabled ? 'pilot' : 'family'} digests.`
+        : `Sent to ${result.sent || result.composedFamilies} ${pilotModeEnabled ? 'pilot recipients' : 'families'}.`,
         'success');
       onClose?.();
     } catch (e) {
@@ -99,13 +100,14 @@ export default function DigestComposer({ onClose }) {
   return (
     <FullScreenForm open onClose={onClose} title="Weekly Digest">
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 20, maxWidth: 760, margin: '0 auto' }}>
+        <PilotModeBanner pilotModeEnabled={pilotModeEnabled} recipientCount={sendable.length} />
         <DigestComposerForm
           period={period}
           onPrevPeriod={() => setPeriod((p) => shiftPeriod(p, -7))}
           onNextPeriod={() => setPeriod((p) => shiftPeriod(p, 7))}
           recipientCount={sendable.length} skippedCount={skipped}
           recipientLoading={recipientLoading} eventsLoading={eventsLoading}
-          outOfSeason={false}
+          outOfSeason={false} pilotModeEnabled={pilotModeEnabled}
           bodyNotes={bodyNotes} setBodyNotes={setBodyNotes}
           opsEnabled={opsEnabled} setOpsEnabled={setOpsEnabled}
           opsNotes={opsNotes} setOpsNotes={setOpsNotes}
@@ -139,7 +141,7 @@ export default function DigestComposer({ onClose }) {
         <button type="button" onClick={onSend} disabled={!canSend} className="sf-press"
           style={{ ...sendBtn, opacity: canSend ? 1 : 0.5 }}>
           <Send size={16} strokeWidth={1.75} />
-          {sending ? 'Sending…' : (testOnly ? 'Send test to admin@' : `Send to ${sendable.length} ${sendable.length === 1 ? 'family' : 'families'}`)}
+          {sending ? 'Sending…' : (testOnly ? 'Send test to admin@' : `Send to ${sendable.length} ${pilotModeEnabled ? (sendable.length === 1 ? 'pilot recipient' : 'pilot recipients') : (sendable.length === 1 ? 'family' : 'families')}`)}
         </button>
       </div>
     </FullScreenForm>

@@ -11,10 +11,12 @@ const PERIOD = {
   end:   new Date('2026-05-17T12:00:00Z'),
 };
 
+// Production v14 palette — sourced from constants.js TEAM_COLORS.
+// Renderer reads team_color inline from this prop; never hardcoded.
 const TEAMS = [
-  { id: 't-11u', name: '11U Girls',  team_color: '#7C3AED', sort_order: 1 },
-  { id: 't-10b', name: '10U Black',  team_color: '#18181B', sort_order: 2 },
-  { id: 't-8u',  name: '8U Boys',    team_color: '#EA580C', sort_order: 5 },
+  { id: 't-11u', name: '11U Girls',  team_color: '#a78bfa', sort_order: 1 }, // violet
+  { id: 't-10b', name: '10U Black',  team_color: '#4a8fd4', sort_order: 2 }, // cobalt
+  { id: 't-8u',  name: '8U Boys',    team_color: '#f59e0b', sort_order: 5 }, // amber
 ];
 
 const COACHES = [

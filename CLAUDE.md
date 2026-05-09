@@ -133,13 +133,11 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
 ```
 
 ### Team Colors (inline style from DB — the ONLY acceptable inline hex)
-| Team | Color |
-|---|---|
-| 11U Girls | `#7C3AED` |
-| 10U Black | `#18181B` |
-| 10U Blue | `#2563EB` |
-| 9U Boys | `#DC2626` |
-| 8U Boys | `#EA580C` |
+Team colors source from `src/lib/constants.js` (`TEAM_COLORS`, the production v14 palette
+sourced from `records-v14_2.html`). Renderers read `team_color` inline from the joined
+`teams.team_color` column via composer; never hardcoded in component or renderer files.
+The actual values live in `constants.js` to stay in sync with what production renders —
+look there for the canonical hex per team.
 
 ---
 
@@ -319,13 +317,18 @@ LeagueApps import: 70 families, 100 accounts (40 Fall 2025 + 60 Spring 2026), 10
 ## 10. LEGACY HOOPERS REFERENCE
 
 ### Teams (oldest to youngest)
-| Team | Age | Circuit | Practice | Color | Sort |
-|---|---|---|---|---|---|
-| 11U Girls | 11U | AAU (Zero Gravity) | Wed, WCC | `#7C3AED` | 1 |
-| 10U Black | 10U | AAU (Zero Gravity) | Wed, WCC | `#18181B` | 2 |
-| 10U Blue | 10U | League Play | Tue, WCC | `#2563EB` | 3 |
-| 9U Boys | 9U | League Play | Tue, WCC | `#DC2626` | 4 |
-| 8U Boys | 8U | AAU (Zero Gravity) | Wed, WCC | `#EA580C` | 5 |
+| Team | Age | Circuit | Practice | Sort |
+|---|---|---|---|---|
+| 11U Girls | 11U | AAU (Zero Gravity) | Wed, WCC | 1 |
+| 10U Black | 10U | AAU (Zero Gravity) | Wed, WCC | 2 |
+| 10U Blue | 10U | League Play | Tue, WCC | 3 |
+| 9U Boys | 9U | League Play | Tue, WCC | 4 |
+| 8U Boys | 8U | AAU (Zero Gravity) | Wed, WCC | 5 |
+
+Team colors live in `src/lib/constants.js` (`TEAM_COLORS`, production v14 palette).
+Renderer code reads `team_color` from joined `teams.team_color` via composer — never
+hardcodes hex. Source of truth = `constants.js`; this table no longer mirrors hex
+to prevent drift.
 
 ### Naming Rules
 - Number first: "10U Black" never "Boys 10U Black"

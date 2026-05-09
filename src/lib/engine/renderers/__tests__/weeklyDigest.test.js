@@ -8,8 +8,8 @@ describe('composeWeeklyDigest', () => {
     expect(out.subject).toBe('Week ahead — May 11–17');
     expect(out.teams_included).toEqual(['t-10b']);
     expect(out.html).toContain('WEEK AHEAD');
-    expect(out.html).toContain('border-left:5px solid #18181B'); // 10U Black stripe
-    expect(out.html).not.toContain('#7C3AED'); // no other team colors
+    expect(out.html).toContain('border-left:5px solid #4a8fd4'); // 10U Black cobalt (v14)
+    expect(out.html).not.toContain('#a78bfa'); // no other team colors
     expect(out.plainText).toContain('Quick week');
     expect(out.sections.some((s) => s.kind === 'weekly_schedule')).toBe(true);
   });
@@ -17,8 +17,8 @@ describe('composeWeeklyDigest', () => {
   it('multi-team Samaritano shape — both teams interleave chronologically', () => {
     const out = composeWeeklyDigest(multiTeam);
     expect(out.teams_included).toEqual(expect.arrayContaining(['t-11u', 't-8u']));
-    expect(out.html).toContain('border-left:5px solid #7C3AED'); // 11U Girls
-    expect(out.html).toContain('border-left:5px solid #EA580C'); // 8U Boys
+    expect(out.html).toContain('border-left:5px solid #a78bfa'); // 11U Girls violet (v14)
+    expect(out.html).toContain('border-left:5px solid #f59e0b'); // 8U Boys amber (v14)
     const may12 = out.html.indexOf('MAY 12');
     const may13 = out.html.indexOf('MAY 13');
     const may16 = out.html.indexOf('MAY 16');
