@@ -4,14 +4,13 @@ import { useAuth } from '../context/AuthContext';
 
 // Reads + writes the current user's row in public.staff_profiles.
 // Single-row pattern: maybeSingle() never errors when no row exists.
-// Save uses upsert keyed on user_id (PK).
 //
-// Wave 3.8 §5.1 fix: payload now includes org_id. The table has
-// `org_id NOT NULL`, and PostgREST upsert builds INSERT...ON CONFLICT
-// SQL — the INSERT phase always validates NOT NULL columns even when
-// the conflict clause routes to UPDATE. Omitting org_id was rejecting
-// every save (even pure renames) with "Couldn't save profile."
-// orgId comes from useAuth context, set per-org at login.
+// Wave 3.8 §5.1 fix (round 2): the PK is composite (user_id, org_id),
+// so onConflict must target both columns. onConflict:'user_id' alone
+// raised 42P10 "no unique or exclusion constraint matching" because
+// no single-column unique on user_id exists. Payload also includes
+// org_id (NOT NULL column validated at INSERT phase even when the
+// conflict clause routes to UPDATE). orgId from useAuth context.
 
 export function useStaffProfile() {
   const { user, orgId } = useAuth();
@@ -53,7 +52,7 @@ export function useStaffProfile() {
     };
     const { data, error: err } = await supabase
       .from('staff_profiles')
-      .upsert(payload, { onConflict: 'user_id' })
+      .upsert(payload, { onConflict: 'user_id,org_id' })
       .select('user_id, display_name, phone, title, org_id, updated_at')
       .single();
     setSaving(false);
