@@ -454,7 +454,7 @@ When generating tournament briefing HTML for LeagueApps + email delivery:
    - Game-day arrival callout: orange #e05c2a
 6. **Audience scoping for tournament messages:** scope to `tournament_rosters` table, NOT team roster. Use `getTournamentRecipients(tournament_id)` helper.
 7. **Recipient preview before send:** show "Active: X · Futures: Y · Recipients: Z guardians" chip.
-8. **9 message types in `tournament_messages.message_type` CHECK constraint:** preliminary_schedule, final_schedule, rsvp_lock, saturday_scenarios, day1_recap, weekend_recap, schedule_change, multi_team_notice, custom. Verified against production via Supabase MCP, May 8, 2026.
+8. **9 kinds in `comms_messages.kind` CHECK constraint** (post foundation rename, May 9, 2026)**:** weekly_digest, tournament_preliminary, tournament_final, tournament_rsvp_lock, tournament_recap_interim, tournament_recap_final, schedule_change, multi_team_notice, custom. Verified against production via Supabase MCP. The table rename (tournament_messages → comms_messages) and enum rename (message_type → kind) ship together in foundation migration `20260508234920_comms_foundation_polymorphic_rename`.
 
 ---
 

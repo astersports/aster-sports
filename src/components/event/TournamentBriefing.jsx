@@ -34,7 +34,7 @@ export default function TournamentBriefing({ event, team, onClose }) {
   const trapRef = useFocusTrap(true);
 
   const isEngineSupported = ENGINE_SUPPORTED_TYPES.has(briefingType);
-  const isSchedule = briefingType === 'preliminary_schedule';
+  const isSchedule = briefingType === 'tournament_preliminary';
   const familyCount = recipients.filter((r) => !r.is_admin_copy).length;
   const footerCoaches = useMemo(
     () => (teamCoaches || []).filter((c) => selectedCoachIds.has(c.user_id) && c.display_name && c.phone),
@@ -97,7 +97,7 @@ export default function TournamentBriefing({ event, team, onClose }) {
         {!isEngineSupported && !loading && !error && (
           <div style={{ padding: 16, borderRadius: 10, backgroundColor: 'var(--em-warning-soft)', border: '1px solid var(--em-warning)' }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--em-text-primary)' }}>Engine for {messageTypeLabel(briefingType)} ships in a follow-up</div>
-            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.5, marginTop: 4 }}>Switch to Preliminary Schedule to send now.</div>
+            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.5, marginTop: 4 }}>Switch to Tournament Preliminary to send now.</div>
           </div>
         )}
 

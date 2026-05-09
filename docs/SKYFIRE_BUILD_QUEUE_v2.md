@@ -676,7 +676,7 @@ These features were missed in the April 19 build queue. Confirmed shipped via sc
 - ✅ Relative time countdown ("in 8h 27m") on event cards
 - ✅ Admin Seasons CRUD with preset chips
 - ✅ Take Attendance (check-in overlay, admin/coach)
-- ✅ Tournament Briefing component exists (uses tournament_messages table)
+- ✅ Tournament Briefing component exists (uses comms_messages table — renamed from tournament_messages in foundation 20260508234920)
 - ✅ Edge Function invite-parent deployed
 - ✅ Guardian notification preferences per person
 
@@ -788,7 +788,7 @@ This is THE killer feature of Ember. Frank currently spends ~8 hours every weeke
 
 ### Schema additions needed (Migration 039 future)
 
-- tournament_messages.message_type ENUM: preliminary_schedule | final_schedule | rsvp_lock | saturday_scenarios | day1_recap | weekend_recap | schedule_change | multi_team_notice | custom
+- comms_messages.kind ENUM (post-foundation, May 9, 2026): weekly_digest | tournament_preliminary | tournament_final | tournament_rsvp_lock | tournament_recap_interim | tournament_recap_final | schedule_change | multi_team_notice | custom
 - parent_message_id (uuid, FK self-ref) for multi-team consolidation
 - message_group_id (uuid) for deduplication
 - seasons.circuit_rules (jsonb) for AAU PD cap +20 etc.

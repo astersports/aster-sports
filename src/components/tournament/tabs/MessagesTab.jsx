@@ -9,8 +9,8 @@ export default function MessagesTab({ tournament, isStaff }) {
   useEffect(() => {
     if (!tournament?.id) return;
     let cancelled = false;
-    supabase.from('tournament_messages')
-      .select('id, message_type, subject, body, sent_at, created_at')
+    supabase.from('comms_messages')
+      .select('id, kind, subject, body_plain, sent_at, created_at')
       .eq('tournament_id', tournament.id)
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
@@ -36,14 +36,14 @@ export default function MessagesTab({ tournament, isStaff }) {
   }
 
   const TYPE_LABELS = {
-    preliminary_schedule: 'Preliminary Schedule',
-    final_schedule: 'Final Schedule',
-    rsvp_lock: 'RSVP Lock',
-    saturday_scenarios: 'Saturday Scenarios',
-    day1_recap: 'Day 1 Recap',
-    weekend_recap: 'Weekend Recap',
+    weekly_digest: 'Weekly Digest',
+    tournament_preliminary: 'Tournament Preliminary',
+    tournament_final: 'Tournament Final',
+    tournament_rsvp_lock: 'Tournament RSVP Lock',
+    tournament_recap_interim: 'Tournament Interim Recap',
+    tournament_recap_final: 'Tournament Final Recap',
     schedule_change: 'Schedule Change',
-    multi_team_notice: 'Multi-team Notice',
+    multi_team_notice: 'Multi-Team Notice',
     custom: 'Custom',
   };
 
@@ -53,14 +53,14 @@ export default function MessagesTab({ tournament, isStaff }) {
         <div key={m.id} style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', padding: 14, marginBottom: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-accent)', padding: '2px 8px', borderRadius: 4, backgroundColor: 'var(--em-accent-soft)' }}>
-              {TYPE_LABELS[m.message_type] || m.message_type}
+              {TYPE_LABELS[m.kind] || m.kind}
             </span>
             <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>
               {m.sent_at ? new Date(m.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Draft'}
             </span>
           </div>
           {m.subject && <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 4 }}>{m.subject}</div>}
-          {m.body && <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.5, WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', display: '-webkit-box', overflow: 'hidden' }}>{m.body}</div>}
+          {m.body_plain && <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.5, WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', display: '-webkit-box', overflow: 'hidden' }}>{m.body_plain}</div>}
         </div>
       ))}
     </div>
