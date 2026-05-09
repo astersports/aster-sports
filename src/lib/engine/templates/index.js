@@ -8,6 +8,7 @@ import tournamentPrelim from './tournamentPrelimTemplates';
 import tournamentRecap from './tournamentRecapTemplates';
 import announcement from './announcementTemplates';
 import customMessage from './customMessageTemplates';
+import rsvpNudge from './rsvpNudgeTemplates';
 
 export const TEMPLATES_BY_KIND = {
   weekly_digest: weeklyDigest,
@@ -16,6 +17,7 @@ export const TEMPLATES_BY_KIND = {
   tournament_recap: tournamentRecap,
   announcement,
   custom_message: customMessage,
+  rsvp_nudge: rsvpNudge,
 };
 
 export function getTemplatesForKind(kind) {
