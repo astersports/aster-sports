@@ -16,9 +16,9 @@ describe('KIND_METADATA', () => {
     });
   });
 
-  it('rsvp_nudge is disabled with badge until wave 4.0', () => {
-    expect(KIND_METADATA.rsvp_nudge.disabled).toBe(true);
-    expect(KIND_METADATA.rsvp_nudge.badge).toBe('Coming soon');
+  it('rsvp_nudge is enabled after wave 4.0 (HMAC token plumbing)', () => {
+    expect(KIND_METADATA.rsvp_nudge.disabled).toBe(false);
+    expect(KIND_METADATA.rsvp_nudge.badge).toBeUndefined();
   });
 
   it('schedule_change has anchor + audience locked', () => {

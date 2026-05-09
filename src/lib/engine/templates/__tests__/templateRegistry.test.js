@@ -14,6 +14,7 @@ const EDITOR_SHAPES = {
   tournament_recap: ['final_standing', 'game_results', 'mvp_name', 'takeaways', 'tourney_link_label'],
   announcement: ['headline', 'body_text'],
   custom_message: ['subject', 'body_text'],
+  rsvp_nudge: ['headline_override', 'custom_message', 'ask_comment_field'],
 };
 
 describe('TEMPLATES_BY_KIND', () => {
@@ -63,8 +64,10 @@ describe('getTemplatesForKind', () => {
     expect(getTemplatesForKind('schedule_change')).toEqual([]);
   });
 
-  it('returns empty array for rsvp_nudge (stub until wave 4.0)', () => {
-    expect(getTemplatesForKind('rsvp_nudge')).toEqual([]);
+  it('returns templates for rsvp_nudge after wave 4.0', () => {
+    const t = getTemplatesForKind('rsvp_nudge');
+    expect(t.length).toBeGreaterThan(0);
+    expect(t[0].id).toBe('rn-blank');
   });
 
   it('returns empty array for unknown kinds', () => {

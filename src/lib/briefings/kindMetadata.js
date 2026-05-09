@@ -70,7 +70,7 @@ export const KIND_METADATA = {
     eventFilter: { upcoming: true, hasPendingRsvps: true },
     defaultAudienceType: 'event_attendees',
     bodyModule: 'RsvpNudgeBody',
-    disabled: true, badge: 'Coming soon',
+    disabled: false,
   },
   custom_message: {
     icon: 'MessageSquare', label: 'Custom message',

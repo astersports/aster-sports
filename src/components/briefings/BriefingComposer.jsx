@@ -16,6 +16,7 @@ import { useDigestRecipients } from '../../hooks/useDigestRecipients';
 import { useOrgStaff } from '../../hooks/useOrgStaff';
 import { useBriefingDraft } from '../../hooks/useBriefingDraft';
 import { compose } from '../../lib/engine/composer';
+import { sendRsvpNudge } from '../../lib/rsvpNudgeSend';
 import { supabase } from '../../lib/supabase';
 import { canAdvance, composerReducer, INITIAL_STATE } from './composerReducer';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
@@ -86,6 +87,16 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   const onSend = async () => {
     setBusy(true);
     try {
+      // Wave 4.0: rsvp_nudge has its own send pipeline (mints per-player
+      // tokens before dispatch). Route here, skip the generic compose path.
+      if (state.kind === 'rsvp_nudge' && state.anchor_kind === 'event' && state.anchor_id) {
+        const { data: ev } = await supabase.from('events').select('id,title,start_at,location,team_id').eq('id', state.anchor_id).maybeSingle();
+        const r = await sendRsvpNudge({ orgId, event: ev, body: state.body, signoffMessage: state.signoff_message, coaches, recipients, pilotModeEnabled, testOnly: state.test_only });
+        if (r?.error) throw r.error;
+        showToast(state.test_only ? 'Test sent to admin@.' : `Sent to ${r.audienceCount ?? 'recipients'} ${r.audienceCount === 1 ? 'family' : 'families'}.`, 'success');
+        onClose?.();
+        return;
+      }
       // Wave 3.16.1: resolve tourney_url from anchor so the kind
       // composer can emit a CTA when body.tourney_link_label is set.
       let tourneyUrl = null;

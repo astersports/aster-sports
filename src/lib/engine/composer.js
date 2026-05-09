@@ -23,6 +23,7 @@ import { composeTournamentPrelim } from './renderers/tournamentPrelim';
 import { composeTournamentRecap } from './renderers/tournamentRecap';
 import { composeAnnouncement } from './renderers/announcement';
 import { composeCustomMessage } from './renderers/customMessage';
+import { composeRsvpNudge } from './renderers/rsvpNudge';
 import scheduleChangeDiff from './renderers/scheduleChangeDiff';
 import statGrid from './renderers/statGrid';
 import poolStandings from './renderers/poolStandings';
@@ -75,6 +76,7 @@ const KIND_COMPOSERS = {
   tournament_recap: composeTournamentRecap,
   announcement: composeAnnouncement,
   custom_message: composeCustomMessage,
+  rsvp_nudge: composeRsvpNudge,
 };
 
 export function renderSections(sections = []) {
