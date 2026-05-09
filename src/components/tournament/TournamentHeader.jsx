@@ -1,7 +1,15 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Calendar, Edit2, MapPin, Trophy } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import TournamentFormSheet from './TournamentFormSheet';
+import SendBriefingButton from '../briefings/SendBriefingButton';
+
+function tournamentBriefingKinds(t) {
+  const kinds = ['announcement', 'custom_message'];
+  if (t?.start_date && new Date(t.start_date) > new Date()) kinds.unshift('tournament_prelim');
+  if (t?.end_date && new Date(t.end_date) < new Date()) kinds.unshift('tournament_recap');
+  return kinds;
+}
 
 function formatRange(start, end) {
   if (!start || !end) return '';
@@ -20,6 +28,7 @@ function formatRange(start, end) {
 export default function TournamentHeader({ tournament, isStaff, onChange }) {
   const [editing, setEditing] = useState(false);
   const dateRange = formatRange(tournament.start_date, tournament.end_date);
+  const briefingKinds = useMemo(() => tournamentBriefingKinds(tournament), [tournament]);
 
   return (
     <div style={{ padding: '6px 16px 12px', borderBottom: '1px solid var(--em-border-default)' }}>
@@ -68,15 +77,18 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
       )}
 
       {isStaff && (
-        <button onClick={() => setEditing(true)} className="sf-press" aria-label="Edit tournament" style={{
-          minHeight: 40, padding: '0 14px', borderRadius: 10,
-          border: '1.5px solid var(--em-border-default)',
-          backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
-          fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6,
-          cursor: 'pointer',
-        }}>
-          <Edit2 size={14} strokeWidth={1.75} /> Edit
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={() => setEditing(true)} className="sf-press" aria-label="Edit tournament" style={{
+            minHeight: 40, padding: '0 14px', borderRadius: 10,
+            border: '1.5px solid var(--em-border-default)',
+            backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
+            fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6,
+            cursor: 'pointer',
+          }}>
+            <Edit2 size={14} strokeWidth={1.75} /> Edit
+          </button>
+          <SendBriefingButton anchorKind="tournament" anchorId={tournament.id} kindFilter={briefingKinds} />
+        </div>
       )}
 
       {editing && (

@@ -1,6 +1,17 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Ban, Pencil, Trash2, UserCheck } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
+import SendBriefingButton from '../briefings/SendBriefingButton';
+
+function eventBriefingKinds(event) {
+  const kinds = ['schedule_change', 'announcement', 'custom_message'];
+  const isPast = event?.start_at ? new Date(event.start_at) < new Date() : false;
+  const isGame = event?.event_type === 'game' || event?.event_type === 'tournament';
+  if (isPast && isGame) kinds.unshift('game_recap');
+  if (!isPast) kinds.push('rsvp_nudge');
+  return kinds;
+}
 
 const iconBtn = { minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' };
 
@@ -22,6 +33,7 @@ export default function EventDetailHeader({ event, team, isStaff, onEdit, onDele
   const teamColor = team?.team_color || 'var(--em-text-tertiary)';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
   const summary = buildSummary({ event, team, typeLabel });
+  const briefingKinds = useMemo(() => eventBriefingKinds(event), [event]);
 
   return (
     <>
@@ -41,6 +53,7 @@ export default function EventDetailHeader({ event, team, isStaff, onEdit, onDele
                 <button type="button" onClick={onEdit} className="sf-press" aria-label="Edit event" style={iconBtn}>
                   <Pencil size={20} strokeWidth={1.75} color="var(--em-text-inverse)" />
                 </button>
+                <SendBriefingButton anchorKind="event" anchorId={event.id} kindFilter={briefingKinds} variant="icon-only" iconColor="var(--em-text-inverse)" />
                 <button type="button" onClick={onDelete} className="sf-press" aria-label="Delete event" style={iconBtn}>
                   <Trash2 size={20} strokeWidth={1.75} color="var(--em-text-inverse)" />
                 </button>

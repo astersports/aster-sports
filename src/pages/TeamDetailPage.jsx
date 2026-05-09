@@ -15,6 +15,9 @@ import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import TeamHeaderCard from '../components/roster/TeamHeaderCard';
+import SendBriefingButton from '../components/briefings/SendBriefingButton';
+
+const TEAM_BRIEFING_KINDS = ['announcement', 'weekly_digest', 'custom_message'];
 import TeamAchievements from '../components/roster/TeamAchievements';
 import RosterSection from '../components/roster/RosterSection';
 import TeamSwitcher from '../components/roster/TeamSwitcher';
@@ -71,6 +74,11 @@ export default function TeamDetailPage() {
       </button>
       {switcherPrograms.length > 1 && <TeamSwitcher programs={switcherPrograms} teamId={teamId} navigate={navigate} />}
       <TeamHeaderCard team={team} summary={summary} loading={recordsLoading} nextEvent={nextEvent} />
+      {isStaff(role) && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -8, marginBottom: 12 }}>
+          <SendBriefingButton anchorKind="team" anchorId={teamId} kindFilter={TEAM_BRIEFING_KINDS} />
+        </div>
+      )}
       {myChildPlayer && <MyChildSpotlight player={myChildPlayer} team={team} child={myChild} nextEvent={nextEvent} />}
       {isStaff(role) && <CoachQuickActions teamId={teamId} />}
       <UpcomingEvents teamId={teamId} />

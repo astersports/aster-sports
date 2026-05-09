@@ -33,7 +33,7 @@ function relTime(ms) {
   return months === 1 ? '1 month ago' : `${months} months ago`;
 }
 
-export default function StepKindPicker({ onPick }) {
+export default function StepKindPicker({ onPick, visibleKinds = null }) {
   const { orgId } = useAuth();
   const [usage, setUsage] = useState({});
   const [counts, setCounts] = useState({});
@@ -55,7 +55,7 @@ export default function StepKindPicker({ onPick }) {
     return () => { cancelled = true; };
   }, [orgId]);
 
-  const ordered = sortKinds(usage);
+  const ordered = sortKinds(usage).filter((k) => !visibleKinds || visibleKinds.includes(k));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
