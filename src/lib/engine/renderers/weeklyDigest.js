@@ -14,9 +14,12 @@ const ORG_NAME_DEFAULT = 'Legacy Hoopers';
 const HEADLINE_DEFAULT = 'WEEK AHEAD';
 const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
 const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
-// Vercel-hosted apple-touch-icon (180x180 PNG, 18 KB) — knight mark.
-// Multi-tenant follow-up: replace with per-org Supabase storage upload.
-const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/apple-touch-icon.png';
+// Vercel-hosted Knight logo (240x240 PNG, ~12 KB) — Legacy Hoopers org
+// brand mark. Wave 3.7 swap: previously pointed at apple-touch-icon.png
+// (Phoenix / Ember PWA shell), which is wrong for post-auth org-specific
+// digest. Multi-tenant follow-up: add organization_settings.brand_logo_url
+// column when 2nd org onboards.
+const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 
 function buildHeader(period, orgName, eyebrowLink) {
   return {
