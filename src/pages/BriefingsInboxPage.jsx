@@ -7,7 +7,7 @@ import BriefingRow from '../components/briefings/BriefingRow';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import EmptyState from '../components/shared/EmptyState';
 import TournamentBriefing from '../components/event/TournamentBriefing';
-import DigestComposeButton from '../components/admin/briefings/DigestComposeButton';
+import BriefingComposeButton from '../components/admin/briefings/BriefingComposeButton';
 
 // Wave 3.5 §C1: tabs replace the old client-side All/Pending/Completed
 // chips. RPC tab param drives the date window:
@@ -110,7 +110,7 @@ export default function BriefingsInboxPage() {
               {t.label}
             </button>
           ))}
-          <DigestComposeButton />
+          <BriefingComposeButton />
         </div>
       </div>
 
