@@ -29,8 +29,8 @@ function buildSummaryLine(summary) {
   return { kind: 'stats_narrative', body: summary.trim() };
 }
 
-function buildDiff(before, after) {
-  return { kind: 'schedule_change_diff', before, after };
+function buildDiff(before, after, eventTitle) {
+  return { kind: 'schedule_change_diff', before, after, eventTitle };
 }
 
 function buildSignoff(prose, coaches) {
@@ -57,6 +57,7 @@ export function composeScheduleChange(data = {}) {
     summary = '',
     before = {},
     after = {},
+    eventTitle = '',
     signoff_message = '',
     coaches = [],
     subject: subjectOverride,
@@ -70,7 +71,7 @@ export function composeScheduleChange(data = {}) {
   sections.push(buildHeader(orgName, eyebrowLink));
   const summarySection = buildSummaryLine(summary);
   if (summarySection) sections.push(summarySection);
-  sections.push(buildDiff(before, after));
+  sections.push(buildDiff(before, after, eventTitle));
   const signoffSection = buildSignoff(signoff_message, coaches);
   if (signoffSection) sections.push(signoffSection);
   sections.push(buildFooter(orgName, eyebrowLink, contactEmail, logoUrl));
@@ -79,7 +80,7 @@ export function composeScheduleChange(data = {}) {
     + renderSections(sections)
     + '</div>';
   const plainText = renderSectionsPlainText(sections);
-  const subject = subjectOverride || `Schedule update — ${after?.label || before?.label || 'event time changed'}`;
+  const subject = subjectOverride || `Schedule update — ${eventTitle || 'event updated'}`;
 
   return { subject, html, plainText, sections };
 }

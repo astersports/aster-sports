@@ -23,24 +23,32 @@ function familyMatchesTeam(family, teamId) {
   return (family.team_ids || []).includes(teamId);
 }
 
-function buildSummaryLine(before, after) {
-  if (!before?.start_at || !after?.start_at) return '';
-  const opts = { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' };
-  const oldFmt = new Date(before.start_at).toLocaleString('en-US', opts);
-  const newFmt = new Date(after.start_at).toLocaleString('en-US', opts);
-  return `${oldFmt} has moved to ${newFmt}.`;
+function fmtLong(iso) {
+  return new Date(iso).toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+function fmtTimeOnly(iso) {
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
-function buildDiffFields(side, eventTitle) {
-  return (vals) => {
-    if (!vals) return null;
-    const opts = { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
-    return {
-      label: eventTitle || null,
-      time: vals.start_at ? new Date(vals.start_at).toLocaleString('en-US', opts) : null,
-      location: vals.location || null,
-    };
-  };
+// Wave 3.8.1: summary line adapts to which fields actually changed.
+// Cancellation > start change > end-only change > location-only change.
+function buildSummaryLine(before, after) {
+  if (after?.status === 'cancelled' && before?.status !== 'cancelled') {
+    return 'This event has been cancelled.';
+  }
+  const startChanged = (before?.start_at || null) !== (after?.start_at || null);
+  const endChanged = (before?.end_at || null) !== (after?.end_at || null);
+  const locChanged = (before?.location || null) !== (after?.location || null);
+  if (startChanged && before?.start_at && after?.start_at) {
+    return `${fmtLong(before.start_at)} has moved to ${fmtLong(after.start_at)}.`;
+  }
+  if (endChanged && before?.end_at && after?.end_at) {
+    return `End time updated from ${fmtTimeOnly(before.end_at)} to ${fmtTimeOnly(after.end_at)}.`;
+  }
+  if (locChanged) {
+    return `Location updated from ${before?.location || '—'} to ${after?.location || '—'}.`;
+  }
+  return '';
 }
 
 export async function sendScheduleChange({
@@ -53,14 +61,17 @@ export async function sendScheduleChange({
   const audience = (recipients || []).filter((f) => familyMatchesTeam(f, teamId));
   if (!audience.length && !testOnly) throw new Error('No families on this team.');
 
-  const fields = buildDiffFields('before', event.title);
-  const beforeFields = fields(before);
-  const afterFields = fields(after);
   const summary = buildSummaryLine(before, after);
 
   const composed = compose({
     kind: 'schedule_change',
-    data: { summary, before: beforeFields, after: afterFields, signoff_message: signoffMessage, coaches },
+    data: {
+      summary,
+      before, after,
+      eventTitle: event.title || '',
+      signoff_message: signoffMessage,
+      coaches,
+    },
   });
 
   const { data: msg, error: msgErr } = await supabase
