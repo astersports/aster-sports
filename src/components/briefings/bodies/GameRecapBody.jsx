@@ -7,6 +7,10 @@ export const defaultValue = {
   score: { ours: '', theirs: '' },
   our_highlights: '', opp_highlights: '',
   player_of_game_name: '', coach_note: '',
+  // Wave 3.16.1: URL resolved from event.tournament_id → tournament.tourney_url.
+  // For non-league/non-tournament games, parent_tourney_url is null and the
+  // CTA hides regardless of label being set.
+  tourney_link_label: '',
 };
 
 export function validate(v) {
@@ -46,6 +50,13 @@ export default function GameRecapBody({ value, onChange }) {
       <label>
         <span style={labelStyle}>Coach note (optional)</span>
         <textarea value={v.coach_note} onChange={(e) => set({ coach_note: e.target.value })} style={textareaStyle} placeholder="What I want the team thinking about until next practice…" />
+      </label>
+      <label>
+        <span style={labelStyle}>League/bracket CTA label (optional)</span>
+        <input type="text" value={v.tourney_link_label} onChange={(e) => set({ tourney_link_label: e.target.value })} style={inputStyle} placeholder="VIEW LEAGUE STANDINGS" />
+        <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>
+          URL is pulled from this game's parent tournament/league SE Tourney link, if the game is parented to one.
+        </span>
       </label>
     </div>
   );

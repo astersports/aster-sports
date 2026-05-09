@@ -37,7 +37,8 @@ export default [
       sun_notes: 'Bracket play TBD pending Saturday results.',
       opponent_scouting: 'Saturday opponent scouting in Friday email.',
       lineup_notes: 'Starting lineup TBD — Coach Kenny will confirm Friday.',
+      tourney_link_label: 'VIEW SCHEDULE ON SE TOURNEY',
     },
-    preview_summary: 'Sat + Sun · hotel block · scouting',
+    preview_summary: 'Sat + Sun · hotel block · scouting · CTA',
   },
 ];

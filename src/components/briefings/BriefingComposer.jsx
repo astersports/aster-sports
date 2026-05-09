@@ -86,7 +86,17 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   const onSend = async () => {
     setBusy(true);
     try {
-      const composed = compose({ kind: state.kind, data: { ...state.body, signoff_message: state.signoff_message, coaches } });
+      // Wave 3.16.1: resolve tourney_url from anchor so the kind
+      // composer can emit a CTA when body.tourney_link_label is set.
+      let tourneyUrl = null;
+      if (state.anchor_kind === 'tournament' && state.anchor_id) {
+        const { data: tRow } = await supabase.from('tournaments').select('tourney_url').eq('id', state.anchor_id).maybeSingle();
+        tourneyUrl = tRow?.tourney_url || null;
+      } else if (state.anchor_kind === 'event' && state.anchor_id && state.kind === 'game_recap') {
+        const { data: eRow } = await supabase.from('events').select('tournament_id, tournaments(tourney_url)').eq('id', state.anchor_id).maybeSingle();
+        tourneyUrl = eRow?.tournaments?.tourney_url || null;
+      }
+      const composed = compose({ kind: state.kind, data: { ...state.body, tourney_url: tourneyUrl, signoff_message: state.signoff_message, coaches } });
       const draftPayload = { kind: state.kind, anchor_kind: state.anchor_kind, anchor_id: state.anchor_id, audience_type: state.audience_type, audience_filter: state.audience_filter, content_sections: { body: state.body, sections: composed.sections }, signoff_message: state.signoff_message, subject: composed.subject, body_html: composed.html, body_plain: composed.plainText };
       if (state.send_mode === 'scheduled' && state.scheduled_for) {
         const r = await draft.submitSchedule(draftPayload, state.scheduled_for);

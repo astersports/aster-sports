@@ -26,6 +26,8 @@ export function composeTournamentPrelim(data = {}) {
     tournamentName = '', tournamentDates = '', tournamentVenue = '',
     hotel_block = '', sat_notes = '', sun_notes = '',
     opponent_scouting = '', lineup_notes = '',
+    // Wave 3.16.1: tourney_url resolved by caller from anchor.
+    tourney_link_label = '', tourney_url = null,
     signoff_message = '', coaches = [],
     orgName = ORG_NAME_DEFAULT, eyebrowLink = ORG_WEBSITE_DEFAULT,
     contactEmail = ORG_CONTACT_DEFAULT, logoUrl = ORG_LOGO_DEFAULT,
@@ -39,6 +41,9 @@ export function composeTournamentPrelim(data = {}) {
   appendIf(sections, sun_notes ? `Sunday\n${sun_notes}` : '');
   appendIf(sections, opponent_scouting);
   appendIf(sections, lineup_notes);
+  if (tourney_link_label?.trim() && tourney_url) {
+    sections.push({ kind: 'cta_buttons', buttons: [{ text: tourney_link_label.trim(), url: tourney_url }] });
+  }
   if (signoff_message?.trim() || coaches.length) {
     sections.push({ kind: 'signoff', prose: signoff_message?.trim() || '', coaches: coaches.map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' })) });
   }

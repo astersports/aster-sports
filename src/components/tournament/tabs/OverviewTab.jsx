@@ -53,7 +53,7 @@ export default function OverviewTab({ tournament, isStaff }) {
         <div style={card}>
           <div style={sectionLabel}><ExternalLink size={11} strokeWidth={2} /> Tournament page</div>
           <a href={tournament.tourney_url} target="_blank" rel="noopener noreferrer" style={linkButton}>
-            Open TourneyMachine <ExternalLink size={12} strokeWidth={2} />
+            View on SE Tourney <ExternalLink size={12} strokeWidth={2} />
           </a>
         </div>
       )}

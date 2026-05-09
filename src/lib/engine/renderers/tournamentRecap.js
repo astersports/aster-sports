@@ -23,6 +23,9 @@ export function composeTournamentRecap(data = {}) {
   const {
     tournamentName = '', final_standing = '', game_results = '',
     mvp_name = '', takeaways = '',
+    // Wave 3.16.1: caller resolves tourney_url from anchor; label is
+    // body-authored. Both required to emit a CTA.
+    tourney_link_label = '', tourney_url = null,
     signoff_message = '', coaches = [],
     orgName = ORG_NAME_DEFAULT, eyebrowLink = ORG_WEBSITE_DEFAULT,
     contactEmail = ORG_CONTACT_DEFAULT, logoUrl = ORG_LOGO_DEFAULT,
@@ -35,6 +38,9 @@ export function composeTournamentRecap(data = {}) {
   appendIf(sections, game_results);
   appendIf(sections, mvp_name ? `MVP: ${mvp_name.trim()}` : '');
   appendIf(sections, takeaways);
+  if (tourney_link_label?.trim() && tourney_url) {
+    sections.push({ kind: 'cta_buttons', buttons: [{ text: tourney_link_label.trim(), url: tourney_url }] });
+  }
   if (signoff_message?.trim() || coaches.length) {
     sections.push({ kind: 'signoff', prose: signoff_message?.trim() || '', coaches: coaches.map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' })) });
   }

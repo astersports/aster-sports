@@ -4,11 +4,14 @@ import { getTemplatesForKind, TEMPLATES_BY_KIND } from '../index';
 // Field-shape contract per body editor (mirrors §1 pre-flight).
 // Keep in lockstep with src/components/briefings/bodies/<X>Body.jsx
 // defaultValue exports.
+// Wave 3.16.1: tourney_link_label added to game_recap, tournament_prelim,
+// tournament_recap. URL is resolved at compose time from anchor; only the
+// label lives on the body.
 const EDITOR_SHAPES = {
   weekly_digest: ['body_notes', 'ops_notes'],
-  game_recap: ['score', 'our_highlights', 'opp_highlights', 'player_of_game_name', 'coach_note'],
-  tournament_prelim: ['hotel_block', 'sat_notes', 'sun_notes', 'opponent_scouting', 'lineup_notes'],
-  tournament_recap: ['final_standing', 'game_results', 'mvp_name', 'takeaways'],
+  game_recap: ['score', 'our_highlights', 'opp_highlights', 'player_of_game_name', 'coach_note', 'tourney_link_label'],
+  tournament_prelim: ['hotel_block', 'sat_notes', 'sun_notes', 'opponent_scouting', 'lineup_notes', 'tourney_link_label'],
+  tournament_recap: ['final_standing', 'game_results', 'mvp_name', 'takeaways', 'tourney_link_label'],
   announcement: ['headline', 'body_text'],
   custom_message: ['subject', 'body_text'],
 };

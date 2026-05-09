@@ -53,7 +53,14 @@ export default function TournamentFormSheet({ tournament, onClose }) {
   const save = async () => {
     if (!valid || saving) return;
     setSaving(true);
-    const result = tournament ? await update(tournament.id, form) : await create(form);
+    // Wave 3.16.1: coerce empty URL fields to null so the DB stores
+    // NULL instead of '' (empty-string-vs-null bug).
+    const cleaned = {
+      ...form,
+      tourney_url: form.tourney_url?.trim() || null,
+      hotel_url: form.hotel_url?.trim() || null,
+    };
+    const result = tournament ? await update(tournament.id, cleaned) : await create(cleaned);
     setSaving(false);
     if (result?.error) { console.error('TournamentFormSheet save:', result.error.message); showToast("Couldn't save. Try again?", 'error'); return; }
     showToast(tournament ? 'Tournament updated' : 'Tournament created');
@@ -107,7 +114,7 @@ export default function TournamentFormSheet({ tournament, onClose }) {
         <Input id="t-address" label="Venue address" type="text" value={form.primary_venue_address} onChange={(e) => patch({ primary_venue_address: e.target.value })} placeholder="260 Jay St, Katonah, NY" />
       </div>
       <div style={section}>
-        <Input id="t-url" label="TourneyMachine URL" type="url" value={form.tourney_url} onChange={(e) => patch({ tourney_url: e.target.value })} placeholder="https://tourneymachine.com/..." />
+        <Input id="t-url" label="SE Tourney link" type="url" value={form.tourney_url} onChange={(e) => patch({ tourney_url: e.target.value })} placeholder="https://setourney.app.link/..." />
       </div>
       <div style={section}>
         <Input id="t-hotel" label="Hotel URL (optional)" type="url" value={form.hotel_url} onChange={(e) => patch({ hotel_url: e.target.value })} placeholder="https://book.passkey.com/..." />
