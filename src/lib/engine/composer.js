@@ -18,6 +18,11 @@ import { composeAcademyCallupNotice } from './renderers/academyCallupNotice';
 import { composeTournamentPreliminary } from './renderers/tournamentPreliminary';
 import { composeWeeklyDigest } from './renderers/weeklyDigest';
 import { composeScheduleChange } from './renderers/scheduleChange';
+import { composeGameRecap } from './renderers/gameRecap';
+import { composeTournamentPrelim } from './renderers/tournamentPrelim';
+import { composeTournamentRecap } from './renderers/tournamentRecap';
+import { composeAnnouncement } from './renderers/announcement';
+import { composeCustomMessage } from './renderers/customMessage';
 import scheduleChangeDiff from './renderers/scheduleChangeDiff';
 import statGrid from './renderers/statGrid';
 import poolStandings from './renderers/poolStandings';
@@ -54,11 +59,22 @@ const SECTION_RENDERERS = {
   schedule_change_diff: scheduleChangeDiff,
 };
 
+// Wave 3.11: 5 new lightweight kind composers added for the unified
+// BriefingComposer. The legacy `tournament_preliminary` (wave-2 spec
+// renderer) is preserved under its original key. The lightweight
+// briefing version registers under `tournament_prelim` to avoid the
+// clash. A future wave will collapse the two once the legacy kind's
+// callers migrate.
 const KIND_COMPOSERS = {
   academy_callup_notice: composeAcademyCallupNotice,
   tournament_preliminary: composeTournamentPreliminary,
   weekly_digest: composeWeeklyDigest,
   schedule_change: composeScheduleChange,
+  game_recap: composeGameRecap,
+  tournament_prelim: composeTournamentPrelim,
+  tournament_recap: composeTournamentRecap,
+  announcement: composeAnnouncement,
+  custom_message: composeCustomMessage,
 };
 
 export function renderSections(sections = []) {
