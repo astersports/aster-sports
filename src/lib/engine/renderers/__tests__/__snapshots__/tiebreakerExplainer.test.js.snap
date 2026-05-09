@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`template T3 — tiebreakerExplainer > matches snapshot 1`] = `
+{
+  "html": "<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;margin:16px 0;"><tr><td style="padding:14px 16px;background-color:#f8fafc;border:1px solid #e5e7eb;border-radius:4px;font-family:Inter,system-ui,sans-serif;"><div style="font-size:14px;font-weight:700;color:#0f172a;line-height:1.4;margin:0 0 6px 0;">How tiebreakers work:</div><div style="font-size:13px;color:#334155;line-height:1.6;margin:0;">Two teams tied? Head-to-head wins. Three teams tied? Point differential decides it. Max +20 per game.</div></td></tr></table>",
+  "plainText": "How tiebreakers work:
+Two teams tied? Head-to-head wins. Three teams tied? Point differential decides it. Max +20 per game.",
+}
+`;

@@ -1,0 +1,8 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`free-text F1 — statsNarrative > matches snapshot 1`] = `
+{
+  "html": "<p style="font-family:Inter,system-ui,sans-serif;font-size:14px;color:#0f172a;line-height:1.6;margin:8px 0;padding:8px 0;">We averaged 29 points across two games. Got there by sharing the ball — eight different scorers in the second game alone. Defense locked in once we adjusted to their press in the third quarter.</p>",
+  "plainText": "We averaged 29 points across two games. Got there by sharing the ball — eight different scorers in the second game alone. Defense locked in once we adjusted to their press in the third quarter.",
+}
+`;
