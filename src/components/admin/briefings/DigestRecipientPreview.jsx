@@ -14,7 +14,7 @@ const navBtn = {
 };
 
 export default function DigestRecipientPreview({
-  family, events, period, teams, tournaments, coaches,
+  family, events, period, teams, tournaments, coaches, rsvpCountsByEvent,
   bodyNotes, signoffMessage, opsNotes,
   index, total, onPrev, onNext,
 }) {
@@ -23,12 +23,12 @@ export default function DigestRecipientPreview({
     try {
       return compose({
         kind: 'weekly_digest',
-        data: { family, events, period, teams, tournaments, coaches, body_notes: bodyNotes, signoff_message: signoffMessage, ops_notes: opsNotes },
+        data: { family, events, period, teams, tournaments, coaches, rsvpCountsByEvent, body_notes: bodyNotes, signoff_message: signoffMessage, ops_notes: opsNotes },
       });
     } catch (e) {
       return { html: `<div style="padding:16px;color:#dc2626;">Preview error: ${e.message}</div>`, plainText: '' };
     }
-  }, [family, events, period, teams, tournaments, coaches, bodyNotes, signoffMessage, opsNotes]);
+  }, [family, events, period, teams, tournaments, coaches, rsvpCountsByEvent, bodyNotes, signoffMessage, opsNotes]);
 
   if (!family) return null;
   const teamLabel = (family.team_names || []).join(' + ');

@@ -1,6 +1,12 @@
 // Builds the weekly_schedule section data for the digest composer.
 // Groups events by NY-tz local date, decorates with team color stripes,
 // derives tournament placeholder text per D10. Pure function; no fetch.
+//
+// Wave 3.5 D2 + D4: event row now carries
+//   location_link   — google_maps_url from joined locations row (null for
+//                     tournament placeholder venues without a pin)
+//   rsvp_counts     — { going, maybe, out } from rsvpCountsByEvent map.
+// Composer (kind composer) plumbs both inputs from useDigestEvents fetches.
 
 const NY_TZ = 'America/New_York';
 const dayKeyFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, year: 'numeric', month: 'numeric', day: 'numeric' });
@@ -30,7 +36,6 @@ function deriveTournamentLabel(event, tournament) {
   const eventDow = dowFmt.format(new Date(event.start_at));
   const tStart = tournament.start_date ? new Date(`${tournament.start_date}T00:00:00`) : null;
   const tStartDow = tStart ? dowFmt.format(tStart) : null;
-  // Friday before a Saturday-start weekend tournament
   if (eventDow === 'Fri' && tStartDow === 'Sat') return `${tournName} — see Thursday email`;
   if (eventDow === 'Sat') return `${tournName} — pool play`;
   if (eventDow === 'Sun') {
@@ -40,22 +45,27 @@ function deriveTournamentLabel(event, tournament) {
   return tournName;
 }
 
-function buildEventRow(event, teamsMap, tournamentsMap) {
-  const team = teamsMap.get(event.team_id) || {};
+function buildEventRow(event, ctx) {
+  const team = ctx.teamsMap.get(event.team_id) || {};
   const teamName = team.name || 'Team';
   const isTournament = event.event_type === 'tournament' || event.is_bracket_placeholder;
+  const counts = ctx.rsvpCountsByEvent?.get(event.id);
   if (isTournament) {
-    const tournament = event.tournament_id ? tournamentsMap.get(event.tournament_id) : null;
+    const tournament = event.tournament_id ? ctx.tournamentsMap.get(event.tournament_id) : null;
     return {
       team_name: teamName,
       team_color: team.team_color || '#4a8fd4',
       primary: `${teamName} · Tournament`,
       secondary: deriveTournamentLabel(event, tournament),
       variant: 'tournament_placeholder',
+      // Tournament placeholders intentionally have no map link.
+      location_link: null,
+      rsvp_counts: counts || undefined,
     };
   }
   const typeLabel = EVENT_TYPE_LABELS[event.event_type] || 'Event';
-  const locParts = [event.location, event.sub_location].filter(Boolean).join(', ');
+  const locationName = event.locations?.name || event.location;
+  const locParts = [locationName, event.sub_location].filter(Boolean).join(', ');
   const secondary = locParts ? `${timeRange(event)} · ${locParts}` : timeRange(event);
   return {
     team_name: teamName,
@@ -63,22 +73,23 @@ function buildEventRow(event, teamsMap, tournamentsMap) {
     primary: `${teamName} · ${typeLabel}`,
     secondary,
     variant: 'standard',
+    location_link: event.locations?.google_maps_url || null,
+    rsvp_counts: counts || undefined,
   };
 }
 
-// Returns a weekly_schedule section payload (per renderer #6) or null
-// when the family has no events in the period.
-export function buildScheduleSection({ events, teams, tournaments }) {
+export function buildScheduleSection({ events, teams, tournaments, rsvpCountsByEvent }) {
   if (!events?.length) return null;
   const teamsMap = new Map((teams || []).map((t) => [t.id, t]));
   const tournamentsMap = new Map((tournaments || []).map((t) => [t.id, t]));
+  const ctx = { teamsMap, tournamentsMap, rsvpCountsByEvent };
   const groups = new Map();
   const sorted = [...events].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
   for (const ev of sorted) {
     if (!ev?.start_at) continue;
     const key = dayKey(ev.start_at);
     if (!groups.has(key)) groups.set(key, { day_label: dayLabel(ev.start_at), events: [] });
-    groups.get(key).events.push(buildEventRow(ev, teamsMap, tournamentsMap));
+    groups.get(key).events.push(buildEventRow(ev, ctx));
   }
   const days = [...groups.values()];
   if (!days.length) return null;

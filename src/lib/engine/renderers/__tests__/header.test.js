@@ -27,4 +27,22 @@ describe('renderer #1 — header (uplifted shape)', () => {
     const out = renderHeader({ ...fixture, goldStripe: false });
     expect(out.html).not.toContain('background-color:#fbbf24');
   });
+
+  it('eyebrow_link wraps the eyebrow in an inline-styled <a> (target=_blank, rel=noopener)', () => {
+    const out = renderHeader({ ...fixture, eyebrow_link: 'https://www.legacyhoopers.org/' });
+    expect(out.html).toContain('href="https://www.legacyhoopers.org/"');
+    expect(out.html).toContain('target="_blank"');
+    expect(out.html).toContain('rel="noopener"');
+    expect(out.html).toMatch(/<a[^>]*>Legacy Hoopers · Weekly Digest<\/a>/);
+  });
+
+  it('eyebrow_link omitted → no <a> tag in eyebrow', () => {
+    const out = renderHeader({ ...fixture });
+    expect(out.html).not.toContain('href=');
+  });
+
+  it('plainText appends bare-host suffix when eyebrow_link present', () => {
+    const out = renderHeader({ ...fixture, eyebrow_link: 'https://www.legacyhoopers.org/' });
+    expect(out.plainText).toContain('LEGACY HOOPERS · WEEKLY DIGEST · legacyhoopers.org');
+  });
 });

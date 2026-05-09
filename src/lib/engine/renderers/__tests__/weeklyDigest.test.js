@@ -17,11 +17,8 @@ describe('composeWeeklyDigest', () => {
   it('multi-team Samaritano shape — both teams interleave chronologically', () => {
     const out = composeWeeklyDigest(multiTeam);
     expect(out.teams_included).toEqual(expect.arrayContaining(['t-11u', 't-8u']));
-    // Both team colors render in stripe borders.
     expect(out.html).toContain('border-left:5px solid #7C3AED'); // 11U Girls
     expect(out.html).toContain('border-left:5px solid #EA580C'); // 8U Boys
-    // Day-label ordering proves the schedule interleaves chronologically:
-    // Tue 5/12 (8U Boys) before Wed 5/13 (11U Girls) before Sat 5/16 (11U Girls game).
     const may12 = out.html.indexOf('MAY 12');
     const may13 = out.html.indexOf('MAY 13');
     const may16 = out.html.indexOf('MAY 16');
@@ -29,6 +26,29 @@ describe('composeWeeklyDigest', () => {
     expect(may13).toBeGreaterThan(may12);
     expect(may16).toBeGreaterThan(may13);
     expect(out.html).toContain('Stagger your snack runs');
+  });
+
+  it('header eyebrow defaults to legacyhoopers.org link for digest kind', () => {
+    const out = composeWeeklyDigest(multiTeam);
+    expect(out.html).toContain('href="https://www.legacyhoopers.org/"');
+    expect(out.html).toMatch(/<a[^>]*>Legacy Hoopers · WEEKLY DIGEST<\/a>/);
+    expect(out.plainText).toContain('LEGACY HOOPERS · WEEKLY DIGEST · legacyhoopers.org');
+  });
+
+  it('event location_link renders inline " · map" link', () => {
+    const out = composeWeeklyDigest(multiTeam);
+    expect(out.html).toContain('href="https://maps.google.com/?q=WCC"');
+    expect(out.html).toContain('href="https://maps.google.com/?q=Stamford+Sportsplex"');
+    expect(out.html).toMatch(/·\s*<a[^>]+>map<\/a>/);
+    expect(out.plainText).toContain('https://maps.google.com/?q=WCC');
+  });
+
+  it('rsvp_counts render as "N going · M maybe · K out", zero-state shows "no RSVPs yet"', () => {
+    const out = composeWeeklyDigest(multiTeam);
+    expect(out.html).toContain('8 going · 2 maybe · 1 out');   // e1
+    expect(out.html).toContain('12 going · 1 maybe · 0 out');  // e3
+    expect(out.html).toContain('no RSVPs yet');                // e2 (all zero)
+    expect(out.plainText).toContain('8 going · 2 maybe · 1 out');
   });
 
   it('tournament weekend — Fri/Sat/Sun derive correct placeholder labels', () => {

@@ -29,6 +29,7 @@ export async function sendWeeklyDigest({
   orgId, period,
   bodyNotes, signoffMessage, opsNotes,
   recipients, events, tournaments, teams, coaches,
+  rsvpCountsByEvent,
   testOnly,
 }) {
   if (!orgId) throw new Error('Missing orgId.');
@@ -49,7 +50,7 @@ export async function sendWeeklyDigest({
       if (!famEvents.length) return null;
       const result = compose({
         kind: 'weekly_digest',
-        data: { family, events: famEvents, period, teams, tournaments, body_notes: bodyNotes, signoff_message: signoffMessage, ops_notes: opsNotes, coaches },
+        data: { family, events: famEvents, period, teams, tournaments, body_notes: bodyNotes, signoff_message: signoffMessage, ops_notes: opsNotes, coaches, rsvpCountsByEvent },
       });
       return { family, ...result };
     })

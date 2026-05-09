@@ -32,7 +32,7 @@ export default function DigestComposer({ onClose }) {
   const [sending, setSending] = useState(false);
 
   const { recipients, loading: recipientLoading } = useDigestRecipients(orgId);
-  const { events, tournaments, teams, loading: eventsLoading } = useDigestEvents({ orgId, period });
+  const { events, tournaments, teams, rsvpCountsByEvent, loading: eventsLoading } = useDigestEvents({ orgId, period });
   const { staff: coaches } = useOrgStaff(orgId);
 
   const eventsByTeam = useMemo(() => {
@@ -80,6 +80,7 @@ export default function DigestComposer({ onClose }) {
         bodyNotes, signoffMessage,
         opsNotes: opsEnabled ? opsNotes : '',
         recipients: sendable, events, tournaments, teams, coaches,
+        rsvpCountsByEvent,
         testOnly,
       });
       showToast(testOnly
@@ -121,6 +122,7 @@ export default function DigestComposer({ onClose }) {
               family={previewFamily} events={previewFamily.events}
               period={period} teams={teams} tournaments={tournaments}
               coaches={coaches}
+              rsvpCountsByEvent={rsvpCountsByEvent}
               bodyNotes={bodyNotes}
               signoffMessage={signoffMessage}
               opsNotes={opsEnabled ? opsNotes : ''}
