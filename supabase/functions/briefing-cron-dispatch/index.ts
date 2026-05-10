@@ -12,12 +12,17 @@
 //
 // This preserves v13 untouched. Pilot mode gate is inherited.
 //
-// REQUIRED SECRETS:
-//   CRON_SECRET           (Frank sets via Supabase env + matching
-//                          app.settings.cron_secret in Postgres)
-//   SUPABASE_URL          (auto)
+// AUTH SECRET (wave 4.3-F): cron secret moved from Deno.env to
+// public.app_secrets (name = 'cron_secret'). Both this function and
+// briefing-auto-draft-tick read it via service-role SELECT at request
+// time. The pg_cron job command builds Bearer from the same row.
+// Rotation = `UPDATE app_secrets SET value = encode(gen_random_bytes(32), 'hex')
+// WHERE name = 'cron_secret';` — immediate, no dashboard ceremony.
+//
+// REQUIRED ENV:
+//   SUPABASE_URL              (auto)
 //   SUPABASE_SERVICE_ROLE_KEY (auto)
-//   SUPABASE_JWT_SECRET   (auto in Supabase managed env)
+//   SUPABASE_JWT_SECRET       (auto; used to mint user JWT for v13)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
@@ -46,22 +51,26 @@ async function mintAuthenticatedJwt(userId: string, secret: string) {
   );
 }
 
-Deno.serve(async (req) => {
-  // Auth: shared secret with pg_cron. Empty Bearer = secret not yet
-  // set by Frank in Postgres GUC; reject quietly so the every-minute
-  // tick doesn't spam logs in the wrong direction.
-  const auth = req.headers.get("Authorization");
-  const expected = `Bearer ${Deno.env.get("CRON_SECRET") ?? ""}`;
-  if (!Deno.env.get("CRON_SECRET") || auth !== expected) {
-    return json({ error: "Unauthorized" }, 401);
-  }
+async function readCronSecret(sb: ReturnType<typeof createClient>): Promise<string | null> {
+  const { data, error } = await sb.from("app_secrets").select("value").eq("name", "cron_secret").maybeSingle();
+  if (error || !data?.value) return null;
+  return data.value as string;
+}
 
+Deno.serve(async (req) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const JWT_SECRET = Deno.env.get("SUPABASE_JWT_SECRET");
   if (!JWT_SECRET) return json({ error: "SUPABASE_JWT_SECRET missing" }, 500);
 
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+  // Auth: shared secret in app_secrets. Pre-4.3-F this read Deno.env.
+  const presented = req.headers.get("Authorization")?.replace(/^Bearer\s+/, "") ?? "";
+  const expected = await readCronSecret(sb);
+  if (!expected || presented !== expected) {
+    return json({ error: "Unauthorized" }, 401);
+  }
 
   const { data: ready, error: readErr } = await sb
     .from("comms_messages")

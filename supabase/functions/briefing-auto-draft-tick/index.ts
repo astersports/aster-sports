@@ -20,10 +20,12 @@
 // check guarantees at most one draft per org per Sunday despite
 // the every-minute cron tick.
 //
-// Auth: shares the briefing-cron-dispatch CRON_SECRET. Until Frank
-// configures both the DB GUC `app.settings.cron_secret` AND the
-// function env var `CRON_SECRET`, ticks pass an empty Bearer and
-// this function 401s — fail-loud, see docs/CRON_SECRET_SETUP.md.
+// Auth: shares the briefing-cron-dispatch cron secret. Wave 4.3-F
+// moved the secret from Deno.env to public.app_secrets (name =
+// 'cron_secret'), readable by the function's service-role client.
+// The pg_cron job command builds Bearer from the same row.
+// Rotation = `UPDATE app_secrets SET value = encode(gen_random_bytes(32), 'hex')
+// WHERE name = 'cron_secret';` — immediate, no dashboard ceremony.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
@@ -83,16 +85,22 @@ async function dispatchTrigger(sb: ReturnType<typeof createClient>, trigger: Tri
   }
 }
 
-Deno.serve(async (req) => {
-  const auth = req.headers.get("Authorization");
-  const expected = `Bearer ${Deno.env.get("CRON_SECRET") ?? ""}`;
-  if (!Deno.env.get("CRON_SECRET") || auth !== expected) {
-    return json({ error: "Unauthorized" }, 401);
-  }
+async function readCronSecret(sb: ReturnType<typeof createClient>): Promise<string | null> {
+  const { data, error } = await sb.from("app_secrets").select("value").eq("name", "cron_secret").maybeSingle();
+  if (error || !data?.value) return null;
+  return data.value as string;
+}
 
+Deno.serve(async (req) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+  const presented = req.headers.get("Authorization")?.replace(/^Bearer\s+/, "") ?? "";
+  const expected = await readCronSecret(sb);
+  if (!expected || presented !== expected) {
+    return json({ error: "Unauthorized" }, 401);
+  }
 
   const now = new Date();
   const { data: triggers, error: trigErr } = await sb

@@ -2894,6 +2894,35 @@ All 5 wave-4.2-A-8 substeps for the registry path landed: 7 calendar-anchored re
 
 **Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 408 passed. Pre-existing weeklyDigest.js 152-line violation untouched.
 
+### Wave 4.3-F — Cron secret moves from Deno.env to app_secrets (architectural fix) — SHIPPED May 10, 2026
+
+**Anchor of work:** `supabase/migrations/20260510225122_wave_4_3_f_cron_secret_to_app_secrets.sql` (NEW, applied via MCP + mirrored), `supabase/functions/briefing-cron-dispatch/index.ts`, `supabase/functions/briefing-auto-draft-tick/index.ts`, `src/lib/__tests__/verifyJwtConfigAudit.test.js` (extended), `docs/CRON_SECRET_SETUP.md` (DELETED).
+
+**The deadlock:** the original cron secret provisioning required Frank to set TWO values via the Supabase dashboard — `app.settings.cron_secret` (DB GUC, set via Database → Configuration) and `CRON_SECRET` (function env var, set via Functions → Secrets). The dashboard halves had been deferred for hours, and CC's environment lacked the Supabase CLI to do the function-side half via tooling. Both paths bottlenecked on the same hands-on step.
+
+**Resolution:** stop using `Deno.env` for shared secrets entirely. Follow the existing token-handler pattern (rsvp_token_secret, callup_token_secret) where the secret lives in `app_secrets` and is settable via SQL — provisioning is doable via MCP from chat, no CLI dependency, no dashboard ceremony.
+
+**What shipped:**
+
+1. **Migration `20260510225122_wave_4_3_f_cron_secret_to_app_secrets.sql`** — provisions `app_secrets.cron_secret` with `encode(extensions.gen_random_bytes(32), 'hex')` (idempotent; doesn't regen on re-apply). Then `cron.unschedule + cron.schedule` rewrites both pg_cron job commands to build `Authorization: Bearer ' || (SELECT value FROM app_secrets WHERE name = 'cron_secret')` instead of `coalesce(current_setting('app.settings.cron_secret', true), '')`. Verification block confirms secret length=64 + both cron commands reference `app_secrets`. Server-side secret generation keeps the value out of tool-use args entirely.
+2. **Both edge function sources refactored** — extract `readCronSecret(sb)` helper that does a service-role `SELECT value FROM app_secrets WHERE name = 'cron_secret'` at request time; auth check compares the Bearer header against the read value. Header comments updated to reference the new pattern.
+3. **Audit test extended for anti-pattern #33** — new `describe` block iterates function dirs, asserts shared-secret functions don't read from `Deno.env.get('*_SECRET')`. JWT_SECRET allowed (impersonation, not auth). `resend-webhook-receiver` exempted (SVIX webhook signing key is platform-managed by Resend; out of scope for app_secrets storage). Detection patterns extended to include `from('app_secrets')` so post-refactor briefing functions still get audited under anti-pattern #31's check.
+4. **`docs/CRON_SECRET_SETUP.md` deleted** — runbook obsolete. Replaced by a one-paragraph rotation note in `BRIEFINGS_COVERAGE_L99.md` v1.17.
+5. **CLAUDE.md anti-pattern #33** — codifies: shared secrets live in `app_secrets`, not `Deno.env`. Documents the JWT_SECRET + resend-webhook-receiver exemptions.
+
+**Brief broken-state window:** between migration apply (cron commands now send Bearer-from-app_secrets) and CI redeploy after merge (~5 min), functions still read `Deno.env.get('CRON_SECRET')` (empty) and 401. Both were 401-ing already pre-PR (per 4.3-E gateway-flip diagnostic), so no regression — just continued 401 until CI redeploys both to v4.
+
+**Tests:** 458 → 465 (+7). Anti-pattern #33 adds 7 per-function-dir assertions. Existing 4.3-E audit (anti-pattern #31, 8 tests) unchanged.
+
+**NOT included (intentional):**
+- The `app.settings.cron_secret` GUC is no longer referenced but left in place. Harmless. Cleanup deferred.
+- No MCP redeploy of either function. config.toml entries from 4.3-E preserve verify_jwt:false on next CI deploy.
+- Caching of the secret read at module level (cron is once-a-minute; query is cheap; keep simple).
+
+**Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 465 passed. Migration applied via Supabase MCP; verification block confirmed. Audit test 15/15 (was 8/8 in 4.3-E).
+
+**Wave 4.3 status post-merge:** auto-draft engine is fully self-bootstrapping — no human-dashboard dependency. weekly_digest fires on next Sunday 8am ET tick after CI completes function redeploys (5-min window). 4.3-B (5 remaining trigger handlers + force-fire override) is unblocked.
+
 ### Wave 4.3-E — Edge function verify_jwt config drift hotfix — SHIPPED May 10, 2026 (P0)
 
 **Anchor of work:** `supabase/config.toml` (2 new function entries), `supabase/migrations/20260510213602_wave_4_3_e_delete_zombie_briefing_drafts.sql` (NEW, applied via MCP + mirrored), `src/lib/__tests__/verifyJwtConfigAudit.test.js` (NEW vitest audit).
