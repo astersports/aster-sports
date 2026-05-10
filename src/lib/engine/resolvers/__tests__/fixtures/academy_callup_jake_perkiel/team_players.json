@@ -1,0 +1,3 @@
+[
+  { "id": "388a6ce8-4caf-4d94-99cd-d92ef98cd423", "team_id": "6abb0447-8866-461c-bd78-1c58eebf9551", "player_id": "4e361e9b-4cfa-46b7-bae8-48552f9841e0", "roster_type": "futures", "status": "active", "joined_at": "2026-05-05T18:23:26.274771+00:00", "left_at": null, "teams": { "id": "6abb0447-8866-461c-bd78-1c58eebf9551", "name": "10U Black", "team_color": "#4a8fd4", "sort_order": 2 } }
+]

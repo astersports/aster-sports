@@ -1,0 +1,55 @@
+[
+  {
+    "kind": "header",
+    "eyebrow": "FUTURES ACADEMY · CALL-UP",
+    "eyebrow_link": "https://www.legacyhoopers.org/",
+    "headline": "CALL-UP",
+    "urgency_label": "TUESDAY",
+    "goldStripe": true
+  },
+  {
+    "kind": "callup_card",
+    "kid_first_name": "Jake",
+    "home_team_name": "10U Black",
+    "home_team_color": "#4a8fd4",
+    "receiving_team_name": "10U Blue",
+    "receiving_team_color": "#94a3b8",
+    "is_same_team": false,
+    "event_label": "Practice",
+    "urgency_phrase": "Tuesday at 7:00 PM",
+    "narrative": "Jake has been called up from 10U Black futures to play with 10U Blue for Tuesday's practice."
+  },
+  {
+    "kind": "event_card",
+    "team_color": "#94a3b8",
+    "date": "Tuesday, May 12",
+    "time": "7:00 PM – 8:30 PM",
+    "location_name": "Rippowam Cisqua School",
+    "location_map_url": "https://maps.app.goo.gl/sKz13y4bh4Cv9zky7",
+    "opponent": null
+  },
+  {
+    "kind": "callup_response",
+    "callup_token_placeholders": {
+      "accept": "{{callup_accept_url}}",
+      "decline": "{{callup_decline_url}}"
+    },
+    "window_label": "Please respond by 12:00 PM today.",
+    "deadline_at": "2026-05-10T16:00:00.000Z"
+  },
+  {
+    "kind": "signoff",
+    "prose": "",
+    "coaches": [
+      { "display_name": "Frank", "title": "Program Director", "phone": "(917) 991-9830" },
+      { "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" }
+    ]
+  },
+  {
+    "kind": "footer",
+    "logoUrl": "https://skyfire-app.vercel.app/knight-logo-240.png",
+    "orgName": "Legacy Hoopers",
+    "websiteUrl": "https://www.legacyhoopers.org/",
+    "contactEmail": "info@legacyhoopers.org"
+  }
+]
