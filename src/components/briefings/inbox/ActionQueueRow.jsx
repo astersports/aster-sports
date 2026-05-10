@@ -1,11 +1,11 @@
 // Wave 3.12 — single inbox row. Status border-left, kind icon, title,
 // audience preview, status pill, primary action button.
 
-import { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy } from 'lucide-react';
+import { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy, UserPlus } from 'lucide-react';
 import { KIND_METADATA } from '../../../lib/briefings/kindMetadata';
 import { STATUS_TABLE, statusFor } from '../../../lib/briefings/statusTable';
 
-const ICON_MAP = { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy };
+const ICON_MAP = { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy, UserPlus };
 
 const rowStyle = (color) => ({
   display: 'flex', gap: 12, padding: 14, borderRadius: 10,

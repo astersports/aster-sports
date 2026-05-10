@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { bodyModuleFor, KIND_METADATA, KIND_ORDER, sortKinds } from '../kindMetadata';
 
 describe('KIND_METADATA', () => {
-  it('all 8 kinds present', () => {
-    expect(KIND_ORDER.length).toBe(8);
+  it('all 9 kinds present (academy_callup_notice surfaced wave 4.1d-2)', () => {
+    expect(KIND_ORDER.length).toBe(9);
     expect(KIND_ORDER.every((k) => KIND_METADATA[k])).toBe(true);
+    expect(KIND_ORDER).toContain('academy_callup_notice');
   });
 
   it('every entry has icon + label + description + bodyModule', () => {
@@ -40,21 +41,39 @@ describe('KIND_METADATA', () => {
   });
 });
 
-describe('sortKinds', () => {
-  it('falls back to spec order when usage is empty', () => {
+// Wave 4.1d-2 §5.1 — academy_callup_notice surfaced
+describe('academy_callup_notice (G2 — surfaced wave 4.1d-2)', () => {
+  it('exists in KIND_METADATA with player_specific audience', () => {
+    const meta = KIND_METADATA.academy_callup_notice;
+    expect(meta).toBeTruthy();
+    expect(meta.disabled).toBe(false);
+    expect(meta.defaultAudienceType).toBe('player_specific');
+    expect(meta.audienceLocked).toBe(true);
+    expect(meta.bodyModule).toBe('AcademyCallupBody');
+  });
+  it('default anchor is event (single game)', () => {
+    expect(KIND_METADATA.academy_callup_notice.defaultAnchorKind).toBe('event');
+    expect(KIND_METADATA.academy_callup_notice.anchorKinds).toEqual(['event']);
+  });
+  it('appears in KIND_ORDER between rsvp_nudge and custom_message', () => {
+    const idx = KIND_ORDER.indexOf('academy_callup_notice');
+    expect(idx).toBeGreaterThan(-1);
+    expect(KIND_ORDER[idx - 1]).toBe('rsvp_nudge');
+    expect(KIND_ORDER[idx + 1]).toBe('custom_message');
+  });
+});
+
+describe('sortKinds (wave 4.1d-2 §2.5 — stable order, usage no longer reorders)', () => {
+  it('returns spec order when usage is empty', () => {
     expect(sortKinds({})).toEqual(KIND_ORDER);
   });
 
-  it('floats most-recently-used kinds to the top', () => {
+  it('returns spec order regardless of usage data (deterministic to fix kind picker flicker)', () => {
     const usage = { announcement: 1000, game_recap: 2000 };
-    const sorted = sortKinds(usage);
-    expect(sorted[0]).toBe('game_recap');
-    expect(sorted[1]).toBe('announcement');
-    expect(sorted.length).toBe(KIND_ORDER.length);
+    expect(sortKinds(usage)).toEqual(KIND_ORDER);
   });
 
-  it('ignores unknown kinds in usage', () => {
-    const sorted = sortKinds({ unknown_kind: 9999 });
-    expect(sorted).toEqual(KIND_ORDER);
+  it('ignores unknown kinds in usage and returns spec order', () => {
+    expect(sortKinds({ unknown_kind: 9999 })).toEqual(KIND_ORDER);
   });
 });

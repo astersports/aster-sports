@@ -57,6 +57,37 @@ export function filterRecipientsByTeams(recipients, teamIds) {
 }
 
 export async function resolveAudience({ recipients, audienceType, audienceFilter, anchorId }) {
+  // Wave 4.1d-2 §5.3 — academy_callup_notice et al. Single-family scope
+  // via explicit player_ids (G2). Bypasses the team_ids machinery
+  // because it cuts a different axis (one player → that player's
+  // guardians, ignoring team filtering).
+  if (audienceType === 'player_specific') {
+    const playerIds = audienceFilter?.player_ids;
+    const audience = await resolvePlayerSpecificAudience(playerIds);
+    const teamIds = Array.from(new Set(audience.flatMap((a) => a.team_ids || [])));
+    return { teamIds, audience };
+  }
   const teamIds = await resolveAudienceTeamIds({ audienceType, audienceFilter, anchorId });
   return { teamIds, audience: filterRecipientsByTeams(recipients, teamIds) };
+}
+
+export async function resolvePlayerSpecificAudience(playerIds) {
+  if (!Array.isArray(playerIds) || !playerIds.length) return [];
+  const { supabase } = await import('../supabase');
+  const { data, error } = await supabase
+    .from('player_guardians')
+    .select('guardian_id, guardians(email), players(team_id)')
+    .in('player_id', playerIds);
+  if (error) throw error;
+  const dedupe = new Map();
+  for (const row of data || []) {
+    const gid = row.guardian_id;
+    const email = row.guardians?.email;
+    if (!gid || !email) continue;
+    if (!dedupe.has(gid)) dedupe.set(gid, { guardian_id: gid, email, team_ids: [] });
+    const slot = dedupe.get(gid);
+    const tid = row.players?.team_id;
+    if (tid && !slot.team_ids.includes(tid)) slot.team_ids.push(tid);
+  }
+  return Array.from(dedupe.values());
 }

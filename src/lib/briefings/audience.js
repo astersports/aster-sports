@@ -55,12 +55,21 @@ export function computeAudience({
   return { filtered, total, pilotModeOn: !!pilotModeOn, mode };
 }
 
+// Wave 4.1d-2 §3.1 — pilot guidance copy is more direct about the fix:
+// admins toggle pilot mode in the Org Settings → Communications card
+// (not yet a deeplink — falls back to settings page when wired).
+//
+// §2.3 — audienceCopy never shows a literal "0 families" pre-resolution.
+// The picker already passes filtered=null while loading; we keep the
+// "Computing audience…" copy. Callers (AudiencePicker, StepBodySignoff)
+// gate the count line behind a loading guard before showing this copy
+// so 0-families flashes are eliminated.
 export function audienceCopy({ filtered, total, mode }) {
   if (mode === 'pilot_zero') {
-    return `${total} families on roster. Pilot mode is ON — filtering to 0 pilot guardians. Send will not deliver to anyone. Disable pilot mode in Settings → Communications to send to all ${total}.`;
+    return `Pilot Mode is filtering this team to 0 pilot guardians (out of ${total}). Send will not deliver to anyone. Disable pilot mode to send to all ${total}.`;
   }
   if (mode === 'pilot_partial') {
-    return `${total} families on roster. Pilot mode is ON — sending to ${filtered} pilot guardians only. Disable pilot mode to send to all ${total}.`;
+    return `Pilot Mode is ON — sending to ${filtered} pilot guardians (out of ${total}). Disable pilot mode to send to all ${total}.`;
   }
   if (filtered == null) return 'Computing audience…';
   return `Will send to ${filtered} ${filtered === 1 ? 'family' : 'families'}.`;

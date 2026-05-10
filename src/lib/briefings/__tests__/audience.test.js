@@ -106,19 +106,30 @@ describe('computeAudience pilot mode states', () => {
   });
 });
 
-describe('audienceCopy', () => {
-  it('pilot_zero copy mentions Settings → Communications', () => {
+describe('audienceCopy (wave 4.1d-2 §3.1 — direct copy without "Settings → Communications" deeplink, no target route exists yet)', () => {
+  it('pilot_zero copy explains 0 filter and how to disable', () => {
     const copy = audienceCopy({ filtered: 0, total: 21, mode: 'pilot_zero' });
-    expect(copy).toContain('21 families on roster');
-    expect(copy).toContain('Pilot mode is ON');
-    expect(copy).toContain('Settings → Communications');
+    expect(copy).toContain('Pilot Mode is filtering');
+    expect(copy).toContain('0 pilot guardians');
+    expect(copy).toContain('out of 21');
+    expect(copy).toContain('Disable pilot mode');
     expect(copy).toContain('send to all 21');
   });
 
   it('pilot_partial copy mentions both numbers', () => {
     const copy = audienceCopy({ filtered: 2, total: 24, mode: 'pilot_partial' });
-    expect(copy).toContain('24 families on roster');
+    expect(copy).toContain('Pilot Mode is ON');
     expect(copy).toContain('sending to 2 pilot guardians');
+    expect(copy).toContain('out of 24');
+    expect(copy).toContain('send to all 24');
+  });
+
+  it('Wave 4.1d-2 §3.1 — pilot_zero "Disable pilot mode" guidance is direct, no broken deeplink', () => {
+    // No more "Settings → Communications" anchor since the route doesn't
+    // exist yet; copy is direct and actionable.
+    const copy = audienceCopy({ filtered: 0, total: 12, mode: 'pilot_zero' });
+    expect(copy).not.toContain('Settings → Communications');
+    expect(copy).toContain('Disable pilot mode');
   });
 
   it('standard copy is the simple Will send line', () => {

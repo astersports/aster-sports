@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { filterRecipientsByTeams } from '../recipientFilter';
+import { filterRecipientsByTeams, resolveAudience } from '../recipientFilter';
 
 const RECIPIENTS = [
   { guardian_id: 'g1', email: 'a@x', team_ids: ['t-11g', 't-8b'] },
@@ -36,5 +36,35 @@ describe('filterRecipientsByTeams', () => {
     const r = [{ guardian_id: 'g0', email: 'z@x' }, ...RECIPIENTS.slice(0, 1)];
     const out = filterRecipientsByTeams(r, ['t-11g']);
     expect(out.map((g) => g.guardian_id)).toEqual(['g1']);
+  });
+});
+
+// Wave 4.1d-2 §5.3 — player_specific audience resolver (G2)
+describe('resolveAudience for player_specific (G2)', () => {
+  it('empty player_ids returns empty audience + no team_ids', async () => {
+    // No supabase touch when input is empty.
+    const out = await resolveAudience({
+      recipients: RECIPIENTS, audienceType: 'player_specific',
+      audienceFilter: { player_ids: [] }, anchorId: null,
+    });
+    expect(out.audience).toEqual([]);
+    expect(out.teamIds).toEqual([]);
+  });
+
+  it('missing audience_filter returns empty', async () => {
+    const out = await resolveAudience({
+      recipients: RECIPIENTS, audienceType: 'player_specific',
+      audienceFilter: null, anchorId: null,
+    });
+    expect(out.audience).toEqual([]);
+    expect(out.teamIds).toEqual([]);
+  });
+
+  it('non-array player_ids returns empty', async () => {
+    const out = await resolveAudience({
+      recipients: RECIPIENTS, audienceType: 'player_specific',
+      audienceFilter: { player_ids: 'not-an-array' }, anchorId: null,
+    });
+    expect(out.audience).toEqual([]);
   });
 });
