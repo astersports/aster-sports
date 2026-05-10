@@ -7,7 +7,7 @@
 // so the per-recipient row records which teams contributed to that body.
 
 import { renderSections, renderSectionsPlainText } from '../composer';
-import { buildScheduleSection } from '../digestSchedule';
+import { buildScheduleSection } from '../resolvers/weeklyDigestSchedule';
 import { formatPeriodLabel, formatSubject } from '../digestPeriod';
 
 const ORG_NAME_DEFAULT = 'Legacy Hoopers';

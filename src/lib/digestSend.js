@@ -5,25 +5,54 @@
 // kind-agnostic — it reads body_html_rendered/body_plain_rendered/
 // subject_rendered per recipient and falls back to message-level body
 // when those are null.
+//
+// Wave 4.2-A-1: per-family compose now goes through the new resolver
+// pair (resolveWeeklyDigest + composeWeeklyDigest) from
+// src/lib/engine/resolvers/weeklyDigest.js. Caller still passes
+// pre-fetched events/recipients/etc. for backward-compat with
+// DigestComposer.jsx; we synthesize a context bundle from those args
+// and call composeWeeklyDigest(context, slice, overrides) per family.
+// renderedFamilies[0] is now deterministic by guardian_id ASC, which
+// stabilizes the "sample" content_sections written to the message row.
 
 import { supabase } from './supabase';
-import { compose } from './engine/composer';
+import { renderSections, renderSectionsPlainText } from './engine/composer';
 import { formatPeriodLabel } from './engine/digestPeriod';
+import { composeWeeklyDigest } from './engine/resolvers/weeklyDigest';
 import { applyUnsubscribeUrls } from './unsubscribeUrl';
 
 const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
+const ORG_NAME_DEFAULT = 'Legacy Hoopers';
+const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
+const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
+const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 
-function eventsForFamily(family, eventsByTeam) {
-  const seen = new Set();
-  const out = [];
-  for (const teamId of family.team_ids || []) {
-    for (const ev of eventsByTeam.get(teamId) || []) {
-      if (seen.has(ev.id)) continue;
-      seen.add(ev.id);
-      out.push(ev);
-    }
-  }
-  return out;
+function buildContext({ orgId, period, events, teams, tournaments, coaches, rsvpCountsByEvent }) {
+  const counts = rsvpCountsByEvent instanceof Map ? rsvpCountsByEvent : new Map(Object.entries(rsvpCountsByEvent || {}));
+  return {
+    org: {
+      id: orgId, name: ORG_NAME_DEFAULT,
+      branding: { eyebrowLink: ORG_WEBSITE_DEFAULT, contactEmail: ORG_CONTACT_DEFAULT, logoUrl: ORG_LOGO_DEFAULT },
+      voice_config: null, brand_colors: null,
+      coaches: coaches || [],
+    },
+    period: { start: period.start, end: period.end, label: formatPeriodLabel(period) },
+    events: events || [], teams: teams || [], tournaments: tournaments || [],
+    rsvpCountsByEvent: counts,
+  };
+}
+
+function buildSlicesFromRecipients(recipients) {
+  return (recipients || [])
+    .map((r) => ({ kind: 'family', guardian_id: r.guardian_id, email: r.email, kid_first_names: r.kid_first_names || [], team_ids: (r.team_ids || []).slice() }))
+    .sort((a, b) => (a.guardian_id < b.guardian_id ? -1 : a.guardian_id > b.guardian_id ? 1 : 0));
+}
+
+function renderSlice(context, slice, overrides) {
+  const { subject, content_sections } = composeWeeklyDigest(context, slice, overrides);
+  const html = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">' + renderSections(content_sections) + '</div>';
+  const plainText = renderSectionsPlainText(content_sections);
+  return { subject, html, plainText, sections: content_sections, teams_included: slice.team_ids };
 }
 
 export async function sendWeeklyDigest({
@@ -37,23 +66,15 @@ export async function sendWeeklyDigest({
   if (!period?.start || !period?.end) throw new Error('Pick a digest period.');
   if (!recipients?.length) throw new Error('No recipients available.');
 
-  const eventsByTeam = new Map();
-  for (const ev of events || []) {
-    const arr = eventsByTeam.get(ev.team_id) || [];
-    arr.push(ev);
-    eventsByTeam.set(ev.team_id, arr);
-  }
-
-  // Per-family compose. Drop families with zero events (D6).
-  const renderedFamilies = (recipients || [])
-    .map((family) => {
-      const famEvents = eventsForFamily(family, eventsByTeam);
-      if (!famEvents.length) return null;
-      const result = compose({
-        kind: 'weekly_digest',
-        data: { family, events: famEvents, period, teams, tournaments, body_notes: bodyNotes, signoff_message: signoffMessage, ops_notes: opsNotes, coaches, rsvpCountsByEvent },
-      });
-      return { family, ...result };
+  const context = buildContext({ orgId, period, events, teams, tournaments, coaches, rsvpCountsByEvent });
+  const overrides = { body_notes: bodyNotes, signoff_message: signoffMessage, ops_notes: opsNotes };
+  const slices = buildSlicesFromRecipients(recipients);
+  const renderedFamilies = slices
+    .map((slice) => {
+      const teamSet = new Set(slice.team_ids || []);
+      const hasEvents = (context.events || []).some((e) => teamSet.has(e.team_id));
+      if (!hasEvents) return null;
+      return { family: slice, ...renderSlice(context, slice, overrides) };
     })
     .filter(Boolean);
 

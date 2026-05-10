@@ -2623,3 +2623,30 @@ All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+
 - **Wave 4.3** — Auto-draft engine: cron-driven scan of `briefing_triggers`, creates draft `comms_messages` rows when trigger conditions match (e.g. `game_completed` → `game_recap` draft within 2h of final score).
 - **Wave 4.4** — Multi-org polish: St. Patrick's CYO Armonk onboarding flow (clone LH team types + customize voice_config, ~45 min target).
 - **Wave 5.0** — Voice / AI compose. LLM-assisted draft generation reading voice_config tone + recent context.
+
+### Wave 4.2-A-1 — Reference resolver + two-stage contract — SHIPPED May 10, 2026
+
+- **Branch:** `claude/wave-4-2-a-1-resolve-weekly-digest`
+- **Files (10 changed; 9 new, 1 deleted):**
+  - NEW `src/lib/engine/resolvers/weeklyDigest.js` (resolver + composer)
+  - NEW `src/lib/engine/resolvers/weeklyDigestSchedule.js` (pure helpers moved from deleted `digestSchedule.js`)
+  - NEW `src/lib/engine/resolvers/__tests__/mockSupabase.js` (chainable mock client)
+  - NEW `src/lib/engine/resolvers/__tests__/weeklyDigest.snapshot.test.js` (2 tests)
+  - NEW `src/lib/engine/resolvers/__tests__/weeklyDigest.contract.test.js` (5 tests)
+  - NEW `src/lib/engine/resolvers/__tests__/fixtures/weekly_digest_may_11_17/*.json` (8 fixture files)
+  - MOD `src/lib/digestSend.js` (per-family compose now goes through `composeWeeklyDigest`)
+  - MOD `src/lib/engine/renderers/weeklyDigest.js` (import path updated)
+  - DEL `src/lib/engine/digestSchedule.js`
+
+**Highlights**
+
+- Locks the wave-wide two-stage resolver contract:
+  ```
+  resolveX(anchor, options) -> { context, slices }
+  composeX(context, slice, overrides) -> { subject, content_sections }
+  ```
+- Snapshot test against production row `3b431eb1-3a1f-4fe0-bdb7-42e8f105ceb9` (May 11–17 weekly digest, sample family Stephanie Samaritano under guardian_id ASC) passes byte-for-byte.
+- Five contract tests: pure (resolver + compose), deterministic slice ordering, time-injectable, no fabrication.
+- Side effect: schedule-section sort now has a sort_order tiebreaker on equal start_at. Reproducibility win.
+
+**Tests:** 300 → 307 (+7). Lint clean. Build clean.
