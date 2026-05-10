@@ -1,8 +1,14 @@
 // Wave 3.11 follow-up — audience picker. Segmented control over 5
 // built-in modes; emits (audience_type, audience_filter). Custom mode
 // (cherry-pick) deferred to wave 4.0.
+//
+// Wave 4.1b §2 — Bug B. Audience copy is now driven by `audience`
+// (output of computeAudience). Pilot mode states get a yellow chip
+// + an explanation line; standard mode keeps the existing copy.
 
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
+import { audienceCopy } from '../../lib/briefings/audience';
+import PilotModeChip from './PilotModeChip';
 
 const segWrap = { display: 'flex', flexWrap: 'wrap', gap: 6 };
 const segBtn = (active) => ({
@@ -32,13 +38,14 @@ function modesAvailableFor(kind) {
   return MODES;
 }
 
-export default function AudiencePicker({ kind, audienceType, audienceFilter, recipientCount, onPick }) {
+export default function AudiencePicker({ kind, audienceType, audienceFilter, audience, onPick }) {
   const meta = KIND_METADATA[kind] || {};
   const locked = meta.audienceLocked;
   const modes = modesAvailableFor(kind);
-  const audienceLabel = recipientCount == null
-    ? 'Computing audience…'
-    : `Will send to ${recipientCount} ${recipientCount === 1 ? 'family' : 'families'}.`;
+  const a = audience || { filtered: null, total: null, mode: 'standard', pilotModeOn: false };
+  const copy = audienceCopy(a);
+  const showChip = a.pilotModeOn && (a.mode === 'pilot_zero' || a.mode === 'pilot_partial');
+  const lineColor = a.mode === 'pilot_zero' ? 'var(--em-warning)' : 'var(--em-text-tertiary)';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={segWrap}>
@@ -50,8 +57,9 @@ export default function AudiencePicker({ kind, audienceType, audienceFilter, rec
           </button>
         ))}
       </div>
-      <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>
-        {audienceLabel}
+      {showChip && <div><PilotModeChip /></div>}
+      <div style={{ fontSize: 13, color: lineColor }}>
+        {copy}
       </div>
     </div>
   );

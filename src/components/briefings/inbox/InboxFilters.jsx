@@ -51,8 +51,8 @@ export default function InboxFilters({ filters, onChange, onClear }) {
           {openMenu === 'kind' && (
             <div style={menuStyle}>
               <button type="button" style={menuItem(!filters.kind)} onClick={() => { onChange({ kind: null }); setOpenMenu(null); }}>All kinds</button>
-              {KIND_ORDER.map((k) => { const m = KIND_METADATA[k]; return (
-                <button key={k} type="button" disabled={m.disabled} style={{ ...menuItem(filters.kind === k), opacity: m.disabled ? 0.5 : 1 }} onClick={() => { onChange({ kind: k }); setOpenMenu(null); }}>{m.label}{m.disabled ? ' (soon)' : ''}</button>
+              {KIND_ORDER.filter((k) => !KIND_METADATA[k]?.disabled).map((k) => { const m = KIND_METADATA[k]; return (
+                <button key={k} type="button" style={menuItem(filters.kind === k)} onClick={() => { onChange({ kind: k }); setOpenMenu(null); }}>{m.label}</button>
               ); })}
             </div>
           )}

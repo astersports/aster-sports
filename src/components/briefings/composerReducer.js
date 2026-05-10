@@ -1,5 +1,18 @@
 // Wave 3.11 follow-up — reducer for BriefingComposer wizard state.
 // Pure module, no React. Easy to unit-test.
+//
+// Wave 4.1b §1 + §3 — Bug A: anchor_id is required when anchor_kind
+// is event/tournament/team (not for org). Bug C: HYDRATE_DRAFT
+// targets the earliest invalid step so admins can recover broken
+// drafts (e.g. anchor_id NULL surfaces inline on Step 2).
+
+export const ANCHOR_KINDS_REQUIRING_ID = new Set(['event', 'tournament', 'team']);
+
+export function step2Valid(state) {
+  if (!state.anchor_kind || !state.audience_type) return false;
+  if (ANCHOR_KINDS_REQUIRING_ID.has(state.anchor_kind) && !state.anchor_id) return false;
+  return true;
+}
 
 export const INITIAL_STATE = {
   step: 1,
@@ -21,8 +34,14 @@ export const INITIAL_STATE = {
 
 export function canAdvance(state) {
   if (state.step === 1) return !!state.kind;
-  if (state.step === 2) return !!state.anchor_kind && !!state.audience_type;
+  if (state.step === 2) return step2Valid(state);
   return false;
+}
+
+export function hydrateTargetStep(payload = {}) {
+  if (!payload.kind) return 1;
+  if (!step2Valid(payload)) return 2;
+  return 3;
 }
 
 export function composerReducer(state, action) {
@@ -64,7 +83,7 @@ export function composerReducer(state, action) {
     case 'JUMP_TO':
       return { ...state, step: action.step };
     case 'HYDRATE_DRAFT':
-      return { ...state, ...action.payload, step: 3 };
+      return { ...state, ...action.payload, step: hydrateTargetStep({ ...state, ...action.payload }) };
     case 'RESET':
       return { ...INITIAL_STATE };
     default:

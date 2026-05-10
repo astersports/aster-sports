@@ -1,5 +1,8 @@
 // Wave 3.12 — merges DB-backed comms_messages (drafts + scheduled)
 // with synthetic items from useNeedsBriefing. Sorts by status priority.
+//
+// Wave 4.1b §6.F — viewFilter='drafts' renders ONLY in-progress drafts
+// (no scheduled, no synthetic). Used by the new Drafts tab.
 
 import { useMemo } from 'react';
 import { useAuth } from '../../../context/AuthContext';
@@ -26,20 +29,25 @@ function applyClientFilters(rows, filters, search) {
   return out;
 }
 
-export default function ActiveQueue({ filters, search, onAction, onCompose, onViewHistory }) {
+export default function ActiveQueue({ filters, search, onAction, onCompose, onViewHistory, viewFilter }) {
   const { orgId } = useAuth();
   const { rows: dbRows } = useInboxQueue({ orgId });
   const { items: synthetic } = useNeedsBriefing({ orgId });
 
   const merged = useMemo(() => {
+    if (viewFilter === 'drafts') {
+      const drafts = (dbRows || []).filter((r) => r.status === 'draft');
+      return applyClientFilters(drafts, filters, search);
+    }
     const all = [...(dbRows || []), ...(synthetic || [])];
     const filtered = applyClientFilters(all, filters, search);
     return filtered.slice().sort((a, b) => sortPriority(a) - sortPriority(b));
-  }, [dbRows, synthetic, filters, search]);
+  }, [dbRows, synthetic, filters, search, viewFilter]);
 
   if (!merged.length) {
     const filterActive = !!(filters?.kind || filters?.teams?.length || search?.trim());
     if (filterActive) return <EmptyState kind="filtered" onClearFilters={() => onAction(null, 'clear_filters')} />;
+    if (viewFilter === 'drafts') return <EmptyState kind="drafts" onCompose={onCompose} />;
     return <EmptyState kind="active" onCompose={onCompose} onViewHistory={onViewHistory} />;
   }
 

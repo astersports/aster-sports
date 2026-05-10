@@ -53,6 +53,24 @@ export const STATUS_TABLE = {
     label: 'DIGEST DUE',
     action: 'Compose',
   },
+  // Wave 4.1b §5 — past tournaments needing recap (last 7 days).
+  needs_briefing_tournament_recap: {
+    sort: 3,
+    borderColor: 'var(--em-warning)',
+    pillBg: 'var(--em-warning-soft)',
+    pillText: 'var(--em-warning)',
+    label: 'NEEDS RECAP',
+    action: 'Compose',
+  },
+  // Wave 4.1b §5 — overflow row when >5 unrecapped games surface.
+  more_recaps_collapsed: {
+    sort: 4,
+    borderColor: 'var(--em-text-tertiary)',
+    pillBg: 'var(--em-bg-secondary)',
+    pillText: 'var(--em-text-tertiary)',
+    label: 'MORE',
+    action: 'View list',
+  },
   stale_draft: {
     sort: 7,
     borderColor: 'var(--em-text-tertiary)',
@@ -92,7 +110,8 @@ export function sortPriority(row, now = Date.now()) {
 // scheduled >24h since they aren't urgent).
 const ACTIVE_BADGE_STATUSES = new Set([
   'draft', 'scheduled_lt24h', 'needs_briefing_tournament',
-  'needs_briefing_game', 'schedule_change_skipped', 'weekly_digest_due',
+  'needs_briefing_tournament_recap', 'needs_briefing_game',
+  'schedule_change_skipped', 'weekly_digest_due',
 ]);
 
 export function isActiveBadgeItem(row, now = Date.now()) {
