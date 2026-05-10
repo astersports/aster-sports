@@ -2769,3 +2769,27 @@ All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+
 **Compose UI bridge:** SKIPPED. The existing `ScheduleChangeBody.jsx` is informational-only (locked diff display from wizardForm's buildSaveDiff) — no editable fields to remove. Send pipeline switch deferred to 4.2-A-8 atomic migration.
 
 **Mock side-effect:** `mockSupabase.js` RPC handler now filters by `p_pilot_only` arg. Wave-1 weeklyDigest fixture's recipients gained explicit `is_pilot_family: true` flags to keep its snapshot passing under the new filter behavior. Behavior-preserving change.
+
+### Wave 4.2-A-6 — resolveRsvpNudge + composeRsvpNudge — SHIPPED May 10, 2026
+
+- **Branch:** `claude/wave-4-2-a-6-resolve-rsvp-nudge`
+- **Files:**
+  - NEW `src/lib/engine/resolvers/rsvpNudge.js` (resolver + composer, 132 lines)
+  - NEW `src/lib/engine/resolvers/rsvpNudgeHelpers.js` (urgency + name-join + error classes, 63 lines)
+  - NEW `src/lib/engine/resolvers/__tests__/rsvpNudge.snapshot.test.js` (1 test)
+  - NEW `src/lib/engine/resolvers/__tests__/rsvpNudge.contract.test.js` (11 tests)
+  - NEW `src/lib/engine/resolvers/__tests__/fixtures/rsvp_nudge_10u_black_skills_lab/*.json` (8 fixture files)
+  - MOD `src/lib/engine/resolvers/__tests__/mockSupabase.js` (added `team_players` to tables map)
+
+**Highlights**
+
+- Anchor: `{ eventId, pilotOnly }`. Slice = family filtered to guardians with at least one unresponded kid on the event's team (NOT EXISTS against event_rsvps).
+- Slice carries `unresponded_kid_first_names` + `unresponded_kid_player_ids` (both ASC). Subject personalized: "RSVP needed for {kid1, kid2, and kid3} — {event}" with Oxford comma.
+- **RSVP token URLs are NOT minted in resolver or compose.** Compose emits literal `{{rsvp_going_url}}` / `{{rsvp_maybe_url}}` / `{{rsvp_not_going_url}}` placeholders inside the `rsvp_request` section. The send-time renderer mints tokens via existing `rsvpNudgeSend.js` + `mint_rsvp_token` RPC and substitutes URLs. Maintains wave-locked purity contract.
+- Urgency formatter (resolver context): `hours_until`, `day_label` (Today / Tomorrow (Weekday) / Weekday / Month Day), `time_label`, `time_range_label`. All NY-tz, noon-UTC anchor pattern.
+- Hallucination guards: `event.team_id null` → `EventHasNoTeamError`; `event.start_at <= now` → `EventAlreadyStartedError`; all responded / empty roster → `slices = []`, not an error.
+- Snapshot anchor: event 2cf635fb (10U Black Skills Lab, Monday May 11 7:35 PM, 11 active roster, 0 RSVPs, 21 unresponded families). Lowest guardian 07ec4308 (medelman83, kid Hudson).
+
+**Tests:** 349 → 361 (+12). Lint clean. Build clean.
+
+**Compose UI bridge:** SKIPPED. Existing `RsvpNudgeBody.jsx` form is all free-form (`headline_override`, `custom_message`, `ask_comment_field`). Send pipeline switch deferred to 4.2-A-8.
