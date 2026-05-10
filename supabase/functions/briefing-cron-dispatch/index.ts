@@ -1,28 +1,15 @@
 // Wave 3.17: cron-driven dispatch for status='scheduled' briefings.
-// pg_cron pings this every minute. We pull rows whose scheduled_for
-// has passed, transition them to 'queued' (atomic), then invoke v13.
+// pg_cron pings every minute → pull rows whose scheduled_for has
+// passed → transition to 'queued' (atomic) → invoke v13 with a
+// minted user JWT impersonating last_edited_by (since v13 is
+// verify_jwt:true and rejects service-role keys). v13's user_roles
+// check + pilot mode gate inherited unchanged.
 //
-// AUTH STRATEGY (critical):
-// v13 (send-tournament-message) requires a user JWT — its
-// `supabaseAuth.auth.getUser()` rejects service-role keys. The cron
-// edge function therefore MINTS a short-lived (60s) authenticated
-// JWT for the message's `last_edited_by` user (the admin who
-// scheduled the briefing) and forwards it to v13. v13 then performs
-// its existing user_roles check on that admin and proceeds.
-//
-// This preserves v13 untouched. Pilot mode gate is inherited.
-//
-// AUTH SECRET (wave 4.3-F): cron secret moved from Deno.env to
-// public.app_secrets (name = 'cron_secret'). Both this function and
-// briefing-auto-draft-tick read it via service-role SELECT at request
-// time. The pg_cron job command builds Bearer from the same row.
-// Rotation = `UPDATE app_secrets SET value = encode(gen_random_bytes(32), 'hex')
-// WHERE name = 'cron_secret';` — immediate, no dashboard ceremony.
-//
-// REQUIRED ENV:
-//   SUPABASE_URL              (auto)
-//   SUPABASE_SERVICE_ROLE_KEY (auto)
-//   SUPABASE_JWT_SECRET       (auto; used to mint user JWT for v13)
+// Shared secrets (waves 4.3-F + 4.3-G): `cron_secret` authenticates
+// the pg_cron caller; `supabase_jwt_secret` signs the impersonation
+// JWT. Both live in public.app_secrets, read via service-role SELECT
+// at request time. Rotation = SQL UPDATE on the row. NULL value
+// fails loud with a diagnosable error.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
@@ -51,26 +38,41 @@ async function mintAuthenticatedJwt(userId: string, secret: string) {
   );
 }
 
-async function readCronSecret(sb: ReturnType<typeof createClient>): Promise<string | null> {
-  const { data, error } = await sb.from("app_secrets").select("value").eq("name", "cron_secret").maybeSingle();
-  if (error || !data?.value) return null;
+// Reads a value from public.app_secrets at request time. Throws on
+// DB error or NULL value, with a diagnosable message so post-deploy
+// state (e.g. supabase_jwt_secret NULL until admin populates) stays
+// observable in net._http_response logs.
+async function getAppSecret(sb: ReturnType<typeof createClient>, name: string): Promise<string> {
+  const { data, error } = await sb.from("app_secrets").select("value").eq("name", name).maybeSingle();
+  if (error) throw new Error(`getAppSecret('${name}') failed: ${error.message}`);
+  if (!data || data.value === null) {
+    throw new Error(`app_secrets.${name} is NULL — admin must populate via SQL UPDATE before this function can run.`);
+  }
   return data.value as string;
 }
 
 Deno.serve(async (req) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const JWT_SECRET = Deno.env.get("SUPABASE_JWT_SECRET");
-  if (!JWT_SECRET) return json({ error: "SUPABASE_JWT_SECRET missing" }, 500);
-
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-  // Auth: shared secret in app_secrets. Pre-4.3-F this read Deno.env.
+  // Auth: shared secret in app_secrets (wave 4.3-F). Empty Bearer
+  // doesn't reach here — the read returns the secret value; the
+  // compare rejects mismatches. NULL value (e.g. fresh provisioning)
+  // surfaces via getAppSecret's error path.
   const presented = req.headers.get("Authorization")?.replace(/^Bearer\s+/, "") ?? "";
-  const expected = await readCronSecret(sb);
-  if (!expected || presented !== expected) {
+  let expectedCron: string;
+  try { expectedCron = await getAppSecret(sb, "cron_secret"); }
+  catch (e) { return json({ error: (e as Error).message }, 500); }
+  if (presented !== expectedCron) {
     return json({ error: "Unauthorized" }, 401);
   }
+
+  // JWT signing secret (wave 4.3-G); used downstream to mint user
+  // JWTs for impersonated calls into send-tournament-message.
+  let JWT_SECRET: string;
+  try { JWT_SECRET = await getAppSecret(sb, "supabase_jwt_secret"); }
+  catch (e) { return json({ error: (e as Error).message }, 500); }
 
   const { data: ready, error: readErr } = await sb
     .from("comms_messages")

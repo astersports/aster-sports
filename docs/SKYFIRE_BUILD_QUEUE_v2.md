@@ -2894,6 +2894,42 @@ All 5 wave-4.2-A-8 substeps for the registry path landed: 7 calendar-anchored re
 
 **Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 408 passed. Pre-existing weeklyDigest.js 152-line violation untouched.
 
+### Wave 4.3-G — SUPABASE_JWT_SECRET moves from Deno.env to app_secrets — SHIPPED May 10, 2026
+
+**Anchor of work:** `supabase/migrations/20260510232037_wave_4_3_g_jwt_secret_to_app_secrets.sql` (NEW, applied via MCP + mirrored), `supabase/functions/briefing-cron-dispatch/index.ts`, `src/lib/__tests__/verifyJwtConfigAudit.test.js` (audit pattern tightened).
+
+**The bug:** 4.3-F's auth pass exposed that `briefing-cron-dispatch` 500'd with `SUPABASE_JWT_SECRET missing` after the cron secret check succeeded. The dispatcher reads JWT_SECRET from `Deno.env` to mint impersonation JWTs for `send-tournament-message` (verify_jwt:true target); that env var had never been set on the function. Pre-4.3-F the auth check 401'd first, masking the issue.
+
+**What shipped:**
+
+1. **Migration `20260510232037`** — `ALTER TABLE app_secrets ALTER COLUMN value DROP NOT NULL` (existing rows have values, unaffected). Then `INSERT INTO app_secrets (name, value) VALUES ('supabase_jwt_secret', NULL)`. Verification block confirms the row exists; does NOT print value.
+
+2. **`briefing-cron-dispatch` refactored** — extracted shared `getAppSecret(sb: SupabaseClient, name: string): Promise<string>` helper. Used twice: for `cron_secret` (auth check) and `supabase_jwt_secret` (impersonation JWT signing). Fail-loud on NULL with `app_secrets.<name> is NULL — admin must populate via SQL UPDATE before this function can run.`
+
+3. **Audit test tightened** — 4.3-F's `(?!SUPABASE_JWT_SECRET)` negative lookahead in the `FORBIDDEN_DENO_ENV_SECRET` regex removed. Any `Deno.env.get('*_SECRET')` read in a function dir now fails the test. Negative-test confirmed: injecting a fake `Deno.env.get('SUPABASE_JWT_SECRET')` into dispatch fails CI immediately; restoring passes.
+
+4. **CLAUDE.md anti-pattern #33 expanded** — enumerates all 4 shared secrets in app_secrets (rsvp_token_secret, callup_token_secret, cron_secret, supabase_jwt_secret), documents the initial-population caveat for secrets that originate outside our control (JWT_SECRET), and flags the architectural seam (dispatcher JWT-minting can be eliminated by refactoring send-tournament-message's auth model — future wave).
+
+**Tests:** 15/15 in the audit. Full suite: 465 → 465 (audit count unchanged; existing tests still pass after JWT_SECRET exemption removed).
+
+**Verification:** `npm run lint` 0 errors. `npm run build` clean. Migration applied via Supabase MCP; verification block confirmed slot present.
+
+**POST-MERGE ADMIN ACTION REQUIRED (one-time):**
+
+After CI completes function redeploy, the dispatcher will 500 with `app_secrets.supabase_jwt_secret is NULL` until Frank runs:
+
+```sql
+UPDATE public.app_secrets
+SET value = '<jwt_secret_from_supabase_dashboard>', rotated_at = now()
+WHERE name = 'supabase_jwt_secret';
+```
+
+JWT secret is at **Supabase Dashboard → Settings → API → JWT Settings → JWT Secret**. After this UPDATE, the next cron tick returns 200; dispatcher ready for scheduled briefings.
+
+**Brief broken-state window:** between merge + CI redeploy + admin UPDATE, dispatcher returns 500 with diagnosable error. No regression — there are 0 scheduled briefings, so dispatcher returning 500 doesn't break any user flow.
+
+**Wave 4.3 status post-merge:** auto-draft engine remains 200 (4.3-F locked it in); dispatcher pending admin's JWT secret population. After admin UPDATE, full cron pipeline returns 200 on every tick. 4.3-B (5 remaining trigger handlers + force-fire override) remains unblocked.
+
 ### Wave 4.3-F — Cron secret moves from Deno.env to app_secrets (architectural fix) — SHIPPED May 10, 2026
 
 **Anchor of work:** `supabase/migrations/20260510225122_wave_4_3_f_cron_secret_to_app_secrets.sql` (NEW, applied via MCP + mirrored), `supabase/functions/briefing-cron-dispatch/index.ts`, `supabase/functions/briefing-auto-draft-tick/index.ts`, `src/lib/__tests__/verifyJwtConfigAudit.test.js` (extended), `docs/CRON_SECRET_SETUP.md` (DELETED).

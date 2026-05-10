@@ -40,9 +40,11 @@ const SHARED_SECRET_PATTERNS = [
   /from\(["']app_secrets["']\)/,
 ];
 
-// Anti-pattern #33: shared secrets must live in app_secrets, not in
-// Deno.env. JWT_SECRET is allowed (used for impersonation, not auth).
-const FORBIDDEN_DENO_ENV_SECRET = /Deno\.env\.get\(["'](?!SUPABASE_JWT_SECRET)[A-Z_]+_SECRET["']\)/;
+// Anti-pattern #33: shared secrets — including SUPABASE_JWT_SECRET as
+// of wave 4.3-G — must live in app_secrets, not in Deno.env. The 4.3-F
+// JWT_SECRET exemption is retired; the dispatcher now reads it from
+// app_secrets.supabase_jwt_secret via the shared getAppSecret helper.
+const FORBIDDEN_DENO_ENV_SECRET = /Deno\.env\.get\(["'][A-Z_]+_SECRET["']\)/;
 
 // Functions to exclude from shared-secret detection even if a pattern
 // matches. send-tournament-message reads SUPABASE_JWT_SECRET for JWT
