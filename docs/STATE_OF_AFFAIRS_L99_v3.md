@@ -889,11 +889,11 @@ Without elite stack, ceiling caps near 88%. Elite stack is the difference.
 **Last verified:** post-PR #53 merge (May 10, 2026 ~00:30 UTC)
 
 - **Migrations:** 126
-- **Edge functions:** 7 active
+- **Edge functions:** 7 active. All `verify_jwt` flags held correct through the May 10 CI redeploy cycle (5 anonymous functions stayed `verify_jwt:false`; 2 user-JWT functions stayed `verify_jwt:true`). Anti-pattern #27 lockdown is now battle-tested and permanent.
   - **Anonymous (verify_jwt:false):** `invite-parent` v5, `briefing-cron-dispatch` v6, `rsvp-token-handler` v4, `unsubscribe-handler` v2, `resend-webhook-receiver` v2
   - **User-JWT (verify_jwt:true):** `send-tournament-message` v16, `rapid-processor` v3
     - `send-tournament-message`: v14 → v16 (verify_jwt:true). v14 was the wave-3 baseline pre-4.1c. v15 was the MCP deploy from PR #57. v16 is the CI rebuild from merged repo source (functionally identical to v15 — behavior matches CC's PR description, version number drifted because CI redeploys on every main push).
-- **Tests:** 214/214
+- **Tests:** 293/293 (post-PR #63)
 
 ### New tables (wave 4.1)
 
@@ -932,13 +932,22 @@ Supabase ALTER DATABASE GUCs blocked by permission model. Use `app_secrets` tabl
 
 PR #59, squash-merged at sha `ec31be9`. Closes the wave-3.11+ gap that 400'd `send-tournament-message v16` with "No queued recipients" for `game_recap`, `tournament_prelim`, `tournament_recap`, `announcement`, `custom_message`. Two pure helpers extracted (`recipientFilter.js`, `queueRecipients.js`) + 10-line wire-up in `composerSubmit.js`. Production smoke verified May 10 04:25 UTC: message `0f08c2b7-96fd-43a3-8bb4-bc677c4913d8` test-sent successfully with `recipient_count=1`, `sent_at=2026-05-10 04:25:32+00`, body delivered to admin@ with full footer + unsubscribe link. Tests 252 → 266 (+14).
 
-## Locked decision — Wave 4.1d-coverage-audit
+## Wave 4.1d-2 UX hardening + status integrity + G2 wire-up — SHIPPED May 10, 2026
+
+PR #62, squash-merged at sha `01a6dc9`. Closed 21 punch-list items in one PR: §6.1+§6.2 status integrity (E9, E10), §5 academy_callup_notice surfacing (G2), §1 synth filters (G4, broadened windows), §2 picker polish (FAB z-index, dropdown auto-close, audience race, sortKinds stable, label drift), §3 pilot copy, §4 gates (G3, G5, E5, test-send copy split). Tests 266 → 286 (+20).
+
+## Wave 4.1d-3 PlayerPicker Academy scope hotfix — SHIPPED May 10, 2026
+
+PR #63, squash-merged. PlayerPicker query now filters to `member_type='futures_academy'` only — closes the attack surface for wrong-team Academy call-ups. Per-row ACADEMY badge removed; subheader replaces it. Empty state copy clarified. Tests 286 → 293 (+7).
+
+## Locked decisions
 
 - **D-COVERAGE-1:** Briefings × events × audience coverage map is canonicalized in `docs/BRIEFINGS_COVERAGE_L99.md`. When a new kind, anchor, or audience mode is added, the audit doc must be updated in the same PR. When a gap is closed, the entry moves from §5 to a "shipped" subsection or §6. New edge cases get fresh E# IDs (next sequential). PR descriptions for any briefings change must reference `BRIEFINGS_COVERAGE_L99.md`. Scope splits ratified May 10, 2026:
-  - Wave 4.1d-2: G2 (academy_callup_notice surfacing) + G3 (cancellation gate) + G4 (bracket placeholder synth filter) + G5 (tournament_recap status gate) + E5 (CTA-field UX) — all small wiring fixes
+  - Wave 4.1d-2: G2 (academy_callup_notice surfacing) + G3 (cancellation gate) + G4 (bracket placeholder synth filter) + G5 (tournament_recap status gate) + E5 (CTA-field UX) — all small wiring fixes ✅ SHIPPED PR #62
   - Wave 4.2: G1 (games_recap kind) + G6 (scrimmage subject) + E6 (multi-team event renderer) — bundled with templates rebuild
   - Wave 4.3+: G7 (standings_update), G8 (photo_drop)
   - Wave 4.5: circuit-aware composer split (E8)
+- **D-COVERAGE-2:** `academy_callup_notice` is scoped to `member_type='futures_academy'` players only. PlayerPicker enforces this filter in the UI (`.eq('member_type', 'futures_academy')`); the renderer assumes Academy semantics. Adding non-Academy player search would require an explicit kind variant (e.g. `guest_callup_notice`) — not a filter widening. Ratified May 10, 2026 in PR #63.
 
 ---
 

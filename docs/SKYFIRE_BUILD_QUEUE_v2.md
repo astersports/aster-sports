@@ -2530,7 +2530,34 @@ PR #53 · sha `32a0ca9` · migration `20260510002836` · Vercel deploy `dpl_7zTP
 
 **Evidence:** PR #59, sha `ec31be9`, production smoke confirms message `0f08c2b7` test-sent at 04:25:32 UTC with `recipient_count=1`, body delivered to admin@ with full footer + unsubscribe link rendered.
 
-### Wave 4.1d-2 — UX punch list + small coverage fixes (queued, awaiting green-light)
+### Wave 4.1d-3 — PlayerPicker Academy scope hotfix — SHIPPED May 10, 2026
+
+- **PR:** #63 (squash-merged)
+- **Files:** 1 modified (`src/components/briefings/bodies/PlayerPicker.jsx`) + 1 new test file
+- **Tests:** 286 → 293 (+7)
+
+**Highlights**
+
+- PlayerPicker query now filters to `member_type='futures_academy'` only — closes the attack surface for wrong-team Academy call-ups (Charlie from 8U Boys can no longer be called up because he's not Academy).
+- Per-row ACADEMY badge removed (whole list is Academy now); replaced with subheader `Academy players · {N} match{es}`.
+- Empty state copy updated: "No Academy players found. Check Settings → Members to mark futures_academy players."
+- D-COVERAGE-2 ratifies the scope: widening to non-Academy players requires a new kind variant (e.g. `guest_callup_notice`), not a filter change.
+
+**Evidence:** PR #63
+
+### Wave 4.1d-2 — UX hardening + status integrity + G2 wire-up — SHIPPED May 10, 2026
+
+- **PR:** #62 (squash-merged at sha `01a6dc9`)
+- **Files:** 27 changed (+658 / -126); 4 new
+- **Tests:** 266 → 286 (+20)
+
+Closed 21 punch-list items: §6.1+§6.2 status integrity (E9, E10), §5 academy_callup_notice surfacing (G2), §1 synth filters (G4 bracket placeholder, broader window, default time chip, subtitle hide), §2 picker polish (FAB z-index, dropdown auto-close, audience race, sortKinds stable, label drift), §3 pilot copy, §4 gates (G3 cancellation, G5 status gate, E5 CTA hide, test-send copy split). Coverage doc updated per D-COVERAGE-1.
+
+**Evidence:** PR #62, sha `01a6dc9`
+
+---
+
+### (Historical) Wave 4.1d-2 punch list (queued, awaiting green-light)
 
 Synthesized from §9 of the d-1 master prompt + Frank's May 10 production verification + the L99 coverage audit (`docs/BRIEFINGS_COVERAGE_L99.md`).
 
@@ -2568,7 +2595,7 @@ Synthesized from §9 of the d-1 master prompt + Frank's May 10 production verifi
 - Test send to admin@ leaves message at `status='queued'` despite `sent_at` populated — investigate webhook receiver flipping status to `'sent'`. Cosmetic but confusing in inbox.
 - Sending a test to admin@ does NOT clear NEEDS RECAP / NEEDS BRIEFING badges on the source needs-attention card (by design — only delivery to families clears it). Worth a copy clarification or sub-pill ("Test sent · families pending").
 
-### Next up — Wave 4.1b (deferred from PR #53) — SHIPPED May 10, 2026 (PR #55, sha `dde4002`)
+### Wave 4.1b (deferred from PR #53) — SHIPPED May 10, 2026 (PR #55, sha `dde4002`)
 
 All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+38). Lint clean, build clean.
 
@@ -2583,9 +2610,9 @@ All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+
 - **Polish I** Save status pill (draft / saving / saved) — ✅ replaces static timestamp
 - **Polish J** Pilot Mode chip on inbox header — ✅ covered by Bug B
 
-### Still queued — wave 4.1c
+### Wave 4.1c — SHIPPED May 9, 2026 (PR #57, sha `02e2dde`)
 
-- **RFC 8058** `List-Unsubscribe` + `List-Unsubscribe-Post` headers in `send-tournament-message` v14 → v15 (one-click for Gmail/Yahoo bulk-sender quotas; CAN-SPAM body link from PR #53 satisfies the legal minimum)
+- **RFC 8058** `List-Unsubscribe` + `List-Unsubscribe-Post` headers in `send-tournament-message` v14 → v15 (one-click for Gmail/Yahoo bulk-sender quotas; CAN-SPAM body link from PR #53 satisfies the legal minimum). See full entry above.
 
 ### Wave 4.2 / 4.3 / 4.4 / 5.0 stubs
 
