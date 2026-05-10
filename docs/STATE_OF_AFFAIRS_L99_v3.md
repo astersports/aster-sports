@@ -880,6 +880,54 @@ LOCKED as design intent. Not optional polish. 57 items distributed across 6 phas
 
 Without elite stack, ceiling caps near 88%. Elite stack is the difference.
 
+---
+
+# APPENDIX: Wave 4.1 update (May 10, 2026)
+
+## Production state — Wave 4.1 verification
+
+**Last verified:** post-PR #53 merge (May 10, 2026 ~00:30 UTC)
+
+- **Migrations:** 126
+- **Edge functions:** 7 active
+  - **Anonymous (verify_jwt:false):** `invite-parent` v5, `briefing-cron-dispatch` v6, `rsvp-token-handler` v4, `unsubscribe-handler` v2, `resend-webhook-receiver` v2
+  - **User-JWT (verify_jwt:true):** `send-tournament-message` v14, `rapid-processor` v3
+- **Tests:** 214/214
+
+### New tables (wave 4.1)
+
+| Table | Purpose |
+|---|---|
+| `team_types` | Org-scoped team type catalog. 6 rows for Legacy Hoopers (game_team, tournament_team, hybrid_team, training_only, academy, clinic_camp). |
+| `briefing_templates` | Per-org × team-type × kind template registry. Empty (ready for seeding in wave 4.2). |
+| `briefing_triggers` | Auto-draft trigger rules. 22 default rows for Legacy Hoopers. |
+| `app_secrets` | Service-role-only secrets storage. 2 secrets seeded (unsubscribe + rsvp). RLS-locked, anon/authenticated denied. |
+
+### New columns
+
+- `teams.team_type_id` — FK, nullable; populated for all 5 LH teams.
+- `organizations.voice_config` — JSONB; seeded for LH (Frankie + Kenny contact, signoff default, brand hex, tone notes).
+
+### New SECURITY DEFINER functions
+
+- `mint_unsubscribe_token(uuid) → text`
+- `verify_unsubscribe_token(text) → uuid`
+- `suppress_unsubscribed_recipients()` — BEFORE INSERT trigger function on `comms_message_recipients`
+- (`mint_rsvp_token` / `verify_rsvp_token` refactored to read from `app_secrets`)
+
+### Token secret management
+
+Supabase ALTER DATABASE GUCs blocked by permission model. Use `app_secrets` table instead. Service-role-only RLS, MCP-manageable. Same security profile as GUC-based.
+
+## Locked decisions — Wave 4.1 additions
+
+- **D-TEAMTYPE-1:** 6 team types canonical for any org (game_team, tournament_team, hybrid_team, training_only, academy, clinic_camp). Adding a 26th team = pick type, 0 config work.
+- **D-TEMPLATES-1:** `briefing_templates` is the primitive going forward. Hardcoded JS templates from wave 3.16 will migrate to DB-driven in wave 4.2.
+- **D-AUTODRAFT-1:** `briefing_triggers` is the source of truth for auto-draft creation. Wave 4.3 implements the engine that reads these rows and creates draft `comms_messages` on schedule.
+- **D-COMPLIANCE-1:** Every parent-facing email MUST include unsubscribe link. Footer renderer emits `{{UNSUBSCRIBE_URL}}` placeholder which send pipeline substitutes per-recipient via `mint_unsubscribe_token` RPC. Suppression trigger on `comms_message_recipients` provides defense-in-depth even if frontend forgets to filter unsubscribed guardians.
+
+---
+
 # END OF DOCUMENT
 
 **Next action when this handoff is consumed by a new chat:** Follow the NEW_CHAT_STARTER_PROMPT.md protocol. Do not skip verification. Do not execute code until Frank confirms the summary is correct.

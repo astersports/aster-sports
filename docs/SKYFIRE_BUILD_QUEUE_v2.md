@@ -2458,3 +2458,52 @@ Bug 1 recipient count + admin@ BCC · `comms_messages_write` RLS blocked digest 
 - **Wave 4b** Weather forecast (OpenWeatherMap + 6h cache + outdoor/indoor gating) — 4-6h
 - **Wave 4c** Detailed compose toggle (`{ detailed: bool }` flag on weekly_digest kind) — 4-6h
 - **Wave 4.5** Circuit-aware composer split (weekly_digest_aau vs weekly_digest_league)
+
+---
+
+## 🚀 May 9–10, 2026 — Wave 4.1 — Briefings Foundation + CAN-SPAM Unsubscribe
+
+**Recently shipped — top entry.**
+
+- **PR:** #53 (squash-merged at sha `32a0ca9`)
+- **Migrations added:** 9 (`20260509234244` → `20260510002836`)
+- **Edge functions added:** 2 (`unsubscribe-handler`, `resend-webhook-receiver`)
+- **Vercel deploy:** `dpl_7zTPUTeTTTTP8rH6jbt1Somq2Pnu` (READY, target: production)
+- **Tests:** 210 → 214 (4 footer cases added)
+
+### Highlights
+
+- JS engine and DB CHECK constraint now agree on 9 canonical kinds (`rsvp_nudge`, `game_recap`, `tournament_prelim`, `tournament_recap`, `announcement`, `custom_message` + 3 legacy backward-compat).
+- `team_type` framework (6 types: game_team, tournament_team, hybrid_team, training_only, academy, clinic_camp) ready for 5 → 25 team scaling.
+- `briefing_templates` + `briefing_triggers` tables created. Triggers seeded with 22 default LH rules; templates table empty (seeded in wave 4.2).
+- `organizations.voice_config` JSONB seeded for Legacy Hoopers (Frankie + Kenny contact, signoff default, brand hex, tone notes).
+- `guardian_email_preferences` activated with BEFORE INSERT suppression trigger on `comms_message_recipients` (CAN-SPAM compliance backbone).
+- `app_secrets` workaround for ALTER DATABASE-blocked GUCs (M9). Service-role-only secrets table, MCP-manageable, same security profile.
+- Latent wave 4.0 RSVP bug fixed: unqualified `extensions.gen_random_bytes` / `extensions.hmac` calls (was DOA pre-M9; never surfaced because missing GUC short-circuited the function before reaching them).
+- Anti-pattern #27 (CI verify_jwt regression on shared-secret endpoints) permanently closed: `supabase/config.toml` extended from 3 → 5 entries; CI redeploy held verify_jwt:false on all 5 anonymous functions.
+- Footer renderer emits `{{UNSUBSCRIBE_URL}}` placeholder; `src/lib/unsubscribeUrl.js` mints per-recipient tokens via `mint_unsubscribe_token` RPC and substitutes in body_html_rendered + body_plain_rendered before INSERT. Wired into `digestSend`, `scheduleChangeSend`, `rsvpNudgeSend`.
+
+### Evidence
+
+PR #53 · sha `32a0ca9` · migration `20260510002836` · Vercel deploy `dpl_7zTPUTeTTTTP8rH6jbt1Somq2Pnu`.
+
+### Next up — Wave 4.1b (deferred from PR #53)
+
+- **Bug A** Step 2 anchor_id validation in BriefingComposer
+- **Bug B** Pilot mode "0 families" explanation + badge in audience preview
+- **Bug C** kind=null guard + draft hydration on `/briefings/compose/:id` reload
+- **Bug D** rsvp_nudge stale dropdown
+- **Bug E** Broaden needs-attention synth (kind-by-trigger expansion)
+- **Polish F** Drafts tab rename ("Drafts" → "Saved drafts")
+- **Polish G** Schedule-for-later picker visible across all wizard steps
+- **Polish H** Composer card height steady (avoid layout shift on step change)
+- **Polish I** Save status indicator (saved · saving · unsaved)
+- **Polish J** Pilot mode badge surface in BriefingsInboxPage filter
+- **RFC 8058** `List-Unsubscribe` + `List-Unsubscribe-Post` headers in `send-tournament-message` v14 (one-click for Gmail/Yahoo bulk-sender quotas; CAN-SPAM body link satisfied by PR #53)
+
+### Wave 4.2 / 4.3 / 4.4 / 5.0 stubs
+
+- **Wave 4.2** — Seed `briefing_templates` per (org × team_type × kind); JS engine reads from DB-driven templates instead of hardcoded JS.
+- **Wave 4.3** — Auto-draft engine: cron-driven scan of `briefing_triggers`, creates draft `comms_messages` rows when trigger conditions match (e.g. `game_completed` → `game_recap` draft within 2h of final score).
+- **Wave 4.4** — Multi-org polish: St. Patrick's CYO Armonk onboarding flow (clone LH team types + customize voice_config, ~45 min target).
+- **Wave 5.0** — Voice / AI compose. LLM-assisted draft generation reading voice_config tone + recent context.
