@@ -34,13 +34,13 @@ describe('rsvp_nudge resolver — contract', () => {
     expect(norm(a)).toEqual(norm(b));
   });
 
-  it('3. slice ordering: guardian_id ASC, kid_first_names ASC within slice', async () => {
+  it('3. slice ordering: guardian_id ASC, unresponded_kids ASC by first_name within slice', async () => {
     const reversed = { ...FIXTURES, player_guardians: [...player_guardians].reverse() };
     const { slices } = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient(reversed), now: NOW });
     const ids = slices.map((s) => s.guardian_id);
     expect(ids).toEqual([...ids].sort());
     for (const s of slices) {
-      const names = s.unresponded_kid_first_names;
+      const names = s.unresponded_kids.map((k) => k.first_name);
       expect(names).toEqual([...names].sort());
     }
   });
@@ -79,9 +79,13 @@ describe('rsvp_nudge resolver — contract', () => {
     ];
     const { context, slices } = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient({ ...FIXTURES, player_guardians: [...player_guardians, ...extraPg] }), now: NOW });
     const target = slices.find((s) => s.guardian_id === '07ec4308-e3ab-4d13-be5e-a5796f506ce3');
-    expect(target.unresponded_kid_first_names).toEqual(['Aubtin', 'Frankie', 'Hudson']);
-    const { subject } = composeRsvpNudge(context, target, {});
+    expect(target.unresponded_kids.map((k) => k.first_name)).toEqual(['Aubtin', 'Frankie', 'Hudson']);
+    const { subject, content_sections } = composeRsvpNudge(context, target, {});
     expect(subject).toBe('RSVP needed for Aubtin, Frankie, and Hudson — 10U Black Skills Lab');
+    const requestSections = content_sections.filter((s) => s.kind === 'rsvp_request');
+    expect(requestSections).toHaveLength(3);
+    expect(requestSections.map((s) => s.kid_first_name)).toEqual(['Aubtin', 'Frankie', 'Hudson']);
+    expect(requestSections.every((s) => !!s.player_id)).toBe(true);
   });
 
   it('9. event has no team_id -> EventHasNoTeamError', async () => {

@@ -57,13 +57,12 @@ async function fetchUnrespondedSlices(supabase, event, now, pilotOnly) {
     if (!g?.id || !g.email) continue;
     if (pilotOnly && !g.is_pilot_family) continue;
     if (!playerNameById.has(row.player_id)) continue;
-    if (!slicesMap.has(g.id)) slicesMap.set(g.id, { kind: 'family', guardian_id: g.id, email: g.email, team_id: event.team_id, _names: new Set(), _ids: new Set() });
+    if (!slicesMap.has(g.id)) slicesMap.set(g.id, { kind: 'family', guardian_id: g.id, email: g.email, team_id: event.team_id, _kids: new Map() });
     const s = slicesMap.get(g.id);
     const fn = row.players?.first_name || playerNameById.get(row.player_id);
-    if (fn) s._names.add(fn);
-    s._ids.add(row.player_id);
+    if (!s._kids.has(row.player_id)) s._kids.set(row.player_id, { player_id: row.player_id, first_name: fn || '' });
   }
-  const slices = Array.from(slicesMap.values()).map((s) => ({ kind: s.kind, guardian_id: s.guardian_id, email: s.email, team_id: s.team_id, unresponded_kid_first_names: [...s._names].sort(), unresponded_kid_player_ids: [...s._ids].sort() })).sort((a, b) => (a.guardian_id < b.guardian_id ? -1 : a.guardian_id > b.guardian_id ? 1 : 0));
+  const slices = Array.from(slicesMap.values()).map((s) => ({ kind: s.kind, guardian_id: s.guardian_id, email: s.email, team_id: s.team_id, unresponded_kids: Array.from(s._kids.values()).sort((a, b) => (a.first_name < b.first_name ? -1 : a.first_name > b.first_name ? 1 : 0)) })).sort((a, b) => (a.guardian_id < b.guardian_id ? -1 : a.guardian_id > b.guardian_id ? 1 : 0));
 
   return { slices, totalRoster, respondedCount: respondedSet.size, unrespondedCount: unresponded.length };
 }
@@ -113,10 +112,13 @@ export function composeRsvpNudge(context, slice, overrides = {}) {
   const { event, team, location, urgency, org } = context;
   const eventLabel = deriveEventLabel(event);
   const subjectLabel = event.title || `${team?.name || ''} ${eventLabel}`.trim();
-  const namesJoined = joinKidNames(slice.unresponded_kid_first_names || []);
+  const kids = slice.unresponded_kids || [];
+  const namesJoined = joinKidNames(kids.map((k) => k.first_name));
   const sections = [];
   sections.push({ kind: 'header', eyebrow: `${team?.name || org.name} · RSVP NEEDED`, eyebrow_link: org.branding.eyebrowLink, headline: 'QUICK RSVP', urgency_label: (urgency.day_label || '').toUpperCase(), goldStripe: true });
-  sections.push({ kind: 'rsvp_request', kid_first_names: slice.unresponded_kid_first_names || [], team_name: team?.name || '', team_color: team?.team_color || '#4a8fd4', event_label: eventLabel, urgency_phrase: `${urgency.day_label} at ${urgency.time_label}`, rsvp_token_placeholders: { going: '{{rsvp_going_url}}', maybe: '{{rsvp_maybe_url}}', not_going: '{{rsvp_not_going_url}}' } });
+  for (const kid of kids) {
+    sections.push({ kind: 'rsvp_request', kid_first_name: kid.first_name, player_id: kid.player_id, team_name: team?.name || '', team_color: team?.team_color || '#4a8fd4', event_label: eventLabel, urgency_phrase: `${urgency.day_label} at ${urgency.time_label}`, rsvp_token_placeholders: { going: '{{rsvp_going_url}}', maybe: '{{rsvp_maybe_url}}', not_going: '{{rsvp_not_going_url}}' } });
+  }
   sections.push({ kind: 'event_card', team_color: team?.team_color || '#4a8fd4', date: ((iso) => iso ? new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'long', month: 'long', day: 'numeric' }).format(new Date(iso)) : '')(event.start_at), time: urgency.time_range_label, location_name: location?.name || event.location || null, location_map_url: location?.google_maps_url || null, opponent: event.opponent || null });
   for (const key of ['coach_note', 'parent_shoutout']) {
     const v = trim(overrides[key]); if (v) sections.push({ kind: 'stats_narrative', body: v });
