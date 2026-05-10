@@ -2530,9 +2530,9 @@ PR #53 · sha `32a0ca9` · migration `20260510002836` · Vercel deploy `dpl_7zTP
 
 **Evidence:** PR #59, sha `ec31be9`, production smoke confirms message `0f08c2b7` test-sent at 04:25:32 UTC with `recipient_count=1`, body delivered to admin@ with full footer + unsubscribe link rendered.
 
-### Wave 4.1d-2 — UX punch list (queued, awaiting green-light)
+### Wave 4.1d-2 — UX punch list + small coverage fixes (queued, awaiting green-light)
 
-Synthesized from §9 of the d-1 master prompt + Frank's May 10 production verification.
+Synthesized from §9 of the d-1 master prompt + Frank's May 10 production verification + the L99 coverage audit (`docs/BRIEFINGS_COVERAGE_L99.md`).
 
 **Filter / list issues**
 
@@ -2540,6 +2540,7 @@ Synthesized from §9 of the d-1 master prompt + Frank's May 10 production verifi
 - "6 items need your attention" header doesn't reflect filtered count. Hide on History tab OR rebind to filtered count.
 - Default time window for needs-attention should be "All time" (or "Last 14 days") — "Today" is too restrictive; cards exist outside today.
 - Synth should filter `event_type='game'` for `game_recap` cards (no practices).
+- **G4 (coverage gap):** synth should also exclude `is_bracket_placeholder=true` games — they have no opponent yet.
 
 **Compose flow issues**
 
@@ -2548,12 +2549,19 @@ Synthesized from §9 of the d-1 master prompt + Frank's May 10 production verifi
 - Audience picker briefly flashes "Will send to 0 families" before "Computing audience…" resolves — race condition during initial mount or audience type swap.
 - Pilot Mode + 11U Girls = "Will send to 0 families" with no UX guidance; Frank has to know to disable pilot mode in Settings → Communications. Inline hint or one-tap disable from the audience step would cut the dead-end.
 - Anchor picker for `game_recap` (event-anchored, past-game filtered) was observed to omit 11U Girls Practice in one screenshot context but include it in another. Investigate `eventFilter: { kind: 'game', past: true }` resolution stability.
+- **E5 (coverage gap):** game_recap CTA-label field is misleading — accepts text but the URL is silently pulled from `event.tournament_id → tournaments.tourney_url`. When event isn't parented, the entire CTA disappears with no UX feedback. Either hide field when no parent tournament, or show inline hint "No tournament link available — CTA will be hidden."
 
 **Kind picker issues**
 
 - "Last sent today · X sent" sub-text inconsistent across loads in the SAME `SAVED` state (Schedule change shows `1 sent` then `Not sent yet` between consecutive opens). `sortKinds(usage)` query result not stable.
 - Kind picker order varies between consecutive opens for the same user (recently-used recompute).
 - "Tournament prelim · ZG Rumble for the Ring CT" inbox label vs. "Tournament briefing" kind picker label — pick one, use everywhere.
+- **G3 (coverage gap):** disable `game_recap` and `tournament_recap` kinds when source event is `status='cancelled'`. One-line filter in StepKindPicker.
+- **G5 (coverage gap):** require `tournaments.schedule_status IN ('complete', 'live')` for `tournament_recap` kind in StepKindPicker. One-line filter.
+- **G2 (coverage gap):** surface dormant `academy_callup_notice` kind. Renderer at `src/lib/engine/renderers/academyCallupNotice.js` already exists (78 lines, ready). Wire-up:
+  - Add to `KIND_ORDER` + `KIND_METADATA` (icon `UserPlus`, label "Academy call-up", description "One-game call-up notice for a futures player")
+  - Add `'player_specific'` to `AudiencePicker` MODES + `modesAvailableFor`
+  - Implement `player_specific` resolver in `recipientFilter.js` (player_guardians → guardian_id list)
 
 **Send completion / inbox issues**
 
@@ -2581,7 +2589,10 @@ All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+
 
 ### Wave 4.2 / 4.3 / 4.4 / 5.0 stubs
 
-- **Wave 4.2** — Seed `briefing_templates` per (org × team_type × kind); JS engine reads from DB-driven templates instead of hardcoded JS.
+- **Wave 4.2** — Seed `briefing_templates` per (org × team_type × kind); JS engine reads from DB-driven templates instead of hardcoded JS. Bundles three coverage gaps from `docs/BRIEFINGS_COVERAGE_L99.md`:
+  - **G1 — `games_recap` kind** (Frank's primary ask). Multi-game digest covering 1+ teams across N selected events. New composer + renderer; new `anchor_kind='multi_event'` (store `event_ids` in `audience_filter`); new `audience_type='multi_event_attendees'` (union team_ids across selected events) implemented in `recipientFilter.js`; briefing_template seed.
+  - **G6 — Scrimmage subject differentiation.** Tiny copy tweak in `gameRecap.js` `buildSubject` — prefix "Scrimmage" when `is_scrimmage=true`.
+  - **E6 — Multi-team event renderer support.** Composer currently assumes single team; render with one team's color. Generalize to multi-team-aware rendering for joint practices / shared events.
 - **Wave 4.3** — Auto-draft engine: cron-driven scan of `briefing_triggers`, creates draft `comms_messages` rows when trigger conditions match (e.g. `game_completed` → `game_recap` draft within 2h of final score).
 - **Wave 4.4** — Multi-org polish: St. Patrick's CYO Armonk onboarding flow (clone LH team types + customize voice_config, ~45 min target).
 - **Wave 5.0** — Voice / AI compose. LLM-assisted draft generation reading voice_config tone + recent context.

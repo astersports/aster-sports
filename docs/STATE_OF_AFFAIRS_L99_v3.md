@@ -932,6 +932,14 @@ Supabase ALTER DATABASE GUCs blocked by permission model. Use `app_secrets` tabl
 
 PR #59, squash-merged at sha `ec31be9`. Closes the wave-3.11+ gap that 400'd `send-tournament-message v16` with "No queued recipients" for `game_recap`, `tournament_prelim`, `tournament_recap`, `announcement`, `custom_message`. Two pure helpers extracted (`recipientFilter.js`, `queueRecipients.js`) + 10-line wire-up in `composerSubmit.js`. Production smoke verified May 10 04:25 UTC: message `0f08c2b7-96fd-43a3-8bb4-bc677c4913d8` test-sent successfully with `recipient_count=1`, `sent_at=2026-05-10 04:25:32+00`, body delivered to admin@ with full footer + unsubscribe link. Tests 252 → 266 (+14).
 
+## Locked decision — Wave 4.1d-coverage-audit
+
+- **D-COVERAGE-1:** Briefings × events × audience coverage map is canonicalized in `docs/BRIEFINGS_COVERAGE_L99.md`. When a new kind, anchor, or audience mode is added, the audit doc must be updated in the same PR. When a gap is closed, the entry moves from §5 to a "shipped" subsection or §6. New edge cases get fresh E# IDs (next sequential). PR descriptions for any briefings change must reference `BRIEFINGS_COVERAGE_L99.md`. Scope splits ratified May 10, 2026:
+  - Wave 4.1d-2: G2 (academy_callup_notice surfacing) + G3 (cancellation gate) + G4 (bracket placeholder synth filter) + G5 (tournament_recap status gate) + E5 (CTA-field UX) — all small wiring fixes
+  - Wave 4.2: G1 (games_recap kind) + G6 (scrimmage subject) + E6 (multi-team event renderer) — bundled with templates rebuild
+  - Wave 4.3+: G7 (standings_update), G8 (photo_drop)
+  - Wave 4.5: circuit-aware composer split (E8)
+
 ---
 
 # END OF DOCUMENT
