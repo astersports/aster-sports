@@ -15,6 +15,15 @@
 # in the foundation drop. Same protection: declare verify_jwt:false
 # so CI redeploys don't reset the flag.
 #
+# Wave 4.3-E (P0 hotfix) — added briefing-auto-draft-tick (4.3-A)
+# and callup-token-handler (4.3-D). Both were omitted from this file
+# on initial ship, so CI auto-deploys ran defaults (verify_jwt:true),
+# blocking every invocation at the gateway with
+# UNAUTHORIZED_INVALID_JWT_FORMAT. Same regression class as wave 4.0.1.
+# CLAUDE.md anti-pattern #31 + the vitest audit at
+# src/lib/__tests__/verifyJwtConfigAudit.test.js enforce the linkage
+# so a future shared-secret function can't ship without this entry.
+#
 # Functions intentionally omitted from this file (default
 # verify_jwt:true preserves correct behavior):
 #   send-tournament-message — requires user JWT for user_roles check
@@ -35,5 +44,11 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.resend-webhook-receiver]
+verify_jwt = false
+
+[functions.briefing-auto-draft-tick]
+verify_jwt = false
+
+[functions.callup-token-handler]
 verify_jwt = false
 

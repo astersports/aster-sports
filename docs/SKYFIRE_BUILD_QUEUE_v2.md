@@ -2894,6 +2894,39 @@ All 5 wave-4.2-A-8 substeps for the registry path landed: 7 calendar-anchored re
 
 **Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 408 passed. Pre-existing weeklyDigest.js 152-line violation untouched.
 
+### Wave 4.3-E — Edge function verify_jwt config drift hotfix — SHIPPED May 10, 2026 (P0)
+
+**Anchor of work:** `supabase/config.toml` (2 new function entries), `supabase/migrations/20260510213602_wave_4_3_e_delete_zombie_briefing_drafts.sql` (NEW, applied via MCP + mirrored), `src/lib/__tests__/verifyJwtConfigAudit.test.js` (NEW vitest audit).
+
+**The bug:** `briefing-auto-draft-tick` (4.3-A) and `callup-token-handler` (4.3-D) both shipped v1 via Supabase MCP `deploy_edge_function` with `verify_jwt: false`. CI's `supabase functions deploy` from GitHub Actions runner subsequently redeployed both at v2 with defaults (`verify_jwt: true`) because they were missing from `supabase/config.toml`. The Supabase gateway has been rejecting every invocation with `UNAUTHORIZED_INVALID_JWT_FORMAT` ever since. The 4.3-A auto-draft engine has never fired; no parent has been able to click an accept/decline link from a callup notice via the 4.3-D handler.
+
+**Root-cause framing:** `supabase/config.toml` was already locking 5 shared-secret functions (briefing-cron-dispatch, rsvp-token-handler, invite-parent, unsubscribe-handler, resend-webhook-receiver) per a wave-4.0.1 fix to the same regression class. The file's own header comment calls out the failure mode: "without these declarations, `supabase functions deploy` defaults to verify_jwt:true on every CI run." Two new shared-secret functions shipped in 4.3-A and 4.3-D without being added to the file. Discovery in 4.3-E identified the gap.
+
+**What shipped:**
+
+1. **`supabase/config.toml`** — 2 new `[functions.*] verify_jwt = false` entries for `briefing-auto-draft-tick` and `callup-token-handler`. CI's next deploy on merge redeploys both functions with correct flags. No MCP redeploy in this PR — that would race the next CI run and create v3+.
+
+2. **Cleanup migration** (`20260510213602_wave_4_3_e_delete_zombie_briefing_drafts.sql`) — deletes 3 zombie drafts (`9218f14f`, `c4e85879`, `f3ff0abc`) created by BriefingComposer autosave during pre-hotfix admin testing of weekly_digest team-scoped wizard mode. All had NULL subject, NULL period_start, recipient_count=0. Defensive criteria check inside `DO $$` aborts if anyone touched them since 4.3-E was scoped. Verified post-apply: 0 zombies remain.
+
+3. **Vitest audit test** (`src/lib/__tests__/verifyJwtConfigAudit.test.js`) — enforces CLAUDE.md anti-pattern #31 deterministically. Iterates `supabase/functions/*` directories; for each function's `index.ts`, detects shared-secret auth patterns via grep (`CRON_SECRET`-style env vars, `searchParams.get('t'|'token')`, `verify_*_token` RPC references); for each detected function, asserts `supabase/config.toml` has `[functions.<name>] verify_jwt = false`. Negative-test verified: removing either new config entry fails the audit with a descriptive error message pointing at the missing config line. Excludes `send-tournament-message` (uses JWT for impersonation, not auth).
+
+4. **CLAUDE.md anti-patterns #31 + #32:**
+   - **#31:** Edge functions using shared-secret auth must declare `verify_jwt = false` in `supabase/config.toml` AND the vitest audit enforces the linkage. Three production regressions cited (PR #48, PR #51, wave 4.3-E).
+   - **#32:** Migration `DO $$` verification confirms SQL semantics only; never the HTTP gateway path. New shared-secret functions need either a config.toml entry (caught at deploy via #31's audit) or a chat-side curl smoke (caught at runtime).
+
+**Tests:** 450 → 458 (+8). 1 sanity (config.toml parses) + 7 function-dir assertions (one per directory in `supabase/functions/`). Of the 7, 5 functions match shared-secret patterns and assert verify_jwt=false; 1 (send-tournament-message) is excluded; 1 (resend-webhook-receiver) doesn't match patterns (Svix signature auth via `RESEND_WEBHOOK_SECRET` is detected by the `_SECRET` env-var pattern → asserted ✓).
+
+**NOT included (intentional):**
+- No MCP redeploy of either function. config.toml + merge triggers CI which redeploys with correct flags. MCP redeploy would race the next CI run and create v3+.
+- No fold of `send-tournament-message` 185-line violation. Out of scope.
+
+**Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 458 passed. Cleanup migration verified 0 zombie drafts remain post-apply.
+
+**Wave 4.3 status post-hotfix:**
+- 4.3-A code path: correct; gateway block removed on next CI deploy. Cron secret dashboard work remains the gate to end-to-end fire.
+- 4.3-D code path: correct; gateway block removed on next CI deploy. End-to-end parent click-through testable after deploy.
+- 4.3-B + 4.3-C: still queued behind Frank's cron secret dashboard work.
+
 ### Wave 4.2-A-8d — weekly_digest test-send dispatch hotfix — SHIPPED May 10, 2026 (P0)
 
 **Anchor of work:** `src/lib/briefings/sendWeeklyDigestFromWizard.js` (NEW), `src/hooks/useWizardDigestData.js` (NEW), `src/components/briefings/BriefingComposer.jsx`.
