@@ -10,6 +10,11 @@
 // didn't surface (S2). Also §2.6 label drift fix: "Tournament prelim"
 // inbox label aligned with KIND_METADATA.label "Tournament briefing".
 // §4.4: test-send rows surface a different audience_preview text.
+//
+// Wave 4.1d-4 — synth rows now carry team scoping so the inbox team
+// filter chip can gate them. Game/skipped rows carry team_id (single
+// team); tournament rows carry team_ids (multi-team). buildDigestDueRow
+// stays org-anchored (chip filter passes anchor_kind='org' through).
 
 export const GAME_RECAP_VISIBLE_CAP = 5;
 export const GAME_RECAP_WINDOW_MS = 14 * 86400000;
@@ -53,6 +58,7 @@ export function buildPrelimRows(tournaments, sentAnchorIds, testSentAnchorIds = 
       status: 'needs_briefing_tournament',
       kind: 'tournament_prelim',
       anchor_kind: 'tournament', anchor_id: t.id,
+      team_ids: t.team_ids || [],
       // Wave 4.1d-2 §2.6: align label with KIND_METADATA "Tournament briefing"
       title: `Tournament briefing · ${t.name}`,
       audience_preview: testSent.has(t.id) ? 'Test sent · families pending' : 'Pre-tournament briefing not sent yet',
@@ -71,6 +77,7 @@ export function buildTournRecapRows(tournaments, sentAnchorIds, testSentAnchorId
       status: 'needs_briefing_tournament_recap',
       kind: 'tournament_recap',
       anchor_kind: 'tournament', anchor_id: t.id,
+      team_ids: t.team_ids || [],
       title: `Tournament recap · ${t.name}`,
       audience_preview: testSent.has(t.id) ? 'Test sent · families pending' : 'Post-tournament recap not sent yet',
       relative_time: relTime(t.end_date),
@@ -88,6 +95,7 @@ export function buildGameRecapRows(games, sentAnchorIds, cap = GAME_RECAP_VISIBL
     status: 'needs_briefing_game',
     kind: 'game_recap',
     anchor_kind: 'event', anchor_id: e.id,
+    team_id: e.team_id,
     title: `Game recap · ${e.teams?.name || ''} · ${e.title}`,
     audience_preview: testSent.has(e.id) ? 'Test sent · families pending' : 'Recap not sent yet',
     relative_time: relTime(e.start_at, ' (game ended)'),
@@ -113,6 +121,7 @@ export function buildSkippedRows(audits) {
     status: 'schedule_change_skipped',
     kind: 'schedule_change',
     anchor_kind: 'event', anchor_id: eca.event_id,
+    team_id: eca.events?.team_id,
     eca_diff: { before: eca.before_jsonb, after: eca.after_jsonb, recurrence_scope: eca.recurrence_scope },
     title: `Schedule change · ${eca.events?.title || ''}`,
     audience_preview: 'Skipped notification — families unaware',
