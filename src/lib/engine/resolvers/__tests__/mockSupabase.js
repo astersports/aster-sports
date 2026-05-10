@@ -31,11 +31,16 @@ export function mockClient(fixtures) {
   // `player_of_game`, `tournament` (singular). Plural is for
   // weekly_digest's multi-event scope. Both shapes are accepted so
   // the mock serves both wave-1 and wave-2-A-2 tests.
+  // tournament_prelim adds `tournament_teams` + `locations` (plural)
+  // for multi-team / multi-location queries.
   const eventsArr = fixtures.events || (fixtures.event ? [fixtures.event] : []);
   const tournamentsArr = fixtures.tournaments || (fixtures.tournament && fixtures.tournament.id ? [fixtures.tournament] : []);
+  const locationsArr = fixtures.locations || (fixtures.location ? [fixtures.location] : []);
   const tables = {
     events: eventsArr,
     tournaments: tournamentsArr,
+    tournament_teams: fixtures.tournament_teams || [],
+    locations: locationsArr,
     event_rsvps: fixtures.event_rsvps || [],
     staff_profiles: fixtures.coaches || [],
     organizations: fixtures.organization ? [fixtures.organization] : [],

@@ -60,10 +60,9 @@ const SECTION_RENDERERS = {
 };
 
 // Wave 4.1d-5: legacy `tournament_preliminary` registry key retired.
-// All callers migrated to `tournament_prelim` (the lightweight
-// briefing renderer added in wave 3.11). The legacy renderer file
-// (tournamentPreliminary.js) is now dead code with a deprecation
-// header; full feature parity restoration is a follow-up wave.
+// Wave 4.2-A-3: legacy `tournamentPreliminary.js` renderer file
+// deleted (parity gaps folded into the new resolveTournamentPrelim
+// pipeline at src/lib/engine/resolvers/tournamentPrelim.js).
 const KIND_COMPOSERS = {
   academy_callup_notice: composeAcademyCallupNotice,
   weekly_digest: composeWeeklyDigest,

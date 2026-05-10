@@ -1,0 +1,44 @@
+[
+  {
+    "kind": "header",
+    "eyebrow": "11U GIRLS · TOURNAMENT WEEK",
+    "eyebrow_link": "https://www.legacyhoopers.org/",
+    "headline": "TOURNAMENT BRIEFING",
+    "sub_context": "ZG Rumble for the Ring CT · May 16–17 · Fairfield County, CT",
+    "goldStripe": true,
+    "team_color": "#a78bfa"
+  },
+  {
+    "kind": "team_schedule_table",
+    "team_color": "#a78bfa",
+    "days": [
+      {
+        "day_label": "SAT · MAY 16",
+        "rows": [
+          { "time": "8:00 AM", "opponent": "Pool Play", "location_name": "Tournament - Fairfield County, CT", "location_map_url": null }
+        ]
+      },
+      {
+        "day_label": "SUN · MAY 17",
+        "rows": [
+          { "time": "8:00 AM", "opponent": "Bracket TBD", "location_name": "Tournament - Fairfield County, CT", "location_map_url": null }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "signoff",
+    "prose": "",
+    "coaches": [
+      { "display_name": "Frank", "title": "Program Director", "phone": "(917) 991-9830" },
+      { "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" }
+    ]
+  },
+  {
+    "kind": "footer",
+    "logoUrl": "https://skyfire-app.vercel.app/knight-logo-240.png",
+    "orgName": "Legacy Hoopers",
+    "websiteUrl": "https://www.legacyhoopers.org/",
+    "contactEmail": "info@legacyhoopers.org"
+  }
+]

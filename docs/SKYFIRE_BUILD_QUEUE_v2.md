@@ -2683,3 +2683,32 @@ All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+
 **Tests:** 307 → 316 (+9). Lint clean. Build clean (no bundle delta).
 
 **Production unlock:** 32 published-but-unrecapped games no longer require manual retyping in the compose flow.
+
+### Wave 4.2-A-3 — resolveTournamentPrelim + composeTournamentPrelim — SHIPPED May 10, 2026
+
+- **Branch:** `claude/wave-4-2-a-3-resolve-tournament-prelim`
+- **Files:**
+  - NEW `src/lib/engine/resolvers/tournamentPrelim.js` (resolver + composer)
+  - NEW `src/lib/engine/resolvers/tournamentPrelimHelpers.js` (pure helpers)
+  - NEW `src/lib/engine/resolvers/__tests__/tournamentPrelim.snapshot.test.js` (3 tests)
+  - NEW `src/lib/engine/resolvers/__tests__/tournamentPrelim.contract.test.js` (8 tests)
+  - NEW `src/lib/engine/resolvers/__tests__/fixtures/tournament_prelim_rumble_for_the_ring/*.json` (9 fixture files)
+  - MOD `src/lib/engine/resolvers/__tests__/mockSupabase.js` (extended for tournament_teams + locations plural)
+  - MOD `src/lib/engine/composer.js` (comment updated for legacy file deletion)
+  - DEL `src/lib/engine/renderers/tournamentPreliminary.js` (legacy d-5 deprecated, parity folded into the new resolver)
+
+**Highlights**
+
+- Anchor: `{ tournamentId, pilotOnly }`. `pilotOnly` defaults to `organization_settings.pilot_mode_enabled` when not provided.
+- Slice = team. recipient_guardians embedded `ORDER BY guardian_id ASC` within each slice. Slices ordered `teams.sort_order ASC, teams.id ASC`.
+- pilotOnly filters recipient_guardians within slices, not slices themselves (teams still participate; their pilot recipient list may be empty).
+- d-7 parity items folded: per-day team schedule table with map links, survival guide, coach keys.
+- Override-merge precedence: override beats data when both present (e.g., overrides.hotel_block over tournament.hotel_url).
+- Sparse tournament metadata → corresponding sections omitted entirely (no fabrication).
+- Snapshot fixtures (3 tests): slice ordering verification + bare expected + with-overrides expected. Anchored to ZG Rumble for the Ring CT (May 16-17, 2026), 3 teams, 65 total guardians.
+
+**Tests:** 316 → 327 (+11). Lint clean. Build clean.
+
+**d-7 closed:** legacy `tournamentPreliminary.js` deleted. Parity items live in the new resolver. No follow-up wave needed.
+
+**Compose UI bridge:** SKIPPED for this PR. The existing `TournamentPrelimBody.jsx` form is all free-form textareas (hotel_block, sat_notes, sun_notes, opponent_scouting, lineup_notes, tourney_link_label) — no data-shaped contradictory inputs to remove. The legacy compose() path is unchanged. Send pipeline switch deferred to 4.2-A-8 atomic migration.
