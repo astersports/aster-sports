@@ -2894,6 +2894,47 @@ All 5 wave-4.2-A-8 substeps for the registry path landed: 7 calendar-anchored re
 
 **Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 408 passed. Pre-existing weeklyDigest.js 152-line violation untouched.
 
+### Wave 4.2-A-8c — academy_callup_notice on registry path — SHIPPED May 10, 2026 — closes wave 4.2-A
+
+**Anchor of work:** `src/lib/engine/substitution/callupTokens.js` (NEW), `src/lib/engine/renderers/callupResponse.js` (NEW), `src/lib/academyCallupSend.js` (NEW), `src/lib/engine/resolvers/registry.js`, `src/lib/engine/resolvers/academyCallupNotice.js` (1-line fix), `src/components/briefings/composerSubmit.js`, `src/components/briefings/PreviewPanel.jsx`, `src/components/briefings/bodies/AcademyCallupBody.jsx`.
+
+**WAVE 4.2-A COMPLETE. 7/7 calendar-anchored kinds on RESOLVER_REGISTRY path.**
+
+**What shipped (mirrors 8b-b for callup tokens):**
+1. **substituteCallupTokens helper** — pure function, per-player tokenMap, `callup_token_placeholders` → `callup_token_urls` field rename, fail-loud on missing player_id.
+2. **callup_response atomic renderer** — 2 stacked buttons (accept = green, decline = neutral gray) with inline styles for Resend compatibility, fail-loud literal `{{callup_*_url}}` fallback.
+3. **sendAcademyCallupNotice send helper** — registry resolve → per-slice loop with 2 mints per slice → URL wrap via callup-token-handler base → substitute → comms_messages INSERT → queueComposedMessages with adminSample → send-tournament-message invoke → status='sent'. Single-slice fan-out (one callup_response section per email since each notice targets one called-up player).
+4. **Registry update** — academy_callup_notice `sendPath: 'blocked'` → `'academyCallupSend'`. `blockedReason` removed. `NoCallupTokenInfrastructureError` retained for test imports but no longer thrown.
+5. **composerSubmit dispatch unblock** — 'blocked' branch removed; 'academyCallupSend' short-circuit added (mirror of 'rsvpNudgeSend' pattern); PreviewPanel dead 'blocked' code paths removed.
+6. **AcademyCallupBody cleanup** — `introNote` renamed to `coach_note` (now flows into overrides.coach_note); stale fields dropped from defaultValue + validate; coachName no longer required.
+
+**Two latent-bug fixes folded in (surfaced during Step 1 discovery):**
+
+- **8b-b sendRsvpNudge URL wrap bug:** `mintRsvpToken` was returning the raw signed token instead of `${RSVP_HANDLER_BASE}?t=<token>&action=<response>`. Renderer would have output `<a href="<raw_token>">` as a broken relative link the first time anyone sent rsvp_nudge via the new pipeline. Fixed by wrapping the mint return value into the handler URL (mirrors legacy `mintLinksForPlayer` pattern). Bug had not manifested because no rsvp_nudge has been sent via the new pipeline yet (cron-gated for scheduled sends; no manual sends to date).
+
+- **4.2-A-7 compose contract:** composeAcademyCallupNotice was emitting `callup_response` section without `player_id`. substituteCallupTokens needs section.player_id to key into tokenMapByPlayer. Fixed with 1-line addition + snapshot fixture update.
+
+**Tests:** 429 → 444 (+15). New: substituteCallupTokens (6), callupResponse renderer (4), sendAcademyCallupNotice integration (4), registry retains-error-class test (1). Updated: composerSubmit dispatch test for academy_callup_notice → sendAcademyCallupNotice short-circuit; registry sendPath assertion; rsvp integration test assertions adjusted for URL wrap shape (3 assertions tightened from .toBe to .toContain).
+
+**Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 444 passed. No new migrations or function deploys (callup infra was shipped in 4.3-D).
+
+**Wave 4.2-A status: COMPLETE.** 7 of 7 calendar-anchored kinds:
+- weekly_digest → digestSend (registry-composed since 4.2-A-1)
+- game_recap → composerSubmit (fan-out since 8b-a)
+- tournament_prelim → composerSubmit (fan-out since 8b-a)
+- tournament_recap → composerSubmit (fan-out since 8b-a)
+- schedule_change → composerSubmit (fan-out since 8b-a)
+- rsvp_nudge → rsvpNudgeSend (registry-composed since 8b-b)
+- academy_callup_notice → academyCallupSend (this PR)
+
+**Wave 4.3 status:**
+- 4.3-A ✅ weekly_digest auto-draft
+- 4.3-D ✅ callup token infra
+- 4.3-B 🚫 5 remaining triggers (gated on cron secret)
+- 4.3-C 🚫 inbox UI (gated on cron secret)
+
+The cron secret dashboard setup is the only thing between current state and a fully shipping auto-draft engine. weeklyDigest.js 152-line tidy is the only remaining ungated work (cosmetic).
+
 ### Wave 4.3-D — Callup token mint infrastructure — SHIPPED May 10, 2026
 
 **Anchor of work:** `supabase/migrations/20260510200529_wave_4_3_d_callup_token_infrastructure.sql` (NEW), `supabase/functions/callup-token-handler/index.ts` (NEW), `src/lib/callup/tokenPayload.js` (NEW), `docs/CALLUP_TOKEN_TESTING.md` (NEW).

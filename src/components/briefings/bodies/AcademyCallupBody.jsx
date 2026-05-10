@@ -1,12 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 // Wave 4.1d-2 §5.1 — minimal body editor for academy_callup_notice (G2).
-//
-// Maps form fields to composeAcademyCallupNotice data shape. Player
-// selection is handled by the audience picker (player_specific mode) —
-// the chosen player's first_name + team flow into the renderer via
-// composerSubmit data injection. This editor collects only the fields
-// the admin authors directly: jersey color, RSVP URL, coach name, and
-// optional intro line.
+// Wave 4.2-A-8c: cleanup post-registry-migration. Stale data-shaped
+// fields (jerseyColor, coachName, rsvpUrl) preserved for backward-
+// compat with legacy preview but unused by the registry compose path
+// (which reads org.coaches from context.org and emits callup_token
+// placeholders, not a single rsvpUrl). The `coach_note` field
+// (renamed from introNote) flows into overrides.coach_note via
+// bodyOverrides, picked up by composeAcademyCallupNotice's narrative
+// loop. Player selection is the anchor (audience_filter.player_ids).
 
 import { useState } from 'react';
 import { fieldGap, inputStyle, labelStyle, textareaStyle } from './_styles';
@@ -14,16 +15,12 @@ import PlayerPicker from './PlayerPicker';
 
 export const defaultValue = {
   player_ids: [],
-  jerseyColor: '',
-  coachName: '',
-  rsvpUrl: '',
-  introNote: '',
+  coach_note: '',
 };
 
 export function validate(v) {
   const errs = [];
   if (!v?.player_ids?.length) errs.push('Pick at least one player.');
-  if (!v?.coachName?.trim()) errs.push('Add a coach name (signs the email).');
   return errs;
 }
 
@@ -47,24 +44,12 @@ export default function AcademyCallupBody({ value, onChange, audienceFilter, onA
         )}
       </div>
       <label>
-        <span style={labelStyle}>Coach name (signs the email)</span>
-        <input type="text" value={v.coachName} onChange={(e) => set({ coachName: e.target.value })} style={inputStyle} placeholder="Coach Kenny" />
-      </label>
-      <label>
-        <span style={labelStyle}>Jersey color (optional)</span>
-        <input type="text" value={v.jerseyColor} onChange={(e) => set({ jerseyColor: e.target.value })} style={inputStyle} placeholder="Navy" />
-      </label>
-      <label>
-        <span style={labelStyle}>RSVP link (optional)</span>
-        <input type="text" value={v.rsvpUrl} onChange={(e) => set({ rsvpUrl: e.target.value })} style={inputStyle} placeholder="https://…" />
-      </label>
-      <label>
-        <span style={labelStyle}>Intro note (optional)</span>
-        <textarea value={v.introNote} onChange={(e) => set({ introNote: e.target.value })} style={textareaStyle}
+        <span style={labelStyle}>Coach note (optional)</span>
+        <textarea value={v.coach_note} onChange={(e) => set({ coach_note: e.target.value })} style={textareaStyle}
           placeholder="Why we're inviting this player up — what to expect on game day." />
       </label>
       <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', lineHeight: 1.4 }}>
-        Anchored to a specific game (Step 2). Email is delivered only to the chosen player(s) guardians, not the whole roster.
+        Anchored to a specific game (Step 2). Email is delivered only to the chosen player(s) guardians, not the whole roster. Coach signoff is auto-populated from org staff.
       </div>
     </div>
   );

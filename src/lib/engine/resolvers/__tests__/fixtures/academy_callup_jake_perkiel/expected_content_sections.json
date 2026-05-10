@@ -30,6 +30,7 @@
   },
   {
     "kind": "callup_response",
+    "player_id": "4e361e9b-4cfa-46b7-bae8-48552f9841e0",
     "callup_token_placeholders": {
       "accept": "{{callup_accept_url}}",
       "decline": "{{callup_decline_url}}"

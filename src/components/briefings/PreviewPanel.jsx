@@ -11,7 +11,6 @@ import { useResolverPreview } from '../../lib/engine/useResolverPreview';
 const wrap = { display: 'flex', flexDirection: 'column', gap: 8, height: '100%' };
 const topBar = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' };
 const frameStyle = { width: '100%', minHeight: 480, border: '1px solid var(--em-border-default)', borderRadius: 10, backgroundColor: '#ffffff' };
-const bannerStyle = { padding: 16, borderRadius: 10, backgroundColor: 'var(--em-warning-soft)', border: '1px solid var(--em-warning)', fontSize: 14, color: 'var(--em-text-primary)' };
 
 function safeLegacyCompose(kind, data) {
   try { return compose({ kind, data }); }
@@ -41,7 +40,6 @@ export default function PreviewPanel({ state, families, coaches, eventTitle, bef
   const preview = useResolverPreview({ resolve: entry?.resolve || null, anchor });
 
   const composed = useMemo(() => {
-    if (sendPath === 'blocked') return { html: '' };
     if (entry) {
       if (preview.isLoading) return { html: '<div style="padding:24px;font-family:Inter,sans-serif;color:#64748b;">Loading preview…</div>' };
       if (preview.error) return { html: `<div style="padding:24px;color:#dc2626;font-family:Inter,sans-serif;">Preview error: ${preview.error.message}</div>` };
@@ -60,7 +58,6 @@ export default function PreviewPanel({ state, families, coaches, eventTitle, bef
   }, [sendPath, entry, preview, overrides, state, coaches, families, eventTitle, before, after, period]);
 
   useEffect(() => {
-    if (sendPath === 'blocked') return;
     const iframe = iframeRef.current;
     if (!iframe) return;
     const doc = iframe.contentDocument;
@@ -73,20 +70,6 @@ export default function PreviewPanel({ state, families, coaches, eventTitle, bef
   const audience = state.test_only
     ? 'Preview · admin@ only'
     : `Preview · sends to ${recipientCount ?? '…'} ${recipientCount === 1 ? 'family' : 'families'}`;
-
-  if (sendPath === 'blocked') {
-    return (
-      <div style={wrap}>
-        <div style={topBar}>{audience}</div>
-        <div style={bannerStyle}>
-          <strong>Sends disabled for {state.kind}.</strong>
-          <div style={{ marginTop: 6, fontSize: 13, color: 'var(--em-text-secondary)' }}>
-            Callup token infrastructure is pending in wave 4.3. Compose can preview but not send.
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div style={wrap}>
