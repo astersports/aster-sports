@@ -5,6 +5,10 @@
 // custom_message), short-circuit for rsvp_nudge, blocked path for
 // academy_callup_notice, and wrong-call-site guards for kinds that
 // don't dispatch through composerSubmit (weekly_digest).
+//
+// Wave 4.2-A-8b-a — registry path now queues via
+// queueComposedMessages (per-slice fan-out). Free-form path keeps
+// resolveAudience + queueRecipients.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -18,6 +22,9 @@ vi.mock('../../supabase', () => {
 });
 vi.mock('../../briefings/queueRecipients', () => ({
   queueRecipients: vi.fn(() => Promise.resolve({ audienceCount: 3, adminBcc: true })),
+}));
+vi.mock('../../briefings/queueComposedMessages', () => ({
+  queueComposedMessages: vi.fn(() => Promise.resolve({ audienceCount: 5, adminBcc: true })),
 }));
 vi.mock('../../briefings/recipientFilter', () => ({
   resolveAudience: vi.fn(() => Promise.resolve({ teamIds: ['t-1'], audience: [{ guardian_id: 'g1', email: 'g1@x' }] })),
@@ -49,22 +56,15 @@ vi.mock('../resolvers/registry', async () => {
 
 const { submitBriefing } = await import('../../../components/briefings/composerSubmit');
 const { queueRecipients } = await import('../../briefings/queueRecipients');
+const { queueComposedMessages } = await import('../../briefings/queueComposedMessages');
 const { resolveAudience } = await import('../../briefings/recipientFilter');
 const { sendRsvpNudge } = await import('../../rsvpNudgeSend');
 const { compose } = await import('../composer');
 const { NoCallupTokenInfrastructureError, RESOLVER_REGISTRY } = await import('../resolvers/registry');
 
-const baseDraft = () => ({
-  submitSend: vi.fn(() => Promise.resolve({ id: 'm-1' })),
-  submitSchedule: vi.fn(() => Promise.resolve({ id: 'm-2' })),
-});
+const baseDraft = () => ({ submitSend: vi.fn(() => Promise.resolve({ id: 'm-1' })), submitSchedule: vi.fn(() => Promise.resolve({ id: 'm-2' })) });
 const baseArgs = (overrides = {}) => ({
-  state: {
-    kind: 'game_recap', anchor_kind: 'event', anchor_id: 'e-1',
-    audience_type: 'event_attendees', audience_filter: {},
-    body: { coach_note: 'ok' }, signoff_message: 'thanks',
-    send_mode: 'now', test_only: false, pilot_only: false, ...overrides,
-  },
+  state: { kind: 'game_recap', anchor_kind: 'event', anchor_id: 'e-1', audience_type: 'event_attendees', audience_filter: {}, body: { coach_note: 'ok' }, signoff_message: 'thanks', send_mode: 'now', test_only: false, pilot_only: false, ...overrides },
   draft: baseDraft(), orgId: 'o-1', recipients: [], coaches: [], pilotModeEnabled: false,
 });
 
@@ -72,7 +72,7 @@ beforeEach(() => { vi.clearAllMocks(); });
 
 describe('composerSubmit dispatch — wave 4.2-A-8a', () => {
   it.each(['game_recap', 'tournament_prelim', 'tournament_recap', 'schedule_change'])(
-    '%s -> registry resolve+compose -> draft.submitSend -> queueRecipients',
+    '%s -> registry resolve+compose-per-slice -> draft.submitSend -> queueComposedMessages',
     async (kind) => {
       const args = baseArgs({ kind, anchor_kind: kind === 'tournament_prelim' || kind === 'tournament_recap' ? 'tournament' : 'event' });
       const entry = RESOLVER_REGISTRY[kind];
@@ -80,18 +80,23 @@ describe('composerSubmit dispatch — wave 4.2-A-8a', () => {
       expect(entry.resolve).toHaveBeenCalledOnce();
       expect(entry.compose).toHaveBeenCalledOnce();
       expect(args.draft.submitSend).toHaveBeenCalledOnce();
-      expect(resolveAudience).toHaveBeenCalledOnce();
-      expect(queueRecipients).toHaveBeenCalledOnce();
-      expect(r).toEqual({ sent: true, audienceCount: 3 });
+      expect(queueComposedMessages).toHaveBeenCalledOnce();
+      expect(resolveAudience).not.toHaveBeenCalled();
+      expect(queueRecipients).not.toHaveBeenCalled();
+      expect(r).toEqual({ sent: true, audienceCount: 5 });
     }
   );
 
-  it('announcement (free-form) -> legacy compose path', async () => {
+  it('announcement (free-form) -> legacy compose path -> queueRecipients', async () => {
     const args = baseArgs({ kind: 'announcement' });
     const r = await submitBriefing(args);
     expect(compose).toHaveBeenCalledWith(expect.objectContaining({ kind: 'announcement' }));
     expect(args.draft.submitSend).toHaveBeenCalledOnce();
+    expect(resolveAudience).toHaveBeenCalledOnce();
+    expect(queueRecipients).toHaveBeenCalledOnce();
+    expect(queueComposedMessages).not.toHaveBeenCalled();
     expect(r.sent).toBe(true);
+    expect(r.audienceCount).toBe(3);
   });
 
   it('custom_message (free-form) -> legacy compose path', async () => {
@@ -128,5 +133,16 @@ describe('composerSubmit dispatch — wave 4.2-A-8a', () => {
     const draft = args.draft;
     expect(draft.submitSend).not.toHaveBeenCalled();
     expect(queueRecipients).not.toHaveBeenCalled();
+    expect(queueComposedMessages).not.toHaveBeenCalled();
+  });
+
+  it('per-slice fan-out: N slices -> queueComposedMessages receives messages.length === N', async () => {
+    const slices = ['g1', 'g2', 'g3'].map((g) => ({ kind: 'family', guardian_id: g, email: `${g}@x`, team_id: 't-1' }));
+    RESOLVER_REGISTRY.game_recap.resolve.mockResolvedValueOnce({ context: { ok: true }, slices });
+    await submitBriefing(baseArgs({ kind: 'game_recap' }));
+    const callArg = queueComposedMessages.mock.calls[0][0];
+    expect(callArg.messages).toHaveLength(3);
+    expect(callArg.messages.map((m) => m.slice.guardian_id)).toEqual(['g1', 'g2', 'g3']);
+    expect(callArg.messages.every((m) => Array.isArray(m.content_sections))).toBe(true);
   });
 });

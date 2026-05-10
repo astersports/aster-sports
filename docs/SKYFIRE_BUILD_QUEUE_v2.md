@@ -2849,3 +2849,21 @@ All calendar-anchored kinds (weekly_digest, game_recap, tournament_prelim, tourn
 ### Wave 4.2-A status: complete ✅
 
 All 5 wave-4.2-A-8 substeps for the registry path landed: 7 calendar-anchored resolver pairs (4.2-A-1 through 4.2-A-7) + atomic dispatch switch (4.2-A-8a). Per-slice fan-out (4.2-A-8b) and academy_callup mint (4.2-A-8c) are tracked separately and do not block wave-4.2-B work.
+
+### Wave 4.2-A-8b-a — Per-slice fan-out for 4 composerSubmit kinds — SHIPPED May 10, 2026
+
+**Anchor of work:** `src/lib/briefings/queueComposedMessages.js` (NEW), `src/components/briefings/composerSubmit.js`, `src/lib/engine/__tests__/composerSubmit.dispatch.test.js`, `src/lib/briefings/__tests__/queueComposedMessages.test.js` (NEW).
+
+**What shipped:**
+- `queueComposedMessages` helper accepts `{messageId, messages: [{slice, subject, content_sections}], testOnly}`. Per-message: render body via shared HTML wrap + `renderSections`/`renderSectionsPlainText`. Family slices → 1 row keyed (guardian_id, email, team_id). Team slices → N rows, one per `slice.recipient_guardians[i]`, all sharing the same composed body. Multi-team families deduped by guardian_id. Admin BCC appended unless already in family rows.
+- composerSubmit refactored: lift `composeViaRegistry` → `resolveAndComposePerSlice(state)` returning `{messages, sample}`. The 4 composerSubmit kinds (game_recap, tournament_prelim, tournament_recap, schedule_change) route through `queueComposedMessages`. Free-form kinds (announcement, custom_message) keep the legacy `queueRecipients` path. Identical-body fan-out today per wave contract.
+- Test coverage: per-slice fan-out for the 4 kinds (the existing it.each in composerSubmit.dispatch.test.js, now asserting `queueComposedMessages` instead of `queueRecipients`/`resolveAudience`); 1 multi-slice end-to-end test verifying messages.length === N; legacy backward-compat (announcement asserts queueRecipients still called); 8 unit tests for queueComposedMessages pure builders.
+
+**8b split (per Step-1 discovery):**
+- 8b-a (this PR): per-slice fan-out only. Safe, no semantics change.
+- 8b-b (next PR): rsvp_nudge → registry migration. Includes (1) new `rsvp_request` atomic renderer (composer.js SECTION_RENDERERS gap surfaced in discovery — shipping rsvp_nudge → registry today would render buttonless emails), (2) per-kid compose expansion in 4.2-A-6 contract (Option A locked: mint_rsvp_token RPC is per-(event, player, guardian, response), so multi-kid families need per-kid section emission), (3) `substituteRsvpTokens` helper accepting per-player tokenMap, (4) sendRsvpNudge migration to registry, (5) composerSubmit call-site signature update for sendRsvpNudge.
+- 8c: academy_callup mint + dispatch unblock (gated on wave 4.3 token mint infrastructure).
+
+**Body audit (Step 5):** zero cleanup actions across 8 components. All state.body shapes are correctly either pure free-form (RsvpNudge, TournamentPrelim, TournamentRecap, Announcement, CustomMessage, WeeklyDigest) or intentionally data-locked (ScheduleChangeBody diff is captured by buildSaveDiff at edit-flow time, not user input — pattern is correct). AcademyCallupBody coachName overlap with org coaches data is a 4.2-A-8c concern.
+
+**Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 401 passed (was 392). Pre-existing weeklyDigest.js 152-line violation untouched.
