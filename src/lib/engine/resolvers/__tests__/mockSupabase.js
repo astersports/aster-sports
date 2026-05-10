@@ -49,7 +49,7 @@ export function mockClient(fixtures) {
     organization_settings: fixtures.organization_settings ? [fixtures.organization_settings] : [],
     player_guardians: fixtures.player_guardians || [],
     game_results: fixtures.game_result ? [fixtures.game_result] : (fixtures.game_results || []),
-    players: fixtures.player_of_game ? [fixtures.player_of_game] : (fixtures.players || []),
+    players: fixtures.player_of_game ? [fixtures.player_of_game] : (fixtures.player ? [fixtures.player] : (fixtures.players || [])),
   };
   return {
     from(table) { return mockChain(tables[table] || []); },

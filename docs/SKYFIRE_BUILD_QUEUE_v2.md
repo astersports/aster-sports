@@ -2793,3 +2793,34 @@ All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+
 **Tests:** 349 → 361 (+12). Lint clean. Build clean.
 
 **Compose UI bridge:** SKIPPED. Existing `RsvpNudgeBody.jsx` form is all free-form (`headline_override`, `custom_message`, `ask_comment_field`). Send pipeline switch deferred to 4.2-A-8.
+
+### Wave 4.2-A-7 — resolveAcademyCallupNotice + composeAcademyCallupNotice — SHIPPED May 10, 2026
+
+- **Branch:** `claude/wave-4-2-a-7-resolve-academy-callup-notice`
+- **Files:**
+  - NEW `src/lib/engine/resolvers/academyCallupNotice.js` (resolver + composer, 134 lines)
+  - NEW `src/lib/engine/resolvers/academyCallupNoticeHelpers.js` (error classes + narrative builder + response window, 44 lines)
+  - NEW `src/lib/engine/resolvers/__tests__/academyCallupNotice.snapshot.test.js` (1 test)
+  - NEW `src/lib/engine/resolvers/__tests__/academyCallupNotice.contract.test.js` (12 tests)
+  - NEW `src/lib/engine/resolvers/__tests__/fixtures/academy_callup_jake_perkiel/*.json` (8 fixture files)
+  - MOD `src/lib/engine/resolvers/__tests__/mockSupabase.js` (added `player` singular fixture key)
+
+**Highlights**
+
+- **First two-ID anchor in the wave**: `{ eventId, playerId, pilotOnly }`.
+- Slice = family with `{ guardian_id, email, player_id, kid_first_name (singular), team_id }`. Slices are the called-up player's guardians ONLY — not receiving team's full roster.
+- Six sanity guards (in order): `EventNotFoundError`, `PlayerNotFoundError`, `PlayerNotAcademyError`, `EventHasNoTeamError`, `EventAlreadyStartedError`, `PlayerNotCalledUpError`.
+- Cross-team vs same-team narrative branches on receiving team == home team identity. `is_same_team` flag in `callup_card` section drives renderer treatment.
+- Response window: `deadline_at = min(now + 2h, event.start_at - 30min)`. Capped so recipient always has ≥30 min. `window_label` formatter switches at 4-hour threshold.
+- Callup token URLs are NOT minted in resolver or compose. Literal `{{callup_accept_url}}` / `{{callup_decline_url}}` placeholders emitted in `callup_response` section. **Mint infrastructure does NOT exist yet** — downstream send pipeline will need to either reuse existing rsvp-token-handler or add a `callup_responses` table. Flagged in PR description.
+- Snapshot anchor: synthetic (production `academy_callup_player_ids` is empty). Jake Perkiel (`4e361e9b`, futures_academy on 10U Black) called up to 10U Blue Practice (`0dd75745`) on Tuesday May 12. 2 guardians; lowest is `0896bcd1` (rissa.perkiel@gmail.com).
+
+**Tests:** 361 → 374 (+13). Lint clean. Build clean.
+
+**Compose UI bridge:** SKIPPED. Existing `AcademyCallupBody.jsx` is all free-form (player_ids, coachName, jerseyColor, rsvpUrl, introNote). Send pipeline switch deferred to 4.2-A-8.
+
+### Wave 4.2-A status: 7 of 7 per-kind resolvers shipped ✅
+
+All calendar-anchored kinds (weekly_digest, game_recap, tournament_prelim, tournament_recap, schedule_change, rsvp_nudge, academy_callup_notice) now have resolver+composer pairs. The two free-form kinds (announcement, custom_message) remain correctly free-form per BRIEFINGS_COVERAGE_L99.md §0.
+
+**Wave 4.2-A-8** (atomic send-pipeline switch) is the final PR: composerSubmit migrates from legacy `compose(kind, state.body)` to the new `resolveX/composeX` registry, deletes legacy compose path, deletes UI bridges. Closes the wave.

@@ -1,0 +1,14 @@
+{
+  "id": "0dd75745-a540-44d9-b16a-9cf0ac1ac819",
+  "title": "10U Blue Practice",
+  "team_id": "13abc98d-5e88-4fe0-8929-690add6e2bdd",
+  "event_type": "practice",
+  "start_at": "2026-05-12T23:00:00+00:00",
+  "end_at": "2026-05-13T00:30:00+00:00",
+  "location_id": "a6a0f88a-c202-4823-9f7e-9bad5a37a1bc",
+  "opponent": null,
+  "status": "scheduled",
+  "publish_status": "published",
+  "academy_callup_player_ids": ["4e361e9b-4cfa-46b7-bae8-48552f9841e0"],
+  "teams": { "id": "13abc98d-5e88-4fe0-8929-690add6e2bdd", "name": "10U Blue", "team_color": "#94a3b8", "sort_order": 3, "org_id": "e3e95e21-3571-4e9a-985a-d5d01480d4a6" }
+}
