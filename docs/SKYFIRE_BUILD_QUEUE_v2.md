@@ -2508,6 +2508,58 @@ PR #53 · sha `32a0ca9` · migration `20260510002836` · Vercel deploy `dpl_7zTP
 
 **Evidence:** PR #57, sha `02e2dde`, edge fn sha `411800e3` v16
 
+### Wave 4.1d-1 — Send pipelines for 5 new kinds — SHIPPED May 10, 2026
+
+- **PR:** #59 (squash-merged at sha `ec31be9`)
+- **Files:** 5 (3 new, 1 modified, 2 new tests) +233 / -1
+  - `src/lib/briefings/recipientFilter.js` (NEW, 62 lines)
+  - `src/lib/briefings/queueRecipients.js` (NEW, 67 lines)
+  - `src/components/briefings/composerSubmit.js` (+10 / -1, total 61 lines)
+  - `src/lib/briefings/__tests__/recipientFilter.test.js` (NEW, 7 tests)
+  - `src/lib/briefings/__tests__/queueRecipients.test.js` (NEW, 7 tests)
+
+**Highlights**
+
+- Closes the wave-3.11+ gap that 400'd `send-tournament-message v16` with "No queued recipients" for `game_recap`, `tournament_prelim`, `tournament_recap`, `announcement`, `custom_message`.
+- `composerSubmit.js` now calls `resolveAudience` + `queueRecipients` between `draft.submitSend` and the edge function invoke. Audience-type → team_ids resolution covers `org_all` / `team` / `multi_team` / `event_attendees` / `tournament_attendees`.
+- `applyUnsubscribeUrls` (PR #53 helper) called per recipient row before bulk INSERT — RFC 8058 token convergence preserved.
+- `testOnly=true` skips family rows; admin BCC always present so "Send test to admin@" never 400s.
+- PATH B-lite chosen — pure helpers extracted, dispatcher unchanged. Refactor to dedicated per-kind senders deferred to wave 4.2.
+
+**Tests:** 252 → 266 (+14)
+
+**Evidence:** PR #59, sha `ec31be9`, production smoke confirms message `0f08c2b7` test-sent at 04:25:32 UTC with `recipient_count=1`, body delivered to admin@ with full footer + unsubscribe link rendered.
+
+### Wave 4.1d-2 — UX punch list (queued, awaiting green-light)
+
+Synthesized from §9 of the d-1 master prompt + Frank's May 10 production verification.
+
+**Filter / list issues**
+
+- Team filter chip selection is decorative — list still shows games from all teams. `1 team · 10U Blue ✕` chip applied but inbox renders 9U Boys + 10U Blue side-by-side.
+- "6 items need your attention" header doesn't reflect filtered count. Hide on History tab OR rebind to filtered count.
+- Default time window for needs-attention should be "All time" (or "Last 14 days") — "Today" is too restrictive; cards exist outside today.
+- Synth should filter `event_type='game'` for `game_recap` cards (no practices).
+
+**Compose flow issues**
+
+- Compose floating button (FAB) z-index overlaps the Compose action button on action-queue cards.
+- Team picker dropdown should auto-close on selection.
+- Audience picker briefly flashes "Will send to 0 families" before "Computing audience…" resolves — race condition during initial mount or audience type swap.
+- Pilot Mode + 11U Girls = "Will send to 0 families" with no UX guidance; Frank has to know to disable pilot mode in Settings → Communications. Inline hint or one-tap disable from the audience step would cut the dead-end.
+- Anchor picker for `game_recap` (event-anchored, past-game filtered) was observed to omit 11U Girls Practice in one screenshot context but include it in another. Investigate `eventFilter: { kind: 'game', past: true }` resolution stability.
+
+**Kind picker issues**
+
+- "Last sent today · X sent" sub-text inconsistent across loads in the SAME `SAVED` state (Schedule change shows `1 sent` then `Not sent yet` between consecutive opens). `sortKinds(usage)` query result not stable.
+- Kind picker order varies between consecutive opens for the same user (recently-used recompute).
+- "Tournament prelim · ZG Rumble for the Ring CT" inbox label vs. "Tournament briefing" kind picker label — pick one, use everywhere.
+
+**Send completion / inbox issues**
+
+- Test send to admin@ leaves message at `status='queued'` despite `sent_at` populated — investigate webhook receiver flipping status to `'sent'`. Cosmetic but confusing in inbox.
+- Sending a test to admin@ does NOT clear NEEDS RECAP / NEEDS BRIEFING badges on the source needs-attention card (by design — only delivery to families clears it). Worth a copy clarification or sub-pill ("Test sent · families pending").
+
 ### Next up — Wave 4.1b (deferred from PR #53) — SHIPPED May 10, 2026 (PR #55, sha `dde4002`)
 
 All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+38). Lint clean, build clean.

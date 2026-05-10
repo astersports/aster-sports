@@ -928,6 +928,10 @@ Supabase ALTER DATABASE GUCs blocked by permission model. Use `app_secrets` tabl
 - **D-COMPLIANCE-1:** Every parent-facing email MUST include unsubscribe link. Footer renderer emits `{{UNSUBSCRIBE_URL}}` placeholder which send pipeline substitutes per-recipient via `mint_unsubscribe_token` RPC. Suppression trigger on `comms_message_recipients` provides defense-in-depth even if frontend forgets to filter unsubscribed guardians.
 - **D-COMPLIANCE-2:** Every parent-facing email MUST include both body footer unsubscribe link (CAN-SPAM, ratified D-COMPLIANCE-1) AND RFC 8058 `List-Unsubscribe` + `List-Unsubscribe-Post: One-Click` headers (Gmail/Yahoo bulk-sender). Single token mint per recipient via `public.mint_unsubscribe_token`; URL converges across body footer + headers + handler.
 
+## Wave 4.1d-1 send pipelines for 5 new kinds — SHIPPED May 10, 2026
+
+PR #59, squash-merged at sha `ec31be9`. Closes the wave-3.11+ gap that 400'd `send-tournament-message v16` with "No queued recipients" for `game_recap`, `tournament_prelim`, `tournament_recap`, `announcement`, `custom_message`. Two pure helpers extracted (`recipientFilter.js`, `queueRecipients.js`) + 10-line wire-up in `composerSubmit.js`. Production smoke verified May 10 04:25 UTC: message `0f08c2b7-96fd-43a3-8bb4-bc677c4913d8` test-sent successfully with `recipient_count=1`, `sent_at=2026-05-10 04:25:32+00`, body delivered to admin@ with full footer + unsubscribe link. Tests 252 → 266 (+14).
+
 ---
 
 # END OF DOCUMENT
