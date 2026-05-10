@@ -8,14 +8,13 @@
 // { html, plainText }, so the wave-1 string-vs-object shim is gone. Wave-1
 // renderers (header, gameCard, championshipScenarios) keep their named
 // `renderXxx` exports for back-compat with kind composers that imported
-// them by name (tournamentPreliminary still inlines its own pipeline).
+// them by name.
 
 import { renderHeader } from './renderers/header';
 import { renderGameCard } from './renderers/gameCard';
 import { renderChampionshipScenarios } from './renderers/championshipScenarios';
 import { renderFooter } from './renderers/footer';
 import { composeAcademyCallupNotice } from './renderers/academyCallupNotice';
-import { composeTournamentPreliminary } from './renderers/tournamentPreliminary';
 import { composeWeeklyDigest } from './renderers/weeklyDigest';
 import { composeScheduleChange } from './renderers/scheduleChange';
 import { composeGameRecap } from './renderers/gameRecap';
@@ -60,15 +59,13 @@ const SECTION_RENDERERS = {
   schedule_change_diff: scheduleChangeDiff,
 };
 
-// Wave 3.11: 5 new lightweight kind composers added for the unified
-// BriefingComposer. The legacy `tournament_preliminary` (wave-2 spec
-// renderer) is preserved under its original key. The lightweight
-// briefing version registers under `tournament_prelim` to avoid the
-// clash. A future wave will collapse the two once the legacy kind's
-// callers migrate.
+// Wave 4.1d-5: legacy `tournament_preliminary` registry key retired.
+// All callers migrated to `tournament_prelim` (the lightweight
+// briefing renderer added in wave 3.11). The legacy renderer file
+// (tournamentPreliminary.js) is now dead code with a deprecation
+// header; full feature parity restoration is a follow-up wave.
 const KIND_COMPOSERS = {
   academy_callup_notice: composeAcademyCallupNotice,
-  tournament_preliminary: composeTournamentPreliminary,
   weekly_digest: composeWeeklyDigest,
   schedule_change: composeScheduleChange,
   game_recap: composeGameRecap,

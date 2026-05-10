@@ -84,7 +84,7 @@ export function useTournamentBriefing({ event, team }) {
   const generate = useCallback((coachKeys, survival, coaches) => {
     if (!events?.length || !team?.name || !event?.tournament_name) return;
     const result = compose({
-      kind: 'tournament_preliminary',
+      kind: 'tournament_prelim',
       data: {
         teamName: team.name,
         tournamentName: event.tournament_name,

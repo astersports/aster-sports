@@ -10,7 +10,7 @@ const DAY_MS = 86400000;
 // Returns one of the production kind CHECK values based on
 // where "now" sits relative to the tournament window.
 export function inferMessageType(tournament, now = new Date()) {
-  if (!tournament?.start_date) return 'custom';
+  if (!tournament?.start_date) return 'custom_message';
   const startMs = new Date(`${tournament.start_date}T00:00:00`).getTime();
   const endMs = new Date(`${tournament.end_date || tournament.start_date}T23:59:59`).getTime();
   const nowMs = now.getTime();
@@ -27,13 +27,13 @@ export function inferMessageType(tournament, now = new Date()) {
   }
   if (daysUntilStart < 1) return 'tournament_rsvp_lock';
   if (daysUntilStart <= 5) return 'tournament_final';
-  return 'tournament_preliminary';
+  return 'tournament_prelim';
 }
 
 export function messageTypeLabel(type) {
   const map = {
     weekly_digest:            'Weekly Digest',
-    tournament_preliminary:   'Tournament Preliminary',
+    tournament_prelim:        'Tournament Preliminary',
     tournament_final:         'Tournament Final',
     tournament_rsvp_lock:     'Tournament RSVP Lock',
     tournament_recap_interim: 'Tournament Interim Recap',
@@ -41,7 +41,7 @@ export function messageTypeLabel(type) {
     schedule_change:          'Schedule Change',
     multi_team_notice:        'Multi-Team Notice',
     academy_callup_notice:    'Academy Call-Up',
-    custom:                   'Custom',
+    custom_message:           'Custom',
   };
   return map[type] || type;
 }
@@ -50,7 +50,7 @@ export function messageTypeLabel(type) {
 export function whyLabel(type) {
   const map = {
     weekly_digest:            'weekly cadence',
-    tournament_preliminary:   '5+ days out',
+    tournament_prelim:        '5+ days out',
     tournament_final:         '2-5 days out',
     tournament_rsvp_lock:     'less than 24 hours',
     tournament_recap_interim: 'mid-tournament',
@@ -58,17 +58,17 @@ export function whyLabel(type) {
     schedule_change:          'manual override',
     multi_team_notice:        'manual override',
     academy_callup_notice:    'roster locked',
-    custom:                   'manual override',
+    custom_message:           'manual override',
   };
   return map[type] || 'manual override';
 }
 
-// Engine support: tournament_preliminary (legacy port) +
-// academy_callup_notice (new in renderer wave 1) + weekly_digest (wave 3).
-// Other kinds remain stubs in the dropdown until later waves land their
-// renderers.
+// Engine support: tournament_prelim (canonical post wave 4.1d-5,
+// previously tournament_preliminary) + academy_callup_notice (renderer
+// wave 1) + weekly_digest (wave 3). Other kinds remain stubs in the
+// dropdown until later waves land their renderers.
 export const ENGINE_SUPPORTED_TYPES = new Set([
-  'tournament_preliminary',
+  'tournament_prelim',
   'academy_callup_notice',
   'weekly_digest',
 ]);

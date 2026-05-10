@@ -68,7 +68,7 @@ export const TEAM_COLORS = {
 // comms_messages.kind CHECK constraint in production.
 export const TOURNAMENT_MESSAGE_TYPES = [
   { value: 'weekly_digest',            label: 'Weekly digest' },
-  { value: 'tournament_preliminary',   label: 'Tournament preliminary schedule' },
+  { value: 'tournament_prelim',        label: 'Tournament preliminary schedule' },
   { value: 'tournament_final',         label: 'Tournament final schedule' },
   { value: 'tournament_rsvp_lock',     label: 'Tournament RSVP lock reminder' },
   { value: 'tournament_recap_interim', label: 'Tournament interim recap' },
@@ -76,5 +76,5 @@ export const TOURNAMENT_MESSAGE_TYPES = [
   { value: 'schedule_change',          label: 'Schedule change' },
   { value: 'multi_team_notice',        label: 'Multi-team notice' },
   { value: 'academy_callup_notice',    label: 'Academy call-up' },
-  { value: 'custom',                   label: 'Custom' },
+  { value: 'custom_message',           label: 'Custom' },
 ];
