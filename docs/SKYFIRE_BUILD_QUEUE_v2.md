@@ -2894,6 +2894,32 @@ All 5 wave-4.2-A-8 substeps for the registry path landed: 7 calendar-anchored re
 
 **Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 408 passed. Pre-existing weeklyDigest.js 152-line violation untouched.
 
+### Wave 4.3-D — Callup token mint infrastructure — SHIPPED May 10, 2026
+
+**Anchor of work:** `supabase/migrations/20260510200529_wave_4_3_d_callup_token_infrastructure.sql` (NEW), `supabase/functions/callup-token-handler/index.ts` (NEW), `src/lib/callup/tokenPayload.js` (NEW), `docs/CALLUP_TOKEN_TESTING.md` (NEW).
+
+**Parallel-track PR.** No dependency on the cron secret gating 4.3-B/C. Mirror of the wave-4.0 rsvp-token-handler pattern for academy callup responses.
+
+**What shipped:**
+
+1. **`callup_token_uses` table** — nonce single-use audit. Mirror of `rsvp_token_uses` (nonce PK, event_id, player_id, guardian_id, response CHECK ∈ accept/decline, used_at, used_from_ip, used_from_ua). RLS: admins read own org rows.
+2. **`mint_callup_token` RPC** — SECURITY DEFINER plpgsql. Reads `callup_token_secret` from `app_secrets`. Builds JWT-style payload `{e, p, g, r, n, x}`, HMAC-signs with sha256, base64url-encodes both halves, returns `payload.signature`. 30-day expiry. Throws on invalid response.
+3. **`verify_callup_token` RPC** — SECURITY DEFINER plpgsql. Returns NULL on bad signature/expired/parse-error; returns payload jsonb on success (with `_already_used: true` flag if nonce already in `callup_token_uses`).
+4. **`apply_callup_decline` RPC** — service-role-only helper. `array_remove` on `events.academy_callup_player_ids` without the `auth.uid()` role check that `add_academy_callup` / `remove_academy_callup` require.
+5. **`callup-token-handler` edge function** — verify_jwt: false (token IS auth). Mirror of rsvp-token-handler flow: parse `?t=&action=` → verify → tamper-check (action matches payload.r) → already-used check → insert callup_token_uses (lock nonce) → upsert event_rsvps (accept→'going', decline→'not_going', ON CONFLICT event_id+player_id) → if decline, call `apply_callup_decline` → render HTML confirmation page.
+6. **`callup_token_secret` row** in `app_secrets` provisioned at migration time with `encode(extensions.gen_random_bytes(32), 'base64')`. Rotate via SQL UPDATE on the row — no dashboard sync required (distinct from CRON_SECRET).
+7. **Pure helper** `src/lib/callup/tokenPayload.js` `parseCallupTokenPayload(token)` — client-side preview decoder. Returns `{event_id, player_id, guardian_id, response, nonce, expires_at}` or NULL on parse error. NEVER trust for state mutations — server-side `verify_callup_token` is authoritative.
+
+**STOP-gate mitigation locked:** `log_pii_change` is not callable from the edge function's service-role context (auth.uid() returns NULL; `pii_audit_log.actor_user_id` is NOT NULL). `apply_callup_decline` skips the audit. `callup_token_uses` row is the audit trail (nonce + ip + ua + timestamp + event/player/guardian/response). Matches rsvp-token-handler precedent. Admin-flow `add_academy_callup` / `remove_academy_callup` continue to write pii_audit_log for human-driven changes.
+
+**Tests:** 423 → 429 (+6). All in `src/lib/callup/__tests__/tokenPayload.test.js` (pure helper). RPC roundtrip tests + edge function smoke tests documented in `docs/CALLUP_TOKEN_TESTING.md` (chat-side runbook executed via Supabase MCP).
+
+**Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 429 passed. Migration applied via Supabase MCP (`20260510200529`). Edge function deployed v1 (verify_jwt: false; custom shared-secret-via-token auth). Migration's `DO $$` verification block confirmed end-to-end roundtrips for both accept + decline.
+
+**Wave 4.2-A unblocked.** 4.2-A-8c (compose wire-up + dispatch unblock + `substituteCallupTokens` helper mirroring `substituteRsvpTokens` from 8b-b) closes wave 4.2-A at 7/7 calendar-anchored kinds on registry path.
+
+**Wave 4.3 status:** 2 of 4 sub-waves shipped (4.3-A weekly_digest auto-draft + this PR). 4.3-B (5 remaining trigger event handlers) and 4.3-C (inbox UI polish) gated on Frank's cron secret dashboard setup per `docs/CRON_SECRET_SETUP.md`.
+
 ### Wave 4.3-A — Auto-draft engine (weekly_digest) — SHIPPED May 10, 2026
 
 **Anchor of work:** `supabase/functions/briefing-auto-draft-tick/{index.ts,_helpers.ts}` (NEW), `src/lib/cron/briefingCronHelpers.js` (NEW), `supabase/migrations/20260510193446_wave_4_3_a_register_briefing_auto_draft_tick_cron.sql` (NEW), `docs/CRON_SECRET_SETUP.md` (NEW), `scripts/trigger-cron-dispatch.sh` (NEW).
