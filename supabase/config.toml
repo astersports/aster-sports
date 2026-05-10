@@ -2,13 +2,18 @@
 # edge functions so CI deploys preserve them.
 #
 # Wave 4.0.1 — without these declarations, `supabase functions deploy`
-# defaults to verify_jwt:true on every CI run, regressing the three
+# defaults to verify_jwt:true on every CI run, regressing the
 # shared-secret functions below. Three regressions in production
 # this week (PR #48 briefing-cron-dispatch, PR #51 redeployed
 # briefing-cron-dispatch + rsvp-token-handler) all manifested as
 # 401 UNAUTHORIZED_INVALID_JWT_FORMAT at the platform layer because
 # the platform rejects non-JWT Bearer tokens before the function
 # code can run its own shared-secret check.
+#
+# Wave 4.1 — extended with two new anonymous functions
+# (unsubscribe-handler, resend-webhook-receiver) shipped via MCP
+# in the foundation drop. Same protection: declare verify_jwt:false
+# so CI redeploys don't reset the flag.
 #
 # Functions intentionally omitted from this file (default
 # verify_jwt:true preserves correct behavior):
@@ -25,3 +30,10 @@ verify_jwt = false
 
 [functions.invite-parent]
 verify_jwt = false
+
+[functions.unsubscribe-handler]
+verify_jwt = false
+
+[functions.resend-webhook-receiver]
+verify_jwt = false
+
