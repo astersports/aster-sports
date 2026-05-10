@@ -15,9 +15,11 @@ const menuItem = (active) => ({ width: '100%', minHeight: 36, padding: '0 10px',
 const chipStyle = { display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: 9999, fontSize: 12, backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)' };
 const chipX = { background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', color: 'var(--em-text-tertiary)' };
 
+// Wave 4.1d-2 §1.3 — added 'Last 14 days' as the new default.
 const DATE_OPTIONS = [
   { v: 'all', l: 'All time' }, { v: 'today', l: 'Today' },
   { v: 'this_week', l: 'This week' }, { v: 'next_7_days', l: 'Last/Next 7 days' },
+  { v: 'last_14_days', l: 'Last 14 days' },
 ];
 
 export default function InboxFilters({ filters, onChange, onClear }) {
@@ -38,9 +40,13 @@ export default function InboxFilters({ filters, onChange, onClear }) {
   const teamLabel = filters.teams?.length ? `${filters.teams.length} team${filters.teams.length === 1 ? '' : 's'}` : 'All teams';
   const dateLabel = DATE_OPTIONS.find((d) => d.v === filters.dateRange)?.l || 'All time';
 
+  // §2.2: auto-close team dropdown after a single-select tap. Multi-team
+  // is still possible by reopening the dropdown — primary use case is
+  // single-team narrowing.
   const toggleTeam = (id) => {
     const has = (filters.teams || []).includes(id);
     onChange({ teams: has ? filters.teams.filter((t) => t !== id) : [...(filters.teams || []), id] });
+    setOpenMenu(null);
   };
 
   return (
@@ -78,7 +84,7 @@ export default function InboxFilters({ filters, onChange, onClear }) {
           )}
         </div>
       </div>
-      {(filters.kind || filters.teams?.length || filters.dateRange !== 'all') && (
+      {(filters.kind || filters.teams?.length || (filters.dateRange && filters.dateRange !== 'all')) && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {filters.kind && <span style={chipStyle}>Kind: {kindLabel} <button type="button" style={chipX} onClick={() => onChange({ kind: null })}><X size={12} /></button></span>}
           {filters.teams?.map((id) => { const t = teams.find((x) => x.id === id); return t && <span key={id} style={chipStyle}>{t.name} <button type="button" style={chipX} onClick={() => toggleTeam(id)}><X size={12} /></button></span>; })}

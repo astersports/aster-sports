@@ -4,11 +4,17 @@
 // Each function returns an array of synthetic queue rows in the shape
 // ActionQueueRow expects: { synthetic_id, status, kind, anchor_kind,
 // anchor_id, title, audience_preview, relative_time, eca_diff? }.
+//
+// Wave 4.1d-2 §1.5 — TOURNAMENT_RECAP_WINDOW_MS broadened 7d → 30d.
+// Production has past tournaments missing recaps that current synth
+// didn't surface (S2). Also §2.6 label drift fix: "Tournament prelim"
+// inbox label aligned with KIND_METADATA.label "Tournament briefing".
+// §4.4: test-send rows surface a different audience_preview text.
 
 export const GAME_RECAP_VISIBLE_CAP = 5;
 export const GAME_RECAP_WINDOW_MS = 14 * 86400000;
 export const TOURNAMENT_PRELIM_WINDOW_MS = 14 * 86400000;
-export const TOURNAMENT_RECAP_WINDOW_MS = 7 * 86400000;
+export const TOURNAMENT_RECAP_WINDOW_MS = 30 * 86400000;
 
 export function relTime(iso, suffix = '') {
   if (!iso) return '';
@@ -36,8 +42,9 @@ export function weeklyDigestDueWindow(now = new Date()) {
   return false;
 }
 
-export function buildPrelimRows(tournaments, sentAnchorIds) {
+export function buildPrelimRows(tournaments, sentAnchorIds, testSentAnchorIds = []) {
   const skip = new Set(sentAnchorIds);
+  const testSent = new Set(testSentAnchorIds);
   return (tournaments || [])
     .filter((t) => !skip.has(t.id))
     .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
@@ -46,14 +53,16 @@ export function buildPrelimRows(tournaments, sentAnchorIds) {
       status: 'needs_briefing_tournament',
       kind: 'tournament_prelim',
       anchor_kind: 'tournament', anchor_id: t.id,
-      title: `Tournament prelim · ${t.name}`,
-      audience_preview: 'Pre-tournament briefing not sent yet',
+      // Wave 4.1d-2 §2.6: align label with KIND_METADATA "Tournament briefing"
+      title: `Tournament briefing · ${t.name}`,
+      audience_preview: testSent.has(t.id) ? 'Test sent · families pending' : 'Pre-tournament briefing not sent yet',
       relative_time: relTime(t.start_date),
     }));
 }
 
-export function buildTournRecapRows(tournaments, sentAnchorIds) {
+export function buildTournRecapRows(tournaments, sentAnchorIds, testSentAnchorIds = []) {
   const skip = new Set(sentAnchorIds);
+  const testSent = new Set(testSentAnchorIds);
   return (tournaments || [])
     .filter((t) => !skip.has(t.id))
     .sort((a, b) => new Date(b.end_date) - new Date(a.end_date))
@@ -63,13 +72,14 @@ export function buildTournRecapRows(tournaments, sentAnchorIds) {
       kind: 'tournament_recap',
       anchor_kind: 'tournament', anchor_id: t.id,
       title: `Tournament recap · ${t.name}`,
-      audience_preview: 'Post-tournament recap not sent yet',
+      audience_preview: testSent.has(t.id) ? 'Test sent · families pending' : 'Post-tournament recap not sent yet',
       relative_time: relTime(t.end_date),
     }));
 }
 
-export function buildGameRecapRows(games, sentAnchorIds, cap = GAME_RECAP_VISIBLE_CAP) {
+export function buildGameRecapRows(games, sentAnchorIds, cap = GAME_RECAP_VISIBLE_CAP, testSentAnchorIds = []) {
   const skip = new Set(sentAnchorIds);
+  const testSent = new Set(testSentAnchorIds);
   const remaining = (games || [])
     .filter((e) => !skip.has(e.id))
     .sort((a, b) => new Date(b.start_at) - new Date(a.start_at));
@@ -79,7 +89,7 @@ export function buildGameRecapRows(games, sentAnchorIds, cap = GAME_RECAP_VISIBL
     kind: 'game_recap',
     anchor_kind: 'event', anchor_id: e.id,
     title: `Game recap · ${e.teams?.name || ''} · ${e.title}`,
-    audience_preview: 'Recap not sent yet',
+    audience_preview: testSent.has(e.id) ? 'Test sent · families pending' : 'Recap not sent yet',
     relative_time: relTime(e.start_at, ' (game ended)'),
   }));
   const overflow = remaining.length - cap;

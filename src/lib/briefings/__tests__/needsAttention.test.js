@@ -113,3 +113,6 @@ describe('buildDigestDueRow', () => {
     expect(row.anchor_id).toBe('org-uuid');
   });
 });
+
+// Wave 4.1d-2 §2.6 + §4.4 tests live in wave_4_1d_2_synth.test.js so
+// this file stays under the 150-line cap.

@@ -85,7 +85,7 @@ export default function BriefingsInboxPage() {
   return (
     <div style={wrap}>
       <div style={inner}>
-        <BriefingsHero activeCount={activeCount} onCompose={() => setComposer({})} pilotModeEnabled={pilotModeEnabled} />
+        <BriefingsHero activeCount={activeCount} onCompose={() => setComposer({})} pilotModeEnabled={pilotModeEnabled} tab={tab} />
         <InboxTabs activeTab={tab} activeCount={activeCount} draftCount={draftCount} historyCount={0} onChange={setTab} />
         <InboxSearch value={search} onChange={setSearch} placeholder={tab === 'history' ? 'Search subject + body…' : 'Search briefings…'} />
         <InboxFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />

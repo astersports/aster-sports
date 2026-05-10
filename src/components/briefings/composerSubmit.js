@@ -2,10 +2,16 @@
 // can stay ≤150 lines while picking up audience, save-status, schedule,
 // and kind-null guard concerns.
 //
-// Pure-ish: this module owns the multi-branch dispatch (rsvp_nudge
-// per-token send vs generic compose+queue+invoke vs scheduled). Caller
-// passes the wizard state + dependencies; we return a result object
-// that maps to a toast message.
+// Wave 4.1d-2 §6.1 — flip comms_messages.status='sent' after the edge
+// function returns successfully. Edge fn v16 already updates sent_at,
+// sent_by, recipient_count, delivery_method but NOT status (ratchet up
+// without an edge-function deploy is fine because we control the call
+// site here). Closes E9.
+//
+// Wave 4.1d-2 §6.2 — scheduled-send path now inserts comms_message_recipients
+// rows at compose time (audience snapshot semantics). Wave 4.3's
+// briefing-cron-dispatch will then call send-tournament-message which
+// already has rows. Closes E10.
 
 import { compose } from '../../lib/engine/composer';
 import { sendRsvpNudge } from '../../lib/rsvpNudgeSend';
@@ -44,7 +50,14 @@ export async function submitBriefing({ state, draft, orgId, recipients, coaches,
   if (state.send_mode === 'scheduled' && state.scheduled_for) {
     const r = await draft.submitSchedule(payload, state.scheduled_for);
     if (r?.error) throw r.error;
-    return { scheduledFor: state.scheduled_for };
+    const { teamIds, audience } = await resolveAudience({
+      recipients, audienceType: state.audience_type,
+      audienceFilter: state.audience_filter, anchorId: state.anchor_id,
+    });
+    const queued = await queueRecipients({
+      messageId: r.id, audience, composed, teamIds, testOnly: state.test_only,
+    });
+    return { scheduledFor: state.scheduled_for, audienceCount: queued.audienceCount };
   }
   const r = await draft.submitSend(payload);
   if (r?.error) throw r.error;
@@ -57,5 +70,7 @@ export async function submitBriefing({ state, draft, orgId, recipients, coaches,
   });
   const dispatchInvoke = await supabase.functions.invoke('send-tournament-message', { body: { message_id: r.id } });
   if (dispatchInvoke.error) throw dispatchInvoke.error;
+  // §6.1: flip status='sent' so wave 4.3 cron + inbox status filters work.
+  await supabase.from('comms_messages').update({ status: 'sent' }).eq('id', r.id);
   return { sent: true, audienceCount: queued.audienceCount };
 }

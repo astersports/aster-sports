@@ -2,13 +2,13 @@
 // recently-used, falling back to spec order. Disabled cards (rsvp_nudge
 // pre-wave 4.0) show a "Coming soon" badge.
 
-import { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy } from 'lucide-react';
+import { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { KIND_METADATA, sortKinds } from '../../lib/briefings/kindMetadata';
 
-const ICON_MAP = { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy };
+const ICON_MAP = { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy, UserPlus };
 
 const cardStyle = (disabled) => ({
   width: '100%', minHeight: 96, padding: 14, borderRadius: 12,

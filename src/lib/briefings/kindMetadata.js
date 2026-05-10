@@ -1,14 +1,19 @@
-// Wave 3.11 follow-up — metadata for the 8 briefing kinds.
+// Wave 3.11 follow-up — metadata for the briefing kinds.
 // Drives StepKindPicker, AnchorPicker filters, AudiencePicker
 // defaults, and recently-used sort.
 //
 // Anchor + audience defaults are spec-locked (see master prompt §3.1
 // + §3.2). Body editor module names map kind → ./bodies/<X>Body.jsx.
+//
+// Wave 4.1d-2 §5 — academy_callup_notice surfaced (G2). Renderer in
+// src/lib/engine/renderers/academyCallupNotice.js was already wired in
+// composer.js but not in the picker — now it is. Audience mode
+// 'player_specific' resolves via player_guardians (recipientFilter.js).
 
 export const KIND_ORDER = [
   'weekly_digest', 'schedule_change', 'game_recap',
   'tournament_prelim', 'tournament_recap',
-  'announcement', 'rsvp_nudge', 'custom_message',
+  'announcement', 'rsvp_nudge', 'academy_callup_notice', 'custom_message',
 ];
 
 export const KIND_METADATA = {
@@ -72,6 +77,15 @@ export const KIND_METADATA = {
     bodyModule: 'RsvpNudgeBody',
     disabled: false,
   },
+  academy_callup_notice: {
+    icon: 'UserPlus', label: 'Academy call-up',
+    description: 'Invite an Academy player to play up with a team for one event',
+    defaultAnchorKind: 'event', anchorKinds: ['event'],
+    eventFilter: { kind: 'game', upcoming: true },
+    defaultAudienceType: 'player_specific', audienceLocked: true,
+    bodyModule: 'AcademyCallupBody',
+    disabled: false,
+  },
   custom_message: {
     icon: 'MessageSquare', label: 'Custom message',
     description: 'Free-form: parent group thread, off-cycle notes',
@@ -82,16 +96,14 @@ export const KIND_METADATA = {
   },
 };
 
-// Sort kinds by recently-used (from comms_messages history) then by spec order.
-// `usage` is { kind: lastSentMs }.
-export function sortKinds(usage = {}) {
-  const seen = new Set();
-  const used = Object.entries(usage)
-    .filter(([k]) => KIND_METADATA[k])
-    .sort((a, b) => (b[1] || 0) - (a[1] || 0))
-    .map(([k]) => { seen.add(k); return k; });
-  const rest = KIND_ORDER.filter((k) => !seen.has(k));
-  return [...used, ...rest];
+// Wave 4.1d-2 §2.5 — stable picker order. Frank observed kind picker
+// order varying between consecutive opens because recently-used sort
+// was non-deterministic when usage data partially loaded. KIND_ORDER
+// now drives the canonical order; the `usage` argument is preserved
+// for compatibility (it informs the "Last sent today · X" sub-text
+// in the picker but no longer reorders cards).
+export function sortKinds(_usage = {}) {
+  return [...KIND_ORDER];
 }
 
 export function bodyModuleFor(kind) {

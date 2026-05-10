@@ -24,6 +24,7 @@ const MODES = [
   { type: 'multi_team', label: 'Multi-team' },
   { type: 'tournament_attendees', label: 'Tournament' },
   { type: 'event_attendees', label: 'Event RSVPs' },
+  { type: 'player_specific', label: 'Specific player(s)' },
   { type: 'org_all', label: 'All families' },
 ];
 
@@ -34,16 +35,20 @@ function modesAvailableFor(kind) {
   if (kind === 'announcement') return MODES.filter((m) => ['team', 'org_all'].includes(m.type));
   if (kind === 'game_recap' || kind === 'rsvp_nudge') return MODES.filter((m) => ['event_attendees', 'team'].includes(m.type));
   if (kind === 'tournament_prelim' || kind === 'tournament_recap') return MODES.filter((m) => ['tournament_attendees'].includes(m.type));
+  if (kind === 'academy_callup_notice') return MODES.filter((m) => ['player_specific'].includes(m.type));
   if (kind === 'custom_message') return MODES;
   return MODES;
 }
 
-export default function AudiencePicker({ kind, audienceType, audienceFilter, audience, onPick }) {
+export default function AudiencePicker({ kind, audienceType, audienceFilter, audience, recipientsLoading, onPick }) {
   const meta = KIND_METADATA[kind] || {};
   const locked = meta.audienceLocked;
   const modes = modesAvailableFor(kind);
   const a = audience || { filtered: null, total: null, mode: 'standard', pilotModeOn: false };
-  const copy = audienceCopy(a);
+  // Wave 4.1d-2 §2.3 — when recipients haven't finished loading, force
+  // "Computing audience…" instead of showing a 0-families flash.
+  const showLoading = recipientsLoading && a.filtered === 0;
+  const copy = showLoading ? 'Computing audience…' : audienceCopy(a);
   const showChip = a.pilotModeOn && (a.mode === 'pilot_zero' || a.mode === 'pilot_partial');
   const lineColor = a.mode === 'pilot_zero' ? 'var(--em-warning)' : 'var(--em-text-tertiary)';
   return (

@@ -45,7 +45,7 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   const { orgId } = useAuth();
   const { showToast } = useToast();
   const { pilotModeEnabled } = useOrgSettings(orgId);
-  const { recipients } = useDigestRecipients({ orgId, pilotOnly: pilotModeEnabled });
+  const { recipients, loading: recipientsLoading } = useDigestRecipients({ orgId, pilotOnly: pilotModeEnabled });
   const { recipients: recipientsTotal } = useDigestRecipients({ orgId, pilotOnly: false });
   const { staff: coaches } = useOrgStaff(orgId);
   const draft = useBriefingDraft(initialDraftId);
@@ -94,6 +94,25 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
     anchorId: state.anchor_id, pilotModeOn: pilotModeEnabled,
   }), [recipients, recipientsTotal, state.audience_type, state.audience_filter, state.anchor_id, pilotModeEnabled]);
 
+  // Wave 4.1d-2 §4.3 — fetch event's parent tournament_id so the
+  // GameRecapBody knows whether to render the league/bracket CTA
+  // field. When event has no parent tournament, the CTA URL would be
+  // null at send time and the renderer would silently drop the button
+  // (E5). Instead we hide the field with no surprise.
+  const [hasParentTournament, setHasParentTournament] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    if (state.kind !== 'game_recap' || state.anchor_kind !== 'event' || !state.anchor_id) {
+      setHasParentTournament(false); return undefined;
+    }
+    Promise.resolve().then(async () => {
+      const { data } = await supabase.from('events').select('tournament_id').eq('id', state.anchor_id).maybeSingle();
+      if (cancelled) return;
+      setHasParentTournament(!!data?.tournament_id);
+    });
+    return () => { cancelled = true; };
+  }, [state.kind, state.anchor_kind, state.anchor_id]);
+
   const onSend = async () => {
     setBusy(true);
     try {
@@ -117,8 +136,8 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
         </div>
         <ScheduleForLaterPicker mode={state.send_mode === 'scheduled' ? 'schedule_for_later' : 'send_now'} scheduledFor={state.scheduled_for} onChange={(payload) => dispatch({ type: 'SET_SCHEDULE', payload })} />
         {state.step === 1 && <StepKindPicker visibleKinds={state.kindFilter} onPick={(kind, meta) => dispatch({ type: 'SET_KIND', kind, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType, defaultBody: {} }) || dispatch({ type: 'GO_FORWARD' })} />}
-        {state.step === 2 && <StepAnchorAudience state={state} dispatch={dispatch} audience={audience} />}
-        {state.step === 3 && <StepBodySignoff state={state} dispatch={dispatch} audience={audience} onSend={onSend} onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose} busy={busy} />}
+        {state.step === 2 && <StepAnchorAudience state={state} dispatch={dispatch} audience={audience} recipientsLoading={recipientsLoading} />}
+        {state.step === 3 && <StepBodySignoff state={state} dispatch={dispatch} audience={audience} hasParentTournament={hasParentTournament} onSend={onSend} onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose} busy={busy} />}
         {state.step < 3 && (
           <button type="button" disabled={!canAdvance(state)} onClick={() => dispatch({ type: 'GO_FORWARD' })} className="sf-press" style={{ minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: canAdvance(state) ? 'var(--em-accent)' : 'var(--em-bg-tertiary)', color: canAdvance(state) ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)', fontSize: 15, fontWeight: 600, cursor: canAdvance(state) ? 'pointer' : 'default' }}>
             Next

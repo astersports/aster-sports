@@ -19,7 +19,12 @@ export function validate(v) {
   return errs;
 }
 
-export default function GameRecapBody({ value, onChange }) {
+// Wave 4.1d-2 §4.3 — hide the league/bracket CTA label field entirely
+// when this game has no parent tournament. Closes E5: previously, the
+// field accepted text, but the URL was silently null at render time
+// and the renderer dropped the button — admin entered "VIEW LEAGUE
+// STANDINGS" and saw nothing in the email.
+export default function GameRecapBody({ value, onChange, hasParentTournament }) {
   const v = { ...defaultValue, ...(value || {}), score: { ...defaultValue.score, ...(value?.score || {}) } };
   const set = (patch) => onChange?.(patch);
   const setScore = (patch) => onChange?.({ score: { ...v.score, ...patch } });
@@ -51,13 +56,15 @@ export default function GameRecapBody({ value, onChange }) {
         <span style={labelStyle}>Coach note (optional)</span>
         <textarea value={v.coach_note} onChange={(e) => set({ coach_note: e.target.value })} style={textareaStyle} placeholder="What I want the team thinking about until next practice…" />
       </label>
-      <label>
-        <span style={labelStyle}>League/bracket CTA label (optional)</span>
-        <input type="text" value={v.tourney_link_label} onChange={(e) => set({ tourney_link_label: e.target.value })} style={inputStyle} placeholder="VIEW LEAGUE STANDINGS" />
-        <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>
-          URL is pulled from this game's parent tournament/league SE Tourney link, if the game is parented to one.
-        </span>
-      </label>
+      {hasParentTournament && (
+        <label>
+          <span style={labelStyle}>League/bracket CTA label (optional)</span>
+          <input type="text" value={v.tourney_link_label} onChange={(e) => set({ tourney_link_label: e.target.value })} style={inputStyle} placeholder="VIEW LEAGUE STANDINGS" />
+          <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>
+            URL is pulled from this game's parent tournament/league SE Tourney link.
+          </span>
+        </label>
+      )}
     </div>
   );
 }

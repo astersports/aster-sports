@@ -20,13 +20,15 @@ const BODY_LAZY = {
   tournament_recap: lazy(() => import('./bodies/TournamentRecapBody.jsx')),
   announcement: lazy(() => import('./bodies/AnnouncementBody.jsx')),
   rsvp_nudge: lazy(() => import('./bodies/RsvpNudgeBody.jsx')),
+  // Wave 4.1d-2 §5 — G2 academy_callup_notice surfaced.
+  academy_callup_notice: lazy(() => import('./bodies/AcademyCallupBody.jsx')),
   custom_message: lazy(() => import('./bodies/CustomMessageBody.jsx')),
 };
 
 const btnPrimary = { width: '100%', minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' };
 const btnGhost = { width: '100%', minHeight: 40, borderRadius: 10, backgroundColor: 'transparent', color: 'var(--em-text-secondary)', fontSize: 14, fontWeight: 500, border: '1px solid var(--em-border-default)', cursor: 'pointer' };
 
-export default function StepBodySignoff({ state, dispatch, audience, onSend, onSaveDraft, onCancel, busy }) {
+export default function StepBodySignoff({ state, dispatch, audience, hasParentTournament, onSend, onSaveDraft, onCancel, busy }) {
   const Body = BODY_LAZY[state.kind] || BODY_LAZY.custom_message;
   const isScheduled = state.send_mode === 'scheduled';
   const a = audience || { filtered: null, total: null, mode: 'standard', pilotModeOn: false };
@@ -59,7 +61,10 @@ export default function StepBodySignoff({ state, dispatch, audience, onSend, onS
         }}
       />
       <Suspense fallback={<div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>Loading editor…</div>}>
-        <Body value={state.body} onChange={(patch) => dispatch({ type: 'UPDATE_BODY', patch })} />
+        <Body value={state.body} onChange={(patch) => dispatch({ type: 'UPDATE_BODY', patch })}
+          anchorId={state.anchor_id} audienceFilter={state.audience_filter}
+          hasParentTournament={hasParentTournament}
+          onAudienceChange={(audience_filter) => dispatch({ type: 'SET_AUDIENCE', audience_type: state.audience_type, audience_filter })} />
       </Suspense>
       <label>
         <span style={labelStyle}>Signoff message (optional)</span>

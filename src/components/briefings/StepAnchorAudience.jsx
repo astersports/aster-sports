@@ -20,7 +20,7 @@ const helperStyle = { fontSize: 13, color: 'var(--em-warning)', marginTop: 8, li
 
 const ANCHOR_NOUN = { event: 'event', tournament: 'tournament', team: 'team' };
 
-export default function StepAnchorAudience({ state, dispatch, audience }) {
+export default function StepAnchorAudience({ state, dispatch, audience, recipientsLoading }) {
   const needsId = ANCHOR_KINDS_REQUIRING_ID.has(state.anchor_kind) && !state.anchor_id;
   const noun = ANCHOR_NOUN[state.anchor_kind] || 'anchor';
 
@@ -41,7 +41,7 @@ export default function StepAnchorAudience({ state, dispatch, audience }) {
         <span style={labelStyle}>Audience</span>
         <AudiencePicker
           kind={state.kind} audienceType={state.audience_type} audienceFilter={state.audience_filter}
-          audience={audience}
+          audience={audience} recipientsLoading={recipientsLoading}
           onPick={(audience_type, audience_filter) => dispatch({ type: 'SET_AUDIENCE', audience_type, audience_filter })} />
       </section>
     </div>

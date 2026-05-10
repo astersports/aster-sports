@@ -5,13 +5,19 @@
 // Single-column conflict raises 42P10.
 //
 // Filter shape (in-memory):
-//   { kind: string|null, teams: uuid[], dateRange: 'all'|'today'|'this_week'|'next_7_days' }
+//   { kind: string|null, teams: uuid[], dateRange:
+//     'all'|'today'|'this_week'|'next_7_days'|'last_14_days' }
+//
+// Wave 4.1d-2 §1.3 — default dateRange changed from 'all' to
+// 'last_14_days' so the inbox surfaces the recent past games that
+// admins compose recaps for. Per-admin saved prefs in
+// briefing_inbox_preferences override this default.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
-const DEFAULTS = { kind: null, teams: [], dateRange: 'all' };
+const DEFAULTS = { kind: null, teams: [], dateRange: 'last_14_days' };
 const DEBOUNCE_MS = 1000;
 
 function fromRow(row) {
@@ -19,7 +25,8 @@ function fromRow(row) {
   return {
     kind: row.default_kind_filter?.[0] || null,
     teams: row.default_team_filter || [],
-    dateRange: row.default_date_filter || 'all',
+    // §1.3: legacy rows with 'all' get bumped to the new default.
+    dateRange: row.default_date_filter || 'last_14_days',
   };
 }
 

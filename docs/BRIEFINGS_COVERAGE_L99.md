@@ -14,7 +14,7 @@ This document is the canonical coverage map for parent-facing briefings. When a 
 
 ## 1. Briefing kind taxonomy
 
-10 composers registered in `composer.js`. **8 surfaced** in the kind picker. 1 dormant. 1 deprecated.
+10 composers registered in `composer.js`. **9 surfaced** in the kind picker. 1 deprecated.
 
 | # | Kind | Surfaced? | Anchor (default) | Audience (default) | Status |
 |---|------|-----------|------------------|---------------------|--------|
@@ -26,7 +26,7 @@ This document is the canonical coverage map for parent-facing briefings. When a 
 | 6 | tournament_recap | ✅ | tournament | tournament_attendees | shipped wave 4.1d-1 |
 | 7 | announcement | ✅ | team / org | org_all | shipped wave 4.1d-1 |
 | 8 | custom_message | ✅ | any | any | shipped wave 4.1d-1 |
-| 9 | academy_callup_notice | ❌ dormant | event | (needs `player_specific`) | renderer ready, picker unwired |
+| 9 | academy_callup_notice | ✅ | event | player_specific (locked) | shipped wave 4.1d-2 (G2) |
 | 10 | tournament_preliminary | ❌ deprecated | (legacy wave-2) | (legacy) | replaced by `tournament_prelim` |
 
 ## 2. Audience taxonomy
@@ -38,10 +38,10 @@ This document is the canonical coverage map for parent-facing briefings. When a 
 | multi_team | List of teams (`audience_filter.team_ids`) | weekly_digest, custom_message |
 | event_attendees | Families on event's team | schedule_change (locked), rsvp_nudge (locked), game_recap |
 | tournament_attendees | Families across `tournament_teams.team_id` | tournament_prelim (locked), tournament_recap (locked) |
+| player_specific | Guardians of selected players (`audience_filter.player_ids`) via `player_guardians` | academy_callup_notice (locked) — shipped wave 4.1d-2 |
 
 **Missing modes (gaps):**
-- `multi_event_attendees` — union of attendees across N selected events. Required for `games_recap`.
-- `player_specific` — single family scoped via `player_guardians`. Required to surface `academy_callup_notice`.
+- `multi_event_attendees` — union of attendees across N selected events. Required for `games_recap` (G1, wave 4.2).
 
 ## 3. Event × Briefing cross-product matrix
 
@@ -65,7 +65,7 @@ Event lifecycle states pulled from migrations 003-005 + CLAUDE.md §5 field deci
 | League standings change (post-game shift) | — | custom_message | ⚠️ no dedicated kind |
 | Roster change (player added/dropped) | — | announcement | ✅ |
 | Org-level news | — | announcement | ✅ |
-| **Academy call-up (futures → roster for one game)** | — | **❌ GAP G2 — renderer dormant** | renderer ready, picker unwired |
+| **Academy call-up (futures → roster for one game)** | — | **academy_callup_notice (player_specific)** | ✅ shipped wave 4.1d-2 (G2) |
 | Photo / media drop | — | announcement | ⚠️ no image-block-first kind |
 | Tryouts / season selections | — | announcement / custom_message | ✅ |
 
@@ -74,13 +74,15 @@ Event lifecycle states pulled from migrations 003-005 + CLAUDE.md §5 field deci
 | ID | Edge case | Severity | Behavior today | Fix scope |
 |---|---|---|---|---|
 | E1 | Scrimmage recap subject reads "Recap —", not "Scrimmage recap —" | minor copy | works | wave 4.2 (renderer change) |
-| E2 | Cancelled game allows game_recap composition | low | no validation gate | **wave 4.1d-2** (G3) |
-| E3 | Bracket placeholder games surface in game_recap synth | medium | synth filter missing | **wave 4.1d-2** (G4) |
-| E4 | tournament_recap on tournament with `schedule_status='preliminary'` | low | no validation gate | **wave 4.1d-2** (G5) |
-| E5 | game_recap CTA hides silently when event has no parent tournament with `tourney_url` | medium | label entered, button vanishes | **wave 4.1d-2** (CTA-field UX item, Frank-added) |
+| E2 | Cancelled game allows game_recap composition | low | synth excludes; kind picker gate deferred to wave 4.2 | ✅ shipped wave 4.1d-2 (synth side, G3) |
+| E3 | Bracket placeholder games surface in game_recap synth | medium | now excluded from synth | ✅ shipped wave 4.1d-2 (G4) |
+| E4 | tournament_recap on tournament with `schedule_status='preliminary'` | low | synth requires schedule_status IN ('complete','live','final') | ✅ shipped wave 4.1d-2 (G5) |
+| E5 | game_recap CTA hides silently when event has no parent tournament with `tourney_url` | medium | CTA label field hidden when no parent tournament | ✅ shipped wave 4.1d-2 |
 | E6 | Multi-team event (joint practice) + game_recap | low | composer assumes single team; renders with one team's color | wave 4.2 |
 | E7 | Game with `is_scrimmage=true` AND `tournament_id` set (tournament scrimmage) | edge | currently treated as tournament game — probably right | leave as-is |
 | E8 | League play game vs AAU — same renderer | by design | wave 4.5 will split via circuit-aware composers | wave 4.5 |
+| E9 | comms_messages.status stayed 'queued' even after sent_at populated (dispatcher path missing flip) | medium | composerSubmit now flips status='sent' after edge fn returns | ✅ shipped wave 4.1d-2 (§6.1) |
+| E10 | Scheduled-send messages had 0 comms_message_recipients rows (would 400 when cron eventually fires) | high (wave 4.3 blocker) | scheduled-send now inserts recipients at compose time (audience snapshot) | ✅ shipped wave 4.1d-2 (§6.2) |
 
 ## 5. Identified gaps — priority order
 
@@ -94,36 +96,26 @@ Multi-game digest covering 1+ teams across N selected events. Use cases: tournam
 - **briefing_template seed** — wave 4.2 templates work
 - **Scope: wave 4.2**
 
-### G2. academy_callup_notice surfacing
+### G2. academy_callup_notice surfacing — ✅ SHIPPED wave 4.1d-2 (PR #62)
 
-Renderer at `src/lib/engine/renderers/academyCallupNotice.js` is 78 lines, ready. Just unwired.
+Renderer at `src/lib/engine/renderers/academyCallupNotice.js` was 78 lines, ready. Now surfaced:
+- Added to `KIND_ORDER` between `rsvp_nudge` and `custom_message`.
+- `KIND_METADATA` entry: icon `UserPlus`, label "Academy call-up", description "Invite an Academy player to play up with a team for one event", `audienceLocked: true`, `defaultAudienceType: 'player_specific'`.
+- `AudiencePicker.MODES` includes `player_specific` ("Specific player(s)") with `modesAvailableFor('academy_callup_notice')` locked to that mode only.
+- `recipientFilter.resolvePlayerSpecificAudience(playerIds)` queries `player_guardians` joined with `guardians` and `players` to dedupe by guardian_id and return the audience shape `{ guardian_id, email, team_ids }`.
+- Body editor `AcademyCallupBody.jsx` (73 lines) collects player picker selection, coach name, jersey color, RSVP URL, and an optional intro note. Player picker is a 84-line modal that searches across all org players (Academy badge surfaces `member_type='futures_academy'`).
 
-- Add `'academy_callup_notice'` to `KIND_ORDER`
-- Add metadata entry to `KIND_METADATA` (icon: `UserPlus`, label: "Academy call-up", description: "One-game call-up notice for a futures player")
-- Add `'player_specific'` to AudiencePicker MODES
-- Implement `player_specific` resolver in `recipientFilter.js` (player_guardians → guardian_id list)
-- **Scope: wave 4.1d-2** (mostly wiring, one new resolver)
+### G3. Cancellation gate — ✅ SHIPPED wave 4.1d-2 (synth side; PR #62)
 
-### G3. Cancellation gate
+Synth (`useNeedsBriefing.fetchGameRecapItems`) now excludes events with `status='cancelled'` from the game_recap needs-attention list. Tournament-side gate folded into G5. Kind-picker gate (admin still composing a recap for a cancelled event) deferred to wave 4.2 — synth is the higher-leverage fix.
 
-Disable `game_recap` and `tournament_recap` kinds in StepKindPicker when source event is `status='cancelled'`.
+### G4. Bracket placeholder synth filter — ✅ SHIPPED wave 4.1d-2 (PR #62)
 
-- One-line filter in StepKindPicker
-- **Scope: wave 4.1d-2**
+`useNeedsBriefing.fetchGameRecapItems` now excludes events with `is_bracket_placeholder=true` from the synth list. Production has 0 today but the filter is cheap and prevents future regressions when bracket placeholders are added during real tournaments.
 
-### G4. Bracket placeholder synth filter
+### G5. tournament_recap status gate — ✅ SHIPPED wave 4.1d-2 (PR #62)
 
-Exclude `is_bracket_placeholder=true` from `game_recap` needs-attention synth in `needsAttention.js`.
-
-- One-line filter
-- **Scope: wave 4.1d-2**
-
-### G5. tournament_recap status gate
-
-Require `tournaments.schedule_status IN ('complete', 'live')` for `tournament_recap` kind in StepKindPicker.
-
-- One-line filter in StepKindPicker
-- **Scope: wave 4.1d-2**
+`useNeedsBriefing.fetchTournamentRecapItems` now requires `tournaments.schedule_status` to be NULL or one of `('complete', 'final', 'live')` before synthesizing a recap-due card. Defensive against recapping a not-yet-started tournament.
 
 ### G6. Scrimmage subject differentiation
 
@@ -148,14 +140,29 @@ Image-first email with photo gallery.
 
 ## 6. Scope assignments (ratified May 10, 2026)
 
-**Wave 4.1d-2 (UX polish + small fixes):**
-- All §9 UX items from d-1 master prompt (filter chip, header context, FAB z-index, dropdown auto-close, default time window, synth event-type filter, label drift)
-- All "NEW" items observed in Frank's May 10 production walk-through (audience race, pilot-mode dead-end, anchor picker stability, kind picker "Last sent" inconsistency, status='queued' vs sent_at, NEEDS RECAP test-send copy)
-- CTA-field UX (E5)
-- Cancellation gate (G3)
-- Bracket placeholder synth filter (G4)
-- tournament_recap status gate (G5)
-- academy_callup_notice surfacing (G2)
+**Wave 4.1d-2 (UX polish + small fixes) — SHIPPED PR #62**
+- ✅ Filter chip context-aware (header subtitle hides on Drafts/History tabs)
+- ✅ Default time window now "Last 14 days" (was "All time"; legacy NULL prefs upgrade in fromRow)
+- ✅ Synth filters event_type='game' for game_recap (already in place; confirmed in audit)
+- ✅ FAB z-index lowered 1000→30 + bottom shifted 16→80 (no longer covers Messages icon)
+- ✅ Team picker dropdown auto-closes on selection
+- ✅ Audience picker "0 families" race eliminated via recipientsLoading guard
+- ✅ Kind picker stable order (sortKinds now returns spec order regardless of usage data)
+- ✅ Label drift "Tournament prelim" → "Tournament briefing" everywhere (synth + metadata)
+- ✅ E5 CTA-field UX: hide league/bracket CTA label field when event has no parent tournament
+- ✅ G3 cancellation gate (synth side)
+- ✅ G4 bracket placeholder synth filter
+- ✅ G5 tournament_recap status gate
+- ✅ G2 academy_callup_notice surfacing
+- ✅ §6.1 (E9) status='sent' flip after edge fn returns
+- ✅ §6.2 (E10) scheduled-send recipients inserted at compose time (audience snapshot)
+- ✅ §1.5 TOURNAMENT_RECAP_WINDOW_MS broadened 7d→30d
+- ✅ §4.4 NEEDS RECAP test-send copy split (recipient_count > 1 splits real send vs test)
+
+Deferred from wave 4.1d-2 to wave 4.2:
+- Pilot mode "Settings → Communications" deeplink — copy updated to be direct, but no settings UI exists yet.
+- Anchor picker stability memoization — deferred to wave 4.2 (renderer rebuild touches the picker).
+- Cancellation gate in StepKindPicker (admin compose flow) — synth side covers the high-leverage case.
 
 **Wave 4.2 (templates + renderer rebuild):**
 - briefing_templates seeding per (org × team_type × kind)

@@ -1,6 +1,9 @@
 // Wave 3.12 — page hero. Title + dynamic count subtitle + Compose CTA.
 // Wave 4.1b §2 — pilot mode chip surfaces under the title when org
 // pilot mode is enabled.
+//
+// Wave 4.1d-2 §1.4 — subtitle hides on Drafts/History tabs because
+// "N items need your attention" is only meaningful for the Active tab.
 
 import { Mail } from 'lucide-react';
 import PilotModeChip from '../PilotModeChip';
@@ -11,7 +14,8 @@ const subtitleStyle = { fontSize: 14, color: 'var(--em-text-secondary)', marginT
 const chipRow = { marginTop: 8 };
 const ctaStyle = { minHeight: 40, padding: '0 14px', borderRadius: 9999, border: 'none', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 };
 
-export default function BriefingsHero({ activeCount, onCompose, pilotModeEnabled }) {
+export default function BriefingsHero({ activeCount, onCompose, pilotModeEnabled, tab = 'active' }) {
+  const showSubtitle = tab === 'active';
   const subtitle = activeCount > 0
     ? `${activeCount} item${activeCount === 1 ? '' : 's'} need${activeCount === 1 ? 's' : ''} your attention`
     : 'All caught up.';
@@ -19,7 +23,7 @@ export default function BriefingsHero({ activeCount, onCompose, pilotModeEnabled
     <header style={wrap}>
       <div>
         <h1 style={titleStyle}>Briefings</h1>
-        <div style={subtitleStyle}>{subtitle}</div>
+        {showSubtitle && <div style={subtitleStyle}>{subtitle}</div>}
         {pilotModeEnabled && <div style={chipRow}><PilotModeChip /></div>}
       </div>
       <button type="button" onClick={onCompose} className="sf-press" style={ctaStyle}>
