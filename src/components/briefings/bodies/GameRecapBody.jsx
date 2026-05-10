@@ -1,19 +1,18 @@
 /* eslint-disable react-refresh/only-export-components */
 // Wave 4.2-A-2 — game_recap body editor.
-// Score / POG / coach_highlight are now read-only displays backed by
-// game_results. Free-form fields (opp_highlights, coach_note,
-// tourney_link_label) remain as textareas. If the score is not yet
-// published, the editor renders an error with a Quick Score link.
+// Wave 4.2-A-8a: useEffect bridge replaced by useResolverPreview.
+// Data displays read from resolver context; free-form fields persist
+// to state.body.* unchanged. composerSubmit dispatches via registry,
+// so legacy auto-populate is no longer needed.
 
-import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fieldGap, inputStyle, labelStyle, textareaStyle } from './_styles';
-import { supabase } from '../../../lib/supabase';
+import { GameRecapNotPublishedError, resolveGameRecap } from '../../../lib/engine/resolvers/gameRecap';
+import { useResolverPreview } from '../../../lib/engine/useResolverPreview';
 
 export const defaultValue = {
-  score: { ours: '', theirs: '' },
   our_highlights: '', opp_highlights: '',
-  player_of_game_name: '', coach_note: '',
+  coach_note: '',
   tourney_link_label: '',
 };
 
@@ -41,51 +40,12 @@ function ReadOnlyRow({ label, present, value, missing, eventId, linkLabel = 'Upd
 }
 
 export default function GameRecapBody({ value, onChange, hasParentTournament, anchorId }) {
-  const v = { ...defaultValue, ...(value || {}), score: { ...defaultValue.score, ...(value?.score || {}) } };
+  const v = { ...defaultValue, ...(value || {}) };
   const set = (patch) => onChange?.(patch);
-  const [display, setDisplay] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [unpublished, setUnpublished] = useState(false);
-  const populatedRef = useRef(false);
+  const anchor = anchorId ? { eventId: anchorId, pilotOnly: false } : null;
+  const { data, isLoading, error } = useResolverPreview({ resolve: resolveGameRecap, anchor });
 
-  useEffect(() => {
-    let cancelled = false;
-    populatedRef.current = false;
-    Promise.resolve().then(async () => {
-      if (cancelled) return;
-      if (!anchorId) { setDisplay(null); setUnpublished(false); setLoading(false); return; }
-      setLoading(true); setUnpublished(false);
-      const { data: ev } = await supabase.from('events').select('id, opponent, start_at, location, locations(name)').eq('id', anchorId).maybeSingle();
-      const { data: gr } = await supabase.from('game_results').select('our_score, opponent_score, result, coach_highlight, player_of_game_id, published_at').eq('event_id', anchorId).maybeSingle();
-      let pog = null;
-      if (gr?.player_of_game_id) {
-        const { data: p } = await supabase.from('players').select('first_name').eq('id', gr.player_of_game_id).maybeSingle();
-        pog = p || null;
-      }
-      if (cancelled) return;
-      setLoading(false);
-      if (!gr || !gr.published_at) { setDisplay(null); setUnpublished(true); return; }
-      setDisplay({ event: ev, game_result: gr, pog });
-    });
-    return () => { cancelled = true; };
-  }, [anchorId]);
-
-  // Auto-populate state.body from db so the legacy send path still
-  // produces correct output. One-shot, guarded; user edits to
-  // free-form fields stay intact.
-  useEffect(() => {
-    if (!display || populatedRef.current) return;
-    populatedRef.current = true;
-    const patch = {};
-    if (display.game_result.our_score != null && display.game_result.opponent_score != null) {
-      patch.score = { ours: display.game_result.our_score, theirs: display.game_result.opponent_score };
-    }
-    if (display.pog?.first_name) patch.player_of_game_name = display.pog.first_name;
-    if (display.game_result.coach_highlight) patch.our_highlights = display.game_result.coach_highlight;
-    if (Object.keys(patch).length) onChange?.(patch);
-  }, [display, onChange]);
-
-  if (unpublished) {
+  if (error && error.name === 'GameRecapNotPublishedError') {
     return (
       <div style={{ ...cardStyle, borderColor: 'var(--em-warning)', backgroundColor: 'var(--em-warning-soft)' }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--em-text-primary)' }}>Score not published yet</div>
@@ -95,22 +55,26 @@ export default function GameRecapBody({ value, onChange, hasParentTournament, an
     );
   }
 
+  const gr = data?.context?.game_result;
+  const pog = data?.context?.player_of_game;
+  const hasScore = gr && gr.our_score != null && gr.opponent_score != null;
+
   return (
     <div style={fieldGap}>
       <ReadOnlyRow
         label="Score" eventId={anchorId}
-        present={display?.game_result?.our_score != null}
-        value={display ? `${display.game_result.our_score} – ${display.game_result.opponent_score} (${display.game_result.result})` : (loading ? 'Loading…' : '—')}
+        present={hasScore}
+        value={hasScore ? `${gr.our_score} – ${gr.opponent_score} (${gr.result})` : (isLoading ? 'Loading…' : '—')}
         missing="No score logged" />
       <ReadOnlyRow
         label="Player of the Game" eventId={anchorId}
-        present={!!display?.pog?.first_name}
-        value={display?.pog?.first_name || (loading ? 'Loading…' : '—')}
+        present={!!pog?.first_name}
+        value={pog?.first_name || (isLoading ? 'Loading…' : '—')}
         missing="No Player of the Game logged" />
       <ReadOnlyRow
         label="Coach highlight" eventId={anchorId}
-        present={!!display?.game_result?.coach_highlight}
-        value={display?.game_result?.coach_highlight || (loading ? 'Loading…' : '—')}
+        present={!!gr?.coach_highlight}
+        value={gr?.coach_highlight || (isLoading ? 'Loading…' : '—')}
         missing="No coach highlight logged" />
       <label>
         <span style={labelStyle}>Opponent highlights (optional)</span>
@@ -132,3 +96,5 @@ export default function GameRecapBody({ value, onChange, hasParentTournament, an
     </div>
   );
 }
+// Re-export for callers that import GameRecapNotPublishedError from this module path
+export { GameRecapNotPublishedError };

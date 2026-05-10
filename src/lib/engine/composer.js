@@ -16,10 +16,6 @@ import { renderChampionshipScenarios } from './renderers/championshipScenarios';
 import { renderFooter } from './renderers/footer';
 import { composeAcademyCallupNotice } from './renderers/academyCallupNotice';
 import { composeWeeklyDigest } from './renderers/weeklyDigest';
-import { composeScheduleChange } from './renderers/scheduleChange';
-import { composeGameRecap } from './renderers/gameRecap';
-import { composeTournamentPrelim } from './renderers/tournamentPrelim';
-import { composeTournamentRecap } from './renderers/tournamentRecap';
 import { composeAnnouncement } from './renderers/announcement';
 import { composeCustomMessage } from './renderers/customMessage';
 import { composeRsvpNudge } from './renderers/rsvpNudge';
@@ -63,13 +59,17 @@ const SECTION_RENDERERS = {
 // Wave 4.2-A-3: legacy `tournamentPreliminary.js` renderer file
 // deleted (parity gaps folded into the new resolveTournamentPrelim
 // pipeline at src/lib/engine/resolvers/tournamentPrelim.js).
+// Wave 4.2-A-8a: legacy compose() entries removed for the 4 kinds
+// that now dispatch via RESOLVER_REGISTRY through composerSubmit
+// (game_recap, tournament_prelim, tournament_recap, schedule_change).
+// Remaining entries: weekly_digest (defensive; production goes through
+// digestSend), rsvp_nudge (used by rsvpNudgeSend per-recipient mint),
+// academy_callup_notice (legacy preview only — sends are blocked
+// pending wave 4.3 callup token mint), announcement + custom_message
+// (free-form, legacy path).
 const KIND_COMPOSERS = {
   academy_callup_notice: composeAcademyCallupNotice,
   weekly_digest: composeWeeklyDigest,
-  schedule_change: composeScheduleChange,
-  game_recap: composeGameRecap,
-  tournament_prelim: composeTournamentPrelim,
-  tournament_recap: composeTournamentRecap,
   announcement: composeAnnouncement,
   custom_message: composeCustomMessage,
   rsvp_nudge: composeRsvpNudge,
