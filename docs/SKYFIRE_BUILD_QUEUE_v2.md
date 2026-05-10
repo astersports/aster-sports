@@ -2824,3 +2824,28 @@ All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+
 All calendar-anchored kinds (weekly_digest, game_recap, tournament_prelim, tournament_recap, schedule_change, rsvp_nudge, academy_callup_notice) now have resolver+composer pairs. The two free-form kinds (announcement, custom_message) remain correctly free-form per BRIEFINGS_COVERAGE_L99.md §0.
 
 **Wave 4.2-A-8** (atomic send-pipeline switch) is the final PR: composerSubmit migrates from legacy `compose(kind, state.body)` to the new `resolveX/composeX` registry, deletes legacy compose path, deletes UI bridges. Closes the wave.
+
+### Wave 4.2-A-8a — Atomic send-pipeline switch via registry — SHIPPED May 10, 2026
+
+**Anchor of work:** `src/lib/engine/resolvers/registry.js`, `src/components/briefings/composerSubmit.js`, `src/components/briefings/PreviewPanel.jsx`, `src/components/briefings/bodies/GameRecapBody.jsx`, `src/lib/engine/composer.js`, `src/lib/engine/useResolverPreview.js`.
+
+**What shipped:**
+- `RESOLVER_REGISTRY` is the single source of truth for resolver+composer mapping per kind. Each entry: `{ resolve, compose, anchorFromState, overridesFromState, sendPath, blockedReason? }`.
+- `sendPath` discriminator gates which send pipeline picks up a kind: `composerSubmit` (4 kinds) / `digestSend` (weekly_digest) / `rsvpNudgeSend` (rsvp_nudge — registry migration deferred to 4.2-A-8b) / `blocked` (academy_callup_notice — gated on wave 4.3 callup token mint) / `legacy` (announcement, custom_message — not in the registry).
+- `composerSubmit` refactored to a 5-branch dispatch: rsvp_nudge short-circuit (preserved), wrong-call-site guards for `digestSend`/`rsvpNudgeSend`, blocked path that throws `NoCallupTokenInfrastructureError`, registry path for `composerSubmit` kinds, legacy `compose()` path for free-form kinds. Throws `NoRecipientsError` when slices.length === 0.
+- `useResolverPreview` hook wraps a resolver call for the compose UI; auto-cancels on unmount; no-ops when `resolve` or `anchor` is null. Used by PreviewPanel for the 4 calendar-anchored kinds and by GameRecapBody for read-only data displays.
+- `PreviewPanel` rewritten registry-aware: calendar-anchored kinds preview through the resolver pipeline; free-form kinds keep legacy compose; blocked kind shows a warning banner with copy "Sends disabled for {kind}. Callup token infrastructure is pending in wave 4.3."
+- `GameRecapBody` `useEffect` bridge — the only one in production — deleted. Data displays (Score, Player of the Game, Coach highlight) read directly from `data.context.{game_result, player_of_game}` via `useResolverPreview`. Free-form fields (`opp_highlights`, `coach_note`, `tourney_link_label`) persist to `state.body.*` unchanged.
+- `composer.js` `KIND_COMPOSERS` trimmed: `composeScheduleChange` / `composeGameRecap` / `composeTournamentPrelim` / `composeTournamentRecap` imports + entries removed (now dispatch via `RESOLVER_REGISTRY`).
+
+**Tests:** 374 → 392 (+18). New: `registry.test.js` (8 unit tests covering helpers + entry shape + error classes) and `composerSubmit.dispatch.test.js` (10 dispatch tests covering all 5 branches + NoRecipientsError).
+
+**Deferred to 4.2-A-8b:** per-slice fan-out via `queueRecipients` refactor; `sendRsvpNudge` migration to `RESOLVER_REGISTRY` with new rsvp token substitution helper; Body-component audit for any other resolver-context bridges that might exist.
+
+**Deferred to 4.2-A-8c:** `academy_callup_notice` mint infrastructure + dispatch unblock (depends on wave 4.3 callup token mint work).
+
+**Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 392 passed. Pre-existing `weeklyDigest.js` 152-line violation (shipped wave 4.2-A-1) untouched in this wave; flagged for cleanup in a future tidy.
+
+### Wave 4.2-A status: complete ✅
+
+All 5 wave-4.2-A-8 substeps for the registry path landed: 7 calendar-anchored resolver pairs (4.2-A-1 through 4.2-A-7) + atomic dispatch switch (4.2-A-8a). Per-slice fan-out (4.2-A-8b) and academy_callup mint (4.2-A-8c) are tracked separately and do not block wave-4.2-B work.
