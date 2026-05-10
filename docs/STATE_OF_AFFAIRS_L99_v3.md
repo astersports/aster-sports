@@ -891,7 +891,8 @@ Without elite stack, ceiling caps near 88%. Elite stack is the difference.
 - **Migrations:** 126
 - **Edge functions:** 7 active
   - **Anonymous (verify_jwt:false):** `invite-parent` v5, `briefing-cron-dispatch` v6, `rsvp-token-handler` v4, `unsubscribe-handler` v2, `resend-webhook-receiver` v2
-  - **User-JWT (verify_jwt:true):** `send-tournament-message` v14, `rapid-processor` v3
+  - **User-JWT (verify_jwt:true):** `send-tournament-message` v16, `rapid-processor` v3
+    - `send-tournament-message`: v14 → v16 (verify_jwt:true). v14 was the wave-3 baseline pre-4.1c. v15 was the MCP deploy from PR #57. v16 is the CI rebuild from merged repo source (functionally identical to v15 — behavior matches CC's PR description, version number drifted because CI redeploys on every main push).
 - **Tests:** 214/214
 
 ### New tables (wave 4.1)
@@ -925,6 +926,7 @@ Supabase ALTER DATABASE GUCs blocked by permission model. Use `app_secrets` tabl
 - **D-TEMPLATES-1:** `briefing_templates` is the primitive going forward. Hardcoded JS templates from wave 3.16 will migrate to DB-driven in wave 4.2.
 - **D-AUTODRAFT-1:** `briefing_triggers` is the source of truth for auto-draft creation. Wave 4.3 implements the engine that reads these rows and creates draft `comms_messages` on schedule.
 - **D-COMPLIANCE-1:** Every parent-facing email MUST include unsubscribe link. Footer renderer emits `{{UNSUBSCRIBE_URL}}` placeholder which send pipeline substitutes per-recipient via `mint_unsubscribe_token` RPC. Suppression trigger on `comms_message_recipients` provides defense-in-depth even if frontend forgets to filter unsubscribed guardians.
+- **D-COMPLIANCE-2:** Every parent-facing email MUST include both body footer unsubscribe link (CAN-SPAM, ratified D-COMPLIANCE-1) AND RFC 8058 `List-Unsubscribe` + `List-Unsubscribe-Post: One-Click` headers (Gmail/Yahoo bulk-sender). Single token mint per recipient via `public.mint_unsubscribe_token`; URL converges across body footer + headers + handler.
 
 ---
 

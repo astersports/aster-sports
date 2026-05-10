@@ -2487,6 +2487,27 @@ Bug 1 recipient count + admin@ BCC · `comms_messages_write` RLS blocked digest 
 
 PR #53 · sha `32a0ca9` · migration `20260510002836` · Vercel deploy `dpl_7zTPUTeTTTTP8rH6jbt1Somq2Pnu`.
 
+### Wave 4.1c — RFC 8058 List-Unsubscribe Headers — SHIPPED May 9, 2026
+
+- **PR:** #57 (squash-merged at sha `02e2dde`)
+- **Edge fn:** `send-tournament-message` v14 → v15 (CI-rebuilt to v16 post-merge, source unchanged, sha `411800e3`)
+- **Files:** 2 (1 modified, 1 new) +46 / -8
+  - `supabase/functions/send-tournament-message/index.ts`
+  - `supabase/functions/send-tournament-message/_lib.ts` (NEW)
+
+**Highlights**
+
+- `List-Unsubscribe` + `List-Unsubscribe-Post: One-Click` headers per recipient (RFC 8058 compliance)
+- `mintUnsubscribeUrl` + `buildEmailRow` extracted to `_lib.ts` to satisfy ≤150-line cap (anti-pattern #11)
+- Per-recipient mints via `Promise.all` within `chunk(100)` batch; token converges with body footer URL (same RPC, same handler)
+- Admin BCC rows (`guardian_id=null`) get NO header — QA copies, not subscriber deliveries
+- Unlocks Gmail/Yahoo bulk-sender quota tier (>5K/day)
+- `verify_jwt:true` preserved (user-JWT body sender; no `config.toml` entry needed since true is platform default)
+
+**Tests:** 252/252 (no new tests required for header injection; covered by existing send pipeline integration tests)
+
+**Evidence:** PR #57, sha `02e2dde`, edge fn sha `411800e3` v16
+
 ### Next up — Wave 4.1b (deferred from PR #53) — SHIPPED May 10, 2026 (PR #55, sha `dde4002`)
 
 All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+38). Lint clean, build clean.
