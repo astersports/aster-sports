@@ -2894,6 +2894,40 @@ All 5 wave-4.2-A-8 substeps for the registry path landed: 7 calendar-anchored re
 
 **Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 408 passed. Pre-existing weeklyDigest.js 152-line violation untouched.
 
+### Wave 4.2-A-8d — weekly_digest test-send dispatch hotfix — SHIPPED May 10, 2026 (P0)
+
+**Anchor of work:** `src/lib/briefings/sendWeeklyDigestFromWizard.js` (NEW), `src/hooks/useWizardDigestData.js` (NEW), `src/components/briefings/BriefingComposer.jsx`.
+
+**The bug:** "Send test to admin@" on the Compose · Body screen for weekly_digest in the generic `BriefingComposer` wizard (reachable from `TeamDetailPage` via `TEAM_BRIEFING_KINDS = ['announcement','weekly_digest','custom_message']`) was throwing the 4.2-A-8a dispatch guard ("weekly_digest sends via digestSend directly; should not reach composerSubmit"). Blocked Frank's wizard-driven weekly_digest test-send.
+
+**Discovery:** the wizard's weekly_digest path was half-wired. `KIND_METADATA.weekly_digest` exposed it as a pickable kind; `WeeklyDigestBody` rendered as the body editor; but the data-gathering layer that `DigestComposer` uses (period, events, tournaments, teams, rsvpCountsByEvent via `useDigestEvents`) was never replicated for the wizard. The dispatch guard was the right architectural backstop. The bug was the wizard over-claiming support for a kind whose data layer it didn't replicate.
+
+**Fix (Path A):**
+1. **`sendWeeklyDigestFromWizard` pure helper** (`src/lib/briefings/sendWeeklyDigestFromWizard.js`) — translates wizard state shape (state.body.body_notes / state.body.ops_notes / state.signoff_message / state.test_only) into the args sendWeeklyDigest expects (bodyNotes/opsNotes/signoffMessage/testOnly). Filters recipients to sendable (only families with events on their teams), mirroring DigestComposer's own filter. Exports `mapWizardStateToDigestArgs` (pure, vitest-testable) + `sendWeeklyDigestFromWizard` (thin delegator).
+2. **`useWizardDigestData` hook** (`src/hooks/useWizardDigestData.js`) — bundles the digest-specific data gathering. Period defaults to `defaultPeriod()`; admin uses DigestComposer for non-default periods. Hook short-circuits to empty data when `enabled` is false, avoiding wasted queries.
+3. **BriefingComposer.onSend short-circuit** — when `state.kind === 'weekly_digest'`, calls `sendWeeklyDigestFromWizard` directly with hook-gathered data + state. Other kinds keep the existing `submitBriefing` path.
+4. **composerSubmit dispatch guard** for weekly_digest — UNCHANGED. Stays as defensive backstop; if the wizard short-circuit ever regresses, the guard catches it.
+
+Real-send via wizard also works (testOnly=false flows through identically). admin can now use either DigestComposer or BriefingComposer for weekly_digest.
+
+**Bug scan (Frank's request, 8 pattern classes):**
+1. ✅ Other "wrong-call-site" guards on production paths — none. composerSubmit's rsvp_nudge + academy_callup_notice short-circuits verified working.
+2. ✅ Token URL-wrap bugs — clean across all three mints (rsvp/callup/unsubscribe).
+3. ✅ Half-wired kinds in event/tournament header entry points — none.
+4. ⚠ Migration drift — 1-row drift pre-existing (CLAUDE.md §5 ghost migrations). Not new.
+5. ✅ PreviewPanel weekly_digest stub — passes empty events/teams/tournaments to legacy compose. Cosmetic; preview shows sparse digest. Not P0.
+6. ⚠ Pre-existing file-length violations — weeklyDigest.js (152), send-tournament-message/index.ts (185). Documented.
+7. ✅ Test coverage — solid across all registry-path send helpers.
+8. ✅ Wizard state.test_only routing — all kinds except weekly_digest (this PR) correctly route test_only through to queueComposedMessages/queueRecipients.
+
+**Tests:** 444 → 450 (+6). All in `sendWeeklyDigestFromWizard.test.js` (state mapping, testOnly flow, sendable filter, kind guard, missing-state guard, end-to-end delegation). Existing composerSubmit dispatch test (weekly_digest → throws) stays green — guard intact.
+
+**File-length lock side-quest:** new BriefingComposer code initially landed at 170 lines (20 over). Extracted `useWizardDigestData` hook + trimmed prior-wave comments to land at 148. Pre-existing 8c-era composerSubmit.dispatch.test.js at 154 also trimmed to 146.
+
+**Verification:** `npm run lint` 0 errors. `npm run build` clean (301kB). `npm test` 450 passed.
+
+**Wave 4.2-A status: STILL COMPLETE.** Hotfix patches a wizard wire-up that slipped through 8a's guard introduction; doesn't change the registry coverage (still 7/7).
+
 ### Wave 4.2-A-8c — academy_callup_notice on registry path — SHIPPED May 10, 2026 — closes wave 4.2-A
 
 **Anchor of work:** `src/lib/engine/substitution/callupTokens.js` (NEW), `src/lib/engine/renderers/callupResponse.js` (NEW), `src/lib/academyCallupSend.js` (NEW), `src/lib/engine/resolvers/registry.js`, `src/lib/engine/resolvers/academyCallupNotice.js` (1-line fix), `src/components/briefings/composerSubmit.js`, `src/components/briefings/PreviewPanel.jsx`, `src/components/briefings/bodies/AcademyCallupBody.jsx`.
