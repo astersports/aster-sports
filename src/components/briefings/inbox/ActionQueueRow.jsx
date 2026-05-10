@@ -13,7 +13,9 @@ const rowStyle = (color) => ({
   borderLeft: `4px solid ${color}`,
 });
 const iconWrap = { width: 36, height: 36, borderRadius: 8, backgroundColor: 'var(--em-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 };
-const titleStyle = { fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', lineHeight: 1.3 };
+// Wave 4.1b §6.H — clamp titles to 2 lines so long tournament names
+// don't push pill or action button off the row at narrow widths.
+const titleStyle = { fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' };
 const audienceStyle = { fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2 };
 const pillStyle = (s) => ({ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', padding: '3px 8px', borderRadius: 9999, backgroundColor: s.pillBg, color: s.pillText, textTransform: 'uppercase' });
 const actionBtn = { minHeight: 36, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' };

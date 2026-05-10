@@ -21,6 +21,14 @@ describe('KIND_METADATA', () => {
     expect(KIND_METADATA.rsvp_nudge.badge).toBeUndefined();
   });
 
+  // Wave 4.1b §4 — Bug D. M1 (PR #53) reconciled the DB CHECK with the
+  // engine's 9 canonical kinds; every kind must be enabled.
+  it('Wave 4.1b — every canonical kind has disabled=false', () => {
+    ['rsvp_nudge', 'game_recap', 'tournament_prelim', 'tournament_recap', 'announcement', 'custom_message'].forEach((k) => {
+      expect(KIND_METADATA[k].disabled, k).toBe(false);
+    });
+  });
+
   it('schedule_change has anchor + audience locked', () => {
     expect(KIND_METADATA.schedule_change.anchorLocked).toBe(true);
     expect(KIND_METADATA.schedule_change.audienceLocked).toBe(true);

@@ -1,42 +1,28 @@
 // Wave 3.11 follow-up — step 2 host. Anchor + audience pickers
 // stacked vertically.
+//
+// Wave 4.1b §1 — Bug A: when anchor_kind requires an id (event /
+// tournament / team) but anchor_id is null, surface an inline helper
+// underneath the picker so admins resuming a broken draft (e.g.
+// d526bbef) understand why Next is disabled.
+//
+// Wave 4.1b §2 — Bug B: audience metadata flows in from the
+// composer parent so pilot-mode states can be shown without re-running
+// the get_digest_recipients RPC inside this component.
 
-import { useMemo } from 'react';
 import AnchorPicker from './AnchorPicker';
 import AudiencePicker from './AudiencePicker';
 import LockedAnchorChip from './LockedAnchorChip';
-import { useDigestRecipients } from '../../hooks/useDigestRecipients';
-import { useAuth } from '../../context/AuthContext';
-import { useOrgSettings } from '../../hooks/useOrgSettings';
+import { ANCHOR_KINDS_REQUIRING_ID } from './composerReducer';
 
 const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', display: 'block', marginBottom: 8 };
+const helperStyle = { fontSize: 13, color: 'var(--em-warning)', marginTop: 8, lineHeight: 1.4 };
 
-function audienceCount({ audienceType, audienceFilter, recipients, anchorId }) {
-  if (!recipients) return null;
-  if (audienceType === 'org_all') return recipients.length;
-  if (audienceType === 'team') {
-    const teamId = audienceFilter?.team_id || anchorId;
-    return recipients.filter((r) => (r.team_ids || []).includes(teamId)).length;
-  }
-  if (audienceType === 'multi_team') {
-    const ids = audienceFilter?.team_ids || (anchorId ? [anchorId] : []);
-    if (!ids.length) return null;
-    return recipients.filter((r) => (r.team_ids || []).some((t) => ids.includes(t))).length;
-  }
-  if (audienceType === 'tournament_attendees' || audienceType === 'event_attendees') {
-    return null; // server-derived at dispatch; preview shown when sample resolves
-  }
-  return null;
-}
+const ANCHOR_NOUN = { event: 'event', tournament: 'tournament', team: 'team' };
 
-export default function StepAnchorAudience({ state, dispatch }) {
-  const { orgId } = useAuth();
-  const { pilotModeEnabled } = useOrgSettings(orgId);
-  const { recipients } = useDigestRecipients({ orgId, pilotOnly: pilotModeEnabled });
-  const count = useMemo(() => audienceCount({
-    audienceType: state.audience_type, audienceFilter: state.audience_filter,
-    recipients, anchorId: state.anchor_id,
-  }), [state.audience_type, state.audience_filter, recipients, state.anchor_id]);
+export default function StepAnchorAudience({ state, dispatch, audience }) {
+  const needsId = ANCHOR_KINDS_REQUIRING_ID.has(state.anchor_kind) && !state.anchor_id;
+  const noun = ANCHOR_NOUN[state.anchor_kind] || 'anchor';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -49,12 +35,13 @@ export default function StepAnchorAudience({ state, dispatch }) {
             kind={state.kind} anchorKind={state.anchor_kind} anchorId={state.anchor_id}
             onPick={(anchor_kind, anchor_id) => dispatch({ type: 'SET_ANCHOR', anchor_kind, anchor_id })} />
         )}
+        {needsId && <div style={helperStyle} role="status">Pick a specific {noun} to continue.</div>}
       </section>
       <section>
         <span style={labelStyle}>Audience</span>
         <AudiencePicker
           kind={state.kind} audienceType={state.audience_type} audienceFilter={state.audience_filter}
-          anchorId={state.anchor_id} recipientCount={count}
+          audience={audience}
           onPick={(audience_type, audience_filter) => dispatch({ type: 'SET_AUDIENCE', audience_type, audience_filter })} />
       </section>
     </div>

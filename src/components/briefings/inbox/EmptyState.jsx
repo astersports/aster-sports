@@ -1,6 +1,7 @@
 // Wave 3.12 — empty states for Active / History / filtered.
+// Wave 4.1b §6.F — added 'drafts' empty state.
 
-import { CheckCircle2, Filter, Mail } from 'lucide-react';
+import { CheckCircle2, FileText, Filter, Mail } from 'lucide-react';
 
 const wrap = { padding: '48px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' };
 const iconStyle = { color: 'var(--em-text-tertiary)' };
@@ -9,6 +10,16 @@ const bodyStyle = { fontSize: 14, color: 'var(--em-text-secondary)', maxWidth: 3
 const btnGhost = { minHeight: 44, padding: '0 16px', borderRadius: 10, fontSize: 14, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer', border: '1px solid var(--em-accent)', backgroundColor: 'transparent', color: 'var(--em-accent)' };
 
 export default function EmptyState({ kind, onCompose, onViewHistory, onClearFilters }) {
+  if (kind === 'drafts') {
+    return (
+      <div style={wrap}>
+        <FileText size={56} strokeWidth={1.25} style={iconStyle} />
+        <div style={titleStyle}>No drafts in progress</div>
+        <div style={bodyStyle}>Tap Compose to start one.</div>
+        {onCompose && <button type="button" onClick={onCompose} className="sf-press" style={btnGhost}>Compose →</button>}
+      </div>
+    );
+  }
   if (kind === 'active') {
     return (
       <div style={wrap}>
