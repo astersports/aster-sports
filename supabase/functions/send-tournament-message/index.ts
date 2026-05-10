@@ -21,12 +21,21 @@
 // organization_settings.reply_to_email (per-org configurable for
 // multi-tenant). Falls back to REPLY_TO_FALLBACK when row/column null.
 //
+// Wave 4.1c (v15): RFC 8058 List-Unsubscribe + List-Unsubscribe-Post
+// headers per recipient. Unlocks Gmail/Yahoo bulk-sender one-click
+// requirement. Token minted via public.mint_unsubscribe_token (HMAC,
+// service role) — same URL the body footer uses, so MUAs that respect
+// the header and clients that use the body link converge on the same
+// guardian_email_preferences upsert. Admin BCC rows (guardian_id=null)
+// receive no header — they're QA copies, not subscriber deliveries.
+//
 // Caller must be admin or coach in the message's org_id.
 // Body: { message_id: uuid, dry_run?: boolean }
 // Returns: { ok: boolean, sent: int, failed: int, errors: string[] }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@4";
+import { buildEmailRow, mintUnsubscribeUrl } from "./_lib.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -129,19 +138,14 @@ Deno.serve(async (req) => {
 
   const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
   const fromHeader = `${FROM_NAME} <${FROM_EMAIL}>`;
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const errors: string[] = [];
   let sent = 0;
   let failed = 0;
 
   for (const group of chunk(recipients, RESEND_BATCH_LIMIT)) {
-    const batch = group.map((r) => ({
-      from: fromHeader,
-      to: [r.email_at_send],
-      subject: r.subject_rendered ?? message.subject,
-      html: r.body_html_rendered ?? message.body_html,
-      text: r.body_plain_rendered ?? message.body_plain,
-      reply_to: replyTo,
-    }));
+    const unsubUrls = await Promise.all(group.map((r) => mintUnsubscribeUrl(sb, supabaseUrl, r.guardian_id)));
+    const batch = group.map((r, idx) => buildEmailRow(r, message, fromHeader, replyTo, unsubUrls[idx]));
     const { data: batchData, error: batchErr } = await resend.batch.send(batch);
     if (batchErr) {
       failed += group.length;
