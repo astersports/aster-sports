@@ -3,30 +3,36 @@
 // BriefingComposer flow (game_recap, tournament_prelim,
 // tournament_recap, schedule_change).
 //
+// Wave 4.2-A-8b-a — those 4 kinds compose per-slice and queue via
+// queueComposedMessages (per-recipient body_html_rendered). The
+// wave-locked contract guarantees content_sections is invariant
+// across slices for these 4 kinds, so fan-out is identical-bodied
+// today; the architectural symmetry is the win. Free-form kinds
+// (announcement, custom_message) keep the legacy single-body
+// queueRecipients path.
+//
 // Other kinds:
 //   weekly_digest: routes through DigestComposer.jsx -> digestSend
 //                  (already on resolver pipeline). composerSubmit
 //                  guards against accidental dispatch.
 //   rsvp_nudge:    short-circuits to lib/rsvpNudgeSend.js (per-
 //                  recipient mint_rsvp_token + per-recipient compose).
-//                  Migration to registry deferred to 4.2-A-8b.
+//                  Migration to registry deferred to 4.2-A-8b-b.
 //   academy_callup_notice: blocked -- callup token mint
 //                  infrastructure pending in wave 4.3. composerSubmit
 //                  raises NoCallupTokenInfrastructureError.
 //   announcement / custom_message: free-form, legacy compose path.
-//
-// 4.2-A-8a uses slices[0]'s subject + content_sections as the SINGLE-
-// BODY message handed to queueRecipients. content_sections is
-// structurally identical across slices for these 4 kinds per the
-// wave contract. Per-slice fan-out arrives in 4.2-A-8b via
-// queueRecipients refactor.
 
 import { compose, renderSections, renderSectionsPlainText } from '../../lib/engine/composer';
 import { sendRsvpNudge } from '../../lib/rsvpNudgeSend';
 import { supabase } from '../../lib/supabase';
 import { resolveAudience } from '../../lib/briefings/recipientFilter';
 import { queueRecipients } from '../../lib/briefings/queueRecipients';
+import { queueComposedMessages } from '../../lib/briefings/queueComposedMessages';
 import { getDispatchSendPath, NoRecipientsError, RESOLVER_REGISTRY } from '../../lib/engine/resolvers/registry';
+
+const HTML_OPEN = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">';
+const HTML_CLOSE = '</div>';
 
 async function resolveTourneyUrl(state) {
   if (state.anchor_kind === 'tournament' && state.anchor_id) {
@@ -40,21 +46,32 @@ async function resolveTourneyUrl(state) {
   return null;
 }
 
-async function composeViaRegistry(state) {
+async function resolveAndComposePerSlice(state) {
   const entry = RESOLVER_REGISTRY[state.kind];
   const anchor = entry.anchorFromState(state);
   const overrides = entry.overridesFromState(state);
   const { context, slices } = await entry.resolve(anchor, { supabase, now: new Date() });
   if (!slices.length) throw new NoRecipientsError(state.kind, anchor);
-  const { subject, content_sections } = entry.compose(context, slices[0], overrides);
-  const html = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">' + renderSections(content_sections) + '</div>';
-  const plainText = renderSectionsPlainText(content_sections);
-  return { subject, html, plainText, sections: content_sections };
+  const messages = slices.map((slice) => ({ slice, ...entry.compose(context, slice, overrides) }));
+  const { subject, content_sections } = messages[0];
+  const sample = {
+    subject,
+    html: HTML_OPEN + renderSections(content_sections) + HTML_CLOSE,
+    plainText: renderSectionsPlainText(content_sections),
+    sections: content_sections,
+  };
+  return { messages, sample };
 }
 
 async function composeLegacy(state, coaches) {
   const tourneyUrl = await resolveTourneyUrl(state);
   return compose({ kind: state.kind, data: { ...state.body, tourney_url: tourneyUrl, signoff_message: state.signoff_message, coaches } });
+}
+
+async function queueForDispatch({ messages, composed, state, recipients, messageId }) {
+  if (messages) return queueComposedMessages({ messageId, messages, testOnly: state.test_only });
+  const { teamIds, audience } = await resolveAudience({ recipients, audienceType: state.audience_type, audienceFilter: state.audience_filter, anchorId: state.anchor_id });
+  return queueRecipients({ messageId, audience, composed, teamIds, testOnly: state.test_only });
 }
 
 export async function submitBriefing({ state, draft, orgId, recipients, coaches, pilotModeEnabled }) {
@@ -72,7 +89,15 @@ export async function submitBriefing({ state, draft, orgId, recipients, coaches,
     throw new Err();
   }
 
-  const composed = sendPath === 'composerSubmit' ? await composeViaRegistry(state) : await composeLegacy(state, coaches);
+  let messages = null;
+  let composed;
+  if (sendPath === 'composerSubmit') {
+    const r = await resolveAndComposePerSlice(state);
+    messages = r.messages;
+    composed = r.sample;
+  } else {
+    composed = await composeLegacy(state, coaches);
+  }
   const payload = {
     kind: state.kind, anchor_kind: state.anchor_kind, anchor_id: state.anchor_id,
     audience_type: state.audience_type, audience_filter: state.audience_filter,
@@ -83,14 +108,12 @@ export async function submitBriefing({ state, draft, orgId, recipients, coaches,
   if (state.send_mode === 'scheduled' && state.scheduled_for) {
     const r = await draft.submitSchedule(payload, state.scheduled_for);
     if (r?.error) throw r.error;
-    const { teamIds, audience } = await resolveAudience({ recipients, audienceType: state.audience_type, audienceFilter: state.audience_filter, anchorId: state.anchor_id });
-    const queued = await queueRecipients({ messageId: r.id, audience, composed, teamIds, testOnly: state.test_only });
+    const queued = await queueForDispatch({ messages, composed, state, recipients, messageId: r.id });
     return { scheduledFor: state.scheduled_for, audienceCount: queued.audienceCount };
   }
   const r = await draft.submitSend(payload);
   if (r?.error) throw r.error;
-  const { teamIds, audience } = await resolveAudience({ recipients, audienceType: state.audience_type, audienceFilter: state.audience_filter, anchorId: state.anchor_id });
-  const queued = await queueRecipients({ messageId: r.id, audience, composed, teamIds, testOnly: state.test_only });
+  const queued = await queueForDispatch({ messages, composed, state, recipients, messageId: r.id });
   const dispatchInvoke = await supabase.functions.invoke('send-tournament-message', { body: { message_id: r.id } });
   if (dispatchInvoke.error) throw dispatchInvoke.error;
   await supabase.from('comms_messages').update({ status: 'sent' }).eq('id', r.id);
