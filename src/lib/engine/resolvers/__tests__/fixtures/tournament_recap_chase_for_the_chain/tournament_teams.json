@@ -1,0 +1,5 @@
+[
+  { "tournament_id": "61e2cbca-af87-4685-a928-57d3da06cd84", "team_id": "507d7a4e-553e-4ba7-a61c-38d6cdf2f364", "final_record_wins": 4, "final_record_losses": 0, "final_place": "Champions", "teams": { "id": "507d7a4e-553e-4ba7-a61c-38d6cdf2f364", "name": "11U Girls", "team_color": "#a78bfa", "sort_order": 1, "org_id": "e3e95e21-3571-4e9a-985a-d5d01480d4a6" } },
+  { "tournament_id": "61e2cbca-af87-4685-a928-57d3da06cd84", "team_id": "6abb0447-8866-461c-bd78-1c58eebf9551", "final_record_wins": 5, "final_record_losses": 0, "final_place": "Champions", "teams": { "id": "6abb0447-8866-461c-bd78-1c58eebf9551", "name": "10U Black", "team_color": "#4a8fd4", "sort_order": 2, "org_id": "e3e95e21-3571-4e9a-985a-d5d01480d4a6" } },
+  { "tournament_id": "61e2cbca-af87-4685-a928-57d3da06cd84", "team_id": "e6dde2e0-38f7-46c9-ad1a-5ac253a2a570", "final_record_wins": 2, "final_record_losses": 2, "final_place": "Finalists", "teams": { "id": "e6dde2e0-38f7-46c9-ad1a-5ac253a2a570", "name": "8U Boys", "team_color": "#f59e0b", "sort_order": 5, "org_id": "e3e95e21-3571-4e9a-985a-d5d01480d4a6" } }
+]

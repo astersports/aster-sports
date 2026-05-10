@@ -1,0 +1,20 @@
+{
+  "id": "61e2cbca-af87-4685-a928-57d3da06cd84",
+  "name": "ZG Chase for the Chain NY",
+  "circuit": "AAU Zero Gravity",
+  "start_date": "2026-04-11",
+  "end_date": "2026-04-12",
+  "primary_venue": "Westchester County, NY",
+  "primary_venue_address": "",
+  "tourney_url": null,
+  "hotel_url": null,
+  "survival_notes": "",
+  "coach_theme": null,
+  "game_day_guide": null,
+  "hotel_block_info": null,
+  "hotel_block_deadline": null,
+  "rsvp_deadline_at": null,
+  "pool_label": null,
+  "schedule_status": "draft",
+  "status": "complete"
+}
