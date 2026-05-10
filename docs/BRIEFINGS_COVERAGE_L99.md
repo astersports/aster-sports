@@ -33,7 +33,7 @@ Per-kind anchor + slice taxonomy:
 | Kind | Anchor | Slice (kind) | Slice ordering | Status |
 |---|---|---|---|---|
 | weekly_digest | `{ orgId, period, pilotOnly }` | family | guardian_id ASC | ✅ shipped 4.2-A-1 |
-| game_recap | `eventId` | family (event team) | guardian_id ASC | 📋 queued 4.2-A-2 |
+| game_recap | `{ eventId, pilotOnly }` | family (event team) | guardian_id ASC | ✅ shipped 4.2-A-2 |
 | tournament_prelim | `tournamentId` | team | sort_order, id | 📋 queued 4.2-A-3 |
 | tournament_recap | `tournamentId` | team | sort_order, id | 📋 queued 4.2-A-4 |
 | schedule_change | `eventId` | family (event team) | guardian_id ASC | 📋 queued 4.2-A-5 |
@@ -234,3 +234,4 @@ When adding an edge case to §4:
 - v1: May 10, 2026 — initial audit post-wave 4.1d-1 ship + Frank's May 10 production verification.
 - v1.1: May 10, 2026 — wave 4.1d-5: legacy `tournament_preliminary` and `custom` code emit sites retired (8 sites migrated). `comms_messages.kind_check` still allows transitional legacy values until wave 4.1d-6 backfills + tightens.
 - v1.2: May 10, 2026 — wave 4.2-A-1: §0 Resolver Layer added with two-stage contract. `resolveWeeklyDigest` + `composeWeeklyDigest` shipped as the reference implementation. Snapshot test locks parity against production row 3b431eb1.
+- v1.3: May 10, 2026 — wave 4.2-A-2: `resolveGameRecap` + `composeGameRecap` shipped. Anchor `{ eventId, pilotOnly }`. `GameRecapNotPublishedError` thrown when `published_at IS NULL`. Compose UI replaces score / POG / coach_highlight inputs with read-only displays + Quick Score edit-links. Snapshot anchor: hand-authored expected output for event a0b2d68a (10U Blue vs Resurrection White 4AB, 2026-05-02 W 2-0). Production unlock: 32 published-but-unrecapped games no longer require manual retyping.

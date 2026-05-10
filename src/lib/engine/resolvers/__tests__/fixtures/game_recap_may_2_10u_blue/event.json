@@ -1,0 +1,18 @@
+{
+  "id": "a0b2d68a-cd2a-4d15-9922-5c2becc0c806",
+  "team_id": "13abc98d-5e88-4fe0-8929-690add6e2bdd",
+  "event_type": "game",
+  "start_at": "2026-05-02T18:00:00+00:00",
+  "end_at": "2026-05-02T19:00:00+00:00",
+  "location": "CYO Spellman",
+  "sub_location": null,
+  "location_id": "9d8e9d95-6084-4712-83c4-10565e8a7430",
+  "opponent": "Resurrection White 4AB",
+  "tournament_id": "254afad0-23af-4979-ac4a-88614b76e341",
+  "tournament_name": null,
+  "is_bracket_placeholder": false,
+  "bracket_placeholder_label": null,
+  "status": "scheduled",
+  "teams": { "id": "13abc98d-5e88-4fe0-8929-690add6e2bdd", "name": "10U Blue", "team_color": "#94a3b8", "sort_order": 3, "org_id": "e3e95e21-3571-4e9a-985a-d5d01480d4a6" },
+  "locations": { "id": "9d8e9d95-6084-4712-83c4-10565e8a7430", "name": "CYO Spellman", "google_maps_url": "http://maps.google.com/maps?q=674%20Mile%20Square%20Road%20Yonkers,%20NY%2010704" }
+}

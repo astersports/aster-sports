@@ -250,6 +250,8 @@ v13 unchanged. schedule_change routes through the same dispatch path — pilot m
 
 # APPENDIX (May 10, 2026 — late afternoon)
 
+**Wave 4.2-A-2 shipped.** `resolveGameRecap` + `composeGameRecap` extracted into `src/lib/engine/resolvers/gameRecap.js`. Compose UI's data-shaped score / POG / coach_highlight inputs replaced with read-only displays backed by `game_results`, with Quick Score edit-links. `GameRecapNotPublishedError` thrown when published_at is null. Production unlock: 32 published-but-unrecapped games no longer require manual retyping. Snapshot anchored to hand-authored expected output for event a0b2d68a (10U Blue vs Resurrection White 4AB, 2026-05-02 W 2-0).
+
 **Wave 4.2-A-1 shipped.** Reference resolver pair (`resolveWeeklyDigest` + `composeWeeklyDigest`) extracted from the four-hook + buildScheduleSection chain into `src/lib/engine/resolvers/weeklyDigest.js`. Locks the two-stage contract for the rest of wave 4.2-A:
 ```
 resolveX(anchor, options) -> { context, slices }

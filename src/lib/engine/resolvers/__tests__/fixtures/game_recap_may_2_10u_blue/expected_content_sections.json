@@ -1,0 +1,28 @@
+[
+  {
+    "kind": "header",
+    "eyebrow": "Legacy Hoopers · GAME RECAP",
+    "eyebrow_link": "https://www.legacyhoopers.org/",
+    "headline": "GAME RECAP",
+    "sub_context": "Saturday, May 2 · CYO Spellman",
+    "goldStripe": true
+  },
+  { "kind": "stats_narrative", "body": "Final: 10U Blue 2 – Resurrection White 4AB 0 (W)" },
+  { "kind": "stats_narrative", "body": "Player of the game: Giuseppe" },
+  { "kind": "stats_narrative", "body": "defense" },
+  {
+    "kind": "signoff",
+    "prose": "",
+    "coaches": [
+      { "display_name": "Frank", "title": "Program Director", "phone": "(917) 991-9830" },
+      { "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" }
+    ]
+  },
+  {
+    "kind": "footer",
+    "logoUrl": "https://skyfire-app.vercel.app/knight-logo-240.png",
+    "orgName": "Legacy Hoopers",
+    "websiteUrl": "https://www.legacyhoopers.org/",
+    "contactEmail": "info@legacyhoopers.org"
+  }
+]
