@@ -63,7 +63,9 @@ describe('sendRsvpNudge — integration', () => {
     const sections = arg.messages[0].content_sections;
     const rsvpReq = sections.filter((s) => s.kind === 'rsvp_request');
     expect(rsvpReq).toHaveLength(1);
-    expect(rsvpReq[0].rsvp_token_urls.going).toBe('mock-mint_rsvp_token-p1-going');
+    expect(rsvpReq[0].rsvp_token_urls.going).toContain('rsvp-token-handler');
+    expect(rsvpReq[0].rsvp_token_urls.going).toContain('t=mock-mint_rsvp_token-p1-going');
+    expect(rsvpReq[0].rsvp_token_urls.going).toContain('action=going');
     expect(rsvpReq[0].rsvp_token_placeholders).toBeUndefined();
     expect(arg.adminSample).toBeTruthy();
     expect(arg.adminSample.content_sections.find((s) => s.kind === 'rsvp_request').rsvp_token_placeholders).toBeTruthy();
@@ -83,11 +85,13 @@ describe('sendRsvpNudge — integration', () => {
     const rsvpReq = arg.messages[0].content_sections.filter((s) => s.kind === 'rsvp_request');
     expect(rsvpReq).toHaveLength(3);
     expect(rsvpReq[0].kid_first_name).toBe('Aubtin');
-    expect(rsvpReq[0].rsvp_token_urls.going).toBe('mock-mint_rsvp_token-p1-going');
+    expect(rsvpReq[0].rsvp_token_urls.going).toContain('rsvp-token-handler');
+    expect(rsvpReq[0].rsvp_token_urls.going).toContain('t=mock-mint_rsvp_token-p1-going');
+    expect(rsvpReq[0].rsvp_token_urls.going).toContain('action=going');
     expect(rsvpReq[1].kid_first_name).toBe('Frankie');
-    expect(rsvpReq[1].rsvp_token_urls.going).toBe('mock-mint_rsvp_token-p2-going');
+    expect(rsvpReq[1].rsvp_token_urls.going).toContain('t=mock-mint_rsvp_token-p2-going');
     expect(rsvpReq[2].kid_first_name).toBe('Hudson');
-    expect(rsvpReq[2].rsvp_token_urls.going).toBe('mock-mint_rsvp_token-p3-going');
+    expect(rsvpReq[2].rsvp_token_urls.going).toContain('t=mock-mint_rsvp_token-p3-going');
   });
 
   it('3. NoRecipientsError when slices empty (no queue, no INSERT)', async () => {

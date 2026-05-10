@@ -23,7 +23,7 @@ describe('registry — helpers', () => {
     expect(getDispatchSendPath('tournament_recap')).toBe('composerSubmit');
     expect(getDispatchSendPath('schedule_change')).toBe('composerSubmit');
     expect(getDispatchSendPath('rsvp_nudge')).toBe('rsvpNudgeSend');
-    expect(getDispatchSendPath('academy_callup_notice')).toBe('blocked');
+    expect(getDispatchSendPath('academy_callup_notice')).toBe('academyCallupSend');
     expect(getDispatchSendPath('announcement')).toBe('legacy');
     expect(getDispatchSendPath('custom_message')).toBe('legacy');
     expect(getDispatchSendPath('not_a_kind')).toBe('legacy');
@@ -36,7 +36,7 @@ describe('registry — helpers', () => {
       expect(typeof e.compose).toBe('function');
       expect(typeof e.anchorFromState).toBe('function');
       expect(typeof e.overridesFromState).toBe('function');
-      expect(['composerSubmit', 'digestSend', 'rsvpNudgeSend', 'blocked']).toContain(e.sendPath);
+      expect(['composerSubmit', 'digestSend', 'rsvpNudgeSend', 'academyCallupSend']).toContain(e.sendPath);
     }
   });
 
@@ -70,8 +70,14 @@ describe('registry — helpers', () => {
     expect(e.anchor).toEqual({ eventId: 'e-1' });
   });
 
-  it('blocked entry exposes blockedReason class', () => {
+  it('academy_callup_notice on academyCallupSend path; blockedReason no longer set', () => {
     const e = RESOLVER_REGISTRY.academy_callup_notice;
-    expect(e.blockedReason).toBe(NoCallupTokenInfrastructureError);
+    expect(e.sendPath).toBe('academyCallupSend');
+    expect(e.blockedReason).toBeUndefined();
+  });
+
+  it('NoCallupTokenInfrastructureError retained for test imports', () => {
+    expect(typeof NoCallupTokenInfrastructureError).toBe('function');
+    expect(new NoCallupTokenInfrastructureError().name).toBe('NoCallupTokenInfrastructureError');
   });
 });

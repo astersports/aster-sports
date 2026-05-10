@@ -33,6 +33,7 @@ import ctaButtons from './renderers/ctaButtons';
 import statsNarrative from './renderers/statsNarrative';
 import signoff from './renderers/signoff';
 import rsvpRequest from './renderers/rsvpRequest';
+import callupResponse from './renderers/callupResponse';
 
 const SECTION_RENDERERS = {
   header: renderHeader,
@@ -54,6 +55,7 @@ const SECTION_RENDERERS = {
   signoff,
   schedule_change_diff: scheduleChangeDiff,
   rsvp_request: rsvpRequest,
+  callup_response: callupResponse,
 };
 
 // Wave 4.1d-5: legacy `tournament_preliminary` registry key retired.

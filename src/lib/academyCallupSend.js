@@ -1,63 +1,60 @@
-// Wave 4.2-A-8b-b — rsvp_nudge send pipeline. Migrated to the
-// RESOLVER_REGISTRY path. Per-slice loop:
+// Wave 4.2-A-8c — academy_callup_notice send pipeline. Mirror of
+// sendRsvpNudge (4.2-A-8b-b) adapted for the callup token infra
+// shipped in 4.3-D. Single-slice fan-out (one callup_response section
+// per email, since each notice targets one called-up player).
+//
+// Per-slice loop:
 //   1. Resolve once via registry (context + slices).
-//   2. For each slice: compose → mint per-kid tokens (3 RPCs per kid)
-//      → substituteRsvpTokens → push to messages[].
+//   2. For each slice: compose → mint accept + decline tokens
+//      → wrap into handler URLs → substituteCallupTokens
+//      → push to messages[].
 //   3. INSERT comms_messages row (sample = first slice's UN-substituted
 //      compose; admin BCC inherits placeholder buttons so an admin tap
-//      doesn't accidentally RSVP for the first family).
+//      doesn't accidentally accept/decline for the first family).
 //   4. queueComposedMessages with adminSample = sample.
-//   5. Invoke send-tournament-message v14 — pilot mode gate inherited
-//      from the resolver's effectivePilotOnly (state.pilot_only or
-//      org settings).
+//   5. Invoke send-tournament-message — pilot mode gate inherited
+//      from the resolver's effectivePilotOnly.
 //   6. Mark comms_messages.status = 'sent'.
 //
-// Token semantics: per-(event, player, guardian, response) per the
-// existing mint_rsvp_token RPC. Multi-kid families get one
-// rsvp_request section per unresponded kid (Option A locked in
-// wave 4.2-A-8b-b prep).
+// Token semantics: per-(event, player, guardian, response). mint
+// returns the signed token; we wrap into the callup-token-handler
+// URL with `?t=<token>&action=accept|decline`.
 
 import { NoRecipientsError, RESOLVER_REGISTRY } from './engine/resolvers/registry';
 import { renderSections, renderSectionsPlainText } from './engine/composer';
-import { substituteRsvpTokens } from './engine/substitution/rsvpTokens';
+import { substituteCallupTokens } from './engine/substitution/callupTokens';
 import { queueComposedMessages } from './briefings/queueComposedMessages';
 
 const HTML_OPEN = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">';
 const HTML_CLOSE = '</div>';
-const RSVP_HANDLER_BASE = 'https://vrwwpsbfbnveawqwbdmj.supabase.co/functions/v1/rsvp-token-handler';
+const CALLUP_HANDLER_BASE = 'https://vrwwpsbfbnveawqwbdmj.supabase.co/functions/v1/callup-token-handler';
 
-async function mintRsvpToken(supabase, eventId, playerId, guardianId, response) {
-  const { data, error } = await supabase.rpc('mint_rsvp_token', {
+async function mintCallupToken(supabase, eventId, playerId, guardianId, response) {
+  const { data, error } = await supabase.rpc('mint_callup_token', {
     p_event_id: eventId, p_player_id: playerId, p_guardian_id: guardianId, p_response: response,
   });
-  if (error) throw new Error(`mint_rsvp_token failed: ${error.message}`);
-  // Wrap into the handler URL the recipient actually clicks. Legacy
-  // `mintLinksForPlayer` wrapped here too; the 8b-b rewrite dropped
-  // the wrap (latent bug fixed in 4.2-A-8c).
-  return `${RSVP_HANDLER_BASE}?t=${encodeURIComponent(data)}&action=${response}`;
+  if (error) throw new Error(`mint_callup_token failed: ${error.message}`);
+  return `${CALLUP_HANDLER_BASE}?t=${encodeURIComponent(data)}&action=${response}`;
 }
 
 async function mintTokensForSlice(supabase, eventId, slice) {
-  const map = {};
-  for (const kid of slice.unresponded_kids || []) {
-    const [going, maybe, not_going] = await Promise.all([
-      mintRsvpToken(supabase, eventId, kid.player_id, slice.guardian_id, 'going'),
-      mintRsvpToken(supabase, eventId, kid.player_id, slice.guardian_id, 'maybe'),
-      mintRsvpToken(supabase, eventId, kid.player_id, slice.guardian_id, 'not_going'),
-    ]);
-    map[kid.player_id] = { going, maybe, not_going };
-  }
-  return map;
+  const playerId = slice.player_id;
+  if (!playerId) throw new Error('sendAcademyCallupNotice: slice missing player_id');
+  const [accept, decline] = await Promise.all([
+    mintCallupToken(supabase, eventId, playerId, slice.guardian_id, 'accept'),
+    mintCallupToken(supabase, eventId, playerId, slice.guardian_id, 'decline'),
+  ]);
+  return { [playerId]: { accept, decline } };
 }
 
-export async function sendRsvpNudge({ state, supabase, now = new Date() }) {
-  if (!state) throw new Error('sendRsvpNudge: missing state.');
-  if (!supabase) throw new Error('sendRsvpNudge: missing supabase client.');
-  const entry = RESOLVER_REGISTRY.rsvp_nudge;
+export async function sendAcademyCallupNotice({ state, supabase, now = new Date() }) {
+  if (!state) throw new Error('sendAcademyCallupNotice: missing state.');
+  if (!supabase) throw new Error('sendAcademyCallupNotice: missing supabase client.');
+  const entry = RESOLVER_REGISTRY.academy_callup_notice;
   const anchor = entry.anchorFromState(state);
   const overrides = entry.overridesFromState(state);
   const { context, slices } = await entry.resolve(anchor, { supabase, now });
-  if (!slices.length) throw new NoRecipientsError('rsvp_nudge', anchor);
+  if (!slices.length) throw new NoRecipientsError('academy_callup_notice', anchor);
 
   const sampleComposed = entry.compose(context, slices[0], overrides);
 
@@ -65,24 +62,25 @@ export async function sendRsvpNudge({ state, supabase, now = new Date() }) {
   for (const slice of slices) {
     const { subject, content_sections } = entry.compose(context, slice, overrides);
     const tokenMap = await mintTokensForSlice(supabase, anchor.eventId, slice);
-    const substituted = substituteRsvpTokens(content_sections, tokenMap);
+    const substituted = substituteCallupTokens(content_sections, tokenMap);
     messages.push({ slice, subject, content_sections: substituted });
   }
 
   const orgId = context.org?.id;
-  const teamId = context.team?.id || context.event?.team_id || null;
+  const teamId = context.receiving_team?.id || context.event?.team_id || null;
   const sampleHtml = HTML_OPEN + renderSections(sampleComposed.content_sections) + HTML_CLOSE;
   const samplePlain = renderSectionsPlainText(sampleComposed.content_sections);
 
   const { data: msg, error: msgErr } = await supabase.from('comms_messages').insert({
     org_id: orgId, tournament_id: null, team_id: teamId,
-    kind: 'rsvp_nudge', language_code: 'en',
+    kind: 'academy_callup_notice', language_code: 'en',
     delivery_method: 'queued', sent_at: null,
     subject: sampleComposed.subject, body_html: sampleHtml, body_plain: samplePlain,
-    headline: 'QUICK RSVP', content_sections: sampleComposed.content_sections,
+    headline: 'CALL-UP', content_sections: sampleComposed.content_sections,
     signoff_message: state.signoff_message || null,
     anchor_kind: 'event', anchor_id: anchor.eventId,
-    audience_type: 'event_attendees',
+    audience_type: 'player_specific',
+    audience_filter: { player_ids: [anchor.playerId] },
   }).select('id').single();
   if (msgErr) throw msgErr;
 

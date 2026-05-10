@@ -4,23 +4,31 @@
 // plus a sendPath discriminator that drives composerSubmit dispatch.
 //
 // sendPath taxonomy:
-//   composerSubmit  — main BriefingComposer flow dispatches via
-//                     this registry through composerSubmit.js.
-//   digestSend      — DigestComposer.jsx routes through digestSend.js
-//                     directly (per-family fan-out + per-recipient
-//                     body). Already on the new resolver pipeline
-//                     since wave 4.2-A-1.
-//   rsvpNudgeSend   — composerSubmit short-circuits to
-//                     lib/rsvpNudgeSend.js (per-recipient
-//                     mint_rsvp_token + per-recipient compose).
-//                     Migration to registry deferred to 4.2-A-8b.
-//   blocked         — kind is registered but cannot send today.
-//                     Used for academy_callup_notice while callup
-//                     token mint infrastructure is pending in 4.3.
-//   legacy          — free-form kinds (announcement, custom_message)
-//                     keep the legacy compose() path. They are NOT
-//                     in this registry; getDispatchSendPath returns
-//                     'legacy' for unknown kinds.
+//   composerSubmit    — main BriefingComposer flow dispatches via
+//                       this registry through composerSubmit.js.
+//   digestSend        — DigestComposer.jsx routes through digestSend.js
+//                       directly (per-family fan-out + per-recipient
+//                       body). Already on the new resolver pipeline
+//                       since wave 4.2-A-1.
+//   rsvpNudgeSend     — composerSubmit short-circuits to
+//                       lib/rsvpNudgeSend.js (per-recipient
+//                       mint_rsvp_token + per-recipient compose).
+//                       Migrated to registry path in wave 4.2-A-8b-b.
+//   academyCallupSend — composerSubmit short-circuits to
+//                       lib/academyCallupSend.js (per-recipient
+//                       mint_callup_token + per-recipient compose).
+//                       Migrated to registry path in wave 4.2-A-8c.
+//                       Closes wave 4.2-A at 7/7 calendar-anchored
+//                       kinds on registry path.
+//   legacy            — free-form kinds (announcement, custom_message)
+//                       keep the legacy compose() path. They are NOT
+//                       in this registry; getDispatchSendPath returns
+//                       'legacy' for unknown kinds.
+//
+// `blocked` sendPath retired in wave 4.2-A-8c (was used for
+// academy_callup_notice while callup token mint was pending in 4.3).
+// NoCallupTokenInfrastructureError class retained for test imports
+// but no longer thrown at dispatch time.
 //
 // Per-kind anchor + override mapping uses state-path conventions
 // from BriefingComposer wizard state (state.anchor_id /
@@ -102,8 +110,7 @@ export const RESOLVER_REGISTRY = {
     compose: composeAcademyCallupNotice,
     anchorFromState: (state) => ({ eventId: state.anchor_id, playerId: state.audience_filter?.player_ids?.[0], pilotOnly: state.pilot_only }),
     overridesFromState: bodyOverrides,
-    sendPath: 'blocked',
-    blockedReason: NoCallupTokenInfrastructureError,
+    sendPath: 'academyCallupSend',
   },
 };
 

@@ -18,13 +18,16 @@
 //   rsvp_nudge:    short-circuits to lib/rsvpNudgeSend.js, which
 //                  migrated to RESOLVER_REGISTRY in wave 4.2-A-8b-b
 //                  with per-kid mint_rsvp_token + substituteRsvpTokens.
-//   academy_callup_notice: blocked -- callup token mint
-//                  infrastructure pending in wave 4.3. composerSubmit
-//                  raises NoCallupTokenInfrastructureError.
+//   academy_callup_notice: short-circuits to lib/academyCallupSend.js,
+//                  which migrated to RESOLVER_REGISTRY in wave 4.2-A-8c
+//                  with per-(player, guardian) mint_callup_token +
+//                  substituteCallupTokens. Closes wave 4.2-A at 7/7
+//                  calendar-anchored kinds on registry path.
 //   announcement / custom_message: free-form, legacy compose path.
 
 import { compose, renderSections, renderSectionsPlainText } from '../../lib/engine/composer';
 import { sendRsvpNudge } from '../../lib/rsvpNudgeSend';
+import { sendAcademyCallupNotice } from '../../lib/academyCallupSend';
 import { supabase } from '../../lib/supabase';
 import { resolveAudience } from '../../lib/briefings/recipientFilter';
 import { queueRecipients } from '../../lib/briefings/queueRecipients';
@@ -80,12 +83,15 @@ export async function submitBriefing({ state, draft, recipients, coaches }) {
     if (r?.error) throw r.error;
     return { audienceCount: r.audienceCount };
   }
+  if (state.kind === 'academy_callup_notice' && state.anchor_kind === 'event' && state.anchor_id) {
+    const r = await sendAcademyCallupNotice({ state, supabase, now: new Date() });
+    if (r?.error) throw r.error;
+    return { audienceCount: r.audienceCount };
+  }
 
   const sendPath = getDispatchSendPath(state.kind);
-  if (sendPath === 'digestSend' || sendPath === 'rsvpNudgeSend') throw new Error(`${state.kind} sends via ${sendPath} directly; should not reach composerSubmit.`);
-  if (sendPath === 'blocked') {
-    const Err = RESOLVER_REGISTRY[state.kind].blockedReason;
-    throw new Err();
+  if (sendPath === 'digestSend' || sendPath === 'rsvpNudgeSend' || sendPath === 'academyCallupSend') {
+    throw new Error(`${state.kind} sends via ${sendPath} directly; should not reach composerSubmit.`);
   }
 
   let messages = null;

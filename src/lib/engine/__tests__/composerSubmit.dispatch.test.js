@@ -32,6 +32,9 @@ vi.mock('../../briefings/recipientFilter', () => ({
 vi.mock('../../rsvpNudgeSend', () => ({
   sendRsvpNudge: vi.fn(() => Promise.resolve({ audienceCount: 4 })),
 }));
+vi.mock('../../academyCallupSend', () => ({
+  sendAcademyCallupNotice: vi.fn(() => Promise.resolve({ audienceCount: 2 })),
+}));
 vi.mock('../composer', () => ({
   compose: vi.fn(() => ({ subject: 'Legacy', html: '<p>L</p>', plainText: 'L', content_sections: [{ kind: 'header' }] })),
   renderSections: vi.fn(() => '<inner/>'),
@@ -59,8 +62,9 @@ const { queueRecipients } = await import('../../briefings/queueRecipients');
 const { queueComposedMessages } = await import('../../briefings/queueComposedMessages');
 const { resolveAudience } = await import('../../briefings/recipientFilter');
 const { sendRsvpNudge } = await import('../../rsvpNudgeSend');
+const { sendAcademyCallupNotice } = await import('../../academyCallupSend');
 const { compose } = await import('../composer');
-const { NoCallupTokenInfrastructureError, RESOLVER_REGISTRY } = await import('../resolvers/registry');
+const { RESOLVER_REGISTRY } = await import('../resolvers/registry');
 
 const baseDraft = () => ({ submitSend: vi.fn(() => Promise.resolve({ id: 'm-1' })), submitSchedule: vi.fn(() => Promise.resolve({ id: 'm-2' })) });
 const baseArgs = (overrides = {}) => ({
@@ -105,11 +109,13 @@ describe('composerSubmit dispatch — wave 4.2-A-8a', () => {
     expect(compose).toHaveBeenCalledWith(expect.objectContaining({ kind: 'custom_message' }));
   });
 
-  it('academy_callup_notice -> NoCallupTokenInfrastructureError, no submitSend', async () => {
-    const args = baseArgs({ kind: 'academy_callup_notice' });
-    await expect(submitBriefing(args)).rejects.toBeInstanceOf(NoCallupTokenInfrastructureError);
+  it('academy_callup_notice with event anchor -> short-circuits to sendAcademyCallupNotice', async () => {
+    const args = baseArgs({ kind: 'academy_callup_notice', anchor_kind: 'event', anchor_id: 'e-1' });
+    const r = await submitBriefing(args);
+    expect(sendAcademyCallupNotice).toHaveBeenCalledOnce();
     expect(args.draft.submitSend).not.toHaveBeenCalled();
     expect(queueRecipients).not.toHaveBeenCalled();
+    expect(r).toEqual({ audienceCount: 2 });
   });
 
   it('weekly_digest -> throws (wrong call site; routes through digestSend)', async () => {
