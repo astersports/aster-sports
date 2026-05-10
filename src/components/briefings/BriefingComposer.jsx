@@ -1,11 +1,6 @@
-// Wave 3.11 follow-up — unified BriefingComposer. 3-step wizard
-// (kind → anchor+audience → body+signoff) with live preview. Wires
-// to useBriefingDraft for auto-save and dispatch.
-//
-// Wave 4.1b §1-§6 — Bug A (anchor_id required for event/team/tournament),
-// Bug B (pilot mode audience copy + chip), Bug C (kind-null guard +
-// HYDRATE jumps to earliest invalid step), §6.G (schedule picker
-// visible at all steps), §6.I (save-status pill in header).
+// Unified BriefingComposer 3-step wizard (kind → anchor+audience →
+// body+signoff) with live preview. Auto-saves via useBriefingDraft.
+// Bug fixes locked in wave 4.1b + 4.2-A-8d (weekly_digest short-circuit).
 
 import { useEffect, useMemo, useReducer, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
@@ -16,6 +11,7 @@ import { useOrgSettings } from '../../hooks/useOrgSettings';
 import { useDigestRecipients } from '../../hooks/useDigestRecipients';
 import { useOrgStaff } from '../../hooks/useOrgStaff';
 import { useBriefingDraft } from '../../hooks/useBriefingDraft';
+import { useWizardDigestData } from '../../hooks/useWizardDigestData';
 import { supabase } from '../../lib/supabase';
 import { canAdvance, composerReducer, INITIAL_STATE } from './composerReducer';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
@@ -27,6 +23,7 @@ import PreviewPanel from './PreviewPanel';
 import ScheduleForLaterPicker from './ScheduleForLaterPicker';
 import SaveStatusPill from './SaveStatusPill';
 import { submitBriefing } from './composerSubmit';
+import { sendWeeklyDigestFromWizard } from '../../lib/briefings/sendWeeklyDigestFromWizard';
 
 const STEPS = ['Kind', 'Audience', 'Body'];
 
@@ -51,6 +48,7 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   const draft = useBriefingDraft(initialDraftId);
   const [state, dispatch] = useReducer(composerReducer, buildInitial({ initialKind, initialAnchorKind, initialAnchorId, initialKindFilter }));
   const [busy, setBusy] = useState(false);
+  const digest = useWizardDigestData({ orgId, enabled: state.kind === 'weekly_digest' });
 
   useEffect(() => {
     if (state.kind || !state.kindFilter || state.kindFilter.length !== 1 || state.step !== 1) return undefined;
@@ -94,11 +92,8 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
     anchorId: state.anchor_id, pilotModeOn: pilotModeEnabled,
   }), [recipients, recipientsTotal, state.audience_type, state.audience_filter, state.anchor_id, pilotModeEnabled]);
 
-  // Wave 4.1d-2 §4.3 — fetch event's parent tournament_id so the
-  // GameRecapBody knows whether to render the league/bracket CTA
-  // field. When event has no parent tournament, the CTA URL would be
-  // null at send time and the renderer would silently drop the button
-  // (E5). Instead we hide the field with no surprise.
+  // GameRecapBody renders the league/bracket CTA field only when the
+  // anchor event has a parent tournament (URL would be null otherwise).
   const [hasParentTournament, setHasParentTournament] = useState(false);
   useEffect(() => {
     let cancelled = false;
@@ -116,9 +111,12 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   const onSend = async () => {
     setBusy(true);
     try {
-      const r = await submitBriefing({ state, draft, orgId, recipients, coaches, pilotModeEnabled });
-      if (r.audienceCount != null) showToast(state.test_only ? 'Test sent to admin@.' : `Sent to ${r.audienceCount} ${r.audienceCount === 1 ? 'family' : 'families'}.`, 'success');
-      else if (r.scheduledFor) showToast(`Scheduled for ${fmtSchedule(r.scheduledFor)}.`, 'success');
+      const r = state.kind === 'weekly_digest'
+        ? await sendWeeklyDigestFromWizard({ state, orgId, recipients, coaches, ...digest })
+        : await submitBriefing({ state, draft, orgId, recipients, coaches, pilotModeEnabled });
+      const audienceCount = r?.audienceCount ?? r?.composedFamilies;
+      if (audienceCount != null) showToast(state.test_only ? 'Test sent to admin@.' : `Sent to ${audienceCount} ${audienceCount === 1 ? 'family' : 'families'}.`, 'success');
+      else if (r?.scheduledFor) showToast(`Scheduled for ${fmtSchedule(r.scheduledFor)}.`, 'success');
       else showToast(state.test_only ? 'Test sent to admin@.' : `Sent to ${audience.filtered ?? 'recipients'}.`, 'success');
       onClose?.();
     } catch (e) { showToast(e.message || "Looks like that didn't go through. Try again?", 'error'); }

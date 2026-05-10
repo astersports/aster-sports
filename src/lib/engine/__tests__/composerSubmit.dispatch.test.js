@@ -1,14 +1,6 @@
-// Wave 4.2-A-8a — composerSubmit dispatch tests. Verifies the
-// 5-branch routing in submitBriefing: registry path for the 4
-// migrated kinds (game_recap, tournament_prelim, tournament_recap,
-// schedule_change), legacy path for free-form kinds (announcement,
-// custom_message), short-circuit for rsvp_nudge, blocked path for
-// academy_callup_notice, and wrong-call-site guards for kinds that
-// don't dispatch through composerSubmit (weekly_digest).
-//
-// Wave 4.2-A-8b-a — registry path now queues via
-// queueComposedMessages (per-slice fan-out). Free-form path keeps
-// resolveAudience + queueRecipients.
+// composerSubmit dispatch tests — registry path (composerSubmit
+// kinds), legacy path (free-form kinds), short-circuits (rsvp_nudge,
+// academy_callup_notice), and wrong-call-site guard (weekly_digest).
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
