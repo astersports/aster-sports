@@ -12,6 +12,38 @@ This document is the canonical coverage map for parent-facing briefings. When a 
 
 ---
 
+## 0. Resolver Layer (wave 4.2-A — calendar-as-spine)
+
+Two-stage contract locked in wave 4.2-A-1. Every kind in 4.2-A follows it:
+
+```
+resolveX(anchor, options = {}) -> { context, slices }
+composeX(context, slice, overrides = {}) -> { subject, content_sections }
+```
+
+Properties:
+- **Pure.** Same input → same output. No side effects, no DB writes.
+- **`options.now`** is the time-injection point (default `new Date()`).
+- **`options.supabase`** is the client (required; pass mock in tests).
+- **`anchor`** is one positional arg (UUID for single-key, object for multi-key).
+- **`slices` is deterministically ordered.** Family slices ORDER BY guardian_id ASC; team slices ORDER BY teams.sort_order ASC then teams.id ASC. This stabilizes `slices[0]`, which existing code stores as the "sample" content_sections on the message row.
+
+Per-kind anchor + slice taxonomy:
+
+| Kind | Anchor | Slice (kind) | Slice ordering | Status |
+|---|---|---|---|---|
+| weekly_digest | `{ orgId, period, pilotOnly }` | family | guardian_id ASC | ✅ shipped 4.2-A-1 |
+| game_recap | `eventId` | family (event team) | guardian_id ASC | 📋 queued 4.2-A-2 |
+| tournament_prelim | `tournamentId` | team | sort_order, id | 📋 queued 4.2-A-3 |
+| tournament_recap | `tournamentId` | team | sort_order, id | 📋 queued 4.2-A-4 |
+| schedule_change | `eventId` | family (event team) | guardian_id ASC | 📋 queued 4.2-A-5 |
+| rsvp_nudge | `eventId` | family (unresponded) | guardian_id ASC | 📋 queued 4.2-A-6 |
+| academy_callup_notice | `{ eventId, playerId }` | family (player guardians) | guardian_id ASC | 📋 queued 4.2-A-7 |
+| announcement | (free-form) | n/a | n/a | not calendar-driven |
+| custom_message | (free-form) | n/a | n/a | not calendar-driven |
+
+Reference implementation: `src/lib/engine/resolvers/weeklyDigest.js`.
+
 ## 1. Briefing kind taxonomy
 
 10 composers registered in `composer.js`. **9 surfaced** in the kind picker. 1 deprecated.
@@ -201,3 +233,4 @@ When adding an edge case to §4:
 **Document trail:**
 - v1: May 10, 2026 — initial audit post-wave 4.1d-1 ship + Frank's May 10 production verification.
 - v1.1: May 10, 2026 — wave 4.1d-5: legacy `tournament_preliminary` and `custom` code emit sites retired (8 sites migrated). `comms_messages.kind_check` still allows transitional legacy values until wave 4.1d-6 backfills + tightens.
+- v1.2: May 10, 2026 — wave 4.2-A-1: §0 Resolver Layer added with two-stage contract. `resolveWeeklyDigest` + `composeWeeklyDigest` shipped as the reference implementation. Snapshot test locks parity against production row 3b431eb1.

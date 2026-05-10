@@ -248,6 +248,15 @@ v13 unchanged. schedule_change routes through the same dispatch path — pilot m
 
 ---
 
+# APPENDIX (May 10, 2026 — late afternoon)
+
+**Wave 4.2-A-1 shipped.** Reference resolver pair (`resolveWeeklyDigest` + `composeWeeklyDigest`) extracted from the four-hook + buildScheduleSection chain into `src/lib/engine/resolvers/weeklyDigest.js`. Locks the two-stage contract for the rest of wave 4.2-A:
+```
+resolveX(anchor, options) -> { context, slices }
+composeX(context, slice, overrides) -> { subject, content_sections }
+```
+Snapshot parity against production row `3b431eb1` confirmed. `digestSchedule.js` deleted; helpers moved to `src/lib/engine/resolvers/weeklyDigestSchedule.js`. See `docs/BRIEFINGS_COVERAGE_L99.md` §0.
+
 # END OF DOCUMENT
 
 **Next action when this is consumed by a new chat:** Verify against live Supabase + git. The pace of this session was high; if anything has shipped after `5c43be89`, write v6 before executing work. Do not skip verification.

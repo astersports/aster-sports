@@ -1,0 +1,118 @@
+[
+  {
+    "kind": "header",
+    "eyebrow": "Legacy Hoopers · WEEKLY DIGEST",
+    "headline": "WEEK AHEAD",
+    "goldStripe": true,
+    "sub_context": "May 11–17",
+    "eyebrow_link": "https://www.legacyhoopers.org/"
+  },
+  {
+    "kind": "weekly_schedule",
+    "days": [
+      {
+        "day_label": "MON · MAY 11",
+        "events": [
+          {
+            "primary": "11U Girls · Practice",
+            "variant": "standard",
+            "secondary": "7:35 PM - 8:35 PM · St. Patrick's",
+            "team_name": "11U Girls",
+            "team_color": "#a78bfa",
+            "rsvp_counts": { "out": 1, "going": 10, "maybe": 2 },
+            "location_link": "https://maps.app.goo.gl/roEeSM85cRqtTFJw5"
+          }
+        ]
+      },
+      {
+        "day_label": "TUE · MAY 12",
+        "events": [
+          {
+            "primary": "8U Boys · Practice",
+            "variant": "standard",
+            "secondary": "5:30 PM - 7:00 PM · Rippowam Cisqua School, Trustees Gym",
+            "team_name": "8U Boys",
+            "team_color": "#f59e0b",
+            "rsvp_counts": { "out": 0, "going": 1, "maybe": 0 },
+            "location_link": "https://maps.app.goo.gl/sKz13y4bh4Cv9zky7"
+          }
+        ]
+      },
+      {
+        "day_label": "FRI · MAY 15",
+        "events": [
+          {
+            "primary": "11U Girls · Practice",
+            "variant": "standard",
+            "secondary": "6:30 PM - 8:00 PM · Westchester Community College",
+            "team_name": "11U Girls",
+            "team_color": "#a78bfa",
+            "rsvp_counts": { "out": 0, "going": 0, "maybe": 0 },
+            "location_link": "https://maps.app.goo.gl/VgNCv8PKLPZjw5mW7"
+          }
+        ]
+      },
+      {
+        "day_label": "SAT · MAY 16",
+        "events": [
+          {
+            "primary": "11U Girls · Tournament",
+            "variant": "tournament_placeholder",
+            "secondary": "Rumble for the Ring CT — pool play",
+            "team_name": "11U Girls",
+            "team_color": "#a78bfa",
+            "rsvp_counts": { "out": 0, "going": 1, "maybe": 0 },
+            "location_link": null
+          },
+          {
+            "primary": "8U Boys · Tournament",
+            "variant": "tournament_placeholder",
+            "secondary": "Rumble for the Ring CT — pool play",
+            "team_name": "8U Boys",
+            "team_color": "#f59e0b",
+            "rsvp_counts": { "out": 1, "going": 0, "maybe": 0 },
+            "location_link": null
+          }
+        ]
+      },
+      {
+        "day_label": "SUN · MAY 17",
+        "events": [
+          {
+            "primary": "11U Girls · Tournament",
+            "variant": "tournament_placeholder",
+            "secondary": "ZG Rumble for the Ring CT — bracket day",
+            "team_name": "11U Girls",
+            "team_color": "#a78bfa",
+            "rsvp_counts": { "out": 0, "going": 0, "maybe": 0 },
+            "location_link": null
+          },
+          {
+            "primary": "8U Boys · Tournament",
+            "variant": "tournament_placeholder",
+            "secondary": "ZG Rumble for the Ring CT — bracket day",
+            "team_name": "8U Boys",
+            "team_color": "#f59e0b",
+            "rsvp_counts": { "out": 0, "going": 0, "maybe": 0 },
+            "location_link": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "signoff",
+    "prose": "",
+    "coaches": [
+      { "display_name": "Frank", "title": "Program Director", "phone": "(917) 991-9830" },
+      { "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" }
+    ]
+  },
+  {
+    "kind": "footer",
+    "logoUrl": "https://skyfire-app.vercel.app/knight-logo-240.png",
+    "orgName": "Legacy Hoopers",
+    "websiteUrl": "https://www.legacyhoopers.org/",
+    "contactEmail": "info@legacyhoopers.org"
+  }
+]

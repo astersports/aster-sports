@@ -1,12 +1,11 @@
-// Builds the weekly_schedule section data for the digest composer.
-// Groups events by NY-tz local date, decorates with team color stripes,
-// derives tournament placeholder text per D10. Pure function; no fetch.
+// Pure schedule-section builder for the weekly_digest resolver.
+// Moved from src/lib/engine/digestSchedule.js in wave 4.2-A-1.
 //
-// Wave 3.5 D2 + D4: event row now carries
-//   location_link   — google_maps_url from joined locations row (null for
-//                     tournament placeholder venues without a pin)
-//   rsvp_counts     — { going, maybe, out } from rsvpCountsByEvent map.
-// Composer (kind composer) plumbs both inputs from useDigestEvents fetches.
+// Groups events by NY-tz local date, decorates with team color stripes,
+// derives tournament placeholder text. Pure function; no fetch.
+//
+// Inputs: { events, teams, tournaments, rsvpCountsByEvent }
+// Output: { kind: 'weekly_schedule', days } | null
 
 const NY_TZ = 'America/New_York';
 const dayKeyFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, year: 'numeric', month: 'numeric', day: 'numeric' });
@@ -49,7 +48,7 @@ function buildEventRow(event, ctx) {
   const team = ctx.teamsMap.get(event.team_id) || {};
   const teamName = team.name || 'Team';
   const isTournament = event.event_type === 'tournament' || event.is_bracket_placeholder;
-  const counts = ctx.rsvpCountsByEvent?.get(event.id);
+  const counts = ctx.rsvpCountsByEvent?.get?.(event.id);
   if (isTournament) {
     const tournament = event.tournament_id ? ctx.tournamentsMap.get(event.tournament_id) : null;
     return {
@@ -58,13 +57,12 @@ function buildEventRow(event, ctx) {
       primary: `${teamName} · Tournament`,
       secondary: deriveTournamentLabel(event, tournament),
       variant: 'tournament_placeholder',
-      // Tournament placeholders intentionally have no map link.
       location_link: null,
       rsvp_counts: counts || undefined,
     };
   }
   const typeLabel = EVENT_TYPE_LABELS[event.event_type] || 'Event';
-  const locationName = event.locations?.name || event.location;
+  const locationName = event.locations?.name || event.location || 'Location TBD';
   const locParts = [locationName, event.sub_location].filter(Boolean).join(', ');
   const secondary = locParts ? `${timeRange(event)} · ${locParts}` : timeRange(event);
   return {
@@ -84,7 +82,13 @@ export function buildScheduleSection({ events, teams, tournaments, rsvpCountsByE
   const tournamentsMap = new Map((tournaments || []).map((t) => [t.id, t]));
   const ctx = { teamsMap, tournamentsMap, rsvpCountsByEvent };
   const groups = new Map();
-  const sorted = [...events].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+  const sorted = [...events].sort((a, b) => {
+    const t = new Date(a.start_at) - new Date(b.start_at);
+    if (t !== 0) return t;
+    const aSort = teamsMap.get(a.team_id)?.sort_order ?? 0;
+    const bSort = teamsMap.get(b.team_id)?.sort_order ?? 0;
+    return aSort - bSort;
+  });
   for (const ev of sorted) {
     if (!ev?.start_at) continue;
     const key = dayKey(ev.start_at);
