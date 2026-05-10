@@ -37,7 +37,7 @@ export default function MessagesTab({ tournament, isStaff }) {
 
   const TYPE_LABELS = {
     weekly_digest: 'Weekly Digest',
-    tournament_preliminary: 'Tournament Preliminary',
+    tournament_prelim: 'Tournament Preliminary',
     tournament_final: 'Tournament Final',
     tournament_rsvp_lock: 'Tournament RSVP Lock',
     tournament_recap_interim: 'Tournament Interim Recap',
@@ -45,7 +45,7 @@ export default function MessagesTab({ tournament, isStaff }) {
     schedule_change: 'Schedule Change',
     multi_team_notice: 'Multi-Team Notice',
     academy_callup_notice: 'Academy Call-Up',
-    custom: 'Custom',
+    custom_message: 'Custom',
   };
 
   return (

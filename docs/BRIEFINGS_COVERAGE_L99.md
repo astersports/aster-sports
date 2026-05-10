@@ -27,7 +27,7 @@ This document is the canonical coverage map for parent-facing briefings. When a 
 | 7 | announcement | ✅ | team / org | org_all | shipped wave 4.1d-1 |
 | 8 | custom_message | ✅ | any | any | shipped wave 4.1d-1 |
 | 9 | academy_callup_notice | ✅ | event | player_specific (locked) | shipped wave 4.1d-2 (G2) |
-| 10 | tournament_preliminary | ❌ deprecated | (legacy wave-2) | (legacy) | replaced by `tournament_prelim` |
+| 10 | ~~tournament_preliminary~~ | ❌ retired | — | — | code emit sites retired in wave 4.1d-5 (PR retires `useTournamentBriefing`, `inferMessageType`, `composer.js` registry, `constants.js`, `TournamentBriefing.jsx`, `MessagesTab.jsx`); CHECK constraint tighten + historical-row backfill ships in wave 4.1d-6 |
 
 ## 2. Audience taxonomy
 
@@ -200,3 +200,4 @@ When adding an edge case to §4:
 
 **Document trail:**
 - v1: May 10, 2026 — initial audit post-wave 4.1d-1 ship + Frank's May 10 production verification.
+- v1.1: May 10, 2026 — wave 4.1d-5: legacy `tournament_preliminary` and `custom` code emit sites retired (8 sites migrated). `comms_messages.kind_check` still allows transitional legacy values until wave 4.1d-6 backfills + tightens.

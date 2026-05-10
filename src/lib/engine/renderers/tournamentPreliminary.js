@@ -1,3 +1,15 @@
+// DEPRECATED — replaced by tournamentPrelim.js in wave 4.1d-5.
+// Kept temporarily because feature-parity gaps were found:
+//   1. Per-day schedule table with bracket-game distinction
+//   2. Survival guide section (renderSurvivalGuide)
+//   3. Coach keys section (renderCoachKeys)
+//   4. Per-game map links
+//   5. Subject format alignment (legacy: "{team} -- {tourn} Weekend";
+//      new: "Game day briefing -- {tourn}")
+// To be deleted in a follow-up wave once parity is closed.
+// No emit sites reach this file after wave 4.1d-5; it is dead code.
+// composer.js dropped the import + registry key in PR for 4.1d-5.
+//
 // Kind composer — tournament_preliminary. Direct port of the legacy
 // generateTournamentBriefing renderer. Visual output is byte-for-byte preserved
 // per scope: existing dispatcher behavior is kept for tournament_preliminary

@@ -34,7 +34,7 @@ export default function TournamentBriefing({ event, team, onClose }) {
   const trapRef = useFocusTrap(true);
 
   const isEngineSupported = ENGINE_SUPPORTED_TYPES.has(briefingType);
-  const isSchedule = briefingType === 'tournament_preliminary';
+  const isSchedule = briefingType === 'tournament_prelim';
   const familyCount = recipients.filter((r) => !r.is_admin_copy).length;
   const footerCoaches = useMemo(
     () => (teamCoaches || []).filter((c) => selectedCoachIds.has(c.user_id) && c.display_name && c.phone),
