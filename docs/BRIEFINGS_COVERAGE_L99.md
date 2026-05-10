@@ -83,6 +83,7 @@ Event lifecycle states pulled from migrations 003-005 + CLAUDE.md §5 field deci
 | E8 | League play game vs AAU — same renderer | by design | wave 4.5 will split via circuit-aware composers | wave 4.5 |
 | E9 | comms_messages.status stayed 'queued' even after sent_at populated (dispatcher path missing flip) | medium | composerSubmit now flips status='sent' after edge fn returns | ✅ shipped wave 4.1d-2 (§6.1) |
 | E10 | Scheduled-send messages had 0 comms_message_recipients rows (would 400 when cron eventually fires) | high (wave 4.3 blocker) | scheduled-send now inserts recipients at compose time (audience snapshot) | ✅ shipped wave 4.1d-2 (§6.2) |
+| E11 | PlayerPicker for `academy_callup_notice` searched ALL org players — wrong-team call-up surface | medium | scoped to `member_type='futures_academy'` only; D-COVERAGE-2 ratifies (widening requires new kind variant) | ✅ shipped wave 4.1d-3 |
 
 ## 5. Identified gaps — priority order
 
