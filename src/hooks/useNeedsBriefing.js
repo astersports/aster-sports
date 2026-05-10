@@ -15,6 +15,10 @@
 //          the card; a "test send" (only admin BCC, recipient_count
 //          ≤ 1) keeps the card visible with "Test sent · families
 //          pending" copy
+//
+// Wave 4.1d-4 — fetch tournament_teams.team_id alongside tournaments
+// so synth rows carry team_ids for the inbox filter chip. Single
+// extra query per refetch, bounded by # tournaments in window (~5).
 
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
@@ -36,14 +40,26 @@ function splitSent(rows) {
   return { sent, testSent };
 }
 
+async function fetchTournamentTeamIds(tournamentIds) {
+  if (!tournamentIds?.length) return {};
+  const { data } = await supabase.from('tournament_teams').select('tournament_id, team_id').in('tournament_id', tournamentIds);
+  const map = {};
+  (data || []).forEach((r) => { (map[r.tournament_id] = map[r.tournament_id] || []).push(r.team_id); });
+  return map;
+}
+
 async function fetchTournamentItems(orgId) {
   const horizon = new Date(Date.now() + TOURNAMENT_PRELIM_WINDOW_MS).toISOString();
   const { data } = await supabase.from('tournaments').select('id,name,start_date').eq('org_id', orgId).gte('start_date', new Date().toISOString()).lte('start_date', horizon);
   if (!data?.length) return [];
   const ids = data.map((t) => t.id);
-  const { data: sentRows } = await supabase.from('comms_messages').select('anchor_id, recipient_count').eq('org_id', orgId).eq('kind', 'tournament_prelim').eq('status', 'sent').in('anchor_id', ids).gte('sent_at', new Date(Date.now() - TOURNAMENT_PRELIM_WINDOW_MS).toISOString());
+  const [{ data: sentRows }, teamIdsByTournament] = await Promise.all([
+    supabase.from('comms_messages').select('anchor_id, recipient_count').eq('org_id', orgId).eq('kind', 'tournament_prelim').eq('status', 'sent').in('anchor_id', ids).gte('sent_at', new Date(Date.now() - TOURNAMENT_PRELIM_WINDOW_MS).toISOString()),
+    fetchTournamentTeamIds(ids),
+  ]);
   const { sent, testSent } = splitSent(sentRows);
-  return buildPrelimRows(data, sent, testSent);
+  const enriched = data.map((t) => ({ ...t, team_ids: teamIdsByTournament[t.id] || [] }));
+  return buildPrelimRows(enriched, sent, testSent);
 }
 
 async function fetchTournamentRecapItems(orgId) {
@@ -53,9 +69,13 @@ async function fetchTournamentRecapItems(orgId) {
   const eligible = data.filter((t) => !t.schedule_status || TOURNAMENT_RECAP_STATUSES.includes(t.schedule_status));
   if (!eligible.length) return [];
   const ids = eligible.map((t) => t.id);
-  const { data: sentRows } = await supabase.from('comms_messages').select('anchor_id, recipient_count').eq('org_id', orgId).eq('kind', 'tournament_recap').eq('status', 'sent').in('anchor_id', ids);
+  const [{ data: sentRows }, teamIdsByTournament] = await Promise.all([
+    supabase.from('comms_messages').select('anchor_id, recipient_count').eq('org_id', orgId).eq('kind', 'tournament_recap').eq('status', 'sent').in('anchor_id', ids),
+    fetchTournamentTeamIds(ids),
+  ]);
   const { sent, testSent } = splitSent(sentRows);
-  return buildTournRecapRows(eligible, sent, testSent);
+  const enriched = eligible.map((t) => ({ ...t, team_ids: teamIdsByTournament[t.id] || [] }));
+  return buildTournRecapRows(enriched, sent, testSent);
 }
 
 async function fetchGameRecapItems(orgId) {

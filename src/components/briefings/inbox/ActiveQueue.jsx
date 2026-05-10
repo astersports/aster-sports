@@ -3,31 +3,20 @@
 //
 // Wave 4.1b §6.F — viewFilter='drafts' renders ONLY in-progress drafts
 // (no scheduled, no synthetic). Used by the new Drafts tab.
+//
+// Wave 4.1d-4 — pure client-side filter logic moved to clientFilters.js
+// so it can be unit-tested without pulling the React tree. Team branch
+// is now default-deny: synth rows that don't carry team scoping no
+// longer fall through and bypass the chip filter.
 
 import { useMemo } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useInboxQueue } from '../../../hooks/useInboxQueue';
 import { useNeedsBriefing } from '../../../hooks/useNeedsBriefing';
 import { sortPriority, statusFor } from '../../../lib/briefings/statusTable';
+import { applyClientFilters } from './clientFilters';
 import ActionQueueRow from './ActionQueueRow';
 import EmptyState from './EmptyState';
-
-function applyClientFilters(rows, filters, search) {
-  let out = rows;
-  if (filters?.kind) out = out.filter((r) => r.kind === filters.kind);
-  if (filters?.teams?.length) {
-    out = out.filter((r) => {
-      if (r.audience_filter?.team_ids) return r.audience_filter.team_ids.some((t) => filters.teams.includes(t));
-      if (r.anchor_kind === 'team') return filters.teams.includes(r.anchor_id);
-      return true;
-    });
-  }
-  if (search?.trim()) {
-    const q = search.trim().toLowerCase();
-    out = out.filter((r) => (r.title || r.subject || '').toLowerCase().includes(q));
-  }
-  return out;
-}
 
 export default function ActiveQueue({ filters, search, onAction, onCompose, onViewHistory, viewFilter }) {
   const { orgId } = useAuth();
