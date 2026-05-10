@@ -42,6 +42,7 @@ export function mockClient(fixtures) {
     tournament_teams: fixtures.tournament_teams || [],
     locations: locationsArr,
     event_rsvps: fixtures.event_rsvps || [],
+    event_change_audit: fixtures.event_change_audit || [],
     staff_profiles: fixtures.coaches || [],
     organizations: fixtures.organization ? [fixtures.organization] : [],
     organization_settings: fixtures.organization_settings ? [fixtures.organization_settings] : [],
@@ -51,8 +52,12 @@ export function mockClient(fixtures) {
   };
   return {
     from(table) { return mockChain(tables[table] || []); },
-    rpc(name) {
-      if (name === 'get_digest_recipients') return Promise.resolve({ data: fixtures.recipients || [], error: null });
+    rpc(name, args) {
+      if (name === 'get_digest_recipients') {
+        const all = fixtures.recipients || [];
+        const filtered = args?.p_pilot_only ? all.filter((r) => r.is_pilot_family) : all;
+        return Promise.resolve({ data: filtered, error: null });
+      }
       return Promise.resolve({ data: [], error: null });
     },
   };

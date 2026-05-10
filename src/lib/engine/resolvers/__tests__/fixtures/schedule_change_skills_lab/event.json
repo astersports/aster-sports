@@ -1,0 +1,14 @@
+{
+  "id": "7c7cc15a-7fa8-47f9-8f7e-b68c6bfaa6c8",
+  "title": "11U Girls Skills Lab",
+  "team_id": "507d7a4e-553e-4ba7-a61c-38d6cdf2f364",
+  "event_type": "practice",
+  "start_at": "2026-05-11T23:35:00+00:00",
+  "end_at": "2026-05-12T01:05:00+00:00",
+  "location": "St. Patrick's",
+  "location_id": "a8b8e73d-04e7-405b-b2d2-b576e0760ce5",
+  "opponent": null,
+  "status": "scheduled",
+  "publish_status": "published",
+  "teams": { "id": "507d7a4e-553e-4ba7-a61c-38d6cdf2f364", "name": "11U Girls", "team_color": "#a78bfa", "sort_order": 1, "org_id": "e3e95e21-3571-4e9a-985a-d5d01480d4a6" }
+}

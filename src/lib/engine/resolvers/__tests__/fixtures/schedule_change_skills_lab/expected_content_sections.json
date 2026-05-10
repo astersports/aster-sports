@@ -1,0 +1,42 @@
+[
+  {
+    "kind": "header",
+    "eyebrow": "Legacy Hoopers · SCHEDULE CHANGE",
+    "eyebrow_link": "https://www.legacyhoopers.org/",
+    "headline": "SCHEDULE UPDATE",
+    "goldStripe": true
+  },
+  {
+    "kind": "stats_narrative",
+    "body": "Practice on Monday, May 11 now ends at 9:05 PM instead of 8:35 PM."
+  },
+  {
+    "kind": "schedule_change_diff",
+    "changed_fields": ["end_at"],
+    "before": {
+      "time": "Monday, May 11 from 7:35 PM to 8:35 PM",
+      "label": "11U Girls Skills Lab",
+      "location": "St. Patrick's"
+    },
+    "after": {
+      "time": "Monday, May 11 from 7:35 PM to 9:05 PM",
+      "label": "11U Girls Skills Lab",
+      "location": "St. Patrick's"
+    }
+  },
+  {
+    "kind": "signoff",
+    "prose": "",
+    "coaches": [
+      { "display_name": "Frank", "title": "Program Director", "phone": "(917) 991-9830" },
+      { "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" }
+    ]
+  },
+  {
+    "kind": "footer",
+    "logoUrl": "https://skyfire-app.vercel.app/knight-logo-240.png",
+    "orgName": "Legacy Hoopers",
+    "websiteUrl": "https://www.legacyhoopers.org/",
+    "contactEmail": "info@legacyhoopers.org"
+  }
+]

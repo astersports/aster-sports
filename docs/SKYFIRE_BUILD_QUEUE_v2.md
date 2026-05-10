@@ -2736,3 +2736,36 @@ All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+
 **Compose UI bridge:** SKIPPED. Existing `TournamentRecapBody.jsx` form is all free-form (final_standing, game_results text, mvp_name, takeaways, tourney_link_label) — same conservative path as 4.2-A-3. Send pipeline switch deferred to 4.2-A-8 atomic migration.
 
 **`whats_next` walk deferred.** Future enhancement: walk calendar for next tournament after `tournament.end_date` for the team. For now, Frank can use `overrides.coach_note` for "next up" prose.
+
+### Wave 4.2-A-5 — resolveScheduleChange + composeScheduleChange — SHIPPED May 10, 2026
+
+- **Branch:** `claude/wave-4-2-a-5-resolve-schedule-change`
+- **Files:**
+  - NEW `src/lib/engine/resolvers/scheduleChange.js` (resolver + composer, 134 lines)
+  - NEW `src/lib/engine/resolvers/scheduleChangeHelpers.js` (normalization + narrative builder, 91 lines)
+  - NEW `src/lib/engine/resolvers/__tests__/scheduleChange.snapshot.test.js` (1 test)
+  - NEW `src/lib/engine/resolvers/__tests__/scheduleChange.contract.test.js` (10 tests)
+  - NEW `src/lib/engine/resolvers/__tests__/fixtures/schedule_change_skills_lab/*.json` (7 fixture files)
+  - MOD `src/lib/engine/resolvers/__tests__/mockSupabase.js` (RPC mock now honors `p_pilot_only` arg)
+  - MOD `src/lib/engine/resolvers/__tests__/fixtures/weekly_digest_may_11_17/recipients.json` (added `is_pilot_family: true` annotations to support new mock filter)
+
+**Highlights**
+
+- Walks `event_change_audit` (the canonical table — previously misnamed `schedule_change_audit_table` in some docs).
+- Resolver normalizes timestamps to `Date.getTime()` for comparison. Strings like `"+00:00"` and `".000Z"` representing the same instant are treated as equal — fixing the production May 9 bug where the legacy compose emitted "moved from 7:35 PM to 7:35 PM" gibberish.
+- `changed_fields` array sorted alphabetically; only fields that actually differ under normalization are listed.
+- Compose narrative formatter is priority-ordered: cancellation → both time fields → start-only → end-only → location-only → opponent-only → multi-field. `recurrence_scope='series'` prepends "All future {team} {event_type}s: ".
+- `schedule_change_diff` section's `before` / `after` include `time` (formatted "Monday, May 11 from 7:35 PM to 8:35 PM"), `label`, `location`. `changed_fields` array tells the renderer which fields to highlight.
+- Cancellation kind: header "CANCELLED", subject prefix "Cancelled — ", no diff section, narrative includes cancellation_reason if present.
+
+**Hallucination guards**
+
+- No audit row for the event → `NoScheduleChangeError`. Compose UI catches and shows "No schedule change to announce. Make a change in the event editor first."
+- `changed_fields` empty after normalization → `NoActualScheduleChangeError`. **This is the production bug regression lock.** Test 6 specifically verifies that timezone-only string differences don't trigger a false positive.
+- Override sections render iff present.
+
+**Tests:** 338 → 349 (+11). Lint clean. Build clean.
+
+**Compose UI bridge:** SKIPPED. The existing `ScheduleChangeBody.jsx` is informational-only (locked diff display from wizardForm's buildSaveDiff) — no editable fields to remove. Send pipeline switch deferred to 4.2-A-8 atomic migration.
+
+**Mock side-effect:** `mockSupabase.js` RPC handler now filters by `p_pilot_only` arg. Wave-1 weeklyDigest fixture's recipients gained explicit `is_pilot_family: true` flags to keep its snapshot passing under the new filter behavior. Behavior-preserving change.
