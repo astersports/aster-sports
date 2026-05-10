@@ -10,6 +10,8 @@
 import { compose } from '../../lib/engine/composer';
 import { sendRsvpNudge } from '../../lib/rsvpNudgeSend';
 import { supabase } from '../../lib/supabase';
+import { resolveAudience } from '../../lib/briefings/recipientFilter';
+import { queueRecipients } from '../../lib/briefings/queueRecipients';
 
 async function resolveTourneyUrl(state) {
   if (state.anchor_kind === 'tournament' && state.anchor_id) {
@@ -46,7 +48,14 @@ export async function submitBriefing({ state, draft, orgId, recipients, coaches,
   }
   const r = await draft.submitSend(payload);
   if (r?.error) throw r.error;
+  const { teamIds, audience } = await resolveAudience({
+    recipients, audienceType: state.audience_type,
+    audienceFilter: state.audience_filter, anchorId: state.anchor_id,
+  });
+  const queued = await queueRecipients({
+    messageId: r.id, audience, composed, teamIds, testOnly: state.test_only,
+  });
   const dispatchInvoke = await supabase.functions.invoke('send-tournament-message', { body: { message_id: r.id } });
   if (dispatchInvoke.error) throw dispatchInvoke.error;
-  return { sent: true };
+  return { sent: true, audienceCount: queued.audienceCount };
 }
