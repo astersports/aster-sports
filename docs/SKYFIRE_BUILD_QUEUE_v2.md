@@ -2650,3 +2650,36 @@ All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+
 - Side effect: schedule-section sort now has a sort_order tiebreaker on equal start_at. Reproducibility win.
 
 **Tests:** 300 → 307 (+7). Lint clean. Build clean.
+
+### Wave 4.2-A-2 — resolveGameRecap + composeGameRecap — SHIPPED May 10, 2026
+
+- **Branch:** `claude/wave-4-2-a-2-resolve-game-recap`
+- **Files:**
+  - NEW `src/lib/engine/resolvers/gameRecap.js` (resolver + composer)
+  - NEW `src/lib/engine/resolvers/gameRecapHelpers.js` (pure helpers + `GameRecapNotPublishedError`)
+  - NEW `src/lib/engine/resolvers/__tests__/gameRecap.snapshot.test.js` (2 tests)
+  - NEW `src/lib/engine/resolvers/__tests__/gameRecap.contract.test.js` (7 tests)
+  - NEW `src/lib/engine/resolvers/__tests__/fixtures/game_recap_may_2_10u_blue/*.json` (9 fixture files)
+  - MOD `src/components/briefings/bodies/GameRecapBody.jsx` (read-only displays + Quick Score edit-links + auto-populate state.body from db)
+  - MOD `src/lib/engine/resolvers/__tests__/mockSupabase.js` (extended for game_recap tables: game_results, players, organization_settings, single-row event/tournament shapes)
+
+**Highlights**
+
+- Anchor: `{ eventId, pilotOnly }`. `pilotOnly` defaults to `organization_settings.pilot_mode_enabled` when not provided.
+- Slice: `{ kind: 'family', guardian_id, email, kid_first_names, team_id }`, `ORDER BY guardian_id ASC`.
+- Hallucination guard: `GameRecapNotPublishedError` thrown when `game_result.published_at IS NULL`. POG section omitted when `player_of_game_id` is null. coach_highlight section omitted when blank.
+- Tournament context fetched but composeGameRecap ignores it. game_recap never renders tournament framing.
+- Snapshot anchor: hand-authored expected output for event a0b2d68a (10U Blue vs Resurrection White 4AB, 2026-05-02 W 2-0, POG Giuseppe, coach_highlight "defense"). 21-recipient roster, lowest guardian_id 02810181 (Shane's parent).
+
+**Compose UI changes**
+
+- Score (ours / theirs): replaced 2 inputs with read-only display ("2 – 0 (W)") + Quick Score edit-link.
+- Player of the Game: replaced input with read-only display + Quick Score edit-link.
+- Coach highlight: replaced `our_highlights` textarea with read-only display backed by `game_result.coach_highlight` + Quick Score edit-link.
+- Free-form fields preserved as textareas: `opp_highlights`, `coach_note`, `tourney_link_label` (conditional on parent tournament).
+- Auto-populates `state.body.score` / `.player_of_game_name` / `.our_highlights` via `onChange` when display data loads, so the legacy send path (composerSubmit → renderers/gameRecap) still produces correct output until composerSubmit is refactored to use the new resolver.
+- Unpublished result state: card with copy "Score not published yet. Publish via Quick Score first." + edit-link. Send is blocked.
+
+**Tests:** 307 → 316 (+9). Lint clean. Build clean (no bundle delta).
+
+**Production unlock:** 32 published-but-unrecapped games no longer require manual retyping in the compose flow.

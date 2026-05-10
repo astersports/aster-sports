@@ -27,13 +27,22 @@ function mockChain(rows) {
 }
 
 export function mockClient(fixtures) {
+  // Single-event resolvers (game_recap) use `event`, `game_result`,
+  // `player_of_game`, `tournament` (singular). Plural is for
+  // weekly_digest's multi-event scope. Both shapes are accepted so
+  // the mock serves both wave-1 and wave-2-A-2 tests.
+  const eventsArr = fixtures.events || (fixtures.event ? [fixtures.event] : []);
+  const tournamentsArr = fixtures.tournaments || (fixtures.tournament && fixtures.tournament.id ? [fixtures.tournament] : []);
   const tables = {
-    events: fixtures.events || [],
-    tournaments: fixtures.tournaments || [],
+    events: eventsArr,
+    tournaments: tournamentsArr,
     event_rsvps: fixtures.event_rsvps || [],
     staff_profiles: fixtures.coaches || [],
     organizations: fixtures.organization ? [fixtures.organization] : [],
+    organization_settings: fixtures.organization_settings ? [fixtures.organization_settings] : [],
     player_guardians: fixtures.player_guardians || [],
+    game_results: fixtures.game_result ? [fixtures.game_result] : (fixtures.game_results || []),
+    players: fixtures.player_of_game ? [fixtures.player_of_game] : (fixtures.players || []),
   };
   return {
     from(table) { return mockChain(tables[table] || []); },
