@@ -2487,19 +2487,24 @@ Bug 1 recipient count + admin@ BCC · `comms_messages_write` RLS blocked digest 
 
 PR #53 · sha `32a0ca9` · migration `20260510002836` · Vercel deploy `dpl_7zTPUTeTTTTP8rH6jbt1Somq2Pnu`.
 
-### Next up — Wave 4.1b (deferred from PR #53)
+### Next up — Wave 4.1b (deferred from PR #53) — SHIPPED May 10, 2026 (PR #55, sha `dde4002`)
 
-- **Bug A** Step 2 anchor_id validation in BriefingComposer
-- **Bug B** Pilot mode "0 families" explanation + badge in audience preview
-- **Bug C** kind=null guard + draft hydration on `/briefings/compose/:id` reload
-- **Bug D** rsvp_nudge stale dropdown
-- **Bug E** Broaden needs-attention synth (kind-by-trigger expansion)
-- **Polish F** Drafts tab rename ("Drafts" → "Saved drafts")
-- **Polish G** Schedule-for-later picker visible across all wizard steps
-- **Polish H** Composer card height steady (avoid layout shift on step change)
-- **Polish I** Save status indicator (saved · saving · unsaved)
-- **Polish J** Pilot mode badge surface in BriefingsInboxPage filter
-- **RFC 8058** `List-Unsubscribe` + `List-Unsubscribe-Post` headers in `send-tournament-message` v14 (one-click for Gmail/Yahoo bulk-sender quotas; CAN-SPAM body link satisfied by PR #53)
+All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+38). Lint clean, build clean.
+
+- **Bug A** Step 2 anchor_id validation — ✅ canAdvance + step2Valid + inline helper
+- **Bug B** Pilot mode "0 families" explanation + badge — ✅ pure computeAudience + PilotModeChip in 3 surfaces
+- **Bug C** kind=null guard + draft hydration — ✅ hydrateTargetStep jumps to earliest invalid step + URL-param auto-open
+- **Bug D** kindMetadata alignment — ✅ "(soon)" labels removed; all 9 kinds enabled
+- **Bug E** Broadened needs-attention synth — ✅ tournament prelim 14d (was 7d), past tournament recap NEW 7d, game recaps 14d capped at 5 + overflow row, weekly digest reminder Sat AM-Mon AM ET
+- **Polish F** Compose tab → "Drafts" with count badge — ✅
+- **Polish G** Schedule picker visible all steps — ✅ lifted to BriefingComposer parent
+- **Polish H** Title line-clamp on action queue rows — ✅
+- **Polish I** Save status pill (draft / saving / saved) — ✅ replaces static timestamp
+- **Polish J** Pilot Mode chip on inbox header — ✅ covered by Bug B
+
+### Still queued — wave 4.1c
+
+- **RFC 8058** `List-Unsubscribe` + `List-Unsubscribe-Post` headers in `send-tournament-message` v14 → v15 (one-click for Gmail/Yahoo bulk-sender quotas; CAN-SPAM body link from PR #53 satisfies the legal minimum)
 
 ### Wave 4.2 / 4.3 / 4.4 / 5.0 stubs
 
