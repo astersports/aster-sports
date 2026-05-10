@@ -1,0 +1,12 @@
+[{
+  "id": "0820aa1a-ecb2-4cbd-86be-9044251db053",
+  "org_id": "e3e95e21-3571-4e9a-985a-d5d01480d4a6",
+  "event_id": "7c7cc15a-7fa8-47f9-8f7e-b68c6bfaa6c8",
+  "changed_by": "1e06a3d4-769b-42c0-b90b-92787410ee5a",
+  "changed_at": "2026-05-09T15:08:51.537032+00:00",
+  "change_kind": "time",
+  "recurrence_scope": "instance",
+  "before_jsonb": { "end_at": "2026-05-12T00:35:00+00:00", "location": "St. Patrick's", "start_at": "2026-05-11T23:35:00+00:00" },
+  "after_jsonb": { "end_at": "2026-05-12T01:05:00.000Z", "location": "St. Patrick's", "start_at": "2026-05-11T23:35:00.000Z" },
+  "dispatch_email_id": "bcc663a7-9ba3-443d-a24d-6d493bc5913d"
+}]
