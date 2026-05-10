@@ -84,7 +84,7 @@ function buildAdminRow({ messageId, sample, familyRows }) {
   };
 }
 
-export async function queueComposedMessages({ messageId, messages, testOnly }) {
+export async function queueComposedMessages({ messageId, messages, testOnly, adminSample }) {
   if (!messageId) throw new Error('queueComposedMessages: missing messageId.');
   if (!Array.isArray(messages)) throw new TypeError('queueComposedMessages: messages must be an array.');
   if (!messages.length) throw new Error('queueComposedMessages: empty messages array.');
@@ -93,7 +93,13 @@ export async function queueComposedMessages({ messageId, messages, testOnly }) {
     if (!Array.isArray(m.content_sections)) throw new TypeError('queueComposedMessages: each message requires content_sections array.');
   }
   const familyRows = buildFanoutRows({ messageId, messages, testOnly });
-  const sample = renderBody(messages[0]);
+  // adminSample lets the caller pin admin BCC to a different body than
+  // messages[0] — used by rsvp_nudge to avoid leaking the first family's
+  // signed RSVP token URLs into the admin BCC. When undefined, admin BCC
+  // mirrors messages[0] (no-op for the 4 calendar-anchored kinds whose
+  // content_sections is invariant across slices).
+  const sampleSource = adminSample || messages[0];
+  const sample = renderBody(sampleSource);
   const adminRow = buildAdminRow({ messageId, sample, familyRows });
   const allRows = [...familyRows, ...(adminRow ? [adminRow] : [])];
   const { applyUnsubscribeUrls } = await import('../unsubscribeUrl');

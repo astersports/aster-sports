@@ -2867,3 +2867,33 @@ All 5 wave-4.2-A-8 substeps for the registry path landed: 7 calendar-anchored re
 **Body audit (Step 5):** zero cleanup actions across 8 components. All state.body shapes are correctly either pure free-form (RsvpNudge, TournamentPrelim, TournamentRecap, Announcement, CustomMessage, WeeklyDigest) or intentionally data-locked (ScheduleChangeBody diff is captured by buildSaveDiff at edit-flow time, not user input — pattern is correct). AcademyCallupBody coachName overlap with org coaches data is a 4.2-A-8c concern.
 
 **Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 401 passed (was 392). Pre-existing weeklyDigest.js 152-line violation untouched.
+
+### Wave 4.2-A-8b-b — rsvp_nudge to registry via per-kid sections — SHIPPED May 10, 2026
+
+**Anchor of work:** `src/lib/engine/resolvers/rsvpNudge.js` (slice shape v2 + per-kid section emit), `src/lib/engine/substitution/rsvpTokens.js` (NEW), `src/lib/engine/renderers/rsvpRequest.js` (NEW), `src/lib/engine/composer.js` (SECTION_RENDERERS + KIND_COMPOSERS trim), `src/lib/rsvpNudgeSend.js` (full rewrite), `src/lib/briefings/queueComposedMessages.js` (adminSample param), `src/components/briefings/composerSubmit.js` (call-site update).
+
+**What shipped (one cohesive PR per Option A lock):**
+
+1. **Slice shape v2 fixing latent bug from 4.2-A-6.** v1 had two parallel arrays (`unresponded_kid_first_names` ASC by name, `unresponded_kid_player_ids` ASC by player_id) — different sort orders, so `kid_first_names[i]` wasn't paired with `kid_player_ids[i]`. v2 single array `unresponded_kids: [{player_id, first_name}]` ASC by first_name, paired data, single source of truth.
+
+2. **Per-kid rsvp_request section emission.** composeRsvpNudge v2 emits ONE rsvp_request section per unresponded kid (was: one section with names array). Each section: `kid_first_name` (singular) + `player_id` + literal `{{rsvp_*_url}}` placeholder triple. Subject ordering preserved (Oxford comma) and now matches section order (alphabetical by first_name).
+
+3. **substituteRsvpTokens helper.** Pure function: `(content_sections, tokenMapByPlayer) -> content_sections` with `rsvp_token_placeholders` replaced by `rsvp_token_urls` per section.player_id. Throws on missing player_id (defense in depth). Other sections passed through unchanged.
+
+4. **rsvp_request atomic renderer.** Registered in `composer.js` SECTION_RENDERERS. Closes the gap from 8b-a discovery — without this, rsvp_nudge → registry would render buttonless emails. Heading + sub-context + 3 stacked buttons (44px tap-target lock) with inline styles for Resend compatibility. Fail-loud fallback: if `rsvp_token_urls` is absent, hrefs render literal `{{rsvp_*_url}}` strings (smoke-test signal).
+
+5. **sendRsvpNudge full rewrite on registry path.** `{state, supabase, now}` signature. Per-slice loop: resolve → compose → mint per-kid (3 RPCs × N kids per slice using existing `mint_rsvp_token(p_event_id, p_player_id, p_guardian_id, p_response)`) → substituteRsvpTokens → push to messages[]. INSERT comms_messages (sample = first slice's UN-substituted compose). queueComposedMessages with adminSample. Invoke send-tournament-message. Mark sent. Legacy `mintLinksForPlayer`, `fetchPlayersForGuardianOnTeam`, and the whole-email `engine/renderers/rsvpNudge.js` (composeRsvpNudge legacy) all deleted.
+
+6. **queueComposedMessages `adminSample` param.** Optional override for admin BCC body. Used by sendRsvpNudge to pin BCC to placeholder URLs so an admin tap doesn't accidentally record an RSVP for the first family's first kid. No-op for the 4 calendar-anchored kinds whose content_sections is invariant across slices.
+
+7. **composerSubmit call-site signature update.** From legacy 8-arg shape (`{orgId, event, body, signoffMessage, coaches, recipients, pilotModeEnabled, testOnly}`) to `{state, supabase, now}`. Redundant pre-call event lookup deleted. submitBriefing's signature trims `orgId` and `pilotModeEnabled` (now unused; BriefingComposer still passes them — destructure ignores).
+
+**Token semantics (Option A locked):** per-(event, player, guardian, response). mint_rsvp_token RPC unchanged. rsvp-token-handler edge function unchanged. No DB migrations. Multi-kid families get N×3 buttons (one row per kid). Multi-kid same-team is essentially nonexistent in production (audit on 10U Black anchor showed 0); per-kid buttons are also clearer for the rare case — explicit "RSVP for Charlie / RSVP for Milo".
+
+**Tests:** 401 → 408 (+7 net). New: substituteRsvpTokens 6 + rsvpRequest renderer 4 + sendRsvpNudge integration 4. Removed: legacy whole-email composer test (7 tests deleted with the file). 4.2-A-6 snapshot + contract tests regenerated for v2 shape; all pass.
+
+**Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 408 passed. Pre-existing weeklyDigest.js 152-line violation untouched.
+
+### Wave 4.2-A status: 6/7 fully on registry path ✅
+
+Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on wave 4.3 callup mint). All 6 calendar-anchored kinds in production (weekly_digest, game_recap, tournament_prelim, tournament_recap, schedule_change, rsvp_nudge) now compose via RESOLVER_REGISTRY and queue via queueComposedMessages or their bespoke equivalents.

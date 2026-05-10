@@ -18,7 +18,6 @@ import { composeAcademyCallupNotice } from './renderers/academyCallupNotice';
 import { composeWeeklyDigest } from './renderers/weeklyDigest';
 import { composeAnnouncement } from './renderers/announcement';
 import { composeCustomMessage } from './renderers/customMessage';
-import { composeRsvpNudge } from './renderers/rsvpNudge';
 import scheduleChangeDiff from './renderers/scheduleChangeDiff';
 import statGrid from './renderers/statGrid';
 import poolStandings from './renderers/poolStandings';
@@ -33,6 +32,7 @@ import opsNotes from './renderers/opsNotes';
 import ctaButtons from './renderers/ctaButtons';
 import statsNarrative from './renderers/statsNarrative';
 import signoff from './renderers/signoff';
+import rsvpRequest from './renderers/rsvpRequest';
 
 const SECTION_RENDERERS = {
   header: renderHeader,
@@ -53,6 +53,7 @@ const SECTION_RENDERERS = {
   stats_narrative: statsNarrative,
   signoff,
   schedule_change_diff: scheduleChangeDiff,
+  rsvp_request: rsvpRequest,
 };
 
 // Wave 4.1d-5: legacy `tournament_preliminary` registry key retired.
@@ -62,17 +63,19 @@ const SECTION_RENDERERS = {
 // Wave 4.2-A-8a: legacy compose() entries removed for the 4 kinds
 // that now dispatch via RESOLVER_REGISTRY through composerSubmit
 // (game_recap, tournament_prelim, tournament_recap, schedule_change).
+// Wave 4.2-A-8b-b: rsvp_nudge entry removed (rsvpNudgeSend now uses
+// RESOLVER_REGISTRY.rsvp_nudge.compose per-slice with substituteRsvpTokens
+// after per-kid mint_rsvp_token RPCs). Legacy renderers/rsvpNudge.js
+// renderer file deleted.
 // Remaining entries: weekly_digest (defensive; production goes through
-// digestSend), rsvp_nudge (used by rsvpNudgeSend per-recipient mint),
-// academy_callup_notice (legacy preview only — sends are blocked
-// pending wave 4.3 callup token mint), announcement + custom_message
-// (free-form, legacy path).
+// digestSend), academy_callup_notice (legacy preview only — sends are
+// blocked pending wave 4.3 callup token mint), announcement +
+// custom_message (free-form, legacy path).
 const KIND_COMPOSERS = {
   academy_callup_notice: composeAcademyCallupNotice,
   weekly_digest: composeWeeklyDigest,
   announcement: composeAnnouncement,
   custom_message: composeCustomMessage,
-  rsvp_nudge: composeRsvpNudge,
 };
 
 export function renderSections(sections = []) {

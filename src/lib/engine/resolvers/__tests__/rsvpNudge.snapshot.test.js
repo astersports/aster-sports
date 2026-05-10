@@ -28,7 +28,9 @@ describe('rsvp_nudge resolver — snapshot vs hand-authored expected', () => {
     expect(slices[0].guardian_id).toBe('07ec4308-e3ab-4d13-be5e-a5796f506ce3');
     expect(slices[0].email).toBe('medelman83@me.com');
     expect(slices[0].team_id).toBe('6abb0447-8866-461c-bd78-1c58eebf9551');
-    expect(slices[0].unresponded_kid_first_names).toEqual(['Hudson']);
+    expect(slices[0].unresponded_kids).toHaveLength(1);
+    expect(slices[0].unresponded_kids[0].first_name).toBe('Hudson');
+    expect(slices[0].unresponded_kids[0].player_id).toBeTruthy();
     expect(context.urgency.day_label).toBe('Tomorrow (Monday)');
     expect(context.urgency.time_label).toBe('7:35 PM');
     expect(context.rsvp_summary).toEqual({ total_roster: 11, responded_count: 0, unresponded_count: 11 });

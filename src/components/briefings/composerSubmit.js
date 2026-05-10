@@ -15,9 +15,9 @@
 //   weekly_digest: routes through DigestComposer.jsx -> digestSend
 //                  (already on resolver pipeline). composerSubmit
 //                  guards against accidental dispatch.
-//   rsvp_nudge:    short-circuits to lib/rsvpNudgeSend.js (per-
-//                  recipient mint_rsvp_token + per-recipient compose).
-//                  Migration to registry deferred to 4.2-A-8b-b.
+//   rsvp_nudge:    short-circuits to lib/rsvpNudgeSend.js, which
+//                  migrated to RESOLVER_REGISTRY in wave 4.2-A-8b-b
+//                  with per-kid mint_rsvp_token + substituteRsvpTokens.
 //   academy_callup_notice: blocked -- callup token mint
 //                  infrastructure pending in wave 4.3. composerSubmit
 //                  raises NoCallupTokenInfrastructureError.
@@ -74,10 +74,9 @@ async function queueForDispatch({ messages, composed, state, recipients, message
   return queueRecipients({ messageId, audience, composed, teamIds, testOnly: state.test_only });
 }
 
-export async function submitBriefing({ state, draft, orgId, recipients, coaches, pilotModeEnabled }) {
+export async function submitBriefing({ state, draft, recipients, coaches }) {
   if (state.kind === 'rsvp_nudge' && state.anchor_kind === 'event' && state.anchor_id) {
-    const { data: ev } = await supabase.from('events').select('id,title,start_at,location,team_id').eq('id', state.anchor_id).maybeSingle();
-    const r = await sendRsvpNudge({ orgId, event: ev, body: state.body, signoffMessage: state.signoff_message, coaches, recipients, pilotModeEnabled, testOnly: state.test_only });
+    const r = await sendRsvpNudge({ state, supabase, now: new Date() });
     if (r?.error) throw r.error;
     return { audienceCount: r.audienceCount };
   }

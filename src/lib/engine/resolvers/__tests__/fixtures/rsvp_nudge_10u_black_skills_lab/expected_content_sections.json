@@ -9,7 +9,8 @@
   },
   {
     "kind": "rsvp_request",
-    "kid_first_names": ["Hudson"],
+    "kid_first_name": "Hudson",
+    "player_id": "36c54719-e610-46c2-a778-72efc7ccdbb1",
     "team_name": "10U Black",
     "team_color": "#4a8fd4",
     "event_label": "Skills Lab",
