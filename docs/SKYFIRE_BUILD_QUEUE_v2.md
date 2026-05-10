@@ -2894,6 +2894,31 @@ All 5 wave-4.2-A-8 substeps for the registry path landed: 7 calendar-anchored re
 
 **Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 408 passed. Pre-existing weeklyDigest.js 152-line violation untouched.
 
+### Wave 4.3-A — Auto-draft engine (weekly_digest) — SHIPPED May 10, 2026
+
+**Anchor of work:** `supabase/functions/briefing-auto-draft-tick/{index.ts,_helpers.ts}` (NEW), `src/lib/cron/briefingCronHelpers.js` (NEW), `supabase/migrations/20260510193446_wave_4_3_a_register_briefing_auto_draft_tick_cron.sql` (NEW), `docs/CRON_SECRET_SETUP.md` (NEW), `scripts/trigger-cron-dispatch.sh` (NEW).
+
+**Premise correction:** the auto-draft engine did not exist prior to this PR. Discovery surfaced that pre-existing infrastructure (briefing_triggers config table with 22 rows, pg_cron + pg_net extensions, briefing-dispatch-tick cron job firing every minute since 2026-05-09) was scaffolding for a service that was never built. The existing briefing-cron-dispatch function is a scheduled-send dispatcher (wave 3.17) — it reads `comms_messages WHERE status='scheduled'` and forwards to send-tournament-message. It has zero reference to briefing_triggers and has never been a draft-creation surface. The 1,449 cron invocations since 2026-05-09 have been pinging the dispatcher, which 401s due to unset `cron_secret` AND would return 0 work anyway since no scheduled briefings exist.
+
+**What shipped:**
+
+1. **New `briefing-auto-draft-tick` edge function.** Reads `briefing_triggers` (active rows), dispatches per `trigger_event` switch. weekly_sunday handler implemented; 5 other trigger events stubbed with `{skipped: 'not_implemented'}` for 4.3-B fill-in.
+2. **TZ gate + idempotency for weekly_sunday.** Fires only when `partsInTimeZone(now, 'America/New_York').weekday === 'Sunday' && hour === 8`. Idempotency: skip insert if `comms_messages WHERE org_id=? AND kind='weekly_digest' AND period_start=?` already exists in any non-discarded status.
+3. **Per-org collapse for weekly_sunday triggers.** The 6 seeded weekly_sunday triggers (one per team_type slug) collapse to one org-wide weekly_digest per Sunday. Anchor_kind='org', anchor_id=org_id. Per-team_type variation deferred to a future wave.
+4. **Draft shape.** subject + content_sections deliberately NULL. Resolver runs fresh at preview/send time per the wave-4.2-A-8a locked behavior.
+5. **Pure helpers extracted** to `src/lib/cron/briefingCronHelpers.js` (vitest source of truth). Mirrored at `supabase/functions/briefing-auto-draft-tick/_helpers.ts` for the Deno runtime — Supabase Edge Function deploys don't reliably resolve cross-tree imports from src/. CLAUDE.md anti-pattern #30 added: mirror sync requirement.
+6. **New pg_cron job** (`briefing-auto-draft-tick`, every minute) registered via migration `20260510193446`. Separate from the existing `briefing-dispatch-tick` job.
+7. **Cron secret coordination runbook** at `docs/CRON_SECRET_SETUP.md`. Both cron functions share `CRON_SECRET` (function env var) ↔ `app.settings.cron_secret` (DB GUC). Frank generates externally and sets via dashboard. Until configured, both cron jobs 401 every tick.
+8. **Manual invocation tool** at `scripts/trigger-cron-dispatch.sh` — bypasses the every-minute wait for testing.
+
+**Tests:** 408 → 423 (+15). All in `briefingCronHelpers.test.js`. Coverage: partsInTimeZone, localDateIso, addDaysIso, isWeeklySundayWindow (4 boundary cases), weeklyDigestPeriod, buildWeeklyDigestDraftRow, weeklyDigestIdempotencyKey, ORG_TIMEZONE.
+
+**Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 423 passed. Function deployed v1 via Supabase MCP. Cron job registered + verified firing every minute.
+
+**MCP coordination:** function deploy + migration applied via Supabase MCP from this session (no chat-side coordination required for those two steps). Cron secret coordination IS chat-side (Frank generates secret externally and sets via Supabase dashboard) — gates 4.3-A from producing actual drafts.
+
+**Next:** wave 4.3-B fills in the 5 stubbed trigger event handlers (game_completed, schedule_changed, rsvp_low_24h_before, tournament_approaching, tournament_completed). 4.3-C will be inbox UI polish for auto-drafted rows. 4.3-D builds callup token mint (unblocks 4.2-A-8c).
+
 ### Wave 4.2-A status: 6/7 fully on registry path ✅
 
 Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on wave 4.3 callup mint). All 6 calendar-anchored kinds in production (weekly_digest, game_recap, tournament_prelim, tournament_recap, schedule_change, rsvp_nudge) now compose via RESOLVER_REGISTRY and queue via queueComposedMessages or their bespoke equivalents.
