@@ -27,16 +27,22 @@ const CONFIG_TOML = 'supabase/config.toml';
 // than a Supabase user JWT. Conservative — false positive (extra config
 // entry) is preferable to false negative (gateway block).
 const SHARED_SECRET_PATTERNS = [
-  // Env-var shared secrets (CRON_SECRET, RESEND_WEBHOOK_SECRET, etc.).
-  // Excludes JWT-secret env vars used for IMPERSONATION on JWT-verified
-  // functions like send-tournament-message (mints a user JWT for the
-  // downstream call but is itself JWT-verified).
+  // Env-var shared secrets (RESEND_WEBHOOK_SECRET, legacy CRON_SECRET,
+  // etc.). Excludes JWT-secret env vars used for IMPERSONATION on
+  // JWT-verified functions like send-tournament-message (mints a user
+  // JWT for the downstream call but is itself JWT-verified).
   /Deno\.env\.get\(["'][A-Z_]+_SECRET["']\)/,
   // URL-param token-based auth (rsvp/callup handler style).
   /searchParams\.get\(["'](t|token)["']\)/,
   // Token-verify RPC presence (signed-link handler style).
   /verify_rsvp_token|verify_callup_token|verify_unsubscribe_token/,
+  // app_secrets read (wave 4.3-F pattern; cron secret moved here).
+  /from\(["']app_secrets["']\)/,
 ];
+
+// Anti-pattern #33: shared secrets must live in app_secrets, not in
+// Deno.env. JWT_SECRET is allowed (used for impersonation, not auth).
+const FORBIDDEN_DENO_ENV_SECRET = /Deno\.env\.get\(["'](?!SUPABASE_JWT_SECRET)[A-Z_]+_SECRET["']\)/;
 
 // Functions to exclude from shared-secret detection even if a pattern
 // matches. send-tournament-message reads SUPABASE_JWT_SECRET for JWT
@@ -88,6 +94,22 @@ describe('Edge function verify_jwt config audit (CLAUDE.md anti-pattern #31)', (
       if (!detectsSharedSecretAuth(source)) return;
       const declared = config[funcName];
       expect(declared, `Function "${funcName}" uses shared-secret auth but supabase/config.toml has no [functions.${funcName}] verify_jwt = false declaration. Without it, CI redeploys default to verify_jwt:true and the gateway rejects all invocations.`).toBe(false);
+    });
+  }
+});
+
+describe('Edge function shared-secret source audit (CLAUDE.md anti-pattern #33)', () => {
+  const functionDirs = listFunctionDirs();
+  for (const funcName of functionDirs) {
+    it(`${funcName}: shared secrets must live in app_secrets, not Deno.env`, () => {
+      if (EXCLUDE_FUNCTIONS.has(funcName)) return;
+      const source = readFileSync(join(FUNCTIONS_DIR, funcName, 'index.ts'), 'utf-8');
+      // Webhook receivers use platform-shared SVIX-style env vars
+      // (RESEND_WEBHOOK_SECRET) that the platform manages directly;
+      // these are out of scope for app_secrets storage.
+      if (funcName === 'resend-webhook-receiver') return;
+      const violation = source.match(FORBIDDEN_DENO_ENV_SECRET);
+      expect(violation, `Function "${funcName}" reads a shared secret from Deno.env (${violation?.[0]}). Move to public.app_secrets and read via service-role SELECT (mirror briefing-cron-dispatch / briefing-auto-draft-tick post wave 4.3-F).`).toBeNull();
     });
   }
 });
