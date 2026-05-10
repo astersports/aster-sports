@@ -43,6 +43,7 @@ export function mockClient(fixtures) {
     locations: locationsArr,
     event_rsvps: fixtures.event_rsvps || [],
     event_change_audit: fixtures.event_change_audit || [],
+    team_players: fixtures.team_players || [],
     staff_profiles: fixtures.coaches || [],
     organizations: fixtures.organization ? [fixtures.organization] : [],
     organization_settings: fixtures.organization_settings ? [fixtures.organization_settings] : [],

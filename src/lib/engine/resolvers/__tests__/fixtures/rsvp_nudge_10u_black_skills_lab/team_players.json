@@ -1,0 +1,13 @@
+[
+  { "player_id": "fa384908-7441-447d-b23a-eea152b37a59", "joined_at": "2026-05-05T18:23:26.274771+00:00", "left_at": null, "status": "active", "players": { "first_name": "Aubtin" } },
+  { "player_id": "d83fd1c9-b5a6-4bb8-a889-7ab30ba25127", "joined_at": "2026-05-05T18:23:26.274771+00:00", "left_at": null, "status": "active", "players": { "first_name": "Cameron" } },
+  { "player_id": "1bdea839-6a57-42ab-9d78-a8a6436cf11b", "joined_at": "2026-05-05T18:23:26.274771+00:00", "left_at": null, "status": "active", "players": { "first_name": "Frankie" } },
+  { "player_id": "f3aa5ce1-119b-4fa4-ad16-d042bb1b0047", "joined_at": "2026-05-05T18:23:26.274771+00:00", "left_at": null, "status": "active", "players": { "first_name": "Gabriel" } },
+  { "player_id": "aeb76b0c-5f04-4605-8ed5-61f50f991d58", "joined_at": "2026-05-05T18:23:26.274771+00:00", "left_at": null, "status": "active", "players": { "first_name": "Henry" } },
+  { "player_id": "e11edf84-ee69-4797-a7fb-1ce0159c27fe", "joined_at": "2026-05-05T18:23:26.274771+00:00", "left_at": null, "status": "active", "players": { "first_name": "Henry" } },
+  { "player_id": "36c54719-e610-46c2-a778-72efc7ccdbb1", "joined_at": "2026-05-05T18:23:26.274771+00:00", "left_at": null, "status": "active", "players": { "first_name": "Hudson" } },
+  { "player_id": "4e361e9b-4cfa-46b7-bae8-48552f9841e0", "joined_at": "2026-05-05T18:23:26.274771+00:00", "left_at": null, "status": "active", "players": { "first_name": "Jake" } },
+  { "player_id": "05a851e0-b025-4970-ad32-975fcfc28605", "joined_at": "2026-05-05T18:23:26.274771+00:00", "left_at": null, "status": "active", "players": { "first_name": "Lucas" } },
+  { "player_id": "e84f1fa7-a480-424b-b379-5b46f4e55b62", "joined_at": "2026-05-05T18:23:26.274771+00:00", "left_at": null, "status": "active", "players": { "first_name": "Mason" } },
+  { "player_id": "8497c4bc-94a3-431a-852b-9189a3bae6b9", "joined_at": "2026-05-05T18:23:26.274771+00:00", "left_at": null, "status": "active", "players": { "first_name": "Spencer" } }
+]

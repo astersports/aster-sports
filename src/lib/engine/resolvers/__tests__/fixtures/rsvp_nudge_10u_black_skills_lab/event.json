@@ -1,0 +1,14 @@
+{
+  "id": "2cf635fb-f1e5-4184-b21d-7e2f049a39e6",
+  "title": "10U Black Skills Lab",
+  "team_id": "6abb0447-8866-461c-bd78-1c58eebf9551",
+  "event_type": "practice",
+  "start_at": "2026-05-11T23:35:00+00:00",
+  "end_at": "2026-05-12T00:35:00+00:00",
+  "location_id": "a8b8e73d-04e7-405b-b2d2-b576e0760ce5",
+  "location": "St. Patrick's",
+  "opponent": null,
+  "status": "scheduled",
+  "publish_status": "published",
+  "teams": { "id": "6abb0447-8866-461c-bd78-1c58eebf9551", "name": "10U Black", "team_color": "#4a8fd4", "sort_order": 2, "org_id": "e3e95e21-3571-4e9a-985a-d5d01480d4a6" }
+}
