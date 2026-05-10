@@ -2712,3 +2712,27 @@ All bugs + polish landed. Files: 23 changed (+864 / -209). Tests: 214 → 252 (+
 **d-7 closed:** legacy `tournamentPreliminary.js` deleted. Parity items live in the new resolver. No follow-up wave needed.
 
 **Compose UI bridge:** SKIPPED for this PR. The existing `TournamentPrelimBody.jsx` form is all free-form textareas (hotel_block, sat_notes, sun_notes, opponent_scouting, lineup_notes, tourney_link_label) — no data-shaped contradictory inputs to remove. The legacy compose() path is unchanged. Send pipeline switch deferred to 4.2-A-8 atomic migration.
+
+### Wave 4.2-A-4 — resolveTournamentRecap + composeTournamentRecap — SHIPPED May 10, 2026
+
+- **Branch:** `claude/wave-4-2-a-4-resolve-tournament-recap`
+- **Files:**
+  - NEW `src/lib/engine/resolvers/tournamentRecap.js` (resolver + composer, 130 lines)
+  - NEW `src/lib/engine/resolvers/tournamentRecapHelpers.js` (placement_block + game_log builders, 47 lines)
+  - NEW `src/lib/engine/resolvers/__tests__/tournamentRecap.snapshot.test.js` (3 tests)
+  - NEW `src/lib/engine/resolvers/__tests__/tournamentRecap.contract.test.js` (8 tests)
+  - NEW `src/lib/engine/resolvers/__tests__/fixtures/tournament_recap_chase_for_the_chain/*.json` (12 fixture files)
+
+**Highlights**
+
+- Anchor + slice shape identical to 4.2-A-3 (`{ tournamentId, pilotOnly }`, slice = team).
+- Resolver shares helpers with 4.2-A-3 (buildSubContext, buildTeamSlices, fetchRecipientGuardians, formatDayLabel, formatTime). Recap-specific section builders (placement_block, game_log) live in tournamentRecapHelpers.js.
+- content_sections: header + placement_block + game_log + (override-only: standout_moments, coach_reflection) + signoff + footer.
+- Hallucination guards: `final_place null` → placement_block omitted; `wins+losses=0` with final_place set → record absent; per-row `published_at null` → status="Result not published"; null POG / empty coach_highlight → key omitted.
+- Snapshot anchor: ZG Chase for the Chain NY (Apr 11–12, 2026), 13 events, 3 teams. 11U Girls + 10U Black Champions, 8U Boys Finalists. POG Milo + coach_highlight "Amazing experience and effort" verified on 8U Boys Game 1.
+
+**Tests:** 327 → 338 (+11). Lint clean. Build clean (no bundle delta).
+
+**Compose UI bridge:** SKIPPED. Existing `TournamentRecapBody.jsx` form is all free-form (final_standing, game_results text, mvp_name, takeaways, tourney_link_label) — same conservative path as 4.2-A-3. Send pipeline switch deferred to 4.2-A-8 atomic migration.
+
+**`whats_next` walk deferred.** Future enhancement: walk calendar for next tournament after `tournament.end_date` for the team. For now, Frank can use `overrides.coach_note` for "next up" prose.

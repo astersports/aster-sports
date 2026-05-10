@@ -35,7 +35,7 @@ Per-kind anchor + slice taxonomy:
 | weekly_digest | `{ orgId, period, pilotOnly }` | family | guardian_id ASC | ✅ shipped 4.2-A-1 |
 | game_recap | `{ eventId, pilotOnly }` | family (event team) | guardian_id ASC | ✅ shipped 4.2-A-2 |
 | tournament_prelim | `{ tournamentId, pilotOnly }` | team (recipient_guardians embedded) | teams.sort_order ASC, teams.id ASC | ✅ shipped 4.2-A-3 |
-| tournament_recap | `tournamentId` | team | sort_order, id | 📋 queued 4.2-A-4 |
+| tournament_recap | `{ tournamentId, pilotOnly }` | team (recipient_guardians embedded) | teams.sort_order ASC, teams.id ASC | ✅ shipped 4.2-A-4 |
 | schedule_change | `eventId` | family (event team) | guardian_id ASC | 📋 queued 4.2-A-5 |
 | rsvp_nudge | `eventId` | family (unresponded) | guardian_id ASC | 📋 queued 4.2-A-6 |
 | academy_callup_notice | `{ eventId, playerId }` | family (player guardians) | guardian_id ASC | 📋 queued 4.2-A-7 |
@@ -236,3 +236,4 @@ When adding an edge case to §4:
 - v1.2: May 10, 2026 — wave 4.2-A-1: §0 Resolver Layer added with two-stage contract. `resolveWeeklyDigest` + `composeWeeklyDigest` shipped as the reference implementation. Snapshot test locks parity against production row 3b431eb1.
 - v1.3: May 10, 2026 — wave 4.2-A-2: `resolveGameRecap` + `composeGameRecap` shipped. Anchor `{ eventId, pilotOnly }`. `GameRecapNotPublishedError` thrown when `published_at IS NULL`. Compose UI replaces score / POG / coach_highlight inputs with read-only displays + Quick Score edit-links. Snapshot anchor: hand-authored expected output for event a0b2d68a (10U Blue vs Resurrection White 4AB, 2026-05-02 W 2-0). Production unlock: 32 published-but-unrecapped games no longer require manual retyping.
 - v1.4: May 10, 2026 — wave 4.2-A-3: `resolveTournamentPrelim` + `composeTournamentPrelim` shipped. Anchor `{ tournamentId, pilotOnly }`. Slice = team, recipient_guardians embedded. d-7 parity (per-day schedule table, survival guide, coach keys, per-game map links) folded into the new pipeline. Deprecated `tournamentPreliminary.js` deleted. Override-merge precedence rule: override beats data when both present.
+- v1.5: May 10, 2026 — wave 4.2-A-4: `resolveTournamentRecap` + `composeTournamentRecap` shipped. Same anchor + slice shape as 4.2-A-3. Walks game_results joined to events for per-team game_log + final placement. content_sections shape: header + placement_block + game_log + (override-only: standout_moments, coach_reflection) + signoff + footer. Hallucination guards: published_at null → "Result not published" status, null POG/empty highlight → key omitted, null final_place → block omitted. Snapshot anchor: ZG Chase for the Chain NY (Apr 11–12, 2026, 3 teams: 11U Girls + 10U Black Champions, 8U Boys Finalists). whats_next walk deferred.
