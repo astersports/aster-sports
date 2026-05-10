@@ -16,6 +16,7 @@
 
 import { supabase } from './supabase';
 import { compose } from './engine/composer';
+import { applyUnsubscribeUrls } from './unsubscribeUrl';
 
 const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
 const HANDLER_BASE = 'https://vrwwpsbfbnveawqwbdmj.supabase.co/functions/v1/rsvp-token-handler';
@@ -104,7 +105,8 @@ export async function sendRsvpNudge({ orgId, event, body, signoffMessage, coache
     subject_rendered: sample.subject, teams_included: [],
   };
   const allRows = [...familyRows, ...(adminRow ? [adminRow] : [])];
-  const { error: recErr } = await supabase.from('comms_message_recipients').insert(allRows);
+  const stampedRows = await applyUnsubscribeUrls(allRows);
+  const { error: recErr } = await supabase.from('comms_message_recipients').insert(stampedRows);
   if (recErr) throw recErr;
 
   const { data: dispatch, error: dispErr } = await supabase.functions.invoke('send-tournament-message', { body: { message_id: msg.id } });

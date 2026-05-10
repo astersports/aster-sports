@@ -15,6 +15,7 @@
 
 import { supabase } from './supabase';
 import { compose } from './engine/composer';
+import { applyUnsubscribeUrls } from './unsubscribeUrl';
 
 const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
 
@@ -104,7 +105,8 @@ export async function sendScheduleChange({
     subject_rendered: composed.subject, teams_included: [],
   };
   const allRows = [...familyRows, ...(adminRow ? [adminRow] : [])];
-  const { error: recErr } = await supabase.from('comms_message_recipients').insert(allRows);
+  const stampedRows = await applyUnsubscribeUrls(allRows);
+  const { error: recErr } = await supabase.from('comms_message_recipients').insert(stampedRows);
   if (recErr) throw recErr;
 
   const { data: dispatch, error: dispErr } = await supabase.functions
