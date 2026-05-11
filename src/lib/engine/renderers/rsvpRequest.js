@@ -17,6 +17,7 @@
 // in email clients) and meets the 44px tap target lock.
 
 import { escapeHtml } from './_util';
+import { COBALT } from '../colors';
 
 const BTN_BASE = [
   'display:inline-block',
@@ -49,7 +50,7 @@ function renderButton(action, href) {
 
 export default function render(section) {
   const kid = section?.kid_first_name || '';
-  const teamColor = section?.team_color || '#4a8fd4';
+  const teamColor = section?.team_color || COBALT;
   const u = urls(section);
   const heading = `<h3 style="margin:24px 0 4px 0;font-family:Inter,system-ui,sans-serif;font-size:16px;font-weight:700;color:${escapeHtml(teamColor)};">RSVP for ${escapeHtml(kid)}</h3>`;
   const subContext = `<p style="margin:0 0 12px 0;font-family:Inter,system-ui,sans-serif;font-size:13px;color:#6b7280;">${escapeHtml(section?.team_name || '')} ${escapeHtml(section?.event_label || '')} · ${escapeHtml(section?.urgency_phrase || '')}</p>`;

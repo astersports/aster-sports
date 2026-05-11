@@ -5,6 +5,7 @@
 
 import { renderHeader } from './header';
 import { renderGameCard } from './gameCard';
+import { COBALT } from '../colors';
 
 function escapeHtml(str) {
   return String(str ?? '')
@@ -18,7 +19,7 @@ function paragraph(text, marginTop = '16px') {
 
 function whatToBring(jerseyColor) {
   return '<div style="margin:20px 28px 0 28px;font-family:Inter,system-ui,sans-serif;">'
-    + '<div style="font-size:11px;font-weight:700;color:#4a8fd4;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">What to bring</div>'
+    + `<div style="font-size:11px;font-weight:700;color:${COBALT};letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">What to bring</div>`
     + `<div style="font-size:14px;color:#334155;line-height:1.6;">Jersey: <strong>${escapeHtml(jerseyColor || 'team color')}</strong>. Water, snacks, and a warm layer for between games.</div>`
     + '</div>';
 }
@@ -27,7 +28,7 @@ function ctaButton(url) {
   if (!url) return '';
   return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;margin:20px 28px;">'
     + '<tr><td align="center">'
-    + `<a href="${escapeHtml(url)}" style="display:inline-block;background-color:#4a8fd4;color:#ffffff;text-decoration:none;font-family:Inter,system-ui,sans-serif;font-size:14px;font-weight:700;padding:12px 28px;border-radius:6px;letter-spacing:0.5px;">RSVP NOW</a>`
+    + `<a href="${escapeHtml(url)}" style="display:inline-block;background-color:${COBALT};color:#ffffff;text-decoration:none;font-family:Inter,system-ui,sans-serif;font-size:14px;font-weight:700;padding:12px 28px;border-radius:6px;letter-spacing:0.5px;">RSVP NOW</a>`
     + '</td></tr></table>';
 }
 

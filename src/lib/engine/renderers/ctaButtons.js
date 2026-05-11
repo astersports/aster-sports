@@ -3,10 +3,11 @@
 // white text, 6px radius. Two buttons sit side-by-side with 12px gap.
 
 import { escapeHtml } from './_util';
+import { COBALT } from '../colors';
 
 const BTN_STYLE = [
   'display:inline-block',
-  'background-color:#4a8fd4',
+  `background-color:${COBALT}`,
   'color:#ffffff',
   'font-family:Inter,system-ui,sans-serif',
   'font-size:13px',

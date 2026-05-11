@@ -3,10 +3,11 @@
 // rows. Used by Coach's Keys, Rules-of-Play, etc. — title is operator-set.
 
 import { escapeHtml } from './_util';
+import { COBALT } from '../colors';
 
 function renderTitle(title) {
   if (!title) return '';
-  return `<div style="font-size:11px;font-weight:700;color:#4a8fd4;letter-spacing:1.5px;text-transform:uppercase;line-height:1.4;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(title)}</div>`;
+  return `<div style="font-size:11px;font-weight:700;color:${COBALT};letter-spacing:1.5px;text-transform:uppercase;line-height:1.4;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(title)}</div>`;
 }
 
 function renderItem(item, isLast) {
