@@ -77,7 +77,7 @@ describe('weeklyDigestPeriod', () => {
 });
 
 describe('buildWeeklyDigestDraftRow', () => {
-  it('builds correct insert shape: subject + content_sections NULL, anchor_kind=org', () => {
+  it('builds correct insert shape: subject NULL, body placeholders empty, content_sections [], anchor_kind=org', () => {
     const row = buildWeeklyDigestDraftRow({
       orgId: ORG_ID,
       period: { period_start: '2026-05-10', period_end: '2026-05-16' },
@@ -86,7 +86,8 @@ describe('buildWeeklyDigestDraftRow', () => {
     expect(row).toEqual({
       org_id: ORG_ID, kind: 'weekly_digest', anchor_kind: 'org', anchor_id: ORG_ID,
       period_start: '2026-05-10', period_end: '2026-05-16',
-      status: 'draft', subject: null, content_sections: null,
+      status: 'draft', subject: null,
+      body_html: '', body_plain: '', content_sections: [],
       audience_type: 'org_all', audience_filter: null,
       last_edited_at: SUNDAY_8AM_LOCAL.toISOString(), last_edited_by: null,
     });

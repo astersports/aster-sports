@@ -65,6 +65,12 @@ export function weeklyDigestPeriod(now: Date, timeZone: string = ORG_TIMEZONE_DE
 export function buildWeeklyDigestDraftRow(
   { orgId, period, now }: { orgId: string; period: WeeklyDigestPeriod; now: Date },
 ) {
+  // body_html + body_plain are NOT NULL on comms_messages with no
+  // default — empty strings are placeholders until admin previews via
+  // the resolver-driven path (wave-4.2-A-8a). content_sections gets
+  // [] to satisfy its NOT NULL constraint (default is '[]'::jsonb).
+  // Subject stays NULL so admin preview shows the resolver-rendered
+  // subject fresh at send time.
   return {
     org_id: orgId,
     kind: "weekly_digest",
@@ -74,7 +80,9 @@ export function buildWeeklyDigestDraftRow(
     period_end: period.period_end,
     status: "draft",
     subject: null,
-    content_sections: null,
+    body_html: "",
+    body_plain: "",
+    content_sections: [],
     audience_type: "org_all",
     audience_filter: null,
     last_edited_at: now.toISOString(),
