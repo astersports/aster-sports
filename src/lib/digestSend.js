@@ -62,6 +62,7 @@ export async function sendWeeklyDigest({
   rsvpCountsByEvent,
   testOnly,
   audienceTeamIds = null,
+  audienceType = null, audienceFilter = null, anchorKind = null, anchorId = null, // C2: persist composer state
 }) {
   if (!orgId) throw new Error('Missing orgId.');
   if (!period?.start || !period?.end) throw new Error('Pick a digest period.');
@@ -99,7 +100,8 @@ export async function sendWeeklyDigest({
     .insert({
       org_id: orgId, tournament_id: null, team_id: null,
       kind: 'weekly_digest', language_code: 'en',
-      delivery_method: 'queued', sent_at: null,
+      delivery_method: 'queued', sent_at: null, status: 'draft',
+      audience_type: audienceType, audience_filter: audienceFilter, anchor_kind: anchorKind, anchor_id: anchorId,
       subject, body_html: sample?.html || '', body_plain: sample?.plainText || '',
       headline: 'WEEK AHEAD', sub_context: formatPeriodLabel(period),
       content_sections: sample?.sections || [],
@@ -141,6 +143,8 @@ export async function sendWeeklyDigest({
   const { data: dispatch, error: dispErr } = await supabase.functions
     .invoke('send-tournament-message', { body: { message_id: msg.id } });
   if (dispErr) throw dispErr;
+
+  await supabase.from('comms_messages').update({ status: 'sent' }).eq('id', msg.id); // C2: mirror composerSubmit:124
 
   return { messageId: msg.id, ...(dispatch || {}), composedFamilies: renderedFamilies.length };
 }
