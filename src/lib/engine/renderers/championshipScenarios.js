@@ -3,6 +3,7 @@
 // Tiebreaker explainer: light gray bg, no left-color stripe — visually an aside.
 
 import { escapeHtml } from './_util';
+import { COBALT } from '../colors';
 
 const OUTCOME_TONES = {
   positive: '#16a34a',
@@ -51,7 +52,7 @@ export function renderChampionshipScenarios(section) {
   const sectionHeader = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
     + ' style="border-collapse:collapse;font-family:Inter,system-ui,sans-serif;margin:24px 0 8px 0;">'
     + '<tr><td align="center" style="padding:0 0 12px 0;">'
-    + '<div style="font-size:11px;font-weight:700;color:#4a8fd4;letter-spacing:2px;text-transform:uppercase;line-height:1.4;">CHAMPIONSHIP SCENARIOS</div>'
+    + `<div style="font-size:11px;font-weight:700;color:${COBALT};letter-spacing:2px;text-transform:uppercase;line-height:1.4;">CHAMPIONSHIP SCENARIOS</div>`
     + '</td></tr></table>';
   const outcomesHtml = (outcomes || []).map(renderOutcome).join('');
   const tiebreakerHtml = tiebreaker ? renderTiebreaker(tiebreaker) : '';

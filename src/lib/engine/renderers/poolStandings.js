@@ -3,8 +3,9 @@
 // light-cobalt bg, navy bold text, and a 3px cobalt left border.
 
 import { escapeHtml } from './_util';
+import { COBALT } from '../colors';
 
-const TH_BASE = 'padding:10px 12px;font-size:11px;font-weight:700;color:#4a8fd4;letter-spacing:1.5px;text-transform:uppercase;border-bottom:2px solid #4a8fd4;';
+const TH_BASE = `padding:10px 12px;font-size:11px;font-weight:700;color:${COBALT};letter-spacing:1.5px;text-transform:uppercase;border-bottom:2px solid ${COBALT};`;
 const TD_BASE = 'padding:10px 12px;font-size:14px;border-bottom:1px solid #e5e7eb;';
 
 function pdColor(pd) {
@@ -18,7 +19,7 @@ function renderRow(row, isLast) {
   const own = !!row?.is_own;
   const bg = own ? 'background-color:#eff6ff;' : '';
   const teamColor = own ? 'color:#1e3a8a;font-weight:700;' : 'color:#0f172a;';
-  const teamBorder = own ? 'border-left:3px solid #4a8fd4;' : '';
+  const teamBorder = own ? `border-left:3px solid ${COBALT};` : '';
   const numColor = own ? 'color:#1e3a8a;font-weight:700;' : 'color:#0f172a;';
   const pdWeight = own ? 'font-weight:700;' : 'font-weight:600;';
   const lastBorder = isLast ? 'border-bottom:none;' : '';

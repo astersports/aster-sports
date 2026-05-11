@@ -3,9 +3,10 @@
 // only (cobalt default / green positive / red negative).
 
 import { escapeHtml } from './_util';
+import { COBALT } from '../colors';
 
 const TONE_COLORS = {
-  neutral:  '#4a8fd4',
+  neutral:  COBALT,
   positive: '#16a34a',
   negative: '#dc2626',
 };

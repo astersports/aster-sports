@@ -2,10 +2,11 @@
 // Navy eyebrow (operator-titled) + bullet list with cobalt bullets.
 
 import { escapeHtml } from './_util';
+import { COBALT } from '../colors';
 
 function renderItem(text) {
   return '<tr><td style="padding:5px 0 5px 0;font-family:Inter,system-ui,sans-serif;font-size:14px;color:#0f172a;line-height:1.5;">'
-    + '<span style="display:inline-block;width:6px;height:6px;background-color:#4a8fd4;border-radius:50%;margin-right:10px;vertical-align:middle;"></span>'
+    + `<span style="display:inline-block;width:6px;height:6px;background-color:${COBALT};border-radius:50%;margin-right:10px;vertical-align:middle;"></span>`
     + escapeHtml(text)
     + '</td></tr>';
 }
