@@ -18,6 +18,7 @@ import AudiencePicker from './AudiencePicker';
 import LockedAnchorChip from './LockedAnchorChip';
 import PilotTestScopePicker from './PilotTestScopePicker';
 import TeamGroupedPicker from './audience/TeamGroupedPicker';
+import RecentAndFavorites from './audience/RecentAndFavorites';
 import { ANCHOR_KINDS_REQUIRING_ID } from './composerReducer';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 import { useOrgTeams } from '../../hooks/useOrgTeams';
@@ -88,6 +89,10 @@ export default function StepAnchorAudience({ state, dispatch, audience, recipien
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* 5d-b-2: Recent + Favorite audiences above the segmented
+                picker. One-tap apply (stays on Step 2; admin reviews
+                the selection in TeamGroupedPicker below before Next). */}
+            <RecentAndFavorites onApply={(audience_type, audience_filter) => dispatch({ type: 'SET_AUDIENCE', audience_type, audience_filter })} />
             <AudiencePicker
               kind={state.kind} audienceType={state.audience_type} audienceFilter={state.audience_filter}
               audience={audience} recipientsLoading={recipientsLoading}
