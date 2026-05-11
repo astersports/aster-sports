@@ -53,33 +53,42 @@ export async function fetchKidNames(supabase, guardianIds) {
   return m;
 }
 
-export async function fetchRecipientGuardians(supabase, orgId, teamIds) {
-  const { data: rpcRows = [], error } = await supabase.rpc('get_digest_recipients', { p_org_id: orgId, p_pilot_only: false });
+// Wave 4.3-I: pilotOnly plumbed through to RPC. Server-side filter is the
+// canonical pilot gate (matches get_digest_recipients(..., p_pilot_only)
+// semantics in all sibling resolvers). Prior code hardcoded
+// p_pilot_only=false and applied a client-side r.is_pilot_family filter at
+// slice-build time — but is_pilot_family is not in the RPC return shape, so
+// the client filter always wiped to 0 in pilot mode. Server-side filter +
+// the 4.3-I synthetic-row override both flow through this single path.
+export async function fetchRecipientGuardians(supabase, orgId, teamIds, pilotOnly = false) {
+  const { data: rpcRows = [], error } = await supabase.rpc('get_digest_recipients', { p_org_id: orgId, p_pilot_only: !!pilotOnly });
   if (error) throw error;
   const teamSet = new Set(teamIds);
   const onTeams = (rpcRows || []).filter((r) => (r.team_ids || []).some((t) => teamSet.has(t)));
-  const kidsByGuardian = await fetchKidNames(supabase, onTeams.map((r) => r.guardian_id));
+  const kidsByGuardian = await fetchKidNames(supabase, onTeams.map((r) => r.guardian_id).filter(Boolean));
   return onTeams.map((r) => ({
     guardian_id: r.guardian_id, email: r.email,
-    is_pilot_family: !!r.is_pilot_family,
-    kid_first_names: (kidsByGuardian.get(r.guardian_id) || []).slice().sort(),
+    kid_first_names: r.guardian_id ? (kidsByGuardian.get(r.guardian_id) || []).slice().sort() : [],
     team_ids: (r.team_ids || []).slice(),
   }));
 }
 
-export function buildTeamSlices(tournamentTeams, allRecipients, pilotOnly) {
+export function buildTeamSlices(tournamentTeams, allRecipients) {
   return (tournamentTeams || [])
     .slice()
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || (a.team_id < b.team_id ? -1 : a.team_id > b.team_id ? 1 : 0))
     .map((t) => {
-      let recip = allRecipients.filter((r) => (r.team_ids || []).includes(t.team_id));
-      if (pilotOnly) recip = recip.filter((r) => r.is_pilot_family);
+      const recip = allRecipients.filter((r) => (r.team_ids || []).includes(t.team_id));
       const dedupe = new Map();
       for (const r of recip) {
-        if (dedupe.has(r.guardian_id)) continue;
-        dedupe.set(r.guardian_id, { guardian_id: r.guardian_id, email: r.email, kid_first_names: r.kid_first_names, is_pilot_family: r.is_pilot_family });
+        const key = r.guardian_id || r.email;
+        if (dedupe.has(key)) continue;
+        dedupe.set(key, { guardian_id: r.guardian_id, email: r.email, kid_first_names: r.kid_first_names });
       }
-      const recipient_guardians = Array.from(dedupe.values()).sort((a, b) => (a.guardian_id < b.guardian_id ? -1 : a.guardian_id > b.guardian_id ? 1 : 0));
+      const recipient_guardians = Array.from(dedupe.values()).sort((a, b) => {
+        const ka = a.guardian_id || a.email; const kb = b.guardian_id || b.email;
+        return ka < kb ? -1 : ka > kb ? 1 : 0;
+      });
       return { kind: 'team', team_id: t.team_id, team_name: t.team_name, team_color: t.team_color, sort_order: t.sort_order, recipient_guardians };
     });
 }

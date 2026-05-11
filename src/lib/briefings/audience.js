@@ -45,6 +45,25 @@ export function computeAudience({
   anchorId,
   pilotModeOn,
 }) {
+  // Wave 4.3-I: pilot_test_recipient_email override.
+  // RPC emits a single synthetic row with guardian_id=null when override
+  // is active + pilot_only=true. team_ids is populated with all org teams,
+  // so the synthetic row passes any audience-scope filter. Surface as a
+  // distinct mode so callers can render "Pilot test recipient: admin@..."
+  // copy rather than "Will send to 1 family."
+  const isPilotTestOverride =
+    Array.isArray(recipientsFiltered) &&
+    recipientsFiltered.length === 1 &&
+    recipientsFiltered[0]?.guardian_id == null;
+  if (isPilotTestOverride) {
+    return {
+      filtered: 1,
+      total: Array.isArray(recipientsTotal) ? recipientsTotal.length : null,
+      pilotModeOn: !!pilotModeOn,
+      mode: 'pilot_test_override',
+      testRecipientEmail: recipientsFiltered[0].email || null,
+    };
+  }
   const filtered = countByAudienceType({ recipients: recipientsFiltered, audienceType, audienceFilter, anchorId });
   const total = countByAudienceType({ recipients: recipientsTotal, audienceType, audienceFilter, anchorId });
   let mode = 'standard';
@@ -64,7 +83,10 @@ export function computeAudience({
 // "Computing audience…" copy. Callers (AudiencePicker, StepBodySignoff)
 // gate the count line behind a loading guard before showing this copy
 // so 0-families flashes are eliminated.
-export function audienceCopy({ filtered, total, mode }) {
+export function audienceCopy({ filtered, total, mode, testRecipientEmail }) {
+  if (mode === 'pilot_test_override') {
+    return `Pilot test recipient: ${testRecipientEmail || 'admin@'} (end-to-end test send only — no real families).`;
+  }
   if (mode === 'pilot_zero') {
     return `Pilot Mode is filtering this team to 0 pilot guardians (out of ${total}). Send will not deliver to anyone. Disable pilot mode to send to all ${total}.`;
   }
