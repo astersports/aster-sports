@@ -71,9 +71,10 @@ export function weeklyDigestPeriod(now, timeZone = ORG_TIMEZONE_DEFAULT) {
 // until admin previews. content_sections gets [] to satisfy its NOT
 // NULL constraint (default is '[]'::jsonb). last_edited_by is NULL:
 // the cron service has no user identity.
-export function buildWeeklyDigestDraftRow({ orgId, period, now }) {
+export function buildWeeklyDigestDraftRow({ orgId, period, now, triggerId = null }) {
   return {
     org_id: orgId,
+    created_by_trigger: triggerId,
     kind: 'weekly_digest',
     anchor_kind: 'org',
     anchor_id: orgId,
@@ -86,6 +87,7 @@ export function buildWeeklyDigestDraftRow({ orgId, period, now }) {
     content_sections: [],
     audience_type: 'org_all',
     audience_filter: null,
+    delivery_method: 'queued',
     last_edited_at: now.toISOString(),
     last_edited_by: null,
   };

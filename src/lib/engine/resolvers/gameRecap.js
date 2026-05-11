@@ -96,8 +96,11 @@ export function composeGameRecap(context, slice, overrides = {}) {
   sections.push({ kind: 'header', eyebrow: `${org.name} · GAME RECAP`, eyebrow_link: org.branding.eyebrowLink, headline: 'GAME RECAP', sub_context: formatSubContext(event.start_at, location?.name), goldStripe: true });
 
   const teamName = team?.name || org.name;
-  const opp = event?.opponent || 'opponent';
-  sections.push({ kind: 'stats_narrative', body: `Final: ${teamName} ${gr.our_score} – ${opp} ${gr.opponent_score} (${gr.result})` });
+  const opp = event?.opponent ? String(event.opponent).trim() : '';
+  const finalLine = opp
+    ? `Final: ${teamName} ${gr.our_score} – ${opp} ${gr.opponent_score} (${gr.result})`
+    : `Final: ${teamName} ${gr.our_score}-${gr.opponent_score} (${gr.result})`;
+  sections.push({ kind: 'stats_narrative', body: finalLine });
 
   if (pog?.first_name) sections.push({ kind: 'stats_narrative', body: `Player of the game: ${pog.first_name}` });
   if (trim(gr.coach_highlight)) sections.push({ kind: 'stats_narrative', body: trim(gr.coach_highlight) });

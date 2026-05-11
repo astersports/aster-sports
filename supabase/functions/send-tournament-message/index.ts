@@ -44,7 +44,10 @@ const corsHeaders = {
 };
 
 const FROM_EMAIL = "briefings@legacyhoopers.org";
-const FROM_NAME = "Coach Frank · Legacy Hoopers";
+// Wave 4.3-H: from_name reads from organization_settings.from_name per kind
+// (no per-kind branching needed; Frank locked "Legacy Hoopers" for all sends).
+// Fallback used only if org_settings row is missing or column is NULL.
+const FROM_NAME_FALLBACK = "Legacy Hoopers";
 const REPLY_TO_FALLBACK = "info@legacyhoopers.org";
 const RESEND_BATCH_LIMIT = 100;
 
@@ -112,11 +115,12 @@ Deno.serve(async (req) => {
   // Pilot-mode defense in depth + reply-to lookup (Wave 3.5 §B5.1 + 3.6 §D6).
   const { data: orgSettings } = await sb
     .from("organization_settings")
-    .select("pilot_mode_enabled, reply_to_email")
+    .select("pilot_mode_enabled, reply_to_email, from_name")
     .eq("organization_id", message.org_id)
     .maybeSingle();
   const pilotMode = orgSettings?.pilot_mode_enabled ?? true;
   const replyTo = orgSettings?.reply_to_email ?? REPLY_TO_FALLBACK;
+  const fromName = orgSettings?.from_name ?? FROM_NAME_FALLBACK;
   if (pilotMode) {
     const guardianIds = recipients.map((r) => r.guardian_id).filter(Boolean);
     if (guardianIds.length) {
@@ -137,7 +141,7 @@ Deno.serve(async (req) => {
   if (body.dry_run) return json({ ok: true, dry_run: true, would_send: recipients.length, pilot_mode_active: pilotMode, reply_to: replyTo });
 
   const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
-  const fromHeader = `${FROM_NAME} <${FROM_EMAIL}>`;
+  const fromHeader = `${fromName} <${FROM_EMAIL}>`;
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const errors: string[] = [];
   let sent = 0;

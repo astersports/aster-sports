@@ -1,7 +1,7 @@
 [
   {
     "kind": "header",
-    "eyebrow": "Legacy Hoopers · WEEKLY DIGEST",
+    "eyebrow": "Legacy Hoopers",
     "headline": "WEEK AHEAD",
     "goldStripe": true,
     "sub_context": "May 11–17",
@@ -58,7 +58,7 @@
           {
             "primary": "11U Girls · Tournament",
             "variant": "tournament_placeholder",
-            "secondary": "Rumble for the Ring CT — pool play",
+            "secondary": "ZG Rumble for the Ring CT — pool play",
             "team_name": "11U Girls",
             "team_color": "#a78bfa",
             "rsvp_counts": { "out": 0, "going": 1, "maybe": 0 },
@@ -67,7 +67,7 @@
           {
             "primary": "8U Boys · Tournament",
             "variant": "tournament_placeholder",
-            "secondary": "Rumble for the Ring CT — pool play",
+            "secondary": "ZG Rumble for the Ring CT — pool play",
             "team_name": "8U Boys",
             "team_color": "#f59e0b",
             "rsvp_counts": { "out": 1, "going": 0, "maybe": 0 },

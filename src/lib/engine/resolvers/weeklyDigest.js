@@ -138,7 +138,7 @@ export function composeWeeklyDigest(context, slice, overrides = {}) {
   const teamSet = new Set(slice.team_ids || []);
   const familyEvents = (context.events || []).filter((e) => teamSet.has(e.team_id));
   const sections = [];
-  sections.push({ kind: 'header', eyebrow: `${context.org.name} · WEEKLY DIGEST`, eyebrow_link: context.org.branding.eyebrowLink, headline: HEADLINE_DEFAULT, sub_context: context.period.label, goldStripe: true });
+  sections.push({ kind: 'header', eyebrow: context.org.name, eyebrow_link: context.org.branding.eyebrowLink, headline: HEADLINE_DEFAULT, sub_context: context.period.label, goldStripe: true });
   if (body_notes && body_notes.trim()) sections.push({ kind: 'stats_narrative', body: body_notes.trim() });
   const schedule = buildScheduleSection({ events: familyEvents, teams: context.teams, tournaments: context.tournaments, rsvpCountsByEvent: context.rsvpCountsByEvent });
   if (schedule) sections.push(schedule);

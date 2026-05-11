@@ -44,7 +44,7 @@ async function readCronSecret(sb: ReturnType<typeof createClient>): Promise<stri
   return data.value as string;
 }
 
-async function handleWeeklySunday(sb: ReturnType<typeof createClient>, orgId: string, now: Date, bypassWindow: boolean) {
+async function handleWeeklySunday(sb: ReturnType<typeof createClient>, triggerId: string, orgId: string, now: Date, bypassWindow: boolean) {
   if (!bypassWindow && !isWeeklySundayWindow(now)) return { skipped: "not_in_window" };
   const period = weeklyDigestPeriod(now);
   const { data: existing, error: selErr } = await sb.from("comms_messages")
@@ -52,7 +52,7 @@ async function handleWeeklySunday(sb: ReturnType<typeof createClient>, orgId: st
     .in("status", ["draft", "scheduled", "queued", "sent"]).limit(1);
   if (selErr) return { error: selErr.message };
   if (existing && existing.length > 0) return { skipped: "exists", existing_id: existing[0].id };
-  const row = buildWeeklyDigestDraftRow({ orgId, period, now });
+  const row = buildWeeklyDigestDraftRow({ orgId, period, now, triggerId });
   const { data: inserted, error: insErr } = await sb.from("comms_messages").insert(row).select("id").single();
   if (insErr) return { error: insErr.message };
   return { draft_created: true, id: inserted.id, period_start: period.period_start };
@@ -61,7 +61,7 @@ async function handleWeeklySunday(sb: ReturnType<typeof createClient>, orgId: st
 async function dispatchTrigger(sb: ReturnType<typeof createClient>, t: TriggerRow, now: Date, forceEvent: string | null) {
   const bypassWeeklyWindow = forceEvent === "weekly_sunday";
   switch (t.trigger_event) {
-    case "weekly_sunday": return [{ trigger_id: t.id, org_id: t.org_id, kind: t.briefing_kind, ...(await handleWeeklySunday(sb, t.org_id, now, bypassWeeklyWindow)) }];
+    case "weekly_sunday": return [{ trigger_id: t.id, org_id: t.org_id, kind: t.briefing_kind, ...(await handleWeeklySunday(sb, t.id, t.org_id, now, bypassWeeklyWindow)) }];
     case "game_completed": return await handleGameCompleted(sb, t, now);
     case "tournament_approaching": return await handleTournamentApproaching(sb, t, now);
     case "tournament_completed": return await handleTournamentCompleted(sb, t, now);

@@ -31,8 +31,12 @@ describe('composeWeeklyDigest', () => {
   it('header eyebrow defaults to legacyhoopers.org link for digest kind', () => {
     const out = composeWeeklyDigest(multiTeam);
     expect(out.html).toContain('href="https://www.legacyhoopers.org/"');
-    expect(out.html).toMatch(/<a[^>]*>Legacy Hoopers · WEEKLY DIGEST<\/a>/);
-    expect(out.plainText).toContain('LEGACY HOOPERS · WEEKLY DIGEST · legacyhoopers.org');
+    // Wave 4.3-H: brand pass dropped the redundant "WEEKLY DIGEST" subhead.
+    // Eyebrow is now just the org name; "WEEK AHEAD" headline carries the
+    // digest context. plainText still appends bare-host suffix via renderer.
+    expect(out.html).toMatch(/<a[^>]*>Legacy Hoopers<\/a>/);
+    expect(out.plainText).toContain('LEGACY HOOPERS · legacyhoopers.org');
+    expect(out.plainText).not.toContain('WEEKLY DIGEST');
   });
 
   it('event location_link renders inline " · map" link', () => {

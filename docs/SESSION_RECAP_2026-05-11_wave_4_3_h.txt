@@ -1,0 +1,477 @@
+================================================================================
+SESSION RECAP — Wave 4.3-H Implementation
+Session date: 2026-05-11 (continuation of 2026-05-10/11 multi-wave session)
+Branch: claude/wave-4-3-h-bug-cleanup-and-branding
+PR: #86 (draft)
+HEAD commits: ecba759 (audit docs) → 08e723d (implementation)
+================================================================================
+
+PURPOSE
+-------
+Hand-off recap for Claude.ai cross-review. Captures what shipped, what's
+pending, decisions made, anti-patterns surfaced, and verification steps.
+
+USE THIS DOC BY:
+  1. Read "WHAT SHIPPED" to verify Code Code's claims vs intent
+  2. Run the chat-side migration applies (§MIGRATIONS PENDING)
+  3. Confirm verification checklist (§POST-MERGE VERIFICATION)
+  4. Flip PR #86 from draft → ready, or surface blockers
+
+
+================================================================================
+SESSION ARC
+================================================================================
+
+Started: post-wave-4.3-B ship, planning 4.3-H pre-launch quality pass.
+
+Major events in order:
+  1. Frank ran chat-side L99 MCP audit, found 9 P1 bugs in briefing system
+  2. CC ran 3-agent code-side audit (engine + edge functions + UI surfaces)
+  3. Both audits reconciled — CC pushed back on 3 false positives in chat
+     audit, confirmed 6 real bugs + 3 chat-only finds
+  4. Frank ran 14-table data wipe (227 rows) at 01:17 UTC via Supabase MCP
+     — clean slate before pre-launch quality work
+  5. CC duplicated the wipe via apply_migration; cleaned up duplicate
+     schema_migrations row
+  6. Two audit docs landed (code-side .md + chat-side .txt) as
+     anti-pattern #34 prototype (two-source audit lock)
+  7. Frank answered 3 open questions blocking Step 2 implementation
+  8. Item 2 simplified dramatically — Frank locked "Legacy Hoopers" as
+     the universal from_name (no per-kind branching, no staff_profiles
+     JOIN, no coach prefix construction). Dropped item 2 from ~15 LOC
+     to ~5 LOC.
+  9. CC implemented all 9 items + 1 data wipe mirror file
+ 10. Tests: 464 → 466 green; 1 snapshot regenerated
+ 11. PR #86 description updated with migration SQL for Frank to apply
+
+
+================================================================================
+WHAT SHIPPED — 9 items + mirror file
+================================================================================
+
+ITEM 1: pilot_only state plumbing
+---------------------------------------------------------------------------
+Files: src/components/briefings/BriefingComposer.jsx (+10 LOC)
+       src/components/briefings/composerReducer.js (+5 LOC)
+
+INITIAL_STATE gains `pilot_only: false`. New SET_PILOT_ONLY reducer case
+sets state.pilot_only from action.value. BriefingComposer adds useEffect
+that dispatches SET_PILOT_ONLY whenever pilotModeEnabled (from
+useOrgSettings) changes — keeping state.pilot_only in sync with the
+org-level toggle.
+
+KEY DECISION: pilot_only is NOT stored per-draft. It's org-level state
+synced from useOrgSettings.pilotModeEnabled. No schema change needed.
+This is the cleaner interpretation of the original audit framing —
+draft rows store only anchor + kind + metadata per anti-pattern #28.
+
+Result: all 7 RESOLVER_REGISTRY.anchorFromState entries now resolve
+preview recipients consistently with send-time recipient filtering.
+Fixes "preview shows 60 families, sends to 5" mismatch when org is in
+pilot mode.
+
+ITEM 2: from_name resolver
+---------------------------------------------------------------------------
+File: supabase/functions/send-tournament-message/index.ts (+5/-2 LOC)
+
+Deleted hardcoded `const FROM_NAME = "Coach Frank · Legacy Hoopers";`
+at line 47. Replaced with read from organization_settings.from_name.
+
+Pre-fix: every send used "Coach Frank · Legacy Hoopers" regardless of
+sender or kind.
+Post-fix: uses orgSettings.from_name (after Frank applies the migration
+to UPDATE to "Legacy Hoopers"). Fallback to constant
+FROM_NAME_FALLBACK = "Legacy Hoopers" if column NULL.
+
+KEY DECISION (Frank, this session): NO per-kind branching. NO
+staff_profiles JOIN. NO coach prefix construction. Every kind reads
+the same from_name. Dropped scope from ~15 LOC to ~5 LOC. The
+"Coach Coach Kenny" doubling bug never materializes because there's
+no Coach prefix construction at all.
+
+ITEM 3: Tournament name priority
+---------------------------------------------------------------------------
+File: src/lib/engine/resolvers/weeklyDigestSchedule.js (1-line change)
+
+Before: `const tournName = event.tournament_name || tournament?.name || 'Tournament';`
+After:  `const tournName = tournament?.name || event.tournament_name || 'Tournament';`
+
+Joined tournaments.name now takes priority over denormalized
+events.tournament_name. Fixes same-tournament inconsistency in single
+digest output ("Rumble for the Ring CT" Sat vs "ZG Rumble for the
+Ring CT" Sun).
+
+DEFERRED (Wave 4.4): drop events.tournament_name entirely. Wider
+denormalized reads still exist in non-composer code:
+  - src/components/wizard/wizardForm.js:39 (UI form state)
+  - src/components/event/AcademyCallupCompose.jsx:20 (display)
+  - src/components/tournament/TournamentPlaceholderEventsModal.jsx:78 (write)
+  - src/hooks/useTournamentBriefing.js:70,90 (text-equality query!)
+These are OUT OF SCOPE for 4.3-H. useTournamentBriefing.js:70's
+text-equality query is structurally fragile (breaks if
+tournaments.name is renamed). File for wave 4.4 cleanup.
+
+ITEM 4: game_recap "vs opponent" leak
+---------------------------------------------------------------------------
+Files: src/lib/engine/resolvers/gameRecapHelpers.js (+3/-2 LOC)
+       src/lib/engine/resolvers/gameRecap.js (+5/-2 LOC)
+
+Before:
+  const opp = event?.opponent || 'opponent';
+  return `Recap — ${teamName} ${verb} ${opp}, ${our}-${theirs}`;
+After:
+  const opp = event?.opponent ? String(event.opponent).trim() : '';
+  if (!opp) return `Recap — ${teamName} ${our}-${theirs}`;
+  const verb = RESULT_VERB[gr.result] || 'played';
+  return `Recap — ${teamName} ${verb} ${opp}, ${our}-${theirs}`;
+
+If opponent is null/empty, "vs X" chunk omitted entirely (not
+substituted with literal "opponent"). Same pattern applied to
+stats_narrative body in gameRecap.js.
+
+ITEM 5: delivery_method harmonization
+---------------------------------------------------------------------------
+Files: src/lib/cron/briefingCronHelpers.js (+2 LOC)
+       supabase/functions/briefing-auto-draft-tick/_helpers.ts (+2 LOC)
+       src/lib/cron/__tests__/briefingCronHelpers.test.js (+14 LOC, 2 new tests)
+
+buildWeeklyDigestDraftRow now sets `delivery_method: 'queued'`
+explicitly in both files (the anti-pattern #30 mirror pair). Pre-fix
+the field was omitted, defaulting to 'copy_paste'. The other 5
+auto-draft kinds (game_recap, rsvp_nudge, tournament_*, schedule_change)
+were already setting 'queued' via placeholderDraft.
+
+ITEM 6: verify_jwt audit glob broadening
+---------------------------------------------------------------------------
+File: src/lib/__tests__/verifyJwtConfigAudit.test.js (+12 LOC, 1 helper)
+
+New helper readFunctionSource(funcName) reads all *.ts files in a
+function dir (was index.ts only) and concatenates with newlines.
+Both audits (anti-pattern #31 verify_jwt config + #33 secrets storage)
+now scan the full function dir, catching shared-secret patterns in
+_handlers.ts / _helpers.ts / _lib.ts siblings.
+
+Wave 4.3-B introduced sibling files that escaped the audit's reach.
+This fix closes that blind spot.
+
+ITEM 7: comms_messages.created_by_trigger column
+---------------------------------------------------------------------------
+Files: supabase/functions/briefing-auto-draft-tick/_handlers.ts
+        (placeholderDraft signature change + 5 callers)
+       src/lib/cron/briefingCronHelpers.js (+triggerId param)
+       supabase/functions/briefing-auto-draft-tick/_helpers.ts (mirror)
+       supabase/functions/briefing-auto-draft-tick/index.ts
+        (handleWeeklySunday signature + dispatcher)
+       src/lib/cron/__tests__/briefingCronHelpers.test.js
+
+placeholderDraft signature changed from (orgId, ...) to (trigger, ...).
+Now derives org_id and created_by_trigger from the trigger object.
+All 5 handler call sites updated. buildWeeklyDigestDraftRow gains
+optional triggerId param (defaults null for tests; production
+caller passes trigger.id).
+
+Audit trail: every auto-draft now has created_by_trigger pointing to
+the briefing_triggers row that created it. Diagnostic gap closed.
+
+MIGRATION REQUIRED (drafted in PR description for chat-side apply):
+  ALTER TABLE comms_messages
+    ADD COLUMN created_by_trigger uuid
+    REFERENCES briefing_triggers(id) ON DELETE SET NULL;
+  CREATE INDEX comms_messages_created_by_trigger_idx
+    ON comms_messages(created_by_trigger)
+    WHERE created_by_trigger IS NOT NULL;
+
+ITEM 8: RSVP coverage threshold gate
+---------------------------------------------------------------------------
+File: supabase/functions/briefing-auto-draft-tick/_handlers.ts
+       (handleRsvpLow24h rewrite, +18 LOC)
+
+Handler entry now reads org's nudge_rules.rsvp_coverage_threshold
+(default 0.7). Per-event:
+  1. Fetch total = team_players WHERE team_id=event.team_id AND status='active'
+  2. If total === 0: skip with "no_active_roster"
+  3. Fetch responded = DISTINCT player_id FROM event_rsvps WHERE event_id=e.id
+  4. coverage = responded / total
+  5. If responded > 0 AND coverage >= threshold: skip with "coverage_met"
+  6. Else: nudge (covers cold-start: responded=0 and gap case)
+
+DEFERRED (Wave 4.4): academy_callup_player_ids[] inflates effective
+roster. v1 ignores callups in denominator (slightly underestimates;
+threshold gate still functions). Document as future refinement.
+
+MIGRATION REQUIRED (drafted in PR description for chat-side apply):
+  UPDATE organization_settings
+  SET nudge_rules = nudge_rules || jsonb_build_object(
+    'rsvp_coverage_threshold', 0.7
+  )
+  WHERE NOT (nudge_rules ? 'rsvp_coverage_threshold');
+
+ITEM 9: weekly_header brand pass
+---------------------------------------------------------------------------
+Files: src/lib/engine/resolvers/weeklyDigest.js (1-line change)
+       src/lib/engine/renderers/weeklyDigest.js (1-line change in buildHeader)
+       src/lib/engine/renderers/__tests__/weeklyDigest.test.js (assertion update)
+       src/lib/engine/resolvers/__tests__/fixtures/weekly_digest_may_11_17/
+         expected_content_sections.json (eyebrow value)
+       src/lib/engine/renderers/__tests__/__snapshots__/
+         weeklyDigest.test.js.snap (regenerated via -u)
+
+Before: eyebrow = `${context.org.name} · WEEKLY DIGEST`
+After:  eyebrow = context.org.name (just "Legacy Hoopers")
+
+"WEEK AHEAD" headline carries the digest context. Brand voice:
+cleaner, less redundant.
+
+DISCOVERY: TWO code paths build the header — both resolver AND
+renderer have their own buildHeader functions. Both needed updating.
+The renderer's buildHeader at line 24-33 was missed in the initial
+edit; surfaced by test failure on snapshot mismatch.
+
+DATA WIPE MIGRATION MIRROR
+---------------------------------------------------------------------------
+New file: supabase/migrations/20260511011751_wave_4_3_h_data_full_interaction_wipe.sql
+
+Mirror of the wipe applied via MCP at 01:17 UTC. 227 rows deleted
+across 14 tables. Atomicity guards in DO $$ block. Per anti-pattern
+#21 mirror requirement.
+
+
+================================================================================
+TEST DELTA
+================================================================================
+
+Before: 464 tests passing
+After:  466 tests passing (+2 new)
+
+New tests in src/lib/cron/__tests__/briefingCronHelpers.test.js:
+  1. "builds correct insert shape with triggerId: created_by_trigger
+     set, delivery_method=queued" — verifies new fields in
+     buildWeeklyDigestDraftRow output
+  2. "defaults created_by_trigger to null when triggerId not provided"
+     — backward-compat coverage
+
+Snapshot regenerated:
+  src/lib/engine/renderers/__tests__/__snapshots__/weeklyDigest.test.js.snap
+  (changes: eyebrow text, multiple HTML occurrences)
+
+Lint: 0 errors, 42 warnings (all pre-existing, unrelated to this wave)
+
+
+================================================================================
+MIGRATIONS PENDING CHAT-SIDE APPLY
+================================================================================
+
+Per anti-pattern #21 split-of-labor pattern:
+  - CC drafts SQL in PR description (DONE)
+  - Frank pre-flights via execute_sql, GOs, applies via apply_migration
+  - CC commits mirror file in same PR with canonical version string
+
+Migration 1 — created_by_trigger column:
+  ALTER TABLE comms_messages
+    ADD COLUMN created_by_trigger uuid
+    REFERENCES briefing_triggers(id) ON DELETE SET NULL;
+  CREATE INDEX comms_messages_created_by_trigger_idx
+    ON comms_messages(created_by_trigger)
+    WHERE created_by_trigger IS NOT NULL;
+
+Migration 2 — from_name + nudge_rules update:
+  UPDATE organization_settings
+  SET from_name = 'Legacy Hoopers',
+      nudge_rules = nudge_rules || jsonb_build_object('rsvp_coverage_threshold', 0.7)
+  WHERE organization_id = 'e3e95e21-3571-4e9a-985a-d5d01480d4a6'
+    AND (from_name IS DISTINCT FROM 'Legacy Hoopers'
+         OR NOT (nudge_rules ? 'rsvp_coverage_threshold'));
+
+
+================================================================================
+ANTI-PATTERNS PROVEN / SURFACED THIS SESSION
+================================================================================
+
+PROVEN (this session is evidence of the value):
+  #21 Migration mirror split-of-labor — chat applies, CC mirrors. Held
+       cleanly across 4.3-H-data wipe.
+  #22 Never trust commit/push reports without verification — caught
+       duplicate apply_migration call (CC + Frank both ran the wipe);
+       verified via schema_migrations query; cleaned up.
+  #27 Pure resolvers with injected supabase — confirmed clean across
+       all 7 resolver/composer pairs.
+  #28 RESOLVER_REGISTRY as dispatch source of truth — held.
+  #30 Edge function helpers mirror sync — held for cron helpers across
+       4.3-H changes (both buildWeeklyDigestDraftRow files updated
+       byte-near-identically).
+  #31 verify_jwt config drift — audit test now globs *.ts per dir.
+  #33 Shared secrets in app_secrets — held; no Deno.env regressions.
+
+PROPOSED FOR CLAUDE.md (Frank's audit doc, §OPEN ISSUES BEYOND 4.3-H):
+  #34 Two-source audit lock — chat-side MCP + code-side grep audits run
+       together. Either side can challenge findings the other can't
+       ground-truth. This session's audit reconciliation proved it
+       (chat audit had 3 false positives that code-side pushback caught;
+       code audit had blind spots that MCP caught — see Bug A "vs
+       opponent" in real production data).
+  #35 Verify rendered output not just stored output — every wave's
+       closing check includes end-to-end send + inspect rendered email.
+       Real production artifact revealed bugs (Bug A subject leak,
+       tournament name inconsistency) neither pure MCP nor pure grep
+       surfaced.
+
+OBSERVED THIS SESSION (could become an anti-pattern doc):
+  - When fixing a "WEEKLY DIGEST" subhead, search BOTH the resolver
+    AND the renderer — there are two parallel code paths that build
+    the same header section. Item 9 initially missed the renderer's
+    buildHeader function; caught by snapshot test failure.
+  - When changing a function signature (placeholderDraft from
+    (orgId, ...) to (trigger, ...)), the mechanical edit at each
+    call site is small but the cognitive load of getting all 5
+    call sites + the test fixture right grows linearly. TodoWrite
+    helps; mass replace-all helps when the change is uniform.
+
+
+================================================================================
+POST-MERGE VERIFICATION CHECKLIST
+================================================================================
+
+After Frank applies migrations + merges PR #86 + CI redeploys:
+
+1. Edge function versions bumped:
+   - briefing-auto-draft-tick should be v8+ (was v7)
+   - send-tournament-message should be v17+ (was v16)
+   Verify via mcp__supabase__list_edge_functions
+
+2. Migrations applied:
+   SELECT version, name FROM supabase_migrations.schema_migrations
+   WHERE version > '20260511011751' ORDER BY version;
+   Expect: 2 new rows
+
+3. created_by_trigger column exists:
+   SELECT EXISTS(SELECT 1 FROM information_schema.columns
+     WHERE table_name = 'comms_messages'
+       AND column_name = 'created_by_trigger');
+   Expect: true
+
+4. Auto-drafts populate created_by_trigger:
+   After next cron tick:
+   SELECT kind, COUNT(*), COUNT(created_by_trigger) AS with_trigger
+   FROM comms_messages
+   WHERE org_id = 'e3e95e21-3571-4e9a-985a-d5d01480d4a6'
+     AND last_edited_by IS NULL
+   GROUP BY kind;
+   Expect: with_trigger = total for every kind
+
+5. nudge_rules has threshold:
+   SELECT nudge_rules ? 'rsvp_coverage_threshold' AS has_threshold,
+          nudge_rules ->> 'rsvp_coverage_threshold' AS value
+   FROM organization_settings
+   WHERE organization_id = 'e3e95e21-3571-4e9a-985a-d5d01480d4a6';
+   Expect: has_threshold=true, value="0.7"
+
+6. organization_settings.from_name set:
+   SELECT from_name FROM organization_settings
+   WHERE organization_id = 'e3e95e21-3571-4e9a-985a-d5d01480d4a6';
+   Expect: 'Legacy Hoopers'
+
+7. weekly_digest delivery_method = 'queued' on Sun 8am ET tick:
+   (Will fire May 17 8am ET. Will be the first weekly_digest after
+   4.3-H ships. Check post-tick.)
+   SELECT delivery_method FROM comms_messages
+   WHERE kind='weekly_digest' AND status='draft' LIMIT 1;
+   Expect: 'queued' (not 'copy_paste')
+
+8. End-to-end send test from wizard:
+   Open BriefingComposer wizard → select weekly_digest → preview →
+   "Send test to admin@" → check Gmail inbox:
+   - Sender field reads "Legacy Hoopers" (not "Coach Frank · Legacy Hoopers")
+   - Body opens with "Legacy Hoopers" eyebrow + "WEEK AHEAD" headline
+     (no "· WEEKLY DIGEST" subhead)
+   - Tournament rows show full "ZG Rumble for the Ring CT" name
+   - Any game_recap with NULL opponent omits "vs X" entirely
+
+
+================================================================================
+DEFERRED TO WAVE 4.4 (filed during this session)
+================================================================================
+
+A. event_reminder_due trigger missing — 6/7 trigger coverage. Add
+   handler + seed 2-6 trigger rows per team_type. ~100 LOC.
+
+B. Polymorphic rename completion (Bug D from earlier audits) —
+   comms_messages.tournament_id/team_id/sent_by/coach_user_ids/headline/
+   sub_context/signoff_message/body_notes still populated by old code
+   paths despite anchor_kind/anchor_id pattern. Drop legacy fields or
+   backfill anchor_* from legacy. ~200 LOC + cleanup migration.
+
+C. briefing_templates table unused (0 rows). Schema-ready but no
+   template rows. Decision needed: seed migration OR document as
+   aspirational + remove FK.
+
+D. Resend webhook receiver: 0 opens recorded despite 24+ sent
+   recipients (pre-wipe). Investigation needed before pilot family
+   expansion.
+
+E. File size cap violations (cosmetic):
+   - weeklyDigest.js (resolver): 152 lines
+   - send-tournament-message/index.ts: 185 lines
+
+F. events.tournament_name denormalized reads in 4 non-composer
+   sites. Wider cleanup beyond item 3's composer fix.
+
+G. useTournamentBriefing.js:70 text-equality query — structurally
+   fragile, breaks if tournaments.name is renamed.
+
+H. language_code hardcoded 'en'. Defer until i18n expansion.
+
+I. No cron downtime catch-up. If briefing-auto-draft-tick is down
+   for N minutes, those windows are lost. Acceptable for current
+   scale.
+
+J. Observability — no first-class metrics on draft creation rate,
+   send success, open/click rates. Defer until pilot family
+   expansion.
+
+K. Force-fire trigger admin UI — currently MCP execute_sql; needs
+   admin surface eventually.
+
+L. Multi-kid "Going for all" UX — deferred from wave 4.2-A-8b-b.
+
+M. Academy callup_player_ids[] in RSVP coverage denominator
+   (item 8 v1 ignores; v2 should include).
+
+N. Two new anti-patterns proposed (#34 two-source audit, #35 verify
+   rendered output) — document in CLAUDE.md when next admin/CC
+   session opens it.
+
+
+================================================================================
+RISKS / OPEN OBSERVATIONS
+================================================================================
+
+R1. Migration apply order matters: Migration 2 (UPDATE
+    organization_settings) is safe before merge — it's just changing
+    a column value. Migration 1 (ALTER TABLE) MUST be applied before
+    code that writes created_by_trigger ships, OR the handler INSERTs
+    will fail with "column does not exist" at runtime. Recommend:
+    apply Migration 1 FIRST, then 2, then flip PR ready, then merge.
+
+R2. Frank's display_name in staff_profiles is currently "Frank"
+    (no Coach prefix). With item 2's universal "Legacy Hoopers"
+    from_name, this is moot — sender display reads "Legacy Hoopers"
+    regardless of who sent. But if a future wave introduces per-kind
+    from_name with display_name lookup, the asymmetry resurfaces
+    (Frank: "Frank · Legacy Hoopers"; Kenny: "Coach Kenny · Legacy
+    Hoopers"). Filed.
+
+R3. The renderer's parallel composeWeeklyDigest function (at
+    renderers/weeklyDigest.js) and the resolver's composeWeeklyDigest
+    (at resolvers/weeklyDigest.js) both exist. Pre-registry path vs
+    registry path. Worth understanding which sends use which. Filed
+    for wave 4.4 investigation.
+
+R4. PR #86 ships ALL 9 items as a single commit. Trade-off: cleaner
+    history but harder to revert individual items if regression
+    surfaces. Squash-merge OK; per-item revert via cherry-pick of
+    file-scoped changes if needed.
+
+
+================================================================================
+END OF RECAP
+================================================================================

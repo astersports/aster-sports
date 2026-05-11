@@ -72,6 +72,17 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
     return () => { cancelled = true; };
   }, [initialDraftId]);
 
+  // Wave 4.3-H: keep state.pilot_only in sync with org-level pilot mode.
+  // Read by every anchorFromState in RESOLVER_REGISTRY to scope preview
+  // recipients consistently with what send pulls (useDigestRecipients
+  // already filters by pilotModeEnabled at fetch time). Without this,
+  // preview resolved with pilotOnly=undefined while send filtered to
+  // pilot subset — mismatch surfaced as "preview shows 60 families,
+  // sends to 5" in orgs with pilot mode ON.
+  useEffect(() => {
+    dispatch({ type: 'SET_PILOT_ONLY', value: !!pilotModeEnabled });
+  }, [pilotModeEnabled]);
+
   // Bug C — kind-null guard. If state lands on Step 3 without a kind,
   // bounce back to Step 1 with a toast so admins can pick first.
   useEffect(() => {

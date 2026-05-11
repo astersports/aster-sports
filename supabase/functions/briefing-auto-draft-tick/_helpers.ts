@@ -63,7 +63,7 @@ export function weeklyDigestPeriod(now: Date, timeZone: string = ORG_TIMEZONE_DE
 }
 
 export function buildWeeklyDigestDraftRow(
-  { orgId, period, now }: { orgId: string; period: WeeklyDigestPeriod; now: Date },
+  { orgId, period, now, triggerId = null }: { orgId: string; period: WeeklyDigestPeriod; now: Date; triggerId?: string | null },
 ) {
   // body_html + body_plain are NOT NULL on comms_messages with no
   // default — empty strings are placeholders until admin previews via
@@ -73,6 +73,7 @@ export function buildWeeklyDigestDraftRow(
   // subject fresh at send time.
   return {
     org_id: orgId,
+    created_by_trigger: triggerId,
     kind: "weekly_digest",
     anchor_kind: "org",
     anchor_id: orgId,
@@ -85,6 +86,7 @@ export function buildWeeklyDigestDraftRow(
     content_sections: [],
     audience_type: "org_all",
     audience_filter: null,
+    delivery_method: "queued",
     last_edited_at: now.toISOString(),
     last_edited_by: null,
   };
