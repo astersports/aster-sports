@@ -90,8 +90,8 @@ export async function resolveTournamentRecap({ tournamentId, pilotOnly }, { supa
 
   const { data: coaches = [] } = orgId ? await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null) : { data: [] };
   const { data: org } = orgId ? await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle() : { data: null };
-  const allRecipients = orgId ? await fetchRecipientGuardians(supabase, orgId, teamIds) : [];
-  const slices = buildTeamSlices(tournament_teams, allRecipients, effectivePilotOnly);
+  const allRecipients = orgId ? await fetchRecipientGuardians(supabase, orgId, teamIds, effectivePilotOnly) : [];
+  const slices = buildTeamSlices(tournament_teams, allRecipients);
 
   return {
     context: {

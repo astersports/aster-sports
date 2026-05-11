@@ -91,6 +91,40 @@ describe('computeAudience pilot mode states', () => {
     expect(result.total).toBe(0);
   });
 
+  // Wave 4.3-I: pilot_test_recipient_email override.
+  // RPC emits a single synthetic row with guardian_id=null when override
+  // is configured + p_pilot_only=true. Surfaces as 'pilot_test_override'
+  // mode. Distinct from pilot_partial (real pilot families) and standard
+  // (production sends).
+  it('pilot_test_override — single synthetic row with guardian_id=null', () => {
+    const synthetic = [{ guardian_id: null, email: 'admin@legacyhoopers.org', team_ids: ['t1', 't2', 't3', 't4', 't5'] }];
+    const result = computeAudience({
+      recipientsFiltered: synthetic,
+      recipientsTotal: FULL_RECIPIENTS,
+      audienceType: 'org_all',
+      pilotModeOn: true,
+    });
+    expect(result.mode).toBe('pilot_test_override');
+    expect(result.filtered).toBe(1);
+    expect(result.total).toBe(5);
+    expect(result.testRecipientEmail).toBe('admin@legacyhoopers.org');
+  });
+
+  it('pilot_test_override — passes team-scoped audience filter', () => {
+    // Synthetic row has team_ids covering ALL org teams so any audience
+    // scope (org_all, team, multi_team) still resolves filtered=1.
+    const synthetic = [{ guardian_id: null, email: 'admin@legacyhoopers.org', team_ids: [team10UBlue, team10UBlack] }];
+    const result = computeAudience({
+      recipientsFiltered: synthetic,
+      recipientsTotal: FULL_RECIPIENTS,
+      audienceType: 'team',
+      anchorId: team10UBlue,
+      pilotModeOn: true,
+    });
+    expect(result.mode).toBe('pilot_test_override');
+    expect(result.filtered).toBe(1);
+  });
+
   it('Bug B reality — 21 total guardians on 10U Blue, 0 pilot', () => {
     const total = Array.from({ length: 21 }, (_, i) => ({ guardian_id: `g${i}`, team_ids: [team10UBlue] }));
     const result = computeAudience({
@@ -139,5 +173,16 @@ describe('audienceCopy (wave 4.1d-2 §3.1 — direct copy without "Settings → 
 
   it('null filtered → Computing audience…', () => {
     expect(audienceCopy({ filtered: null, mode: 'standard' })).toBe('Computing audience…');
+  });
+
+  it('pilot_test_override copy shows the test recipient email', () => {
+    const copy = audienceCopy({ filtered: 1, total: 102, mode: 'pilot_test_override', testRecipientEmail: 'admin@legacyhoopers.org' });
+    expect(copy).toContain('Pilot test recipient: admin@legacyhoopers.org');
+    expect(copy).toContain('end-to-end test send only');
+  });
+
+  it('pilot_test_override copy falls back to admin@ when email not provided', () => {
+    const copy = audienceCopy({ filtered: 1, mode: 'pilot_test_override' });
+    expect(copy).toContain('admin@');
   });
 });
