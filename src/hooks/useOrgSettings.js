@@ -19,7 +19,7 @@ export function useOrgSettings(orgId) {
       setLoading(true);
       const { data, error } = await supabase
         .from('organization_settings')
-        .select('pilot_mode_enabled')
+        .select('pilot_mode_enabled, pilot_test_recipient_email')
         .eq('organization_id', orgId)
         .maybeSingle();
       if (cancelled) return;
@@ -33,5 +33,9 @@ export function useOrgSettings(orgId) {
   // Safe default: when the row is missing or the fetch errors, treat as
   // pilot mode ON. The whole point of the gate is to fail closed.
   const pilotModeEnabled = settings?.pilot_mode_enabled ?? true;
-  return { settings, pilotModeEnabled, loading };
+  // Wave 4.3-K: pilot_test_recipient_email override is org-scoped; null
+  // means "no override, route to real pilot families." UI gates the test
+  // scope picker on this being non-null.
+  const pilotTestRecipientEmail = settings?.pilot_test_recipient_email || null;
+  return { settings, pilotModeEnabled, pilotTestRecipientEmail, loading };
 }

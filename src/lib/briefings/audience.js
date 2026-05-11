@@ -85,7 +85,19 @@ export function computeAudience({
 // so 0-families flashes are eliminated.
 export function audienceCopy({ filtered, total, mode, testRecipientEmail }) {
   if (mode === 'pilot_test_override') {
-    return `Pilot test recipient: ${testRecipientEmail || 'admin@'} (end-to-end test send only — no real families).`;
+    // Wave 4.3-K Item 4: explicit pilot test mode copy. Names the test
+    // recipient and the dormant-family count separately so admins don't
+    // confuse the synthetic admin@ row with a real pilot family. N team
+    // views = filtered count from upstream (1 or N depending on test
+    // scope picker); M = total real-guardian universe.
+    const email = testRecipientEmail || 'admin@';
+    const teamViews = typeof filtered === 'number' ? filtered : 1;
+    const viewLabel = teamViews === 1 ? '1 team view' : `${teamViews} team views`;
+    const familyCount = typeof total === 'number' ? total : null;
+    const tail = familyCount != null
+      ? ` Disable pilot mode in Settings to send to all ${familyCount}.`
+      : '';
+    return `Pilot test mode — sending to ${email} (${viewLabel}).${tail}`;
   }
   if (mode === 'pilot_zero') {
     return `Pilot Mode is filtering this team to 0 pilot guardians (out of ${total}). Send will not deliver to anyone. Disable pilot mode to send to all ${total}.`;

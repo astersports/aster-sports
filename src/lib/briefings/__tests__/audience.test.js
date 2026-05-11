@@ -175,13 +175,22 @@ describe('audienceCopy (wave 4.1d-2 §3.1 — direct copy without "Settings → 
     expect(audienceCopy({ filtered: null, mode: 'standard' })).toBe('Computing audience…');
   });
 
-  it('pilot_test_override copy shows the test recipient email', () => {
-    const copy = audienceCopy({ filtered: 1, total: 102, mode: 'pilot_test_override', testRecipientEmail: 'admin@legacyhoopers.org' });
-    expect(copy).toContain('Pilot test recipient: admin@legacyhoopers.org');
-    expect(copy).toContain('end-to-end test send only');
+  it('Wave 4.3-K — pilot_test_override copy names the test recipient and dormant family count separately', () => {
+    const copy = audienceCopy({ filtered: 5, total: 102, mode: 'pilot_test_override', testRecipientEmail: 'admin@legacyhoopers.org' });
+    expect(copy).toContain('Pilot test mode');
+    expect(copy).toContain('admin@legacyhoopers.org');
+    expect(copy).toContain('5 team views');
+    expect(copy).toContain('Disable pilot mode');
+    expect(copy).toContain('all 102');
   });
 
-  it('pilot_test_override copy falls back to admin@ when email not provided', () => {
+  it('Wave 4.3-K — pilot_test_override singular: 1 team view', () => {
+    const copy = audienceCopy({ filtered: 1, total: 102, mode: 'pilot_test_override', testRecipientEmail: 'admin@legacyhoopers.org' });
+    expect(copy).toContain('1 team view');
+    expect(copy).not.toContain('1 team views');
+  });
+
+  it('Wave 4.3-K — pilot_test_override copy falls back to admin@ when email not provided', () => {
     const copy = audienceCopy({ filtered: 1, mode: 'pilot_test_override' });
     expect(copy).toContain('admin@');
   });

@@ -86,4 +86,34 @@ describe('queueComposedMessages — pure builders', () => {
     const message = { slice: { kind: 'mystery' }, subject: 'X', content_sections: sectionsA };
     expect(() => __test.expandSliceToRows('m-1', message, rendered)).toThrow(/unknown slice\.kind/);
   });
+
+  it('Wave 4.3-K — synthetic rows (guardian_id=null) fan out by team, not collapse', () => {
+    // Simulates the 5 per-team synthetic recipients from get_digest_recipients
+    // when pilot_test_recipient_email is set. Pre-4.3-K the dedup key was
+    // guardian_id alone — all 5 collapsed to 1 (null key collision). The
+    // composite key (email + teams_included) keeps them distinct.
+    const messages = ['t-1', 't-2', 't-3', 't-4', 't-5'].map((tid) => ({
+      slice: { kind: 'family', guardian_id: null, email: 'admin@x', team_id: tid },
+      subject: `Pilot Test · team ${tid}`,
+      content_sections: sectionsA,
+    }));
+    const rows = buildFanoutRows({ messageId: 'm-1', messages, testOnly: false });
+    expect(rows).toHaveLength(5);
+    expect(rows.every((r) => r.guardian_id == null)).toBe(true);
+    expect(rows.every((r) => r.email_at_send === 'admin@x')).toBe(true);
+    expect(rows.map((r) => r.teams_included[0]).sort()).toEqual(['t-1', 't-2', 't-3', 't-4', 't-5']);
+  });
+
+  it('Wave 4.3-K — real-guardian dedup unchanged for guardians sharing an email', () => {
+    // Sanity check that the composite key doesn't accidentally allow real
+    // guardians to duplicate. Two team slices both list guardian g1; g1
+    // should still appear only once in the output rows.
+    const messages = [
+      teamMessage('t-1', [{ guardian_id: 'g1', email: 'g1@x' }]),
+      teamMessage('t-2', [{ guardian_id: 'g1', email: 'g1@x' }]),
+    ];
+    const rows = buildFanoutRows({ messageId: 'm-1', messages, testOnly: false });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].guardian_id).toBe('g1');
+  });
 });

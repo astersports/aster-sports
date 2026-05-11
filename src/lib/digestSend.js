@@ -61,17 +61,29 @@ export async function sendWeeklyDigest({
   recipients, events, tournaments, teams, coaches,
   rsvpCountsByEvent,
   testOnly,
+  audienceTeamIds = null,
 }) {
   if (!orgId) throw new Error('Missing orgId.');
   if (!period?.start || !period?.end) throw new Error('Pick a digest period.');
   if (!recipients?.length) throw new Error('No recipients available.');
 
   const context = buildContext({ orgId, period, events, teams, tournaments, coaches, rsvpCountsByEvent });
-  const overrides = { body_notes: bodyNotes, signoff_message: signoffMessage, ops_notes: opsNotes };
+  // Wave 4.3-K: audience_team_ids threads through to the composer so per-team
+  // anchored briefings (audience=team:X) intersect slice.team_ids with the
+  // anchor before scoping body events. Without this a multi-team family or a
+  // synthetic per-team test row would render whichever team_ids the slice
+  // happens to carry, ignoring the anchor.
+  const overrides = { body_notes: bodyNotes, signoff_message: signoffMessage, ops_notes: opsNotes, audience_team_ids: audienceTeamIds };
   const slices = buildSlicesFromRecipients(recipients);
   const renderedFamilies = slices
     .map((slice) => {
-      const teamSet = new Set(slice.team_ids || []);
+      // Apply audience anchor intersection at the slice level for the
+      // hasEvents short-circuit, so per-team-anchored sends correctly drop
+      // recipients whose team_ids don't overlap the anchor.
+      const effectiveTeamIds = audienceTeamIds && audienceTeamIds.length
+        ? (slice.team_ids || []).filter((t) => audienceTeamIds.includes(t))
+        : (slice.team_ids || []);
+      const teamSet = new Set(effectiveTeamIds);
       const hasEvents = (context.events || []).some((e) => teamSet.has(e.team_id));
       if (!hasEvents) return null;
       return { family: slice, ...renderSlice(context, slice, overrides) };
@@ -99,7 +111,14 @@ export async function sendWeeklyDigest({
   if (msgErr) throw msgErr;
 
   // Build per-recipient queue rows. In test mode, only admin@ row is queued.
-  const familyRows = testOnly ? [] : renderedFamilies.map((f) => ({
+  // Wave 4.3-K: when ALL rendered families are synthetic (guardian_id=null,
+  // routed to pilot_test_recipient_email already), testOnly is effectively
+  // a no-op — the synthetic rows ARE the test send and they must pass
+  // through. Without this carve-out testOnly drops the per-team synthetic
+  // rows and only the single admin BCC row survives (recipient_count=1).
+  const allSynthetic = renderedFamilies.length > 0 && renderedFamilies.every((f) => f.family.guardian_id == null);
+  const effectiveTestOnly = testOnly && !allSynthetic;
+  const familyRows = effectiveTestOnly ? [] : renderedFamilies.map((f) => ({
     message_id: msg.id, guardian_id: f.family.guardian_id,
     email_at_send: f.family.email,
     delivery_method: 'resend_api', delivery_status: 'queued',

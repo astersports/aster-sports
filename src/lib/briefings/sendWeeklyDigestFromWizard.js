@@ -18,17 +18,52 @@
 
 import { sendWeeklyDigest } from '../digestSend';
 
-function filterSendable(recipients, eventsByTeam) {
-  return (recipients || []).map((r) => {
-    const seen = new Set();
-    const evs = [];
-    for (const tid of r.team_ids || []) {
-      for (const ev of eventsByTeam.get(tid) || []) {
-        if (!seen.has(ev.id)) { seen.add(ev.id); evs.push(ev); }
+// Wave 4.3-K: resolve audience anchor to team_ids list. Mirrors
+// recipientFilter.js's resolveAudienceTeamIds but kept inline + sync —
+// audience.js dynamic-imports supabase, which we don't want in this hot
+// path. weekly_digest only supports synchronous audience types
+// (org_all/team/multi_team); event_attendees + tournament_attendees aren't
+// composer kinds for weekly_digest so they don't appear here.
+function resolveWeeklyDigestAudienceTeamIds({ audienceType, audienceFilter, anchorId }) {
+  if (!audienceType || audienceType === 'org_all') return null;
+  if (audienceType === 'team') {
+    const id = audienceFilter?.team_id || anchorId;
+    return id ? [id] : [];
+  }
+  if (audienceType === 'multi_team') {
+    const ids = audienceFilter?.team_ids;
+    if (Array.isArray(ids) && ids.length) return ids.filter(Boolean);
+    return anchorId ? [anchorId] : [];
+  }
+  return null;
+}
+
+function filterSendable(recipients, eventsByTeam, audienceTeamIds = null, pilotTestScopeTeamId = null) {
+  const audienceSet = Array.isArray(audienceTeamIds) && audienceTeamIds.length ? new Set(audienceTeamIds) : null;
+  return (recipients || [])
+    // Wave 4.3-K Item 3: pilot test scope picker. Synthetic rows have
+    // guardian_id=null and team_ids=[single team]; the wizard picker
+    // narrows the test send to just the selected team. Real guardians
+    // are untouched by this filter.
+    .filter((r) => {
+      if (!pilotTestScopeTeamId) return true;
+      if (r.guardian_id != null) return true; // never filter real guardians
+      return (r.team_ids || []).includes(pilotTestScopeTeamId);
+    })
+    .map((r) => {
+      const seen = new Set();
+      const evs = [];
+      for (const tid of r.team_ids || []) {
+        // Wave 4.3-K Item 2: audience anchor enforcement. When the message
+        // is anchored to specific team(s), skip events for teams outside
+        // the anchor — even if the recipient's team_ids array includes them.
+        if (audienceSet && !audienceSet.has(tid)) continue;
+        for (const ev of eventsByTeam.get(tid) || []) {
+          if (!seen.has(ev.id)) { seen.add(ev.id); evs.push(ev); }
+        }
       }
-    }
-    return { ...r, events: evs };
-  }).filter((f) => f.events.length > 0);
+      return { ...r, events: evs };
+    }).filter((f) => f.events.length > 0);
 }
 
 function buildEventsByTeam(events) {
@@ -45,7 +80,12 @@ export function mapWizardStateToDigestArgs({ state, orgId, period, recipients, e
   if (state.kind !== 'weekly_digest') {
     throw new Error(`mapWizardStateToDigestArgs: expected kind=weekly_digest, got ${state.kind}`);
   }
-  const sendable = filterSendable(recipients, buildEventsByTeam(events));
+  const audienceTeamIds = resolveWeeklyDigestAudienceTeamIds({
+    audienceType: state.audience_type,
+    audienceFilter: state.audience_filter,
+    anchorId: state.anchor_id,
+  });
+  const sendable = filterSendable(recipients, buildEventsByTeam(events), audienceTeamIds, state.pilot_test_scope_team_id || null);
   return {
     orgId, period,
     bodyNotes: state.body?.body_notes || '',
@@ -54,8 +94,11 @@ export function mapWizardStateToDigestArgs({ state, orgId, period, recipients, e
     recipients: sendable, events, tournaments, teams, coaches,
     rsvpCountsByEvent,
     testOnly: !!state.test_only,
+    audienceTeamIds,
   };
 }
+
+export const __test = { resolveWeeklyDigestAudienceTeamIds, filterSendable, buildEventsByTeam };
 
 export async function sendWeeklyDigestFromWizard(args) {
   const digestArgs = mapWizardStateToDigestArgs(args);
