@@ -19,6 +19,7 @@ import { computeAudience } from '../../lib/briefings/audience';
 import StepKindPicker from './StepKindPicker';
 import StepAnchorAudience from './StepAnchorAudience';
 import StepBodySignoff from './StepBodySignoff';
+import StepSendConfirm from './StepSendConfirm';
 import PreviewPanel from './PreviewPanel';
 import ScheduleForLaterPicker from './ScheduleForLaterPicker';
 import SaveStatusPill from './SaveStatusPill';
@@ -74,7 +75,7 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   // Bug C — kind-null guard. If state lands on Step 3 without a kind,
   // bounce back to Step 1 with a toast so admins can pick first.
   useEffect(() => {
-    if (state.step === 3 && !state.kind) {
+    if (state.step === STEPS.length && !state.kind) {
       dispatch({ type: 'JUMP_TO', step: 1 });
       showToast('Pick a kind to continue.', 'info');
     }
@@ -128,18 +129,20 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
       <div style={{ maxWidth: 720, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--em-text-tertiary)' }}>
           {state.step > 1 && <button type="button" onClick={() => dispatch({ type: 'GO_BACK' })} className="sf-press" style={{ minHeight: 36, minWidth: 36, border: 'none', background: 'transparent', cursor: 'pointer' }}><ArrowLeft size={16} strokeWidth={1.75} /></button>}
-          <span>{`Step ${state.step} of 3`}</span>
+          <span>{`Step ${state.step} of ${STEPS.length}`}</span>
           <span style={{ marginLeft: 'auto' }}><SaveStatusPill busy={draft.busy} savedAt={draft.savedAt} hasKind={!!state.kind} /></span>
         </div>
         <ScheduleForLaterPicker mode={state.send_mode === 'scheduled' ? 'schedule_for_later' : 'send_now'} scheduledFor={state.scheduled_for} onChange={(payload) => dispatch({ type: 'SET_SCHEDULE', payload })} />
         {state.step === 1 && <StepKindPicker visibleKinds={state.kindFilter} onPick={(kind, meta) => dispatch({ type: 'SET_KIND', kind, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType, defaultBody: {} }) || dispatch({ type: 'GO_FORWARD' })} />}
         {state.step === 2 && <StepAnchorAudience state={state} dispatch={dispatch} audience={audience} recipientsLoading={recipientsLoading} teams={digest?.teams} pilotTestRecipientEmail={pilotTestRecipientEmail} />}
-        {state.step === 3 && <StepBodySignoff state={state} dispatch={dispatch} audience={audience} hasParentTournament={hasParentTournament} onSend={onSend} onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose} busy={busy} />}
-        {state.step < 3 && (
+        {state.step === 3 && <StepBodySignoff state={state} dispatch={dispatch} audience={audience} hasParentTournament={hasParentTournament} onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose} />}
+        {state.step === STEPS.length && <StepSendConfirm state={state} audience={audience} onSend={onSend} sending={busy} pilotModeEnabled={pilotModeEnabled} />}
+        {state.step < STEPS.length && (
           <button type="button" disabled={!canAdvance(state)} onClick={() => dispatch({ type: 'GO_FORWARD' })} className="sf-press" style={{ minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: canAdvance(state) ? 'var(--em-accent)' : 'var(--em-bg-tertiary)', color: canAdvance(state) ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)', fontSize: 15, fontWeight: 600, cursor: canAdvance(state) ? 'pointer' : 'default' }}>
             Next
           </button>
         )}
+        {/* PreviewPanel intentionally stays bound to Step 3 (Body) only — Frank-locked decision. Step 4 (Send) is text-only confirmation. */}
         {state.step === 3 && <PreviewPanel state={state} families={recipients} coaches={coaches} recipientCount={audience.filtered} />}
       </div>
     </FullScreenForm>

@@ -4,7 +4,10 @@
 import { INITIAL_STATE } from './composerReducer';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 
-export const STEPS = ['Kind', 'Audience', 'Body'];
+// Wave 4.4-B Session 5c: 'Send' added as 4th terminal step.
+// Step 3 (Body) now advances via the wizard chrome's Next button to
+// Step 4 (Send) where the confirmation card + SEND button live.
+export const STEPS = ['Kind', 'Audience', 'Body', 'Send'];
 
 // Wave 4.4-B Session 1: audience pre-fill from anchor. When the deep-link
 // supplies anchor=team&id=<uuid>, default audience to {type:'team',

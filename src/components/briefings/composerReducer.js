@@ -41,9 +41,20 @@ export const INITIAL_STATE = {
   pilot_test_scope_team_id: null,
 };
 
+// Wave 4.4-B Session 5c: Step 3 (Body) is now advanceable to Step 4
+// (Send). Body content is template-driven (resolver fills it at
+// preview/send for the 6 wizard-flow kinds; free-form for the other 2).
+// Gate is the upstream-state invariant — if kind + audience_type are
+// set, Step 3 can advance; the SEND button on Step 4 has its own gates
+// for pilot-zero / scheduleInvalid / recipient-count-zero.
+export function step3Valid(state) {
+  return !!(state.kind && state.audience_type);
+}
+
 export function canAdvance(state) {
   if (state.step === 1) return !!state.kind;
   if (state.step === 2) return step2Valid(state);
+  if (state.step === 3) return step3Valid(state);
   return false;
 }
 
@@ -92,7 +103,11 @@ export function composerReducer(state, action) {
     case 'GO_BACK':
       return { ...state, step: Math.max(1, state.step - 1) };
     case 'GO_FORWARD':
-      return canAdvance(state) ? { ...state, step: Math.min(3, state.step + 1) } : state;
+      // Wave 4.4-B Session 5c: clamp bumped 3 → 4 to match STEPS.length
+      // ('Kind', 'Audience', 'Body', 'Send'). STEPS lives in
+      // briefingComposerHelpers.js; importing here would create a
+      // circular dep (helpers imports INITIAL_STATE from this file).
+      return canAdvance(state) ? { ...state, step: Math.min(4, state.step + 1) } : state;
     case 'JUMP_TO':
       return { ...state, step: action.step };
     case 'HYDRATE_DRAFT':
