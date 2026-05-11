@@ -2,19 +2,28 @@
 // through RESOLVER_REGISTRY via useResolverPreview. Free-form kinds
 // keep legacy compose. academy_callup_notice shows the blocker
 // banner (token mint pending in 4.3).
+//
+// Wave 4.4-T0c — preview surface delegates to DevicePreviewFrame
+// (375 / 600 / plain) per CLAUDE.md §12 rule #12.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { compose, renderSections } from '../../lib/engine/composer';
+import { useMemo, useState } from 'react';
+import { compose, renderSections, renderSectionsPlainText } from '../../lib/engine/composer';
 import { getDispatchSendPath, RESOLVER_REGISTRY } from '../../lib/engine/resolvers/registry';
 import { useResolverPreview } from '../../lib/engine/useResolverPreview';
+import DevicePreviewFrame from '../shared/DevicePreviewFrame';
 
 const wrap = { display: 'flex', flexDirection: 'column', gap: 8, height: '100%' };
 const topBar = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' };
-const frameStyle = { width: '100%', minHeight: 480, border: '1px solid var(--em-border-default)', borderRadius: 10, backgroundColor: '#ffffff' };
+
+function errorRender(msg) {
+  return { html: `<div style="padding:24px;color:#dc2626;font-family:Inter,sans-serif;">${msg}</div>`, plainText: msg };
+}
 
 function safeLegacyCompose(kind, data) {
-  try { return compose({ kind, data }); }
-  catch (e) { return { html: `<div style="padding:24px;color:#dc2626;font-family:Inter,sans-serif;">Preview error: ${e.message}</div>`, plainText: '' }; }
+  try {
+    const r = compose({ kind, data });
+    return { html: r.html, plainText: r.plainText || '' };
+  } catch (e) { return errorRender(`Preview error: ${e.message}`); }
 }
 
 function buildLegacyData(state, coaches, families, eventTitle, before, after, period) {
@@ -30,7 +39,6 @@ function buildLegacyData(state, coaches, families, eventTitle, before, after, pe
 }
 
 export default function PreviewPanel({ state, families, coaches, eventTitle, before, after, recipientCount }) {
-  const iframeRef = useRef(null);
   const [period] = useState(() => ({ start: new Date(), end: new Date(Date.now() + 7 * 86400000) }));
   const sendPath = getDispatchSendPath(state.kind);
 
@@ -41,31 +49,22 @@ export default function PreviewPanel({ state, families, coaches, eventTitle, bef
 
   const composed = useMemo(() => {
     if (entry) {
-      if (preview.isLoading) return { html: '<div style="padding:24px;font-family:Inter,sans-serif;color:#64748b;">Loading preview…</div>' };
-      if (preview.error) return { html: `<div style="padding:24px;color:#dc2626;font-family:Inter,sans-serif;">Preview error: ${preview.error.message}</div>` };
-      if (!preview.data) return { html: '' };
-      if (!preview.data.slices.length) return { html: '<div style="padding:24px;font-family:Inter,sans-serif;color:#64748b;">No recipients for this anchor.</div>' };
+      if (preview.isLoading) return { html: '<div style="padding:24px;font-family:Inter,sans-serif;color:#64748b;">Loading preview…</div>', plainText: 'Loading preview…' };
+      if (preview.error) return errorRender(`Preview error: ${preview.error.message}`);
+      if (!preview.data) return { html: '', plainText: '' };
+      if (!preview.data.slices.length) return { html: '<div style="padding:24px;font-family:Inter,sans-serif;color:#64748b;">No recipients for this anchor.</div>', plainText: 'No recipients for this anchor.' };
       try {
         const { content_sections } = entry.compose(preview.data.context, preview.data.slices[0], overrides);
         const inner = renderSections(content_sections);
-        return { html: `<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">${inner}</div>` };
-      } catch (e) {
-        return { html: `<div style="padding:24px;color:#dc2626;font-family:Inter,sans-serif;">Preview error: ${e.message}</div>` };
-      }
+        return {
+          html: `<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">${inner}</div>`,
+          plainText: renderSectionsPlainText(content_sections),
+        };
+      } catch (e) { return errorRender(`Preview error: ${e.message}`); }
     }
     const data = buildLegacyData(state, coaches, families, eventTitle, before, after, period);
     return safeLegacyCompose(state.kind || 'custom_message', data);
-  }, [sendPath, entry, preview, overrides, state, coaches, families, eventTitle, before, after, period]);
-
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    const doc = iframe.contentDocument;
-    if (!doc) return;
-    doc.open();
-    doc.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=600"></head><body style="margin:0;padding:0;background:#f8fafc;">${composed.html}</body></html>`);
-    doc.close();
-  }, [composed.html, sendPath]);
+  }, [entry, preview, overrides, state, coaches, families, eventTitle, before, after, period]);
 
   const audience = state.test_only
     ? 'Preview · admin@ only'
@@ -74,7 +73,7 @@ export default function PreviewPanel({ state, families, coaches, eventTitle, bef
   return (
     <div style={wrap}>
       <div style={topBar}>{audience}</div>
-      <iframe ref={iframeRef} title="Briefing preview" sandbox="" style={frameStyle} />
+      <DevicePreviewFrame html={composed.html} plainText={composed.plainText} />
     </div>
   );
 }
