@@ -14,13 +14,15 @@
 // production renderer behavior. Multi-tenant org-level branding is
 // a separate wave; today these are file-level defaults.
 
-import { formatPeriodLabel, formatSubject, periodIsoBounds } from '../digestPeriod';
-import { buildScheduleSection } from './weeklyDigestSchedule';
+import { formatPeriodLabel, periodIsoBounds } from '../digestPeriod';
+
+// Wave 4.3-K: composeWeeklyDigest lives in a sibling file to keep this
+// module under the 150-line cap. Re-export preserves the public surface.
+export { composeWeeklyDigest } from './composeWeeklyDigest';
 
 const RSVP_KEY = { going: 'going', maybe: 'maybe', not_going: 'out' };
 
 const ORG_NAME_DEFAULT = 'Legacy Hoopers';
-const HEADLINE_DEFAULT = 'WEEK AHEAD';
 const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
 const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
 const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
@@ -132,21 +134,3 @@ export async function resolveWeeklyDigest({ orgId, period, pilotOnly = false }, 
   };
 }
 
-export function composeWeeklyDigest(context, slice, overrides = {}) {
-  if (!context || !slice) throw new Error('Missing context or slice');
-  const { body_notes = '', signoff_message = '', ops_notes = '' } = overrides;
-  const teamSet = new Set(slice.team_ids || []);
-  const familyEvents = (context.events || []).filter((e) => teamSet.has(e.team_id));
-  const sections = [];
-  sections.push({ kind: 'header', eyebrow: context.org.name, eyebrow_link: context.org.branding.eyebrowLink, headline: HEADLINE_DEFAULT, sub_context: context.period.label, goldStripe: true });
-  if (body_notes && body_notes.trim()) sections.push({ kind: 'stats_narrative', body: body_notes.trim() });
-  const schedule = buildScheduleSection({ events: familyEvents, teams: context.teams, tournaments: context.tournaments, rsvpCountsByEvent: context.rsvpCountsByEvent });
-  if (schedule) sections.push(schedule);
-  const opsItems = (ops_notes || '').split('\n').map((s) => s.trim()).filter(Boolean);
-  if (opsItems.length) sections.push({ kind: 'ops_notes', title: 'BEFORE YOU GO', items: opsItems });
-  const validCoaches = (context.org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
-  const hasSignoff = (signoff_message && signoff_message.trim()) || validCoaches.length;
-  if (hasSignoff) sections.push({ kind: 'signoff', prose: (signoff_message || '').trim(), coaches: validCoaches });
-  sections.push({ kind: 'footer', logoUrl: context.org.branding.logoUrl, orgName: context.org.name, websiteUrl: context.org.branding.eyebrowLink, contactEmail: context.org.branding.contactEmail });
-  return { subject: formatSubject(context.period), content_sections: sections };
-}

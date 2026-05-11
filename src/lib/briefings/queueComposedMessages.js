@@ -59,11 +59,20 @@ export function buildFanoutRows({ messageId, messages, testOnly }) {
     const rendered = renderBody(message);
     allRows.push(...expandSliceToRows(messageId, message, rendered));
   }
+  // Wave 4.3-K: composite dedup key. Real guardians have unique guardian_id
+  // (the primary key). Pilot-test synthetic rows have guardian_id=null and
+  // share email_at_send=admin@ — they need a composite key over
+  // (email_at_send, teams_included) so the 5 per-team synthetic rows fan
+  // out into 5 distinct comms_message_recipients rows. Without this the
+  // first row wins and the admin only sees one team's content per send.
   const seen = new Set();
   const deduped = [];
   for (const row of allRows) {
-    if (seen.has(row.guardian_id)) continue;
-    seen.add(row.guardian_id);
+    const key = row.guardian_id != null
+      ? `g:${row.guardian_id}`
+      : `s:${row.email_at_send}:${(row.teams_included || []).join(',')}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     deduped.push(row);
   }
   return deduped;

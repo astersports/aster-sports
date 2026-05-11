@@ -61,6 +61,46 @@ describe('resolver contract — wave 4.2-A-1', () => {
     expect(norm(a.context.events)).toEqual(norm(b.context.events));
   });
 
+  // Wave 4.3-K — audience anchor enforcement at compose time.
+  it('6. composeWeeklyDigest with overrides.audience_team_ids intersects slice.team_ids', () => {
+    // Slice claims two teams (multi-team family). Audience anchored to one
+    // of them. Body must scope events to the anchor team only.
+    const context = {
+      org: { id: 'o-1', name: 'X', branding: {}, coaches: [] },
+      period: { start: new Date(), end: new Date(), label: 'May 11-17' },
+      events: [
+        { id: 'e1', team_id: 't-11u', start_at: '2026-05-13T22:00:00Z' },
+        { id: 'e2', team_id: 't-8u', start_at: '2026-05-13T22:00:00Z' },
+      ],
+      teams: [{ id: 't-11u', name: '11U Girls' }, { id: 't-8u', name: '8U Boys' }],
+      tournaments: [], rsvpCountsByEvent: new Map(),
+    };
+    const slice = { kind: 'family', guardian_id: 'g1', email: 'g@x', kid_first_names: [], team_ids: ['t-11u', 't-8u'] };
+    const out = composeWeeklyDigest(context, slice, { audience_team_ids: ['t-11u'] });
+    const flat = JSON.stringify(out.content_sections);
+    // 11U Girls event renders; 8U Boys event does not.
+    expect(flat).toContain('11U Girls');
+    expect(flat).not.toContain('8U Boys');
+  });
+
+  it('7. composeWeeklyDigest with overrides.audience_team_ids null falls back to slice.team_ids (org_all behavior)', () => {
+    const context = {
+      org: { id: 'o-1', name: 'X', branding: {}, coaches: [] },
+      period: { start: new Date(), end: new Date(), label: 'May 11-17' },
+      events: [
+        { id: 'e1', team_id: 't-11u', start_at: '2026-05-13T22:00:00Z' },
+        { id: 'e2', team_id: 't-8u', start_at: '2026-05-13T22:00:00Z' },
+      ],
+      teams: [{ id: 't-11u', name: '11U Girls' }, { id: 't-8u', name: '8U Boys' }],
+      tournaments: [], rsvpCountsByEvent: new Map(),
+    };
+    const slice = { kind: 'family', guardian_id: 'g1', email: 'g@x', kid_first_names: [], team_ids: ['t-11u', 't-8u'] };
+    const out = composeWeeklyDigest(context, slice);
+    const flat = JSON.stringify(out.content_sections);
+    expect(flat).toContain('11U Girls');
+    expect(flat).toContain('8U Boys');
+  });
+
   it('5. no fabrication: null location.name -> "Location TBD"; missing coach phone -> coach omitted from signoff', async () => {
     // Use 11U Girls Mon practice (index 2) so it lands in Stephanie's slice
     const fixturesNoFab = {

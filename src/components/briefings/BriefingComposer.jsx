@@ -13,7 +13,7 @@ import { useOrgStaff } from '../../hooks/useOrgStaff';
 import { useBriefingDraft } from '../../hooks/useBriefingDraft';
 import { useWizardDigestData } from '../../hooks/useWizardDigestData';
 import { supabase } from '../../lib/supabase';
-import { canAdvance, composerReducer, INITIAL_STATE } from './composerReducer';
+import { canAdvance, composerReducer } from './composerReducer';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 import { computeAudience } from '../../lib/briefings/audience';
 import StepKindPicker from './StepKindPicker';
@@ -24,24 +24,12 @@ import ScheduleForLaterPicker from './ScheduleForLaterPicker';
 import SaveStatusPill from './SaveStatusPill';
 import { submitBriefing } from './composerSubmit';
 import { sendWeeklyDigestFromWizard } from '../../lib/briefings/sendWeeklyDigestFromWizard';
-
-const STEPS = ['Kind', 'Audience', 'Body'];
-
-function buildInitial({ initialKind, initialAnchorKind, initialAnchorId, initialKindFilter }) {
-  const base = { ...INITIAL_STATE, kindFilter: initialKindFilter?.length ? initialKindFilter : null };
-  if (!initialKind && !initialAnchorId) return base;
-  const meta = KIND_METADATA[initialKind] || {};
-  return { ...base, step: initialAnchorId ? 2 : 1, kind: initialKind || null, anchor_kind: initialAnchorKind || meta.defaultAnchorKind || null, anchor_id: initialAnchorId || null, audience_type: meta.defaultAudienceType || null };
-}
-
-function fmtSchedule(iso) {
-  return new Date(iso).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-}
+import { buildInitial, fmtSchedule, STEPS } from './briefingComposerHelpers';
 
 export default function BriefingComposer({ onClose, initialKind, initialAnchorKind, initialAnchorId, initialDraftId, initialKindFilter }) {
   const { orgId } = useAuth();
   const { showToast } = useToast();
-  const { pilotModeEnabled } = useOrgSettings(orgId);
+  const { pilotModeEnabled, pilotTestRecipientEmail } = useOrgSettings(orgId);
   const { recipients, loading: recipientsLoading } = useDigestRecipients({ orgId, pilotOnly: pilotModeEnabled });
   const { recipients: recipientsTotal } = useDigestRecipients({ orgId, pilotOnly: false });
   const { staff: coaches } = useOrgStaff(orgId);
@@ -145,7 +133,7 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
         </div>
         <ScheduleForLaterPicker mode={state.send_mode === 'scheduled' ? 'schedule_for_later' : 'send_now'} scheduledFor={state.scheduled_for} onChange={(payload) => dispatch({ type: 'SET_SCHEDULE', payload })} />
         {state.step === 1 && <StepKindPicker visibleKinds={state.kindFilter} onPick={(kind, meta) => dispatch({ type: 'SET_KIND', kind, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType, defaultBody: {} }) || dispatch({ type: 'GO_FORWARD' })} />}
-        {state.step === 2 && <StepAnchorAudience state={state} dispatch={dispatch} audience={audience} recipientsLoading={recipientsLoading} />}
+        {state.step === 2 && <StepAnchorAudience state={state} dispatch={dispatch} audience={audience} recipientsLoading={recipientsLoading} teams={digest?.teams} pilotTestRecipientEmail={pilotTestRecipientEmail} />}
         {state.step === 3 && <StepBodySignoff state={state} dispatch={dispatch} audience={audience} hasParentTournament={hasParentTournament} onSend={onSend} onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose} busy={busy} />}
         {state.step < 3 && (
           <button type="button" disabled={!canAdvance(state)} onClick={() => dispatch({ type: 'GO_FORWARD' })} className="sf-press" style={{ minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: canAdvance(state) ? 'var(--em-accent)' : 'var(--em-bg-tertiary)', color: canAdvance(state) ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)', fontSize: 15, fontWeight: 600, cursor: canAdvance(state) ? 'pointer' : 'default' }}>
