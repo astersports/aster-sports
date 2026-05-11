@@ -6,6 +6,8 @@
 // targets the earliest invalid step so admins can recover broken
 // drafts (e.g. anchor_id NULL surfaces inline on Step 2).
 
+import { STEPS } from './composerSteps';
+
 export const ANCHOR_KINDS_REQUIRING_ID = new Set(['event', 'tournament', 'team']);
 
 export function step2Valid(state) {
@@ -103,11 +105,10 @@ export function composerReducer(state, action) {
     case 'GO_BACK':
       return { ...state, step: Math.max(1, state.step - 1) };
     case 'GO_FORWARD':
-      // Wave 4.4-B Session 5c: clamp bumped 3 → 4 to match STEPS.length
-      // ('Kind', 'Audience', 'Body', 'Send'). STEPS lives in
-      // briefingComposerHelpers.js; importing here would create a
-      // circular dep (helpers imports INITIAL_STATE from this file).
-      return canAdvance(state) ? { ...state, step: Math.min(4, state.step + 1) } : state;
+      // Wave 4.4-B housekeeping: clamp derived from STEPS.length so
+      // future STEPS array changes don't drift this hardcoded value.
+      // STEPS lives in composerSteps.js (leaf module — no cycle).
+      return canAdvance(state) ? { ...state, step: Math.min(STEPS.length, state.step + 1) } : state;
     case 'JUMP_TO':
       return { ...state, step: action.step };
     case 'HYDRATE_DRAFT':
