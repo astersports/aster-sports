@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Users } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ChevronLeft, Mail, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { isStaff } from '../lib/permissions';
 import { usePrograms } from '../hooks/usePrograms';
@@ -15,9 +15,6 @@ import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import TeamHeaderCard from '../components/roster/TeamHeaderCard';
-import SendBriefingButton from '../components/briefings/SendBriefingButton';
-
-const TEAM_BRIEFING_KINDS = ['announcement', 'weekly_digest', 'custom_message'];
 import TeamAchievements from '../components/roster/TeamAchievements';
 import RosterSection from '../components/roster/RosterSection';
 import TeamSwitcher from '../components/roster/TeamSwitcher';
@@ -76,7 +73,17 @@ export default function TeamDetailPage() {
       <TeamHeaderCard team={team} summary={summary} loading={recordsLoading} nextEvent={nextEvent} />
       {isStaff(role) && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -8, marginBottom: 12 }}>
-          <SendBriefingButton anchorKind="team" anchorId={teamId} kindFilter={TEAM_BRIEFING_KINDS} />
+          {/* Wave 4.4-B Session 1: deep-link to the briefing portal. The
+              old <SendBriefingButton> that lazy-mounted BriefingComposer
+              inline is retired in favor of one route + URL params, so
+              the portal becomes the single entry point. Team-scoped
+              audience auto-fills via the anchor=team param. */}
+          <Link to={`/admin/briefings/compose?anchor=team&id=${teamId}`} aria-label="Send briefing about this team"
+            className="sf-press"
+            style={{ minHeight: 44, padding: '0 14px', borderRadius: 10, fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer', border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
+            <Mail size={14} strokeWidth={1.75} />
+            <span>Send briefing</span>
+          </Link>
         </div>
       )}
       {myChildPlayer && <MyChildSpotlight player={myChildPlayer} team={team} child={myChild} nextEvent={nextEvent} />}

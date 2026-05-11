@@ -5,10 +5,16 @@
 // ?anchor_id) now open the composer pre-populated. §6.F: Compose tab
 // renamed to Drafts (in-progress drafts only). §2: pilot mode chip
 // surfaced via BriefingsHero when org pilot mode is enabled.
+//
+// Wave 4.4-B Session 1: deep-link parsing extracted to
+// useBriefingDeepLink hook (new + legacy taxonomies, /compose path
+// auto-opens composer). Closing the composer when on /compose
+// navigates back to /admin/briefings so the URL stays consistent.
 
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useBriefingDeepLink } from '../hooks/useBriefingDeepLink';
 import { useOrgSettings } from '../hooks/useOrgSettings';
 import { useInboxQueue } from '../hooks/useInboxQueue';
 import { useNeedsBriefing } from '../hooks/useNeedsBriefing';
@@ -27,16 +33,16 @@ const BriefingComposer = lazy(() => import('../components/briefings/BriefingComp
 const wrap = { backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' };
 const inner = { maxWidth: 760, margin: '0 auto', padding: '0 16px 80px', display: 'flex', flexDirection: 'column', gap: 12 };
 
-const COMPOSER_PARAMS = ['draft_id', 'kind', 'anchor_kind', 'anchor_id'];
-
 export default function BriefingsInboxPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { orgId } = useAuth();
   const { pilotModeEnabled } = useOrgSettings(orgId);
   const tab = searchParams.get('tab') || 'active';
   const { filters, update: updateFilters, clear: clearFilters } = useBriefingFilters();
   const [search, setSearch] = useState('');
   const [composer, setComposer] = useState(null); // null | { kind, anchor_kind, anchor_id, draft_id }
+  const deepLink = useBriefingDeepLink();
 
   const { rows: dbRows } = useInboxQueue({ orgId });
   const { items: synthetic } = useNeedsBriefing({ orgId });
@@ -46,25 +52,24 @@ export default function BriefingsInboxPage() {
   }, [dbRows, synthetic]);
   const draftCount = useMemo(() => (dbRows || []).filter((r) => r.status === 'draft').length, [dbRows]);
 
-  // Bug C — open composer from URL params on first navigation. Strip
-  // them after wiring so a refresh after dismissing doesn't re-open.
-  // Promise.resolve to defer setState out of the effect body (matches
-  // the pattern used in BriefingComposer + useInboxQueue elsewhere).
+  // Wave 4.4-B Session 1: deep-link parser handles old+new param taxonomy
+  // plus /admin/briefings/compose route as a cold-start entry. Auto-open
+  // composer + strip params so refresh after dismiss doesn't re-open.
   useEffect(() => {
-    if (composer) return undefined;
-    const draftId = searchParams.get('draft_id');
-    const kind = searchParams.get('kind');
-    const anchorKind = searchParams.get('anchor_kind');
-    const anchorId = searchParams.get('anchor_id');
-    if (!draftId && !kind && !anchorId) return undefined;
+    if (composer || !deepLink.shouldOpenComposer) return undefined;
     Promise.resolve().then(() => {
-      setComposer({ draft_id: draftId, kind, anchor_kind: anchorKind, anchor_id: anchorId });
-      const sp = new URLSearchParams(searchParams);
-      COMPOSER_PARAMS.forEach((p) => sp.delete(p));
-      setSearchParams(sp, { replace: true });
+      setComposer(deepLink.composerInit);
+      deepLink.consume();
     });
     return undefined;
-  }, [composer, searchParams, setSearchParams]);
+  }, [composer, deepLink]);
+
+  // Close composer: if we arrived via /compose route, redirect to the
+  // inbox so the URL stays consistent. Otherwise just close the modal.
+  const closeComposer = () => {
+    setComposer(null);
+    if (deepLink.isComposeRoute) navigate('/admin/briefings', { replace: true });
+  };
 
   const setTab = (next) => {
     const sp = new URLSearchParams(searchParams);
@@ -101,7 +106,7 @@ export default function BriefingsInboxPage() {
             initialAnchorKind={composer.anchor_kind}
             initialAnchorId={composer.anchor_id}
             initialDraftId={composer.draft_id}
-            onClose={() => setComposer(null)}
+            onClose={closeComposer}
           />
         </Suspense>
       )}

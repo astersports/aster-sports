@@ -83,6 +83,7 @@ export default function App() {
       <Route path="/admin/financials" element={<Protected allowedRoles={['admin']}><FinancialDashboardPage /></Protected>} />
       <Route path="/admin/financials/import" element={<Protected allowedRoles={['admin']}><FinancialImportPage /></Protected>} />
       <Route path="/admin/briefings" element={<Protected allowedRoles={['admin']}><BriefingsInboxPage /></Protected>} />
+      <Route path="/admin/briefings/compose" element={<Protected allowedRoles={['admin']}><BriefingsInboxPage /></Protected>} />
       <Route path="/admin/briefings/history/:id" element={<Protected allowedRoles={['admin']}><BriefingHistoryDetail /></Protected>} />
       <Route path="/admin/engine-preview" element={<Protected allowedRoles={['admin']}><EngineDebugPreviewPage /></Protected>} />
     </Routes>

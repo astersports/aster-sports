@@ -6,17 +6,39 @@ import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 
 export const STEPS = ['Kind', 'Audience', 'Body'];
 
+// Wave 4.4-B Session 1: audience pre-fill from anchor. When the deep-link
+// supplies anchor=team&id=<uuid>, default audience to {type:'team',
+// filter:{team_ids:[id]}}. anchor=event / anchor=tournament land here
+// too (param taxonomy scaffolded now; audience pre-fill for those kinds
+// ships in Sessions 5+ — for now they pass through and let the wizard
+// derive from KIND_METADATA at Step 1).
+function audienceFromAnchor(anchorKind, anchorId) {
+  if (anchorKind === 'team' && anchorId) {
+    return { audience_type: 'team', audience_filter: { team_ids: [anchorId] } };
+  }
+  return {};
+}
+
 export function buildInitial({ initialKind, initialAnchorKind, initialAnchorId, initialKindFilter }) {
   const base = { ...INITIAL_STATE, kindFilter: initialKindFilter?.length ? initialKindFilter : null };
   if (!initialKind && !initialAnchorId) return base;
   const meta = KIND_METADATA[initialKind] || {};
+  const anchorAudience = audienceFromAnchor(initialAnchorKind, initialAnchorId);
+  // Wave 4.4-B Session 1 step-skipping rules:
+  //   anchor + id + kind → step 3 (Body) — everything pre-filled
+  //   anchor + id only   → step 1 (Kind) — pick kind first, audience already set
+  //   cold start         → step 1 (Kind)
+  // Draft hydration lands at step 3 via HYDRATE_DRAFT action in
+  // BriefingComposer's useEffect — not this function's concern.
+  const hasKindAndAnchor = !!(initialKind && initialAnchorId);
   return {
     ...base,
-    step: initialAnchorId ? 2 : 1,
+    step: hasKindAndAnchor ? 3 : 1,
     kind: initialKind || null,
     anchor_kind: initialAnchorKind || meta.defaultAnchorKind || null,
     anchor_id: initialAnchorId || null,
-    audience_type: meta.defaultAudienceType || null,
+    audience_type: anchorAudience.audience_type || meta.defaultAudienceType || null,
+    audience_filter: anchorAudience.audience_filter || null,
   };
 }
 
