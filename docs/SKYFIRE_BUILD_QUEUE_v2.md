@@ -2926,7 +2926,7 @@ Inserted rows verified shape-correct in DB: `body_html=''`, `body_plain=''`, `co
 
 **Verification:** `npm run lint` 0 errors. `npm run build` clean (953ms, dist sizes unchanged). `npm test` 465 passed. v6 deployed via MCP `deploy_edge_function`. File lengths: _helpers.ts 93, _handlers.ts 149, index.ts 109, briefingCronHelpers.js 101 — all within 150-line lock.
 
-**Wave 4.3 status post-merge:** auto-draft engine now functionally complete for 6 of 7 trigger events. event_reminder_due remains a `not_implemented` stub (deferred until ops need surfaces). 4.3-C inbox UI polish remains the only open auto-draft work.
+**Wave 4.3 status post-merge:** auto-draft engine now functionally complete for 6 of 7 trigger events. event_reminder_due remains a `not_implemented` stub (deferred until ops need surfaces). 4.3-C inbox UI polish remains the only open auto-draft work. **4.3-C scope expanded (May 11):** inbox at-glance preview enrichment folded in — list rows currently show kind+anchor synthesizer labels but no resolver-composed subject/body snippet until admin clicks through. To deliver the L99 Sunday-morning "scan 11 rows + send in 5 minutes" experience, the inbox list view itself invokes `useResolverPreview` (or a list-batched equivalent) per row to surface composed subject + content snippet. Same hook the composer's PreviewPanel uses; no new architectural surface required. Same wave as the rest of 4.3-C inbox polish.
 
 ### Wave 4.3-G — SUPABASE_JWT_SECRET moves from Deno.env to app_secrets — SHIPPED May 10, 2026
 
