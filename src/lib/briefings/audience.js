@@ -25,6 +25,14 @@ export function countByAudienceType({ recipients, audienceType, audienceFilter, 
   if (!audienceType) return null;
   if (audienceType === 'org_all') return recipients.length;
   if (TEAM_AUDIENCE_TYPES.has(audienceType)) {
+    // 5d-b-1: prefer audience_filter.team_ids[] (new shape from
+    // TeamGroupedPicker). Fall back to legacy audience_filter.team_id
+    // (singular) so in-flight drafts saved pre-5d-b-1 still resolve.
+    // Final fallback to anchorId for the old SendBriefingButton path.
+    const ids = audienceFilter?.team_ids;
+    if (Array.isArray(ids) && ids.length) {
+      return recipients.filter((r) => (r.team_ids || []).some((t) => ids.includes(t))).length;
+    }
     const teamId = audienceFilter?.team_id || anchorId;
     if (!teamId) return null;
     return recipients.filter((r) => (r.team_ids || []).includes(teamId)).length;
