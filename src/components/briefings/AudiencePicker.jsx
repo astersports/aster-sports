@@ -36,7 +36,10 @@ function modesAvailableFor(kind) {
   if (kind === 'game_recap' || kind === 'rsvp_nudge') return MODES.filter((m) => ['event_attendees', 'team'].includes(m.type));
   if (kind === 'tournament_prelim' || kind === 'tournament_recap') return MODES.filter((m) => ['tournament_attendees'].includes(m.type));
   if (kind === 'academy_callup_notice') return MODES.filter((m) => ['player_specific'].includes(m.type));
-  if (kind === 'custom_message') return MODES;
+  // 5d-b-1: player_specific deferred (no wizard picker built yet);
+  // academy_callup_notice still uses player_specific via the dedicated
+  // EventDetailPage AcademyCallupCompose UI (audienceLocked path).
+  if (kind === 'custom_message') return MODES.filter((m) => m.type !== 'player_specific');
   return MODES;
 }
 
