@@ -4,9 +4,13 @@
 // Wave 4.1b §6.G — ScheduleForLaterPicker lifted to BriefingComposer
 // parent (visible all steps). Wave 4.1b §2 — pilot mode chip + audience
 // copy come in via the `audience` prop (computeAudience output).
+//
+// Wave 4.4-B Session 5c — Send button removed. STEPS grew 3 → 4; the
+// SEND CTA lives on Step 4 (StepSendConfirm). The wizard chrome's Next
+// button now appears on Step 3 to advance to Step 4. onSend/busy props
+// dropped from this component's signature.
 
-import { lazy, Suspense, useMemo } from 'react';
-import { Send } from 'lucide-react';
+import { lazy, Suspense } from 'react';
 import { labelStyle, textareaStyle } from './bodies/_styles';
 import TemplatePicker from './TemplatePicker';
 import PilotModeChip from './PilotModeChip';
@@ -25,29 +29,11 @@ const BODY_LAZY = {
   custom_message: lazy(() => import('./bodies/CustomMessageBody.jsx')),
 };
 
-const btnPrimary = { width: '100%', minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' };
 const btnGhost = { width: '100%', minHeight: 40, borderRadius: 10, backgroundColor: 'transparent', color: 'var(--em-text-secondary)', fontSize: 14, fontWeight: 500, border: '1px solid var(--em-border-default)', cursor: 'pointer' };
 
-export default function StepBodySignoff({ state, dispatch, audience, hasParentTournament, onSend, onSaveDraft, onCancel, busy }) {
+export default function StepBodySignoff({ state, dispatch, audience, hasParentTournament, onSaveDraft, onCancel }) {
   const Body = BODY_LAZY[state.kind] || BODY_LAZY.custom_message;
-  const isScheduled = state.send_mode === 'scheduled';
   const a = audience || { filtered: null, total: null, mode: 'standard', pilotModeOn: false };
-  const recipientCount = a.filtered;
-  const scheduleInvalid = useMemo(() => {
-    if (!isScheduled) return false;
-    if (!state.scheduled_for) return true;
-    // eslint-disable-next-line react-hooks/purity
-    const now = Date.now();
-    return new Date(state.scheduled_for).getTime() - now < 5 * 60 * 1000;
-  }, [isScheduled, state.scheduled_for]);
-  // Bug B: in pilot_zero mode, send is blocked even with test_only off.
-  const pilotZeroBlock = a.mode === 'pilot_zero' && !state.test_only;
-  const sendBlocked = busy || (recipientCount === 0 && !state.test_only) || scheduleInvalid || pilotZeroBlock;
-  const sendLabel = isScheduled
-    ? 'Schedule send'
-    : (state.test_only
-      ? 'Send test to admin@'
-      : `Send to ${recipientCount ?? '…'} ${recipientCount === 1 ? 'family' : 'families'}`);
   const showChip = a.pilotModeOn && (a.mode === 'pilot_zero' || a.mode === 'pilot_partial');
 
   return (
@@ -78,9 +64,6 @@ export default function StepBodySignoff({ state, dispatch, audience, hasParentTo
       <div style={{ fontSize: 12, color: a.mode === 'pilot_zero' ? 'var(--em-warning)' : 'var(--em-text-tertiary)', lineHeight: 1.4 }}>
         {audienceCopy(a)}
       </div>
-      <button type="button" onClick={onSend} disabled={sendBlocked} className="sf-press" style={{ ...btnPrimary, opacity: sendBlocked ? 0.5 : 1 }}>
-        <Send size={16} strokeWidth={1.75} /> {busy ? 'Sending…' : sendLabel}
-      </button>
       <button type="button" onClick={onSaveDraft} className="sf-press" style={btnGhost}>Save draft</button>
       <button type="button" onClick={onCancel} className="sf-press" style={btnGhost}>Cancel</button>
     </div>
