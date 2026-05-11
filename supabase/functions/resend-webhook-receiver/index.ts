@@ -1,4 +1,13 @@
 // Wave 4.4-A2 (v3) — Resend webhook receiver, expanded to 8 event types.
+// Wave 4.4-A2b (v4) — rank-based delivery_status transitions. Out-of-order
+// event arrival (Resend retries, dashboard replays, Svix at-least-once)
+// previously corrupted state: an email.delivered arriving after
+// email.opened would downgrade delivery_status from 'opened' to
+// 'delivered', breaking open-rate analytics. Status now advances only if
+// the incoming event's rank exceeds the current row's rank, or if the
+// incoming state is terminal (bounced/complained/unsubscribed/failed).
+// Timestamps remain idempotent independently (NULL → first-event-wins).
+//
 // Anonymous endpoint (verify_jwt:false). Auth via svix signature header.
 //
 // Wave 4.4-A1 (migration 20260511180000) added clicked_at, bounced_at,
@@ -6,20 +15,22 @@
 // and widened the delivery_status enum to include 'clicked' and
 // 'complained'. This receiver writes to those columns per event.
 //
-// Idempotency: each *_at column is written only if it is currently NULL.
-// Timestamps don't go backwards. Re-delivered events (Resend retries) or
-// duplicate events from the dashboard yield no-op responses, not row
-// rewrites.
+// Idempotency: each *_at column is written only if currently NULL.
+// Timestamps don't go backwards. Re-delivered events yield no-op responses.
 //
 // State machine (logical) for delivery_status:
-//   queued → sent → delivered → opened → clicked
-//                           ↓
-//                           bounced | complained | failed (terminal)
-// Transient signals (delivery_delayed) log a warning but don't transition.
+//   queued (0) → sent (1) → delivered (2) → opened (3) → clicked (4)
+//                                    ↓
+//                          bounced | complained | failed | unsubscribed
+//                                                         (rank 100, terminal)
+// Terminal states always win, even if current rank is higher. Transient
+// signals (email.delivery_delayed) log a warning but don't transition.
 //
 // Structured logging: every handled event emits one console line with
 // event_type, recipient_id, action taken. Failures emit error level.
 // Signature verification failures emit 401 + log without leaking secret.
+// Suppressed downgrades emit an info log so out-of-order arrivals show
+// up in Vercel logs (debugging hook for the rank-comparison logic).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Webhook } from "https://esm.sh/svix@1.21.0";
@@ -36,6 +47,15 @@ const HANDLERS: Record<string, { ts: string | null; status: string | null; level
   "email.complained":       { ts: "complained_at",   status: "complained",  level: "warn" },
   "email.delivery_delayed": { ts: null,              status: null,          level: "warn" },
   "email.failed":           { ts: null,              status: "failed",      level: "error" },
+};
+
+// Wave 4.4-A2b: rank lookup for the delivery_status state machine.
+// Higher rank = later in the lifecycle. Terminal states pinned to 100
+// so they win against any current state regardless of progression.
+// Status update writes ONLY IF newRank > currentRank OR newRank >= 100.
+const STATE_RANK: Record<string, number> = {
+  queued: 0, sent: 1, delivered: 2, opened: 3, clicked: 4,
+  bounced: 100, complained: 100, unsubscribed: 100, failed: 100,
 };
 
 function json(body: unknown, status = 200) {
@@ -80,9 +100,13 @@ Deno.serve(async (req) => {
 
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const selectCols = handler.ts ? `id, ${handler.ts}` : "id";
+  // Wave 4.4-A2b: always read delivery_status (rank comparison) in addition
+  // to id and the event's timestamp column. selectCols dedupes via Set so
+  // delivery_status doesn't duplicate when handler.ts is null.
+  const colSet = new Set<string>(["id", "delivery_status"]);
+  if (handler.ts) colSet.add(handler.ts);
   const { data: rec } = await sb.from("comms_message_recipients")
-    .select(selectCols)
+    .select([...colSet].join(", "))
     .eq("email_at_send", recipientEmail)
     .gte("created_at", sevenDaysAgo)
     .order("created_at", { ascending: false })
@@ -90,10 +114,23 @@ Deno.serve(async (req) => {
   if (!rec) { log("warn", "no matching recipient row", { event_type: eventType, email: recipientEmail }); return json({ ok: true, note: "no matching recipient row" }); }
 
   const recId = (rec as { id: string }).id;
-  // Idempotent timestamp write (only if column is currently NULL).
   const update: Record<string, unknown> = {};
+  // Idempotent timestamp write (only if column is currently NULL).
   if (handler.ts && !(rec as Record<string, unknown>)[handler.ts]) update[handler.ts] = eventTimestamp;
-  if (handler.status) update.delivery_status = handler.status;
+  // Wave 4.4-A2b: rank-based status update. Advance only if new rank
+  // exceeds current rank, OR if the new state is terminal (rank >= 100).
+  // Out-of-order arrivals that would downgrade (e.g. delivered after
+  // opened) log + skip the status write but still apply the timestamp.
+  if (handler.status) {
+    const currentStatus = (rec as { delivery_status?: string }).delivery_status || "queued";
+    const currentRank = STATE_RANK[currentStatus] ?? 0;
+    const newRank = STATE_RANK[handler.status] ?? 0;
+    if (newRank > currentRank || newRank >= 100) {
+      update.delivery_status = handler.status;
+    } else {
+      log("info", "status downgrade suppressed", { event_type: eventType, recipient_id: recId, current: currentStatus, attempted: handler.status });
+    }
+  }
   if (Object.keys(update).length === 0) { log("info", "idempotent no-op", { event_type: eventType, recipient_id: recId }); return json({ ok: true, note: "idempotent no-op", recipient_id: recId }); }
 
   const { error: updateErr } = await sb.from("comms_message_recipients").update(update).eq("id", recId);
