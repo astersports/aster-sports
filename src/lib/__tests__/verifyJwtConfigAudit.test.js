@@ -80,6 +80,16 @@ function listFunctionDirs() {
     .sort();
 }
 
+// Wave 4.3-H: read all *.ts files in a function dir (index.ts + any
+// sibling _handlers.ts / _helpers.ts / _lib.ts). Concatenates with a
+// newline so single-line regex patterns still match cleanly. Closes
+// anti-pattern #31's blind spot for shared-secret code in sibling files.
+function readFunctionSource(funcName) {
+  const dir = join(FUNCTIONS_DIR, funcName);
+  const tsFiles = readdirSync(dir).filter((f) => f.endsWith('.ts'));
+  return tsFiles.map((f) => readFileSync(join(dir, f), 'utf-8')).join('\n');
+}
+
 describe('Edge function verify_jwt config audit (CLAUDE.md anti-pattern #31)', () => {
   const config = parseConfigToml(readFileSync(CONFIG_TOML, 'utf-8'));
   const functionDirs = listFunctionDirs();
@@ -91,8 +101,7 @@ describe('Edge function verify_jwt config audit (CLAUDE.md anti-pattern #31)', (
   for (const funcName of functionDirs) {
     it(`${funcName}: shared-secret auth → requires verify_jwt = false`, () => {
       if (EXCLUDE_FUNCTIONS.has(funcName)) return;
-      const indexPath = join(FUNCTIONS_DIR, funcName, 'index.ts');
-      const source = readFileSync(indexPath, 'utf-8');
+      const source = readFunctionSource(funcName);
       if (!detectsSharedSecretAuth(source)) return;
       const declared = config[funcName];
       expect(declared, `Function "${funcName}" uses shared-secret auth but supabase/config.toml has no [functions.${funcName}] verify_jwt = false declaration. Without it, CI redeploys default to verify_jwt:true and the gateway rejects all invocations.`).toBe(false);
@@ -105,11 +114,11 @@ describe('Edge function shared-secret source audit (CLAUDE.md anti-pattern #33)'
   for (const funcName of functionDirs) {
     it(`${funcName}: shared secrets must live in app_secrets, not Deno.env`, () => {
       if (EXCLUDE_FUNCTIONS.has(funcName)) return;
-      const source = readFileSync(join(FUNCTIONS_DIR, funcName, 'index.ts'), 'utf-8');
       // Webhook receivers use platform-shared SVIX-style env vars
       // (RESEND_WEBHOOK_SECRET) that the platform manages directly;
       // these are out of scope for app_secrets storage.
       if (funcName === 'resend-webhook-receiver') return;
+      const source = readFunctionSource(funcName);
       const violation = source.match(FORBIDDEN_DENO_ENV_SECRET);
       expect(violation, `Function "${funcName}" reads a shared secret from Deno.env (${violation?.[0]}). Move to public.app_secrets and read via service-role SELECT (mirror briefing-cron-dispatch / briefing-auto-draft-tick post wave 4.3-F).`).toBeNull();
     });

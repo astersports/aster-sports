@@ -21,9 +21,10 @@ export function formatSubContext(startAt, locationName) {
 }
 
 export function buildSubject(team, event, gr) {
-  const verb = RESULT_VERB[gr.result] || 'played';
   const teamName = team?.name || 'Legacy Hoopers';
-  const opp = event?.opponent || 'opponent';
+  const opp = event?.opponent ? String(event.opponent).trim() : '';
+  if (!opp) return `Recap — ${teamName} ${gr.our_score}-${gr.opponent_score}`;
+  const verb = RESULT_VERB[gr.result] || 'played';
   return `Recap — ${teamName} ${verb} ${opp}, ${gr.our_score}-${gr.opponent_score}`;
 }
 

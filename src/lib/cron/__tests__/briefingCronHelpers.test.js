@@ -8,6 +8,7 @@ import {
 } from '../briefingCronHelpers';
 
 const ORG_ID = 'e3e95e21-3571-4e9a-985a-d5d01480d4a6';
+const TRIGGER_ID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 // 2026-05-10 is a Sunday. 12:30 UTC == 08:30 EDT (NY in May).
 const SUNDAY_8AM_LOCAL = new Date('2026-05-10T12:30:00Z');
 // Same day, 11:00 UTC == 07:00 EDT.
@@ -77,20 +78,32 @@ describe('weeklyDigestPeriod', () => {
 });
 
 describe('buildWeeklyDigestDraftRow', () => {
-  it('builds correct insert shape: subject NULL, body placeholders empty, content_sections [], anchor_kind=org', () => {
+  it('builds correct insert shape with triggerId: created_by_trigger set, delivery_method=queued', () => {
+    const row = buildWeeklyDigestDraftRow({
+      orgId: ORG_ID,
+      period: { period_start: '2026-05-10', period_end: '2026-05-16' },
+      now: SUNDAY_8AM_LOCAL,
+      triggerId: TRIGGER_ID,
+    });
+    expect(row).toEqual({
+      org_id: ORG_ID, created_by_trigger: TRIGGER_ID,
+      kind: 'weekly_digest', anchor_kind: 'org', anchor_id: ORG_ID,
+      period_start: '2026-05-10', period_end: '2026-05-16',
+      status: 'draft', subject: null,
+      body_html: '', body_plain: '', content_sections: [],
+      audience_type: 'org_all', audience_filter: null,
+      delivery_method: 'queued',
+      last_edited_at: SUNDAY_8AM_LOCAL.toISOString(), last_edited_by: null,
+    });
+  });
+  it('defaults created_by_trigger to null when triggerId not provided', () => {
     const row = buildWeeklyDigestDraftRow({
       orgId: ORG_ID,
       period: { period_start: '2026-05-10', period_end: '2026-05-16' },
       now: SUNDAY_8AM_LOCAL,
     });
-    expect(row).toEqual({
-      org_id: ORG_ID, kind: 'weekly_digest', anchor_kind: 'org', anchor_id: ORG_ID,
-      period_start: '2026-05-10', period_end: '2026-05-16',
-      status: 'draft', subject: null,
-      body_html: '', body_plain: '', content_sections: [],
-      audience_type: 'org_all', audience_filter: null,
-      last_edited_at: SUNDAY_8AM_LOCAL.toISOString(), last_edited_by: null,
-    });
+    expect(row.created_by_trigger).toBeNull();
+    expect(row.delivery_method).toBe('queued');
   });
 });
 

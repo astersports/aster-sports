@@ -30,7 +30,10 @@ function timeRange(ev) {
 
 function deriveTournamentLabel(event, tournament) {
   if (event.bracket_placeholder_label) return event.bracket_placeholder_label;
-  const tournName = event.tournament_name || tournament?.name || 'Tournament';
+  // Wave 4.3-H: prefer joined tournaments.name over denormalized
+  // events.tournament_name (the latter can be stale, producing same-tournament
+  // inconsistencies across rows in a single digest).
+  const tournName = tournament?.name || event.tournament_name || 'Tournament';
   if (!tournament) return tournName;
   const eventDow = dowFmt.format(new Date(event.start_at));
   const tStart = tournament.start_date ? new Date(`${tournament.start_date}T00:00:00`) : null;

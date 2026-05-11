@@ -24,7 +24,9 @@ const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 function buildHeader(period, orgName, eyebrowLink) {
   return {
     kind: 'header',
-    eyebrow: `${orgName} · WEEKLY DIGEST`,
+    // Wave 4.3-H: brand pass dropped redundant "WEEKLY DIGEST" subhead.
+    // "WEEK AHEAD" headline carries the digest context.
+    eyebrow: orgName,
     eyebrow_link: eyebrowLink,
     headline: HEADLINE_DEFAULT,
     sub_context: formatPeriodLabel(period),

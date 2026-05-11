@@ -30,6 +30,10 @@ export const INITIAL_STATE = {
   draft_id: null,
   preview_family_id: null,
   activeTemplateId: null,   // wave 3.16: tracks which starter template is applied
+  // Wave 4.3-H: pilot_only is org-level, not draft-level. Synced from
+  // useOrgSettings.pilotModeEnabled via effect in BriefingComposer; read
+  // by RESOLVER_REGISTRY.anchorFromState to scope preview recipients.
+  pilot_only: false,
 };
 
 export function canAdvance(state) {
@@ -74,6 +78,8 @@ export function composerReducer(state, action) {
       return { ...state, scheduled_for: action.value, send_mode: 'scheduled' };
     case 'SET_DRAFT_ID':
       return { ...state, draft_id: action.id };
+    case 'SET_PILOT_ONLY':
+      return { ...state, pilot_only: !!action.value };
     case 'SET_PREVIEW_FAMILY':
       return { ...state, preview_family_id: action.id };
     case 'GO_BACK':
