@@ -2894,6 +2894,40 @@ All 5 wave-4.2-A-8 substeps for the registry path landed: 7 calendar-anchored re
 
 **Verification:** `npm run lint` 0 errors. `npm run build` clean. `npm test` 408 passed. Pre-existing weeklyDigest.js 152-line violation untouched.
 
+### Wave 4.3-B — 5 remaining trigger handlers + force-fire override — SHIPPED May 11, 2026
+
+**Anchor of work:** `supabase/functions/briefing-auto-draft-tick/_handlers.ts` (NEW), `supabase/functions/briefing-auto-draft-tick/index.ts` (refactored), `supabase/functions/briefing-auto-draft-tick/_helpers.ts` (NOT NULL fix), `src/lib/cron/briefingCronHelpers.js` (mirror NOT NULL fix), `src/lib/cron/__tests__/briefingCronHelpers.test.js` (assertion update).
+
+**What shipped:**
+
+1. **5 trigger handlers wired** — `handleGameCompleted` (game_results.published_at in last 7d → kind=game_recap), `handleTournamentApproaching` (tournaments.start_date within `lead_time_hours` default 72h → tournament_prelim), `handleTournamentCompleted` (tournaments.end_date in last 14d → tournament_recap), `handleScheduleChanged` (event_change_audit in last 24h → schedule_change, per-audit-row idempotency), `handleRsvpLow24h` (events starting within next 24h → rsvp_nudge). Each handler queries unscheduled anchors, idempotency-checks, inserts a placeholder draft (subject + body NULL/empty; content_sections []). Resolver runs fresh at admin's preview/send time per wave-4.2-A-8a.
+
+2. **Handler module extracted** to sibling `_handlers.ts` (≤150 LoC lock preserved). `index.ts` dispatch switch maps each `trigger_event` → handler. Shared `placeholderDraft` + `tryInsert` helpers reduce per-handler boilerplate.
+
+3. **Per-org collapse refactored** from per-(org, team_type) to per-(org, trigger_event) via Set on `{org_id}:{trigger_event}`. Eliminates fan-out across the team_type duplicates seeded into briefing_triggers. 17 trigger rows → 6 distinct dispatches per tick for the LH org.
+
+4. **Force-fire ops override** — `POST /briefing-auto-draft-tick?force_trigger_event=<event>&force_now=<ISO>`. Bypasses weekly_sunday TZ gate; overrides Date.now() for handler windows. Idempotency still applies. Used end-to-end to smoke-test all 6 trigger events.
+
+5. **NOT NULL bug surfaced + fixed.** `comms_messages.body_html` + `body_plain` are NOT NULL with no defaults; both 4.3-A's `buildWeeklyDigestDraftRow` and the new `placeholderDraft` omitted them (`content_sections` also NULL in 4.3-A). First post-deploy cron tick returned `null value in column "body_html"` for game_recap inserts. Weekly_sunday's TZ gate had masked the same latent bug since 4.3-A. Both builders fixed to emit `body_html: ""`, `body_plain: ""`, `content_sections: []` — empty strings stay placeholders until admin previews via the resolver path. Mirror lock (anti-pattern #30): change applied to both `src/lib/cron/briefingCronHelpers.js` (vitest source of truth) and `supabase/functions/briefing-auto-draft-tick/_helpers.ts` (Deno mirror); vitest assertion updated to match.
+
+**Smoke verification (6 force-fire HTTP calls via pg net.http_post):**
+
+- game_completed: 6 game_recap drafts created
+- game_completed replay: 6 already_drafted skips (idempotency confirmed)
+- tournament_approaching: 0 (no anchors in window)
+- tournament_completed: 0 (no anchors in window)
+- schedule_changed: 1 schedule_change draft created
+- rsvp_low_24h_before: 3 rsvp_nudge drafts created
+- weekly_sunday (TZ bypass): 1 weekly_digest draft created (validates the parallel buildWeeklyDigestDraftRow fix)
+
+Inserted rows verified shape-correct in DB: `body_html=''`, `body_plain=''`, `content_sections=[]`, `subject=NULL`, `status='draft'`, `audience_type` correct per kind.
+
+**Tests:** 465 → 465. Existing weekly_digest assertion updated to match the new shape (added body_html/body_plain/content_sections expectations). No new tests required (smoke verification is the end-to-end check).
+
+**Verification:** `npm run lint` 0 errors. `npm run build` clean (953ms, dist sizes unchanged). `npm test` 465 passed. v6 deployed via MCP `deploy_edge_function`. File lengths: _helpers.ts 93, _handlers.ts 149, index.ts 109, briefingCronHelpers.js 101 — all within 150-line lock.
+
+**Wave 4.3 status post-merge:** auto-draft engine now functionally complete for 6 of 7 trigger events. event_reminder_due remains a `not_implemented` stub (deferred until ops need surfaces). 4.3-C inbox UI polish remains the only open auto-draft work.
+
 ### Wave 4.3-G — SUPABASE_JWT_SECRET moves from Deno.env to app_secrets — SHIPPED May 10, 2026
 
 **Anchor of work:** `supabase/migrations/20260510232037_wave_4_3_g_jwt_secret_to_app_secrets.sql` (NEW, applied via MCP + mirrored), `supabase/functions/briefing-cron-dispatch/index.ts`, `src/lib/__tests__/verifyJwtConfigAudit.test.js` (audit pattern tightened).

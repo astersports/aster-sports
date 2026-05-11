@@ -64,10 +64,13 @@ export function weeklyDigestPeriod(now, timeZone = ORG_TIMEZONE_DEFAULT) {
 }
 
 // Shape of the draft row inserted into comms_messages for a
-// weekly_digest auto-draft. Subject + content_sections deliberately
-// NULL — the resolver runs fresh at preview/send time per the
-// wave-4.2-A-8a locked behavior. last_edited_by is NULL: the cron
-// service has no user identity.
+// weekly_digest auto-draft. Subject stays NULL so admin preview shows
+// the resolver-rendered subject fresh at send time per the
+// wave-4.2-A-8a locked behavior. body_html + body_plain are NOT NULL
+// on comms_messages with no default — empty strings are placeholders
+// until admin previews. content_sections gets [] to satisfy its NOT
+// NULL constraint (default is '[]'::jsonb). last_edited_by is NULL:
+// the cron service has no user identity.
 export function buildWeeklyDigestDraftRow({ orgId, period, now }) {
   return {
     org_id: orgId,
@@ -78,7 +81,9 @@ export function buildWeeklyDigestDraftRow({ orgId, period, now }) {
     period_end: period.period_end,
     status: 'draft',
     subject: null,
-    content_sections: null,
+    body_html: '',
+    body_plain: '',
+    content_sections: [],
     audience_type: 'org_all',
     audience_filter: null,
     last_edited_at: now.toISOString(),

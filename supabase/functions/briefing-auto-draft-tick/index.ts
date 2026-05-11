@@ -1,36 +1,28 @@
 // Wave 4.3-A — auto-draft engine.
+// Wave 4.3-B — 5 remaining handlers (game_completed, schedule_changed,
+// rsvp_low_24h_before, tournament_approaching, tournament_completed)
+// implemented + force-fire override for ops testing.
 //
-// Reads briefing_triggers and creates draft comms_messages rows for
-// trigger events whose conditions are met right now. This is a
-// SEPARATE function from briefing-cron-dispatch (which is the wave-
-// 3.17 scheduled-send dispatcher); the two share no logic beyond
-// the cron secret. Two functions intentional: scheduled-send is
-// stable + narrow, auto-draft is new + grows across 4.3-B/C.
+// Reads briefing_triggers and creates placeholder draft comms_messages
+// rows (subject + content_sections NULL; resolver runs at preview/send
+// time per wave-4.2-A-8a). Per-org collapse via Set across team_type
+// rows. weekly_sunday TZ gate inline; other handlers select via their
+// natural time windows.
 //
-// Trigger event coverage in 4.3-A:
-//   weekly_sunday   — IMPLEMENTED. Fires Sunday 08:00-08:59 NY tz
-//                     per active trigger row.
-//   game_completed, schedule_changed, rsvp_low_24h_before,
-//   tournament_approaching, tournament_completed
-//                   — STUB (no-op, returns skipped:not_implemented).
-//                     4.3-B fills these in.
+// Auth: shares the briefing-cron-dispatch cron secret via app_secrets
+// (wave 4.3-F).
 //
-// Idempotency: skip insert if a (org_id, kind, period_start) row
-// already exists for weekly_digest. The 1-hour TZ window plus this
-// check guarantees at most one draft per org per Sunday despite
-// the every-minute cron tick.
-//
-// Auth: shares the briefing-cron-dispatch cron secret. Wave 4.3-F
-// moved the secret from Deno.env to public.app_secrets (name =
-// 'cron_secret'), readable by the function's service-role client.
-// The pg_cron job command builds Bearer from the same row.
-// Rotation = `UPDATE app_secrets SET value = encode(gen_random_bytes(32), 'hex')
-// WHERE name = 'cron_secret';` — immediate, no dashboard ceremony.
+// Force-fire (ops): POST /briefing-auto-draft-tick
+//   ?force_trigger_event=<event>&force_now=<ISO>
+// Bypasses the weekly_sunday TZ gate; force_now overrides Date.now()
+// for handler time-window queries. Idempotency still applies.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildWeeklyDigestDraftRow, isWeeklySundayWindow, weeklyDigestPeriod } from "./_helpers.ts";
 import {
-  buildWeeklyDigestDraftRow, isWeeklySundayWindow, weeklyDigestPeriod,
-} from "./_helpers.ts";
+  handleGameCompleted, handleRsvpLow24h, handleScheduleChanged,
+  handleTournamentApproaching, handleTournamentCompleted,
+} from "./_handlers.ts";
 
 interface TriggerRow {
   id: string;
@@ -43,46 +35,7 @@ interface TriggerRow {
 }
 
 function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status, headers: { "Content-Type": "application/json" },
-  });
-}
-
-async function handleWeeklySunday(sb: ReturnType<typeof createClient>, orgId: string, now: Date) {
-  if (!isWeeklySundayWindow(now)) return { skipped: "not_in_window" };
-  const period = weeklyDigestPeriod(now);
-  const { data: existing, error: selErr } = await sb
-    .from("comms_messages")
-    .select("id")
-    .eq("org_id", orgId)
-    .eq("kind", "weekly_digest")
-    .eq("period_start", period.period_start)
-    .in("status", ["draft", "scheduled", "queued", "sent"])
-    .limit(1);
-  if (selErr) return { error: selErr.message };
-  if (existing && existing.length > 0) return { skipped: "exists", existing_id: existing[0].id };
-  const row = buildWeeklyDigestDraftRow({ orgId, period, now });
-  const { data: inserted, error: insErr } = await sb
-    .from("comms_messages").insert(row).select("id").single();
-  if (insErr) return { error: insErr.message };
-  return { draft_created: true, id: inserted.id, period_start: period.period_start };
-}
-
-async function dispatchTrigger(sb: ReturnType<typeof createClient>, trigger: TriggerRow, now: Date) {
-  switch (trigger.trigger_event) {
-    case "weekly_sunday":
-      return await handleWeeklySunday(sb, trigger.org_id, now);
-    case "game_completed":
-    case "schedule_changed":
-    case "rsvp_low_24h_before":
-    case "tournament_approaching":
-    case "tournament_completed":
-    case "event_reminder_due":
-      // Stubbed in 4.3-A; 4.3-B fills these in.
-      return { skipped: "not_implemented", trigger_event: trigger.trigger_event };
-    default:
-      return { skipped: "unknown_trigger_event", trigger_event: trigger.trigger_event };
-  }
+  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
 async function readCronSecret(sb: ReturnType<typeof createClient>): Promise<string | null> {
@@ -91,39 +44,66 @@ async function readCronSecret(sb: ReturnType<typeof createClient>): Promise<stri
   return data.value as string;
 }
 
+async function handleWeeklySunday(sb: ReturnType<typeof createClient>, orgId: string, now: Date, bypassWindow: boolean) {
+  if (!bypassWindow && !isWeeklySundayWindow(now)) return { skipped: "not_in_window" };
+  const period = weeklyDigestPeriod(now);
+  const { data: existing, error: selErr } = await sb.from("comms_messages")
+    .select("id").eq("org_id", orgId).eq("kind", "weekly_digest").eq("period_start", period.period_start)
+    .in("status", ["draft", "scheduled", "queued", "sent"]).limit(1);
+  if (selErr) return { error: selErr.message };
+  if (existing && existing.length > 0) return { skipped: "exists", existing_id: existing[0].id };
+  const row = buildWeeklyDigestDraftRow({ orgId, period, now });
+  const { data: inserted, error: insErr } = await sb.from("comms_messages").insert(row).select("id").single();
+  if (insErr) return { error: insErr.message };
+  return { draft_created: true, id: inserted.id, period_start: period.period_start };
+}
+
+async function dispatchTrigger(sb: ReturnType<typeof createClient>, t: TriggerRow, now: Date, forceEvent: string | null) {
+  const bypassWeeklyWindow = forceEvent === "weekly_sunday";
+  switch (t.trigger_event) {
+    case "weekly_sunday": return [{ trigger_id: t.id, org_id: t.org_id, kind: t.briefing_kind, ...(await handleWeeklySunday(sb, t.org_id, now, bypassWeeklyWindow)) }];
+    case "game_completed": return await handleGameCompleted(sb, t, now);
+    case "tournament_approaching": return await handleTournamentApproaching(sb, t, now);
+    case "tournament_completed": return await handleTournamentCompleted(sb, t, now);
+    case "schedule_changed": return await handleScheduleChanged(sb, t, now);
+    case "rsvp_low_24h_before": return await handleRsvpLow24h(sb, t, now);
+    case "event_reminder_due": return [{ trigger_id: t.id, org_id: t.org_id, kind: t.briefing_kind, skipped: "not_implemented", trigger_event: t.trigger_event }];
+    default: return [{ trigger_id: t.id, org_id: t.org_id, kind: t.briefing_kind, skipped: "unknown_trigger_event", trigger_event: t.trigger_event }];
+  }
+}
+
 Deno.serve(async (req) => {
+  const auth = req.headers.get("Authorization");
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
-
-  const presented = req.headers.get("Authorization")?.replace(/^Bearer\s+/, "") ?? "";
   const expected = await readCronSecret(sb);
-  if (!expected || presented !== expected) {
-    return json({ error: "Unauthorized" }, 401);
-  }
+  if (!expected || auth !== `Bearer ${expected}`) return json({ error: "Unauthorized" }, 401);
 
-  const now = new Date();
-  const { data: triggers, error: trigErr } = await sb
-    .from("briefing_triggers")
+  const url = new URL(req.url);
+  const forceEvent = url.searchParams.get("force_trigger_event");
+  const forceNow = url.searchParams.get("force_now");
+  const now = forceNow ? new Date(forceNow) : new Date();
+  if (forceNow && isNaN(now.getTime())) return json({ error: "force_now must be a valid ISO 8601 date" }, 400);
+
+  let query = sb.from("briefing_triggers")
     .select("id, org_id, team_type_id, trigger_event, briefing_kind, lead_time_hours, active")
     .eq("active", true);
+  if (forceEvent) query = query.eq("trigger_event", forceEvent);
+  const { data: triggers, error: trigErr } = await query;
   if (trigErr) return json({ error: trigErr.message }, 500);
-  if (!triggers || triggers.length === 0) return json({ processed: 0, results: [] });
+  if (!triggers || triggers.length === 0) return json({ processed: 0, results: [], force: { forceEvent, forceNow } });
 
-  // Collapse weekly_sunday triggers per (org_id) — Q3 lock: one
-  // org-wide weekly_digest per Sunday, ignore team_type_id. Other
-  // trigger_events fan out as-is (each row dispatched separately).
-  const seenWeeklySundayOrgs = new Set<string>();
+  // Per-org collapse: each (org_id, trigger_event) pair runs once.
+  const seen = new Set<string>();
   const results: Array<Record<string, unknown>> = [];
   for (const t of triggers as TriggerRow[]) {
-    if (t.trigger_event === "weekly_sunday") {
-      if (seenWeeklySundayOrgs.has(t.org_id)) continue;
-      seenWeeklySundayOrgs.add(t.org_id);
-    }
-    const r = await dispatchTrigger(sb, t, now);
-    results.push({ trigger_id: t.id, org_id: t.org_id, kind: t.briefing_kind, ...r });
+    const key = `${t.org_id}:${t.trigger_event}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const r = await dispatchTrigger(sb, t, now, forceEvent);
+    results.push(...r);
   }
-
-  const draftsCreated = results.filter((r) => r.draft_created).length;
-  return json({ processed: results.length, drafts_created: draftsCreated, results });
+  const draftsCreated = results.filter((r) => r.created || r.draft_created).length;
+  return json({ processed: results.length, drafts_created: draftsCreated, results, force: forceEvent || forceNow ? { forceEvent, forceNow } : undefined });
 });
