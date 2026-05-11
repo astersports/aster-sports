@@ -3,7 +3,6 @@
 // Bug fixes locked in wave 4.1b + 4.2-A-8d (weekly_digest short-circuit).
 
 import { useEffect, useMemo, useReducer, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import FullScreenForm from '../shared/FullScreenForm';
 import { useToast } from '../../context/useToast';
 import { useAuth } from '../../context/AuthContext';
@@ -22,7 +21,7 @@ import StepBodySignoff from './StepBodySignoff';
 import StepSendConfirm from './StepSendConfirm';
 import PreviewPanel from './PreviewPanel';
 import ScheduleForLaterPicker from './ScheduleForLaterPicker';
-import SaveStatusPill from './SaveStatusPill';
+import WizardHeader from './WizardHeader';
 import { submitBriefing } from './composerSubmit';
 import { sendWeeklyDigestFromWizard } from '../../lib/briefings/sendWeeklyDigestFromWizard';
 import { buildInitial, fmtSchedule, STEPS } from './briefingComposerHelpers';
@@ -127,14 +126,10 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   return (
     <FullScreenForm open onClose={onClose} title={`Compose · ${STEPS[stepIndex]}`}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--em-text-tertiary)' }}>
-          {state.step > 1 && <button type="button" onClick={() => dispatch({ type: 'GO_BACK' })} className="sf-press" style={{ minHeight: 36, minWidth: 36, border: 'none', background: 'transparent', cursor: 'pointer' }}><ArrowLeft size={16} strokeWidth={1.75} /></button>}
-          <span>{`Step ${state.step} of ${STEPS.length}`}</span>
-          <span style={{ marginLeft: 'auto' }}><SaveStatusPill busy={draft.busy} savedAt={draft.savedAt} hasKind={!!state.kind} /></span>
-        </div>
+        <WizardHeader step={state.step} totalSteps={STEPS.length} onBack={() => dispatch({ type: 'GO_BACK' })} draft={draft} hasKind={!!state.kind} />
         <ScheduleForLaterPicker mode={state.send_mode === 'scheduled' ? 'schedule_for_later' : 'send_now'} scheduledFor={state.scheduled_for} onChange={(payload) => dispatch({ type: 'SET_SCHEDULE', payload })} />
         {state.step === 1 && <StepKindPicker visibleKinds={state.kindFilter} onPick={(kind, meta) => dispatch({ type: 'SET_KIND', kind, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType, defaultBody: {} }) || dispatch({ type: 'GO_FORWARD' })} />}
-        {state.step === 2 && <StepAnchorAudience state={state} dispatch={dispatch} audience={audience} recipientsLoading={recipientsLoading} teams={digest?.teams} pilotTestRecipientEmail={pilotTestRecipientEmail} />}
+        {state.step === 2 && <StepAnchorAudience state={state} dispatch={dispatch} audience={audience} recipientsLoading={recipientsLoading} pilotTestRecipientEmail={pilotTestRecipientEmail} />}
         {state.step === 3 && <StepBodySignoff state={state} dispatch={dispatch} audience={audience} hasParentTournament={hasParentTournament} onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose} />}
         {state.step === STEPS.length && <StepSendConfirm state={state} audience={audience} onSend={onSend} sending={busy} pilotModeEnabled={pilotModeEnabled} />}
         {state.step < STEPS.length && (
