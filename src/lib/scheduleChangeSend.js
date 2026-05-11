@@ -1,117 +1,88 @@
-// Wave 3.8 §5.2 — schedule_change send pipeline. Mirrors digestSend.js
-// shape: insert one comms_messages row, queue per-recipient rows with
-// rendered body, invoke send-tournament-message v13. Pilot mode gate
-// applies automatically because v13 enforces it on every recipient
-// with a non-null guardian_id.
+// Wave 3.8 §5.2 — schedule_change send pipeline.
 //
-// Audience: families whose team_ids include the affected event.team_id,
-// scoped through get_digest_recipients(p_org_id, p_pilot_only=true)
-// when org pilot mode is on. Defense in depth: the RPC + the edge
-// function both filter to is_pilot_family=true under pilot.
+// Wave 4.4-T0d — refactored to dispatch through RESOLVER_REGISTRY
+// instead of the legacy `compose({kind:'schedule_change'})`. That
+// dispatch entry was removed from KIND_COMPOSERS in Wave 4.2-A-8a
+// when schedule_change migrated to the resolver path, but this file
+// was not updated. Every call threw "No engine composer for kind
+// 'schedule_change'" and useScheduleChangeAudit:55 caught silently.
+// Audit rows wrote dispatch_email_id=NULL. No email reached parents.
 //
-// Audit row: caller (useScheduleChangeDispatch) writes the
-// event_change_audit row and links dispatch_email_id once messageId
-// returns.
+// Signature changed: was {orgId, event, before, after, signoffMessage,
+// coaches, recipients, pilotModeEnabled, testOnly}. Now {state, supabase,
+// now} — matches rsvpNudgeSend.js and the registry contract. State must
+// carry: kind, anchor_kind='event', anchor_id=eventId, body, signoff_message,
+// test_only, pilot_only. The resolver fetches event + audit + location +
+// coaches + recipients on its own (no longer passed in).
+//
+// Caller (useScheduleChangeAudit) must write the event_change_audit row
+// BEFORE invoking this — the resolver reads from that table to compute
+// the diff. Ordering is enforced by the caller, not this file.
 
-import { supabase } from './supabase';
-import { compose } from './engine/composer';
+import { supabase as defaultSupabase } from './supabase';
+import { RESOLVER_REGISTRY } from './engine/resolvers/registry';
+import { renderSections, renderSectionsPlainText } from './engine/composer';
 import { applyUnsubscribeUrls } from './unsubscribeUrl';
 
 const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
+const HTML_OPEN = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">';
+const HTML_CLOSE = '</div>';
 
-function familyMatchesTeam(family, teamId) {
-  if (!teamId) return true;
-  return (family.team_ids || []).includes(teamId);
-}
+export async function sendScheduleChange({ state, supabase: sb, now = new Date() }) {
+  if (!state) throw new Error('sendScheduleChange: missing state.');
+  if (state.kind !== 'schedule_change') throw new Error(`sendScheduleChange: expected state.kind='schedule_change', got '${state.kind}'.`);
+  if (!state.anchor_id) throw new Error('sendScheduleChange: missing state.anchor_id (eventId).');
+  const db = sb || defaultSupabase;
 
-function fmtLong(iso) {
-  return new Date(iso).toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-}
-function fmtTimeOnly(iso) {
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-}
+  const entry = RESOLVER_REGISTRY.schedule_change;
+  const anchor = entry.anchorFromState(state);
+  const overrides = entry.overridesFromState(state);
+  const { context, slices } = await entry.resolve(anchor, { supabase: db, now });
+  if (!slices.length && !state.test_only) throw new Error('No families on this team.');
 
-// Wave 3.8.1: summary line adapts to which fields actually changed.
-// Cancellation > start change > end-only change > location-only change.
-function buildSummaryLine(before, after) {
-  if (after?.status === 'cancelled' && before?.status !== 'cancelled') {
-    return 'This event has been cancelled.';
-  }
-  const startChanged = (before?.start_at || null) !== (after?.start_at || null);
-  const endChanged = (before?.end_at || null) !== (after?.end_at || null);
-  const locChanged = (before?.location || null) !== (after?.location || null);
-  if (startChanged && before?.start_at && after?.start_at) {
-    return `${fmtLong(before.start_at)} has moved to ${fmtLong(after.start_at)}.`;
-  }
-  if (endChanged && before?.end_at && after?.end_at) {
-    return `End time updated from ${fmtTimeOnly(before.end_at)} to ${fmtTimeOnly(after.end_at)}.`;
-  }
-  if (locChanged) {
-    return `Location updated from ${before?.location || '—'} to ${after?.location || '—'}.`;
-  }
-  return '';
-}
+  const sampleSlice = slices[0] || { kind: 'family', guardian_id: null, email: '', kid_first_names: [], team_id: context.event?.team_id };
+  const { subject, content_sections } = entry.compose(context, sampleSlice, overrides);
+  const html = HTML_OPEN + renderSections(content_sections) + HTML_CLOSE;
+  const plainText = renderSectionsPlainText(content_sections);
 
-export async function sendScheduleChange({
-  orgId, event, before, after, signoffMessage, coaches,
-  recipients, pilotModeEnabled, testOnly,
-}) {
-  if (!orgId) throw new Error('Missing orgId.');
-  if (!event?.id) throw new Error('Missing event.');
-  const teamId = event.team_id || null;
-  const audience = (recipients || []).filter((f) => familyMatchesTeam(f, teamId));
-  if (!audience.length && !testOnly) throw new Error('No families on this team.');
+  const teamId = context.event?.team_id || null;
+  const orgId = context.org?.id;
 
-  const summary = buildSummaryLine(before, after);
-
-  const composed = compose({
-    kind: 'schedule_change',
-    data: {
-      summary,
-      before, after,
-      eventTitle: event.title || '',
-      signoff_message: signoffMessage,
-      coaches,
-    },
-  });
-
-  const { data: msg, error: msgErr } = await supabase
-    .from('comms_messages')
-    .insert({
-      org_id: orgId, tournament_id: null, team_id: teamId,
-      kind: 'schedule_change', language_code: 'en',
-      delivery_method: 'queued', sent_at: null,
-      subject: composed.subject,
-      body_html: composed.html, body_plain: composed.plainText,
-      headline: 'SCHEDULE UPDATE',
-      content_sections: composed.sections || [],
-      signoff_message: signoffMessage || null,
-    })
-    .select('id').single();
+  const { data: msg, error: msgErr } = await db.from('comms_messages').insert({
+    org_id: orgId, tournament_id: null, team_id: teamId,
+    kind: 'schedule_change', language_code: 'en',
+    delivery_method: 'queued', sent_at: null, status: 'draft',
+    audience_type: 'team', audience_filter: teamId ? { team_id: teamId } : null,
+    anchor_kind: 'event', anchor_id: anchor.eventId,
+    subject, body_html: html, body_plain: plainText,
+    headline: 'SCHEDULE UPDATE', content_sections,
+    signoff_message: state.signoff_message || null,
+  }).select('id').single();
   if (msgErr) throw msgErr;
 
-  const familyRows = testOnly ? [] : audience.map((f) => ({
-    message_id: msg.id, guardian_id: f.guardian_id,
-    email_at_send: f.email,
+  const familyRows = state.test_only ? [] : slices.map((s) => ({
+    message_id: msg.id, guardian_id: s.guardian_id, email_at_send: s.email,
     delivery_method: 'resend_api', delivery_status: 'queued',
-    body_html_rendered: composed.html, body_plain_rendered: composed.plainText,
-    subject_rendered: composed.subject, teams_included: teamId ? [teamId] : [],
+    body_html_rendered: html, body_plain_rendered: plainText,
+    subject_rendered: subject, teams_included: teamId ? [teamId] : [],
   }));
   const adminAlreadyIncluded = familyRows.some((r) => r.email_at_send === ADMIN_BCC_EMAIL);
   const adminRow = adminAlreadyIncluded ? null : {
     message_id: msg.id, guardian_id: null, email_at_send: ADMIN_BCC_EMAIL,
     delivery_method: 'resend_api', delivery_status: 'queued',
-    body_html_rendered: composed.html, body_plain_rendered: composed.plainText,
-    subject_rendered: composed.subject, teams_included: [],
+    body_html_rendered: html, body_plain_rendered: plainText,
+    subject_rendered: subject, teams_included: [],
   };
   const allRows = [...familyRows, ...(adminRow ? [adminRow] : [])];
   const stampedRows = await applyUnsubscribeUrls(allRows);
-  const { error: recErr } = await supabase.from('comms_message_recipients').insert(stampedRows);
+  const { error: recErr } = await db.from('comms_message_recipients').insert(stampedRows);
   if (recErr) throw recErr;
 
-  const { data: dispatch, error: dispErr } = await supabase.functions
-    .invoke('send-tournament-message', { body: { message_id: msg.id } });
+  const { error: dispErr } = await db.functions.invoke('send-tournament-message', { body: { message_id: msg.id } });
   if (dispErr) throw dispErr;
 
-  return { messageId: msg.id, ...(dispatch || {}), audienceCount: audience.length, pilotModeEnabled: !!pilotModeEnabled };
+  // Wave 4.4-T0d: status='sent' on dispatch (mirror of rsvpNudgeSend:94, composerSubmit:124).
+  await db.from('comms_messages').update({ status: 'sent' }).eq('id', msg.id);
+
+  return { messageId: msg.id, audienceCount: slices.length };
 }
