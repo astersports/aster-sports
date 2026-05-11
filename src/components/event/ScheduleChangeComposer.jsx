@@ -10,7 +10,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/useToast';
 import { useDigestRecipients } from '../../hooks/useDigestRecipients';
 import { useOrgSettings } from '../../hooks/useOrgSettings';
-import { useOrgStaff } from '../../hooks/useOrgStaff';
 import { useScheduleChangeAudit } from '../../hooks/useScheduleChangeAudit';
 
 const inputStyle = { width: '100%', minHeight: 88, padding: 10, borderRadius: 10, fontSize: 14, fontFamily: 'inherit', backgroundColor: 'var(--em-bg-tertiary)', border: '1.5px solid var(--em-border-default)', color: 'var(--em-text-primary)' };
@@ -27,7 +26,8 @@ export default function ScheduleChangeComposer({ event, diff, onClose, onDone })
   const { showToast } = useToast();
   const { pilotModeEnabled } = useOrgSettings(orgId);
   const { recipients } = useDigestRecipients({ orgId, pilotOnly: pilotModeEnabled });
-  const { staff: coaches } = useOrgStaff(orgId);
+  // Wave 4.4-T0d: coaches removed — the schedule_change resolver fetches
+  // staff_profiles directly (no need to pass through the composer).
   const { busy, recordSkip, recordAndDispatch } = useScheduleChangeAudit();
   const [signoff, setSignoff] = useState('');
   const [testOnly, setTestOnly] = useState(true);
@@ -45,11 +45,14 @@ export default function ScheduleChangeComposer({ event, diff, onClose, onDone })
   };
 
   const onSend = async () => {
+    // Wave 4.4-T0d: pass state shape (matches registry contract for the
+    // schedule_change resolver). useScheduleChangeAudit writes the audit
+    // row first (resolver reads it), then dispatches, then links the
+    // message_id back to the audit row.
     const r = await recordAndDispatch(diff, {
-      orgId, event,
-      before: diff.before, after: diff.after,
-      signoffMessage: signoff, coaches,
-      recipients: audience, pilotModeEnabled, testOnly,
+      kind: 'schedule_change', anchor_kind: 'event', anchor_id: event?.id,
+      body: {}, signoff_message: signoff,
+      test_only: testOnly, pilot_only: pilotModeEnabled,
     });
     if (r?.error) { showToast(r.error.message || "Send failed.", 'error'); return; }
     showToast(testOnly ? 'Test sent to admin@.' : `Sent to ${audience.length} ${pilotModeEnabled ? 'pilot recipients' : 'families'}.`, 'success');
