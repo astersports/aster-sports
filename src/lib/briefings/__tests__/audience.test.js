@@ -96,6 +96,42 @@ describe('computeAudience pilot mode states', () => {
   // is configured + p_pilot_only=true. Surfaces as 'pilot_test_override'
   // mode. Distinct from pilot_partial (real pilot families) and standard
   // (production sends).
+  it('Wave 4.3-L — pilot_test_override detection handles N synthetic rows (post-4.3-J fan-out)', () => {
+    // RPC emits one row per team when override active. Before 4.3-L the
+    // detection checked length === 1 — N rows fell through to pilot_partial
+    // mode and the wizard rendered "1 pilot guardians (out of 22)" copy on
+    // the Body step instead of "Pilot test mode — sending to admin@".
+    const synthetic5 = ['t1', 't2', 't3', 't4', 't5'].map((tid) => ({
+      guardian_id: null, email: 'admin@legacyhoopers.org', team_ids: [tid],
+    }));
+    const result = computeAudience({
+      recipientsFiltered: synthetic5,
+      recipientsTotal: FULL_RECIPIENTS,
+      audienceType: 'org_all',
+      pilotModeOn: true,
+    });
+    expect(result.mode).toBe('pilot_test_override');
+    expect(result.filtered).toBe(5);
+    expect(result.testRecipientEmail).toBe('admin@legacyhoopers.org');
+  });
+
+  it('Wave 4.3-L — mixed synthetic + real does NOT trigger pilot_test_override', () => {
+    // Defense in depth: if a future flow accidentally mixes a synthetic row
+    // into a real-guardian list, the every() predicate fails and we fall
+    // back to standard/pilot_partial. Prevents accidental admin@ routing.
+    const mixed = [
+      { guardian_id: null, email: 'admin@x', team_ids: ['t1'] },
+      { guardian_id: 'g1', email: 'g1@x', team_ids: ['t1'] },
+    ];
+    const result = computeAudience({
+      recipientsFiltered: mixed,
+      recipientsTotal: FULL_RECIPIENTS,
+      audienceType: 'org_all',
+      pilotModeOn: true,
+    });
+    expect(result.mode).not.toBe('pilot_test_override');
+  });
+
   it('pilot_test_override — single synthetic row with guardian_id=null', () => {
     const synthetic = [{ guardian_id: null, email: 'admin@legacyhoopers.org', team_ids: ['t1', 't2', 't3', 't4', 't5'] }];
     const result = computeAudience({
@@ -144,7 +180,7 @@ describe('audienceCopy (wave 4.1d-2 §3.1 — direct copy without "Settings → 
   it('pilot_zero copy explains 0 filter and how to disable', () => {
     const copy = audienceCopy({ filtered: 0, total: 21, mode: 'pilot_zero' });
     expect(copy).toContain('Pilot Mode is filtering');
-    expect(copy).toContain('0 pilot guardians');
+    expect(copy).toContain('0 pilot families');
     expect(copy).toContain('out of 21');
     expect(copy).toContain('Disable pilot mode');
     expect(copy).toContain('send to all 21');
@@ -153,9 +189,30 @@ describe('audienceCopy (wave 4.1d-2 §3.1 — direct copy without "Settings → 
   it('pilot_partial copy mentions both numbers', () => {
     const copy = audienceCopy({ filtered: 2, total: 24, mode: 'pilot_partial' });
     expect(copy).toContain('Pilot Mode is ON');
-    expect(copy).toContain('sending to 2 pilot guardians');
+    expect(copy).toContain('sending to 2 pilot families');
     expect(copy).toContain('out of 24');
     expect(copy).toContain('send to all 24');
+  });
+
+  it('Wave 4.3-L — noun is "pilot families" not "pilot guardians" in pilot_zero/pilot_partial', () => {
+    // Families is the right audience unit; each family has 1-2 guardians.
+    // Wave 4.3-L renames the noun in both pilot_zero + pilot_partial.
+    const zero = audienceCopy({ filtered: 0, total: 22, mode: 'pilot_zero' });
+    const partial = audienceCopy({ filtered: 3, total: 102, mode: 'pilot_partial' });
+    expect(zero).not.toContain('pilot guardians');
+    expect(partial).not.toContain('pilot guardians');
+    expect(zero).toContain('pilot families');
+    expect(partial).toContain('pilot families');
+  });
+
+  it('Wave 4.3-L — pilot_test_override tail explicitly says "all N families"', () => {
+    // Compose · Body banner consistency — total is the dormant-family
+    // universe; copy now suffixes "families" so admins don't read "all 102"
+    // as ambiguous (could be guardians, families, etc.).
+    const copy = audienceCopy({ filtered: 5, total: 102, mode: 'pilot_test_override', testRecipientEmail: 'admin@legacyhoopers.org' });
+    expect(copy).toContain('all 102 families');
+    expect(copy).not.toContain('pilot guardians');
+    expect(copy).not.toContain('out of 102');
   });
 
   it('Wave 4.1d-2 §3.1 — pilot_zero "Disable pilot mode" guidance is direct, no broken deeplink', () => {
