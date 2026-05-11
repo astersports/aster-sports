@@ -95,6 +95,13 @@ export function mapWizardStateToDigestArgs({ state, orgId, period, recipients, e
     rsvpCountsByEvent,
     testOnly: !!state.test_only,
     audienceTeamIds,
+    // Wave 4.4-C2: forward audience metadata + anchor so digestSend can
+    // persist them on the comms_messages row (matches the wizard-flow
+    // pattern composerSubmit.js already uses for the 6 other kinds).
+    audienceType: state.audience_type || null,
+    audienceFilter: state.audience_filter || null,
+    anchorKind: state.anchor_kind || null,
+    anchorId: state.anchor_id || null,
   };
 }
 
