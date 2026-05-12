@@ -25,6 +25,14 @@ export default function SeasonRolloverPage() {
       const { data: s } = await supabase.from('seasons').select('*').eq('org_id', orgId).eq('status', 'active').maybeSingle();
       setSeason(s);
       if (!s) return;
+      // CLAUDE.md §11.5 historical-view exception (Wave 4.8 hygiene PR
+       // #124): rollover wizard inherently shows a season's PAST roster,
+       // not current `team_players` state. `roster_members` carries
+       // `registered_at`/`left_at` which scope correctly to a season_id;
+       // `team_players` represents present-tense membership only. The
+       // nested PostgREST relation `teams(...roster_members(...))` was
+       // missed by the L99 audit grep — Wave 4.8 hygiene PR #124 added
+       // this caller to the §11.5 documented-callers list.
       const { data: t } = await supabase.from('teams').select('*, roster_members(player_id, players(id, first_name, last_name, jersey_number, grad_year)), team_staff(user_id, role)').eq('org_id', orgId).eq('season_id', s.id).order('sort_order');
       const mapped = (t || []).map((tm) => ({
         ...tm, players: (tm.roster_members || []).filter((r) => r.players).map((r) => ({ ...r.players, action: 'keep' })),

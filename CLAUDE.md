@@ -423,6 +423,18 @@ source for the question you're asking.
 - New code that needs "is this kid on this team" reads from `team_players`.
 - New code that needs "is this kid's parent allowed to see this row" reads from `current_user_teammate_player_ids()` or `current_user_child_team_ids()`.
 
+**Documented exception callers** (Wave 4.8 hygiene PR #124 audit — re-run the grep `grep -rn "from.*roster_members\|\.from('roster_members')" src/` and reconcile against this list when adding a new caller):
+
+| File:line | Exception kind | Rationale |
+|---|---|---|
+| `src/hooks/useAttendanceData.js:37` | sizes + historical view | jersey_number lookup for the per-player attendance grid; one of the 5 attendance views |
+| `src/hooks/useEventRsvpCounts.js:27` | historical window | `left_at IS NULL` is the canonical date-windowed eligibility check (per the table row above) |
+| `src/hooks/useRoster.js:13` | sizes (canonical home) | reads `jersey_size` + `shorts_size` — team_players has neither column. (Also reads legacy `payment_status`; future PR can migrate that single column to `financial_accounts`.) |
+| `src/pages/SeasonRolloverPage.jsx:28` | historical view (season scope) | rollover wizard inherently shows a season's PAST roster, not current team_players state. Nested PostgREST relation `teams(...roster_members(...))` — missed by the L99 audit grep until PR #124 |
+| `src/hooks/useSeasonRollover.js:49` | WRITE (not a read) | `.insert()` into roster_members. §11.5 read-restriction doesn't apply; membership writes legitimately go through roster_members |
+
+If you add a new caller and it fits an existing exception kind, append it to this table. If it doesn't fit, the migration to team_players (or financial_accounts for payment fields) is the right move.
+
 The two tables are kept in alignment by the trigger added in migration `20260505201932_wave4_roster_alignment_lock`. If they ever diverge, the trigger surfaces it as an INSERT/UPDATE failure rather than as silent UI bugs.
 
 ---
