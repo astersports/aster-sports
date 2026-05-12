@@ -3249,3 +3249,15 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
 - Deploy gate: code lands on main via this PR. Edge function deploy is chat-side via Supabase MCP per the prompt's explicit "What NOT to do". Live behavior changes only after Frank triggers the deploy.
 - Gates: 543/543 vitest tests pass (536 → 543; +7 new computeExpiryForKind cases), 0 new lint warnings (baseline 40 unchanged), 0 `created_at` references (PR #114 regression class avoided — sweep uses status + expires_at predicates only).
 - Unblocks: PR #119 (unified `briefing_active_queue` RPC + hook rewrite consuming `expires_at` as the visibility cutoff). PR #120 (post-deploy cleanup + index on expires_at if needed once sweep volume is observed).
+
+### Wave 4.8 6c Session 2+2b — RPC mirror files — PR #119
+- Date: 2026-05-12
+- Files:
+  - NEW supabase/migrations/20260512180758_wave_4_8_6c_2_briefing_active_queue_rpc.sql (the RPC, initial version)
+  - NEW supabase/migrations/20260512180925_wave_4_8_6c_2b_briefing_active_queue_tz_cast_fix.sql (TZ cast fix — same function, CREATE OR REPLACE)
+- Evidence: both migrations applied chat-side via Supabase MCP earlier today. Mirror files satisfy anti-pattern #21 (mirror created in same turn as MCP apply, character-for-character). Verified byte-identical against `supabase_migrations.schema_migrations` via MCP — heads + tails matched the prompt's pasted SQL on both versions before write.
+- Why both mirrors: production runs only the latest CREATE OR REPLACE (2b's TZ-correct version). The intermediate 2 ships in the repo so `supabase db reset` can recreate full migration history. Skipping 2 would leave a numbered gap.
+- The RPC's contract (return columns + signature) is preserved across 2 → 2b. The diff is purely the `tournaments.start_date::timestamptz` and `end_date::timestamptz` casts becoming `(text || ' 00:00:00 America/New_York')::timestamptz` to land at midnight EASTERN instead of UTC. Before the fix, "today's" tournament showed as "8pm yesterday" in the queue.
+- No logic delta in this PR. No DDL apply. No edge function touch. No frontend touch. Pure repo-housekeeping.
+- Gates: 543/543 vitest tests pass (unchanged from PR #118 baseline), 0 new lint warnings, no other files touched.
+- Unblocks: PR #120 — useInboxQueue rewrites to `supabase.rpc('briefing_active_queue', {p_org_id, p_kind, p_team_ids, p_date_range})`, useNeedsBriefing.js gets deleted (5 client-side sub-streams collapse to one server call), ActiveQueue.jsx consumes the unified rows with the synth/db source discriminator on each row.
