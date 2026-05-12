@@ -16,7 +16,7 @@ export function useInboxQueue({ orgId } = {}) {
     setLoading(true); setError(null);
     const { data, error: err } = await supabase
       .from('comms_messages')
-      .select('id,kind,anchor_kind,anchor_id,audience_type,audience_filter,status,scheduled_for,subject,last_edited_at,created_at')
+      .select('id,kind,anchor_kind,anchor_id,audience_type,audience_filter,status,scheduled_for,subject,last_edited_at')
       .eq('org_id', orgId)
       .in('status', ACTIVE_STATUSES)
       .order('last_edited_at', { ascending: false, nullsFirst: false });
