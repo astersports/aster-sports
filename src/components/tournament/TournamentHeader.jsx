@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Calendar, Edit2, ExternalLink, MapPin, Trophy } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import TournamentFormSheet from './TournamentFormSheet';
+import ComposeTournamentCta from './ComposeTournamentCta';
 import SendBriefingButton from '../briefings/SendBriefingButton';
 
 function tournamentBriefingKinds(t) {
@@ -29,6 +30,13 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
   const [editing, setEditing] = useState(false);
   const dateRange = formatRange(tournament.start_date, tournament.end_date);
   const briefingKinds = useMemo(() => tournamentBriefingKinds(tournament), [tournament]);
+  // Wave 4.8 6b Session 2: gate Compose CTA on upcoming/completed.
+  // In-flight tournaments (mid-event) render no CTA — neither prelim nor
+  // recap fits the moment. Mirrors tournamentBriefingKinds:9-10 predicates.
+  const now = new Date();
+  const ctaKind = tournament.start_date && new Date(tournament.start_date) > now
+    ? 'tournament_prelim'
+    : (tournament.end_date && new Date(tournament.end_date) < now ? 'tournament_recap' : null);
 
   return (
     <div style={{ padding: '6px 16px 12px', borderBottom: '1px solid var(--em-border-default)' }}>
@@ -82,6 +90,7 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
         </div>
       )}
 
+      {isStaff && ctaKind && <ComposeTournamentCta tournament={tournament} kind={ctaKind} />}
       {isStaff && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => setEditing(true)} className="sf-press" aria-label="Edit tournament" style={{
