@@ -27,7 +27,7 @@ import { queueComposedMessages } from './briefings/queueComposedMessages';
 
 const HTML_OPEN = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">';
 const HTML_CLOSE = '</div>';
-const CALLUP_HANDLER_BASE = 'https://vrwwpsbfbnveawqwbdmj.supabase.co/functions/v1/callup-token-handler';
+const CALLUP_HANDLER_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/callup-token-handler`;
 
 async function mintCallupToken(supabase, eventId, playerId, guardianId, response) {
   const { data, error } = await supabase.rpc('mint_callup_token', {

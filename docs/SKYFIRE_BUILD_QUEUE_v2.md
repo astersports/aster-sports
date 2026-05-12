@@ -3288,3 +3288,17 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
 - Lint fixed in-PR: initial `JSON.stringify(teamIds || [])` in the `useCallback` dep array tripped the React Compiler's `preserve-manual-memoization` rule (3 errors). Replaced with a `useMemo`-wrapped sorted-join key (`teamIdsKey`).
 - Gates: 541/541 vitest pass (was 543; net −2 after −10 deleted builder tests + +11 RPC contract + status mapping additions). 0 lint errors, 40 baseline warnings unchanged. All 13 touched files <150 LOC.
 - Unblocks: PR #121 (env var migration for hardcoded Supabase URLs in rsvpNudgeSend.js + academyCallupSend.js, P1 from yesterday's L99 audit). PR #122 (AuthContext + FinancialDashboard exhaustive-deps cleanup). PR #123 (digestSend integration test).
+
+### Wave 4.8 Hardening — env var migration for send handlers — PR #121
+- Date: 2026-05-13
+- Files:
+  - EDIT src/lib/rsvpNudgeSend.js (line 27 — `RSVP_HANDLER_BASE` now `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rsvp-token-handler`)
+  - EDIT src/lib/academyCallupSend.js (line 30 — `CALLUP_HANDLER_BASE` swapped same way)
+  - EDIT eslint.config.js — added `no-restricted-syntax` rule banning the literal `vrwwpsbfbnveawqwbdmj.supabase.co` so future drift fails CI
+- Evidence: L99 P1-1 from 2026-05-12. The pilot project id leaked into the JS bundle, breaking multi-org portability and forcing a code change on any future Supabase project rename.
+- Investigation note: prompt cited `scheduleChangeSend.js` as the model — that file doesn't actually build any HTTP handler URL (it dispatches through the comms_messages queue). The real model is `src/lib/unsubscribeUrl.js:17` + `src/components/roster/InviteButton.jsx:16`, both already using the env-var template literal. The prompt's prescribed SYNTAX was correct; the file citation was off.
+- Test impact: zero. Both `rsvpNudgeSend.integration.test.js` and `academyCallupSend.integration.test.js` assert on path substrings (`'rsvp-token-handler'`, `'functions/v1/callup-token-handler'`), not the hostname. Env-var swap preserves the path. 541/541 still pass.
+- Lint rule selector targets the literal regex `/vrwwpsbfbnveawqwbdmj\.supabase\.co/` — surfaces both the bare hostname and any future variant that includes the project id. Failure message points callers to the env-var pattern.
+- Scope: exactly the 2 callers the audit flagged. Verified via fresh grep — zero hostname literals remain in `src/`.
+- Gates: 0 lint errors (40 baseline warnings unchanged), 541/541 vitest pass, both edited send files still under 100 LOC.
+- Unblocks: PR #122 (AuthContext + FinancialDashboard exhaustive-deps cleanup, P1-2 + P1-3 from L99). PR #123 (digestSend integration test, P1-5 from L99). PR #124 (roster_members → team_players migration in 4 callers, P1-4 from L99).
