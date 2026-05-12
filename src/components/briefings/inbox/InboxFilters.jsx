@@ -1,6 +1,12 @@
+/* eslint-disable react-refresh/only-export-components */
 // Wave 3.12 — three filter dropdowns: Kind / Team / Date.
 // Active chips render below with ✕ removal. Filter state persisted
 // per-admin via useBriefingFilters → briefing_inbox_preferences.
+//
+// Wave 4.8 UX (PR #123): `DATE_OPTIONS` named export so tests can lock
+// the chip set without parsing the component tree. The disable above
+// matches the project pattern (see AcademyCallupBody.jsx:1) — the
+// shared-constant + default-component co-existence is intentional.
 
 import { ChevronDown, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -16,10 +22,19 @@ const chipStyle = { display: 'inline-flex', alignItems: 'center', gap: 4, paddin
 const chipX = { background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', color: 'var(--em-text-tertiary)' };
 
 // Wave 4.1d-2 §1.3 — added 'Last 14 days' as the new default.
-const DATE_OPTIONS = [
-  { v: 'all', l: 'All time' }, { v: 'today', l: 'Today' },
-  { v: 'this_week', l: 'This week' }, { v: 'next_7_days', l: 'Last/Next 7 days' },
+// Wave 4.8 UX (PR #123) — 'today' and 'next_7_days' removed; chip set
+// now mirrors the briefing_active_queue RPC's accepted values exactly
+// (Active tab is RPC-driven post-PR #120). 'last_30_days' added — RPC
+// accepts it and admin had no way to pick it before. Defensive shims
+// in useInboxQueue.js + useInboxHistory.js retain handlers for stale
+// briefing_inbox_preferences.default_date_filter values that predate
+// this PR. History tab loses 'today' / 'next_7_days' as UI options;
+// defensive code path still works if a stored pref names them.
+export const DATE_OPTIONS = [
+  { v: 'all', l: 'All time' },
+  { v: 'this_week', l: 'This week' },
   { v: 'last_14_days', l: 'Last 14 days' },
+  { v: 'last_30_days', l: 'Last 30 days' },
 ];
 
 export default function InboxFilters({ filters, onChange, onClear }) {
