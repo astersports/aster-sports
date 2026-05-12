@@ -11,6 +11,47 @@
 
 const ORG_TIMEZONE_DEFAULT = "America/New_York";
 
+// Wave 4.8 6c — kind-scoped expiry windows for the Active queue.
+// MUST stay in sync with the SQL CASE branches in
+// 20260512162843_wave_4_8_6c_1_comms_messages_expires_at.sql + the
+// future briefing_active_queue RPC (PR #119).
+// game_recap        14d post-event
+// tournament_prelim until tournament starts (or +14d fallback)
+// tournament_recap  30d post-end_date
+// schedule_change   7d post-edit
+// weekly_digest     7d post-edit
+// announcement      30d post-edit
+// rsvp_nudge        until event starts (or +3d fallback)
+// custom_message    30d post-edit
+// academy_callup    7d post-edit
+export function computeExpiryForKind(
+  kind: string,
+  anchorTime: Date | null,
+  fallbackEdit: Date,
+): Date {
+  const fallback = fallbackEdit ?? new Date();
+  switch (kind) {
+    case "game_recap":
+      return new Date((anchorTime ?? fallback).getTime() + 14 * 86400000);
+    case "tournament_prelim":
+      return anchorTime ?? new Date(fallback.getTime() + 14 * 86400000);
+    case "tournament_recap":
+      return new Date((anchorTime ?? fallback).getTime() + 30 * 86400000);
+    case "schedule_change":
+    case "weekly_digest":
+      return new Date(fallback.getTime() + 7 * 86400000);
+    case "announcement":
+    case "custom_message":
+      return new Date(fallback.getTime() + 30 * 86400000);
+    case "rsvp_nudge":
+      return anchorTime ?? new Date(fallback.getTime() + 3 * 86400000);
+    case "academy_callup_notice":
+      return new Date(fallback.getTime() + 7 * 86400000);
+    default:
+      return new Date(fallback.getTime() + 14 * 86400000);
+  }
+}
+
 export interface DateParts {
   weekday: string;
   year: number;
@@ -89,6 +130,7 @@ export function buildWeeklyDigestDraftRow(
     delivery_method: "queued",
     last_edited_at: now.toISOString(),
     last_edited_by: null,
+    expires_at: computeExpiryForKind("weekly_digest", null, now).toISOString(),
   };
 }
 

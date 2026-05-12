@@ -3225,3 +3225,27 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
 - Gates: 536/536 tests pass (no test delta — hook contract unchanged; the new shared component is purely presentational over an already-tested hook), 0 new lint warnings (baseline 40 unchanged), all touched files <150 LOC.
 - Closes: Session 6b. With this PR, all three intended callers (event detail header, tournament detail header, briefing-history footers) deep-link the wizard with pre-filled anchor + kind.
 - Unblocks: Session 6c — unified RPC + `comms_messages.expires_at` auto-expire. The deep-link surface is now stable; 6c rebuilds the queue source.
+
+### Wave 4.8 6c Session 1 — expires_at stamp + sweep handler — PR #118
+- Date: 2026-05-12
+- Files:
+  - NEW supabase/migrations/20260512162843_wave_4_8_6c_1_comms_messages_expires_at.sql (mirror of chat-applied migration; verified byte-identical against `supabase_migrations.schema_migrations` via MCP)
+  - NEW supabase/functions/briefing-auto-draft-tick/_draftRow.ts (71 LOC; extracted placeholderDraft + draftExists + tryInsert + Trigger/HandlerResult types from _handlers.ts to satisfy anti-pattern #11)
+  - NEW supabase/functions/briefing-auto-draft-tick/__tests__/computeExpiry.test.ts (Deno test, 7 cases; runs at deploy time)
+  - EDIT supabase/functions/briefing-auto-draft-tick/_helpers.ts (96 → 137 LOC; new `computeExpiryForKind` export + threaded `expires_at` into `buildWeeklyDigestDraftRow`)
+  - EDIT supabase/functions/briefing-auto-draft-tick/_handlers.ts (169 → 139 LOC after extract + threading; 5 handlers now derive anchorTime + expires_at)
+  - EDIT supabase/functions/briefing-auto-draft-tick/index.ts (109 → 131 LOC; new `handleExpireSweep` runs unconditionally on every tick before trigger dispatch; result included in both early-return and full-dispatch JSON paths)
+  - EDIT src/lib/cron/briefingCronHelpers.js (103 → 142 LOC; logical mirror of the Deno helper per anti-pattern #30 — `computeExpiryForKind` added in JS, weekly_digest builder also stamps `expires_at`)
+  - EDIT src/lib/cron/__tests__/briefingCronHelpers.test.js (+ 7 vitest cases for computeExpiryForKind + updated buildWeeklyDigestDraftRow toEqual)
+  - EDIT vite.config.js (added `test.include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}']` so vitest no longer tries to load Deno test files under supabase/functions/ — those have `https://` imports vitest can't resolve)
+- Evidence: Session 6a audit Area 7 — no auto-expire concept existed. Migration applied chat-side at 20260512162843 (the run that backfilled 35 drafts; 6 already past expires_at).
+- Sweep semantics: a single `UPDATE comms_messages SET status='archived' WHERE status='draft' AND expires_at < NOW()`, scoped by an indexed predicate (expires_at + status combination is cheap). Returns `{ archived, ids }` in the response JSON. Runs every tick (every minute via pg_cron). Not driven by a briefing_triggers row.
+- Forward-stamping: every new draft INSERT from the 6 trigger handlers (weekly_digest in _helpers.ts + 5 others in _handlers.ts) now stamps `expires_at` at INSERT time, computed by `computeExpiryForKind(kind, anchorTime, now)`. Anchor-time inference mirrors the migration's SQL CASE branches: game_recap → event.start_at, tournament_prelim → tournament.start_date midnight ET, tournament_recap → tournament.end_date end-of-day ET, schedule_change → null (uses fallback), rsvp_nudge → event.start_at.
+- Anti-pattern compliance:
+  - #11 (file size): _handlers.ts was already at 169 LOC pre-PR (over the 150 cap). Extracted shared utilities to `_draftRow.ts` so the post-PR result is 139 LOC. All 4 Deno files now under 150.
+  - #21 (mirror migration in same turn): mirror written from the canonical `supabase_migrations.schema_migrations` row, byte-identical to the chat-applied source.
+  - #30 (Deno/vitest mirror sync): `computeExpiryForKind` lives in BOTH `briefingCronHelpers.js` (vitest source of truth) AND `_helpers.ts` (Deno deploy). Vitest covers via 7 new cases; Deno coverage ships with the function and runs at deploy time.
+- Post-deploy expectation: 6 drafts get archived on the first tick after Frank deploys (per the MCP-confirmed backfill leaving 6 rows with `expires_at < NOW()`). Drafts tab badge drops from 35 to ~29 once the sweep runs.
+- Deploy gate: code lands on main via this PR. Edge function deploy is chat-side via Supabase MCP per the prompt's explicit "What NOT to do". Live behavior changes only after Frank triggers the deploy.
+- Gates: 543/543 vitest tests pass (536 → 543; +7 new computeExpiryForKind cases), 0 new lint warnings (baseline 40 unchanged), 0 `created_at` references (PR #114 regression class avoided — sweep uses status + expires_at predicates only).
+- Unblocks: PR #119 (unified `briefing_active_queue` RPC + hook rewrite consuming `expires_at` as the visibility cutoff). PR #120 (post-deploy cleanup + index on expires_at if needed once sweep volume is observed).

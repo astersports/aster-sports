@@ -13,5 +13,10 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   test: {
     setupFiles: ['./src/test/setup.js'],
+    // Wave 4.8 6c: scope discovery to src/ so vitest doesn't try to
+    // load Deno test files under supabase/functions/ (they import
+    // from https:// URLs which Node's ESM loader rejects). Deno tests
+    // run in the function deploy bundle, not under vitest.
+    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
   },
 })
