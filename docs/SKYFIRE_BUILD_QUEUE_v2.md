@@ -3302,3 +3302,23 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
 - Scope: exactly the 2 callers the audit flagged. Verified via fresh grep — zero hostname literals remain in `src/`.
 - Gates: 0 lint errors (40 baseline warnings unchanged), 541/541 vitest pass, both edited send files still under 100 LOC.
 - Unblocks: PR #122 (AuthContext + FinancialDashboard exhaustive-deps cleanup, P1-2 + P1-3 from L99). PR #123 (digestSend integration test, P1-5 from L99). PR #124 (roster_members → team_players migration in 4 callers, P1-4 from L99).
+
+### Wave 4.8 BUG — academy_callup_notice wizard redirect — PR #122
+- Date: 2026-05-14
+- Files:
+  - EDIT src/lib/briefings/kindMetadata.js (added `wizardSupported: false` flag on academy_callup_notice with provenance comment)
+  - NEW src/components/briefings/bodies/AcademyCallupRedirectCard.jsx (67 LOC; 3-step instructions + Open Schedule button + footnote)
+  - EDIT src/components/briefings/bodies/AcademyCallupBody.jsx (guard renders `<AcademyCallupRedirectCard />` when flag is false; picker UI preserved for the day the flag flips back on)
+  - EDIT src/components/briefings/BriefingComposer.jsx (Next button disabled when the kind has `wizardSupported: false` — `wizardBlocked` derived once before render)
+  - EDIT src/lib/briefings/__tests__/kindMetadata.test.js (+1 case asserting the flag)
+  - NEW src/components/briefings/bodies/__tests__/AcademyCallupRedirectCard.test.jsx (6 cases — heading / 3 steps / trailing hint / button presence / navigate target / footnote)
+- Evidence: Frank hit PlayerNotCalledUpError live on 5/13 at 5:58 PM composing academy_callup_notice via the wizard. Investigation (read-only, 5/14 morning) confirmed: the wizard never activates the player on `events.academy_callup_player_ids`; only the canonical flow (EventDetail → AcademyCallupPicker → `add_academy_callup` RPC → auto-open AcademyCallupCompose) populates that field. Resolver validation at `academyCallupNotice.js:72` is correct and unchanged.
+- Path X3 selected from yesterday's investigation: keep the kind discoverable in the picker (label/icon/description unchanged), replace the wizard body with a redirect card pointing admins to the canonical flow. Lowest blast radius of the four options; reversible by flipping the flag.
+- Implementation notes:
+  - Guard sits AFTER hook declarations in `AcademyCallupBody.jsx` so the Rules of Hooks call order stays stable when the flag toggles at runtime (e.g. in tests).
+  - Next-button gate in `BriefingComposer.jsx` derives `wizardBlocked` once before the render block; keeps the JSX compact and the file under the 150 LOC cap (149 final).
+  - Redirect card uses `useNavigate('/schedule')`. Canonical flow needs admin to land on a specific event detail page; Schedule is the right starting point — admin picks the event from there.
+  - Resolver validation NOT changed by this PR. Contract test at `academyCallupNotice.contract.test.js:68-72` still locks `PlayerNotCalledUpError` for the day the wizard learns to call `add_academy_callup` itself.
+  - Canonical flow path unchanged. `AcademyCallupPicker` + `AcademyCallupCompose` (legacy compose path, not registry) still work exactly as before.
+- Gates: 548/548 vitest pass (541 → 548; +7 new — 6 redirect card + 1 KIND_METADATA flag). 0 lint errors, 40 baseline warnings unchanged. All 6 touched/new files under 150 LOC (kindMetadata.js 120, AcademyCallupRedirectCard.jsx 67, AcademyCallupBody.jsx 71, BriefingComposer.jsx 149, kindMetadata.test.js 86, AcademyCallupRedirectCard.test.jsx 53).
+- Future PR (deferred): merge `AcademyActivationPanel` (writes to `player_activations` for attendance tracking) with `AcademyCallupPicker` (writes to `events.academy_callup_player_ids` for callup) naming/concept confusion. Separate concern; doesn't fix Frank's bug; high blast radius.

@@ -85,6 +85,15 @@ export const KIND_METADATA = {
     defaultAudienceType: 'player_specific', audienceLocked: true,
     bodyModule: 'AcademyCallupBody',
     disabled: false,
+    // Wave 4.8 BUG (5/13 incident) — wizard cannot complete an academy
+    // call-up because it never activates the player on the event
+    // (events.academy_callup_player_ids stays empty), so the resolver
+    // throws PlayerNotCalledUpError at send time. The canonical flow
+    // (EventDetail → AcademyCallupPicker → addCallup RPC → auto-open
+    // AcademyCallupCompose) is the only path that populates that field.
+    // Kind stays discoverable in the picker; the Body step renders a
+    // redirect card pointing admins to the canonical flow.
+    wizardSupported: false,
   },
   custom_message: {
     icon: 'MessageSquare', label: 'Custom message',

@@ -8,9 +8,17 @@
 // (renamed from introNote) flows into overrides.coach_note via
 // bodyOverrides, picked up by composeAcademyCallupNotice's narrative
 // loop. Player selection is the anchor (audience_filter.player_ids).
+//
+// Wave 4.8 BUG (5/13 incident) — when KIND_METADATA.academy_callup_notice
+// .wizardSupported === false, this module short-circuits to a redirect
+// card pointing admins at the canonical flow. The picker UI below is
+// preserved for the day the flag flips back on (e.g. when the wizard
+// learns to call add_academy_callup itself).
 
 import { useState } from 'react';
+import { KIND_METADATA } from '../../../lib/briefings/kindMetadata';
 import { fieldGap, inputStyle, labelStyle, textareaStyle } from './_styles';
+import AcademyCallupRedirectCard from './AcademyCallupRedirectCard';
 import PlayerPicker from './PlayerPicker';
 
 export const defaultValue = {
@@ -29,6 +37,12 @@ export default function AcademyCallupBody({ value, onChange, audienceFilter, onA
   const [pickerOpen, setPickerOpen] = useState(false);
   const set = (patch) => onChange?.(patch);
   const selectedIds = audienceFilter?.player_ids || v.player_ids || [];
+  // Wave 4.8 BUG short-circuit. Returns the redirect card and never
+  // renders the picker when the wizard can't complete this kind. Sits
+  // AFTER hook declarations to keep the Rules of Hooks call order stable.
+  if (KIND_METADATA.academy_callup_notice?.wizardSupported === false) {
+    return <AcademyCallupRedirectCard />;
+  }
 
   return (
     <div style={fieldGap}>

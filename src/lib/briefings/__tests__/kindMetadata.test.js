@@ -61,6 +61,13 @@ describe('academy_callup_notice (G2 — surfaced wave 4.1d-2)', () => {
     expect(KIND_ORDER[idx - 1]).toBe('rsvp_nudge');
     expect(KIND_ORDER[idx + 1]).toBe('custom_message');
   });
+  // Wave 4.8 BUG (5/13 incident) — wizard cannot complete this kind; the
+  // canonical activation flow (EventDetail → AcademyCallupPicker) is the
+  // only path that populates events.academy_callup_player_ids. Body step
+  // short-circuits to AcademyCallupRedirectCard when the flag is false.
+  it('wizardSupported: false (kind stays discoverable, body renders redirect)', () => {
+    expect(KIND_METADATA.academy_callup_notice.wizardSupported).toBe(false);
+  });
 });
 
 describe('sortKinds (wave 4.1d-2 §2.5 — stable order, usage no longer reorders)', () => {

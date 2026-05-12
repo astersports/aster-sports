@@ -123,6 +123,10 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   };
 
   const stepIndex = state.step - 1;
+  // Wave 4.8 BUG (5/13 incident) — Next is a dead end when the kind's
+  // wizardSupported flag is false (the Body step renders a redirect card).
+  const wizardBlocked = !!state.kind && KIND_METADATA[state.kind]?.wizardSupported === false;
+  const canGo = canAdvance(state) && !wizardBlocked;
   return (
     <FullScreenForm open onClose={onClose} title={`Compose · ${STEPS[stepIndex]}`}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -133,7 +137,7 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
         {state.step === 3 && <StepBodySignoff state={state} dispatch={dispatch} audience={audience} hasParentTournament={hasParentTournament} onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose} />}
         {state.step === STEPS.length && <StepSendConfirm state={state} audience={audience} onSend={onSend} sending={busy} pilotModeEnabled={pilotModeEnabled} />}
         {state.step < STEPS.length && (
-          <button type="button" disabled={!canAdvance(state)} onClick={() => dispatch({ type: 'GO_FORWARD' })} className="sf-press" style={{ minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: canAdvance(state) ? 'var(--em-accent)' : 'var(--em-bg-tertiary)', color: canAdvance(state) ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)', fontSize: 15, fontWeight: 600, cursor: canAdvance(state) ? 'pointer' : 'default' }}>
+          <button type="button" disabled={!canGo} onClick={() => dispatch({ type: 'GO_FORWARD' })} className="sf-press" style={{ minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: canGo ? 'var(--em-accent)' : 'var(--em-bg-tertiary)', color: canGo ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)', fontSize: 15, fontWeight: 600, cursor: canGo ? 'pointer' : 'default' }}>
             Next
           </button>
         )}
