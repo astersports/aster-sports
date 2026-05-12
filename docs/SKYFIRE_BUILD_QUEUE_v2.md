@@ -3261,3 +3261,30 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
 - No logic delta in this PR. No DDL apply. No edge function touch. No frontend touch. Pure repo-housekeeping.
 - Gates: 543/543 vitest tests pass (unchanged from PR #118 baseline), 0 new lint warnings, no other files touched.
 - Unblocks: PR #120 — useInboxQueue rewrites to `supabase.rpc('briefing_active_queue', {p_org_id, p_kind, p_team_ids, p_date_range})`, useNeedsBriefing.js gets deleted (5 client-side sub-streams collapse to one server call), ActiveQueue.jsx consumes the unified rows with the synth/db source discriminator on each row.
+
+### Wave 4.8 6c Session 3 — useInboxQueue consumes briefing_active_queue RPC — PR #120
+- Date: 2026-05-13
+- Files:
+  - REWRITE src/hooks/useInboxQueue.js (33 → 60 LOC; new signature `{orgId, kind, teamIds, dateRange}`; calls `supabase.rpc('briefing_active_queue', {...})`; UI→RPC date-range mapping shim; sorted-join teamIds key for stable deps)
+  - STUB src/hooks/useNeedsBriefing.js (134 → 54 LOC; reduced to `fetchWeeklyDigestDue` only — 3 covered sub-streams + 1 schedule_change_skipped sub-stream removed)
+  - TRIM src/lib/briefings/needsAttention.js (143 → 32 LOC; kept `weeklyDigestDueWindow` + `buildDigestDueRow`; removed window constants + builders for the deleted sub-streams)
+  - EDIT src/components/briefings/inbox/ActiveQueue.jsx (50 → 64 LOC; threads filters into useInboxQueue, merges safety-net via (kind, anchor_id) dedupe)
+  - EDIT src/components/briefings/inbox/ActionQueueRow.jsx (read `title_text` + `anchor_time` from RPC rows alongside the legacy fields)
+  - EDIT src/components/briefings/inbox/clientFilters.js (34 → 26 LOC; search-only; `rowMatchesTeamFilter` kept exported for safety-net use)
+  - EDIT src/lib/briefings/statusTable.js (statusFor maps RPC synth rows by kind to the existing styled status keys; visual continuity preserved)
+  - EDIT src/pages/BriefingsInboxPage.jsx (threads `filters` to useInboxQueue; draftCount now `source !== 'synthetic' && status === 'draft'`; onAction branches on `source==='synthetic' || synthetic_id`)
+  - DELETED src/lib/briefings/__tests__/wave_4_1d_2_synth.test.js (50 LOC — all 3 describes targeted deleted builders)
+  - UPDATED src/lib/briefings/__tests__/needsAttention.test.js (trimmed to `weeklyDigestDueWindow` + `buildDigestDueRow` describes only)
+  - UPDATED src/lib/briefings/__tests__/wave_4_1d_2.test.js (removed TOURNAMENT_RECAP_WINDOW_MS describe — constant deleted with the rest of needsAttention.js)
+  - UPDATED src/lib/briefings/__tests__/statusTable.test.js (+3 cases for RPC synth → styled-key mapping)
+  - UPDATED src/components/briefings/inbox/__tests__/ActiveQueue.filter.test.js (rewrote applyClientFilters describes for search-only contract)
+  - NEW src/hooks/__tests__/useInboxQueue.test.js (7 cases — RPC pass-through, date-range mapping shim, empty teamIds coercion, no-orgId short-circuit, mixed-source rows, error reset)
+- Evidence: closes Session 6c. Migrations 1+2+2b applied yesterday; sweep verified working (153 archived overnight per the prompt). This PR makes the RPC actually drive the UI; kills the 6a Area 1+3 partial-implementation bug (dateRange/teams chips that didn't filter Active).
+- D2-mid scope honored: useNeedsBriefing.js stubbed, NOT deleted — keeps `weekly_digest_due` as a safety net surface for a kind not yet in the RPC. The deletion happens in a future PR after 30+ days cron telemetry confirms reliable auto-draft firing (per CLAUDE.md anti-pattern #34 caller migration).
+- **Spec-vs-reality discrepancy flagged + resolved:** prompt specified "keep rsvp_nudge + weekly_digest_due in useNeedsBriefing", but `fetchRsvpNudgeItems` never existed in this codebase — rsvp_nudge is auto-drafted exclusively via `handleRsvpLow24h` in the auto-draft tick, surfacing via RPC Branch A. Per the prompt's "Do NOT add new logic" fallback clause, kept only what was actually there: `weekly_digest_due`. Documented in the new `useNeedsBriefing.js` header.
+- **UX wrinkle accepted:** UI exposes date-range chip values (`'today'`, `'next_7_days'`) that the RPC doesn't accept. Mapping shim in useInboxQueue translates them to nearest RPC bucket (`'today'` → `'this_week'`, `'next_7_days'` → `'last_14_days'`). Chip labels stay as-is for now; cleanup deferred to a chip-UX PR.
+- **Status mapping decision:** RPC returns `status='needs_briefing'` for all 3 synth kinds (game_recap / tournament_prelim / tournament_recap). `statusFor` maps `(source='synthetic', status='needs_briefing', kind=X)` → existing styled-status key for kind X (`'needs_briefing_game'` / `'needs_briefing_tournament'` / `'needs_briefing_tournament_recap'`). No new STATUS_TABLE entry needed; badge + sort + action stay byte-identical to the prior synth surface.
+- Compose deep-link behavior preserved: RPC synth rows (`id=null`, `source='synthetic'`) route to `?kind=<k>&anchor=<ak>&id=<anchor_id>` (PR #115 plumbing); DB-backed rows route to `?draft_id=<id>`. The `onAction` branch is `row.source === 'synthetic' || !!row.synthetic_id`.
+- Lint fixed in-PR: initial `JSON.stringify(teamIds || [])` in the `useCallback` dep array tripped the React Compiler's `preserve-manual-memoization` rule (3 errors). Replaced with a `useMemo`-wrapped sorted-join key (`teamIdsKey`).
+- Gates: 541/541 vitest pass (was 543; net −2 after −10 deleted builder tests + +11 RPC contract + status mapping additions). 0 lint errors, 40 baseline warnings unchanged. All 13 touched files <150 LOC.
+- Unblocks: PR #121 (env var migration for hardcoded Supabase URLs in rsvpNudgeSend.js + academyCallupSend.js, P1 from yesterday's L99 audit). PR #122 (AuthContext + FinancialDashboard exhaustive-deps cleanup). PR #123 (digestSend integration test).

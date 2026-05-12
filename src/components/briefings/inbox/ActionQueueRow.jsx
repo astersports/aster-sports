@@ -28,6 +28,10 @@ function timeRel(row) {
   if (row.relative_time) return row.relative_time;
   if (row.scheduled_for) return `sends ${new Date(row.scheduled_for).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
   if (row.last_edited_at) return `edited ${new Date(row.last_edited_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
+  // Wave 4.8 6c — briefing_active_queue rows expose anchor_time (event
+  // start_at / tournament start_date / etc.). For synth rows the legacy
+  // synthetic surface used row.relative_time; RPC rows fall through here.
+  if (row.anchor_time) return new Date(row.anchor_time).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   return '';
 }
 
@@ -35,7 +39,7 @@ export default function ActionQueueRow({ row, onAction }) {
   const status = statusFor(row);
   const s = STATUS_TABLE[status] || STATUS_TABLE.draft;
   const Icon = ICON_MAP[iconNameFor(row.kind)] || MessageSquare;
-  const title = row.title || row.subject || (KIND_METADATA[row.kind]?.label || row.kind);
+  const title = row.title || row.title_text || row.subject || (KIND_METADATA[row.kind]?.label || row.kind);
   return (
     <div style={rowStyle(s.borderColor)}>
       <span style={iconWrap}><Icon size={20} strokeWidth={1.75} color="var(--em-text-secondary)" /></span>

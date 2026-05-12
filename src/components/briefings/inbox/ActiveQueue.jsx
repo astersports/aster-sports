@@ -1,13 +1,16 @@
-// Wave 3.12 — merges DB-backed comms_messages (drafts + scheduled)
-// with synthetic items from useNeedsBriefing. Sorts by status priority.
+// Wave 3.12 — merges DB-backed comms_messages (drafts + scheduled) with
+// synthetic items.
 //
 // Wave 4.1b §6.F — viewFilter='drafts' renders ONLY in-progress drafts
 // (no scheduled, no synthetic). Used by the new Drafts tab.
 //
-// Wave 4.1d-4 — pure client-side filter logic moved to clientFilters.js
-// so it can be unit-tested without pulling the React tree. Team branch
-// is now default-deny: synth rows that don't carry team scoping no
-// longer fall through and bypass the chip filter.
+// Wave 4.8 6c (PR #120) — useInboxQueue now serves a UNIFIED set
+// (DB-backed drafts/scheduled + synthetic game_recap / tournament_prelim
+// / tournament_recap) via briefing_active_queue RPC. Filter chips
+// (kind / teams / dateRange) thread through as RPC params. The remaining
+// client-side synth surface (weekly_digest_due via useNeedsBriefing) is
+// merged in here as a safety net; dedupe by (kind, anchor_id) prefers
+// the RPC row if both produce the same anchor.
 
 import { useMemo } from 'react';
 import { useAuth } from '../../../context/AuthContext';
@@ -18,20 +21,31 @@ import { applyClientFilters } from './clientFilters';
 import ActionQueueRow from './ActionQueueRow';
 import EmptyState from './EmptyState';
 
+function dedupeByAnchor(primary, safetyNet) {
+  const seen = new Set(primary.map((r) => `${r.kind}|${r.anchor_id || ''}`));
+  const extras = safetyNet.filter((r) => !seen.has(`${r.kind}|${r.anchor_id || ''}`));
+  return [...primary, ...extras];
+}
+
 export default function ActiveQueue({ filters, search, onAction, onCompose, onViewHistory, viewFilter }) {
   const { orgId } = useAuth();
-  const { rows: dbRows } = useInboxQueue({ orgId });
-  const { items: synthetic } = useNeedsBriefing({ orgId });
+  const { rows: dbRows } = useInboxQueue({
+    orgId,
+    kind: filters?.kind || null,
+    teamIds: filters?.teams?.length ? filters.teams : null,
+    dateRange: filters?.dateRange || 'last_14_days',
+  });
+  const { items: safetyNet } = useNeedsBriefing({ orgId });
 
   const merged = useMemo(() => {
     if (viewFilter === 'drafts') {
-      const drafts = (dbRows || []).filter((r) => r.status === 'draft');
+      const drafts = (dbRows || []).filter((r) => r.source !== 'synthetic' && r.status === 'draft');
       return applyClientFilters(drafts, filters, search);
     }
-    const all = [...(dbRows || []), ...(synthetic || [])];
-    const filtered = applyClientFilters(all, filters, search);
+    const combined = dedupeByAnchor(dbRows || [], safetyNet || []);
+    const filtered = applyClientFilters(combined, filters, search);
     return filtered.slice().sort((a, b) => sortPriority(a) - sortPriority(b));
-  }, [dbRows, synthetic, filters, search, viewFilter]);
+  }, [dbRows, safetyNet, filters, search, viewFilter]);
 
   if (!merged.length) {
     const filterActive = !!(filters?.kind || filters?.teams?.length || search?.trim());
@@ -43,7 +57,7 @@ export default function ActiveQueue({ filters, search, onAction, onCompose, onVi
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {merged.map((row) => (
-        <ActionQueueRow key={row.synthetic_id || row.id} row={row} onAction={(r) => onAction(r, statusFor(r))} />
+        <ActionQueueRow key={row.id || row.synthetic_id || `${row.kind}-${row.anchor_id}`} row={row} onAction={(r) => onAction(r, statusFor(r))} />
       ))}
     </div>
   );

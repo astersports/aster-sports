@@ -69,14 +69,9 @@ describe('Wave 4.1d-2 §2.6 — label drift fixed at source', () => {
   });
 });
 
-// §1.5 — TOURNAMENT_RECAP_WINDOW_MS broadened from 7d to 30d. Smoke the
-// constant value to catch regressions.
-describe('Wave 4.1d-2 §1.5 — tournament recap window broadened', () => {
-  it('TOURNAMENT_RECAP_WINDOW_MS is 30 days', async () => {
-    const { TOURNAMENT_RECAP_WINDOW_MS } = await import('../needsAttention');
-    expect(TOURNAMENT_RECAP_WINDOW_MS).toBe(30 * 86400000);
-  });
-});
+// §1.5 — TOURNAMENT_RECAP_WINDOW_MS constant removed in Wave 4.8 6c
+// (PR #120) when tournament_recap moved to the briefing_active_queue
+// RPC. The 30d window now lives in the SQL function (Migration 2b).
 
 // §5.2 — player_specific is a registered audience mode.
 describe('Wave 4.1d-2 §5.2 — player_specific audience mode', () => {

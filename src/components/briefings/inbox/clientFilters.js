@@ -1,15 +1,13 @@
-// Wave 4.1d-4 — pure inbox-row client-side filter helpers, extracted
-// from ActiveQueue.jsx so tests can import without pulling the React
-// tree. Default-deny on the team branch closes the bug class where
-// synth rows fell through `return true` and bypassed the chip filter.
+// Wave 4.8 6c Session 3 — client-side filtering reduced to search only.
+// kind + teams + dateRange now flow as RPC params to briefing_active_queue
+// (PR #120) so the partial-implementation bug from the 6a audit (chip set
+// but no server-side application) closes server-side. Search stays
+// client-side because the RPC has no full-text index on title/subject yet.
 //
-// Row shapes that team-pass:
-//   anchor_kind === 'org'           — always (org-wide, e.g. weekly digest)
-//   audience_filter.team_ids        — DB-backed multi_team rows
-//   team_ids[]                      — synth tournament rows
-//   team_id                         — synth game/skipped rows
-//   anchor_kind === 'team'          — DB-backed team-anchored rows
-//   default                         — DENY (hide, don't leak)
+// rowMatchesTeamFilter is preserved (still exported) for use against the
+// safety-net rows from useNeedsBriefing — those don't flow through the
+// RPC, and a kind/teams filter applied to the RPC path leaves the
+// safety-net rows untouched.
 
 export function rowMatchesTeamFilter(r, teamFilter) {
   if (!teamFilter?.length) return true;
@@ -21,13 +19,8 @@ export function rowMatchesTeamFilter(r, teamFilter) {
   return false;
 }
 
-export function applyClientFilters(rows, filters, search) {
-  let out = rows;
-  if (filters?.kind) out = out.filter((r) => r.kind === filters.kind);
-  if (filters?.teams?.length) out = out.filter((r) => rowMatchesTeamFilter(r, filters.teams));
-  if (search?.trim()) {
-    const q = search.trim().toLowerCase();
-    out = out.filter((r) => (r.title || r.subject || '').toLowerCase().includes(q));
-  }
-  return out;
+export function applyClientFilters(rows, _filters, search) {
+  if (!search?.trim()) return rows;
+  const q = search.trim().toLowerCase();
+  return rows.filter((r) => (r.title || r.title_text || r.subject || '').toLowerCase().includes(q));
 }
