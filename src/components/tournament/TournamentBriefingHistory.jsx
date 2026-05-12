@@ -1,12 +1,18 @@
 // Wave 3.15 — past briefings about this tournament. Mirrors
 // EventBriefingHistory shape from PR #45; uses useAnchorBriefings
 // with anchor_kind='tournament'. Renders only when briefings exist.
+//
+// Wave 4.8 6b Session 3: prop contract changed from {tournamentId} to
+// {tournament} so the component can infer kind (prelim vs recap vs
+// in-flight) for the new "Compose new" footer. Footer renders inside
+// the existing briefings-exist gate — zero-history surfacing deferred.
 
 import { useNavigate } from 'react-router-dom';
 import { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAnchorBriefings } from '../../hooks/useAnchorBriefings';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
+import ComposeAnchorCta from '../briefings/ComposeAnchorCta';
 
 const ICON_MAP = { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy };
 
@@ -36,10 +42,20 @@ function deliverySubtitle(recipientCount, deliveredCount) {
   return `${recipientCount} families · ${pct}% delivered`;
 }
 
-export default function TournamentBriefingHistory({ tournamentId }) {
+// Mirrors the three-state predicate at TournamentHeader.jsx:36-39.
+function tournamentCtaKind(t) {
+  if (!t) return null;
+  const now = new Date();
+  if (t.start_date && new Date(t.start_date) > now) return 'tournament_prelim';
+  if (t.end_date && new Date(t.end_date) < now) return 'tournament_recap';
+  return null;
+}
+
+export default function TournamentBriefingHistory({ tournament }) {
   const { orgId } = useAuth();
   const navigate = useNavigate();
-  const { briefings } = useAnchorBriefings({ orgId, anchorKind: 'tournament', anchorId: tournamentId });
+  const { briefings } = useAnchorBriefings({ orgId, anchorKind: 'tournament', anchorId: tournament?.id });
+  const ctaKind = tournamentCtaKind(tournament);
 
   if (!briefings.length) return null;
 
@@ -62,6 +78,7 @@ export default function TournamentBriefingHistory({ tournamentId }) {
           );
         })}
       </div>
+      {ctaKind && <ComposeAnchorCta anchorKind="tournament" anchor={tournament} kind={ctaKind} />}
     </div>
   );
 }

@@ -1,12 +1,20 @@
 // Wave 3.14 — past briefings about this event. Renders only when
 // briefings exist (no header / no empty state when zero). Click a
 // row to navigate to BriefingHistoryDetail.
+//
+// Wave 4.8 6b Session 3: prop contract changed from {eventId} to {event}
+// so the component can infer kind for the new "Compose new" footer.
+// Renders the footer inside the existing briefings-exist gate — admins
+// with zero past briefings on an anchor land in the same null-render path
+// as before. Surfacing zero-history "Compose new" is deferred to a future
+// session (would require parent-mount changes per the audit).
 
 import { useNavigate } from 'react-router-dom';
 import { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useEventBriefings } from '../../hooks/useEventBriefings';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
+import ComposeAnchorCta from '../briefings/ComposeAnchorCta';
 
 const ICON_MAP = { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy };
 
@@ -36,10 +44,20 @@ function deliverySubtitle(recipientCount, deliveredCount) {
   return `${recipientCount} families · ${pct}% delivered`;
 }
 
-export default function EventBriefingHistory({ eventId }) {
+// Mirrors the past-game predicate at EventDetailHeader.jsx:73-75.
+function pastGameKind(event) {
+  if (!event) return null;
+  const isPastGame = event.event_type === 'game'
+    && !!event.start_at && new Date(event.start_at) < new Date()
+    && event.status !== 'cancelled';
+  return isPastGame ? 'game_recap' : null;
+}
+
+export default function EventBriefingHistory({ event }) {
   const { orgId } = useAuth();
   const navigate = useNavigate();
-  const { briefings } = useEventBriefings({ orgId, eventId });
+  const { briefings } = useEventBriefings({ orgId, eventId: event?.id });
+  const ctaKind = pastGameKind(event);
 
   if (!briefings.length) return null;
 
@@ -62,6 +80,7 @@ export default function EventBriefingHistory({ eventId }) {
           );
         })}
       </div>
+      {ctaKind && <ComposeAnchorCta anchorKind="event" anchor={event} kind={ctaKind} />}
     </div>
   );
 }

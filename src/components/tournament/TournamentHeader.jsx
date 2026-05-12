@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Calendar, Edit2, ExternalLink, MapPin, Trophy } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import TournamentFormSheet from './TournamentFormSheet';
-import ComposeTournamentCta from './ComposeTournamentCta';
+import ComposeAnchorCta from '../briefings/ComposeAnchorCta';
 import SendBriefingButton from '../briefings/SendBriefingButton';
 
 function tournamentBriefingKinds(t) {
@@ -90,7 +90,7 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
         </div>
       )}
 
-      {isStaff && ctaKind && <ComposeTournamentCta tournament={tournament} kind={ctaKind} />}
+      {isStaff && ctaKind && <ComposeAnchorCta anchorKind="tournament" anchor={tournament} kind={ctaKind} />}
       {isStaff && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => setEditing(true)} className="sf-press" aria-label="Edit tournament" style={{
