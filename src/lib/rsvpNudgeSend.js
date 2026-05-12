@@ -24,7 +24,7 @@ import { queueComposedMessages } from './briefings/queueComposedMessages';
 
 const HTML_OPEN = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">';
 const HTML_CLOSE = '</div>';
-const RSVP_HANDLER_BASE = 'https://vrwwpsbfbnveawqwbdmj.supabase.co/functions/v1/rsvp-token-handler';
+const RSVP_HANDLER_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rsvp-token-handler`;
 
 async function mintRsvpToken(supabase, eventId, playerId, guardianId, response) {
   const { data, error } = await supabase.rpc('mint_rsvp_token', {
