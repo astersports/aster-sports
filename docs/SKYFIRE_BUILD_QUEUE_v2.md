@@ -3203,3 +3203,25 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
 - Existing `SendBriefingButton` at `TournamentHeader.jsx:148` unchanged — both coexist. Same deprecation timing as PR #115.
 - Gates: 536/536 tests pass (no test delta), 0 new lint warnings (baseline 40 unchanged), 0 `created_at` references (PR #114 regression class avoided).
 - Unblocks: Session 3 — `EventBriefingHistory` + `TournamentBriefingHistory` get inline "Compose new" footer rows. That third caller triggers the dedupe of `ComposeRecapCta` (EventDetailHeader inline) + `ComposeTournamentCta` (this PR) into a single shared `briefings/ComposeAnchorCta`.
+
+### Wave 4.8 6b Session 3 — ComposeAnchorCta extract + history footer rows — PR #117
+- Date: 2026-05-12
+- Files:
+  - NEW src/components/briefings/ComposeAnchorCta.jsx (58 LOC)
+  - DELETED src/components/tournament/ComposeTournamentCta.jsx (was 52 LOC)
+  - EDIT src/components/event/EventDetailHeader.jsx (122 → 87 LOC)
+  - EDIT src/components/tournament/TournamentHeader.jsx (117 LOC; import + 1 JSX line)
+  - EDIT src/components/event/EventBriefingHistory.jsx (67 → 86 LOC; prop contract + footer)
+  - EDIT src/components/tournament/TournamentBriefingHistory.jsx (67 → 84 LOC; prop contract + footer)
+  - EDIT src/pages/EventDetailPage.jsx (1 line — `eventId={event.id}` → `event={event}`)
+  - EDIT src/pages/TournamentDetailPage.jsx (1 line — `tournamentId={tournament.id}` → `tournament={tournament}`)
+- Evidence: Session 6a Area 6 — third caller (history components) triggers the dedupe of the two inline CTA variants from PRs #115 + #116 into a single shared component. Closes Session 6b.
+- Shared component contract: `<ComposeAnchorCta anchorKind={'event'|'tournament'} anchor={obj-with-id} kind={'game_recap'|'tournament_prelim'|'tournament_recap'} />`. Drives copy via a `CTA_COPY` map keyed by kind; aria-noun via a `NOUN` map keyed by anchorKind. Calls `useAnchorDraftStatus` (PR #115's hook) and renders one of three states (default / hasDraft accent-soft / sent-only disabled). On click: `navigate('/admin/briefings/compose?kind=<k>&anchor=<ak>&id=<id>')`.
+- Style normalization: PR #115's inline wrap used `padding: '8px 12px 0'`; PR #116's wrapper used `marginBottom: 8`. The shared component adopts `marginBottom: 8` for consistency. Visual difference is minor — the new spacing matches the tournament-side rhythm.
+- History prop contract change: `{eventId}` → `{event}` and `{tournamentId}` → `{tournament}`. Both have only two callers each — the parent detail pages — both updated in the same diff. The history components now infer `ctaKind` internally via `pastGameKind(event)` / `tournamentCtaKind(tournament)` helpers that mirror `EventDetailHeader.jsx:73-75` and `TournamentHeader.jsx:36-39` predicates exactly. Anti-pattern #34 satisfied: zero stale callers; the prop rename and consumer updates ship in one PR.
+- Footer placement decision: rendered INSIDE the existing `if (!briefings.length) return null;` gate, after the briefings list. Admins with at least one past briefing on an anchor see "Compose new"; admins with zero history see nothing new (mirrors prior behavior). Surfacing "Compose new" on zero-history anchors would require restructuring the parent-mount gate and is explicitly deferred to a future session per the prompt's WAIT clause.
+- aria nouns: `event` → "game", `tournament` → "tournament" (per the existing aria-label phrasing in the inline versions).
+- 44px tap target preserved on the new button via `minHeight: 44`. No `created_at` references (PR #114 regression class avoided — the shared component touches no Supabase column lists directly; the underlying hook was already audited in PR #115).
+- Gates: 536/536 tests pass (no test delta — hook contract unchanged; the new shared component is purely presentational over an already-tested hook), 0 new lint warnings (baseline 40 unchanged), all touched files <150 LOC.
+- Closes: Session 6b. With this PR, all three intended callers (event detail header, tournament detail header, briefing-history footers) deep-link the wizard with pre-filled anchor + kind.
+- Unblocks: Session 6c — unified RPC + `comms_messages.expires_at` auto-expire. The deep-link surface is now stable; 6c rebuilds the queue source.

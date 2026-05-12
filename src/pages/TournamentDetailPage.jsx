@@ -76,7 +76,7 @@ export default function TournamentDetailPage() {
         {activeTab === 'scenarios' && <ScenariosTab tournament={tournament} teamFilter={teamFilter} />}
       </div>
 
-      {isStaff && <TournamentBriefingHistory tournamentId={tournament.id} />}
+      {isStaff && <TournamentBriefingHistory tournament={tournament} />}
     </div>
   );
 }
