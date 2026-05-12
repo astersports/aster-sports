@@ -4,8 +4,21 @@ import { isActiveBadgeItem, sortPriority, STATUS_TABLE, statusFor } from '../sta
 const NOW = Date.UTC(2026, 4, 9, 16, 0, 0);
 
 describe('statusFor', () => {
-  it('synthetic items return their declared status', () => {
+  it('synthetic items (legacy useNeedsBriefing shape) return their declared status', () => {
     expect(statusFor({ synthetic_id: 'x', status: 'needs_briefing_game' })).toBe('needs_briefing_game');
+  });
+
+  // Wave 4.8 6c — RPC returns source='synthetic' + status='needs_briefing'
+  // with the actual variant carried by `kind`. statusFor maps to the
+  // existing styled keys so badges/sort stay byte-identical.
+  it('RPC synth game_recap maps to needs_briefing_game', () => {
+    expect(statusFor({ source: 'synthetic', status: 'needs_briefing', kind: 'game_recap' })).toBe('needs_briefing_game');
+  });
+  it('RPC synth tournament_prelim maps to needs_briefing_tournament', () => {
+    expect(statusFor({ source: 'synthetic', status: 'needs_briefing', kind: 'tournament_prelim' })).toBe('needs_briefing_tournament');
+  });
+  it('RPC synth tournament_recap maps to needs_briefing_tournament_recap', () => {
+    expect(statusFor({ source: 'synthetic', status: 'needs_briefing', kind: 'tournament_recap' })).toBe('needs_briefing_tournament_recap');
   });
 
   it('draft within 7d → draft', () => {

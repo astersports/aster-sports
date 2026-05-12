@@ -89,7 +89,21 @@ export const STATUS_TABLE = {
   },
 };
 
+// Wave 4.8 6c — briefing_active_queue RPC returns source='synthetic' +
+// status='needs_briefing' for game_recap / tournament_prelim /
+// tournament_recap rows. Map them to the existing styled status keys
+// based on kind so the badge + sort + action columns stay byte-identical
+// to the prior synth surface.
+const RPC_SYNTH_KIND_MAP = {
+  game_recap: 'needs_briefing_game',
+  tournament_prelim: 'needs_briefing_tournament',
+  tournament_recap: 'needs_briefing_tournament_recap',
+};
+
 export function statusFor(row, now = Date.now()) {
+  if (row.source === 'synthetic' && row.status === 'needs_briefing') {
+    return RPC_SYNTH_KIND_MAP[row.kind] || 'needs_briefing_game';
+  }
   if (row.synthetic_id) return row.status;
   if (row.status === 'draft') {
     const editedMs = row.last_edited_at ? new Date(row.last_edited_at).getTime() : 0;

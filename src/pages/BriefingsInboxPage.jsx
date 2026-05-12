@@ -44,13 +44,23 @@ export default function BriefingsInboxPage() {
   const [composer, setComposer] = useState(null); // null | { kind, anchor_kind, anchor_id, draft_id }
   const deepLink = useBriefingDeepLink();
 
-  const { rows: dbRows } = useInboxQueue({ orgId });
+  const { rows: dbRows } = useInboxQueue({
+    orgId,
+    kind: filters.kind,
+    teamIds: filters.teams,
+    dateRange: filters.dateRange,
+  });
   const { items: synthetic } = useNeedsBriefing({ orgId });
   const activeCount = useMemo(() => {
     const all = [...(dbRows || []), ...(synthetic || [])];
     return all.filter(isActiveBadgeItem).length;
   }, [dbRows, synthetic]);
-  const draftCount = useMemo(() => (dbRows || []).filter((r) => r.status === 'draft').length, [dbRows]);
+  // Wave 4.8 6c — drafts come from the RPC tagged source='comms_messages';
+  // synth rows are tagged source='synthetic' and excluded from this count.
+  const draftCount = useMemo(
+    () => (dbRows || []).filter((r) => r.source !== 'synthetic' && r.status === 'draft').length,
+    [dbRows],
+  );
 
   // Wave 4.4-B Session 1: deep-link parser handles old+new param taxonomy
   // plus /admin/briefings/compose route as a cold-start entry. Auto-open
@@ -80,7 +90,12 @@ export default function BriefingsInboxPage() {
   const onAction = (row, status) => {
     if (status === 'clear_filters') { clearFilters(); setSearch(''); return; }
     if (!row) return;
-    if (row.synthetic_id) {
+    // Wave 4.8 6c — synthetic rows from briefing_active_queue have
+    // source='synthetic' (id=null). Legacy safety-net rows from
+    // useNeedsBriefing have synthetic_id set. Both paths route to
+    // composer with anchor pre-fill, NOT draft_id.
+    const isSynthetic = row.source === 'synthetic' || !!row.synthetic_id;
+    if (isSynthetic) {
       setComposer({ kind: row.kind, anchor_kind: row.anchor_kind, anchor_id: row.anchor_id });
     } else {
       setComposer({ draft_id: row.id });

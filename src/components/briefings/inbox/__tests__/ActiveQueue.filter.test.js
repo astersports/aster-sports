@@ -1,10 +1,10 @@
 // Wave 4.1d-4 — regression tests for the inbox team filter chip.
-//
-// Repros the wave 4.1d-2 punch-list bug: synth rows from
-// useNeedsBriefing fell through `return true` in applyClientFilters
-// because they don't carry `audience_filter.team_ids` or
-// `anchor_kind === 'team'`. Chip "10U Blue ✕" left other teams' synth
-// cards visible in the rendered list.
+// Wave 4.8 6c (PR #120) — kind/teams/dateRange filtering moved to the
+// briefing_active_queue RPC. applyClientFilters is now search-only.
+// `rowMatchesTeamFilter` is kept (still exported) for use against the
+// safety-net rows from useNeedsBriefing — those don't flow through the
+// RPC and may still need client-side team checks if a future caller
+// re-introduces them.
 //
 // Tests the pure filter logic — no React render, no Supabase.
 
@@ -18,10 +18,9 @@ const ORG = 'org-uuid';
 function dbAnnouncement(teamIds) { return { id: `db-${teamIds.join('-')}`, kind: 'announcement', audience_filter: { team_ids: teamIds }, title: 'DB row' }; }
 function synthGameRecap(teamId) { return { synthetic_id: `g-${teamId}`, kind: 'game_recap', anchor_kind: 'event', team_id: teamId, title: `Game · ${teamId}` }; }
 function synthTournPrelim(teamIds) { return { synthetic_id: `tp-${teamIds.join('-')}`, kind: 'tournament_prelim', anchor_kind: 'tournament', team_ids: teamIds, title: 'Tournament' }; }
-function synthSkipped(teamId) { return { synthetic_id: `sk-${teamId}`, kind: 'schedule_change', anchor_kind: 'event', team_id: teamId, title: 'Schedule change' }; }
 function synthDigest() { return { synthetic_id: 'digest', kind: 'weekly_digest', anchor_kind: 'org', anchor_id: ORG, title: 'Weekly digest' }; }
 
-describe('rowMatchesTeamFilter — Wave 4.1d-4', () => {
+describe('rowMatchesTeamFilter — exported helper (kept for safety-net rows)', () => {
   it('synth game_recap is hidden when its team is not selected', () => {
     expect(rowMatchesTeamFilter(synthGameRecap(TEAM_BOYS), [TEAM_BLUE])).toBe(false);
   });
@@ -34,46 +33,42 @@ describe('rowMatchesTeamFilter — Wave 4.1d-4', () => {
     expect(rowMatchesTeamFilter(synthDigest(), [TEAM_BLUE])).toBe(true);
   });
 
-  it('default-deny: row with no team fields is hidden when chip active (regression class lock)', () => {
+  it('default-deny: row with no team fields is hidden when chip active', () => {
     const rogueRow = { synthetic_id: 'rogue', kind: 'custom_message', anchor_kind: 'unknown', title: 'Rogue' };
     expect(rowMatchesTeamFilter(rogueRow, [TEAM_BLUE])).toBe(false);
   });
 });
 
-describe('applyClientFilters — chip gates the rendered list', () => {
+describe('applyClientFilters — search-only (Wave 4.8 6c)', () => {
   const mixed = [
     dbAnnouncement([TEAM_BLUE]),
-    dbAnnouncement([TEAM_BOYS]),
     synthGameRecap(TEAM_BLUE),
-    synthGameRecap(TEAM_BOYS),
     synthTournPrelim([TEAM_BLUE, TEAM_BOYS]),
-    synthSkipped(TEAM_BLUE),
-    synthSkipped(TEAM_BOYS),
     synthDigest(),
   ];
 
-  it('chip selected gates list to that team (digest still passes as org-scoped)', () => {
-    const result = applyClientFilters(mixed, { teams: [TEAM_BLUE] }, '');
-    const ids = result.map((r) => r.id || r.synthetic_id).sort();
-    expect(ids).toEqual([
-      'db-team-10u-blue',
-      'digest',
-      'g-team-10u-blue',
-      'sk-team-10u-blue',
-      'tp-team-10u-blue-team-9u-boys',
-    ]);
+  it('returns input verbatim when no search term', () => {
+    const result = applyClientFilters(mixed, { teams: [TEAM_BLUE], kind: 'game_recap' }, '');
+    expect(result).toEqual(mixed);
   });
 
-  it('chip cleared (empty teams[]) shows all rows', () => {
-    const result = applyClientFilters(mixed, { teams: [] }, '');
-    expect(result.length).toBe(mixed.length);
+  it('filters by case-insensitive substring on title/title_text/subject', () => {
+    const rows = [
+      { id: 'a', title: 'Weekly digest · all program families' },
+      { id: 'b', title_text: 'Game · 10U Blue vs Falcons' },
+      { id: 'c', subject: 'Tournament briefing · ZG Memorial Day' },
+    ];
+    const out = applyClientFilters(rows, {}, 'GAME');
+    expect(out).toHaveLength(1);
+    expect(out[0].id).toBe('b');
   });
 
-  it('chip with empty result set returns only org-scoped rows (UI renders empty-state for narrowed views)', () => {
-    const NO_MATCH = 'team-does-not-exist';
-    const result = applyClientFilters(mixed, { teams: [NO_MATCH] }, '');
-    expect(result.map((r) => r.synthetic_id)).toEqual(['digest']);
-    const teamScoped = result.filter((r) => r.anchor_kind !== 'org');
-    expect(teamScoped).toHaveLength(0);
+  it('treats whitespace-only search as no filter', () => {
+    expect(applyClientFilters(mixed, {}, '   ').length).toBe(mixed.length);
+  });
+
+  it('returns empty array when no rows match', () => {
+    const out = applyClientFilters(mixed, {}, 'no-such-string');
+    expect(out).toEqual([]);
   });
 });
