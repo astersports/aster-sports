@@ -3340,3 +3340,18 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
 - Mid-PR fix: initial export of `DATE_OPTIONS` triggered `react-refresh/only-export-components` error. Applied the project's existing pattern (`/* eslint-disable react-refresh/only-export-components */` at top of file, see `AcademyCallupBody.jsx:1`) instead of extracting to a constants file — minimal-blast-radius and consistent.
 - Gates: 550/550 vitest pass (548 → 550; +3 new chip-set assertions, -1 removed fake-list assertion). 0 lint errors, 40 baseline warnings unchanged. All 4 touched files under 150 LOC (InboxFilters.jsx 112, useInboxQueue.js 71, useBriefingFilters.js 83, wave_4_1d_2.test.js 100).
 - Closes the Path C UX wrinkle documented in PR #120's build queue entry.
+
+### Wave 4.8 Hygiene — roster_members doctrine cleanup — PR #124
+- Date: 2026-05-14
+- Files:
+  - EDIT src/hooks/useRoster.js (header comment; §11.5 sizes-canonical exception + flagged legacy `payment_status` read for a future financial-tables migration)
+  - EDIT src/hooks/useEventRsvpCounts.js (inline comment above the query; §11.5 historical-window exception)
+  - EDIT src/hooks/useAttendanceData.js (inline comment above the query; §11.5 attendance-view exception — one of the 5 named views)
+  - EDIT src/pages/SeasonRolloverPage.jsx (inline comment above the nested PostgREST relation; §11.5 historical-view exception, caller missed by L99 audit grep)
+  - EDIT CLAUDE.md §11.5 (new "Documented exception callers" table listing all 4 exception files + 1 write site)
+- Evidence: yesterday's 5/13 read-only investigation found the L99 audit's "4 P1 roster_members migrations" were really 2 Class A swaps + 1 Class B §11.5 exception + 2 Class C semantic decisions. This PR ships the doctrine cleanup half — comments + CLAUDE.md table — so future audits don't re-flag the exception files as P1 violations. SeasonRolloverPage.jsx:28 was missed by the L99 audit grep (nested PostgREST relation `teams(...roster_members(...))` syntax escaped the simple `from('roster_members')` pattern); CLAUDE.md §11.5 now lists it.
+- No code behavior changes. Comments + documentation only.
+- MCP-confirmed (5/13): 63 = 63 rows across roster_members and team_players for the pilot org; zero divergence today. The "Milo filter" bug class is latent. Doctrine compliance is forward-protective, not active-fix.
+- Followup gap (NOT this PR): useRoster.js reads `payment_status` from roster_members — that column is the LEGACY field per §11.5 line 414. A future single-column migration to `financial_accounts` + `financial_transactions` can address it. Flagged in the file's new header comment.
+- PR #125 (next) handles the 2 actual Class A swaps: `useRsvps.js` + `notificationBadgeQueries.js` — both clean `.from('roster_members')` → `.from('team_players')` + `.is('left_at', null)` → `.eq('status', 'active')` translations.
+- Gates: 550/550 vitest pass (unchanged — no code behavior changes). 0 lint errors, 40 baseline warnings unchanged. All 4 touched code files under 150 LOC.

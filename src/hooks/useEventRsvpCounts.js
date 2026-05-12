@@ -22,6 +22,12 @@ export function useEventRsvpCounts(activities) {
     if (lastKeyRef.current === key) return;
     lastKeyRef.current = key;
 
+    // CLAUDE.md §11.5 historical-window exception (Wave 4.8 hygiene
+    // PR #124): RSVP-coverage counts compare "responded" against "team
+    // size on the activity's date". `team_players` only reflects
+    // present-tense membership; `roster_members.left_at IS NULL` is the
+    // canonical date-windowed eligibility check per §11.5 line 417.
+    // Stay on roster_members.
     Promise.all([
       supabase.from('event_rsvps').select('event_id, response').in('event_id', eventIds),
       supabase.from('roster_members').select('team_id').in('team_id', teamIds).is('left_at', null),

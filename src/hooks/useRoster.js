@@ -1,3 +1,15 @@
+// CLAUDE.md §11.5 exception (Wave 4.8 hygiene PR #124): roster_members
+// is the canonical home for jersey_size + shorts_size — team_players does
+// not carry those columns. Migration to team_players would require either
+// schema additions or a parallel JOIN, neither justified for this hook's
+// 4 consumers (ArrivalBoard, PlayerOfGamePicker, LiveScorePage,
+// TeamDetailPage). Stay on roster_members.
+// Separate concern (not addressed here): the `payment_status` column read
+// at line 14 is the LEGACY field per §11.5 line 414 — canonical financial
+// truth is `financial_accounts` + `financial_transactions`. A future PR
+// can migrate that single column to the financial tables; out of scope
+// for the §11.5 doctrine cleanup.
+
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 

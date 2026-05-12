@@ -32,6 +32,13 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
       if (filter === 'practices') evtQuery = evtQuery.eq('event_type', 'practice');
       else if (filter === 'games') evtQuery = evtQuery.in('event_type', ['game', 'tournament']);
 
+      // CLAUDE.md §11.5 attendance-view exception (Wave 4.8 hygiene
+      // PR #124): the attendance grid is a historical view across a
+      // lookback window (28d or 180d). roster_members carries the
+      // jersey_number alongside the eligibility date-windowing this
+      // hook would need if it ever filters by historical eligibility.
+      // Stay on roster_members. One of the 5 attendance views named in
+      // §11.5 line 421 ("historical date windows in the 5 attendance views").
       const [evtRes, rmRes] = await Promise.all([
         evtQuery,
         supabase.from('roster_members').select('player_id, jersey_number').eq('team_id', teamId),
