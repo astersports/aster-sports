@@ -3185,3 +3185,21 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
 - SendBriefingButton at `EventDetailHeader.jsx:95` is unchanged — both coexist. Deprecation will land in a later session once Sessions 2 + 3 ship.
 - Tests: +4 cases on `useAnchorDraftStatus` (empty / draft / sent / missing-args). 532 → 536. Mock pattern mirrors `useOrgTeams.test.js`. Note on test shape: `waitFor` asserts on the final data shape (`hasDraft`/`hasSent`) rather than the `isLoading` transition because empty-result and initial state both have `isLoading: false`.
 - Unblocks: Session 2 (TournamentHeader same pattern for tournament_prelim + tournament_recap), Session 3 (`EventBriefingHistory` + `TournamentBriefingHistory` inline "Compose new" footer rows).
+
+### Wave 4.8 6b Session 2 — TournamentHeader Compose CTA — PR #116
+- Date: 2026-05-12
+- Files:
+  - NEW src/components/tournament/ComposeTournamentCta.jsx (52 LOC)
+  - EDIT src/components/tournament/TournamentHeader.jsx (108 → 117 LOC)
+- Evidence: Session 6a audit Area 6 gap — tournament detail pages had no compose deep-link entry point. Mirrors PR #115's event-side CTA pattern with two kind variants.
+- What ships: a Compose CTA below the tournament header info row (above the existing Edit / SendBriefingButton row) for staff. Three states:
+  - `tournament.start_date > NOW` → kind=`tournament_prelim`, default copy "Compose briefing" / "Resume draft" / "Briefing sent" (disabled).
+  - `tournament.end_date < NOW` → kind=`tournament_recap`, default copy "Compose recap" / "Resume draft" / "Recap sent" (disabled).
+  - In-flight (neither) → no CTA rendered (silent). Mid-tournament moment fits neither prelim nor recap; admin can still use the existing SendBriefingButton in the row below for announcements / custom messages.
+- On tap: `navigate('/admin/briefings/compose?kind=<kind>&anchor=tournament&id=<id>')`. `buildInitial` at `briefingComposerHelpers.js:38-47` routes kind+anchor → step 3 (Body); `audience_type='tournament_attendees'` pre-fills from `KIND_METADATA[<kind>].defaultAudienceType` (`kindMetadata.js:50,59`).
+- Hook reuse: `useAnchorDraftStatus` from PR #115 takes the new tuple as-is (`anchorKind='tournament'`, `kind=tournament_prelim|tournament_recap`). No new hook, no new test fixture — existing 4 cases cover the contract.
+- Split rationale: TournamentHeader hit 160 LOC when the CTA was inline — over the §6 cap. Extracted `ComposeTournamentCta.jsx` per the prompt's split instruction (and per CLAUDE.md anti-pattern #11). TournamentHeader landed at 117 LOC after extract; new component at 52. The new file's style block (`composeCtaBase` + 3-state variants) is byte-identical to PR #115's `EventDetailHeader.jsx:23-29` block; Session 3 (third caller in EventBriefingHistory/TournamentBriefingHistory) is the natural dedupe point into a shared `briefings/ComposeAnchorCta` — flagged in the new file's header comment.
+- 44px tap target enforced via `minHeight: 44` on the button. Note: the existing Edit button at `TournamentHeader.jsx` line ~139 still uses `minHeight: 40` — pre-existing, NOT fixed in this PR (out of scope). Worth a future tap-target follow-up across detail headers.
+- Existing `SendBriefingButton` at `TournamentHeader.jsx:148` unchanged — both coexist. Same deprecation timing as PR #115.
+- Gates: 536/536 tests pass (no test delta), 0 new lint warnings (baseline 40 unchanged), 0 `created_at` references (PR #114 regression class avoided).
+- Unblocks: Session 3 — `EventBriefingHistory` + `TournamentBriefingHistory` get inline "Compose new" footer rows. That third caller triggers the dedupe of `ComposeRecapCta` (EventDetailHeader inline) + `ComposeTournamentCta` (this PR) into a single shared `briefings/ComposeAnchorCta`.
