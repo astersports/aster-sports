@@ -8,69 +8,30 @@
 // Per-org collapse (Set across trigger rows within the same org)
 // happens in index.ts dispatch — handlers receive (orgId, trigger,
 // now) and don't fan out internally across team_type rows.
+//
+// Wave 4.8 6c Session 1 — each handler now derives an anchorTime
+// (event.start_at / tournament.start_date / tournament.end_date /
+// event.start_at / null) and computes expires_at via
+// computeExpiryForKind. placeholderDraft + draftExists + tryInsert
+// moved to ./_draftRow.ts to keep this file under the 150 LOC cap.
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-interface Trigger {
-  id: string;
-  org_id: string;
-  trigger_event: string;
-  lead_time_hours: number | null;
-}
-
-type HandlerResult = {
-  trigger_id: string;
-  org_id: string;
-  kind: string;
-  anchor_id?: string;
-  created?: boolean;
-  skipped?: string;
-  error?: string;
-};
-
-async function draftExists(sb: SupabaseClient, orgId: string, kind: string, anchorId: string): Promise<boolean> {
-  const { data, error } = await sb.from("comms_messages").select("id")
-    .eq("org_id", orgId).eq("kind", kind).eq("anchor_id", anchorId)
-    .in("status", ["draft", "scheduled", "queued", "sent"]).limit(1);
-  if (error) throw new Error(`draftExists check failed: ${error.message}`);
-  return !!data && data.length > 0;
-}
-
-function placeholderDraft(trigger: Trigger, kind: string, anchorKind: string, anchorId: string, teamId: string | null, audienceType: string, now: Date) {
-  // body_html + body_plain are NOT NULL on comms_messages with no
-  // default — empty strings are placeholders until admin previews via
-  // the resolver-driven path (wave-4.2-A-8a). content_sections gets
-  // [] to satisfy its NOT NULL constraint (default is '[]'::jsonb).
-  return {
-    org_id: trigger.org_id, created_by_trigger: trigger.id,
-    kind, anchor_kind: anchorKind, anchor_id: anchorId, team_id: teamId,
-    status: "draft", subject: null, body_html: "", body_plain: "", content_sections: [],
-    audience_type: audienceType, audience_filter: null, language_code: "en",
-    delivery_method: "queued", last_edited_at: now.toISOString(), last_edited_by: null,
-  };
-}
-
-// Insert + result builder shared by all 5 handlers. Returns one result.
-async function tryInsert(sb: SupabaseClient, trigger: Trigger, kind: string, anchorId: string, row: ReturnType<typeof placeholderDraft>): Promise<HandlerResult> {
-  if (await draftExists(sb, trigger.org_id, kind, anchorId)) {
-    return { trigger_id: trigger.id, org_id: trigger.org_id, kind, anchor_id: anchorId, skipped: "already_drafted" };
-  }
-  const { error } = await sb.from("comms_messages").insert(row);
-  if (error) return { trigger_id: trigger.id, org_id: trigger.org_id, kind, anchor_id: anchorId, error: error.message };
-  return { trigger_id: trigger.id, org_id: trigger.org_id, kind, anchor_id: anchorId, created: true };
-}
+import { computeExpiryForKind } from "./_helpers.ts";
+import { draftExists, HandlerResult, placeholderDraft, Trigger, tryInsert } from "./_draftRow.ts";
 
 export async function handleGameCompleted(sb: SupabaseClient, trigger: Trigger, now: Date): Promise<HandlerResult[]> {
   const nowIso = now.toISOString();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
   const { data: rows = [], error } = await sb.from("game_results")
-    .select("event_id, events!inner(id, team_id, teams!inner(org_id))")
+    .select("event_id, events!inner(id, team_id, start_at, teams!inner(org_id))")
     .not("published_at", "is", null).gt("published_at", sevenDaysAgo).lte("published_at", nowIso);
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "game_recap", error: error.message }];
   const orgRows = (rows || []).filter((r: any) => r.events?.teams?.org_id === trigger.org_id);
   const out: HandlerResult[] = [];
   for (const r of orgRows as any[]) {
-    const row = placeholderDraft(trigger, "game_recap", "event", r.event_id, r.events.team_id, "event_attendees", now);
+    const anchorTime = r.events?.start_at ? new Date(r.events.start_at) : null;
+    const expiresAt = computeExpiryForKind("game_recap", anchorTime, now);
+    const row = placeholderDraft(trigger, "game_recap", "event", r.event_id, r.events.team_id, "event_attendees", expiresAt, now);
     out.push(await tryInsert(sb, trigger, "game_recap", r.event_id, row));
   }
   return out;
@@ -86,7 +47,13 @@ export async function handleTournamentApproaching(sb: SupabaseClient, trigger: T
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "tournament_prelim", error: error.message }];
   const out: HandlerResult[] = [];
   for (const t of rows || []) {
-    const row = placeholderDraft(trigger, "tournament_prelim", "tournament", t.id, null, "tournament_attendees", now);
+    // start_date is a DATE — bind it to midnight Eastern via the SQL
+    // text-cast pattern mirrored from the migration (EDT-fixed offset
+    // is acceptable for May; full DST correctness ships with the
+    // briefing_active_queue RPC in PR #119).
+    const anchorTime = new Date(`${t.start_date}T04:00:00Z`);
+    const expiresAt = computeExpiryForKind("tournament_prelim", anchorTime, now);
+    const row = placeholderDraft(trigger, "tournament_prelim", "tournament", t.id, null, "tournament_attendees", expiresAt, now);
     out.push(await tryInsert(sb, trigger, "tournament_prelim", t.id, row));
   }
   return out;
@@ -100,7 +67,10 @@ export async function handleTournamentCompleted(sb: SupabaseClient, trigger: Tri
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "tournament_recap", error: error.message }];
   const out: HandlerResult[] = [];
   for (const t of rows || []) {
-    const row = placeholderDraft(trigger, "tournament_recap", "tournament", t.id, null, "tournament_attendees", now);
+    // end_date DATE → end-of-day Eastern (03:59 UTC the next morning).
+    const anchorTime = new Date(`${t.end_date}T23:59:59Z`);
+    const expiresAt = computeExpiryForKind("tournament_recap", anchorTime, now);
+    const row = placeholderDraft(trigger, "tournament_recap", "tournament", t.id, null, "tournament_attendees", expiresAt, now);
     out.push(await tryInsert(sb, trigger, "tournament_recap", t.id, row));
   }
   return out;
@@ -113,6 +83,7 @@ export async function handleScheduleChanged(sb: SupabaseClient, trigger: Trigger
     .eq("org_id", trigger.org_id).gt("changed_at", cutoff).is("dispatch_email_id", null);
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "schedule_change", error: error.message }];
   const out: HandlerResult[] = [];
+  const expiresAt = computeExpiryForKind("schedule_change", null, now);
   for (const r of rows as any[]) {
     // schedule_change idempotency: per-audit-row — a draft from BEFORE
     // this audit row's changed_at is a stale change; create a fresh one.
@@ -123,7 +94,7 @@ export async function handleScheduleChanged(sb: SupabaseClient, trigger: Trigger
       out.push({ trigger_id: trigger.id, org_id: trigger.org_id, kind: "schedule_change", anchor_id: r.event_id, skipped: "already_drafted" });
       continue;
     }
-    const row = placeholderDraft(trigger, "schedule_change", "event", r.event_id, r.events?.team_id ?? null, "event_attendees", now);
+    const row = placeholderDraft(trigger, "schedule_change", "event", r.event_id, r.events?.team_id ?? null, "event_attendees", expiresAt, now);
     const { error: insErr } = await sb.from("comms_messages").insert(row);
     out.push(insErr
       ? { trigger_id: trigger.id, org_id: trigger.org_id, kind: "schedule_change", anchor_id: r.event_id, error: insErr.message }
@@ -141,13 +112,11 @@ export async function handleRsvpLow24h(sb: SupabaseClient, trigger: Trigger, now
     .select("nudge_rules").eq("organization_id", trigger.org_id).maybeSingle();
   const threshold = (orgSettings?.nudge_rules as { rsvp_coverage_threshold?: number } | null)?.rsvp_coverage_threshold ?? 0.7;
   const { data: events = [], error } = await sb.from("events")
-    .select("id, team_id, teams!inner(org_id)").gt("start_at", nowIso).lte("start_at", in24h);
+    .select("id, team_id, start_at, teams!inner(org_id)").gt("start_at", nowIso).lte("start_at", in24h);
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "rsvp_nudge", error: error.message }];
   const orgEvents = (events || []).filter((e: any) => e.teams?.org_id === trigger.org_id);
   const out: HandlerResult[] = [];
   for (const e of orgEvents as any[]) {
-    // Denominator: active roster for the event's team. Numerator:
-    // distinct players who responded (going/maybe/not_going all count).
     const { count: total } = await sb.from("team_players")
       .select("*", { count: "exact", head: true }).eq("team_id", e.team_id).eq("status", "active");
     if (!total || total === 0) {
@@ -157,12 +126,13 @@ export async function handleRsvpLow24h(sb: SupabaseClient, trigger: Trigger, now
     const { data: respRows = [] } = await sb.from("event_rsvps").select("player_id").eq("event_id", e.id);
     const responded = new Set((respRows || []).map((r: any) => r.player_id)).size;
     const coverage = responded / total;
-    // Cold-start always nudges; otherwise skip when coverage meets threshold.
     if (responded > 0 && coverage >= threshold) {
       out.push({ trigger_id: trigger.id, org_id: trigger.org_id, kind: "rsvp_nudge", anchor_id: e.id, skipped: "coverage_met" });
       continue;
     }
-    const row = placeholderDraft(trigger, "rsvp_nudge", "event", e.id, e.team_id, "event_attendees", now);
+    const anchorTime = e.start_at ? new Date(e.start_at) : null;
+    const expiresAt = computeExpiryForKind("rsvp_nudge", anchorTime, now);
+    const row = placeholderDraft(trigger, "rsvp_nudge", "event", e.id, e.team_id, "event_attendees", expiresAt, now);
     out.push(await tryInsert(sb, trigger, "rsvp_nudge", e.id, row));
   }
   return out;

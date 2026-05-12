@@ -44,6 +44,19 @@ async function readCronSecret(sb: ReturnType<typeof createClient>): Promise<stri
   return data.value as string;
 }
 
+// Wave 4.8 6c — archive expired drafts on every tick. Single UPDATE
+// scoped to status='draft' AND expires_at < now. Runs unconditionally
+// before the trigger loop (no briefing_triggers row needed).
+async function handleExpireSweep(sb: ReturnType<typeof createClient>, now: Date) {
+  const { data, error } = await sb.from("comms_messages")
+    .update({ status: "archived" })
+    .eq("status", "draft")
+    .lt("expires_at", now.toISOString())
+    .select("id, kind, anchor_id");
+  if (error) return { error: error.message, archived: 0 };
+  return { archived: (data || []).length, ids: (data || []).map((r: { id: string }) => r.id) };
+}
+
 async function handleWeeklySunday(sb: ReturnType<typeof createClient>, triggerId: string, orgId: string, now: Date, bypassWindow: boolean) {
   if (!bypassWindow && !isWeeklySundayWindow(now)) return { skipped: "not_in_window" };
   const period = weeklyDigestPeriod(now);
@@ -86,13 +99,16 @@ Deno.serve(async (req) => {
   const now = forceNow ? new Date(forceNow) : new Date();
   if (forceNow && isNaN(now.getTime())) return json({ error: "force_now must be a valid ISO 8601 date" }, 400);
 
+  // Sweep expired drafts before dispatch — independent of trigger rows.
+  const sweepResult = await handleExpireSweep(sb, now);
+
   let query = sb.from("briefing_triggers")
     .select("id, org_id, team_type_id, trigger_event, briefing_kind, lead_time_hours, active")
     .eq("active", true);
   if (forceEvent) query = query.eq("trigger_event", forceEvent);
   const { data: triggers, error: trigErr } = await query;
   if (trigErr) return json({ error: trigErr.message }, 500);
-  if (!triggers || triggers.length === 0) return json({ processed: 0, results: [], force: { forceEvent, forceNow } });
+  if (!triggers || triggers.length === 0) return json({ processed: 0, expire_sweep: sweepResult, results: [], force: { forceEvent, forceNow } });
 
   // Per-org collapse: each (org_id, trigger_event) pair runs once.
   const seen = new Set<string>();
@@ -105,5 +121,11 @@ Deno.serve(async (req) => {
     results.push(...r);
   }
   const draftsCreated = results.filter((r) => r.created || r.draft_created).length;
-  return json({ processed: results.length, drafts_created: draftsCreated, results, force: forceEvent || forceNow ? { forceEvent, forceNow } : undefined });
+  return json({
+    processed: results.length,
+    drafts_created: draftsCreated,
+    expire_sweep: sweepResult,
+    results,
+    force: forceEvent || forceNow ? { forceEvent, forceNow } : undefined,
+  });
 });
