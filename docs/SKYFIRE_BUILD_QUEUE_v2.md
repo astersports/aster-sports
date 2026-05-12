@@ -3322,3 +3322,21 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
   - Canonical flow path unchanged. `AcademyCallupPicker` + `AcademyCallupCompose` (legacy compose path, not registry) still work exactly as before.
 - Gates: 548/548 vitest pass (541 → 548; +7 new — 6 redirect card + 1 KIND_METADATA flag). 0 lint errors, 40 baseline warnings unchanged. All 6 touched/new files under 150 LOC (kindMetadata.js 120, AcademyCallupRedirectCard.jsx 67, AcademyCallupBody.jsx 71, BriefingComposer.jsx 149, kindMetadata.test.js 86, AcademyCallupRedirectCard.test.jsx 53).
 - Future PR (deferred): merge `AcademyActivationPanel` (writes to `player_activations` for attendance tracking) with `AcademyCallupPicker` (writes to `events.academy_callup_player_ids` for callup) naming/concept confusion. Separate concern; doesn't fix Frank's bug; high blast radius.
+
+### Wave 4.8 UX — Remove lying chip values — PR #123
+- Date: 2026-05-14
+- Files:
+  - EDIT src/components/briefings/inbox/InboxFilters.jsx (105 → 112 LOC; `DATE_OPTIONS` trimmed to RPC-accepted values + exported as named const + `react-refresh/only-export-components` disable at top per project pattern)
+  - EDIT src/hooks/useInboxQueue.js (header comment on `mapDateRange` shim updated — defensive-only post-PR #123)
+  - EDIT src/hooks/useBriefingFilters.js (type-alias comment updated to drop retired values + add PR #123 reference)
+  - EDIT src/lib/briefings/__tests__/wave_4_1d_2.test.js (replaced the fake hardcoded-list assertion with 3 real cases importing `DATE_OPTIONS` from InboxFilters)
+- Evidence: PR #120 added a `mapDateRange()` shim so 'today'/'next_7_days' chips wouldn't crash the RPC, but the chips still lied about their behavior on the Active tab (selecting 'today' on Active showed the whole week's drafts). This PR removes the two lying values from the chip render and **adds 'last_30_days'** as a new chip — RPC accepts it and admin had no UI way to pick it before.
+- Path C from chat (minimal removal): chip set now mirrors the `briefing_active_queue` RPC's accepted set exactly (`'all' | 'this_week' | 'last_14_days' | 'last_30_days'`). Default stays `'last_14_days'`.
+- Shims preserved as defensive code:
+  - `useInboxQueue.js:20-26` `mapDateRange()` — translates stale stored prefs ('today' / 'next_7_days') to nearest RPC bucket
+  - `useInboxHistory.js:10-26` — branches for 'today' / 'next_7_days' kept; they were never lying on the History tab (that tab uses client-side dateRange filtering, not the RPC). Defensive for stale stored prefs.
+- **Side-effect flagged for future:** the History tab loses 'today' and 'last 7 days' as UI-accessible filter options. The branch code stays defensive; admin just can't pick those values from the UI. If History deserves its own chip set (since it doesn't share the RPC constraint), a future PR can re-introduce them there. Not in scope for this minimal-removal PR.
+- **MCP check on stored prefs:** `SELECT default_date_filter, count(*) FROM briefing_inbox_preferences GROUP BY 1` returned 1 row (`'all'`, count 1). No production rows currently carry 'today' or 'next_7_days', so the shims are insurance, not active-use.
+- Mid-PR fix: initial export of `DATE_OPTIONS` triggered `react-refresh/only-export-components` error. Applied the project's existing pattern (`/* eslint-disable react-refresh/only-export-components */` at top of file, see `AcademyCallupBody.jsx:1`) instead of extracting to a constants file — minimal-blast-radius and consistent.
+- Gates: 550/550 vitest pass (548 → 550; +3 new chip-set assertions, -1 removed fake-list assertion). 0 lint errors, 40 baseline warnings unchanged. All 4 touched files under 150 LOC (InboxFilters.jsx 112, useInboxQueue.js 71, useBriefingFilters.js 83, wave_4_1d_2.test.js 100).
+- Closes the Path C UX wrinkle documented in PR #120's build queue entry.

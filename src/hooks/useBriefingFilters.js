@@ -6,7 +6,11 @@
 //
 // Filter shape (in-memory):
 //   { kind: string|null, teams: uuid[], dateRange:
-//     'all'|'today'|'this_week'|'next_7_days'|'last_14_days' }
+//     'all'|'this_week'|'last_14_days'|'last_30_days' }
+// Wave 4.8 UX (PR #123): 'today' and 'next_7_days' retired from the
+// chip UI to match the briefing_active_queue RPC's accepted values.
+// Defensive shims in useInboxQueue.js + useInboxHistory.js still
+// accept the legacy values for stale stored prefs.
 //
 // Wave 4.1d-2 §1.3 — default dateRange changed from 'all' to
 // 'last_14_days' so the inbox surfaces the recent past games that

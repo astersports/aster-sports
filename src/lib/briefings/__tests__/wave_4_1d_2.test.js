@@ -37,10 +37,25 @@ describe('Wave 4.1d-2 §5.1 — academy_callup_notice surfacing details', () => 
 // §1.3 — default time window is 'last_14_days'. Verified via the
 // useBriefingFilters DEFAULTS constant (in-memory; legacy DB rows
 // with NULL fall through to 'last_14_days' too).
-describe('Wave 4.1d-2 §1.3 — default time window', () => {
-  it('"last_14_days" is in the DATE_OPTIONS set documented by InboxFilters', () => {
-    const DATE_VALUES = ['all', 'today', 'this_week', 'next_7_days', 'last_14_days'];
-    expect(DATE_VALUES).toContain('last_14_days');
+//
+// Wave 4.8 UX (PR #123) — chip values now mirror the
+// briefing_active_queue RPC's accepted set exactly. 'today' and
+// 'next_7_days' retired from the UI (defensive shims remain in
+// useInboxQueue + useInboxHistory for stale stored prefs).
+describe('Wave 4.1d-2 §1.3 + Wave 4.8 UX — date chip option set', () => {
+  it('DATE_OPTIONS contains exactly the 4 RPC-accepted values', async () => {
+    const { DATE_OPTIONS } = await import('../../../components/briefings/inbox/InboxFilters');
+    expect(DATE_OPTIONS.map((o) => o.v)).toEqual(['all', 'this_week', 'last_14_days', 'last_30_days']);
+  });
+  it('"last_14_days" stays the default (last_14_days is in the set)', async () => {
+    const { DATE_OPTIONS } = await import('../../../components/briefings/inbox/InboxFilters');
+    expect(DATE_OPTIONS.find((o) => o.v === 'last_14_days')).toBeTruthy();
+  });
+  it('"today" and "next_7_days" are no longer in the chip set', async () => {
+    const { DATE_OPTIONS } = await import('../../../components/briefings/inbox/InboxFilters');
+    const values = DATE_OPTIONS.map((o) => o.v);
+    expect(values).not.toContain('today');
+    expect(values).not.toContain('next_7_days');
   });
 });
 

@@ -13,9 +13,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-// UI exposes a richer set of date-range chip values than the RPC accepts.
-// Map non-RPC values to the nearest RPC bucket so the user's intent
-// flows through. Documented UX wrinkle for the chip cleanup pass.
+// Wave 4.8 UX (PR #123) — defensive shim only. The chip UI in
+// InboxFilters.jsx no longer offers 'today' / 'next_7_days'; this map
+// stays in case a stale briefing_inbox_preferences.default_date_filter
+// row still carries a legacy value (or a future caller forgets to map
+// itself). Maps to the nearest RPC bucket so the user's intent flows
+// through without crashing the RPC.
 const RPC_DATE_RANGES = new Set(['all', 'this_week', 'last_14_days', 'last_30_days']);
 function mapDateRange(uiValue) {
   if (RPC_DATE_RANGES.has(uiValue)) return uiValue;
