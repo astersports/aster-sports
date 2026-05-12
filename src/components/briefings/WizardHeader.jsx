@@ -14,7 +14,7 @@ const headerWrap = {
   fontSize: 12, color: 'var(--em-text-tertiary)',
 };
 const backBtn = {
-  minHeight: 36, minWidth: 36, border: 'none',
+  minWidth: 44, minHeight: 44, padding: 12, border: 'none',
   background: 'transparent', cursor: 'pointer',
 };
 
@@ -22,7 +22,13 @@ export default function WizardHeader({ step, totalSteps, onBack, draft, hasKind 
   return (
     <div style={headerWrap}>
       {step > 1 && (
-        <button type="button" onClick={onBack} className="sf-press" style={backBtn}>
+        <button
+          type="button"
+          onClick={onBack}
+          className="sf-press"
+          style={backBtn}
+          aria-label="Back to previous step"
+        >
           <ArrowLeft size={16} strokeWidth={1.75} />
         </button>
       )}
