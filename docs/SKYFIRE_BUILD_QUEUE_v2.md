@@ -3155,3 +3155,9 @@ The cron secret dashboard setup is the only thing between current state and a fu
 ### Wave 4.2-A status: 6/7 fully on registry path ✅
 
 Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on wave 4.3 callup mint). All 6 calendar-anchored kinds in production (weekly_digest, game_recap, tournament_prelim, tournament_recap, schedule_change, rsvp_nudge) now compose via RESOLVER_REGISTRY and queue via queueComposedMessages or their bespoke equivalents.
+
+### Wave 4.7 Session 2 — UNSUBSCRIBE_URL preview substitution — PR #113
+- Date: 2026-05-12
+- Files: src/components/briefings/PreviewPanel.jsx
+- Evidence: P3 item from Wave 4.4-B smoke test — plain-text preview tab rendered literal `Unsubscribe: {{UNSUBSCRIBE_URL}}` in the footer; delivered emails (verified in Frank's Gmail) substituted correctly because `applyUnsubscribeUrl()` runs in `src/lib/unsubscribeUrl.js` before INSERT.
+- Note: preview-only. `withPreviewUnsubscribe()` in PreviewPanel swaps `{{UNSUBSCRIBE_URL}}` → `https://app.legacyhoopers.org/unsubscribe?preview=1` for both `html` (375 + 600 iframe tabs) and `plainText` (plain tab) at the `<DevicePreviewFrame />` boundary. Footer renderer still emits the literal token, send-time substitution path (`unsubscribeUrl.js` + callers in `digestSend`, `scheduleChangeSend`, `queueComposedMessages`, `queueRecipients`, `send-tournament-message`) is unchanged. Footer test asserting renderer emits the placeholder (`footer.test.js:67,68,83`) stays green.
