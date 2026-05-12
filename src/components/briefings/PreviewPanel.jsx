@@ -15,6 +15,16 @@ import DevicePreviewFrame from '../shared/DevicePreviewFrame';
 const wrap = { display: 'flex', flexDirection: 'column', gap: 8, height: '100%' };
 const topBar = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' };
 
+// Placeholder substituted for preview only — real per-recipient URLs are inserted at send time by digestSend
+const PREVIEW_UNSUBSCRIBE_URL = 'https://app.legacyhoopers.org/unsubscribe?preview=1';
+
+function withPreviewUnsubscribe({ html, plainText }) {
+  return {
+    html: (html || '').replaceAll('{{UNSUBSCRIBE_URL}}', PREVIEW_UNSUBSCRIBE_URL),
+    plainText: (plainText || '').replaceAll('{{UNSUBSCRIBE_URL}}', PREVIEW_UNSUBSCRIBE_URL),
+  };
+}
+
 function errorRender(msg) {
   return { html: `<div style="padding:24px;color:#dc2626;font-family:Inter,sans-serif;">${msg}</div>`, plainText: msg };
 }
@@ -73,7 +83,7 @@ export default function PreviewPanel({ state, families, coaches, eventTitle, bef
   return (
     <div style={wrap}>
       <div style={topBar}>{audience}</div>
-      <DevicePreviewFrame html={composed.html} plainText={composed.plainText} />
+      <DevicePreviewFrame {...withPreviewUnsubscribe(composed)} />
     </div>
   );
 }
