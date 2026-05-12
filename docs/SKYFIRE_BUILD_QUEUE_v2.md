@@ -3170,3 +3170,18 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
 - Fix: drop `created_at` from the SELECT list. Dead weight — the hook orders by `last_edited_at DESC NULLS LAST` (`useInboxQueue.js:20`) and no downstream consumer reads `created_at` (verified across `ActiveQueue.jsx`, `ActionQueueRow.jsx`, `BriefingsInboxPage.jsx`, `statusTable.js`, `clientFilters.js`).
 - Post-deploy expectation: Drafts tab badge will jump from 0 → 35 because the inbox surface is now wired to reality. The two 5/12 drafts will appear at the top (most-recently edited). The 33 older drafts are mostly weekly_digest test artifacts from 5/11 + a wave 4.3-E zombie cleanup that didn't fully drain. Wave 4.8 6c's auto-expire sweep is the durable fix for the long tail; this PR just stops hiding them.
 - Unblocks: 6b deep-link work — `useAnchorDraftStatus` will use a `comms_messages` SELECT with a similar shape and should not inherit the broken column reference.
+
+### Wave 4.8 6b Session 1 — EventDetailHeader Compose CTA — PR #115
+- Date: 2026-05-12
+- Files:
+  - NEW src/hooks/useAnchorDraftStatus.js (47 LOC)
+  - NEW src/hooks/__tests__/useAnchorDraftStatus.test.js (4 cases)
+  - EDIT src/components/event/EventDetailHeader.jsx (83 → 122 LOC)
+- Evidence: Session 6a audit Area 6 gap — event/tournament detail pages did not construct kind+anchor+id deep-links to the briefing wizard. The only external compose-URL callers were `QuickActions.jsx:10` (cold start) and `TeamDetailPage.jsx:81` (team anchor).
+- What ships: a "Compose recap" CTA below the EventDetailHeader's colored block on past games (`event_type='game'`, `start_at < NOW()`, `status !== 'cancelled'`). Copy varies by anchor state via `useAnchorDraftStatus({org, event, game_recap})` — "Compose recap" by default, "Resume draft" when a draft exists (accent-soft pill), "Recap sent" when only a sent row exists (disabled, informational). On tap: `navigate('/admin/briefings/compose?kind=game_recap&anchor=event&id=<id>')`. `buildInitial` at `briefingComposerHelpers.js:38-47` routes kind+anchor to step 3 (Body) with `audience_type='event_attendees'` pre-filled from KIND_METADATA — verified end-to-end via the deep-link parser at `useBriefingDeepLink.js:35-47`.
+- Hook contract (`useAnchorDraftStatus.js`): `{ orgId, anchorKind, anchorId, kind } → { hasDraft, draftId, hasSent, sentAt, isLoading, error }`. Single `comms_messages` SELECT, ordered by `last_edited_at DESC NULLS LAST`. Columns selected are `id,status,sent_at` only — verified via Supabase MCP `pg_attribute` (no PR #114 regression). When required args are missing, the hook short-circuits to INITIAL without firing a query.
+- Admin gating: reuses the `isStaff` prop already threaded from `EventDetailPage.jsx:95` — no new role check.
+- 44px tap target enforced via `minHeight: 44` on the button (matches CLAUDE.md §7 + PR #112's WizardHeader ruling). Style anchor matches `SendBriefingButton.baseStyle` + `TeamDetailPage:81-86`.
+- SendBriefingButton at `EventDetailHeader.jsx:95` is unchanged — both coexist. Deprecation will land in a later session once Sessions 2 + 3 ship.
+- Tests: +4 cases on `useAnchorDraftStatus` (empty / draft / sent / missing-args). 532 → 536. Mock pattern mirrors `useOrgTeams.test.js`. Note on test shape: `waitFor` asserts on the final data shape (`hasDraft`/`hasSent`) rather than the `isLoading` transition because empty-result and initial state both have `isLoading: false`.
+- Unblocks: Session 2 (TournamentHeader same pattern for tournament_prelim + tournament_recap), Session 3 (`EventBriefingHistory` + `TournamentBriefingHistory` inline "Compose new" footer rows).
