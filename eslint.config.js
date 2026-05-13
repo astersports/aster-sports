@@ -41,6 +41,38 @@ export default defineConfig([
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^[A-Z_]' }],
       'sort-imports': ['warn', { ignoreCase: true, ignoreDeclarationSort: true, allowSeparatedGroups: true }],
+      // ──────────────────────────────────────────────────────────────────
+      // eslint-plugin-react-hooks 7.1.1 — new rules set to 'warn', NOT 'off'
+      // (Option C with constraints from 2026-05-13 Dependabot triage).
+      //
+      // The plugin's 7.1.x line ships React Compiler / React 19 idiom
+      // checks. Each catches a real concern in the render-scheduling
+      // model — JS-3 (PR #149) was exactly this class (stale closure on
+      // Enter key). The existing codebase has ≥10 violation sites that
+      // need per-site analysis. Setting to 'warn' instead of 'off':
+      //   - Violations still surface in CI output for triage
+      //   - Build doesn't fail, so the 7.1.1 bump can land
+      //   - Existing inline `// eslint-disable-next-line` comments
+      //     for these rules stay useful (vs. becoming unused-disable
+      //     warnings under 'off')
+      //
+      // exhaustive-deps stays at error (pre-existing rule, codebase
+      // clean post-PR #126 Wave 4.8 hygiene).
+      //
+      // FUTURE PROCESS (per reviewer's discipline note):
+      //   1. Triage warnings into a tracked list (file:line + classification)
+      //   2. Fix one PR at a time, each scoped to one violation
+      //   3. When the warning count for a rule hits zero, promote that
+      //      rule from 'warn' to 'error' and delete the disable.
+      //
+      // Don't drop all five rules to 'off' silently — that's the failure
+      // mode the disable-and-forget anti-pattern warns about.
+      // ──────────────────────────────────────────────────────────────────
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
       // Wave 4.8 Hardening (PR #121) — ban hardcoded prod Supabase hostname.
       // The pilot project id leaked into 2 send pipelines (rsvpNudgeSend,
       // academyCallupSend) and broke multi-org portability. Force callers
