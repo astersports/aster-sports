@@ -10,9 +10,10 @@ import App from './App.jsx';
 import './index.css';
 import './styles/broadcast.css';
 
-// Defer Sentry init to idle time so it doesn't block first paint.
+// Defer Sentry + PostHog init to idle time so they don't block first paint.
 const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
 idle(() => { import('./lib/sentry').then((m) => m.initSentry()).catch(() => {}); });
+idle(() => { import('./lib/posthog').then((m) => m.initPosthog()).catch(() => {}); });
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

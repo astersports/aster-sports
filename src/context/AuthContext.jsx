@@ -4,6 +4,7 @@ import { autoLinkGuardian } from '../lib/autoLinkGuardian';
 import { fetchParentContext } from '../lib/parentContext';
 import { bustAllCaches } from '../lib/cacheBuster';
 import { clearSentryUser, setSentryUser } from '../lib/sentry';
+import { identifyPosthog, resetPosthog } from '../lib/posthog';
 import { useOrgBranding } from '../hooks/useOrgBranding';
 
 const AuthContext = createContext(null);
@@ -62,6 +63,12 @@ export function AuthProvider({ children }) {
     }
     setRole(resolvedRole); setOrg(resolvedOrg);
     setSentryUser(authUser, resolvedRole, resolvedOrg?.id);
+    // PostHog identify mirrors Sentry. Distinct ID = auth.uid (UUID), never email.
+    // Properties stay categorical (role + org_id) — no player names, no child IDs,
+    // no roster/streak data per §16.7 privacy locks.
+    // FUTURE: never identify a minor. If kids ever get login (Phase 3+), gate
+    // on is_adult before this call.
+    identifyPosthog(authUser, resolvedRole, resolvedOrg?.id);
 
     if (resolvedRole === 'parent') {
       const ctx = await fetchParentContext(authUser.id);
@@ -93,7 +100,7 @@ export function AuthProvider({ children }) {
         else {
           setRole(null); setOrg(null);
           setMyChildren([]); setMyTeamIds([]); setGuardianId(null); setGuardianFirstName(null);
-          clearSentryUser(); setLoading(false);
+          clearSentryUser(); resetPosthog(); setLoading(false);
         }
       }
     );
