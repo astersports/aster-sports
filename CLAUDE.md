@@ -444,6 +444,21 @@ The two tables are kept in alignment by the trigger added in migration `20260505
 
 ---
 
+## 11.6. TEST FILE CONVENTIONS
+
+| Layer | Path | Glob | Runner |
+|---|---|---|---|
+| E2E (Playwright) | `e2e/` | `e2e/**/*.spec.js` | `npx playwright test` (CI: `e2e` job) |
+| Unit / integration (Vitest) | `src/` | `src/**/*.test.{js,jsx}` | `npm test` (CI: `lint-test-build` job) |
+
+**Don't cross the streams.** A Playwright test landing as `*.test.js` gets picked up by Vitest and fails confusingly (no `page` fixture, no browser). A Vitest test landing in `e2e/` gets picked up by Playwright and fails confusingly (no `describe`/`it`, no jsdom).
+
+The `e2e/` directory is the only place `*.spec.js` files exist; `src/` stays `*.test.js`-only. Both runners run as separate CI jobs in parallel — adding a test in the wrong place doesn't fail the right job, it just doesn't run there at all (silent miss).
+
+Shared fixtures for E2E live in `e2e/_fixtures/` or `e2e/_helpers/` (underscore prefix keeps them out of the Playwright glob). Shared Vitest fixtures follow the existing `src/lib/__tests__/_fixtures.js` pattern.
+
+---
+
 ## 12. DEVELOPMENT WORKFLOW
 
 ```bash
@@ -482,6 +497,9 @@ The v2 → main merge dance from earlier in the project is retired. v2 is gone (
     Manual override (per-PR, rare):
     - Apply the `do-not-auto-merge` label to hold a PR pending Frank's review
     - Request a reviewer other than Claude Code
+
+    **Mechanism: `gh pr merge <PR#> --auto --squash --delete-branch`, NOT a background bash wait-loop.** The bash pattern (`until ...; do sleep ...; done; gh pr merge`) races against mid-flight commits — if a reviewer asks for a refinement after the wait-loop is armed but before CI completes, the loop sees the pre-refinement state go green and merges; the new commit gets stranded. GitHub's native `--auto` flag re-evaluates required checks on every push and only merges when all are green simultaneously. See May 13, 2026 race condition (#152) for the lesson source — that PR exists because PR #151's broadening commit got stranded by exactly this race.
+
     No path-based exceptions. Schema migrations, CLAUDE.md edits, RLS policies, edge function deploys to prod, and financial schemas all auto-merge once CI is green and there are no unresolved review comments — same as any other PR. If Frank wants to hold something for review, use the label or request a reviewer.
     Goal: Frank stays no-touch. Claude Code is responsible for verifying CI green + zero review comments before pressing merge. Anti-pattern #22 still applies — verify the merge with a follow-up `pull_request_read` after.
 
@@ -622,7 +640,7 @@ Migration 039 (Phase 1 Step 5G) adds Realtime publication to event_rsvps.
 
 ### 16.10 Performance budgets (hard limits)
 
-- Initial bundle: ≤ 350 KB compressed (currently ~102 KB)
+- Initial bundle: ≤ 350 KB compressed (entry chunk ~85 KB gz; first-load including lazy chunks ~144 KB gz as of PR #150 / 2026-05-13. Re-measure when bundle conversation comes up next.)
 - FCP: ≤ 1.5s on 4G
 - TTI: ≤ 2.5s on 4G
 - 60fps scrolling on iPhone 11
