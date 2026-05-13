@@ -54,12 +54,18 @@ export async function fetchStaffBadgeCount(supabase, { activeRole, teams, nowMs,
   let severity = 'info';
 
   for (const ev of events ?? []) {
+    // Wave 4.8 hygiene PR #125 — swapped from roster_members per
+    // CLAUDE.md §11.5. team_players is the canonical "active team
+    // membership" source. Old filter `.is('left_at', null)` is
+    // equivalent to `.eq('status', 'active')` per MCP check 2026-05-14
+    // (63 = 63 rows org-wide). N+1 query pattern (for-loop over events)
+    // remains; that's a separate concern, not this PR's scope.
     const [{ count: rosterSize }, { count: rsvpCount }] = await Promise.all([
       supabase
-        .from('roster_members')
+        .from('team_players')
         .select('id', { count: 'exact', head: true })
         .eq('team_id', ev.team_id)
-        .is('left_at', null),
+        .eq('status', 'active'),
       supabase
         .from('event_rsvps')
         .select('id', { count: 'exact', head: true })

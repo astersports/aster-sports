@@ -3355,3 +3355,22 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
 - Followup gap (NOT this PR): useRoster.js reads `payment_status` from roster_members — that column is the LEGACY field per §11.5 line 414. A future single-column migration to `financial_accounts` + `financial_transactions` can address it. Flagged in the file's new header comment.
 - PR #125 (next) handles the 2 actual Class A swaps: `useRsvps.js` + `notificationBadgeQueries.js` — both clean `.from('roster_members')` → `.from('team_players')` + `.is('left_at', null)` → `.eq('status', 'active')` translations.
 - Gates: 550/550 vitest pass (unchanged — no code behavior changes). 0 lint errors, 40 baseline warnings unchanged. All 4 touched code files under 150 LOC.
+
+### Wave 4.8 Hygiene — Class A swap (partial) — PR #125
+- Date: 2026-05-14
+- Files:
+  - EDIT src/hooks/notificationBadgeQueries.js (`.from('roster_members')` → `.from('team_players')`; `.is('left_at', null)` → `.eq('status', 'active')`; provenance comment with PR + §11.5 + MCP 63=63 reference + N+1 note)
+  - NEW src/hooks/__tests__/notificationBadgeQueries.test.js (85 LOC, 3 cases — chainable mock asserts team_players is queried, status=active filter fires, count/severity contract preserved)
+- Evidence: Closes 1 of the 2 originally-flagged Class A callers from yesterday's investigation. MCP-verified chat-side equivalence 2026-05-14 (63 = 63 rows across 5 teams; `roster_members WHERE team_id=X AND left_at IS NULL` matches `team_players WHERE team_id=X AND status='active'` exactly for the pilot org).
+- N+1 query pattern in `fetchStaffBadgeCount` (for-loop over events, two parallel awaits per iteration) remains — separate concern, not in scope.
+- **useRsvps DEFERRED** — investigation surfaced a type-mismatch break: the query carries `.order('jersey_number', ascending: true)`, and `roster_members.jersey_number` is INTEGER while `team_players.jersey_number` is TEXT. Swapping would change the sort from numeric (`1, 2, 9, 10`) to lexicographic (`1, 10, 2, 9`) — visible regression on every event roster panel. The prompt's explicit STOP-criterion fired ("sort/comparison break = reclassify Class B"). Three sub-paths exist for a future decision PR:
+  - (a) sort by first_name instead (drops jersey ordering)
+  - (b) sort client-side with explicit `parseInt` (introduces TEXT→INT assumption; fragile if jerseys ever carry letters or leading zeros)
+  - (c) stay on roster_members + add to §11.5 exceptions ("INTEGER jersey sort canonical")
+  None in scope here.
+- 4 of 6 originally-flagged roster_members callers now addressed:
+  - 1 swapped (this PR — notificationBadgeQueries)
+  - 4 documented as §11.5 exceptions (PR #124 — useRoster, useEventRsvpCounts, useAttendanceData, SeasonRolloverPage)
+  - 1 (useRsvps) deferred pending sort-order decision
+- Gates: 553/553 vitest pass (550 → 553; +3 new structural). 0 lint errors, 40 baseline warnings unchanged. Both files under 150 LOC (notificationBadgeQueries.js 83, test 85).
+- Closes L99 P1-4 partial (the Class A half). Class B / payment_status follow-ups documented in PR #124's `useRoster.js` header comment.
