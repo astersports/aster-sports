@@ -74,7 +74,7 @@ export function useBriefingDraft(initialDraftId = null) {
       return draftId;
     } catch (e) { setError(e); return null; }
     finally { setBusy(false); }
-  }, [draftId, orgId, user?.id]);
+  }, [draftId, orgId, user]);
 
   const save = useCallback((draft) => {
     pendingRef.current = draft;

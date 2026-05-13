@@ -36,7 +36,7 @@ export default function useEventDelete(event) {
         : `Delete failed: ${err.message}`;
       showToast(msg, 'error');
     }
-  }, [event?.id, event?.parent_event_id, event?.start_at, navigate, showToast]);
+  }, [event, navigate, showToast]);
 
   const cancelDelete = useCallback(() => setPendingDelete(null), []);
 

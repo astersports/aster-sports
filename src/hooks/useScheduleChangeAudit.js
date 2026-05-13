@@ -49,7 +49,7 @@ export function useScheduleChangeAudit() {
     }).select('id').single();
     if (err) throw err;
     return data?.id;
-  }, [user?.id, orgId]);
+  }, [user, orgId]);
 
   const recordSkip = useCallback(async (diff) => {
     setBusy(true); setError(null);
