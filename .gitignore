@@ -29,6 +29,8 @@ dist-ssr
 supabase/.temp/
 
 # Persistent untracked items per Wave 2 IA Map v1.1 Decision 103.
-rides-audit-source.zip
-WAVE_3A_PROMPT_v2.md
+# Anchored to repo root so archived copies under docs/archive/ remain tracked
+# (relocated 2026-05-12 in chore/repo-root-tidy).
+/rides-audit-source.zip
+/WAVE_3A_PROMPT_v2.md
 .mcp.json
