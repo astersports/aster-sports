@@ -88,3 +88,45 @@ jobs:
             exit 1
           fi
           echo "PASS — entry chunk under budget by $((ENTRY_BUDGET_KB - ENTRY_KB)) KB"
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Parallel to lint-test-build, NOT gated on it. Catches different
+    # failure modes (DOM-level regressions vs unit-level) so running both
+    # at once is the right call for total CI latency.
+    env:
+      VITE_SUPABASE_URL: https://ci-dummy.supabase.co
+      VITE_SUPABASE_ANON_KEY: ci-dummy-anon-key
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # chromium-only — no Firefox, no WebKit, no ffmpeg. Saves ~600 MB
+      # disk + ~3 GB during install. Cross-browser is a Phase 2 concern.
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Build (production bundle for `vite preview` to serve)
+        run: npm run build
+
+      # Playwright spins up `vite preview` per playwright.config.js webServer.
+      - name: Run Playwright tests
+        run: npx playwright test
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
