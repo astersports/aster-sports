@@ -1,5 +1,21 @@
 name: Deploy Supabase Edge Functions
 
+# Path-scoped: deploys ONLY function dirs that changed since the previous main
+# commit. Replaces the prior "redeploy all 9 functions on any change" pattern,
+# which carried two real risks documented in CLAUDE.md anti-pattern #21:
+#   - Silent dashboard-edit regressions (any out-of-repo edit on any function
+#     gets reverted on the next merge that touches `supabase/functions/**`)
+#   - Linear deploy-time growth as the function count climbs
+#
+# Function discovery is filesystem-driven (`ls supabase/functions/*/`) so
+# adding a new function requires zero workflow edit. Future-proof against
+# the count growing past today's 8.
+#
+# `dorny/paths-filter` is used because `github.event.before` is unreliable
+# for squash-merges (our default per §12 #15). The action computes the
+# effective base via the GitHub API and is race-safe across squash/merge/
+# rebase strategies.
+
 on:
   push:
     branches:
@@ -7,30 +23,88 @@ on:
     paths:
       - 'supabase/functions/**'
   workflow_dispatch:
+    inputs:
+      function_name:
+        description: 'Specific function to (re)deploy. Leave blank to redeploy ALL functions.'
+        required: false
+        type: string
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          # paths-filter needs history to compute the base ref diff
+          fetch-depth: 0
+
+      # Path-filter: detects changed function directories on push.
+      # Skipped on workflow_dispatch (manual trigger) — that path uses the
+      # function_name input instead.
+      - name: Detect changed functions
+        id: changes
+        if: github.event_name == 'push'
+        uses: dorny/paths-filter@v3
+        with:
+          list-files: shell
+          filters: |
+            functions:
+              - 'supabase/functions/*/**'
+
+      - name: Compute deploy targets
+        id: targets
+        env:
+          EVENT: ${{ github.event_name }}
+          DISPATCH_FN: ${{ github.event.inputs.function_name }}
+          CHANGED_FILES: ${{ steps.changes.outputs.functions_files }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            if [ -n "${DISPATCH_FN:-}" ]; then
+              echo "Dispatch: deploying single function '$DISPATCH_FN'"
+              echo "targets=$DISPATCH_FN" >> "$GITHUB_OUTPUT"
+            else
+              echo "Dispatch with no function_name: redeploying ALL functions"
+              ALL=$(find supabase/functions -mindepth 1 -maxdepth 1 -type d \
+                ! -name '_*' ! -name '.*' -printf '%f\n' | sort | tr '\n' ' ')
+              echo "targets=$ALL" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            # Push event: extract unique function dirs from changed files
+            CHANGED=$(echo "${CHANGED_FILES:-}" | tr ' ' '\n' \
+              | sed -nE 's|^supabase/functions/([^/]+)/.*|\1|p' \
+              | grep -v '^_' | grep -v '^\.' \
+              | sort -u | tr '\n' ' ')
+            if [ -z "$CHANGED" ]; then
+              echo "Push touched supabase/functions/** but no individual function dir matched (likely _shared/ or root file). Nothing to deploy."
+              echo "targets=" >> "$GITHUB_OUTPUT"
+            else
+              echo "Push: deploying changed functions: $CHANGED"
+              echo "targets=$CHANGED" >> "$GITHUB_OUTPUT"
+            fi
+          fi
 
       - name: Setup Supabase CLI
+        if: steps.targets.outputs.targets != ''
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: Deploy all edge functions
+      - name: Deploy targets
+        if: steps.targets.outputs.targets != ''
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          TARGETS: ${{ steps.targets.outputs.targets }}
         run: |
-          for dir in supabase/functions/*/; do
-            func_name=$(basename "$dir")
-            # Skip _shared/ (Deno convention) and hidden dirs
-            if [[ "$func_name" == _* ]] || [[ "$func_name" == .* ]]; then
+          set -euo pipefail
+          for fn in $TARGETS; do
+            if [ ! -d "supabase/functions/$fn" ]; then
+              echo "::error::Target '$fn' has no source dir at supabase/functions/$fn — skipping"
               continue
             fi
-            echo "Deploying $func_name..."
-            supabase functions deploy "$func_name" \
-              --project-ref vrwwpsbfbnveawqwbdmj
+            echo "::group::Deploying $fn"
+            supabase functions deploy "$fn" --project-ref vrwwpsbfbnveawqwbdmj
+            echo "::endgroup::"
           done
