@@ -1,17 +1,83 @@
-# React + Vite
+# Skyfire
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, Google Sheets, email/text, and spreadsheets with one mobile-first platform.
 
-Currently, two official plugins are available:
+**Live:** https://skyfire-app.vercel.app
+**Org #1:** Legacy Hoopers LLC — Westchester, NY AAU youth basketball, grades 2–5
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+| Layer | Tech |
+|---|---|
+| Frontend | React 18 · Tailwind · Vite |
+| Auth + DB | Supabase (Postgres + Auth + Realtime + RLS + Storage) |
+| Hosting | Vercel (auto-deploy from `main`) |
+| Email | Resend (via Supabase Edge Functions) |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Quickstart
 
-## Expanding the ESLint configuration
+```bash
+git clone git@github.com:LegacyHoopers/skyfire-app.git
+cd skyfire-app
+npm install
+cp .env.example .env   # then fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
+npm run dev            # http://localhost:5173
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Common scripts
 
+```bash
+npm run dev      # Vite dev server with HMR
+npm run build    # production build (must stay ≤350KB compressed — see CLAUDE.md §12 #13)
+npm run lint     # ESLint
+npm test         # Vitest
+```
+
+## Workflow
+
+All work flows through PRs against `main`. Branches auto-merge once CI is green and there are no unresolved review comments — see [`CLAUDE.md`](./CLAUDE.md) §15 for the rules.
+
+```bash
+git checkout main && git pull
+git checkout -b <type>/<short-description>
+# ... edit, commit ...
+git push -u origin <branch>
+gh pr create --base main --head <branch> --title "..." --body "..."
+```
+
+Pre-flight before any new work (per CLAUDE.md anti-pattern #35):
+
+```bash
+git fetch origin
+git log --oneline origin/main..HEAD   # ahead?
+git log --oneline HEAD..origin/main   # behind?
+```
+
+## Where things live
+
+| | |
+|---|---|
+| **Source of truth for everything** | [`CLAUDE.md`](./CLAUDE.md) — design tokens, schema, anti-patterns, workflow |
+| Live planning + status | [`docs/SKYFIRE_BUILD_QUEUE_v2.md`](./docs/SKYFIRE_BUILD_QUEUE_v2.md) |
+| Current state-of-affairs | [`docs/STATE_OF_AFFAIRS_L99_v5.md`](./docs/STATE_OF_AFFAIRS_L99_v5.md) |
+| Components | `src/components/` (≤150 LOC each) |
+| Hooks | `src/hooks/` |
+| Pages | `src/pages/` |
+| Migrations | `supabase/migrations/` (141 applied as of May 12, 2026) |
+| Edge functions | `supabase/functions/` |
+| Historical / superseded docs | `docs/archive/` |
+
+## Hard rules (the ones most likely to trip up new contributors)
+
+These are full-detail in [`CLAUDE.md`](./CLAUDE.md) §0 and §11 — short list here:
+
+- **No hardcoded hex** in components. Use `var(--em-*)` tokens. Only exception: `team_color` inline from the database.
+- **No invented CSS tokens.** The token list in CLAUDE.md §3 is exhaustive.
+- **Files >150 lines are a P0 blocker.** Split in the same commit.
+- **Forms with 3+ fields → `FullScreenForm`**, not `BottomSheet`.
+- **Read from canonical sources** per §11.5 ground-truth tables (`team_players` for team membership, `financial_accounts` for payment status, etc. — not `roster_members`).
+- **Branch off main and PR.** Don't commit directly to `main` (bypasses CI gates).
+
+## License
+
+Proprietary — Legacy Hoopers LLC.
