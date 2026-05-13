@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel in-progress runs of this workflow on the same ref
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # CI-only placeholder values for the Supabase client init at
+    # src/lib/supabase.js:7. Tests mock all actual Supabase calls via
+    # vi.mock or mockSupabase fixtures — these dummies only satisfy
+    # the module-init guard. See CLAUDE.md anti-pattern #27 for the
+    # deeper "resolvers must inject the client" doctrine; modules
+    # that still import supabase at the top (scheduleChangeSend.js,
+    # digestSend.js, InboxFilters.jsx, etc.) trigger init at test
+    # load. Migrating those is a follow-up.
+    env:
+      VITE_SUPABASE_URL: https://ci-dummy.supabase.co
+      VITE_SUPABASE_ANON_KEY: ci-dummy-anon-key
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # CLAUDE.md §12 #13: bundle size budget is 350 KB compressed.
+      # Vite code-splits per route, so initial-load = entry chunk + supabase
+      # chunk + a route chunk. We enforce on the entry bundle (the strictest
+      # bound on what every user pays on first paint) and informationally
+      # report initial-load + all-chunks-summed totals so regressions in
+      # either are visible without failing the build.
+      - name: Bundle size guard
+        run: |
+          set -euo pipefail
+          ENTRY_BUDGET_KB=350
+
+          ENTRY=$(find dist/assets -name 'index-*.js' -type f | head -1)
+          [ -z "$ENTRY" ] && { echo "::error::No entry chunk found in dist/assets/"; exit 1; }
+          ENTRY_GZ=$(gzip -c "$ENTRY" | wc -c)
+          ENTRY_KB=$((ENTRY_GZ / 1024))
+
+          SUPA=$(find dist/assets -name 'supabase-*.js' -type f | head -1)
+          if [ -n "$SUPA" ]; then
+            SUPA_GZ=$(gzip -c "$SUPA" | wc -c)
+            INITIAL_KB=$(((ENTRY_GZ + SUPA_GZ) / 1024))
+          else
+            INITIAL_KB=$ENTRY_KB
+          fi
+
+          TOTAL=0
+          while IFS= read -r f; do
+            TOTAL=$((TOTAL + $(gzip -c "$f" | wc -c)))
+          done < <(find dist/assets -name '*.js' -type f)
+          TOTAL_KB=$((TOTAL / 1024))
+
+          echo "Entry chunk:      ${ENTRY_KB} KB gzipped (budget: ${ENTRY_BUDGET_KB} KB)"
+          echo "Initial-load est: ${INITIAL_KB} KB gzipped (entry + supabase chunk)"
+          echo "All chunks total: ${TOTAL_KB} KB gzipped (informational; chunks lazy-load per route)"
+
+          if [ "$ENTRY_KB" -gt "$ENTRY_BUDGET_KB" ]; then
+            echo "::error::Entry bundle ${ENTRY_KB} KB exceeds budget ${ENTRY_BUDGET_KB} KB (CLAUDE.md §12 #13)"
+            exit 1
+          fi
+          echo "PASS — entry chunk under budget by $((ENTRY_BUDGET_KB - ENTRY_KB)) KB"
