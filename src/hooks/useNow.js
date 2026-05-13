@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // Returns the current time in milliseconds, updated on a configurable
 // interval. Replaces direct Date.now() calls in render paths. The

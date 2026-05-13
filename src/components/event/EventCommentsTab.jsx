@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Send, Pin } from 'lucide-react';
+import { Pin, Send } from 'lucide-react';
 import Input from '../shared/Input';
 import { useComments } from '../../hooks/useComments';
 import LoadingSkeleton from '../shared/LoadingSkeleton';

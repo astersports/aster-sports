@@ -1,4 +1,4 @@
-import { Trophy, Dumbbell, Target, Users, Medal, Calendar } from 'lucide-react';
+import { Calendar, Dumbbell, Medal, Target, Trophy, Users } from 'lucide-react';
 
 const TYPES = [
   { key: 'practice', label: 'Practice', icon: Dumbbell, large: true },

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreVertical, Edit2, Archive, RotateCcw } from 'lucide-react';
+import { Archive, Edit2, MoreVertical, RotateCcw } from 'lucide-react';
 
 export default function LocationRowMenu({ showArchived = false, onEdit, onArchive, onUnarchive }) {
   const [open, setOpen] = useState(false);

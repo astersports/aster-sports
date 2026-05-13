@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Share2, Copy, Check } from 'lucide-react';
+import { Check, Copy, Share2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 export default function ShareScheduleButton({ teamId, teamName }) {

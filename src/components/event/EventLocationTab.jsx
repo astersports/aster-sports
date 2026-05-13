@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Navigation, Calendar } from 'lucide-react';
+import { Calendar, Navigation } from 'lucide-react';
 import { getDirectionUrls } from '../../lib/mapsUrls';
 import Button from '../shared/Button';
 

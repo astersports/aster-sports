@@ -1,4 +1,4 @@
-import { MapPin, ExternalLink, Navigation } from 'lucide-react';
+import { ExternalLink, MapPin, Navigation } from 'lucide-react';
 import LocationRowMenu from './LocationRowMenu';
 
 function mapsUrl(address, lat, lon, googleMapsUrl) {

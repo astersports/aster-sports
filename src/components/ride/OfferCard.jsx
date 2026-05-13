@@ -1,6 +1,6 @@
 
 import { useCallback, useState } from 'react';
-import { Car, Users, MapPin, Clock, ArrowRight, Repeat, Phone } from 'lucide-react';
+import { ArrowRight, Car, Clock, MapPin, Phone, Repeat, Users } from 'lucide-react';
 import ConfirmDialog from '../shared/ConfirmDialog';
 import { useDensity } from '../../hooks/useDensity';
 import ClaimStatusPill from './ClaimStatusPill';

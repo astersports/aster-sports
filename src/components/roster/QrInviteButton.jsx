@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { QrCode, Copy, Check, Download } from 'lucide-react';
+import { Check, Copy, Download, QrCode } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 export default function QrInviteButton({ teamId, teamName }) {
