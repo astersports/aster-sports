@@ -2,69 +2,57 @@
 
 ## Purpose
 
-Frank is heading out of town. This doc captures the in-flight state of the **PR-Privacy-Denylists** work so the next CC session can resume without re-deriving context from chat history.
+Captures the closed-out state of the **PR-Privacy-Denylists** work plus the broader session ledger. Supersedes the earlier in-flight version of this same file (PR #158); see git history if the in-flight context is needed.
 
-Read this + tail of CLAUDE.md §16.7 + `git log --oneline -10` and you have the full picture.
-
----
-
-## In-flight work: PR-Privacy-Denylists (task graph)
-
-7 tasks, wired with dependencies. **None of the code is on disk yet — `main` is unchanged at `91e16ce`.**
-
-| # | Task | Status | Blocked by |
-|---|------|--------|------------|
-| 1 | Confirm Sentry "Prevent Storing of IP Addresses" toggle flipped | pending | — |
-| 2 | Add `$geoip_disable` super-property + `property_denylist` to `src/lib/posthog.js` | blocked | #1 |
-| 3 | Add defensive geo/ip strip to `src/lib/sentry.js` `beforeSend` | blocked | #1 |
-| 4 | Document two-surface enrichment principle in CLAUDE.md §16.7.x | blocked | #1 |
-| 5 | Open bundled PR for posthog.js + sentry.js + CLAUDE.md changes | blocked | #2, #3, #4 |
-| 6 | Verify clean identify event after toggle + PR merge | blocked | #5 |
-| 7 | Clean up historical geo properties on existing person profile (~30 MCP calls) | blocked | #6 |
-
-Task graph lives in CC's local task state. `TaskList` in a fresh session surfaces it.
+Read this + `git log --oneline -10` + CLAUDE.md §16.7.1 and you have the full picture.
 
 ---
 
-## Scope: actually-correct (post-docs-search)
+## What landed this session
 
-This session re-scoped the PostHog fix three times before landing on the right mechanism. Capturing the final version so it doesn't get re-derived (or re-mis-derived) later:
+Three real things, separable from tooling churn:
 
-### The two leaks
+1. **Sentry IP/geo storage stopped going forward.** Project toggle "Prevent Storing of IP Addresses" flipped at `/settings/legacy-hoopers/projects/javascript-react/security-and-privacy/`. Defensive `event.user.{geo,ip_address}` strip added to `src/lib/sentry.js` `beforeSend` — no-op in current config (`sendDefaultPii: false`), armed if anyone later flips it to true.
 
-- **PostHog server-side GeoIP enrichment** attaches `$geoip_*` (15 fields) and `$initial_geoip_*` (15 mirror fields) to every event from the source IP. Verified first-party on person `502fd821-f79c-5747-8cad-7700a9746d19` (Supabase auth UID `0b81b465-225e-4ede-b752-ed9a2dde1f7c`): Armonk city, lat/long 41.1265/-73.714, postal 10504, NY subdivision, America/New_York TZ — all attached.
-- **Sentry server-side IP-based enrichment** attaches `user.geo` (`US, Armonk, United States`) to events. Verified first-party on event `198d7b89eafa4d77ace2039bf88c786d` (issue JAVASCRIPT-REACT-2).
+2. **PostHog SDK auto-capture cleaned up.** `property_denylist` shipped in `src/lib/posthog.js` covering ~60 keys: URL/path/referrer family, browser/OS/device/viewport/screen family, all UTM keys, all click-ID keys, plus their `$initial_` mirrors. Verified first-party via PostHog MCP — the two `$set` events from the post-merge re-login have zero SDK auto-capture properties on the outbound payload.
 
-### The actually-correct fixes
+3. **Doctrine captured.** CLAUDE.md §16.7.1 documents the two-surface enrichment principle, the source-hierarchy rule for SDK mechanism verification, current state per surface for both PostHog and Sentry, and the three SDK-mechanism corrections caught this session. Next SDK integration will not repeat this mistake without contradicting written doctrine.
 
-| Surface | Mechanism | Notes |
-|---|---|---|
-| **PostHog GeoIP** | `posthog.register({ $geoip_disable: true })` in init's `loaded` callback | Server-side enricher honors this flag per event. **This is the primary fix.** Verified via PostHog docs-search 2026-05-13. |
-| PostHog non-geo auto-capture | `property_denylist` for ~25 keys (`$current_url`, `$pathname`, `$host`, `$referrer`, `$raw_user_agent`, `$browser`, `$os`, `$device_type`, `$screen_*`, `$viewport_*`, all UTM keys, all click-ID keys) | SDK-side; strips client-attached fields pre-transport. |
-| PostHog raw IP at rest | "Discard client IP data" toggle at `/settings/project#datacapture` | **All plans, including Free.** Optional defense-in-depth. **Does NOT stop GeoIP enrichment** — only discards raw IP after enrichment runs. |
-| Sentry `user.geo` / `user.ip_address` | Project setting: **"Prevent Storing of IP Addresses"** at `/settings/legacy-hoopers/projects/javascript-react/security-and-privacy/` | Primary fix. |
-| Sentry defensive | Add `event.user.geo` / `event.user.ip_address` strip in `beforeSend` with comment | No-op today (server-enriched after beforeSend runs). Activates only if anyone later flips `sendDefaultPii: true`. |
-| Historical PostHog cleanup | 30 `persons-property-delete` MCP calls on person `502fd821-…` | Durable because `$geoip_disable` prevents re-enrichment on subsequent events. |
+## What didn't land (honest gap)
+
+**PostHog server-side GeoIP enrichment still active.** Every login by an authenticated parent re-attaches `$geoip_*` + `$initial_geoip_*` (~30 fields including city, lat/long, postal, timezone, NY subdivision) to their person profile at PostHog's ingest layer. SDK `property_denylist` cannot reach server-enriched fields — architectural reason captured in §16.7.1.
+
+Canonical fix per PostHog staff is disabling the GeoIP transformation at `/pipeline/transformations`; that page was not findable on our tier during the audit. Help desk ticket pending (carryover item below).
+
+Historical cleanup of the existing person profile (~30 `persons-property-delete` MCP calls) is **deferred** rather than skipped — running it now would be undone by the next login, since re-enrichment still happens. Will run alongside the help desk resolution when it lands.
 
 ---
 
-## Three-strikes correction log
+## Task graph final state
 
-Worth recording — the discipline that produced the correct scope:
-
-1. **Chat-side reviewer's first spec:** SDK-side `property_denylist` on `$geoip_*` fields. Caught by source-grep against `node_modules/posthog-js@1.373.4`: those fields are server-enriched, never in SDK outbound payload. Denylist would have been a no-op shipped as a privacy fix.
-2. **Reviewer's (and CC's) second spec:** PostHog "Discard client IPs and GeoIP data" project toggle. Caught by docs-search: per `posthog.com/docs/privacy/data-storage`, that toggle (real label: "Discard client IP data", no GeoIP in label) only discards raw IP at rest — GeoIP enrichment still runs.
-3. **docs-search surfaced the actual mechanism:** `$geoip_disable: true` super-property. Documented in PostHog community Q&A (Max, PostHog, May 2025).
-
-Each correction earned by first-party verification rather than reviewer framing. See memories `[[ask-receipts-when-reviewer-cites-off-cc-work]]` and `[[verify-sdk-mechanism-against-installed-source]]`.
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 1 | Sentry "Prevent Storing of IP Addresses" toggle | ✅ completed | User-flipped, confirmed |
+| 2 | PostHog `property_denylist` (non-geo) in `src/lib/posthog.js` | ✅ completed | Shipped in PR #159 |
+| 3 | Sentry `beforeSend` defensive `event.user.{geo,ip_address}` strip | ✅ completed | Shipped in PR #159 |
+| 4 | CLAUDE.md §16.7.1 doctrine subsection | ✅ completed | Shipped in PR #159 |
+| 5 | Bundled PR for #2/#3/#4 | ✅ completed | PR #159 merged at `03fdbdf` |
+| 6 | Post-merge verification of clean identify event | ✅ completed | Verified via PostHog `execute-sql` on `$set` events from post-merge re-login |
+| 7 | Cleanup historical geo properties on existing person profile | ❎ deleted | Deferred to post-help-desk; would be undone by re-enrichment |
+| 8 | Verify `$geoip_disable` mechanism via PostHog docs before drafting code | ✅ completed | Caught the wrong mechanism; triggered scope correction |
 
 ---
 
-## Open PRs at session end
+## PR ledger this session
 
-- **#147** chore(deps)(deps): bump the risky-runtime-deps group across 1 directory with 5 updates (Dependabot, opened 2026-05-13T04:21Z)
+| # | Title | State | Notes |
+|---|-------|-------|-------|
+| #158 | docs: CC session handoff 2026-05-13 (PR-Privacy-Denylists in-flight state) | MERGED | Earlier in-flight handoff doc; superseded by this file. Auto-merged squash. |
+| #159 | feat(privacy): non-geo SDK denylist + defensive Sentry strip + §16.7.1 doctrine | MERGED | The actual privacy ship. CI: 1 minute, squashed at `03fdbdf`. |
 
-No other PRs in flight.
+Open at session end (not opened by this session):
+
+- **#147** chore(deps)(deps): bump the risky-runtime-deps group across 1 directory with 5 updates — Dependabot, opened 04:21 UTC, untouched
 
 ---
 
@@ -72,40 +60,61 @@ No other PRs in flight.
 
 | MCP | Status | Notes |
 |---|---|---|
-| `plugin:posthog:posthog` | Authed | Project 421610. Exercised: `search`, `info`, `call persons-list`, `call persons-retrieve`, `call docs-search`. |
-| `supabase-ro` | Authed | Project-scoped to `vrwwpsbfbnveawqwbdmj`, read-only. Unused this session. |
+| `plugin:posthog:posthog` | Authed | Project 421610. Used for `search`, `info`, `call persons-list`, `call persons-retrieve`, `call docs-search`, `call execute-sql`. |
+| `supabase-ro` | Authed | Project-scoped to `vrwwpsbfbnveawqwbdmj`, read-only. Available but unused this session. |
 | `supabase-rw` | Not authed | Pilot, full access. Untouched. |
-| `claude.ai Sentry` | Available | Used `find_organizations`, `find_projects`, `search_events`, `search_issues`, `get_sentry_resource`. |
-| Ahrefs, Guru, Lucid, Microsoft 365 | Not authed | Untouched. |
-| `claude.ai Supabase` (unscoped) | Available | Untouched this session — prefer `supabase-ro` for diagnostics. |
+| `claude.ai Sentry` | Available (hosted) | Used `find_organizations`, `find_projects`, `search_events`, `search_issues`, `get_sentry_resource`. |
+| Other claude.ai MCPs (Ahrefs, Guru, Lucid, Microsoft 365, Bitly, Canva, Cloudflare, Gmail, Calendar, Drive, Mermaid, Stripe, Supabase unscoped, Vercel, Wix) | Available, not used | All connected via claude.ai OAuth or untouched. |
 
 ---
 
 ## Memory files at session end
 
-`/home/admin/.claude/projects/-home-admin/memory/MEMORY.md` index has four entries:
+`/home/admin/.claude/projects/-home-admin/memory/MEMORY.md` index has four entries; the **new one this session** is the last:
 
 - `check-main-before-framing-revive-options` (pre-existing)
 - `use-gh-pr-merge-auto-not-bash-wait-loops` (pre-existing)
 - `ask-receipts-when-reviewer-cites-off-cc-work` (pre-existing, referenced heavily this session)
-- **`verify-sdk-mechanism-against-installed-source` (NEW this session)** — when someone specifies an SDK option, grep the installed version's source before drafting; pairs with the ask-receipts memory.
+- **`verify-sdk-mechanism-against-installed-source`** — written today. When a reviewer specifies an SDK option, grep the installed version's source/docs before drafting; generalized SDK knowledge misses the difference between SDK-side filters and server-side enrichment. Anchored to today's PostHog GeoIP arc.
 
 ---
 
-## Time-sensitive / known unresolved states
+## Carryover items (priority order)
 
-- PostHog person profile `0b81b465-…` still holds **30 geo properties** (`$geoip_*` + `$initial_geoip_*`). Will keep re-enriching on every login until task #2 ships (`$geoip_disable`). Single test account, Frank's own data — not a multi-user emergency, just unresolved.
-- Sentry `javascript-react` still allows IP-based geo enrichment until task #1 (toggle) lands.
-- The "Autocapture web vitals opt in updated successfully!" message the reviewer cited from chat-side was never confirmed by CC's tool log. Reviewer recommended a defensive sweep of three PostHog autocapture toggles (web autocapture, web vitals, dead clicks) to confirm all OFF — not done this session.
+| # | Item | Blocked on | Estimate |
+|---|------|-----------|----------|
+| 1 | PostHog help desk ticket re: GeoIP transformation toggle on Free tier | You opening it | ~5 min to file, days for response |
+| 2 | `persons-property-delete` cleanup loop on person `502fd821-…` (30 calls) | Resolution of #1 | ~5 min CC time once unblocked |
+| 3 | react-hooks 7.1.1 triage execution (Group D first, mechanical 3-site fix) | Nothing — pure CC work | Unknown without scoping |
+| 4 | Test-team / test-org doctrine decision | Your decision | — |
+| 5 | Playwright #2 (auth-gated login) | #4 | — |
+| 6 | Playwright #3 (RSVP both paths) | #4, #5 | — |
+| 7 | Playwright #4 (briefing send) | #4, #5, #6 | — |
+| 8 | Event taxonomy (PostHog) | Your §16.12 picks | — |
+| 9 | Lighthouse warnings-only enforcement | Post-Wave-1 | — |
+
+None are urgent. None are degrading anything currently working.
+
+---
+
+## Session lessons (durable)
+
+The pattern that emerged today: a chat-side reviewer (working from generalized SDK knowledge) proposed three distinct mechanisms for stopping PostHog's GeoIP enrichment, and **all three were wrong** when checked against the installed SDK version + PostHog's own docs:
+
+1. SDK-side `property_denylist` on `$geoip_*` — caught by reading `node_modules/posthog-js/lib/src/posthog-core.js`. Those properties are server-enriched; denylist runs pre-transport; no-op.
+2. PostHog "Discard client IPs and GeoIP data" project toggle — caught by `docs-search`. Real label is "Discard client IP data" (no GeoIP); per docs, only discards raw IP at rest, GeoIP enrichment still runs.
+3. `$geoip_disable` super-property on `posthog-js` — caught by `docs-search`. Documented for server SDKs only; open bug GH #31154 for alias/merge events on browser SDK (which our `identify` after Supabase auth uses).
+
+The keeper: **reviewer's general knowledge < CC's first-party verification of the installed version, every time.** Captured in the memory file written today.
 
 ---
 
 ## Resume path
 
-1. Read this doc + tail of `CLAUDE.md §16.7` + `git log --oneline -10` for any commits since this handoff.
-2. `TaskList` to surface the 7-task graph.
-3. If Sentry toggle has been flipped, mark task #1 complete and proceed with #2 → #7 in order.
-4. Tasks #2/#3/#4 can be drafted in parallel; bundle as one PR in #5 per `[[use-gh-pr-merge-auto-not-bash-wait-loops]]`.
-5. Post-merge: re-query the person profile (`persons-retrieve id=502fd821-f79c-5747-8cad-7700a9746d19`) before running cleanup to confirm `$geoip_disable` actually suppressed re-enrichment. If `$geoip_*` is still appearing on events captured *after* the merge, the super-property may not be registering early enough — check that `register()` runs in the `loaded` callback before any identify.
+Next CC session:
+
+1. Read this doc + `git log --oneline -10` + CLAUDE.md §16.7.1.
+2. If the PostHog help desk has responded on the GeoIP transformation, that unblocks carryover #1 → #2 (file the dashboard change, then run the cleanup loop).
+3. Otherwise, pick from carryover #3 onward — react-hooks triage is the most self-contained.
 
 End handoff.
