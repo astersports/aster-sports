@@ -6,13 +6,20 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist']),
-  // Node-context config files (root-level *.config.js, scripts/) need
-  // process / __dirname / etc. as known globals so 'no-undef' doesn't trip.
-  // Application source under src/ stays browser-only.
+  // Node + browser context: build configs, scripts, and Playwright e2e
+  // tests. Configs need Node globals (process, __dirname). e2e tests run
+  // in Node (the test runner) but straddle browser context via Playwright's
+  // page.evaluate() and similar fixtures, so include both globals sets so
+  // either is allowed without no-undef tripping.
+  // Application source under src/ stays browser-only via the next block.
   {
-    files: ['*.config.js', 'scripts/**/*.{js,cjs}'],
+    files: [
+      '*.config.{js,mjs,cjs}',
+      'scripts/**/*.{js,mjs,cjs}',
+      'e2e/**/*.{js,mjs}',
+    ],
     languageOptions: {
-      globals: globals.node,
+      globals: { ...globals.node, ...globals.browser },
     },
   },
   {
