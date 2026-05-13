@@ -72,7 +72,14 @@ export default defineConfig([
       'react-hooks/purity': 'warn',
       'react-hooks/immutability': 'warn',
       'react-hooks/refs': 'warn',
-      'react-hooks/preserve-manual-memoization': 'warn',
+      // preserve-manual-memoization promoted to 'error' after PR draining
+      // Group D — useBriefingDraft.js, useEventDelete.js, useScheduleChangeAudit.js.
+      // All 3 violations shared the optional-chain-in-deps shape
+      // (`[user?.id]` / `[event?.id, …]`). React Compiler can only infer
+      // the whole object as the dep; fix was to align deps to `[user]` /
+      // `[event]`. Both refs are stable per AuthContext (useState +
+      // useMemo'd value) and useEventDetail (state-backed hook).
+      'react-hooks/preserve-manual-memoization': 'error',
       // Wave 4.8 Hardening (PR #121) — ban hardcoded prod Supabase hostname.
       // The pilot project id leaked into 2 send pipelines (rsvpNudgeSend,
       // academyCallupSend) and broke multi-org portability. Force callers
