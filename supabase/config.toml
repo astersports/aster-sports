@@ -27,7 +27,6 @@
 # Functions intentionally omitted from this file (default
 # verify_jwt:true preserves correct behavior):
 #   send-tournament-message — requires user JWT for user_roles check
-#   rapid-processor         — JWT-authenticated
 
 project_id = "vrwwpsbfbnveawqwbdmj"
 
