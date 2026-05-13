@@ -3389,3 +3389,27 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
 - FinancialDashboard fix is the most user-impactful: the prior derivation pattern (`data?.accounts || []` evaluated inline on every render) returned a fresh `[]` reference during the initial null-data phase, defeating the downstream `stats` useMemo and forcing the two forEach aggregations (over accounts + transactions) to recompute every render. iPhone 11 fps budget per §16.10 — most visible on tabs with 100+ transactions.
 - Gates: 553/553 vitest pass (unchanged — no behavior change). Lint warnings reduced **40 → 35** (−5 net: −3 AuthContext + −2 FinancialDashboard + −4 NextUpCard suppressed, but the suppression directives ALSO suppress the previously-reported "unused dep" warnings AND eliminate 2 silent lint sites the audit didn't enumerate; the lint counter doesn't always 1:1 the audit's count). All 4 touched files under 150 LOC (AuthContext 145, FinancialDashboardPage 146, NextUpCardMax 135, NextUpCardMed 140).
 - No new tests — defensive lint compliance, no behavior to assert.
+
+### Wave 4.8 Hygiene — digestSend integration test — PR #127
+- Date: 2026-05-14
+- Files:
+  - NEW src/lib/__tests__/digestSend.integration.test.js (138 LOC, 7 cases)
+- Evidence: Closes L99 P1-5 from 2026-05-12 audit. `digestSend.js` had zero coverage despite being the most-used send path (weekly_digest, org-wide flagship). Sister pipelines all had integration tests (rsvpNudgeSend, academyCallupSend, scheduleChangeSend); digestSend was the lone gap.
+- **Test shape differs from sister tests** because `digestSend.js` imports `supabase` directly (not injected as a param like `rsvpNudgeSend`). Used `vi.mock('../supabase', ...)` + chainable table mock + `vi.mock('../unsubscribeUrl', ...)` for token substitution + `vi.mock('../engine/resolvers/weeklyDigest', ...)` for compose. Resolver internals are covered by `weeklyDigest.contract.test.js` / `.snapshot.test.js`; this file focuses on digestSend's own orchestration contract.
+- **Investigation surprises:** 2 of the prompt's 6 suggested cases (pilot mode handling, unsubscribed guardian skip) don't apply to digestSend — recipients are pre-filtered by `get_digest_recipients` RPC + `useDigestRecipients` hook upstream. digestSend trusts its recipients arg. Substituted with `testOnly` behavior + `hasEvents` filter cases that DO match digestSend's surface.
+- 7 cases covering: (a) happy path orchestration (insert message → recipients → dispatch → status='sent'), (b) UNSUBSCRIBE_URL substitution per-recipient via applyUnsubscribeUrls, (c) missing orgId guard, (d) missing period guard, (e) empty recipients guard, (f) testOnly=true drops family rows keeps admin BCC, (g) hasEvents=false slices dropped when recipient's team has no events.
+- Mid-PR: initial draft was 178 LOC (over the 150 cap). Tightened mock setup — combined message + recipient chain factories into a single `tableChain(table)` that branches on `table === 'comms_message_recipients'`. Final 138 LOC.
+- Gates: 560/560 vitest pass (553 → 560; +7 new). 0 lint errors, 33 baseline warnings unchanged. Test file under 150 LOC.
+- **All 6 L99 audit findings now closed:**
+  - P1-1 hardcoded URLs: PR #121
+  - P1-2 AuthContext deps: PR #126
+  - P1-3 FinancialDashboard deps: PR #126
+  - P1-4 roster_members migration: PR #124 (doctrine, 4 exception callers) + PR #125 (Class A swap — notificationBadgeQueries). useRsvps deferred per jersey_number type mismatch (sort-order decision).
+  - P1-5 digestSend coverage: PR #127 (this PR)
+  - P2-4 NextUpCard deps: PR #126
+- Wave 4.8 backlog remaining (all flagged for future, none gating):
+  - useRsvps Class B swap (sort-order decision)
+  - useNeedsBriefing.js deletion (cron-telemetry-gated)
+  - AcademyActivationPanel + AcademyCallupPicker naming/concept merge
+  - useRoster.js `payment_status` → `financial_accounts` migration
+  - Wave 4.9 TODO: refactor `formatCountdown(startAt, now)` so the time-tick dep is lexically visible to lint (removes the NextUpCard disables)
