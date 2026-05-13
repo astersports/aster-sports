@@ -1,9 +1,17 @@
 # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 #
-# Per CLAUDE.md §15, PRs auto-merge once CI green + zero unresolved review
-# comments. Dependabot PRs follow the same rule — security patches and
-# minor updates land automatically; majors require manual review (see
-# `versioning-strategy: increase` semantics + ignored majors below).
+# IMPORTANT: Dependabot PRs are NOT covered by the §15 auto-merge rule.
+# §15 explicitly scopes to "Claude Code's own PRs" — i.e. PRs Claude Code
+# opens itself with the verifications it ran. Dependabot's PRs are
+# external; they go through branch-protection's required CI check and
+# then sit pending manual review. CI green ≠ test coverage of the
+# surface a dep bump touches. Until hook coverage is materially better,
+# manual triage of every Dependabot PR is the safety policy.
+#
+# If you ever want auto-merge for Dependabot's grouped minor+patch PRs
+# specifically, the right way is a separate workflow with a `gh pr merge
+# --auto` step gated on a label (e.g. `dependencies-auto-merge`) — not by
+# extending §15.
 
 version: 2
 updates:
