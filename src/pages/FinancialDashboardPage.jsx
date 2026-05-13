@@ -44,8 +44,14 @@ export default function FinancialDashboardPage() {
 
   useEffect(() => { refetch(); }, [refetch]);
 
-  const accounts = data?.accounts || [];
-  const transactions = data?.transactions || [];
+  // Wave 4.8 hygiene PR #126 — stabilize derived state so the downstream
+  // useMemo at `stats` actually memoizes. Without the wrapper memos,
+  // `data?.accounts || []` returned a fresh empty array on every render
+  // during the null-data phase, defeating the `stats` memo and forcing
+  // its (heavy: 2 forEach loops over accounts + transactions) computation
+  // to recompute on every render of this page.
+  const accounts = useMemo(() => data?.accounts || [], [data]);
+  const transactions = useMemo(() => data?.transactions || [], [data]);
   const loading = !data;
 
   const stats = useMemo(() => {

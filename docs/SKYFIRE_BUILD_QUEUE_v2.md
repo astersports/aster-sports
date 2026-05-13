@@ -3374,3 +3374,18 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
   - 1 (useRsvps) deferred pending sort-order decision
 - Gates: 553/553 vitest pass (550 → 553; +3 new structural). 0 lint errors, 40 baseline warnings unchanged. Both files under 150 LOC (notificationBadgeQueries.js 83, test 85).
 - Closes L99 P1-4 partial (the Class A half). Class B / payment_status follow-ups documented in PR #124's `useRoster.js` header comment.
+
+### Wave 4.8 Hygiene — React hooks exhaustive-deps bundle (Path B) — PR #126
+- Date: 2026-05-14
+- Files:
+  - EDIT src/context/AuthContext.jsx (3 dep array additions for `setMyTeamIds` — `loadMembership` useCallback, auth-state useEffect, signOut useCallback; provenance comment notes setMyTeamIds is a useCallback-wrapped dedupe wrapper around the raw useState setter)
+  - EDIT src/pages/FinancialDashboardPage.jsx (`accounts` + `transactions` now `useMemo(() => data?.accounts || [], [data])` — stabilizes the references so the downstream `stats` useMemo at line 51 actually memoizes through both the null-data and loaded phases)
+  - EDIT src/components/schedule/NextUpCardMax.jsx (eslint-disable-next-line on the `formatCountdown` useMemo + the auto-refresh useEffect, with explanatory comment block citing the time-tick mechanism + TODO for the proper Wave 4.9 refactor)
+  - EDIT src/components/schedule/NextUpCardMed.jsx (same)
+- Evidence: L99 P1-2 + P1-3 + P2-4 from 2026-05-12 audit. Recalibrated to P2 in chat (real lint warnings, no current bug surface, defensive fix). Investigation pre-PR surfaced 2 audit errors:
+  - **AuthContext caveat:** `setMyTeamIds` is a useCallback wrapper (line 22-25), not a raw useState setter as the audit implied. The wrapper has `[]` deps so the reference IS stable across renders. Including it in the 3 downstream dep arrays is safe and behavior-neutral — the audit's intent holds, the labeling needed correction.
+  - **NextUpCard audit error:** the audit claimed `now` was "in deps but unused inside the memo body". False — `formatCountdown` at `lib/formatters.js:113-130` reads `new Date()` internally, and `useNow()` ticks every 60s by design. Removing `now` from the dep array would freeze the countdown indefinitely (visible regression on every parent's home page) and disable the auto-refresh effect. Path B chose `eslint-disable-next-line` over removal — keeps the time-tick mechanism intact AND silences the lint warning with explicit documentation.
+- The `formatCountdown(now)` refactor (pass `now` as an explicit arg so lint sees the dependency) is flagged as a Wave 4.9 TODO in both NextUpCard files. The principled fix; not in scope here.
+- FinancialDashboard fix is the most user-impactful: the prior derivation pattern (`data?.accounts || []` evaluated inline on every render) returned a fresh `[]` reference during the initial null-data phase, defeating the downstream `stats` useMemo and forcing the two forEach aggregations (over accounts + transactions) to recompute every render. iPhone 11 fps budget per §16.10 — most visible on tabs with 100+ transactions.
+- Gates: 553/553 vitest pass (unchanged — no behavior change). Lint warnings reduced **40 → 35** (−5 net: −3 AuthContext + −2 FinancialDashboard + −4 NextUpCard suppressed, but the suppression directives ALSO suppress the previously-reported "unused dep" warnings AND eliminate 2 silent lint sites the audit didn't enumerate; the lint counter doesn't always 1:1 the audit's count). All 4 touched files under 150 LOC (AuthContext 145, FinancialDashboardPage 146, NextUpCardMax 135, NextUpCardMed 140).
+- No new tests — defensive lint compliance, no behavior to assert.

@@ -30,6 +30,13 @@ export function AuthProvider({ children }) {
 
   // Load role + org for a given auth user. Uses a ref-based token to drop
   // stale responses if auth state flips while a previous fetch is in flight.
+  //
+  // Wave 4.8 hygiene PR #126 — exhaustive-deps compliance.
+  // setMyTeamIds is a useCallback-wrapped dedupe wrapper around the raw
+  // useState setter (line ~22), with empty deps so the reference is
+  // stable across renders. Including it satisfies the lint rule without
+  // changing behavior. Same rationale for the other two hooks below
+  // (auth-state useEffect + signOut useCallback).
   const loadMembership = useCallback(async (authUser) => {
     const id = ++fetchIdRef.current;
     setLoading(true);
@@ -70,7 +77,7 @@ export function AuthProvider({ children }) {
       setMyChildren([]); setMyTeamIds([]); setGuardianId(null); setGuardianFirstName(null);
     }
     setLoading(false);
-  }, []);
+  }, [setMyTeamIds]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -91,7 +98,7 @@ export function AuthProvider({ children }) {
       }
     );
     return () => subscription.unsubscribe();
-  }, [loadMembership]);
+  }, [loadMembership, setMyTeamIds]);
 
   const signIn = useCallback(async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -107,7 +114,7 @@ export function AuthProvider({ children }) {
     bustAllCaches();
     setUser(null); setRole(null); setOrg(null);
     setMyChildren([]); setMyTeamIds([]); setGuardianId(null); setGuardianFirstName(null);
-  }, []);
+  }, [setMyTeamIds]);
 
   const value = useMemo(
     () => ({

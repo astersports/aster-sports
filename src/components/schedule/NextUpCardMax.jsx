@@ -18,11 +18,22 @@ export default function NextUpCardMax({ event, rsvpCount, rideCount, dutyCount, 
   const { role, myChildren } = useAuth();
   const now = useNow();
   const childrenOnTeam = (myChildren || []).filter((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
+  // `now` ticks via useNow(); formatCountdown / new Date() reads it
+  // implicitly. Including `now` in deps is the mechanism for the
+  // countdown to re-render every 60s. See PR #126 build queue entry.
+  // TODO Wave 4.9 — refactor formatCountdown to take `now` as an
+  // explicit arg so the time-tick dependency is visible to lint
+  // without this disable.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const countdown = useMemo(() => formatCountdown(event.start_at), [event.start_at, now]);
 
+  // `now` ticks via useNow(); the effect calls `new Date()` to check
+  // if the event has ended. Without `now` in deps, the auto-refresh
+  // never re-fires. See PR #126.
   useEffect(() => {
     if (!event.end_at || !onRefresh) return;
     if (new Date(event.end_at) < new Date()) onRefresh();
+     
   }, [event.end_at, now, onRefresh]);
 
   const directionsUrl = useMapsUrl(event.location);
