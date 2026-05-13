@@ -1,0 +1,90 @@
+CC → Claude AI handoff
+Date: 2026-05-13
+Topic: React-hooks triage opening — ground-state mismatch surfaced
+
+────────────────────────────────────────────────────────
+SUMMARY
+────────────────────────────────────────────────────────
+The opening message Frank pasted to start a react-hooks triage
+session references artifacts that do not exist in this repo.
+CC stopped before coding and surfaced the mismatch. Three
+possible explanations laid out for Frank to pick from.
+
+────────────────────────────────────────────────────────
+WHAT'S ACTUALLY IN MAIN
+────────────────────────────────────────────────────────
+- Latest PR is #23 (fix(briefings): recipient count regression
+  + admin@ safety net), not #160. PR numbers in the opening
+  message (#147 Dependabot, #156, #160) do not exist here —
+  they're from a different project or a different mental
+  model of where we are.
+- Current branch: claude/comms-foundation-mirror-Maqtw, clean,
+  ahead by one commit (5de7ddc — the comms foundation mirror
+  from this morning's session). That commit has not been
+  opened as a PR yet.
+- No `main` ref locally. origin/main HEAD is a82ed12 (PR #23).
+
+────────────────────────────────────────────────────────
+DOCS — ACTUAL vs REFERENCED
+────────────────────────────────────────────────────────
+docs/ actual:
+  ADMIN_SESSION_SCOPE.md
+  AUDIT_2026_05_06.md
+  EMBER_TENANCY_ARCHITECTURE_v3.md
+  LH_BRAND_CONTENT_MODEL.md
+  LH_OPS_SPEC.md
+  NEW_CHAT_STARTER_PROMPT.md
+  README.md
+  SKYFIRE_BUILD_QUEUE_v2.md
+  STATE_OF_AFFAIRS_L99_v3.md
+  STATE_OF_AFFAIRS_L99_v4.md
+  archive/
+
+Referenced in the opening message but MISSING:
+  docs/REACT_HOOKS_71_TRIAGE.md         ❌
+  docs/CC_SESSION_HANDOFF_2026-05-13.md ❌
+
+No archived versions of either in archive/.
+
+────────────────────────────────────────────────────────
+WHAT GROUP D ACTUALLY IS
+────────────────────────────────────────────────────────
+Unknown. Group A–E lettering only makes sense relative to the
+triage doc, and the triage doc isn't here. CC will not invent
+a Group D scope from a fresh lint run — that would be
+speculation about what Frank triaged, which violates
+anti-pattern #22 and Frank's "receipts before commitment"
+discipline.
+
+────────────────────────────────────────────────────────
+READ ON HIDDEN COMPLEXITY
+────────────────────────────────────────────────────────
+Can't assess. No triage rubric to read against.
+
+────────────────────────────────────────────────────────
+THREE EXPLANATIONS — FRANK PICKS
+────────────────────────────────────────────────────────
+1. Wrong repo / wrong session pasted.
+   The prompt was drafted for a different project's CC
+   session and got pasted here by mistake. If so, the
+   morning's work was the comms foundation mirror
+   (5de7ddc on claude/comms-foundation-mirror-Maqtw),
+   still unmerged.
+
+2. Triage doc lives somewhere CC hasn't looked.
+   If it's in a private gist, a Notion page, or unpushed
+   locally, paste the contents (or the path) and CC will
+   re-ground.
+
+3. Triage doc was planned but not written.
+   If react-hooks triage is the NEXT infra task and the
+   doc itself doesn't exist yet, the first move is to
+   generate it: run lint, classify the 71 warnings into
+   A–E groups, write docs/REACT_HOOKS_71_TRIAGE.md, then
+   ship Group D off that.
+
+────────────────────────────────────────────────────────
+CURRENT STATE
+────────────────────────────────────────────────────────
+Standing by. No coding until Frank picks one of the three
+explanations above.
