@@ -623,6 +623,39 @@ Bidirectional EN ↔ ES:
 
 **Implementation pattern reminder:** streaks UI uses ref-based height for expand/collapse (per anti-pattern #18).
 
+### 16.7.1 SDK telemetry — two-surface enrichment
+
+Third-party analytics/observability SDKs leak privacy at **two distinct surfaces**:
+
+(a) **What the SDK auto-attaches client-side.** Fixable via SDK config — `property_denylist`, `beforeSend`-style hooks, autocapture flags. Operates on the outbound payload before transport.
+
+(b) **What the vendor enriches server-side at ingest.** Fixable only via the vendor's project-level toggle, pipeline transformation, or upstream proxy. The SDK has no visibility into these fields — they're appended after the SDK's payload arrives.
+
+**SDK-side filters cannot strip server-enriched fields.** Assuming they can ships a no-op as a privacy fix. Audit both surfaces on every SDK wire-up.
+
+**Source hierarchy for SDK mechanism verification:** (1) official vendor docs, (2) installed version's type defs (`node_modules/<sdk>/dist/*.d.ts`), (3) installed source, (4) vendor-staff GitHub comments (with skepticism). **Never** community Q&A as primary source — PostHog's own `docs-search` tool warns against it explicitly. Memory: `verify-sdk-mechanism-against-installed-source` (2026-05-13).
+
+#### Current state — PostHog (project 421610, posthog-js@1.373.4)
+
+- **SDK auto-capture (resolved 2026-05-13):** Non-geo fields (URL, path, UA, device, viewport, UTM, click IDs, plus `$initial_` mirrors) stripped via `property_denylist` in `src/lib/posthog.js`. Geo properties intentionally NOT in the list — they're server-enriched.
+- **Server-side GeoIP enrichment (unresolved):** `$geoip_*` + `$initial_geoip_*` (city, lat/long, postal, timezone, NY subdivision — ~30 fields total) attach to every person profile at ingest. Canonical fix per PostHog staff is disabling the GeoIP transformation at `/pipeline/transformations`; not findable on our tier as of 2026-05-13. **Help desk ticket pending.** Until resolved, authenticated parent geo persists on PostHog's servers — accessible only to PostHog admins of project 421610.
+- **Historical cleanup (skipped):** Without server-side enrichment disabled, re-login re-enriches; cleanup would be undone. Will run alongside the help desk fix when it lands.
+
+#### Current state — Sentry (project javascript-react, @sentry/react v8+)
+
+- **Server-side IP/geo enrichment (resolved 2026-05-13):** "Prevent Storing of IP Addresses" toggle at `/settings/projects/javascript-react/security-and-privacy/` flipped. Available on all plans.
+- **Defensive in-code (no-op today, armed for future):** `beforeSend` in `src/lib/sentry.js` strips `event.user.geo` and `event.user.ip_address`. Sentry enriches these at ingest, after `beforeSend` runs in our default config (`sendDefaultPii: false`), so the strip is a no-op today. Activates if anyone later flips `sendDefaultPii: true` — at which point the SDK attaches IP/geo client-side and the strip catches them pre-transport.
+
+#### Three corrections caught this session (2026-05-13)
+
+Each caught by first-party verification, not reviewer framing:
+
+1. Initial spec: SDK-side `property_denylist` on `$geoip_*` — caught by source-grep against `node_modules/posthog-js`. Those fields are server-enriched; the denylist runs pre-transport; would have shipped a no-op as a privacy fix.
+2. Second spec: PostHog "Discard client IPs and GeoIP data" project toggle — caught by `docs-search`. Real label is "Discard client IP data" (no GeoIP in label); per docs, the toggle only discards raw IP after enrichment runs.
+3. Third spec: `$geoip_disable` super-property on `posthog-js` — caught by `docs-search`. Documented for server SDKs only (`posthog-node` defaults to it); open bug GH #31154 for alias/merge events on browser SDK (which our `identify` after Supabase auth uses).
+
+The third correction triggered the verification gate that produced the current scope.
+
 ### 16.8 Audit log visibility
 
 Every coach/admin override: timestamped, author-tagged, surfaced to affected parents.
