@@ -12,11 +12,18 @@ export default function AcademyActivationPanel({ eventId, teamId }) {
     if (!eventId || !teamId) return;
     let cancelled = false;
     (async () => {
+      // §11.5 doctrine: team_players is canonical for "kids on a team right
+      // now" + jersey_number. .eq('status', 'active') is MCP-verified
+      // equivalent to roster_members .is('left_at', null) per PR #125.
+      // Keeping the players(member_type) JS filter as a redundant safety
+      // check; team_players.roster_type='futures' would also work but
+      // member_type stays the canonical player-level signal.
       const [rosterRes, actRes] = await Promise.all([
         supabase
-          .from('roster_members')
+          .from('team_players')
           .select('player_id, jersey_number, players(id, first_name, last_name, member_type)')
-          .eq('team_id', teamId),
+          .eq('team_id', teamId)
+          .eq('status', 'active'),
         supabase
           .from('player_activations')
           .select('player_id')

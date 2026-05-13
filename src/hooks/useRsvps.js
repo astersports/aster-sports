@@ -13,13 +13,17 @@ export function useRsvps(eventId, teamId) {
   const fetch = useCallback(async () => {
     if (!eventId || !teamId) { setLoading(false); return; }
     if (!didInitialLoad.current) setLoading(true);
+    // §11.5 doctrine: team_players is canonical for "kids on a team right
+    // now". .eq('status', 'active') is MCP-verified equivalent to
+    // .is('left_at', null) on roster_members (per PR #125). Same player(...)
+    // PostgREST embed shape; jersey_number sort behavior preserved.
     const [rsvpRes, rosterRes] = await Promise.all([
       supabase.from('event_rsvps').select('*').eq('event_id', eventId),
       supabase
-        .from('roster_members')
+        .from('team_players')
         .select('jersey_number, players(id, first_name, last_name, member_type)')
         .eq('team_id', teamId)
-        .is('left_at', null)
+        .eq('status', 'active')
         .order('jersey_number', { ascending: true, nullsFirst: false }),
     ]);
     if (cancelledRef.current) return;
