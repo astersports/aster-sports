@@ -1,8 +1,8 @@
 # SKYFIRE PLATFORM — CLAUDE.md
 > Single source of truth for all Claude Code sessions.
 > Place at project root: `~/legacy-hoopers-app/CLAUDE.md`
-> Branch: `v2` (clean rebuild) — prototype preserved on `main`
-> Last updated: May 5, 2026
+> Branch: `main` (v2 retired May 11, 2026 — see `docs/archive/PRE_3_AUDIT_2026-05-11.md`)
+> Last updated: May 12, 2026
 
 ---
 
@@ -55,8 +55,8 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
 - Repo: github.com/LegacyHoopers/skyfire-app (private)
 - Supabase project: `vrwwpsbfbnveawqwbdmj`
 - Admin: admin@legacyhoopers.org (user_id: `1e06a3d4-769b-42c0-b90b-92787410ee5a`, org_id: `e3e95e21-3571-4e9a-985a-d5d01480d4a6`)
-- Local path: `~/legacy-hoopers-app` | branch: `v2`
-- Deploy chain: push v2 then merge to main (see section 12)
+- Local path: `~/legacy-hoopers-app` | branch: `main`
+- Deploy chain: PR against main, auto-merge per §15 once CI green (see section 12)
 
 ---
 
@@ -161,7 +161,12 @@ Every table includes `org_id` FK → organizations. All RLS policies scope to us
 
 ---
 
-## 5. DATABASE SCHEMA (v2 — 67 Migrations applied as of May 5, 2026)
+## 5. DATABASE SCHEMA (141 migrations applied as of May 12, 2026)
+
+> The illustrative tables below capture the foundation (001–012) and select Wave migrations.
+> They are NOT exhaustive — actual migration count is 141 files in `supabase/migrations/`.
+> Source of truth for the full list is the migrations directory; consult it directly when
+> reasoning about current schema.
 
 | # | File | What It Does |
 |---|---|---|
@@ -370,7 +375,7 @@ to prevent drift.
 16. **Invent CSS tokens → forbidden**
 17. **Change CSS token values → forbidden**
 18. **CSS % or dvh for overlay heights → JS visualViewport**
-19. **Deploy without merging v2 → main → nothing ships**
+19. **Commit directly to main → bypasses CI gates and the PR review trail. Always branch + PR.**
 20. **cmd='ALL' RLS policies must always have explicit with_check.** with_check=NULL on a write policy allows any column values that pass the USING qual, with zero constraint on the data being written. P0 anti-pattern by default. Wave 1G (Decision #110) caught this on event_rsvps, event_comments, event_duties. M5 methodology rule.
 21. **Migration mirror files must be created in the same turn as MCP apply.** When Claude AI applies a migration via `apply_migration`, the mirror `.sql` file is created immediately with the canonical production version string as the filename prefix (e.g. `20260505161540_wave_7a_...sql`). Claude Code does NOT write migration files for schema applied via MCP — that creates version-string mismatches and duplicate files. The user moves the file into `supabase/migrations/` in the next round-trip.
 22. **Never trust Claude Code's "committed and pushed" reports without verification.** Claude Code may report files as committed when they were actually auto-committed by pre-commit hooks with different content, or when the push targeted a different branch than expected. Always verify with `git log --oneline` + `git diff` after any claimed commit.
@@ -427,10 +432,10 @@ source for the question you're asking.
 
 | File:line | Exception kind | Rationale |
 |---|---|---|
-| `src/hooks/useAttendanceData.js:37` | sizes + historical view | jersey_number lookup for the per-player attendance grid; one of the 5 attendance views |
-| `src/hooks/useEventRsvpCounts.js:27` | historical window | `left_at IS NULL` is the canonical date-windowed eligibility check (per the table row above) |
-| `src/hooks/useRoster.js:13` | sizes (canonical home) | reads `jersey_size` + `shorts_size` — team_players has neither column. (Also reads legacy `payment_status`; future PR can migrate that single column to `financial_accounts`.) |
-| `src/pages/SeasonRolloverPage.jsx:28` | historical view (season scope) | rollover wizard inherently shows a season's PAST roster, not current team_players state. Nested PostgREST relation `teams(...roster_members(...))` — missed by the L99 audit grep until PR #124 |
+| `src/hooks/useAttendanceData.js:44` | sizes + historical view | jersey_number lookup for the per-player attendance grid; one of the 5 attendance views |
+| `src/hooks/useEventRsvpCounts.js:33` | historical window | `left_at IS NULL` is the canonical date-windowed eligibility check (per the table row above) |
+| `src/hooks/useRoster.js:25` | sizes (canonical home) | reads `jersey_size` + `shorts_size` — team_players has neither column. (Also reads legacy `payment_status`; future PR can migrate that single column to `financial_accounts`.) |
+| `src/pages/SeasonRolloverPage.jsx:36` | historical view (season scope) | rollover wizard inherently shows a season's PAST roster, not current team_players state. Nested PostgREST relation `teams(...roster_members(...))` — missed by the L99 audit grep until PR #124 |
 | `src/hooks/useSeasonRollover.js:49` | WRITE (not a read) | `.insert()` into roster_members. §11.5 read-restriction doesn't apply; membership writes legitimately go through roster_members |
 
 If you add a new caller and it fits an existing exception kind, append it to this table. If it doesn't fit, the migration to team_players (or financial_accounts for payment fields) is the right move.
@@ -445,13 +450,20 @@ The two tables are kept in alignment by the trigger added in migration `20260505
 # Resume every session
 cd ~/legacy-hoopers-app && claude
 
-# ALWAYS use this full chain — never skip the merge
-git add -A && git commit -m "description" && git push origin v2 && git checkout main && git merge v2 && git push origin main && git checkout v2
+# Branch off main per change (never commit directly to main)
+git checkout main && git pull origin main
+git checkout -b <type>/<short-description>      # e.g. fix/rsvp-count, chore/repo-tidy
+# ... edit, commit ...
+git push -u origin <branch>
+gh pr create --base main --head <branch> --title "..." --body "..."
+# Auto-merges per §15 once CI is green and there are no review comments.
 
-# Wait 60s for Vercel deploy, test on phone
+# Wait ~60s for Vercel deploy after merge, test on phone.
 ```
 
-10. **Every Claude Code prompt ends with manual verification steps.** The prompt MUST end with a numbered checklist Frank can walk through in the app (e.g., "1. Log in as admin. 2. Navigate to X. 3. Verify Y renders."). Don't merge v2 → main until checklist passes.
+The v2 → main merge dance from earlier in the project is retired. v2 is gone (May 11, 2026). All work flows through PRs against `main`.
+
+10. **Every Claude Code prompt ends with manual verification steps.** The prompt MUST end with a numbered checklist Frank can walk through in the app (e.g., "1. Log in as admin. 2. Navigate to X. 3. Verify Y renders."). Don't merge a PR to main until the checklist passes.
 
 11. **Files over 150 lines are a P0 blocker.** If the prompt results in a file > 150 lines, stop and split in the SAME commit. Do not ship "will refactor later."
 
