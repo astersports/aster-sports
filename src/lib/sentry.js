@@ -15,6 +15,11 @@ export function initSentry() {
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,
     beforeSend(event) {
+      // Drop user-cancelled Web Share API calls. navigator.share() rejects
+      // with AbortError when the user dismisses the share sheet — that's
+      // expected platform behavior, not a bug. Sentry JAVASCRIPT-REACT-2.
+      const ex = event.exception?.values?.[0];
+      if (ex?.type === 'AbortError' && /share/i.test(ex?.value || '')) return null;
       if (event.contexts?.state?.user?.email) delete event.contexts.state.user.email;
       if (event.contexts?.state?.user?.phone) delete event.contexts.state.user.phone;
       return event;
