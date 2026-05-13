@@ -3,7 +3,7 @@
 // Uses FullScreenForm primitive: Cancel button in header (iOS HIG),
 // Submit button in footer. Optimistic UI happens in the hook.
 
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import FullScreenForm from '../shared/FullScreenForm';

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Calendar } from 'lucide-react';
+import { Calendar, MapPin } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 
 // Single row in the tournaments list. Shows name, date range, attending teams

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { House, Calendar, Trophy, Users, MessageSquare } from 'lucide-react';
+import { Calendar, House, MessageSquare, Trophy, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/permissions';
 import { useHasUnread } from '../../hooks/useHasUnread';

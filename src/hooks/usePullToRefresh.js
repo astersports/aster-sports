@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 export function usePullToRefresh(onRefresh) {
   const [refreshing, setRefreshing] = useState(false);

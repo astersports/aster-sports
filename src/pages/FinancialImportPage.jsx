@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Upload, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronLeft, Upload } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { parseLeagueAppsData, importToFinancials } from '../lib/leagueAppsImport';
+import { importToFinancials, parseLeagueAppsData } from '../lib/leagueAppsImport';
 import Button from '../components/shared/Button';
 import Label from '../components/shared/Label';
 

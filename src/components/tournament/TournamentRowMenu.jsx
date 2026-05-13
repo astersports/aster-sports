@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreVertical, Edit2, Archive } from 'lucide-react';
+import { Archive, Edit2, MoreVertical } from 'lucide-react';
 
 export default function TournamentRowMenu({ onEdit, onArchive }) {
   const [open, setOpen] = useState(false);

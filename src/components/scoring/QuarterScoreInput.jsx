@@ -1,4 +1,4 @@
-import { useCallback, Fragment } from 'react';
+import { Fragment, useCallback } from 'react';
 
 const QUARTERS = ['q1', 'q2', 'q3', 'q4'];
 const LABELS = { q1: 'Q1', q2: 'Q2', q3: 'Q3', q4: 'Q4' };

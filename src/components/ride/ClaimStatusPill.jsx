@@ -3,7 +3,7 @@
 // Used inside OfferCard when current user has a claim on the offer,
 // and inside ClaimCard list views in Phase D.
 
-import { Check, Clock, AlertCircle, X, Ban } from 'lucide-react';
+import { AlertCircle, Ban, Check, Clock, X } from 'lucide-react';
 
 const STATUS_VARIANTS = {
   confirmed: { label: 'Confirmed', icon: Check, fg: 'var(--em-success)', bg: 'var(--em-success-soft)' },

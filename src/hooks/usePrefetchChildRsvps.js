@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { responseCache, cacheKey } from '../lib/rsvpCache';
+import { cacheKey, responseCache } from '../lib/rsvpCache';
 
 export function usePrefetchChildRsvps(activities, myChildren) {
   const playerIds = useMemo(() => (myChildren || []).map((c) => c.playerId).filter(Boolean), [myChildren]);
