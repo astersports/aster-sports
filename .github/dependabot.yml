@@ -1,0 +1,50 @@
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Per CLAUDE.md §15, PRs auto-merge once CI green + zero unresolved review
+# comments. Dependabot PRs follow the same rule — security patches and
+# minor updates land automatically; majors require manual review (see
+# `versioning-strategy: increase` semantics + ignored majors below).
+
+version: 2
+updates:
+  # JavaScript / npm
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+      include: scope
+    groups:
+      # Group lockfile-only minor/patch bumps so we don't get 30 PRs a week
+      minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Hold majors for manual review — major version bumps tend to
+      # have breaking changes that warrant a deliberate look. Dependabot
+      # still files security patches for these regardless.
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: chore(actions)
+      include: scope
