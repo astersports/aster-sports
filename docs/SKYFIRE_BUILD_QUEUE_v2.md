@@ -2364,7 +2364,7 @@ Full-day session. Claude Code (web) + Claude AI (MCP) working in parallel.
 **Audit pass (Waves 1-4):**
 - 5-agent audit: JS/JSX, SQL/RLS, UX/A11y, Security, Performance
 - 68 unique findings across 5 surfaces
-- 38 findings closed same-day, rest documented in docs/AUDIT_2026_05_06.md
+- 38 findings closed same-day, rest documented in docs/archive/AUDIT_2026_05_06.md
 
 **Bug fixes shipped:**
 - P0: ClaimSeatForm wrong-kid, Toast auto-dismiss, NextEventCard wrong column, useEventDutyCounts over-count, useNotificationBadge always-0, useRoster/useRsvps null deref
