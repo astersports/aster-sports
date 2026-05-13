@@ -6,6 +6,15 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist']),
+  // Node-context config files (root-level *.config.js, scripts/) need
+  // process / __dirname / etc. as known globals so 'no-undef' doesn't trip.
+  // Application source under src/ stays browser-only.
+  {
+    files: ['*.config.js', 'scripts/**/*.{js,cjs}'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
   {
     files: ['**/*.{js,jsx}'],
     extends: [

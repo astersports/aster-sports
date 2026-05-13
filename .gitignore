@@ -28,6 +28,11 @@ dist-ssr
 # Supabase CLI local scratch (linked-project refs, version cache)
 supabase/.temp/
 
+# Playwright artifacts (traces, screenshots, HTML reports)
+playwright-report/
+test-results/
+.playwright/
+
 # Persistent untracked items per Wave 2 IA Map v1.1 Decision 103.
 # Anchored to repo root so archived copies under docs/archive/ remain tracked
 # (relocated 2026-05-12 in chore/repo-root-tidy).
