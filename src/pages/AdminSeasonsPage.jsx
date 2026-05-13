@@ -127,7 +127,11 @@ export default function AdminSeasonsPage() {
         message={`Only one season can be active at a time. ${confirmSwitch?.name} will become active and the current one will move to archived.`}
         confirmLabel="Switch"
         onCancel={() => setConfirmSwitch(null)}
-        onConfirm={() => handleSetActive(confirmSwitch.id)}
+        // Guard against the stale-closure window where ConfirmDialog's
+        // useEffect-bound Enter key fires after confirmSwitch nullifies
+        // (e.g., a parallel state update from useSeasons mid-transition).
+        // Sentry JAVASCRIPT-REACT-3.
+        onConfirm={() => confirmSwitch && handleSetActive(confirmSwitch.id)}
       />}
       <Toast
         message={toast?.message}
