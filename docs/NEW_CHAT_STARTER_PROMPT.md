@@ -16,7 +16,7 @@ Before you write any code, generate any SQL, or take any execution step, you MUS
 
 ## Verification 1 — Read the state-of-affairs document
 
-Read `/mnt/project/STATE_OF_AFFAIRS_L99_v3.md` end to end. This is the authoritative source for everything the prior chat established. If you find conflicting information in older docs (SKYFIRE_LEVEL99_MASTER.md, GENERATE_FRESH_AUDIT.md, SESSION_HANDOFF__2_.md, STATE_OF_AFFAIRS_L99.pdf), the v3 document takes precedence.
+Read `/mnt/project/STATE_OF_AFFAIRS_L99_v5.md` end to end. This is the authoritative source for everything the prior chat established. If you find conflicting information in older docs (SKYFIRE_LEVEL99_MASTER.md, GENERATE_FRESH_AUDIT.md, SESSION_HANDOFF__2_.md, STATE_OF_AFFAIRS_L99.pdf, STATE_OF_AFFAIRS_L99_v3.md, STATE_OF_AFFAIRS_L99_v4.md), the v5 document takes precedence.
 
 ## Verification 2 — Read the build queue
 
