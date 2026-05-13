@@ -16,6 +16,17 @@ jobs:
   lint-test-build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # CI-only placeholder values for the Supabase client init at
+    # src/lib/supabase.js:7. Tests mock all actual Supabase calls via
+    # vi.mock or mockSupabase fixtures — these dummies only satisfy
+    # the module-init guard. See CLAUDE.md anti-pattern #27 for the
+    # deeper "resolvers must inject the client" doctrine; modules
+    # that still import supabase at the top (scheduleChangeSend.js,
+    # digestSend.js, InboxFilters.jsx, etc.) trigger init at test
+    # load. Migrating those is a follow-up.
+    env:
+      VITE_SUPABASE_URL: https://ci-dummy.supabase.co
+      VITE_SUPABASE_ANON_KEY: ci-dummy-anon-key
     steps:
       - name: Checkout
         uses: actions/checkout@v4
