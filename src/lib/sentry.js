@@ -22,6 +22,17 @@ export function initSentry() {
       if (ex?.type === 'AbortError' && /share/i.test(ex?.value || '')) return null;
       if (event.contexts?.state?.user?.email) delete event.contexts.state.user.email;
       if (event.contexts?.state?.user?.phone) delete event.contexts.state.user.phone;
+      // Defense-in-depth: strip server-derived geo + IP from event.user.
+      // Sentry enriches these at ingest from the request IP, AFTER beforeSend
+      // runs in our config (sendDefaultPii: false is the @sentry/react v8+
+      // default), so this is a no-op today. Activates if sendDefaultPii is
+      // ever flipped to true, at which point the SDK attaches
+      // user.{geo,ip_address} pre-transport and this strip fires.
+      // See CLAUDE.md §16.7.1 for the two-surface enrichment principle.
+      if (event.user) {
+        delete event.user.geo;
+        delete event.user.ip_address;
+      }
       return event;
     },
   });

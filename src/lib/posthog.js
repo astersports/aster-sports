@@ -29,6 +29,12 @@
 //   defaults: '2026-01-30'           — pin defaults so PostHog's future SDK
 //                                      changes don't surprise the privacy
 //                                      posture
+//   property_denylist: [...]         — strip SDK auto-attached non-geo fields
+//                                      (URL, path, UA, device, viewport, UTM,
+//                                      click IDs, plus $initial_ mirrors).
+//                                      Geo ($geoip_*) is intentionally NOT
+//                                      stripped here — server-enriched at
+//                                      ingest, see CLAUDE.md §16.7.1
 //
 // NOT SET (intentional, off-by-default in this SDK):
 //   web vitals       — opt-in via WebVitalsAutocapture extension; we don't
@@ -44,6 +50,39 @@ import posthog from 'posthog-js';
 const KEY = import.meta.env.VITE_POSTHOG_KEY;
 const HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com';
 const MODE = import.meta.env.MODE;
+
+// SDK-attached auto-capture properties we strip before transport. posthog-js
+// adds these client-side; the denylist runs before the outbound payload leaves
+// the browser. NOT a fix for server-enriched fields like $geoip_* — those are
+// added at ingest, after the SDK's payload arrives. See CLAUDE.md §16.7.1 for
+// the two-surface enrichment principle.
+const PROPERTY_DENYLIST = [
+  // URL, path, referrer (event + $initial_ mirror)
+  '$current_url', '$pathname', '$host', '$referrer', '$referring_domain',
+  '$initial_current_url', '$initial_pathname', '$initial_host',
+  '$initial_referrer', '$initial_referring_domain',
+  // Browser, OS, device, viewport, screen
+  '$raw_user_agent', '$browser', '$browser_version', '$os', '$os_version',
+  '$device_type', '$screen_width', '$screen_height',
+  '$viewport_width', '$viewport_height',
+  '$initial_raw_user_agent', '$initial_browser', '$initial_browser_version',
+  '$initial_os', '$initial_os_version', '$initial_device_type',
+  '$initial_screen_width', '$initial_screen_height',
+  '$initial_viewport_width', '$initial_viewport_height',
+  // UTM
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+  '$initial_utm_source', '$initial_utm_medium', '$initial_utm_campaign',
+  '$initial_utm_term', '$initial_utm_content',
+  // Click IDs (ad networks, affiliate, partner clicks)
+  'gclid', 'fbclid', 'dclid', 'gbraid', 'igshid', 'irclid', 'mc_cid',
+  'ttclid', 'twclid', 'wbraid', 'msclkid', 'rdt_cid', 'li_fat_id',
+  'epik', 'qclid', 'sccid', '_kx', 'gad_source', 'gclsrc',
+  '$initial_gclid', '$initial_fbclid', '$initial_dclid', '$initial_gbraid',
+  '$initial_igshid', '$initial_irclid', '$initial_mc_cid', '$initial_ttclid',
+  '$initial_twclid', '$initial_wbraid', '$initial_msclkid', '$initial_rdt_cid',
+  '$initial_li_fat_id', '$initial_epik', '$initial_qclid', '$initial_sccid',
+  '$initial__kx', '$initial_gad_source', '$initial_gclsrc',
+];
 
 let initialized = false;
 
@@ -70,6 +109,7 @@ export function initPosthog() {
         maskTextSelector: '*',
       },
     },
+    property_denylist: PROPERTY_DENYLIST,
     loaded: () => { initialized = true; },
   });
 }
