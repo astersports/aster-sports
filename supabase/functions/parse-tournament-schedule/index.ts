@@ -101,8 +101,14 @@ Deno.serve(async (req) => {
 
   try {
     const apiKey = await getAppSecret(sb, "anthropic_api_key");
+    // teams has no archive concept; locations does. Filtering teams
+    // by archived_at IS NULL would error (column doesn't exist) and
+    // the destructured default `[]` would silently swallow it — which
+    // meant the LLM was getting "(none)" for the team list and could
+    // never map section headers. Confirmed via schema introspection
+    // May 15, 2026 after three failed smoke tests.
     const [{ data: teams = [] }, { data: venues = [] }] = await Promise.all([
-      sb.from("teams").select("id, name").eq("org_id", body.org_id).is("archived_at", null),
+      sb.from("teams").select("id, name").eq("org_id", body.org_id),
       sb.from("locations").select("id, name").eq("org_id", body.org_id).is("archived_at", null),
     ]);
     const prompt = buildPrompt(body.paste, { teams, venues });
