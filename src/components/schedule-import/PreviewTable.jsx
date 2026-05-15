@@ -31,7 +31,7 @@ export default function PreviewTable({ rows, validation, dedup, canCommit, onUpd
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 96, paddingLeft: 12, paddingRight: 12 }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 'calc(96px + 80px + env(safe-area-inset-bottom, 0px))', paddingLeft: 12, paddingRight: 12 }}>
       <div style={{ padding: 12, backgroundColor: 'var(--em-bg-card)', borderRadius: 8, marginBottom: 12, fontSize: 14, color: 'var(--em-text-primary)' }}>{summary}</div>
 
       {teamNames.length > 0 && (
@@ -53,7 +53,10 @@ export default function PreviewTable({ rows, validation, dedup, canCommit, onUpd
         ? <PreviewMobileCards rows={rows} teamNames={teamNames} onUpdateRow={onUpdateRow} onRemoveRow={onRemoveRow} />
         : <PreviewDesktopTable rows={rows} teamNames={teamNames} onUpdateRow={onUpdateRow} onRemoveRow={onRemoveRow} />}
 
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '12px 16px', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)', boxShadow: '0 -2px 6px rgba(0,0,0,0.08)', zIndex: 10, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+      {/* Sticky commit footer — must clear the AppShell BottomNav
+          (80px tall + safe-area-inset-bottom). zIndex 40 keeps it
+          above content but below BottomNav (z-50). */}
+      <div style={{ position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0, padding: '12px 16px', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)', boxShadow: '0 -2px 6px rgba(0,0,0,0.08)', zIndex: 40, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
         <button type="button" onClick={onCommit} disabled={!canCommit || committing} className="sf-press"
           style={{ minHeight: 44, padding: '0 24px', borderRadius: 10, border: 'none', backgroundColor: canCommit ? 'var(--em-accent)' : 'var(--em-bg-tertiary)', color: canCommit ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)', fontSize: 15, fontWeight: 600, cursor: canCommit ? 'pointer' : 'not-allowed' }}>
           {committing ? 'Committing…' : `Commit ${dedup.new + dedup.updated} events`}
