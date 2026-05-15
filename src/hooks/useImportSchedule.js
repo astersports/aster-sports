@@ -29,8 +29,21 @@ export function useImportSchedule(tournamentId) {
       setTournament(t);
       const { data: existing = [] } = await supabase.from('events').select('id, team_id, tournament_id, start_at, opponent, location_id, sub_location, is_bonus_game').eq('tournament_id', tournamentId);
       const { data, error: invErr } = await supabase.functions.invoke('parse-tournament-schedule', { body: { paste, tournament_id: tournamentId, org_id: orgId } });
-      if (invErr) throw invErr;
+      // Edge function returns { error: '...' } in the JSON body on
+      // 4xx/5xx, but supabase.functions.invoke surfaces only a generic
+      // FunctionsHttpError unless we dig into context. Try the body
+      // first (it's parsed even on non-2xx); fall back to invErr.
       if (data?.error) throw new Error(data.error);
+      if (invErr) {
+        const ctxBody = invErr.context?.body;
+        if (ctxBody) {
+          try {
+            const parsed = typeof ctxBody === 'string' ? JSON.parse(ctxBody) : ctxBody;
+            if (parsed?.error) throw new Error(parsed.error);
+          } catch (parseErr) { void parseErr; }
+        }
+        throw invErr;
+      }
       setTeams(data.teams || []);
       setLocations(data.venues || []);
       const validated = (data.rows || []).map((r) => validateParsedRow(r, { teams: data.teams, locations: data.venues, tournament: t }));
