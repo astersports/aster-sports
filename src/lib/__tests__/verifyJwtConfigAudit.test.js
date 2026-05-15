@@ -52,7 +52,10 @@ const FORBIDDEN_DENO_ENV_SECRET = /Deno\.env\.get\(["'][A-Z_]+_SECRET["']\)/;
 // parse-tournament-schedule (wave 5 PR 2) reads anthropic_api_key from
 // app_secrets for the DOWNSTREAM Anthropic API call (not inbound auth);
 // the function itself is JWT-verified via supabase.auth.getUser().
-const EXCLUDE_FUNCTIONS = new Set(['send-tournament-message', 'parse-tournament-schedule']);
+// suggest-briefing-closer (wave 5 PR 3b) — same pattern as
+// parse-tournament-schedule: reads anthropic_api_key from app_secrets
+// for the downstream LLM call, JWT-verified inbound.
+const EXCLUDE_FUNCTIONS = new Set(['send-tournament-message', 'parse-tournament-schedule', 'suggest-briefing-closer']);
 
 function detectsSharedSecretAuth(source) {
   return SHARED_SECRET_PATTERNS.some((p) => p.test(source));
