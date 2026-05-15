@@ -34,6 +34,20 @@ import statsNarrative from './renderers/statsNarrative';
 import signoff from './renderers/signoff';
 import rsvpRequest from './renderers/rsvpRequest';
 import callupResponse from './renderers/callupResponse';
+// Wave 5 (cutover wave PR 1) — new sections for tournament_prelim alignment
+// with Frank's hand-composed briefings. Per docs/CUTOVER_WAVE_GAP_AUDIT.md,
+// the tournament_prelim resolver previously emitted an orphaned
+// `team_schedule_table` section with no registered renderer (silent empty
+// render). The new sections below replace that path: day_header groups
+// game_card rows by day; rsvp_callout / venue_list / logistics_line /
+// tagline_footer / brand_footer / bracket_callout match Frank's pattern.
+import dayHeader from './renderers/dayHeader';
+import rsvpCallout from './renderers/rsvpCallout';
+import venueList from './renderers/venueList';
+import logisticsLine from './renderers/logisticsLine';
+import taglineFooter from './renderers/taglineFooter';
+import brandFooter from './renderers/brandFooter';
+import bracketCallout from './renderers/bracketCallout';
 
 const SECTION_RENDERERS = {
   header: renderHeader,
@@ -56,6 +70,13 @@ const SECTION_RENDERERS = {
   schedule_change_diff: scheduleChangeDiff,
   rsvp_request: rsvpRequest,
   callup_response: callupResponse,
+  day_header: dayHeader,
+  rsvp_callout: rsvpCallout,
+  venue_list: venueList,
+  logistics_line: logisticsLine,
+  tagline_footer: taglineFooter,
+  brand_footer: brandFooter,
+  bracket_callout: bracketCallout,
 };
 
 // Wave 4.1d-5: legacy `tournament_preliminary` registry key retired.
@@ -80,11 +101,24 @@ const KIND_COMPOSERS = {
   custom_message: composeCustomMessage,
 };
 
+// Wave 5 PR 1 — orphan-kind guard. Prior behavior: unknown section
+// kinds silently rendered as empty strings, which masked the
+// tournament_prelim → team_schedule_table broken wire for months.
+// New: warn in non-prod when a section's kind has no registered
+// renderer. Tests + prod stay silent (no console noise); dev surfaces
+// the broken wire immediately.
+function warnUnknownKind(kind) {
+  if (kind && typeof console !== 'undefined' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+    console.warn(`[engine/composer] No registered renderer for section kind "${kind}". Section will render as empty.`);
+  }
+}
+
 export function renderSections(sections = []) {
   return (sections || [])
     .map((section) => {
       const fn = SECTION_RENDERERS[section?.kind];
-      return fn ? (fn(section)?.html || '') : '';
+      if (!fn) { warnUnknownKind(section?.kind); return ''; }
+      return fn(section)?.html || '';
     })
     .join('');
 }
@@ -95,7 +129,8 @@ export function renderSectionsPlainText(sections = []) {
   return (sections || [])
     .map((section) => {
       const fn = SECTION_RENDERERS[section?.kind];
-      return fn ? (fn(section)?.plainText || '') : '';
+      if (!fn) return '';
+      return fn(section)?.plainText || '';
     })
     .filter(Boolean)
     .join('\n\n');
