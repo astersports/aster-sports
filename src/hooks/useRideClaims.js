@@ -32,7 +32,7 @@ export function useRideClaims(eventId) {
   }, [eventId]);
 
   useEffect(() => {
-    fetchClaims();
+    (async () => { await fetchClaims(); })();
   }, [fetchClaims]);
 
   // Realtime: any change to claims for this event refetches.

@@ -35,7 +35,7 @@ export function useTournament(tournamentId) {
     }
   }, [orgId, tournamentId]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { (async () => { await fetch(); })(); }, [fetch]);
 
   return { tournament, loading, error, refetch: fetch };
 }

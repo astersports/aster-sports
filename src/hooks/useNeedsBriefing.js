@@ -44,7 +44,7 @@ export function useNeedsBriefing({ orgId } = {}) {
   }, [orgId]);
 
   useEffect(() => {
-    refetch();
+    (async () => { await refetch(); })();
     const onFocus = () => refetch();
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
