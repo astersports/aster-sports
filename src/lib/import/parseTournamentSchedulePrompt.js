@@ -21,15 +21,35 @@ Each event in the source follows a 7-line repeating pattern:
   line 6: time (H:MM AM/PM)
   line 7: court+venue (format: "<num> - <venue> - Court <n>")
 
-Section headers like "2nd grade - 8u" or "5th grade - 11u girls" tell
-you which Legacy Hoopers team the events belong to.
+CRITICAL: "Legacy Hoopers" appears in every event as either the away
+team (line 2) or home team (line 4) — that's our organization. The
+\`team\` field in your output is NOT the literal string "Legacy
+Hoopers". It's the SPECIFIC TEAM NAME from the section header that
+groups the events.
+
+Section headers look like:
+  "2nd grade - 8u"           → output team = "8U Boys"
+  "3rd grade - 9u boys"      → output team = "9U Boys"
+  "4th grade - 10u black"    → output team = "10U Black"
+  "4th grade - 10u blue"     → output team = "10U Blue"
+  "5th grade - 11u girls"    → output team = "11U Girls"
+
+The exact team names to use are in the "Known Legacy Hoopers teams"
+list below. Match the section header to the closest team in that
+list. If a section has 5 events under it, every one of those 5
+events has the same \`team\` value (the team from that section's
+header).
 
 Pool Standings sections must be IGNORED — they are not events.
 
 For each event, output: { team, date, time, opponent, venue, court,
-home_away }. team = the Legacy Hoopers team name from the section
-header. opponent = the non-Legacy team. home_away = "home" if Legacy
-appears as home (line 4), "away" if Legacy appears as away (line 2).
+home_away }.
+  - team        = team name from the SECTION HEADER, matching
+                  one of the known Legacy Hoopers teams.
+  - opponent    = the non-Legacy team from the event lines.
+  - home_away   = "home" if "Legacy Hoopers" appears as the home
+                  team (line 4 of the 7-line block), "away" if
+                  it appears as the away team (line 2).
 
 Return ONLY a JSON array of event objects. No prose, no markdown
 fences. If the input has no parseable events, return [].
