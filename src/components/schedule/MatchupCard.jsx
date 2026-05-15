@@ -58,14 +58,19 @@ export default function MatchupCard({ event, gameResult }) {
             </span>
           </div>
         ) : (
-          <div style={{ width: 72, flexShrink: 0, textAlign: 'center' }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase' }}>
-              {isPast ? '—' : isAway ? '@' : 'VS'}
-            </div>
+          // Wave 5 follow-up — inline VS + time on one row (was stacked).
+          // Stacked layout made the middle column the tallest element on
+          // every card, ratcheting card height unevenly when the opponent
+          // text wrapped. Single line reads naturally as "vs 5:00 PM"
+          // and keeps card height constant when opponent fits on one line.
+          <div style={{ width: 96, flexShrink: 0, display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase' }}>
+              {isPast ? '—' : isAway ? '@' : 'vs'}
+            </span>
             {!isPast && (
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-accent)' }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--em-accent)', whiteSpace: 'nowrap' }}>
                 {formatTime(event.start_at)}
-              </div>
+              </span>
             )}
           </div>
         )}
