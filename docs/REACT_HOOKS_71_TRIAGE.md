@@ -52,16 +52,36 @@ Both predate the 7.1.1 bump — added preemptively or migrated from another lint
 
 **PR scope:** could be 1 PR (all 5 share the pattern + likely fix). If switching to `use()` or TanStack Query is the move, that's a Wave-scale refactor — defer until that decision is made.
 
-### Group B — "cache-then-fetch" pattern (2 sites)
+### Group B — "cache-then-fetch" pattern (2 sites) — MERGED INTO GROUP A
 
-`if (cached) { setX(cached); setLoading(false); } fetch();` — synchronous setState from cache hit, then async fetch.
+**Structural-similarity correction (2026-05-15, in flight during Group B PR).**
+The original triage doc claimed Group B's fix was mechanical: "Move cache
+read into useState initializer; fetch in effect." When CC implemented this
+on `useLocations.js` and `useTournaments.js`, the rule still fired on the
+remaining `useEffect(() => { fetch(); }, [fetch]);` line. Reason: `fetch`
+internally calls `setLoading(true)` synchronously before its first await,
+so any effect that invokes `fetch()` is reachable-setState from the effect
+body and trips the rule.
 
-| File:line | Likely fix |
+Group B is structurally the same as Group A: both are "effect calls a
+fetcher that internally setStates." The lazy-initializer cleanup is a
+real UX improvement (cached data renders on first paint vs first
+effect-tick) but does NOT drain the lint warning by itself.
+
+**Decision**: Group B's 2 sites fold into Group A's unified doctrine PR
+(now 7 sites: 5 original + 2 from Group B). All 7 get the same treatment:
+intentional `eslint-disable-next-line react-hooks/set-state-in-effect`
+with a per-site reason comment + a CLAUDE.md doctrine note. Real refactor
+to TanStack Query / React 19 `use()` parks as a Wave 1 follow-up.
+
+**Lazy-initializer cleanup**: shipped separately as a perf PR (NOT a
+lint drainage). See PR with title `perf(hooks): lazy-initialize cache
+hit in useLocations + useTournaments`.
+
+| File:line | Disposition |
 |---|---|
-| `src/hooks/useLocations.js:58` | Move cache read into useState initializer (lazy initial state); fetch in effect |
-| `src/hooks/useTournaments.js:86` | Same |
-
-**PR scope:** 1 PR for both.
+| `src/hooks/useLocations.js:58` (now :56 post lazy-init) | → Group A unified doctrine PR (disable comment) |
+| `src/hooks/useTournaments.js:86` (now :84 post lazy-init) | → Group A unified doctrine PR (disable comment) |
 
 ### Group C — distinct one-offs in set-state-in-effect (3 sites)
 
