@@ -34,13 +34,7 @@ import statsNarrative from './renderers/statsNarrative';
 import signoff from './renderers/signoff';
 import rsvpRequest from './renderers/rsvpRequest';
 import callupResponse from './renderers/callupResponse';
-// Wave 5 (cutover wave PR 1) — new sections for tournament_prelim alignment
-// with Frank's hand-composed briefings. Per docs/CUTOVER_WAVE_GAP_AUDIT.md,
-// the tournament_prelim resolver previously emitted an orphaned
-// `team_schedule_table` section with no registered renderer (silent empty
-// render). The new sections below replace that path: day_header groups
-// game_card rows by day; rsvp_callout / venue_list / logistics_line /
-// tagline_footer / brand_footer / bracket_callout match Frank's pattern.
+// Wave 5 PR 1+3a — tournament_prelim alignment sections (audit §5.x).
 import dayHeader from './renderers/dayHeader';
 import rsvpCallout from './renderers/rsvpCallout';
 import venueList from './renderers/venueList';
@@ -49,6 +43,13 @@ import logisticsLine from './renderers/logisticsLine';
 import taglineFooter from './renderers/taglineFooter';
 import brandFooter from './renderers/brandFooter';
 import bracketCallout from './renderers/bracketCallout';
+// Wave 5 PR 4b — coach_roundup section renderers (4): cobalt banner,
+// per-team colored pill, amber conflict callout, per-event row with
+// left-edge color stripe. Make multi-team docs visually scannable.
+import coachHeader from './renderers/coachHeader';
+import teamColorPill from './renderers/teamColorPill';
+import conflictCallout from './renderers/conflictCallout';
+import colorStripedRow from './renderers/colorStripedRow';
 
 const SECTION_RENDERERS = {
   header: renderHeader,
@@ -79,23 +80,16 @@ const SECTION_RENDERERS = {
   tagline_footer: taglineFooter,
   brand_footer: brandFooter,
   bracket_callout: bracketCallout,
+  coach_header: coachHeader,
+  team_color_pill: teamColorPill,
+  conflict_callout: conflictCallout,
+  color_striped_row: colorStripedRow,
 };
 
-// Wave 4.1d-5: legacy `tournament_preliminary` registry key retired.
-// Wave 4.2-A-3: legacy `tournamentPreliminary.js` renderer file
-// deleted (parity gaps folded into the new resolveTournamentPrelim
-// pipeline at src/lib/engine/resolvers/tournamentPrelim.js).
-// Wave 4.2-A-8a: legacy compose() entries removed for the 4 kinds
-// that now dispatch via RESOLVER_REGISTRY through composerSubmit
-// (game_recap, tournament_prelim, tournament_recap, schedule_change).
-// Wave 4.2-A-8b-b: rsvp_nudge entry removed (rsvpNudgeSend now uses
-// RESOLVER_REGISTRY.rsvp_nudge.compose per-slice with substituteRsvpTokens
-// after per-kid mint_rsvp_token RPCs). Legacy renderers/rsvpNudge.js
-// renderer file deleted.
-// Remaining entries: weekly_digest (defensive; production goes through
-// digestSend), academy_callup_notice (legacy preview only — sends are
-// blocked pending wave 4.3 callup token mint), announcement +
-// custom_message (free-form, legacy path).
+// KIND_COMPOSERS — legacy compose() path for kinds NOT in
+// RESOLVER_REGISTRY (announcement, custom_message). weekly_digest +
+// academy_callup_notice retained defensively; their production sends
+// go through dedicated paths (digestSend, academyCallupSend).
 const KIND_COMPOSERS = {
   academy_callup_notice: composeAcademyCallupNotice,
   weekly_digest: composeWeeklyDigest,

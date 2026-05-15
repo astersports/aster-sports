@@ -1,63 +1,91 @@
-// Wave 5 PR 4a (cutover wave) — `coach_roundup` resolver + composer
-// SKELETON. Per docs/CUTOVER_WAVE_GAP_AUDIT.md §5.3: a coach who
-// runs multiple teams gets one weekly briefing showing all their
-// teams' upcoming games on one canvas (multi-team header,
-// per-team-color game rows, conflict callouts when two teams have
-// overlapping start times).
+// Wave 5 PR 4b — coach_roundup resolver + composer. Real multi-team
+// aggregation: walks team_staff to find every team the coach helms,
+// fetches events in the date range, groups by team, detects cross-
+// team conflicts, and composes a single briefing document.
 //
-// 4a ships the discoverability wire: schema migration (#wave5_pr4a)
-// extends the three kind_check constraints, RESOLVER_REGISTRY gets
-// an entry, kindMetadata lists it in the picker. Resolver here
-// returns a placeholder body so the wizard end-to-end smoke passes.
-// 4b replaces this with the real multi-team aggregation. 4c lands
-// the rich Body component (coach picker + date range).
+// 4a shipped the schema + skeleton. 4b replaces the skeleton with
+// the real aggregation. 4c lands the UI body component (coach
+// picker + date range).
 //
-// Two-stage contract (locked across wave 4.2-A):
-//   resolveCoachRoundup({ coachUserId, dateRange }, options)
+// Two-stage contract:
+//   resolveCoachRoundup({ coachUserId, dateRange }, { supabase })
 //     -> { context, slices }
 //   composeCoachRoundup(context, slice, overrides)
 //     -> { subject, content_sections }
+
+import {
+  buildBrandFooter, buildCoachHeaderSection, buildConflictCalloutSection,
+  buildSignoffSection, buildTeamSections,
+} from './coachRoundupSections';
+import { detectConflicts, groupEventsByTeam } from './coachRoundupHelpers';
 
 export async function resolveCoachRoundup({ coachUserId, dateRange }, { supabase } = {}) {
   if (!coachUserId) throw new Error('Missing coachUserId');
   if (!supabase) throw new Error('Missing supabase client (pass via options.supabase)');
 
-  // 4a stub: minimal context fetch so the resolver pipeline doesn't
-  // throw on a missing coach. 4b will walk team_staff → teams →
-  // events for the date range and aggregate.
   const { data: coach, error: coachErr } = await supabase.from('staff_profiles')
     .select('user_id, display_name, org_id, phone, title').eq('user_id', coachUserId).maybeSingle();
   if (coachErr) throw coachErr;
   if (!coach) throw new Error(`Coach ${coachUserId} not found in staff_profiles`);
 
+  const { data: staffRows, error: staffErr } = await supabase.from('team_staff')
+    .select('team_id, role, teams ( id, name, team_color, sort_order, org_id )').eq('user_id', coachUserId);
+  if (staffErr) throw staffErr;
+  const teams = (staffRows || []).filter((r) => r.teams).map((r) => ({
+    team_id: r.team_id, role: r.role,
+    team_name: r.teams.name, team_color: r.teams.team_color || '#4a8fd4',
+    sort_order: r.teams.sort_order ?? 0,
+  }));
+
+  const teamIds = teams.map((t) => t.team_id);
+  let events = [];
+  if (teamIds.length && dateRange?.start && dateRange?.end) {
+    const { data: evRows, error: evErr } = await supabase.from('events')
+      .select('id, team_id, start_at, end_at, opponent, location, sub_location, title')
+      .in('team_id', teamIds)
+      .gte('start_at', dateRange.start)
+      .lte('start_at', `${dateRange.end}T23:59:59Z`);
+    if (evErr) throw evErr;
+    events = evRows || [];
+  }
+
+  const teamsWithEvents = groupEventsByTeam(teams, events);
+  const conflicts = detectConflicts(teamsWithEvents);
+
+  let coaches = [];
+  if (coach.org_id) {
+    const { data: cRows, error: cErr } = await supabase.from('staff_profiles')
+      .select('display_name, title, phone').eq('org_id', coach.org_id).not('display_name', 'is', null);
+    if (cErr) throw cErr;
+    coaches = cRows || [];
+  }
+
+  let orgName = 'Legacy Hoopers';
+  if (coach.org_id) {
+    const { data: orgRow, error: orgErr } = await supabase.from('organizations')
+      .select('name').eq('id', coach.org_id).maybeSingle();
+    if (orgErr) throw orgErr;
+    if (orgRow?.name) orgName = orgRow.name;
+  }
+
   return {
-    context: { coach, dateRange: dateRange || null, teams: [], events_by_team: {} },
-    // Single slice: the coach themselves is the audience anchor. 4b
-    // may introduce per-team slices if the briefing fans out per-team
-    // (TBD design call); for now the briefing renders as one document.
+    context: { coach, teamsWithEvents, conflicts, dateRange, coaches, orgName },
     slices: [{ recipient_user_id: coach.user_id, coach_name: coach.display_name }],
   };
 }
 
 export function composeCoachRoundup(context, slice, overrides = {}) {
   if (!context || !slice) throw new Error('Missing context or slice');
-  // 4a stub: returns a single placeholder section so an admin who
-  // selects this kind in the picker sees a coherent (if minimal)
-  // preview. Real section emission lands in 4b once the section
-  // renderers ship.
-  void overrides;
+  const { coach, teamsWithEvents, conflicts, dateRange, coaches, orgName } = context;
+  const sections = [buildCoachHeaderSection(coach, teamsWithEvents, dateRange)];
+  const conflictSection = buildConflictCalloutSection(conflicts);
+  if (conflictSection) sections.push(conflictSection);
+  sections.push(...buildTeamSections(teamsWithEvents));
+  const signoff = buildSignoffSection(overrides, coaches);
+  if (signoff) sections.push(signoff);
+  sections.push(buildBrandFooter(orgName));
   return {
-    subject: `Coach Roundup — ${slice.coach_name || 'Coach'}`,
-    content_sections: [
-      {
-        kind: 'ops_notes',
-        title: 'COACH ROUNDUP (PREVIEW)',
-        items: [
-          `Coach: ${slice.coach_name || 'TBD'}`,
-          'Multi-team aggregation lands in PR 4b.',
-          'Per-team color rows + conflict callouts ship in PR 4b.',
-        ],
-      },
-    ],
+    subject: `Coach roundup — ${slice.coach_name || coach?.display_name || 'Coach'}`,
+    content_sections: sections,
   };
 }
