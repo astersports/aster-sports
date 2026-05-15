@@ -53,10 +53,14 @@ export function resolveLocationId(venueString, locations) {
 
 function timeWithinSanity(iso) {
   if (!iso) return false;
+  // ISO timestamp from normalizeTimeToISO is already in ET (e.g.
+  // "2026-05-17T10:00:00-04:00") — the hour portion IS the ET hour.
+  // Earlier version subtracted 4 (treating hour as UTC) which flagged
+  // legit 10am ET games as "outside 7am-10pm." Fixed: read hour as ET
+  // directly.
   const m = /T(\d{2}):/.exec(iso);
   if (!m) return false;
-  const utcHour = parseInt(m[1], 10);
-  const etHour = ((utcHour - 4) % 24 + 24) % 24;
+  const etHour = parseInt(m[1], 10);
   return etHour >= SANITY_HOUR_MIN && etHour <= SANITY_HOUR_MAX;
 }
 

@@ -34,10 +34,13 @@ export default function PreviewTable({ rows, validation, dedup, canCommit, onUpd
   const summary = useMemo(() => `${validation.valid} valid · ${validation.warning} warnings · ${validation.error} errors  |  ${dedup.new} new · ${dedup.updated} updated · ${dedup.duplicate} duplicate`, [validation, dedup]);
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 80 }}>
       <div style={{ padding: 12, backgroundColor: 'var(--em-bg-card)', borderRadius: 8, marginBottom: 16, fontSize: 14, color: 'var(--em-text-primary)' }}>{summary}</div>
 
-      <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 6px' }}>
+      {/* Horizontal scroll wrapper — table has 9 columns, doesn't fit
+          on mobile portrait viewports. */}
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <table style={{ minWidth: 920, width: '100%', borderCollapse: 'separate', borderSpacing: '0 6px' }}>
         <thead>
           <tr style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' }}>
             <th style={{ padding: 6, textAlign: 'left', width: 32 }}>•</th>
@@ -75,8 +78,11 @@ export default function PreviewTable({ rows, validation, dedup, canCommit, onUpd
           ))}
         </tbody>
       </table>
+      </div>
 
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
+      {/* Sticky-bottom commit footer — keeps the action visible on
+          mobile portrait where the table is taller than the viewport. */}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '12px 16px', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)', boxShadow: '0 -2px 6px rgba(0,0,0,0.08)', zIndex: 10, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
         <button type="button" onClick={onCommit} disabled={!canCommit || committing} className="sf-press"
           style={{ minHeight: 44, padding: '0 24px', borderRadius: 10, border: 'none', backgroundColor: canCommit ? 'var(--em-accent)' : 'var(--em-bg-tertiary)', color: canCommit ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)', fontSize: 15, fontWeight: 600, cursor: canCommit ? 'pointer' : 'not-allowed' }}>
           {committing ? 'Committing…' : `Commit ${dedup.new + dedup.updated} events`}
