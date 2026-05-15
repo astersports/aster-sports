@@ -44,6 +44,7 @@ import callupResponse from './renderers/callupResponse';
 import dayHeader from './renderers/dayHeader';
 import rsvpCallout from './renderers/rsvpCallout';
 import venueList from './renderers/venueList';
+import venueNotes from './renderers/venueNotes';
 import logisticsLine from './renderers/logisticsLine';
 import taglineFooter from './renderers/taglineFooter';
 import brandFooter from './renderers/brandFooter';
@@ -73,6 +74,7 @@ const SECTION_RENDERERS = {
   day_header: dayHeader,
   rsvp_callout: rsvpCallout,
   venue_list: venueList,
+  venue_notes: venueNotes,
   logistics_line: logisticsLine,
   tagline_footer: taglineFooter,
   brand_footer: brandFooter,

@@ -46,6 +46,25 @@ export function buildVenueListSection(events, locations) {
   return { kind: 'venue_list', venues, single_with_address: venues.length === 1 };
 }
 
+// Wave 5 PR 3a — venue_notes section. Emits per-venue prose
+// (notes / parking_notes / entry_instructions from the locations
+// row) so parents see local tips before they arrive. Returns null
+// when every venue has all three columns empty — keeps the
+// briefing tight when there's nothing to surface.
+export function buildVenueNotesSection(events, locations) {
+  const seen = new Set();
+  const venuesWithNotes = [];
+  for (const ev of events || []) {
+    const loc = locations[ev.location_id];
+    if (!loc || seen.has(loc.id)) continue;
+    seen.add(loc.id);
+    if (!loc.notes && !loc.parking_notes && !loc.entry_instructions) continue;
+    venuesWithNotes.push({ name: loc.name, notes: loc.notes || null, parking_notes: loc.parking_notes || null, entry_instructions: loc.entry_instructions || null });
+  }
+  if (!venuesWithNotes.length) return null;
+  return { kind: 'venue_notes', venues: venuesWithNotes };
+}
+
 export function buildScheduleSections(events, locations) {
   if (!events || !events.length) return [];
   const sections = [];
