@@ -35,6 +35,7 @@
 // state.audience_filter / state.body / state.signoff_message).
 
 import { composeAcademyCallupNotice, resolveAcademyCallupNotice } from './academyCallupNotice';
+import { composeCoachRoundup, resolveCoachRoundup } from './coachRoundup';
 import { composeGameRecap, resolveGameRecap } from './gameRecap';
 import { composeRsvpNudge, resolveRsvpNudge } from './rsvpNudge';
 import { composeScheduleChange, resolveScheduleChange } from './scheduleChange';
@@ -111,6 +112,17 @@ export const RESOLVER_REGISTRY = {
     anchorFromState: (state) => ({ eventId: state.anchor_id, playerId: state.audience_filter?.player_ids?.[0], pilotOnly: state.pilot_only }),
     overridesFromState: bodyOverrides,
     sendPath: 'academyCallupSend',
+  },
+  // Wave 5 PR 4a — coach_roundup skeleton. State carries the chosen
+  // coach as state.audience_filter.coach_user_id; the date range
+  // lives in state.body.date_range. 4b expands the resolver to walk
+  // team_staff → events; 4c adds the UI body.
+  coach_roundup: {
+    resolve: resolveCoachRoundup,
+    compose: composeCoachRoundup,
+    anchorFromState: (state) => ({ coachUserId: state.audience_filter?.coach_user_id, dateRange: state.body?.date_range }),
+    overridesFromState: bodyOverrides,
+    sendPath: 'composerSubmit',
   },
 };
 

@@ -13,6 +13,7 @@
 export const KIND_ORDER = [
   'weekly_digest', 'schedule_change', 'game_recap',
   'tournament_prelim', 'tournament_recap',
+  'coach_roundup',
   'announcement', 'rsvp_nudge', 'academy_callup_notice', 'custom_message',
 ];
 
@@ -59,6 +60,19 @@ export const KIND_METADATA = {
     defaultAudienceType: 'tournament_attendees',
     bodyModule: 'TournamentRecapBody',
     disabled: false,
+  },
+  // Wave 5 PR 4a — coach_roundup. anchorKind 'coach' is conceptual
+  // (the coach user_id drives the resolver), not stored as a uuid in
+  // comms_messages.anchor_id; the row's audience_filter holds the
+  // coach_user_id. 4c will lock the picker to a real coach UI.
+  coach_roundup: {
+    icon: 'Users', label: 'Coach roundup',
+    description: 'One weekly briefing for a coach across all their teams (multi-team, conflict-aware)',
+    defaultAnchorKind: null, anchorKinds: [],
+    defaultAudienceType: 'coach_self',
+    bodyModule: 'CoachRoundupBody',
+    disabled: false,
+    wizardSupported: false,
   },
   announcement: {
     icon: 'Megaphone', label: 'Announcement',

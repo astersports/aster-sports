@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { bodyModuleFor, KIND_METADATA, KIND_ORDER, sortKinds } from '../kindMetadata';
 
 describe('KIND_METADATA', () => {
-  it('all 9 kinds present (academy_callup_notice surfaced wave 4.1d-2)', () => {
-    expect(KIND_ORDER.length).toBe(9);
+  it('all 10 kinds present (coach_roundup added wave 5 PR 4a)', () => {
+    expect(KIND_ORDER.length).toBe(10);
     expect(KIND_ORDER.every((k) => KIND_METADATA[k])).toBe(true);
     expect(KIND_ORDER).toContain('academy_callup_notice');
+    expect(KIND_ORDER).toContain('coach_roundup');
   });
 
   it('every entry has icon + label + description + bodyModule', () => {
