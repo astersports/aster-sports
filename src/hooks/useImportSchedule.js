@@ -28,8 +28,9 @@ export function useImportSchedule(tournamentId) {
       const { data: t } = await supabase.from('tournaments').select('id, name, start_date, end_date').eq('id', tournamentId).maybeSingle();
       if (!t) throw new Error('Tournament not found');
       setTournament(t);
-      const { data: existing = [] } = await supabase.from('events').select('id, team_id, tournament_id, start_at, opponent, location_id, sub_location, is_bonus_game').eq('tournament_id', tournamentId);
-      setExistingEvents(existing);
+      const { data: existing, error: exErr } = await supabase.from('events').select('id, team_id, tournament_id, start_at, opponent, location_id, sub_location, is_bonus_game').eq('tournament_id', tournamentId);
+      if (exErr) throw exErr;
+      setExistingEvents(existing || []);
       const { data, error: invErr } = await supabase.functions.invoke('parse-tournament-schedule', { body: { paste, tournament_id: tournamentId, org_id: orgId } });
       // Edge function returns { error: '...' } in the JSON body on
       // 4xx/5xx, but supabase.functions.invoke surfaces only a generic
@@ -49,7 +50,7 @@ export function useImportSchedule(tournamentId) {
       setTeams(data.teams || []);
       setLocations(data.venues || []);
       const validated = (data.rows || []).map((r) => validateParsedRow(r, { teams: data.teams, locations: data.venues, tournament: t }));
-      const withDedup = validated.map((r) => classifyRowAgainstExisting({ ...r, tournament_id: tournamentId }, existing));
+      const withDedup = validated.map((r) => classifyRowAgainstExisting({ ...r, tournament_id: tournamentId }, existing || []));
       setRows(withDedup);
       setState('preview');
     } catch (e) { setError(e); setState('error'); }

@@ -123,7 +123,8 @@ export async function handleRsvpLow24h(sb: SupabaseClient, trigger: Trigger, now
       out.push({ trigger_id: trigger.id, org_id: trigger.org_id, kind: "rsvp_nudge", anchor_id: e.id, skipped: "no_active_roster" });
       continue;
     }
-    const { data: respRows = [] } = await sb.from("event_rsvps").select("player_id").eq("event_id", e.id);
+    const { data: respRows, error: respErr } = await sb.from("event_rsvps").select("player_id").eq("event_id", e.id);
+    if (respErr) throw respErr;
     const responded = new Set((respRows || []).map((r: any) => r.player_id)).size;
     const coverage = responded / total;
     if (responded > 0 && coverage >= threshold) {

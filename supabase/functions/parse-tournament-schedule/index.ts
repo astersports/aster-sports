@@ -93,24 +93,33 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Authz: caller must be admin in the org
-  const { data: roles } = await sb
+  // Authz: caller must be admin in the org. Anti-pattern #36 — check
+  // error explicitly; a RLS denial or column mismatch on user_roles
+  // would otherwise silently return [] and surface as "Not authorized"
+  // when the real failure is upstream.
+  const { data: roles, error: rolesErr } = await sb
     .from("user_roles").select("role")
     .eq("user_id", user.id).eq("organization_id", body.org_id).in("role", ["admin"]);
+  if (rolesErr) return json({ error: `Authz check failed: ${rolesErr.message}` }, 500);
   if (!roles || roles.length === 0) return json({ error: "Not authorized" }, 403);
 
   try {
     const apiKey = await getAppSecret(sb, "anthropic_api_key");
-    // teams has no archive concept; locations does. Filtering teams
-    // by archived_at IS NULL would error (column doesn't exist) and
-    // the destructured default `[]` would silently swallow it — which
-    // meant the LLM was getting "(none)" for the team list and could
-    // never map section headers. Confirmed via schema introspection
-    // May 15, 2026 after three failed smoke tests.
-    const [{ data: teams = [] }, { data: venues = [] }] = await Promise.all([
+    // teams has no archive concept; locations does. PR #179 fixed
+    // the bogus archived_at filter on the teams query. This commit
+    // (anti-pattern #36) fixes the larger failure mode that masked
+    // it for three smoke tests: the destructured `data = []` default
+    // would silently swallow ANY query error (column missing, RLS,
+    // transient DB), leaving callers with empty data and no signal.
+    // Always check error before using data.
+    const [teamsRes, venuesRes] = await Promise.all([
       sb.from("teams").select("id, name").eq("org_id", body.org_id),
       sb.from("locations").select("id, name").eq("org_id", body.org_id).is("archived_at", null),
     ]);
+    if (teamsRes.error) throw teamsRes.error;
+    if (venuesRes.error) throw venuesRes.error;
+    const teams = teamsRes.data || [];
+    const venues = venuesRes.data || [];
     const prompt = buildPrompt(body.paste, { teams, venues });
     const rawOutput = await callClaude(apiKey, prompt);
     const rows = parseClaudeOutput(rawOutput);
