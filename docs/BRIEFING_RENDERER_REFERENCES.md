@@ -200,7 +200,11 @@ recap stat strip.)
 `Arrive 15 minutes before each tip | Jersey: black side out`
 
 ### Tagline
-`27 days of work. Time to show it.`
+`Tournament 3. These boys are ready.`
+
+(Per-team customized — NOT shared template. 10U Black + 11U Girls used
+"27 days of work. Time to show it." this weekend; 8U Boys used the line
+above. Tagline is a per-briefing free-text override on every send.)
 
 ### Voicey prose closer (free-text variant)
 ```
@@ -209,16 +213,272 @@ gym. 669 Main St, Ansonia. You are welcome.
 
 Sunday is an 8 AM tip in Shelton, then a potential championship back in Ansonia
 at 5 PM. That is an 8-hour window. You could technically fly to Florida and
-back. [continues...]
+back. We recommend lunch instead.
 ```
+
+---
+
+## Entry: VIP Parent Guide — Edina & Santos Dodaro — May 16-17
+
+A separate briefing kind. Parent-scoped, multi-kid, multi-team, **multi-org**
+in this case (Sofia plays for Legacy Hoopers 11U Girls; Mario plays "Boys
+Var" — a team not in our org's roster). Aggregates all of a single family's
+games across the weekend into one chronological calendar.
+
+This is the canonical render for `multi_team_notice` (CLAUDE.md §13 canonical
+9 kinds). It does NOT use the universal header band — it has its own
+parent-name display + per-kid pills.
+
+**Subject** (likely): `VIP Parent Guide: Edina & Santos Dodaro — Tournament Weekend`
+**From**: Legacy Hoopers
+**Internal label** (Frank's title): `dodaro family rumble`
+
+### Header (different from the standard universal header)
+- Overline (gold/yellow): `VIP PARENT GUIDE`
+- Display (large, dark text on light bg): parent names
+  `EDINA & SANTOS DODARO`
+- Subline (regular weight): `ZG Rumble for the Ring | May 16-17 | CT`
+- Two color-coded kid pill badges (rounded, ~36px height):
+  - Blue (#4a8fd4 / accent): `SOFIA | 11U GIRLS`
+  - Red (#8B1A1A / crimson): `MARIO | BOYS VAR`
+- Pill colors map to the kid's team color in the unified schedule below.
+
+### Quick-link nav row (centered, accent links, pipe-separated)
+```
+Sofia Standings | Mario Standings | Insports | House of Sports
+```
+Format: `<KidName> Standings` for each kid + venue jump-links per distinct
+venue across all the kids' games.
+
+### Unified chronological schedule (interleaved across kids)
+
+Day header band (uppercase letter-spaced): `SATURDAY, MAY 16`
+
+Per-game row format:
+- **Left column**: time (large bold) + `AM`/`PM` (small uppercase below)
+- **Color stripe** down the left edge (~6px wide): kid's team color
+  (matches pill badge color in header)
+- **Top row**: kid badge pill (small) + optional inline status badge
+  (e.g., gray `BONUS`)
+- **Game line**: opponent (e.g., `vs CT Northstars - Tracy`) — note this
+  uses lowercase `vs` (not the all-caps `VS` of the team-scoped briefings)
+- **Sub-line**: venue + ` | ` + court (e.g., `Insports | Court 3`)
+
+### Saturday, May 16 (verbatim from screenshot)
+| Time     | Kid    | Opponent                        | Venue / Court             |
+|----------|--------|---------------------------------|---------------------------|
+| 11:00 AM | SOFIA  | vs CT Northstars - Tracy        | Insports \| Court 3       |
+|  2:00 PM | SOFIA  | vs PHD - Carothers              | Insports \| Court 1       |
+|  7:45 PM | MARIO  | vs Team Russell                 | House of Sports \| Court 4 |
+|  8:45 PM | MARIO  | vs Stepback Wolves - Tommy      | House of Sports \| Court 4 |
+
+### Sunday, May 17 (partial — visible in screenshot through 3:25 PM)
+| Time     | Kid    | Opponent                        | Venue / Court             |
+|----------|--------|---------------------------------|---------------------------|
+|  8:00 AM | SOFIA  | vs PHD - McCurdy                | Insports \| Court 4       |
+| 10:00 AM | SOFIA  | vs Connecticut Elite - JC (BONUS) | Insports \| Court 4     |
+|  3:25 PM | MARIO  | (cut off in screenshot)         | (cut off)                 |
+
+(Sunday continues below the visible cutoff. When Frank shares the
+remainder — including any if-advance championship rows + tagline + closer —
+fill the rest in.)
+
+### Cross-tournament reach
+Sofia's games are all at Insports (CT). Mario's games are all at House of
+Sports (Westchester County, NY) — a venue used by ZG NY Metro Showdown
+back in April. So this single VIP guide spans:
+- Two distinct teams
+- Two distinct venues in two states
+- Possibly two distinct tournaments (or one circuit running concurrent
+  brackets across regions)
+
+The per-kid `Standings` link points to whichever bracket portal that
+kid's team is registered in.
+
+---
+
+## Atomic renderers introduced by the VIP Parent Guide
+
+Adds 4 renderers beyond the 12 already cataloged for team-scoped briefings:
+
+| # | Renderer | Sections it produces |
+|---|---|---|
+| 13 | VIP header (parent-name display) | Different header band — gold overline, dark parent names, light bg, kid pills |
+| 14 | Kid color pill | Color-coded badge (kid's team color) reused inline + in header |
+| 15 | Quick-link nav row | Per-kid standings + per-venue jump-links |
+| 16 | Color-striped game row | Per-game card with left edge color stripe matching kid color, kid pill badge, lowercase `vs <Opponent>`, venue/court sub-line |
+
+Renderer 16 supersedes renderer 3/4 (game card + day-grouped) for VIP
+guides — the two-column "Game N / time" format becomes the single-column
+"time + AM/PM" format because game numbering doesn't apply across teams.
+
+---
+
+## Entry: Coach Roundup — Coach Kenny — May 16-20
+
+A third briefing kind. Coach-scoped, multi-team (3 teams under one coach),
+multi-event-type (mixes Rumble for the Ring tournament + WPCYO league play),
+extended date range (Sat May 16 → Wed May 20, beyond the tournament weekend).
+Sent TO the coach as a personal weekend roundup so they can see all their
+games at a glance and plan around conflicts.
+
+This is the canonical render for a **coach_roundup** kind (NOT in the
+CLAUDE.md §13 canonical 9 — surfaces a gap to confirm the kind name with
+Frank). Pattern is the same shape as VIP Parent Guide but with coach-name
+header + per-team pills (instead of parent-name header + per-kid pills).
+
+**Subject** (likely): `Coach Kenny — Rumble for the Ring + League Play (May 16-20)`
+**From**: Legacy Hoopers
+**Recipient**: kenny@legacyhoopers.org (coach mailbox, not parent list)
+
+### Header (light bg, dark text — variant of VIP header pattern)
+- Overline (cobalt accent): `COACH KENNY`
+- Display (large, dark text): `RUMBLE FOR THE RING + LEAGUE PLAY`
+  (combines tournament + circuit name when both apply that week)
+- Three team pill badges (color-coded per `teams.team_color`):
+  - Dark olive/yellow: `11U GIRLS`
+  - Cobalt blue: `10U BLACK`
+  - Gray: `10U BLUE`
+
+### Quick-link nav row
+```
+ZG Standings | Insports | Shelton | IC-Tuckahoe
+```
+- First link: tournament standings portal
+- Remaining: per-distinct-venue jump links (Insports = ZG Rumble, Shelton =
+  ZG Rumble bracket, IC-Tuckahoe = WPCYO league venue)
+
+### Saturday, May 16 | Insports Center
+(Day header includes single-venue suffix when all that day's games share
+a venue. When venues differ, the suffix is omitted — same logic as the
+team-scoped briefing variant.)
+
+| Time     | Team       | Opponent                       | Court    |
+|----------|------------|--------------------------------|----------|
+| 11:00 AM | 11U GIRLS  | vs CT Northstars - Tracy       | Court 3  |
+| 12:00 PM | 10U BLACK  | vs PHD White - Rutherford      | Court 4  |
+|  1:00 PM | 10U BLACK  | vs PHD Yellow - Rutherford     | Court 4  |
+|  2:00 PM | 11U GIRLS  | vs PHD - Carothers             | Court 1  |
+
+### Sunday, May 17
+| Time     | Team       | Opponent                       | Venue / Court           |
+|----------|------------|--------------------------------|-------------------------|
+|  8:00 AM | 11U GIRLS  | vs PHD - McCurdy               | Insports \| Court 4     |
+| 10:00 AM | 11U GIRLS  | vs Connecticut Elite - JC `[BONUS]` | Insports \| Court 4 |
+| 11:00 AM | 10U BLACK  | vs Team Frenji                 | Insports \| Court 2     |
+
+#### IF ADVANCE (inline section sub-header within Sunday)
+| Time     | Team       | Game                           | Venue / Court           |
+|----------|------------|--------------------------------|-------------------------|
+| 12:00 PM | 11U GIRLS  | ★ Championship                 | Insports \| Court 4     |
+
+#### ⚠ Conflict callout (orange/red text, distinct row variant)
+```
+2:00-2:30 PM CONFLICT: 10U BLACK SEMI + 10U BLUE LEAGUE
+```
+
+| Time     | Team       | Game / Opponent                | Venue / Court           |
+|----------|------------|--------------------------------|-------------------------|
+|  2:00 PM | 10U BLACK  | Semi: 2nd vs 3rd Place         | BGC Shelton \| Court 1  |
+|  2:30 PM | 10U BLUE `[LEAGUE]` | vs 6th Boro 4AB        | IC-Tuckahoe \| Map      |
+|  4:00 PM | 10U BLACK  | ★ Championship                 | BGC Shelton \| Court 2  |
+
+### Wednesday, May 20
+| Time     | Team       | Game                           | Venue / Court           |
+|----------|------------|--------------------------------|-------------------------|
+|  7:00 PM | 10U BLUE `[LEAGUE]` | vs Holy Family-NR 4AB  | Spellman Rec \| Map     |
+
+### Footer (compact)
+`15 min before each tip | Black side out`
+
+(No tagline / no prose closer — coach roundups are utilitarian; the
+voicey wrap is reserved for parent-facing team-scoped briefings.)
+
+---
+
+## Entry: Coach Roundup — Coach Darien — May 16-18
+
+Same kind as the Coach Kenny entry above, scoped to Coach Darien's two teams.
+
+**Subject** (likely): `Coach Darien — Rumble for the Ring + League Play (May 16-18)`
+**From**: Legacy Hoopers
+**Recipient**: darien@legacyhoopers.org
+
+### Header
+- Overline: `COACH DARIEN`
+- Display: `RUMBLE FOR THE RING + LEAGUE PLAY`
+- Two team pill badges:
+  - Green: `8U BOYS`
+  - Cobalt teal: `9U BOYS`
+
+### Quick-link nav
+```
+ZG Standings | Ansonia | Shelton | Spellman
+```
+
+### Saturday, May 16 | BGC Ansonia
+| Time     | Team      | Opponent                        | Court    |
+|----------|-----------|---------------------------------|----------|
+| 11:00 AM | 8U BOYS   | vs ACC - ED                     | Court 2  |
+|  2:00 PM | 8U BOYS   | vs Stamford Peace - Preston     | Court 2  |
+
+### Sunday, May 17
+| Time     | Team      | Opponent                        | Venue / Court           |
+|----------|-----------|---------------------------------|-------------------------|
+|  8:00 AM | 8U BOYS   | vs CT Wolves                    | BGC Shelton \| Court 2  |
+
+#### IF ADVANCE
+| Time     | Team      | Game                            | Venue / Court           |
+|----------|-----------|---------------------------------|-------------------------|
+|  5:00 PM | 8U BOYS   | ★ Championship                  | BGC Ansonia \| Court 2  |
+
+### Monday, May 18
+| Time     | Team      | Game                            | Venue / Court           |
+|----------|-----------|---------------------------------|-------------------------|
+|  6:00 PM | 9U BOYS `[LEAGUE]` | vs 6th Boro 3AB         | Spellman Rec \| Map     |
+
+### Footer (compact)
+`15 min before each tip | Black side out`
+
+---
+
+## Atomic renderers introduced by Coach Roundup
+
+Adds 4 more renderers beyond the 16 already cataloged. Several share patterns
+with VIP Parent Guide (header band, color-striped row), but introduce
+coach-specific concerns (multi-event-type combination, conflict detection,
+inline LEAGUE/BONUS tag pills, IF ADVANCE sub-section, extended date range).
+
+| # | Renderer | Sections it produces |
+|---|---|---|
+| 17 | Coach header (coach-name display) | Light bg + cobalt overline + dark display + team pills (parallels VIP header r13 with coach-name + team pills instead of parent-name + kid pills) |
+| 18 | Inline event-type tag | Gray pill `LEAGUE` / `BONUS` rendered inline next to team pill in game rows; differentiates non-tournament rows |
+| 19 | IF ADVANCE inline sub-section | Sub-header within a day section (not a top-level day band); separates conditional bracket games from regular games chronologically |
+| 20 | ⚠ Conflict callout | Orange/red text band BETWEEN game rows when two games on the coach's teams overlap in time. Format: `<TIME RANGE> CONFLICT: <TEAM A SHORT> + <TEAM B SHORT>`. Computed by the engine, not authored. |
+
+---
+
+## Three briefing kinds — summary
+
+| Kind                      | Audience            | Header | Game row format        | Cross-tournament? |
+|---------------------------|---------------------|--------|------------------------|-------------------|
+| Team briefing             | Parents of one team | Cobalt band, TEAM \| TOURNAMENT overline | "Game N / time" two-column | No |
+| VIP Parent Guide          | Parents w/ multiple kids | Light, gold VIP overline + parent names + kid pills | "time + AM/PM" + color stripe + kid pill | Yes (multi-kid, multi-team, multi-org) |
+| Coach Roundup             | A single coach      | Light, cobalt COACH overline + coach name + team pills | "time + AM/PM" + color stripe + team pill + optional [LEAGUE]/[BONUS] tag | Yes (multi-team, multi-event-type, extended date range) |
+
+The CLAUDE.md §13 canonical 9 kinds list covers `multi_team_notice` (which
+should map to one of these). Confirm with Frank which canonical kind
+maps to the Coach Roundup pattern (potential gap: may need a new
+`coach_roundup` kind if not folded into `multi_team_notice`).
 
 ---
 
 ## Engine wave checklist (when implementing)
 
-When the engine renderer wave kicks off, each renderer should be validated against
-these three production samples. The atomic-test rubric:
+When the engine renderer wave kicks off, each renderer should be validated
+against these production samples. The atomic-test rubric:
 
+### Team-scoped briefings (10U Black, 11U Girls, 8U Boys)
 - [ ] Renderer 1 (universal header) produces the cobalt band exactly per all 3 samples
 - [ ] Renderer 3 (game card) handles "Court X only" vs "Venue | Court X" addressing
 - [ ] Renderer 4 (day-grouped) supports the `| Ansonia` venue suffix variant
@@ -227,8 +487,26 @@ these three production samples. The atomic-test rubric:
 - [ ] Renderer 8 (bonus variant) renders the gray BONUS overline + accent footnote
 - [ ] Renderer 9 (championship scenarios) handles SEMI + ★ Championship combo and ★-only
 - [ ] Renderer 10 (logistics) substitutes `<N> minutes` and jersey side dynamically
-- [ ] Renderer 11 (tagline footer) is a free-text override per briefing
+- [ ] Renderer 11 (tagline footer) is per-briefing free-text override (10U Black +
+      11U Girls shared "27 days of work" this weekend; 8U Boys used "Tournament 3.
+      These boys are ready." — confirm renderer accepts arbitrary string)
 - [ ] Renderer 12 (prose closer) is opt-in, free-text, raw paragraphs
 
-A future PR adds these as fixture-driven snapshot tests when the renderer wave
-ships.
+### VIP Parent Guide briefings (multi-kid, multi-team)
+- [ ] Renderer 13 (VIP header) replaces universal header for `multi_team_notice` kind
+- [ ] Renderer 14 (kid color pill) sources kid's team color via `teams.team_color`
+- [ ] Renderer 15 (quick-link nav) builds standings + venue list dynamically per family
+- [ ] Renderer 16 (color-striped game row) interleaves all kids' games chronologically,
+      omits "Game N" numbering, uses lowercase `vs`, supports inline `BONUS` badge
+
+### Coach Roundup briefings (single coach, multi-team, mixed event types)
+- [ ] Renderer 17 (Coach header) parallels VIP header but coach-name + team pills
+- [ ] Renderer 18 (inline event-type tag) renders gray pill `[LEAGUE]` / `[BONUS]`
+      inline next to team pill in game row
+- [ ] Renderer 19 (IF ADVANCE sub-section) renders sub-header within a day section
+      separating conditional bracket games from regular pool play
+- [ ] Renderer 20 (⚠ Conflict callout) detects overlap across teams and emits the
+      orange/red banner row. Engine-computed, not authored.
+
+A future PR adds these as fixture-driven snapshot tests when the renderer
+wave ships.
