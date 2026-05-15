@@ -32,9 +32,15 @@ export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = 
   const [seats, setSeats] = useState('2');
   const [rideType, setRideType] = useState('round_trip');
   const [pickupLocation, setPickupLocation] = useState('');
-  const [pickupTime, setPickupTime] = useState('');
+  // pickupTime / returnTime use the derived-with-override pattern:
+  // state holds the user's edit (or null if untouched); the consumed
+  // value is the override when set, else the eventStartAt/EndAt-derived
+  // default. Replaces an effect that initialized defaults on the open
+  // toggle. !== null discrimination (not truthy) so '' is a valid
+  // user override (cleared field).
+  const [pickupTimeOverride, setPickupTime] = useState(null);
   const [returnLocation, setReturnLocation] = useState('');
-  const [returnTime, setReturnTime] = useState('');
+  const [returnTimeOverride, setReturnTime] = useState(null);
   const [vehicle, setVehicle] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
@@ -57,13 +63,8 @@ export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = 
     return () => { cancelled = true; };
   }, [open, user?.id, orgId, phone]);
 
-  // Set time defaults when form opens (only if user hasn't edited).
-  useEffect(() => {
-    if (!open) return;
-    if (!pickupTime && eventStartAt) setPickupTime(isoMinusMinutes(eventStartAt, 45));
-    if (!returnTime && eventEndAt) setReturnTime(isoToLocal(eventEndAt));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, eventStartAt, eventEndAt]);
+  const pickupTime = pickupTimeOverride !== null ? pickupTimeOverride : (eventStartAt ? isoMinusMinutes(eventStartAt, 45) : '');
+  const returnTime = returnTimeOverride !== null ? returnTimeOverride : (eventEndAt ? isoToLocal(eventEndAt) : '');
 
   const reset = useCallback(() => {
     setSeats('2'); setRideType('round_trip'); setPickupLocation('');
