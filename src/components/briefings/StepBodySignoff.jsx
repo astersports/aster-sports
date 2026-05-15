@@ -10,11 +10,13 @@
 // button now appears on Step 3 to advance to Step 4. onSend/busy props
 // dropped from this component's signature.
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { labelStyle, textareaStyle } from './bodies/_styles';
 import TemplatePicker from './TemplatePicker';
 import PilotModeChip from './PilotModeChip';
 import { audienceCopy } from '../../lib/briefings/audience';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 const BODY_LAZY = {
   weekly_digest: lazy(() => import('./bodies/WeeklyDigestBody.jsx')),
@@ -30,11 +32,39 @@ const BODY_LAZY = {
 };
 
 const btnGhost = { width: '100%', minHeight: 40, borderRadius: 10, backgroundColor: 'transparent', color: 'var(--em-text-secondary)', fontSize: 14, fontWeight: 500, border: '1px solid var(--em-border-default)', cursor: 'pointer' };
+const btnSuggest = { minHeight: 32, padding: '0 12px', borderRadius: 8, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)', fontSize: 13, fontWeight: 600, border: '1px solid var(--em-accent)', cursor: 'pointer' };
+
+// Wave 5 PR 3b — Only tournament_prelim has the structured anchor +
+// schedule shape the suggest-briefing-closer edge function needs.
+// Adding more kinds later = extend this set + add the resolver
+// context the edge function looks up.
+const SUGGEST_CLOSER_KINDS = new Set(['tournament_prelim']);
 
 export default function StepBodySignoff({ state, dispatch, audience, hasParentTournament, onSaveDraft, onCancel }) {
   const Body = BODY_LAZY[state.kind] || BODY_LAZY.custom_message;
   const a = audience || { filtered: null, total: null, mode: 'standard', pilotModeOn: false };
   const showChip = a.pilotModeOn && (a.mode === 'pilot_zero' || a.mode === 'pilot_partial');
+  const { orgId } = useAuth();
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestErr, setSuggestErr] = useState(null);
+  const canSuggest = SUGGEST_CLOSER_KINDS.has(state.kind) && state.anchor_id && orgId;
+
+  const onSuggestCloser = async () => {
+    if (!canSuggest || suggesting) return;
+    setSuggesting(true); setSuggestErr(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-briefing-closer', {
+        body: { tournament_id: state.anchor_id, org_id: orgId },
+      });
+      if (data?.error) throw new Error(data.error);
+      if (error) throw error;
+      const text = data?.suggested_closer || '';
+      if (text) dispatch({ type: 'UPDATE_SIGNOFF', value: text });
+      else setSuggestErr('The model returned an empty closer. Try again or write one manually.');
+    } catch (e) {
+      setSuggestErr(e.message || String(e));
+    } finally { setSuggesting(false); }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -53,8 +83,17 @@ export default function StepBodySignoff({ state, dispatch, audience, hasParentTo
           onAudienceChange={(audience_filter) => dispatch({ type: 'SET_AUDIENCE', audience_type: state.audience_type, audience_filter })} />
       </Suspense>
       <label>
-        <span style={labelStyle}>Signoff message (optional)</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <span style={labelStyle}>Signoff message (optional)</span>
+          {canSuggest && (
+            <button type="button" onClick={onSuggestCloser} disabled={suggesting} className="sf-press"
+              style={{ ...btnSuggest, opacity: suggesting ? 0.6 : 1, cursor: suggesting ? 'wait' : 'pointer' }}>
+              {suggesting ? 'Suggesting…' : 'Suggest closer'}
+            </button>
+          )}
+        </div>
         <textarea value={state.signoff_message} onChange={(e) => dispatch({ type: 'UPDATE_SIGNOFF', value: e.target.value })} style={{ ...textareaStyle, minHeight: 80 }} placeholder="Add a closing note…" />
+        {suggestErr && <div style={{ fontSize: 12, color: 'var(--em-danger)', marginTop: 4 }}>{suggestErr}</div>}
       </label>
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--em-text-secondary)' }}>
         <input type="checkbox" checked={state.test_only} onChange={(e) => dispatch({ type: 'TOGGLE_TEST', value: e.target.checked })} />
