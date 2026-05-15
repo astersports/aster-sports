@@ -27,6 +27,12 @@
 # Functions intentionally omitted from this file (default
 # verify_jwt:true preserves correct behavior):
 #   send-tournament-message — requires user JWT for user_roles check
+#   parse-tournament-schedule (wave 5 PR 2) — JWT-verified via
+#       supabase.auth.getUser; reads anthropic_api_key from
+#       app_secrets for downstream Anthropic API call (NOT inbound
+#       auth). Excluded from verifyJwtConfigAudit's shared-secret
+#       detection via EXCLUDE_FUNCTIONS list (mirror of
+#       send-tournament-message exemption pattern).
 
 project_id = "vrwwpsbfbnveawqwbdmj"
 
