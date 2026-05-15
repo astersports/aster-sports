@@ -20,8 +20,10 @@ const cacheKey = (orgId, teamId, statusFilter, seasonFilter) =>
 
 export function useTournaments({ teamId, statusFilter = 'all', seasonFilter = 'active', limit = 20 } = {}) {
   const { orgId } = useAuth();
-  const [tournaments, setTournaments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Lazy initializers lift the cache-hit setState out of the effect
+  // (see useLocations.js for rationale).
+  const [tournaments, setTournaments] = useState(() => cache.get(cacheKey(orgId, teamId, statusFilter, seasonFilter)) || []);
+  const [loading, setLoading] = useState(() => !cache.has(cacheKey(orgId, teamId, statusFilter, seasonFilter)));
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const offsetRef = useRef(0);
@@ -80,12 +82,7 @@ export function useTournaments({ teamId, statusFilter = 'all', seasonFilter = 'a
     }
   }, [orgId, teamId, statusFilter, seasonFilter, limit]);
 
-  useEffect(() => {
-    const key = cacheKey(orgId, teamId, statusFilter, seasonFilter);
-    const cached = cache.get(key);
-    if (cached) { setTournaments(cached); setLoading(false); }
-    fetch();
-  }, [fetch, orgId, teamId, statusFilter, seasonFilter]);
+  useEffect(() => { fetch(); }, [fetch]);
 
   const loadMore = useCallback(() => { if (hasMore && !loading) fetch({ append: true }); }, [fetch, hasMore, loading]);
 

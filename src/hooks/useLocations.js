@@ -14,8 +14,13 @@ const cacheKey = (orgId, search, showArchived) =>
 
 export function useLocations({ search = '', showArchived = false } = {}) {
   const { orgId } = useAuth();
-  const [locations, setLocations] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Lazy initializers lift the cache-hit setState out of the effect
+  // (was: if (cached) { setLocations(cached); setLoading(false); } —
+  // a react-hooks/set-state-in-effect violation). Cache miss on null
+  // orgId at first render is automatic; effect re-runs when orgId
+  // resolves via fetch's dep change.
+  const [locations, setLocations] = useState(() => cache.get(cacheKey(orgId, search, showArchived)) || []);
+  const [loading, setLoading] = useState(() => !cache.has(cacheKey(orgId, search, showArchived)));
   const [error, setError] = useState(null);
 
   const fetch = useCallback(async () => {
@@ -53,11 +58,7 @@ export function useLocations({ search = '', showArchived = false } = {}) {
     }
   }, [orgId, search, showArchived]);
 
-  useEffect(() => {
-    const cached = cache.get(cacheKey(orgId, search, showArchived));
-    if (cached) { setLocations(cached); setLoading(false); }
-    fetch();
-  }, [fetch, orgId, search, showArchived]);
+  useEffect(() => { fetch(); }, [fetch]);
 
   const create = async (fields) => {
     if (!orgId) return { error: new Error('No orgId') };
