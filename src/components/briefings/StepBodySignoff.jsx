@@ -28,6 +28,8 @@ const BODY_LAZY = {
   rsvp_nudge: lazy(() => import('./bodies/RsvpNudgeBody.jsx')),
   // Wave 4.1d-2 §5 — G2 academy_callup_notice surfaced.
   academy_callup_notice: lazy(() => import('./bodies/AcademyCallupBody.jsx')),
+  // Wave 5 PR 4c — coach_roundup body (coach picker + date range).
+  coach_roundup: lazy(() => import('./bodies/CoachRoundupBody.jsx')),
   custom_message: lazy(() => import('./bodies/CustomMessageBody.jsx')),
 };
 
