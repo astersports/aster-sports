@@ -9,7 +9,8 @@ import {
 } from '../registry';
 
 describe('registry — helpers', () => {
-  it('isCalendarAnchored: 7 kinds true, free-form + unknown false', () => {
+  it('isCalendarAnchored: 8 kinds true (coach_roundup added wave 5 PR 4a), free-form + unknown false', () => {
+    expect(CALENDAR_ANCHORED_KINDS.length).toBe(8);
     for (const k of CALENDAR_ANCHORED_KINDS) expect(isCalendarAnchored(k)).toBe(true);
     expect(isCalendarAnchored('announcement')).toBe(false);
     expect(isCalendarAnchored('custom_message')).toBe(false);
@@ -24,12 +25,13 @@ describe('registry — helpers', () => {
     expect(getDispatchSendPath('schedule_change')).toBe('composerSubmit');
     expect(getDispatchSendPath('rsvp_nudge')).toBe('rsvpNudgeSend');
     expect(getDispatchSendPath('academy_callup_notice')).toBe('academyCallupSend');
+    expect(getDispatchSendPath('coach_roundup')).toBe('composerSubmit');
     expect(getDispatchSendPath('announcement')).toBe('legacy');
     expect(getDispatchSendPath('custom_message')).toBe('legacy');
     expect(getDispatchSendPath('not_a_kind')).toBe('legacy');
   });
 
-  it('all 7 entries expose resolve, compose, anchorFromState, overridesFromState, sendPath', () => {
+  it('all 8 entries expose resolve, compose, anchorFromState, overridesFromState, sendPath', () => {
     for (const kind of CALENDAR_ANCHORED_KINDS) {
       const e = RESOLVER_REGISTRY[kind];
       expect(typeof e.resolve).toBe('function');
@@ -38,6 +40,14 @@ describe('registry — helpers', () => {
       expect(typeof e.overridesFromState).toBe('function');
       expect(['composerSubmit', 'digestSend', 'rsvpNudgeSend', 'academyCallupSend']).toContain(e.sendPath);
     }
+  });
+
+  it('coach_roundup anchorFromState pulls coach_user_id from audience_filter + date_range from body', () => {
+    const state = { audience_filter: { coach_user_id: 'coach-1' }, body: { date_range: { start: '2026-05-18', end: '2026-05-24' } } };
+    expect(RESOLVER_REGISTRY.coach_roundup.anchorFromState(state)).toEqual({
+      coachUserId: 'coach-1',
+      dateRange: { start: '2026-05-18', end: '2026-05-24' },
+    });
   });
 
   it('anchorFromState pulls the right state path per kind', () => {

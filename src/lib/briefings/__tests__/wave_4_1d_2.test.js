@@ -65,8 +65,8 @@ describe('Wave 4.1d-2 §1.3 + Wave 4.8 UX — date chip option set', () => {
 // presence of the call site in composerSubmit.js (string-match grep
 // substitute would be a separate integration test in staging).
 describe('Wave 4.1d-2 §6 — status integrity policy', () => {
-  it('all 9 surfaced kinds go through one dispatcher with status flip', () => {
-    expect(KIND_ORDER.length).toBe(9);
+  it('all 10 surfaced kinds go through one dispatcher with status flip (coach_roundup added wave 5 PR 4a)', () => {
+    expect(KIND_ORDER.length).toBe(10);
     // Every surfaced kind has a metadata entry — presence here means
     // composerSubmit's generic path will run for it (rsvp_nudge has
     // its own dedicated path; both end with status='sent' set).
