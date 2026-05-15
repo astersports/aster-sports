@@ -82,7 +82,7 @@ export function useTournaments({ teamId, statusFilter = 'all', seasonFilter = 'a
     }
   }, [orgId, teamId, statusFilter, seasonFilter, limit]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { (async () => { await fetch(); })(); }, [fetch]);
 
   const loadMore = useCallback(() => { if (hasMore && !loading) fetch({ append: true }); }, [fetch, hasMore, loading]);
 

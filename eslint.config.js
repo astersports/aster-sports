@@ -68,7 +68,14 @@ export default defineConfig([
       // Don't drop all five rules to 'off' silently — that's the failure
       // mode the disable-and-forget anti-pattern warns about.
       // ──────────────────────────────────────────────────────────────────
-      'react-hooks/set-state-in-effect': 'warn',
+      // set-state-in-effect promoted to 'error' after PR draining
+      // Group A — 7 sites: useNeedsBriefing, useRideClaims, useRideOffers,
+      // useRoster, useTournament, useLocations, useTournaments. All 7
+      // shared the fetch-on-mount pattern. Fix: wrap the effect's
+      // fetcher call in an inline async IIFE — React's canonical
+      // idiom for data-fetching effects per react.dev. Makes the
+      // async boundary syntactically visible.
+      'react-hooks/set-state-in-effect': 'error',
       // purity promoted to 'error' after PR draining Group E1 —
       // useAttendanceData.js:82. Single repo-wide site; Date.now()
       // inside useMemo was the violation. Fix: lift `now` to state

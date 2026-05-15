@@ -32,7 +32,7 @@ export function useRideOffers(eventId) {
   }, [eventId]);
 
   useEffect(() => {
-    fetchOffers();
+    (async () => { await fetchOffers(); })();
   }, [fetchOffers]);
 
   // Realtime: any change to offers for this event refetches.

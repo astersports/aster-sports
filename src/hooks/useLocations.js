@@ -58,7 +58,7 @@ export function useLocations({ search = '', showArchived = false } = {}) {
     }
   }, [orgId, search, showArchived]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { (async () => { await fetch(); })(); }, [fetch]);
 
   const create = async (fields) => {
     if (!orgId) return { error: new Error('No orgId') };

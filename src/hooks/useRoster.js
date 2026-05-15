@@ -51,7 +51,7 @@ export function useRoster(teamId) {
   }, [teamId]);
 
   useEffect(() => {
-    refetch();
+    (async () => { await refetch(); })();
   }, [refetch]);
 
   return { players, loading, refetch };
