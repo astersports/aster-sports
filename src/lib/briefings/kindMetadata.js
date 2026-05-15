@@ -61,18 +61,20 @@ export const KIND_METADATA = {
     bodyModule: 'TournamentRecapBody',
     disabled: false,
   },
-  // Wave 5 PR 4a — coach_roundup. anchorKind 'coach' is conceptual
-  // (the coach user_id drives the resolver), not stored as a uuid in
-  // comms_messages.anchor_id; the row's audience_filter holds the
-  // coach_user_id. 4c will lock the picker to a real coach UI.
+  // Wave 5 PR 4a/4c — coach_roundup. anchorKind 'org' for the schema
+  // path (anchor_id is the org_id), but the practical "anchor" is the
+  // coach itself — coach_user_id lives in state.audience_filter and
+  // is read by RESOLVER_REGISTRY.coach_roundup.anchorFromState.
+  // wizardSupported flipped to true in 4c with the CoachRoundupBody
+  // landing the picker + date range UI.
   coach_roundup: {
     icon: 'Users', label: 'Coach roundup',
     description: 'One weekly briefing for a coach across all their teams (multi-team, conflict-aware)',
-    defaultAnchorKind: null, anchorKinds: [],
+    defaultAnchorKind: 'org', anchorKinds: ['org'],
     defaultAudienceType: 'coach_self',
     bodyModule: 'CoachRoundupBody',
     disabled: false,
-    wizardSupported: false,
+    wizardSupported: true,
   },
   announcement: {
     icon: 'Megaphone', label: 'Announcement',
