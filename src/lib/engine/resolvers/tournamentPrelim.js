@@ -18,7 +18,8 @@
 
 import {
   buildBracketSections, buildBrandFooter, buildHeaderSection, buildLogisticsLine,
-  buildRsvpCalloutSection, buildScheduleSections, buildTaglineFooter, buildVenueListSection,
+  buildRsvpCalloutSection, buildScheduleSections, buildTaglineFooter,
+  buildVenueListSection, buildVenueNotesSection,
 } from './tournamentPrelimSections';
 import { buildSubject, buildTeamSlices, fetchRecipientGuardians, trim } from './tournamentPrelimHelpers';
 
@@ -62,8 +63,8 @@ export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { sup
   const locationIds = [...new Set((events || []).map((e) => e.location_id).filter(Boolean))];
   const locations = {};
   if (locationIds.length) {
-    const { data: locRows = [] } = await supabase.from('locations').select('id, name, address, google_maps_url').in('id', locationIds);
-    for (const l of locRows || []) locations[l.id] = { id: l.id, name: l.name, address: l.address, google_maps_url: l.google_maps_url };
+    const { data: locRows = [] } = await supabase.from('locations').select('id, name, address, google_maps_url, notes, parking_notes, entry_instructions').in('id', locationIds);
+    for (const l of locRows || []) locations[l.id] = { id: l.id, name: l.name, address: l.address, google_maps_url: l.google_maps_url, notes: l.notes, parking_notes: l.parking_notes, entry_instructions: l.entry_instructions };
   }
 
   const { data: coaches = [] } = orgId ? await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null) : { data: [] };
@@ -100,6 +101,8 @@ export function composeTournamentPrelim(context, slice, overrides = {}) {
   sections.push(buildRsvpCalloutSection(overrides, defaultCoachFirstName(org.coaches)));
   const venueList = buildVenueListSection(events, locations);
   if (venueList) sections.push(venueList);
+  const venueNotes = buildVenueNotesSection(events, locations);
+  if (venueNotes) sections.push(venueNotes);
 
   const sched = buildScheduleSections(events, locations);
   if (sched.schedule?.length) sections.push(...sched.schedule);
