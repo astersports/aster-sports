@@ -43,8 +43,13 @@ export default function useScoreDraft(eventId) {
   const retryTimerRef = useRef(null);
   const serverRef = useRef(null);
   const flashRef = useRef(null);
+  // resultRef + performSaveRef: canonical React 19 fixes per the refs
+  // + immutability rules. resultRef mirrors `result` for async reads
+  // (1-frame lag safe — all consumers async). performSaveRef breaks
+  // self-recursion in retry setTimeout. Revisit when useEffectEvent ships.
   const resultRef = useRef(result);
-  resultRef.current = result;
+  const performSaveRef = useRef(null);
+  useEffect(() => { resultRef.current = result; }, [result]);
 
   useEffect(() => {
     if (!eventId) return;
@@ -91,9 +96,10 @@ export default function useScoreDraft(eventId) {
     } catch (err) {
       retryRef.current += 1;
       if (retryRef.current >= 5) { setState('error'); setError(err); return; }
-      retryTimerRef.current = setTimeout(() => performSave(), RETRY_DELAYS[retryRef.current - 1] ?? 16000);
+      retryTimerRef.current = setTimeout(() => performSaveRef.current?.(), RETRY_DELAYS[retryRef.current - 1] ?? 16000);
     }
   }, [eventId, user]);
+  useEffect(() => { performSaveRef.current = performSave; }, [performSave]);
 
   const updateField = useCallback((name, value) => {
     setResult(prev => derive({ ...prev, [name]: value }));
@@ -136,11 +142,7 @@ export default function useScoreDraft(eventId) {
 
   const retry = useCallback(() => { retryRef.current = 0; setError(null); performSave(); }, [performSave]);
 
-  useEffect(() => () => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (flashRef.current) clearTimeout(flashRef.current);
-    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-  }, []);
+  useEffect(() => () => { [debounceRef, flashRef, retryTimerRef].forEach((r) => { if (r.current) clearTimeout(r.current); }); }, []);
 
   return { result, state, lastSaved, error, isPublished: !!result.published_at, updateField, updateFields, publish, unpublish, retry };
 }

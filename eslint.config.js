@@ -77,8 +77,14 @@ export default defineConfig([
       // is exempt from the purity rule (runs once at mount, not on
       // re-render).
       'react-hooks/purity': 'error',
-      'react-hooks/immutability': 'warn',
-      'react-hooks/refs': 'warn',
+      // immutability + refs promoted to 'error' after PR draining
+      // Group E2 — useScoreDraft.js (refs at line 47, immutability at
+      // line 94). Both rules had only this 1 site repo-wide. Fix
+      // pattern: useEffect-mediated ref writes + performSaveRef
+      // indirection for self-recursive useCallback. Canonical React 19
+      // idioms per react.dev/reference/react/useRef.
+      'react-hooks/immutability': 'error',
+      'react-hooks/refs': 'error',
       // preserve-manual-memoization promoted to 'error' after PR draining
       // Group D — useBriefingDraft.js, useEventDelete.js, useScheduleChangeAudit.js.
       // All 3 violations shared the optional-chain-in-deps shape
