@@ -1,87 +1,58 @@
-// Wave 5 PR 2 — Step 2 UI: per-row inline edit table with status
-// indicators. Three-severity (error/warning/info) per scope read
-// flagged-item #3 + dedup labels (new/updated/duplicate) per
-// flagged-item #2.
+// Wave 5 PR 2 — Step 2 UI orchestrator: bulk team picker + viewport-
+// branched layout (desktop table vs mobile cards) + sticky-bottom
+// commit footer. Per-row inline edit with NEW/UPDATED/DUP dedup
+// labels and three-severity status indicators.
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import PreviewDesktopTable from './PreviewDesktopTable';
+import PreviewMobileCards from './PreviewMobileCards';
 
-const STATUS_STYLES = {
-  valid:   { bg: '#fff', border: '1px solid var(--em-border-default)' },
-  warning: { bg: 'var(--em-warning-soft)', border: '1px solid var(--em-warning)' },
-  error:   { bg: 'var(--em-danger-soft)', border: '1px solid var(--em-danger)' },
-};
-const DEDUP_BADGES = {
-  new:       { text: 'NEW', color: 'var(--em-success)', bg: 'var(--em-success-soft)' },
-  updated:   { text: 'UPDATED', color: 'var(--em-warning)', bg: 'var(--em-warning-soft)' },
-  duplicate: { text: 'DUP (will skip)', color: 'var(--em-text-tertiary)', bg: 'var(--em-bg-tertiary)' },
-};
-const inputStyle = { width: '100%', minHeight: 32, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--em-border-default)', backgroundColor: '#fff', fontSize: 13, fontFamily: 'inherit' };
-const cellStyle = { padding: 6, verticalAlign: 'top', fontSize: 13 };
+const bulkInputStyle = { minHeight: 40, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: '#fff', fontSize: 14, fontFamily: 'inherit', minWidth: 160 };
 
-function StatusBadge({ status }) {
-  if (status === 'valid') return <span style={{ fontSize: 11, color: 'var(--em-success)' }}>✓</span>;
-  if (status === 'warning') return <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-warning)' }}>⚠</span>;
-  return <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--em-danger)' }}>✗</span>;
+function useIsNarrow(breakpoint = 720) {
+  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
+  useEffect(() => {
+    const onR = () => setNarrow(window.innerWidth < breakpoint);
+    window.addEventListener('resize', onR);
+    return () => window.removeEventListener('resize', onR);
+  }, [breakpoint]);
+  return narrow;
 }
 
-function DedupBadge({ dedup }) {
-  const cfg = DEDUP_BADGES[dedup];
-  if (!cfg) return null;
-  return <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, color: cfg.color, backgroundColor: cfg.bg, letterSpacing: '0.5px' }}>{cfg.text}</span>;
-}
-
-export default function PreviewTable({ rows, validation, dedup, canCommit, onUpdateRow, onRemoveRow, onCommit, committing }) {
+export default function PreviewTable({ rows, validation, dedup, canCommit, onUpdateRow, onRemoveRow, onCommit, committing, teams }) {
+  const narrow = useIsNarrow();
   const summary = useMemo(() => `${validation.valid} valid · ${validation.warning} warnings · ${validation.error} errors  |  ${dedup.new} new · ${dedup.updated} updated · ${dedup.duplicate} duplicate`, [validation, dedup]);
+  const teamNames = (teams || []).map((t) => t.name);
+  const someTeamMissing = rows.some((r) => !r.team);
+
+  const applyTeamToAll = (name) => {
+    if (!name) return;
+    rows.forEach((_, i) => onUpdateRow(i, { team: name }));
+  };
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 80 }}>
-      <div style={{ padding: 12, backgroundColor: 'var(--em-bg-card)', borderRadius: 8, marginBottom: 16, fontSize: 14, color: 'var(--em-text-primary)' }}>{summary}</div>
+    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 96, paddingLeft: 12, paddingRight: 12 }}>
+      <div style={{ padding: 12, backgroundColor: 'var(--em-bg-card)', borderRadius: 8, marginBottom: 12, fontSize: 14, color: 'var(--em-text-primary)' }}>{summary}</div>
 
-      {/* Horizontal scroll wrapper — table has 9 columns, doesn't fit
-          on mobile portrait viewports. */}
-      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-      <table style={{ minWidth: 920, width: '100%', borderCollapse: 'separate', borderSpacing: '0 6px' }}>
-        <thead>
-          <tr style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' }}>
-            <th style={{ padding: 6, textAlign: 'left', width: 32 }}>•</th>
-            <th style={{ padding: 6, textAlign: 'left' }}>Team</th>
-            <th style={{ padding: 6, textAlign: 'left' }}>Date</th>
-            <th style={{ padding: 6, textAlign: 'left' }}>Time</th>
-            <th style={{ padding: 6, textAlign: 'left' }}>Opponent</th>
-            <th style={{ padding: 6, textAlign: 'left' }}>Venue</th>
-            <th style={{ padding: 6, textAlign: 'left' }}>Court</th>
-            <th style={{ padding: 6, textAlign: 'left' }}>Status</th>
-            <th style={{ padding: 6, textAlign: 'right' }}>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i} style={{ ...STATUS_STYLES[r.status], borderRadius: 6 }}>
-              <td style={cellStyle}><StatusBadge status={r.status} /></td>
-              <td style={cellStyle}><input value={r.team} onChange={(e) => onUpdateRow(i, { team: e.target.value })} style={inputStyle} /></td>
-              <td style={cellStyle}><input value={r.date} onChange={(e) => onUpdateRow(i, { date: e.target.value })} style={{ ...inputStyle, width: 80 }} placeholder="5/16" /></td>
-              <td style={cellStyle}><input value={r.time} onChange={(e) => onUpdateRow(i, { time: e.target.value })} style={{ ...inputStyle, width: 100 }} placeholder="11:00 AM" /></td>
-              <td style={cellStyle}><input value={r.opponent} onChange={(e) => onUpdateRow(i, { opponent: e.target.value })} style={inputStyle} /></td>
-              <td style={cellStyle}><input value={r.venue} onChange={(e) => onUpdateRow(i, { venue: e.target.value })} style={inputStyle} /></td>
-              <td style={cellStyle}><input value={r.court} onChange={(e) => onUpdateRow(i, { court: e.target.value })} style={{ ...inputStyle, width: 80 }} /></td>
-              <td style={cellStyle}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <DedupBadge dedup={r.dedup} />
-                  {r.messages?.length > 0 && (<div style={{ fontSize: 11, color: 'var(--em-text-secondary)' }}>{r.messages.join('; ')}</div>)}
-                </div>
-              </td>
-              <td style={{ ...cellStyle, textAlign: 'right' }}>
-                <button type="button" onClick={() => onRemoveRow(i)} className="sf-press"
-                  style={{ minHeight: 28, padding: '0 10px', borderRadius: 6, border: '1px solid var(--em-border-default)', backgroundColor: '#fff', color: 'var(--em-text-secondary)', fontSize: 12, cursor: 'pointer' }}>Remove</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      </div>
+      {teamNames.length > 0 && (
+        <div style={{ padding: 12, backgroundColor: someTeamMissing ? 'var(--em-warning-soft)' : 'var(--em-bg-card)', border: `1px solid ${someTeamMissing ? 'var(--em-warning)' : 'var(--em-border-default)'}`, borderRadius: 8, marginBottom: 16, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <label htmlFor="bulk-team" style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)' }}>Set team for all rows:</label>
+          <select id="bulk-team" defaultValue="" onChange={(e) => { applyTeamToAll(e.target.value); e.target.value = ''; }} style={bulkInputStyle}>
+            <option value="">Select team…</option>
+            {teamNames.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+          {someTeamMissing && (
+            <span style={{ fontSize: 12, color: 'var(--em-text-secondary)' }}>
+              Parser couldn't infer the team from your paste. Pick it once here.
+            </span>
+          )}
+        </div>
+      )}
 
-      {/* Sticky-bottom commit footer — keeps the action visible on
-          mobile portrait where the table is taller than the viewport. */}
+      {narrow
+        ? <PreviewMobileCards rows={rows} teamNames={teamNames} onUpdateRow={onUpdateRow} onRemoveRow={onRemoveRow} />
+        : <PreviewDesktopTable rows={rows} teamNames={teamNames} onUpdateRow={onUpdateRow} onRemoveRow={onRemoveRow} />}
+
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '12px 16px', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)', boxShadow: '0 -2px 6px rgba(0,0,0,0.08)', zIndex: 10, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
         <button type="button" onClick={onCommit} disabled={!canCommit || committing} className="sf-press"
           style={{ minHeight: 44, padding: '0 24px', borderRadius: 10, border: 'none', backgroundColor: canCommit ? 'var(--em-accent)' : 'var(--em-bg-tertiary)', color: canCommit ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)', fontSize: 15, fontWeight: 600, cursor: canCommit ? 'pointer' : 'not-allowed' }}>

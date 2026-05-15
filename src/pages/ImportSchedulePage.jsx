@@ -68,7 +68,7 @@ export default function ImportSchedulePage() {
       {im.state === 'preview' || im.state === 'committing' || im.state === 'done' ? (
         <PreviewTable rows={im.rows} validation={im.validation} dedup={im.dedup} canCommit={im.canCommit}
           onUpdateRow={im.updateRow} onRemoveRow={im.removeRow} onCommit={onCommit}
-          committing={im.state === 'committing'} />
+          committing={im.state === 'committing'} teams={im.teams} />
       ) : null}
 
       {im.error && (
