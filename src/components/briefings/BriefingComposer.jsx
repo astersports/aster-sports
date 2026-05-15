@@ -92,20 +92,20 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   }), [recipients, recipientsTotal, state.audience_type, state.audience_filter, state.anchor_id, pilotModeEnabled]);
 
   // GameRecapBody renders the league/bracket CTA field only when the
-  // anchor event has a parent tournament (URL would be null otherwise).
-  const [hasParentTournament, setHasParentTournament] = useState(false);
+  // anchor event has a parent tournament. Raw lookup tagged with anchorId
+  // so render-time derivation rejects stale results from a prior anchor.
+  const [tournamentLookup, setTournamentLookup] = useState(null);
   useEffect(() => {
     let cancelled = false;
-    if (state.kind !== 'game_recap' || state.anchor_kind !== 'event' || !state.anchor_id) {
-      setHasParentTournament(false); return undefined;
-    }
+    if (state.kind !== 'game_recap' || state.anchor_kind !== 'event' || !state.anchor_id) return undefined;
     Promise.resolve().then(async () => {
       const { data } = await supabase.from('events').select('tournament_id').eq('id', state.anchor_id).maybeSingle();
       if (cancelled) return;
-      setHasParentTournament(!!data?.tournament_id);
+      setTournamentLookup({ anchorId: state.anchor_id, tournamentId: data?.tournament_id ?? null });
     });
     return () => { cancelled = true; };
   }, [state.kind, state.anchor_kind, state.anchor_id]);
+  const hasParentTournament = state.kind === 'game_recap' && state.anchor_kind === 'event' && state.anchor_id && tournamentLookup?.anchorId === state.anchor_id && !!tournamentLookup?.tournamentId;
 
   const onSend = async () => {
     setBusy(true);
