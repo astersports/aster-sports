@@ -11,6 +11,7 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [version, setVersion] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const lastKeyRef = useRef(null);
 
   useEffect(() => {
@@ -75,11 +76,11 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
     })();
   }, [teamId, filter, range, version]);
 
-  const refetch = useCallback(() => { lastKeyRef.current = null; setVersion((v) => v + 1); }, []);
+  const refetch = useCallback(() => { lastKeyRef.current = null; setVersion((v) => v + 1); setNowMs(Date.now()); }, []);
   useRefetchOnVisible(refetch);
 
   const grid = useMemo(() => {
-    const now = Date.now();
+    const now = nowMs;
     const rsvpMap = {};
     rsvps.forEach((r) => { rsvpMap[`${r.event_id}-${r.player_id}`] = r.response; });
     const arrMap = {};
@@ -134,7 +135,7 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
         goingCount, maybeCount, declinedCount, noResponseCount, totalPast, responseRate,
       };
     }).sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
-  }, [players, events, rsvps, arrivals, checkIns, activations]);
+  }, [players, events, rsvps, arrivals, checkIns, activations, nowMs]);
 
   return { grid, events, loading, refetch };
 }

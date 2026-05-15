@@ -69,7 +69,14 @@ export default defineConfig([
       // mode the disable-and-forget anti-pattern warns about.
       // ──────────────────────────────────────────────────────────────────
       'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/purity': 'warn',
+      // purity promoted to 'error' after PR draining Group E1 —
+      // useAttendanceData.js:82. Single repo-wide site; Date.now()
+      // inside useMemo was the violation. Fix: lift `now` to state
+      // (nowMs), refresh alongside data via existing refetch callback,
+      // useMemo deps on nowMs. Lazy initializer useState(() => Date.now())
+      // is exempt from the purity rule (runs once at mount, not on
+      // re-render).
+      'react-hooks/purity': 'error',
       'react-hooks/immutability': 'warn',
       'react-hooks/refs': 'warn',
       // preserve-manual-memoization promoted to 'error' after PR draining
