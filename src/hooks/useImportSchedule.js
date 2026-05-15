@@ -19,6 +19,7 @@ export function useImportSchedule(tournamentId) {
   const [tournament, setTournament] = useState(null);
   const [teams, setTeams] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [existingEvents, setExistingEvents] = useState([]);
 
   const parse = useCallback(async () => {
     if (!paste.trim() || !tournamentId || !orgId) return;
@@ -28,6 +29,7 @@ export function useImportSchedule(tournamentId) {
       if (!t) throw new Error('Tournament not found');
       setTournament(t);
       const { data: existing = [] } = await supabase.from('events').select('id, team_id, tournament_id, start_at, opponent, location_id, sub_location, is_bonus_game').eq('tournament_id', tournamentId);
+      setExistingEvents(existing);
       const { data, error: invErr } = await supabase.functions.invoke('parse-tournament-schedule', { body: { paste, tournament_id: tournamentId, org_id: orgId } });
       // Edge function returns { error: '...' } in the JSON body on
       // 4xx/5xx, but supabase.functions.invoke surfaces only a generic
@@ -53,9 +55,22 @@ export function useImportSchedule(tournamentId) {
     } catch (e) { setError(e); setState('error'); }
   }, [paste, tournamentId, orgId]);
 
+  // Re-run BOTH validation AND dedup on inline edit. If validation
+  // flips a row from error → valid (e.g. operator picks a team via
+  // the dropdown after parse couldn't infer one), the dedup early-
+  // return on `status === 'error'` would have stamped it 'new'.
+  // Without re-running dedup here, that stale 'new' label survives
+  // the edit and the commit inserts even when a matching placeholder
+  // event already exists — which is exactly what happened on the
+  // first real-world parse (May 15, 2026 smoke test → 4 dup events
+  // landed alongside 4 pre-existing placeholders).
   const updateRow = useCallback((idx, patch) => {
-    setRows((prev) => prev.map((r, i) => i === idx ? validateParsedRow({ ...r, ...patch }, { teams, locations, tournament }) : r));
-  }, [teams, locations, tournament]);
+    setRows((prev) => prev.map((r, i) => {
+      if (i !== idx) return r;
+      const validated = validateParsedRow({ ...r, ...patch }, { teams, locations, tournament });
+      return classifyRowAgainstExisting({ ...validated, tournament_id: tournamentId }, existingEvents);
+    }));
+  }, [teams, locations, tournament, existingEvents, tournamentId]);
 
   const removeRow = useCallback((idx) => setRows((prev) => prev.filter((_, i) => i !== idx)), []);
 
