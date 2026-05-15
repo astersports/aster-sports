@@ -1,9 +1,14 @@
 import { Link } from 'react-router-dom';
-import { CalendarPlus, DollarSign, Inbox, Mail, Megaphone, MessageSquare, Trophy, UserPlus } from 'lucide-react';
+import { CalendarPlus, DollarSign, Inbox, Mail, Megaphone, MessageSquare, Trophy, Upload, UserPlus } from 'lucide-react';
 
 // Wave 4.4-B Session 1: 'Compose Briefing' is the canonical entry point
 // into the briefing portal per the L99 strategic direction. The existing
 // 'Briefings' tile remains as the queue/triage view. Two distinct surfaces.
+//
+// Wave 5 PR 2 (2026-05-15): 'Import Schedule' added after Tournaments —
+// natural grouping (you import the schedule for a tournament). Lands on
+// /admin/import-schedule (paste TourneyMachine text → preview → commit
+// per cutover wave PR 2).
 const ACTIONS = [
   { label: '+ Event',         icon: CalendarPlus,  to: '/schedule'                  },
   { label: '+ Player',        icon: UserPlus,      to: '/teams'                     },
@@ -13,6 +18,7 @@ const ACTIONS = [
   { label: 'Announce',        icon: Megaphone,     to: '/messages?announce=1'       },
   { label: 'Message',         icon: MessageSquare, to: '/messages'                  },
   { label: 'Tournaments',     icon: Trophy,        to: '/tournaments'               },
+  { label: 'Import Schedule', icon: Upload,        to: '/admin/import-schedule'     },
 ];
 
 export default function QuickActions() {
