@@ -45,14 +45,24 @@ async function callClaude(apiKey: string, prompt: string): Promise<string> {
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-6",
+      // claude-sonnet-4-5 is the stable Sonnet model ID known to be
+      // accepted by the Messages API as of Spring 2026. Wave 5 PR 2
+      // initially used 'claude-sonnet-4-6' (per system prompt's
+      // "latest" naming) but the API returned a model-not-found error.
+      // 4-5 is sufficient for parser accuracy (validated in the spike
+      // earlier today against the AAU CT Rumble paste — 10/10 ground
+      // truth match).
+      model: "claude-sonnet-4-5",
       max_tokens: 4096,
       messages: [{ role: "user", content: prompt }],
     }),
   });
   if (!resp.ok) {
     const text = await resp.text();
-    throw new Error(`Anthropic API ${resp.status}: ${text}`);
+    // Surface the upstream error verbatim so the React side can show
+    // a diagnosable message to the operator instead of generic
+    // "Edge Function returned a non-2xx status code."
+    throw new Error(`Anthropic API ${resp.status}: ${text.slice(0, 500)}`);
   }
   const data = await resp.json();
   return data?.content?.[0]?.text ?? "";
