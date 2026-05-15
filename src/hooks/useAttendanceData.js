@@ -15,7 +15,7 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
   const lastKeyRef = useRef(null);
 
   useEffect(() => {
-    if (!teamId) { setLoading(false); return; }
+    if (!teamId) return;
     const key = `${teamId}-${filter}-${range}-${version}`;
     if (lastKeyRef.current === key) return;
     lastKeyRef.current = key;
@@ -137,5 +137,10 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
     }).sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
   }, [players, events, rsvps, arrivals, checkIns, activations, nowMs]);
 
-  return { grid, events, loading, refetch };
+  // loading derived at return so the !teamId case doesn't need an
+  // in-effect setLoading(false) (which would trip the
+  // react-hooks/set-state-in-effect rule). Same public contract:
+  // teamId set + fetching → true; teamId set + done → false;
+  // teamId null → false.
+  return { grid, events, loading: teamId ? loading : false, refetch };
 }
