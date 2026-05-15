@@ -740,3 +740,97 @@ Net: cutover wave is real work but smaller than the original
 plan suggested. PR 1 (narrow renderer alignment) is
 shippable in 1 PR session. The full cutover wave (PR 1-7)
 is realistic in 4-6 sessions.
+
+---
+
+## 12. Post-audit findings (PR 1 implementation, 2026-05-16)
+
+PR 1 verification reads surfaced two additional findings that
+sharpened or corrected the audit's load-bearing claims.
+
+### 12.1 The cobalt header is visual STRUCTURE, not string swap
+
+Audit §4.3 claimed: "renderer slots are flexible — resolver
+just needs to pass the right strings." Verification read of
+`src/lib/engine/renderers/header.js` against production HTML
+(May 11 weekly_digest send) showed this was wrong.
+
+The engine renders white background + cobalt 2px underline +
+slate-mist headline. Frank's pattern is full cobalt BACKGROUND
++ white headline. Same content slots (eyebrow / headline /
+sub_context), DIFFERENT visual treatment. String swaps cannot
+produce Frank's pattern; renderer-level changes are required.
+
+Fix in PR 1: added `variant: 'cobalt_band'` parameter to the
+header renderer. Default = existing underlined treatment for
+weekly_digest etc.; `cobalt_band` = full cobalt bg + white
+text + no underline + no gold stripe (redundant inside band).
+Resolver passes `variant: 'cobalt_band'` for tournament_prelim.
+
+### 12.2 The `team_schedule_table` section was orphaned
+
+Audit §3 framed: "engine works for the kinds it's been used
+for; tournament_prelim hasn't been used." Verification of
+the resolver/composer wire showed something stronger.
+
+`composeTournamentPrelim` emitted `team_schedule_table`
+sections. `composer.js` SECTION_RENDERERS had zero entries
+for that kind. The composer silently rendered unknown
+section kinds as empty strings (per the prior guard:
+`fn ? fn(section)?.html : ''`).
+
+Implication: if Frank HAD sent a tournament_prelim through
+the engine, the schedule section would have been silently
+empty. The pipeline was broken end-to-end, not just
+"unused." This explains the zero-production-tournament_prelim-
+sends finding more completely than the audit's framing did.
+
+Fix in PR 1: replaced `team_schedule_table` projection with
+day-grouped `game_card` sections (existing renderer reused
+with rail.label="GAME N" / "BONUS" / "SEMI" / "★"). Also
+added a dev-mode warning in `composer.renderSections` when a
+section kind has no registered renderer, so this class of
+silent failure can't repeat unnoticed.
+
+### 12.3 championshipScenarios is for OUTCOMES, not bracket rows
+
+Verification of `src/lib/engine/renderers/championshipScenarios.js`
+showed it renders "if you win, you go to X / if you lose, you
+go to Y" outcome boxes with positive/negative/neutral tone
+coloring. Frank's bracket section is structurally different:
+yellow "BRACKET PLAY | IF ADVANCE" callout + game-card-style
+SEMI / ★ Championship rows underneath.
+
+Fix in PR 1: added a small `bracket_callout` renderer (yellow
+band only). Bracket rows reuse the existing `game_card`
+renderer with appropriate rail labels (SEMI / ★) and
+championship variant for the title game. The `championshipScenarios`
+renderer is preserved for its actual use case (recap-style
+outcome explanations), not repurposed.
+
+---
+
+## 13. Session lesson — verification reads cascade
+
+Each layer of analysis (initial framing → audit → file-level
+verification → implementation read) catches errors in the
+prior level. Don't skip levels; the gap between "thinks it
+knows" and "verified directly" is where bugs live.
+
+This session's chain:
+  - Initial wave plan: "PR 1 = build the renderer engine."
+    (Wrong — engine is built.)
+  - Audit: "engine output is different shape than Frank's
+    hand-composed; renderer slots are flexible enough that
+    swapping strings produces the right pattern."
+    (Half right — content slots flexible; visual treatment
+    NOT flexible.)
+  - PR 1 verification reads: "the cobalt is a different
+    visual structure; the schedule section was orphaned;
+    championshipScenarios serves a different purpose."
+    (Sharper, code-verified.)
+
+Each layer was a hypothesis; each verification was a
+correction. The pattern joins the family already pinned in
+CLAUDE.md (`ask-receipts-when-reviewer-cites-off-cc-work`,
+`verify-sdk-mechanism-against-installed-source`).

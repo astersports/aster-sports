@@ -78,21 +78,41 @@ describe('tournament_prelim resolver — contract', () => {
     expect(slices).toEqual([]);
   });
 
-  it('6. no fabrication — empty schedule renders Schedule TBD structure (no fabricated rows)', async () => {
+  it('6. no fabrication — empty schedule renders Schedule TBD placeholder (no fabricated rows)', async () => {
+    // Wave 5 PR 1: empty schedule emits a day_header with "Schedule TBD"
+    // label (replaces the old team_schedule_table placeholder structure).
     const noEvents = { ...FIXTURES, events: [] };
     const { context, slices } = await resolveTournamentPrelim({ tournamentId: TID, pilotOnly: false }, { supabase: mockClient(noEvents), now: NOW });
     const { content_sections } = composeTournamentPrelim(context, slices[0], {});
-    const schedule = content_sections.find((s) => s.kind === 'team_schedule_table');
-    expect(schedule).toBeDefined();
-    expect(schedule.days).toEqual([]);
-    expect(schedule.placeholder).toBe('Schedule TBD');
+    const placeholder = content_sections.find((s) => s.kind === 'day_header' && s.label === 'Schedule TBD');
+    expect(placeholder).toBeDefined();
+    expect(content_sections.find((s) => s.kind === 'game_card')).toBeUndefined();
   });
 
-  it('7. no fabrication — sparse tournament metadata: only header + schedule + signoff + footer', async () => {
+  it('7. no fabrication — sparse tournament metadata emits aligned section sequence', async () => {
+    // Wave 5 PR 1: tournament_prelim aligned to Frank's hand-composed
+    // pattern. Required sections (always): header / rsvp_callout /
+    // (placeholder day_header for empty events) / logistics_line /
+    // brand_footer. Optional (data-driven): venue_list, day_header+
+    // game_card rows, bracket_callout, hotel_block, signoff,
+    // tagline_footer.
     const { context, slices } = await resolveTournamentPrelim({ tournamentId: TID, pilotOnly: false }, { supabase: mockClient(FIXTURES), now: NOW });
     const { content_sections } = composeTournamentPrelim(context, slices[0], {});
     const kinds = content_sections.map((s) => s.kind);
-    expect(kinds).toEqual(['header', 'team_schedule_table', 'signoff', 'footer']);
+    // Required-always sections present
+    expect(kinds).toContain('header');
+    expect(kinds).toContain('rsvp_callout');
+    expect(kinds).toContain('logistics_line');
+    expect(kinds).toContain('brand_footer');
+    // Ordering invariants
+    const headerIdx = kinds.indexOf('header');
+    const rsvpIdx = kinds.indexOf('rsvp_callout');
+    const logisticsIdx = kinds.indexOf('logistics_line');
+    const brandIdx = kinds.indexOf('brand_footer');
+    expect(headerIdx).toBe(0);
+    expect(rsvpIdx).toBeGreaterThan(headerIdx);
+    expect(logisticsIdx).toBeGreaterThan(rsvpIdx);
+    expect(brandIdx).toBe(kinds.length - 1);
   });
 
   it('8. override-merge precedence: hotel_block override beats tournament.hotel_url', async () => {

@@ -1,4 +1,11 @@
 // Wave 4.2-A-3 — tournament_prelim resolver pair.
+// Wave 5 (cutover wave PR 1, 2026-05-16) — compose() rewritten to
+// align with Frank's hand-composed pattern per
+// docs/CUTOVER_WAVE_GAP_AUDIT.md. Previously emitted an orphaned
+// `team_schedule_table` section (no registered renderer → silent
+// empty render). Now emits cobalt-band header + RSVP callout +
+// venue list + day-grouped game_card rows + bracket section +
+// logistics line + tagline footer + brand footer.
 //
 // Two-stage contract (locked across wave 4.2-A):
 //   resolveTournamentPrelim({ tournamentId, pilotOnly }, options)
@@ -6,28 +13,14 @@
 //   composeTournamentPrelim(context, slice, overrides)
 //     -> { subject, content_sections }
 //
-// Calendar walk: tournaments + tournament_teams + events (filtered by
-// tournament_id) + locations + team_players + player_guardians +
-// guardians + staff_profiles + organizations.
-//
-// Slice is per-team: each participating team gets its own
-// content_sections (their own schedule). Recipient guardians are
-// embedded in the slice for downstream send pipeline.
-//
-// Hallucination guard:
-//   - Empty tournament_teams -> slices = [].
-//   - Empty events for a team -> "Schedule TBD" structure (no
-//     fabricated rows).
-//   - Map link omitted per row when location.google_maps_url is null.
-//   - Sparse tournament metadata (null/empty hotel_url, survival_notes,
-//     coach_theme, etc.) -> corresponding sections omitted entirely.
-//   - Override beats data when both present.
-//   - Coaches with null phone omitted from signoff (matches wave).
+// Section builders extracted to tournamentPrelimSections.js to keep
+// this file under the 150-line cap.
 
 import {
-  buildSubContext, buildSubject, buildTeamSlices,
-  fetchRecipientGuardians, formatDayLabel, formatTime, trim,
-} from './tournamentPrelimHelpers';
+  buildBracketSections, buildBrandFooter, buildHeaderSection, buildLogisticsLine,
+  buildRsvpCalloutSection, buildScheduleSections, buildTaglineFooter, buildVenueListSection,
+} from './tournamentPrelimSections';
+import { buildSubject, buildTeamSlices, fetchRecipientGuardians, trim } from './tournamentPrelimHelpers';
 
 const ORG_NAME_DEFAULT = 'Legacy Hoopers';
 const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
@@ -59,7 +52,7 @@ export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { sup
   } else if (effectivePilotOnly === undefined) effectivePilotOnly = false;
 
   const teamIds = tournament_teams.map((t) => t.team_id);
-  const { data: events = [] } = await supabase.from('events').select('id, team_id, event_type, start_at, end_at, location, sub_location, location_id, opponent, tournament_id, tournament_name, is_bracket_placeholder, bracket_placeholder_label, status').eq('tournament_id', tournamentId);
+  const { data: events = [] } = await supabase.from('events').select('id, team_id, event_type, start_at, end_at, location, sub_location, location_id, opponent, tournament_id, tournament_name, is_bracket_placeholder, bracket_placeholder_label, bracket_label, is_bonus_game, is_championship_final, status').eq('tournament_id', tournamentId);
   const events_by_team = {};
   for (const tid of teamIds) events_by_team[tid] = [];
   for (const ev of (events || []).slice().sort((a, b) => new Date(a.start_at) - new Date(b.start_at))) {
@@ -81,68 +74,52 @@ export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { sup
   return {
     context: {
       org: {
-        id: orgId, name: ORG_NAME_DEFAULT,
+        id: orgId, name: org?.name || ORG_NAME_DEFAULT,
         branding: { eyebrowLink: ORG_WEBSITE_DEFAULT, contactEmail: ORG_CONTACT_DEFAULT, logoUrl: ORG_LOGO_DEFAULT },
         voice_config: org?.voice_config || null, brand_colors: org?.brand_colors || null,
         coaches: coaches || [],
       },
-      tournament,
-      tournament_teams,
-      events_by_team,
-      locations,
+      tournament, tournament_teams, events_by_team, locations,
     },
     slices,
   };
 }
 
-function buildTeamScheduleSection(events, locations, teamColor) {
-  if (!events || !events.length) return { kind: 'team_schedule_table', team_color: teamColor, days: [], placeholder: 'Schedule TBD' };
-  const dayMap = new Map();
-  for (const ev of events) {
-    const label = formatDayLabel(ev.start_at);
-    if (!dayMap.has(label)) dayMap.set(label, []);
-    const loc = locations[ev.location_id] || null;
-    const isBracket = !ev.opponent && !ev.is_bracket_placeholder;
-    dayMap.get(label).push({
-      time: formatTime(ev.start_at),
-      opponent: ev.opponent || (isBracket ? 'Bracket TBD' : 'TBD'),
-      location_name: loc?.name || ev.location || 'Location TBD',
-      location_map_url: loc?.google_maps_url || null,
-    });
-  }
-  const days = Array.from(dayMap.entries()).map(([day_label, rows]) => ({ day_label, rows }));
-  return { kind: 'team_schedule_table', team_color: teamColor, days };
+function defaultCoachFirstName(coaches) {
+  const first = (coaches || []).find((c) => c.display_name);
+  return first ? String(first.display_name).split(/\s+/)[0] : null;
 }
 
 export function composeTournamentPrelim(context, slice, overrides = {}) {
   if (!context || !slice) throw new Error('Missing context or slice');
   const { tournament, events_by_team, locations, org } = context;
+  const events = events_by_team[slice.team_id] || [];
   const sections = [];
-  sections.push({ kind: 'header', eyebrow: `${slice.team_name.toUpperCase()} · TOURNAMENT WEEK`, eyebrow_link: org.branding.eyebrowLink, headline: 'TOURNAMENT BRIEFING', sub_context: buildSubContext(tournament), goldStripe: true, team_color: slice.team_color });
-  sections.push(buildTeamScheduleSection(events_by_team[slice.team_id] || [], locations, slice.team_color));
 
+  sections.push(buildHeaderSection(slice, tournament, overrides));
+  sections.push(buildRsvpCalloutSection(overrides, defaultCoachFirstName(org.coaches)));
+  const venueList = buildVenueListSection(events, locations);
+  if (venueList) sections.push(venueList);
+
+  const sched = buildScheduleSections(events, locations);
+  if (sched.schedule?.length) sections.push(...sched.schedule);
+  else sections.push({ kind: 'day_header', label: 'Schedule TBD', venue_suffix: null });
+  if (sched.brackets?.length) sections.push(...buildBracketSections(sched.brackets, locations));
+
+  // Wave 5 PR 1 — hotel_block preserved from prior resolver for
+  // tournaments with hotel info (override OR tournament.hotel_block_info).
   const hotelText = trim(overrides.hotel_block) || trim(tournament.hotel_block_info) || (tournament.hotel_url ? `Hotel info: ${tournament.hotel_url}` : '');
   if (hotelText) sections.push({ kind: 'hotel_block', text: hotelText });
 
-  const survival = trim(overrides.survival_guide) || trim(tournament.survival_notes);
-  if (survival) sections.push({ kind: 'survival_guide', text: survival });
+  sections.push(buildLogisticsLine(overrides));
 
-  const coachKeys = trim(overrides.coach_keys) || trim(tournament.coach_theme);
-  if (coachKeys) sections.push({ kind: 'coach_keys', text: coachKeys });
-
-  const linkLabel = trim(overrides.tourney_url_label);
-  if (tournament.tourney_url && linkLabel) sections.push({ kind: 'tourney_url_link', label: linkLabel, url: tournament.tourney_url });
-
-  for (const key of ['coach_note', 'parent_shoutout']) {
-    const v = trim(overrides[key]);
-    if (v) sections.push({ kind: 'stats_narrative', body: v });
-  }
-
-  const validCoaches = (org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
   const signoffProse = trim(overrides.signoff_message);
+  const validCoaches = (org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
   if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
 
-  sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
+  const tagline = buildTaglineFooter(overrides);
+  if (tagline) sections.push(tagline);
+  sections.push(buildBrandFooter(org.name));
 
   return { subject: buildSubject(slice, tournament), content_sections: sections };
 }

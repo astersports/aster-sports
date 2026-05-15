@@ -8,10 +8,15 @@ export const defaultValue = {
   opponent_scouting: '', lineup_notes: '',
   // Wave 3.16.1: URL resolved from tournament.tourney_url at render.
   tourney_link_label: '',
+  // Wave 5 (cutover wave PR 1) — per-briefing tagline footer
+  // (e.g. "27 days of work. Time to show it."). Body field per
+  // audit §9.5 (NOT a comms_messages column).
+  tagline: '',
+  rsvp_coach_first_name: '',
 };
 
 export function validate(v) {
-  const filled = ['hotel_block', 'sat_notes', 'sun_notes', 'opponent_scouting', 'lineup_notes'].filter((k) => v?.[k]?.trim());
+  const filled = ['hotel_block', 'sat_notes', 'sun_notes', 'opponent_scouting', 'lineup_notes', 'tagline'].filter((k) => v?.[k]?.trim());
   if (!filled.length) return ['Add at least one section so the briefing has body content.'];
   return [];
 }
@@ -20,6 +25,8 @@ export default function TournamentPrelimBody({ value, onChange }) {
   const v = { ...defaultValue, ...(value || {}) };
   const set = (patch) => onChange?.(patch);
   const fields = [
+    { key: 'tagline', label: 'Closing tagline', placeholder: '27 days of work. Time to show it.' },
+    { key: 'rsvp_coach_first_name', label: 'Coach first name for RSVP banner', placeholder: 'Kenny' },
     { key: 'hotel_block', label: 'Hotel + parking', placeholder: 'Hampton Inn block: $189/night through May 14. Code: LEGACY11U.' },
     { key: 'sat_notes', label: 'Saturday plan', placeholder: 'Pool play 9 AM, noon, 3 PM. Arrive 45 min before tip.' },
     { key: 'sun_notes', label: 'Sunday plan', placeholder: 'Bracket play TBD pending Saturday results.' },
