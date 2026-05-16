@@ -36,6 +36,7 @@
 
 import { composeAcademyCallupNotice, resolveAcademyCallupNotice } from './academyCallupNotice';
 import { composeCoachRoundup, resolveCoachRoundup } from './coachRoundup';
+import { composeFamilyGuide, resolveFamilyGuide } from './familyGuide';
 import { composeGameRecap, resolveGameRecap } from './gameRecap';
 import { composeRsvpNudge, resolveRsvpNudge } from './rsvpNudge';
 import { composeScheduleChange, resolveScheduleChange } from './scheduleChange';
@@ -121,6 +122,19 @@ export const RESOLVER_REGISTRY = {
     resolve: resolveCoachRoundup,
     compose: composeCoachRoundup,
     anchorFromState: (state) => ({ coachUserId: state.audience_filter?.coach_user_id, dateRange: state.body?.date_range }),
+    overridesFromState: bodyOverrides,
+    sendPath: 'composerSubmit',
+  },
+  // Wave 5 PR 5a — family_guide skeleton. State carries the chosen
+  // parent as state.audience_filter.parent_user_id; the date range
+  // lives in state.body.date_range. 5b expands the resolver to walk
+  // player_guardians → players → team_players → events with cross-
+  // kid conflict detection; 5c adds the UI body (parent picker +
+  // date range). wizardSupported stays false in 5a/5b; flipped in 5c.
+  family_guide: {
+    resolve: resolveFamilyGuide,
+    compose: composeFamilyGuide,
+    anchorFromState: (state) => ({ parentUserId: state.audience_filter?.parent_user_id, dateRange: state.body?.date_range }),
     overridesFromState: bodyOverrides,
     sendPath: 'composerSubmit',
   },

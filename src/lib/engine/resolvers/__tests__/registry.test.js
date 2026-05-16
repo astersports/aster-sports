@@ -9,8 +9,8 @@ import {
 } from '../registry';
 
 describe('registry — helpers', () => {
-  it('isCalendarAnchored: 8 kinds true (coach_roundup added wave 5 PR 4a), free-form + unknown false', () => {
-    expect(CALENDAR_ANCHORED_KINDS.length).toBe(8);
+  it('isCalendarAnchored: 9 kinds true (family_guide added wave 5 PR 5a), free-form + unknown false', () => {
+    expect(CALENDAR_ANCHORED_KINDS.length).toBe(9);
     for (const k of CALENDAR_ANCHORED_KINDS) expect(isCalendarAnchored(k)).toBe(true);
     expect(isCalendarAnchored('announcement')).toBe(false);
     expect(isCalendarAnchored('custom_message')).toBe(false);
@@ -26,12 +26,13 @@ describe('registry — helpers', () => {
     expect(getDispatchSendPath('rsvp_nudge')).toBe('rsvpNudgeSend');
     expect(getDispatchSendPath('academy_callup_notice')).toBe('academyCallupSend');
     expect(getDispatchSendPath('coach_roundup')).toBe('composerSubmit');
+    expect(getDispatchSendPath('family_guide')).toBe('composerSubmit');
     expect(getDispatchSendPath('announcement')).toBe('legacy');
     expect(getDispatchSendPath('custom_message')).toBe('legacy');
     expect(getDispatchSendPath('not_a_kind')).toBe('legacy');
   });
 
-  it('all 8 entries expose resolve, compose, anchorFromState, overridesFromState, sendPath', () => {
+  it('all 9 entries expose resolve, compose, anchorFromState, overridesFromState, sendPath', () => {
     for (const kind of CALENDAR_ANCHORED_KINDS) {
       const e = RESOLVER_REGISTRY[kind];
       expect(typeof e.resolve).toBe('function');
