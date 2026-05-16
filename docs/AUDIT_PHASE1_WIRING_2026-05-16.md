@@ -62,17 +62,17 @@ Edge function trusts upstream `guardianIds` array. Per anti-pattern #36 lessons:
 
 ---
 
-### P0-3: `useGameDetail.js:15` — game_results query missing published_at filter
+### ~~P0-3~~: `useGameDetail.js:15` — RECLASSIFIED AS FALSE POSITIVE
 
-```js
-.from('game_results').eq('event_id', eventId).maybeSingle()
-```
+**Original flag:** game_results query missing `published_at` filter; 3 sibling callsites filter it; this one doesn't.
 
-Three sibling callsites filter `.not('published_at', 'is', null)` to exclude unpublished scores. This one doesn't. Draft scores visible to anyone fetching event detail (RLS may gate by role, but the application-layer filter is the canonical pattern — RLS shouldn't be the only line of defense).
+**On verification:** the file path tells the story — `src/components/livescore/useGameDetail.js`. The hook powers the live-scoring editing surface (`/events/:id/live` route, coach/admin-gated). Coaches need to see draft game_results because that IS the editing surface. The 3 sibling callsites that filter `published_at` are public-facing reads (Records page, game result cards) where drafts SHOULD hide from parents.
 
-**Canonical pattern:** `.not('published_at', 'is', null)` per the 3 peer callsites (useGameResultsMap, useGameResultsStats, GameResultCard).
+This is intentional asymmetry, not drift. Cluster 4 agent missed the `livescore/` directory context.
 
-**Fix scope:** 1 file, ~1 line.
+**Process correction:** when an agent flags drift, verify the directory + caller context before tagging severity. Same lesson class as the schema false positives above.
+
+**Updated P0 count: 2 (not 3).**
 
 ---
 
@@ -199,9 +199,12 @@ Three P0 findings → either 1 batched PR or 3 small PRs:
 
 ## Phase 1 status: COMPLETE
 
-- **Findings:** 3 P0, 7 P1, 3 P2
-- **False positives discarded:** 7 (all schema-existence flags from my incomplete canonical lists)
-- **Fix PRs:** deferred until Phase 5 + synthesis complete, per Frank's discipline
-- **Process correction noted:** schema verification before agent prompts in Phase 2+
+- **Findings:** 2 P0, 7 P1, 3 P2 (after cross-verification reclassified 1 P0 → false positive)
+- **False positives discarded:** 8 total (7 schema-existence from incomplete canonical lists + 1 published_at on live-scoring hook from missed directory context)
+- **Fix policy (per Frank's fix-as-you-go reframe):** Class 1 + Class 2 (app-layer only) fixes shipped immediately with per-finding verification. RLS + schema migrations stay gated to post-synthesis batched PR.
+- **P0 fix PR shipping now:** PR for P0-1 (EventLocationTab locations + tournaments) and P0-2 (send-tournament-message guardians defense-in-depth).
+- **Process corrections noted:**
+  1. Schema verification (information_schema query) before agent prompts in Phase 2+
+  2. Directory + caller context verification on every agent-flagged finding before severity tag
 
 Standing by for Frank's routing to Phase 2 (Registry + State-machine sweep).
