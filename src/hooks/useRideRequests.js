@@ -10,13 +10,14 @@ export function useRideRequests(eventId) {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!eventId) { setRequests([]); setLoading(false); return; }
+    if (!eventId || !orgId) { setRequests([]); setLoading(false); return; }
+    // Alpha audit defense-in-depth — anti-pattern #37.
     const { data, error } = await supabase.from('event_ride_requests')
-      .select('*').eq('event_id', eventId).order('created_at', { ascending: true });
+      .select('*').eq('org_id', orgId).eq('event_id', eventId).order('created_at', { ascending: true });
     if (error) console.error('useRideRequests:', error.message);
     setRequests(data || []);
     setLoading(false);
-  }, [eventId]);
+  }, [eventId, orgId]);
 
   useEffect(() => { Promise.resolve().then(fetch); }, [fetch]);
 

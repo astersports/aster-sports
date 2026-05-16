@@ -11,12 +11,14 @@ let initialFavorites = null;
 const upsertFn = vi.fn(() => Promise.resolve({ error: null }));
 
 function selectChain() {
+  // Phase Alpha audit PR #208 added .eq('org_id', orgId) after .eq('user_id', userId).
+  // Mock supports chained .eq() calls by returning the same shape recursively.
+  const eqShape = {
+    eq: () => eqShape,
+    maybeSingle: () => Promise.resolve({ data: initialFavorites === null ? null : { favorite_audiences: initialFavorites }, error: null }),
+  };
   return {
-    select: () => ({
-      eq: () => ({
-        maybeSingle: () => Promise.resolve({ data: initialFavorites === null ? null : { favorite_audiences: initialFavorites }, error: null }),
-      }),
-    }),
+    select: () => eqShape,
     upsert: (...a) => { upsertFn(...a); return Promise.resolve({ error: null }); },
   };
 }

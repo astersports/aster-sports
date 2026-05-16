@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Trophy } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 const TYPE_LABELS = {
   tournament_champion: 'Champion',
@@ -19,13 +20,16 @@ const TYPE_COLORS = {
 };
 
 export default function TeamAchievements({ teamId }) {
+  const { orgId } = useAuth();
   const [achievements, setAchievements] = useState([]);
 
   useEffect(() => {
-    if (!teamId) return;
+    if (!teamId || !orgId) return;
     let cancelled = false;
+    // Alpha audit defense-in-depth — anti-pattern #37.
     supabase.from('team_achievements')
       .select('id, achievement_type, event_date, opponent_team_name, tournament_name, location_name, confirmed_at')
+      .eq('org_id', orgId)
       .eq('team_id', teamId)
       .not('confirmed_at', 'is', null)
       .order('event_date', { ascending: false })
@@ -33,7 +37,7 @@ export default function TeamAchievements({ teamId }) {
         if (!cancelled) setAchievements(data || []);
       });
     return () => { cancelled = true; };
-  }, [teamId]);
+  }, [teamId, orgId]);
 
   if (achievements.length === 0) return null;
 

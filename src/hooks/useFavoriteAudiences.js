@@ -27,11 +27,13 @@ export function useFavoriteAudiences() {
   useEffect(() => {
     let cancelled = false;
     Promise.resolve().then(async () => {
-      if (!userId) { setFavorites([]); setLoading(false); return; }
+      if (!userId || !orgId) { setFavorites([]); setLoading(false); return; }
+      // Alpha audit defense-in-depth — anti-pattern #37.
       const { data, error } = await supabase
         .from('user_preferences')
         .select('favorite_audiences')
         .eq('user_id', userId)
+        .eq('org_id', orgId)
         .maybeSingle();
       if (cancelled) return;
       if (error) { setFavorites([]); setLoading(false); return; }
@@ -39,7 +41,7 @@ export function useFavoriteAudiences() {
       setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [userId]);
+  }, [userId, orgId]);
 
   const persist = useCallback(async (next) => {
     if (!userId || !orgId) return;
