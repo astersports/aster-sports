@@ -49,34 +49,30 @@ export default function MatchupCard({ event, gameResult }) {
           </span>
         </div>
         {hasResult ? (
-          <div style={{ width: 72, flexShrink: 0, textAlign: 'center' }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: gr.result === 'W' ? 'var(--em-success)' : gr.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
+          <div style={{ width: 80, flexShrink: 0, textAlign: 'center' }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: gr.result === 'W' ? 'var(--em-success)' : gr.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
               {gr.result}
             </span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)', marginLeft: 4 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginLeft: 4 }}>
               {gr.our_score}-{gr.opponent_score}
             </span>
           </div>
         ) : (
-          // Wave 5 follow-up — inline VS + time on one row (was stacked).
-          // Stacked layout made the middle column the tallest element on
-          // every card, ratcheting card height unevenly when the opponent
-          // text wrapped. Single line reads naturally as "vs 5:00 PM"
-          // and keeps card height constant when opponent fits on one line.
-          <div style={{ width: 96, flexShrink: 0, display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4 }}>
-            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase' }}>
-              {isPast ? '—' : isAway ? '@' : 'vs'}
-            </span>
+          // Wave 5 follow-up — time pinned at 17px bold to match
+          // EventCard typography hierarchy (time is the primary signal).
+          // "vs"/"@" moved to the opponent prefix (also matches EventCard
+          // pattern: time is bare, opponent carries the home/away mark).
+          <div style={{ width: 80, flexShrink: 0, textAlign: 'center' }}>
             {!isPast && (
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--em-accent)', whiteSpace: 'nowrap' }}>
+              <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)', whiteSpace: 'nowrap' }}>
                 {formatTime(event.start_at)}
               </span>
             )}
           </div>
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
-            {opponent}
+          <span style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>
+            {isPast ? opponent : `${isAway ? '@ ' : 'vs '}${opponent}`}
           </span>
           {isPast && (
             <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 1 }}>
