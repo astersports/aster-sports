@@ -11,7 +11,9 @@ export default function StepDetails({ eventType, data, onChange, orgId }) {
   const [opponents, setOpponents] = useState([]);
   useEffect(() => {
     if (!orgId) return;
-    supabase.from('tournaments').select('id, name').eq('org_id', orgId).in('status', ['planned', 'scheduled', 'in_progress']).order('start_date')
+    // Phase 1 audit P1-7 — archived_at filter (tournaments archived rows
+    // should not surface in the Create/Edit wizard tournament picker).
+    supabase.from('tournaments').select('id, name').eq('org_id', orgId).is('archived_at', null).in('status', ['planned', 'scheduled', 'in_progress']).order('start_date')
       .then(({ data: t }) => setTournaments(t || []));
     supabase.from('opponents').select('id, name').eq('org_id', orgId).order('name')
       .then(({ data: o }) => setOpponents(o || []));

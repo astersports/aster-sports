@@ -26,9 +26,13 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
   const selectTeam = (id) => { setForm((f) => ({ ...f, teamId: id })); setStep(2); };
 
   // On edit, load recurrence (pattern + until) from sibling dates.
+  // Phase 1 audit P1-2 (docs/AUDIT_PHASE1_WIRING_2026-05-16.md):
+  // org_id added as defense-in-depth; parent_event_id isolation is
+  // practically sufficient but the canonical pattern requires org scope.
   useEffect(() => {
-    if (!isEdit || !editEvent?.parent_event_id) return;
+    if (!isEdit || !editEvent?.parent_event_id || !orgId) return;
     supabase.from('events').select('start_at')
+      .eq('org_id', orgId)
       .eq('parent_event_id', editEvent.parent_event_id)
       .order('start_at', { ascending: true })
       .then(({ data }) => {
@@ -38,7 +42,7 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
         const until = data[data.length - 1].start_at.slice(0, 10);
         setForm((f) => ({ ...f, recurrence: { pattern, until } }));
       });
-  }, [isEdit, editEvent?.parent_event_id]);
+  }, [isEdit, editEvent?.parent_event_id, orgId]);
 
   // On edit, load existing volunteer slots into the DutyEditor.
   useEffect(() => {
