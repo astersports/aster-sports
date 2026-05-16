@@ -63,9 +63,12 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
                 {gameResult?.published_at && <span style={{ fontSize: 13, fontWeight: 700, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)', marginLeft: 'auto' }}>{gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}</span>}
                 {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
               </div>
+              {/* Weather is the rightmost badge so it stays put as RSVP
+                  counts come in. RSVP varies in length (14NR vs 6G · 7NR
+                  vs absent); weather is a stable 2-3 char "78°" cell. */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                {weather && !isPast && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{weather.icon} {weather.temp}°</span>}
                 <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
+                {weather && !isPast && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{weather.icon} {weather.temp}°</span>}
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2 }}>
@@ -111,9 +114,12 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
                 </div>
               )}
             </div>
+            {/* RSVP on top, weather on bottom — keeps weather pinned to
+                the bottom-right corner. RSVP cell length varies; weather
+                position stays stable. */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0, textAlign: 'right' }}>
-              {weather && !isPast && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{weather.icon} {weather.temp}°</span>}
               <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
+              {weather && !isPast && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{weather.icon} {weather.temp}°</span>}
             </div>
           </div>
         )}
