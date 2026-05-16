@@ -50,6 +50,9 @@ import coachHeader from './renderers/coachHeader';
 import teamColorPill from './renderers/teamColorPill';
 import conflictCallout from './renderers/conflictCallout';
 import colorStripedRow from './renderers/colorStripedRow';
+// Audit 2026-05-16 Phase 5 orphan fix — event_card emitted by
+// rsvp_nudge + academy_callup_notice composers, previously unregistered.
+import eventCard from './renderers/eventCard';
 
 const SECTION_RENDERERS = {
   header: renderHeader,
@@ -84,6 +87,7 @@ const SECTION_RENDERERS = {
   team_color_pill: teamColorPill,
   conflict_callout: conflictCallout,
   color_striped_row: colorStripedRow,
+  event_card: eventCard,
 };
 
 // KIND_COMPOSERS — legacy compose() path for kinds NOT in
