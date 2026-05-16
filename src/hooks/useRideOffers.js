@@ -14,22 +14,24 @@ export function useRideOffers(eventId) {
   const [error, setError] = useState(null);
 
   const fetchOffers = useCallback(async () => {
-    if (!eventId) {
+    if (!eventId || !orgId) {
       setOffers([]);
       setLoading(false);
       return;
     }
     setError(null);
+    // Alpha audit defense-in-depth — anti-pattern #37.
     const { data, error: fetchError } = await supabase
       .from('event_ride_offers')
       .select('*')
+      .eq('org_id', orgId)
       .eq('event_id', eventId)
       .eq('status', 'active')
       .order('created_at', { ascending: true });
     if (fetchError) setError(fetchError);
     else setOffers(data || []);
     setLoading(false);
-  }, [eventId]);
+  }, [eventId, orgId]);
 
   useEffect(() => {
     (async () => { await fetchOffers(); })();

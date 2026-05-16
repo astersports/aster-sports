@@ -1,20 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 export function useGameDetail(eventId) {
+  const { orgId } = useAuth();
   const [result, setResult] = useState(null);
   const [plays, setPlays] = useState([]);
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!eventId) { Promise.resolve().then(() => setLoading(false)); return; }
+    if (!eventId || !orgId) { Promise.resolve().then(() => setLoading(false)); return; }
     let cancelled = false;
     (async () => {
+      // Alpha audit defense-in-depth — anti-pattern #37.
+      // game_results + game_plays scope via event_id FK (no org_id column);
+      // only player_game_stats has org_id directly.
       const [grRes, plRes, stRes] = await Promise.all([
         supabase.from('game_results').select('*').eq('event_id', eventId).maybeSingle(),
         supabase.from('game_plays').select('*').eq('event_id', eventId).eq('is_voided', false).order('created_at', { ascending: true }),
-        supabase.from('player_game_stats').select('*, players(id, first_name, last_name)').eq('event_id', eventId).order('pts', { ascending: false, nullsFirst: false }),
+        supabase.from('player_game_stats').select('*, players(id, first_name, last_name)').eq('org_id', orgId).eq('event_id', eventId).order('pts', { ascending: false, nullsFirst: false }),
       ]);
       if (cancelled) return;
       setResult(grRes.data || null);
@@ -23,7 +28,7 @@ export function useGameDetail(eventId) {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [eventId]);
+  }, [eventId, orgId]);
 
   const quarterScores = useMemo(() => {
     const qs = {};
