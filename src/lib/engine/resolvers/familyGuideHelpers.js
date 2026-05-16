@@ -1,12 +1,20 @@
-// Wave 5 PR 5a — pure helpers for the family_guide resolver:
-// date-range parsing, kid-grouping, and conflict detection across
-// a parent's children. No DB calls; no IO. Caller passes data;
-// helpers transform. Tested in isolation against fixtures in 5b.
+// Wave 5 PR 5b — pure helpers for the family_guide resolver:
+// date-range parsing, kid+event grouping, and cross-kid conflict
+// detection. No DB calls; no IO. Caller passes data; helpers
+// transform.
 //
-// 5a ships date-formatting + a stub conflict detector. 5b lands
-// the real grouping + conflict logic with travel-time awareness.
+// Conflict detection taxonomy (decided in 5a, implemented here):
+//   1. Same-day overlapping (same time, same or different venues)
+//   2. Same-day close-together with travel implication
+//      (back-to-back games at venues >= TRAVEL_GAP_MIN minutes
+//      apart by elapsed time, computed by absolute distance
+//      between start_at values when both kids have games on the
+//      same day with no overlap but a tight gap)
+// Same-day non-overlapping with reasonable travel: NOT a conflict.
+// Different-day: NOT a conflict.
 
 const DEFAULT_GAME_MINUTES = 60;
+const TRAVEL_GAP_MIN = 30;
 
 function pad2(n) { return String(n).padStart(2, '0'); }
 
@@ -40,23 +48,84 @@ export function formatTime(iso) {
   return `${h}:${pad2(m)} ${am ? 'AM' : 'PM'}`;
 }
 
-// 5a stub — real grouping lands in 5b. Returns [{ player_id,
-// first_name, team_id, team_name, team_color, events: [...sorted
-// by start_at] }]. In 5b the walk parent → players → teams →
-// events feeds this shape.
-export function groupEventsByKid(/* kids, events */) {
-  return [];
+// Groups events by kid (one row per kid×team because a kid on two
+// teams has events on each). Each kid block carries the kid's
+// player_id, the team they're playing on for that subset, the
+// team_color of that team, and the sorted events. Same kid on
+// two teams gets two blocks — VIP header sums the event_count
+// across blocks.
+export function groupEventsByKid(kids, events) {
+  const out = [];
+  const byKey = new Map();
+  for (const k of kids || []) {
+    for (const t of k.teams || []) {
+      const key = `${k.player_id}|${t.team_id}`;
+      const block = {
+        player_id: k.player_id,
+        first_name: k.first_name,
+        team_id: t.team_id,
+        team_name: t.team_name,
+        team_color: t.team_color || '#4a8fd4',
+        sort_order: t.sort_order ?? 0,
+        events: [],
+      };
+      byKey.set(key, block);
+      out.push(block);
+    }
+  }
+  for (const ev of events || []) {
+    for (const block of out) {
+      if (block.team_id === ev.team_id) block.events.push(ev);
+    }
+  }
+  for (const block of out) {
+    block.events.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+  }
+  out.sort((a, b) => (a.sort_order - b.sort_order) || (a.first_name || '').localeCompare(b.first_name || ''));
+  return out;
 }
 
-// 5a stub — real detection lands in 5b. Two-class conflict
-// taxonomy per audit-day routing spec:
-//   1. Same-day overlapping (same time, same or different venues)
-//   2. Same-day close-together with travel implication
-//      (back-to-back games at venues >= TRAVEL_GAP_MIN apart)
-// Same-day non-overlapping with reasonable travel: NOT a conflict.
-// Different-day: NOT a conflict.
-export function detectConflicts(/* kidsWithEvents */) {
-  return [];
+// Cross-kid conflict detection. Two events on the same day are a
+// conflict when either:
+//   (a) their time windows overlap (end-time falls back to
+//       start + DEFAULT_GAME_MINUTES)
+//   (b) gap between A's end and B's start is < TRAVEL_GAP_MIN
+//       minutes (parent cannot physically travel between)
+// Same-kid pairs are NOT conflicts (kid plays both; parent only
+// needs to be at one). Different-day pairs are NOT conflicts.
+export function detectConflicts(kidsWithEvents) {
+  const allEvents = [];
+  for (const block of kidsWithEvents || []) {
+    for (const ev of block.events || []) {
+      allEvents.push({ ...ev, _kid: block });
+    }
+  }
+  allEvents.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+  const conflicts = [];
+  for (let i = 0; i < allEvents.length; i++) {
+    const a = allEvents[i];
+    const aStart = new Date(a.start_at).getTime();
+    const aEnd = a.end_at ? new Date(a.end_at).getTime() : aStart + DEFAULT_GAME_MINUTES * 60 * 1000;
+    const aDay = new Date(a.start_at).toISOString().slice(0, 10);
+    for (let j = i + 1; j < allEvents.length; j++) {
+      const b = allEvents[j];
+      const bStart = new Date(b.start_at).getTime();
+      const bDay = new Date(b.start_at).toISOString().slice(0, 10);
+      if (aDay !== bDay) break;
+      if (a._kid.player_id === b._kid.player_id) continue;
+      const gapMin = (bStart - aEnd) / (60 * 1000);
+      const overlapping = bStart < aEnd;
+      const tightTravel = gapMin >= 0 && gapMin < TRAVEL_GAP_MIN;
+      if (!overlapping && !tightTravel) continue;
+      conflicts.push({
+        date_label: formatDayLabel(a.start_at),
+        kid_a: a._kid.first_name, team_a: a._kid.team_name, time_a: formatTime(a.start_at), color_a: a._kid.team_color,
+        kid_b: b._kid.first_name, team_b: b._kid.team_name, time_b: formatTime(b.start_at), color_b: b._kid.team_color,
+        reason: overlapping ? 'overlap' : 'tight_travel',
+      });
+    }
+  }
+  return conflicts;
 }
 
-export { DEFAULT_GAME_MINUTES };
+export { DEFAULT_GAME_MINUTES, TRAVEL_GAP_MIN };

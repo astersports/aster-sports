@@ -63,6 +63,15 @@ import placementBlock from './renderers/placementBlock';
 import gameLog from './renderers/gameLog';
 import standoutMoments from './renderers/standoutMoments';
 import coachReflection from './renderers/coachReflection';
+// Wave 5 PR 5b — family_guide section renderers (3): cobalt VIP
+// banner (parent + kids + N games), per-kid colored pill (kid +
+// team + N games), quick-link nav (one row per kid with the team
+// color as left edge). Per anti-pattern #38: renderers register
+// here BEFORE the resolver emits the kinds in PR 5b's resolver
+// commit.
+import vipHeader from './renderers/vipHeader';
+import kidColorPill from './renderers/kidColorPill';
+import quickLinkNav from './renderers/quickLinkNav';
 
 const SECTION_RENDERERS = {
   header: renderHeader,
@@ -103,6 +112,9 @@ const SECTION_RENDERERS = {
   game_log: gameLog,
   standout_moments: standoutMoments,
   coach_reflection: coachReflection,
+  vip_header: vipHeader,
+  kid_color_pill: kidColorPill,
+  quick_link_nav: quickLinkNav,
 };
 
 // KIND_COMPOSERS — legacy compose() path for kinds NOT in
