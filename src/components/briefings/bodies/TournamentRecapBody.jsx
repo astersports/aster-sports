@@ -1,19 +1,28 @@
 /* eslint-disable react-refresh/only-export-components */
-// Wave 3.11 follow-up — tournament_recap body editor.
-// Wave 3.16.1 — added optional tourney_link_label. The URL itself is
-// resolved at compose/render time from the anchored tournament's
-// tourney_url column (NOT stored on the body). Empty label hides the
-// CTA; non-empty label + non-null tourney_url renders a primary CTA.
+// Wave 4.2-A-4 alignment — body fields match composeTournamentRecap's
+// overrides contract in src/lib/engine/resolvers/tournamentRecap.js.
+// Composer reads: standout_moments, coach_reflection, coach_note,
+// parent_shoutout. signoff_message is a top-level state field handled
+// by bodyOverrides (not part of state.body).
+//
+// Placement + per-game results auto-render from DB (placement_block +
+// game_log sections in compose). No body editor needed for those.
 
 import { fieldGap, inputStyle, labelStyle, textareaStyle } from './_styles';
 
 export const defaultValue = {
-  final_standing: '', game_results: '', mvp_name: '', takeaways: '',
-  tourney_link_label: '',
+  standout_moments: '',
+  coach_reflection: '',
+  coach_note: '',
+  parent_shoutout: '',
 };
 
 export function validate(v) {
-  if (!v?.final_standing?.trim() && !v?.takeaways?.trim()) return ['Add at least final standing or takeaways.'];
+  const hasContent = v?.standout_moments?.trim()
+    || v?.coach_reflection?.trim()
+    || v?.coach_note?.trim()
+    || v?.parent_shoutout?.trim();
+  if (!hasContent) return ['Add at least one section — coach reflection, standout moments, coach note, or parent shoutout.'];
   return [];
 }
 
@@ -23,27 +32,20 @@ export default function TournamentRecapBody({ value, onChange }) {
   return (
     <div style={fieldGap}>
       <label>
-        <span style={labelStyle}>Final standing</span>
-        <input type="text" value={v.final_standing} onChange={(e) => set({ final_standing: e.target.value })} style={inputStyle} placeholder="Finished 3rd of 8 teams." />
+        <span style={labelStyle}>Coach reflection</span>
+        <textarea value={v.coach_reflection} onChange={(e) => set({ coach_reflection: e.target.value })} style={textareaStyle} placeholder="Defense in the second half was the difference in the bracket win." />
       </label>
       <label>
-        <span style={labelStyle}>Game-by-game results</span>
-        <textarea value={v.game_results} onChange={(e) => set({ game_results: e.target.value })} style={textareaStyle} placeholder={"Sat: W 42-38 vs Storm Blue, L 30-40 vs Mavs\nSun: W 51-44 vs Heat"} />
+        <span style={labelStyle}>Standout moments</span>
+        <textarea value={v.standout_moments} onChange={(e) => set({ standout_moments: e.target.value })} style={textareaStyle} placeholder="Sara K. with 18 points and the game-winning block." />
       </label>
       <label>
-        <span style={labelStyle}>MVP / standout</span>
-        <input type="text" value={v.mvp_name} onChange={(e) => set({ mvp_name: e.target.value })} style={inputStyle} placeholder="Sara K." />
+        <span style={labelStyle}>Coach note (optional)</span>
+        <textarea value={v.coach_note} onChange={(e) => set({ coach_note: e.target.value })} style={textareaStyle} placeholder="Per-game blurbs, opponent notes, or anything else worth calling out." />
       </label>
       <label>
-        <span style={labelStyle}>Coach takeaways</span>
-        <textarea value={v.takeaways} onChange={(e) => set({ takeaways: e.target.value })} style={textareaStyle} placeholder="Defense in the second half was the difference in the bracket win." />
-      </label>
-      <label>
-        <span style={labelStyle}>Bracket/schedule CTA label (optional)</span>
-        <input type="text" value={v.tourney_link_label} onChange={(e) => set({ tourney_link_label: e.target.value })} style={inputStyle} placeholder="VIEW BRACKET ON SE TOURNEY" />
-        <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>
-          URL is pulled from this tournament's SE Tourney link in tournament settings.
-        </span>
+        <span style={labelStyle}>Parent shoutout (optional)</span>
+        <input type="text" value={v.parent_shoutout} onChange={(e) => set({ parent_shoutout: e.target.value })} style={inputStyle} placeholder="Thanks to the carpool crew this weekend." />
       </label>
     </div>
   );

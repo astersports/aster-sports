@@ -7,11 +7,16 @@ import { getTemplatesForKind, TEMPLATES_BY_KIND } from '../index';
 // Wave 3.16.1: tourney_link_label added to game_recap, tournament_prelim,
 // tournament_recap. URL is resolved at compose time from anchor; only the
 // label lives on the body.
+// Audit 2026-05-16 Phase 5: tournament_recap migrated from the legacy
+// renderer-path contract (final_standing/game_results/mvp_name/takeaways)
+// to the wave 4.2-A resolver-path contract (standout_moments/
+// coach_reflection/coach_note/parent_shoutout) — body editor now aligned
+// with composeTournamentRecap in resolvers/tournamentRecap.js.
 const EDITOR_SHAPES = {
   weekly_digest: ['body_notes', 'ops_notes'],
   game_recap: ['score', 'our_highlights', 'opp_highlights', 'player_of_game_name', 'coach_note', 'tourney_link_label'],
   tournament_prelim: ['hotel_block', 'sat_notes', 'sun_notes', 'opponent_scouting', 'lineup_notes', 'tourney_link_label'],
-  tournament_recap: ['final_standing', 'game_results', 'mvp_name', 'takeaways', 'tourney_link_label'],
+  tournament_recap: ['standout_moments', 'coach_reflection', 'coach_note', 'parent_shoutout'],
   announcement: ['headline', 'body_text'],
   custom_message: ['subject', 'body_text'],
   rsvp_nudge: ['headline_override', 'custom_message', 'ask_comment_field'],
