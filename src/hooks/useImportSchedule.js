@@ -20,6 +20,11 @@ export function useImportSchedule(tournamentId) {
   const [teams, setTeams] = useState([]);
   const [locations, setLocations] = useState([]);
   const [existingEvents, setExistingEvents] = useState([]);
+  // Wave 5 follow-up — track commit result so the page can render a
+  // success state distinct from the preview, and so the Commit button
+  // is gone (the post-commit dedup labels are stale; clicking again
+  // would re-insert/re-update the same rows).
+  const [lastCommit, setLastCommit] = useState(null);
 
   const parse = useCallback(async () => {
     if (!paste.trim() || !tournamentId || !orgId) return;
@@ -75,6 +80,15 @@ export function useImportSchedule(tournamentId) {
 
   const removeRow = useCallback((idx) => setRows((prev) => prev.filter((_, i) => i !== idx)), []);
 
+  // Reset back to a clean paste-mode state. Called from the "Import
+  // another" button after a successful commit so the operator can
+  // queue another paste without page reload (which would wipe the
+  // tournament selection).
+  const reset = useCallback(() => {
+    setState('idle'); setPaste(''); setRows([]); setError(null);
+    setExistingEvents([]); setLastCommit(null);
+  }, []);
+
   const commit = useCallback(async () => {
     setState('committing'); setError(null);
     try {
@@ -95,8 +109,10 @@ export function useImportSchedule(tournamentId) {
         const { error: upErr } = await supabase.from('events').update({ start_at: r.resolved.start_at, opponent: r.opponent, location_id: r.resolved.location_id, sub_location: r.court || null }).eq('id', r.matched_event_id);
         if (upErr) throw upErr;
       }
+      const result = { inserted: toInsert.length, updated: toUpdate.length };
+      setLastCommit(result);
       setState('done');
-      return { inserted: toInsert.length, updated: toUpdate.length };
+      return result;
     } catch (e) { setError(e); setState('error'); throw e; }
   }, [rows, tournamentId, tournament]);
 
@@ -104,5 +120,5 @@ export function useImportSchedule(tournamentId) {
   const dedup = dedupSummary(rows);
   const canCommit = validation.error === 0 && (dedup.new + dedup.updated) > 0;
 
-  return { state, paste, setPaste, rows, error, parse, updateRow, removeRow, commit, validation, dedup, canCommit, teams, locations };
+  return { state, paste, setPaste, rows, error, parse, updateRow, removeRow, commit, reset, lastCommit, validation, dedup, canCommit, teams, locations };
 }
