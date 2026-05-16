@@ -124,8 +124,16 @@ Deno.serve(async (req) => {
   if (pilotMode) {
     const guardianIds = recipients.map((r) => r.guardian_id).filter(Boolean);
     if (guardianIds.length) {
+      // Phase 1 audit P0-2: defense-in-depth — the guardianIds array
+      // comes from comms_message_recipients which is already filtered
+      // by message_id (and thus by message.org_id), but the guardians
+      // query itself didn't enforce org scope. Adding the filter
+      // protects against a malformed/crafted guardianIds array slipping
+      // through and leaking cross-org guardian email + is_pilot_family.
       const { data: guardians, error: gErr } = await sb
-        .from("guardians").select("id, is_pilot_family, email").in("id", guardianIds);
+        .from("guardians").select("id, is_pilot_family, email")
+        .eq("org_id", message.org_id)
+        .in("id", guardianIds);
       if (gErr) return json({ error: `Pilot check failed: ${gErr.message}` }, 500);
       const nonPilot = (guardians || []).filter((g) => !g.is_pilot_family);
       if (nonPilot.length) {

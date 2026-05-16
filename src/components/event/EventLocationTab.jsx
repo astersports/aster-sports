@@ -2,40 +2,50 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Calendar, Navigation } from 'lucide-react';
 import { getDirectionUrls } from '../../lib/mapsUrls';
+import { useAuth } from '../../context/AuthContext';
 import Button from '../shared/Button';
 
 export default function EventLocationTab({ event }) {
   const [locationData, setLocationData] = useState(null);
   const [tournamentStatus, setTournamentStatus] = useState(undefined);
+  // Phase 1 audit findings P0-1 + P1-1 (docs/AUDIT_PHASE1_WIRING_2026-05-16.md):
+  // both queries below were missing the org_id filter. Locations was also
+  // missing archived_at. Same class as the AnchorPicker bug (PR #193).
+  const { orgId } = useAuth();
 
   useEffect(() => {
     if (event.event_type !== 'tournament') return;
     let cancelled = false;
-    if (!event.tournament_id) {
+    if (!event.tournament_id || !orgId) {
       Promise.resolve().then(() => { if (!cancelled) setTournamentStatus(null); });
       return () => { cancelled = true; };
     }
-    supabase.from('tournaments').select('schedule_status').eq('id', event.tournament_id).limit(1)
+    supabase.from('tournaments').select('schedule_status')
+      .eq('id', event.tournament_id)
+      .eq('org_id', orgId)
+      .limit(1)
       .then(({ data, error }) => {
         if (error) console.error('EventLocationTab tournamentStatus:', error.message);
         if (cancelled) return;
         setTournamentStatus(data?.[0]?.schedule_status ?? null);
       });
     return () => { cancelled = true; };
-  }, [event.event_type, event.tournament_id]);
+  }, [event.event_type, event.tournament_id, orgId]);
 
   useEffect(() => {
-    if (!event.location) return;
+    if (!event.location || !orgId) return;
     const searchName = event.location.replace(/[\u2018\u2019\u2032]/g, "'").split(' - ')[0].split('(')[0].trim();
     if (!searchName) return;
     supabase.from('locations').select('name, address, lat, lon, google_maps_url, entry_instructions')
+      .eq('org_id', orgId)
+      .is('archived_at', null)
       .ilike('name', `%${searchName}%`)
       .limit(1)
       .then(({ data, error }) => {
         if (error) console.error('EventLocationTab locationSearch:', error.message);
         if (data && data[0]) setLocationData(data[0]);
       });
-  }, [event.location]);
+  }, [event.location, orgId]);
 
   const isTournamentNotPublished = event.event_type === 'tournament' &&
     (tournamentStatus === undefined || tournamentStatus === null || tournamentStatus === 'draft');
