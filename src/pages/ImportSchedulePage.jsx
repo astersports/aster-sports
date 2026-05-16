@@ -65,11 +65,30 @@ export default function ImportSchedulePage() {
         <PastePane paste={im.paste} setPaste={im.setPaste} onParse={im.parse} parsing={im.state === 'parsing'} />
       ) : null}
 
-      {im.state === 'preview' || im.state === 'committing' || im.state === 'done' ? (
+      {im.state === 'preview' || im.state === 'committing' ? (
         <PreviewTable rows={im.rows} validation={im.validation} dedup={im.dedup} canCommit={im.canCommit}
           onUpdateRow={im.updateRow} onRemoveRow={im.removeRow} onCommit={onCommit}
           committing={im.state === 'committing'} teams={im.teams} />
       ) : null}
+
+      {im.state === 'done' && (
+        // Wave 5 follow-up — post-commit success view. Previously the
+        // PreviewTable kept rendering with a live Commit button, which
+        // let operators re-commit the same rows (stale dedup labels →
+        // duplicate inserts). Replacing the preview with a confirmation
+        // forces an explicit "Import another" reset.
+        <div style={{ maxWidth: 720, margin: '16px auto', padding: 24, backgroundColor: 'var(--em-success-soft)', border: '1px solid var(--em-success)', borderRadius: 10, textAlign: 'center' }}>
+          <div style={{ fontSize: 24, marginBottom: 8 }}>✓</div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 6 }}>Import complete</div>
+          <div style={{ fontSize: 14, color: 'var(--em-text-secondary)', marginBottom: 16 }}>
+            {im.lastCommit?.inserted || 0} new · {im.lastCommit?.updated || 0} updated
+          </div>
+          <button type="button" onClick={im.reset} className="sf-press"
+            style={{ minHeight: 44, padding: '0 24px', borderRadius: 10, border: '1px solid var(--em-accent)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
+            Import another
+          </button>
+        </div>
+      )}
 
       {im.error && (
         <div style={{ maxWidth: 720, margin: '16px auto', padding: 12, backgroundColor: 'var(--em-danger-soft)', border: '1px solid var(--em-danger)', borderRadius: 8, color: 'var(--em-text-primary)', fontSize: 13 }}>
