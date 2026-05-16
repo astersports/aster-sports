@@ -94,9 +94,13 @@ export function useAdminStats() {
         if (accounts.length === 0) return { collected: 0, outstanding: 0 };
         const billed = accounts.reduce((s, a) => s + (a.season_fee_cents || 0) - (a.discount_cents || 0), 0);
         const acctIds = accounts.map((a) => a.id);
+        // Beta B1 audit defense-in-depth — anti-pattern #37.
+        // account_id IN list already implicitly scopes by org via prior
+        // accounts query; explicit filter prevents drift.
         const { data: txns } = await supabase
           .from('financial_transactions')
           .select('amount_cents, transaction_type')
+          .eq('org_id', orgId)
           .in('account_id', acctIds);
         let paid = 0;
         (txns || []).forEach((t) => {

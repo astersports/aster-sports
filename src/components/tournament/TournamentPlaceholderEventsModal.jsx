@@ -35,8 +35,11 @@ export default function TournamentPlaceholderEventsModal({ tournament, teamIds, 
     let cancelled = false;
     Promise.resolve().then(async () => {
       if (cancelled || !teamIds?.length) return;
+      // Beta B1 audit defense-in-depth — anti-pattern #37.
+      // teamIds came from tournament.tournament_teams (org-scoped) so this
+      // is implicit-scoped, but explicit filter matches the canonical pattern.
       const [{ data: tRows }, { data: lRows }] = await Promise.all([
-        supabase.from('teams').select('id, name, sort_order').in('id', teamIds),
+        supabase.from('teams').select('id, name, sort_order').eq('org_id', tournament.org_id).in('id', teamIds),
         supabase.from('locations').select('id, name, address').eq('org_id', tournament.org_id).is('archived_at', null).order('name'),
       ]);
       if (cancelled) return;
