@@ -1,8 +1,18 @@
 import { useEffect, useState } from 'react';
 
-const CACHE_KEY = 'ember-weather-cache';
-const FALLBACK_KEY = 'ember-weather-fallback';
+const CACHE_PREFIX = 'ember-weather-cache:';
+const FALLBACK_PREFIX = 'ember-weather-fallback:';
 const CACHE_TTL = 30 * 60 * 1000;
+
+// Beta B4 audit fix — cache key must include lat/lon. Prior global key
+// caused stale weather for one venue to render at another venue within
+// the 30-min TTL.
+function cacheKeyFor(lat, lon) {
+  return `${CACHE_PREFIX}${lat.toFixed(3)},${lon.toFixed(3)}`;
+}
+function fallbackKeyFor(lat, lon) {
+  return `${FALLBACK_PREFIX}${lat.toFixed(3)},${lon.toFixed(3)}`;
+}
 
 const WMO_ICONS = {
   0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️',
@@ -28,7 +38,9 @@ export function useWeather(lat, lon) {
 
   useEffect(() => {
     if (!lat || !lon) return;
-    const cached = sessionStorage.getItem(CACHE_KEY);
+    const cacheKey = cacheKeyFor(lat, lon);
+    const fallbackKey = fallbackKeyFor(lat, lon);
+    const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
@@ -48,12 +60,12 @@ export function useWeather(lat, lon) {
         label: WMO_LABELS[codes[i]] || 'Unknown',
       }));
       const data = { hours, fetchedAt: Date.now() };
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
-      try { localStorage.setItem(FALLBACK_KEY, JSON.stringify(data)); } catch { /* quota */ }
+      sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data }));
+      try { localStorage.setItem(fallbackKey, JSON.stringify(data)); } catch { /* quota */ }
       setWeather(data);
     }).catch(() => {
       try {
-        const fallback = localStorage.getItem(FALLBACK_KEY);
+        const fallback = localStorage.getItem(fallbackKey);
         if (fallback) setWeather(JSON.parse(fallback));
       } catch { /* ignore */ }
     });
