@@ -13,7 +13,7 @@
 export const KIND_ORDER = [
   'weekly_digest', 'schedule_change', 'game_recap',
   'tournament_prelim', 'tournament_recap',
-  'coach_roundup',
+  'coach_roundup', 'family_guide',
   'announcement', 'rsvp_nudge', 'academy_callup_notice', 'custom_message',
 ];
 
@@ -75,6 +75,21 @@ export const KIND_METADATA = {
     bodyModule: 'CoachRoundupBody',
     disabled: false,
     wizardSupported: true,
+  },
+  // Wave 5 PR 5a — family_guide. Per-parent multi-kid aggregation.
+  // anchorKind 'org' for the schema path (anchor_id is org_id), but
+  // the practical "anchor" is the parent itself — parent_user_id
+  // lives in state.audience_filter and is read by
+  // RESOLVER_REGISTRY.family_guide.anchorFromState. wizardSupported
+  // flipped to true in 5c with FamilyGuideBody landing the picker.
+  family_guide: {
+    icon: 'Home', label: 'Family guide',
+    description: 'One briefing for a parent across all their kids (multi-kid, conflict-aware)',
+    defaultAnchorKind: 'org', anchorKinds: ['org'],
+    defaultAudienceType: 'family_specific',
+    bodyModule: 'FamilyGuideBody',
+    disabled: false,
+    wizardSupported: false,
   },
   announcement: {
     icon: 'Megaphone', label: 'Announcement',
