@@ -34,12 +34,18 @@ const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 const EVENT_SELECT = 'id, title, team_id, event_type, start_at, end_at, location, location_id, opponent, status, publish_status, teams ( id, name, team_color, sort_order, org_id )';
 
 async function fetchUnrespondedSlices(supabase, event, now, pilotOnly) {
-  const { data: tpRows = [] } = await supabase.from('team_players').select('player_id, joined_at, left_at, status, players ( first_name )').eq('team_id', event.team_id).eq('status', 'active');
+  // Beta B6 audit — anti-pattern #36.
+  const { data: tpData, error: tpErr } = await supabase.from('team_players').select('player_id, joined_at, left_at, status, players ( first_name )').eq('team_id', event.team_id).eq('status', 'active');
+  if (tpErr) throw tpErr;
+  const tpRows = tpData || [];
   const nowMs = now.getTime();
-  const active = (tpRows || []).filter((r) => (!r.left_at || new Date(r.left_at).getTime() > nowMs) && (!r.joined_at || new Date(r.joined_at).getTime() <= nowMs));
+  const active = tpRows.filter((r) => (!r.left_at || new Date(r.left_at).getTime() > nowMs) && (!r.joined_at || new Date(r.joined_at).getTime() <= nowMs));
   const totalRoster = active.length;
 
-  const { data: rsvpRows = [] } = await supabase.from('event_rsvps').select('player_id').eq('event_id', event.id);
+  // Beta B6 audit — anti-pattern #36.
+  const { data: rsvpData, error: rsvpErr } = await supabase.from('event_rsvps').select('player_id').eq('event_id', event.id);
+  if (rsvpErr) throw rsvpErr;
+  const rsvpRows = rsvpData || [];
   const respondedSet = new Set((rsvpRows || []).map((r) => r.player_id));
 
   const unresponded = active.filter((r) => !respondedSet.has(r.player_id));
@@ -91,7 +97,10 @@ export async function resolveRsvpNudge({ eventId, pilotOnly }, { supabase, now =
     const { data: l } = await supabase.from('locations').select('id, name, address, google_maps_url').eq('id', event.location_id).maybeSingle();
     location = l || null;
   }
-  const { data: coaches = [] } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
+  // Beta B6 audit — anti-pattern #36.
+  const { data: coachesData, error: coachesErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
+  if (coachesErr) throw coachesErr;
+  const coaches = coachesData || [];
   const { data: org } = await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
 
   return {

@@ -66,7 +66,10 @@ export async function resolveGameRecap({ eventId, pilotOnly }, { supabase, now =
     tournament = t || null;
   }
 
-  const { data: coaches = [] } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
+  // Beta B6 audit — anti-pattern #36.
+  const { data: coachesData, error: coachesErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
+  if (coachesErr) throw coachesErr;
+  const coaches = coachesData || [];
   const { data: org } = await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
   const slices = await fetchSlices(supabase, orgId, event.team_id, effectivePilotOnly);
 

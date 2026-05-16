@@ -36,8 +36,11 @@ const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 const EVENT_SELECT = 'id, title, team_id, event_type, start_at, end_at, location, location_id, opponent, status, publish_status, teams ( id, name, team_color, sort_order, org_id )';
 
 async function fetchSlices(supabase, orgId, teamId, pilotOnly) {
-  const { data: rpcRows = [] } = await supabase.rpc('get_digest_recipients', { p_org_id: orgId, p_pilot_only: pilotOnly });
-  const onTeam = (rpcRows || []).filter((r) => (r.team_ids || []).includes(teamId));
+  // Beta B6 audit — anti-pattern #36.
+  const { data: rpcData, error: rpcErr } = await supabase.rpc('get_digest_recipients', { p_org_id: orgId, p_pilot_only: pilotOnly });
+  if (rpcErr) throw rpcErr;
+  const rpcRows = rpcData || [];
+  const onTeam = rpcRows.filter((r) => (r.team_ids || []).includes(teamId));
   if (!onTeam.length) return [];
   const kidsByGuardian = await fetchKidNames(supabase, onTeam.map((r) => r.guardian_id));
   return onTeam
@@ -61,7 +64,10 @@ export async function resolveScheduleChange({ eventId, pilotOnly }, { supabase, 
     effectivePilotOnly = settings?.pilot_mode_enabled ?? false;
   }
 
-  const { data: auditRows = [] } = await supabase.from('event_change_audit').select('id, org_id, event_id, changed_by, changed_at, change_kind, recurrence_scope, before_jsonb, after_jsonb, dispatch_email_id').eq('event_id', eventId).order('changed_at', { ascending: false });
+  // Beta B6 audit — anti-pattern #36.
+  const { data: auditData, error: auditErr } = await supabase.from('event_change_audit').select('id, org_id, event_id, changed_by, changed_at, change_kind, recurrence_scope, before_jsonb, after_jsonb, dispatch_email_id').eq('event_id', eventId).order('changed_at', { ascending: false });
+  if (auditErr) throw auditErr;
+  const auditRows = auditData || [];
   const audit = (auditRows || [])[0] || null;
 
   let location = null;
@@ -69,7 +75,10 @@ export async function resolveScheduleChange({ eventId, pilotOnly }, { supabase, 
     const { data: l } = await supabase.from('locations').select('id, name, address, google_maps_url').eq('id', event.location_id).maybeSingle();
     location = l || null;
   }
-  const { data: coaches = [] } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
+  // Beta B6 audit — anti-pattern #36.
+  const { data: coachesData, error: coachesErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
+  if (coachesErr) throw coachesErr;
+  const coaches = coachesData || [];
   const { data: org } = await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
   const slices = await fetchSlices(supabase, orgId, event.team_id, effectivePilotOnly);
 
