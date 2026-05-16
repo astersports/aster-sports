@@ -89,7 +89,9 @@ export const KIND_METADATA = {
     defaultAudienceType: 'family_specific',
     bodyModule: 'FamilyGuideBody',
     disabled: false,
-    wizardSupported: false,
+    // Wave 5 PR 5c — body component landed; wizard can now drive
+    // end-to-end family_guide briefings.
+    wizardSupported: true,
   },
   announcement: {
     icon: 'Megaphone', label: 'Announcement',
