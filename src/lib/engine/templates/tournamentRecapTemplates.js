@@ -1,39 +1,26 @@
-// Wave 3.16 — tournament_recap starter templates.
-// Body fields consumed by TournamentRecapBody:
-//   { final_standing, game_results, mvp_name, takeaways }
+// Wave 4.2-A-4 alignment — templates match TournamentRecapBody fields.
+// Body fields consumed by the resolver-path composer:
+//   { standout_moments, coach_reflection, coach_note, parent_shoutout }
 //
-// TODO(future-wave): TournamentRecapBody currently consumes only the
-// 4 fields above. Frank's full hand-written tournament recaps are
-// richer — mood headers ("TIME TO BREATHE."), urgent CTAs (hotel
-// deadlines), 4-stat blocks, countdown to next event, per-game
-// blurbs with one-line characterizations of each opponent. A future
-// wave will extend the editor + renderer to surface those fields.
-// The seeds below populate only what the editor renders for and
-// inline the richer voice into the four available text fields so
-// Frank can copy-paste the structure when he backfills his other
-// recaps via docs/BRIEFING_TEMPLATES.md.
+// Placement (record, point differential) auto-renders from DB. Per-game
+// results auto-render from game_results. Templates only seed the
+// narrative fields the editor exposes.
 
 export default [
   {
     id: 'tr-blank',
     name: 'Blank starter',
     description: 'Empty sections — write from scratch',
-    body: { final_standing: '', game_results: '', mvp_name: '', takeaways: '' },
+    body: { standout_moments: '', coach_reflection: '', coach_note: '', parent_shoutout: '' },
     preview_summary: 'Empty body',
   },
   {
     id: 'tr-weekend-wrapup-champs',
     name: 'Weekend wrap-up · Tournament champs',
-    description: 'Per-game blurbs + record + countdown phrasing — based on the 11U Girls voice',
+    description: 'Voice template based on the 11U Girls champ recap — countdown phrasing + per-game blurbs',
     body: {
-      final_standing: 'TOURNAMENT CHAMPIONS · 5-2 record · +6.3 point differential',
-      game_results: [
-        'Sat: Palisades Elite — 20-43 — Talented. Physical. Well-coached.',
-        'Sat: NY Gauchos — 14-24 — The reputation walks in before the team does.',
-        'Sun: Rockland Spartans — 29-24 — Closed Sunday the right way.',
-      ].join('\n'),
-      mvp_name: '',
-      takeaways: [
+      standout_moments: 'Tournament champions. 5-2 record. +6.3 point differential. The team that walked in nervous walked out with rings.',
+      coach_reflection: [
         '28 days. 7 games. 2 tournaments. Back to back weekends with no break.',
         "That's not a season start. That's a launch sequence.",
         '',
@@ -44,7 +31,12 @@ export default [
         '',
         'Next up: RUMBLE FOR THE RING — May 16-17 — Fairfield, CT (27 days)',
       ].join('\n'),
-      tourney_link_label: 'VIEW FULL TOURNEY BRACKET',
+      coach_note: [
+        'Sat: Palisades Elite — 20-43 — Talented. Physical. Well-coached.',
+        'Sat: NY Gauchos — 14-24 — The reputation walks in before the team does.',
+        'Sun: Rockland Spartans — 29-24 — Closed Sunday the right way.',
+      ].join('\n'),
+      parent_shoutout: '',
     },
     preview_summary: 'Champ banner · per-game blurbs · countdown to next event',
   },
