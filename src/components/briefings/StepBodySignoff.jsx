@@ -30,6 +30,8 @@ const BODY_LAZY = {
   academy_callup_notice: lazy(() => import('./bodies/AcademyCallupBody.jsx')),
   // Wave 5 PR 4c — coach_roundup body (coach picker + date range).
   coach_roundup: lazy(() => import('./bodies/CoachRoundupBody.jsx')),
+  // Wave 5 PR 5c — family_guide body (parent picker + date range).
+  family_guide: lazy(() => import('./bodies/FamilyGuideBody.jsx')),
   custom_message: lazy(() => import('./bodies/CustomMessageBody.jsx')),
 };
 
