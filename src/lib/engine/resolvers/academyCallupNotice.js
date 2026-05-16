@@ -35,13 +35,17 @@ const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 const EVENT_SELECT = 'id, title, team_id, event_type, start_at, end_at, location_id, opponent, status, publish_status, academy_callup_player_ids, teams ( id, name, team_color, sort_order, org_id )';
 
 async function fetchHomeTeam(supabase, playerId) {
-  const { data: rows = [] } = await supabase.from('team_players').select('id, team_id, roster_type, status, teams ( id, name, team_color, sort_order )').eq('player_id', playerId).eq('roster_type', 'futures').eq('status', 'active');
+  // Beta B6 audit — anti-pattern #36. Surface errors explicitly.
+  const { data: rows, error } = await supabase.from('team_players').select('id, team_id, roster_type, status, teams ( id, name, team_color, sort_order )').eq('player_id', playerId).eq('roster_type', 'futures').eq('status', 'active');
+  if (error) throw error;
   const sorted = (rows || []).slice().sort((a, b) => (a.id < b.id ? -1 : 1));
   return sorted[0] || null;
 }
 
 async function fetchSlices(supabase, orgId, playerId, kidFirstName, receivingTeamId, pilotOnly) {
-  const { data: rows = [] } = await supabase.from('player_guardians').select('guardian_id, player_id, guardians ( id, email, is_pilot_family, org_id )').eq('player_id', playerId);
+  // Beta B6 audit — anti-pattern #36.
+  const { data: rows, error } = await supabase.from('player_guardians').select('guardian_id, player_id, guardians ( id, email, is_pilot_family, org_id )').eq('player_id', playerId);
+  if (error) throw error;
   const seen = new Set();
   const out = [];
   for (const row of rows || []) {
@@ -89,7 +93,10 @@ export async function resolveAcademyCallupNotice({ eventId, playerId, pilotOnly 
     const { data: l } = await supabase.from('locations').select('id, name, address, google_maps_url').eq('id', event.location_id).maybeSingle();
     location = l || null;
   }
-  const { data: coaches = [] } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
+  // Beta B6 audit — anti-pattern #36.
+  const { data: coachesData, error: coachesErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
+  if (coachesErr) throw coachesErr;
+  const coaches = coachesData || [];
   const { data: org } = await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
   const slices = await fetchSlices(supabase, orgId, playerId, player.first_name, event.team_id, effectivePilotOnly);
 
