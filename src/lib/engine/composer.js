@@ -56,6 +56,13 @@ import eventCard from './renderers/eventCard';
 // Audit 2026-05-16 Phase 5 orphan fix — callup_card emitted by
 // academy_callup_notice composer at academyCallupNotice.js:117.
 import callupCard from './renderers/callupCard';
+// Audit 2026-05-16 Phase 5 orphan fix — 4 tournament_recap section
+// kinds emitted by resolvers/tournamentRecap.js + tournamentRecapHelpers.js
+// previously unregistered.
+import placementBlock from './renderers/placementBlock';
+import gameLog from './renderers/gameLog';
+import standoutMoments from './renderers/standoutMoments';
+import coachReflection from './renderers/coachReflection';
 
 const SECTION_RENDERERS = {
   header: renderHeader,
@@ -92,6 +99,10 @@ const SECTION_RENDERERS = {
   color_striped_row: colorStripedRow,
   event_card: eventCard,
   callup_card: callupCard,
+  placement_block: placementBlock,
+  game_log: gameLog,
+  standout_moments: standoutMoments,
+  coach_reflection: coachReflection,
 };
 
 // KIND_COMPOSERS — legacy compose() path for kinds NOT in
