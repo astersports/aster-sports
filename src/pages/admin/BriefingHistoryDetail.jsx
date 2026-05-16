@@ -7,6 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 
 const wrap = { backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' };
@@ -22,15 +23,18 @@ const iframeStyle = { width: '100%', minHeight: 400, border: '1px solid var(--em
 export default function BriefingHistoryDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { orgId } = useAuth();
   const iframeRef = useRef(null);
   const [msg, setMsg] = useState(null);
   const [recipients, setRecipients] = useState([]);
   const [previewIdx, setPreviewIdx] = useState(0);
 
   useEffect(() => {
+    if (!orgId) return;
     let cancelled = false;
     Promise.resolve().then(async () => {
-      const { data: m } = await supabase.from('comms_messages').select('*').eq('id', id).maybeSingle();
+      // Beta B1 audit defense-in-depth — anti-pattern #37.
+      const { data: m } = await supabase.from('comms_messages').select('*').eq('id', id).eq('org_id', orgId).maybeSingle();
       if (cancelled) return;
       setMsg(m);
       const { data: rec } = await supabase.from('comms_message_recipients').select('id,email_at_send,delivery_status,delivered_at,opened_at,bounce_reason,body_html_rendered,body_plain_rendered').eq('message_id', id).order('email_at_send');
@@ -38,7 +42,7 @@ export default function BriefingHistoryDetail() {
       setRecipients(rec || []);
     });
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, orgId]);
 
   useEffect(() => {
     const iframe = iframeRef.current;

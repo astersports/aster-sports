@@ -19,8 +19,10 @@ export function useDmThreads() {
     const raw = data || [];
     const enriched = await Promise.all(raw.map(async (t) => {
       const otherId = t.user_a === user.id ? t.user_b : t.user_a;
+      // Beta B1 audit defense-in-depth — anti-pattern #37.
       const { data: lastMsg } = await supabase
         .from('messages').select('sender_name, body, created_at')
+        .eq('org_id', orgId)
         .eq('dm_thread_id', t.id).order('created_at', { ascending: false }).limit(1);
       const { data: roleRow } = await supabase
         .from('user_roles').select('role').eq('user_id', otherId).maybeSingle();

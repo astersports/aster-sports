@@ -53,9 +53,11 @@ export function useDigestEvents({ orgId, period }) {
       const tournamentIds = [...new Set((rows || []).map((r) => r.tournament_id).filter(Boolean))];
       let tournaments = [];
       if (tournamentIds.length) {
+        // Beta B1 audit defense-in-depth — anti-pattern #37.
         const { data: trows } = await supabase
           .from('tournaments')
           .select('id, name, start_date, end_date, rules')
+          .eq('org_id', orgId)
           .in('id', tournamentIds);
         tournaments = trows || [];
       }
