@@ -36,14 +36,18 @@ export function useActivities() {
     try {
       let query = supabase
         .from('events')
-        .select('*, teams!inner(id, name, team_color, age_group, circuit, org_id, season_id, sort_order)')
+        .select('*, teams!inner(id, name, team_color, age_group, circuit, org_id, season_id, sort_order), locations(name, google_maps_url)')
         .eq('teams.org_id', orgId)
         .order('start_at', { ascending: true });
       if (seasonId) query = query.eq('teams.season_id', seasonId);
       if ((role === 'parent' || role === 'coach') && myTeamIds?.length) query = query.in('team_id', myTeamIds);
       const { data, error: fetchErr } = await query;
       if (fetchErr) throw fetchErr;
-      const processed = (data || []).map((e) => ({ ...e, location_name: e.location || null }));
+      // Beta B5 audit Finding 1 — tournament events have location_id +
+      // sub_location populated by the parser but events.location text
+      // column null. Fall back to joined locations.name so the schedule
+      // list renders a venue line on tournament events.
+      const processed = (data || []).map((e) => ({ ...e, location_name: e.location || e.locations?.name || null }));
       cache.key = key; cache.data = processed;
       setActivities(processed);
     } catch (err) {
