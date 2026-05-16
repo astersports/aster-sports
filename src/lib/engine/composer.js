@@ -53,6 +53,9 @@ import colorStripedRow from './renderers/colorStripedRow';
 // Audit 2026-05-16 Phase 5 orphan fix — event_card emitted by
 // rsvp_nudge + academy_callup_notice composers, previously unregistered.
 import eventCard from './renderers/eventCard';
+// Audit 2026-05-16 Phase 5 orphan fix — callup_card emitted by
+// academy_callup_notice composer at academyCallupNotice.js:117.
+import callupCard from './renderers/callupCard';
 
 const SECTION_RENDERERS = {
   header: renderHeader,
@@ -88,6 +91,7 @@ const SECTION_RENDERERS = {
   conflict_callout: conflictCallout,
   color_striped_row: colorStripedRow,
   event_card: eventCard,
+  callup_card: callupCard,
 };
 
 // KIND_COMPOSERS — legacy compose() path for kinds NOT in
