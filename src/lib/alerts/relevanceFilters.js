@@ -16,6 +16,10 @@
 // PR 5 ships filterAlertsForParent. PR 6 will consume
 // filterAlertsForCoach.
 
+// Alert types that fire org-wide rollup data with no per-team or
+// per-family scoping shape. These drop entirely for non-admin
+// scopes (parent, coach). Extract to alert_types.audience_scope
+// column when a third admin-only type arrives.
 const ADMIN_ONLY_TYPES = new Set(['briefing_overdue', 'payment_overdue']);
 
 function filterEventsByTeamScope(alert, teamIdSet) {

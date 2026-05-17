@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { ActiveRoleProvider } from './context/ActiveRoleContext';
 import { AuthProvider } from './context/AuthContext';
 import { PreferencesProvider } from './context/PreferencesProvider';
 import { SeasonProvider } from './context/SeasonContext';
@@ -21,15 +20,13 @@ createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <ActiveRoleProvider>
-            <PreferencesProvider>
-              <SeasonProvider>
-                <ToastProvider>
-                  <App />
-                </ToastProvider>
-              </SeasonProvider>
-            </PreferencesProvider>
-          </ActiveRoleProvider>
+          <PreferencesProvider>
+            <SeasonProvider>
+              <ToastProvider>
+                <App />
+              </ToastProvider>
+            </SeasonProvider>
+          </PreferencesProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>
