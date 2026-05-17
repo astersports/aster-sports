@@ -7,9 +7,11 @@ import { useAdminStats } from '../hooks/useAdminStats';
 import { useSeasons } from '../hooks/useSeasons';
 import { usePrograms } from '../hooks/usePrograms';
 import { useActivities } from '../hooks/useActivities';
+import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { getWeatherForTime, useWeather } from '../hooks/useWeather';
+import AlertZone from '../components/alerts/AlertZone';
 import KpiGrid from '../components/admin/KpiGrid';
 import QuickActions from '../components/admin/QuickActions';
 import ActiveSeasonCard from '../components/admin/ActiveSeasonCard';
@@ -33,6 +35,7 @@ export default function AdminHomePage() {
   const { activities, refetch } = useActivities();
   const { byTeamId: recordsByTeam } = useOrgTeamRecords(orgId);
   const weather = useWeather(41.03, -73.76);
+  const { alerts } = useAlertEvaluator();
   useRefetchOnVisible(refetch);
   const navigate = useNavigate();
   const nextEvent = activities.find((a) => new Date(a.start_at) >= new Date() && a.status !== 'cancelled');
@@ -46,6 +49,8 @@ export default function AdminHomePage() {
   return (
     <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
       <AdminGreeting user={user} />
+
+      <AlertZone alerts={alerts} variant="always_visible" sectionLabel="ALERTS" />
 
       <section className="min-w-0" aria-label="Key metrics">
         <KpiGrid stats={stats} />
