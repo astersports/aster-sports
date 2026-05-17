@@ -53,8 +53,8 @@ export default function AdminHomePage() {
 
       {nextEvent && <NextEventCard event={nextEvent} weather={getWeatherForTime(weather, nextEvent.start_at)} />}
 
-      <section className="min-w-0" aria-label="Quick actions">
-        <Label>QUICK ACTIONS</Label>
+      <section className="min-w-0" aria-label="Admin shortcuts">
+        <Label>ADMIN SHORTCUTS</Label>
         <QuickActions />
       </section>
 

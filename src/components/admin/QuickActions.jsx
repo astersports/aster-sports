@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { CalendarPlus, DollarSign, Inbox, Mail, Megaphone, MessageSquare, Trophy, Upload, UserPlus } from 'lucide-react';
+import { CalendarPlus, DollarSign, Inbox, Mail, Megaphone, Trophy, Upload, UserPlus } from 'lucide-react';
 
 // Wave 4.4-B Session 1: 'Compose Briefing' is the canonical entry point
 // into the briefing portal per the L99 strategic direction. The existing
@@ -9,6 +9,10 @@ import { CalendarPlus, DollarSign, Inbox, Mail, Megaphone, MessageSquare, Trophy
 // natural grouping (you import the schedule for a tournament). Lands on
 // /admin/import-schedule (paste TourneyMachine text → preview → commit
 // per cutover wave PR 2).
+//
+// IA Tier 1 (2026-05-17): 'Message' tile dropped — duplicates the
+// Messages tab in the bottom nav, no admin-specific function. Section
+// label renamed to ADMIN SHORTCUTS in AdminHomePage.
 const ACTIONS = [
   { label: '+ Event',         icon: CalendarPlus,  to: '/schedule'                  },
   { label: '+ Player',        icon: UserPlus,      to: '/teams'                     },
@@ -16,7 +20,6 @@ const ACTIONS = [
   { label: 'Briefings',       icon: Inbox,         to: '/admin/briefings'           },
   { label: 'Financials',      icon: DollarSign,    to: '/admin/financials'          },
   { label: 'Announce',        icon: Megaphone,     to: '/messages?announce=1'       },
-  { label: 'Message',         icon: MessageSquare, to: '/messages'                  },
   { label: 'Tournaments',     icon: Trophy,        to: '/tournaments'               },
   { label: 'Import Schedule', icon: Upload,        to: '/admin/import-schedule'     },
 ];
@@ -25,7 +28,7 @@ export default function QuickActions() {
   return (
     <div
       style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}
-      aria-label="Quick actions"
+      aria-label="Admin shortcuts"
     >
       {ACTIONS.map((action) => {
         const Icon = action.icon;
