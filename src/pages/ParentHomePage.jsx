@@ -12,15 +12,21 @@ import { useGameResultsMap } from '../hooks/useGameResultsMap';
 import { useWeather } from '../hooks/useWeather';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { useDensity } from '../hooks/useDensity';
+import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
 import DateGroupedList from '../components/schedule/DateGroupedList';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import PastEventsSection from '../components/schedule/PastEventsSection';
 import MyTeamsStrip from '../components/home/MyTeamsStrip';
 import DensityToggle from '../components/home/DensityToggle';
+import ConflictCallout from '../components/home/ConflictCallout';
+import AlertZone from '../components/alerts/AlertZone';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import Label from '../components/shared/Label';
 import { firstNameFrom, greetingFor } from '../lib/greetings';
+import { filterAlertsForParent } from '../lib/alerts/relevanceFilters';
+import { toKidsWithEvents } from '../lib/home/conflictAdapter';
+import { detectConflicts } from '../lib/engine/resolvers/familyGuideHelpers';
 
 export default function ParentHomePage() {
   const { user, guardianFirstName, myChildren, orgId, orgName } = useAuth();
@@ -77,6 +83,21 @@ export default function ParentHomePage() {
   const weather = useWeather(41.03, -73.76);
   const nextEventId = filteredNext7.find((a) => new Date(a.start_at).getTime() >= now)?.id || null;
 
+  // Alerts: hook is role-agnostic (Gap 6/8). Page applies data-
+  // ownership filter so parent sees only alerts touching their kids'
+  // teams. ADMIN_ONLY_TYPES are dropped entirely in v1.
+  const { alerts: allAlerts } = useAlertEvaluator();
+  const parentAlerts = useMemo(() => filterAlertsForParent(allAlerts, myChildren), [allAlerts, myChildren]);
+
+  // Multi-kid conflict detection: reuses familyGuideHelpers.detectConflicts
+  // (already tested) via an adapter. Renders nothing for single-kid
+  // families or when no conflicts in next 7 days.
+  const teamsById = useMemo(() => Object.fromEntries(myTeams.map((t) => [t.id, t])), [myTeams]);
+  const conflicts = useMemo(() => {
+    if (!myChildren || myChildren.length < 2) return [];
+    return detectConflicts(toKidsWithEvents(myChildren, next7days, teamsById));
+  }, [myChildren, next7days, teamsById]);
+
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
@@ -86,6 +107,9 @@ export default function ParentHomePage() {
         <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>{name}</h1>
         {orgName && <div style={{ color: 'var(--em-text-tertiary)', fontSize: 13, marginTop: 2 }}>{orgName}{myTeams.length > 0 ? ` · ${myTeams.length} team${myTeams.length !== 1 ? 's' : ''}` : ''}</div>}
       </section>
+
+      <AlertZone alerts={parentAlerts} variant="collapsible" sectionLabel="ALERTS" />
+      <ConflictCallout conflicts={conflicts} />
 
       {!loading && myTeams.length === 0 && (
         <div style={{ padding: 20, backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', textAlign: 'center' }}>
