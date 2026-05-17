@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { tokensForSeverity } from '../../lib/alerts/severityTokens';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
 import Label from '../shared/Label';
 
@@ -18,12 +19,19 @@ const TYPE_LABELS = {
   rsvp_nudge: 'RSVP Nudge',
 };
 
+// pending/failed/read map to severity tokens (warning/critical/info).
+// sent + delivered are success outcomes, not severity states — they
+// keep direct --em-success refs (success is its own axis, not part
+// of the severity domain per severityTokens.js).
+const WARNING = tokensForSeverity('warning');
+const CRITICAL = tokensForSeverity('critical');
+const INFO = tokensForSeverity('info');
 const STATUS_STYLE = {
-  pending: { bg: 'var(--em-warning-soft)', color: 'var(--em-warning)' },
-  sent: { bg: 'var(--em-success-soft)', color: 'var(--em-success)' },
+  pending:   { bg: WARNING.bg,  color: WARNING.text },
+  sent:      { bg: 'var(--em-success-soft)', color: 'var(--em-success)' },
   delivered: { bg: 'var(--em-success-soft)', color: 'var(--em-success)' },
-  failed: { bg: 'var(--em-danger-soft)', color: 'var(--em-danger)' },
-  read: { bg: 'var(--em-info-soft)', color: 'var(--em-info)' },
+  failed:    { bg: CRITICAL.bg, color: CRITICAL.text },
+  read:      { bg: INFO.bg,     color: INFO.text },
 };
 
 export default function NotificationHistory({ orgId }) {
