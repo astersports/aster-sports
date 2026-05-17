@@ -1,0 +1,122 @@
+// Wave 5 PR 5c — family_guide resolver + composer contract.
+// Mocks supabase with the full join chain so the real aggregation
+// + cross-kid conflict detection are exercised.
+
+import { describe, expect, it } from 'vitest';
+import { composeFamilyGuide, resolveFamilyGuide } from '../familyGuide';
+import { detectConflicts, formatDateRange, groupEventsByKid } from '../familyGuideHelpers';
+
+function mockSb({ parent = null, pgRows = [], tpRows = [], events = [], coaches = [], org = null }) {
+  return {
+    from(table) {
+      const b = {
+        _t: table, select() { return this; }, eq() { return this; }, in() { return this; },
+        gte() { return this; }, lte() { return this; }, not() { return this; },
+        async maybeSingle() {
+          if (this._t === 'guardians') return { data: parent, error: null };
+          if (this._t === 'organizations') return { data: org, error: null };
+          return { data: null, error: null };
+        },
+        then(resolve) {
+          const map = { player_guardians: pgRows, team_players: tpRows, events, staff_profiles: coaches };
+          return Promise.resolve({ data: map[this._t] ?? [], error: null }).then(resolve);
+        },
+      };
+      return b;
+    },
+  };
+}
+
+const PARENT = { id: 'g1', user_id: 'u1', first_name: 'Frank', last_name: 'S', email: 'frank@ex.com', org_id: 'org-1' };
+const KID = (id, name) => ({ player_id: id, players: { id, first_name: name, last_name: 'S' } });
+const TEAM = (pid, tid, name, color, sort) => ({ player_id: pid, team_id: tid, teams: { id: tid, name, team_color: color, sort_order: sort } });
+
+describe('resolveFamilyGuide', () => {
+  it('throws when parentUserId is missing', async () => {
+    await expect(resolveFamilyGuide({}, { supabase: mockSb({}) })).rejects.toThrow(/Missing parentUserId/);
+  });
+  it('throws when parent not in guardians', async () => {
+    await expect(resolveFamilyGuide({ parentUserId: 'u1' }, { supabase: mockSb({ parent: null }) })).rejects.toThrow(/Parent u1 not found/);
+  });
+  it('returns empty kidsWithEvents when no kids', async () => {
+    const r = await resolveFamilyGuide({ parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } }, { supabase: mockSb({ parent: PARENT, pgRows: [] }) });
+    expect(r.context.kidsWithEvents).toEqual([]);
+    expect(r.context.conflicts).toEqual([]);
+  });
+  it('aggregates events per kid×team', async () => {
+    const r = await resolveFamilyGuide(
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { supabase: mockSb({
+        parent: PARENT,
+        pgRows: [KID('p-1', 'Charlie'), KID('p-2', 'Milo')],
+        tpRows: [TEAM('p-1', 't-1', '11U Girls', '#a78bfa', 1), TEAM('p-2', 't-2', '8U Boys', '#f59e0b', 5)],
+        events: [
+          { id: 'e1', team_id: 't-1', start_at: '2026-05-18T15:00:00Z' },
+          { id: 'e2', team_id: 't-2', start_at: '2026-05-18T20:00:00Z' },
+        ],
+      }) },
+    );
+    expect(r.context.kidsWithEvents).toHaveLength(2);
+    expect(r.context.kidsWithEvents[0].first_name).toBe('Charlie');
+    expect(r.context.kidsWithEvents[0].events).toHaveLength(1);
+  });
+});
+
+describe('composeFamilyGuide', () => {
+  it('throws on missing context or slice', () => {
+    expect(() => composeFamilyGuide(null, {})).toThrow();
+    expect(() => composeFamilyGuide({}, null)).toThrow();
+  });
+  it('emits vip_header → kid_color_pill → quick_link_nav → brand_footer', () => {
+    const ctx = {
+      parent: PARENT,
+      kidsWithEvents: [{ player_id: 'p-1', first_name: 'Charlie', team_id: 't-1', team_name: '11U Girls', team_color: '#a78bfa', events: [{ start_at: '2026-05-18T15:00:00-04:00' }] }],
+      conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], orgName: 'Legacy Hoopers',
+    };
+    const out = composeFamilyGuide(ctx, { parent_name: 'Frank' });
+    const kinds = out.content_sections.map((s) => s.kind);
+    expect(kinds[0]).toBe('vip_header');
+    expect(kinds).toContain('kid_color_pill');
+    expect(kinds).toContain('quick_link_nav');
+    expect(kinds[kinds.length - 1]).toBe('brand_footer');
+  });
+});
+
+describe('familyGuideHelpers', () => {
+  it('formatDateRange formats ISO date strings', () => {
+    expect(formatDateRange({ start: '2026-05-18', end: '2026-05-24' })).toBe('5/18 – 5/24');
+    expect(formatDateRange({})).toBe('');
+  });
+  it('groupEventsByKid splits kid×team blocks + sorts events', () => {
+    const kids = [{ player_id: 'p-1', first_name: 'Charlie', teams: [{ team_id: 't-1', team_name: '11U Girls', team_color: '#a78bfa', sort_order: 1 }] }];
+    const events = [{ team_id: 't-1', start_at: '2026-05-20T15:00:00Z' }, { team_id: 't-1', start_at: '2026-05-18T15:00:00Z' }];
+    const g = groupEventsByKid(kids, events);
+    expect(g[0].events[0].start_at).toBe('2026-05-18T15:00:00Z');
+  });
+  it('detectConflicts flags same-day cross-kid overlaps', () => {
+    const c = detectConflicts([
+      { player_id: 'p-1', first_name: 'Charlie', team_name: '11U', team_color: '#a78bfa', events: [{ start_at: '2026-05-18T15:00:00Z', end_at: '2026-05-18T16:00:00Z' }] },
+      { player_id: 'p-2', first_name: 'Milo', team_name: '8U', team_color: '#f59e0b', events: [{ start_at: '2026-05-18T15:30:00Z' }] },
+    ]);
+    expect(c).toHaveLength(1);
+    expect(c[0].reason).toBe('overlap');
+  });
+  it('detectConflicts flags tight-travel gap < 30 min', () => {
+    const c = detectConflicts([
+      { player_id: 'p-1', first_name: 'Charlie', team_name: '11U', team_color: '#a78bfa', events: [{ start_at: '2026-05-18T15:00:00Z', end_at: '2026-05-18T16:00:00Z' }] },
+      { player_id: 'p-2', first_name: 'Milo', team_name: '8U', team_color: '#f59e0b', events: [{ start_at: '2026-05-18T16:15:00Z' }] },
+    ]);
+    expect(c[0].reason).toBe('tight_travel');
+  });
+  it('detectConflicts skips same-kid + different-day', () => {
+    const sameKid = detectConflicts([
+      { player_id: 'p-1', first_name: 'C', team_name: '11U', team_color: '#a78bfa', events: [{ start_at: '2026-05-18T15:00:00Z', end_at: '2026-05-18T16:00:00Z' }, { start_at: '2026-05-18T15:30:00Z' }] },
+    ]);
+    const diffDay = detectConflicts([
+      { player_id: 'p-1', first_name: 'C', team_name: '11U', team_color: '#a78bfa', events: [{ start_at: '2026-05-18T15:00:00Z', end_at: '2026-05-18T16:00:00Z' }] },
+      { player_id: 'p-2', first_name: 'M', team_name: '8U', team_color: '#f59e0b', events: [{ start_at: '2026-05-19T15:00:00Z' }] },
+    ]);
+    expect(sameKid).toEqual([]);
+    expect(diffDay).toEqual([]);
+  });
+});
