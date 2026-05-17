@@ -5,17 +5,23 @@ import { useActivities } from '../hooks/useActivities';
 import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useGameResultsMap } from '../hooks/useGameResultsMap';
-import { useWeather } from '../hooks/useWeather';
+import { getWeatherForTime, useWeather } from '../hooks/useWeather';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
+import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
 import { supabase } from '../lib/supabase';
 import AdminGreeting from '../components/admin/AdminGreeting';
+import NextEventCard from '../components/admin/NextEventCard';
 import SectionShell from '../components/home/SectionShell';
 import DateGroupedList from '../components/schedule/DateGroupedList';
 import PastEventsSection from '../components/schedule/PastEventsSection';
 import DensityToggle from '../components/home/DensityToggle';
 import { useDensity } from '../hooks/useDensity';
 import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
+import AlertZone from '../components/alerts/AlertZone';
+import CoachRosterSnapshot from '../components/coach/CoachRosterSnapshot';
+import Label from '../components/shared/Label';
+import { filterAlertsForCoach } from '../lib/alerts/relevanceFilters';
 
 export default function CoachHomePage() {
   const { user } = useAuth();
@@ -45,10 +51,31 @@ export default function CoachHomePage() {
     });
   }, [user?.id]);
 
+  // Alerts: hook is role-agnostic. Page applies filterAlertsForCoach
+  // (data-ownership filter) scoped to coach's team_staff teamIds.
+  const coachedTeamIds = useMemo(() => myTeams.map((t) => t.id), [myTeams]);
+  const { alerts: allAlerts } = useAlertEvaluator();
+  const coachAlerts = useMemo(() => filterAlertsForCoach(allAlerts, coachedTeamIds), [allAlerts, coachedTeamIds]);
+
+  // Next event across all coached teams. Pulse-glow wrapper draws
+  // the eye to the upcoming game per Q4 highlight #1.
+  const nextEvent = thisWeek[0];
 
   return (
     <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
       <AdminGreeting user={user} />
+
+      <AlertZone alerts={coachAlerts} variant="collapsible" sectionLabel="ALERTS" />
+
+      {nextEvent && (
+        <div style={{
+          borderRadius: 12, padding: 2,
+          border: '1.5px solid var(--em-accent)',
+          boxShadow: 'var(--em-shadow-md)',
+        }}>
+          <NextEventCard event={nextEvent} weather={getWeatherForTime(weather, nextEvent.start_at)} />
+        </div>
+      )}
 
       <SectionShell
         title="NEXT 7 DAYS"
@@ -64,6 +91,13 @@ export default function CoachHomePage() {
       </SectionShell>
 
       <PastEventsSection activities={activities} rsvpCounts={rsvpCounts} rideCounts={rideCounts} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
+
+      {myTeams.length > 0 && (
+        <section className="min-w-0" aria-label="Roster snapshot">
+          <Label>ROSTER SNAPSHOT</Label>
+          <CoachRosterSnapshot teams={myTeams} />
+        </section>
+      )}
 
       <SectionShell
         title="MY TEAMS"
