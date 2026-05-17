@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AlertCircle, Calendar, DollarSign, Users } from 'lucide-react';
 import { formatCurrency } from '../../lib/formatters';
+import { tokensForSeverity } from '../../lib/alerts/severityTokens';
 
 // Animates a number from 0 to `target` over `duration` ms with an
 // ease-out cubic curve. Called per Card with the resolved numeric value
@@ -131,7 +132,7 @@ export default function KpiGrid({ stats }) {
         label="Outstanding"
         value={formatCurrency(outstanding)}
         loading={loading}
-        accent={outstanding > 0 ? 'var(--em-warning)' : 'var(--em-text-tertiary)'}
+        accent={outstanding > 0 ? tokensForSeverity('warning').text : 'var(--em-text-tertiary)'}
         accentValue={outstanding > 0}
         stagger="sf-stagger-4"
       />
