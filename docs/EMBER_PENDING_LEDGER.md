@@ -67,15 +67,31 @@ chat's L99 ordering.
 - Resolution: Migration 021 should null the `tournament_id` on that event.
 - Surface impact: if this event is counted as a tournament game, it would distort future tournament aggregates once Cluster 1 is published.
 
-### Cluster 1.2 — 10U Blue record discrepancy (Frank data dump finding)
-- Status: **UNDER OBSERVATION**, awaiting post-publish verification
-- Severity: LOW (3-2 vs 3-3 ambiguity)
-- Screenshots at audit time showed 10U Blue at 3-2. Frank's data dump shows 6 league games played (3W 3L). One game (Resurrection White 4AB 2-0) may be a forfeit not counted in aggregate.
-- Three possible explanations:
-  - (a) Resurrection White 4AB 2-0 is a forfeit/no-play not counted as W
-  - (b) A recent game wasn't yet in aggregate when screenshots taken
-  - (c) Game entry happened after screenshot capture
-- Resolution: verify after Frank publishes tournament results. If 10U Blue stays at 3-2 (vs 3-3 from data dump), investigate the forfeit-counting logic.
+### Cluster 1.2 — 10U Blue Game 6 missing from system
+- Status: **OPEN**, Frank confirmed 3-3 is correct (not 3-2 shown in screenshots)
+- Severity: LOW (workflow data entry)
+- Evidence: Frank's league schedule data dump shows 6 league games played for 10U Blue. Resurrection Blue 4AB (May 9) at 25-27 L is the 6th game. Screenshots at audit time showed 3-2 — that means Game 6 was not yet entered in the system at screenshot capture.
+- Frank-action item: enter Game 6 result (Resurrection Blue 4AB, May 9, 25-27 L) into the system during the Quick Score backfill session.
+
+### Cluster 1.3 — 10U Blue Game 7 status unknown
+- Status: **AWAITING FRANK VERIFICATION** (added to §6)
+- Severity: LOW
+- Evidence: 10U Blue scheduled to play 6th Boro 4AB on Sun May 17 (rescheduled to HOME @ IC-Tuckahoe). Frank's data dump does not include a result for this game. Either:
+  - (a) Game happened, result not yet entered (workflow gap)
+  - (b) Game rescheduled again, didn't happen May 17 (calendar update needed)
+- Frank-action item: confirm Game 7 status during Quick Score session.
+
+### Cluster 3.1 — Event title ad-hoc string appendages (scope expansion)
+- Status: **OPEN**, expands original Cluster 3 (B2) scope
+- Severity: LOW (data hygiene)
+- Examples found in production:
+  - "9U Boys Game" (team name embedded as title)
+  - "10U Blue · 6th Boro 4AB · May Reschedule"
+  - "10U Blue · Holy Family-NR · May Reschedule"
+- Root pattern: ad-hoc free-text edits to `event.title` during reschedule + event creation workflows. No constraint on what gets stored in the title field.
+- Resolution:
+  - Migration 021: sanitize existing event titles to remove redundant team names + "May Reschedule" suffix appendages
+  - Cluster 3 PR: centralize event title rendering in shared helper. Computed from `event.opponent` + `event.event_type` + event status, NOT free-text. Prevents future ad-hoc appendages.
 
 ### Cluster 2 — Per-player % degenerates to RSVP-going-rate when check-ins absent
 - Status: **OPEN**, label rename queued
@@ -212,7 +228,8 @@ but with different implementations.
 - **A1** — View-as eye-icon identity context: does clicking the eye actually switch greeting + scope, or only switch role label? Needs in-app verification.
 - **A13** — Bell badge purpose: RESOLVED per Frank's note (routes to Settings, no inbox). Moves to Cluster 4 resolution.
 - **P10** — "Ember v2.0" label: intentional rebrand preview or hardcoded leak? Tied to §8 Phase 0C work.
-- **D12-pending** — 11U Girls duplicate practice Mon May 18: D12 diagnostic confirms or refutes; if duplicate, moves to Migration 021.
+- **D12-pending** — 11U Girls duplicate practice Mon May 18: D12 diagnostic confirms or refutes; if duplicate, moves to Migration 021. **VERIFIED FALSE POSITIVE 2026-05-18 18:00Z** — D6 confirmed no 6:30 PM 11U Girls practice on May 18. Only 7:35 PM at St. Patrick's. Closed.
+- **Cluster 1.3** — 10U Blue Game 7 (6th Boro 4AB May 17): did the rescheduled game happen? If yes, get score; if no, mark further reschedule. Frank to confirm during Quick Score session.
 
 ---
 
@@ -253,13 +270,13 @@ Known scope:
 Issues that look like bugs but actually require behavioral changes
 (Frank or coaches doing something different in production):
 
-### Cluster 1 — Tournament results publish (Rumble for the Ring CT May 16-17)
-**Status: WORKFLOW DATA SUPPLIED 2026-05-18 18:00 CEST**
+### Cluster 1 — Tournament results publish + league backfill (Rumble for the Ring CT May 16-17 + 10U Blue Games 6-7)
+**Status: WORKFLOW DATA SUPPLIED 2026-05-18 18:15 CEST (REVISED)**
 
-Frank-action item: open Quick Score, enter scores for 13 tournament
-games, publish. Estimated ~30 min.
+Frank-action item: open Quick Score, enter scores for **13-15 games**
+(13 tournament + 1-2 league backfill), publish. Estimated ~30-45 min.
 
-Tournament inventory:
+Tournament inventory (13 games):
 
 **11U Girls — Rumble for the Ring CT (5 games, 3-2 in tournament)**
 | Date    | Opponent              | Score | Result        |
@@ -286,18 +303,34 @@ Tournament inventory:
 | May 16  | Twin Athletics        | 8-34  | L             |
 | May 16  | NY Wild               | 13-34 | L             |
 
+League backfill (1-2 games):
+
+**10U Blue — likely missing**
+| Game # | Date    | Opponent              | Venue                  | Result      |
+|--------|---------|-----------------------|------------------------|-------------|
+| Game 6 | May 9   | Resurrection Blue 4AB | St Patrick-Armonk HOME | 25-27 L     |
+| Game 7 | May 17  | 6th Boro 4AB (resched)| IC-Tuckahoe HOME       | **unknown** |
+
+Game 6 evidence: Frank confirmed 3-3 is the correct record; screenshots
+showed 3-2. The gap is Game 6 not yet entered.
+
+Game 7 evidence: rescheduled to May 17 yesterday; outcome unknown.
+Frank to verify (see Cluster 1.3 / §6).
+
 Post-publish expected aggregate state (verification targets):
 - 11U Girls: 8-4 season (was 5-2 pre-tournament)
 - 10U Black: 9-4 season (was 5-4 pre-tournament), 2× Tournament Champion
 - 8U Boys: 3-9 season (was 3-5 pre-tournament)
+- 10U Blue: 3-3 (after Game 6 entered) or 4-3 / 3-4 (after Game 7 if played)
+- 9U Boys: 1-5 (current data confirms, no backfill needed)
 - Nationals Qualified count: 2 (11U Girls + 10U Black)
 - Rumble for the Ring CT tile shows W/L per team
 
 If aggregates DON'T update after publish, Cluster 1 reopens as code
 fix (filter bug in aggregate query path).
 
-Note: D1 reported 15 tournament events; 13 actual games to enter.
-Delta of 2 likely consists of:
+Note: D1 reported 15 tournament events; 13 actual tournament games to
+enter. Delta of 2 likely consists of:
 - 1 placeholder Championship bracket event for 8U Boys (didn't reach
   the championship game; 0-4 in pool play)
 - 1 mis-tagged 10U Blue event (see Cluster 1.1 above)
