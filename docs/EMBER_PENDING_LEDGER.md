@@ -977,6 +977,55 @@ Registered here under anti-pattern #45 acid-test: a new audit surfaced new pendi
 | V-26 | PROMPT_ELITE_POLISH.md outcome | §4.G (quick wins / Elite polish) | docs/PROMPT_ELITE_POLISH.md (April 10-13 build sprint) | 15 min | Elite Polish arc completeness | Read PROMPT_ELITE_POLISH.md top-to-bottom + cross-ref ELITE-* tags against CLAUDE.md §16 + git log for sprint commits |
 | V-27 | PROMPT_FUNCTIONAL_FEATURES.md (ToastContext + usePullToRefresh) ship status | §4.G | docs/PROMPT_FUNCTIONAL_FEATURES.md (April 13 chat) | 10 min | functional-features arc | `grep -rn 'ToastContext\|usePullToRefresh' src/` (both already shipped per repo state — confirm scope matched prompt doc) + read prompt doc for any unshipped sub-items |
 | V-28 | PROMPT_NEXT_LEVEL.md outcome | §4.G | docs/PROMPT_NEXT_LEVEL.md (April 10-13 build sprint) | 15 min | next-level features arc | Read PROMPT_NEXT_LEVEL.md top-to-bottom + git log cross-ref for shipped sub-items + flag any unshipped items to §4.G as concrete tasks |
+| V-29 | PR #21 disposition — coach contact in briefings (WIP draft, closed 2026-05-12 unmerged) | §4.N Layer 1 | Layer 1 git log audit 2026-05-18 evening | 10 min | Confirm A/B decision routed correctly; no orphaned ship | Read PR #21 body (A vs B framing) + grep `staff_profiles` + `coach_user_ids` + briefing renderer dynamic-coach-array code in `src/` to verify path A shipped through a different PR. If shipped: close V-29 with cite. If unshipped: re-scope to §4.G as concrete work item. |
 
-Total estimated verification effort: ~7-8 hours when bundled (with V-17 through V-22 additions +1 hour, V-23 through V-28 additions +1.5 hours).
-Recommended cadence: batch V-1 through V-7 + V-17 through V-21 (Migrations + BUGs + Phase 1/3 ship-status confirms, ~1.5 hours) as the first Monday pass — these are the highest-value unknowns AND closable with grep/DB queries. V-8 through V-14 + V-27 (~3 hours) as a focused mid-Monday session — these include spec-doc deep reads that benefit from sustained focus. V-15 + V-16 + V-22 + V-23 through V-26 + V-28 (~3 hours) as a separate "rebuild + tidy" pass when energy is low — these are mostly read-and-flag with low decision burden.
+### Layer 1 findings (2026-05-18 evening soft start — §4.N audit, low-cognitive pass)
+
+Layer 1 of the §4.N Two-Week L99 Audit executed Sunday evening (post-sign-off, soft start per Frank's "Continue with the build" routing). Mechanical enumeration + sequence gap analysis. No interpretive findings — those wait for Layers 2-5 with fresh-head cognitive load.
+
+**Quantitative ground truth:**
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Total commits in window (May 4 → May 18, main branch) | 616 | Required `git fetch --unshallow` to materialize — main was shallow-cloned with 72 commits visible |
+| Commits with PR-squash markers `(#NNN)$` | 232 | Real PR landings |
+| Commits via merge-commit style (`Merge pull request #NNN ...`) | 12 | Pre-PR-squash-discipline merges (#14, #93-#95, #97, #99-#104, others) — counted as landings, not orphans |
+| Direct-to-main commits (no PR reference) | 384 | ALL pre-2026-05-12 (v2 history rolled into main on May 11 retirement). Zero post-retirement direct-to-main commits. Anti-pattern #19 holds firm. |
+| Sequence gaps in PR numbers (window: #6-#254) | 17 raw → 5 real | 12 of 17 are merge-commit false positives. 4 of remaining 5 (#140-#143) are dependabot bumps superseded by consolidated PR #147 (§4.K). 1 real WIP orphan: PR #21 (→ V-29). |
+| PRs referenced in EMBER_PENDING_LEDGER | 32 of 232 (14%) | Expected — ledger is forward-tracking from May 18 creation, not retroactive completeness over full window |
+| PRs unreconciled to ledger | 200 | Expected; not actionable. Layer 1's scope ends at quantification. Layer 4 (prod verification sweep) cross-references actionable ship status; Layer 5 (22-bug catalog) cross-references the named-uncertainty subset. |
+
+**Per-day landing density** (post-v2-retirement era only — May 12-18, all via PR):
+
+```
+2026-05-12: 28 PRs   wave 4.4 broadcast components + briefing IA
+2026-05-13: 16 PRs   doctrine sweep + dependabot consolidation
+2026-05-14:  2 PRs   quiet day (Italy travel transition)
+2026-05-15: 18 PRs   schedule + briefings refinement
+2026-05-16: 40 PRs   audit-day (5-phase audit + Beta + fixes)
+2026-05-17: 12 PRs   Tier 3 v1 alert framework (6 PRs)
+2026-05-18: 22 PRs   L99 cross-role audit + meta-discipline + ledger
+```
+
+**Findings synthesis:**
+
+1. **Anti-pattern #19 status:** HOLDS FIRM post-2026-05-12. Zero direct-to-main commits in the 7-day post-v2-retirement window. The 384 direct commits are entirely v2 history rolled into main at the May 11 retirement merge. Not violations.
+
+2. **Sequence gap class:** 12 of 17 raw gaps are merge-commit-style merges (`Merge pull request #NNN from ...`) that the squash-merge regex `\(#NNN\)$` doesn't catch. Refining the cross-reference regex for future Layer 1 runs is a Layer 1 method-improvement; not a finding requiring action.
+
+3. **Dependabot consolidation pattern (PR #147):** Four individual dependabot bumps (#140-#143) were closed unmerged in favor of the consolidated `risky-runtime-deps` group bump landed as #147. §4.K already tracks #147 as the canonical record. The 4 closed PRs are intentional cleanup, not orphans.
+
+4. **Real orphan: PR #21.** Frank-authored WIP draft titled "coach contact in briefings (PR-F partial — awaiting A/B decision)". Closed 2026-05-12 unmerged. PR body says: *"Migration `20260508194310` applied via Supabase MCP. Production already has these changes: `staff_profiles` table + `tournament_messages.coach_user_ids` column."* So the production schema reflects Path A artifacts. The code wiring (CoachPicker component, useTeamCoaches hook, composer wiring, useComposeBriefing) may or may not have shipped via a different PR. → V-29 verifies.
+
+5. **Ledger reconciliation gap (200 unreconciled):** Expected and not actionable at Layer 1. The ledger is forward-tracking (created May 18 in PR #238); it captures pending/verify/active-bug items, not every shipped feature. The "200 unreconciled" framing is informational — Layer 4 cross-checks production state of ship claims and Layer 5 cross-checks named uncertainties; neither needs Layer 1 to pre-enumerate the 200.
+
+**Layer 1 sign-off conditions check:**
+
+- ✅ Anti-pattern #45 compliance — findings → ledger same commit (this PR)
+- ✅ Findings count + ledger-growth report → 1 new V-* (V-29), 1 findings block (~50 lines)
+- ✅ Strategic arc routing decision deferred to next layer (Layer 5 next per §4.N sequencing — clears mechanical 22-bug catalog uncertainty)
+
+**Layer 1 effort actual:** ~35 minutes (matches §4.N estimate of 20-30 min with a small unshallow surprise overhead).
+
+Total estimated verification effort: ~7-8 hours when bundled (with V-17 through V-22 additions +1 hour, V-23 through V-28 additions +1.5 hours, V-29 +10 min).
+Recommended cadence: batch V-1 through V-7 + V-17 through V-21 (Migrations + BUGs + Phase 1/3 ship-status confirms, ~1.5 hours) as the first Monday pass — these are the highest-value unknowns AND closable with grep/DB queries. V-8 through V-14 + V-27 (~3 hours) as a focused mid-Monday session — these include spec-doc deep reads that benefit from sustained focus. V-15 + V-16 + V-22 + V-23 through V-26 + V-28 + V-29 (~3.5 hours) as a separate "rebuild + tidy" pass when energy is low — these are mostly read-and-flag with low decision burden.
