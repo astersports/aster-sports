@@ -186,71 +186,207 @@ anti-pattern #21.
 
 Items where the decision is locked in chat-side discussion or prior
 session notes, but the code/doc artifact hasn't shipped yet.
-Populated 2026-05-18 from a cross-document audit against
-`STATE_OF_AFFAIRS_L99_v5.md` + `CC_WAVE_4_4_COUNTER_PLAN_REVISION_2026-05-11.md`
-+ `AUDIT_DAY_2026-05-16_FINAL_CLOSE.md` after chat surfaced the
-Wave 4.4-B IA gap.
+Organized by **arc**, not by chronology — each arc is a coherent
+multi-PR unit with its own scope and sequencing.
 
-### Briefing IA (Wave 4.4-B remainder)
+Sources cross-referenced 2026-05-18:
+- `docs/SKYFIRE_BUILD_QUEUE_v2.md` (canonical build queue)
+- `docs/CUTOVER_WAVE_GAP_AUDIT.md` (briefing renderer + parser arc)
+- `docs/STATE_OF_AFFAIRS_L99_v5.md` (canonical state)
+- `docs/CC_SESSION_HANDOFF_2026-05-13.md` (PostHog + Dependabot)
+- `docs/AUDIT_DAY_2026-05-16_FINAL_CLOSE.md` (audit close)
+- `docs/CC_WAVE_4_4_COUNTER_PLAN_REVISION_2026-05-11.md` (briefing IA)
+
+Items flagged "VERIFY MONDAY" live in §15 — they may already be
+shipped (status uncertain at audit time).
+
+---
+
+### §4.A — Cutover Wave (briefing renderer + parser)
+
+Status: **NOT STARTED**. 5-7 PR arc per `CUTOVER_WAVE_GAP_AUDIT.md`.
+Strategic priority: compounding cost on every tournament briefing
+without PR 1 (renderer alignment).
+
+- **PR 1** — `tournament_prelim` renderer alignment. Match cobalt-header /
+  yellow-RSVP-banner / venue-list / day-grouped-game-cards / IF-ADVANCE /
+  logistics / tagline / brand-footer pattern from Frank's hand-composed
+  briefings. Add 5 new section types: rsvp_callout, venue_list, +3 more.
+- **PR 2** — Schedule parser at `/admin/import-schedule`. Single-paste
+  flow, LLM extraction with 8 validation rules, per-row inline edit,
+  reuses DO $$ pattern from ZG Rumble materialization. Note: route may
+  be partially live (referenced in `QuickActions.jsx`); see §15.
+- **PR 3** — Per-venue notes + LLM-suggested closer. `locations.notes`
+  column + LLM-suggest button on signoff_message textarea.
+- **PR 4** — Coach Roundup kind. New `coach_roundup` in
+  RESOLVER_REGISTRY; multi-team header + per-team-color game rows +
+  conflict callout.
+- **PR 5** — Family Guide kind (VIP Parent Guide). Multi-kid family
+  briefings; VIP header + per-kid-color game rows; new section types
+  `vip_header`, `kid_color_pill`.
+- **PR 6** — Coverage delegation schema + UI. New
+  `event_coach_assignments` table (Option B); conflict detection at
+  parse time + delegation prompt in import preview.
+- **PR 7** — Cutover gate infrastructure. `briefing_feedback` table;
+  survey link injection into briefing emails; 1-5 rating signed-token
+  endpoint; ≥4.0 average aggregation query.
+
+---
+
+### §4.B — Briefing IA remainder (Wave 4.4-B)
+
+Status: Session 1 partially shipped. Remainder OPEN.
+
 - **TournamentHeader Send Briefing relocation** — Wave 4.4-B Session 1
   shipped for AdminHome + TeamDetailPage (deep-link to
   `/admin/briefings/compose?anchor=team&id=<team.id>`), but
   TournamentHeader still uses the legacy inline `SendBriefingButton`
   (verified 2026-05-18 in `src/components/tournament/TournamentHeader.jsx:103`).
-  Fix shape: replace `<SendBriefingButton>` with a deep-link to
+  Fix: replace `<SendBriefingButton>` with a deep-link to
   `/admin/briefings/compose?anchor=tournament&id=<tournament.id>&kind=<ctaKind>`.
-  Verify the portal's URL param hydration handles the `tournament`
-  anchor kind (it likely does — same pattern as `team`).
-  Estimate: ~30-45 min including a cross-surface invariant test per #43.
+  Verify portal's URL param hydration handles the `tournament` anchor
+  kind. Estimate: ~30-45 min including cross-surface invariant test per #43.
 - **docs/IA_FRAMING.md** — May 13 Decision D (IA framing addendum)
   never shipped. Light doc capturing the briefing IA strategy (one
-  home Quick Action + portal as canonical entry, deep-link buttons
-  on team/tournament detail surfaces as convenience). ~10 min.
+  home Quick Action + portal as canonical entry, deep-link buttons on
+  team/tournament detail surfaces as convenience). ~10 min.
 
-### Schedule-change rebuild (Wave 3.8 §5.2)
-Per `STATE_OF_AFFAIRS_L99_v5:159`: schedule_change kind has zero
+---
+
+### §4.C — Sprint B-F Home Page completion
+
+Source: `SKYFIRE_BUILD_QUEUE_v2.md` Phase 1 Sprint plan, references
+`HOME_DESIGN_SPEC.md` (CC hasn't read in this session — see §15).
+
+Status: **PARTIAL via Tier 3 v1** (PRs #225-#232 + #239-#241 overlap
+Sprints D-E in particular). Individual section status uncertain;
+VERIFY MONDAY per §15.
+
+- **Sprint B — Parent home Phase 1**: MY TEAMS dynamic data (likely
+  SHIPPED via PR #239), ACTION ZONE, density toggle wiring (reads
+  Migration 016), relative date language (partial via PR #234), empty
+  state design.
+- **Sprint C — Parent home Phase 2**: LIVE NOW card, RECOGNITION card
+  (ties to Migration 018 team_achievements UI), Tournament weekend
+  banner, Emergency alert banner, Coach message block.
+- **Sprint D — Coach home**: new CoachHomePage.jsx (SHIPPED via Tier
+  3 v1), all coach-specific sections (partial — alerts + roster
+  snapshot + MY TEAMS shipped), Team Pulse wiring (Migration 023
+  shipped; status of Team Pulse unknown).
+- **Sprint E — Admin home redesign**: AdminHomePage exists + alerts
+  + KpiGrid shipped; ops dashboard / pending queues / activity feed /
+  Attention Required banner state uncertain.
+- **Sprint F — Cross-role polish**: dark mode complete (Q10),
+  accessibility full audit (Q1), analytics instrumentation (Q9),
+  performance optimization, multi-org scaffolding (Q3). All NOT
+  shipped per current visibility.
+
+---
+
+### §4.D — Sprint G Rides redesign
+
+Source: `RIDES_DESIGN_SPEC.md` (CC hasn't read in this session — see §15).
+
+Status: **DESIGNED, NOT BUILT**. Entire sprint queued.
+
+- **Migration 025** — Rides schema redesign
+- Offer + claim UI for parents
+- Coach rides dashboard
+- Admin rides widget + audit
+- Waitlist + auto-confirm infrastructure
+
+---
+
+### §4.E — P0 BUG-001 through 004 (Phase 1)
+
+Source: `SKYFIRE_BUILD_QUEUE_v2.md` §P0 Bugs.
+
+Status: **LIKELY CLOSED by Migration 022** but **NOT VERIFIED**. See §15.
+
+- **BUG-001** — Admin home "Next Up" card data stale/broken. Fix phase
+  Phase 1 after Migration 022; Mig 022 shipped 2026-04-24.
+- **BUG-002** — `src/hooks/useEventDutyCounts.js`. Phase 1.
+- **BUG-003** — `src/hooks/useEventRideCounts.js`. Phase 1.
+- **BUG-004** — DB CHECK or frontend guard in `RideFormOverlay.jsx`.
+
+Build queue states "All 5 fixed in Migration 022" but only 4 BUGs
+listed. Verification pass needed Monday.
+
+---
+
+### §4.F — PostHog telemetry (Frank-action)
+
+Source: `CC_SESSION_HANDOFF_2026-05-13.md` + CLAUDE.md §16.7.1.
+
+- **PostHog server-side GeoIP enrichment** — unresolved. Help desk
+  ticket to file (Frank-action, ~5 min). Free tier doesn't expose
+  `/pipeline/transformations` toggle.
+- **Historical cleanup of geo properties** — deferred until help desk
+  resolves (would be undone by re-enrichment).
+- **PostHog-js alias/merge bug GH #31154** — open upstream; affects
+  identify-after-Supabase-auth on browser SDK.
+
+---
+
+### §4.G — Quick wins (small, ship anytime)
+
+Items <30 min each. Bundle into a single Monday-AM warm-up PR.
+
+- **Cluster 3** event title centralization + Migration 021 sanitization
+  (~30-45 min, see §2)
+- **Cluster 4** bell badge removal (~15 min, see §2)
+- **Cluster 7** admin greeting NY-pin (~5-10 min, see §2)
+- **Cluster 6.A2** KpiGrid loading gate refinement (downgraded MEDIUM)
+- Async-ordering test replication for `useAdminStats`, `useHomeRole`,
+  `useAttendanceData`, `useActivities` per anti-pattern #44 (see §11)
+
+---
+
+### §4.H — Pre-existing locked items (verify against rebuilt index)
+
+Inherited from earlier session notes:
+- Density toggle 3 levels (blocked by Migration 016 `user_preferences`)
+- Note edit cooldown 4hr
+- Rotation Planner staff-only
+
+Status: needs verification — the `EMBER_MASTER_INDEX_v3.md` referenced
+in earlier docs is not present in `docs/` as of 2026-05-18. The "49
+locked decisions" figure has no canonical source today. Worth either
+rebuilding the index from session notes or accepting that locked
+decisions live distributed across various session docs.
+
+---
+
+### §4.I — Schedule-change rebuild (Wave 3.8 §5.2)
+
+Per `STATE_OF_AFFAIRS_L99_v5:159`: `schedule_change` kind has zero
 producers in the codebase; `useUpdateActivity.updateSeries()` strips
 `start_at`/`end_at` deliberately. Spec is pending Claude.ai lock —
 3-option dialog + composer + audit table. Estimate 6-8h once spec
 lands. Not blocked on code; blocked on product spec.
 
-### Weather forecast per event (Wave 4b)
-Per `STATE_OF_AFFAIRS_L99_v5:171` (D-WEATHER-1): OpenWeatherMap
-fetch at compose time, 6h cache, indoor events skip. Backlog item.
-~4-6h. Implementation queue, not blocked.
+---
 
-### CLAUDE.md anti-pattern #44 (candidate, drafted not registered)
-Chat drafted text for "trace the full state pipeline before ruling
-out a regression at the gate" on 2026-05-18 (PR #241 origin case
-during L99 close). Should land as a small CLAUDE.md doc PR with
-the discipline note + drift-hedge pattern (hook-level loading-state
-tests pinning mid-flight via paused promise resolvers).
+### §4.J — Weather forecast per event (Wave 4b)
 
-### Dependabot PR #147
+Per `STATE_OF_AFFAIRS_L99_v5:171` (D-WEATHER-1): OpenWeatherMap fetch
+at compose time, 6h cache, indoor events skip. Backlog. ~4-6h.
+
+---
+
+### §4.K — Dependabot PR #147
+
 Per `AUDIT_DAY_2026-05-16_FINAL_CLOSE:85`: needs workflow-read token
-scope before next attempt. CI failures, can't repro locally,
-integration token returns 403 on workflow log endpoint. Frame the
-scope grant as a permanent capability upgrade.
+scope before next attempt. Frame as a permanent capability upgrade
+(debugging CI via Actions logs), not just a #147 fix.
 
-### Tier 4 P2 findings (2026-05-16 audit)
+---
+
+### §4.L — Tier 4 P2 findings (2026-05-16 audit)
+
 Per `AUDIT_SYNTHESIS_2026-05-16:151`: deferred to next-week cleanup
-batch. CC to read the synthesis doc when planning the cleanup PR
-to enumerate the specific items.
-
-### Density toggle (mentioned in earlier audit)
-- Density toggle 3 levels (blocked by Migration 016 `user_preferences`)
-- Note edit cooldown 4hr
-- Rotation Planner staff-only
-- (Pre-existing items from earlier session notes — verify against
-  EMBER_MASTER_INDEX if/when that doc is found or rebuilt)
-
-### EMBER_MASTER_INDEX reconciliation
-The original `EMBER_MASTER_INDEX_v3.md` is not present in `docs/`
-(verified 2026-05-18). Either the doc was renamed, never created,
-or lives in a different location. The "49 locked decisions" figure
-referenced in chat threads has no canonical source today. Worth
-either rebuilding the index from session notes or accepting that
-the locked decisions live distributed across various session docs.
+batch. CC to read the synthesis doc when planning the cleanup PR to
+enumerate specific items.
 
 ---
 
@@ -552,7 +688,43 @@ When a session ends:
 
 CC's session-start checklist:
 1. Read this doc end-to-end
-2. Cross-check with `STATE_OF_AFFAIRS_L99_v3.md`
+2. Cross-check with `STATE_OF_AFFAIRS_L99_v5.md`
 3. Confirm `git fetch + branch divergence` per anti-pattern #35
 4. Apply ground-truth tables (§11.5 CLAUDE.md) and canonical hooks
    (this doc §5) to any code being touched
+
+---
+
+## 15. VERIFICATION QUEUE
+
+Items flagged uncertain during the 2026-05-18 L99 audit expansion
+(commit 1 of PR #243). Each row needs a focused verification pass
+before the corresponding §4 entry can be marked closed or
+re-scoped. Verification methods specified per row so the work is
+mechanical, not interpretive.
+
+| # | Item | Arc tag | Source doc | Effort | Blocking | Verification method |
+|---|------|---------|------------|--------|----------|---------------------|
+| V-1 | Migration 016 (`user_preferences`) ship status | §4.H | SKYFIRE_BUILD_QUEUE_v2 | 5 min | density toggle wiring | `ls supabase/migrations/ \| grep 016` + DB inspect via MCP |
+| V-2 | Migration 018 (team_achievements) ship status + UI presence | §4.C (Sprint C RECOGNITION) | SKYFIRE_BUILD_QUEUE_v2 | 10 min | RECOGNITION card | `ls supabase/migrations/ \| grep 018` + `grep team_achievements src/` |
+| V-3 | Migration 021 (data corrections bundle) ship status | §2 Cluster 1.1 + §4.C | SKYFIRE_BUILD_QUEUE_v2 | 5 min | 10U Blue mis-tagged event fix | `ls supabase/migrations/ \| grep 021` + DB inspect |
+| V-4 | BUG-001 closure (Admin home Next Up data) | §4.E | SKYFIRE_BUILD_QUEUE_v2 | 15 min | confirms §4.E closure | Manual smoke on AdminHome NextEventCard + code-grep for null-handling |
+| V-5 | BUG-002 closure (`useEventDutyCounts.js`) | §4.E | SKYFIRE_BUILD_QUEUE_v2 | 10 min | confirms §4.E closure | Code read + unit test pass |
+| V-6 | BUG-003 closure (`useEventRideCounts.js`) | §4.E | SKYFIRE_BUILD_QUEUE_v2 | 10 min | confirms §4.E closure | Code read + unit test pass |
+| V-7 | BUG-004 closure (RideFormOverlay guard) | §4.E | SKYFIRE_BUILD_QUEUE_v2 | 10 min | confirms §4.E closure | Code read for DB CHECK or frontend guard |
+| V-8 | Sprint D Coach home completeness vs Tier 3 v1 | §4.C | HOME_DESIGN_SPEC.md | 20 min | Sprint D close-out | Read `HOME_DESIGN_SPEC.md §2` + diff against CoachHomePage.jsx |
+| V-9 | Sprint E Admin home completeness vs Tier 3 v1 | §4.C | HOME_DESIGN_SPEC.md | 20 min | Sprint E close-out | Read `HOME_DESIGN_SPEC.md §3` + diff against AdminHomePage.jsx |
+| V-10 | Density toggle wiring state | §4.H | SKYFIRE_BUILD_QUEUE_v2 | 10 min | Sprint B close-out | `grep -rn 'useDensity\|density_level' src/` + Migration 016 status |
+| V-11 | TournamentDetailPage briefing surface state | §4.B | this audit | 5 min | §4.B TournamentHeader fix scope | `grep -n briefing src/pages/TournamentDetailPage.jsx` (already verified: no direct refs; only via TournamentHeader) |
+| V-12 | `/admin/import-schedule` route partial status | §4.A PR 2 | this audit | 5 min | parser PR scope | `grep -rn 'import-schedule' src/` + route map |
+| V-13 | HOME_DESIGN_SPEC.md detail extraction | §4.C | docs/HOME_DESIGN_SPEC.md | 30 min | Sprint B-F scoping | Read top-to-bottom; populate §4.C with named tasks |
+| V-14 | RIDES_DESIGN_SPEC.md detail extraction | §4.D | docs/RIDES_DESIGN_SPEC.md | 30 min | Sprint G scoping | Read top-to-bottom; populate §4.D with named tasks |
+| V-15 | EMBER_MASTER_INDEX_v3 reconciliation | §4.H | (file missing) | 60 min | locked-decisions catalog | Rebuild from session notes OR accept distributed-decisions model |
+| V-16 | Tier 4 P2 specific items | §4.L | AUDIT_SYNTHESIS_2026-05-16 | 30 min | cleanup batch scoping | Read synthesis doc + enumerate P2 entries |
+
+Total estimated verification effort: ~4-5 hours when bundled.
+Recommended cadence: batch V-1 through V-7 (Migrations + BUGs,
+~1 hour) as the first Monday pass — these are the highest-value
+unknowns. V-8 through V-14 (~2.5 hours) as a focused mid-Monday
+session. V-15 + V-16 (~1.5 hours) as a separate "rebuild + tidy"
+pass when energy is low.
