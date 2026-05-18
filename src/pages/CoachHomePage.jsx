@@ -9,6 +9,7 @@ import { getWeatherForTime, useWeather } from '../hooks/useWeather';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
 import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
+import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { supabase } from '../lib/supabase';
 import AdminGreeting from '../components/admin/AdminGreeting';
 import NextEventCard from '../components/admin/NextEventCard';
@@ -24,8 +25,9 @@ import Label from '../components/shared/Label';
 import { filterAlertsForCoach } from '../lib/alerts/relevanceFilters';
 
 export default function CoachHomePage() {
-  const { user } = useAuth();
+  const { user, orgId } = useAuth();
   const { activities, loading, error, refetch } = useActivities();
+  const { byTeamId: recordsByTeam, loading: recordsLoading } = useOrgTeamRecords(orgId);
   const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(activities);
   const { counts: rideCounts } = useEventRideCounts(activities);
   const gameResults = useGameResultsMap(activities);
@@ -111,6 +113,8 @@ export default function CoachHomePage() {
             <ParentHomeTeamCard
               key={t.id}
               team={t}
+              summary={recordsByTeam[t.id]}
+              loading={recordsLoading}
               onClick={() => navigate(`/schedule?team=${t.id}`)}
             />
           ))}
