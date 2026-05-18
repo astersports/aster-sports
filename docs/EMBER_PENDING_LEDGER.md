@@ -449,19 +449,19 @@ Edge function deploy reconciliation: CLEAN per audit (10 functions verified, no 
 GATED per Class 7 discipline: all 6 findings staged for post-synthesis batched RLS migration PR.
 
 P0 — RLS UPDATE policies missing `WITH CHECK`:
-- `briefing_reminders.admins update own org reminders` — admin could change `org_id` silently
-- `briefing_templates.briefing_templates_update_admin` — admin could change `org_id` or `kind`
-- `team_types.team_types_update_admin` — admin could change `org_id`
+- `briefing_reminders.admins update own org reminders` — **CLOSED** (V-20 verified `with_check_expr` matches `using_expr`)
+- `briefing_templates.briefing_templates_update_admin` — **CLOSED** (V-20 verified)
+- `team_types.team_types_update_admin` — **CLOSED** (V-20 verified)
 
 P1 — PUBLIC EXECUTE on SECURITY DEFINER (anti-pattern #23):
-- `briefing_active_queue(p_org_id, ...)` — anon can call
-- `log_pii_change(p_target_table, ...)` — anon can write to pii_audit_log directly
-- `suppress_unsubscribed_recipients()` — trigger function; should not have PUBLIC EXECUTE
+- `briefing_active_queue(p_org_id, ...)` — **CLOSED** (V-20: PUBLIC revoked; grants now service_role + authenticated + postgres; authenticated is correct since function checks admin internally)
+- `log_pii_change(p_target_table, ...)` — **PARTIALLY CLOSED, DOWNGRADED P1 → P2** (V-20: PUBLIC revoked, no anon access; but `authenticated` still has EXECUTE — should only be invoked from triggers)
+- `suppress_unsubscribed_recipients()` — **PARTIALLY CLOSED, DOWNGRADED P1 → P2** (V-20: PUBLIC revoked; `authenticated` still has EXECUTE on trigger function)
 
 NOT findings (intentional):
 - `get_invitation_by_token(p_token)` — PUBLIC EXECUTE BY DESIGN (anon invite redemption)
 
-RLS coverage: 65/65 public tables enabled. Status of batched RLS migration PR: UNKNOWN — verify via V-20.
+RLS coverage: 65/65 public tables enabled. Status of batched RLS migration PR: **4 of 6 fully closed; 2 of 3 P1s downgraded to P2** (PUBLIC/anon surface fully closed; authenticated-still-can-call surface remains).
 
 #### §4.M.5 — Phase 5 (Type / Contract): 4 NEW orphan renderers + 1 P1 (UNSHIPPED)
 
@@ -483,7 +483,7 @@ RESOLVER_REGISTRY contracts: PASS. composerSubmit dispatch: PASS.
 
 Per `AUDIT_BETA_SYNTHESIS_2026-05-16` synthesis. Items NOT shipped in the Beta PR set (#210-#215). Each is a candidate cleanup item:
 
-- **20+ `.maybeSingle()` no-error-destructure callsites** (P1) — milder variant of anti-pattern #36; sweep follow-up to PR #211 deferred
+- **27 `.maybeSingle()` no-error-destructure callsites** (P1) — V-22 verified 2026-05-18 20:30Z. 81 total maybeSingle in src/; 27 use pattern A (no error destructure); mostly in `src/lib/engine/resolvers/` (rsvpNudge / gameRecap / scheduleChange / tournamentPrelim / tournamentRecap) + 3 outside resolvers (`useImportSchedule.js` · `useLiveGame.js` · `PostOfferForm.jsx`). Sweep PR scope: ~30-45 min, anti-pattern #36 follow-through to PR #211
 - useWeather localStorage fallback persists across users (P2)
 - BriefingComposer state doesn't reset on orgId change (P2)
 - useHasUnread channel name 'unread-badge' is global (P2)
@@ -903,9 +903,9 @@ Phase 5 — V-1 through V-16 (the queue below) executes ONLY after Phases 1-4 ga
 | V-17 | Phase 1 P0 batch ship status (EventLocationTab + send-tournament-message) | §4.M.1 | AUDIT_PHASE1_WIRING_2026-05-16 | 5 min | confirm 2 of 30+ items closed | **CLOSED 2026-05-18 19:50Z** — PRs #195 (P0-1 + P1-1 + P0-2) + #203 (P1-2 + P1-7) shipped. Code-grep confirmed: `EventLocationTab.jsx` locations query has `.eq('org_id', orgId).is('archived_at', null)`; tournaments query has `.eq('org_id', orgId)`; `send-tournament-message/index.ts` guardians query has `.eq('org_id', message.org_id)`. |
 | V-18 | Phase 2 + Phase 5 orphan renderer status (7 P0-LATENT) | §4.M.2 + §4.M.5 | AUDIT_PHASE2 + AUDIT_PHASE5 | 10 min | sizing the 7-renderer arc | **6 of 7 CLOSED 2026-05-18 19:50Z** — `ls src/lib/engine/renderers/` confirms: eventCard.js · placementBlock.js · gameLog.js · callupCard.js · coachReflection.js · standoutMoments.js ALL EXIST. The 7th (`family`) was flagged "needs verification" in Phase 5 itself — no `family.js` renderer; was likely never a real emit site (Phase 2A agent claimed it was a nested data carrier, contested by Phase 5 without resolution). LIKELY a Phase 5 false positive. |
 | V-19 | Phase 3 P0 mirror drift ship status (scheduleGaps.js ↔ _scheduleGaps.ts) | §4.M.3 | AUDIT_PHASE3_MIGRATION_DEPLOY | 5 min | confirm closed | **CLOSED 2026-05-18 19:50Z** — both source and Deno mirror have `describeScheduleGaps(events, { minGapMinutes = MIN_GAP_MINUTES } = {})` signature and `if (gap >= minGapMinutes)` gate. Mirror in sync. Header comment on Deno side explicitly notes the parity. |
-| V-20 | Phase 4 RLS migration ship status (3 P0 + 3 P1 batched) | §4.M.4 | AUDIT_PHASE4_RLS_SECURITY | 10 min | confirm RLS hardening closed | **DEFERRED to Monday** — DB query via Supabase MCP required (`SELECT polname, polcmd, polwithcheck FROM pg_policy WHERE polrelid::regclass::text IN ('briefing_reminders', 'briefing_templates', 'team_types') AND polwithcheck IS NULL;`). Not run tonight (end-of-day MCP work). Bundle with V-1 through V-7 Monday morning. |
+| V-20 | Phase 4 RLS migration ship status (3 P0 + 3 P1 batched) | §4.M.4 | AUDIT_PHASE4_RLS_SECURITY | 10 min | confirm RLS hardening closed | **4 of 6 CLOSED 2026-05-18 20:30Z (P0s ALL CLOSED, P1s mixed).** DB query confirmed: (a) all 3 P0 UPDATE policies (briefing_reminders/briefing_templates/team_types) have matching `with_check_expr` — anti-pattern #20 closed. (b) 1 of 3 P1 PUBLIC EXECUTE issues fully closed: `briefing_active_queue` grants service_role + authenticated + postgres (no anon, authenticated is correct since function checks admin internally). (c) 2 of 3 P1 PARTIALLY closed: `log_pii_change` + `suppress_unsubscribed_recipients` had PUBLIC revoked (no anon access) but `authenticated` still has EXECUTE — log_pii_change should only be called from triggers; suppress_unsubscribed_recipients is itself a trigger function. Downgraded P1 → P2 since PUBLIC/anon attack surface is closed. |
 | V-21 | Phase 5 TournamentRecapBody defaultValue drift ship status | §4.M.5 | AUDIT_PHASE5_TYPE_CONTRACT | 3 min | confirm closed | **CLOSED 2026-05-18 19:50Z** — `TournamentRecapBody.jsx` defaultValue has `standout_moments: ''` + `coach_reflection: ''` + 2 additional keys (`coach_note`, `parent_shoutout`). Drift fixed, plus scope expanded beyond original audit. |
-| V-22 | Beta `.maybeSingle()` no-error-destructure sweep status (20+ callsites) | §4.M.6 | AUDIT_BETA_SYNTHESIS | 10 min | confirm anti-pattern #36 follow-up sweep status | **DEFERRED to Monday** — `grep -rn 'maybeSingle' src/` + spot-check requires careful per-callsite read. Not run tonight. Bundle with V-15 + V-16 in the energy-low pass. |
+| V-22 | Beta `.maybeSingle()` no-error-destructure sweep status (20+ callsites) | §4.M.6 | AUDIT_BETA_SYNTHESIS | 10 min | confirm anti-pattern #36 follow-up sweep status | **OPEN 2026-05-18 20:30Z** — sweep confirms Beta carryover is real and unshipped. 81 total `.maybeSingle()` callsites in `src/`; **27 still use pattern A** (`{ data: x } = ... .maybeSingle()` with no error destructure); 9 correctly use `{ data, error }`. Sweep PR scope: 27 callsites mostly in `src/lib/engine/resolvers/` (rsvpNudge, gameRecap, scheduleChange, tournamentPrelim, tournamentRecap) + `useImportSchedule.js` + `useLiveGame.js` + `PostOfferForm.jsx`. ~30-45 min PR shipping the anti-pattern #36 follow-through (PR #211 closed the first batch in briefing resolvers; this is the broader sweep). |
 
 Total estimated verification effort: ~5-6 hours when bundled (with V-17 through V-22 additions, +1 hour).
 Recommended cadence: batch V-1 through V-7 + V-17 through V-21 (Migrations + BUGs + Phase 1/3 ship-status confirms, ~1.5 hours) as the first Monday pass — these are the highest-value unknowns AND closable with grep/DB queries. V-8 through V-14 (~2.5 hours) as a focused mid-Monday session. V-15 + V-16 + V-22 (~2 hours) as a separate "rebuild + tidy" pass when energy is low.
