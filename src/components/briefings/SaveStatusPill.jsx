@@ -19,7 +19,7 @@ const TONE = {
 };
 
 function fmtTime(d) {
-  return new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
 }
 
 export default function SaveStatusPill({ busy, savedAt, hasKind }) {

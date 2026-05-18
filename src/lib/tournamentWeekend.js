@@ -40,7 +40,7 @@ export function weekendDaysInRange(startStr, endStr) {
       out.push({
         iso: d.toISOString().slice(0, 10),
         dow,
-        label: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+        label: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' }),
       });
     }
   }

@@ -42,7 +42,7 @@ export default function ArrivalBoard({ event }) {
         {sortedPlayers.map((p) => {
           const a = arrivalMap[p.id];
           const s = a ? STATUS_DISPLAY[a.status] : null;
-          const time = a?.status_changed_at ? new Date(a.status_changed_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
+          const time = a?.status_changed_at ? new Date(a.status_changed_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : null;
           const nextStatus = !a ? 'arrived' : a.status === 'arrived' ? null : 'arrived';
           return (
             <button key={p.id} type="button" onClick={() => nextStatus && setArrival(p.id, nextStatus)} className="sf-press"

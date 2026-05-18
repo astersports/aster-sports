@@ -18,7 +18,7 @@ const btnSecondary = { ...btnPrimary, backgroundColor: 'var(--em-bg-secondary)',
 
 function fmt(ts) {
   if (!ts) return '';
-  return new Date(ts).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  return new Date(ts).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
 }
 
 export default function ScheduleChangeComposer({ event, diff, onClose, onDone }) {

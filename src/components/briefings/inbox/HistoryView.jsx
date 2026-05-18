@@ -25,7 +25,7 @@ function relTime(iso) {
   if (ms < 3600000) return 'just now';
   if (ms < 86400000) return `${hours}h ago`;
   if (days < 30) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' });
 }
 
 export default function HistoryView({ filters, search, onCompose }) {

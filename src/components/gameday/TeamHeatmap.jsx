@@ -56,7 +56,7 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle })
           <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--em-text-tertiary)' }}>Player</div>
           {events.map((e) => (
             <div key={e.id} style={{ fontSize: 9, color: 'var(--em-text-tertiary)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden' }}>
-              {new Date(e.start_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })}
+              {new Date(e.start_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', timeZone: 'America/New_York' })}
             </div>
           ))}
           <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--em-text-tertiary)', textAlign: 'right' }}>ATT%</div>

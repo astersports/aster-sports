@@ -16,14 +16,12 @@ function formatRange(start, end) {
   if (!start || !end) return '';
   const s = new Date(start + 'T12:00:00');
   const e = new Date(end + 'T12:00:00');
-  const opts = { month: 'short', day: 'numeric', year: 'numeric' };
-  if (start === end) return s.toLocaleDateString('en-US', opts);
+  if (start === end) return s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' });
   const sameMonth = s.getMonth() === e.getMonth();
   if (sameMonth) {
-    const shortOpts = { month: 'short', day: 'numeric' };
-    return `${s.toLocaleDateString('en-US', shortOpts)}–${e.getDate()}, ${s.getFullYear()}`;
+    return `${s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}–${e.getDate()}, ${s.getFullYear()}`;
   }
-  return `${s.toLocaleDateString('en-US', opts)} – ${e.toLocaleDateString('en-US', opts)}`;
+  return `${s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })} – ${e.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })}`;
 }
 
 export default function TournamentHeader({ tournament, isStaff, onChange }) {

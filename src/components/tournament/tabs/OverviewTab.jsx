@@ -66,7 +66,7 @@ export default function OverviewTab({ tournament, isStaff }) {
           </a>
           {tournament.hotel_deadline_at && (
             <div style={{ fontSize: 13, color: 'var(--em-warning)', marginTop: 8 }}>
-              Deadline: {new Date(tournament.hotel_deadline_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              Deadline: {new Date(tournament.hotel_deadline_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })}
             </div>
           )}
         </div>

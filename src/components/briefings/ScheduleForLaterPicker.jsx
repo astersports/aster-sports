@@ -54,7 +54,7 @@ export default function ScheduleForLaterPicker({ mode, scheduledFor, onChange })
   const setTime = (time) => onChange({ mode: 'schedule_for_later', scheduledFor: fromLocalParts(parts.date || new Date().toISOString().slice(0, 10), time) });
 
   const summary = mode === 'schedule_for_later' && scheduledFor && !err
-    ? `Will send ${new Date(scheduledFor).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}`
+    ? `Will send ${new Date(scheduledFor).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York', timeZoneName: 'short' })}`
     : null;
 
   return (

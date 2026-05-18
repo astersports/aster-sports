@@ -8,7 +8,7 @@ import QuarterScoreInput from './QuarterScoreInput';
 import PlayerOfGamePicker from './PlayerOfGamePicker';
 
 function formatDate(iso) {
-  return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
 }
 
 function SaveBadge({ state }) {

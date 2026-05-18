@@ -36,7 +36,7 @@ export default function EventCommentsTab({ eventId }) {
               {c.author_name || 'User'}
             </span>
             <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>
-              {new Date(c.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+              {new Date(c.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })}
             </span>
           </div>
           <div style={{ fontSize: 15, color: 'var(--em-text-primary)', whiteSpace: 'pre-wrap' }}>{c.body}</div>

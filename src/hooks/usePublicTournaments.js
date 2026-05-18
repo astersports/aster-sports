@@ -53,8 +53,10 @@ export function usePublicTournaments(orgId) {
         return;
       }
 
-      // Local YYYY-MM-DD for today (en-CA always returns ISO date format)
-      const todayStr = new Date().toLocaleDateString('en-CA');
+      // NY-anchored YYYY-MM-DD for today (en-CA always returns ISO date format).
+      // Pin to America/New_York so a late-night CEST admin doesn't misclassify
+      // a tournament ending TODAY in NY as "past".
+      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 
       // First future tournament (end_date >= today) gets "Up Next"
       const futureTournaments = (rows || []).filter(t => t.end_date >= todayStr);
