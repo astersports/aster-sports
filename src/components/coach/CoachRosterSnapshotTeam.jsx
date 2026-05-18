@@ -13,6 +13,10 @@
 // Visual treatments per Q4 lock (all three highlights):
 //   - Section accent stripe by team color (left edge of header)
 //   - Per-player highlight strip when RSVP missing for next event
+//     AND next event starts within HIGHLIGHT_WINDOW_MS (72h). Without
+//     the proximity gate the binary signal loses scan-value when
+//     100% of rows are yellow for a far-out event (per the §UX note
+//     in docs/TIER_3_V1_RETROSPECTIVE_NOTES.md).
 //   - (Pulse/glow on NextEventCard is applied in CoachHomePage,
 //     not here)
 
@@ -20,6 +24,11 @@ import { useMemo } from 'react';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { useAttendanceData } from '../../hooks/useAttendanceData';
 import { useNow } from '../../hooks/useNow';
+
+// 72h — matches the standard youth-sports "RSVP by 3 days out"
+// expectation. Inclusive at the threshold (a player with no RSVP for
+// an event exactly 72h out still highlights).
+const HIGHLIGHT_WINDOW_MS = 72 * 60 * 60 * 1000;
 
 function trendArrow(pct) {
   if (pct == null) return null;
@@ -32,10 +41,14 @@ export default function CoachRosterSnapshotTeam({ team }) {
   const { grid, events, loading } = useAttendanceData(team.id);
   const now = useNow();
 
-  const nextEventId = useMemo(() => (events || [])
+  const nextEvent = useMemo(() => (events || [])
     .filter((e) => e.start_at && new Date(e.start_at).getTime() >= now)
-    .sort((a, b) => new Date(a.start_at) - new Date(b.start_at))[0]?.id || null,
+    .sort((a, b) => new Date(a.start_at) - new Date(b.start_at))[0] || null,
     [events, now]);
+
+  const nextEventId = nextEvent?.id || null;
+  const nextEventWithinWindow = nextEvent
+    && (new Date(nextEvent.start_at).getTime() - now) <= HIGHLIGHT_WINDOW_MS;
 
   if (loading && !grid?.length) return null;
   if (!grid?.length) return null;
@@ -51,7 +64,7 @@ export default function CoachRosterSnapshotTeam({ team }) {
         <ul style={{ display: 'flex', flexDirection: 'column', gap: 4, listStyle: 'none', padding: 0, margin: 0 }}>
           {grid.slice(0, 6).map((row) => {
             const nextCell = nextEventId ? row.cells.find((c) => c.eventId === nextEventId) : null;
-            const isMissingRsvp = nextCell?.state === 'no_response';
+            const isMissingRsvp = nextCell?.state === 'no_response' && nextEventWithinWindow;
             const arrow = trendArrow(row.pct);
             return (
               <li key={row.player.id} style={{
