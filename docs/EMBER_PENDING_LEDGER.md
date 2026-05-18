@@ -37,6 +37,9 @@ the next round of silent divergence.
 | #235  | 2026-05-18 | AlertZone loading-state gate (kindness-microcopy invariant)        | All 3 home pages    |
 | #236  | 2026-05-18 | Tier 3 v1 retrospective doc consolidation                          | Docs                |
 | #237  | 2026-05-18 | Coach roster overdue gate (<72h threshold on yellow highlight)     | CoachRosterSnapshot |
+| #238  | 2026-05-18 | L99 meta-fix: EMBER_PENDING_LEDGER + anti-pattern #43              | Docs + doctrine     |
+| #239  | 2026-05-18 | Cluster 5 / B1 — CoachHomePage MY TEAMS records (first #43 fix)    | Coach Home          |
+| #240  | 2026-05-18 | Cluster 2 / B3 — `% Going` label across Coach/Admin/Parent surfaces| Roster snapshots    |
 
 Five-PR Sunday from Italy CEST. Audit immediately after surfaced the
 items below.
@@ -94,17 +97,18 @@ chat's L99 ordering.
   - Cluster 3 PR: centralize event title rendering in shared helper. Computed from `event.opponent` + `event.event_type` + event status, NOT free-text. Prevents future ad-hoc appendages.
 
 ### Cluster 2 — Per-player % degenerates to RSVP-going-rate when check-ins absent
-- Status: **OPEN**, label rename queued
+- Status: **RESOLVED (label fix)** via PR #240 (2026-05-18); workflow promotion deferred
 - Severity: HIGH (label) / MEDIUM (workflow)
-- CC code-validated: `useAttendanceData.js:130` computes `pct = goingCount / totalPast`. When no check-in / arrival rows exist, attendance% collapses to RSVP-going%. Math is correct; label is misleading.
+- CC code-validated: `useAttendanceData.js:130` computes `pct = goingCount / totalPast`. When no check-in / arrival rows exist, attendance% collapses to RSVP-going%. Math is correct; label was misleading on Coach Home.
 - Surfaces affected:
-  - Coach: B3 (roster snapshot 4% / 0% identical per team)
-  - Admin: A11 (Lily Alexander "4% Going · 96% NR")
-  - Parent: P4 (Charlie "4% No · 96% NR" despite RSVP'd GOING tonight)
-- Resolution:
-  - Label rename across CoachRosterSnapshotTeam + admin Teams roster + parent Teams roster (~10-15 min)
-  - Workflow promotion of check-ins → §9 workflow gaps
-- Drift-hedge test per #43: assert the % label name matches the metric it represents across all 3 surfaces
+  - Coach: B3 (roster snapshot "4%" with no label — the worst case)
+  - Admin: A11 (Lily Alexander "4% Going · 96% NR" — already had label)
+  - Parent: P4 (Charlie "4% No · 96% NR" — already had labels for each category)
+- PR #240 resolution:
+  - `CoachRosterSnapshotTeam.jsx:83` — changed `${row.pct}%` → `${row.pct}% Going`
+  - Matches the convention in `PlayerRow.jsx` + `MyChildSpotlight.jsx` (admin + parent rosters) which already used `% Going` / `% Maybe` / `% No` / `% NR` labels per category
+  - Cross-surface invariant test (`playerGoingLabelInvariant.test.jsx`) locks: bare `{pct}%` form must not re-appear; "Going" label must be present in all surfaces rendering the goingCount metric
+- Workflow promotion of check-ins remains in §9 (gameday arrival board → coaches do check-ins → metric becomes real attendance, not just RSVP-going-rate)
 
 ### Cluster 3 — Event title concatenates own team name redundantly
 - Status: **OPEN**, awaiting diagnostic D6
