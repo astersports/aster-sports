@@ -339,6 +339,12 @@ Items <30 min each. Bundle into a single Monday-AM warm-up PR.
 - **Cluster 6.A2** KpiGrid loading gate refinement (downgraded MEDIUM)
 - Async-ordering test replication for `useAdminStats`, `useHomeRole`,
   `useAttendanceData`, `useActivities` per anti-pattern #44 (see §11)
+- **P6 RSVP copy normalization** — chat's L99 parent review flagged
+  inconsistent decline copy ("Can't" vs "Not Going"). Pick canonical
+  label (likely "Not Going" matching `PlayerRow.jsx`/`MyChildSpotlight.jsx`
+  category set) and unify across RSVP UI surfaces. ~5-10 min.
+  Found post-PR-#243 via anti-pattern #45 acid-test scan — captured
+  same-session via this PR #244 amendment.
 
 ---
 
