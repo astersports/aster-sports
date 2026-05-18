@@ -1,0 +1,399 @@
+# EMBER Pending Ledger
+
+> Living source of truth for everything in-flight on the Skyfire / Ember
+> platform. CC + chat both read this at session start to avoid
+> re-discovery. Updated per session and per PR.
+>
+> Created: 2026-05-18 (Italy CEST) from L99 cross-role audit consolidation
+> Last updated: 2026-05-18
+
+This doc complements (not replaces):
+- `docs/SKYFIRE_BUILD_QUEUE_v2.md` — shipped-log roadmap, forward-only
+- `docs/STATE_OF_AFFAIRS_L99_v3.md` — canonical high-level state
+- `docs/EMBER_MASTER_INDEX_v3.md` — locked decisions catalog
+- `CLAUDE.md` — durable anti-patterns + architectural rules
+
+This is the **pending** ledger: what's not yet shipped, what's decided
+but not yet built, what needs cross-surface propagation, what's blocked
+on workflow vs code, what's deferred for product calls. Every category
+that doesn't fit cleanly into the shipped-log or the high-level state
+lives here.
+
+The architectural commitment that produced this doc: CLAUDE.md
+**anti-pattern #43** — cross-role fixes ship with a cross-surface
+invariant test. The L99 audit on 2026-05-18 cataloged 14 distinct
+bugs grouping into 4 drift classes. Without #43, those bugs repeat
+within weeks; with #43 + this ledger, the system protects itself from
+the next round of silent divergence.
+
+---
+
+## 1. SHIPPED RECENTLY (last 7 days)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #233  | 2026-05-18 | formatters.js NY-pin (canonical helpers)                           | All date renders    |
+| #234  | 2026-05-18 | 51 leaf-callsite NY-pin + static-grep audit (`timezoneAuditPin`)   | All toLocale* sites |
+| #235  | 2026-05-18 | AlertZone loading-state gate (kindness-microcopy invariant)        | All 3 home pages    |
+| #236  | 2026-05-18 | Tier 3 v1 retrospective doc consolidation                          | Docs                |
+| #237  | 2026-05-18 | Coach roster overdue gate (<72h threshold on yellow highlight)     | CoachRosterSnapshot |
+
+Five-PR Sunday from Italy CEST. Audit immediately after surfaced the
+items below.
+
+---
+
+## 2. ACTIVE BUGS (L99 audit clusters)
+
+Each cluster maps to one or more bug observations (B# = coach review,
+A# = admin review, P# = parent review). Cluster numbers preserve
+chat's L99 ordering.
+
+### Cluster 1 — Tournament results not propagated to aggregates
+- Status: **OPEN**, awaiting diagnostic D1
+- Severity: HIGH
+- Surfaces affected: 9 across all 3 roles
+  - Coach: B4 (10U Black 0% post-championship), B5 (Teams tab records pre-tournament)
+  - Admin: A4 (Nationals Qualified = 0), A5 (Season Records pre-tournament), A6 (Tournament tiles inconsistent), A7 (Standings PCT stale)
+  - Parent: P22 (Home MY TEAMS pre-tournament), P28 (Schedule Games tab Standings stale)
+- Hypothesis: tournament `game_results` either not entered OR filtered out of season-aggregate query
+- Resolution path branches:
+  - (a) **Workflow gap**: Frank publishes results via Quick Score → §9 workflow gaps
+  - (b) **Code fix**: single SQL view / hook filter correction → PR #239+ Monday
+  - (c) **Both**: workflow today, code hardening later
+- Drift-hedge test per #43: assert tournament events with `tournament_id IS NOT NULL` and entered scores propagate to all 4 aggregate surfaces
+
+### Cluster 2 — Per-player % degenerates to RSVP-going-rate when check-ins absent
+- Status: **OPEN**, label rename queued
+- Severity: HIGH (label) / MEDIUM (workflow)
+- CC code-validated: `useAttendanceData.js:130` computes `pct = goingCount / totalPast`. When no check-in / arrival rows exist, attendance% collapses to RSVP-going%. Math is correct; label is misleading.
+- Surfaces affected:
+  - Coach: B3 (roster snapshot 4% / 0% identical per team)
+  - Admin: A11 (Lily Alexander "4% Going · 96% NR")
+  - Parent: P4 (Charlie "4% No · 96% NR" despite RSVP'd GOING tonight)
+- Resolution:
+  - Label rename across CoachRosterSnapshotTeam + admin Teams roster + parent Teams roster (~10-15 min)
+  - Workflow promotion of check-ins → §9 workflow gaps
+- Drift-hedge test per #43: assert the % label name matches the metric it represents across all 3 surfaces
+
+### Cluster 3 — Event title concatenates own team name redundantly
+- Status: **OPEN**, awaiting diagnostic D6
+- Severity: MEDIUM
+- Surfaces affected:
+  - Coach: B2 (Schedule "vs. 9U Boys Game" vs Home NEXT EVENT "vs. 6th Boro 3AB · 9U Boys")
+  - Admin: A9 (Schedule lists redundant team line below title)
+  - Parent: P25 (8U Boys event detail "8U Boys Practice" with redundant "8U Boys" team line)
+- Hypothesis: `event.title` either auto-gen'd with wrong template OR Schedule pulls `event.title` literal while Home composes from `opponent_name`
+- Resolution: centralize event-title rendering in shared helper (likely `src/lib/eventDisplay.js` or `<EventTitle event={e} />`)
+- Drift-hedge test per #43: assert same event ID renders consistent title across Schedule, Home NEXT EVENT, Parent profile event detail
+
+### Cluster 4 — Notification bell badge has no inbox to consume it
+- Status: **OPEN** — UX decision required (resolution path locked-ish)
+- Severity: MEDIUM (UX clarity)
+- Frank's clarification: bell tap routes to Settings; no actual inbox
+- Surfaces affected: bell appears on all role headers showing "4" / "1" / "2"
+- Resolution paths:
+  - (a) Remove badge count + route bell to settings shortcut without count → ~15 min near-term
+  - (b) Build real notification inbox → larger; deferred to Phase plan item
+- Recommended near-term: (a). Counts without inbox = misleading UX.
+- Anti-pattern #42 reminder: don't pre-build `useNotificationBadge()` hook before the inbox exists
+- Drift-hedge test per #43: assert bell badge behavior consistent across all 3 role headers
+
+### Cluster 5 — Coach Home MY TEAMS source divergence
+- Status: **OPEN**, root cause validated, fix shape clear
+- Severity: HIGH
+- CC code-validated:
+  - `CoachHomePage.jsx:47-51` builds `myTeams` from direct `team_staff` query — no records data
+  - `ParentHomePage.jsx:124` passes `byTeamId={recordsByTeam}` from `useOrgTeamRecords(orgId)` to same downstream component
+  - Both use `ParentHomeTeamCard`; one passes records, one doesn't
+- Resolution: add `useOrgTeamRecords` to CoachHomePage + thread records prop through (~10-15 min)
+- Drift-hedge test per #43: assert MY TEAMS panel renders matching records across CoachHomePage + ParentHomePage + TeamsPage for same fixture
+- Anticipated PR: #239 (tonight per L99 routing lock)
+
+### Cluster 6 — Admin Home cache/query race (A2 + A3)
+- Status: **OPEN**, awaiting diagnostic D5 + D7
+- Severity: HIGH
+- A2: player/event count flip 63→31 / 159→77 on refresh
+- A3: AlertZone amber→green flip on refresh
+- CC code-validated: PR #235 gate logic structurally correct. A3 is NOT a #235 regression — most likely data race between concurrent queries OR anti-pattern #36 (destructured-default Supabase swallow)
+- Resolution path branches:
+  - (a) Cache/staleTime fix in KpiGrid / useAlertEvaluator
+  - (b) Anti-pattern #36 violation in `createSupabaseQueryExecutor` swallowing errors silently → returns empty data, AlertZone reads as "no alerts firing"
+  - (c) RLS or query-parameter divergence between renders
+- Diagnostic D5 + D7 will route
+- Drift-hedge test per #43: assert AlertZone behavior stable across rapid re-renders with concurrent KPI query refresh
+
+### Cluster 7 — Admin Home greeting not NY-pinned
+- Status: **OPEN**, ~5-min one-liner
+- Severity: LOW
+- Surfaces affected: Admin Home only (A12)
+- Parent Home (P21) gets it right; Admin Home doesn't
+- Resolution: wire AdminHomePage greeting to NY-pin helper from PR #233/#234 cascade
+- Drift-hedge test per #43: assert greeting respects NY-pin across all 3 home pages
+
+---
+
+## 3. STAGED MIGRATIONS (Phase 0B 013-021)
+
+> Frank's input needed to populate full list. CC's knowledge here is
+> partial. Update this section with current staged migration list.
+
+Known:
+- **Migration 021** — data corrections including 11U Girls duplicate practice Mon May 18 (if D12 diagnostic confirms duplicate)
+- Migration 013 → 020 — TBD (need Frank to enumerate)
+
+Pattern reminder: migrations applied via MCP must be mirrored to
+`supabase/migrations/` with canonical version-string filenames per
+anti-pattern #21.
+
+---
+
+## 4. DECISIONS LOCKED, NOT YET IMPLEMENTED
+
+> Anchored to `docs/EMBER_MASTER_INDEX_v3.md` (49 locked decisions per
+> chat's note). CC doesn't have visibility into the full list. Frank
+> to enumerate which are awaiting implementation. Examples surfaced:
+
+- Density toggle 3 levels (blocked by Migration 016 `user_preferences`)
+- Note edit cooldown 4hr
+- Rotation Planner staff-only
+- (and N more — Frank to populate from EMBER_MASTER_INDEX)
+
+This section becomes high-leverage when Monday's work starts —
+implementing a locked decision is cheaper than re-deciding.
+
+---
+
+## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
+
+The drift classes from CC's L99 analysis. Each is a pattern that
+exists on some surfaces and not others, OR exists on all surfaces
+but with different implementations.
+
+### Render-layer drift (Class 2)
+- **Event title rendering** — 3 paths today (Schedule literal, Home composed, Parent detail concatenated) → should be 1 shared helper
+- **Team PPG rendering** — 4 paths today (TeamRow, TeamDetail, StandingsTable, TeamHeaderCard) → should be 1 `<TeamPpgCell />` or similar
+- **W-L record formatting** ("5-2") — appears in TeamRow, TeamDetail, StandingsTable, TeamHeaderCard, MY TEAMS panel, parent Home MY TEAMS, admin Records summary → should be 1 helper
+- **Streak indicator** ("W1", "L4") — similar multi-path
+- **Status badge rendering** — needs inventory
+- **Attendance % rendering with label** — Cluster 2 territory
+
+### Data-layer drift (Class 1)
+- **Team records** — `useOrgTeamRecords` exists, partial adoption (Cluster 5)
+- **Roster data** — `useAttendanceData` canonical; verify all consumers
+- **Alerts** — `useAlertEvaluator` canonical; per-role filtering at consumer (correct)
+
+### Label / semantic drift (Class 3)
+- **Attendance % label** — "Attendance" vs "Going %" vs "% No" (Cluster 2)
+- **Bell badge meaning** — count without inbox (Cluster 4)
+
+### Cross-role behavior drift (Class 4)
+- **Home greeting NY-pin** — admin doesn't, parent + coach do (Cluster 7)
+- **Density toggle convention** — Home vs Schedule may diverge (B6)
+
+---
+
+## 6. VERIFICATION ITEMS WAITING ON FRANK
+
+- **A1** — View-as eye-icon identity context: does clicking the eye actually switch greeting + scope, or only switch role label? Needs in-app verification.
+- **A13** — Bell badge purpose: RESOLVED per Frank's note (routes to Settings, no inbox). Moves to Cluster 4 resolution.
+- **P10** — "Ember v2.0" label: intentional rebrand preview or hardcoded leak? Tied to §8 Phase 0C work.
+- **D12-pending** — 11U Girls duplicate practice Mon May 18: D12 diagnostic confirms or refutes; if duplicate, moves to Migration 021.
+
+---
+
+## 7. PRODUCT CALLS DEFERRED
+
+Items requiring Frank's product judgment, not technical fixes:
+
+- **B6 / P26** — Density toggle convention (blocked by Phase 0B Migration 016 `user_preferences`)
+- **A8** — Standings sort PCT desc vs oldest-to-youngest age. Standings semantic may legitimately override the org-wide age sort rule.
+- **A10 / P20** — "View full schedule →" link styling vs CTA button card. Design hierarchy call.
+- **P8** — "Arrive 15 min early" vs "5 min" contradiction in event detail. Which takes precedence?
+- **P12** — Comments enabled on practice events. Keep or scope to games only?
+- **P17 / P18** — Schedule filter density (4 mechanisms). Simplify parent view?
+- **B7** — Color/name mismatch (10U Black blue, 10U Blue gray). Locked v14 palette per CLAUDE.md §10. Could revisit if user confusion is real.
+- **A12 timezone product call** — Greeting "where you are" vs "where the org is". Recommended: NY-pin for consistency (Cluster 7), but worth Frank's explicit lock.
+
+---
+
+## 8. PHASE 0C REBRAND CHECKLIST (Skyfire → Ember)
+
+> Tracker for the rebrand work. CC has limited visibility on Phase 0C
+> details — Frank to populate from authoritative source.
+
+Known scope:
+- `--sf-*` → `--em-*` CSS variable migration (mostly done per PR
+  history; verify completeness)
+- Domain decision (current `skyfire-app.vercel.app` → ?)
+- `skyfire_phoenix.webp` retirement / replacement
+- Version string source (Ember v2.0 — P10 verification)
+- Codebase rename (file paths, package names)
+- Email template namespace
+- (and other items Frank to enumerate)
+
+---
+
+## 9. WORKFLOW GAPS (NOT CODE BUGS)
+
+Issues that look like bugs but actually require behavioral changes
+(Frank or coaches doing something different in production):
+
+- **Cluster 1 root** (potentially): tournament results not always
+  published from Quick Score workflow → Frank action: publish results
+  for Rumble for the Ring CT May 16-17 + ZG NY Metro Showdown Apr 18-19
+  if missing
+- **Cluster 2 root**: check-ins not recorded at events → coach action:
+  use the gameday arrival board / check-in feature at games and
+  practices going forward
+- Both above might be **(b) both code fix and workflow change** — code
+  could surface the workflow gap more visibly (e.g., "0 check-ins
+  recorded — was this event run?" indicator)
+
+This category is the discipline that separates "we have a bug" from
+"we need to use the feature we built." Both are real, both need
+resolution, but the resolution path is different.
+
+---
+
+## 10. QUICK-LINK CHANGES STATUS
+
+CC's read: Frank's "quick links" likely refers to the Admin Shortcuts
+panel (IMG_1216) showing 8 buttons: Event, Player, Compose Briefing,
+Briefings, Financials, Announce, Tournaments, Import Schedule.
+
+These appear shipped per the audit screenshots. If Frank meant
+something else, this section catches it. Update with specifics if
+different scope.
+
+---
+
+## 11. TEST COVERAGE GAPS
+
+Tests that should exist but don't. Each item is a candidate
+drift-hedge test under anti-pattern #43.
+
+- **Cross-role home page integration test** — mount all 3 home pages
+  with same fixture, assert equivalent renders for shared elements
+  (greeting respects NY-pin, KpiGrid renders same numbers, AlertZone
+  respects loading state, MY TEAMS records match)
+- **Hook divergence audit** — static-grep asserting canonical hooks
+  are used where they exist (e.g., direct `teams` queries flagged
+  when `useOrgTeamRecords` exists)
+- **AlertZone behavior under concurrent query refresh** — no race
+  between `useKpiGrid` and `useAlertEvaluator` should produce false
+  all-clear pill (covers Cluster 6 A3 hypothesis)
+- **Render-path consistency tests** — for each shared display pattern
+  in §5 above, a test that asserts same data renders identically
+  across surfaces
+- **Cluster 1 aggregate test** — tournament events with scores
+  propagate to all 4 records aggregate surfaces (Teams tab, Records
+  page season, Tournament tiles, Standings PCT)
+- **Cluster 2 label invariant** — % label string consistent across
+  all 3 role roster surfaces
+
+---
+
+## 12. 150-LINE CAP WATCH
+
+Files approaching the cap that v2 work might push over. **Watch is
+not split** — per anti-pattern #42, splitting prematurely creates
+parallel systems for no current benefit. List here is informational.
+
+> CC needs to grep current line counts to populate. Will run during
+> next session and update this section. Initial known candidates:
+> - `CoachHomePage.jsx` (likely close)
+> - `AdminHomePage.jsx`
+> - `ParentHomePage.jsx`
+> - `formatters.js` (137 lines post-PR-#234, room left)
+> - `useAttendanceData.js`
+
+---
+
+## 13. ANTI-PATTERN CATCH TALLY
+
+How many times each anti-pattern fired in production work. Tells us
+which ones are paying rent vs which are dormant. Drift-tracking
+metric — a pattern that catches frequently is providing real value;
+a pattern that never fires is either redundant or covering a
+non-occurring failure mode.
+
+| # | Pattern                              | Catches | Last caught |
+|---|--------------------------------------|---------|-------------|
+| 22 | Verify CC commits/pushes             | ~5      | PR #237     |
+| 27 | Resolver / composer pure with IO     | 0       | —           |
+| 31 | verify_jwt config audit              | 3       | Wave 4.3-E  |
+| 34 | Registry/dispatch table removals     | 1       | Wave 4.4-T0d |
+| 35 | Branch divergence pre-flight         | 3       | PR #234, #235, #237 |
+| 36 | Destructured-default Supabase swallow| 1       | Wave 5 PR 2 |
+| 37 | Org-scoped query order               | 5       | Phase Beta B1 |
+| 38 | Renderer-emit parity                 | 1       | Phase Gamma 5b |
+| 39 | Position+hedge                       | 2+      | L99 routing |
+| 40 | Existing-infra hedge                 | 1+      | PR #234     |
+| 41 | Routing-signal overshadow            | 1+      | L99 routing |
+| 42 | Parallel-system buildup              | 1+      | PR 6 Tier 3 v1 |
+| 43 | Cross-surface invariant test         | 0 (NEW) | —           |
+
+> CC to populate fully from git history during next session.
+> Highlights so far: #35 has caught divergence reliably; #36 has
+> high value for one observed incident; #43 starts at 0 and grows
+> from here.
+
+---
+
+## 14. HELPER-EXTRACTION BACKLOG
+
+Code in components that should move to `src/lib/` per "single render
+path" doctrine. Each is a candidate refactor PR with a drift-hedge
+test per anti-pattern #43.
+
+Ordered by inferred ROI (most-impactful first):
+
+1. **`formatEventTitle(event)`** — solves Cluster 3 + multi-surface
+   redundancy. Inputs: event object with opponent_name, team, type.
+   Output: canonical title string. Audit-grep test: no inline `vs.`
+   concatenation in JSX.
+2. **`<TeamRecordCell record={} />`** — W-L format ("5-2") across
+   7+ surfaces.
+3. **`<TeamPpgCell stats={} />`** — PPG across 4 surfaces.
+4. **`<StreakBadge streak={} />`** — "W1" / "L4" rendering.
+5. **`formatAttendancePct(rowPct, hasCheckinData)`** — Cluster 2.
+   Returns "—" or "{pct}%" with correct label. Test: label string
+   matches across surfaces.
+6. **`<StatusBadge status={} />`** — status pill rendering
+   (needs inventory).
+7. **`<EventLocationLink location={} />`** — map URL priority
+   per CLAUDE.md §15.
+
+Each extraction PR ships with:
+- The helper / component
+- Migration of all known callsites to the helper
+- A drift-hedge audit test (static-grep flagging inline reimplementations)
+
+This section is the operational target for "stop running audits."
+When this list is empty, the structural drift surface area is
+minimal.
+
+---
+
+## DOC UPDATE PROTOCOL
+
+When a PR ships that resolves an item:
+1. Mark the cluster RESOLVED in §2 with PR # and date
+2. Move tactical detail to PR description; keep one-line summary here
+3. Update §1 (shipped recently) with the PR
+4. Update §13 (anti-pattern tally) if the PR caught a new instance
+5. If new bugs surface, append to §2 with cluster mapping
+6. If new drift class identified, append to §5 + CLAUDE.md anti-pattern
+
+When a session ends:
+1. Update §3 / §4 / §6 / §8 from session state
+2. Update §11 / §12 / §14 with new findings
+3. Commit the doc with PR or as separate docs commit
+
+CC's session-start checklist:
+1. Read this doc end-to-end
+2. Cross-check with `STATE_OF_AFFAIRS_L99_v3.md`
+3. Confirm `git fetch + branch divergence` per anti-pattern #35
+4. Apply ground-truth tables (§11.5 CLAUDE.md) and canonical hooks
+   (this doc §5) to any code being touched
