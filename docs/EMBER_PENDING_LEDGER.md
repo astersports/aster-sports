@@ -204,9 +204,7 @@ shipped (status uncertain at audit time).
 
 ### §4.A — Cutover Wave (briefing renderer + parser)
 
-Status: **NOT STARTED**. 5-7 PR arc per `CUTOVER_WAVE_GAP_AUDIT.md`.
-Strategic priority: compounding cost on every tournament briefing
-without PR 1 (renderer alignment).
+Status: **PARTIALLY SHIPPED.** PRs 4 + 5 landed May 16; PRs 1, 2, 3, 6, 7 remain open. 7-PR arc per `CUTOVER_WAVE_GAP_AUDIT.md`. Strategic priority: compounding cost on every tournament briefing without PR 1 (renderer alignment). Status corrected via §4.N Layer 2 audit (2026-05-18 evening) — git log confirmed PR 4 = #185/#186/#187, PR 5 = #217/#219/#220.
 
 - **PR 1** — `tournament_prelim` renderer alignment. Match cobalt-header /
   yellow-RSVP-banner / venue-list / day-grouped-game-cards / IF-ADVANCE /
@@ -218,12 +216,8 @@ without PR 1 (renderer alignment).
   be partially live (referenced in `QuickActions.jsx`); see §15.
 - **PR 3** — Per-venue notes + LLM-suggested closer. `locations.notes`
   column + LLM-suggest button on signoff_message textarea.
-- **PR 4** — Coach Roundup kind. New `coach_roundup` in
-  RESOLVER_REGISTRY; multi-team header + per-team-color game rows +
-  conflict callout.
-- **PR 5** — Family Guide kind (VIP Parent Guide). Multi-kid family
-  briefings; VIP header + per-kid-color game rows; new section types
-  `vip_header`, `kid_color_pill`.
+- **PR 4** ✅ **SHIPPED 2026-05-16** (#185 skeleton, #186 aggregation + renderers, #187 body) — Coach Roundup kind. `coach_roundup` in RESOLVER_REGISTRY; multi-team header + per-team-color game rows + conflict callout.
+- **PR 5** ✅ **SHIPPED 2026-05-16** (#217 skeleton, #219 aggregation + renderers, #220 body + wizardSupported flip) — Family Guide kind (VIP Parent Guide). Multi-kid family briefings; VIP header + per-kid-color game rows; new section types `vip_header`, `kid_color_pill`. **NOTE:** 5c-VALIDATE findings from Frank's actor validation send (VIP header tone, kid color, quick link nav rows, day-grouped events, conflict callouts, brand footer) pending Frank's read → V-37.
 - **PR 6** — Coverage delegation schema + UI. New
   `event_coach_assignments` table (Option B); conflict detection at
   parse time + delegation prompt in import preview.
@@ -980,6 +974,14 @@ Registered here under anti-pattern #45 acid-test: a new audit surfaced new pendi
 | V-29 | PR #21 disposition — coach contact in briefings (WIP draft, closed 2026-05-12 unmerged) | §4.N Layer 1 | Layer 1 git log audit 2026-05-18 evening | 10 min | Confirm A/B decision routed correctly; no orphaned ship | Read PR #21 body (A vs B framing) + grep `staff_profiles` + `coach_user_ids` + briefing renderer dynamic-coach-array code in `src/` to verify path A shipped through a different PR. If shipped: close V-29 with cite. If unshipped: re-scope to §4.G as concrete work item. |
 | V-30 | BUG-005 ride duplicate-offer prevention — DB UNIQUE constraint + frontend edit-mode guard | §4.N Layer 5 / §4.E | SKYFIRE_BUILD_QUEUE_v2 §BUG-005 + Layer 5 catalog walk 2026-05-18 evening | 15 min | Confirm BUG-005 closed at both DB and UI layers | DB query confirmed Migration 025 (rides_redesign) applied BUT `event_ride_offers` has zero UNIQUE constraints — only PK + CHECKs. No `(event_id, guardian_id)` UNIQUE guard at DB layer. Frontend: `grep existingOffer\|hasExistingOffer src/` returned no matches → likely no edit-mode guard in RideFormOverlay. Both layers need verification: (a) is duplicate-offer prevention via a different mechanism (RLS policy / trigger / app-layer query)? (b) does RideFormOverlay check existing-offer state before insert? If both negative → re-scope to §4.D Sprint G as concrete work item. |
 | V-31 | VAL-001 stale validation closure — Apr 23 11U Girls RSVP count anomaly (13 vs 10-12 roster) | §4.N Layer 5 | SKYFIRE_BUILD_QUEUE_v2 §VAL-001 (Apr 23, 2026) | 5 min | Confirm closed by Migration 022 duplicate deletion | Cite Migration 022 (`rls_privacy_lockdown_plus_roster_left_at`) verified applied; per CLAUDE.md §11.5 the migration deleted duplicate roster rows and added `left_at` for date-windowed eligibility. Verification: query `event_rsvps` for the Apr 23 11U Girls practice event_id, count distinct guardian responses, confirm matches current roster size. If duplicate count still anomalous → re-open with named follow-up. |
+| V-32 | `AdminMembersPage` / Member-Family Directory build status | §4.N Layer 2 / §3-A extension | ADMIN_SESSION_SCOPE.md Tier 1 | 10 min | Determine if Tier 1 admin surface is complete or open | `ls src/pages/Admin*` confirmed: only AdminHomePage, AdminSeasonsPage, AdminTeamsPage, admin/BriefingHistoryDetail. No AdminMembersPage. Spec target: `/admin/members` route. Verify against ADMIN_SESSION_SCOPE.md Tier 1 P0 list; if genuinely unbuilt → new §4 sub-arc or §4.G entry. |
+| V-33 | `AdminOpponentsPage` build / §3-A "Location + opponent mgr" completion | §4.N Layer 2 | ADMIN_SESSION_SCOPE.md Tier 1 + CLAUDE.md §8 (3-A PARTIAL) | 10 min | Determine §3-A completion path | CLAUDE.md §8 marks "3-A Location + opponent mgr" as ⚠ PARTIAL — locations seeded (9 venues), no mgmt UI. Same for opponents. Spec target: `/admin/opponents` route. Read CLAUDE.md §8 + verify locations mgmt UI ship status + opponents mgmt UI ship status; if both unbuilt → consolidate into §4 sub-arc (likely §4.G or new §4.O). |
+| V-34 | `admin_audit_log` table determination vs existing `event_change_audit` | §4.N Layer 2 | ADMIN_SESSION_SCOPE.md + ledger schema inventory | 5 min | Resolve: do we need a new table or does `event_change_audit` suffice? | DB query confirmed `event_change_audit` exists; no `admin_audit_log`. Determine if the admin-audit-trail use case (operator action history) is covered by `event_change_audit` (event-row mutations) or needs a separate operator-action log. If separate → new schema migration item. If covered → V-34 closes with cite. |
+| V-35 | LH_BRAND_CONTENT_MODEL Part 11 — 95% delight features triage | §4.N Layer 2 / §4.G or new §4.O | LH_BRAND_CONTENT_MODEL.md Part 11 | 20 min | Triage 10 delight feature candidates into §4.G quick wins, §4.C Sprint B-F, or P2 backlog | Read Part 11 in full + dispatch each of 10 candidates (auto-badging, tournament archive, "Run of Play", Quick Score propagation, Winter archive, achievement timelines, arrival reminders, RSVP countdown, "Car Ride Home" toast, Academy handbook in-app) to appropriate ledger section. Most are P1 polish; expect majority absorbed into §4.G or §4.C, 2-3 net new §4 entries. |
+| V-36 | EMBER_TENANCY v3 Steps 11-13 deferral status (V-24 sub-finding) | §4.N Layer 2 / V-24 sub | EMBER_TENANCY_ARCHITECTURE_v3.md Section 22 | 5 min | Confirm Steps 11-13 explicit deferral captured in V-24 scope | Per agent 3 read: v3 Section 22 explicitly defers Steps 11-13 (BrandTransition animation, Coach welcome card dismissible via localStorage, Admin welcome + 4-item checklist). Document as V-24 sub-deferral so future V-24 closure attempts don't expect these Steps. No new work; just sub-tracking. |
+| V-37 | 5c-VALIDATE findings batch — Family Guide actor validation follow-ups | §4.N Layer 2 / §4.A PR 5 follow-up | AUDIT_DAY_2026-05-16_FINAL_CLOSE.md + STATE_OF_AFFAIRS_L99_v5.md | 30 min | Resolve 6 enumerated findings from Frank's actor validation send | Findings pending Frank's read on the May 16 admin@ send: (1) VIP header tone, (2) kid color rendering, (3) quick link nav rows, (4) day-grouped events presentation, (5) conflict callouts, (6) brand footer. Each finding → follow-up PR or absorbed into PR 1 renderer alignment scope. §4.A PR 5 SHIPPED but follow-ups are the polish round; track as a single V-* to keep §4.A clean. |
+| V-38 | Audit-day May 16 P2 carryovers — consolidated 8-item batch | §4.N Layer 2 / §4.L extension | AUDIT_DAY_2026-05-16_FINAL_CLOSE.md P2 carryover list | 60 min | Triage 8 P2 items into individual §4 entries or single quick-wins batch | Items: (a) localStorage fallback cleanup, (b) BriefingComposer state reset on close, (c) useHasUnread channel name reconciliation, (d) RecordsPage cross-org count, (e) useAcademyCallupCandidates auth context, (f) FK CASCADE gaps on 2 tables, (g) `briefing_templates.org_id` nullable cleanup, (h) legacy renderer dead code removal. Each is small (<30 LOC). Recommend batching as single multi-PR "audit-day P2 sweep" or absorbing into §4.L. No individual V-* per item — would fragment. |
+| V-39 | Tier 3 V2 performance items — polling cost + per-team useAttendanceData mount cost | §4.N Layer 2 / §4 Phase 2 backlog | TIER_3_V1_RETROSPECTIVE_NOTES.md "Performance Items for V2" | 5 min | Confirm tracking — not actionable today, V2 deferred | Two named items: (1) 60s home page client polling cost — trigger = simultaneous-open spike OR org 500+ users; path = edge function with shared cache OR cron-cache table. (2) Per-team `useAttendanceData` mount cost scaling linearly — trigger = coach 10+ teams OR mobile load >3s; path = batched `useAttendanceData(teamIds[])` hook. Add as backlog markers (no immediate action); becomes V-39's named cite for when triggers fire. |
 
 ### Layer 5 findings (2026-05-18 evening — §4.N audit, 22-bug catalog walk)
 
@@ -1025,6 +1027,48 @@ Net new V-*: 2 (V-30, V-31). Significantly below §4.N's L5 sizing prediction (+
 - ✅ Closes "named uncertainty" raised in 2026-05-18 session-end audit (was: only 4 of 22 in §15; now: 4 in §15 from prior + 2 new = 6, but **also**: 6 verified closed + 11 absorbed = 23 of 25 accounted for, 2 truly new)
 
 **Layer 5 effort actual:** ~25 minutes (matches §4.N estimate of 20 min with small SQL roundtrip overhead).
+
+### Layer 2 findings (2026-05-18 evening — §4.N audit, doc-diff sweep bounded by mtime > May 4)
+
+Layer 2 of the §4.N Two-Week L99 Audit executed via three parallel `Explore` sub-agents reading clustered doc subsets. Methodology delegation per anti-pattern #45 acid-test: findings → ledger same commit; sub-agent constraint hallucinations flagged transparently rather than retried indefinitely.
+
+**Sub-agent execution outcomes:**
+
+| Cluster | Docs | Outcome |
+|---------|------|---------|
+| Audit/briefing (16 docs) | Phase 1-5 + Beta + Synthesis + Verification + Briefing references | Partial — agent self-aborted at doc 3 citing a tool-use constraint that wasn't in the prompt (hallucination). Of 3 docs completed (Phase 1, 2, 3), **0 new findings** — all already captured in §4.M.1-§4.M.3. CC spot-read Phase 4 + Phase 5 doc heads directly, confirmed same reconciliation pattern continues. Audit-cycle cluster judged fully reconciled in §4.M without need to re-launch agent. |
+| Handoff/state (7 docs) | CC_SESSION_HANDOFF + COUNTER_PLAN + STATE_OF_AFFAIRS + CUTOVER_WAVE_GAP_AUDIT + REACT_HOOKS_71_TRIAGE + AUDIT_DAY_FINAL_CLOSE + TIER_3_V1_RETROSPECTIVE | Complete — agent returned state-of-affairs synthesis (not the requested delta format) but contents minable for items. CC verified each candidate against ledger before adding. **Net:** 4 genuine new items (V-37, V-38, V-39, §4.A status correction). |
+| Spec/reference (5 docs) | ADMIN_SESSION_SCOPE + LH_OPS_SPEC + EMBER_TENANCY_ARCHITECTURE_v3 + LH_BRAND_CONTENT_MODEL + README | Complete — agent returned 28 candidate items. CC verified each against current DB schema + code state. **False positives filtered:** `game_results` exists (Migration 010), `tournaments` first-class exists, `team_achievements` exists (Migration 018), `staff_profiles` exists, `opponents` exists, calendar sync ICS already tracked as V-23, agent's "Migrations 1-5 missing" claim fully reduced to false positive. **Genuine new:** 5 items (V-32, V-33, V-34, V-35, V-36). |
+
+**§4.A status correction (inline):** Layer 2 cross-reference with Layer 1 git log revealed §4.A status was stale. PR 4 (Coach Roundup) shipped 2026-05-16 via PRs #185/#186/#187. PR 5 (Family Guide) shipped 2026-05-16 via PRs #217/#219/#220. Updated §4.A in-place to mark PRs 4 + 5 SHIPPED with cites. PRs 1, 2, 3, 6, 7 remain OPEN. PR 5 5c-VALIDATE follow-ups extracted to V-37.
+
+**Per-doc reconciliation status (28 total docs in window, mtime > 2026-05-04):**
+
+| Status | Count | Examples |
+|--------|-------|----------|
+| Fully reconciled in §4.M | 11 | Phase 1-5 audit docs, Beta B1/B3/Synthesis, Audit Synthesis, AUDIT_DAY_CLOSE, AUDIT_VERIFICATION |
+| Already absorbed in §4.A/§4.B/§4.C/§4.G | 6 | CUTOVER_WAVE_GAP_AUDIT (PR 1-7 = §4.A), STATE_OF_AFFAIRS_L99_v5 (audit-day status), CC_WAVE_4_4_COUNTER_PLAN (4.4-C2 sequence), CC_SESSION_HANDOFF_2026-05-13 (PostHog work, hooks triage), REACT_HOOKS_71_TRIAGE (16/16 closed May 15), AUDIT_DAY_FINAL_CLOSE (top-level synthesis of audit-day work) |
+| Reference docs, no action items | 3 | README.md, BRIEFING_RENDERER_REFERENCES.md, BRIEFING_TEMPLATES.md |
+| V-* already tracking | 3 | V-23 ICS feed, V-24 EMBER_TENANCY Steps 5-14, V-22 maybeSingle (closed PR #251) |
+| Spec docs surfacing new items | 3 | ADMIN_SESSION_SCOPE (→ V-32, V-33, V-34), LH_BRAND_CONTENT_MODEL (→ V-35), EMBER_TENANCY_ARCHITECTURE_v3 (→ V-36 sub-tracking) |
+| State docs surfacing new items | 2 | AUDIT_DAY_FINAL_CLOSE P2 carryovers (→ V-38), TIER_3_V1_RETROSPECTIVE Performance (→ V-39) |
+
+**Findings synthesis:**
+
+- **§4.A status drift caught.** PR 4 + PR 5 shipped May 16; ledger still marked "NOT STARTED" — exactly the drift class that anti-pattern #45 was registered to prevent. The fact that this drift survived Sunday's PR #246 May 16 Audit Cycle reconciliation suggests §4.A wasn't audited against git log at that point. Layer 1's git log cross-reference was the structural inverse of this blind spot — finding paid off in Layer 2 synthesis.
+- **5c-VALIDATE findings are the highest-value Layer 2 item.** V-37 captures 6 enumerated polish findings from Frank's actor validation send on the Family Guide ship. These are likely the next concrete follow-up PRs for §4.A; resolving them advances the Cutover Wave further toward production readiness.
+- **Sub-agent hallucination class (anti-pattern candidate #47?):** Both Explore agents launched independently reported a "tool-use constraint" that wasn't in the prompts. The constraint appears to be a sub-agent-side artifact (possibly a recent system-message injection sub-agents are misinterpreting). Worth registering as anti-pattern if it recurs — for now, single-agent retries didn't resolve it; CC fallback to direct reads worked. Future Layer 2-style sweeps should budget for sub-agent unreliability and have a CC-direct fallback path.
+- **False-positive rate on agent 3 sub-agent: 23 of 28 (82%).** The agent's "missing from ledger" flag conflated "not explicitly mentioned in ledger" with "not yet built". Many spec doc references to schema items are descriptive (the items exist; spec just describes them). CC verification via Supabase MCP `information_schema.tables` query was the right filter. Reinforces anti-pattern #42 / #43 framing on sub-agent outputs.
+- **Layer 2 found 8 net new V-* items (V-32 through V-39).** Matches §4.N's L2 prediction range (+5-10). Items skew P1/P2; none are P0-blocking — consistent with the audit's "completeness check, not bug discovery" thesis.
+
+**Layer 2 sign-off conditions check:**
+
+- ✅ Anti-pattern #45 compliance — findings → ledger same commit (this PR)
+- ✅ Findings count + ledger-growth report → 8 new V-* (V-32-V-39) + 1 §4.A inline correction + 1 findings block (~80 lines)
+- ✅ Strategic arc routing decision: 5c-VALIDATE findings (V-37) gate Cutover Wave forward progress; admin-pages items (V-32, V-33) consolidate into a future §4.O or absorb into §4.G
+- ✅ Bounded version of Monday-opener Phases 1-3 — Layer 2 closes the V-0 "22 unread docs" inventory work (most absorbed into §4.M; remainder triaged via V-32-V-39)
+
+**Layer 2 effort actual:** ~50 minutes (matches §4.N estimate of 45-60 min). Sub-agent parallelism + CC verification overhead balanced.
 
 ### Layer 1 findings (2026-05-18 evening soft start — §4.N audit, low-cognitive pass)
 
