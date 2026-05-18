@@ -141,17 +141,16 @@ chat's L99 ordering.
 - Anticipated PR: #239 (tonight per L99 routing lock)
 
 ### Cluster 6 — Admin Home cache/query race (A2 + A3)
-- Status: **OPEN**, awaiting diagnostic D5 + D7
-- Severity: HIGH
-- A2: player/event count flip 63→31 / 159→77 on refresh
-- A3: AlertZone amber→green flip on refresh
-- CC code-validated: PR #235 gate logic structurally correct. A3 is NOT a #235 regression — most likely data race between concurrent queries OR anti-pattern #36 (destructured-default Supabase swallow)
-- Resolution path branches:
-  - (a) Cache/staleTime fix in KpiGrid / useAlertEvaluator
-  - (b) Anti-pattern #36 violation in `createSupabaseQueryExecutor` swallowing errors silently → returns empty data, AlertZone reads as "no alerts firing"
-  - (c) RLS or query-parameter divergence between renders
-- Diagnostic D5 + D7 will route
-- Drift-hedge test per #43: assert AlertZone behavior stable across rapid re-renders with concurrent KPI query refresh
+- Status: **A3 RESOLVED via PR #241; A2 OPEN**
+- Severity: HIGH (A3 confirmed regression) / MEDIUM (A2 state-transition flicker)
+- A3 final root cause: **PR #235 regression** in `useAlertEvaluator.js`, not in AlertZone.
+  - CC's D5 diagnostic missed this — focused on AlertZone gate logic (structurally correct) and didn't trace upstream evaluator timing.
+  - Frank's 2026-05-18 smoke confirmed the green-flash-before-amber pattern persisted in production post-PR-#235.
+  - Actual race: `useState([])` for configs made the initial state and "fetched + empty" state indistinguishable. The evaluate callback fired on mount with `configs=[]`, hit its empty-configs early return (`setAlerts([]); setLoading(false); return`), and flipped `loading=false` BEFORE the configs fetch completed. AlertZone briefly rendered the green AllClearPill before re-rendering with the real alerts once configs loaded and evaluate re-fired.
+  - Fix in PR #241: `useState(null)` as "not yet fetched" sentinel. The evaluate's null branch returns without touching loading. AlertZone's loading gate stays armed through the configs-fetch window.
+  - Drift-hedge test (`useAlertEvaluator.loadingGate.test.js`) asserts `loading=true` persists through the configs-fetch phase + only flips to false after evaluate completes.
+- A2 (count flip 63→31 / 159→77): identified as season-context state-transition flicker. Downgraded HIGH → MEDIUM. Fix candidate: skeleton on KpiGrid until useSeason settles. Not in PR #241 scope.
+- Lesson registered for CLAUDE.md anti-pattern future-extension: code-side review of a downstream gate isn't sufficient when an upstream hook can output values that bypass the gate. Trace the FULL state pipeline before ruling out a regression.
 
 ### Cluster 7 — Admin Home greeting not NY-pinned
 - Status: **OPEN**, ~5-min one-liner
