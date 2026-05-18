@@ -396,6 +396,120 @@ enumerate specific items.
 
 ---
 
+### §4.M — May 16 Audit Cycle carryovers (Phase 1-5 + Beta)
+
+Source: Phase 1 Core Subset read 2026-05-18 19:30 CEST (Sunday post-dinner hour). Six docs walked in sequence: `AUDIT_PHASE1_WIRING` → `PHASE2_REGISTRY_STATE` → `PHASE3_MIGRATION_DEPLOY` → `PHASE4_RLS_SECURITY` → `PHASE5_TYPE_CONTRACT` → `AUDIT_BETA_SYNTHESIS`.
+
+**30+ findings across 5 phases + Beta synthesis.** Some shipped during the audit-day itself (PR #210-#215 + Phase 1 P0 batch + Phase 3 P0 mirror). Many P0-LATENT / P1 items remain unshipped or unknown-status. Each entry below either flags SHIPPED (with evidence cite) or queues a V-* verification item.
+
+**KEY FINDING for Monday Phase 4**: the "22-bug catalog" referenced in Frank's Monday-opener prompt is NOT in `BETA_SYNTHESIS`. The synthesis doc has 6 sub-area verdicts + carryover items but no "22-bug" enumeration. The 22-bug catalog lives in `SKYFIRE_BUILD_QUEUE_v2.md` as documented in §4.E. Phase 4 of the Monday-opener (22-bug reconciliation) should focus on §4.E + SKYFIRE_BUILD_QUEUE_v2, NOT on the May 16 audit docs. Saves ~15-20 min of misdirected search.
+
+#### §4.M.1 — Phase 1 (Wiring + Schema Drift): mostly SHIPPED, some P1 remaining
+
+SHIPPED per audit doc note: "P0 fix PR shipping now: PR for P0-1 (EventLocationTab locations + tournaments) and P0-2 (send-tournament-message guardians defense-in-depth)" — May 16. Verify via V-17.
+
+REMAINING (P1):
+- P1-1: `EventLocationTab.jsx:18` tournaments query missing org_id (defense-in-depth gap)
+- P1-2: `CreateActivityWizard.jsx:31` events series-recurrence missing org_id
+- P1-3: `notificationBadgeQueries.js:40` conditional org filter — needs normalization decision
+- P1-4: `FinancialDashboardPage.jsx:36` financial_transactions missing season_id (over-fetches; misaligned scope)
+- P1-5: `useRsvps.js:21` event_rsvps wildcard select
+- P1-6: `useEventArrivals.js` (3 callsites) event_arrivals wildcard select
+- P1-7: tournaments archived_at inconsistency across surfaces (StepDetails.jsx + EventLocationTab.jsx)
+
+Plus systemic patterns A/B/C/D worth a structural fix:
+- Pattern C: edge function input re-validation anti-pattern candidate (CLAUDE.md addition)
+
+#### §4.M.2 — Phase 2 (Registry + State-Machine): 3 P0-LATENT + 3 P1 (UNSHIPPED, status verify)
+
+P0-LATENT (3 orphan renderers, expanded to 7 in Phase 5):
+- `event_card` — emitted by rsvpNudge.js:121 + academyCallupNotice.js:118; no SECTION_RENDERERS entry; renders empty
+- `placement_block` — emitted by tournamentRecapHelpers.js:12; no renderer
+- `game_log` — emitted by tournamentRecapHelpers.js:38, 46; no renderer
+
+P1:
+- `championship_scenarios` renderer is dead code (registered but never emitted)
+- 4 KIND_COMPOSERS entries unreachable (academy_callup_notice, weekly_digest, announcement, custom_message)
+- 5 legacy kind enum values in `constants.js:72-77` (tournament_final, tournament_rsvp_lock, etc.)
+
+Status: PROBABLY UNSHIPPED — audit doc recommended "Option B: stage to post-synthesis batched PR" with rationale that latent bugs don't affect real users yet. Verify via V-18.
+
+#### §4.M.3 — Phase 3 (Migration + Deploy): 1 P0 + 5 P1 + 10+ P2 (PARTIAL SHIPPED)
+
+LIKELY SHIPPED (audit doc said "ship now"): P0-1 `scheduleGaps.js ↔ _scheduleGaps.ts` mirror drift fix. Verify via V-19.
+
+REMAINING:
+- P1: 5 documented unregistered ghost migrations (per CLAUDE.md §5 — known + documented; only blocking if `supabase db reset` runs)
+- P2: 8 ghost data ops + 5 filename mismatches + 13 sequential-prefix duplicates (cosmetic only; CI skips re-applied versions)
+
+Edge function deploy reconciliation: CLEAN per audit (10 functions verified, no drift).
+
+#### §4.M.4 — Phase 4 (RLS / Security): 3 P0 + 3 P1 (GATED, UNSHIPPED)
+
+GATED per Class 7 discipline: all 6 findings staged for post-synthesis batched RLS migration PR.
+
+P0 — RLS UPDATE policies missing `WITH CHECK`:
+- `briefing_reminders.admins update own org reminders` — admin could change `org_id` silently
+- `briefing_templates.briefing_templates_update_admin` — admin could change `org_id` or `kind`
+- `team_types.team_types_update_admin` — admin could change `org_id`
+
+P1 — PUBLIC EXECUTE on SECURITY DEFINER (anti-pattern #23):
+- `briefing_active_queue(p_org_id, ...)` — anon can call
+- `log_pii_change(p_target_table, ...)` — anon can write to pii_audit_log directly
+- `suppress_unsubscribed_recipients()` — trigger function; should not have PUBLIC EXECUTE
+
+NOT findings (intentional):
+- `get_invitation_by_token(p_token)` — PUBLIC EXECUTE BY DESIGN (anon invite redemption)
+
+RLS coverage: 65/65 public tables enabled. Status of batched RLS migration PR: UNKNOWN — verify via V-20.
+
+#### §4.M.5 — Phase 5 (Type / Contract): 4 NEW orphan renderers + 1 P1 (UNSHIPPED)
+
+Phase 5 expanded the orphan renderer count from 3 → 7. Total 7 orphan section kinds across 4 briefing kinds (rsvp_nudge, academy_callup_notice, tournament_recap, suspected `family` site).
+
+P0-LATENT additions (beyond Phase 2):
+- `callup_card` — academyCallupNotice.js:117
+- `coach_reflection` — tournamentRecap.js:120
+- `standout_moments` — tournamentRecap.js:119
+- `family` — academyCallupNotice.js:54 (needs verification)
+
+P1: `TournamentRecapBody.jsx` defaultValue lacks `standout_moments` + `coach_reflection` keys. Composer falls through to undefined; latent UX bug on first real tournament_recap use.
+
+Combined fix scope (Phases 2 + 5): 7 new renderer files (~30-50 lines each) + composer.js registration. ~250-350 lines total. Substantial but mechanical. Splittable into 2-3 PRs by briefing kind (rsvp_nudge / academy_callup / tournament_recap) per Phase 5 trade-off note. Verify via V-21.
+
+RESOLVER_REGISTRY contracts: PASS. composerSubmit dispatch: PASS.
+
+#### §4.M.6 — Phase Beta carryovers (deferred from May 16 audit)
+
+Per `AUDIT_BETA_SYNTHESIS_2026-05-16` synthesis. Items NOT shipped in the Beta PR set (#210-#215). Each is a candidate cleanup item:
+
+- **20+ `.maybeSingle()` no-error-destructure callsites** (P1) — milder variant of anti-pattern #36; sweep follow-up to PR #211 deferred
+- useWeather localStorage fallback persists across users (P2)
+- BriefingComposer state doesn't reset on orgId change (P2)
+- useHasUnread channel name 'unread-badge' is global (P2)
+- RecordsPage.jsx game_results count cross-org (P2)
+- useAcademyCallupCandidates lacks useAuth context (P2)
+- 2 FKs without CASCADE — org_id, player_of_game_id (P2; non-actionable today per audit)
+- briefing_templates.org_id nullable (P2; table empty)
+- Legacy renderer dead code removal (P2; overlaps with §4.M.2 P1)
+- Anti-patterns #37 + #38 CLAUDE.md additions (CLOSED — #37/#38 are now registered in CLAUDE.md as of recent sessions)
+
+Bundle these into the Tier 4 P2 cleanup batch (§4.L).
+
+#### §4.M.7 — Phase 1 ledger contract gates for Monday Phase 2-5
+
+Per Monday-opener routing locked Sunday 2026-05-18: Phase 1 = COMPLETE (this entry). Phase 2-5 deferred pending Frank's gate decision.
+
+Findings count from Phase 1 Core Subset: **30+ items across 5 audit phases + Beta synthesis carryovers**.
+
+Status break:
+- LIKELY SHIPPED: 6-8 items (Phase 1 P0 batch + Phase 3 P0 mirror + Beta PRs #210-215)
+- LIKELY UNSHIPPED: ~22-24 items (all of Phase 4 RLS, all of Phase 5 type/contract, most of Phase 2 registry, several Beta carryovers)
+
+Verification items added to §15 V-17 through V-22 below to size the unshipped surface.
+
+---
+
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 
 The drift classes from CC's L99 analysis. Each is a pattern that
@@ -784,10 +898,12 @@ Phase 5 — V-1 through V-16 (the queue below) executes ONLY after Phases 1-4 ga
 | V-14 | RIDES_DESIGN_SPEC.md detail extraction | §4.D | docs/RIDES_DESIGN_SPEC.md | 30 min | Sprint G scoping | Read top-to-bottom; populate §4.D with named tasks |
 | V-15 | EMBER_MASTER_INDEX_v3 reconciliation | §4.H | (file missing) | 60 min | locked-decisions catalog | Rebuild from session notes OR accept distributed-decisions model |
 | V-16 | Tier 4 P2 specific items | §4.L | AUDIT_SYNTHESIS_2026-05-16 | 30 min | cleanup batch scoping | Read synthesis doc + enumerate P2 entries |
+| V-17 | Phase 1 P0 batch ship status (EventLocationTab + send-tournament-message) | §4.M.1 | AUDIT_PHASE1_WIRING_2026-05-16 | 5 min | confirm 2 of 30+ items closed | `git log --oneline --grep='audit-phase1\|EventLocationTab.*org_id\|send-tournament-message.*guardians'` + code-grep for `.eq('org_id'` in the 2 files |
+| V-18 | Phase 2 + Phase 5 orphan renderer status (7 P0-LATENT) | §4.M.2 + §4.M.5 | AUDIT_PHASE2 + AUDIT_PHASE5 | 10 min | sizing the 7-renderer arc | `ls src/lib/engine/renderers/` for event_card / placement_block / game_log / callup_card / coach_reflection / standout_moments / family + grep SECTION_RENDERERS in composer.js |
+| V-19 | Phase 3 P0 mirror drift ship status (scheduleGaps.js ↔ _scheduleGaps.ts) | §4.M.3 | AUDIT_PHASE3_MIGRATION_DEPLOY | 5 min | confirm closed | `diff src/lib/briefings/scheduleGaps.js supabase/functions/suggest-briefing-closer/_scheduleGaps.ts` + check for `minGapMinutes` param on Deno side |
+| V-20 | Phase 4 RLS migration ship status (3 P0 + 3 P1 batched) | §4.M.4 | AUDIT_PHASE4_RLS_SECURITY | 10 min | confirm RLS hardening closed | DB query: `SELECT polname, polcmd, polwithcheck FROM pg_policy WHERE polrelid::regclass::text IN ('briefing_reminders', 'briefing_templates', 'team_types') AND polwithcheck IS NULL;` + PUBLIC EXECUTE check on 3 SECURITY DEFINER funcs |
+| V-21 | Phase 5 TournamentRecapBody defaultValue drift ship status | §4.M.5 | AUDIT_PHASE5_TYPE_CONTRACT | 3 min | confirm closed | `grep -A 10 'defaultValue' src/components/briefings/bodies/TournamentRecapBody.jsx` for `standout_moments` + `coach_reflection` keys |
+| V-22 | Beta `.maybeSingle()` no-error-destructure sweep status (20+ callsites) | §4.M.6 | AUDIT_BETA_SYNTHESIS | 10 min | confirm anti-pattern #36 follow-up sweep status | `grep -rn 'maybeSingle' src/ --include='*.{js,jsx}' \| wc -l` + spot-check 5 for error handling |
 
-Total estimated verification effort: ~4-5 hours when bundled.
-Recommended cadence: batch V-1 through V-7 (Migrations + BUGs,
-~1 hour) as the first Monday pass — these are the highest-value
-unknowns. V-8 through V-14 (~2.5 hours) as a focused mid-Monday
-session. V-15 + V-16 (~1.5 hours) as a separate "rebuild + tidy"
-pass when energy is low.
+Total estimated verification effort: ~5-6 hours when bundled (with V-17 through V-22 additions, +1 hour).
+Recommended cadence: batch V-1 through V-7 + V-17 through V-21 (Migrations + BUGs + Phase 1/3 ship-status confirms, ~1.5 hours) as the first Monday pass — these are the highest-value unknowns AND closable with grep/DB queries. V-8 through V-14 (~2.5 hours) as a focused mid-Monday session. V-15 + V-16 + V-22 (~2 hours) as a separate "rebuild + tidy" pass when energy is low.
