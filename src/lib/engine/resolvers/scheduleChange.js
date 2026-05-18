@@ -53,14 +53,16 @@ export async function resolveScheduleChange({ eventId, pilotOnly }, { supabase, 
   if (!supabase) throw new Error('Missing supabase client (pass via options.supabase)');
   void now;
 
-  const { data: event } = await supabase.from('events').select(EVENT_SELECT).eq('id', eventId).maybeSingle();
+  const { data: event, error: eventErr } = await supabase.from('events').select(EVENT_SELECT).eq('id', eventId).maybeSingle();
+  if (eventErr) throw eventErr;
   if (!event) throw new Error(`Event ${eventId} not found`);
   const orgId = event.teams?.org_id;
   if (!orgId) throw new Error(`Event ${eventId} has no team org_id`);
 
   let effectivePilotOnly = pilotOnly;
   if (effectivePilotOnly === undefined) {
-    const { data: settings } = await supabase.from('organization_settings').select('pilot_mode_enabled').eq('organization_id', orgId).maybeSingle();
+    const { data: settings, error: settingsErr } = await supabase.from('organization_settings').select('pilot_mode_enabled').eq('organization_id', orgId).maybeSingle();
+    if (settingsErr) throw settingsErr;
     effectivePilotOnly = settings?.pilot_mode_enabled ?? false;
   }
 
@@ -72,14 +74,16 @@ export async function resolveScheduleChange({ eventId, pilotOnly }, { supabase, 
 
   let location = null;
   if (event.location_id) {
-    const { data: l } = await supabase.from('locations').select('id, name, address, google_maps_url').eq('id', event.location_id).maybeSingle();
+    const { data: l, error: lErr } = await supabase.from('locations').select('id, name, address, google_maps_url').eq('id', event.location_id).maybeSingle();
+    if (lErr) throw lErr;
     location = l || null;
   }
   // Beta B6 audit — anti-pattern #36.
   const { data: coachesData, error: coachesErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
   if (coachesErr) throw coachesErr;
   const coaches = coachesData || [];
-  const { data: org } = await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
+  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
+  if (orgErr) throw orgErr;
   const slices = await fetchSlices(supabase, orgId, event.team_id, effectivePilotOnly);
 
   const diff = audit ? computeDiff(audit.before_jsonb, audit.after_jsonb) : { changed_fields: [], before_normalized: {}, after_normalized: {} };

@@ -30,7 +30,8 @@ export function useImportSchedule(tournamentId) {
     if (!paste.trim() || !tournamentId || !orgId) return;
     setState('parsing'); setError(null);
     try {
-      const { data: t } = await supabase.from('tournaments').select('id, name, start_date, end_date').eq('id', tournamentId).maybeSingle();
+      const { data: t, error: tErr } = await supabase.from('tournaments').select('id, name, start_date, end_date').eq('id', tournamentId).maybeSingle();
+      if (tErr) throw tErr;
       if (!t) throw new Error('Tournament not found');
       setTournament(t);
       const { data: existing, error: exErr } = await supabase.from('events').select('id, team_id, tournament_id, start_at, opponent, location_id, sub_location, is_bonus_game').eq('tournament_id', tournamentId);

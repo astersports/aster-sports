@@ -58,7 +58,8 @@ export async function resolveTournamentRecap({ tournamentId, pilotOnly }, { supa
 
   let effectivePilotOnly = pilotOnly;
   if (effectivePilotOnly === undefined && orgId) {
-    const { data: settings } = await supabase.from('organization_settings').select('pilot_mode_enabled').eq('organization_id', orgId).maybeSingle();
+    const { data: settings, error: settingsErr } = await supabase.from('organization_settings').select('pilot_mode_enabled').eq('organization_id', orgId).maybeSingle();
+    if (settingsErr) throw settingsErr;
     effectivePilotOnly = settings?.pilot_mode_enabled ?? false;
   } else if (effectivePilotOnly === undefined) effectivePilotOnly = false;
 
@@ -103,7 +104,8 @@ export async function resolveTournamentRecap({ tournamentId, pilotOnly }, { supa
     if (coachesErr) throw coachesErr;
     coaches = coachesData || [];
   }
-  const { data: org } = orgId ? await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle() : { data: null };
+  const { data: org, error: orgErr } = orgId ? await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle() : { data: null, error: null };
+  if (orgErr) throw orgErr;
   const allRecipients = orgId ? await fetchRecipientGuardians(supabase, orgId, teamIds, effectivePilotOnly) : [];
   const slices = buildTeamSlices(tournament_teams, allRecipients);
 
