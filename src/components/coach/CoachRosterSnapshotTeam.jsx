@@ -5,6 +5,14 @@
 // the trend grid + finds the next upcoming event from the grid's
 // events list to detect missing RSVPs.
 //
+// Per-player metric label: "{pct}% Going" matches the convention in
+// PlayerRow.jsx / MyChildSpotlight.jsx for the same goingCount /
+// totalPast value. Cross-surface label consistency per CLAUDE.md
+// anti-pattern #43 — same calculation renders with the same label
+// semantic everywhere. The bare "%" rendering from the L99 audit
+// (B3) was ambiguous; "Going" makes the workflow-gap degeneracy
+// (no check-ins → metric = RSVP-going rate) honest in the UI.
+//
 // Per Q3 lock (PR 6 pre-flight): per-team useAttendanceData call.
 // Coach with N teams = N lookback queries on mount. Acceptable at
 // Legacy scale (Kenny = 5 teams). v2 cost concern pinned in
@@ -80,7 +88,7 @@ export default function CoachRosterSnapshotTeam({ team }) {
                 </span>
                 {arrow && <arrow.Icon size={12} strokeWidth={1.75} color={arrow.color} aria-hidden="true" />}
                 <span style={{ fontSize: 12, color: 'var(--em-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
-                  {row.pct != null ? `${row.pct}%` : '—'}
+                  {row.pct != null ? `${row.pct}% Going` : '—'}
                 </span>
               </li>
             );
