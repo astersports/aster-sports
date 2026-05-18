@@ -510,6 +510,36 @@ The major reframe from these verifications: **§4.M is mostly CLOSED, not mostly
 
 V-20 (Phase 4 RLS migration status) + V-22 (Beta `.maybeSingle()` sweep) deferred to Monday — both require more substantial DB / per-callsite work than the end-of-day window allows.
 
+### §4.N — Two-Week L99 Audit (May 4 → May 18, scheduled Monday 2026-05-19)
+
+**Meta-audit lock.** Designed Sunday evening 2026-05-18 to close the question "have we caught everything from the last two weeks?" by closing each blind-spot class the prior audits sampled but didn't fully cover. Locked tonight per anti-pattern #45 acid-test (structural plan designed in chat owes ledger reconciliation in the same session). Captured here so commitment survives the sleep cycle and the Monday-opener prompt can be rewritten Monday morning with this scaffolding instead of being reconstructed from chat memory.
+
+**Why a five-layer audit instead of another shape:** every prior audit was bounded by what it opened (the 22-doc gap that produced V-0 is the canonical example). The five layers below each close a specific class of miss the prior audits couldn't see:
+
+| Layer | Catches | Source of truth | Effort | Order |
+|-------|---------|-----------------|--------|-------|
+| **Layer 1 — Git log cross-reference** | PRs landed but never reconciled to ledger · PRs opened but never merged · direct-to-main commits bypassing PR review | `git log --since="2026-05-04" --pretty=format` cross-ref against §1 (shipped) + §4 (pending) | 20-30 min | first (factual ground truth) |
+| **Layer 2 — Doc-diff sweep** | Docs created or modified in window not yet reconciled to ledger (the BETA/PHASE/SYNTHESIS class — V-0 caught some of these, this layer closes the remainder bounded by date) | `ls docs/*.md` filtered to mtime > May 4 → per-doc summarize + identify named bug/enhancement/decision not in §1 or §4 | 45-60 min | fourth |
+| **Layer 3 — Chat transcript scan + recent_chats walk** | Decisions made in chat that were never written down · code drops promised in chat never shipped · bugs flagged in chat never logged | Frank-side `conversation_search` (targeted queries: "decision locked", "park this", "queued for next session", "remind me to", "TODO") **PLUS sequential `recent_chats` walk over the 2-week window** for maximum reasonable confidence | 45-60 min (chat-side, Frank does it) | third |
+| **Layer 4 — Production verification sweep** | Features marked SHIPPED in ledger that don't actually work as advertised · migrations marked applied without expected schema state · edge functions marked deployed but failing (the PR #235 / Cluster 6.A3 class retroactively applied across every recent ship per anti-pattern #44) | Supabase MCP + Vercel MCP per-item verification on §1 SHIPPED items touched in window | 45-60 min | last (highest cognitive load) |
+| **Layer 5 — 22-bug catalog walk** | Bugs from the SKYFIRE_BUILD_QUEUE_v2 KNOWN BUGS catalog silently fixed or quietly still open (closes the question raised earlier about only 4 of 22 bugs being in §15) | Each of 22 bugs gets grep + Supabase MCP probe → status: SHIPPED with evidence / OPEN with V-* / AMBIGUOUS with deeper trace needed | 20 min | second (mechanical, clears known uncertainty) |
+
+**Layer 3 scope decision (locked tonight):** included the sequential `recent_chats` walk on top of `conversation_search`, not skipped. Reason: tonight's discovery pattern (each harder look surfaces more — 22 docs from `ls`, 6 V-* from code-drop audit, 27 callsites from V-22 sweep) signals we're not at the asymptote yet. 30-min premium on Layer 3 vs. residual chat-only drift is the right trade given Layer 3 anchors the entire "highest reasonable confidence" claim. If the walk finds nothing new, that's also useful — it validates the bound and lets us declare the asymptote.
+
+**Execution contract (mirrors PR #243 + tonight's discipline):**
+
+- **Branch:** `docs/two-week-audit-2026-05-04-to-2026-05-18` (root branch; per-layer feature branches off it)
+- **PRs:** 5 PRs total, one per layer, squash on merge, anti-pattern #45 enforced (each layer's findings → ledger same commit)
+- **Scope:** `docs/EMBER_PENDING_LEDGER.md` + `docs/CLAUDE.md` (if new anti-patterns emerge). Zero `src/` changes. Zero migrations. Pure ledger reconciliation pass.
+- **Gate between layers:** after each layer's findings drop, STOP and report before next layer begins. Frank routes whether findings reshape next layer's scope.
+- **Sequencing (cognitive load + dependency):** Layer 1 (git log, factual) → Layer 5 (22-bug walk, mechanical) → Layer 3 (chat scan, Frank-side parallel) → Layer 2 (doc-diff, integrates Monday-opener Phases 1-3 work) → Layer 4 (prod verification, needs everything else stable).
+- **Time ceiling:** ~4 hours CC time + ~45-60 min Frank chat-side. Total ~5 hours bundled.
+- **Bypass clause:** if Monday-morning Frank decides the five-layer framing is wrong on review, this entry is overridable per locked-decision protocol — amend it before the prompt drops, don't grind through a stale design.
+
+**Replaces:** the Monday-opener Phase 1-3 sequence from V-0 + Phase 5 V-1 through V-22 batch cadence — both consolidate into Layers 2, 4, 5 of this audit. V-23 through V-28 (just landed via PR #252) consolidate into Layer 2.
+
+**Tonight sign-off action:** this entry IS the action. Five minutes to write, mechanical, no decision burden. Per #45 acid-test the work is owed; per cognitive-load discipline the audit execution waits for Monday morning.
+
 ---
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
