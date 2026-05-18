@@ -9,6 +9,24 @@
 // Returns { alerts, loading, error, refresh } so consumers can
 // render firing alerts immediately + reflect loading state on
 // first load.
+//
+// Loading-state contract (per CLAUDE.md anti-pattern #43, locked
+// 2026-05-18 after L99 audit + Frank smoke surfaced a regression):
+// `loading` MUST stay true from mount until the FIRST evaluate cycle
+// completes with real configs. The original implementation used
+// configs = useState([]) which made the initial state and the
+// "fetched + empty" state indistinguishable — the evaluate callback
+// fired on mount with configs=[] and hit its empty-configs early
+// return (`setAlerts([]); setLoading(false)`), flipping loading=false
+// BEFORE the configs fetch completed. AlertZone then briefly rendered
+// the green AllClearPill before re-rendering with the real alerts
+// (amber) once configs loaded and evaluate fired the second time.
+//
+// Fix: configs = useState(null) as the "not yet fetched" sentinel.
+// The empty-configs early return only fires when configs is a
+// fetched-but-empty array. The null branch returns without touching
+// loading, so the loading gate in AlertZone stays armed through the
+// configs-fetch window.
 
 import { useCallback, useEffect, useState } from 'react';
 import { useInterval } from './useInterval';
@@ -21,7 +39,11 @@ const POLL_INTERVAL_MS = 60_000;
 
 export function useAlertEvaluator() {
   const { orgId } = useAuth();
-  const [configs, setConfigs] = useState([]);
+  // null = configs not yet fetched (initial state).
+  // [] = fetched, no configs enabled for this org.
+  // [c1, c2, ...] = fetched, configs loaded.
+  // The null sentinel keeps `loading` armed through the fetch window.
+  const [configs, setConfigs] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,7 +73,13 @@ export function useAlertEvaluator() {
   }, [orgId]);
 
   const evaluate = useCallback(async () => {
-    if (!configs.length) { setAlerts([]); setLoading(false); return; }
+    // Null = configs not yet fetched. Don't touch loading; the
+    // configs fetch effect will set configs (to [] or [c1...]) when
+    // it completes, which re-fires this callback via the useEffect
+    // below.
+    if (configs === null) return;
+    // Fetched + empty: no alerts possible. Done loading.
+    if (configs.length === 0) { setAlerts([]); setLoading(false); return; }
     try {
       const qx = createSupabaseQueryExecutor(supabase);
       const firing = await evaluateAlerts(configs, qx);
@@ -64,11 +92,12 @@ export function useAlertEvaluator() {
     }
   }, [configs]);
 
-  // Run once after configs load.
+  // Run once after configs load (configs transition from null → array).
   useEffect(() => { Promise.resolve().then(evaluate); }, [evaluate]);
 
-  // Poll every 60s thereafter.
-  useInterval(evaluate, configs.length ? POLL_INTERVAL_MS : null);
+  // Poll every 60s thereafter. Only poll when configs has loaded
+  // and has at least one entry — null or empty array = nothing to poll.
+  useInterval(evaluate, configs && configs.length ? POLL_INTERVAL_MS : null);
 
   return { alerts, loading, error, refresh: evaluate };
 }
