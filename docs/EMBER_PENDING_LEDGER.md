@@ -9,9 +9,9 @@
 
 This doc complements (not replaces):
 - `docs/SKYFIRE_BUILD_QUEUE_v2.md` — shipped-log roadmap, forward-only
-- `docs/STATE_OF_AFFAIRS_L99_v3.md` — canonical high-level state
-- `docs/EMBER_MASTER_INDEX_v3.md` — locked decisions catalog
+- `docs/STATE_OF_AFFAIRS_L99_v5.md` — canonical high-level state
 - `CLAUDE.md` — durable anti-patterns + architectural rules
+- Various audit synthesis docs (`docs/AUDIT_*.md`) — point-in-time deep dives
 
 This is the **pending** ledger: what's not yet shipped, what's decided
 but not yet built, what needs cross-surface propagation, what's blocked
@@ -40,6 +40,7 @@ the next round of silent divergence.
 | #238  | 2026-05-18 | L99 meta-fix: EMBER_PENDING_LEDGER + anti-pattern #43              | Docs + doctrine     |
 | #239  | 2026-05-18 | Cluster 5 / B1 — CoachHomePage MY TEAMS records (first #43 fix)    | Coach Home          |
 | #240  | 2026-05-18 | Cluster 2 / B3 — `% Going` label across Coach/Admin/Parent surfaces| Roster snapshots    |
+| #241  | 2026-05-18 | Cluster 6 / A3 — `useAlertEvaluator` configs null-sentinel (PR #235 regression close) | All 3 home pages |
 
 Five-PR Sunday from Italy CEST. Audit immediately after surfaced the
 items below.
@@ -183,17 +184,73 @@ anti-pattern #21.
 
 ## 4. DECISIONS LOCKED, NOT YET IMPLEMENTED
 
-> Anchored to `docs/EMBER_MASTER_INDEX_v3.md` (49 locked decisions per
-> chat's note). CC doesn't have visibility into the full list. Frank
-> to enumerate which are awaiting implementation. Examples surfaced:
+Items where the decision is locked in chat-side discussion or prior
+session notes, but the code/doc artifact hasn't shipped yet.
+Populated 2026-05-18 from a cross-document audit against
+`STATE_OF_AFFAIRS_L99_v5.md` + `CC_WAVE_4_4_COUNTER_PLAN_REVISION_2026-05-11.md`
++ `AUDIT_DAY_2026-05-16_FINAL_CLOSE.md` after chat surfaced the
+Wave 4.4-B IA gap.
 
+### Briefing IA (Wave 4.4-B remainder)
+- **TournamentHeader Send Briefing relocation** — Wave 4.4-B Session 1
+  shipped for AdminHome + TeamDetailPage (deep-link to
+  `/admin/briefings/compose?anchor=team&id=<team.id>`), but
+  TournamentHeader still uses the legacy inline `SendBriefingButton`
+  (verified 2026-05-18 in `src/components/tournament/TournamentHeader.jsx:103`).
+  Fix shape: replace `<SendBriefingButton>` with a deep-link to
+  `/admin/briefings/compose?anchor=tournament&id=<tournament.id>&kind=<ctaKind>`.
+  Verify the portal's URL param hydration handles the `tournament`
+  anchor kind (it likely does — same pattern as `team`).
+  Estimate: ~30-45 min including a cross-surface invariant test per #43.
+- **docs/IA_FRAMING.md** — May 13 Decision D (IA framing addendum)
+  never shipped. Light doc capturing the briefing IA strategy (one
+  home Quick Action + portal as canonical entry, deep-link buttons
+  on team/tournament detail surfaces as convenience). ~10 min.
+
+### Schedule-change rebuild (Wave 3.8 §5.2)
+Per `STATE_OF_AFFAIRS_L99_v5:159`: schedule_change kind has zero
+producers in the codebase; `useUpdateActivity.updateSeries()` strips
+`start_at`/`end_at` deliberately. Spec is pending Claude.ai lock —
+3-option dialog + composer + audit table. Estimate 6-8h once spec
+lands. Not blocked on code; blocked on product spec.
+
+### Weather forecast per event (Wave 4b)
+Per `STATE_OF_AFFAIRS_L99_v5:171` (D-WEATHER-1): OpenWeatherMap
+fetch at compose time, 6h cache, indoor events skip. Backlog item.
+~4-6h. Implementation queue, not blocked.
+
+### CLAUDE.md anti-pattern #44 (candidate, drafted not registered)
+Chat drafted text for "trace the full state pipeline before ruling
+out a regression at the gate" on 2026-05-18 (PR #241 origin case
+during L99 close). Should land as a small CLAUDE.md doc PR with
+the discipline note + drift-hedge pattern (hook-level loading-state
+tests pinning mid-flight via paused promise resolvers).
+
+### Dependabot PR #147
+Per `AUDIT_DAY_2026-05-16_FINAL_CLOSE:85`: needs workflow-read token
+scope before next attempt. CI failures, can't repro locally,
+integration token returns 403 on workflow log endpoint. Frame the
+scope grant as a permanent capability upgrade.
+
+### Tier 4 P2 findings (2026-05-16 audit)
+Per `AUDIT_SYNTHESIS_2026-05-16:151`: deferred to next-week cleanup
+batch. CC to read the synthesis doc when planning the cleanup PR
+to enumerate the specific items.
+
+### Density toggle (mentioned in earlier audit)
 - Density toggle 3 levels (blocked by Migration 016 `user_preferences`)
 - Note edit cooldown 4hr
 - Rotation Planner staff-only
-- (and N more — Frank to populate from EMBER_MASTER_INDEX)
+- (Pre-existing items from earlier session notes — verify against
+  EMBER_MASTER_INDEX if/when that doc is found or rebuilt)
 
-This section becomes high-leverage when Monday's work starts —
-implementing a locked decision is cheaper than re-deciding.
+### EMBER_MASTER_INDEX reconciliation
+The original `EMBER_MASTER_INDEX_v3.md` is not present in `docs/`
+(verified 2026-05-18). Either the doc was renamed, never created,
+or lives in a different location. The "49 locked decisions" figure
+referenced in chat threads has no canonical source today. Worth
+either rebuilding the index from session notes or accepting that
+the locked decisions live distributed across various session docs.
 
 ---
 
@@ -377,7 +434,14 @@ drift-hedge test under anti-pattern #43.
   when `useOrgTeamRecords` exists)
 - **AlertZone behavior under concurrent query refresh** — no race
   between `useKpiGrid` and `useAlertEvaluator` should produce false
-  all-clear pill (covers Cluster 6 A3 hypothesis)
+  all-clear pill (covers Cluster 6 A2 hypothesis; A3 closed via PR #241)
+- **Async-ordering tests for all home-page hooks** — pattern
+  established in `useAlertEvaluator.loadingGate.test.js` via PR #241
+  (paused promise resolvers pin the hook mid-flight). Replicate for
+  `useAdminStats`, `useHomeRole`, `useAttendanceData`, `useActivities`.
+  Each should assert: loading=true persists until canonical data
+  resolution; no early loading=false on an intermediate state. This
+  is the operational follow-through on anti-pattern #44 (candidate).
 - **Render-path consistency tests** — for each shared display pattern
   in §5 above, a test that asserts same data renders identically
   across surfaces
