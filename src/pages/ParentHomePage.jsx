@@ -86,7 +86,7 @@ export default function ParentHomePage() {
   // Alerts: hook is role-agnostic (Gap 6/8). Page applies data-
   // ownership filter so parent sees only alerts touching their kids'
   // teams. ADMIN_ONLY_TYPES are dropped entirely in v1.
-  const { alerts: allAlerts } = useAlertEvaluator();
+  const { alerts: allAlerts, loading: alertsLoading } = useAlertEvaluator();
   const parentAlerts = useMemo(() => filterAlertsForParent(allAlerts, myChildren), [allAlerts, myChildren]);
 
   // Multi-kid conflict detection: reuses familyGuideHelpers.detectConflicts
@@ -108,7 +108,7 @@ export default function ParentHomePage() {
         {orgName && <div style={{ color: 'var(--em-text-tertiary)', fontSize: 13, marginTop: 2 }}>{orgName}{myTeams.length > 0 ? ` · ${myTeams.length} team${myTeams.length !== 1 ? 's' : ''}` : ''}</div>}
       </section>
 
-      <AlertZone alerts={parentAlerts} variant="collapsible" sectionLabel="ALERTS" />
+      <AlertZone alerts={parentAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
       <ConflictCallout conflicts={conflicts} />
 
       {!loading && myTeams.length === 0 && (
