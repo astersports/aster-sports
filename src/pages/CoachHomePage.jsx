@@ -54,7 +54,7 @@ export default function CoachHomePage() {
   // Alerts: hook is role-agnostic. Page applies filterAlertsForCoach
   // (data-ownership filter) scoped to coach's team_staff teamIds.
   const coachedTeamIds = useMemo(() => myTeams.map((t) => t.id), [myTeams]);
-  const { alerts: allAlerts } = useAlertEvaluator();
+  const { alerts: allAlerts, loading: alertsLoading } = useAlertEvaluator();
   const coachAlerts = useMemo(() => filterAlertsForCoach(allAlerts, coachedTeamIds), [allAlerts, coachedTeamIds]);
 
   // Next event across all coached teams. Pulse-glow wrapper draws
@@ -65,7 +65,7 @@ export default function CoachHomePage() {
     <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
       <AdminGreeting user={user} />
 
-      <AlertZone alerts={coachAlerts} variant="collapsible" sectionLabel="ALERTS" />
+      <AlertZone alerts={coachAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
 
       {nextEvent && (
         <div style={{

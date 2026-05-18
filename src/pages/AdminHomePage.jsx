@@ -35,7 +35,7 @@ export default function AdminHomePage() {
   const { activities, refetch } = useActivities();
   const { byTeamId: recordsByTeam } = useOrgTeamRecords(orgId);
   const weather = useWeather(41.03, -73.76);
-  const { alerts } = useAlertEvaluator();
+  const { alerts, loading: alertsLoading } = useAlertEvaluator();
   useRefetchOnVisible(refetch);
   const navigate = useNavigate();
   const nextEvent = activities.find((a) => new Date(a.start_at) >= new Date() && a.status !== 'cancelled');
@@ -50,7 +50,7 @@ export default function AdminHomePage() {
     <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
       <AdminGreeting user={user} />
 
-      <AlertZone alerts={alerts} variant="always_visible" sectionLabel="ALERTS" />
+      <AlertZone alerts={alerts} loading={alertsLoading} variant="always_visible" sectionLabel="ALERTS" />
 
       <section className="min-w-0" aria-label="Key metrics">
         <KpiGrid stats={stats} />

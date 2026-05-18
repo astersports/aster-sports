@@ -13,6 +13,16 @@
 // Alerts are pre-sorted by compareSeverityDesc so critical surfaces
 // first. PR 4/5/6 hooks pass the alerts array; this component
 // doesn't fetch.
+//
+// Loading-state gate (CLAUDE.md §16.3 kindness-microcopy invariant):
+// the AllClearPill must NOT render before useAlertEvaluator's query
+// resolves. Rendering "All clear" optimistically while alerts are
+// still being evaluated is false reassurance — a coach scanning
+// during the load window could walk away thinking nothing's wrong,
+// missing the actual amber/red state. When loading + no alerts:
+// collapsible variant renders nothing (pill is small, layout
+// adjusts fine); always-visible renders the section header + a
+// shape-matched skeleton so the layout doesn't jump.
 
 import AlertCard from './AlertCard';
 import AllClearPill from './AllClearPill';
@@ -22,8 +32,32 @@ function sortedAlerts(alerts) {
   return [...(alerts || [])].sort((a, b) => compareSeverityDesc(a.severity, b.severity));
 }
 
-export default function AlertZone({ alerts = [], variant = 'always_visible', sectionLabel = 'ALERTS' }) {
+const SECTION_LABEL_STYLE = {
+  fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
+  textTransform: 'uppercase', color: 'var(--em-text-tertiary)',
+  marginBottom: 8,
+};
+
+const SKELETON_STYLE = {
+  height: 52, borderRadius: 10,
+  backgroundColor: 'var(--em-bg-secondary)',
+  border: '1px solid var(--em-border-subtle)',
+};
+
+export default function AlertZone({ alerts = [], variant = 'always_visible', sectionLabel = 'ALERTS', loading = false }) {
   const hasAlerts = alerts.length > 0;
+
+  // Loading + no alerts: suppress AllClearPill until the query
+  // resolves, per the kindness-microcopy invariant above.
+  if (loading && !hasAlerts) {
+    if (variant === 'collapsible') return null;
+    return (
+      <section className="min-w-0" aria-label="Alerts" aria-busy="true">
+        <div style={SECTION_LABEL_STYLE}>{sectionLabel}</div>
+        <div className="animate-pulse" aria-hidden="true" style={SKELETON_STYLE} />
+      </section>
+    );
+  }
 
   // Collapsible variant + no alerts = pill only, no section header.
   if (variant === 'collapsible' && !hasAlerts) {
@@ -37,13 +71,7 @@ export default function AlertZone({ alerts = [], variant = 'always_visible', sec
   // Always-visible OR collapsible-with-alerts = full section.
   return (
     <section className="min-w-0" aria-label="Alerts">
-      <div style={{
-        fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
-        textTransform: 'uppercase', color: 'var(--em-text-tertiary)',
-        marginBottom: 8,
-      }}>
-        {sectionLabel}
-      </div>
+      <div style={SECTION_LABEL_STYLE}>{sectionLabel}</div>
       {!hasAlerts ? (
         <AllClearPill mode="inline" />
       ) : (
