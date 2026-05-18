@@ -1070,6 +1070,59 @@ Layer 2 of the §4.N Two-Week L99 Audit executed via three parallel `Explore` su
 
 **Layer 2 effort actual:** ~50 minutes (matches §4.N estimate of 45-60 min). Sub-agent parallelism + CC verification overhead balanced.
 
+### Layer 2 validation pass (2026-05-18 evening — L99 shipped-vs-open determinations)
+
+Per Frank's routing: validate the 8 Layer 2 findings (V-32 through V-39) to confirm shipped vs unshipped status, so Monday opens with a clean actionable list rather than uncertain V-* items. L99 fidelity: each V-* gets a direct code-grep + DB-query verification, not gate-only inference.
+
+**Per-V-* validation result:**
+
+| V-* | Item | Validation method | Status confirmed | Routing for Monday |
+|-----|------|-------------------|------------------|---------------------|
+| V-32 | AdminMembersPage | `ls src/pages/Admin*` → only AdminHomePage, AdminSeasonsPage, AdminTeamsPage. No grep matches for `admin/members` route, `AdminMembersPage`, or `MembersDirectory`. | **UNBUILT (CONFIRMED).** | Promote to **new §4.O — Admin Manager Pages**; merge with V-33 as a single arc. Concrete deliverable: `AdminMembersPage.jsx` + `/admin/members` route + guardian/player directory query. |
+| V-33 | AdminOpponentsPage + LocationsManager | No grep matches for `admin/opponents`, `AdminOpponentsPage`, `OpponentManager`, `admin/locations`, `AdminLocationsPage`, `LocationsManager`. CLAUDE.md §8 marks 3-A PARTIAL. | **UNBUILT (CONFIRMED).** Both opponent and location mgmt UI absent. | Promote to **§4.O** alongside V-32. Closes the §3-A PARTIAL line in CLAUDE.md §8. Concrete deliverables: AdminOpponentsPage.jsx + AdminLocationsPage.jsx + routes. |
+| V-34 | admin_audit_log vs event_change_audit | DB query: `event_change_audit` columns = `(id, org_id, event_id NOT NULL, changed_by, changed_at, change_kind, recurrence_scope, before_jsonb, after_jsonb, dispatch_email_id)`. Scoped to event-row mutations only. | **DESIGN GAP CONFIRMED.** `event_change_audit` covers event mutations; non-event admin actions (member edits, settings changes, payment edits) are unaudited. | Stays open as a **design call**: (a) build separate `admin_audit_log` for general operator actions, (b) extend `event_change_audit` schema to be generic with optional event_id, or (c) accept unaudited non-event admin actions today. Recommend (a) for separation-of-concerns + simpler RLS. Nominate for Monday's product-judgment review. |
+| V-35 | LH_BRAND_CONTENT_MODEL Part 11 — 10 delight features | Code-grep on 5 spot-checked features. Results: auto-badge UNBUILT (only static "Nationals Qualified" label exists), Run of Play UNBUILT, Arrival protocol UNBUILT, RSVP countdown PARTIAL (tournaments have `rsvp_deadline_at` + nudge config in `AutoNotificationSettingsSheet`, but no urgent visual banner), Car Ride Home toast UNBUILT. | **9 UNBUILT + 1 PARTIAL of 10.** | Re-scope to **§4.G** as a 10-item batch entry titled "LH_BRAND_CONTENT_MODEL Part 11 95% delight features". Each ranks P1 polish; none are P0-blocking. Recommend cherry-picking 2-3 for Sprint B-F absorption (the rest stay backlog). RSVP countdown PARTIAL — the missing urgent visual banner becomes a concrete sub-item under §4.J Weather/notification arc. |
+| V-36 | EMBER_TENANCY v3 Steps 11-13 deferral | Doc read confirmed Section 22 line 220: *"Minimum-viable tonight: steps 1-10. Steps 11-13 (BrandTransition, coach welcome, admin checklist) can defer."* | **EXPLICIT DEFERRAL CONFIRMED in source doc.** | Closes as **documentation-only sub-finding under V-24**. No action required; V-24 closure attempts should expect Steps 5-10 as the completion target, with Steps 11-13 explicitly out of scope until brought back via separate decision. |
+| V-37 | 5c-VALIDATE findings batch | Doc read: AUDIT_DAY_2026-05-16_FINAL_CLOSE.md line 65 = *"[CONFIRMATION + FINDINGS TO BE FILLED ON FRANK'S READ — render quality on VIP header tone, kid color (Charlie 11U Girls violet / Milo 8U Boys amber), quick link nav rows, day-grouped events, conflict callouts, brand footer.]"* | **GENUINELY OPEN. Frank-gated.** Placeholder still empty; Frank hasn't read the May 16 admin@ send yet. | Stays open as **§4.A PR 5 follow-up** + flagged for Frank Monday-opener: read the May 16 send, fill in findings, each finding → PR. CC cannot resolve unilaterally — depends on Frank's render-quality judgment. |
+| V-38 | Audit-day May 16 P2 carryovers — 11 items (originally 8 per Layer 2 framing; doc read found 11) | Full P2 list from AUDIT_DAY_2026-05-16_FINAL_CLOSE.md lines 93-118: items 8-18 (useWeather signout cleanup, BriefingComposer state reset, useHasUnread channel name, RecordsPage cross-org count, useAcademyCallupCandidates auth, 2 FK CASCADE gaps, briefing_templates nullable, legacy renderer dead code, anti-patterns #37/#38 CLAUDE.md, Admin Home IA Tier 3). | **10 OPEN + 1 CLOSED.** Item 17 (anti-patterns #37 + #38 CLAUDE.md) already CLOSED — both registered in CLAUDE.md §11. | Re-scope V-38 to **10 actionable items** as a single "audit-day P2 sweep" entry in §4.L. Each is small (<30 LOC); recommend batching as one multi-commit PR Monday. Item 18 (Admin Home IA Tier 3) is a design exercise, splits out separately. |
+| V-39 | Tier 3 V2 performance items | Code-grep: `useAttendanceData` confirmed consumed by CoachRosterSnapshotTeam in a per-team loop pattern (line 49). 60s polling exists in `useNow.js:15` + `useAlertEvaluator.js:38`. | **CONFIRMED real concerns + V2 triggers not yet fired.** Org currently <500 users; no mobile-load >3s reports. | Stays as **documented backlog markers** under new §4 sub-arc or §4.G "V2 perf watchlist". Not actionable today; triggers (org 500+ users OR coach 10+ teams OR mobile load >3s) become V-39 close conditions. |
+
+**Monday-actionable summary:**
+
+**§4.O — Admin Manager Pages (NEW sub-arc, P1 build):**
+- AdminMembersPage.jsx + `/admin/members` route (V-32 promoted)
+- AdminOpponentsPage.jsx + `/admin/opponents` route (V-33 promoted)
+- AdminLocationsPage.jsx + `/admin/locations` route (V-33 promoted, closes §3-A PARTIAL)
+
+**§4.A PR 5 follow-ups (Frank-gated, V-37):**
+- 6 named 5c-VALIDATE findings: VIP header tone, kid color rendering, quick link nav rows, day-grouped events, conflict callouts, brand footer
+- Frank reads May 16 admin@ Family Guide send → fills findings → 1-6 follow-up PRs
+
+**§4.L audit-day P2 sweep (V-38, single multi-commit PR):**
+- 10 items (8-16, 18 from FINAL_CLOSE list; item 17 already closed)
+
+**§4.G batch additions (V-35, P1 polish):**
+- 9 UNBUILT delight features (auto-badge, Run of Play, Arrival reminders, Car Ride Home, Tournament archive, Quick Score propagation, Winter archive, Achievement timelines, Academy handbook in-app)
+- 1 PARTIAL feature: RSVP countdown urgent banner → routes under §4.J
+
+**Design call (V-34, P2 product judgment):**
+- admin_audit_log: separate table vs extend event_change_audit vs accept gap
+
+**Documented backlog (V-36, V-39):**
+- V-36: EMBER_TENANCY Steps 11-13 explicit deferral — no action
+- V-39: V2 perf watchlist (polling cost, useAttendanceData per-team) — trigger-gated
+
+**Validation pass net result:**
+- 8 V-* items validated to **L99 fidelity**
+- 4 V-* promote to concrete §4 build entries (V-32, V-33, V-35, V-38)
+- 2 V-* stay open as forward gates (V-37 Frank read, V-34 design call)
+- 2 V-* close as documentation/backlog (V-36 deferral confirmed, V-39 trigger-gated)
+- 1 V-* finding already CLOSED at validation time (V-38 item 17)
+
+**Validation pass effort actual:** ~30 minutes. Brings total Layer 2 to ~80 min — above §4.N's 45-60 min estimate, but L99 validation depth was added to the original scope per Frank's routing.
+
+**Tomorrow's plan opens clean:** Monday-opener now starts from concrete action items (5 named admin pages, 6 named Family Guide findings, 10 named P2 cleanup items, 9 named delight features) rather than 8 abstract verification queue entries.
+
 ### Layer 1 findings (2026-05-18 evening soft start — §4.N audit, low-cognitive pass)
 
 Layer 1 of the §4.N Two-Week L99 Audit executed Sunday evening (post-sign-off, soft start per Frank's "Continue with the build" routing). Mechanical enumeration + sequence gap analysis. No interpretive findings — those wait for Layers 2-5 with fresh-head cognitive load.
