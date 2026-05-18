@@ -540,6 +540,32 @@ V-20 (Phase 4 RLS migration status) + V-22 (Beta `.maybeSingle()` sweep) deferre
 
 **Tonight sign-off action:** this entry IS the action. Five minutes to write, mechanical, no decision burden. Per #45 acid-test the work is owed; per cognitive-load discipline the audit execution waits for Monday morning.
 
+**Expected ledger growth post-audit:**
+
+```
+§1 SHIPPED:     +5-15 items recovered from L1 / L3
+§2 active bugs: +0-5 items if L4 surfaces regressions
+§4 PENDING:     +5-10 items recovered from L2 / L3
+§15 VERIFY:     +18-22 items from L5, +5-10 from L4
+```
+
+Estimate 30-50 net new ledger entries. Most are recovery (documenting what already exists), not new work. The number frames the audit as completeness-confirmation, not feature-discovery — useful for sizing the post-audit reconciliation PR cadence and for setting expectations on what Monday's output volume looks like.
+
+**Sign-off conditions:**
+
+- All 5 layer PRs merged with anti-pattern #45 compliance (each layer's findings → ledger same commit as the layer-PR)
+- §15 verification queue closed for any item run in L4 or L5 (open V-* either CLOSED with evidence or re-scoped with named follow-up)
+- Findings count + ledger-growth report posted in chat (compare actual vs. expected growth above to validate the 30-50 estimate as calibration data for future audit-cycle sizing)
+- Strategic arc routing decision becomes the next session focus (i.e., once the retroactive sweep closes, the next session's first move is choosing the next forward arc, not relitigating the audit findings)
+
+**Anti-pattern #46 candidate:**
+
+If §4.N execution surfaces a durable rule, register: *"Audit cycles spanning 2+ weeks require date-bounded retroactive completeness sweep before sign-off."*
+
+Origin case: 2026-05-18 session-end discovery that prior audits sampled cross-sections; no single method caught everything. Five-layer design exists because each layer is the structural inverse of a documented blind spot. If the layered pattern repeats successfully on a future 2-week window (catches a meaningful number of items the prior audits missed AND the time-cost stays under ceiling), the candidate promotes to registered anti-pattern.
+
+Layer 3 scope confirmed locked Sunday 2026-05-18 (Option α): sequential `recent_chats` walk **INCLUDED**, not optional. Reasoning trail in §4.N main body — the audit exists to close the completeness question; an optional Layer 3 walk recreates exactly the ambiguity the audit is built to eliminate. Anti-pattern #44 framing also applies: trace the full pipeline before ruling out completeness; optional means stopping at the gate instead of tracing.
+
 ---
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
