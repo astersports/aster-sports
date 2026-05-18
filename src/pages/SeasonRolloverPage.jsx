@@ -22,7 +22,8 @@ export default function SeasonRolloverPage() {
   useEffect(() => {
     if (!orgId) return;
     (async () => {
-      const { data: s } = await supabase.from('seasons').select('*').eq('org_id', orgId).eq('status', 'active').maybeSingle();
+      const { data: s, error: sErr } = await supabase.from('seasons').select('*').eq('org_id', orgId).eq('status', 'active').maybeSingle();
+      if (sErr) throw sErr;
       setSeason(s);
       if (!s) return;
       // CLAUDE.md §11.5 historical-view exception (Wave 4.8 hygiene PR

@@ -46,7 +46,8 @@ export async function resolveGameRecap({ eventId, pilotOnly }, { supabase, now =
 
   let effectivePilotOnly = pilotOnly;
   if (effectivePilotOnly === undefined) {
-    const { data: settings } = await supabase.from('organization_settings').select('pilot_mode_enabled').eq('organization_id', orgId).maybeSingle();
+    const { data: settings, error: settingsErr } = await supabase.from('organization_settings').select('pilot_mode_enabled').eq('organization_id', orgId).maybeSingle();
+    if (settingsErr) throw settingsErr;
     effectivePilotOnly = settings?.pilot_mode_enabled ?? false;
   }
 
@@ -56,13 +57,15 @@ export async function resolveGameRecap({ eventId, pilotOnly }, { supabase, now =
 
   let playerOfGame = null;
   if (gameResult.player_of_game_id) {
-    const { data: p } = await supabase.from('players').select('id, first_name').eq('id', gameResult.player_of_game_id).maybeSingle();
+    const { data: p, error: pErr } = await supabase.from('players').select('id, first_name').eq('id', gameResult.player_of_game_id).maybeSingle();
+    if (pErr) throw pErr;
     playerOfGame = p || null;
   }
 
   let tournament = null;
   if (event.tournament_id) {
-    const { data: t } = await supabase.from('tournaments').select('id, name, start_date, end_date, tourney_url, schedule_status').eq('id', event.tournament_id).maybeSingle();
+    const { data: t, error: tErr } = await supabase.from('tournaments').select('id, name, start_date, end_date, tourney_url, schedule_status').eq('id', event.tournament_id).maybeSingle();
+    if (tErr) throw tErr;
     tournament = t || null;
   }
 
@@ -70,7 +73,8 @@ export async function resolveGameRecap({ eventId, pilotOnly }, { supabase, now =
   const { data: coachesData, error: coachesErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
   if (coachesErr) throw coachesErr;
   const coaches = coachesData || [];
-  const { data: org } = await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
+  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
+  if (orgErr) throw orgErr;
   const slices = await fetchSlices(supabase, orgId, event.team_id, effectivePilotOnly);
 
   return {

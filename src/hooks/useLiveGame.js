@@ -105,7 +105,8 @@ export function useLiveGame(eventId, { teamId, orgId } = {}) {
 
   const saveToGameResults = useCallback(async () => {
     const result = ourScore > oppScore ? 'W' : ourScore < oppScore ? 'L' : 'T';
-    const { data: existing } = await supabase.from('game_results').select('id').eq('event_id', eventId).maybeSingle();
+    const { data: existing, error: existingErr } = await supabase.from('game_results').select('id').eq('event_id', eventId).maybeSingle();
+    if (existingErr) throw existingErr;
     const row = { event_id: eventId, our_score: ourScore, opponent_score: oppScore, result, point_differential: ourScore - oppScore, published_at: new Date().toISOString(), published_by: user?.id };
     const { error } = existing
       ? await supabase.from('game_results').update(row).eq('id', existing.id)
