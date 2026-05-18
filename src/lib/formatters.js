@@ -5,14 +5,17 @@
 const NY_TZ = 'America/New_York';
 
 // "6:30 PM" — lowercase meridiem stripped by toLocaleTimeString by default.
+// NY-anchored: a parent on Pacific or European time sees the NY-local
+// game time, not their own browser-local interpretation.
 export function formatTime(time) {
   const d = typeof time === 'string' && time.length <= 8 && time.includes(':')
     ? new Date(`1970-01-01T${time}`)
     : new Date(time);
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: NY_TZ });
 }
 
 // "Monday, April 13, 2026" — full date headers, confirmation dialogs.
+// NY-anchored: see formatTime comment.
 export function formatDateFull(date) {
   const d = typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
     ? new Date(date + 'T12:00:00')
@@ -22,6 +25,7 @@ export function formatDateFull(date) {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
+    timeZone: NY_TZ,
   });
 }
 
@@ -110,6 +114,9 @@ export function formatEventDateMin(startAt) {
 }
 
 // "in 35m", "in 2h 15m", "Tomorrow 6:30 PM", "Wed 5:00 PM"
+// NY-anchored "Tomorrow" boundary + time render: a parent on Pacific or
+// European time sees "Tomorrow" relative to the NY day boundary, not
+// their own local midnight.
 export function formatCountdown(startAt) {
   const diff = new Date(startAt) - new Date();
   if (diff < 0) return 'Now';
@@ -121,9 +128,10 @@ export function formatCountdown(startAt) {
   const dt = new Date(startAt);
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  if (dt.toDateString() === tomorrow.toDateString()) {
-    return `Tomorrow ${dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+  const dayKey = (date) => date.toLocaleDateString('en-CA', { timeZone: NY_TZ });
+  if (dayKey(dt) === dayKey(tomorrow)) {
+    return `Tomorrow ${dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: NY_TZ })}`;
   }
-  return dt.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' +
-    dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return dt.toLocaleDateString('en-US', { weekday: 'short', timeZone: NY_TZ }) + ' ' +
+    dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: NY_TZ });
 }
