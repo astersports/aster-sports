@@ -1123,6 +1123,88 @@ Per Frank's routing: validate the 8 Layer 2 findings (V-32 through V-39) to conf
 
 **Tomorrow's plan opens clean:** Monday-opener now starts from concrete action items (5 named admin pages, 6 named Family Guide findings, 10 named P2 cleanup items, 9 named delight features) rather than 8 abstract verification queue entries.
 
+### §4.N.2 — Claude AI pressure-test resolutions + Monday-opener sequence lock (2026-05-18 ~20:30 CEST)
+
+Captured post-session-recap exchange with Claude AI. Five open questions raised in the recap got direct answers; Monday-opener sequence locked at 4 actions. Per anti-pattern #45 acid-test: structural plan refinement happens in chat → ledger reconciliation owed same session. Captured here so Monday-morning Frank reads concrete decisions, not chat-archaeology.
+
+**Q1 — Anti-pattern #47 (sub-agent constraint hallucination) promotion criterion:** HOLD as candidate, do not promote tonight. Two data points isn't a pattern. Mitigation (CC fallback to direct reads) worked. **Promotion trigger:** third occurrence OR same class on Monday's Layer 4 sub-agent usage. Cost of bounded retry (~10 min) is less than cost of anti-pattern catalog bloat if rule doesn't repeat. **Status:** observation-only, monitor Monday.
+
+**Q2 — V-34 admin_audit_log design call:** **PATH (a) LOCKED — separate `admin_audit_log` table.**
+- Path (b) extend `event_change_audit` to be generic: rejected. Recreates anti-pattern #42 risk in reverse (parallel-system buildup via expanding scope). Table name + columns are event-scoped; generic-ifying = rename + nullable FKs + RLS expansion = rewrite with backward-compat baggage.
+- Path (c) accept unaudited admin actions: rejected. Non-starter once §4.O ships three admin manager pages — those produce admin actions needing audit trails for the same reasons event mutations do (compliance, debugging, multi-tenant attribution).
+- Path (a) lock specifics: separate table, generic shape day-one, no migration of existing `event_change_audit` data. The two tables coexist with clear semantic boundaries. **Schema design caveat (LOAD-BEARING):** `org_id NOT NULL` + RLS via `current_user_org_id()` pattern that doesn't recurse on `org_members` (per CLAUDE.md anti-pattern #11.1). Skip that and we're back here in 3 weeks.
+
+**Q3 — V-37 Frank-gated 5c-VALIDATE findings priority pin:** **MONDAY ACTION #1 — clear V-37 FIRST.** Even before Layer 3 chat scan. Cost of running L3 / L4 with V-37 still open: any new chat-surfaced briefing-arc decisions might conflict with whatever Frank decides on the 5c-VALIDATE read. Sequence: Frank reads May 16 admin@ Family Guide actor-validation send → fills findings → 1-6 follow-up PRs land in §4.A. Until that gate clears, §4.A PR 5 follow-up cycle is blocked.
+
+**Q4 — §4.O AdminManagerLayout design call:** **LEAN UNIFIED wrapper. Locked design parameters:**
+- New `src/components/admin/AdminManagerLayout.jsx`: 80-120 lines, owns page header (Inter font, brand cobalt accent, breadcrumb back) + search + Add CTA + tabs slot (Active/Archived if needed) + empty state
+- Each of 3 child pages: 80-100 lines, mounts layout, supplies own table + form sheet + data hooks
+- **NOT in scope tonight:** pulling existing `AdminSeasonsPage` + `AdminTeamsPage` into the wrapper. Sample-of-two is not precedent — those pre-date the design discipline. New code uses new layout; old code stays as-is until independent refactor reason emerges. Anti-pattern #42 (parallel-system buildup) caution: don't refactor what works just because new pattern exists.
+- **Design call to confirm Monday before code:** does AdminManagerLayout absorb the page header, or does each page render its own header and the layout only owns the body? **CC recommendation: header included** — visible-consistency win is what drove unified call.
+
+**Q5 — Layer 3 chat-side query list:** Frank runs Tier 1 queries first via `conversation_search`; if Tier 1 yields <5-10 distinct items, run Tier 2; Tier 3 only if `recent_chats` walk surfaces unexpected gaps.
+
+```
+Tier 1 (highest signal):
+  "decision locked"
+  "park this"
+  "queued for next session"
+  "next session"
+  "TODO" + date range filter to May 4-18
+
+Tier 2 (medium signal):
+  "remind me to"
+  "we'll do that later"
+  "added to backlog"
+  "deferred"
+  "let me write that down"
+
+Tier 3 (long-tail, only if walk surfaces gaps):
+  "we discussed"
+  "yesterday we"
+  "last session"
+  "you mentioned"
+```
+
+The `recent_chats` sequential walk over May 4-18 is the validation pass — if `conversation_search` returns thin results from Tier 1+2 (<5-10 items), the walk confirms thin = actually thin. If rich (15+ items), walk catches what's missing.
+
+**Monday-opener locked 4-action sequence:**
+
+```
+Action 1 (Frank-side, ~15 min, FIRST)
+  V-37 clearance — read May 16 admin@ Family Guide actor-validation send,
+  fill 5c-VALIDATE findings, route each into PR scope or "acceptable as
+  shipped" buckets
+
+Action 2 (CC + Frank, ~20 min, after V-37)
+  §4.O design call — confirm AdminManagerLayout scope locked above;
+  decide page-header-included-in-layout vs each-page-renders-own
+  (CC recommends included)
+
+Action 3 (Frank chat-side, ~45-60 min Frank time, parallel-ready)
+  Layer 3 execution — Tier 1 conversation_search queries → recent_chats
+  walk validation. Yield → ledger amendments same-session per #45.
+
+Action 4 (CC, ~60-90 min, PEAK ENERGY SLOT)
+  Layer 4 execution — production verification sweep over §1 SHIPPED
+  items in window. Anti-pattern #44 applied retroactively per item.
+  5-15 items @ 5-10 min each. SLOT: hour 3-4 of Monday session when
+  fresh on prod state. If energy wrong by hour 3-4, DEFER to Tuesday
+  rather than rush. The audit-cycle commitment is "all 5 layers merged
+  with #45 compliance" — session goal, not calendar deadline.
+```
+
+**Strategic three-arc routing (post-Action 4):**
+
+After all 5 §4.N layers close, Monday-to-Wednesday plan converges on three coherent arcs:
+1. **§4.A PR 5 follow-up cycle** — unblocked by V-37 clearance; each named finding → PR
+2. **§4.O admin managers build** — three pages on the locked layout pattern
+3. **§4.C Sprint B-F start** — the strategic question after the first two. Layer 5's framing inversion ("residual concentrates in Sprint B-F") makes this the next architectural priority, not a parked arc.
+
+**Sprint G (Rides redesign) stays deferred** behind these three. §4.D content remains accurate but lower-priority than the three above.
+
+**Tonight's true sign-off:** every structural decision from the Claude AI exchange now lives in §4.N.2. Monday-morning Frank reads concrete actions in the ledger, not chat history. Anti-pattern #45 acid-test cycled 9 times tonight (8 PRs + this amendment), held every time.
+
 ### Layer 1 findings (2026-05-18 evening soft start — §4.N audit, low-cognitive pass)
 
 Layer 1 of the §4.N Two-Week L99 Audit executed Sunday evening (post-sign-off, soft start per Frank's "Continue with the build" routing). Mechanical enumeration + sequence gap analysis. No interpretive findings — those wait for Layers 2-5 with fresh-head cognitive load.
