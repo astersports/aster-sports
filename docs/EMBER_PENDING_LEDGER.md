@@ -50,18 +50,32 @@ A# = admin review, P# = parent review). Cluster numbers preserve
 chat's L99 ordering.
 
 ### Cluster 1 — Tournament results not propagated to aggregates
-- Status: **OPEN**, awaiting diagnostic D1
+- Status: **WORKFLOW-IN-PROGRESS** (diagnostic D1 confirmed workflow gap, not code)
 - Severity: HIGH
 - Surfaces affected: 9 across all 3 roles
   - Coach: B4 (10U Black 0% post-championship), B5 (Teams tab records pre-tournament)
   - Admin: A4 (Nationals Qualified = 0), A5 (Season Records pre-tournament), A6 (Tournament tiles inconsistent), A7 (Standings PCT stale)
   - Parent: P22 (Home MY TEAMS pre-tournament), P28 (Schedule Games tab Standings stale)
-- Hypothesis: tournament `game_results` either not entered OR filtered out of season-aggregate query
-- Resolution path branches:
-  - (a) **Workflow gap**: Frank publishes results via Quick Score → §9 workflow gaps
-  - (b) **Code fix**: single SQL view / hook filter correction → PR #239+ Monday
-  - (c) **Both**: workflow today, code hardening later
-- Drift-hedge test per #43: assert tournament events with `tournament_id IS NOT NULL` and entered scores propagate to all 4 aggregate surfaces
+- D1 finding (2026-05-18): 15 tournament events from May 16-17 exist in `events` table with `tournament_id IS NOT NULL`. ALL have `has_result=false`, `our_score=null`, `opponent_score=null`, `published_at=null`. The tournament events ARE in the system; scores were never entered via Quick Score → game_results table is empty for these events → aggregate queries correctly return pre-tournament state.
+- Resolution: **workflow item, not code PR**. Frank publishes 13 tournament results via Quick Score (see §9 for full inventory). If aggregates DON'T update after publish, reopen as code fix in a follow-up PR.
+- Drift-hedge test per #43 (deferred until aggregate path is touched): assert tournament events with `tournament_id IS NOT NULL` and entered scores propagate to all 4 aggregate surfaces
+
+### Cluster 1.1 — 10U Blue mis-tagged tournament event (D1 bonus finding)
+- Status: **OPEN**, awaiting Frank verification
+- Severity: LOW (data hygiene)
+- D1 surfaced one 10U Blue event on 2026-05-17 with `tournament_id = '254afad0-23af-4979-ac4a-88614b76e341'` (different from the Rumble for the Ring tournament 196e595d...). Per Frank's data dump, 10U Blue played 6th Boro 4AB on May 17 at IC-Tuckahoe — a league game, not a tournament.
+- Resolution: Migration 021 should null the `tournament_id` on that event.
+- Surface impact: if this event is counted as a tournament game, it would distort future tournament aggregates once Cluster 1 is published.
+
+### Cluster 1.2 — 10U Blue record discrepancy (Frank data dump finding)
+- Status: **UNDER OBSERVATION**, awaiting post-publish verification
+- Severity: LOW (3-2 vs 3-3 ambiguity)
+- Screenshots at audit time showed 10U Blue at 3-2. Frank's data dump shows 6 league games played (3W 3L). One game (Resurrection White 4AB 2-0) may be a forfeit not counted in aggregate.
+- Three possible explanations:
+  - (a) Resurrection White 4AB 2-0 is a forfeit/no-play not counted as W
+  - (b) A recent game wasn't yet in aggregate when screenshots taken
+  - (c) Game entry happened after screenshot capture
+- Resolution: verify after Frank publishes tournament results. If 10U Blue stays at 3-2 (vs 3-3 from data dump), investigate the forfeit-counting logic.
 
 ### Cluster 2 — Per-player % degenerates to RSVP-going-rate when check-ins absent
 - Status: **OPEN**, label rename queued
@@ -239,16 +253,61 @@ Known scope:
 Issues that look like bugs but actually require behavioral changes
 (Frank or coaches doing something different in production):
 
-- **Cluster 1 root** (potentially): tournament results not always
-  published from Quick Score workflow → Frank action: publish results
-  for Rumble for the Ring CT May 16-17 + ZG NY Metro Showdown Apr 18-19
-  if missing
-- **Cluster 2 root**: check-ins not recorded at events → coach action:
-  use the gameday arrival board / check-in feature at games and
-  practices going forward
-- Both above might be **(b) both code fix and workflow change** — code
-  could surface the workflow gap more visibly (e.g., "0 check-ins
-  recorded — was this event run?" indicator)
+### Cluster 1 — Tournament results publish (Rumble for the Ring CT May 16-17)
+**Status: WORKFLOW DATA SUPPLIED 2026-05-18 18:00 CEST**
+
+Frank-action item: open Quick Score, enter scores for 13 tournament
+games, publish. Estimated ~30 min.
+
+Tournament inventory:
+
+**11U Girls — Rumble for the Ring CT (5 games, 3-2 in tournament)**
+| Date    | Opponent              | Score | Result        |
+|---------|-----------------------|-------|---------------|
+| May 16  | CT Northstars         | 19-14 | W             |
+| May 16  | PHD Carothers         | 10-41 | L             |
+| May 16  | PHD McCurdy           | 18-9  | W             |
+| May 16  | Connecticut Elite     | 17-6  | W             |
+| May 17  | PHD McCurdy (FINAL)   | 23-26 | L (runner-up) |
+
+**10U Black — Rumble for the Ring CT (4 games, 4-0 + championship)**
+| Date    | Opponent              | Score | Result        |
+|---------|-----------------------|-------|---------------|
+| May 16  | PHD White             | 29-21 | W             |
+| May 16  | PHD Yellow            | 38-20 | W             |
+| May 17  | Team Frenji SF        | 38-22 | W             |
+| May 17  | CT Wolves (FINAL)     | 37-30 | W (champion)  |
+
+**8U Boys — Rumble for the Ring CT (4 games, 0-4)**
+| Date    | Opponent              | Score | Result        |
+|---------|-----------------------|-------|---------------|
+| May 16  | CT Wolves             | 15-35 | L             |
+| May 16  | Stamford Peace        | 12-41 | L             |
+| May 16  | Twin Athletics        | 8-34  | L             |
+| May 16  | NY Wild               | 13-34 | L             |
+
+Post-publish expected aggregate state (verification targets):
+- 11U Girls: 8-4 season (was 5-2 pre-tournament)
+- 10U Black: 9-4 season (was 5-4 pre-tournament), 2× Tournament Champion
+- 8U Boys: 3-9 season (was 3-5 pre-tournament)
+- Nationals Qualified count: 2 (11U Girls + 10U Black)
+- Rumble for the Ring CT tile shows W/L per team
+
+If aggregates DON'T update after publish, Cluster 1 reopens as code
+fix (filter bug in aggregate query path).
+
+Note: D1 reported 15 tournament events; 13 actual games to enter.
+Delta of 2 likely consists of:
+- 1 placeholder Championship bracket event for 8U Boys (didn't reach
+  the championship game; 0-4 in pool play)
+- 1 mis-tagged 10U Blue event (see Cluster 1.1 above)
+
+### Cluster 2 — Check-in workflow gap
+- Coach action: use the gameday arrival board / check-in feature at
+  games and practices going forward
+- Code surfaces this as the % degeneration documented in Cluster 2
+- Optional code follow-up: "0 check-ins recorded — was this event
+  run?" indicator to make the workflow gap more visible
 
 This category is the discipline that separates "we have a bug" from
 "we need to use the feature we built." Both are real, both need
