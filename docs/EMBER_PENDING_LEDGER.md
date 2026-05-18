@@ -406,7 +406,7 @@ Source: Phase 1 Core Subset read 2026-05-18 19:30 CEST (Sunday post-dinner hour)
 
 #### §4.M.1 — Phase 1 (Wiring + Schema Drift): mostly SHIPPED, some P1 remaining
 
-SHIPPED per audit doc note: "P0 fix PR shipping now: PR for P0-1 (EventLocationTab locations + tournaments) and P0-2 (send-tournament-message guardians defense-in-depth)" — May 16. Verify via V-17.
+**VERIFIED SHIPPED** via V-17 (2026-05-18 19:50Z): PRs #195 + #203 closed P0-1 + P0-2 + P1-1 + P1-2 + P1-7. Code-grep confirmed `.eq('org_id', ...)` + `.is('archived_at', null)` present in the affected files.
 
 REMAINING (P1):
 - P1-1: `EventLocationTab.jsx:18` tournaments query missing org_id (defense-in-depth gap)
@@ -432,11 +432,11 @@ P1:
 - 4 KIND_COMPOSERS entries unreachable (academy_callup_notice, weekly_digest, announcement, custom_message)
 - 5 legacy kind enum values in `constants.js:72-77` (tournament_final, tournament_rsvp_lock, etc.)
 
-Status: PROBABLY UNSHIPPED — audit doc recommended "Option B: stage to post-synthesis batched PR" with rationale that latent bugs don't affect real users yet. Verify via V-18.
+Status: **6 of 7 VERIFIED SHIPPED** via V-18 (2026-05-18 19:50Z). `ls src/lib/engine/renderers/` confirms eventCard.js · placementBlock.js · gameLog.js · callupCard.js · coachReflection.js · standoutMoments.js all exist. The 7th (`family`) was contested between Phase 2A and Phase 5 — likely a Phase 5 false positive (nested data carrier, not top-level emit). The orphan-renderer arc that Phase 5 sized at 250-350 lines of new code was actually CLOSED across multiple subsequent PRs we hadn't cross-referenced.
 
 #### §4.M.3 — Phase 3 (Migration + Deploy): 1 P0 + 5 P1 + 10+ P2 (PARTIAL SHIPPED)
 
-LIKELY SHIPPED (audit doc said "ship now"): P0-1 `scheduleGaps.js ↔ _scheduleGaps.ts` mirror drift fix. Verify via V-19.
+**VERIFIED SHIPPED** via V-19 (2026-05-18 19:50Z): P0-1 `scheduleGaps.js ↔ _scheduleGaps.ts` mirror drift CLOSED. Both source and Deno mirror have `describeScheduleGaps(events, { minGapMinutes = MIN_GAP_MINUTES } = {})` signature.
 
 REMAINING:
 - P1: 5 documented unregistered ghost migrations (per CLAUDE.md §5 — known + documented; only blocking if `supabase db reset` runs)
@@ -473,7 +473,7 @@ P0-LATENT additions (beyond Phase 2):
 - `standout_moments` — tournamentRecap.js:119
 - `family` — academyCallupNotice.js:54 (needs verification)
 
-P1: `TournamentRecapBody.jsx` defaultValue lacks `standout_moments` + `coach_reflection` keys. Composer falls through to undefined; latent UX bug on first real tournament_recap use.
+P1: `TournamentRecapBody.jsx` defaultValue lacks `standout_moments` + `coach_reflection` keys. Composer falls through to undefined; latent UX bug on first real tournament_recap use. **VERIFIED SHIPPED** via V-21 (2026-05-18 19:50Z): defaultValue now has both keys plus 2 additional (`coach_note`, `parent_shoutout`).
 
 Combined fix scope (Phases 2 + 5): 7 new renderer files (~30-50 lines each) + composer.js registration. ~250-350 lines total. Substantial but mechanical. Splittable into 2-3 PRs by briefing kind (rsvp_nudge / academy_callup / tournament_recap) per Phase 5 trade-off note. Verify via V-21.
 
@@ -502,11 +502,13 @@ Per Monday-opener routing locked Sunday 2026-05-18: Phase 1 = COMPLETE (this ent
 
 Findings count from Phase 1 Core Subset: **30+ items across 5 audit phases + Beta synthesis carryovers**.
 
-Status break:
-- LIKELY SHIPPED: 6-8 items (Phase 1 P0 batch + Phase 3 P0 mirror + Beta PRs #210-215)
-- LIKELY UNSHIPPED: ~22-24 items (all of Phase 4 RLS, all of Phase 5 type/contract, most of Phase 2 registry, several Beta carryovers)
+**Status break (post V-17/V-18/V-19/V-21 closure 2026-05-18 19:50Z):**
+- **VERIFIED SHIPPED: ~18-20 items** (Phase 1 P0/P1 batch via #195+#203 + Phase 3 P0 mirror + Phase 2/5 orphan renderers 6-of-7 + Phase 5 TournamentRecapBody defaultValue + Beta PRs #210-215)
+- **UNSHIPPED + UNKNOWN-STATUS: ~10-12 items** (Phase 4 RLS 3 P0 + 3 P1 GATED; Phase 1 remaining P1 wildcards; Phase 2 P1 dead code + legacy enums; Beta `.maybeSingle()` sweep; ghost migrations P1; family orphan if real)
 
-Verification items added to §15 V-17 through V-22 below to size the unshipped surface.
+The major reframe from these verifications: **§4.M is mostly CLOSED, not mostly open.** The Phase 5 worry about "250-350 lines of new renderer code remaining" was wrong — that work shipped in PRs we hadn't cross-referenced.
+
+V-20 (Phase 4 RLS migration status) + V-22 (Beta `.maybeSingle()` sweep) deferred to Monday — both require more substantial DB / per-callsite work than the end-of-day window allows.
 
 ---
 
@@ -898,12 +900,12 @@ Phase 5 — V-1 through V-16 (the queue below) executes ONLY after Phases 1-4 ga
 | V-14 | RIDES_DESIGN_SPEC.md detail extraction | §4.D | docs/RIDES_DESIGN_SPEC.md | 30 min | Sprint G scoping | Read top-to-bottom; populate §4.D with named tasks |
 | V-15 | EMBER_MASTER_INDEX_v3 reconciliation | §4.H | (file missing) | 60 min | locked-decisions catalog | Rebuild from session notes OR accept distributed-decisions model |
 | V-16 | Tier 4 P2 specific items | §4.L | AUDIT_SYNTHESIS_2026-05-16 | 30 min | cleanup batch scoping | Read synthesis doc + enumerate P2 entries |
-| V-17 | Phase 1 P0 batch ship status (EventLocationTab + send-tournament-message) | §4.M.1 | AUDIT_PHASE1_WIRING_2026-05-16 | 5 min | confirm 2 of 30+ items closed | `git log --oneline --grep='audit-phase1\|EventLocationTab.*org_id\|send-tournament-message.*guardians'` + code-grep for `.eq('org_id'` in the 2 files |
-| V-18 | Phase 2 + Phase 5 orphan renderer status (7 P0-LATENT) | §4.M.2 + §4.M.5 | AUDIT_PHASE2 + AUDIT_PHASE5 | 10 min | sizing the 7-renderer arc | `ls src/lib/engine/renderers/` for event_card / placement_block / game_log / callup_card / coach_reflection / standout_moments / family + grep SECTION_RENDERERS in composer.js |
-| V-19 | Phase 3 P0 mirror drift ship status (scheduleGaps.js ↔ _scheduleGaps.ts) | §4.M.3 | AUDIT_PHASE3_MIGRATION_DEPLOY | 5 min | confirm closed | `diff src/lib/briefings/scheduleGaps.js supabase/functions/suggest-briefing-closer/_scheduleGaps.ts` + check for `minGapMinutes` param on Deno side |
-| V-20 | Phase 4 RLS migration ship status (3 P0 + 3 P1 batched) | §4.M.4 | AUDIT_PHASE4_RLS_SECURITY | 10 min | confirm RLS hardening closed | DB query: `SELECT polname, polcmd, polwithcheck FROM pg_policy WHERE polrelid::regclass::text IN ('briefing_reminders', 'briefing_templates', 'team_types') AND polwithcheck IS NULL;` + PUBLIC EXECUTE check on 3 SECURITY DEFINER funcs |
-| V-21 | Phase 5 TournamentRecapBody defaultValue drift ship status | §4.M.5 | AUDIT_PHASE5_TYPE_CONTRACT | 3 min | confirm closed | `grep -A 10 'defaultValue' src/components/briefings/bodies/TournamentRecapBody.jsx` for `standout_moments` + `coach_reflection` keys |
-| V-22 | Beta `.maybeSingle()` no-error-destructure sweep status (20+ callsites) | §4.M.6 | AUDIT_BETA_SYNTHESIS | 10 min | confirm anti-pattern #36 follow-up sweep status | `grep -rn 'maybeSingle' src/ --include='*.{js,jsx}' \| wc -l` + spot-check 5 for error handling |
+| V-17 | Phase 1 P0 batch ship status (EventLocationTab + send-tournament-message) | §4.M.1 | AUDIT_PHASE1_WIRING_2026-05-16 | 5 min | confirm 2 of 30+ items closed | **CLOSED 2026-05-18 19:50Z** — PRs #195 (P0-1 + P1-1 + P0-2) + #203 (P1-2 + P1-7) shipped. Code-grep confirmed: `EventLocationTab.jsx` locations query has `.eq('org_id', orgId).is('archived_at', null)`; tournaments query has `.eq('org_id', orgId)`; `send-tournament-message/index.ts` guardians query has `.eq('org_id', message.org_id)`. |
+| V-18 | Phase 2 + Phase 5 orphan renderer status (7 P0-LATENT) | §4.M.2 + §4.M.5 | AUDIT_PHASE2 + AUDIT_PHASE5 | 10 min | sizing the 7-renderer arc | **6 of 7 CLOSED 2026-05-18 19:50Z** — `ls src/lib/engine/renderers/` confirms: eventCard.js · placementBlock.js · gameLog.js · callupCard.js · coachReflection.js · standoutMoments.js ALL EXIST. The 7th (`family`) was flagged "needs verification" in Phase 5 itself — no `family.js` renderer; was likely never a real emit site (Phase 2A agent claimed it was a nested data carrier, contested by Phase 5 without resolution). LIKELY a Phase 5 false positive. |
+| V-19 | Phase 3 P0 mirror drift ship status (scheduleGaps.js ↔ _scheduleGaps.ts) | §4.M.3 | AUDIT_PHASE3_MIGRATION_DEPLOY | 5 min | confirm closed | **CLOSED 2026-05-18 19:50Z** — both source and Deno mirror have `describeScheduleGaps(events, { minGapMinutes = MIN_GAP_MINUTES } = {})` signature and `if (gap >= minGapMinutes)` gate. Mirror in sync. Header comment on Deno side explicitly notes the parity. |
+| V-20 | Phase 4 RLS migration ship status (3 P0 + 3 P1 batched) | §4.M.4 | AUDIT_PHASE4_RLS_SECURITY | 10 min | confirm RLS hardening closed | **DEFERRED to Monday** — DB query via Supabase MCP required (`SELECT polname, polcmd, polwithcheck FROM pg_policy WHERE polrelid::regclass::text IN ('briefing_reminders', 'briefing_templates', 'team_types') AND polwithcheck IS NULL;`). Not run tonight (end-of-day MCP work). Bundle with V-1 through V-7 Monday morning. |
+| V-21 | Phase 5 TournamentRecapBody defaultValue drift ship status | §4.M.5 | AUDIT_PHASE5_TYPE_CONTRACT | 3 min | confirm closed | **CLOSED 2026-05-18 19:50Z** — `TournamentRecapBody.jsx` defaultValue has `standout_moments: ''` + `coach_reflection: ''` + 2 additional keys (`coach_note`, `parent_shoutout`). Drift fixed, plus scope expanded beyond original audit. |
+| V-22 | Beta `.maybeSingle()` no-error-destructure sweep status (20+ callsites) | §4.M.6 | AUDIT_BETA_SYNTHESIS | 10 min | confirm anti-pattern #36 follow-up sweep status | **DEFERRED to Monday** — `grep -rn 'maybeSingle' src/` + spot-check requires careful per-callsite read. Not run tonight. Bundle with V-15 + V-16 in the energy-low pass. |
 
 Total estimated verification effort: ~5-6 hours when bundled (with V-17 through V-22 additions, +1 hour).
 Recommended cadence: batch V-1 through V-7 + V-17 through V-21 (Migrations + BUGs + Phase 1/3 ship-status confirms, ~1.5 hours) as the first Monday pass — these are the highest-value unknowns AND closable with grep/DB queries. V-8 through V-14 (~2.5 hours) as a focused mid-Monday session. V-15 + V-16 + V-22 (~2 hours) as a separate "rebuild + tidy" pass when energy is low.
