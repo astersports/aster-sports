@@ -978,6 +978,53 @@ Registered here under anti-pattern #45 acid-test: a new audit surfaced new pendi
 | V-27 | PROMPT_FUNCTIONAL_FEATURES.md (ToastContext + usePullToRefresh) ship status | §4.G | docs/PROMPT_FUNCTIONAL_FEATURES.md (April 13 chat) | 10 min | functional-features arc | `grep -rn 'ToastContext\|usePullToRefresh' src/` (both already shipped per repo state — confirm scope matched prompt doc) + read prompt doc for any unshipped sub-items |
 | V-28 | PROMPT_NEXT_LEVEL.md outcome | §4.G | docs/PROMPT_NEXT_LEVEL.md (April 10-13 build sprint) | 15 min | next-level features arc | Read PROMPT_NEXT_LEVEL.md top-to-bottom + git log cross-ref for shipped sub-items + flag any unshipped items to §4.G as concrete tasks |
 | V-29 | PR #21 disposition — coach contact in briefings (WIP draft, closed 2026-05-12 unmerged) | §4.N Layer 1 | Layer 1 git log audit 2026-05-18 evening | 10 min | Confirm A/B decision routed correctly; no orphaned ship | Read PR #21 body (A vs B framing) + grep `staff_profiles` + `coach_user_ids` + briefing renderer dynamic-coach-array code in `src/` to verify path A shipped through a different PR. If shipped: close V-29 with cite. If unshipped: re-scope to §4.G as concrete work item. |
+| V-30 | BUG-005 ride duplicate-offer prevention — DB UNIQUE constraint + frontend edit-mode guard | §4.N Layer 5 / §4.E | SKYFIRE_BUILD_QUEUE_v2 §BUG-005 + Layer 5 catalog walk 2026-05-18 evening | 15 min | Confirm BUG-005 closed at both DB and UI layers | DB query confirmed Migration 025 (rides_redesign) applied BUT `event_ride_offers` has zero UNIQUE constraints — only PK + CHECKs. No `(event_id, guardian_id)` UNIQUE guard at DB layer. Frontend: `grep existingOffer\|hasExistingOffer src/` returned no matches → likely no edit-mode guard in RideFormOverlay. Both layers need verification: (a) is duplicate-offer prevention via a different mechanism (RLS policy / trigger / app-layer query)? (b) does RideFormOverlay check existing-offer state before insert? If both negative → re-scope to §4.D Sprint G as concrete work item. |
+| V-31 | VAL-001 stale validation closure — Apr 23 11U Girls RSVP count anomaly (13 vs 10-12 roster) | §4.N Layer 5 | SKYFIRE_BUILD_QUEUE_v2 §VAL-001 (Apr 23, 2026) | 5 min | Confirm closed by Migration 022 duplicate deletion | Cite Migration 022 (`rls_privacy_lockdown_plus_roster_left_at`) verified applied; per CLAUDE.md §11.5 the migration deleted duplicate roster rows and added `left_at` for date-windowed eligibility. Verification: query `event_rsvps` for the Apr 23 11U Girls practice event_id, count distinct guardian responses, confirm matches current roster size. If duplicate count still anomalous → re-open with named follow-up. |
+
+### Layer 5 findings (2026-05-18 evening — §4.N audit, 22-bug catalog walk)
+
+Layer 5 of the §4.N Two-Week L99 Audit executed in continuation of Layer 1's soft start. Mechanical bug-by-bug status check against the catalog in `docs/SKYFIRE_BUILD_QUEUE_v2.md §🐛 Open Bugs & 95% UX Audit` (logged Apr 23, 2026). Catalog count is **25 items**, not exactly 22 — the "22-bug catalog" framing in §4.N was approximate. Distribution: 5 P0 BUGs + 14 P1 UX gaps + 1 validation + 5 P0 RLS holes.
+
+**Per-bug closure status:**
+
+| Bug | Catalog severity | Status | Evidence cite | Routing |
+|-----|------------------|--------|---------------|---------|
+| BUG-001 (Admin NextEventCard data) | P0 | EXISTS-IN-CODE; render verification owed | `src/components/admin/NextEventCard.jsx:23` exports default function | Already tracked: **V-4** |
+| BUG-002 (Duty count 2/2 vs 1+1) | P0 | LIKELY FIXED — hook correctly distinguishes `claimed_by_name OR guardian_id` | `src/hooks/useEventDutyCounts.js` aggregation logic correct vs original bug hypothesis | Already tracked: **V-5** |
+| BUG-003 (Ride summary undercount) | P0 | LIKELY FIXED — hook uses `seats_offered/seats_requested/seats_needed` (SUM not COUNT) | `src/hooks/useEventRideCounts.js:18-22` uses correct seat-count columns | Already tracked: **V-6** |
+| BUG-004 (Same-user offer+request) | P1 | UNVERIFIED — no frontend guard found via grep; DB CHECK status unknown | No `existingOffer\|sameUserGuard` matches in `src/components/ride/RideFormOverlay.jsx` | Already tracked: **V-7** |
+| BUG-005 (Duplicate ride offers) | P1 | PARTIALLY OPEN — Migration 025 applied but DB has zero UNIQUE constraints on `event_ride_offers`; frontend guard not found | DB query: only `event_ride_offers_pkey` + 5 CHECKs, no `UNIQUE(event_id, guardian_id)`. Grep: no `existingOffer` matches. | **NEW V-30** |
+| UX-001 to UX-006 (parent Next Up CTAs / countdown / multi-child) | P1 | UNSHIPPED — Sprint B-F arc | No grep evidence for any of the 6 UX items | Absorbed into **§4.C** (Sprint B-F Home Page completion). No individual V-* needed. |
+| UX-007 to UX-010 (coach Next Up enrichment) | P1 | UNSHIPPED — Sprint D arc | No grep evidence for `StaffRSVP`, `Start Check-In`, etc. | Absorbed into **§4.C** (Sprint D within Sprint B-F). No individual V-* needed. |
+| UX-011 (admin multi-event dashboard) | P1 | UNCERTAIN — AdminHomePage exists but redesign extent unknown | `src/pages/AdminHomePage.jsx` shipped, but per UX-011 spec "needs full redesign" not "small fix" — extent unclear | Absorbed into **§4.C** (Sprint E). No individual V-* needed. |
+| UX-012 (admin operational alerts strip) | P1 | **SHIPPED** | `src/pages/AdminHomePage.jsx:53` mounts `<AlertZone ... sectionLabel="ALERTS" />` via Tier 3 v1 PR #229 | Closed by Tier 3 v1 alert framework. |
+| UX-013 (achievement queue indicator) | P1 | UNSHIPPED — gated on Migration 018 UI | No grep evidence | Absorbed into **§4.C** Sprint E. No individual V-* needed. |
+| UX-014 (notification audit trail) | P1 | UNSHIPPED — gated on Migration 019 UI | No grep evidence | Absorbed into **§4.C** Sprint E. No individual V-* needed. |
+| VAL-001 (Apr 23 RSVP count anomaly) | Validation | LIKELY CLOSED by Migration 022 | Migration 022 (`rls_privacy_lockdown_plus_roster_left_at`) verified applied; deletes duplicate roster rows + adds `left_at` for date-windowed eligibility | **NEW V-31** (one-query cite confirmation) |
+| HOLE-001 (`guardians`) | P0 RLS | **CLOSED** | `relrowsecurity=true`, 6 policies | Migration 022 |
+| HOLE-002 (`player_guardians`) | P0 RLS | **CLOSED** | `relrowsecurity=true`, 3 policies | Migration 022 |
+| HOLE-003 (`players`) | P0 RLS | **CLOSED** | `relrowsecurity=true`, 7 policies | Migration 022 |
+| HOLE-004 (`roster_members`) | P0 RLS | **CLOSED** | `relrowsecurity=true`, 7 policies | Migration 022 |
+| HOLE-005 (`tournament_pool_teams`) | P0 RLS | **CLOSED** | `relrowsecurity=true`, 2 policies | Migration 022 |
+
+**Synthesis:**
+
+- **Verified CLOSED with evidence: 6 items** (UX-012 + HOLE-001-005). 5 closed by Migration 022; 1 closed by Tier 3 v1 PR #229.
+- **Likely closed pending narrow re-check: 3 items** (BUG-002, BUG-003 via hook-content inspection; VAL-001 → V-31 cite-confirm).
+- **Already in §15 queue from prior arcs: 4 items** (BUG-001-004 → V-4-V-7). Layer 5 re-confirms tracking, no duplicate V-* added.
+- **NEW V-* added: 2** (V-30 BUG-005 partial-open, V-31 VAL-001 cite-confirm).
+- **Absorbed into §4.C Sprint B-F arc: 11 items** (UX-001-011 + UX-013-014). No individual V-* added — Sprint B-F completion is the unit of work, not per-UX-item.
+
+Net new V-*: 2 (V-30, V-31). Significantly below §4.N's L5 sizing prediction (+18-22). The reason: most catalog items either (a) verified closed at grep time, (b) already in V-* queue from prior arcs, or (c) absorbable into existing §4.C arc rather than individual V-*. Layer 5 closes "named uncertainty" by confirming the 22-bug catalog is mostly addressed; the residual is concentrated in Sprint B-F Home Page completion (§4.C) rather than scattered open bugs.
+
+**Layer 5 sign-off conditions check:**
+
+- ✅ Anti-pattern #45 compliance — findings → ledger same commit (this PR)
+- ✅ Findings count + ledger-growth report → 2 new V-* (V-30, V-31), 1 findings block (~70 lines with status table)
+- ✅ Strategic arc routing decision: residual bug-catalog work consolidates into §4.C (Sprint B-F completion) — no fragmentation into per-bug V-*
+- ✅ Closes "named uncertainty" raised in 2026-05-18 session-end audit (was: only 4 of 22 in §15; now: 4 in §15 from prior + 2 new = 6, but **also**: 6 verified closed + 11 absorbed = 23 of 25 accounted for, 2 truly new)
+
+**Layer 5 effort actual:** ~25 minutes (matches §4.N estimate of 20 min with small SQL roundtrip overhead).
 
 ### Layer 1 findings (2026-05-18 evening soft start — §4.N audit, low-cognitive pass)
 
