@@ -47,8 +47,8 @@ export default function CoachPayoutsSection({ orgId }) {
               <div>
                 <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>
                   {p.period_start && p.period_end
-                    ? `${new Date(p.period_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${new Date(p.period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                    : new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    ? `${new Date(p.period_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })} – ${new Date(p.period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}`
+                    : new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2 }}>{p.payment_method || 'Not specified'}</div>
               </div>

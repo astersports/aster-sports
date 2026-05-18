@@ -26,12 +26,12 @@ function iconNameFor(kind) {
 
 function timeRel(row) {
   if (row.relative_time) return row.relative_time;
-  if (row.scheduled_for) return `sends ${new Date(row.scheduled_for).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
-  if (row.last_edited_at) return `edited ${new Date(row.last_edited_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
+  if (row.scheduled_for) return `sends ${new Date(row.scheduled_for).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })}`;
+  if (row.last_edited_at) return `edited ${new Date(row.last_edited_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })}`;
   // Wave 4.8 6c — briefing_active_queue rows expose anchor_time (event
   // start_at / tournament start_date / etc.). For synth rows the legacy
   // synthetic surface used row.relative_time; RPC rows fall through here.
-  if (row.anchor_time) return new Date(row.anchor_time).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  if (row.anchor_time) return new Date(row.anchor_time).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
   return '';
 }
 

@@ -23,7 +23,7 @@ export default function ParentHomeTeamCard({ team, summary, loading, nextEvent, 
         <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{recordLine}</span>
         {nextEvent && (
           <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginLeft: 'auto' }}>
-            Next: {new Date(nextEvent.start_at).toLocaleDateString('en-US', { weekday: 'short' })} {new Date(nextEvent.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+            Next: {new Date(nextEvent.start_at).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' })} {new Date(nextEvent.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })}
           </span>
         )}
       </div>

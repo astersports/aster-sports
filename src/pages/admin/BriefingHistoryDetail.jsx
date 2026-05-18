@@ -65,7 +65,7 @@ export default function BriefingHistoryDetail() {
           <div style={labelStyle}>{meta.label || msg.kind}</div>
           <div style={titleStyle}>{msg.subject || '(no subject)'}</div>
           <div style={{ marginTop: 6, fontSize: 13, color: 'var(--em-text-secondary)' }}>
-            Sent {msg.sent_at ? new Date(msg.sent_at).toLocaleString() : '—'} · {recipients.length} recipient{recipients.length === 1 ? '' : 's'}
+            Sent {msg.sent_at ? new Date(msg.sent_at).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : '—'} · {recipients.length} recipient{recipients.length === 1 ? '' : 's'}
           </div>
         </div>
         <div style={card}>
@@ -87,7 +87,7 @@ export default function BriefingHistoryDetail() {
                 <tr key={r.id}>
                   <td style={cellStyle}>{r.email_at_send}</td>
                   <td style={cellStyle}>{r.delivery_status || '—'}</td>
-                  <td style={cellStyle}>{r.delivered_at ? new Date(r.delivered_at).toLocaleString() : '—'}</td>
+                  <td style={cellStyle}>{r.delivered_at ? new Date(r.delivered_at).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : '—'}</td>
                   <td style={cellStyle}>{r.opened_at ? '✓' : '—'}</td>
                 </tr>
               ))}

@@ -20,7 +20,7 @@ export default function ParentArrivalActions({ event }) {
       {kids.map((child) => {
         const status = getStatus(child.playerId);
         if (status?.status === 'arrived') {
-          const t = new Date(status.status_changed_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          const t = new Date(status.status_changed_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
           return <div key={child.playerId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', fontSize: 14, color: 'var(--em-success)', fontWeight: 500 }}>✅ {child.firstName} arrived at {t}</div>;
         }
         if (status?.status === 'running_late') {

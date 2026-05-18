@@ -18,7 +18,7 @@ async function resolveAnchorName(kind, id) {
   if (kind === 'event') {
     const { data } = await supabase.from('events').select('title,start_at,teams(name)').eq('id', id).maybeSingle();
     if (!data) return '(event not found)';
-    const date = data.start_at ? new Date(data.start_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
+    const date = data.start_at ? new Date(data.start_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' }) : '';
     return [data.teams?.name, data.title, date].filter(Boolean).join(' · ');
   }
   if (kind === 'tournament') {

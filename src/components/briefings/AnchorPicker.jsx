@@ -42,7 +42,7 @@ async function search(orgId, kind, query) {
       .ilike('title', `%${q}%`)
       .order('start_at', { ascending: false })
       .limit(20);
-    return (r.data || []).map((e) => ({ id: e.id, label: e.title, secondary: `${new Date(e.start_at).toLocaleDateString()} · ${e.teams?.name || ''}`, type: 'event' }));
+    return (r.data || []).map((e) => ({ id: e.id, label: e.title, secondary: `${new Date(e.start_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' })} · ${e.teams?.name || ''}`, type: 'event' }));
   }
   if (meta.anchorKinds?.includes('team')) {
     const r = await supabase.from('teams')

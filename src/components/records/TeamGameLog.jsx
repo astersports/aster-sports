@@ -9,11 +9,11 @@ function formatGameDate(iso) {
 function formatDateRange(start, end) {
   if (!start) return '';
   const s = new Date(start + 'T12:00:00');
-  const sm = s.toLocaleDateString('en-US', { month: 'short' });
+  const sm = s.toLocaleDateString('en-US', { month: 'short', timeZone: 'America/New_York' });
   const sd = s.getDate();
   if (!end) return `${sm} ${sd}`;
   const e = new Date(end + 'T12:00:00');
-  const em = e.toLocaleDateString('en-US', { month: 'short' });
+  const em = e.toLocaleDateString('en-US', { month: 'short', timeZone: 'America/New_York' });
   const ed = e.getDate();
   if (sm === em) return `${sm} ${sd}–${ed}`;
   return `${sm} ${sd}–${em} ${ed}`;

@@ -16,7 +16,7 @@ const RIDE_TYPE_LABEL = {
 
 function formatTime(iso) {
   if (!iso) return null;
-  return new Date(iso).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
+  return new Date(iso).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
 }
 
 export default function OfferCard({

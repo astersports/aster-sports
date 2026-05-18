@@ -3,11 +3,11 @@ import React from 'react';
 function formatDateRange(startDate, endDate) {
   if (!startDate) return '';
   const s = new Date(startDate + 'T00:00:00');
-  const sMonth = s.toLocaleDateString('en-US', { month: 'short' });
+  const sMonth = s.toLocaleDateString('en-US', { month: 'short', timeZone: 'America/New_York' });
   const sDay = s.getDate();
   if (!endDate) return `${sMonth} ${sDay}`;
   const e = new Date(endDate + 'T00:00:00');
-  const eMonth = e.toLocaleDateString('en-US', { month: 'short' });
+  const eMonth = e.toLocaleDateString('en-US', { month: 'short', timeZone: 'America/New_York' });
   const eDay = e.getDate();
   if (sMonth === eMonth) return `${sMonth} ${sDay}–${eDay}`;
   return `${sMonth} ${sDay}–${eMonth} ${eDay}`;

@@ -13,6 +13,6 @@ export function groupByDate(list) {
 export function formatDateHeader(dateStr) {
   const d = new Date(dateStr + 'T12:00:00');
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-  const label = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  const label = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
   return dateStr === today ? `${label} · TODAY` : label;
 }

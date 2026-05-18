@@ -9,7 +9,7 @@ export default function MessageBubble({ message, isAnnouncement, onDelete }) {
   const timerRef = useRef(null);
 
   const time = new Date(message.created_at).toLocaleString('en-US', {
-    hour: 'numeric', minute: '2-digit',
+    hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York',
   });
 
   const startPress = useCallback(() => {

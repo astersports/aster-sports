@@ -83,7 +83,7 @@ export default function NotificationHistory({ orgId }) {
               {n.body && <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2, WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', display: '-webkit-box', overflow: 'hidden' }}>{n.body}</div>}
             </div>
             <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', flexShrink: 0 }}>
-              {new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}
             </span>
           </div>
         );

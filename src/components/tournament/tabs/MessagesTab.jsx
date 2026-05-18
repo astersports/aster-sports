@@ -57,7 +57,7 @@ export default function MessagesTab({ tournament, isStaff }) {
               {TYPE_LABELS[m.kind] || m.kind}
             </span>
             <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>
-              {m.sent_at ? new Date(m.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Draft'}
+              {m.sent_at ? new Date(m.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' }) : 'Draft'}
             </span>
           </div>
           {m.subject && <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 4 }}>{m.subject}</div>}

@@ -34,7 +34,7 @@ function relTime(iso) {
   if (ms < 86400000) return `${hours}h ago`;
   if (days === 1) return 'yesterday';
   if (days < 30) return `${days} days ago`;
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' });
 }
 
 function deliverySubtitle(recipientCount, deliveredCount) {
