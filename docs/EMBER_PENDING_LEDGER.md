@@ -709,6 +709,63 @@ before the corresponding §4 entry can be marked closed or
 re-scoped. Verification methods specified per row so the work is
 mechanical, not interpretive.
 
+### V-0 — Meta: audit completeness (the gap that produced this queue)
+
+**Status: SURFACED 2026-05-18 19:50 CEST, Monday-opener prompt drafted, deferred to Monday Phase 1-4 execution.**
+
+The L99 audit + missed-builds audit + §4 expansion across PRs #238 / #242 / #243 were bounded by the 7 source docs CC opened. Frank's session-end `ls docs/*.md` check (Sunday 7:50 PM Italy) surfaced 22 additional `.md` files CC never read. Total `docs/*.md` = 30; CC's source list = 7; ledger itself = 1; unread = 22.
+
+Per anti-pattern #45 acid-test: V-0 closes "complete inventory" from a verified claim back into a sized gap that gets walked Monday.
+
+**Inventory of 22 unread docs (captured for Monday-opener input):**
+
+| Category | Doc | Why flagged |
+|---|---|---|
+| May 16 audit-cycle (single multi-phase unit, read in order) | AUDIT_PHASE1_WIRING_2026-05-16.md | Earliest phase doc |
+| | AUDIT_PHASE2_REGISTRY_STATE_2026-05-16.md | Phase 2 |
+| | AUDIT_PHASE3_MIGRATION_DEPLOY_2026-05-16.md | Phase 3 |
+| | AUDIT_PHASE4_RLS_SECURITY_2026-05-16.md | Phase 4 |
+| | AUDIT_PHASE5_TYPE_CONTRACT_2026-05-16.md | Phase 5 |
+| | AUDIT_BETA_B1_UI_LAYER_2026-05-16.md | Beta phase B1 |
+| | AUDIT_BETA_B3_EDGE_FUNCTIONS_2026-05-16.md | Beta phase B3 |
+| | AUDIT_BETA_SYNTHESIS_2026-05-16.md | Beta synthesis (likely 22-bug catalog home) |
+| | AUDIT_SYNTHESIS_2026-05-16.md | Top-level synthesis (CC grepped excerpts only) |
+| | AUDIT_DAY_2026-05-16_CLOSE.md | Earlier close (CC read only FINAL_CLOSE) |
+| | AUDIT_VERIFICATION_2026-05-16.md | Verification doc |
+| Partial-read (highest-confidence "something there") | SCHEDULE_CHANGE_DIAGNOSIS.md | Cited in §4.I but never opened (cite-without-read anti-pattern) |
+| | BRIEFINGS_COVERAGE_L99.md | CC head-50 read only |
+| Unknown-shape | ADMIN_SESSION_SCOPE.md | Possible session scope spec |
+| | BRIEFING_RENDERER_REFERENCES.md | Briefing system reference |
+| | BRIEFING_TEMPLATES.md | Briefing template inventory |
+| | CALLUP_TOKEN_TESTING.md | Callup token test plan |
+| | EMBER_TENANCY_ARCHITECTURE_v3.md | Tenancy architecture spec |
+| | LH_BRAND_CONTENT_MODEL.md | Brand content model |
+| | LH_OPS_SPEC.md | Operations spec |
+| | README.md | Top-level doc readme |
+| | TIER_3_V1_RETROSPECTIVE_NOTES.md | Created via PR #236; CC touched but didn't audit for §4-relevant items |
+
+**Monday-opener prompt (locked Sunday 2026-05-18, executes 2026-05-19):**
+
+Phase 1 — May 16 audit-cycle unit (~45-60 min, gated). Read in phase order:
+PHASE1 → PHASE2 → PHASE3 → PHASE4 → PHASE5 → BETA_B1 → BETA_B3 → BETA_SYNTHESIS → AUDIT_SYNTHESIS (full read) → DAY_CLOSE → VERIFICATION → reconcile FINAL_CLOSE. Findings → ledger same commit per #45.
+
+Phase 2 — Flagged partial-read (~20-30 min, gated):
+SCHEDULE_CHANGE_DIAGNOSIS full read · BRIEFINGS_COVERAGE_L99 full read · AUDIT_SYNTHESIS full read (may overlap Phase 1).
+
+Phase 3 — Unknown-shape (~30-45 min, gated):
+Triage by filename pattern (`*_DESIGN_SPEC` / `*_HANDOFF` / `*_AUDIT` / `*_RETRO` → full read; other → 30-sec header scan, full read only if signal present).
+
+Phase 4 — Reconcile 22-bug catalog (~15-20 min, gated):
+If Phase 1 surfaced the missing 18 bugs (likely in BETA_SYNTHESIS or PHASE docs), walk each: grep git log + relevant component file for fix evidence. Evidence → CLOSED in §15 with SHA; no evidence → V-17 through V-38 with named verification method; ambiguous → V-* "needs deeper trace."
+
+Phase 5 — V-1 through V-16 (the queue below) executes ONLY after Phases 1-4 gate-pass.
+
+**Standing rule (anti-pattern #45)**: every findings batch from Phases 1-4 → ledger same commit.
+
+**Anti-pattern #46 candidate (not registered tonight)**: "Audit-cycle outputs (multi-phase Frank audits like the May 16 series) must land in EMBER_PENDING_LEDGER §4/§15 within 24 hours of cycle close, or the cycle isn't closed." Re-evaluate Monday post-Phase-1 once we see how much surfaces. If Phase 1 surfaces 10+ unlanded items, #46 becomes near-term priority.
+
+### V-1 through V-16 (executed Monday Phase 5)
+
 | # | Item | Arc tag | Source doc | Effort | Blocking | Verification method |
 |---|------|---------|------------|--------|----------|---------------------|
 | V-1 | Migration 016 (`user_preferences`) ship status | §4.H | SKYFIRE_BUILD_QUEUE_v2 | 5 min | density toggle wiring | `ls supabase/migrations/ \| grep 016` + DB inspect via MCP |
