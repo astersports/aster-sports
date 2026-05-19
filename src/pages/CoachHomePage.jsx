@@ -25,6 +25,7 @@ import CoachRosterSnapshot from '../components/coach/CoachRosterSnapshot';
 import Label from '../components/shared/Label';
 import { filterAlertsForCoach } from '../lib/alerts/relevanceFilters';
 import { usePendingAchievements } from '../hooks/usePendingAchievements';
+import { useUnpublishedScores } from '../hooks/useUnpublishedScores';
 
 export default function CoachHomePage() {
   const { user, orgId } = useAuth();
@@ -61,12 +62,18 @@ export default function CoachHomePage() {
   const { alerts: allAlerts, loading: alertsLoading } = useAlertEvaluator();
   const coachAlerts = useMemo(() => filterAlertsForCoach(allAlerts, coachedTeamIds), [allAlerts, coachedTeamIds]);
 
-  // ACTION QUEUE per HOME_DESIGN_SPEC §2.1.3. First signal: pending
-  // team achievements awaiting coach confirmation. Reuses parent's
-  // signal-agnostic ActionZone shell — same shape, different data
-  // source. Future Sprint D signals (Quick Scores needing approval,
-  // roster requests, unapproved coach comp) merge into the same list.
+  // ACTION QUEUE per HOME_DESIGN_SPEC §2.1.3. Signals merge into the
+  // signal-agnostic ActionZone shell (parent + coach share infra).
+  //  - achievement_pending: team_achievements awaiting confirmation
+  //  - score_unpublished: game_results entered but not yet published
+  // Future signals: roster requests, unapproved coach comp.
   const { items: pendingAchievements, loading: pendingAchievementsLoading } = usePendingAchievements(coachedTeamIds);
+  const { items: unpublishedScores, loading: unpublishedScoresLoading } = useUnpublishedScores(coachedTeamIds);
+  const actionQueueItems = useMemo(
+    () => [...(pendingAchievements || []), ...(unpublishedScores || [])],
+    [pendingAchievements, unpublishedScores],
+  );
+  const actionQueueLoading = pendingAchievementsLoading || unpublishedScoresLoading;
 
   // Next event across all coached teams. Pulse-glow wrapper draws
   // the eye to the upcoming game per Q4 highlight #1.
@@ -77,7 +84,7 @@ export default function CoachHomePage() {
       <AdminGreeting user={user} />
 
       <AlertZone alerts={coachAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
-      <ActionZone items={pendingAchievements} loading={pendingAchievementsLoading} />
+      <ActionZone items={actionQueueItems} loading={actionQueueLoading} />
 
       {nextEvent && (
         <div style={{
