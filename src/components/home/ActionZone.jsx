@@ -1,19 +1,22 @@
 // §4.C Sprint B — ACTION ZONE on parent home. Per HOME_DESIGN_SPEC.md
-// §1.1.2: surfaces "things to handle" for the parent. This PR ships the
-// first signal: pending RSVPs (kid × event where no event_rsvps row
-// exists yet). Future PRs add ride needed / open duty slot / payment
-// overdue signals via the same shell.
+// §1.1.2: surfaces "things to handle" for the parent. Signal-agnostic
+// shell — each item carries its own `primary` label (e.g. "Charlie:
+// RSVP needed", "Charlie: Ride needed") so this renderer doesn't have
+// to know about signal kinds. Item shape:
+//   { event_id, player_id, primary, start_at, event_title,
+//     team_name, team_color }
 //
 // Visibility: hidden entirely when items.length === 0. The section is
 // presence-driven, not always-on.
 //
-// CTAs: this PR clicks through to event detail. Inline RSVP buttons
-// (Going / Can't / Maybe per HOME_DESIGN_SPEC visual) ship in a
-// follow-up — they need the optimistic-update path from PR §16.1.
+// CTAs: this PR clicks through to event detail. Inline action buttons
+// (Going / Can't / Maybe for RSVP, Offer / Request for ride per
+// HOME_DESIGN_SPEC visual) ship in follow-ups — they need the
+// optimistic-update path from PR §16.1.
 //
 // Density: HOME_DESIGN_SPEC §1.1.2 specifies 3 states (minimal /
-// medium / detailed). This PR ships the medium default. Density-aware
-// variants ship in a follow-up alongside DensityToggle wiring.
+// medium / detailed). This shell ships the medium default. Density-
+// aware variants ship in a follow-up alongside DensityToggle wiring.
 
 import { Link } from 'react-router-dom';
 import Label from '../shared/Label';
@@ -53,7 +56,7 @@ export default function ActionZone({ items, loading }) {
       >
         {items.map((item, idx) => (
           <li
-            key={`${item.event_id}:${item.player_id}`}
+            key={`${item.kind || 'item'}:${item.event_id}:${item.player_id}`}
             style={{
               borderTop: idx === 0 ? 'none' : '1px solid var(--em-border-subtle)',
             }}
@@ -83,7 +86,7 @@ export default function ActionZone({ items, loading }) {
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, color: 'var(--em-text-primary)' }}>
-                    {item.kid_first_name}: RSVP needed
+                    {item.primary || `${item.kid_first_name}: action needed`}
                   </div>
                   <div style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginTop: 2 }}>
                     {formatWhen(item.start_at)} · {item.event_title}

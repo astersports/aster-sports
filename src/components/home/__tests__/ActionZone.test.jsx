@@ -17,6 +17,8 @@ function withRouter(node) {
 }
 
 const ITEM = (over = {}) => ({
+  kind: 'rsvp_pending',
+  primary: 'Charlie: RSVP needed',
   event_id: 'e1',
   player_id: 'p1',
   kid_first_name: 'Charlie',
@@ -52,10 +54,20 @@ describe('ActionZone', () => {
   it('renders pluralized headline for multiple items', () => {
     const items = [
       ITEM({ event_id: 'e1', kid_first_name: 'Charlie' }),
-      ITEM({ event_id: 'e2', kid_first_name: 'Milo' }),
+      ITEM({ event_id: 'e2', kid_first_name: 'Milo', primary: 'Milo: RSVP needed' }),
     ];
     render(withRouter(<ActionZone items={items} loading={false} />));
     expect(screen.getByText(/2 THINGS TO HANDLE/i)).toBeInTheDocument();
+  });
+
+  it('mixes signals via item.primary (RSVP + Ride)', () => {
+    const items = [
+      ITEM({ event_id: 'e1', kind: 'rsvp_pending', primary: 'Charlie: RSVP needed' }),
+      ITEM({ event_id: 'e2', kind: 'ride_needed',  primary: 'Milo: Ride needed', player_id: 'p2' }),
+    ];
+    render(withRouter(<ActionZone items={items} loading={false} />));
+    expect(screen.getByText('Charlie: RSVP needed')).toBeInTheDocument();
+    expect(screen.getByText('Milo: Ride needed')).toBeInTheDocument();
   });
 
   it('each item links to /events/<event_id>', () => {

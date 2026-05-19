@@ -6,9 +6,9 @@ import { supabase } from '../lib/supabase';
 // event's team AND no event_rsvps row exists yet for that pair.
 // Single query bounded to next 7 days of upcoming events.
 //
-// Output shape per item:
-//   { event_id, player_id, kid_first_name, start_at,
-//     event_title, team_name, team_color }
+// Output shape per item (per ActionZone's signal-agnostic shell):
+//   { kind: 'rsvp_pending', primary, event_id, player_id,
+//     kid_first_name, start_at, event_title, team_name, team_color }
 //
 // Empty list when myChildren is empty OR no upcoming events OR all
 // (kid × event) pairs already have a response.
@@ -76,9 +76,13 @@ export function usePendingRsvps(myChildren, upcomingActivities) {
     for (const row of data || []) {
       if (row.response) responded.add(`${row.event_id}:${row.player_id}`);
     }
-    const pendingItems = candidates.filter(
-      (c) => !responded.has(`${c.event_id}:${c.player_id}`),
-    );
+    const pendingItems = candidates
+      .filter((c) => !responded.has(`${c.event_id}:${c.player_id}`))
+      .map((c) => ({
+        ...c,
+        kind: 'rsvp_pending',
+        primary: `${c.kid_first_name}: RSVP needed`,
+      }));
     // Sort soonest first.
     pendingItems.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
     setError(null);
