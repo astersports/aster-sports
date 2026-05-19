@@ -54,15 +54,20 @@ export default function ActionZone({ items, loading }) {
           listStyle: 'none',
         }}
       >
-        {items.map((item, idx) => (
+        {items.map((item, idx) => {
+          // PR coach-action-queue: signal-agnostic link target via
+          // item.href. Falls back to /events/<event_id> for parent
+          // signals where event_id is the natural drill-down target.
+          const href = item.href || (item.event_id ? `/events/${item.event_id}` : '#');
+          return (
           <li
-            key={`${item.kind || 'item'}:${item.event_id}:${item.player_id}`}
+            key={`${item.kind || 'item'}:${item.event_id || item.id}:${item.player_id || ''}`}
             style={{
               borderTop: idx === 0 ? 'none' : '1px solid var(--em-border-subtle)',
             }}
           >
             <Link
-              to={`/events/${item.event_id}`}
+              to={href}
               className="sf-press"
               style={{
                 display: 'block',
@@ -88,9 +93,11 @@ export default function ActionZone({ items, loading }) {
                   <div style={{ fontWeight: 600, color: 'var(--em-text-primary)' }}>
                     {item.primary || `${item.kid_first_name}: action needed`}
                   </div>
-                  <div style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginTop: 2 }}>
-                    {formatWhen(item.start_at)} · {item.event_title}
-                  </div>
+                  {(item.start_at || item.event_title || item.secondary) && (
+                    <div style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginTop: 2 }}>
+                      {item.secondary || [formatWhen(item.start_at), item.event_title].filter(Boolean).join(' · ')}
+                    </div>
+                  )}
                 </div>
                 <span
                   aria-hidden="true"
@@ -101,7 +108,8 @@ export default function ActionZone({ items, loading }) {
               </div>
             </Link>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </section>
   );
