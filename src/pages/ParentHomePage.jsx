@@ -15,6 +15,7 @@ import { useDensity } from '../hooks/useDensity';
 import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
 import { usePendingRsvps } from '../hooks/usePendingRsvps';
 import { useRideNeeded } from '../hooks/useRideNeeded';
+import { useVolunteerSlots } from '../hooks/useVolunteerSlots';
 import ActionZone from '../components/home/ActionZone';
 import DateGroupedList from '../components/schedule/DateGroupedList';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
@@ -105,16 +106,19 @@ export default function ParentHomePage() {
   //  - rsvp_pending: kid × event with no event_rsvps row yet
   //  - ride_needed: kid × event with going-RSVP and zero ride
   //    actions (offer / claim / request) by the current user
+  //  - volunteer_slot: per-event (not per-kid) when event has ≥1
+  //    unclaimed event_duties row and parent has a kid on the team
   // ActionZone is signal-agnostic — each item carries its own
-  // `primary` label. Both lists merged + sorted by start_at.
+  // `primary` label. Lists merged + sorted by start_at.
   const { pending: pendingRsvps, loading: pendingRsvpsLoading } = usePendingRsvps(myChildren, next7days);
   const { needed: ridesNeeded, loading: rideNeededLoading } = useRideNeeded(myChildren, next7days, user?.id);
+  const { items: volunteerSlots, loading: volunteerSlotsLoading } = useVolunteerSlots(myChildren, next7days);
   const actionItems = useMemo(() => {
-    const merged = [...(pendingRsvps || []), ...(ridesNeeded || [])];
+    const merged = [...(pendingRsvps || []), ...(ridesNeeded || []), ...(volunteerSlots || [])];
     merged.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
     return merged;
-  }, [pendingRsvps, ridesNeeded]);
-  const actionItemsLoading = pendingRsvpsLoading || rideNeededLoading;
+  }, [pendingRsvps, ridesNeeded, volunteerSlots]);
+  const actionItemsLoading = pendingRsvpsLoading || rideNeededLoading || volunteerSlotsLoading;
 
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
