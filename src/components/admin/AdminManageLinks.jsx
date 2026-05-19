@@ -14,21 +14,21 @@
 // audit enforces that going forward.
 
 import { Link } from 'react-router-dom';
-import { CalendarDays, FlaskConical, MapPin, Repeat, Trophy, UserCog, UsersRound } from 'lucide-react';
+import { CalendarDays, FlaskConical, MapPin, Repeat, Swords, Trophy, UsersRound } from 'lucide-react';
 
 const LINKS = [
   { label: 'Seasons',         icon: CalendarDays,   to: '/admin/seasons'         },
   { label: 'Teams',           icon: Trophy,         to: '/admin/teams'           },
   { label: 'Members',         icon: UsersRound,     to: '/admin/members'         },
+  { label: 'Opponents',       icon: Swords,         to: '/admin/opponents'       },
   { label: 'Locations',       icon: MapPin,         to: '/locations'             },
   { label: 'Season Rollover', icon: Repeat,         to: '/admin/rollover'        },
-  { label: 'Coach Directory', icon: UserCog,        to: '/admin/members'         }, // alias surface
   { label: 'Engine Preview',  icon: FlaskConical,   to: '/admin/engine-preview'  },
 ];
 
-// Coach Directory currently aliases /admin/members (guardians ARE the
-// coach population for now since staff_profiles are not yet on a
-// dedicated manager page). Dedicated /admin/coaches lands when staff
+// Coach Directory tile dropped 2026-05-19 PR C (was aliased to
+// /admin/members; replaced with Opponents now that V-33 part 1 ships).
+// Dedicated /admin/coaches lands when staff
 // profiles get their own management surface.
 const DEDUP_BY_TO = (items) => {
   const seen = new Set();
