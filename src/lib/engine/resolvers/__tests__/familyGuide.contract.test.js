@@ -80,6 +80,52 @@ describe('composeFamilyGuide', () => {
     expect(kinds).toContain('quick_link_nav');
     expect(kinds[kinds.length - 1]).toBe('brand_footer');
   });
+  it('emits conflict_callout immediately after vip_header when conflicts exist (PR 5b-3)', () => {
+    const ctx = {
+      parent: PARENT,
+      kidsWithEvents: [
+        { player_id: 'p-1', first_name: 'Charlie', team_id: 't-1', team_name: '11U Girls', team_color: '#a78bfa', events: [{ start_at: '2026-05-18T15:00:00Z' }] },
+        { player_id: 'p-2', first_name: 'Milo', team_id: 't-2', team_name: '8U Boys', team_color: '#f59e0b', events: [{ start_at: '2026-05-18T15:30:00Z' }] },
+      ],
+      conflicts: [{ date_label: 'MON 5/18', kid_a: 'Charlie', team_a: '11U Girls', time_a: '11:00 AM', kid_b: 'Milo', team_b: '8U Boys', time_b: '11:30 AM' }],
+      dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], orgName: 'LH',
+    };
+    const out = composeFamilyGuide(ctx, { parent_name: 'Frank' });
+    const kinds = out.content_sections.map((s) => s.kind);
+    expect(kinds[0]).toBe('vip_header');
+    expect(kinds[1]).toBe('conflict_callout');
+    const callout = out.content_sections.find((s) => s.kind === 'conflict_callout');
+    expect(callout.items).toEqual(ctx.conflicts);
+  });
+  it('omits conflict_callout when conflicts is empty (PR 5b-3)', () => {
+    const ctx = {
+      parent: PARENT,
+      kidsWithEvents: [{ player_id: 'p-1', first_name: 'Charlie', team_id: 't-1', team_name: '11U Girls', team_color: '#a78bfa', events: [{ start_at: '2026-05-18T15:00:00Z' }] }],
+      conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], orgName: 'LH',
+    };
+    const out = composeFamilyGuide(ctx, { parent_name: 'Frank' });
+    expect(out.content_sections.some((s) => s.kind === 'conflict_callout')).toBe(false);
+  });
+  it('vip_header conflict_count agrees with conflict_callout.items.length (cross-surface invariant per #43)', () => {
+    const conflicts = [
+      { date_label: 'MON 5/18', kid_a: 'Charlie', team_a: '11U Girls', time_a: '11:00 AM', kid_b: 'Milo', team_b: '8U Boys', time_b: '11:30 AM' },
+      { date_label: 'WED 5/20', kid_a: 'Charlie', team_a: '11U Girls', time_a: '6:00 PM', kid_b: 'Milo', team_b: '8U Boys', time_b: '6:30 PM' },
+    ];
+    const ctx = {
+      parent: PARENT,
+      kidsWithEvents: [
+        { player_id: 'p-1', first_name: 'Charlie', team_id: 't-1', team_name: '11U Girls', team_color: '#a78bfa', events: [] },
+        { player_id: 'p-2', first_name: 'Milo', team_id: 't-2', team_name: '8U Boys', team_color: '#f59e0b', events: [] },
+      ],
+      conflicts, dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], orgName: 'LH',
+    };
+    const out = composeFamilyGuide(ctx, { parent_name: 'Frank' });
+    const vipHeader = out.content_sections.find((s) => s.kind === 'vip_header');
+    const callout = out.content_sections.find((s) => s.kind === 'conflict_callout');
+    expect(vipHeader.conflict_count).toBe(2);
+    expect(callout.items.length).toBe(2);
+    expect(vipHeader.conflict_count).toBe(callout.items.length);
+  });
 });
 
 describe('familyGuideHelpers', () => {
