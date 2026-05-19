@@ -14,6 +14,7 @@ import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { useDensity } from '../hooks/useDensity';
 import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
 import { usePendingRsvps } from '../hooks/usePendingRsvps';
+import { useRideNeeded } from '../hooks/useRideNeeded';
 import ActionZone from '../components/home/ActionZone';
 import DateGroupedList from '../components/schedule/DateGroupedList';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
@@ -100,11 +101,20 @@ export default function ParentHomePage() {
     return detectConflicts(toKidsWithEvents(myChildren, next7days, teamsById));
   }, [myChildren, next7days, teamsById]);
 
-  // ACTION ZONE (HOME_DESIGN_SPEC §1.1.2 + Sprint B). First signal:
-  // pending RSVPs across the parent's kids' upcoming events. Hidden
-  // entirely when zero pending; future PRs add ride / duty / payment
-  // signals to the same section.
+  // ACTION ZONE (HOME_DESIGN_SPEC §1.1.2 + Sprint B). Signals:
+  //  - rsvp_pending: kid × event with no event_rsvps row yet
+  //  - ride_needed: kid × event with going-RSVP and zero ride
+  //    actions (offer / claim / request) by the current user
+  // ActionZone is signal-agnostic — each item carries its own
+  // `primary` label. Both lists merged + sorted by start_at.
   const { pending: pendingRsvps, loading: pendingRsvpsLoading } = usePendingRsvps(myChildren, next7days);
+  const { needed: ridesNeeded, loading: rideNeededLoading } = useRideNeeded(myChildren, next7days, user?.id);
+  const actionItems = useMemo(() => {
+    const merged = [...(pendingRsvps || []), ...(ridesNeeded || [])];
+    merged.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+    return merged;
+  }, [pendingRsvps, ridesNeeded]);
+  const actionItemsLoading = pendingRsvpsLoading || rideNeededLoading;
 
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
@@ -118,7 +128,7 @@ export default function ParentHomePage() {
 
       <AlertZone alerts={parentAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
       <ConflictCallout conflicts={conflicts} />
-      <ActionZone items={pendingRsvps} loading={pendingRsvpsLoading} />
+      <ActionZone items={actionItems} loading={actionItemsLoading} />
 
       {!loading && myTeams.length === 0 && (
         <div style={{ padding: 20, backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', textAlign: 'center' }}>
