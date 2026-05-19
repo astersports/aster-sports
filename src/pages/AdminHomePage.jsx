@@ -14,6 +14,7 @@ import { getWeatherForTime, useWeather } from '../hooks/useWeather';
 import AlertZone from '../components/alerts/AlertZone';
 import KpiGrid from '../components/admin/KpiGrid';
 import QuickActions from '../components/admin/QuickActions';
+import AdminManageLinks from '../components/admin/AdminManageLinks';
 import ActiveSeasonCard from '../components/admin/ActiveSeasonCard';
 import AdminScheduleSection from '../components/admin/AdminScheduleSection';
 import NextEventCard from '../components/admin/NextEventCard';
@@ -61,6 +62,11 @@ export default function AdminHomePage() {
       <section className="min-w-0" aria-label="Admin shortcuts">
         <Label>ADMIN SHORTCUTS</Label>
         <QuickActions />
+      </section>
+
+      <section className="min-w-0" aria-label="Manage">
+        <Label>MANAGE</Label>
+        <AdminManageLinks />
       </section>
 
       <section className="min-w-0" aria-label="Teams">
