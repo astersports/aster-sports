@@ -12,7 +12,6 @@ import TeamDetailPage from './pages/TeamDetailPage';
 import AccountPage from './pages/AccountPage';
 import PublicSchedulePage from './pages/PublicSchedulePage';
 
-const LocationsPage = lazy(() => import('./pages/LocationsPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const EventDetailPage = lazy(() => import('./pages/EventDetailPage'));
 const TournamentsPage = lazy(() => import('./pages/TournamentsPage'));
@@ -24,6 +23,7 @@ const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
 const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
 const AdminMembersPage = lazy(() => import('./pages/AdminMembersPage'));
 const AdminOpponentsPage = lazy(() => import('./pages/AdminOpponentsPage'));
+const AdminLocationsPage = lazy(() => import('./pages/AdminLocationsPage'));
 const SeasonRolloverPage = lazy(() => import('./pages/SeasonRolloverPage'));
 const FinancialDashboardPage = lazy(() => import('./pages/FinancialDashboardPage'));
 const FinancialImportPage = lazy(() => import('./pages/FinancialImportPage'));
@@ -64,7 +64,6 @@ export default function App() {
       <Route path="/"         element={<Protected><HomePage /></Protected>} />
       <Route path="/records"  element={<Protected><RecordsPage /></Protected>} />
       <Route path="/schedule" element={<Protected><SchedulePage /></Protected>} />
-      <Route path="/locations" element={<Protected><LocationsPage /></Protected>} />
       <Route path="/teams"           element={<Protected><TeamsPage /></Protected>} />
       <Route path="/teams/:teamId"   element={<Protected><TeamDetailPage /></Protected>} />
       <Route path="/teams/:teamId/player/:playerId" element={<Protected><PlayerProfilePage /></Protected>} />
@@ -84,6 +83,7 @@ export default function App() {
       <Route path="/admin/teams" element={<Protected allowedRoles={['admin']}><AdminTeamsPage /></Protected>} />
       <Route path="/admin/members" element={<Protected allowedRoles={['admin']}><AdminMembersPage /></Protected>} />
       <Route path="/admin/opponents" element={<Protected allowedRoles={['admin']}><AdminOpponentsPage /></Protected>} />
+      <Route path="/admin/locations" element={<Protected allowedRoles={['admin']}><AdminLocationsPage /></Protected>} />
       <Route path="/admin/rollover" element={<Protected allowedRoles={['admin']}><SeasonRolloverPage /></Protected>} />
       <Route path="/admin/financials" element={<Protected allowedRoles={['admin']}><FinancialDashboardPage /></Protected>} />
       <Route path="/admin/financials/import" element={<Protected allowedRoles={['admin']}><FinancialImportPage /></Protected>} />

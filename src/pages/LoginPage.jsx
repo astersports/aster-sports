@@ -10,7 +10,7 @@ export default function LoginPage() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const REDIRECT_ALLOWLIST = ['/events/', '/tournaments/', '/teams/', '/schedule', '/records', '/account', '/locations', '/messages'];
+  const REDIRECT_ALLOWLIST = ['/events/', '/tournaments/', '/teams/', '/schedule', '/records', '/account', '/admin/locations', '/messages'];
   const stickyFrom = location.state?.from?.pathname;
   const from = REDIRECT_ALLOWLIST.some(p => stickyFrom?.startsWith(p)) ? stickyFrom : '/';
 
