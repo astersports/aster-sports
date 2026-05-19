@@ -16,7 +16,9 @@ import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
 import { usePendingRsvps } from '../hooks/usePendingRsvps';
 import { useRideNeeded } from '../hooks/useRideNeeded';
 import { useVolunteerSlots } from '../hooks/useVolunteerSlots';
+import { useLiveNowEvents } from '../hooks/useLiveNowEvents';
 import ActionZone from '../components/home/ActionZone';
+import LiveNowCard from '../components/home/LiveNowCard';
 import DateGroupedList from '../components/schedule/DateGroupedList';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import PastEventsSection from '../components/schedule/PastEventsSection';
@@ -120,6 +122,11 @@ export default function ParentHomePage() {
   }, [pendingRsvps, ridesNeeded, volunteerSlots]);
   const actionItemsLoading = pendingRsvpsLoading || rideNeededLoading || volunteerSlotsLoading;
 
+  // LIVE NOW (HOME_DESIGN_SPEC §1.1.3). Pure derivation off activities
+  // + myChildren + now-tick. Card auto-removes when event ends because
+  // useNow ticks + useLiveNowEvents re-derives empty.
+  const liveNowItems = useLiveNowEvents(myChildren, activities, now);
+
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
@@ -133,6 +140,7 @@ export default function ParentHomePage() {
       <AlertZone alerts={parentAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
       <ConflictCallout conflicts={conflicts} />
       <ActionZone items={actionItems} loading={actionItemsLoading} />
+      <LiveNowCard items={liveNowItems} nowMs={now} />
 
       {!loading && myTeams.length === 0 && (
         <div style={{ padding: 20, backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', textAlign: 'center' }}>
