@@ -3,8 +3,14 @@ import { supabase } from '../lib/supabase';
 import { autoLinkGuardian } from '../lib/autoLinkGuardian';
 import { fetchParentContext } from '../lib/parentContext';
 import { bustAllCaches } from '../lib/cacheBuster';
-import { clearSentryUser, setSentryUser } from '../lib/sentry';
-import { identifyPosthog, resetPosthog } from '../lib/posthog';
+// Sentry + PostHog helpers are loaded dynamically (lazy import) so the
+// SDK code chunks separately from the main bundle. Pulling them in via
+// `import { ... } from '../lib/sentry'` is what defeated the
+// chunk-split in main.jsx historically — measured savings ~500 kB raw
+// on the Vercel production build. Each call site below uses
+// `import('../lib/<lib>').then((m) => m.X(...)).catch(() => {})` —
+// fire-and-forget, swallows any module-load failure so the auth flow
+// can't crash on a transient SDK fetch.
 import { useOrgBranding } from '../hooks/useOrgBranding';
 
 const AuthContext = createContext(null);
@@ -62,13 +68,17 @@ export function AuthProvider({ children }) {
       resolvedOrg = linked?.organization ?? null;
     }
     setRole(resolvedRole); setOrg(resolvedOrg);
-    setSentryUser(authUser, resolvedRole, resolvedOrg?.id);
+    import('../lib/sentry')
+      .then((m) => m.setSentryUser(authUser, resolvedRole, resolvedOrg?.id))
+      .catch(() => { /* swallow — sentry chunk unreachable, identify is best-effort */ });
     // PostHog identify mirrors Sentry. Distinct ID = auth.uid (UUID), never email.
     // Properties stay categorical (role + org_id) — no player names, no child IDs,
     // no roster/streak data per §16.7 privacy locks.
     // FUTURE: never identify a minor. If kids ever get login (Phase 3+), gate
     // on is_adult before this call.
-    identifyPosthog(authUser, resolvedRole, resolvedOrg?.id);
+    import('../lib/posthog')
+      .then((m) => m.identifyPosthog(authUser, resolvedRole, resolvedOrg?.id))
+      .catch(() => { /* swallow — same rationale as Sentry above */ });
 
     if (resolvedRole === 'parent') {
       const ctx = await fetchParentContext(authUser.id);
@@ -100,7 +110,9 @@ export function AuthProvider({ children }) {
         else {
           setRole(null); setOrg(null);
           setMyChildren([]); setMyTeamIds([]); setGuardianId(null); setGuardianFirstName(null);
-          clearSentryUser(); resetPosthog(); setLoading(false);
+          import('../lib/sentry').then((m) => m.clearSentryUser()).catch(() => {});
+          import('../lib/posthog').then((m) => m.resetPosthog()).catch(() => {});
+          setLoading(false);
         }
       }
     );
