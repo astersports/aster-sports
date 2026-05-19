@@ -1,19 +1,22 @@
-// Wave 5 PR 5a — section builders for the family_guide resolver.
+// Wave 5 PR 5a / 5b — section builders for the family_guide resolver.
 // Each function takes context bits and returns a content_sections
 // entry (or null to skip). Extracted from familyGuide.js to keep
 // both files under the 150-line cap.
 //
 // Builder fan-out (called by composeFamilyGuide):
-//   vip_header → kid_color_pill x N (one per kid) →
+//   vip_header → conflict_callout (5b-3, when conflicts > 0) →
+//   per kid (5b-2): kid_color_pill → color_striped_row x N →
 //   quick_link_nav → signoff → brand_footer
 //
-// 5a ships placeholder shapes — real per-event row builders land
-// in 5b (kid_color_pill expands to color-striped event rows per
-// kid, similar to coach_roundup's color_striped_row).
+// 5a shipped placeholder shapes. 5b-1 added kind-aware label.
+// 5b-3 added conflict_callout section. 5b-2 (this PR) finally lands
+// per-event color_striped_row rows under each kid_color_pill +
+// wires the quick_link_nav URLs to the team detail page.
 
-import { formatDateRange, summarizeEventKinds } from './familyGuideHelpers';
+import { formatDateRange, formatDayLabel, formatTime, summarizeEventKinds } from './familyGuideHelpers';
 
 const FALLBACK_TEAM_COLOR = '#4a8fd4';
+const APP_BASE_URL = 'https://skyfire-app.vercel.app';
 
 function trim(s) { return typeof s === 'string' ? s.trim() : ''; }
 
@@ -41,6 +44,12 @@ export function buildVipHeaderSection(parent, kidsWithEvents, dateRange, conflic
   };
 }
 
+// PR 5b-2 — per-kid block expands to: kid_color_pill (summary chip)
+// + color_striped_row per event (mirrors coachRoundupSections.buildTeamSections).
+// Events are already sorted chronologically by groupEventsByKid in
+// familyGuideHelpers, so day_label progresses naturally from earliest
+// to latest within each kid block. Same kid on two teams produces two
+// adjacent blocks (different team_color = visual separation).
 export function buildKidColorPillSections(kidsWithEvents) {
   const out = [];
   for (const k of kidsWithEvents || []) {
@@ -53,15 +62,30 @@ export function buildKidColorPillSections(kidsWithEvents) {
       event_count: k.events.length,
       events_label: summarizeEventKinds(k.events),
     });
+    for (const ev of k.events) {
+      out.push({
+        kind: 'color_striped_row',
+        team_color: k.team_color || FALLBACK_TEAM_COLOR,
+        day_label: formatDayLabel(ev.start_at),
+        time: formatTime(ev.start_at),
+        primary: ev.opponent ? `vs ${ev.opponent}` : (ev.title || 'TBD'),
+        secondary: ev.sub_location
+          ? `${ev.location || ''} | ${ev.sub_location}`.trim().replace(/^\|\s*/, '')
+          : (ev.location || ''),
+      });
+    }
   }
   return out;
 }
 
+// PR 5b-2 — quick_link_nav each row links to the per-kid team detail
+// page at /teams/<team_id>. That URL is auth-gated (Protected route in
+// App.jsx); parents land on the team page where they can drill into
+// individual events for RSVPs / maps. Single URL per kid keeps the
+// visual compact; per-event URLs (RSVP signed-tokens, map deep-links)
+// already live on the color_striped_row's parent route, so the nav
+// stays focused on team-level navigation.
 export function buildQuickLinkNav(kidsWithEvents) {
-  // Renders 1-3 quick-action chips per kid: open RSVPs, view team
-  // schedule, jump to map. 5a stub returns null when no kids; 5b
-  // wires per-kid links once the resolver supplies real player_id /
-  // team_id values to embed in the URL slugs.
   if (!(kidsWithEvents || []).length) return null;
   return {
     kind: 'quick_link_nav',
@@ -71,6 +95,7 @@ export function buildQuickLinkNav(kidsWithEvents) {
       team_color: k.team_color || FALLBACK_TEAM_COLOR,
       player_id: k.player_id || null,
       team_id: k.team_id || null,
+      url: k.team_id ? `${APP_BASE_URL}/teams/${k.team_id}` : null,
     })),
   };
 }

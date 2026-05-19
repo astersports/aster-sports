@@ -126,6 +126,80 @@ describe('composeFamilyGuide', () => {
     expect(callout.items.length).toBe(2);
     expect(vipHeader.conflict_count).toBe(callout.items.length);
   });
+  it('emits color_striped_row per event after each kid_color_pill (PR 5b-2)', () => {
+    const ctx = {
+      parent: PARENT,
+      kidsWithEvents: [
+        { player_id: 'p-1', first_name: 'Charlie', team_id: 't-1', team_name: '11U Girls', team_color: '#a78bfa', events: [
+          { start_at: '2026-05-20T22:30:00Z', opponent: null, location: 'WCC', title: 'Practice' },
+          { start_at: '2026-05-23T19:30:00Z', opponent: 'Greenwich Hawks', location: 'Home Gym', sub_location: 'Court A', title: 'Game' },
+        ] },
+        { player_id: 'p-2', first_name: 'Milo', team_id: 't-2', team_name: '8U Boys', team_color: '#f59e0b', events: [
+          { start_at: '2026-05-19T21:30:00Z', opponent: null, location: 'Trustees Gym', title: 'Practice' },
+        ] },
+      ],
+      conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], orgName: 'LH',
+    };
+    const out = composeFamilyGuide(ctx, { parent_name: 'Frank' });
+    const kinds = out.content_sections.map((s) => s.kind);
+    // Expected order: vip_header, kid_color_pill (Charlie), 2 rows, kid_color_pill (Milo), 1 row, quick_link_nav, brand_footer
+    expect(kinds.filter((k) => k === 'color_striped_row')).toHaveLength(3);
+    const charlieIdx = kinds.indexOf('kid_color_pill');
+    expect(kinds[charlieIdx + 1]).toBe('color_striped_row');
+    expect(kinds[charlieIdx + 2]).toBe('color_striped_row');
+    expect(kinds[charlieIdx + 3]).toBe('kid_color_pill'); // Milo's pill
+    expect(kinds[charlieIdx + 4]).toBe('color_striped_row'); // Milo's one row
+  });
+  it('color_striped_row primary uses "vs <opponent>" for games and event.title for practices (PR 5b-2)', () => {
+    const ctx = {
+      parent: PARENT,
+      kidsWithEvents: [
+        { player_id: 'p-1', first_name: 'Charlie', team_id: 't-1', team_name: '11U Girls', team_color: '#a78bfa', events: [
+          { start_at: '2026-05-20T22:30:00Z', opponent: null, location: 'WCC', title: '11U Girls Practice' },
+          { start_at: '2026-05-23T19:30:00Z', opponent: 'Greenwich Hawks', location: 'WCC', title: '11U Girls Game' },
+        ] },
+      ],
+      conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], orgName: 'LH',
+    };
+    const out = composeFamilyGuide(ctx, { parent_name: 'Frank' });
+    const rows = out.content_sections.filter((s) => s.kind === 'color_striped_row');
+    expect(rows[0].primary).toBe('11U Girls Practice'); // no opponent → title
+    expect(rows[1].primary).toBe('vs Greenwich Hawks'); // has opponent → "vs X"
+  });
+  it('cross-surface invariant per #43: vip_header.event_count === sum of color_striped_row counts (PR 5b-2)', () => {
+    const ctx = {
+      parent: PARENT,
+      kidsWithEvents: [
+        { player_id: 'p-1', first_name: 'Charlie', team_id: 't-1', team_name: '11U Girls', team_color: '#a78bfa', events: [
+          { start_at: '2026-05-20T22:30:00Z' }, { start_at: '2026-05-22T22:30:00Z' }, { start_at: '2026-05-23T22:30:00Z' },
+        ] },
+        { player_id: 'p-2', first_name: 'Milo', team_id: 't-2', team_name: '8U Boys', team_color: '#f59e0b', events: [
+          { start_at: '2026-05-19T21:30:00Z' }, { start_at: '2026-05-26T21:30:00Z' },
+        ] },
+      ],
+      conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], orgName: 'LH',
+    };
+    const out = composeFamilyGuide(ctx, { parent_name: 'Frank' });
+    const vipHeader = out.content_sections.find((s) => s.kind === 'vip_header');
+    const rowCount = out.content_sections.filter((s) => s.kind === 'color_striped_row').length;
+    expect(vipHeader.event_count).toBe(5);
+    expect(rowCount).toBe(5);
+    expect(vipHeader.event_count).toBe(rowCount);
+  });
+  it('quick_link_nav items carry url to /teams/<team_id> when team_id present (PR 5b-2)', () => {
+    const ctx = {
+      parent: PARENT,
+      kidsWithEvents: [
+        { player_id: 'p-1', first_name: 'Charlie', team_id: 'team-abc', team_name: '11U Girls', team_color: '#a78bfa', events: [{ start_at: '2026-05-20T22:30:00Z' }] },
+        { player_id: 'p-2', first_name: 'Milo', team_id: null, team_name: 'Unrostered', team_color: '#f59e0b', events: [{ start_at: '2026-05-19T21:30:00Z' }] },
+      ],
+      conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], orgName: 'LH',
+    };
+    const out = composeFamilyGuide(ctx, { parent_name: 'Frank' });
+    const nav = out.content_sections.find((s) => s.kind === 'quick_link_nav');
+    expect(nav.items[0].url).toBe('https://skyfire-app.vercel.app/teams/team-abc');
+    expect(nav.items[1].url).toBeNull();
+  });
 });
 
 describe('familyGuideHelpers', () => {

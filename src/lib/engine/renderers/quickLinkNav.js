@@ -1,11 +1,10 @@
-// Renderer — family_guide quick-link nav. Per-kid action chip row
-// with the team color as a left-edge marker. Items render as a
-// compact list (kid · team · action). 5b ships the visual shell;
-// the actual link URLs ("Open RSVPs", "View team schedule", "Map")
-// are deferred to wave 5 PR 6 once routing slug conventions are
-// finalized for the family_guide email — kept generic for now so
-// the visual lands without coupling to URL contracts that may
-// shift.
+// Renderer — family_guide quick-link nav. Per-kid row linking to the
+// team detail page (PR 5b-2 wired the URL via buildQuickLinkNav). Row
+// content is wrapped in <a href> when item.url is present; falls back
+// to non-link rendering when url is null (preserves the 5a/5b-1 visual
+// for any cached fixtures or test paths that pre-date 5b-2). Single
+// URL per kid keeps the visual compact; per-event URLs (RSVP, map)
+// belong on the team detail page itself, not in this nav.
 
 import { escapeHtml } from './_util';
 import { BORDER_SUBTLE, TEXT_SLATE } from '../colors';
@@ -14,10 +13,15 @@ function renderRow(item) {
   const kid = escapeHtml(item.kid_name || 'Kid');
   const team = escapeHtml(item.team_name || 'Team');
   const color = escapeHtml(item.team_color || '#4a8fd4');
+  const url = item.url ? escapeHtml(item.url) : null;
+  const inner = `<strong style="color:#0f172a;">${kid}</strong> <span style="opacity:0.7;">·</span> ${team}`;
+  const cellContent = url
+    ? `<a href="${url}" style="color:${TEXT_SLATE};text-decoration:none;display:block;">${inner}</a>`
+    : inner;
   return '<tr>'
     + `<td style="width:6px;background-color:${color};padding:0;"></td>`
     + `<td style="padding:8px 12px;font-family:Inter,system-ui,sans-serif;font-size:13px;color:${TEXT_SLATE};">`
-    + `<strong style="color:#0f172a;">${kid}</strong> <span style="opacity:0.7;">·</span> ${team}`
+    + cellContent
     + '</td></tr>';
 }
 
