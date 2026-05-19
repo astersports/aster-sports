@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Calendar, Download, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatTime } from '../lib/formatters';
-import { TYPE_LABELS } from '../lib/constants';
+import { formatEventTitleString } from '../lib/eventTitle';
 import { downloadTeamIcs } from '../lib/icalHelpers';
 import BottomSheet from '../components/shared/BottomSheet';
 
@@ -72,7 +72,7 @@ export default function PublicSchedulePage() {
               <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--em-text-primary)', marginLeft: 4 }}>{formatTime(e.start_at)}</span>
             </div>
             <div style={{ fontSize: 15, color: 'var(--em-text-primary)', marginTop: 2 }}>
-              {e.opponent ? `vs. ${e.opponent}` : e.title || TYPE_LABELS[e.event_type] || 'Event'}
+              {formatEventTitleString(e)}
             </div>
             {e.location_name && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { formatEventTitleString } from '../lib/eventTitle';
 
 // §4.C Sprint C — LIVE NOW card data. Pure derivation hook (no
 // queries) — composes the live-event slice off the already-fetched
@@ -34,7 +35,7 @@ export function useLiveNowEvents(myChildren, activities, nowMs) {
         out.push({
           event_id: ev.id,
           kid_first_name: k.firstName || 'Your kid',
-          event_title: ev.title || ev.event_type || 'Event',
+          event_title: formatEventTitleString(ev),
           start_at: ev.start_at,
           end_at: ev.end_at,
           team_color: ev.teams?.team_color || 'var(--em-success)',

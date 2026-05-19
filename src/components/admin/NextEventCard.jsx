@@ -1,5 +1,5 @@
 import { useNow } from '../../hooks/useNow';
-import { TYPE_LABELS } from '../../lib/constants';
+import { formatEventTitleString } from '../../lib/eventTitle';
 import Label from '../shared/Label';
 
 const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
@@ -23,13 +23,11 @@ function useLiveCountdown(targetDate) {
 export default function NextEventCard({ event, weather }) {
   const countdown = useLiveCountdown(event?.start_at);
   if (!event) return null;
-  const typeLabel = TYPE_LABELS[event.event_type] || 'Event';
   const teamName = event.teams?.name;
   const dt = new Date(event.start_at);
   const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
   const timeStr = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
-  const title = (event.event_type === 'game' || event.event_type === 'tournament') && event.opponent
-    ? `vs. ${event.opponent}` : typeLabel;
+  const title = formatEventTitleString(event);
   return (
     <div
       className="sf-stagger-5"
