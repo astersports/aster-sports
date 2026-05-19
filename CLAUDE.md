@@ -518,9 +518,19 @@ The v2 → main merge dance from earlier in the project is retired. v2 is gone (
     - Apply the `do-not-auto-merge` label to hold a PR pending Frank's review
     - Request a reviewer other than Claude Code
 
-    **Mechanism: `gh pr merge <PR#> --auto --squash --delete-branch`, NOT a background bash wait-loop.** The bash pattern (`until ...; do sleep ...; done; gh pr merge`) races against mid-flight commits — if a reviewer asks for a refinement after the wait-loop is armed but before CI completes, the loop sees the pre-refinement state go green and merges; the new commit gets stranded. GitHub's native `--auto` flag re-evaluates required checks on every push and only merges when all are green simultaneously. See May 13, 2026 race condition (#152) for the lesson source — that PR exists because PR #151's broadening commit got stranded by exactly this race.
+    **Claude Code's responsibility, on every PR, end-to-end:**
+
+    1. **Create the PR** (draft OK as the initial state — keeps the description clean for amendment before the merge fires).
+    2. **Immediately after creation, mark the PR ready** (`draft: false` via `update_pull_request`) AND **enable auto-merge** (`enable_pr_auto_merge` with `mergeMethod: SQUASH` for single-commit PRs, `MERGE` for multi-commit). GitHub's native `--auto` flag will then merge automatically the instant the last required check turns green. No human in the loop. No Claude polling.
+    3. **If `enable_pr_auto_merge` fails** with `mergeable_state: unstable` ("required checks are failing") **AND** all visible check_runs report `conclusion: success`, the API is reading a stale combined-status. Fallback: wait until check_runs all show `completed` + `success`, then call `merge_pull_request` directly (squash for single-commit). This bypass works when GitHub's combined-status lags behind individual check_runs.
+    4. **Frank stays no-touch.** Claude Code drives the entire create → ready → auto-merge → verified-merge cycle in the same session.
+
+    **Mechanism: GitHub's native `--auto` flag (via `enable_pr_auto_merge` MCP, equivalent to `gh pr merge <PR#> --auto --squash --delete-branch`), NOT a background bash wait-loop.** The bash pattern (`until ...; do sleep ...; done; gh pr merge`) races against mid-flight commits — if a reviewer asks for a refinement after the wait-loop is armed but before CI completes, the loop sees the pre-refinement state go green and merges; the new commit gets stranded. GitHub's native `--auto` flag re-evaluates required checks on every push and only merges when all are green simultaneously. See May 13, 2026 race condition (#152) for the lesson source — that PR exists because PR #151's broadening commit got stranded by exactly this race.
+
+    **Anti-pattern caught 2026-05-19 (PRs #275/#276/#277 stuck):** creating a PR as `draft: true` and NOT flipping to ready leaves the PR stranded — GitHub doesn't auto-merge drafts even when required checks pass. The CLAUDE.md spec said "Claude Code marks ready before merging" but Claude Code was leaving every PR as draft and relying on external mechanisms to flip them. Three PRs stacked up "ready but draft + checks-green" before Frank surfaced "275 is still hung up." Discipline lock: step (2) above is mandatory on every PR creation. Marking-ready-+-enable-auto-merge happens in the same MCP burst as `create_pull_request`, not as a deferred step.
 
     No path-based exceptions. Schema migrations, CLAUDE.md edits, RLS policies, edge function deploys to prod, and financial schemas all auto-merge once CI is green and there are no unresolved review comments — same as any other PR. If Frank wants to hold something for review, use the label or request a reviewer.
+
     Goal: Frank stays no-touch. Claude Code is responsible for verifying CI green + zero review comments before pressing merge. Anti-pattern #22 still applies — verify the merge with a follow-up `pull_request_read` after.
 
 ---
