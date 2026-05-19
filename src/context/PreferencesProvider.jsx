@@ -6,7 +6,7 @@ import { PreferencesContext } from './PreferencesContext';
 /**
  * PreferencesProvider
  * Shared state for user_preferences row. Single instance lives at app root;
- * all consumers (Header, RoleSwitcherSheet, useNotificationBadge, useHomeRole)
+ * all consumers (Header, RoleSwitcherSheet, useHomeRole)
  * read from this same store via useContext(PreferencesContext) — eliminates
  * stale-state bugs that surfaced in Step 4C smoke test.
  *
