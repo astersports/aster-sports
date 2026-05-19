@@ -21,7 +21,7 @@ const LINKS = [
   { label: 'Teams',           icon: Trophy,         to: '/admin/teams'           },
   { label: 'Members',         icon: UsersRound,     to: '/admin/members'         },
   { label: 'Opponents',       icon: Swords,         to: '/admin/opponents'       },
-  { label: 'Locations',       icon: MapPin,         to: '/locations'             },
+  { label: 'Locations',       icon: MapPin,         to: '/admin/locations'       },
   { label: 'Season Rollover', icon: Repeat,         to: '/admin/rollover'        },
   { label: 'Engine Preview',  icon: FlaskConical,   to: '/admin/engine-preview'  },
 ];
