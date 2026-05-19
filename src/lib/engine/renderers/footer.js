@@ -59,5 +59,3 @@ export function renderFooter(section) {
   ].filter((part) => part !== undefined && part !== null);
   return { html, plainText: plainParts.join('\n') };
 }
-
-export default renderFooter;

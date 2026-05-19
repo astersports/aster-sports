@@ -84,5 +84,3 @@ export function composeScheduleChange(data = {}) {
 
   return { subject, html, plainText, sections };
 }
-
-export default composeScheduleChange;

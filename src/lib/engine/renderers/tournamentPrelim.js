@@ -55,5 +55,3 @@ export function composeTournamentPrelim(data = {}) {
   const subject = `Game day briefing — ${tournamentName || 'tournament'}`;
   return { subject, html, plainText, sections };
 }
-
-export default composeTournamentPrelim;

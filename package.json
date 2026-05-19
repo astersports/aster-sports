@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "knip": "knip",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -42,6 +43,7 @@
     "globals": "^17.6.0",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "knip": "^6.14.1",
     "lint-staged": "^16.4.0",
     "supabase": "^2.100.0",
     "tailwindcss": "^4.2.2",

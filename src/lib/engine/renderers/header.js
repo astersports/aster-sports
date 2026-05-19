@@ -78,5 +78,3 @@ export function renderHeader(section) {
   ].filter(Boolean);
   return { html, plainText: plainLines.join('\n') };
 }
-
-export default renderHeader;

@@ -36,5 +36,3 @@ export function composeAnnouncement(data = {}) {
   const subject = headline?.trim() || `${orgName} announcement`;
   return { subject, html, plainText, sections };
 }
-
-export default composeAnnouncement;

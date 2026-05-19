@@ -117,5 +117,3 @@ export function composeWeeklyDigest(data = {}) {
     sections, // exposed so the dispatcher can persist content_sections JSONB
   };
 }
-
-export default composeWeeklyDigest;

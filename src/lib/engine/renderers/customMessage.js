@@ -35,5 +35,3 @@ export function composeCustomMessage(data = {}) {
   const plainText = renderSectionsPlainText(sections);
   return { subject: subject?.trim() || `${orgName} message`, html, plainText, sections };
 }
-
-export default composeCustomMessage;

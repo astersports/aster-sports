@@ -58,5 +58,3 @@ export function renderChampionshipScenarios(section) {
   const tiebreakerHtml = tiebreaker ? renderTiebreaker(tiebreaker) : '';
   return { html: sectionHeader + outcomesHtml + tiebreakerHtml, plainText: buildPlain({ outcomes, tiebreaker }) };
 }
-
-export default renderChampionshipScenarios;
