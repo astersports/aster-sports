@@ -19,10 +19,12 @@ import { useVolunteerSlots } from '../hooks/useVolunteerSlots';
 import { useLiveNowEvents } from '../hooks/useLiveNowEvents';
 import { useUpcomingTournament } from '../hooks/useUpcomingTournament';
 import { useRecentAchievements } from '../hooks/useRecentAchievements';
+import { useRecentAnnouncements } from '../hooks/useRecentAnnouncements';
 import ActionZone from '../components/home/ActionZone';
 import LiveNowCard from '../components/home/LiveNowCard';
 import TournamentWeekendBanner from '../components/home/TournamentWeekendBanner';
 import RecognitionCard from '../components/home/RecognitionCard';
+import CoachMessageBlock from '../components/home/CoachMessageBlock';
 import DateGroupedList from '../components/schedule/DateGroupedList';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import PastEventsSection from '../components/schedule/PastEventsSection';
@@ -140,6 +142,10 @@ export default function ParentHomePage() {
   // confirmed within 48h for parent's kids' teams. Hidden when empty.
   const { achievements: recentAchievements } = useRecentAchievements(myTeamIds, now);
 
+  // COACH MESSAGE BLOCK (HOME_DESIGN_SPEC §1.1.7). Latest
+  // announcement-channel message per team in last 24h.
+  const { messages: recentAnnouncements } = useRecentAnnouncements(myTeamIds, now);
+
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
@@ -156,6 +162,7 @@ export default function ParentHomePage() {
       <LiveNowCard items={liveNowItems} nowMs={now} />
       <TournamentWeekendBanner tournament={upcomingTournament} />
       <RecognitionCard achievements={recentAchievements} nowMs={now} />
+      <CoachMessageBlock messages={recentAnnouncements} nowMs={now} />
 
       {!loading && myTeams.length === 0 && (
         <div style={{ padding: 20, backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', textAlign: 'center' }}>
