@@ -3,20 +3,18 @@ import { Bell, Eye, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useHomeRole } from '../../hooks/useHomeRole';
-import { useNotificationBadge } from '../../hooks/useNotificationBadge';
 import { EMBER_DISPLAY_NAME } from '../../lib/emberDefaults';
 import RoleSwitcherSheet from '../RoleSwitcherSheet';
 
-const SEVERITY_COLOR = {
-  info: 'var(--em-accent)',
-  warning: 'var(--em-warning)',
-  danger: 'var(--em-danger)',
-};
+// Cluster 4 fix (2026-05-19): notification bell renders as a route
+// affordance to /account, no badge count. The previous badge bubble
+// implied an inbox that doesn't exist; per ledger §2 Cluster 4 the
+// near-term resolution is "remove badge count + route bell to
+// settings shortcut without count". A real inbox lands in Phase 2.
 
 export default function Header() {
   const { org, orgName } = useAuth();
   const { activeRole, isViewingAs, canSwitchRoles } = useHomeRole();
-  const { count: unread, severity } = useNotificationBadge();
   const navigate = useNavigate();
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -80,18 +78,10 @@ export default function Header() {
 
         <button
           onClick={handleBellTap}
-          aria-label={unread > 0 ? `${unread} notifications` : 'Notifications'}
+          aria-label="Notifications"
           className="relative w-11 h-11 flex items-center justify-center"
         >
           <Bell className="w-5 h-5" />
-          {unread > 0 && (
-            <span
-              className="absolute top-2 right-2 min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
-              style={{ background: SEVERITY_COLOR[severity] || SEVERITY_COLOR.info, color: 'var(--em-text-inverse)' }}
-            >
-              {unread > 9 ? '9+' : unread}
-            </span>
-          )}
         </button>
 
         <button
