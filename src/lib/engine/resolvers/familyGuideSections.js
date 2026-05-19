@@ -17,6 +17,16 @@ const FALLBACK_TEAM_COLOR = '#4a8fd4';
 
 function trim(s) { return typeof s === 'string' ? s.trim() : ''; }
 
+// PR 5b-3 — Family Guide gets its own conflict_callout section, mirroring
+// Coach Roundup's pattern. detectConflicts produces items with kid_a /
+// kid_b in addition to team_a / team_b — the shared renderer was
+// updated to surface kid names when present (and stay team-only for
+// the coach audience case). Empty conflicts → null (composer skips).
+export function buildConflictCalloutSection(conflicts) {
+  if (!conflicts || !conflicts.length) return null;
+  return { kind: 'conflict_callout', items: conflicts };
+}
+
 export function buildVipHeaderSection(parent, kidsWithEvents, dateRange, conflicts) {
   const kidNames = (kidsWithEvents || []).map((k) => k.first_name || 'Kid');
   const allEvents = (kidsWithEvents || []).flatMap((k) => k.events || []);

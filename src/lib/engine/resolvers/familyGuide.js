@@ -16,8 +16,8 @@
 // before using data.
 
 import {
-  buildBrandFooter, buildKidColorPillSections, buildQuickLinkNav,
-  buildSignoffSection, buildVipHeaderSection,
+  buildBrandFooter, buildConflictCalloutSection, buildKidColorPillSections,
+  buildQuickLinkNav, buildSignoffSection, buildVipHeaderSection,
 } from './familyGuideSections';
 import { detectConflicts, groupEventsByKid } from './familyGuideHelpers';
 
@@ -105,6 +105,8 @@ export function composeFamilyGuide(context, slice, overrides = {}) {
   if (!context || !slice) throw new Error('Missing context or slice');
   const { parent, kidsWithEvents, conflicts, dateRange, coaches, orgName } = context;
   const sections = [buildVipHeaderSection(parent, kidsWithEvents, dateRange, conflicts)];
+  const conflictSection = buildConflictCalloutSection(conflicts);
+  if (conflictSection) sections.push(conflictSection);
   sections.push(...buildKidColorPillSections(kidsWithEvents));
   const navSection = buildQuickLinkNav(kidsWithEvents);
   if (navSection) sections.push(navSection);
