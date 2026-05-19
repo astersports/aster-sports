@@ -18,7 +18,11 @@ export default function renderVipHeader(section) {
   const kidsLine = kidNames.length
     ? kidNames.map((k) => escapeHtml(k)).join(' · ')
     : 'NO KIDS THIS WINDOW';
-  const gamesLabel = eventCount === 1 ? '1 GAME' : `${eventCount} GAMES`;
+  // PR 5b-1 — kind-aware events label per V-37 finding #1. Fall back
+  // to legacy "N GAMES" if the section was built without events_label
+  // (older snapshots, pre-5b-1 fixtures).
+  const eventsLabel = section?.events_label
+    || (eventCount === 1 ? '1 GAME' : `${eventCount} GAMES`);
   const conflictLabel = conflictCount ? ` · ${conflictCount} CONFLICT${conflictCount === 1 ? '' : 'S'}` : '';
   const html = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
     + ' style="border-collapse:collapse;margin:0 0 16px 0;">'
@@ -26,13 +30,13 @@ export default function renderVipHeader(section) {
     + `<div style="font-size:11px;font-weight:700;color:#ffffff;letter-spacing:2px;text-transform:uppercase;line-height:1.4;opacity:0.85;margin-bottom:6px;">${eyebrow}</div>`
     + `<div style="font-size:22px;font-weight:700;color:#ffffff;line-height:1.2;letter-spacing:-0.2px;">${headline}</div>`
     + `<div style="font-size:13px;font-weight:500;color:#ffffff;line-height:1.4;opacity:0.9;margin-top:4px;">${kidsLine}</div>`
-    + `<div style="font-size:12px;font-weight:600;color:#ffffff;letter-spacing:1.5px;text-transform:uppercase;line-height:1.4;opacity:0.75;margin-top:6px;">${gamesLabel}${conflictLabel}</div>`
+    + `<div style="font-size:12px;font-weight:600;color:#ffffff;letter-spacing:1.5px;text-transform:uppercase;line-height:1.4;opacity:0.75;margin-top:6px;">${eventsLabel}${conflictLabel}</div>`
     + '</td></tr></table>';
   const plainText = [
     `FAMILY GUIDE${range ? ` · ${range}` : ''}`,
     parent,
     kidsLine,
-    `${gamesLabel}${conflictLabel}`,
+    `${eventsLabel}${conflictLabel}`,
   ].join('\n');
   return { html, plainText };
 }

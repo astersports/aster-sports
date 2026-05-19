@@ -129,3 +129,27 @@ export function detectConflicts(kidsWithEvents) {
 }
 
 export { DEFAULT_GAME_MINUTES, TRAVEL_GAP_MIN };
+
+// PR 5b-1 — kind-aware event-count label for the VIP header.
+// V-37 finding #1: header rendered "4 GAMES" when the 4 events
+// were all PRACTICES. Accuracy fix: read events[i].event_type
+// (added to the resolver select in 5b-1) and emit the exact kind
+// label when all events share a kind; fall back to generic "EVENTS"
+// when mixed or unknown. Tournament events count as games (the
+// competition-type distinction is internal per CLAUDE.md §5);
+// is_scrimmage stays a flag on a game, not a separate bucket.
+export function summarizeEventKinds(events) {
+  const list = events || [];
+  if (!list.length) return 'NO EVENTS';
+  let games = 0;
+  let practices = 0;
+  for (const ev of list) {
+    const t = ev?.event_type;
+    if (t === 'game' || t === 'tournament') games += 1;
+    else if (t === 'practice') practices += 1;
+  }
+  const total = list.length;
+  if (games === total) return total === 1 ? '1 GAME' : `${total} GAMES`;
+  if (practices === total) return total === 1 ? '1 PRACTICE' : `${total} PRACTICES`;
+  return total === 1 ? '1 EVENT' : `${total} EVENTS`;
+}

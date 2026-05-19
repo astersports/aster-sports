@@ -67,7 +67,7 @@ export async function resolveFamilyGuide({ parentUserId, dateRange }, { supabase
     const teamIds = [...new Set(kids.flatMap((k) => k.teams.map((t) => t.team_id)))];
     if (teamIds.length && dateRange?.start && dateRange?.end) {
       const { data: evRows, error: evErr } = await supabase.from('events')
-        .select('id, team_id, start_at, end_at, opponent, location, sub_location, title')
+        .select('id, team_id, start_at, end_at, opponent, location, sub_location, title, event_type, is_scrimmage')
         .in('team_id', teamIds)
         .gte('start_at', dateRange.start)
         .lte('start_at', `${dateRange.end}T23:59:59Z`);

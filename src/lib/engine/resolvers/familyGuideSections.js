@@ -11,7 +11,7 @@
 // in 5b (kid_color_pill expands to color-striped event rows per
 // kid, similar to coach_roundup's color_striped_row).
 
-import { formatDateRange } from './familyGuideHelpers';
+import { formatDateRange, summarizeEventKinds } from './familyGuideHelpers';
 
 const FALLBACK_TEAM_COLOR = '#4a8fd4';
 
@@ -19,12 +19,14 @@ function trim(s) { return typeof s === 'string' ? s.trim() : ''; }
 
 export function buildVipHeaderSection(parent, kidsWithEvents, dateRange, conflicts) {
   const kidNames = (kidsWithEvents || []).map((k) => k.first_name || 'Kid');
+  const allEvents = (kidsWithEvents || []).flatMap((k) => k.events || []);
   return {
     kind: 'vip_header',
     parent_name: parent?.first_name || 'Parent',
     kid_names: kidNames,
     date_range_label: formatDateRange(dateRange),
-    event_count: (kidsWithEvents || []).reduce((s, k) => s + (k.events?.length || 0), 0),
+    event_count: allEvents.length,
+    events_label: summarizeEventKinds(allEvents),
     conflict_count: (conflicts || []).length,
   };
 }
@@ -39,6 +41,7 @@ export function buildKidColorPillSections(kidsWithEvents) {
       team_name: k.team_name || 'Team',
       team_color: k.team_color || FALLBACK_TEAM_COLOR,
       event_count: k.events.length,
+      events_label: summarizeEventKinds(k.events),
     });
   }
   return out;
