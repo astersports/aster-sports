@@ -52,5 +52,36 @@ export function useGuardians() {
 
   useEffect(() => { Promise.resolve().then(refetch); }, [refetch]);
 
-  return { guardians, loading, error, refetch };
+  // PR 5b-B — basic add/edit CRUD. No archive in this PR (guardians
+  // table lacks archived_at; cascading-delete via FK to player_guardians
+  // is also out of scope until product call on "what happens to a
+  // kid when their last guardian is removed" lands). Per anti-pattern
+  // #36: destructure data + error; surface error to caller.
+  const createGuardian = useCallback(async (input) => {
+    if (!orgId) return { error: 'No organization' };
+    const payload = {
+      org_id: orgId,
+      first_name: (input.first_name || '').trim() || null,
+      last_name: (input.last_name || '').trim() || null,
+      email: (input.email || '').trim() || null,
+      phone: (input.phone || '').trim() || null,
+    };
+    const { error: e } = await supabase.from('guardians').insert(payload);
+    if (!e) await refetch();
+    return { error: e?.message };
+  }, [orgId, refetch]);
+
+  const updateGuardian = useCallback(async (id, input) => {
+    const payload = {
+      first_name: (input.first_name || '').trim() || null,
+      last_name: (input.last_name || '').trim() || null,
+      email: (input.email || '').trim() || null,
+      phone: (input.phone || '').trim() || null,
+    };
+    const { error: e } = await supabase.from('guardians').update(payload).eq('id', id);
+    if (!e) await refetch();
+    return { error: e?.message };
+  }, [refetch]);
+
+  return { guardians, loading, error, refetch, createGuardian, updateGuardian };
 }
