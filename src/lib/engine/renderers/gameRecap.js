@@ -71,5 +71,3 @@ export function composeGameRecap(data = {}) {
   const plainText = renderSectionsPlainText(sections);
   return { subject: buildSubject({ teamName, opponent, score: data.score }), html, plainText, sections };
 }
-
-export default composeGameRecap;

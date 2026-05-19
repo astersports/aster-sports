@@ -52,5 +52,3 @@ export function composeTournamentRecap(data = {}) {
   const subject = `Tournament recap — ${tournamentName || 'tournament'}`;
   return { subject, html, plainText, sections };
 }
-
-export default composeTournamentRecap;

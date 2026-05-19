@@ -88,5 +88,3 @@ export function renderGameCard(section) {
     + '</table>';
   return { html, plainText: buildPlain(section || {}) };
 }
-
-export default renderGameCard;
