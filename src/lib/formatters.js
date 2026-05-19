@@ -66,53 +66,6 @@ export function formatCurrency(cents) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
 
-// NEXT UP date helpers. NY-anchored so a parent on Pacific time still sees
-// "Sat May 3 · 2:00 PM" matching the local game time, not 11:00 AM PT.
-
-// MAX variant: "Sat, May 3 · 2:00 PM"
-export function formatEventDateMax(startAt) {
-  const d = new Date(startAt);
-  const date = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: NY_TZ });
-  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: NY_TZ });
-  return `${date} · ${time}`;
-}
-
-// MED variant: "Sat May 3 · 2:00 PM" — same as MAX without the comma.
-export function formatEventDateMed(startAt) {
-  const d = new Date(startAt);
-  const weekday = d.toLocaleDateString('en-US', { weekday: 'short', timeZone: NY_TZ });
-  const monthDay = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: NY_TZ });
-  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: NY_TZ });
-  return `${weekday} ${monthDay} · ${time}`;
-}
-
-// MIN variant — relative-first:
-//   today  → "Today · 2:00 PM"
-//   tomorrow → "Tomorrow · 2:00 PM"
-//   within 7 days → "Sat · 2:00 PM"
-//   beyond → "May 3 · 2:00 PM"
-export function formatEventDateMin(startAt) {
-  const d = new Date(startAt);
-  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: NY_TZ });
-  // en-CA gives YYYY-MM-DD; we use it purely to compare NY-local calendar
-  // dates without parsing back into a Date.
-  const dayKey = (date) => date.toLocaleDateString('en-CA', { timeZone: NY_TZ });
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const eventDay = dayKey(d);
-  if (eventDay === dayKey(today)) return `Today · ${time}`;
-  if (eventDay === dayKey(tomorrow)) return `Tomorrow · ${time}`;
-  const sevenOut = new Date(today);
-  sevenOut.setDate(sevenOut.getDate() + 7);
-  if (d < sevenOut) {
-    const weekday = d.toLocaleDateString('en-US', { weekday: 'short', timeZone: NY_TZ });
-    return `${weekday} · ${time}`;
-  }
-  const monthDay = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: NY_TZ });
-  return `${monthDay} · ${time}`;
-}
-
 // "in 35m", "in 2h 15m", "Tomorrow 6:30 PM", "Wed 5:00 PM"
 // NY-anchored "Tomorrow" boundary + time render: a parent on Pacific or
 // European time sees "Tomorrow" relative to the NY day boundary, not

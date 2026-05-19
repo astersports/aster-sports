@@ -26,12 +26,10 @@ export const CREAM            = '#fffbeb';
 export const BORDER_DEFAULT   = '#e5e7eb';
 export const BORDER_SUBTLE    = '#f1f5f9';
 export const BG_PAGE          = '#f8fafc';
-export const BG_WHITE         = '#ffffff';
 
 // Status (W/L/T tones in resultsTable, outcome tones in scenarios)
 export const STATUS_WIN       = '#16a34a';
 export const STATUS_LOSS      = '#dc2626';
-export const STATUS_NEUTRAL   = '#94a3b8';
 
 // Wave 3.7 hotfix §D-RSVP-1 — RSVP count tones in renderer #6.
 // Compound visual: each count + label colored to its status. Separators

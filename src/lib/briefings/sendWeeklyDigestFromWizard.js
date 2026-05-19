@@ -105,8 +105,6 @@ export function mapWizardStateToDigestArgs({ state, orgId, period, recipients, e
   };
 }
 
-export const __test = { resolveWeeklyDigestAudienceTeamIds, filterSendable, buildEventsByTeam };
-
 export async function sendWeeklyDigestFromWizard(args) {
   const digestArgs = mapWizardStateToDigestArgs(args);
   return sendWeeklyDigest(digestArgs);
