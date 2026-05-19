@@ -284,7 +284,7 @@ F still mostly open.
     extend with red-bordered cancellation-specific render)
   - Registration/payment reminder: BLOCKED on parent payment surface
 
-- **Sprint D — Coach home**: COACH ACTION QUEUE STARTED.
+- **Sprint D — Coach home**: COACH ACTION QUEUE 2 of 4+ SIGNALS.
   - CoachHomePage.jsx new file: SHIPPED via Tier 3 v1
   - Alerts + roster snapshot + MY TEAMS: SHIPPED via Tier 3 v1
   - ACTION QUEUE shell + 2 signals: SHIPPED via PR #288 (pending
@@ -296,13 +296,17 @@ F still mostly open.
     UPCOMING PREP, RECOGNITION CARD coach context, QUICK ACTIONS ROW,
     additional ACTION QUEUE signals (roster requests, coach comp)
 
-- **Sprint E — Admin home redesign**: PARTIAL.
+- **Sprint E — Admin home redesign**: ADMIN ACTION QUEUE 3 SIGNALS.
   - AdminHomePage exists + alerts + KpiGrid: SHIPPED
   - MANAGE section added 2026-05-19: SHIPPED via PR #269 (admin entry
     + route audit). 6 admin manager links visible on home.
-  - Ops dashboard / pending queues / activity feed / Attention
-    Required banner: NOT shipped per current visibility. ACTION
-    QUEUE shell pattern from Sprint D directly applicable here.
+  - ACTION QUEUE shell + 3 signals: SHIPPED via PR #291 (low-RSVP
+    events within 72h) + #292 (unscored games past start, 7d window)
+    + #293 (pending parent invitations). Validates ActionZone as
+    truly cross-role (parent + coach + admin all consume it).
+  - Remaining: ops dashboard, pending queues lanes, activity feed,
+    additional Attention Required signals (overdue waivers,
+    expired discount codes, missing emergency contacts, etc.).
 
 - **Sprint F — Cross-role polish**: dark mode complete (Q10),
   accessibility full audit (Q1), analytics instrumentation (Q9),
@@ -310,13 +314,26 @@ F still mostly open.
   shipped per current visibility. **Bundle perf SHIPPED via PR #277**
   (SDK lazy-load — main bundle 893 kB → ~440 kB on Vercel).
 
-**Cross-role infrastructure shipped this stretch:**
-- `ActionZone` component generalized as signal-agnostic — parent + coach
-  share the same component, items emit `kind`, `primary`, optional
-  `secondary`, optional `href`. New signals add hooks; ActionZone needs
-  no further work. Pattern extends to admin (Sprint E) cleanly.
+**Cross-role infrastructure validated this stretch:**
+- `ActionZone` component is signal-agnostic — parent + coach + admin
+  ALL consume the same component. Items emit `kind`, `primary`,
+  optional `secondary`, optional `href`. New signals add hooks; the
+  component needs no further work. **Tally: 3 pages × 8 signal hooks
+  × 1 shared component.**
+  - Parent: usePendingRsvps, useRideNeeded, useVolunteerSlots
+  - Coach: usePendingAchievements, useUnpublishedScores
+  - Admin: useLowRsvpEvents, useUnscoredGames, usePendingInvitations
 - Recognition card pattern (relative timestamp + composed title
-  + team-color stripe + click → /teams/<id>) similarly reusable.
+  + team-color stripe + click → /teams/<id>) similarly reusable for
+  any team-scoped recognition surface.
+- Per-role data-scope pattern locked: parent signals scope by
+  myChildren×teams, coach signals scope by coachedTeamIds, admin
+  signals scope by orgId. All three follow anti-pattern #36 + #37.
+
+**Symmetric "3 signals per page" pattern locked** for parent + admin
+(coach has 2 today, pending 2-3 more). The shell pattern is now
+proven; future Sprint D/E work adds hooks rather than rewriting
+infrastructure.
 
 ---
 
