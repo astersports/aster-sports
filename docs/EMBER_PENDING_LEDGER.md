@@ -257,28 +257,66 @@ Status: Session 1 partially shipped. Remainder OPEN.
 Source: `SKYFIRE_BUILD_QUEUE_v2.md` Phase 1 Sprint plan, references
 `HOME_DESIGN_SPEC.md` (CC hasn't read in this session — see §15).
 
-Status: **PARTIAL via Tier 3 v1** (PRs #225-#232 + #239-#241 overlap
-Sprints D-E in particular). Individual section status uncertain;
-VERIFY MONDAY per §15.
+Status: **SUBSTANTIVELY ADVANCED** via 2026-05-19 afternoon session.
+Sprints B and C effectively shipped (B fully; C 4 of 6 sections).
+Sprint D started with ACTION QUEUE shell + 2 signals. Sprints E and
+F still mostly open.
 
-- **Sprint B — Parent home Phase 1**: MY TEAMS dynamic data (likely
-  SHIPPED via PR #239), ACTION ZONE, density toggle wiring (reads
-  Migration 016), relative date language (partial via PR #234), empty
-  state design.
-- **Sprint C — Parent home Phase 2**: LIVE NOW card, RECOGNITION card
-  (ties to Migration 018 team_achievements UI), Tournament weekend
-  banner, Emergency alert banner, Coach message block.
-- **Sprint D — Coach home**: new CoachHomePage.jsx (SHIPPED via Tier
-  3 v1), all coach-specific sections (partial — alerts + roster
-  snapshot + MY TEAMS shipped), Team Pulse wiring (Migration 023
-  shipped; status of Team Pulse unknown).
-- **Sprint E — Admin home redesign**: AdminHomePage exists + alerts
-  + KpiGrid shipped; ops dashboard / pending queues / activity feed /
-  Attention Required banner state uncertain.
+- **Sprint B — Parent home Phase 1**: SUBSTANTIVELY COMPLETE.
+  - MY TEAMS dynamic data: SHIPPED via PR #239 (Cluster 5 fix)
+  - ACTION ZONE shell + 3 signals: SHIPPED via PR #281 (RSVP pending),
+    #282 (ride needed), #283 (volunteer slot). Generalized to signal-
+    agnostic shape in #288 (item.href + item.secondary fields).
+  - Density toggle wiring: SHIPPED (DensityToggle component exists)
+  - Relative date language: PARTIAL via PR #234
+  - Empty state design: SHIPPED (welcome card lines 114-120 of
+    ParentHomePage)
+  - 4th ACTION ZONE signal (payment overdue): BLOCKED on parent
+    payment surface — Phase 7 financials prerequisite. Documented
+    in PR #283 closeout.
+
+- **Sprint C — Parent home Phase 2**: 4 OF 6 SECTIONS SHIPPED.
+  - LIVE NOW card: SHIPPED via PR #284
+  - Tournament weekend banner: SHIPPED via PR #285
+  - Recognition card: SHIPPED via PR #286
+  - Coach message block: SHIPPED via PR #287
+  - Emergency alert banner: PARTIAL via existing AlertZone (could
+    extend with red-bordered cancellation-specific render)
+  - Registration/payment reminder: BLOCKED on parent payment surface
+
+- **Sprint D — Coach home**: COACH ACTION QUEUE STARTED.
+  - CoachHomePage.jsx new file: SHIPPED via Tier 3 v1
+  - Alerts + roster snapshot + MY TEAMS: SHIPPED via Tier 3 v1
+  - ACTION QUEUE shell + 2 signals: SHIPPED via PR #288 (pending
+    achievements) + #289 (unpublished scores). ActionZone shell
+    validated as cross-role infrastructure (parent + coach use the
+    same component).
+  - Team Pulse wiring (Migration 023 — STATUS UNKNOWN)
+  - Remaining: full COACHING TODAY render polish, MESSAGING BLOCK,
+    UPCOMING PREP, RECOGNITION CARD coach context, QUICK ACTIONS ROW,
+    additional ACTION QUEUE signals (roster requests, coach comp)
+
+- **Sprint E — Admin home redesign**: PARTIAL.
+  - AdminHomePage exists + alerts + KpiGrid: SHIPPED
+  - MANAGE section added 2026-05-19: SHIPPED via PR #269 (admin entry
+    + route audit). 6 admin manager links visible on home.
+  - Ops dashboard / pending queues / activity feed / Attention
+    Required banner: NOT shipped per current visibility. ACTION
+    QUEUE shell pattern from Sprint D directly applicable here.
+
 - **Sprint F — Cross-role polish**: dark mode complete (Q10),
   accessibility full audit (Q1), analytics instrumentation (Q9),
   performance optimization, multi-org scaffolding (Q3). All NOT
-  shipped per current visibility.
+  shipped per current visibility. **Bundle perf SHIPPED via PR #277**
+  (SDK lazy-load — main bundle 893 kB → ~440 kB on Vercel).
+
+**Cross-role infrastructure shipped this stretch:**
+- `ActionZone` component generalized as signal-agnostic — parent + coach
+  share the same component, items emit `kind`, `primary`, optional
+  `secondary`, optional `href`. New signals add hooks; ActionZone needs
+  no further work. Pattern extends to admin (Sprint E) cleanly.
+- Recognition card pattern (relative timestamp + composed title
+  + team-color stripe + click → /teams/<id>) similarly reusable.
 
 ---
 
