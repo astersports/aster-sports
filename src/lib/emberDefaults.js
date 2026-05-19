@@ -10,9 +10,7 @@ export const EMBER_BRAND = Object.freeze({
   text_on_dark: '#F5F0E8',
 });
 
-export const EMBER_LOGO_URL = '/phoenix.webp';
 export const EMBER_DISPLAY_NAME = 'Ember';
-export const EMBER_TAGLINE = 'Coach more. Coordinate less.';
 
 // Maps brand_colors jsonb keys to CSS variable names.
 // Used by useOrgBranding to apply or clear org overrides.

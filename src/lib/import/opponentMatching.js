@@ -28,19 +28,3 @@ export function fuzzyOpponentMatch(parsedString, candidateString) {
   if (!parsedString || !candidateString) return false;
   return levenshtein(parsedString, candidateString) <= FUZZY_THRESHOLD;
 }
-
-// Best-effort opponent_id resolution against a list of opponent rows.
-// Returns { opponent_id, confidence } where confidence is the inverse
-// of the Levenshtein distance (0-1 scale, higher = better match).
-// Returns { opponent_id: null, confidence: 0 } if no match within
-// threshold.
-export function resolveOpponentId(opponentString, opponents) {
-  if (!opponentString || !opponents?.length) return { opponent_id: null, confidence: 0 };
-  let best = null; let bestDist = Infinity;
-  for (const op of opponents) {
-    const d = levenshtein(opponentString, op.name);
-    if (d < bestDist && d <= FUZZY_THRESHOLD) { best = op; bestDist = d; }
-  }
-  if (!best) return { opponent_id: null, confidence: 0 };
-  return { opponent_id: best.id, confidence: 1 - (bestDist / Math.max(String(opponentString).length, 1)) };
-}

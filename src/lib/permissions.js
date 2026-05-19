@@ -7,16 +7,7 @@ export const isAdmin  = (role) => role === 'admin';
 // Staff = admin or coach — both have write access to their team's data.
 export const isStaff  = (role) => role === 'admin' || role === 'coach';
 
-// canEdit is currently equivalent to isStaff, but kept as a separate name so
-// call sites read more naturally and we can tighten the rule later without
-// touching every page.
-export const canEdit  = (role) => role === 'admin' || role === 'coach';
-
 export const VIEW_AS_EXPIRY_HOURS = 24;
-
-export const isParent = (role) => role === 'parent';
-
-export const isCoach = (role) => role === 'coach';
 
 export const isViewAsExpired = (setAtIso) => {
   if (!setAtIso) return true;
