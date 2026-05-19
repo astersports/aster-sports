@@ -3,6 +3,7 @@ import { Car, MapPin, Repeat } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCountdown, formatTime } from '../../lib/formatters';
 import { TYPE_LABELS } from '../../lib/constants';
+import { formatEventTitle } from '../../lib/eventTitle';
 import { useAuth } from '../../context/AuthContext';
 import { useNow } from '../../hooks/useNow';
 import { useMapsUrl } from '../../hooks/useMapsUrl';
@@ -24,18 +25,15 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
   const dimmed = isCancelled || isPast;
   const msUntil = new Date(event.start_at).getTime() - now;
   const showCountdown = isNext && msUntil > 0 && msUntil < 24 * 60 * 60 * 1000;
-  const rawTitle = event.title || typeLabel;
-  const alreadyPrefixed = rawTitle.startsWith('vs.') || rawTitle.startsWith('vs ') || rawTitle.startsWith('@ ') || rawTitle.startsWith('@');
-  const titlePrefix = !alreadyPrefixed && (event.event_type === 'game' || event.event_type === 'tournament') && event.opponent
-    ? (event.home_away === 'away' ? '@ ' : 'vs. ')
-    : '';
+  const { prefix: titlePrefix, body: titleBody } = formatEventTitle(event);
+  const titleAria = `${titlePrefix}${titleBody}`;
   const mapsUrl = useMapsUrl(event.location_name || null);
 
   return (
     <div
       role="link"
       tabIndex={0}
-      aria-label={`${teamName} ${rawTitle}, ${formatTime(event.start_at)}`}
+      aria-label={`${teamName} ${titleAria}, ${formatTime(event.start_at)}`}
       className={`sf-press ${dimmed ? '' : (stagger || '')}`}
       onClick={(e) => { if (e.target.closest('a, button')) return; navigator.vibrate?.(10); navigate(`/events/${event.id}`, { state: { event } }); }}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/events/${event.id}`, { state: { event } }); } }}
@@ -96,7 +94,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
                 {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
               </div>
               <div style={{ fontSize: 15, color: 'var(--em-text-primary)', marginTop: 2, marginBottom: 2, textDecoration: isCancelled ? 'line-through' : 'none' }}>
-                {titlePrefix}{rawTitle}
+                {titlePrefix}{titleBody}
               </div>
               {teamName && <div style={{ fontSize: 13, color: teamColor, fontWeight: 500 }}>{teamName}</div>}
               {event.location_name && (

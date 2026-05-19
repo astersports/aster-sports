@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { formatEventTitleString } from '../lib/eventTitle';
 
 // §4.C Sprint B — ACTION ZONE second signal: ride needed.
 // Triggers for a (kid × event) pair when:
@@ -34,7 +35,7 @@ export function useRideNeeded(myChildren, upcomingActivities, userId) {
           player_id: k.playerId,
           kid_first_name: k.firstName || 'Your kid',
           start_at: ev.start_at,
-          event_title: ev.title || ev.event_type || 'Event',
+          event_title: formatEventTitleString(ev),
           team_name: ev.teams?.name || '—',
           team_color: ev.teams?.team_color || 'var(--em-neutral)',
         });

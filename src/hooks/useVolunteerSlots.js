@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { formatEventTitleString } from '../lib/eventTitle';
 
 // §4.C Sprint B — ACTION ZONE third signal: open volunteer slots.
 // Triggers per event (not per kid) when:
@@ -65,7 +66,7 @@ export function useVolunteerSlots(myChildren, upcomingActivities) {
         event_id: ev.id,
         player_id: null,
         start_at: ev.start_at,
-        event_title: ev.title || ev.event_type || 'Event',
+        event_title: formatEventTitleString(ev),
         team_name: ev.teams?.name || '—',
         team_color: ev.teams?.team_color || 'var(--em-neutral)',
         open_count: count,
