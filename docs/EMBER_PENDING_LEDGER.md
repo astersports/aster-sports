@@ -1145,7 +1145,7 @@ Captured post-session-recap exchange with Claude AI. Five open questions raised 
 - New `src/components/admin/AdminManagerLayout.jsx`: 80-120 lines, owns page header (Inter font, brand cobalt accent, breadcrumb back) + search + Add CTA + tabs slot (Active/Archived if needed) + empty state
 - Each of 3 child pages: 80-100 lines, mounts layout, supplies own table + form sheet + data hooks
 - **NOT in scope tonight:** pulling existing `AdminSeasonsPage` + `AdminTeamsPage` into the wrapper. Sample-of-two is not precedent — those pre-date the design discipline. New code uses new layout; old code stays as-is until independent refactor reason emerges. Anti-pattern #42 (parallel-system buildup) caution: don't refactor what works just because new pattern exists.
-- **Design call to confirm Monday before code:** does AdminManagerLayout absorb the page header, or does each page render its own header and the layout only owns the body? **CC recommendation: header included** — visible-consistency win is what drove unified call.
+- ~~**Design call to confirm Monday before code:** does AdminManagerLayout absorb the page header, or does each page render its own header and the layout only owns the body? **CC recommendation: header included** — visible-consistency win is what drove unified call.~~ **LOCKED 2026-05-19 — header included** (Monday-opener Action 2 close; see §4.N.4). AdminManagerLayout owns the page header. Child pages mount the layout and supply body content only — no per-page header rendering. The visible-consistency win across the 3 new admin manager pages (Members / Opponents / Locations) drives the unified call; cost of a future "this page needs a custom header" exception is low (escape hatch via optional prop later if a real need surfaces).
 
 **Q5 — Layer 3 chat-side query list:** Frank runs Tier 1 queries first via `conversation_search`; if Tier 1 yields <5-10 distinct items, run Tier 2; Tier 3 only if `recent_chats` walk surfaces unexpected gaps.
 
@@ -1256,6 +1256,50 @@ Actions 3 + 4 (L3 chat scan, L4 prod verification sweep) **unchanged.**
 **Forward implication — the §4.N.3 surfacing IS a Layer 4 finding.** Production verification on §1 SHIPPED items, applied retroactively to PR 5 (Family Guide) via Action 1 prep. The full Layer 4 sweep scheduled for Monday hour 3-4 will likely surface similar narrative-drift instances on other §1 SHIPPED items. Worth budgeting for: Layer 4 may find more "code-merged but actor validation not executed" cases.
 
 **Anti-pattern #45 acid-test cycle 10:** structural findings from Action 1 execution → ledger amendments same session. Cycle holds.
+
+### §4.N.4 — Monday-opener Action 2 (§4.O AdminManagerLayout design call) close (2026-05-19)
+
+Action 2 executed per §4.N.2 sequence following Action 1 close. **Outcome: header-included-in-layout LOCKED.** §4.O arc design parameters fully resolved; ready for code build when arc reaches turn in strategic-three-arc routing.
+
+**Decision lock:**
+
+Q4's open question (*"does AdminManagerLayout absorb the page header, or does each page render its own header and the layout only owns the body?"*) resolved with CC's recommendation: **header included.** AdminManagerLayout owns:
+- Page header (Inter font, brand cobalt accent, breadcrumb back)
+- Search bar
+- Add CTA
+- Tabs slot (Active/Archived if needed)
+- Empty state
+
+Child pages (AdminMembersPage / AdminOpponentsPage / AdminLocationsPage) mount the layout and supply body content only — no per-page header rendering.
+
+**Rationale:**
+
+Visible-consistency win across the 3 new admin manager pages drives the unified call. Three pages built independently produce drift between header layouts within weeks; unifying at the layout boundary makes that impossible by construction. The cost of a future "this page needs a custom header" exception stays low — escape hatch via optional `headerOverride` prop can land later if a real need surfaces. Premature flexibility isn't free; YAGNI (per anti-pattern #39: lean-with-hedge usually means the hedge is wrong; don't pre-build the override).
+
+**NOT changed by this lock:**
+
+- §4.N.2 Q4's "NOT in scope tonight" guard still holds: existing `AdminSeasonsPage` + `AdminTeamsPage` stay as-is. Sample-of-two is not precedent. Anti-pattern #42 (parallel-system buildup) caution applies — don't refactor what works just because the new pattern exists. If a real refactor reason emerges later, that's a separate decision.
+- File-size targets unchanged: AdminManagerLayout 80-120 lines, each child page 80-100 lines.
+
+**§4.O arc state after lock:**
+
+- Design: fully resolved
+- Implementation: NOT STARTED — arc waits in strategic-three-arc routing (arc 2, between §4.A PR 5 follow-ups and §4.C Sprint B-F start)
+- Concrete deliverables (from §4.O-related Layer 2 validation entries V-32 + V-33):
+  - `src/components/admin/AdminManagerLayout.jsx` (new shared wrapper)
+  - `src/pages/AdminMembersPage.jsx` + `/admin/members` route (V-32)
+  - `src/pages/AdminOpponentsPage.jsx` + `/admin/opponents` route (V-33)
+  - `src/pages/AdminLocationsPage.jsx` + `/admin/locations` route (V-33, closes §3-A PARTIAL)
+
+**Monday-opener routing (unchanged from §4.N.2 4-action sequence):**
+
+Action 2 **CLOSED 2026-05-19** — header-included locked. Output: §4.N.2 Q4 marked LOCKED + this §4.N.4 amendment.
+
+Actions 3 (Layer 3 chat scan, Frank-side) + 4 (Layer 4 production verification sweep, CC peak energy hour 3-4) **next.**
+
+**Forward implication:** Action 2 cost was minimal (single decision lock, ~5 minutes including ledger reconciliation) compared to §4.N.2's ~20-min estimate. The estimate was conservative because the recommendation was strong and the surrounding parameters were already locked in §4.N.2 Q4. Useful calibration data: when the recommendation IS the decision, "design call" collapses to "lock the recommendation."
+
+**Anti-pattern #45 acid-test cycle 11:** locked decision in planning doc → ledger reconciliation same session. Cycle holds.
 
 ### Layer 1 findings (2026-05-18 evening soft start — §4.N audit, low-cognitive pass)
 
