@@ -23,6 +23,7 @@ const PlayerProfilePage = lazy(() => import('./pages/PlayerProfilePage'));
 const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
 const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
 const AdminMembersPage = lazy(() => import('./pages/AdminMembersPage'));
+const AdminOpponentsPage = lazy(() => import('./pages/AdminOpponentsPage'));
 const SeasonRolloverPage = lazy(() => import('./pages/SeasonRolloverPage'));
 const FinancialDashboardPage = lazy(() => import('./pages/FinancialDashboardPage'));
 const FinancialImportPage = lazy(() => import('./pages/FinancialImportPage'));
@@ -82,6 +83,7 @@ export default function App() {
       <Route path="/admin/seasons" element={<Protected allowedRoles={['admin']}><AdminSeasonsPage /></Protected>} />
       <Route path="/admin/teams" element={<Protected allowedRoles={['admin']}><AdminTeamsPage /></Protected>} />
       <Route path="/admin/members" element={<Protected allowedRoles={['admin']}><AdminMembersPage /></Protected>} />
+      <Route path="/admin/opponents" element={<Protected allowedRoles={['admin']}><AdminOpponentsPage /></Protected>} />
       <Route path="/admin/rollover" element={<Protected allowedRoles={['admin']}><SeasonRolloverPage /></Protected>} />
       <Route path="/admin/financials" element={<Protected allowedRoles={['admin']}><FinancialDashboardPage /></Protected>} />
       <Route path="/admin/financials/import" element={<Protected allowedRoles={['admin']}><FinancialImportPage /></Protected>} />
