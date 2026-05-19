@@ -14,7 +14,13 @@ export default function renderKidColorPill(section) {
   const team = section?.team_name || 'Team';
   const color = section?.team_color || '#4a8fd4';
   const count = section?.event_count || 0;
-  const countLabel = count === 1 ? '1 game' : `${count} games`;
+  // PR 5b-1 — kind-aware label per V-37 finding #1 applied consistently
+  // across the email. Lower-cased here to match the secondary-line tone
+  // ("11U Girls · 2 practices"); VIP header keeps the uppercase form.
+  // Fall back to legacy "N games" if the builder didn't compute label.
+  const countLabel = section?.events_label
+    ? section.events_label.toLowerCase()
+    : (count === 1 ? '1 game' : `${count} games`);
   const html = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
     + ' style="border-collapse:collapse;margin:20px 0 8px 0;">'
     + `<tr><td style="font-family:Inter,system-ui,sans-serif;">`

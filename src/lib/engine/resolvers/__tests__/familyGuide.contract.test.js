@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { composeFamilyGuide, resolveFamilyGuide } from '../familyGuide';
-import { detectConflicts, formatDateRange, groupEventsByKid } from '../familyGuideHelpers';
+import { detectConflicts, formatDateRange, groupEventsByKid, summarizeEventKinds } from '../familyGuideHelpers';
 
 function mockSb({ parent = null, pgRows = [], tpRows = [], events = [], coaches = [], org = null }) {
   return {
@@ -107,6 +107,33 @@ describe('familyGuideHelpers', () => {
       { player_id: 'p-2', first_name: 'Milo', team_name: '8U', team_color: '#f59e0b', events: [{ start_at: '2026-05-18T16:15:00Z' }] },
     ]);
     expect(c[0].reason).toBe('tight_travel');
+  });
+  it('summarizeEventKinds — all practices renders "N PRACTICES"', () => {
+    expect(summarizeEventKinds([
+      { event_type: 'practice' }, { event_type: 'practice' }, { event_type: 'practice' }, { event_type: 'practice' },
+    ])).toBe('4 PRACTICES');
+    expect(summarizeEventKinds([{ event_type: 'practice' }])).toBe('1 PRACTICE');
+  });
+  it('summarizeEventKinds — all games / tournament games render "N GAMES"', () => {
+    expect(summarizeEventKinds([
+      { event_type: 'game' }, { event_type: 'tournament' }, { event_type: 'game' },
+    ])).toBe('3 GAMES');
+    expect(summarizeEventKinds([{ event_type: 'game' }])).toBe('1 GAME');
+  });
+  it('summarizeEventKinds — mixed kinds render generic "N EVENTS"', () => {
+    expect(summarizeEventKinds([
+      { event_type: 'practice' }, { event_type: 'game' },
+    ])).toBe('2 EVENTS');
+    expect(summarizeEventKinds([{ event_type: 'practice' }, { event_type: 'tournament' }])).toBe('2 EVENTS');
+  });
+  it('summarizeEventKinds — unknown / missing event_type counts as generic EVENT bucket', () => {
+    expect(summarizeEventKinds([{}])).toBe('1 EVENT');
+    expect(summarizeEventKinds([{ event_type: 'practice' }, {}])).toBe('2 EVENTS');
+  });
+  it('summarizeEventKinds — empty list returns "NO EVENTS"', () => {
+    expect(summarizeEventKinds([])).toBe('NO EVENTS');
+    expect(summarizeEventKinds(null)).toBe('NO EVENTS');
+    expect(summarizeEventKinds(undefined)).toBe('NO EVENTS');
   });
   it('detectConflicts skips same-kid + different-day', () => {
     const sameKid = detectConflicts([
