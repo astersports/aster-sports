@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -10,14 +10,11 @@ import { useActivities } from '../hooks/useActivities';
 import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
-import { useNow } from '../hooks/useNow';
-import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
-import { useLowRsvpEvents } from '../hooks/useLowRsvpEvents';
-import { useUnscoredGames } from '../hooks/useUnscoredGames';
-import { usePendingInvitations } from '../hooks/usePendingInvitations';
+import { useAdminHomeSignals } from '../hooks/useAdminHomeSignals';
 import { getWeatherForTime, useWeather } from '../hooks/useWeather';
 import AlertZone from '../components/alerts/AlertZone';
 import ActionZone from '../components/home/ActionZone';
+import PendingQueuesLanes from '../components/home/PendingQueuesLanes';
 import KpiGrid from '../components/admin/KpiGrid';
 import QuickActions from '../components/admin/QuickActions';
 import AdminManageLinks from '../components/admin/AdminManageLinks';
@@ -48,29 +45,16 @@ export default function AdminHomePage() {
   const nextEvent = activities.find((a) => new Date(a.start_at) >= new Date() && a.status !== 'cancelled');
   const [notifSettingsOpen, setNotifSettingsOpen] = useState(false);
 
-  // ACTION QUEUE per HOME_DESIGN_SPEC §3.1 (Admin "Attention Required").
-  // Reuses the signal-agnostic ActionZone shell from parent (PR #281)
-  // and coach (PR #288). First admin signal: events within 72h with
-  // > 50% of roster still no-response. Bound the RSVP counts query
-  // to the same 72h slice to keep payload small.
-  const now = useNow();
-  const next72hActivities = useMemo(
-    () => activities.filter((a) => {
-      if (!a?.start_at || a.status === 'cancelled') return false;
-      const ms = new Date(a.start_at).getTime();
-      return ms >= now && ms <= now + 72 * 60 * 60 * 1000;
-    }),
-    [activities, now],
-  );
-  const { counts: rsvpCounts } = useEventRsvpCounts(next72hActivities);
-  const lowRsvpItems = useLowRsvpEvents(next72hActivities, rsvpCounts, now);
-  const { items: unscoredGames, loading: unscoredLoading } = useUnscoredGames(orgId, now);
-  const { items: pendingInvitations, loading: invitationsLoading } = usePendingInvitations(orgId, now);
-  const adminActionItems = useMemo(
-    () => [...(lowRsvpItems || []), ...(unscoredGames || []), ...(pendingInvitations || [])],
-    [lowRsvpItems, unscoredGames, pendingInvitations],
-  );
-  const adminActionLoading = unscoredLoading || invitationsLoading;
+  // ACTION QUEUE per HOME_DESIGN_SPEC §3.1 (Admin "Attention Required")
+  // + PENDING QUEUES per §3.1.4. Both shells fed by useAdminHomeSignals
+  // — extracts the signal aggregation out of this page to keep it under
+  // the 150-line cap (anti-pattern #11).
+  const {
+    actionItems: adminActionItems,
+    actionLoading: adminActionLoading,
+    pendingLanes,
+    pendingLanesLoading,
+  } = useAdminHomeSignals(activities, orgId);
 
   // overflow-x-hidden + max-w-full on the page wrapper is defense in
   // depth — even if a child component escapes its box, nothing drags
@@ -83,6 +67,7 @@ export default function AdminHomePage() {
 
       <AlertZone alerts={alerts} loading={alertsLoading} variant="always_visible" sectionLabel="ALERTS" />
       <ActionZone items={adminActionItems} loading={adminActionLoading} />
+      <PendingQueuesLanes lanes={pendingLanes} loading={pendingLanesLoading} />
 
       <section className="min-w-0" aria-label="Key metrics">
         <KpiGrid stats={stats} />
