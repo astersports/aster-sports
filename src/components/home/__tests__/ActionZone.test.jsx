@@ -70,6 +70,16 @@ describe('ActionZone', () => {
     expect(screen.getByText('Milo: Ride needed')).toBeInTheDocument();
   });
 
+  it('handles per-event signals with null player_id (volunteer slot)', () => {
+    const items = [
+      ITEM({ event_id: 'e1', kind: 'volunteer_slot', primary: '2 volunteer slots open', player_id: null }),
+    ];
+    render(withRouter(<ActionZone items={items} loading={false} />));
+    expect(screen.getByText('2 volunteer slots open')).toBeInTheDocument();
+    // Verify the link target still resolves (key handles null player_id)
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/events/e1');
+  });
+
   it('each item links to /events/<event_id>', () => {
     const items = [
       ITEM({ event_id: 'e-123', kid_first_name: 'Charlie' }),
