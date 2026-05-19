@@ -1301,6 +1301,91 @@ Actions 3 (Layer 3 chat scan, Frank-side) + 4 (Layer 4 production verification s
 
 **Anti-pattern #45 acid-test cycle 11:** locked decision in planning doc → ledger reconciliation same session. Cycle holds.
 
+### §4.N.5 — Monday-opener Action 4 (Layer 4 production verification sweep) close (2026-05-19)
+
+Action 4 executed per §4.N.2 sequence following Action 2 close. **Outcome: 9 §1 SHIPPED PRs all production-healthy via anti-pattern #44 retroactive trace.** Layer 4's major finding was already surfaced earlier during Action 1 prep (§4.A PR 5 reclassification to CODE-PARTIAL, captured in §4.N.3). The remaining §1 sweep confirms no other code-merged-but-actor-validation-missing instances in the May 4 → May 18 window.
+
+**§1 verification table (9 PRs):**
+
+| PR | Claim | Verification | Verdict |
+|----|-------|--------------|---------|
+| #233 | formatters.js NY-pin canonical helpers | `NY_TZ = 'America/New_York'` at `formatters.js:5`; threaded through every `toLocale*` call (lines 14, 28, 60, 75-76, 83-85, 96, 99, 109) | ✓ HEALTHY |
+| #234 | 51 leaf-callsite NY-pin + static-grep audit | `timezoneAuditPin.test.js` test passes 1/1; bracket-balance design holds | ✓ HEALTHY |
+| #235 | AlertZone loading-state gate | Closed by #241 — see below | ✓ HEALTHY (via #241) |
+| #236 | Tier 3 v1 retrospective doc | `TIER_3_V1_RETROSPECTIVE_NOTES.md` present | ✓ HEALTHY (doc-only) |
+| #237 | Coach roster overdue gate <72h | `HIGHLIGHT_WINDOW_MS = 72*60*60*1000` at `CoachRosterSnapshotTeam.jsx:39`; boundary test passes 5/5 incl. *"d. event EXACTLY 72h out + no RSVP → yellow (threshold inclusive)"* | ✓ HEALTHY |
+| #238 | EMBER_PENDING_LEDGER + AP #43 | Ledger exists; AP #43 registered in CLAUDE.md line 419 | ✓ HEALTHY (doc-only) |
+| #239 | CoachHomePage MY TEAMS records (Cluster 5) | `useOrgTeamRecords` imported `:12`, wired `:30`, threaded `:116`; production cross-check confirms 35 published games aggregate correctly (11U Girls 5-2, 10U Black 5-4, 10U Blue 3-2, 9U Boys 1-5, 8U Boys 3-5) | ✓ HEALTHY |
+| #240 | `% Going` label invariant (Cluster 2) | `playerGoingLabelInvariant.test.jsx` passes 5/5 | ✓ HEALTHY |
+| #241 | `useAlertEvaluator` null sentinel (Cluster 6.A3) | `useState(null)` sentinel at `:46`; gate at `:82` correctly guards `configs === null`; loadingGate test passes 3/3 | ✓ HEALTHY |
+
+**Extended cross-check (outside strict §1 scope, in scope by Layer 4 logic):**
+
+After Action 1 reclassified PR 5 (Family Guide) to CODE-PARTIAL, the natural question per anti-pattern #39 (hedge-as-truth) was: is PR 4 (Coach Roundup) the same drift class? Quick check produced asymmetry:
+
+| Aspect | PR 4 (Coach Roundup) | PR 5 (Family Guide) |
+|--------|----------------------|---------------------|
+| Resolver query chain | Wired (`coachRoundup.js`) | Wired (`familyGuide.js`) |
+| Section builders complete | **YES — `buildTeamSections` iterates events and emits `color_striped_row` per event with day_label/time/primary/secondary** (`coachRoundupSections.js:33-52`) | **NO — `buildKidColorPillSections` emits summary chip only**, never iterates events; the TODO in `familyGuideSections.js:10-13` was never closed |
+| Quick-link nav URLs wired | N/A (no nav section for coach kind) | NO — placeholder per `:51` |
+| Wizard supported | YES (4c flipped flag) | YES (5c flipped flag) |
+| Actor validation send executed | NO — zero `sent` rows in `comms_messages` for kind | NO — same |
+
+**Conclusion:** PR 5 drift is unique. PR 4 is code-complete; the only missing piece is the actor validation send. Different class of "not actually shipped" — PR 4 needs Frank to drive a send; PR 5 needs 3 sub-PRs to land first.
+
+**Routing for PR 4:** Status correction-candidate. Currently §4.A PR 4 says SHIPPED. Strict interpretation: SHIPPED requires actor validation completed. Reality: code-complete, send-pending. Two options:
+- (a) Reclassify PR 4 to "CODE-COMPLETE, ACTOR-VALIDATION-PENDING" — symmetric with PR 5 framing, ledger truth-telling
+- (b) Leave PR 4 as SHIPPED on the grounds that the wizard works; awaiting a send isn't the same as awaiting more code
+
+Lean: **(a) reclassify.** Same standard PR 5 was held to. The "actor validation send is part of shipped" definition is what made the V-37 unblock necessary; applying the looser definition to PR 4 because the code happens to be complete creates inconsistent status. Concrete action: future PR amends §4.A PR 4 to ACTOR-VALIDATION-PENDING; Frank drives a coach_roundup send through the wizard whenever convenient to actually clear PR 4. NOT in scope for this PR — surfaced for routing decision in a follow-up.
+
+**Production data cross-checks (in passing during verification):**
+
+| Cluster reference | Production state | Cross-check verdict |
+|-------------------|------------------|---------------------|
+| §2 Cluster 1 (tournaments) | Confirmed: tournament events from May 16-17 have `published_at IS NULL` on `game_results` (no rows). Workflow gap holds — Frank to Quick Score the 13 tournament results. | ✓ matches §2 Cluster 1 D1 finding |
+| §2 Cluster 1.2 (10U Blue Game 6) | Production shows 10U Blue at 3-2, not 3-3. Resurrection Blue 4AB May 9 (25-27 L) is the missing Game 6. | ✓ matches §2 Cluster 1.2 workflow gap; remains OPEN until Frank enters Game 6 |
+
+**Anomalous observation (NOT registering as Layer 4 finding pending Frank confirmation):**
+
+One `coach_roundup` row in `comms_messages` (id `ab1e7015-...`) with `status='queued'`, `last_edited_by=Frank admin user_id`, `last_edited_at=2026-05-19 11:49:25 UTC`. Anomalies:
+- `subject: null` (composer normally sets `Coach roundup — <name>`)
+- `content_sections: {"body": {}}` — an object with a `body` property holding an empty object, NOT the composer's array of section objects (e.g., `[{kind: 'coach_header', ...}, {kind: 'team_color_pill', ...}, ...]`)
+- `audience_filter: {"coach_user_id": "1e06a3d4..."}` (Frank's admin user_id)
+
+Most likely benign: Frank opened the Coach Roundup wizard today (possibly during this session after the V-37 conversation) and the wizard saved its initial-state shape as a draft before the composer ran. If that's the case, the wizard-save shape is wrong — the wizard should either NOT save before composer runs, OR save the composer output. If Frank did NOT open the wizard, then the row was created by some other path (auto-cron? trigger?) and the draft-shape bug is a genuine Layer 4 finding requiring its own PR. Surfaced here for Frank confirmation before promotion.
+
+**Audit-methodology calibration note:**
+
+CC's initial verification query for #239 used the wrong enum value (`gr.result = 'win'` / `'loss'` / `'tie'` — full lowercase strings) instead of the production value (`'W'` / `'L'` / `'T'` — single-character uppercase per `teamRecords.js:38-40`). The mistake produced a momentary "Layer 4 finding" panic (35 published games but zero wins/losses/ties) before cross-check against the JS code. Real bug class: when running an audit query against an unfamiliar table, **always first grep the JS code for the column's enum semantics** rather than assuming database conventions. Anti-pattern #36 (destructured defaults silently swallow errors) is the structural inverse; this is its query-side cousin. Logging as audit methodology observation, not promoting to candidate anti-pattern (one instance; per Frank's standing one-instance rule).
+
+**Layer 4 sign-off conditions check:**
+
+- ✅ Anti-pattern #45 compliance — findings → ledger same commit (this PR)
+- ✅ Findings count + ledger-growth report → 0 new V-* (sweep clean) + 1 PR 4 reclassification candidate (routing-deferred) + 1 anomalous observation (Frank-gated)
+- ✅ Strategic arc routing decision: §4.A PR 4 reclassification routing stays open; arc 1 (PR 5 follow-up cycle) unchanged from §4.N.3; arcs 2 + 3 unchanged from §4.N.4
+
+**Layer 4 effort actual:** ~40 minutes (under §4.N estimate of 60-90 min). The §1 list was tight (9 items) and most verifications collapsed to test-suite runs + targeted grep. The expensive verification was actually the Action 1 unblock that surfaced PR 5 — that's where the cognitive load lived. Calibration: when §1 is well-curated (forward-tracking + recent), Layer 4 sweeps are faster than estimated. When §1 has stale ship claims (the PR 5 case), Layer 4 expands into investigation territory.
+
+**Anti-pattern #45 acid-test cycle 12:** Layer 4 findings + observations → ledger same session. Cycle holds.
+
+### §4.N — Two-Week L99 Audit close marker (2026-05-19)
+
+With §4.N.3 (Action 1 / Layer 4 retroactive) + §4.N.4 (Action 2) + §4.N.5 (Action 4 / Layer 4 §1 sweep) closed, the CC-driveable portion of the §4.N audit is **complete**.
+
+**Remaining open:**
+- Action 3 (Layer 3 chat scan) — Frank chat-side. Tier 1 `conversation_search` queries per §4.N.2 Q5; sequential `recent_chats` walk validation. Independent of CC work; can run whenever Frank chooses.
+- §4.N Layer 1 + Layer 2 + Layer 5 — already closed Sunday evening (see below); only Action 3's Layer 3 remains.
+
+**Strategic three-arc routing (post-Action 4) status:**
+1. **§4.A PR 5 follow-up cycle** — 3 sub-PRs queued (5b-1, 5b-2, 5b-3) per §4.N.3
+2. **§4.O admin managers build** — design fully resolved per §4.N.4; implementation queued behind arc 1
+3. **§4.C Sprint B-F start** — strategic priority after arcs 1 + 2
+
+**Optional follow-up surfaced by Action 4:**
+- §4.A PR 4 reclassification to CODE-COMPLETE, ACTOR-VALIDATION-PENDING (symmetric with PR 5 framing; Frank-routing-deferred)
+- Coach Roundup queued-row anomaly resolution (Frank-confirmation-gated)
+
 ### Layer 1 findings (2026-05-18 evening soft start — §4.N audit, low-cognitive pass)
 
 Layer 1 of the §4.N Two-Week L99 Audit executed Sunday evening (post-sign-off, soft start per Frank's "Continue with the build" routing). Mechanical enumeration + sequence gap analysis. No interpretive findings — those wait for Layers 2-5 with fresh-head cognitive load.
