@@ -18,9 +18,11 @@ import { useRideNeeded } from '../hooks/useRideNeeded';
 import { useVolunteerSlots } from '../hooks/useVolunteerSlots';
 import { useLiveNowEvents } from '../hooks/useLiveNowEvents';
 import { useUpcomingTournament } from '../hooks/useUpcomingTournament';
+import { useRecentAchievements } from '../hooks/useRecentAchievements';
 import ActionZone from '../components/home/ActionZone';
 import LiveNowCard from '../components/home/LiveNowCard';
 import TournamentWeekendBanner from '../components/home/TournamentWeekendBanner';
+import RecognitionCard from '../components/home/RecognitionCard';
 import DateGroupedList from '../components/schedule/DateGroupedList';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import PastEventsSection from '../components/schedule/PastEventsSection';
@@ -37,7 +39,7 @@ import { toKidsWithEvents } from '../lib/home/conflictAdapter';
 import { detectConflicts } from '../lib/engine/resolvers/familyGuideHelpers';
 
 export default function ParentHomePage() {
-  const { user, guardianFirstName, myChildren, orgId, orgName } = useAuth();
+  const { user, guardianFirstName, myChildren, myTeamIds, orgId, orgName } = useAuth();
   const { activities, loading, refetch } = useActivities();
   const { byTeamId: recordsByTeam, loading: recordsLoading } = useOrgTeamRecords(orgId);
   const navigate = useNavigate();
@@ -134,6 +136,10 @@ export default function ParentHomePage() {
   // entirely when null.
   const { tournament: upcomingTournament } = useUpcomingTournament(next7days, now);
 
+  // RECOGNITION CARD (HOME_DESIGN_SPEC §1.1.6). team_achievements
+  // confirmed within 48h for parent's kids' teams. Hidden when empty.
+  const { achievements: recentAchievements } = useRecentAchievements(myTeamIds, now);
+
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
@@ -149,6 +155,7 @@ export default function ParentHomePage() {
       <ActionZone items={actionItems} loading={actionItemsLoading} />
       <LiveNowCard items={liveNowItems} nowMs={now} />
       <TournamentWeekendBanner tournament={upcomingTournament} />
+      <RecognitionCard achievements={recentAchievements} nowMs={now} />
 
       {!loading && myTeams.length === 0 && (
         <div style={{ padding: 20, backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', textAlign: 'center' }}>
