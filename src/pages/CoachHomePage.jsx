@@ -26,6 +26,8 @@ import Label from '../components/shared/Label';
 import { filterAlertsForCoach } from '../lib/alerts/relevanceFilters';
 import { usePendingAchievements } from '../hooks/usePendingAchievements';
 import { useUnpublishedScores } from '../hooks/useUnpublishedScores';
+import { useRecentTeamMessages } from '../hooks/useRecentTeamMessages';
+import CoachMessageBlock from '../components/home/CoachMessageBlock';
 
 export default function CoachHomePage() {
   const { user, orgId } = useAuth();
@@ -75,6 +77,13 @@ export default function CoachHomePage() {
   );
   const actionQueueLoading = pendingAchievementsLoading || unpublishedScoresLoading;
 
+  // MESSAGING BLOCK per HOME_DESIGN_SPEC §2.1.4. Latest team-chat
+  // message per coached team (24h window), excluding the coach's own
+  // posts. Reuses the same CoachMessageBlock component that parent
+  // home uses (PR #287) — component is role-agnostic; data source
+  // differs by hook.
+  const { messages: recentTeamMessages } = useRecentTeamMessages(coachedTeamIds, user?.id, now);
+
   // Next event across all coached teams. Pulse-glow wrapper draws
   // the eye to the upcoming game per Q4 highlight #1.
   const nextEvent = thisWeek[0];
@@ -85,6 +94,7 @@ export default function CoachHomePage() {
 
       <AlertZone alerts={coachAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
       <ActionZone items={actionQueueItems} loading={actionQueueLoading} />
+      <CoachMessageBlock messages={recentTeamMessages} nowMs={now} />
 
       {nextEvent && (
         <div style={{
