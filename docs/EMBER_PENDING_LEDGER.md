@@ -86,7 +86,7 @@ chat's L99 ordering.
 - Frank-action item: confirm Game 7 status during Quick Score session.
 
 ### Cluster 3.1 — Event title ad-hoc string appendages (scope expansion)
-- Status: **OPEN**, expands original Cluster 3 (B2) scope
+- Status: **RESOLVED (render layer)** via PR #298 (2026-05-19); Migration 021 (data hygiene) still queued
 - Severity: LOW (data hygiene)
 - Examples found in production:
   - "9U Boys Game" (team name embedded as title)
@@ -94,8 +94,8 @@ chat's L99 ordering.
   - "10U Blue · Holy Family-NR · May Reschedule"
 - Root pattern: ad-hoc free-text edits to `event.title` during reschedule + event creation workflows. No constraint on what gets stored in the title field.
 - Resolution:
-  - Migration 021: sanitize existing event titles to remove redundant team names + "May Reschedule" suffix appendages
-  - Cluster 3 PR: centralize event title rendering in shared helper. Computed from `event.opponent` + `event.event_type` + event status, NOT free-text. Prevents future ad-hoc appendages.
+  - PR #298 — `formatEventTitle` helper computes from `event.opponent` + `event.event_type` + `event.home_away`; `event.title` intentionally NOT consulted. Drift-hedge audit test locks the render invariant.
+  - Migration 021 (still queued) — sanitize existing event titles in DB. Render-layer fix above neutralizes user-visible drift even before data hygiene lands.
 
 ### Cluster 2 — Per-player % degenerates to RSVP-going-rate when check-ins absent
 - Status: **RESOLVED (label fix)** via PR #240 (2026-05-18); workflow promotion deferred
@@ -112,15 +112,18 @@ chat's L99 ordering.
 - Workflow promotion of check-ins remains in §9 (gameday arrival board → coaches do check-ins → metric becomes real attendance, not just RSVP-going-rate)
 
 ### Cluster 3 — Event title concatenates own team name redundantly
-- Status: **OPEN**, awaiting diagnostic D6
+- Status: **RESOLVED** via PR #298 (2026-05-19)
 - Severity: MEDIUM
 - Surfaces affected:
   - Coach: B2 (Schedule "vs. 9U Boys Game" vs Home NEXT EVENT "vs. 6th Boro 3AB · 9U Boys")
   - Admin: A9 (Schedule lists redundant team line below title)
   - Parent: P25 (8U Boys event detail "8U Boys Practice" with redundant "8U Boys" team line)
-- Hypothesis: `event.title` either auto-gen'd with wrong template OR Schedule pulls `event.title` literal while Home composes from `opponent_name`
-- Resolution: centralize event-title rendering in shared helper (likely `src/lib/eventDisplay.js` or `<EventTitle event={e} />`)
-- Drift-hedge test per #43: assert same event ID renders consistent title across Schedule, Home NEXT EVENT, Parent profile event detail
+- Root cause confirmed: 6 surfaces composed their own title fallback (`event.title || vs. ${opponent} || typeLabel || event_type`). Some echoed free-text literal, some stripped prefixes inconsistently, some appended redundant team name.
+- PR #298 resolution:
+  - `src/lib/eventTitle.js` — `formatEventTitle(event)` returns `{ prefix, body }` computed from opponent + event_type + home_away. Flat-string sibling `formatEventTitleString`.
+  - Migrated callsites: EventCard, NextEventCard (admin), PublicSchedulePage, + 4 ACTION ZONE hooks (usePendingRsvps, useRideNeeded, useVolunteerSlots, useLiveNowEvents).
+  - Drift-hedge per #43: `eventTitleAudit.test.js` static-grep fails CI on any inline `vs. ${opponent}` recomposition outside the allowlist (ical export + briefing emit channels intentionally preserve admin-curated labels).
+  - 11 unit tests cover the contract surface (home/away/neutral/tbd, missing fields, free-text rejection, unknown event_type).
 
 ### Cluster 4 — Notification bell badge has no inbox to consume it
 - Status: **OPEN** — UX decision required (resolution path locked-ish)
@@ -386,8 +389,8 @@ Source: `CC_SESSION_HANDOFF_2026-05-13.md` + CLAUDE.md §16.7.1.
 
 Items <30 min each. Bundle into a single Monday-AM warm-up PR.
 
-- **Cluster 3** event title centralization + Migration 021 sanitization
-  (~30-45 min, see §2)
+- ~~**Cluster 3** event title centralization~~ — **DONE** (PR #298, 2026-05-19).
+  Migration 021 sanitization still queued under §2 Cluster 3.1.
 - **Cluster 4** bell badge removal (~15 min, see §2)
 - **Cluster 7** admin greeting NY-pin (~5-10 min, see §2)
 - **Cluster 6.A2** KpiGrid loading gate refinement (downgraded MEDIUM)
@@ -876,10 +879,11 @@ test per anti-pattern #43.
 
 Ordered by inferred ROI (most-impactful first):
 
-1. **`formatEventTitle(event)`** — solves Cluster 3 + multi-surface
-   redundancy. Inputs: event object with opponent_name, team, type.
-   Output: canonical title string. Audit-grep test: no inline `vs.`
-   concatenation in JSX.
+1. ~~**`formatEventTitle(event)`** — solves Cluster 3 + multi-surface
+   redundancy.~~ **DONE** (PR #298, 2026-05-19). Shipped at
+   `src/lib/eventTitle.js` returning `{ prefix, body }`; flat-string
+   sibling `formatEventTitleString`. Drift-hedge audit at
+   `src/lib/__tests__/eventTitleAudit.test.js`.
 2. **`<TeamRecordCell record={} />`** — W-L format ("5-2") across
    7+ surfaces.
 3. **`<TeamPpgCell stats={} />`** — PPG across 4 surfaces.
