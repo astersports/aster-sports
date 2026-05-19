@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -10,8 +10,12 @@ import { useActivities } from '../hooks/useActivities';
 import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
+import { useNow } from '../hooks/useNow';
+import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
+import { useLowRsvpEvents } from '../hooks/useLowRsvpEvents';
 import { getWeatherForTime, useWeather } from '../hooks/useWeather';
 import AlertZone from '../components/alerts/AlertZone';
+import ActionZone from '../components/home/ActionZone';
 import KpiGrid from '../components/admin/KpiGrid';
 import QuickActions from '../components/admin/QuickActions';
 import AdminManageLinks from '../components/admin/AdminManageLinks';
@@ -42,6 +46,23 @@ export default function AdminHomePage() {
   const nextEvent = activities.find((a) => new Date(a.start_at) >= new Date() && a.status !== 'cancelled');
   const [notifSettingsOpen, setNotifSettingsOpen] = useState(false);
 
+  // ACTION QUEUE per HOME_DESIGN_SPEC §3.1 (Admin "Attention Required").
+  // Reuses the signal-agnostic ActionZone shell from parent (PR #281)
+  // and coach (PR #288). First admin signal: events within 72h with
+  // > 50% of roster still no-response. Bound the RSVP counts query
+  // to the same 72h slice to keep payload small.
+  const now = useNow();
+  const next72hActivities = useMemo(
+    () => activities.filter((a) => {
+      if (!a?.start_at || a.status === 'cancelled') return false;
+      const ms = new Date(a.start_at).getTime();
+      return ms >= now && ms <= now + 72 * 60 * 60 * 1000;
+    }),
+    [activities, now],
+  );
+  const { counts: rsvpCounts } = useEventRsvpCounts(next72hActivities);
+  const adminActionItems = useLowRsvpEvents(next72hActivities, rsvpCounts, now);
+
   // overflow-x-hidden + max-w-full on the page wrapper is defense in
   // depth — even if a child component escapes its box, nothing drags
   // the page horizontally. `min-w-0` on each section lets flex children
@@ -52,6 +73,7 @@ export default function AdminHomePage() {
       <AdminGreeting user={user} />
 
       <AlertZone alerts={alerts} loading={alertsLoading} variant="always_visible" sectionLabel="ALERTS" />
+      <ActionZone items={adminActionItems} loading={false} />
 
       <section className="min-w-0" aria-label="Key metrics">
         <KpiGrid stats={stats} />
