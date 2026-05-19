@@ -80,6 +80,24 @@ describe('ActionZone', () => {
     expect(screen.getByRole('link').getAttribute('href')).toBe('/events/e1');
   });
 
+  it('honors item.href for non-event signals (coach achievement)', () => {
+    const items = [
+      {
+        kind: 'achievement_pending',
+        primary: '11U Girls: Championship',
+        secondary: 'Pending your confirmation',
+        href: '/teams/team-abc',
+        id: 'a-1',
+        team_color: '#a78bfa',
+        team_name: '11U Girls',
+      },
+    ];
+    render(withRouter(<ActionZone items={items} loading={false} />));
+    expect(screen.getByText('11U Girls: Championship')).toBeInTheDocument();
+    expect(screen.getByText('Pending your confirmation')).toBeInTheDocument();
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/teams/team-abc');
+  });
+
   it('each item links to /events/<event_id>', () => {
     const items = [
       ITEM({ event_id: 'e-123', kid_first_name: 'Charlie' }),

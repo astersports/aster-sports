@@ -20,9 +20,11 @@ import DensityToggle from '../components/home/DensityToggle';
 import { useDensity } from '../hooks/useDensity';
 import ParentHomeTeamCard from '../components/home/ParentHomeTeamCard';
 import AlertZone from '../components/alerts/AlertZone';
+import ActionZone from '../components/home/ActionZone';
 import CoachRosterSnapshot from '../components/coach/CoachRosterSnapshot';
 import Label from '../components/shared/Label';
 import { filterAlertsForCoach } from '../lib/alerts/relevanceFilters';
+import { usePendingAchievements } from '../hooks/usePendingAchievements';
 
 export default function CoachHomePage() {
   const { user, orgId } = useAuth();
@@ -59,6 +61,13 @@ export default function CoachHomePage() {
   const { alerts: allAlerts, loading: alertsLoading } = useAlertEvaluator();
   const coachAlerts = useMemo(() => filterAlertsForCoach(allAlerts, coachedTeamIds), [allAlerts, coachedTeamIds]);
 
+  // ACTION QUEUE per HOME_DESIGN_SPEC §2.1.3. First signal: pending
+  // team achievements awaiting coach confirmation. Reuses parent's
+  // signal-agnostic ActionZone shell — same shape, different data
+  // source. Future Sprint D signals (Quick Scores needing approval,
+  // roster requests, unapproved coach comp) merge into the same list.
+  const { items: pendingAchievements, loading: pendingAchievementsLoading } = usePendingAchievements(coachedTeamIds);
+
   // Next event across all coached teams. Pulse-glow wrapper draws
   // the eye to the upcoming game per Q4 highlight #1.
   const nextEvent = thisWeek[0];
@@ -68,6 +77,7 @@ export default function CoachHomePage() {
       <AdminGreeting user={user} />
 
       <AlertZone alerts={coachAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
+      <ActionZone items={pendingAchievements} loading={pendingAchievementsLoading} />
 
       {nextEvent && (
         <div style={{
