@@ -13,6 +13,7 @@ import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { useNow } from '../hooks/useNow';
 import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
 import { useLowRsvpEvents } from '../hooks/useLowRsvpEvents';
+import { useUnscoredGames } from '../hooks/useUnscoredGames';
 import { getWeatherForTime, useWeather } from '../hooks/useWeather';
 import AlertZone from '../components/alerts/AlertZone';
 import ActionZone from '../components/home/ActionZone';
@@ -61,7 +62,12 @@ export default function AdminHomePage() {
     [activities, now],
   );
   const { counts: rsvpCounts } = useEventRsvpCounts(next72hActivities);
-  const adminActionItems = useLowRsvpEvents(next72hActivities, rsvpCounts, now);
+  const lowRsvpItems = useLowRsvpEvents(next72hActivities, rsvpCounts, now);
+  const { items: unscoredGames, loading: unscoredLoading } = useUnscoredGames(orgId, now);
+  const adminActionItems = useMemo(
+    () => [...(lowRsvpItems || []), ...(unscoredGames || [])],
+    [lowRsvpItems, unscoredGames],
+  );
 
   // overflow-x-hidden + max-w-full on the page wrapper is defense in
   // depth — even if a child component escapes its box, nothing drags
@@ -73,7 +79,7 @@ export default function AdminHomePage() {
       <AdminGreeting user={user} />
 
       <AlertZone alerts={alerts} loading={alertsLoading} variant="always_visible" sectionLabel="ALERTS" />
-      <ActionZone items={adminActionItems} loading={false} />
+      <ActionZone items={adminActionItems} loading={unscoredLoading} />
 
       <section className="min-w-0" aria-label="Key metrics">
         <KpiGrid stats={stats} />
