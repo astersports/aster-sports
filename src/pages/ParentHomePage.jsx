@@ -17,8 +17,10 @@ import { usePendingRsvps } from '../hooks/usePendingRsvps';
 import { useRideNeeded } from '../hooks/useRideNeeded';
 import { useVolunteerSlots } from '../hooks/useVolunteerSlots';
 import { useLiveNowEvents } from '../hooks/useLiveNowEvents';
+import { useUpcomingTournament } from '../hooks/useUpcomingTournament';
 import ActionZone from '../components/home/ActionZone';
 import LiveNowCard from '../components/home/LiveNowCard';
+import TournamentWeekendBanner from '../components/home/TournamentWeekendBanner';
 import DateGroupedList from '../components/schedule/DateGroupedList';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
 import PastEventsSection from '../components/schedule/PastEventsSection';
@@ -127,6 +129,11 @@ export default function ParentHomePage() {
   // useNow ticks + useLiveNowEvents re-derives empty.
   const liveNowItems = useLiveNowEvents(myChildren, activities, now);
 
+  // TOURNAMENT WEEKEND BANNER (HOME_DESIGN_SPEC §1.1.10). Soonest
+  // tournament starting within 72h on parent's kids' teams. Hidden
+  // entirely when null.
+  const { tournament: upcomingTournament } = useUpcomingTournament(next7days, now);
+
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
@@ -141,6 +148,7 @@ export default function ParentHomePage() {
       <ConflictCallout conflicts={conflicts} />
       <ActionZone items={actionItems} loading={actionItemsLoading} />
       <LiveNowCard items={liveNowItems} nowMs={now} />
+      <TournamentWeekendBanner tournament={upcomingTournament} />
 
       {!loading && myTeams.length === 0 && (
         <div style={{ padding: 20, backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', textAlign: 'center' }}>
