@@ -76,7 +76,7 @@ export default function AdminHomePage() {
         <KpiGrid stats={stats} />
       </section>
 
-      <ProgramHealthCard season={activeSeason} paymentPct={stats.pct} nowMs={nowMs} />
+      <ProgramHealthCard season={activeSeason} nowMs={nowMs} />
 
       {nextEvent && <NextEventCard event={nextEvent} weather={getWeatherForTime(weather, nextEvent.start_at)} />}
 
