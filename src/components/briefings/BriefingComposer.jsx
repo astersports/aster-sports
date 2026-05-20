@@ -3,6 +3,7 @@
 // Bug fixes locked in wave 4.1b + 4.2-A-8d (weekly_digest short-circuit).
 
 import { useEffect, useMemo, useReducer, useState } from 'react';
+import { useResetOnOrgChange } from '../../hooks/useResetOnOrgChange';
 import FullScreenForm from '../shared/FullScreenForm';
 import { useToast } from '../../context/useToast';
 import { useAuth } from '../../context/AuthContext';
@@ -37,6 +38,7 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   const [state, dispatch] = useReducer(composerReducer, buildInitial({ initialKind, initialAnchorKind, initialAnchorId, initialKindFilter }));
   const [busy, setBusy] = useState(false);
   const digest = useWizardDigestData({ orgId, enabled: state.kind === 'weekly_digest' });
+  useResetOnOrgChange(orgId, dispatch); // May 16 audit P2 #9 — prevent cross-org reducer-state bleed
 
   useEffect(() => {
     if (state.kind || !state.kindFilter || state.kindFilter.length !== 1 || state.step !== 1) return undefined;
@@ -60,13 +62,10 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
     return () => { cancelled = true; };
   }, [initialDraftId]);
 
-  // Wave 4.3-H: keep state.pilot_only in sync with org-level pilot mode.
-  // Read by every anchorFromState in RESOLVER_REGISTRY to scope preview
-  // recipients consistently with what send pulls (useDigestRecipients
-  // already filters by pilotModeEnabled at fetch time). Without this,
-  // preview resolved with pilotOnly=undefined while send filtered to
-  // pilot subset — mismatch surfaced as "preview shows 60 families,
-  // sends to 5" in orgs with pilot mode ON.
+  // Wave 4.3-H: keep state.pilot_only in sync with org-level pilot
+  // mode so preview-vs-send filters stay consistent (without this,
+  // preview rendered 60 families while send filtered to 5 in pilot
+  // orgs — anchorFromState in RESOLVER_REGISTRY reads this field).
   useEffect(() => {
     dispatch({ type: 'SET_PILOT_ONLY', value: !!pilotModeEnabled });
   }, [pilotModeEnabled]);
