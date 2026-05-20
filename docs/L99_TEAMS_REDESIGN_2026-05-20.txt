@@ -1,0 +1,614 @@
+# L99 — TEAMS PAGE REDESIGN PROPOSAL
+
+Date: 2026-05-20
+Context: Frank flagged the team detail page on iPad screenshots after
+the L99 event-detail arc (#392/#393/#394) shipped. Same drift class:
+an admin-skewed page that's grown a mid-section attendance grid + a
+"Player Stats" empty-state block + a "2% Going" pulse metric that
+misreads to families. Goal is "100% adoption by parents, coaches, and
+admins" — page must be valuable to all three personas at a glance.
+
+This doc replicates the structure of
+`docs/L99_EVENT_DETAIL_REDESIGN_2026-05-20.txt` so reviewer cadence
+stays consistent.
+
+---
+
+## PART 1 — AUDIT: CURRENT TEAM DETAIL FOOTPRINT
+
+File: `src/pages/TeamDetailPage.jsx` (111 lines — under the §11.5 /
+anti-pattern #11 150-line cap; targeted edits land cleanly).
+
+Render order top-to-bottom, role-gated where noted:
+
+```
+1.  Back chevron + "Teams" link                            ~44px
+2.  TeamSwitcher (FilterSelect dropdown)                   ~56px   if switcherPrograms.length > 1
+3.  TeamHeaderCard — name, age circle, meta, 5 stat cells ~150-200px
+4.  Send briefing chip (right-aligned)                     ~44px   isStaff only
+5.  MyChildSpotlight (parent + myChildPlayer)            ~120-180px
+6.  CoachQuickActions (Message · Schedule, 2 tiles)        ~70px   isStaff only
+7.  UPCOMING (NEXT 7 DAYS) header + 0-5 EventCards        ~80-500px
+    + "View full schedule →" CTA                           +44px
+8.  RosterControls (search + 5 sort chips)                 ~44px
+9.  CollapsibleSection "Roster" — defaultOpen={isStaff}   ~60-900px
+    └ each PlayerRow ~56px collapsed, ~110-160px expanded
+10. TeamHeatmap "Team Pulse · 2% Going"  defaultOpen=false ~44px
+    └ when open: range toggle + filter + N×players grid (~200-450px)
+11. TeamPlayerStats "Player Stats"  defaultOpen=false      ~44px   isStaff only
+12. TeamAchievements (chips, only renders if confirmed rows)~0-80px
+13. MessageTeamFAB (fixed FAB, bottom-right)               ~56px   isStaff only
+```
+
+**Above-the-fold reality on iPhone (~840px):**
+- Staff: Back + Switcher + TeamHeaderCard (stat strip if record > 0) +
+  half of the Send-briefing chip. No primary action visible. Upcoming,
+  roster, pulse all below the fold.
+- Parent: Back + Switcher + TeamHeaderCard + most of MyChildSpotlight.
+  Their own kid's RSVP picker is below the fold on iPhone 13/14 if
+  the team has played games (stat strip pushes hero taller).
+
+Total page on a staff role with 13-player roster expanded: ~1500-1800px.
+Not as bad as event detail (~3200px), but the structural shape is the
+same — the hero pattern is half-implemented (TeamHeaderCard exists but
+lacks per-role action stack) and the secondary surfaces are
+inconsistently collapsed (Roster forced open for staff, Pulse always
+closed, Player Stats always closed).
+
+---
+
+## PART 2 — BUGS / DATA-CORRECTNESS ISSUES
+
+**B1. "Team Pulse · 2% Going" misreads when check-ins are absent (CRITICAL).**
+`src/components/gameday/TeamHeatmap.jsx:30-41` computes
+`teamPct = totalGoing / totalPast`. `useAttendanceData.js:111`
+increments `goingCount` only when
+`arrival === 'arrived' || checkedIn || rsvp === 'going'` — so when
+check-ins haven't been run and parents haven't actively pressed
+"Going" on past events, the metric collapses to "% of past-event
+slots where the family pre-RSVP'd Going" which floors at near-zero.
+This is the team-scope shape of the same bug §4 ledger Cluster 2
+closed at the player-row scope (PR #240 added the "Going" suffix).
+The grid in the screenshot is mostly empty with red dashes — those
+are the `no_response_past` cells. The header reads "2% Going" but
+the grid says "you don't have data here." Two conflicting signals
+on the same surface.
+
+Fix shape (no code yet): either gate the pulse on
+`totalPast > 0 && responseRate > 50%` (don't show a number under
+sparse signal — show "Not enough data yet"), OR re-anchor the metric
+on `responseRate` (computed at `useAttendanceData.js:131` already)
+so the headline says "Team Pulse · 65% responded · 2% attended" with
+both numbers honest. Frank picks via Q3.
+
+**B2. Diagnostic "No RSVPs yet" pill bleeds into parent view from peer rows.**
+`PlayerRow.jsx:24` defines `sparseRsvp = responsesReceived <= 1` and
+shows the "No RSVPs yet" pill regardless of role. Parents looking
+at the roster see this pill on every peer kid — same anti-pattern
+class as the "No guardians linked" diagnostic PR #387 caught (kept
+in CLAUDE.md §16.14 as a pinned example). The signal is
+admin-actionable, not parent-actionable.
+
+**B3. Roster `defaultOpen={isStaff(role)}` is the inverse of §16.14.**
+`RosterSection.jsx:14` keeps the 13-player roster always-expanded
+for coaches and admins. §16.14 says "closed by default unless
+context demands otherwise." On a coach hitting their own team
+mid-week, the 13 rows aren't the primary task — schedule +
+briefing-send + pulse are. Auto-expand here is the same anti-pattern
+as the L99 ArrivalBoard auto-expand that #392 reverted.
+
+**B4. MessageTeamFAB overlaps content on small viewports.**
+FAB is fixed at `bottom: calc(80px + safe-area + 16px)` which puts
+it on top of TeamAchievements / TeamPlayerStats expanded content.
+Same surface but the Send-briefing chip (line 80-86 of
+TeamDetailPage) does the same job — two entry points for "message
+families about this team" on the same page (briefing portal vs
+`/messages?team=`). One canonical action per concern per §16.14
+anti-patterns.
+
+**B5. UpcomingEvents weather lat/lng is hard-coded.**
+`UpcomingEvents.jsx:16` calls `useWeather(41.03, -73.76)` —
+Westchester coords. Multi-tenant code shouldn't hard-code one org's
+geography. Out-of-scope for this redesign but worth flagging in the
+ledger. Already implicitly tracked under §4 multi-tenant work;
+cross-reference at PR time.
+
+**B6. Empty UPCOMING text "Time to work on those crossovers" reads
+as admin-flavored.**
+Charming for coaches; lands as confusing for parents who weren't
+expecting a hoops in-joke. Either keep and ship a parent-flavored
+variant, or move to a kindness-microcopy-bucket admin-only string.
+§16.3 mandate.
+
+---
+
+## PART 3 — PER-ROLE INFORMATION ARCHITECTURE
+
+What each persona actually needs on `/teams/:teamId`:
+
+**Parent (parent of a roster player on this team):**
+1. Their child's spot + status (jersey #, streak, next-event RSVP).
+   Already shipped via MyChildSpotlight — keep but promote into the
+   hero.
+2. The team's next game/practice: when, where, what to bring.
+   UpcomingEvents covers it.
+3. Who their kid's teammates are (roster as a directory, not a
+   management surface). Roster contact details (phone/email) are
+   useful for carpools, but per-kid attendance % pills and the
+   "No RSVPs yet" diagnostic are noise.
+4. Coach contact + practice location/day. Currently NOT surfaced
+   anywhere on this page — team data has `practice_day`,
+   `practice_location`, `circuit_name` (per `usePrograms.js:27`
+   `.select('*')`) but TeamHeaderCard doesn't render them. Gap.
+5. Nothing related to "Send briefing", "Player Stats", "Team Pulse"
+   (or only the parent-filtered RSVP-Pulse variant per
+   `TeamHeatmap.jsx:39`).
+
+**Coach (coach of this team):**
+1. RSVP / attendance snapshot for the next event — "9 of 13 going,
+   2 not replied" — actionable before practice.
+2. Briefing entry point + Message entry point (these exist as 3
+   separate surfaces today: Send briefing chip + CoachQuickActions
+   tiles + MessageTeamFAB).
+3. Roster as a phone-book + RSVP-trend view. Worth keeping
+   defaultOpen=true ONLY when there's an event in the next 24-48h.
+4. Pulse / attendance heatmap — close by default, summary text
+   "12/13 responded · last 4 weeks" in the header.
+5. Player stats — only meaningful once live-scoring runs (per the
+   empty state). Default closed, header says "Live-scored games: 0"
+   so the coach knows why.
+
+**Admin (org admin):**
+1. Everything the coach sees, plus:
+2. Cross-team comparison context. The Admin Home already has
+   `TeamPerformanceStrip` (`src/components/admin/TeamPerformanceStrip.jsx`)
+   — not on this page. Suggest adding a "Switch team" affordance
+   richer than the current FilterSelect (PerformanceStrip's W-L tile
+   pattern could replace TeamSwitcher when admins land here from
+   `/teams`).
+3. Roster admin actions: invite missing guardians, copy roster,
+   manage jersey numbers. CopyRosterButton + InviteButton exist;
+   they're already gated correctly inside PlayerRow.
+4. Schedule-import entry. Currently lives under the
+   CoachQuickActions "Schedule" tile that routes to
+   `/schedule?team=`. Adequate; leave alone.
+
+**Role detection: use `useHomeRole().activeRole`, not `useAuth().role`
+directly.**
+`TeamDetailPage.jsx:31` reads `role` from `useAuth()` directly.
+`useHomeRole` (`src/hooks/useHomeRole.js`) wraps `useAuth().role`
+with the admin "view as" preview (anti-pattern #42 —
+parallel-systems hazard). On this page admins testing "view as
+coach" or "view as parent" will see the real-role variant, not the
+previewed variant. The L99 detail pages have the same gap but it
+was deferred. The Teams redesign should adopt
+`useHomeRole().activeRole` since admin QA of parent/coach experience
+is exactly what Frank uses to verify the redesign lands. Q1 confirms.
+
+---
+
+## PART 4 — REDESIGN PROPOSAL (HERO + COLLAPSIBLES PER §16.14)
+
+### [A] STAFF (coach/admin) — future game/practice within 7 days
+
+```
+┌─ navy strip (existing back chevron + ⋯ overflow) ───┐
+│ ← Teams                                    [ ⋯ ]    │   ⋯ = Edit team · Send briefing · Manage roster
+└─────────────────────────────────────────────────────┘
+┌─ HERO CARD ─────────────────────────────────────────┐
+│ ▮▮ 10U Blue                                10U      │   color stripe + age pill
+│ AAU · CYO Hoops · 8-4 · L1                          │
+│ ━━━━━━━━━━━━━━━━━━━━░░░ 7.8 PPG diff (when games>0) │
+│ ─────────────────────────────────────────────────── │
+│ Next: Wed May 20 · 7:00 PM · CYO Spellman           │
+│ ━━━━━━━━━━━━━━━░░░░░ 9/13 RSVP'd                    │
+│                                                     │
+│ [ Send briefing ]    [ Message families ]           │
+└─────────────────────────────────────────────────────┘
+▶ Upcoming (next 7 days) · 3 events
+▶ Roster · 13 players · 11 responded last event
+▶ Team Pulse · 65% responded · last 4 weeks
+▶ Player Stats · no live-scored games yet
+▶ Achievements · 1 (Pool Winner) — only if data
+```
+
+Notes:
+- The stat strip (PPG/Allowed/Diff/Win%/Games) shipped today is fine;
+  it stays inside the hero. Collapses to a single-line
+  "8-4 · L1 · +7.8 diff" on iPhone via
+  `matchMedia (max-width: 414px)` — only the strip, not the meta line.
+- Next-event mini-block lives inside the hero (not as its own card).
+  RSVP progress bar uses the same shape as the event-detail hero
+  from #393. This re-centers the page on "what's happening next"
+  instead of "here is a record line."
+- Action stack is per-role, per-context. Coach/admin viewing during
+  the week sees [Send briefing] + [Message families]. On game day
+  (within 4h of tip) Send briefing becomes [Open game-day mode]
+  which deep-links to EventDetailPage of the next event.
+
+### [B] PARENT — same team, future event
+
+```
+┌─ HERO CARD ─────────────────────────────────────────┐
+│ ▮▮ 10U Blue                                10U      │
+│ AAU · CYO Hoops · Practice Mon @ Rippowam           │   meta line includes practice day+loc
+│ Coach Mike · 914-555-0140                           │   coach contact line (gap today)
+│ ─────────────────────────────────────────────────── │
+│ Charlie #14   [ Going ] [ Maybe ] [ Can't ]         │   ChildRsvp picker inline
+│ Next: Wed May 20 · 7:00 PM · CYO Spellman           │
+└─────────────────────────────────────────────────────┘
+▶ Upcoming (next 7 days) · 3 events
+▶ Teammates · 13 players                              │   "Roster" → "Teammates" for parents
+▶ My attendance · 92% Going                           │   parent-filtered TeamHeatmap
+▶ Achievements · 1 (Pool Winner) — only if data
+```
+
+Notes:
+- The 5-cell stat strip hides for parents — they don't read
+  PPG/Allowed/Diff as actionable. The meta line carries "8-4 · L1"
+  if games > 0 — that's enough.
+- MyChildSpotlight collapses INTO the hero. The current
+  `borderLeft: 3px solid accent` treatment moves to the hero card.
+- "Teammates" collapsible (renamed from "Roster") strips the
+  `% Going / NR` per-kid pill stack — they keep avatar + name +
+  #jersey + guardian contact rows. Per-kid attendance noise stays
+  admin-only.
+- "My attendance" already exists as parent-filtered TeamHeatmap
+  behavior (line 27-28 of TeamHeatmap.jsx). Keep, with summary text
+  in header.
+- MessageTeamFAB hides for parents (already hidden —
+  `TeamDetailPage.jsx:108` is staff-gated; verify and leave).
+
+### [C] STAFF — past-leaning team (between games / off-week)
+
+```
+┌─ HERO CARD ─────────────────────────────────────────┐
+│ ▮▮ 10U Blue                                10U      │
+│ AAU · CYO Hoops · 8-4 · L1                          │
+│ stat strip                                          │
+│ ─────────────────────────────────────────────────── │
+│ Clear week ahead                                    │
+│ Last game: Sun May 17 · L 23-26 vs 6th Boro         │   ← if scored
+│                                                     │
+│ [ Send briefing ]    [ Plan practice ]              │
+└─────────────────────────────────────────────────────┘
+▶ Upcoming · clear (next event May 26)
+▶ Roster · 13 players
+▶ Team Pulse · 65% responded · season
+▶ Player Stats · no live-scored games yet
+```
+
+### [D] ADMIN — landing from `/teams` list
+
+Same as [A] / [C] but the back-chevron row carries an inline mini-strip
+of the next 1-2 sibling teams (compact W-L chips) so admins jumping
+between teams don't have to hit "Back → tap next team." Optional polish;
+can defer to a v2.
+
+### Anti-patterns explicitly avoided per §16.14:
+
+- **No mid-page always-on chrome.** Search + sort stays inside the
+  Roster collapsible's expanded body, not as a row above it.
+- **No floating destructive surfaces.** No delete-team button on the
+  public team page. Admin team-management lives at `/admin/teams`
+  (`AdminTeamsPage.jsx`) where it already does.
+- **No two surfaces showing the same data.** MessageTeamFAB +
+  CoachQuickActions Message tile + Send-briefing chip collapse to
+  one [Send briefing] + one [Message] in the hero action row. FAB
+  retires on this page.
+- **No diagnostic copy parents can't act on.** "No RSVPs yet" pill
+  role-gates.
+- **No auto-expand on signal alone.** Roster
+  `defaultOpen={isStaff}` flips to `defaultOpen={false}` for both
+  roles. The collapsible header carries the count: "Roster · 13
+  players · 11 responded last event."
+
+---
+
+## PART 5 — RESPONSIVE BEHAVIOR
+
+Same `matchMedia (min-width: 600px)` breakpoint convention (per
+CLAUDE.md and the L99 doc Part 5).
+
+Hero card:
+- iPad/≥600px: max-width 760px, centered. Stat strip 5-up; action
+  row side-by-side.
+- iPhone/<600px: full width 16px padding. Stat strip 5-up still fits
+  at ~70px per cell. Action row stacks vertical, full-width buttons.
+
+Collapsible header summary text:
+- iPad: full text "Roster · 13 players · 11 responded last event".
+- iPhone: compact form when needed: "Roster · 13 · 11 responded".
+  Ship full first, audit on real device, add compact only where it
+  wraps.
+
+Hero parent-RSVP picker:
+- Both: 3 buttons in a row (Going / Maybe / Can't) at 44px
+  min-height. Same shape as ChildRsvp inside MyChildSpotlight today.
+
+iPhone above-the-fold target after redesign:
+- Staff: hero (full) + first 3-4 collapsible headers. Send briefing
+  + Message tappable without scrolling.
+- Parent: hero (full, with kid RSVP picker) + first 2-3 collapsible
+  headers. RSVP tappable without scrolling.
+
+---
+
+## PART 6 — 3-PR ROLLOUT
+
+Mirrors the L99 #392/#393/#394 shape. Smallest first.
+
+### PR A — STOP-THE-BLEEDING (~3-4 file edits, no new components)
+
+- `TeamHeatmap.jsx`: gate the pulse percentage on
+  `responseRate > 50% AND totalPast >= 2`. Below threshold, header
+  reads "Team Pulse · Not enough data yet" with the grid still
+  openable. Lock with a unit test asserting the bug shape (B1).
+- `RosterSection.jsx`: flip `defaultOpen={isStaff(role)}` →
+  `defaultOpen={false}`. Section header carries `count` (already
+  supported by CollapsibleSection at line 4) + a new `subtitle` line
+  "11 responded last event" computed in the parent and passed
+  through.
+- `PlayerRow.jsx`: role-gate the "No RSVPs yet" sparse-RSVP pill —
+  show to staff only. Parent peer rows render no pill in the sparse
+  case (B2).
+- `TeamDetailPage.jsx`: swap `useAuth().role` for
+  `useHomeRole().activeRole` (B-side per Q1). This is the
+  parallel-systems fix per anti-pattern #42 — single source of truth
+  for "what role is rendering this page."
+- Cross-surface invariant test per anti-pattern #43:
+  `TeamPulseHeaderInvariant.test.jsx` locks "Team Pulse" header
+  never renders a `% Going` numeric when `responseRate < 50%`. Same
+  shape as Cluster 2's `playerGoingLabelInvariant.test.jsx`.
+
+Risk: Low. No new components. No file > 150 lines after the edits.
+Roster collapse change is reversible per-tap; staff can re-open
+immediately.
+
+Reclaim: ~600-900px on staff load (roster collapsed). Bug-class
+closure on B1+B2 (the two complaints most likely to reach families).
+
+### PR B — HERO CARD CONSOLIDATION (~120-line new component)
+
+- New `TeamDetailHero.jsx` (~120 lines, under cap). Replaces
+  `TeamHeaderCard` + `MyChildSpotlight` + the inline
+  `<Link to=...send briefing>` chip + the inline `CoachQuickActions`
+  tile row.
+  - Slot 1: color stripe + name + age pill + meta line.
+  - Slot 2: stat strip (5-cell), staff-only, hides if
+    `gamesPlayed === 0`.
+  - Slot 3: next-event mini-block (date · location · RSVP progress).
+  - Slot 4: per-role action stack. Parent gets ChildRsvp inline per
+    kid. Staff gets [Send briefing] + [Message families].
+- `MessageTeamFAB.jsx` retires (component file kept for reference;
+  removed from page mount).
+- `CoachQuickActions.jsx` retires (Message + Schedule tiles fold
+  into hero action row + the per-event detail page).
+- `UpcomingEvents.jsx` wraps in
+  `<CollapsibleSection title="Upcoming (next 7 days)" subtitle="3 events">`
+  — moves from always-on to collapsed-with-summary.
+- Add `useHomeRole` (already done in PR A) consumer.
+- Cross-surface invariant test:
+  `TeamDetailHeroPerRoleInvariant.test.jsx` — render the hero for
+  parent, coach, admin against the same fixture; assert role-specific
+  element presence/absence per Part 4 wireframes.
+
+Risk: Medium. New top-level component, changes the page's mount tree.
+Mount-point swaps for 3 existing components.
+
+Reclaim: another ~300-400px. Hero replaces 4 stacked cards with 1.
+
+### PR C — POLISH + OVERFLOW MENU
+
+- New `⋯` overflow in the back-chevron row (no header strip exists
+  on this page today — add a thin one matching `EventDetailHeader`
+  shape).
+  - For staff: Edit team (deep-link to `/admin/teams` opening the
+    team form sheet) · Send briefing · Copy roster.
+  - For parent: hide (no destructive or admin actions).
+- `TeamAchievements` wraps in `CollapsibleSection` with header
+  summary "Achievements · 2 trophies." Currently renders inline chip
+  cluster always-on.
+- "View full schedule →" CTA at the bottom of `UpcomingEvents` moves
+  to a single inline link inside the collapsed Upcoming header
+  (subtitle).
+- Microcopy pass on the empty-states per §16.3 (parent variant of
+  "Clear week ahead").
+
+Risk: Low. Mostly visual + microcopy. New header strip is the only
+structural piece; matches EventDetailHeader pattern so the diff
+reads cleanly.
+
+### Sequencing logic
+
+PR A is the smallest ship that closes the user-visible bug (B1) and
+the privacy noise (B2). It ships first because every day "2% Going"
+sits in production, it erodes the briefing-program's trust signal —
+the same metric Frank uses to argue for parent adoption.
+
+PR B is the structural ship. It can sit a session if PR A causes any
+regression to bisect.
+
+PR C is the polish. Best to merge after PR B's hero lands so the
+overflow menu fits the new hero rhythm.
+
+If any one PR regresses: PR A reverts cleanly (3 file edits, no new
+components). PR B is the risk concentration — keep TeamHeaderCard,
+MyChildSpotlight, CoachQuickActions in the tree but unreferenced for
+1 session before deleting (the L99 #393 playbook).
+
+---
+
+## PART 7 — OPEN QUESTIONS FOR FRANK
+
+**Q1. Adopt `useHomeRole().activeRole` on TeamDetailPage in PR A?**
+Anti-pattern #42 says yes — parallel role-resolution paths on detail
+pages are exactly the buildup the rule guards against. Cost: one
+import change + threading through to
+CoachQuickActions/PlayerRow/etc. (currently those import `useAuth`
+directly; some can stay since they're permissions checks per the
+useHomeRole docstring scope warning at line 14 — "Other pages use
+useAuth().role for permissions checks"). Recommend: page-level
+rendering uses `activeRole`, in-row permission checks (InviteButton,
+CopyRosterButton) stay on `useAuth().role` since those are real
+permissions, not preview. Confirm boundary.
+
+**Q2. What's the canonical Team Pulse metric?**
+Today: `goingCount / totalPast` which collapses to RSVP-going-rate
+when check-ins aren't running. Three candidate replacements:
+- (a) Hide the % entirely when
+  `totalPast < 2 || responseRate < 50%`. Header reads "Team Pulse ·
+  Not enough data yet."
+- (b) Show response-rate instead of attendance-rate: "Team Pulse ·
+  65% responded · last 4 weeks." Honest about what we actually
+  measure.
+- (c) Two numbers: "Team Pulse · 65% responded · 58% attended."
+  Requires check-ins to be populated to read sensibly.
+Recommend (b) as the headline + (a) as the sparse-data fallback.
+(c) waits on the check-in workflow promotion already noted in §9
+ledger.
+
+**Q3. Does Roster default closed for staff too, or stay open for
+staff and closed for parents?**
+§16.14 says closed by default. The L99 ArrivalBoard reversal was the
+locked precedent. But the team detail page has more "stable" content
+shape than an event — a coach landing here mid-week to do a quick
+"who's missing from practice tonight" may genuinely want the roster
+open as the dominant block. Recommend: closed for both roles, but
+the section header carries the actionable count + responded-last-event
+subtitle so the coach reads the answer without expanding. If the
+coach taps, expansion is one motion.
+
+**Q4. Parent "Teammates" collapsible — do we strip the per-kid RSVP
+pill stack or keep it?**
+Today PlayerRow renders the same goingCount/maybeCount/declinedCount
+pills for all roles. Per B2 fix, the "sparse" diagnostic role-gates.
+Question is whether the FULL pill stack (when data is rich) should
+show to parents too — it's not strictly diagnostic but it is per-kid
+attendance data shown across the roster. Recommend: hide all per-kid
+RSVP pills from parent view EXCEPT on their own kid's row (where
+`isMyChild === true`). Keeps the spotlight + matches the
+parent-filtered Pulse pattern.
+
+**Q5. Coach contact line in the parent hero — where does the data
+come from?**
+The hero wireframe in Part 4 [B] shows
+"Coach Mike · 914-555-0140." Today's `teams` row doesn't carry a
+head-coach FK on its face; `team_staff` table exists (per the
+AdminHomePage `team_staff` query at `CoachHomePage.jsx:47-51`).
+Need: a `useTeamHeadCoach(teamId)` helper or a join inside
+`usePrograms` to surface the head coach's name + contact. If not yet
+feasible, skip the coach contact line in PR B and add in PR C /
+defer.
+
+**Q6. PR A first as the bug-closure ship, or one combined PR?**
+Same shape as L99 Q4. Recommend split — PR A is the trust-recovery
+ship (B1's "2% Going" reaches families via screenshots Frank takes);
+PR B is structural and benefits from a clean revert path.
+
+**Q7. Hard-coded weather lat/lng (B5) — fix in this arc or queue
+separately?**
+`UpcomingEvents.jsx:16` calls `useWeather(41.03, -73.76)`.
+Multi-tenant gap. Recommend: log to §4 ledger as a separate cluster,
+leave alone in this arc. Don't expand scope.
+
+**Q8. Hero parent-RSVP picker — render every kid on this team, or
+only the kid associated with this team?**
+`TeamDetailPage.jsx:61` already finds `myChild` as the first child
+whose `teamIds.includes(teamId)`. A parent with multiple kids on the
+same team (siblings on 10U Blue) gets only one rendered. Recommend:
+iterate over `myChildren.filter(c => c.teamIds?.includes(teamId))`
+and render ChildRsvp per kid, same as the L99 event-detail hero [D]
+wireframe. Confirm.
+
+---
+
+## PART 8 — RISKS / DEPENDENCIES
+
+**Risk R1: Admin power-features regressing.**
+Today's page is admin-skewed: roster controls (search + 5 sort chips
+including Att%), CopyRosterButton, InviteButton, TeamPlayerStats.
+PR B's hero collapses the Send-briefing chip and CoachQuickActions
+into the hero action row — admin shouldn't lose access to "Schedule"
+deep-link. Either preserve it in the overflow menu (PR C) or as a
+tertiary link inside UpcomingEvents collapsible header.
+
+**Risk R2: Role-detection drift.**
+Per Q1: adopting `useHomeRole().activeRole` on the page is the right
+call but introduces a divergence between page-level rendering and
+child-component permissions checks. The pattern needs to be
+documented in CLAUDE.md as an extension to §16.14 — "detail pages
+render against `activeRole`, in-row permissions check `realRole`."
+If this isn't locked it'll drift back within weeks.
+
+**Risk R3: Cross-surface invariant tests not yet load-bearing for
+this page.**
+PR A's `TeamPulseHeaderInvariant.test.jsx` and PR B's
+`TeamDetailHeroPerRoleInvariant.test.jsx` are new shapes. The
+Cluster 2 `playerGoingLabelInvariant.test.jsx` is the only similar
+test today. Mention in the PR descriptions that this is the
+test-class extension per anti-pattern #43.
+
+**Risk R4: TeamHeaderCard + MyChildSpotlight + CoachQuickActions
+deprecation hazard.**
+PR B replaces these three with TeamDetailHero. Per anti-pattern #34
+(registry/dispatch-table removals), the PR must include a pre-flight
+grep proving zero off-page callers of those three components. Quick
+scan today: TeamHeaderCard is only imported by TeamDetailPage;
+MyChildSpotlight likewise; CoachQuickActions likewise. Safe but
+verify in PR-pre-flight.
+
+**Risk R5: Mobile-screenshot drift between this redesign and L99
+#393.**
+Hero pattern needs to read structurally identical to the event hero
+— same border radius, same shadow, same color-stripe height (6px in
+TeamHeaderCard today; matches EventDetailHero per #393).
+Anti-pattern #46 says PRs touching `*Card` / `*Row` ship with one
+of: invariant test, screenshot, or token reference. Plan:
+TeamDetailHero PR ships with before/after screenshots of all 4 role
+variants (parent / coach / admin / admin-viewing-as-parent).
+
+**Dependency D1: useHomeRole already exists (line 24 of
+`useHomeRole.js`).**
+Reuse, don't rebuild (anti-pattern #42 catch). Confirmed.
+
+**Dependency D2: CollapsibleSection already supports `subtitle`
+prop.**
+`CollapsibleSection.jsx:24` renders subtitle when closed:
+`{!open && subtitle && ...}`. Drop-in for the section header
+summaries.
+
+**Dependency D3: useTeamHeadCoach — does not exist today.**
+If Q5 says yes, this is a new ~30-line hook fetching `team_staff`
+joined to `staff_profiles`. Same shape as the
+`CoachHomePage.jsx:47-51` inline query. Reasonable PR-C addition.
+
+**Dependency D4: Per anti-pattern #45, any PR touching this spec doc
+updates `EMBER_PENDING_LEDGER.md §4` in the same commit.**
+This redesign is a new §4 arc. When PR A opens, add `§4.X — Teams
+page hero/collapsibles arc (PRs A/B/C)` to the ledger.
+
+---
+
+## APPENDIX — KEY FILE PATHS
+
+### Critical Files for Implementation
+
+- src/pages/TeamDetailPage.jsx
+- src/components/roster/TeamHeaderCard.jsx
+- src/components/gameday/TeamHeatmap.jsx
+- src/components/roster/RosterSection.jsx
+- src/components/roster/PlayerRow.jsx
+
+Secondary references:
+- src/components/roster/MyChildSpotlight.jsx
+- src/components/roster/CoachQuickActions.jsx
+- src/components/roster/UpcomingEvents.jsx
+- src/components/shared/CollapsibleSection.jsx
+- src/hooks/useHomeRole.js
+- src/hooks/useAttendanceData.js
+- CLAUDE.md §16.14, anti-patterns #11, #34, #42, #43, #45, #46
+- docs/L99_EVENT_DETAIL_REDESIGN_2026-05-20.txt (template)
+- docs/EMBER_PENDING_LEDGER.md §2 Cluster 2 (B1 precedent)
+
+END OF DOCUMENT

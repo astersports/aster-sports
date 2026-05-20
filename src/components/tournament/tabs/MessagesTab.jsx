@@ -1,16 +1,22 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../context/AuthContext';
 import LoadingSkeleton from '../../shared/LoadingSkeleton';
 
 export default function MessagesTab({ tournament, isStaff }) {
+  const { orgId } = useAuth();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!tournament?.id) return;
+    if (!tournament?.id || !orgId) return;
     let cancelled = false;
+    // org_id filter first per anti-pattern #37 — defense in depth over
+    // RLS's policy scoping (comms_messages has its own org_id column,
+    // NOT NULL since 20260509031540).
     supabase.from('comms_messages')
       .select('id, kind, subject, body_plain, sent_at, created_at')
+      .eq('org_id', orgId)
       .eq('tournament_id', tournament.id)
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
@@ -20,7 +26,7 @@ export default function MessagesTab({ tournament, isStaff }) {
         setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [tournament?.id]);
+  }, [tournament?.id, orgId]);
 
   if (loading) return <LoadingSkeleton variant="card" count={2} />;
 
