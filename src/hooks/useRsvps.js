@@ -18,7 +18,10 @@ export function useRsvps(eventId, teamId) {
     // .is('left_at', null) on roster_members (per PR #125). Same player(...)
     // PostgREST embed shape; jersey_number sort behavior preserved.
     const [rsvpRes, rosterRes] = await Promise.all([
-      supabase.from('event_rsvps').select('*').eq('event_id', eventId),
+      supabase
+        .from('event_rsvps')
+        .select('id, event_id, player_id, guardian_id, response, comment, responded_at')
+        .eq('event_id', eventId),
       supabase
         .from('team_players')
         .select('jersey_number, players(id, first_name, last_name, member_type)')
