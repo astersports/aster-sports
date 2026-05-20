@@ -66,13 +66,13 @@ export default function AdminHomePage() {
   const { items: recentActivityItems, loading: recentActivityLoading } = useRecentActivity(orgId, activeSeason?.id);
   const ridesSummary = useRidesTodaySummary(orgId, nowMs);
 
-  // Top-level loading gate mirrors ParentHomePage:84 + CoachHomePage
-  // (PR #339 ↔ PR #340). Closes the "old screens load first" UX
-  // asymmetry — pre-PR admin home rendered its shell immediately
-  // while sections fetched independently; the cascade was visible
-  // on mobile as a sequence of empty-to-populated rows. Symmetry
-  // across all three role homes restored.
-  if (activitiesLoading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
+  // Top-level loading gate covers ALL primary data hooks — not just
+  // activitiesLoading. PRs #339/#340's single-signal gate released
+  // too early, leaving stats/alerts/signals to populate in cascade
+  // (Frank-reported 2026-05-20). Waits on the slowest signal: page
+  // stays blank ~200-400ms longer but the layered flash stops.
+  const isLoading = activitiesLoading || stats.loading || alertsLoading || adminActionLoading || pendingLanesLoading;
+  if (isLoading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   // overflow-x-hidden + max-w-full on the page wrapper is defense in
   // depth — even if a child component escapes its box, nothing drags
