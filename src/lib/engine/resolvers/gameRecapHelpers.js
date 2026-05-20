@@ -31,9 +31,19 @@ export function buildSubject(team, event, gr) {
 export function trim(s) { return (s || '').trim(); }
 
 export async function fetchKidNames(supabase, guardianIds) {
-  if (!guardianIds.length) return new Map();
+  // Filter out null/undefined guardianIds — the pilot test rows from
+  // get_digest_recipients return guardian_id=null (admin@ stands in
+  // for each team with no real guardian backing). Without this filter,
+  // .in('guardian_id', [null]) serializes as ?guardian_id=in.(null)
+  // which Postgres reads as the literal string "null" and rejects with
+  // 22P02 (invalid input syntax for type uuid: "null"). Frank-reported
+  // 2026-05-20 via test-send on the schedule_change Notify families
+  // flow. Sibling fetchKidNames in tournamentPrelimHelpers.js already
+  // filters (line 68); this version was missed.
+  const validIds = (guardianIds || []).filter(Boolean);
+  if (!validIds.length) return new Map();
   const { data: rows = [], error } = await supabase
-    .from('player_guardians').select('guardian_id, players ( first_name )').in('guardian_id', guardianIds);
+    .from('player_guardians').select('guardian_id, players ( first_name )').in('guardian_id', validIds);
   if (error) throw error;
   const m = new Map();
   for (const row of rows || []) {
