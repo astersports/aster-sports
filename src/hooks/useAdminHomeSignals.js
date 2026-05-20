@@ -4,7 +4,6 @@ import { useEventRsvpCounts } from './useEventRsvpCounts';
 import { useLowRsvpEvents } from './useLowRsvpEvents';
 import { useUnscoredGames } from './useUnscoredGames';
 import { usePendingInvitations } from './usePendingInvitations';
-import { usePendingAchievementsOrg } from './usePendingAchievementsOrg';
 import { useCoachPayoutsPending } from './useCoachPayoutsPending';
 import { useSeasonFinancials } from './useSeasonFinancials';
 
@@ -32,7 +31,6 @@ export function useAdminHomeSignals(activities, orgId, activeSeasonId) {
   const lowRsvpItems = useLowRsvpEvents(next72hActivities, rsvpCounts, now);
   const { items: unscoredGames, loading: unscoredLoading } = useUnscoredGames(orgId, now);
   const { items: pendingInvitations, loading: invitationsLoading } = usePendingInvitations(orgId, now);
-  const { count: achievementsPendingCount, loading: achievementsLoading } = usePendingAchievementsOrg(orgId);
   const { count: coachPayoutsPendingCount, loading: payoutsLoading } = useCoachPayoutsPending(orgId);
   const { stats: financialStats, loading: financialsLoading } = useSeasonFinancials(orgId, activeSeasonId);
   const familiesOwingCount = financialStats?.familiesOwing || 0;
@@ -43,15 +41,20 @@ export function useAdminHomeSignals(activities, orgId, activeSeasonId) {
   );
   const actionLoading = unscoredLoading || invitationsLoading;
 
+  // The achievements lane was removed 2026-05-20 — the REVIEW button
+  // routed to /admin/teams (no actual review screen exists), so the
+  // lane was dead UX. Frank archived the 3 stale seed-data rows via
+  // MCP. Re-add this lane only when a dedicated achievement review
+  // screen is built (anti-pattern #34: ship the consumer with the
+  // surface, not before).
   const pendingLanes = useMemo(
     () => [
-      { kind: 'achievements', emoji: '\u{1F3C6}', label: 'Achievements awaiting confirmation', count: achievementsPendingCount, href: '/admin/teams' },
       { kind: 'coach_payouts', emoji: '\u{1F4B0}', label: 'Coach payouts pending', count: coachPayoutsPendingCount, href: '/admin/financials' },
       { kind: 'families_owing', emoji: '\u{1F4B3}', label: 'Families with outstanding balance', count: familiesOwingCount, href: '/admin/financials' },
     ],
-    [achievementsPendingCount, coachPayoutsPendingCount, familiesOwingCount],
+    [coachPayoutsPendingCount, familiesOwingCount],
   );
-  const pendingLanesLoading = achievementsLoading || payoutsLoading || financialsLoading;
+  const pendingLanesLoading = payoutsLoading || financialsLoading;
 
   return { actionItems, actionLoading, pendingLanes, pendingLanesLoading };
 }
