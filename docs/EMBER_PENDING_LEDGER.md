@@ -388,40 +388,49 @@ infrastructure.
 
 ### §4.D — Sprint G Rides redesign
 
-Source: `RIDES_DESIGN_SPEC.md`. Status reconciled 2026-05-20 Wednesday
-session via PR #329 — staleness catch (same anti-pattern #44/#45 shape
-as Clusters 4/5/7 and §4.L sweep): the entry said DESIGNED-NOT-BUILT but
-schema + hook layer are already shipped. Only the UI consumers are
-missing.
+Source: `RIDES_DESIGN_SPEC.md`. Status reconciled 2026-05-20 via
+PR #329 + corrected via PR #330.
 
-**Status: SCHEMA + HOOKS SHIPPED · UI NOT BUILT (Phase A done; Phase B/C pending).**
+**Anti-pattern #44 recursive catch (PR #330):** PR #329 was itself
+stale at a deeper layer. Initial grep flagged `useRideOffers` /
+`useRideClaims` as "orphan hooks" but only checked `src/components` +
+`src/pages` for direct consumers — missed the indirection through
+`src/hooks/useEventRidesView` (a meta-hook composing both ride hooks,
+consumed by `EventRidesTab` 150 lines, wired into `EventDetailPage`
+Rides section). The trace should have run `grep -rln useRideOffers
+src/`, not `grep -rln useRideOffers src/components src/pages`.
+**Lesson:** when verifying "this hook has no consumers," grep MUST be
+src-tree-wide; intermediate-hook indirection is the failure mode.
 
-Component-by-component verification (production state):
+**Corrected status: SCHEMA + HOOKS + PARENT UI SHIPPED · COACH + ADMIN UI NOT BUILT.**
 
-- ✅ **Schema** — Migration 025 (or equivalent) shipped. Tables exist
-  matching RIDES_DESIGN_SPEC SECTION 1 column-by-column:
-  - `event_ride_offers` — all 17 spec columns present (driver_user_id,
-    seats_offered, ride_type, pickup_location/time, return_location/time,
-    vehicle_description, driver_phone, notes, status, cancelled_at/reason)
-  - `event_ride_claims` — all 17 spec columns present (offer_id,
-    rider_user_id, for_child_id, seats_requested, pickup_address,
-    pickup_notes, return_needed, status, waitlist_position, etc.)
-- ✅ **Hooks (Phase A)** — `useRideOffers.js` (122 lines, with Realtime
-  subscription + optimistic postOffer/cancelOffer) and `useRideClaims.js`
-  (121 lines) both shipped. ZERO UI consumers today → orphan hook surface
-  per anti-pattern #42 catch. Hooks are well-formed for future UI; not
-  vestigial.
-- ❌ **Parent offer + claim UI** — NOT BUILT. The existing
-  `useRideNeeded` hook surfaces ride-needed signals through ActionZone
-  but doesn't expose the offer/claim flows.
-- ❌ **Coach rides dashboard** — NOT BUILT
-- ❌ **Admin rides widget + audit** — NOT BUILT
-- ❌ **Waitlist + auto-confirm UI** — NOT BUILT (DB shape supports;
-  no surface exists)
+Component-by-component verification:
 
-Next chunk: Phase B — wire `useRideOffers` + `useRideClaims` into an
-event detail tab or a dedicated rides panel. Estimated ~90-120 min for
-parent surface alone. Coach + admin surfaces are follow-ups.
+- ✅ **Schema** — `event_ride_offers` + `event_ride_claims` match
+  RIDES_DESIGN_SPEC §1 column-by-column (17 columns each).
+- ✅ **Hooks** — `useRideOffers.js` (Realtime + optimistic
+  postOffer/cancelOffer), `useRideClaims.js`, and the composing
+  `useEventRidesView.js`. NOT orphan — consumed by EventRidesTab.
+- ✅ **Parent UI (RIDES_DESIGN_SPEC §4)** — `EventRidesTab.jsx`
+  (150 lines) on EventDetailPage Rides section. Handles ride requests,
+  Need ride / Offer ride buttons, PostOfferForm, my claimed seats
+  with OfferCard, other offers with claim flow, density toggle,
+  RideRequestCard.
+- ❌ **Coach RIDES COORDINATION section (§5)** — NOT BUILT. Spec
+  wants: arrival coverage metric, return coverage metric, unmatched
+  families with [Suggest match], [Post team ride request],
+  [Offer rides myself]. Coach home + event detail lack this.
+- ❌ **Admin home Rides Today widget (§6)** — NOT BUILT. Spec wants:
+  "Rides Today: N events, X% avg coverage" + per-team breakdown +
+  [Send program broadcast].
+- ⚠ **Waitlist + auto-confirm UI** — DB shape supports
+  (waitlist_position, lifecycle flows §2.3/2.4); render-layer
+  surfacing not fully audited.
+
+Next chunks (in priority order):
+1. Coach RIDES COORDINATION section (~60-90 min)
+2. Admin Rides Today widget (~45-60 min)
+3. Waitlist + auto-confirm UI audit pass
 
 ---
 
