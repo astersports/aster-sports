@@ -7,8 +7,15 @@ import { SeasonProvider } from './context/SeasonContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastProvider';
 import App from './App.jsx';
+import { applyCachedBrandColorsSync } from './lib/orgBrandingCache';
 import './index.css';
 import './styles/broadcast.css';
+
+// Apply cached brand colors BEFORE React mounts so first paint uses
+// the correct org brand instead of Ember/Skyfire defaults. Closes the
+// brand-flash Frank captured 2026-05-20. Safe no-op when cache empty
+// (first-ever login on this browser) — defaults remain.
+applyCachedBrandColorsSync();
 
 // Defer Sentry + PostHog init to idle time so they don't block first paint.
 const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));

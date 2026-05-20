@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { BRAND_CSS_VAR_MAP, EMBER_BRAND } from '../lib/emberDefaults';
+import { setCachedBrandColors } from '../lib/orgBrandingCache';
 
 // Validates a hex color string. Accepts #RGB, #RRGGBB, or rgba(...) format.
 // Returns true if the value is safe to inject as a CSS variable.
@@ -39,6 +40,10 @@ export function useOrgBranding(org) {
         }
       }
     });
+
+    // Cache the applied brand_colors so next boot's main.jsx can
+    // apply them synchronously before React mounts (brand-flash fix).
+    setCachedBrandColors(org.brand_colors);
 
     return () => {
       appliedKeys.forEach((cssVar) => root.style.removeProperty(cssVar));
