@@ -43,6 +43,12 @@ export function useOrgTeamRecords(orgId) {
         result: row.result,
         our_score: row.our_score,
         opponent_score: row.opponent_score,
+        // start_at is required by computeSummary's chronological sort
+        // (teamRecords.js:28). Without it, the sort was a no-op (every
+        // game's "start_at" resolved to '') and the last-5 form guide
+        // rendered in PostgREST entry order instead of by game date.
+        // Frank-reported 2026-05-20: last-5 didn't match recent games.
+        start_at: row.events?.start_at,
       });
     }
 
