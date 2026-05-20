@@ -32,8 +32,15 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle })
   const teamPct = totalPast > 0 ? Math.round((totalGoing / totalPast) * 100) : 0;
   const rangeLabel = range === '4weeks' ? 'last 4 weeks' : 'season';
 
+  // 2026-05-20 — was "Team Pulse · 3%" which reads ambiguously (% of what?).
+  // Suffix makes the metric explicit: percent of past RSVPs that were
+  // "Going" responses. Parent view filters to their own kid only, so the
+  // "Team" prefix doesn't apply.
+  const pulseTitle = role === 'parent'
+    ? `RSVP Pulse · ${teamPct}% Going`
+    : `Team Pulse · ${teamPct}% Going`;
   return (
-    <CollapsibleSection title={`Team Pulse · ${teamPct}%`} sectionKey="heatmap" defaultOpen={false}>
+    <CollapsibleSection title={pulseTitle} sectionKey="heatmap" defaultOpen={false}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 16px 8px' }}>
         <button type="button" onClick={onRangeToggle} className="sf-press" style={{
           fontSize: 12, fontWeight: 500, color: 'var(--em-accent)', background: 'var(--em-accent-soft)',
