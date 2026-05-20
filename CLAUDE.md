@@ -288,7 +288,7 @@ sf-pulse, sf-fade-in, sf-pulse-dot, sf-bounce-tap, sf-fill-grow, card-expand, sh
 | 2-D3 | Game day checklist + running late | ✅ DONE — arrival board, parent status buttons, coach checklist |
 | 2-E | Availability heatmap | ✅ DONE — per-player attendance grid with streak fire icon |
 | 3-A | Location + opponent mgr | ⚠ PARTIAL — locations seeded (9 venues), no mgmt UI |
-| 3-B | Calendar sync + public schedule + QR | ⚠ PARTIAL — public schedule page done; calendar sync + QR not |
+| 3-B | Calendar sync + public schedule + QR | ⚠ PARTIAL — public schedule page done; calendar sync SHIPPED (PR #342 V-23 iCal subscription URL); QR not yet |
 | 3-C | Home dashboard + inline RSVP | ✅ DONE |
 | 4-A | Team chat + announcements | ✅ DONE — channels, DM threads, unread badges, message deletion |
 | 4-B | Save & Message Team + auto-notifications | |
@@ -303,7 +303,7 @@ sf-pulse, sf-fade-in, sf-pulse-dot, sf-bounce-tap, sf-fill-grow, card-expand, sh
 #### Financial data loaded (May 5, 2026)
 LeagueApps import: 70 families, 100 accounts (40 Fall 2025 + 60 Spring 2026), 105 transactions. $102,765 billed, $97,374 net to bank. Email-first dedup, orphan-merge for 2 families (DeMasi, KHOJASTEH).
 
-⬅ NEXT unbuilt: 4-B (auto-notifications), 5-C (player stats), 3-A location mgr UI, 3-B calendar sync + QR, 6-A QR invites. Plus finish partials: 2-B weather API polish.
+⬅ NEXT unbuilt: 4-B (auto-notifications), 5-C (player stats), 3-A location mgr UI, 3-B QR (calendar sync shipped via V-23 / PR #342), 6-A QR invites. Plus finish partials: 2-B weather API polish.
 
 ---
 
