@@ -15,6 +15,13 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
   const PILL = { fontSize: 11, fontWeight: 500, padding: '1px 5px', borderRadius: 4, lineHeight: '16px' };
   const showRsvp = player.totalPast > 0 && (role !== 'parent' || isMyChild);
   const useCount = player.totalPast < 5;
+  // Frank-reported 2026-05-20 L99 v6 §5.1 B4: roster row showed
+  // "3% Going · 97% NR" with sparse RSVP data. The %s are misleading
+  // when the family has only submitted 0-1 responses across all past
+  // events. Render "No RSVPs yet" empty state instead so the row
+  // reads honestly until real signal accumulates.
+  const responsesReceived = (player.goingCount || 0) + (player.maybeCount || 0) + (player.declinedCount || 0);
+  const sparseRsvp = responsesReceived <= 1;
 
   return (
     <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--em-border-subtle)', borderLeft: isMyChild ? '3px solid var(--em-accent)' : 'none', backgroundColor: isMyChild ? 'var(--em-accent-soft)' : undefined }}>
@@ -51,7 +58,12 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
             {(role === 'admin' || role === 'coach') && player.grade && <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{ordinalGrade(player.grade)}</span>}
             {(role === 'admin' || role === 'coach') && age != null && <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{age}y</span>}
           </div>
-          {showRsvp && (
+          {showRsvp && sparseRsvp && (
+            <div className="flex items-center gap-1" style={{ marginTop: 3 }}>
+              <span style={{ ...PILL, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-tertiary)' }}>No RSVPs yet</span>
+            </div>
+          )}
+          {showRsvp && !sparseRsvp && (
             <div className="flex items-center gap-1" style={{ marginTop: 3, flexWrap: 'wrap' }}>
               {player.goingCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-success-soft)', color: 'var(--em-success)' }}>{useCount ? player.goingCount : Math.round((player.goingCount / player.totalPast) * 100) + '%'} Going</span>}
               {player.maybeCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-warning-soft)', color: 'var(--em-warning)' }}>{useCount ? player.maybeCount : Math.round((player.maybeCount / player.totalPast) * 100) + '%'} Maybe</span>}
