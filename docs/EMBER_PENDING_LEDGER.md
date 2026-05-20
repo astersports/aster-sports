@@ -532,14 +532,16 @@ Source: Phase 1 Core Subset read 2026-05-18 19:30 CEST (Sunday post-dinner hour)
 
 **VERIFIED SHIPPED** via V-17 (2026-05-18 19:50Z): PRs #195 + #203 closed P0-1 + P0-2 + P1-1 + P1-2 + P1-7. Code-grep confirmed `.eq('org_id', ...)` + `.is('archived_at', null)` present in the affected files.
 
-REMAINING (P1):
-- P1-1: `EventLocationTab.jsx:18` tournaments query missing org_id (defense-in-depth gap)
-- P1-2: `CreateActivityWizard.jsx:31` events series-recurrence missing org_id
-- P1-3: `notificationBadgeQueries.js:40` conditional org filter — needs normalization decision
-- P1-4: `FinancialDashboardPage.jsx:36` financial_transactions missing season_id (over-fetches; misaligned scope)
-- P1-5: `useRsvps.js:21` event_rsvps wildcard select
-- P1-6: `useEventArrivals.js` (3 callsites) event_arrivals wildcard select
-- P1-7: tournaments archived_at inconsistency across surfaces (StepDetails.jsx + EventLocationTab.jsx)
+P1 STATUS (sweep 2026-05-20 Wednesday — PR #328 reconciliation):
+- ✅ P1-1: `EventLocationTab.jsx` tournaments query — already has `.eq('org_id', orgId)` (shipped silently between audit and sweep)
+- ✅ P1-2: `CreateActivityWizard.jsx` events series-recurrence — already has `.eq('org_id', orgId)`
+- ✅ P1-3: `notificationBadgeQueries.js` — file DELETED via PR #272 (knip orphan sweep) alongside the bell-badge UI removal (Cluster 4). Issue auto-closed.
+- ⚠ P1-4: `FinancialDashboardPage.jsx`/`useSeasonFinancials` financial_transactions over-fetch — still ships `.from('financial_transactions').eq('org_id', orgId)` and filters client-side by acctIds. Bounded over-fetch (production: ~100-200 rows); optimization deferred.
+- ✅ P1-5: `useRsvps.js` event_rsvps wildcard select — closed via PR #328 (explicit column list).
+- ✅ P1-6: `useEventArrivals.js` event_arrivals wildcard select — closed via PR #328 (explicit column list).
+- ✅ P1-7: tournaments `archived_at` filter — shipped on `StepDetails.jsx:14-16` (`.is('archived_at', null)`).
+
+Status: **6 of 7 closed.** Only P1-4 (optimization, not correctness) remains, deferred to a focused perf pass when financial_transactions row counts grow.
 
 Plus systemic patterns A/B/C/D worth a structural fix:
 - Pattern C: edge function input re-validation anti-pattern candidate (CLAUDE.md addition)

@@ -11,7 +11,10 @@ export function useEventArrivals(eventId) {
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
-    const { data, error } = await supabase.from('event_arrivals').select('*').eq('event_id', eventId);
+    const { data, error } = await supabase
+      .from('event_arrivals')
+      .select('id, event_id, player_id, guardian_id, status, eta_minutes, reason, status_changed_at')
+      .eq('event_id', eventId);
     if (error) {
       console.error('useEventArrivals:', error.message);
       showToast("Couldn't load arrivals. Try again in a moment.", 'error');
