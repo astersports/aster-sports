@@ -11,13 +11,70 @@ const T2 = { id: 't2', name: '8U Boys', team_color: '#fa0' };
 describe('aggregateRidesSummary', () => {
   it('returns empty totals when no events', () => {
     const out = aggregateRidesSummary([], [], []);
-    expect(out).toEqual({
-      eventCount: 0,
-      totalSeatsOffered: 0,
-      totalSeatsClaimed: 0,
-      coveragePct: null,
-      byTeam: [],
-    });
+    expect(out.eventCount).toBe(0);
+    expect(out.totalSeatsOffered).toBe(0);
+    expect(out.totalSeatsClaimed).toBe(0);
+    expect(out.coveragePct).toBeNull();
+    expect(out.byTeam).toEqual([]);
+    expect(out.arrival.coveragePct).toBeNull();
+    expect(out.return.coveragePct).toBeNull();
+  });
+
+  it('splits arrival vs return coverage by ride_type + return_needed', () => {
+    const events = [
+      { id: 'e1', teams: T1 },
+      { id: 'e2', teams: T1 },
+    ];
+    const offers = [
+      // e1: 4-seat round-trip (counts for both directions)
+      { event_id: 'e1', seats_offered: 4, ride_type: 'round_trip' },
+      // e2: 3-seat arrival-only + 2-seat return-only
+      { event_id: 'e2', seats_offered: 3, ride_type: 'arrival_only' },
+      { event_id: 'e2', seats_offered: 2, ride_type: 'return_only' },
+    ];
+    const claims = [
+      // e1: 2 seats arrival + return
+      { event_id: 'e1', seats_requested: 2, return_needed: true, status: 'confirmed' },
+      // e2: 1 seat arrival only
+      { event_id: 'e2', seats_requested: 1, return_needed: false, status: 'pending' },
+    ];
+    const out = aggregateRidesSummary(events, offers, claims);
+
+    // Arrival: 4 (e1 round-trip) + 3 (e2 arrival-only) = 7 offered;
+    //          2 (e1) + 1 (e2) = 3 claimed
+    expect(out.arrival.offered).toBe(7);
+    expect(out.arrival.claimed).toBe(3);
+    expect(out.arrival.coveragePct).toBe(43); // 3/7 = 42.86 → 43
+
+    // Return: 4 (e1 round-trip) + 2 (e2 return-only) = 6 offered;
+    //         2 (e1 return_needed=true) + 0 (e2 return_needed=false) = 2
+    expect(out.return.offered).toBe(6);
+    expect(out.return.claimed).toBe(2);
+    expect(out.return.coveragePct).toBe(33); // 2/6 = 33.3 → 33
+  });
+
+  it('treats missing ride_type as round_trip (default)', () => {
+    const events = [{ id: 'e1', teams: T1 }];
+    const offers = [
+      { event_id: 'e1', seats_offered: 5 }, // no ride_type
+    ];
+    const claims = [
+      { event_id: 'e1', seats_requested: 2, return_needed: true, status: 'confirmed' },
+    ];
+    const out = aggregateRidesSummary(events, offers, claims);
+    expect(out.arrival.offered).toBe(5);
+    expect(out.return.offered).toBe(5);
+  });
+
+  it('treats missing return_needed as true (default — claim needs return)', () => {
+    const events = [{ id: 'e1', teams: T1 }];
+    const offers = [{ event_id: 'e1', seats_offered: 4, ride_type: 'round_trip' }];
+    const claims = [
+      { event_id: 'e1', seats_requested: 2, status: 'confirmed' }, // no return_needed
+    ];
+    const out = aggregateRidesSummary(events, offers, claims);
+    expect(out.arrival.claimed).toBe(2);
+    expect(out.return.claimed).toBe(2);
   });
 
   it('counts events but zero offers + claims when no ride data', () => {
