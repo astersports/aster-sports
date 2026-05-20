@@ -840,6 +840,14 @@ Layer 3 scope confirmed locked Sunday 2026-05-18 (Option α): sequential `recent
   src/components-only)
 - V-23 iCal subscription URL: verified PARTIAL (download yes,
   subscribe no): #331
+- V-23 iCal subscription URL: PARTIAL → SHIPPED end-to-end (migration
+  + edge function + UI subscribe button): #342 (Thursday 2026-05-20
+  morning, post-Wed-checkpoint substantive action 3 from end-of-Wed
+  letter). Closes the last polish-tier verification queue row.
+  Migration 20260520093701 added teams.team_feed_token; edge function
+  team-feed deployed v1 (verify_jwt=false per anti-pattern #31, audit
+  test auto-picked it up); PublicSchedulePage gained Subscribe to
+  Calendar bottom sheet with webcal:// (Apple) + Google Calendar URLs.
 - Sprint G aggregate-coverage signal: shipped end-to-end:
   - Admin Rides Today widget (§6): #332
   - Coach RIDES COORDINATION section (§5): #333
@@ -918,8 +926,8 @@ discipline; this is a ledger note flagging the durable observation).
 - §4.L: 8 of 11 P2 items closed; #18 (Admin Home IA Tier 3) parked
 - §4.M.1: 6 of 7 P1 items closed; P1-4 (financial_transactions
   over-fetch) deferred as perf-only
-- V-23 iCal subscription URL: PARTIAL (download yes, subscribe no);
-  deferred as polish-tier
+- V-23 iCal subscription URL: SHIPPED end-to-end Thursday 2026-05-20
+  via PR #342 (migration + edge function + UI). No follow-up work.
 - Anti-pattern #48: split via Framing C per Wednesday-eve letter.
   #48 (original) stays candidate, untested. #48' (modified, soft-
   ceiling) stays candidate, awaits one more under-load session.
@@ -932,7 +940,6 @@ Next-session candidate moves (no priority assigned):
   (four-class evidence: PRs #241/#260/#277/#330)
 - Sprint G v2 — interactive CTAs (broadcast, suggest match, etc.)
 - Sprint G v2 — arrival/return split
-- iCal subscription URL feature build
 - §4.D Waitlist + auto-confirm UI audit
 - Admin Home IA Tier 3 design exercise (§4.L #18)
 - Async-ordering tests for useAdminStats / useHomeRole /
@@ -1344,7 +1351,7 @@ Registered here under anti-pattern #45 acid-test: a new audit surfaced new pendi
 
 | # | Item | Arc tag | Source doc / chat | Effort | Blocking | Verification method |
 |---|------|---------|-------------------|--------|----------|---------------------|
-| V-23 | M2-2 iCal subscription URL per team ship status | §4.B (calendar/iCal feeds) | CC_SESSION_HANDOFF_APR19.md (referenced; full read pending) | **VERIFIED 2026-05-20 (PR #331)** | iCal feed surface for parents/coaches | **PARTIAL.** Download path SHIPPED (`src/lib/icalHelpers.js` exports `downloadTeamIcs` consumed by `PublicSchedulePage`). Subscription URL feature NOT BUILT — DB query confirmed no `team_feed_token` / `*_feed_*` / `*_subscri*` columns on `teams`; no edge function serving `/team-feed/:token` or equivalent. To build: (a) ALTER TABLE teams ADD COLUMN team_feed_token TEXT UNIQUE + random backfill, (b) edge function returning ICS body, (c) "Subscribe to calendar" UI on public schedule + team detail. Est. 60-90 min total. Low LH usage potential (mobile-first families); polish-tier rather than load-bearing. Tracked here for future-multi-tenant value when power-user surface emerges. |
+| V-23 | M2-2 iCal subscription URL per team ship status | §4.B (calendar/iCal feeds) | CC_SESSION_HANDOFF_APR19.md (referenced; full read pending) | **SHIPPED 2026-05-20 Thursday (PR #342)** | iCal feed surface for parents/coaches | **SHIPPED end-to-end.** PARTIAL verification on Wed (PR #331) confirmed subscription URL not built; Thursday Action 3 from end-of-Wed letter shipped the three-phase build: (a) Migration `20260520093701_teams_add_feed_token_for_ical_subscription` added `teams.team_feed_token TEXT UNIQUE NOT NULL DEFAULT gen_random_uuid()::text` + `get_team_by_feed_token` SECURITY DEFINER RPC; (b) Edge function `team-feed` deployed v1 returning `text/calendar` ICS body keyed by token (verify_jwt=false in config.toml, audit test auto-detected the new function +2 tests); (c) `PublicSchedulePage` gained Subscribe to Calendar bottom sheet with webcal:// (Apple Calendar) + `calendar.google.com/calendar/r?cid=...` (Google Calendar) options. Anti-patterns honored: #21 (migration mirror), #23 (REVOKE PUBLIC before anon), #30 (ICS helpers mirrored from src/lib/icalHelpers.js into the edge function), #31 (config.toml entry + audit test). Production verified: 5/5 teams have unique tokens. |
 | V-24 | EMBER_TENANCY Steps 5-14 completion vs Steps 1-4 closed | §4.H (pre-existing locked items) | EMBER_TENANCY_ARCHITECTURE_v3.md + April 25 chat handoff | 20 min | tenancy hardening arc | Read EMBER_TENANCY_ARCHITECTURE_v3.md (currently in V-0 unread set) + `git log --oneline --all \| grep -iE 'tenan\|ember.tenancy'` + verify Steps 5-14 line items against shipped commits |
 | V-25 | Rides remediation 7.6-7.10 ship status | §4.D (Sprint G Rides redesign) | RIDES_DESIGN_SPEC.md §7.6-7.10 + April 29 Rides Fix chat | 15 min | Sprint G Rides arc completeness | Read RIDES_DESIGN_SPEC.md §7.6-7.10 (full read pending per V-14) + `git log --oneline --all -- src/components/ride src/hooks/useRide* src/hooks/useEventRide*` cross-ref |
 | V-26 | PROMPT_ELITE_POLISH.md outcome | §4.G (quick wins / Elite polish) | docs/PROMPT_ELITE_POLISH.md (April 10-13 build sprint) | 15 min | Elite Polish arc completeness | Read PROMPT_ELITE_POLISH.md top-to-bottom + cross-ref ELITE-* tags against CLAUDE.md §16 + git log for sprint commits |
