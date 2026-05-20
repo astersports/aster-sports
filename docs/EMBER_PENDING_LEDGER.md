@@ -402,35 +402,53 @@ src/`, not `grep -rln useRideOffers src/components src/pages`.
 **Lesson:** when verifying "this hook has no consumers," grep MUST be
 src-tree-wide; intermediate-hook indirection is the failure mode.
 
-**Corrected status: SCHEMA + HOOKS + PARENT UI SHIPPED · COACH + ADMIN UI NOT BUILT.**
+**Status (after PRs #332 + #333): AGGREGATE-COVERAGE SIGNAL SHIPPED END-TO-END.**
+
+Schema + hooks + parent UI + admin widget + coach section all built.
+Interactive v2 features (CTAs, arrival/return split, waitlist surface)
+deferred.
 
 Component-by-component verification:
 
 - ✅ **Schema** — `event_ride_offers` + `event_ride_claims` match
   RIDES_DESIGN_SPEC §1 column-by-column (17 columns each).
 - ✅ **Hooks** — `useRideOffers.js` (Realtime + optimistic
-  postOffer/cancelOffer), `useRideClaims.js`, and the composing
-  `useEventRidesView.js`. NOT orphan — consumed by EventRidesTab.
-- ✅ **Parent UI (RIDES_DESIGN_SPEC §4)** — `EventRidesTab.jsx`
-  (150 lines) on EventDetailPage Rides section. Handles ride requests,
-  Need ride / Offer ride buttons, PostOfferForm, my claimed seats
-  with OfferCard, other offers with claim flow, density toggle,
+  postOffer/cancelOffer), `useRideClaims.js`, composing
+  `useEventRidesView.js`, plus new `useRidesTodaySummary.js`
+  (PR #332/#333) — cross-role hook with optional teamIds filter.
+- ✅ **Parent UI (§4)** — `EventRidesTab.jsx` (150 lines) on
+  EventDetailPage Rides section. Handles ride requests, Need ride /
+  Offer ride buttons, PostOfferForm, my claimed seats with
+  OfferCard, other offers with claim flow, density toggle,
   RideRequestCard.
-- ❌ **Coach RIDES COORDINATION section (§5)** — NOT BUILT. Spec
-  wants: arrival coverage metric, return coverage metric, unmatched
-  families with [Suggest match], [Post team ride request],
-  [Offer rides myself]. Coach home + event detail lack this.
-- ❌ **Admin home Rides Today widget (§6)** — NOT BUILT. Spec wants:
-  "Rides Today: N events, X% avg coverage" + per-team breakdown +
-  [Send program broadcast].
+- ✅ **Coach RIDES COORDINATION section (§5)** — SHIPPED via PR #333.
+  `RidesTodayCard` on `CoachHomePage` below ActionZone, scoped to
+  coachedTeamIds via `useRidesTodaySummary` teamIds filter. Renders
+  aggregate coverage + per-team breakdown bars.
+- ✅ **Admin home Rides Today widget (§6)** — SHIPPED via PR #332.
+  `RidesTodayCard` on AdminHomePage between PROGRAM HEALTH and
+  RECENT ACTIVITY. Renders "RIDES TODAY · N events · X% avg coverage"
+  + per-team breakdown with CoverageBar (green ≥80% / amber ≥50% /
+  red <50%). Org-wide via `useRidesTodaySummary(orgId, now)`.
 - ⚠ **Waitlist + auto-confirm UI** — DB shape supports
   (waitlist_position, lifecycle flows §2.3/2.4); render-layer
   surfacing not fully audited.
 
-Next chunks (in priority order):
-1. Coach RIDES COORDINATION section (~60-90 min)
-2. Admin Rides Today widget (~45-60 min)
-3. Waitlist + auto-confirm UI audit pass
+Anti-pattern #42 honored on the new infra: ONE hook
+(`useRidesTodaySummary`) serves both admin (org-wide) and coach
+(team-scoped) consumers. Second arc of cross-role infra after the
+financial-math single-source consolidation (PRs #303-#306).
+
+V2 chunks (deferred, priority order):
+1. **Interactive CTAs**: admin `[Send program broadcast]`; coach
+   `[Suggest match]` / `[Post team ride request]` / `[Offer rides myself]`.
+   Need broadcast flow + audience-picker integration + suggestion
+   algorithm. ~60-90 min each.
+2. **Arrival vs return split**: today the aggregate is
+   undifferentiated. Spec §5 wants two coverage bars
+   (arrival_seats / return_seats). ~30 min hook extension + 15 min UI.
+3. **Waitlist + auto-confirm UI audit pass**. Confirm DB lifecycle
+   maps to render-layer states; surface waitlist promotion notices.
 
 ---
 
