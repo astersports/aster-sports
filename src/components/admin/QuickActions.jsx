@@ -19,13 +19,24 @@ import { CalendarPlus, DollarSign, Inbox, Mail, Megaphone, Trophy, Upload, UserP
 // COMMUNICATE, OPERATE. MANAGE separated previously via
 // AdminManageLinks (PR #269). Each bucket renders a sub-label and a
 // 2-col tile grid.
+//
+// 2026-05-20 Frank-reported: "+player takes you to a teams section but
+// not to add a player. +events takes you to schedule but that screen
+// has a + to add an event." Two fixes:
+// - +Event now opens the CreateActivityWizard directly via
+//   /schedule?wizard=1 (existing query-param at SchedulePage:37) — no
+//   double-tap landing on the schedule then tapping the FAB
+// - +Player renamed to +Member, points at /admin/members — there is no
+//   standalone player-create flow in the codebase (players come in via
+//   season rollover or bulk import); Members is the only adjacent
+//   create surface that actually works
 
 const GROUPS = [
   {
     label: 'CREATE',
     tiles: [
-      { label: '+ Event',  icon: CalendarPlus, to: '/schedule' },
-      { label: '+ Player', icon: UserPlus,     to: '/teams'    },
+      { label: '+ Event',  icon: CalendarPlus, to: '/schedule?wizard=1' },
+      { label: '+ Member', icon: UserPlus,     to: '/admin/members'    },
     ],
   },
   {
