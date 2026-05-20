@@ -3,29 +3,31 @@ import { supabase } from '../lib/supabase';
 
 // §4.C Sprint D — shared source of truth for season financial state.
 // Pulls accounts + transactions for an (org_id, season_id), computes
-// per-account balance map + aggregate stats. Two consumers today:
+// per-account balance map + aggregate stats. Three consumers today:
 //   - FinancialDashboardPage (full UI: stats cards + family list)
-//   - AdminHomePage PendingQueuesLanes (just the count of families
-//     owing, for the third lane per HOME_DESIGN_SPEC §3.1.4)
+//   - AdminHomePage PendingQueuesLanes (count of families owing, for
+//     the third lane per HOME_DESIGN_SPEC §3.1.4)
+//   - ParentHomePage RegistrationReminderCard (parent's own balance
+//     via guardianId filter, per HOME_DESIGN_SPEC §1.1.9)
 //
 // Originally the computation lived inline at FinancialDashboardPage
-// :57-69. Extracted in this PR per anti-pattern #42 to avoid
-// parallel-system buildup — if the admin-home lane re-implemented
-// "families owing" with its own query, two computations could
-// silently disagree on the same business question.
+// :57-69. Extracted PR #303 per anti-pattern #42 to avoid
+// parallel-system buildup. PR #304 extended with optional guardianId
+// filter so parent home can scope to a single family's accounts
+// without re-implementing the balance math.
 //
 // Naming note: ledger entry §4.Q used `useFamiliesOwing` as the
 // candidate name. Final hook is `useSeasonFinancials` because it
 // returns the broader state (stats + balances + accounts +
 // transactions), not just the count. The count is one field
-// (`stats.familiesOwing`); the lane consumer uses it directly.
+// (`stats.familiesOwing`); the admin-home lane reads it directly.
 //
 // Per anti-pattern #36 (data + error destructured separately) +
 // #37 (org_id filter first on the chain).
 
 const EMPTY_STATS = { billed: 0, paid: 0, fees: 0, net: 0, outstanding: 0, familiesOwing: 0, pct: 0 };
 
-export function useSeasonFinancials(orgId, seasonId) {
+export function useSeasonFinancials(orgId, seasonId, guardianId = null) {
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,12 +43,17 @@ export function useSeasonFinancials(orgId, seasonId) {
     }
     setLoading(true);
     const id = ++fetchIdRef.current;
+    // guardianId narrows the accounts query to a single family — parent
+    // home consumer. Without it (admin consumers) we fetch the full
+    // org+season slice.
+    let accountsQuery = supabase
+      .from('financial_accounts')
+      .select('*, guardians(first_name, last_name, user_id)')
+      .eq('org_id', orgId)
+      .eq('season_id', seasonId);
+    if (guardianId) accountsQuery = accountsQuery.eq('guardian_id', guardianId);
     const [aRes, tRes] = await Promise.all([
-      supabase
-        .from('financial_accounts')
-        .select('*, guardians(first_name, last_name, user_id)')
-        .eq('org_id', orgId)
-        .eq('season_id', seasonId),
+      accountsQuery,
       supabase
         .from('financial_transactions')
         .select('*')
@@ -69,7 +76,7 @@ export function useSeasonFinancials(orgId, seasonId) {
     setAccounts(accts);
     setTransactions((tRes.data || []).filter((t) => acctIds.has(t.account_id)));
     setLoading(false);
-  }, [orgId, seasonId]);
+  }, [orgId, seasonId, guardianId]);
 
   useEffect(() => { Promise.resolve().then(refetch); }, [refetch]);
 

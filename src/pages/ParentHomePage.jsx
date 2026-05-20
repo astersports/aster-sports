@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSeason } from '../context/SeasonContext';
 import { useActivities } from '../hooks/useActivities';
 import { usePrefetchChildRsvps } from '../hooks/usePrefetchChildRsvps';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
@@ -13,13 +14,8 @@ import { useWeather } from '../hooks/useWeather';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { useDensity } from '../hooks/useDensity';
 import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
-import { usePendingRsvps } from '../hooks/usePendingRsvps';
-import { useRideNeeded } from '../hooks/useRideNeeded';
-import { useVolunteerSlots } from '../hooks/useVolunteerSlots';
-import { useLiveNowEvents } from '../hooks/useLiveNowEvents';
-import { useUpcomingTournament } from '../hooks/useUpcomingTournament';
-import { useRecentAchievements } from '../hooks/useRecentAchievements';
-import { useRecentAnnouncements } from '../hooks/useRecentAnnouncements';
+import { useParentHomeSignals } from '../hooks/useParentHomeSignals';
+import RegistrationReminderCard from '../components/home/RegistrationReminderCard';
 import ActionZone from '../components/home/ActionZone';
 import LiveNowCard from '../components/home/LiveNowCard';
 import TournamentWeekendBanner from '../components/home/TournamentWeekendBanner';
@@ -37,114 +33,51 @@ import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import Label from '../components/shared/Label';
 import { firstNameFrom, greetingFor } from '../lib/greetings';
 import { filterAlertsForParent } from '../lib/alerts/relevanceFilters';
-import { toKidsWithEvents } from '../lib/home/conflictAdapter';
-import { detectConflicts } from '../lib/engine/resolvers/familyGuideHelpers';
 
 export default function ParentHomePage() {
-  const { user, guardianFirstName, myChildren, myTeamIds, orgId, orgName } = useAuth();
+  const { user, guardianFirstName, guardianId, myChildren, myTeamIds, orgId, orgName } = useAuth();
+  const { activeSeason } = useSeason();
   const { activities, loading, refetch } = useActivities();
   const { byTeamId: recordsByTeam, loading: recordsLoading } = useOrgTeamRecords(orgId);
   const navigate = useNavigate();
   const [activeKidFilter, setActiveKidFilter] = useState(null);
   const name = guardianFirstName ? guardianFirstName.charAt(0).toUpperCase() + guardianFirstName.slice(1) : firstNameFrom(user);
   usePrefetchChildRsvps(activities, myChildren);
-  const now = useNow(), cutoff = now + 7 * 24 * 60 * 60 * 1000;
+  const now = useNow();
   useRefetchOnVisible(refetch);
   const { density } = useDensity('parent-home');
 
-  const myTeams = useMemo(() => {
-    const map = new Map();
-    for (const a of activities) {
-      if (!a.team_id || map.has(a.team_id)) continue;
-      map.set(a.team_id, { id: a.team_id, name: a.teams?.name || '—', team_color: a.teams?.team_color || 'var(--em-neutral)', sort_order: a.teams?.sort_order ?? 999 });
-    }
-    return [...map.values()].sort((x, y) => x.sort_order - y.sort_order);
-  }, [activities]);
-
-  const nextEventByTeam = useMemo(() => {
-    const map = {};
-    for (const a of activities) {
-      if (!a.team_id || a.status === 'cancelled' || !a.start_at) continue;
-      if (new Date(a.start_at).getTime() < now) continue;
-      if (!map[a.team_id]) map[a.team_id] = a;
-    }
-    return map;
-  }, [activities, now]);
-
-  const next7days = useMemo(() => activities
-    .filter((a) => {
-      if (!a.start_at) return false;
-      const startT = new Date(a.start_at).getTime();
-      return startT >= now && startT < cutoff && a.status !== 'cancelled';
-    })
-    .sort((a, b) => new Date(a.start_at) - new Date(b.start_at)),
-    [activities, now, cutoff]);
-
-  const filteredNext7 = useMemo(() => {
-    if (!activeKidFilter) return next7days;
-    const kid = (myChildren || []).find((k) => k.playerId === activeKidFilter);
-    const ids = kid?.teamIds?.length ? kid.teamIds : (kid?.teamId ? [kid.teamId] : []);
-    if (!ids.length) return next7days;
-    return next7days.filter((e) => ids.includes(e.team_id));
-  }, [next7days, activeKidFilter, myChildren]);
+  // All HOME_DESIGN_SPEC §1.1 schedule derivations + signal hooks
+  // (action zone, live now, tournament banner, recognition,
+  // announcements, conflicts, payment reminder) live in
+  // useParentHomeSignals — extracted in PR #304 to keep this page
+  // under the 150-line cap (anti-pattern #11). Mirrors the
+  // useAdminHomeSignals pattern from PR #297.
+  const {
+    myTeams, nextEventByTeam, filteredNext7, nextEventId,
+    actionItems, actionItemsLoading,
+    liveNowItems,
+    upcomingTournament,
+    recentAchievements,
+    recentAnnouncements,
+    financialStats, financialsLoading,
+    conflicts,
+  } = useParentHomeSignals({
+    activities, myChildren, myTeamIds, now, activeKidFilter,
+    userId: user?.id,
+    orgId, activeSeasonId: activeSeason?.id, guardianId,
+  });
 
   const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(filteredNext7);
   const { counts: rideCounts } = useEventRideCounts(filteredNext7);
   const { counts: dutyCounts } = useEventDutyCounts(filteredNext7);
   const gameResults = useGameResultsMap(filteredNext7);
   const weather = useWeather(41.03, -73.76);
-  const nextEventId = filteredNext7.find((a) => new Date(a.start_at).getTime() >= now)?.id || null;
 
-  // Alerts: hook is role-agnostic (Gap 6/8). Page applies data-
-  // ownership filter so parent sees only alerts touching their kids'
-  // teams. ADMIN_ONLY_TYPES are dropped entirely in v1.
+  // Alerts: hook is role-agnostic. Page applies data-ownership
+  // filter so parent sees only alerts touching their kids' teams.
   const { alerts: allAlerts, loading: alertsLoading } = useAlertEvaluator();
   const parentAlerts = useMemo(() => filterAlertsForParent(allAlerts, myChildren), [allAlerts, myChildren]);
-
-  // Multi-kid conflict detection: reuses familyGuideHelpers.detectConflicts
-  // (already tested) via an adapter. Renders nothing for single-kid
-  // families or when no conflicts in next 7 days.
-  const teamsById = useMemo(() => Object.fromEntries(myTeams.map((t) => [t.id, t])), [myTeams]);
-  const conflicts = useMemo(() => {
-    if (!myChildren || myChildren.length < 2) return [];
-    return detectConflicts(toKidsWithEvents(myChildren, next7days, teamsById));
-  }, [myChildren, next7days, teamsById]);
-
-  // ACTION ZONE (HOME_DESIGN_SPEC §1.1.2 + Sprint B). Signals:
-  //  - rsvp_pending: kid × event with no event_rsvps row yet
-  //  - ride_needed: kid × event with going-RSVP and zero ride
-  //    actions (offer / claim / request) by the current user
-  //  - volunteer_slot: per-event (not per-kid) when event has ≥1
-  //    unclaimed event_duties row and parent has a kid on the team
-  // ActionZone is signal-agnostic — each item carries its own
-  // `primary` label. Lists merged + sorted by start_at.
-  const { pending: pendingRsvps, loading: pendingRsvpsLoading } = usePendingRsvps(myChildren, next7days);
-  const { needed: ridesNeeded, loading: rideNeededLoading } = useRideNeeded(myChildren, next7days, user?.id);
-  const { items: volunteerSlots, loading: volunteerSlotsLoading } = useVolunteerSlots(myChildren, next7days);
-  const actionItems = useMemo(() => {
-    const merged = [...(pendingRsvps || []), ...(ridesNeeded || []), ...(volunteerSlots || [])];
-    merged.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
-    return merged;
-  }, [pendingRsvps, ridesNeeded, volunteerSlots]);
-  const actionItemsLoading = pendingRsvpsLoading || rideNeededLoading || volunteerSlotsLoading;
-
-  // LIVE NOW (HOME_DESIGN_SPEC §1.1.3). Pure derivation off activities
-  // + myChildren + now-tick. Card auto-removes when event ends because
-  // useNow ticks + useLiveNowEvents re-derives empty.
-  const liveNowItems = useLiveNowEvents(myChildren, activities, now);
-
-  // TOURNAMENT WEEKEND BANNER (HOME_DESIGN_SPEC §1.1.10). Soonest
-  // tournament starting within 72h on parent's kids' teams. Hidden
-  // entirely when null.
-  const { tournament: upcomingTournament } = useUpcomingTournament(next7days, now);
-
-  // RECOGNITION CARD (HOME_DESIGN_SPEC §1.1.6). team_achievements
-  // confirmed within 48h for parent's kids' teams. Hidden when empty.
-  const { achievements: recentAchievements } = useRecentAchievements(myTeamIds, now);
-
-  // COACH MESSAGE BLOCK (HOME_DESIGN_SPEC §1.1.7). Latest
-  // announcement-channel message per team in last 24h.
-  const { messages: recentAnnouncements } = useRecentAnnouncements(myTeamIds, now);
 
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
@@ -158,6 +91,7 @@ export default function ParentHomePage() {
 
       <AlertZone alerts={parentAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
       <ConflictCallout conflicts={conflicts} />
+      <RegistrationReminderCard stats={financialStats} seasonName={activeSeason?.name} loading={financialsLoading} />
       <ActionZone items={actionItems} loading={actionItemsLoading} />
       <LiveNowCard items={liveNowItems} nowMs={now} />
       <TournamentWeekendBanner tournament={upcomingTournament} />
