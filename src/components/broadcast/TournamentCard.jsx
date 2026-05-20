@@ -34,9 +34,15 @@ function participantChipClass(participant) {
 }
 
 function ParticipantChip({ participant, isCompleted }) {
-  const { team, final_place, final_record_wins, final_record_losses } = participant;
+  const { team, final_record_wins, final_record_losses } = participant;
   const hasRecord = (final_record_wins ?? 0) + (final_record_losses ?? 0) > 0;
-  const showRecord = isCompleted && !final_place && hasRecord;
+  // 2026-05-20 — was `isCompleted && !final_place && hasRecord` which
+  // hid the W/L when a team finished as Champions or Finalists. Frank
+  // flagged on Records: Rumble for the Ring CT showed 8U Boys 1-2 but
+  // 11U Girls (Finalists, 3-2) and 10U Black (Champions, 4-0) had no
+  // record — same for ZG Chase for the Chain NY. Chip color carries
+  // the podium label; the W/L is additional, not redundant.
+  const showRecord = isCompleted && hasRecord;
 
   return (
     <span className={participantChipClass(participant)}>
