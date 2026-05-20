@@ -14,8 +14,13 @@
 // audit enforces that going forward.
 
 import { Link } from 'react-router-dom';
-import { CalendarDays, FlaskConical, MapPin, Repeat, Swords, Trophy, UsersRound } from 'lucide-react';
+import { CalendarDays, MapPin, Repeat, Swords, Trophy, UsersRound } from 'lucide-react';
 
+// Engine Preview tile removed 2026-05-20 (L99 v6 §5.2 C1) — internal
+// renderer-debug surface, not a production admin feature. Route at
+// /admin/engine-preview stays reachable by direct URL for debug work;
+// it's added to routeAccessibility test EXEMPT list so the audit
+// doesn't flag it as an orphan.
 const LINKS = [
   { label: 'Seasons',         icon: CalendarDays,   to: '/admin/seasons'         },
   { label: 'Teams',           icon: Trophy,         to: '/admin/teams'           },
@@ -23,7 +28,6 @@ const LINKS = [
   { label: 'Opponents',       icon: Swords,         to: '/admin/opponents'       },
   { label: 'Locations',       icon: MapPin,         to: '/admin/locations'       },
   { label: 'Season Rollover', icon: Repeat,         to: '/admin/rollover'        },
-  { label: 'Engine Preview',  icon: FlaskConical,   to: '/admin/engine-preview'  },
 ];
 
 // Coach Directory tile dropped 2026-05-19 PR C (was aliased to
