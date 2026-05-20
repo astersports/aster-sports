@@ -30,7 +30,6 @@ const FinancialImportPage = lazy(() => import('./pages/FinancialImportPage'));
 const ImportSchedulePage = lazy(() => import('./pages/ImportSchedulePage'));
 const BriefingsInboxPage = lazy(() => import('./pages/BriefingsInboxPage'));
 const BriefingHistoryDetail = lazy(() => import('./pages/admin/BriefingHistoryDetail'));
-const EngineDebugPreviewPage = lazy(() => import('./pages/EngineDebugPreviewPage'));
 
 const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading...</div>;
 
@@ -91,7 +90,6 @@ export default function App() {
       <Route path="/admin/briefings" element={<Protected allowedRoles={['admin']}><BriefingsInboxPage /></Protected>} />
       <Route path="/admin/briefings/compose" element={<Protected allowedRoles={['admin']}><BriefingsInboxPage /></Protected>} />
       <Route path="/admin/briefings/history/:id" element={<Protected allowedRoles={['admin']}><BriefingHistoryDetail /></Protected>} />
-      <Route path="/admin/engine-preview" element={<Protected allowedRoles={['admin']}><EngineDebugPreviewPage /></Protected>} />
     </Routes>
       </Suspense>
     </PageTransition>
