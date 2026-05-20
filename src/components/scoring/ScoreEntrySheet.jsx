@@ -43,7 +43,14 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [handleDismiss]);
 
-  const canPublish = draft.result.our_score != null && draft.result.opponent_score != null && !draft.isPublished;
+  // 2026-05-20 — opponent gate. Frank flagged on Records: 10U Black W
+  // 37-30 TBD May 17 (game scored with blank opponent). Block publish
+  // when event.opponent is null/blank — admin must set opponent on
+  // event detail first. Pairs with the schedule_change opponent fix
+  // (PR #378) as a data-discipline class.
+  const hasOpponent = !!(event.opponent && event.opponent.trim());
+  const canPublish = draft.result.our_score != null && draft.result.opponent_score != null
+    && hasOpponent && !draft.isPublished;
 
   const handlePublish = async () => { try { await draft.publish(); } catch { /* error in draft.error */ } };
 
@@ -65,6 +72,11 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
       </div>
 
       <main style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', WebkitOverflowScrolling: 'touch' }}>
+        {!hasOpponent && (
+          <div role="alert" style={{ marginBottom: 16, padding: 12, backgroundColor: 'var(--em-warning-soft)', borderLeft: '4px solid var(--em-warning)', borderRadius: 6, fontSize: 14, color: 'var(--em-text-primary)' }}>
+            Set the opponent on this event before publishing — close this sheet, tap the event, and edit the opponent field.
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
           <label style={{ flex: 1 }}>
             <div style={lbl}>Our Score</div>
