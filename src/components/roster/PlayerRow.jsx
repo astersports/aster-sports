@@ -83,8 +83,14 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
         <ChevronDown size={16} strokeWidth={1.75} color="var(--em-text-tertiary)"
           style={{ marginLeft: 8, flexShrink: 0, transform: expanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 150ms' }} />
       </div>
-      {expanded && (
+      {expanded && (guardians.length > 0 || role === 'admin') && (
         <div style={{ padding: '4px 16px 12px 68px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* 2026-05-20 — "No guardians linked" diagnostic copy is admin-only.
+              Frank flagged on 11U Girls roster (parent view): Bianca's row
+              showed the diagnostic to peer parents — privacy leak + reveals
+              data-integrity state a non-admin can't act on. Admins still see
+              it (and the invite affordance) since it's an actionable signal
+              for them. */}
           {guardians.length === 0
             ? <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', fontStyle: 'italic' }}>No guardians linked</div>
             : guardians.map((g) => <GuardianRow key={g.id} guardian={g} role={role} />)}
