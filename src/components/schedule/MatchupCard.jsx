@@ -49,11 +49,16 @@ export default function MatchupCard({ event, gameResult }) {
           </span>
         </div>
         {hasResult ? (
+          // Result + score pinned at 17px to match the upcoming time
+          // typography (line 67) — same primary-signal weight across
+          // upcoming and results sections. Frank-reported 2026-05-20:
+          // "Games page on the schedule has different font size on
+          // the upcoming games vs results section."
           <div style={{ width: 80, flexShrink: 0, textAlign: 'center' }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: gr.result === 'W' ? 'var(--em-success)' : gr.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
+            <span style={{ fontSize: 17, fontWeight: 700, color: gr.result === 'W' ? 'var(--em-success)' : gr.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
               {gr.result}
             </span>
-            <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginLeft: 4 }}>
+            <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginLeft: 4 }}>
               {gr.our_score}-{gr.opponent_score}
             </span>
           </div>
