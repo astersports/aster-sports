@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Star } from 'lucide-react';
 import { useSeasons } from '../hooks/useSeasons';
+import AdminBackHeader from '../components/admin/AdminBackHeader';
 import SeasonFormSheet from '../components/admin/SeasonFormSheet';
 import Badge from '../components/shared/Badge';
 import Button from '../components/shared/Button';
@@ -41,6 +42,7 @@ export default function AdminSeasonsPage() {
 
   return (
     <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
+      <AdminBackHeader />
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20 }}>
           Seasons
