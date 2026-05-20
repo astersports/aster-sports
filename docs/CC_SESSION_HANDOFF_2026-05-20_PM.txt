@@ -1,0 +1,239 @@
+CC SESSION HANDOFF — 2026-05-20 PM (Wednesday night NYC)
+========================================================
+Repo:    legacyhoopers/skyfire-app (private, GitHub)
+App:     Skyfire / Legacy Hoopers (multi-tenant React + Supabase
+         platform for youth basketball ops; mobile-first, iPhone-
+         primary, iPad secondary)
+Operator: Frank Samaritano (Program Director, admin role).
+         Kids: Charlie (11U Girls), Milo (8U Boys).
+Source-of-truth docs:
+  - CLAUDE.md (root) — design tokens, anti-patterns #1-#48,
+    §16 Elite design principles, §16.14 detail-page pattern
+    (added this session)
+  - docs/EMBER_PENDING_LEDGER.md — §4.A..§4.T forward queue;
+    §4.S / §4.T / §4.G updated this session
+  - docs/L99_EVENT_DETAIL_REDESIGN_2026-05-20.txt — the redesign
+    proposal that anchored the L99 arc this session
+
+----------------------------------------------------------
+SESSION SHIPPED — 25 PRs IN ONE SESSION
+----------------------------------------------------------
+
+Arc 1 — Frank-flagged afternoon (13 PRs):
+  #378  schedule_change opponent fix (original Frank ask:
+        Notify families threw NoActualScheduleChangeError when
+        only opponent changed)
+  #379  cancelled events suppress countdown + disable RSVP picker
+  #380  AllClearPill says "No alerts" (disambiguate from ActionZone)
+  #381  past-event freeze (Cancel/Lock/Activate/RSVP buttons
+        hidden on events whose end_at < now)
+  #382  tournament anchors show "Schedule pending" on MatchupCard
+        (Games tab) instead of "vs TBD"
+  #383  score-entry opponent gate (Publish disabled if opponent
+        null; warning banner instructs admin to set it first)
+  #384  empty-state microcopy + 1-decimal formatting (9U Boys
+        21 PA showed as integer; "— avg coverage" was literal
+        text; per-player stats copy clarified per §16.12)
+  #385  tournament chips show W/L for podium finishers (was
+        gated on !final_place; verified data via Supabase MCP)
+  #386  parent up-next countdown hero matches admin/coach
+  #387  roster guardian diagnostic admin-only
+        ("No guardians linked" was privacy-leaking to peer parents)
+  #388  admin-as-coach empty-state copy (when admin views as
+        coach and has no team assignments)
+  #389  Team Pulse "· 3% Going" (was "· 3%", ambiguous)
+  #390  inline academy Activate on RSVP rows; dedicated panel
+        dropped (Frank workflow: academy called up only when
+        regular roster RSVP comes up short)
+
+Arc 2 — L99 event detail redesign (7 PRs):
+  #391  L99 redesign proposal doc + ledger §4.T entry
+        (handed to claude.ai for outside review)
+  #392  PR A: collapse-defaults (~1800px iPad scroll reclaimed;
+        GameDayMode never auto-expands; AcademyCallupPicker +
+        LocationTab + EventBriefingHistory wrapped in
+        CollapsibleSection; RSVPs default closed for staff)
+  #393  PR B: GameDetailHero card + EventHeroActions child +
+        eventWindows.js constants + skeleton + cancelled hero
+        variant. Hero answers parent's 3 questions above the
+        fold on iPhone: Where do I go / What time / Anything
+        to do.
+  #394  PR C: header ⋯ overflow menu (Cancel + Delete); inline
+        Compose-recap chip removed; cancelled red strip removed
+        (replaced by hero's red border + Cancelled badge)
+  #395  CLAUDE.md §16.14 — detail page hero + collapsibles
+        pattern registered as positive design rule
+  #396  parent Location auto-expand within 4h game-day window
+        when kid RSVP'd Going (Q3 sub Frank-confirmed answer)
+  #397  ledger §4.T close-out
+
+Arc 3 — Late-night sweep (5 items, 4 PRs + 1 SQL):
+  #398  Engine Preview page + route deletion (Frank: "What's
+        the purpose of the page if I can't get to it?")
+  #399  RSVP canonical labels: buttons "Can't" everywhere,
+        status/headers "Not Going" everywhere
+  #400  CI guard for anti-pattern #46 (*Card/*Row/*Tile.jsx
+        require a test change in the same PR; GitHub Actions
+        job, PR-only, 2-minute timeout)
+  #401  ledger §4.G + §4.S close-out (audit revealed several
+        ledger items were already shipped in earlier PRs but
+        referents stayed stale — anti-pattern #45 corollary)
+  (SQL) D1 backfill: 1 row (event dd9a3915-... linked to
+        opponents row 17831749-... = "PHD - McCurdy")
+  #402  DRAFT pill on tournament-anchor EventCard (schedule
+        list parity with MatchupCard from PR #382)
+
+Plus PR #350 unstuck via rebase mid-session — Frank flagged
+"PR 350 stuck"; the actually-stuck PR was #374 (red asterisk
+on required fields); rebase against main resolved a
+TournamentFormSheet conflict, force-push, auto-merge fired.
+
+----------------------------------------------------------
+DECISIONS LOCKED THIS SESSION
+----------------------------------------------------------
+
+L99 redesign:
+  Q1: hero is ONE component with branches + EventHeroActions
+      child for the role × event-type × time-window matrix
+  Q2: tournament drafts STAY on the schedule list with
+      "Schedule pending" / DRAFT pill treatment (not hidden)
+  Q3: Location auto-expand in 4h game-day window when
+      parking_notes exist; sub-Q3: ONLY when parent role +
+      kid RSVP'd Going (not for parents whose kid is Out)
+  Q4: PR A solo first, then PR B+C bundled. Actually shipped
+      as 3 separate PRs because scope diverged mid-build —
+      worked fine.
+  Q5: Hero action button order: Notify families LEFT, Lock
+      roster RIGHT (frequency-weighted, not structural sequence)
+
+Workflow:
+  - Frank uses "auto-execute" delegation pattern; CC asks only
+    on DELETE / NEW SURFACE / non-obvious LABEL change
+  - PRs ship as draft → marked ready → auto-merge armed in
+    same MCP burst (anti-pattern caught 2026-05-19 when 3 PRs
+    stranded as drafts; PRs #392-#402 all shipped via this flow)
+  - GitHub webhook PR subscription pays for itself — CI
+    failures + Vercel preview signals arrive as events; never
+    poll, never bash-sleep-loop wait
+
+Academy workflow (Frank-clarified mid-session):
+  - Academy kids invited to EVERY practice (no activation
+    concept; rendered normally in RSVP list)
+  - For games: called up only when regular roster RSVP drops
+    below needed count. Activation is a REACTION to RSVP
+    shortfall, not an independent action
+  - This drove PR #390: inline Activate button on academy RSVP
+    rows instead of a separate Academy Players panel
+
+----------------------------------------------------------
+ANTI-PATTERNS REGISTERED OR REINFORCED THIS SESSION
+----------------------------------------------------------
+
+  #11 (150-line file cap) — tested ~6 times across the arc;
+      every time the fix was a tighter extraction (helper
+      to lib/, child component, consolidated JSX). Cap forces
+      good factoring.
+
+  #21 (migration mirror file in same commit as MCP apply) —
+      reinforced via PR template adoption (E2 already shipped).
+
+  #34 (registry/dispatch table removals include caller
+      migration in same PR) — referenced in PR template.
+
+  #36 (destructured defaults on .from(...) results swallow
+      errors) — referenced in PR template.
+
+  #45 (planning-doc + ledger §4 reconciled in same commit) —
+      reinforced on every doc PR this session; CORROLLARY
+      registered: ledger marked OPEN but code already done
+      is the recurring staleness shape. Sweep audit on PR #401
+      proved several §4.G + §4.S items were already shipped
+      with inline L99 §X.Y markers but ledger referents had
+      not been flipped. Discipline: grep for L99 markers
+      before re-shipping a ledger item.
+
+  #46 (cross-component visual rhythm requires invariant test) —
+      now CI-enforced as of PR #400. *Card/*Row/*Tile.jsx
+      changes in a PR diff require a test change in the same
+      PR, else CI fails with a pointer to the reference shape.
+
+  #47 (branch-reset hazard — switch to main BEFORE git reset
+      --hard) — registered earlier; held this session.
+
+  #48 (PostgREST .order foreignTable is no-op for parent
+      rows — sort in JS) — registered earlier; held this
+      session.
+
+----------------------------------------------------------
+STILL OPEN — NEXT SESSION QUEUE
+----------------------------------------------------------
+
+CC-actionable (small):
+  - Cluster 6.A2 KpiGrid loading gate refinement (downgraded
+    MEDIUM; ~30 min)
+  - Async-ordering test replication for useAdminStats,
+    useHomeRole, useAttendanceData, useActivities per
+    anti-pattern #44 (~1 hour batched)
+
+CC-actionable (deferred, need Frank's call):
+  - Lock bottom-sheet inline trigger — extract LockRosterSheet
+    from EventRosterLockCard so hero Lock button opens it
+    directly instead of scrolling to the lock card. Worth
+    only if Frank reports the 2-tap friction in real use.
+  - PostHog instrumentation — zero capture() sites in codebase
+    today; first call sets a precedent. CLAUDE.md §16.7.1
+    GeoIP enrichment unresolved (project-tier toggle not
+    findable on free tier). Privacy posture decision needed
+    before any instrumentation.
+
+Frank-action (not CC):
+  - File PostHog GeoIP help-desk ticket (~5 min, your task)
+  - Edit 10U Black May 17 game to set the opponent (1-tap
+    edit via Schedule → tap event → edit; 1 historical
+    TBD-opponent row remains)
+  - Migration 021 sanitization (queued under §2 Cluster 3.1
+    from earlier work; status check needed)
+
+----------------------------------------------------------
+KNOWN DATA QUIRKS / WATCH-LIST
+----------------------------------------------------------
+
+  - 1 historical event with TBD opponent: 10U Black, May 17
+    @ Boys and Girls Club of Shelton, Rumble for the Ring CT,
+    W 37-30. Frank manual edit needed.
+  - PR #350 (required-opponent wizard gate) + PR #383 (score-
+    entry opponent gate) together prevent NEW events from
+    landing in this state. Belt + suspenders.
+  - Engine Preview removed (was an internal renderer-debug
+    tool); fixtures + renderer code in src/lib/engine/ still
+    live for any future re-entry.
+
+----------------------------------------------------------
+RECOMMENDED NEXT-SESSION OPENER
+----------------------------------------------------------
+
+  1. Run `git fetch origin && git log --oneline origin/main..HEAD`
+     and `git log --oneline HEAD..origin/main` — anti-pattern
+     #35 branch-divergence pre-flight gate. Should be clean.
+
+  2. Skim docs/EMBER_PENDING_LEDGER.md §4.T close (lines
+     2061-2118) for L99 arc final state.
+
+  3. Skim docs/L99_EVENT_DETAIL_REDESIGN_2026-05-20.txt for
+     the redesign rationale (still useful context for any
+     follow-up detail-page work).
+
+  4. Pick from "Still open" queue:
+     - If shipping mode → Cluster 6.A2 OR DRAFT pill on more
+       surfaces (currently only EventCard + MatchupCard; admin
+       home schedule might benefit)
+     - If discipline mode → async-ordering tests
+     - If discussion mode → walk through PostHog privacy
+       posture + Lock bottom-sheet extraction decisions
+
+  5. Don't re-litigate this session's Frank-locks (see
+     §4.S "Things Frank already locked" + Q1-Q5 above).
+
+----------------------------------------------------------
+END OF HANDOFF
+----------------------------------------------------------
