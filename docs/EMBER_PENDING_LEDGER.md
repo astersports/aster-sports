@@ -491,9 +491,30 @@ scope before next attempt. Frame as a permanent capability upgrade
 
 ### §4.L — Tier 4 P2 findings (2026-05-16 audit)
 
-Per `AUDIT_SYNTHESIS_2026-05-16:151`: deferred to next-week cleanup
-batch. CC to read the synthesis doc when planning the cleanup PR to
-enumerate specific items.
+**Status: SWEEP CLOSED 2026-05-20 Wednesday session.** 8 of 11 items
+shipped today as one-PR-each through the §4.Q session. Items 17
+(anti-patterns #37 + #38 CLAUDE.md) already closed pre-Wednesday.
+Item 18 (Admin Home IA Tier 3) is a design exercise, parked.
+
+| Item | Description | Closed by |
+|------|-------------|-----------|
+| 8 | useWeather localStorage signout cleanup | PR #320 |
+| 9 | BriefingComposer state reset on org change | PR #318 |
+| 10 | useHasUnread channel name + filter org-scope | PR #319 |
+| 11 | RecordsPage game_results count org-scope | PR #321 |
+| 12 | useAcademyCallupCandidates lacks useAuth | PR #322 |
+| 13 | event_ride_requests.org_id FK CASCADE | PR #324 |
+| 14 | game_results.player_of_game_id FK SET NULL | PR #324 |
+| 15 | briefing_templates.org_id NOT NULL | PR #325 |
+| 16 | legacy renderers/tournamentRecap.js dead code | PR #323 |
+| 17 | anti-patterns #37 + #38 CLAUDE.md | CLOSED pre-Wed |
+| 18 | Admin Home IA Tier 3 (design exercise) | PARKED |
+
+Drift-hedge note: every fix carried PR-body smoke evidence + an
+anti-pattern citation (#21 mirror migrations, #37 org_id scoping,
+#42 parallel-system, #45 ledger reconciliation). The single
+sustained discipline arc produced eight ledger-aligned PRs in
+~75 minutes across the back half of the Wednesday session.
 
 ---
 
@@ -717,6 +738,33 @@ Layer 3 scope confirmed locked Sunday 2026-05-18 (Option α): sequential `recent
 - If terms breach → ledger reconciliation at breach point; candidate remains "tried, didn't take."
 
 **Branch state at contract open:** main, clean, 0 ahead / 0 behind origin.
+
+**Mid-session checkpoint (2026-05-20 ~07:46 NYC, after PR #325):**
+- PRs: 26 of 50 cap (52%)
+- Elapsed: ~3h 50m of 10h cap (38%)
+- End-time: midnight, still ~16h runway
+- Contract terms holding all three caps under-budget
+- **Hard-pause discipline removed** mid-session (Frank explicit;
+  contract numbers still bound the envelope). The mechanism #48
+  was meant to stress-test (pause-after-each-Move) is no longer
+  the operative test for this session — reduces #48 promotion
+  test to "do budget numbers hold as soft ceilings?" Different
+  question than original test.
+
+**Wednesday session arc so far:**
+- §4.C home-page completion: COMPLETE across all 3 roles (#296-#317)
+- Financial-math consolidation (anti-pattern #42 end-to-end): #303-#306
+- ActionZone + PendingQueuesLanes density variants: #308, #313
+- Sprint completion ledger reconciliation: #314
+- §2 stale-OPEN sweep (Clusters 4 + 5 + 7): #301, #315
+- Home page invariant audit: #316
+- UPCOMING PREP card (parent + coach): #317
+- May 16 audit P2 sweep — 8 items closed: #318-#325
+  - useWeather signout, BriefingComposer org reset, useHasUnread
+    channel scope, RecordsPage org-scope, useAcademyCallupCandidates
+    org-scope, FK CASCADE gaps (2), briefing_templates NOT NULL,
+    legacy renderer dead code
+- This entry — §4.L close + §4.Q checkpoint reconciliation
 
 ---
 
