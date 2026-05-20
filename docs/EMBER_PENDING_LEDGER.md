@@ -820,7 +820,77 @@ Layer 3 scope confirmed locked Sunday 2026-05-18 (Option α): sequential `recent
     channel scope, RecordsPage org-scope, useAcademyCallupCandidates
     org-scope, FK CASCADE gaps (2), briefing_templates NOT NULL,
     legacy renderer dead code
-- This entry — §4.L close + §4.Q checkpoint reconciliation
+- §4.L close + §4.Q mid-session checkpoint: #326
+
+**End-of-day checkpoint (2026-05-20 ~08:50 NYC, after PR #336):**
+- PRs: 37 of 50 cap (74%)
+- Elapsed: ~4h 52m of 10h cap (49%)
+- End-time: midnight, still ~15h runway
+- All three contract caps still holding under-budget
+
+**Second-half arc (PRs #327-#336):**
+- §2 Cluster 6 A2 closure + ledger flip: #327 (Admin KPI loading state
+  on season-change refetch; same shape as Cluster 6 A3's #241 fix on
+  a different upstream signal)
+- §4.M.1 P1 sweep — 6 of 7 items closed + wildcard select cleanups:
+  #328 (useRsvps + useEventArrivals)
+- §4.D Sprint G rides reconciliation — staleness catches + corrections:
+  #329 (initial), #330 (anti-pattern #44 recursive correction; PR #329
+  itself was stale at a deeper layer; lesson: grep src-tree-wide, not
+  src/components-only)
+- V-23 iCal subscription URL: verified PARTIAL (download yes,
+  subscribe no): #331
+- Sprint G aggregate-coverage signal: shipped end-to-end:
+  - Admin Rides Today widget (§6): #332
+  - Coach RIDES COORDINATION section (§5): #333
+  - §4.D reconciliation post-shipping: #334
+  - useRidesTodaySummary aggregator extracted + 7 unit tests: #335
+- Home page invariant audit extended to 12 home-arc components: #336
+
+**Cross-arc structural wins of the day:**
+- 2 cross-role hook abstractions shipped (useSeasonFinancials and
+  useRidesTodaySummary), each with 2-5 consumers via teamIds/seasonId
+  optional filters
+- 4 drift-hedge audit tests added (financialMathAudit,
+  homePageInvariantAudit + extension, ridesSummary unit tests, plus
+  the pre-existing eventTitleAudit family)
+- §2 ACTIVE BUGS now down to 2 Frank-gated items (Cluster 1.1 + 1.2);
+  all code-actionable HIGH/MEDIUM bugs closed
+- §4.L Tier 4 P2 sweep — 8 of 11 items closed (1 pre-Wed + 2 deferred)
+- §4.M.1 Phase 1 P1 — 6 of 7 items closed (1 deferred as perf-only)
+- §4.D Sprint G aggregate signal SHIPPED end-to-end (parent UI was
+  already shipped pre-Wed; coach + admin widgets shipped today)
+
+**Anti-pattern #48 status — promotion data points:**
+- Tuesday: contract held but session atypically short → HOLD CANDIDATE
+- Wednesday: contract holding at 74% PRs / 49% time / well before
+  midnight cap. STRONG data point, BUT pause-after-each-Move was
+  removed mid-session (Frank explicit). Promotion would be on the
+  weaker claim ("budget numbers held as soft ceilings"), not the
+  original test ("pause-after-each-Move under load"). Honest
+  framing left for Frank's review before promotion.
+
+**Next-session opener — clean read state:**
+- §2 ACTIVE BUGS: 2 Frank-gated items only
+- §4.C: COMPLETE all sprints
+- §4.D Sprint G: aggregate signal SHIPPED; v2 (interactive CTAs +
+  arrival/return split) deferred
+- §4.L: 8 of 11 P2 items closed; #18 (Admin Home IA Tier 3) parked
+- §4.M.1: 6 of 7 P1 items closed; P1-4 (financial_transactions
+  over-fetch) deferred as perf-only
+- V-23 iCal subscription URL: PARTIAL (download yes, subscribe no);
+  deferred as polish-tier
+- Anti-pattern #48: pending Frank's promotion decision
+
+Next-session candidate moves (no priority assigned):
+- Anti-pattern #48 promotion decision + CLAUDE.md §11 entry
+- Sprint G v2 — interactive CTAs (broadcast, suggest match, etc.)
+- Sprint G v2 — arrival/return split
+- iCal subscription URL feature build
+- §4.D Waitlist + auto-confirm UI audit
+- Admin Home IA Tier 3 design exercise (§4.L #18)
+- Async-ordering tests for useAdminStats / useHomeRole /
+  useAttendanceData / useActivities (TEST COVERAGE GAPS §11)
 
 ---
 
