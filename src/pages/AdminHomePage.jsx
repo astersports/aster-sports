@@ -69,7 +69,7 @@ export default function AdminHomePage() {
       <AdminGreeting user={user} />
 
       <AlertZone alerts={alerts} loading={alertsLoading} variant="always_visible" sectionLabel="ALERTS" />
-      <ActionZone items={adminActionItems} loading={adminActionLoading} />
+      <ActionZone items={adminActionItems} loading={adminActionLoading} sectionKey="admin-action-zone" />
       <PendingQueuesLanes lanes={pendingLanes} loading={pendingLanesLoading} />
 
       <section className="min-w-0" aria-label="Key metrics">

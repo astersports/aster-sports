@@ -14,12 +14,19 @@
 // HOME_DESIGN_SPEC visual) ship in follow-ups — they need the
 // optimistic-update path from PR §16.1.
 //
-// Density: HOME_DESIGN_SPEC §1.1.2 specifies 3 states (minimal /
-// medium / detailed). This shell ships the medium default. Density-
-// aware variants ship in a follow-up alongside DensityToggle wiring.
+// Density: HOME_DESIGN_SPEC §1.1.2. Two states (the useDensity hook
+// runtime supports `minimal` + `maximum`; spec's middle "medium" maps
+// to `maximum` here, the default rows view):
+//   - `minimal`: single-line summary "N things to handle — tap to expand"
+//   - `maximum` (default): full rows with team-color stripe + drill-down
+// PR #308 adds the minimal variant + DensityToggle in the section
+// header. Maximum's spec ambition (inline CTAs — Going/Can't, Offer
+// ride, Claim slot — with optimistic updates) ships in its own arc.
 
 import { Link } from 'react-router-dom';
 import Label from '../shared/Label';
+import DensityToggle from './DensityToggle';
+import { useDensity } from '../../hooks/useDensity';
 
 function formatWhen(iso) {
   if (!iso) return '';
@@ -28,7 +35,12 @@ function formatWhen(iso) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
 }
 
-export default function ActionZone({ items, loading }) {
+export default function ActionZone({ items, loading, sectionKey = 'action-zone' }) {
+  // Default = 'maximum' (rows). useDensity's global fallback is
+  // 'minimal' which would silently flip every existing user to the
+  // summary view; override per HOME_DESIGN_SPEC §1.1.2 (medium is the
+  // default in spec, mapped to maximum in our 2-state runtime).
+  const { density } = useDensity(sectionKey, 'maximum');
   // Hide entirely while loading + empty; hide after load if nothing
   // to handle. Don't render a "0 items" empty state — the section's
   // purpose is to surface action, not advertise its own emptiness.
@@ -36,12 +48,30 @@ export default function ActionZone({ items, loading }) {
 
   const count = items.length;
   const headline = count === 1 ? '1 thing to handle' : `${count} things to handle`;
+  const isMinimal = density === 'minimal';
 
   return (
     <section aria-label="Things to handle">
       <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
         <Label style={{ marginBottom: 0 }}>{headline.toUpperCase()}</Label>
+        <DensityToggle sectionKey={sectionKey} />
       </div>
+      {isMinimal && (
+        <div
+          style={{
+            backgroundColor: 'var(--em-bg-card)',
+            borderRadius: 10,
+            border: '1px solid var(--em-border-default)',
+            boxShadow: 'var(--em-shadow-sm)',
+            padding: '12px 14px',
+            fontSize: 14,
+            color: 'var(--em-text-secondary)',
+          }}
+        >
+          {count === 1 ? '1 item needs your attention' : `${count} items need your attention`} — tap the density toggle to expand.
+        </div>
+      )}
+      {!isMinimal && (
       <ul
         style={{
           backgroundColor: 'var(--em-bg-card)',
@@ -111,6 +141,7 @@ export default function ActionZone({ items, loading }) {
           );
         })}
       </ul>
+      )}
     </section>
   );
 }
