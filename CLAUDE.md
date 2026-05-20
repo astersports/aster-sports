@@ -748,3 +748,46 @@ Before merging any feature to main, ask:
 10. Performance budget respected? (16.10)
 
 If any answer is no, feature is not ready to merge.
+
+### 16.14 Detail page pattern — hero + section-summary collapsibles
+
+Locked 2026-05-20 from the L99 event detail redesign (PRs #392 / #393 / #394).
+Frank-flagged that event detail had grown to ~3200px of always-on chrome on
+a 14-kid game day (auto-expanded ArrivalBoard alone was ~1500px).
+
+**The rule:** detail pages — event, tournament, team, player, location —
+use a single hero card at the top + collapsible sections for everything
+else. Avoid mid-page always-on chrome.
+
+**Hero card contract:**
+1. **Title + primary metadata** — venue, opponent, date, time, arrival on
+   one card.
+2. **State summary at a glance** — RSVP progress bar, score line, or
+   equivalent. The user sees state without expanding anything.
+3. **Per-role action stack** — buttons for the 1-2 actions the user
+   in this role / event-type / time-window most needs.
+4. **Cancelled / past / draft variants** rendered as in-place treatments
+   on the hero (red border, score line, "schedule pending" subtitle), not
+   as separate strips floating above or below.
+
+**Collapsible contract for everything else:**
+1. **Closed by default** unless context demands otherwise (game-day +
+   parking notes is the documented exception per Q3 sub).
+2. **Section header shows summary text** so users can read state
+   without expanding (e.g., `RSVPs · 11/13 going · 2 out`).
+3. **Compact summary on iPhone** via `matchMedia (max-width: 414px)`
+   when full text wraps awkwardly.
+
+**Anti-patterns (don't do these on a detail page):**
+- Floating destructive button at page bottom (Cancel/Delete go in
+  header overflow menu).
+- Auto-expand based on time window alone (the L99 ArrivalBoard
+  auto-expand was the worst offender — coach taps to open).
+- Two different surfaces showing the same data (RsvpSummaryBlock +
+  EventRosterLockCard both showed RSVP counts; consolidated into hero).
+- Diagnostic copy visible to parents that they can't act on (per
+  anti-pattern #45 follow-up + PR #387's "No guardians linked").
+
+When building a new detail page, the hero exists before the first
+collapsible. When refactoring an old one, find the floating chrome
+first.
