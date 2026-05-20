@@ -19,6 +19,8 @@ import EventRidesTab from '../components/event/EventRidesTab';
 import EventNotes from '../components/event/EventNotes';
 import EventCancelActions from '../components/event/EventCancelActions';
 import EventRosterLockSection from '../components/event/EventRosterLockSection';
+import AcademyCallupPicker from '../components/event/AcademyCallupPicker';
+import { useEventRosterLock } from '../hooks/useEventRosterLock';
 import MyActionsSection from '../components/event/MyActionsSection';
 import RsvpSummaryBlock from '../components/event/RsvpSummaryBlock';
 import GameDayMode from '../components/event/GameDayMode';
@@ -32,7 +34,6 @@ const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActiv
 const ScheduleChangeComposer = lazy(() => import('../components/event/ScheduleChangeComposer'));
 const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
 const FinalizedGameView = lazy(() => import('../components/livescore/FinalizedGameView'));
-const SH = ({ children, sectionKey }) => <h2 data-section={sectionKey} style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 6 }}>{children}</h2>;
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -75,6 +76,7 @@ export default function EventDetailPage() {
   const isPast = event ? (event.end_at ? new Date(event.end_at) < new Date() : new Date(event.start_at).getTime() + 14400000 < new Date().getTime()) : false;
   const canActivateAcademy = isStaff && isGameType && !isPast;
   const { activatedSet, toggle: toggleActivation } = useEventActivations(event?.id, canActivateAcademy);
+  const lock = useEventRosterLock(event?.id);
 
   if (eventLoading) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }} />;
   if (!event) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh', padding: 24, color: 'var(--em-text-tertiary)' }}>Event not found.</div>;
@@ -103,30 +105,29 @@ export default function EventDetailPage() {
       {isStaff && <GameDayMode event={event} isStaff={isStaff} isGameType={isGameType} />}
       {isPastGame && <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>Enter Score</Button>}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
-      {isStaff && !isPast && <EventRosterLockSection event={event} team={team} isStaff={isStaff} rsvps={rsvps} roster={roster} onChange={refetchAll} />}
+      {isStaff && !isPast && <EventRosterLockSection event={event} isStaff={isStaff} rsvps={rsvps} roster={roster} onChange={refetchAll} />}
       {event.parent_event_id && (
         <div style={{ padding: '6px 16px', fontSize: 13, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Repeat size={12} strokeWidth={1.75} /> Part of a recurring series
-          {isStaff && (
-            <button type="button" onClick={() => setConfirmAction({ type: 'removeSeries' })} style={{ fontSize: 13, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>Remove from series
-            </button>
-          )}
+          {isStaff && <button type="button" onClick={() => setConfirmAction({ type: 'removeSeries' })} style={{ fontSize: 13, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>Remove from series</button>}
         </div>
       )}
 
       <EventDetailTab event={event} />
-      <SH>Location</SH>
-      <EventLocationTab event={event} />
+      <CollapsibleSection title="Location" sectionKey="location" defaultOpen={false} subtitle={event.location || 'TBD'}>
+        <EventLocationTab event={event} />
+      </CollapsibleSection>
       <CollapsibleSection title="Rides" sectionKey="rides" defaultOpen={false}>
         <EventRidesTab event={event} />
       </CollapsibleSection>
-      <CollapsibleSection title="RSVPs" sectionKey="rsvps" defaultOpen={isStaff} count={`${rsvps.filter((r) => r.response === 'going').length}/${roster.length}`}>
+      <CollapsibleSection title="RSVPs" sectionKey="rsvps" defaultOpen={false} count={`${rsvps.filter((r) => r.response === 'going').length}/${roster.length}`}>
         <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} readOnly={isPast} canActivateAcademy={canActivateAcademy} activatedSet={activatedSet} onToggleActivation={toggleActivation} />
       </CollapsibleSection>
+      {isStaff && isGameType && teamId && !isPast && <CollapsibleSection title="Academy call-ups" sectionKey="academy-callups" defaultOpen={false}><AcademyCallupPicker event={event} team={team} isStaff={isStaff} isLocked={lock.isLocked} academyCallupPlayerIds={lock.academyCallupPlayerIds} addCallup={lock.addCallup} removeCallup={lock.removeCallup} /></CollapsibleSection>}
       {dutyCount > 0 && <CollapsibleSection title="Volunteers" sectionKey="duties" defaultOpen={false} count={`${dutyCount}`}><EventDutiesTab eventId={event.id} /></CollapsibleSection>}
       {(event.notes || event.coach_notes) && <CollapsibleSection title="Notes" sectionKey="notes" defaultOpen={false}><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></CollapsibleSection>}
       <CollapsibleSection title="Comments" sectionKey="comments" defaultOpen={false}><EventCommentsTab eventId={event.id} /></CollapsibleSection>
-      {isStaff && <EventBriefingHistory event={event} />}
+      {isStaff && <CollapsibleSection title="Briefings" sectionKey="briefings" defaultOpen={false}><EventBriefingHistory event={event} /></CollapsibleSection>}
 
       {isStaff && !isPast && <EventCancelActions event={event} onStatusChange={(status) => { patchEvent({ status }); refetch(); }} />}
 
