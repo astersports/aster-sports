@@ -14,6 +14,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import AdminBackHeader from '../components/admin/AdminBackHeader';
 import { useBriefingDeepLink } from '../hooks/useBriefingDeepLink';
 import { useOrgSettings } from '../hooks/useOrgSettings';
 import { useInboxQueue } from '../hooks/useInboxQueue';
@@ -105,6 +106,7 @@ export default function BriefingsInboxPage() {
   return (
     <div style={wrap}>
       <div style={inner}>
+        <AdminBackHeader />
         <BriefingsHero activeCount={activeCount} onCompose={() => setComposer({})} pilotModeEnabled={pilotModeEnabled} tab={tab} />
         <InboxTabs activeTab={tab} activeCount={activeCount} draftCount={draftCount} historyCount={0} onChange={setTab} />
         <InboxSearch value={search} onChange={setSearch} placeholder={tab === 'history' ? 'Search subject + body…' : 'Search briefings…'} />
