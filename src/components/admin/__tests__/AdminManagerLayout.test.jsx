@@ -6,12 +6,21 @@
 // (AdminMembersPage etc.) cover the layout+data integration.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import AdminManagerLayout from '../AdminManagerLayout';
 
 afterEach(() => cleanup());
+
+// AdminManagerLayout now renders AdminBackHeader (PR for Frank-reported
+// "missing back buttons", 2026-05-20), which uses useNavigate() and
+// therefore needs a Router context. Wrap render() so every test in this
+// file gets the Router for free.
+function render(ui, options) {
+  return rtlRender(ui, { wrapper: MemoryRouter, ...options });
+}
 
 describe('AdminManagerLayout', () => {
   it('renders title + subtitle', () => {
@@ -31,7 +40,11 @@ describe('AdminManagerLayout', () => {
 
   it('omits Add button when onAdd not provided', () => {
     render(<AdminManagerLayout title="Members"><div>body</div></AdminManagerLayout>);
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    // Scope to "new" / Add CTA buttons — the layout always renders a
+    // back-nav button (AdminBackHeader, aria-label="Back") which is
+    // expected to exist regardless of onAdd.
+    expect(screen.queryByRole('button', { name: /new/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add/i })).not.toBeInTheDocument();
   });
 
   it('renders search input when onSearchChange is provided + fires onChange', async () => {
