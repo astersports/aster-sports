@@ -2008,3 +2008,52 @@ Full session recap in `docs/STATE_OF_AFFAIRS_L99_v6.md`. This section captures t
 - If shipping mode: start with B1 (lowest risk, surfaces visible bug)
 - If process mode: start with E2 (compounds over every future PR; ~10 min)
 - If discussion mode: walk Frank through the 4 open decisions, then route from there
+
+---
+
+### §4.T — Event detail page redesign (3-PR arc — PROPOSAL stage)
+
+Frank-requested 2026-05-20 PM after iPad screenshot audit. Current event
+detail page accumulates ~3200px of always-on chrome for staff drilling
+into a future game (ArrivalBoard auto-expand alone is ~1500px on a
+14-kid team). Practice events tolerable at ~1055px; tournament events
+similar to games. Full audit + wireframes + responsive notes in
+`docs/L99_EVENT_DETAIL_REDESIGN_2026-05-20.txt`.
+
+**Status:** PROPOSAL. Doc handed to Frank for external review on
+claude.ai before implementation. No code work yet.
+
+**Proposed 3-PR arc** (per Part 6 of the doc):
+- **PR A** — Stop the bleeding (small, zero new components, ~1800px
+  reclaimed): drop GameDayMode auto-expand, gate it on isGameType
+  (practices stop seeing it), wrap AcademyCallupPicker + LocationTab
+  + EventBriefingHistory in CollapsibleSection, remove "Location"
+  h2 heading.
+- **PR B** — Hero card consolidation: new `GameDetailHero.jsx` (~120
+  lines) replaces RsvpSummaryBlock + EventDetailTab +
+  EventRosterLockCard from page. Per-event-type action stacks. Parent
+  variant integrates MyActionsSection / ParentArrivalActions.
+- **PR C** — Polish + Cancel relocation: ⋯ overflow menu in
+  EventDetailHeader (Cancel + Delete inside). Drop "Compose recap"
+  chip from header (CTA lives inside Briefings collapsible).
+
+**Responsive verified:** uses existing `matchMedia (min-width: 600px)`
+breakpoint. Hero action row side-by-side on iPad, stacked on iPhone.
+Section header summaries get compact text variant on iPhone if needed.
+
+**Open questions documented in doc Part 7** for reviewer:
+1. Hero component scope (one cross-type component vs three)
+2. Tournament draft state — show on Schedule list or hide
+3. Parking notes prominence (auto-expand Location on game day?)
+4. PR A solo first or bundle B+C
+5. Action button order (Lock then Notify, or reverse)
+6. Audit gaps the reviewer might spot
+
+**Anti-pattern #45 compliance:** this entry created in same commit as
+the proposal doc per #45 rule (planning-doc changes must reconcile
+ledger §4 in same commit).
+
+**Routing:** Frank → claude.ai review → response back → CC executes
+selected PR(s) in order. Highest probability path: ship PR A first as
+the no-new-components quick win, validate the impact visually, then
+proceed to PR B based on review feedback.

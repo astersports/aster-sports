@@ -1,0 +1,362 @@
+L99 — EVENT DETAIL PAGE REDESIGN PROPOSAL
+==========================================
+Date:    2026-05-20
+Context: Frank-flagged on iPad screenshots. Event detail page
+         (game/practice/tournament) has accumulated too much
+         always-on chrome. Auto-expanded ArrivalBoard alone takes
+         >1500px on a 14-kid team. Looking for an outside opinion
+         on the structural redesign before implementation.
+
+App context (skim if helpful):
+- Skyfire / Legacy Hoopers: multi-tenant React + Supabase app for
+  youth basketball ops. Three roles: parent, coach, admin.
+- Mobile-first (iPhone-primary), iPad as secondary surface.
+- Project convention: matchMedia (min-width: 600px) for the
+  iPad/desktop breakpoint.
+- 150-line per-file cap (CLAUDE.md anti-pattern #11). Targeted edits
+  preferred over rewrites.
+- Recent shipped improvements: cancelled events suppress countdown
+  + RSVP (PR #379); past-event freeze (PR #381); tournament anchors
+  show "Schedule pending" instead of "vs TBD" (PR #382); score
+  entry blocked without opponent (PR #383); inline academy Activate
+  dropped the separate Academy panel (PR #390).
+
+---------------------------------------------------------------
+PART 1 — AUDIT: CURRENT EVENT DETAIL FOOTPRINT
+---------------------------------------------------------------
+
+Blocks rendered top-to-bottom on EventDetailPage.jsx:
+
+  1. EventDetailHeader (navy strip + 4 icons + title)        ~140px
+  1a. "Compose recap" CTA chip (past game only)               +60px
+  1b. "Cancelled" red strip (when cancelled)                  +50px
+  2.  MyActionsSection (parent, per kid)                ~120-180px
+  3.  ParentArrivalActions (parent, within 2h)               ~210px
+  4.  RsvpSummaryBlock (staff, count line + drawer)       ~70-100px
+  5.  GameDayMode wrapper (staff)
+      └ 5a. ArrivalBoard expanded (14 kids ~1500px) WORST OFFENDER
+      └ 5b. Live Score button                              +80px
+      └ 5c. "Show game-day tools" toggle (outside window)  +80px
+  6.  Enter Score button (past game)                         ~80px
+  7.  FinalizedGameView (if scored)                         ~250px
+  8.  EventRosterLockCard (counts + Lock button)            ~200px
+  9.  AcademyCallupPicker (cross-team callup card)      ~250-400px
+  10. "Part of recurring series" strip                       ~50px
+  11. EventDetailTab (date + arrival + opponent + jersey)   ~180px
+  12. "Location" h2 heading                                  ~50px
+  13. LocationTab card (name+address+entry+Get Directions) ~250-400px
+  14. Rides collapsible (closed)                             ~60px
+  15. RSVPs collapsible (closed per PR #381)                 ~60px
+  16. Volunteers collapsible                                 ~60px
+  17. Notes collapsible                                      ~60px
+  18. Comments collapsible                                   ~60px
+  19. EventBriefingHistory list                             ~180px
+  20. EventCancelActions ("Cancel Event" button)             ~80px
+
+Total for staff drilling into a FUTURE GAME on game day:
+  ~3200px. iPhone above-the-fold (~840px) sees Header +
+  ArrivalBoard rows starting — no primary action visible.
+
+Practice events: skip blocks 8, 9, drop to ~1055px. Tolerable.
+
+---------------------------------------------------------------
+PART 2 — REDUNDANCIES + DEAD WEIGHT
+---------------------------------------------------------------
+
+1. RsvpSummaryBlock + EventRosterLockCard show the same RSVP
+   counts in two different shapes.
+2. EventDetailTab repeats data already shown in the header
+   (date, opponent, HOME/AWAY).
+3. "Location" h2 heading wastes a row to say "Location"
+   with no extra info.
+4. GameDayMode renders on practices too (where it has no
+   useful function — no live score, no arrival board need).
+5. AcademyCallupPicker is a 250-400px always-on card that's
+   empty 99% of the time. Coaches rarely call up across teams.
+6. "Compose recap" chip in header duplicates the same CTA
+   inside EventBriefingHistory.
+7. Cancel Event button floats orange at the bottom — usually
+   off-screen, but visually heavy when scrolled-to.
+
+---------------------------------------------------------------
+PART 3 — REDESIGN PRINCIPLES
+---------------------------------------------------------------
+
+A. Hero card consolidation. Title, time, location subtitle, RSVP
+   progress, primary actions — one card at the top. Replaces
+   blocks 4, 8, 11, 12, parts of 1.
+
+B. Collapse-by-default for all secondary surfaces. Section
+   headers show summary text so state is visible without
+   expanding.
+
+C. Game-day surfaces gate on actual game-day state.
+   ArrivalBoard, Live Score, ParentArrivalActions all hide
+   outside the relevant time window. No always-on "Show game-day
+   tools" toggle.
+
+D. Event-type-aware rendering. Practice loses Lock card, Academy
+   callup, Game-Day Mode entirely. Tournament keeps these but
+   adapts when schedule_status='draft'.
+
+E. One canonical destructive surface. Cancel moves into the
+   header overflow with Delete.
+
+F. Per-role primary actions in the hero:
+   - Future game (staff):  [Lock roster] + [Notify families]
+   - Past game (staff):    [Enter Score] (if unscored)
+   - Future practice (staff): [Notify families]
+   - Tournament draft (staff): [Compose briefing] + [Notify]
+   - Parent:               their RSVP picker for each kid
+   - Parent within 2h:     ParentArrivalActions replaces RSVP
+
+---------------------------------------------------------------
+PART 4 — WIREFRAMES (text)
+---------------------------------------------------------------
+
+[A] GAME — future, staff (coach/admin)
+
+  ┌─ navy header ─────────────────────────────────────┐
+  │ ← [edit · send · ⋯]   ⋯ = cancel + delete         │
+  │ 10U Blue · Game · Wed May 20 · HOME               │
+  └───────────────────────────────────────────────────┘
+  ┌─ HERO CARD ───────────────────────────────────────┐
+  │ vs Holy Family-NR 4AB                             │
+  │ Wed, May 20 · 7:00 PM · Arrive 15 min early       │
+  │ 📍 CYO Spellman   · Jersey: Black                 │
+  │                                                   │
+  │ ━━━━━━━━━━━━━━━━━━━━━░░░ 11/13                    │
+  │ 11 going · 0 maybe · 2 out · 0 no reply           │
+  │                                                   │
+  │ [ Lock roster ]      [ Notify families ]          │
+  └───────────────────────────────────────────────────┘
+  ▶ Arrival board · 1/13 arrived · 3h to tip
+  ▶ RSVPs · 11/13 going · 2 out
+  ▶ Academy call-ups · 0 selected
+  ▶ Location · CYO Spellman
+  ▶ Rides · no offers yet
+  ▶ Notes · 1 note
+  ▶ Comments
+  ▶ Briefings · 1 sent
+
+[B] GAME — game-day window (within 4h before / 3h after), staff
+  Same as A, BUT Arrival board auto-expands (only auto-expansion
+  on the page). Live Score button moves inline above the
+  arrival list.
+
+[C] GAME — past, staff
+  ┌─ navy header ─────────────────────────────────────┐
+  │ ← [edit · send · ⋯]                               │
+  │ 10U Blue · Game · Sun May 17 · HOME               │
+  └───────────────────────────────────────────────────┘
+  ┌─ HERO CARD ───────────────────────────────────────┐
+  │ vs 6th Boro 4AB                                   │
+  │ Sun, May 17 · 2:30 PM                             │
+  │ 📍 Immaculate Conception-Tuckahoe                 │
+  │                                                   │
+  │  (if unscored)  [ Enter Score ]                   │
+  │  (if scored)    Final: 23–26  L                   │
+  │                                                   │
+  │ Final RSVP: 11 going · 2 out                      │
+  └───────────────────────────────────────────────────┘
+  ▶ Box score        (if scored, FinalizedGameView)
+  ▶ RSVPs · final 11 going · 2 out  (read-only PR #381)
+  ▶ Location
+  ▶ Notes
+  ▶ Comments
+  ▶ Briefings · 1 sent
+
+[D] GAME — future, parent
+  ┌─ HERO CARD ───────────────────────────────────────┐
+  │ vs Holy Family-NR 4AB                             │
+  │ Wed, May 20 · 7:00 PM · Arrive 15 min early       │
+  │ 📍 CYO Spellman                                   │
+  │                                                   │
+  │  Charlie    [ Going ] [ Maybe ] [ Can't ]         │
+  │  Milo       [ Going ] [ Maybe ] [ Can't ]         │
+  │                                                   │
+  │ Team: 11 going · 0 maybe · 2 out                  │
+  └───────────────────────────────────────────────────┘
+
+[E] GAME — game-day (parent within 2h)
+  ParentArrivalActions (🏃 On the way / ✅ Here / ⏰ Late) auto-
+  promotes into the hero, replacing the RSVP picker.
+
+[F] PRACTICE — any state
+  No Lock card. No Academy. No Game-Day Mode. No score CTAs.
+  ┌─ HERO CARD ───────────────────────────────────────┐
+  │ Practice                                          │
+  │ Tue, May 26 · 5:30 PM · Arrive 5 min early        │
+  │ 📍 Rippowam Cisqua School                         │
+  │ Upper Gym · Enter via Clinton Road                │
+  │                                                   │
+  │ (staff)  ━━━━━━━━━━━━━ 8/13 RSVP'd                │
+  │ (staff)  [ Notify families ]                      │
+  │ (parent) [ Going ] [ Maybe ] [ Can't ]            │
+  └───────────────────────────────────────────────────┘
+  ▶ RSVPs · 8/13 going
+  ▶ Location · Rippowam Cisqua School
+  ▶ Rides
+  ▶ Notes · "Bring water bottles"
+  ▶ Comments
+
+[G] TOURNAMENT — schedule_status='draft'
+  ┌─ HERO CARD ───────────────────────────────────────┐
+  │ ZG Girls National Finals                          │
+  │ May 30 – 31 · Metrowest, MA                       │
+  │ 📍 Schedule releases Wednesday                    │
+  │                                                   │
+  │ (staff)  [ Compose briefing ]   [ Notify ]        │
+  │ (parent) Updates will appear as the bracket       │
+  │          releases.                                │
+  └───────────────────────────────────────────────────┘
+  ▶ Notes
+  ▶ Comments
+  ▶ Briefings
+
+[H] TOURNAMENT — schedule released
+  Same as Game variant A. Title is the tournament name. Bracket
+  games render as child events elsewhere.
+
+---------------------------------------------------------------
+PART 5 — RESPONSIVE BEHAVIOR (iPad + iPhone)
+---------------------------------------------------------------
+
+Verified the codebase uses matchMedia (min-width: 600px) as the
+"iPad/desktop" breakpoint. The redesign respects this:
+
+Hero card:
+- iPad / ≥600px: max-width 760px, centered. Action row is
+  side-by-side: [Lock roster] [Notify families]. Plenty of
+  horizontal slack.
+- iPhone / <600px: full width with 16px side padding. Action row
+  stacks vertically with 8px gap. Each button full-width for
+  one-thumb taps.
+
+Title line ("vs Holy Family-NR 4AB"):
+- Both: wraps to 2 lines if long. font-size 17px, font-weight 600.
+- iPhone: wraps more often, no truncation.
+
+Date / arrival / location subtitle:
+- iPad: typically fits on one line each.
+- iPhone: long venue names wrap. Sub_location renders on its
+  own line below.
+
+Progress bar + RSVP count:
+- Both: bar full width of card; count line below. Numbers stay
+  on one line at typical 14px tabular-nums.
+
+Section header summary text:
+- iPad: full text fits ("Arrival board · 1/13 arrived · 3h to tip").
+- iPhone (375-414px): compact form when needed:
+    "Arrival · 1/13 · 3h"
+    "RSVPs · 11/13 · 2 out"
+    "Academy · 0 selected"
+    "Location · CYO Spellman"
+  Decision: ship full text first, see what wraps awkwardly on a
+  real iPhone, then add the compact variant only where needed.
+
+ArrivalBoard (when expanded):
+- Already responsive. One row per player with status pill.
+
+ParentArrivalActions (when promoted into hero, parent within 2h):
+- Three 52px-tall buttons stacked vertically. Same shape both
+  viewports; iPad just has more empty space on the sides.
+
+Header overflow menu (⋯):
+- Both viewports show the same icon row. On iPhone, current
+  4-icon row [UserCheck · Edit · Send · Trash] becomes
+  [UserCheck · Edit · Send · ⋯] where ⋯ opens a sheet with
+  Delete + Cancel. Net: same icon count on iPhone.
+
+Reading order:
+- Top-to-bottom on both. Hero is the first thing seen.
+- iPhone above-the-fold (~840px viewport): header (~140px) +
+  most/all of hero (~280px) + first 2-3 collapsible headers.
+- iPad portrait above-the-fold (~1366px): header + full hero +
+  ~5-6 collapsible headers. ArrivalBoard expansion fits without
+  pushing other content way down.
+
+---------------------------------------------------------------
+PART 6 — IMPLEMENTATION PLAN (3 PRs)
+---------------------------------------------------------------
+
+PR A — STOP THE BLEEDING (small, safe; zero new components)
+- Drop GameDayMode auto-expand. ArrivalBoard collapses always.
+- Summary subtitle on the GameDayMode toggle:
+  "Arrival board · 1/13 arrived · 3h to tip"
+- Gate GameDayMode on isGameType (practices stop seeing it).
+- Wrap AcademyCallupPicker in CollapsibleSection.
+- Wrap EventLocationTab in CollapsibleSection.
+- Wrap EventBriefingHistory in CollapsibleSection.
+- Remove the "Location" h2 heading.
+Expected impact: ~1800px reclaimed. Same data, different
+collapse defaults. Ships in a day.
+
+PR B — HERO CARD CONSOLIDATION
+- New GameDetailHero.jsx (~120 lines).
+- Removes RsvpSummaryBlock + EventDetailTab + EventRosterLockCard
+  from the page (components stay, mount points change).
+- Lock roster + Notify buttons move into the hero action row.
+- Per-event-type action stacks per Part 4 wireframes.
+- Parent variant: hero shows RSVP picker per kid.
+- Parent within 2h: hero swaps to ParentArrivalActions.
+
+PR C — POLISH + CANCEL RELOCATION
+- ⋯ overflow menu in EventDetailHeader (Cancel + Delete inside).
+- Remove EventCancelActions from page bottom.
+- Drop "Compose recap" chip from EventDetailHeader; CTA lives
+  inside Briefings collapsible.
+- Visual tuning (padding, dividers).
+
+---------------------------------------------------------------
+PART 7 — OPEN QUESTIONS FOR REVIEWER
+---------------------------------------------------------------
+
+1. Hero card scope — one component with conditional action
+   stacks for game/practice/tournament, or three separate
+   hero components? (Preference: one component with branches.)
+
+2. Tournament draft state — should the event even appear on the
+   Schedule list as a future game when schedule_status='draft'?
+   Or only show on the team's Records/Tournaments view? (PR #382
+   already softened the "vs TBD" display.)
+
+3. Parking notes prominence — Frank's iPad screenshot showed a
+   loud yellow callout when Location was expanded. Inside the
+   collapsed Location collapsible by default — but should
+   Location auto-expand on game day so parking is glanceable
+   without an extra tap?
+
+4. PR A first as a no-new-components quick win, see the impact,
+   then move to PR B/C? Or one bigger PR for clarity?
+
+5. Action button order in the hero (game, future, staff):
+   [Lock roster] then [Notify families] left-to-right (iPad)
+   or top-to-bottom (iPhone) — Lock first because it's the
+   structural action; Notify second because it's downstream of
+   any change. Reverse if reviewer thinks Notify is more common.
+
+6. Anything in the audit that the reviewer thinks I'm missing?
+
+---------------------------------------------------------------
+APPENDIX — KEY FILE PATHS
+---------------------------------------------------------------
+
+src/pages/EventDetailPage.jsx              (page; 150 lines)
+src/components/event/EventDetailHeader.jsx (header; ~90 lines)
+src/components/event/RsvpSummaryBlock.jsx
+src/components/event/EventRosterLockCard.jsx
+src/components/event/AcademyCallupPicker.jsx
+src/components/event/EventDetailTab.jsx
+src/components/event/EventLocationTab.jsx
+src/components/event/EventNotes.jsx
+src/components/event/EventCancelActions.jsx
+src/components/event/EventBriefingHistory.jsx
+src/components/event/MyActionsSection.jsx
+src/components/gameday/ParentArrivalActions.jsx
+src/components/gameday/ArrivalBoard.jsx
+src/components/gameday/GameDayMode.jsx
+src/components/livescore/FinalizedGameView.jsx
+
+END OF DOCUMENT
