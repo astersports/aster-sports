@@ -19,6 +19,11 @@ export default function MyChildSpotlight({ player, team, child, nextEvent }) {
   const tc = team?.team_color || 'var(--em-neutral)';
   const showRsvp = player.totalPast > 0;
   const useCount = player.totalPast < 5;
+  // Frank-reported 2026-05-20 L99 v6 §5.1 B4 — match PlayerRow's
+  // sparse-RSVP empty state so the spotlight and roster row stay
+  // consistent across surfaces.
+  const responsesReceived = (player.goingCount || 0) + (player.maybeCount || 0) + (player.declinedCount || 0);
+  const sparseRsvp = responsesReceived <= 1;
 
   return (
     <div style={{
@@ -42,7 +47,12 @@ export default function MyChildSpotlight({ player, team, child, nextEvent }) {
             )}
             {player.streak >= 3 && <span style={{ fontSize: 11 }}>🔥 {player.streak}</span>}
           </div>
-          {showRsvp && (
+          {showRsvp && sparseRsvp && (
+            <div className="flex items-center gap-1" style={{ marginTop: 3 }}>
+              <span style={{ ...PILL, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-tertiary)' }}>No RSVPs yet</span>
+            </div>
+          )}
+          {showRsvp && !sparseRsvp && (
             <div className="flex items-center gap-1" style={{ marginTop: 3, flexWrap: 'wrap' }}>
               {player.goingCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-success-soft)', color: 'var(--em-success)' }}>{useCount ? player.goingCount : Math.round((player.goingCount / player.totalPast) * 100) + '%'} Going</span>}
               {player.maybeCount > 0 && <span style={{ ...PILL, backgroundColor: 'var(--em-warning-soft)', color: 'var(--em-warning)' }}>{useCount ? player.maybeCount : Math.round((player.maybeCount / player.totalPast) * 100) + '%'} Maybe</span>}
