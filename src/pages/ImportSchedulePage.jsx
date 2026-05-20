@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import AdminBackHeader from '../components/admin/AdminBackHeader';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/useToast';
@@ -48,6 +49,7 @@ export default function ImportSchedulePage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--em-bg-page)' }}>
+      <div style={{ padding: '8px 16px 0' }}><AdminBackHeader /></div>
       <div style={headerStyle}>
         <div style={titleStyle}>Import tournament schedule</div>
         <div style={subStyle}>Paste from TourneyMachine. Parser maps games to your teams + venues. Preview before commit.</div>
