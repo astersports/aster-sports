@@ -388,15 +388,40 @@ infrastructure.
 
 ### §4.D — Sprint G Rides redesign
 
-Source: `RIDES_DESIGN_SPEC.md` (CC hasn't read in this session — see §15).
+Source: `RIDES_DESIGN_SPEC.md`. Status reconciled 2026-05-20 Wednesday
+session via PR #329 — staleness catch (same anti-pattern #44/#45 shape
+as Clusters 4/5/7 and §4.L sweep): the entry said DESIGNED-NOT-BUILT but
+schema + hook layer are already shipped. Only the UI consumers are
+missing.
 
-Status: **DESIGNED, NOT BUILT**. Entire sprint queued.
+**Status: SCHEMA + HOOKS SHIPPED · UI NOT BUILT (Phase A done; Phase B/C pending).**
 
-- **Migration 025** — Rides schema redesign
-- Offer + claim UI for parents
-- Coach rides dashboard
-- Admin rides widget + audit
-- Waitlist + auto-confirm infrastructure
+Component-by-component verification (production state):
+
+- ✅ **Schema** — Migration 025 (or equivalent) shipped. Tables exist
+  matching RIDES_DESIGN_SPEC SECTION 1 column-by-column:
+  - `event_ride_offers` — all 17 spec columns present (driver_user_id,
+    seats_offered, ride_type, pickup_location/time, return_location/time,
+    vehicle_description, driver_phone, notes, status, cancelled_at/reason)
+  - `event_ride_claims` — all 17 spec columns present (offer_id,
+    rider_user_id, for_child_id, seats_requested, pickup_address,
+    pickup_notes, return_needed, status, waitlist_position, etc.)
+- ✅ **Hooks (Phase A)** — `useRideOffers.js` (122 lines, with Realtime
+  subscription + optimistic postOffer/cancelOffer) and `useRideClaims.js`
+  (121 lines) both shipped. ZERO UI consumers today → orphan hook surface
+  per anti-pattern #42 catch. Hooks are well-formed for future UI; not
+  vestigial.
+- ❌ **Parent offer + claim UI** — NOT BUILT. The existing
+  `useRideNeeded` hook surfaces ride-needed signals through ActionZone
+  but doesn't expose the offer/claim flows.
+- ❌ **Coach rides dashboard** — NOT BUILT
+- ❌ **Admin rides widget + audit** — NOT BUILT
+- ❌ **Waitlist + auto-confirm UI** — NOT BUILT (DB shape supports;
+  no surface exists)
+
+Next chunk: Phase B — wire `useRideOffers` + `useRideClaims` into an
+event detail tab or a dedicated rides panel. Estimated ~90-120 min for
+parent surface alone. Coach + admin surfaces are follow-ups.
 
 ---
 
