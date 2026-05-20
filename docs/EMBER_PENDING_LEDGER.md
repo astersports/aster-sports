@@ -2057,3 +2057,74 @@ ledger §4 in same commit).
 selected PR(s) in order. Highest probability path: ship PR A first as
 the no-new-components quick win, validate the impact visually, then
 proceed to PR B based on review feedback.
+
+---
+
+#### §4.T close (2026-05-20 PM, post-review execution)
+
+**Status:** SHIPPED (5 PRs merged + 2 deferred for explicit Frank
+decision).
+
+**claude.ai review feedback resolution:**
+- Q1: one component with branches + EventHeroActions child split ✓
+- Q2: tournament draft on schedule list with "Schedule pending"
+  treatment — PR #382 already shipped; bracket-icon polish deferred
+  to a follow-up schedule-list adjustment.
+- Q3: Location auto-expand within game-day window when parking_notes
+  exist. Q3 sub (Frank-confirmed): only for parents whose kid is
+  RSVP'd Going. Both shipped in PR #396 via `shouldAutoExpandLocation`
+  helper.
+- Q4: PR A solo first, then PR B+C bundled — actually shipped as 3
+  separate PRs (B and C diverged in scope mid-build; reviewer's
+  "<250 lines bundling" threshold slightly exceeded).
+- Q5 (Frank): Notify left, Lock right (frequency-weighted) — shipped
+  in PR #393 EventHeroActions.
+- Gap 1 (skeleton): `EventDetailHero.Skeleton` shipped in PR #393.
+- Gap 2 (window constants): `src/lib/eventWindows.js` shipped in
+  PR #393; threaded through `useEventTimeWindow`, `GameDayMode`,
+  `ParentArrivalActions`.
+- Gap 3 (cancelled hero variant): red border + Cancelled badge +
+  action stack hidden — shipped in PR #393.
+- Gap 4 (tournament parent view): parent variant on tournament drafts
+  shows RSVP picker if kids on team; full tournament-parent surface
+  remains future scope.
+- Gap 5 (empty states): verified existing collapsibles use clean copy.
+
+**Shipped PRs:**
+- PR #392 — PR A: collapse defaults (~1800px reclaimed)
+- PR #393 — PR B: GameDetailHero + EventHeroActions + eventWindows
+  constants + skeleton + cancelled variant
+- PR #394 — PR C: header overflow menu (Cancel + Delete) + cancel
+  relocation + compose-recap chip removal + cancelled red strip
+  removal
+- PR #395 — CLAUDE.md §16.14 detail page hero + collapsibles pattern
+  registered as positive design rule
+- PR #396 — Q3 sub: parent Location auto-expand within game-day
+  window when kid Going
+
+**Deferred (explicit Frank decision needed):**
+- **Lock bottom-sheet inline trigger.** Hero's Lock button currently
+  scrolls to EventRosterLockCard below the hero (2-tap flow). Worth
+  extracting `LockRosterSheet` from `EventRosterLockCard` only if
+  Frank reports the scroll-then-tap friction is real. Lock is not a
+  daily action.
+- **PostHog instrumentation** (reviewer observation 3). Codebase has
+  PostHog initialized but zero `capture()` call sites today; adding
+  the first creates a precedent. CLAUDE.md §16.7.1 documents the
+  PostHog GeoIP enrichment that hasn't been resolved (project-tier
+  toggle not findable). Decision deferred to a separate explicit
+  Frank decision on privacy posture + first-capture precedent.
+
+**Anti-patterns reinforced this arc:**
+- #11 (150-line cap) tested 4 times across the arc; each time the
+  fix was a tighter extraction (helper to lib, child component,
+  consolidated JSX). Cap forces good factoring.
+- #45 (planning-doc + ledger same commit) followed on PR #391 (doc
+  creation) and this close commit. Ledger stays in sync.
+- §16.14 (new): positive design rule for detail pages established —
+  future tournament / team / player / location detail surfaces use
+  the same hero + collapsibles pattern.
+
+**Total session output 2026-05-20 PM:** 13 PRs from the Frank-flagged
+afternoon arc → 5 more from L99 redesign + 1 docs + 1 follow-up = 20
+PRs in one session. L99 v6 doc captures the broader context.
