@@ -32,10 +32,19 @@ export default function RidesTodayCard({ summary, loading }) {
   if (loading) return null;
   if (!summary || summary.eventCount === 0) return null;
 
-  const { eventCount, coveragePct, totalSeatsOffered, totalSeatsClaimed, byTeam } = summary;
-  const headlinePct = coveragePct === null ? '—' : `${coveragePct}%`;
+  // PR #338 — arrival/return split per RIDES_DESIGN_SPEC §5/§6.
+  // Headline shows event count + the lower of the two coverage
+  // percentages (the gap is where families are unmatched). Detail
+  // rows show separate bars for arrival vs return per team.
+  const { eventCount, totalSeatsOffered, totalSeatsClaimed, byTeam, arrival, return: ret } = summary;
+  const headlinePct = (() => {
+    if (arrival.coveragePct === null && ret.coveragePct === null) return '—';
+    if (arrival.coveragePct === null) return `${ret.coveragePct}%`;
+    if (ret.coveragePct === null) return `${arrival.coveragePct}%`;
+    return `${Math.min(arrival.coveragePct, ret.coveragePct)}%`;
+  })();
   const eventLabel = eventCount === 1 ? '1 event' : `${eventCount} events`;
-  const seatsLabel = totalSeatsOffered === 0 ? 'no offers' : `${totalSeatsClaimed}/${totalSeatsOffered} seats claimed`;
+  const seatsLabel = totalSeatsOffered === 0 ? 'no offers' : `${totalSeatsClaimed}/${totalSeatsOffered} seats`;
 
   return (
     <section className="min-w-0" aria-label="Rides today">
@@ -59,16 +68,28 @@ export default function RidesTodayCard({ summary, loading }) {
           </div>
         </div>
         {byTeam.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {byTeam.map((t) => (
               <div key={t.teamId}>
-                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
-                  <span style={{ color: t.teamColor || 'var(--em-text-primary)', fontWeight: 500 }}>{t.teamName}</span>
-                  <span style={{ color: 'var(--em-text-tertiary)' }}>
-                    {t.coveragePct === null ? '—' : `${t.coveragePct}%`} · {t.claimed}/{t.offered} seats
-                  </span>
+                <div style={{ fontSize: 12, color: t.teamColor || 'var(--em-text-primary)', fontWeight: 500, marginBottom: 4 }}>
+                  {t.teamName}
                 </div>
-                <CoverageBar pct={t.coveragePct} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--em-text-tertiary)', marginBottom: 2 }}>
+                      <span>Arrival</span>
+                      <span>{t.arrival.coveragePct === null ? '—' : `${t.arrival.coveragePct}%`}</span>
+                    </div>
+                    <CoverageBar pct={t.arrival.coveragePct} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--em-text-tertiary)', marginBottom: 2 }}>
+                      <span>Return</span>
+                      <span>{t.return.coveragePct === null ? '—' : `${t.return.coveragePct}%`}</span>
+                    </div>
+                    <CoverageBar pct={t.return.coveragePct} />
+                  </div>
+                </div>
               </div>
             ))}
           </div>

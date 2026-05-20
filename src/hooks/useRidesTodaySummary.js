@@ -24,17 +24,28 @@ import { aggregateRidesSummary } from '../lib/ridesSummary';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+const EMPTY_DIR = { offered: 0, claimed: 0, coveragePct: null };
+const EMPTY_SUMMARY = {
+  eventCount: 0,
+  totalSeatsOffered: 0,
+  totalSeatsClaimed: 0,
+  coveragePct: null,
+  byTeam: [],
+  arrival: EMPTY_DIR,
+  return: EMPTY_DIR,
+};
+
 export function useRidesTodaySummary(orgId, nowMs, teamIds = null) {
   // Stable key for caller-provided teamIds (callers often re-derive
   // the array each render). Used in useCallback deps below.
   const teamIdsKey = useMemo(() => (teamIds ? teamIds.join(',') : ''), [teamIds]);
-  const [data, setData] = useState({ eventCount: 0, totalSeatsOffered: 0, totalSeatsClaimed: 0, coveragePct: 0, byTeam: [] });
+  const [data, setData] = useState(EMPTY_SUMMARY);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const refetch = useCallback(async () => {
     if (!orgId || !nowMs) {
-      setData({ eventCount: 0, totalSeatsOffered: 0, totalSeatsClaimed: 0, coveragePct: 0, byTeam: [] });
+      setData(EMPTY_SUMMARY);
       setLoading(false);
       return;
     }
@@ -56,7 +67,7 @@ export function useRidesTodaySummary(orgId, nowMs, teamIds = null) {
     } else if (teamIds && teamIds.length === 0) {
       // Coach with zero coached teams → no events possible. Bail.
       setError(null);
-      setData({ eventCount: 0, totalSeatsOffered: 0, totalSeatsClaimed: 0, coveragePct: 0, byTeam: [] });
+      setData(EMPTY_SUMMARY);
       setLoading(false);
       return;
     }
@@ -70,14 +81,14 @@ export function useRidesTodaySummary(orgId, nowMs, teamIds = null) {
     const ridesEvents = (events || []).filter((e) => e.enable_rides === true);
     if (ridesEvents.length === 0) {
       setError(null);
-      setData({ eventCount: 0, totalSeatsOffered: 0, totalSeatsClaimed: 0, coveragePct: 0, byTeam: [] });
+      setData(EMPTY_SUMMARY);
       setLoading(false);
       return;
     }
     const eventIds = ridesEvents.map((e) => e.id);
     const [offersRes, claimsRes] = await Promise.all([
-      supabase.from('event_ride_offers').select('event_id, seats_offered').eq('status', 'active').in('event_id', eventIds),
-      supabase.from('event_ride_claims').select('event_id, seats_requested, status').in('event_id', eventIds),
+      supabase.from('event_ride_offers').select('event_id, seats_offered, ride_type').eq('status', 'active').in('event_id', eventIds),
+      supabase.from('event_ride_claims').select('event_id, seats_requested, return_needed, status').in('event_id', eventIds),
     ]);
     if (offersRes.error || claimsRes.error) {
       const msg = offersRes.error?.message || claimsRes.error?.message;
