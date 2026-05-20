@@ -1950,6 +1950,7 @@ Full session recap in `docs/STATE_OF_AFFAIRS_L99_v6.md`. This section captures t
 
 **P1 — small, clear, no design call (ship next):**
 - **B1.** New Tournament form checkboxes have no visible "checked" state. ~20 lines in `TournamentFormSheet`'s team picker. Add `<Check />` icon (Lucide) or `aria-checked` pill style.
+- **B2.** Historical events with `opponent = TBD` or null still show on Schedule and Results. Promoted from P3 per chat-side pressure-test — Frank will see these on iPhone within 24h. Surface in admin home alerts lane until cleaned (~30 lines + an alert config row). PR #350 prevents new ones; this addresses the ~7 historical rows.
 - **B3.** Financials shows "Winter 2025-26" tab even when empty. ~10 lines — filter `seasons` query to ones with `financial_accounts.count > 0`.
 - **B4.** Coach team roster shows "3% Going · 97% NR" with sparse data. ~10 lines — when player has ≤1 RSVP datapoint, render "No RSVPs yet" instead of misleading percentages.
 
@@ -1960,7 +1961,7 @@ Full session recap in `docs/STATE_OF_AFFAIRS_L99_v6.md`. This section captures t
 
 **P3 — data hygiene (one-shot SQL):**
 - **D1.** Import 30 tournament-opponent strings into the opponents directory. SQL one-shot insert from distinct `events.opponent` values where no matching opponent row exists, then backfill `events.opponent_id` via name match. ~15 mins. PR #363 closed the bug for 12 CYO opponents; D1 extends the same fix to the 30 tournament-opponent strings.
-- **D2.** Historical events with no opponent ("vs TBD" cards). Same SQL sweep as D1 — surface remaining events in admin home alerts lane until cleaned. Overlaps with B2 from L99 v6 5.1 (alert-lane fix).
+- ~~D2~~ — absorbed into B2 (alert-lane fix surfaces TBD-opponent events directly).
 
 **P4 — process / discipline (compounds):**
 - **E1.** Anti-pattern #46 CI guard. GitHub Actions step that fails CI if a `*Card.jsx` / `*Row.jsx` / `*Tile.jsx` file is in the diff WITHOUT an accompanying invariant test added in the same PR. Simple grep job.
@@ -1970,7 +1971,7 @@ Full session recap in `docs/STATE_OF_AFFAIRS_L99_v6.md`. This section captures t
 - **C4.** Members list — guardian/family grouping enhancement. ~3 guardians per family but no family grouping in the list. Possible enhancement to spot duplicates. Defer until Frank confirms real pain.
 
 **Open decisions for Frank (block P2 work):**
-1. Engine Preview placement (C1) — keep / move / remove?
+1. Engine Preview placement (C1) — keep / move to /admin/dev / remove? **Chat-side + CC concur: lean (b) move to /admin/dev.**
 2. Tournament conflict warning style (C2) — soft banner or hard block?
 3. Required-field marker (C3) — adopt red asterisk pattern everywhere?
 4. PR template (E2) — adopt or skip?
@@ -1981,7 +1982,10 @@ Full session recap in `docs/STATE_OF_AFFAIRS_L99_v6.md`. This section captures t
 - Attendance metric replaced by **Active teams** (NOT active players — Frank's explicit preference for "programs or teams")
 - Engine Preview is currently in MANAGE grid (C1 will move it if Frank approves)
 
-**Anti-pattern #46 registered:** PRs that touch `*Card.jsx` / `*Row.jsx` / `*Tile.jsx` ship with one of: (a) a cross-surface invariant test, (b) a before/after screenshot, or (c) a typography token reference. Origin case in L99 v6 Part 1.2.
+**Anti-patterns #46/#47/#48 registered:**
+- **#46** (PR #359): cross-component visual rhythm requires invariant test / screenshot / token reference. Origin case in L99 v6 Part 1.2.
+- **#47** (chat-side pressure-test 2026-05-20 PM): branch-reset hazard — switch to main before `git reset --hard`. Promoted to registered on first occurrence per calibration heuristic (mechanical operational rule preventing data loss; bounded recovery today, worst-case data loss tomorrow).
+- **#48** (chat-side pressure-test 2026-05-20 PM): PostgREST `.order(col, { foreignTable })` is a no-op for parent rows — always sort in JS. Short corollary entry, not a full anti-pattern.
 
 **Trigger pattern established (audit candidates for next session):**
 - `team_achievements` aggregates (currently no manual columns — safe)
@@ -1990,7 +1994,8 @@ Full session recap in `docs/STATE_OF_AFFAIRS_L99_v6.md`. This section captures t
 
 **Operator-CC discipline observations from this session:**
 - Frank's "auto proceed" delegation pattern unlocks rapid serial shipping; CC's calibration is: if item involves DELETION / NEW SURFACE / non-obvious LABEL change, ask. Otherwise execute.
-- Branch-reset hazard: twice CC did `git reset --hard origin/main` on a feature branch with uncommitted work, wiping work. ~5 min recovery each time. Discipline: switch to main first, then branch. Promote to anti-pattern #47 if it recurs.
+- Branch-reset hazard: twice CC did `git reset --hard origin/main` on a feature branch with uncommitted work, wiping work. ~5 min recovery each time. **Promoted to anti-pattern #47 immediately (chat-side pressure-test) — operational rule preventing data loss, register on first occurrence.**
+- **Chat-side pressure-test loop:** L99 v6 v1 had a numbering question (raised by chat-side, verified clean by grep — catalog was contiguous, v6's #46 claim was correct) and an evidence claim that needed pinning (Notify-families E2E). Both corrections shipped via §4.S follow-up commit + L99 Part 7.1 edit. Pattern lock: chat-side reads L99 immediately on close, flags structural questions, CC verifies and reconciles in the same doc-pair.
 - Webhook PR subscription pattern paid for itself: PR #361 CI failure caught and fixed within minutes via subscription, vs hours later via Frank's smoke.
 
 **§4.S close conditions:**
