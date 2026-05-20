@@ -650,6 +650,34 @@ Layer 3 scope confirmed locked Sunday 2026-05-18 (Option α): sequential `recent
 
 **Branch state at contract open:** main, clean, 0 ahead / 0 behind origin.
 
+**Tuesday close (2026-05-20 ~05:09 UTC):** Contract held. Final state:
+- PRs: 2 of 40 cap (PR #300 contract entry; PR #301 Cluster 5 ledger reconciliation)
+- Elapsed: ~33 min of 10h cap
+- End-time: closed well before midnight
+- Anti-pattern #48 promotion verdict: **HOLD CANDIDATE.** Honest read — Tuesday's contract terms all held, but the session was atypically short. Move 2 collapsed from "code fix + #43 test" to "ledger reconciliation only" when CC's pre-flight surfaced that Cluster 5 had already shipped via PR #239 (anti-pattern #44/#45 catch). One short session doesn't stress-test the chain-vs-pause discipline under load. #48 stays in candidate status pending a full-budget session that tests pause discipline at the 4h+ mark. Tuesday's data point: "shape supports the discipline" — not strong enough for promotion to registered rule.
+
+---
+
+### §4.Q — Wednesday session contract (2026-05-20) — anti-pattern #48 ongoing test
+
+**Second session under stated-budget discipline.** Tuesday's data point ("shape supports") needs a longer session to validate. Wednesday's contract tests pause-discipline-under-load: does the hard-pause-after-each-Move structural commitment hold when the session has real runway, or does momentum chain past it?
+
+**Contract terms (Frank-stated 2026-05-20 ~07:15 NYC):**
+- Max hours: **10**
+- End time: **midnight local NYC**
+- Max PRs: **50**
+
+**Operational discipline:**
+1. Move 1 (this entry) — contract written to ledger BEFORE any code.
+2. Move 2 — Payment overdue lane for PendingQueuesLanes (HOME_DESIGN_SPEC §3.1.4 third lane). Scope: 75-90 min, lane work + `useFamiliesOwing` hook extraction + flow back through `FinancialDashboardPage:60-68` for consistency. One PR per anti-pattern #42 (avoid parallel-system buildup) — shipping the hook without FinancialDashboardPage consuming it would create two sources of truth for "outstanding balance."
+3. Move 3 — **hard pause** after Move 2. Same discipline as Tuesday. Route from stop.
+
+**Promotion criteria (carries forward from §4.P):**
+- If contract terms hold across the Wednesday session → second data point supporting #48; promote based on accumulated evidence.
+- If terms breach → ledger reconciliation at breach point; candidate remains "tried, didn't take."
+
+**Branch state at contract open:** main, clean, 0 ahead / 0 behind origin.
+
 ---
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
