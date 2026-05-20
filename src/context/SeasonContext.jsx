@@ -25,11 +25,13 @@ export function SeasonProvider({ children }) {
         // hasn't resolved yet (initial mount before auth finishes),
         // consumers should still observe loading=true so they know the
         // season data isn't authoritative yet. Setting loading=false
-        // here used to cause useAdminStats to see seasonsLoading=false
-        // the instant auth resolved — but before the seasons fetch had
-        // even started — which flashed a premature "0" on the KPI
-        // cards. We still clear any stale rows so a sign-out doesn't
-        // leak the previous org's data.
+        // here used to cause downstream stats hooks to see
+        // seasonsLoading=false the instant auth resolved — but before
+        // the seasons fetch had even started — which flashed premature
+        // zero values on the admin home. We still clear any stale rows
+        // so a sign-out doesn't leak the previous org's data. The
+        // companion guard is in useSeasonFinancials' stale-gate
+        // (§4.G Cluster 6.A2 close, 2026-05-20 PM).
         setSeasons([]);
         setActiveSeasonId(null);
         return;
