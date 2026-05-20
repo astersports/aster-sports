@@ -92,7 +92,7 @@ export default function ParentHomePage() {
       <AlertZone alerts={parentAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
       <ConflictCallout conflicts={conflicts} />
       <RegistrationReminderCard stats={financialStats} seasonName={activeSeason?.name} loading={financialsLoading} />
-      <ActionZone items={actionItems} loading={actionItemsLoading} />
+      <ActionZone items={actionItems} loading={actionItemsLoading} sectionKey="parent-action-zone" />
       <LiveNowCard items={liveNowItems} nowMs={now} />
       <TournamentWeekendBanner tournament={upcomingTournament} />
       <RecognitionCard achievements={recentAchievements} nowMs={now} />

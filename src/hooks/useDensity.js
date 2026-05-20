@@ -14,7 +14,13 @@ export function useDensity(sectionKey, defaultDensity = FALLBACK) {
   const { preferences, loading, mergePreferenceJson } = usePreferences();
 
   const density = useMemo(() => {
-    if (!preferences) return FALLBACK;
+    // Honor caller's defaultDensity in the null-preferences case too
+    // (PR #308 fix). Pre-PR this path returned FALLBACK regardless of
+    // what the caller passed, which silently flipped every consumer
+    // to 'minimal' before user prefs loaded. Callers that pass a
+    // specific default (e.g. ActionZone wants 'maximum' = rows) need
+    // that honored even when preferences haven't resolved.
+    if (!preferences) return VALID.includes(defaultDensity) ? defaultDensity : FALLBACK;
     const map = preferences.card_density ?? {};
     const sectionValue = map[sectionKey];
     if (VALID.includes(sectionValue)) return sectionValue;

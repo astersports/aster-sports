@@ -93,7 +93,7 @@ export default function CoachHomePage() {
       <AdminGreeting user={user} />
 
       <AlertZone alerts={coachAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
-      <ActionZone items={actionQueueItems} loading={actionQueueLoading} />
+      <ActionZone items={actionQueueItems} loading={actionQueueLoading} sectionKey="coach-action-zone" />
       <CoachMessageBlock messages={recentTeamMessages} nowMs={now} />
 
       {nextEvent && (
