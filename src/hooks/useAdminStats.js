@@ -2,30 +2,33 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useSeason } from '../context/SeasonContext';
+import { useSeasonFinancials } from './useSeasonFinancials';
 
-// Counts for the admin dashboard KPI grid. Each count is wrapped in its
-// own try/catch so one missing table doesn't take the whole grid down —
-// if `roster_members` or `events` isn't provisioned yet the card just shows 0.
-// Payment totals are hard-coded to 0 until the billing schema lands.
+// Counts for the admin dashboard KPI grid: players + events + the
+// financial pair (collected, outstanding).
 //
-// Loading discipline: `loading: false` is ONLY ever written from the
-// single setStats at the end of a completed fetch. No early-return
-// paths write state. If orgId or seasonsLoading aren't settled yet, the
-// effect bails without touching state and the hook stays on its initial
-// `loading: true`. This is what prevents the KPI Events card from
-// flashing "0" on hard refresh while the season data is still in
-// flight.
+// Anti-pattern #42 cleanup (PR #305): financial computation used to
+// live inline at :82-111, duplicating the math owned by
+// useSeasonFinancials. After this PR the financial slice flows
+// through the shared hook (4th consumer); only the player + event
+// counts stay local to this hook.
+//
+// Units fix (in-PR): pre-PR the hook returned collected/outstanding
+// in DOLLARS (`paid / 100`), but KpiGrid pipes those values through
+// `formatCurrency()` which itself divides by 100 (expects CENTS).
+// Net effect: the KPI grid was rendering ~1/100th of actual values
+// (e.g. "$702" instead of "$70,243"). Pre-existing bug surfaced
+// during consolidation. Hook now returns CENTS to match
+// formatCurrency's expectation — display values become correct.
+//
+// Each count is wrapped in SAFE so one missing table doesn't take
+// the whole grid down. Loading discipline: counts.loading flips to
+// false only at end of completed fetch; financialLoading comes
+// from useSeasonFinancials's own gate. Hook stays on loading=true
+// while either is in flight.
 const SAFE = async (fn) => {
   try { return await fn(); }
   catch { return 0; }
-};
-
-const INITIAL = {
-  players: 0,
-  events: 0,
-  collected: 0,
-  outstanding: 0,
-  loading: true,
 };
 
 export function useAdminStats() {
@@ -33,23 +36,18 @@ export function useAdminStats() {
   const { activeSeason, loading: seasonsLoading } = useSeason();
   const seasonId = activeSeason?.id ?? null;
 
-  const [stats, setStats] = useState(INITIAL);
+  const [counts, setCounts] = useState({ players: 0, events: 0, loading: true });
+
+  // Financial slice via shared hook. Cents in; dollars out at boundary.
+  const { stats: financial, loading: financialLoading } = useSeasonFinancials(orgId, seasonId);
 
   useEffect(() => {
-    // Wait for auth AND season context to settle before doing anything.
-    // The effect re-fires when either dep changes, so we'll come back
-    // here once they're ready. Critically: no state mutation in these
-    // bail paths — the hook stays on loading=true.
     if (!orgId || seasonsLoading) return undefined;
 
     let cancelled = false;
     Promise.resolve().then(async () => {
       if (cancelled) return;
 
-      // Team IDs for the active season scope every subsequent count.
-      // When there's no active season (seasonId null but seasonsLoading
-      // is already false), we skip this fetch and teamIds stays empty,
-      // which naturally drives both counts to 0 in SAFE() below.
       let teamIds = [];
       if (seasonId) {
         const { data } = await supabase
@@ -79,43 +77,18 @@ export function useAdminStats() {
         return count ?? 0;
       });
 
-      // Financial stats mirror FinancialDashboardPage logic:
-      // 1. Query accounts for this season to get billed totals
-      // 2. Query transactions scoped to those accounts for collected
-      // 3. Outstanding = billed - collected
-      const { collected, outstanding } = await SAFE(async () => {
-        if (!seasonId) return { collected: 0, outstanding: 0 };
-        const { data: accts } = await supabase
-          .from('financial_accounts')
-          .select('id, season_fee_cents, discount_cents')
-          .eq('org_id', orgId)
-          .eq('season_id', seasonId);
-        const accounts = accts || [];
-        if (accounts.length === 0) return { collected: 0, outstanding: 0 };
-        const billed = accounts.reduce((s, a) => s + (a.season_fee_cents || 0) - (a.discount_cents || 0), 0);
-        const acctIds = accounts.map((a) => a.id);
-        // Beta B1 audit defense-in-depth — anti-pattern #37.
-        // account_id IN list already implicitly scopes by org via prior
-        // accounts query; explicit filter prevents drift.
-        const { data: txns } = await supabase
-          .from('financial_transactions')
-          .select('amount_cents, transaction_type')
-          .eq('org_id', orgId)
-          .in('account_id', acctIds);
-        let paid = 0;
-        (txns || []).forEach((t) => {
-          if (t.transaction_type === 'payment') paid += t.amount_cents || 0;
-          if (t.transaction_type === 'refund') paid -= t.amount_cents || 0;
-        });
-        return { collected: paid / 100, outstanding: Math.max(0, billed - paid) / 100 };
-      }) || { collected: 0, outstanding: 0 };
-
       if (cancelled) return;
-      setStats({ players, events, collected, outstanding, loading: false });
+      setCounts({ players, events, loading: false });
     });
 
     return () => { cancelled = true; };
   }, [orgId, seasonId, seasonsLoading]);
 
-  return stats;
+  return {
+    players: counts.players,
+    events: counts.events,
+    collected: financial?.paid || 0,
+    outstanding: Math.max(0, financial?.outstanding || 0),
+    loading: counts.loading || financialLoading,
+  };
 }
