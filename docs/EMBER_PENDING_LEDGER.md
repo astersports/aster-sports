@@ -945,6 +945,81 @@ Next-session candidate moves (no priority assigned):
 - Async-ordering tests for useAdminStats / useHomeRole /
   useAttendanceData / useActivities (TEST COVERAGE GAPS §11)
 
+### §4.R — Thursday continuation (2026-05-20 morning NYC) — V-23 + Frank-reported loading bug arc
+
+**Frame:** Continuation of the Wednesday session's "Continue with the
+lean" under-load discipline. Substantive items executed from the
+end-of-Wed locked Thursday plan, plus an in-session bug Frank surfaced
+mid-execution.
+
+**Shipped (in order):**
+- PR #339, #340 — Coach + Admin home LoadingSkeleton gates (Thursday
+  Action 1 from end-of-Wed letter)
+- PR #341 — Anti-pattern #48 Framing C ledger lock (Thursday Action 2)
+- PR #342 — V-23 iCal subscription URL: migration + edge function +
+  UI three-phase build (Thursday Action 3; SHIPPED end-to-end)
+- PR #343 — V-23 ledger reconciliation (PARTIAL → SHIPPED across
+  §4.Q + §15 V-23 row + CLAUDE.md §8 Prompt 3-B) per anti-pattern #45
+- PR #344 — Home loading-gate comprehensive fix (Frank-reported
+  2026-05-20: admin home cascade-flash from single-signal gate).
+  Extended all three role homes' isLoading gates to combine multiple
+  loading signals; added homePageLoadingGateAudit invariant test per
+  anti-pattern #43
+- PR #345 — Brand-flash cached-colors fix (Frank-reported same
+  session: Ember/Skyfire defaults rendering before AuthContext
+  applies Legacy Hoopers brand_colors). New orgBrandingCache module
+  with synchronous pre-mount CSS-var application; cache invalidation
+  through registerCacheBuster registry → no AuthContext changes
+
+**Bug-arc methodology note:** Frank's screenshot report named one
+symptom ("old screens load in first") but the diagnosis surfaced TWO
+distinct bugs at different layers — in-page cascade (PR #344) and
+brand-flash (PR #345). The two were entangled in the same Capture
+timeline but had different root causes. Split into two PRs rather
+than one bundled fix: each PR's diff stays scoped to one concern,
+each gets its own invariant test (homePageLoadingGateAudit for #344;
+orgBrandingCache.test for #345), and the §15 auto-merge discipline
+runs cleanly per PR. Reverse pattern of bundling worth registering
+durably — the "two bugs, one symptom" framing is a recurring shape
+worth pre-flighting on similar reports.
+
+**Anti-pattern compliance:**
+- #11 (150-line cap): all touched files under cap (149/145/145
+  for #344; 67/56/41 for #345). PR #344 trimmed AdminHomePage's
+  comment to land at 149 from 152.
+- #21 (migration mirror), #23 (REVOKE order), #30 (helper mirroring),
+  #31 (config.toml + audit) — all honored on PR #342
+- #43 (cross-role invariant test): homePageLoadingGateAudit on
+  PR #344 locks the multi-signal gate shape across all three role
+  homes; orgBrandingCache.test on PR #345 covers the cache contract
+- #44 (trace full pipeline before ruling at the gate): the cascade
+  bug diagnosed by tracing each downstream-of-gate hook's loading
+  state, not by inspecting the gate logic
+- #45 (planning-doc reconciliation): PR #343 (V-23 docs) + this §4.R
+  entry (PR #344 + #345 docs) ship reconciliation in the same
+  coordinated set as the substantive code
+
+**Cross-arc structural wins of Thursday morning:**
+- 1 substantive feature shipped end-to-end (V-23 iCal subscription)
+- 2 Frank-reported UX bugs closed with invariant tests
+- 1 new audit test (homePageLoadingGateAudit, 6 cases)
+- 1 new module with unit coverage (orgBrandingCache, 9 cases)
+- AuthContext.jsx (pre-existing 164 lines over-cap) untouched —
+  brand-flash fix wired through registerCacheBuster registry
+
+**Next-session opener — clean read state (refreshed end of §4.R):**
+- All §4.Q "next-session opener" items still apply, PLUS:
+- §2 ACTIVE BUGS: 2 Frank-gated items only (unchanged)
+- §4.D Sprint G: aggregate signal SHIPPED; v2 still deferred
+- V-23: SHIPPED end-to-end (no follow-up)
+- Loading-gate cascade: CLOSED across all three role homes
+- Brand-flash: CLOSED with localStorage cache + pre-mount apply
+- Anti-pattern #48 (original): still candidate, untested
+- Anti-pattern #48' (modified, soft-ceiling): still candidate,
+  awaits one more under-load session
+- Anti-pattern #44 generalization note inline on CLAUDE.md §11 #44:
+  still pending (queued from §4.Q)
+
 ---
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
