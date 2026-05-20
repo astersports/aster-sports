@@ -2180,3 +2180,89 @@ decision).
 **Total session output 2026-05-20 PM:** 13 PRs from the Frank-flagged
 afternoon arc → 5 more from L99 redesign + 1 docs + 1 follow-up = 20
 PRs in one session. L99 v6 doc captures the broader context.
+
+---
+
+### §4.U — Teams page redesign (3-PR arc — PROPOSAL stage)
+
+Frank-requested 2026-05-20 PM after iPad screenshot audit. Same drift
+class as §4.T: an admin-skewed detail page that's grown a mid-section
+attendance grid + a "Player Stats" empty-state block + a "2% Going"
+pulse metric that misreads to families. Goal stated as "100%
+adoption by parents, coaches, and admins" — page must be valuable to
+all three personas at a glance.
+
+Full audit + wireframes + responsive notes in
+`docs/L99_TEAMS_REDESIGN_2026-05-20.txt`.
+
+**Status:** PROPOSAL. No code work yet. Stop-the-bleeding bugs
+identified for PR A.
+
+**Critical bug at the top of PR A (B1 in doc):**
+- `TeamHeatmap.jsx:30-41` computes `teamPct = totalGoing / totalPast`
+  which floors near zero when check-ins are absent. Header reads
+  "Team Pulse · 2% Going" while the grid says "no data here." Two
+  conflicting signals on the same surface, family-visible.
+
+**Proposed 3-PR arc** (per Part 6 of the doc):
+- **PR A** — Stop the bleeding (small, zero new components): gate
+  Team Pulse on responseRate threshold, flip Roster `defaultOpen` to
+  false, role-gate "No RSVPs yet" pill to staff only, adopt
+  `useHomeRole().activeRole` at page level. Drift-hedge invariant
+  test per AP #43.
+- **PR B** — Hero card consolidation: new `TeamDetailHero.jsx`
+  (~120 lines) replaces TeamHeaderCard + MyChildSpotlight +
+  Send-briefing chip + CoachQuickActions. Per-role action stacks
+  identical to event-detail hero shape from #393.
+- **PR C** — Polish + overflow menu: ⋯ menu in back-chevron row,
+  TeamAchievements collapsible, microcopy parent-variant pass.
+
+**Open questions documented in doc Part 7** for Frank:
+1. Adopt `useHomeRole().activeRole` at page level (recommend yes,
+   in-row permissions stay on real role)
+2. Canonical Team Pulse metric (a/b/c, recommend b: response-rate)
+3. Roster `defaultOpen` for staff (recommend closed both roles)
+4. Strip per-kid RSVP pill stack from parent view? (recommend yes
+   except on parent's own kid row)
+5. Coach contact line in parent hero — `useTeamHeadCoach` hook
+   needed (defer to PR C if data path not yet built)
+6. PR A solo first or combined (recommend split)
+7. Hard-coded weather lat/lng (B5) — defer separately
+8. Hero parent-RSVP picker — iterate over `myChildren` filtered to
+   this team (sibling case)
+
+**Anti-pattern #45 compliance:** this entry created in same commit
+as the proposal doc per #45 rule.
+
+**Routing:** Frank reviews doc → answers Q1-Q8 → CC executes PR A
+first. PR A is the stop-the-bleeding ship (closes B1 + B2 which are
+family-visible bugs).
+
+---
+
+### §4.V — Bug-sweep follow-ups (2026-05-20 PM)
+
+From the auto-execute bug-sweep agent run companion to §4.T close.
+Agent flagged 7 items; CC verified 3 real + 4 false positives.
+
+**False positives** (no action, agent over-rotated on AP #37 without
+applying the FK-scoped exception):
+- `RecordPaymentForm.jsx:39` `financial_transactions.insert` — payload
+  includes `org_id: orgId`; AP #37 governs read filters, not insert
+  payloads.
+- `GamesTab.jsx:18-40` `events` queries — events has NO `org_id`
+  column (FK-scoped via `team_id → teams.org_id`). AP #37 documented
+  exception.
+- `ScopeChoiceDialog.jsx:38-40` three `events` queries — same
+  FK-scoped exception.
+
+**Real findings shipped in companion PR:**
+- `MessagesTab.jsx:12` — added `.eq('org_id', orgId)` before
+  `tournament_id` filter (AP #37 discipline, defense in depth over
+  RLS). Required `useAuth` import.
+- `GamesTab.jsx:18` — added `error` destructure + console.error on
+  events query (AP #36).
+- `GamesTab.jsx:27` — same on `game_results` query (AP #36).
+
+Three small fixes; no behavior change in the happy path. Bug
+diagnostics now surface when PostgREST returns an error.

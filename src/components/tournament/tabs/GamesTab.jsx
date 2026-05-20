@@ -15,19 +15,25 @@ export default function GamesTab({ tournament, teamFilter }) {
     if (!tournament?.id) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase.from('events')
+      // anti-pattern #36: destructure `error` and surface it; never swallow
+      // PostgREST errors into an empty data array via the `data || []`
+      // fallback alone. events is FK-scoped via team_id → teams.org_id
+      // (no org_id column), so the AP #37 org_id filter does NOT apply.
+      const { data, error } = await supabase.from('events')
         .select('id, title, event_type, start_at, opponent, home_away, team_id, status, is_bracket_game, is_championship_final, is_bonus_game, is_scrimmage, bracket_label, game_sequence, teams(name, team_color)')
         .eq('tournament_id', tournament.id)
         .order('start_at', { ascending: true });
       if (cancelled) return;
+      if (error) console.error('GamesTab events:', error.message);
       const evts = data || [];
       setEvents(evts);
       const ids = evts.map((e) => e.id);
       if (ids.length) {
-        const { data: gr } = await supabase.from('game_results')
+        const { data: gr, error: grErr } = await supabase.from('game_results')
           .select('event_id, result, our_score, opponent_score, published_at, quarter_scores, coach_highlight')
           .in('event_id', ids).not('published_at', 'is', null);
         if (!cancelled) {
+          if (grErr) console.error('GamesTab results:', grErr.message);
           const map = {};
           (gr || []).forEach((r) => { map[r.event_id] = r; });
           setResults(map);
