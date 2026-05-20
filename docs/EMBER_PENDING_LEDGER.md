@@ -264,62 +264,101 @@ Status: Session 1 partially shipped. Remainder OPEN.
 Source: `SKYFIRE_BUILD_QUEUE_v2.md` Phase 1 Sprint plan, references
 `HOME_DESIGN_SPEC.md` (CC hasn't read in this session — see §15).
 
-Status: **SUBSTANTIVELY ADVANCED** via 2026-05-19 afternoon session.
-Sprints B and C effectively shipped (B fully; C 4 of 6 sections).
-Sprint D started with ACTION QUEUE shell + 2 signals. Sprints E and
-F still mostly open.
+Status: **SUBSTANTIVELY COMPLETE END-TO-END** as of 2026-05-20 Wednesday
+session. Sprints B, C, D, E are essentially done across the full spec
+§1 / §2 / §3 section enumeration. Sprint F (cross-role polish) is
+~30% done. Only schema-blocked items remain (UPCOMING PREP for parent
++ coach require event_prep_notes table — not yet created).
 
-- **Sprint B — Parent home Phase 1**: SUBSTANTIVELY COMPLETE.
+- **Sprint B — Parent home Phase 1**: COMPLETE.
   - MY TEAMS dynamic data: SHIPPED via PR #239 (Cluster 5 fix)
   - ACTION ZONE shell + 3 signals: SHIPPED via PR #281 (RSVP pending),
     #282 (ride needed), #283 (volunteer slot). Generalized to signal-
     agnostic shape in #288 (item.href + item.secondary fields).
   - Density toggle wiring: SHIPPED (DensityToggle component exists)
+  - **ActionZone density variants**: SHIPPED via PR #308
+    (Compact ↔ Detailed cross-role).
   - Relative date language: PARTIAL via PR #234
-  - Empty state design: SHIPPED (welcome card lines 114-120 of
-    ParentHomePage)
-  - 4th ACTION ZONE signal (payment overdue): BLOCKED on parent
-    payment surface — Phase 7 financials prerequisite. Documented
-    in PR #283 closeout.
+  - Empty state design: SHIPPED (welcome card)
+  - **4th ACTION ZONE signal area — payment overdue**: UNBLOCKED via
+    PR #303 (lane on admin home) + PR #304 (RegistrationReminderCard on
+    parent home; parent payment surface now exists).
 
-- **Sprint C — Parent home Phase 2**: 4 OF 6 SECTIONS SHIPPED.
+- **Sprint C — Parent home Phase 2**: 6 OF 6 SECTIONS SHIPPED.
   - LIVE NOW card: SHIPPED via PR #284
   - Tournament weekend banner: SHIPPED via PR #285
   - Recognition card: SHIPPED via PR #286
   - Coach message block: SHIPPED via PR #287
   - Emergency alert banner: PARTIAL via existing AlertZone (could
     extend with red-bordered cancellation-specific render)
-  - Registration/payment reminder: BLOCKED on parent payment surface
+  - **Registration/payment reminder**: SHIPPED via PR #304
+    (RegistrationReminderCard reads useSeasonFinancials with
+    guardianId filter — 3rd consumer of the shared hook).
 
-- **Sprint D — Coach home**: COACH ACTION QUEUE 2 of 4+ SIGNALS.
+- **Sprint D — Coach home**: COMPLETE end-to-end except UPCOMING PREP.
   - CoachHomePage.jsx new file: SHIPPED via Tier 3 v1
   - Alerts + roster snapshot + MY TEAMS: SHIPPED via Tier 3 v1
   - ACTION QUEUE shell + 2 signals: SHIPPED via PR #288 (pending
-    achievements) + #289 (unpublished scores). ActionZone shell
-    validated as cross-role infrastructure (parent + coach use the
-    same component).
-  - Team Pulse wiring (Migration 023 — STATUS UNKNOWN)
-  - Remaining: full COACHING TODAY render polish, MESSAGING BLOCK,
-    UPCOMING PREP, RECOGNITION CARD coach context, QUICK ACTIONS ROW,
-    additional ACTION QUEUE signals (roster requests, coach comp)
+    achievements) + #289 (unpublished scores).
+  - **MESSAGING BLOCK (§2.1.4)**: SHIPPED via PR #296 (useRecentTeamMessages
+    + CoachMessageBlock reused from PR #287; same component, opposite-
+    direction data flow — cross-role infra validation).
+  - **QUICK ACTIONS ROW (§2.1.6)**: SHIPPED via PR #310
+    (CoachHomeQuickActions — Start Check-In, Message Team, Quick Score).
+  - **useCoachHomeSignals extracted**: PR #310 (third role with
+    signal-aggregator hook pattern; mirrors useParentHomeSignals
+    PR #304 + useAdminHomeSignals PR #297).
+  - UPCOMING PREP (§2.1.5): BLOCKED — needs event_prep_notes schema.
 
-- **Sprint E — Admin home redesign**: ADMIN ACTION QUEUE 3 SIGNALS.
+- **Sprint E — Admin home redesign**: COMPLETE end-to-end.
   - AdminHomePage exists + alerts + KpiGrid: SHIPPED
-  - MANAGE section added 2026-05-19: SHIPPED via PR #269 (admin entry
-    + route audit). 6 admin manager links visible on home.
-  - ACTION QUEUE shell + 3 signals: SHIPPED via PR #291 (low-RSVP
-    events within 72h) + #292 (unscored games past start, 7d window)
-    + #293 (pending parent invitations). Validates ActionZone as
-    truly cross-role (parent + coach + admin all consume it).
-  - Remaining: ops dashboard, pending queues lanes, activity feed,
-    additional Attention Required signals (overdue waivers,
-    expired discount codes, missing emergency contacts, etc.).
+  - **KpiGrid units bug fix**: SHIPPED via PR #305 ($702 → $70,243
+    display — pre-existing units-mismatch surfaced during consolidation).
+  - MANAGE section added: SHIPPED via PR #269.
+  - **ADMIN SHORTCUTS redesign close**: SHIPPED via PR #309 (regrouped
+    8 flat tiles into CREATE / COMMUNICATE / OPERATE buckets per May 16
+    audit Tier 1+2 item).
+  - ACTION QUEUE shell + 3 signals: SHIPPED via PRs #291/#292/#293.
+  - **PENDING QUEUES lanes (§3.1.4)**: SHIPPED via PR #297 (achievements +
+    coach payouts) + PR #303 (3rd lane: families with outstanding balance)
+    + PR #313 (Compact/Detailed density variants — mirror PR #308).
+  - **PROGRAM HEALTH card (§3.1.5)**: SHIPPED v1 via PR #307 (season
+    progress + payment %) + v2 via PR #311 (+ RSVP rate + Attendance +
+    Registration pipeline). All 4 spec metrics now rendered; Attendance
+    gracefully renders '—' until check-ins workflow is in active use.
+  - **RECENT ACTIVITY feed (§3.1.6)**: SHIPPED v1 via PR #312 (3 streams:
+    RSVPs, announcements, game results; merged + sorted desc, 24h,
+    top 8). Hidden today (zero recent activity); surfaces when data
+    arrives.
+  - **QUICK ACTIONS ROW (§3.1.7)**: EFFECTIVELY SHIPPED via ADMIN
+    SHORTCUTS redesign (PR #309). Spec listed 4 generic chips
+    [Create Event] [Send Announcement] [Export Data] [View Reports] —
+    superseded by the richer 8-tile + sub-grouping treatment.
+  - Remaining sprint-E adjacent: overdue-waivers signal (schema dep),
+    expired discount codes signal, missing emergency contacts signal —
+    all defer to schema work or product calls.
 
-- **Sprint F — Cross-role polish**: dark mode complete (Q10),
-  accessibility full audit (Q1), analytics instrumentation (Q9),
-  performance optimization, multi-org scaffolding (Q3). All NOT
-  shipped per current visibility. **Bundle perf SHIPPED via PR #277**
-  (SDK lazy-load — main bundle 893 kB → ~440 kB on Vercel).
+- **Sprint F — Cross-role polish**: ~30% done.
+  - Bundle perf SHIPPED via PR #277 (SDK lazy-load — main bundle
+    893 kB → ~440 kB on Vercel).
+  - **Density variants** SHIPPED via PR #308 (ActionZone) + PR #313
+    (PendingQueuesLanes) — 2 of 3 cross-role shells. MessageBlock
+    density deferred (no section header; pattern doesn't map naturally).
+  - Dark mode complete (Q10), accessibility full audit (Q1), analytics
+    instrumentation (Q9) — NOT SHIPPED.
+
+- **Financial-math single-source consolidation** (anti-pattern #42
+  end-to-end closure): PRs #303 → #306. Five render-time consumers
+  now route through `useSeasonFinancials`:
+    1. FinancialDashboardPage (KPI cards + family balance list)
+    2. Admin home payment-overdue lane (via useAdminHomeSignals)
+    3. Parent home RegistrationReminderCard (via useParentHomeSignals)
+    4. Admin home KPI grid (via useAdminStats)
+    5. Admin home ProgramHealthCard (via useProgramHealthMetrics)
+  Sixth consumer reads (FamilyBalanceList) flow through the same hook
+  via the `balances` map. Drift-hedge audit at
+  `lib/__tests__/financialMathAudit.test.js` fails CI on any inline
+  re-implementation.
 
 **Cross-role infrastructure validated this stretch:**
 - `ActionZone` component is signal-agnostic — parent + coach + admin
