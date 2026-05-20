@@ -10,6 +10,7 @@ import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { useCoachHomeSignals } from '../hooks/useCoachHomeSignals';
+import { useHomeRole } from '../hooks/useHomeRole';
 import AdminGreeting from '../components/admin/AdminGreeting';
 import NextEventCard from '../components/admin/NextEventCard';
 import SectionShell from '../components/home/SectionShell';
@@ -32,6 +33,7 @@ import { useRidesTodaySummary } from '../hooks/useRidesTodaySummary';
 
 export default function CoachHomePage() {
   const { user, orgId } = useAuth();
+  const { isViewingAs } = useHomeRole();
   const { activities, loading, error, refetch } = useActivities();
   const { byTeamId: recordsByTeam, loading: recordsLoading } = useOrgTeamRecords(orgId);
   const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(activities);
@@ -125,7 +127,9 @@ export default function CoachHomePage() {
         sectionKey="coach-my-teams"
         loading={loading && myTeams.length === 0}
         skeletonVariant="row"
-        empty={myTeams.length === 0 ? { heading: 'No teams yet', message: 'Once an admin assigns you to a team, it appears here.' } : null}
+        empty={myTeams.length === 0 ? (isViewingAs
+          ? { heading: 'Coach view sample', message: 'You are admin — coach view shows what a coach assigned to a team would see. Assign yourself to a team in Teams admin to populate, or switch back to admin view.' }
+          : { heading: 'No teams yet', message: 'Once an admin assigns you to a team, it appears here.' }) : null}
       >
         <div className="flex gap-2 flex-wrap" style={{ paddingBottom: 4 }}>
           {myTeams.map((t) => (
