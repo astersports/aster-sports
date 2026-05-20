@@ -55,7 +55,6 @@ const EXEMPT = new Set([
   '/forgot-password',    // Linked from LoginPage form (text content varies)
   '/',                   // Root / home default; always reachable
   '/records-preview',    // <Navigate to="/records"> destination; intentional alias
-  '/admin/engine-preview', // Internal renderer-debug surface, reachable by direct URL only (L99 v6 §5.2 C1, 2026-05-20). Restoring a nav tile would require gating it behind a developer flag on staff_profiles; not in scope today.
 ]);
 
 function extractRoutePaths(appSource) {

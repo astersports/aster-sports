@@ -16,11 +16,8 @@
 import { Link } from 'react-router-dom';
 import { CalendarDays, MapPin, Repeat, Swords, Trophy, UsersRound } from 'lucide-react';
 
-// Engine Preview tile removed 2026-05-20 (L99 v6 §5.2 C1) — internal
-// renderer-debug surface, not a production admin feature. Route at
-// /admin/engine-preview stays reachable by direct URL for debug work;
-// it's added to routeAccessibility test EXEMPT list so the audit
-// doesn't flag it as an orphan.
+// Engine Preview removed 2026-05-20 (L99 v6 §5.2 C1, tile + route + page).
+// Internal renderer-debug surface; not a production admin feature.
 const LINKS = [
   { label: 'Seasons',         icon: CalendarDays,   to: '/admin/seasons'         },
   { label: 'Teams',           icon: Trophy,         to: '/admin/teams'           },
