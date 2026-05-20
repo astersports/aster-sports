@@ -81,9 +81,13 @@ Listed in merge order. All merged to `main` via §15 auto-merge.
 - `20260520120945_tournament_teams_sync_from_game_results` (PR #357)
 - `20260520131038_opponents_sync_from_game_results` (PR #363)
 
-### Anti-pattern registered:
+### Anti-patterns registered:
 
 - **#46** (PR #359): cross-component visual rhythm requires invariant test / screenshot / token reference
+- **#47** (registered 2026-05-20 PM, chat-side pressure-test): branch-reset hazard — switch to main BEFORE `git reset --hard origin/main`; promoted from candidate to registered on first occurrence per "operational rule preventing data loss" calibration heuristic
+- **#48** (registered 2026-05-20 PM, chat-side pressure-test): PostgREST `.order(col, { foreignTable })` is a no-op for parent rows — always sort in JS for parent-row ordering. Short corollary entry, not a full anti-pattern
+
+Catalog state pre-session: #45 entries registered. Post-session: #46/#47/#48. (Chat-side pressure-test verified contiguous catalog via `grep -nE "^[0-9]+\. \*\*" CLAUDE.md` after v6's initial draft raised a numbering question — file was clean, v6's #46 claim was correct.)
 
 ### Pre-PR work via Supabase MCP:
 
@@ -260,15 +264,17 @@ Sweep parent tables for manual aggregate columns that depend on child-table acti
 
 # PART 6: FORWARD PRIORITIES + OPEN DECISIONS
 
-## 6.1 Ranked priority for next session
+## 6.1 Ranked priority for next session (revised post chat-side pressure-test)
 
 | Tier | Items | Why |
 |---|---|---|
-| P1 — ship next | B1, B3, B4 | Small, clear, no design call |
+| P1 — ship next | B1, B2, B3, B4 | Small, clear, no design call. B2 promoted from P3 — Frank will see TBD-opponent cards on iPhone within 24h |
 | P2 — Frank decides | C1, C2, C3 | Design choices |
-| P3 — data hygiene | D1, D2/B2 | One-shot SQL + UI nudge |
+| P3 — data hygiene | D1 | One-shot SQL (D2 absorbed into B2's alert-lane fix) |
 | P4 — process | E2, E1 | Compounds over time |
 | P-deferred | C4 | Until Frank confirms real pain |
+
+**Engine Preview C1 lean (chat-side concur):** (b) move to `/admin/dev` — preserves debug surface, gets it off the user-facing path. Same anti-pattern class as PR #360's CTA destinations (internal-vs-user-expected mismatch).
 
 ## 6.2 Open decisions for Frank
 
@@ -289,17 +295,17 @@ Sweep parent tables for manual aggregate columns that depend on child-table acti
 
 ## 7.1 What's working in production right now (verified)
 
-- All 17 PRs merged and deployed
+- All 17 PRs merged and deployed (Frank: "Passed" at session close 2026-05-20 PM after iPhone smoke)
 - 2 trigger migrations live with backfills applied
-- Anti-pattern #46 registered in CLAUDE.md
-- Schedule games + Records page now visually consistent on iPhone (Frank verified)
-- Notify-families test send works end-to-end (PR #347)
-- Edit Team form actually saves now (PR #348)
-- Records page shows correct champions + nationals counts (PR #353)
-- Records game log + form guide both in chronological order (PR #349 + #358)
-- Admin home is cleaner (no KPI grid, no dead achievements lane, scores-only action lane)
-- All admin sub-pages have back buttons
-- Opponents page shows real head-to-head for the 12 CYO opponents
+- Anti-patterns #46/#47/#48 registered in CLAUDE.md
+- Schedule games + Records page now visually consistent on iPhone (Frank-verified via "Passed" smoke)
+- Notify-families null-guardian-id crash fixed (PR #347 resolver hardening); end-to-end test send not directly named in "Passed" smoke but implied by no further crash report. **Evidence boundary:** Frank's "Passed" message covers the iPhone smoke surfaces visible in the screenshot batches; explicit Notify-families test send by Frank was not separately documented post-#347. If chat-side or Frank needs hard evidence before the 11U Girls rollout relies on this surface, run an admin test send before broadcast.
+- Edit Team form actually saves now (PR #348) — Frank-verified
+- Records page shows correct champions + nationals counts (PR #353) — Frank-verified
+- Records game log + form guide both in chronological order (PR #349 + #358) — Frank-verified
+- Admin home is cleaner (no KPI grid, no dead achievements lane, scores-only action lane) — Frank-verified
+- All admin sub-pages have back buttons — Frank-verified via screenshot tour
+- Opponents page shows real head-to-head for the 12 CYO opponents (sync trigger; Frank-verified via iPhone smoke)
 
 ## 7.2 What needs Frank's verification on next visit
 
