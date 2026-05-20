@@ -1,12 +1,12 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/useToast';
 import StepType from './StepType';
 import StepTeam from './StepTeam';
 import StepWhen from './StepWhen';
 import StepDetails from './StepDetails';
+import WizardHeader from './WizardHeader';
 import { buildSaveDiff, EMPTY_FORM, eventToForm } from './wizardForm';
 import { useCreateActivity } from '../../hooks/useCreateActivity';
 import { useUpdateActivity } from '../../hooks/useUpdateActivity';
@@ -73,7 +73,15 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
     if (result?.data) { onCreated?.(diff); onClose(); }
     else if (result?.error) { console.error('CreateActivityWizard save:', result.error); showToast("Couldn't save. Try again?", 'error'); }
   };
-  const canNext = step === 2 ? (form.date && form.startTime && form.endTime) : true;
+  // Step-3 validation: games + tournaments require an opponent.
+  // Frank-reported 2026-05-20 ("Opponents should be a mandatory field").
+  // Block-disable the save button so admin can't ship a game-type
+  // event with no opponent. Practice events have no opponent concept.
+  const isGameType = form.eventType === 'game' || form.eventType === 'tournament';
+  const opponentOK = !isGameType || (form.opponent || '').trim().length > 0;
+  const canNext = step === 2 ? (form.date && form.startTime && form.endTime)
+    : step === 3 ? opponentOK
+    : true;
   const backStop = isEdit ? 2 : 0;
   const dots = isEdit ? EDIT_STEPS : STEPS;
   const dotIndex = isEdit ? step - 2 : step;
@@ -84,31 +92,8 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
       backgroundColor: 'var(--em-bg-page)',
       display: 'flex', flexDirection: 'column', overflow: 'hidden',
     }}>
-      <div style={{
-        minHeight: 56, padding: '0 8px 0 4px',
-        display: 'flex', alignItems: 'center', gap: 8,
-        borderBottom: '1px solid var(--em-border-default)',
-        backgroundColor: 'var(--em-bg-card)', flexShrink: 0,
-        paddingTop: 'env(safe-area-inset-top, 0px)',
-      }}>
-        <button type="button" onClick={step > backStop ? () => setStep(step - 1) : onClose}
-          className="sf-press" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {step > backStop
-            ? <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-primary)" />
-            : <X size={20} strokeWidth={1.75} color="var(--em-text-primary)" />}
-        </button>
-        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', flex: 1 }}>
-          {isEdit ? 'Edit Event' : 'New Event'}
-        </span>
-        <div style={{ display: 'flex', gap: 6, paddingRight: 8 }}>
-          {dots.map((_, i) => (
-            <div key={i} style={{
-              width: 8, height: 8, borderRadius: 4,
-              backgroundColor: i <= dotIndex ? 'var(--em-accent)' : 'var(--em-border-default)',
-            }} />
-          ))}
-        </div>
-      </div>
+      <WizardHeader step={step} backStop={backStop} isEdit={isEdit} dots={dots} dotIndex={dotIndex}
+        onBack={() => setStep(step - 1)} onClose={onClose} />
 
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' }}>
         {step === 0 && <StepType value={form.eventType} onSelect={selectType} />}
