@@ -15,7 +15,10 @@ const STATUS_LABELS = {
   not_going: { label: 'Not Going', color: 'var(--em-danger)' },
 };
 
-export default function RsvpPlayerRow({ player, response, existingNote, teamColor, onSetRsvp, onSaveNote, forceReadOnly = false }) {
+export default function RsvpPlayerRow({
+  player, response, existingNote, teamColor, onSetRsvp, onSaveNote, forceReadOnly = false,
+  canActivateAcademy = false, isActivated = false, onToggleActivation,
+}) {
   const { role, myChildren } = useAuth();
   const [showNote, setShowNote] = useState(false);
   const [noteText, setNoteText] = useState(existingNote || '');
@@ -24,6 +27,11 @@ export default function RsvpPlayerRow({ player, response, existingNote, teamColo
   // forceReadOnly comes from EventRsvpTab when the event is past — admins
   // and coaches still see the rows, just can't toggle status on history.
   const readOnly = forceReadOnly || (role === 'parent' && !isMyChild);
+  // 2026-05-20 — inline Academy activation toggle. Frank workflow:
+  // academy kids are called up only when regular roster RSVP comes up
+  // short. Coach scans the RSVP list, sees a Going academy kid, taps
+  // Activate inline. Replaces the dedicated Academy Players panel.
+  const showActivate = canActivateAcademy && player.member_type === 'futures_academy';
 
   return (
     <div style={{
@@ -52,6 +60,16 @@ export default function RsvpPlayerRow({ player, response, existingNote, teamColo
               fontSize: 11, color: 'var(--em-academy)', fontWeight: 500,
               backgroundColor: 'var(--em-academy-soft)', padding: '1px 6px', borderRadius: 4,
             }}>Academy</span>
+          )}
+          {showActivate && (
+            <button type="button" onClick={() => onToggleActivation?.(player.id)} className="sf-press"
+              aria-label={`${isActivated ? 'Deactivate' : 'Activate'} ${player.first_name} ${player.last_name}`}
+              style={{
+                marginLeft: 6, minHeight: 28, padding: '0 10px', borderRadius: 14, fontSize: 12, fontWeight: 600,
+                border: isActivated ? 'none' : '1px solid var(--em-accent)',
+                backgroundColor: isActivated ? 'var(--em-accent)' : 'transparent',
+                color: isActivated ? 'var(--em-text-inverse)' : 'var(--em-accent)', cursor: 'pointer',
+              }}>{isActivated ? 'Active' : 'Activate'}</button>
           )}
         </div>
 

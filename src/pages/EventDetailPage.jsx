@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import { useEventDetail } from '../hooks/useEventDetail';
 import { useRsvps } from '../hooks/useRsvps';
+import { useEventActivations } from '../hooks/useEventActivations';
 import useEventDelete from '../hooks/useEventDelete';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import EventDetailHeader from '../components/event/EventDetailHeader';
@@ -31,7 +32,6 @@ const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActiv
 const ScheduleChangeComposer = lazy(() => import('../components/event/ScheduleChangeComposer'));
 const ScoreEntrySheet = lazy(() => import('../components/scoring/ScoreEntrySheet'));
 const FinalizedGameView = lazy(() => import('../components/livescore/FinalizedGameView'));
-const AcademyActivationPanel = lazy(() => import('../components/event/AcademyActivationPanel'));
 const SH = ({ children, sectionKey }) => <h2 data-section={sectionKey} style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', padding: '0 16px', marginTop: 16, marginBottom: 6 }}>{children}</h2>;
 
 export default function EventDetailPage() {
@@ -69,19 +69,19 @@ export default function EventDetailPage() {
     if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
   }, [searchParams, rsvpLoading, roster.length]);
   const { requestDelete, pendingDelete, confirmDelete, cancelDelete } = useEventDelete(event);
+  // Hooks must run on every render; gate the inner fetch on `enabled` instead.
+  const isStaff = role === 'admin' || role === 'coach';
+  const isGameType = event?.event_type === 'game' || event?.event_type === 'tournament';
+  const isPast = event ? (event.end_at ? new Date(event.end_at) < new Date() : new Date(event.start_at).getTime() + 14400000 < new Date().getTime()) : false;
+  const canActivateAcademy = isStaff && isGameType && !isPast;
+  const { activatedSet, toggle: toggleActivation } = useEventActivations(event?.id, canActivateAcademy);
 
   if (eventLoading) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }} />;
   if (!event) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh', padding: 24, color: 'var(--em-text-tertiary)' }}>Event not found.</div>;
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--em-text-tertiary)';
-  const isStaff = role === 'admin' || role === 'coach';
   const rsvpMap = {};
   rsvps.forEach((r) => { rsvpMap[r.player_id] = r.response; });
-  const isGameType = event.event_type === 'game' || event.event_type === 'tournament';
-  // 2026-05-20 — isPast freezes Cancel/Lock/Academy/RSVP affordances on
-  // events whose end has passed (Frank-flagged: a 3-day-old game still
-  // showed all of them live). Enter Score stays actionable for games.
-  const isPast = event.end_at ? new Date(event.end_at) < new Date() : new Date(event.start_at).getTime() + 14400000 < new Date().getTime();
   const isPastGame = isStaff && isGameType && isPast;
 
   const openEdit = () => {
@@ -121,9 +121,8 @@ export default function EventDetailPage() {
         <EventRidesTab event={event} />
       </CollapsibleSection>
       <CollapsibleSection title="RSVPs" sectionKey="rsvps" defaultOpen={isStaff} count={`${rsvps.filter((r) => r.response === 'going').length}/${roster.length}`}>
-        <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} readOnly={isPast} />
+        <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} readOnly={isPast} canActivateAcademy={canActivateAcademy} activatedSet={activatedSet} onToggleActivation={toggleActivation} />
       </CollapsibleSection>
-      {isStaff && isGameType && teamId && !isPast && <Suspense fallback={null}><AcademyActivationPanel eventId={event.id} teamId={teamId} /></Suspense>}
       {dutyCount > 0 && <CollapsibleSection title="Volunteers" sectionKey="duties" defaultOpen={false} count={`${dutyCount}`}><EventDutiesTab eventId={event.id} /></CollapsibleSection>}
       {(event.notes || event.coach_notes) && <CollapsibleSection title="Notes" sectionKey="notes" defaultOpen={false}><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></CollapsibleSection>}
       <CollapsibleSection title="Comments" sectionKey="comments" defaultOpen={false}><EventCommentsTab eventId={event.id} /></CollapsibleSection>
