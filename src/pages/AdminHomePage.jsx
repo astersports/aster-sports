@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSeason } from '../context/SeasonContext';
-import { useAdminStats } from '../hooks/useAdminStats';
 import { useSeasons } from '../hooks/useSeasons';
 import { usePrograms } from '../hooks/usePrograms';
 import { useActivities } from '../hooks/useActivities';
@@ -16,7 +15,6 @@ import { getWeatherForTime, useWeather } from '../hooks/useWeather';
 import AlertZone from '../components/alerts/AlertZone';
 import ActionZone from '../components/home/ActionZone';
 import PendingQueuesLanes from '../components/home/PendingQueuesLanes';
-import KpiGrid from '../components/admin/KpiGrid';
 import ProgramHealthCard from '../components/admin/ProgramHealthCard';
 import RecentActivityFeed from '../components/admin/RecentActivityFeed';
 import RidesTodayCard from '../components/admin/RidesTodayCard';
@@ -40,7 +38,6 @@ import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 export default function AdminHomePage() {
   const { user, orgId } = useAuth();
   const { activeSeason } = useSeason();
-  const stats = useAdminStats();
   const { seasons } = useSeasons();
   const { programs } = usePrograms();
   const { activities, loading: activitiesLoading, refetch } = useActivities();
@@ -71,7 +68,7 @@ export default function AdminHomePage() {
   // too early, leaving stats/alerts/signals to populate in cascade
   // (Frank-reported 2026-05-20). Waits on the slowest signal: page
   // stays blank ~200-400ms longer but the layered flash stops.
-  const isLoading = activitiesLoading || stats.loading || alertsLoading || adminActionLoading || pendingLanesLoading;
+  const isLoading = activitiesLoading || alertsLoading || adminActionLoading || pendingLanesLoading;
   if (isLoading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   // overflow-x-hidden + max-w-full on the page wrapper is defense in
@@ -86,10 +83,6 @@ export default function AdminHomePage() {
       <AlertZone alerts={alerts} loading={alertsLoading} variant="always_visible" sectionLabel="ALERTS" />
       <ActionZone items={adminActionItems} loading={adminActionLoading} sectionKey="admin-action-zone" />
       <PendingQueuesLanes lanes={pendingLanes} loading={pendingLanesLoading} sectionKey="admin-pending-queues" />
-
-      <section className="min-w-0" aria-label="Key metrics">
-        <KpiGrid stats={stats} />
-      </section>
 
       <ProgramHealthCard season={activeSeason} nowMs={nowMs} />
 
