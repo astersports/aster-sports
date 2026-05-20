@@ -57,10 +57,10 @@ export default function LocationFormSheet({ location, onClose }) {
   return (
     <FullScreenForm open={true} onClose={onClose} title={location ? 'Edit Location' : 'New Location'}>
       <div style={section}>
-        <Input id="l-name" label="Name" type="text" value={form.name} onChange={(e) => patch({ name: e.target.value })} placeholder="Westchester Community College" />
+        <Input id="l-name" label="Name" type="text" value={form.name} onChange={(e) => patch({ name: e.target.value })} placeholder="Westchester Community College" required />
       </div>
       <div style={section}>
-        <Input id="l-addr" label="Address" type="text" value={form.address} onChange={(e) => patch({ address: e.target.value })} placeholder="75 Grasslands Rd, Valhalla, NY 10595" />
+        <Input id="l-addr" label="Address" type="text" value={form.address} onChange={(e) => patch({ address: e.target.value })} placeholder="75 Grasslands Rd, Valhalla, NY 10595" required />
         <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 4 }}>
           Coordinates auto-fetched on save.
         </div>

@@ -66,12 +66,12 @@ function Body({ program, onSave, onDelete }) {
   return (
     <>
       <div>
-        <Field label="Display name">
+        <Field label="Display name" required>
           <Input value={form.name} onChange={(v) => patch('name', v)} placeholder="10U Black" />
         </Field>
-        <ChipField label="Age group" options={AGE_GROUPS} value={form.age_group} onChange={(v) => patch('age_group', v)} />
-        <ChipField label="Gender" options={GENDERS} value={form.gender} onChange={(v) => patch('gender', v)} />
-        <ChipField label="Competition type" options={CIRCUITS} value={form.circuit} onChange={(v) => patch('circuit', v)} />
+        <ChipField label="Age group" options={AGE_GROUPS} value={form.age_group} onChange={(v) => patch('age_group', v)} required />
+        <ChipField label="Gender" options={GENDERS} value={form.gender} onChange={(v) => patch('gender', v)} required />
+        <ChipField label="Competition type" options={CIRCUITS} value={form.circuit} onChange={(v) => patch('circuit', v)} required />
         {form.circuit === 'aau' && (
           <Field label="Circuit name">
             <Input value={form.circuit_name ?? ''} onChange={(v) => patch('circuit_name', v)} placeholder="Zero Gravity" />
