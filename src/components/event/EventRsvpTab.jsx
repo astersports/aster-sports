@@ -6,7 +6,11 @@ import LoadingSkeleton from '../shared/LoadingSkeleton';
 // going/maybe/not-going selector. Thin wrapper around the existing
 // RSVP components; kept as a tab so the page-level state can own
 // the useRsvps hook and pass in the resulting data.
-export default function EventRsvpTab({ roster, rsvps, rsvpMap, teamColor, onSetRsvp, onSaveNote, loading }) {
+// 2026-05-20 — readOnly freezes the RSVP picker for past events
+// (Frank-flagged: past events let parents/coaches re-RSVP for events
+// that already happened). Existing parent-not-my-kid read-only logic
+// inside RsvpPlayerRow ORs with this prop.
+export default function EventRsvpTab({ roster, rsvps, rsvpMap, teamColor, onSetRsvp, onSaveNote, loading, readOnly = false }) {
   if (loading) {
     return <div style={{ padding: 16 }}><LoadingSkeleton variant="list" count={5} /></div>;
   }
@@ -47,6 +51,7 @@ export default function EventRsvpTab({ roster, rsvps, rsvpMap, teamColor, onSetR
               teamColor={teamColor}
               onSetRsvp={onSetRsvp}
               onSaveNote={onSaveNote}
+              forceReadOnly={readOnly}
             />
           </div>
         );
