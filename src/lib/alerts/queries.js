@@ -118,6 +118,23 @@ export function createSupabaseQueryExecutor(supabase) {
       return data || [];
     },
 
+    // L99 v6 §5.1 B2 — opponent_unassigned alert. Same shape as
+    // getEventsWithoutLocation but on event_type IN ('game','tournament')
+    // (no opponent concept for practice events) and matches three forms
+    // of "no opponent": NULL, empty string, literal 'TBD'.
+    async getEventsWithoutOpponent(orgId, withinHours) {
+      const start = new Date().toISOString();
+      const end = isoForward(withinHours / 24);
+      const { data, error } = await supabase.from('events')
+        .select('id, team_id, start_at, opponent, event_type, teams!inner(org_id, name)')
+        .eq('teams.org_id', orgId)
+        .in('event_type', ['game', 'tournament'])
+        .or('opponent.is.null,opponent.eq.,opponent.eq.TBD')
+        .gte('start_at', start).lte('start_at', end).neq('status', 'cancelled');
+      if (error) throw error;
+      return data || [];
+    },
+
     // Per Q7 lock: 2 trigger conditions, NO orphan check.
     // Condition 1: location_id IS NULL on a future event.
     // Condition 2: location_id IS NOT NULL AND events.location IS NULL
