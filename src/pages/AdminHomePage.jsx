@@ -35,6 +35,7 @@ import AutoNotificationSettingsSheet from '../components/admin/AutoNotificationS
 import PastEventsSection from '../components/schedule/PastEventsSection';
 import DensityToggle from '../components/home/DensityToggle';
 import Label from '../components/shared/Label';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 
 export default function AdminHomePage() {
   const { user, orgId } = useAuth();
@@ -42,7 +43,7 @@ export default function AdminHomePage() {
   const stats = useAdminStats();
   const { seasons } = useSeasons();
   const { programs } = usePrograms();
-  const { activities, refetch } = useActivities();
+  const { activities, loading: activitiesLoading, refetch } = useActivities();
   const { byTeamId: recordsByTeam } = useOrgTeamRecords(orgId);
   const weather = useWeather(41.03, -73.76);
   const { alerts, loading: alertsLoading } = useAlertEvaluator();
@@ -64,6 +65,14 @@ export default function AdminHomePage() {
   } = useAdminHomeSignals(activities, orgId, activeSeason?.id);
   const { items: recentActivityItems, loading: recentActivityLoading } = useRecentActivity(orgId, activeSeason?.id);
   const ridesSummary = useRidesTodaySummary(orgId, nowMs);
+
+  // Top-level loading gate mirrors ParentHomePage:84 + CoachHomePage
+  // (PR #339 ↔ PR #340). Closes the "old screens load first" UX
+  // asymmetry — pre-PR admin home rendered its shell immediately
+  // while sections fetched independently; the cascade was visible
+  // on mobile as a sequence of empty-to-populated rows. Symmetry
+  // across all three role homes restored.
+  if (activitiesLoading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   // overflow-x-hidden + max-w-full on the page wrapper is defense in
   // depth — even if a child component escapes its box, nothing drags
