@@ -10,7 +10,7 @@ import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
 import { useGameResultsMap } from '../hooks/useGameResultsMap';
-import { useWeather } from '../hooks/useWeather';
+import { getWeatherForTime, useWeather } from '../hooks/useWeather';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { useDensity } from '../hooks/useDensity';
 import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
@@ -29,6 +29,7 @@ import MyTeamsStrip from '../components/home/MyTeamsStrip';
 import DensityToggle from '../components/home/DensityToggle';
 import ConflictCallout from '../components/home/ConflictCallout';
 import AlertZone from '../components/alerts/AlertZone';
+import NextEventCard from '../components/admin/NextEventCard';
 import TextEmptyState from '../components/shared/TextEmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import Label from '../components/shared/Label';
@@ -97,6 +98,9 @@ export default function ParentHomePage() {
         <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>{name}</h1>
         {orgName && <div style={{ color: 'var(--em-text-tertiary)', fontSize: 13, marginTop: 2 }}>{orgName}{myTeams.length > 0 ? ` · ${myTeams.length} team${myTeams.length !== 1 ? 's' : ''}` : ''}</div>}
       </section>
+
+      {/* 2026-05-20 — parent up-next hero matches admin/coach pattern. */}
+      {(() => { const ne = filteredNext7.find((e) => e.id === nextEventId); return ne ? <NextEventCard event={ne} weather={getWeatherForTime(weather, ne.start_at)} /> : null; })()}
 
       <AlertZone alerts={parentAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
       <ConflictCallout conflicts={conflicts} />
