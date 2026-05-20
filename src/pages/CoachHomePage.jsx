@@ -24,6 +24,8 @@ import CoachRosterSnapshot from '../components/coach/CoachRosterSnapshot';
 import Label from '../components/shared/Label';
 import CoachMessageBlock from '../components/home/CoachMessageBlock';
 import CoachHomeQuickActions from '../components/home/CoachHomeQuickActions';
+import UpcomingPrepCard from '../components/home/UpcomingPrepCard';
+import { useUpcomingPrep } from '../hooks/useUpcomingPrep';
 
 export default function CoachHomePage() {
   const { user, orgId } = useAuth();
@@ -43,6 +45,7 @@ export default function CoachHomePage() {
     return t >= now && t <= weekEnd;
   }).sort((a, b) => new Date(a.start_at) - new Date(b.start_at)), [activities, now, weekEnd]);
   const { density } = useDensity('coach-schedule');
+  const upcomingPrep = useUpcomingPrep(thisWeek, now);
 
   // Coach-home queue + signal aggregation lives in
   // useCoachHomeSignals — extracted in PR #310 to keep this page
@@ -66,6 +69,7 @@ export default function CoachHomePage() {
 
       <AlertZone alerts={coachAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
       <ActionZone items={actionQueueItems} loading={actionQueueLoading} sectionKey="coach-action-zone" />
+      <UpcomingPrepCard prep={upcomingPrep} />
       <CoachHomeQuickActions />
       <CoachMessageBlock messages={recentTeamMessages} nowMs={now} />
 

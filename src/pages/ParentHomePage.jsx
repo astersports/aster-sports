@@ -16,6 +16,7 @@ import { useDensity } from '../hooks/useDensity';
 import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
 import { useParentHomeSignals } from '../hooks/useParentHomeSignals';
 import RegistrationReminderCard from '../components/home/RegistrationReminderCard';
+import UpcomingPrepCard from '../components/home/UpcomingPrepCard';
 import ActionZone from '../components/home/ActionZone';
 import LiveNowCard from '../components/home/LiveNowCard';
 import TournamentWeekendBanner from '../components/home/TournamentWeekendBanner';
@@ -61,6 +62,7 @@ export default function ParentHomePage() {
     recentAchievements,
     recentAnnouncements,
     financialStats, financialsLoading,
+    upcomingPrep,
     conflicts,
   } = useParentHomeSignals({
     activities, myChildren, myTeamIds, now, activeKidFilter,
@@ -92,6 +94,7 @@ export default function ParentHomePage() {
       <AlertZone alerts={parentAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
       <ConflictCallout conflicts={conflicts} />
       <RegistrationReminderCard stats={financialStats} seasonName={activeSeason?.name} loading={financialsLoading} />
+      <UpcomingPrepCard prep={upcomingPrep} />
       <ActionZone items={actionItems} loading={actionItemsLoading} sectionKey="parent-action-zone" />
       <LiveNowCard items={liveNowItems} nowMs={now} />
       <TournamentWeekendBanner tournament={upcomingTournament} />

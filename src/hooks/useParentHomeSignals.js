@@ -7,6 +7,7 @@ import { useUpcomingTournament } from './useUpcomingTournament';
 import { useRecentAchievements } from './useRecentAchievements';
 import { useRecentAnnouncements } from './useRecentAnnouncements';
 import { useSeasonFinancials } from './useSeasonFinancials';
+import { useUpcomingPrep } from './useUpcomingPrep';
 import { toKidsWithEvents } from '../lib/home/conflictAdapter';
 import { detectConflicts } from '../lib/engine/resolvers/familyGuideHelpers';
 
@@ -85,6 +86,10 @@ export function useParentHomeSignals({
   // Third consumer of useSeasonFinancials per anti-pattern #42.
   const { stats: financialStats, loading: financialsLoading } = useSeasonFinancials(orgId, activeSeasonId, guardianId);
 
+  // ─── UPCOMING PREP (§1.1.5) ───
+  // Pure derivation off next7days — first event in T+24h with notes.
+  const upcomingPrep = useUpcomingPrep(next7days, now);
+
   // ─── Multi-kid conflict detection ───
   const conflicts = useMemo(() => {
     if (!myChildren || myChildren.length < 2) return [];
@@ -99,6 +104,7 @@ export function useParentHomeSignals({
     recentAchievements,
     recentAnnouncements,
     financialStats, financialsLoading,
+    upcomingPrep,
     conflicts,
   };
 }
