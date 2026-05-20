@@ -24,7 +24,19 @@ export function useTeamGamesByTournament(teamId) {
         .order('start_at', { foreignTable: 'events', ascending: true });
       if (cancelled) return;
       if (error) console.error('useTeamGamesByTournament:', error.message);
-      setGames(data || []);
+      // PostgREST's `.order(..., { foreignTable: 'events' })` applies to
+      // embedded subarrays, NOT to top-level result rows — so the rows
+      // come back in DB insertion (score-entry) order, not by game
+      // date. computeSummary does its own start_at sort
+      // (teamRecords.js:28) so summary stats stay correct, but the
+      // per-game log on the Records page rendered in score-entry order.
+      // Sort in JS to match user expectation. Frank-reported 2026-05-20.
+      const sorted = [...(data || [])].sort((a, b) => {
+        const da = a.event?.start_at || '';
+        const db = b.event?.start_at || '';
+        return da < db ? -1 : da > db ? 1 : 0;
+      });
+      setGames(sorted);
       setLoading(false);
     }
     if (teamId) Promise.resolve().then(load);
