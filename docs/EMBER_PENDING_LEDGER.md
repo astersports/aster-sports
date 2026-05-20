@@ -625,6 +625,29 @@ Layer 3 scope confirmed locked Sunday 2026-05-18 (Option α): sequential `recent
 
 ---
 
+### §4.P — Tuesday session contract (2026-05-20) — anti-pattern #48 promotion test
+
+**Stated before any code, per the discipline lock from Monday evening session close.** The 40-PR Monday cycle (PR #260 → #299) extended past every implicit stopping point until Frank stopped, not until the work stopped — same shape as Sunday's 8-PR cascade. Anti-pattern #48's candidate ("time-budget revisions require ledger reconciliation") didn't fire Monday because no budget was set. Tuesday is the promotion test: can the workflow hold a stated budget for the first time in this build cycle?
+
+**Contract terms (Frank-stated 2026-05-20 ~04:36 UTC / morning NYC):**
+- Max hours: **10**
+- End time: **midnight local NYC**
+- Max PRs: **40**
+
+**Operational discipline locked alongside contract:**
+1. Move 1 (this entry) — contract written to ledger BEFORE any code.
+2. Move 2 — Cluster 5 closure + #43 cross-surface invariant test as first execution unit. ~15-20 min. Mechanical: useOrgTeamRecords already exists; thread records prop through CoachHomePage matching ParentHomePage:124 pattern.
+3. Move 3 — **hard pause** after Move 2. No auto-chain. Route from a stopped position, not from momentum. Pause is the discipline.
+
+**Promotion criteria for anti-pattern #48:**
+- If contract terms hold (all three numbers respected) → #48 promotes from candidate to registered rule in CLAUDE.md §11.
+- If terms breach (any of the three exceeded) → ledger-reconciliation move required at the breach point, candidate remains as "tried, didn't take" learning artifact, workflow accepts session-extending as its actual shape.
+- Either outcome produces useful information.
+
+**Branch state at contract open:** main, clean, 0 ahead / 0 behind origin.
+
+---
+
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 
 The drift classes from CC's L99 analysis. Each is a pattern that
