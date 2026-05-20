@@ -24,11 +24,21 @@ export default function RecordsPage() {
 
   const [totalGames, setTotalGames] = useState(0);
   useEffect(() => {
-    let c = false;
-    supabase.from('game_results').select('*', { count: 'exact', head: true }).not('published_at', 'is', null)
-      .then(({ count }) => { if (!c) setTotalGames(count || 0); });
-    return () => { c = true; };
-  }, []);
+    // May 16 audit P2 #11 (PR #321): pre-fix the count query had no
+    // org scope — `game_results` doesn't carry org_id directly, so a
+    // bare `count` rolled in every org's published games (RLS may
+    // mask via team-scope in some configs, but the application-layer
+    // filter is the right discipline per anti-pattern #37). Scope
+    // via events!inner → teams!inner → org_id FK chain.
+    if (!orgId) return undefined;
+    let cancelled = false;
+    supabase.from('game_results')
+      .select('id, events!inner(id, teams!inner(id, org_id))', { count: 'exact', head: true })
+      .eq('events.teams.org_id', orgId)
+      .not('published_at', 'is', null)
+      .then(({ count }) => { if (!cancelled) setTotalGames(count || 0); });
+    return () => { cancelled = true; };
+  }, [orgId]);
 
   const tournamentStats = useMemo(() => ({
     champs: tournaments.reduce((s, t) => s + (t.participants?.filter((p) => p.final_place === 'Champions').length || 0), 0),
