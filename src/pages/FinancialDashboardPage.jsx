@@ -17,9 +17,18 @@ export default function FinancialDashboardPage() {
 
   useEffect(() => {
     if (!orgId) return;
-    supabase.from('seasons').select('id, name, status').eq('org_id', orgId)
-      .order('start_date', { ascending: false })
-      .then(({ data: d }) => setSeasons(d || []));
+    // Frank-reported 2026-05-20 L99 v6 §5.1 B3: empty Winter 2025-26
+    // tab was rendering despite no financial_accounts for that season.
+    // Filter to seasons that actually have accounts so the tab strip
+    // only shows what's clickable. Two-query approach (vs PostgREST
+    // !inner) keeps the parent shape simple and the filter explicit.
+    Promise.all([
+      supabase.from('seasons').select('id, name, status').eq('org_id', orgId).order('start_date', { ascending: false }),
+      supabase.from('financial_accounts').select('season_id').eq('org_id', orgId),
+    ]).then(([seasonsRes, accountsRes]) => {
+      const withAccounts = new Set((accountsRes.data || []).map((a) => a.season_id).filter(Boolean));
+      setSeasons((seasonsRes.data || []).filter((s) => withAccounts.has(s.id)));
+    });
   }, [orgId]);
 
   const seasonId = selectedSeasonId
