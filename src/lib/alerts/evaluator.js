@@ -75,6 +75,25 @@ async function evalLocationUnassigned(config, qx) {
     data: { events, critical_count: critical.length } };
 }
 
+// L99 v6 §5.1 B2 — mirror of evalLocationUnassigned for opponent.
+// Same window + severity escalation logic. Reuses the same
+// filterEventsByTeamScope path in relevanceFilters.js (location_
+// unassigned branch recomputes severity from filtered critical count;
+// opponent_unassigned passes through since it doesn't get
+// per-event-team rescoping from the parent admin scope).
+async function evalOpponentUnassigned(config, qx) {
+  const cfg = config.threshold_config || {};
+  const warnHours = cfg.severity_warning_window_hours ?? 336;
+  const critHours = cfg.severity_critical_window_hours ?? 24;
+  const events = await qx.getEventsWithoutOpponent(config.org_id, warnHours);
+  if (!events.length) return null;
+  const now = Date.now();
+  const critical = events.filter((e) => (new Date(e.start_at).getTime() - now) <= critHours * 3600000);
+  return { config_id: config.id, alert_type_key: 'opponent_unassigned', instance_key: null,
+    severity: critical.length ? 'critical' : 'warning',
+    data: { events, critical_count: critical.length } };
+}
+
 async function evalPaymentOverdue(config, qx) {
   const cfg = config.threshold_config || {};
   const rows = await qx.getOverdueFamilyBalances(config.org_id, cfg.age_threshold_days ?? 30, cfg.minimum_amount_dollars ?? 1);
@@ -102,6 +121,7 @@ const EVALUATORS = {
   'briefing_overdue:weekly_digest': evalBriefingOverdue,
   'briefing_overdue:tournament_prelim': evalBriefingOverdueTournament,
   'location_unassigned': evalLocationUnassigned,
+  'opponent_unassigned': evalOpponentUnassigned,
   'payment_overdue': evalPaymentOverdue,
   'data_integrity_event_location_missing': evalDataIntegrityLocationMissing,
 };

@@ -17,6 +17,7 @@ export function makeExec(overrides = {}) {
     getMostRecentBriefingByKind: vi.fn(overrides.getMostRecentBriefingByKind || (() => Promise.resolve(null))),
     getTournamentsWithoutPrelim: vi.fn(overrides.getTournamentsWithoutPrelim || noop),
     getEventsWithoutLocation: vi.fn(overrides.getEventsWithoutLocation || noop),
+    getEventsWithoutOpponent: vi.fn(overrides.getEventsWithoutOpponent || noop),
     getEventsWithBrokenLocationData: vi.fn(overrides.getEventsWithBrokenLocationData || noop),
     getOverdueFamilyBalances: vi.fn(overrides.getOverdueFamilyBalances || noop),
   };

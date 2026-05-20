@@ -16,6 +16,7 @@ function alertTitle(alert) {
     case 'rsvp_shortfall': return alert.instance_key === 'saturday_6am' ? 'Roster shortfall today' : 'RSVP shortfall';
     case 'briefing_overdue': return alert.instance_key === 'tournament_prelim' ? 'Tournament prelim briefing overdue' : 'Weekly briefing overdue';
     case 'location_unassigned': return 'Event missing location';
+    case 'opponent_unassigned': return 'Event missing opponent';
     case 'payment_overdue': return 'Payments overdue';
     case 'data_integrity_event_location_missing': return 'Event location data broken';
     default: return alert.alert_type_key;
@@ -28,6 +29,7 @@ function alertBody(alert) {
     case 'rsvp_shortfall': return `${d.affected_count || 0} event${(d.affected_count || 0) === 1 ? '' : 's'} affected`;
     case 'briefing_overdue': return d.tournaments ? `${d.tournaments.length} upcoming` : `Expected by ${d.expected_send_by || 'usual window'}`;
     case 'location_unassigned': return `${(d.events || []).length} event${(d.events || []).length === 1 ? '' : 's'}${d.critical_count ? ` · ${d.critical_count} <24h` : ''}`;
+    case 'opponent_unassigned': return `${(d.events || []).length} event${(d.events || []).length === 1 ? '' : 's'}${d.critical_count ? ` · ${d.critical_count} <24h` : ''}`;
     case 'payment_overdue': {
       const dollars = ((d.total_outstanding_cents || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
       return `${dollars} across ${d.family_count || 0} famil${(d.family_count || 0) === 1 ? 'y' : 'ies'}`;

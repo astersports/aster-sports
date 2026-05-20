@@ -16,11 +16,13 @@ describe('evaluatorKey', () => {
   });
 });
 
-describe('EVALUATORS map covers all 8 v1 configs', () => {
-  it('has 5 catalog entries + 3 primitives = 8 keys', () => {
+describe('EVALUATORS map covers all v1 configs', () => {
+  it('has 6 catalog entries + 3 rsvp primitives = 9 keys', () => {
+    // L99 v6 §5.1 B2: opponent_unassigned added 2026-05-20.
     expect(Object.keys(EVALUATORS).sort()).toEqual([
       'briefing_overdue:tournament_prelim', 'briefing_overdue:weekly_digest',
-      'data_integrity_event_location_missing', 'location_unassigned', 'payment_overdue',
+      'data_integrity_event_location_missing', 'location_unassigned',
+      'opponent_unassigned', 'payment_overdue',
       'rsvp_shortfall:friday_noon', 'rsvp_shortfall:league_24h', 'rsvp_shortfall:saturday_6am',
     ]);
   });
