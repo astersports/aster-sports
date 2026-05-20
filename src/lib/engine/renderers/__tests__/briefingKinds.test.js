@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { composeGameRecap } from '../gameRecap';
 import { composeTournamentPrelim } from '../tournamentPrelim';
-import { composeTournamentRecap } from '../tournamentRecap';
 import { composeAnnouncement } from '../announcement';
 import { composeCustomMessage } from '../customMessage';
+
+// composeTournamentRecap removed PR #323 — May 16 audit P2 #16 dead-code
+// cleanup. The legacy `renderers/tournamentRecap.js` was unreferenced
+// by any production path (canonical compose is `resolvers/tournamentRecap.js`
+// via RESOLVER_REGISTRY). The sibling legacy renderers above remain
+// (still tested) until they're flagged for removal too.
 
 const COACHES = [{ display_name: 'Frank', title: 'Program Director', phone: '(917) 991-9830' }];
 
@@ -61,25 +66,6 @@ describe('composeTournamentPrelim', () => {
     expect(out.html).toContain('Sunday');
     expect(out.plainText).toContain('Pool play 9 AM');
     expect(out.plainText).toContain('Bracket play TBD');
-  });
-});
-
-describe('composeTournamentRecap', () => {
-  it('renders standing + game results + MVP + takeaways', () => {
-    const out = composeTournamentRecap({
-      tournamentName: 'NY Hoop Festival',
-      final_standing: 'Finished 3rd of 8 teams.',
-      game_results: 'Sat: W 42-38, L 30-40. Sun: W 51-44.',
-      mvp_name: 'Sara K.',
-      takeaways: 'Defense in the second half was the difference.',
-      signoff_message: 'Great weekend.', coaches: COACHES,
-    });
-    expect(out.subject).toBe('Tournament recap — NY Hoop Festival');
-    expect(out.html).toContain('TOURNAMENT RECAP');
-    expect(out.html).toContain('NY HOOP FESTIVAL');
-    expect(out.html).toContain('Finished 3rd of 8 teams.');
-    expect(out.html).toContain('MVP: Sara K.');
-    expect(out.plainText).toContain('Sat: W 42-38');
   });
 });
 
