@@ -30,7 +30,7 @@ export default function FinancialDashboardPage() {
   // Per anti-pattern #42 — single source of truth for financial
   // state across this page and admin-home's payment-overdue lane.
   // Previously inline at :57-69 here; extracted PR #303.
-  const { accounts, transactions, stats, loading, refetch } = useSeasonFinancials(orgId, seasonId);
+  const { accounts, balances, stats, loading, refetch } = useSeasonFinancials(orgId, seasonId);
 
   const fmt = (cents) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   const currentSeason = seasons.find((s) => s.id === seasonId);
@@ -81,7 +81,7 @@ export default function FinancialDashboardPage() {
             <StatCard label="Families" value={accounts.length} sub={currentSeason?.name || ''} color="var(--em-text-primary)" />
           </div>
 
-          <FamilyBalanceList accounts={accounts} transactions={transactions} fmt={fmt} onRecordPayment={setPayingAccount}
+          <FamilyBalanceList accounts={accounts} balances={balances} fmt={fmt} onRecordPayment={setPayingAccount}
             onNudge={(family) => {
               const uid = family.guardians?.user_id;
               navigate(uid ? `/messages?dm=${uid}` : '/messages');

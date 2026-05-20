@@ -2,19 +2,19 @@ import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import Label from '../shared/Label';
 
-export default function FamilyBalanceList({ accounts, transactions, fmt, onRecordPayment, onNudge }) {
+// Per anti-pattern #42: `balances` is the per-account balance map from
+// useSeasonFinancials — the canonical source. This component used to
+// recompute balance inline (anti-pattern #42 violation, PR #306 catch).
+export default function FamilyBalanceList({ accounts, balances, fmt, onRecordPayment, onNudge }) {
   const [search, setSearch] = useState('');
 
   const families = useMemo(() => {
     return accounts.map((a) => {
-      const paid = transactions
-        .filter((t) => t.account_id === a.id && t.transaction_type === 'payment')
-        .reduce((s, t) => s + t.amount_cents, 0);
-      const balance = (a.season_fee_cents - a.discount_cents) - paid;
+      const balance = balances?.[a.id] ?? 0;
       const name = a.guardians ? `${a.guardians.first_name} ${a.guardians.last_name}` : 'Unknown';
-      return { ...a, name, balance, paid };
+      return { ...a, name, balance };
     });
-  }, [accounts, transactions]);
+  }, [accounts, balances]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return families;
