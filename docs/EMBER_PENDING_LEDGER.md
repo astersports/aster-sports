@@ -126,16 +126,15 @@ chat's L99 ordering.
   - 11 unit tests cover the contract surface (home/away/neutral/tbd, missing fields, free-text rejection, unknown event_type).
 
 ### Cluster 4 — Notification bell badge has no inbox to consume it
-- Status: **OPEN** — UX decision required (resolution path locked-ish)
+- Status: **RESOLVED** via PR #295 (2026-05-19; resolution path (a))
 - Severity: MEDIUM (UX clarity)
 - Frank's clarification: bell tap routes to Settings; no actual inbox
-- Surfaces affected: bell appears on all role headers showing "4" / "1" / "2"
-- Resolution paths:
-  - (a) Remove badge count + route bell to settings shortcut without count → ~15 min near-term
-  - (b) Build real notification inbox → larger; deferred to Phase plan item
-- Recommended near-term: (a). Counts without inbox = misleading UX.
-- Anti-pattern #42 reminder: don't pre-build `useNotificationBadge()` hook before the inbox exists
-- Drift-hedge test per #43: assert bell badge behavior consistent across all 3 role headers
+- Surfaces affected: bell appears on all role headers — was showing "4" / "1" / "2"
+- PR #295 resolution (path (a)):
+  - Removed badge count entirely from `Header.jsx`; bell still routes to `/account` settings shortcut
+  - Anti-pattern #42 honored: `useNotificationBadge()` hook + supporting query file deleted in the same PR (no parallel-system buildup; the hook was orphan since no inbox existed to consume it)
+- Path (b) (real notification inbox) — deferred to Phase plan, not in §2 scope
+- Anti-pattern #44/#45 catch (registered 2026-05-20): like Cluster 5, this §2 entry stayed stale ("Status: OPEN") for one day post-PR-#295 merge while §1 SHIPPED and §15 verification surfaces were updated. Same staleness shape as Cluster 5; closed in PR #315 alongside Cluster 7.
 
 ### Cluster 5 — Coach Home MY TEAMS source divergence
 - Status: **RESOLVED** via PR #239 (2026-05-18)
@@ -165,12 +164,14 @@ chat's L99 ordering.
 - Lesson registered for CLAUDE.md anti-pattern future-extension: code-side review of a downstream gate isn't sufficient when an upstream hook can output values that bypass the gate. Trace the FULL state pipeline before ruling out a regression.
 
 ### Cluster 7 — Admin Home greeting not NY-pinned
-- Status: **OPEN**, ~5-min one-liner
+- Status: **RESOLVED** via PR #295 (2026-05-19)
 - Severity: LOW
 - Surfaces affected: Admin Home only (A12)
-- Parent Home (P21) gets it right; Admin Home doesn't
-- Resolution: wire AdminHomePage greeting to NY-pin helper from PR #233/#234 cascade
-- Drift-hedge test per #43: assert greeting respects NY-pin across all 3 home pages
+- Parent Home (P21) was correct; Admin Home was using browser-local time and skewed for admins traveling outside ET
+- PR #295 resolution:
+  - `AdminGreeting.jsx` now imports `firstNameFrom` + `greetingFor` from `src/lib/greetings.js` (NY-pinned helper from PR #233/#234 cascade)
+  - Greeting helper is shared with parent home so future drift on either surface fails the same way
+- Anti-pattern #44/#45 catch (registered 2026-05-20): like Clusters 4 + 5, this §2 entry stayed stale ("Status: OPEN, ~5-min one-liner") for one day post-PR-#295 merge while §1 SHIPPED was updated. Closed in PR #315 alongside Cluster 4.
 
 ---
 
