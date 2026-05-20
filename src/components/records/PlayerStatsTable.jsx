@@ -47,9 +47,16 @@ export default function PlayerStatsTable({ players, stats, showAvg }) {
     .sort((a, b) => b.sortPts - a.sortPts);
 
   if (!hasStats) {
+    // 2026-05-20 — per CLAUDE.md §16.12, per-player game stats are NOT
+    // tracked at the league-management layer; team-level totals only.
+    // Per-player rows here come from the optional live-scoring mode,
+    // which captures play-by-play. Frank flagged the previous copy
+    // ("No game stats recorded yet") reading like a bug on a team with
+    // 12 played games — clarifying scope so admins know team totals
+    // (above) are the canonical record.
     return (
       <div style={{ padding: 16, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13 }}>
-        No game stats recorded yet. Stats appear after live scoring a game.
+        Per-player stats appear only when a game is scored in live-scoring mode. Team totals are tracked above.
       </div>
     );
   }

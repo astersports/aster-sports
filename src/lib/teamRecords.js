@@ -8,6 +8,16 @@
 // Record formats as "W-L" when ties=0 (preserving existing display),
 // "W-L-T" when ties>0. A tie breaks the streak; T-streaks don't render.
 
+// 2026-05-20 — single-decimal formatter shared across TeamRow / TeamDetail
+// / TeamHeaderCard. Frank flagged "9U Boys · 21 PA" rendering without
+// decimal while sibling rows showed "20.4 PA" etc. — template literal
+// dropped the trailing zero from exact integers (e.g. 147 ÷ 7 = 21.0).
+// Always-1-decimal keeps the column rhythm consistent.
+export function fmt1(n) {
+  if (n == null || Number.isNaN(n)) return '0.0';
+  return Number(n).toFixed(1);
+}
+
 export const EMPTY_SUMMARY = {
   record: '0-0',
   ties: 0,
