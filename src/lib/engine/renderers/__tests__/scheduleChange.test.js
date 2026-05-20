@@ -104,6 +104,18 @@ describe('scheduleChangeDiff — field-by-field rendering', () => {
     expect(plainText).toContain('PREVIOUS Where:');
   });
 
+  it('opponent-only change renders Opponent row with TBD fallback (Frank 11U Girls championship, 2026-05-20)', () => {
+    const before = { start_at: startA, end_at: endA60, location: 'WCC', opponent: null };
+    const after = { start_at: startA, end_at: endA60, location: 'WCC', opponent: 'PHD - McCurdy' };
+    const { html, plainText } = scheduleChangeDiff({ kind: 'schedule_change_diff', before, after });
+    expect(html).toContain('PREVIOUS · Opponent');
+    expect(html).toContain('TBD');
+    expect(html).toContain('UPDATED · Opponent');
+    expect(html).toContain('PHD - McCurdy');
+    expect(plainText).toContain('PREVIOUS Opponent: TBD');
+    expect(plainText).toContain('UPDATED Opponent: PHD - McCurdy');
+  });
+
   it('no changes returns empty html and plainText (defensive)', () => {
     const same = { start_at: startA, end_at: endA60, location: 'WCC' };
     const out = scheduleChangeDiff({ kind: 'schedule_change_diff', before: same, after: same });
