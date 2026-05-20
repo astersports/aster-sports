@@ -18,6 +18,7 @@ import { Plus, Search } from 'lucide-react';
 import Button from '../shared/Button';
 import EmptyState from '../shared/EmptyState';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
+import AdminBackHeader from './AdminBackHeader';
 
 export default function AdminManagerLayout({
   title,
@@ -49,6 +50,7 @@ export default function AdminManagerLayout({
 
   return (
     <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
+      <AdminBackHeader />
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20 }}>
