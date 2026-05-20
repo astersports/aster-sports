@@ -89,6 +89,51 @@ jobs:
           fi
           echo "PASS — entry chunk under budget by $((ENTRY_BUDGET_KB - ENTRY_KB)) KB"
 
+  # Anti-pattern #46 guard (CLAUDE.md): when a `*Card.jsx` / `*Row.jsx` /
+  # `*Tile.jsx` file is in the PR diff, require at least one test file
+  # (anywhere under __tests__/) to also be in the diff. Cross-surface
+  # invariant tests are how this codebase prevents visual-rhythm drift
+  # between sibling card variants (origin: PR #359 MatchupCardRowRhythm).
+  # Heuristic — "any test change" doesn't prove the test exercises the
+  # changed card, but it catches the case where a card change ships with
+  # zero test work at all. Stronger checks (per-file pairing) are a
+  # future refinement. Pull-request-only; main pushes skip the guard.
+  anti-pattern-46-guard:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guard *Card/*Row/*Tile.jsx changes require a test change
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          CARDS=$(echo "$CHANGED" | grep -E '(Card|Row|Tile)\.jsx$' | grep -v '__tests__' || true)
+          if [ -z "$CARDS" ]; then
+            echo "No *Card/*Row/*Tile.jsx changes — guard not triggered."
+            exit 0
+          fi
+          TESTS=$(echo "$CHANGED" | grep -E '__tests__.*\.(test|spec)\.(js|jsx)$' || true)
+          if [ -z "$TESTS" ]; then
+            echo "::error::Anti-pattern #46: PR touches *Card/*Row/*Tile.jsx without an accompanying test change."
+            echo "Touched card/row/tile files:"
+            echo "$CARDS"
+            echo ""
+            echo "Add an invariant test (see src/components/schedule/__tests__/MatchupCardRowRhythm.test.jsx for the reference shape), OR document the exemption in the PR body."
+            exit 1
+          fi
+          echo "Anti-pattern #46 guard: PASS"
+          echo "Touched card/row/tile files:"
+          echo "$CARDS"
+          echo "Test files in the same diff:"
+          echo "$TESTS"
+
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15
