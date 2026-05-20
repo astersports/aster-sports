@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 // Returns Academy Futures candidates for a given event team. Sort tiers:
 //   1. same age band as event team
@@ -8,6 +9,12 @@ import { supabase } from '../lib/supabase';
 // Sort is helpful, NOT gating — operator can call up any candidate.
 // Decoration uses team_name age prefix ("8U Boys" → 8). Falls back to
 // 'other' when the team_name doesn't match the pattern.
+//
+// May 16 audit P2 #12 (PR #322): added useAuth context so the
+// team_players query scopes by org via the teams!inner.org_id FK
+// chain. Pre-PR the query had no org filter — RLS may mask via
+// team-scope policies, but the application-layer org_id filter is
+// the right discipline per anti-pattern #37.
 
 const AGE_PREFIX = /^(\d+)U/i;
 const TIER_ORDER = { same: 0, adjacent: 1, other: 2 };
@@ -26,6 +33,7 @@ function tierFor(candidateGrade, eventGrade) {
 }
 
 export function useAcademyCallupCandidates({ eventTeamName }) {
+  const { orgId } = useAuth();
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -35,6 +43,7 @@ export function useAcademyCallupCandidates({ eventTeamName }) {
     cancelled.current = false;
     Promise.resolve().then(async () => {
       if (cancelled.current) return;
+      if (!orgId) { setCandidates([]); setLoading(false); return; }
       setLoading(true);
       setError(null);
       const { data, error: err } = await supabase
@@ -42,8 +51,9 @@ export function useAcademyCallupCandidates({ eventTeamName }) {
         .select(`
           player_id, jersey_number, status, roster_type,
           players!inner ( id, first_name, last_name, member_type ),
-          teams!inner ( id, name )
+          teams!inner ( id, name, org_id )
         `)
+        .eq('teams.org_id', orgId)
         .eq('roster_type', 'futures')
         .eq('status', 'active');
       if (cancelled.current) return;
@@ -78,7 +88,7 @@ export function useAcademyCallupCandidates({ eventTeamName }) {
       setLoading(false);
     });
     return () => { cancelled.current = true; };
-  }, [eventTeamName]);
+  }, [eventTeamName, orgId]);
 
   return { candidates, loading, error };
 }
