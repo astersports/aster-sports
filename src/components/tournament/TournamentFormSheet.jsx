@@ -1,20 +1,19 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import FullScreenForm from '../shared/FullScreenForm';
 import Input from '../shared/Input';
 import TeamMultiSelect from './TeamMultiSelect';
+import TournamentFormFooter from './TournamentFormFooter';
 import { useTournaments } from '../../hooks/useTournaments';
+import { useTournamentConflicts } from '../../hooks/useTournamentConflicts';
 import { useToast } from '../../context/useToast';
 import { hasWeekendDays } from '../../lib/tournamentWeekend';
 
 // §C3: weekend-spanning new tournaments open the placeholder modal before close.
 const TournamentPlaceholderEventsModal = lazy(() => import('./TournamentPlaceholderEventsModal'));
-
 const CIRCUITS = ['AAU Zero Gravity', 'League Play', 'Independent', 'Other'];
 const STATUSES = [
-  { value: 'planned', label: 'Planned' },
-  { value: 'scheduled', label: 'Scheduled' },
-  { value: 'in_progress', label: 'In progress' },
-  { value: 'complete', label: 'Complete' },
+  { value: 'planned', label: 'Planned' }, { value: 'scheduled', label: 'Scheduled' },
+  { value: 'in_progress', label: 'In progress' }, { value: 'complete', label: 'Complete' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
@@ -23,6 +22,11 @@ const emptyForm = {
   primary_venue: '', primary_venue_address: '', tourney_url: '', hotel_url: '',
   survival_notes: '', status: 'scheduled', teamIds: [],
 };
+
+const LABEL = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)', marginBottom: 6, display: 'block' };
+const SELECT_STYLE = { width: '100%', minHeight: 44, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' };
+const TEXTAREA_STYLE = { ...SELECT_STYLE, minHeight: 90, resize: 'vertical' };
+const SECTION = { marginBottom: 18 };
 
 export default function TournamentFormSheet({ tournament, onClose }) {
   const { create, update } = useTournaments();
@@ -50,6 +54,19 @@ export default function TournamentFormSheet({ tournament, onClose }) {
   const valid = form.name.trim() && form.start_date && form.end_date &&
     form.start_date <= form.end_date && form.teamIds.length > 0;
 
+  // L99 v6 §5.2 C2 — soft conflict warning. Frank's call: NOT a block.
+  const { conflicts } = useTournamentConflicts(form.teamIds, form.start_date, form.end_date, tournament?.id);
+  const conflictMessage = useMemo(() => {
+    if (!conflicts.length) return null;
+    const byTeam = new Map();
+    for (const c of conflicts) {
+      if (!byTeam.has(c.team_name)) byTeam.set(c.team_name, new Set());
+      byTeam.get(c.team_name).add(c.tournament_name);
+    }
+    const phrases = Array.from(byTeam.entries()).map(([t, ts]) => `${t} also in ${Array.from(ts).join(', ')}`);
+    return phrases.join(' · ');
+  }, [conflicts]);
+
   const save = async () => {
     if (!valid || saving) return;
     setSaving(true);
@@ -70,32 +87,20 @@ export default function TournamentFormSheet({ tournament, onClose }) {
     onClose();
   };
 
-  const label = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)', marginBottom: 6, display: 'block' };
-  const selectStyle = {
-    width: '100%', minHeight: 44, padding: '10px 12px', borderRadius: 10,
-    border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)',
-    color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit',
-  };
-  const textareaStyle = {
-    width: '100%', minHeight: 90, padding: '10px 12px', borderRadius: 10,
-    border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)',
-    color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit', resize: 'vertical',
-  };
-  const section = { marginBottom: 18 };
   const disabled = !valid || saving;
 
   return (
     <FullScreenForm open={true} title={tournament ? 'Edit Tournament' : 'New Tournament'} onClose={onClose}>
-      <div style={section}>
+      <div style={SECTION}>
         <Input id="t-name" label="Name" type="text" value={form.name} onChange={(e) => patch({ name: e.target.value })} placeholder="ZG NY Metro Showdown" />
       </div>
-      <div style={section}>
-        <label style={label} htmlFor="t-circuit">Circuit</label>
-        <select id="t-circuit" value={form.circuit} onChange={(e) => patch({ circuit: e.target.value })} style={selectStyle}>
+      <div style={SECTION}>
+        <label style={LABEL} htmlFor="t-circuit">Circuit</label>
+        <select id="t-circuit" value={form.circuit} onChange={(e) => patch({ circuit: e.target.value })} style={SELECT_STYLE}>
           {CIRCUITS.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
-      <div style={{ ...section, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div style={{ ...SECTION, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
           <Input id="t-start" label="Start date" type="date" value={form.start_date} onChange={(e) => patch({ start_date: e.target.value })} />
         </div>
@@ -103,38 +108,33 @@ export default function TournamentFormSheet({ tournament, onClose }) {
           <Input id="t-end" label="End date" type="date" value={form.end_date} onChange={(e) => patch({ end_date: e.target.value })} />
         </div>
       </div>
-      <div style={section}>
-        <label style={label}>Teams attending</label>
+      <div style={SECTION}>
+        <label style={LABEL}>Teams attending</label>
         <TeamMultiSelect selectedIds={form.teamIds} onChange={(ids) => patch({ teamIds: ids })} />
       </div>
-      <div style={section}>
+      <div style={SECTION}>
         <Input id="t-venue" label="Primary venue" type="text" value={form.primary_venue} onChange={(e) => patch({ primary_venue: e.target.value })} placeholder="The Harvey School" />
       </div>
-      <div style={section}>
+      <div style={SECTION}>
         <Input id="t-address" label="Venue address" type="text" value={form.primary_venue_address} onChange={(e) => patch({ primary_venue_address: e.target.value })} placeholder="260 Jay St, Katonah, NY" />
       </div>
-      <div style={section}>
+      <div style={SECTION}>
         <Input id="t-url" label="SE Tourney link" type="url" value={form.tourney_url} onChange={(e) => patch({ tourney_url: e.target.value })} placeholder="https://setourney.app.link/..." />
       </div>
-      <div style={section}>
+      <div style={SECTION}>
         <Input id="t-hotel" label="Hotel URL (optional)" type="url" value={form.hotel_url} onChange={(e) => patch({ hotel_url: e.target.value })} placeholder="https://book.passkey.com/..." />
       </div>
-      <div style={section}>
-        <label style={label} htmlFor="t-notes">Parent survival notes</label>
-        <textarea id="t-notes" value={form.survival_notes} onChange={(e) => patch({ survival_notes: e.target.value })} placeholder="Arrive 15 min early. Cash only at the door. Parking $10." rows={4} style={textareaStyle} />
+      <div style={SECTION}>
+        <label style={LABEL} htmlFor="t-notes">Parent survival notes</label>
+        <textarea id="t-notes" value={form.survival_notes} onChange={(e) => patch({ survival_notes: e.target.value })} placeholder="Arrive 15 min early. Cash only at the door. Parking $10." rows={4} style={TEXTAREA_STYLE} />
       </div>
-      <div style={section}>
-        <label style={label} htmlFor="t-status">Status</label>
-        <select id="t-status" value={form.status} onChange={(e) => patch({ status: e.target.value })} style={selectStyle}>
+      <div style={SECTION}>
+        <label style={LABEL} htmlFor="t-status">Status</label>
+        <select id="t-status" value={form.status} onChange={(e) => patch({ status: e.target.value })} style={SELECT_STYLE}>
           {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
       </div>
-      <div style={{ position: 'sticky', bottom: -16, margin: '8px -16px -16px', padding: '12px 16px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)', display: 'flex', gap: 10 }}>
-        <button type="button" onClick={onClose} className="sf-press" aria-label="Cancel"
-          style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1.5px solid var(--em-accent)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-        <button type="button" onClick={save} disabled={disabled} className="sf-press" aria-label={saving ? 'Saving' : 'Save'}
-          style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, opacity: disabled ? 0.5 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}>{saving ? 'Saving…' : 'Save'}</button>
-      </div>
+      <TournamentFormFooter conflictMessage={conflictMessage} onCancel={onClose} onSave={save} disabled={disabled} saving={saving} />
       {placeholderForTournament && (
         <Suspense fallback={null}>
           <TournamentPlaceholderEventsModal
