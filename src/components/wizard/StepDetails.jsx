@@ -36,13 +36,20 @@ export default function StepDetails({ eventType, data, onChange, orgId }) {
 
       {isGame && (
         <div>
-          <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>Opponent</span>
+          <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>
+            Opponent <span style={{ color: 'var(--em-danger)' }} aria-hidden="true">*</span>
+          </span>
           <input list="opponent-list" value={data.opponent || ''} onChange={(e) => set('opponent', e.target.value)}
-            placeholder="Search or type opponent name" aria-label="Opponent"
+            placeholder="Search or type opponent name" aria-label="Opponent" aria-required="true" required
             style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' }} />
           <datalist id="opponent-list">
             {opponents.map((o) => <option key={o.id} value={o.name} />)}
           </datalist>
+          {!(data.opponent || '').trim() && (
+            <div style={{ marginTop: 6, fontSize: 12, color: 'var(--em-text-tertiary)' }}>
+              Required — pick a saved opponent or type a new one.
+            </div>
+          )}
         </div>
       )}
 
