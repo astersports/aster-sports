@@ -11,11 +11,13 @@ import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { useAdminHomeSignals } from '../hooks/useAdminHomeSignals';
+import { useNow } from '../hooks/useNow';
 import { getWeatherForTime, useWeather } from '../hooks/useWeather';
 import AlertZone from '../components/alerts/AlertZone';
 import ActionZone from '../components/home/ActionZone';
 import PendingQueuesLanes from '../components/home/PendingQueuesLanes';
 import KpiGrid from '../components/admin/KpiGrid';
+import ProgramHealthCard from '../components/admin/ProgramHealthCard';
 import QuickActions from '../components/admin/QuickActions';
 import AdminManageLinks from '../components/admin/AdminManageLinks';
 import ActiveSeasonCard from '../components/admin/ActiveSeasonCard';
@@ -44,6 +46,7 @@ export default function AdminHomePage() {
   const navigate = useNavigate();
   const nextEvent = activities.find((a) => new Date(a.start_at) >= new Date() && a.status !== 'cancelled');
   const [notifSettingsOpen, setNotifSettingsOpen] = useState(false);
+  const nowMs = useNow();
 
   // ACTION QUEUE per HOME_DESIGN_SPEC §3.1 (Admin "Attention Required")
   // + PENDING QUEUES per §3.1.4. Both shells fed by useAdminHomeSignals
@@ -72,6 +75,8 @@ export default function AdminHomePage() {
       <section className="min-w-0" aria-label="Key metrics">
         <KpiGrid stats={stats} />
       </section>
+
+      <ProgramHealthCard season={activeSeason} paymentPct={stats.pct} nowMs={nowMs} />
 
       {nextEvent && <NextEventCard event={nextEvent} weather={getWeatherForTime(weather, nextEvent.start_at)} />}
 

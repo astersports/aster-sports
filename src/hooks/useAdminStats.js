@@ -89,6 +89,11 @@ export function useAdminStats() {
     events: counts.events,
     collected: financial?.paid || 0,
     outstanding: Math.max(0, financial?.outstanding || 0),
+    // PR #307 — billed + pct exposed for ProgramHealthCard. Single
+    // useSeasonFinancials call serves both KPI grid + program-health
+    // surface (avoids a second concurrent fetch).
+    billed: financial?.billed || 0,
+    pct: financial?.pct || 0,
     loading: counts.loading || financialLoading,
   };
 }
