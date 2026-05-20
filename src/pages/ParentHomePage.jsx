@@ -81,7 +81,14 @@ export default function ParentHomePage() {
   const { alerts: allAlerts, loading: alertsLoading } = useAlertEvaluator();
   const parentAlerts = useMemo(() => filterAlertsForParent(allAlerts, myChildren), [allAlerts, myChildren]);
 
-  if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
+  // Top-level loading gate covers ALL primary data hooks — not just
+  // activities `loading`. Pre-2026-05-20 the gate watched a single
+  // signal, releasing too early and letting alerts/action-queue/
+  // financials populate in cascade. Symmetric extension across role
+  // homes per anti-pattern #43 (Frank-reported 2026-05-20 from the
+  // admin-home capture; parent home shares the pattern).
+  const isLoading = loading || alertsLoading || actionItemsLoading || financialsLoading;
+  if (isLoading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
     <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">

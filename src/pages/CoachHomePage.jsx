@@ -68,12 +68,14 @@ export default function CoachHomePage() {
   // the eye to the upcoming game per Q4 highlight #1.
   const nextEvent = thisWeek[0];
 
-  // Top-level loading gate mirrors ParentHomePage:84 (PR #339). Without
-  // this, coach home rendered its shell immediately and cards populated
-  // independently as each fetch resolved — visible to Frank-on-mobile
-  // as "old screens load first." Asymmetric vs parent home, which had
-  // the gate since Sprint B. Symmetry restored.
-  if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
+  // Top-level loading gate covers ALL primary data hooks — not just
+  // activities `loading`. PR #339 added a single-signal gate that
+  // released too early: activities resolved first, then alerts +
+  // action queue continued to populate in cascade. Frank-reported
+  // 2026-05-20 (admin-home capture; coach-home shares the pattern).
+  // Symmetric extension across role homes per anti-pattern #43.
+  const isLoading = loading || alertsLoading || actionQueueLoading;
+  if (isLoading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
     <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
