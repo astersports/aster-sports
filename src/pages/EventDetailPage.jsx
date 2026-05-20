@@ -10,7 +10,7 @@ import { useEventActivations } from '../hooks/useEventActivations';
 import useEventDelete from '../hooks/useEventDelete';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import EventDetailHeader from '../components/event/EventDetailHeader';
-import EventDetailTab from '../components/event/EventDetailTab';
+import EventDetailHero from '../components/event/EventDetailHero';
 import EventLocationTab from '../components/event/EventLocationTab';
 import EventRsvpTab from '../components/event/EventRsvpTab';
 import EventDutiesTab from '../components/event/EventDutiesTab';
@@ -21,14 +21,10 @@ import EventCancelActions from '../components/event/EventCancelActions';
 import EventRosterLockSection from '../components/event/EventRosterLockSection';
 import AcademyCallupPicker from '../components/event/AcademyCallupPicker';
 import { useEventRosterLock } from '../hooks/useEventRosterLock';
-import MyActionsSection from '../components/event/MyActionsSection';
-import RsvpSummaryBlock from '../components/event/RsvpSummaryBlock';
 import GameDayMode from '../components/event/GameDayMode';
 import EventBriefingHistory from '../components/event/EventBriefingHistory';
 import ScopeChoiceDialog from '../components/event/ScopeChoiceDialog';
 import CollapsibleSection from '../components/shared/CollapsibleSection';
-import ParentArrivalActions from '../components/gameday/ParentArrivalActions';
-import Button from '../components/shared/Button';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 const ScheduleChangeComposer = lazy(() => import('../components/event/ScheduleChangeComposer'));
@@ -78,13 +74,12 @@ export default function EventDetailPage() {
   const { activatedSet, toggle: toggleActivation } = useEventActivations(event?.id, canActivateAcademy);
   const lock = useEventRosterLock(event?.id);
 
-  if (eventLoading) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }} />;
+  if (eventLoading) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}><EventDetailHero.Skeleton /></div>;
   if (!event) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh', padding: 24, color: 'var(--em-text-tertiary)' }}>Event not found.</div>;
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--em-text-tertiary)';
   const rsvpMap = {};
   rsvps.forEach((r) => { rsvpMap[r.player_id] = r.response; });
-  const isPastGame = isStaff && isGameType && isPast;
 
   const openEdit = () => {
     if (event.parent_event_id) {
@@ -99,13 +94,10 @@ export default function EventDetailPage() {
   return (
     <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} />
-      {role === 'parent' && <MyActionsSection event={event} onRsvpChange={refetchRsvps} />}
-      {role === 'parent' && <ParentArrivalActions event={event} />}
-      {isStaff && <RsvpSummaryBlock rsvps={rsvps} roster={roster} />}
+      <EventDetailHero event={event} isStaff={isStaff} isPast={isPast} rsvps={rsvps} roster={roster} onEnterScore={() => setShowScoreSheet(true)} onLockRoster={() => document.querySelector('[data-section="lock-roster"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} onNotify={() => window.location.assign(`/admin/briefings/compose?anchor=event&id=${event.id}`)} onRsvpChange={refetchRsvps} />
       {isStaff && <GameDayMode event={event} isStaff={isStaff} isGameType={isGameType} />}
-      {isPastGame && <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>Enter Score</Button>}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
-      {isStaff && !isPast && <EventRosterLockSection event={event} isStaff={isStaff} rsvps={rsvps} roster={roster} onChange={refetchAll} />}
+      {isStaff && !isPast && <div data-section="lock-roster"><EventRosterLockSection event={event} isStaff={isStaff} rsvps={rsvps} roster={roster} onChange={refetchAll} /></div>}
       {event.parent_event_id && (
         <div style={{ padding: '6px 16px', fontSize: 13, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Repeat size={12} strokeWidth={1.75} /> Part of a recurring series
@@ -113,7 +105,6 @@ export default function EventDetailPage() {
         </div>
       )}
 
-      <EventDetailTab event={event} />
       <CollapsibleSection title="Location" sectionKey="location" defaultOpen={false} subtitle={event.location || 'TBD'}>
         <EventLocationTab event={event} />
       </CollapsibleSection>

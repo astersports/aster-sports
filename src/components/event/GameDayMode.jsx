@@ -19,6 +19,7 @@ import { useEventTimeWindow } from '../../hooks/useEventTimeWindow';
 import { useEventArrivals } from '../../hooks/useEventArrivals';
 import { useRoster } from '../../hooks/useRoster';
 import { useNow } from '../../hooks/useNow';
+import { LIVE_GAME_WINDOW_AFTER_MS } from '../../lib/eventWindows';
 
 const wrap = { margin: '12px 16px' };
 const toggleStyle = { display: 'flex', alignItems: 'center', gap: 8, minHeight: 56, width: '100%', padding: '14px 16px', borderRadius: 10, border: '1px dashed var(--em-border-default)', backgroundColor: 'var(--em-bg-card-hover)', color: 'var(--em-text-secondary)', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' };
@@ -29,7 +30,7 @@ function tipSubtitle(event, now) {
   const startMs = new Date(event.start_at).getTime();
   const msUntil = startMs - now;
   const msAfter = now - startMs;
-  if (msAfter > 0 && msAfter < 4 * 60 * 60 * 1000) return 'Live';
+  if (msAfter > 0 && msAfter < LIVE_GAME_WINDOW_AFTER_MS) return 'Live';
   if (msUntil <= 0) return '';
   const m = Math.floor(msUntil / 60000);
   if (m < 60) return `${m}m to tip`;
