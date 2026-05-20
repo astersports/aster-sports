@@ -33,7 +33,12 @@ const PILL = {
 export default function AllClearPill({ mode = 'inline', label }) {
   const style = mode === 'pill' ? PILL : INLINE;
   const iconSize = mode === 'pill' ? 14 : 18;
-  const text = label || (mode === 'pill' ? 'All clear' : "All clear · no alerts firing");
+  // 2026-05-20 — pill text was "All clear", which contradicted the
+  // sibling ActionZone "1 thing to handle" card on the parent home.
+  // Tightened scope: the pill is about the alert framework specifically
+  // (RSVP shortfall, briefing overdue, etc), not the parent's overall
+  // todo state. "No alerts" disambiguates so both can coexist.
+  const text = label || (mode === 'pill' ? 'No alerts' : "All clear · no alerts firing");
   return (
     <div role="status" aria-label="All clear, no alerts firing" style={style}>
       <CheckCircle2 size={iconSize} strokeWidth={1.75} aria-hidden="true" />

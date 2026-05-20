@@ -46,9 +46,9 @@ describe('AlertZone — loading-state gate', () => {
     expect(screen.getByLabelText('Alerts')).toHaveAttribute('aria-busy', 'true');
   });
 
-  it('c. collapsible + not loading + no alerts → renders AllClearPill', () => {
+  it('c. collapsible + not loading + no alerts → renders AllClearPill (pill mode says "No alerts" to disambiguate from sibling ActionZone)', () => {
     render(<AlertZone alerts={[]} variant="collapsible" loading={false} />);
-    expect(screen.getByText('All clear')).toBeInTheDocument();
+    expect(screen.getByText('No alerts')).toBeInTheDocument();
   });
 
   it('d. always_visible + not loading + no alerts → header + inline AllClearPill', () => {
