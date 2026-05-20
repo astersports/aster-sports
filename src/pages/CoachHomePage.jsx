@@ -25,7 +25,9 @@ import Label from '../components/shared/Label';
 import CoachMessageBlock from '../components/home/CoachMessageBlock';
 import CoachHomeQuickActions from '../components/home/CoachHomeQuickActions';
 import UpcomingPrepCard from '../components/home/UpcomingPrepCard';
+import RidesTodayCard from '../components/admin/RidesTodayCard';
 import { useUpcomingPrep } from '../hooks/useUpcomingPrep';
+import { useRidesTodaySummary } from '../hooks/useRidesTodaySummary';
 
 export default function CoachHomePage() {
   const { user, orgId } = useAuth();
@@ -58,6 +60,8 @@ export default function CoachHomePage() {
     actionQueueItems, actionQueueLoading,
     recentTeamMessages,
   } = useCoachHomeSignals(user?.id, now);
+  const coachedTeamIds = useMemo(() => myTeams.map((t) => t.id), [myTeams]);
+  const coachRidesSummary = useRidesTodaySummary(orgId, now, coachedTeamIds);
 
   // Next event across all coached teams. Pulse-glow wrapper draws
   // the eye to the upcoming game per Q4 highlight #1.
@@ -69,6 +73,7 @@ export default function CoachHomePage() {
 
       <AlertZone alerts={coachAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
       <ActionZone items={actionQueueItems} loading={actionQueueLoading} sectionKey="coach-action-zone" />
+      <RidesTodayCard summary={coachRidesSummary} loading={coachRidesSummary.loading} />
       <UpcomingPrepCard prep={upcomingPrep} />
       <CoachHomeQuickActions />
       <CoachMessageBlock messages={recentTeamMessages} nowMs={now} />
