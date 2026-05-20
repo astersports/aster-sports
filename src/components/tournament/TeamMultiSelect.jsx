@@ -77,7 +77,25 @@ export default function TeamMultiSelect({ selectedIds = [], onChange }) {
                 <span style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: t.team_color || 'var(--em-text-tertiary)', flexShrink: 0 }} />
                 <span>{t.name}</span>
               </div>
-              {selected && <Check size={18} strokeWidth={2} color="var(--em-accent)" />}
+              {/* Visible checkbox affordance for both states. Frank-
+                  reported 2026-05-20 L99 v6 §5.1 B1: previously only
+                  the Check icon rendered on selection, so unselected
+                  rows looked like passive cards with no "tap to
+                  select" cue. Outlined circle fills + checks on
+                  selection. */}
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 22, height: 22, borderRadius: '50%',
+                  border: `2px solid ${selected ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
+                  backgroundColor: selected ? 'var(--em-accent)' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                  transition: 'background-color 120ms ease-out, border-color 120ms ease-out',
+                }}
+              >
+                {selected && <Check size={14} strokeWidth={3} color="var(--em-text-inverse)" />}
+              </span>
             </button>
           );
         })}
