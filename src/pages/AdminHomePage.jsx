@@ -18,6 +18,8 @@ import ActionZone from '../components/home/ActionZone';
 import PendingQueuesLanes from '../components/home/PendingQueuesLanes';
 import KpiGrid from '../components/admin/KpiGrid';
 import ProgramHealthCard from '../components/admin/ProgramHealthCard';
+import RecentActivityFeed from '../components/admin/RecentActivityFeed';
+import { useRecentActivity } from '../hooks/useRecentActivity';
 import QuickActions from '../components/admin/QuickActions';
 import AdminManageLinks from '../components/admin/AdminManageLinks';
 import ActiveSeasonCard from '../components/admin/ActiveSeasonCard';
@@ -58,6 +60,7 @@ export default function AdminHomePage() {
     pendingLanes,
     pendingLanesLoading,
   } = useAdminHomeSignals(activities, orgId, activeSeason?.id);
+  const { items: recentActivityItems, loading: recentActivityLoading } = useRecentActivity(orgId, activeSeason?.id);
 
   // overflow-x-hidden + max-w-full on the page wrapper is defense in
   // depth — even if a child component escapes its box, nothing drags
@@ -77,6 +80,8 @@ export default function AdminHomePage() {
       </section>
 
       <ProgramHealthCard season={activeSeason} nowMs={nowMs} />
+
+      <RecentActivityFeed items={recentActivityItems} loading={recentActivityLoading} nowMs={nowMs} />
 
       {nextEvent && <NextEventCard event={nextEvent} weather={getWeatherForTime(weather, nextEvent.start_at)} />}
 
