@@ -1937,3 +1937,69 @@ Layer 1 of the §4.N Two-Week L99 Audit executed Sunday evening (post-sign-off, 
 
 Total estimated verification effort: ~7-8 hours when bundled (with V-17 through V-22 additions +1 hour, V-23 through V-28 additions +1.5 hours, V-29 +10 min).
 Recommended cadence: batch V-1 through V-7 + V-17 through V-21 (Migrations + BUGs + Phase 1/3 ship-status confirms, ~1.5 hours) as the first Monday pass — these are the highest-value unknowns AND closable with grep/DB queries. V-8 through V-14 + V-27 (~3 hours) as a focused mid-Monday session — these include spec-doc deep reads that benefit from sustained focus. V-15 + V-16 + V-22 + V-23 through V-26 + V-28 + V-29 (~3.5 hours) as a separate "rebuild + tidy" pass when energy is low — these are mostly read-and-flag with low decision burden.
+
+---
+
+### §4.S — Thursday afternoon arc (2026-05-20 PM NYC) — Frank-reported feedback marathon close + forward queue
+
+Full session recap in `docs/STATE_OF_AFFAIRS_L99_v6.md`. This section captures the FORWARD queue (the P1-P4 items) so chat-side can plan routing without re-deriving from the L99 doc.
+
+**Shipped this session (17 PRs + 2 migrations + 1 anti-pattern):** see L99 v6 Part 2.
+
+**Forward queue ranked by tier:**
+
+**P1 — small, clear, no design call (ship next):**
+- **B1.** New Tournament form checkboxes have no visible "checked" state. ~20 lines in `TournamentFormSheet`'s team picker. Add `<Check />` icon (Lucide) or `aria-checked` pill style.
+- **B3.** Financials shows "Winter 2025-26" tab even when empty. ~10 lines — filter `seasons` query to ones with `financial_accounts.count > 0`.
+- **B4.** Coach team roster shows "3% Going · 97% NR" with sparse data. ~10 lines — when player has ≤1 RSVP datapoint, render "No RSVPs yet" instead of misleading percentages.
+
+**P2 — design call needed:**
+- **C1.** Engine Preview surfaces a dev/preview tool in production admin (MANAGE section). Options: hide via flag / move to `/admin/dev` / remove. **CC recommendation: move to `/admin/dev` (preserve tool, remove from main flow).**
+- **C2.** Tournament conflict warning: Jun 6-7 has 2 tournaments registered, no warning if admin double-books. ~30 lines for a banner on the New Tournament form when a selected team is already on another tournament in the same date range.
+- **C3.** Form field required/optional indicators inconsistent across New Member / New Location / New Tournament / Edit Team. Adopt the red `*` pattern from PR #350 (Opponent on the wizard) across all required fields. ~50 lines across 4-5 forms.
+
+**P3 — data hygiene (one-shot SQL):**
+- **D1.** Import 30 tournament-opponent strings into the opponents directory. SQL one-shot insert from distinct `events.opponent` values where no matching opponent row exists, then backfill `events.opponent_id` via name match. ~15 mins. PR #363 closed the bug for 12 CYO opponents; D1 extends the same fix to the 30 tournament-opponent strings.
+- **D2.** Historical events with no opponent ("vs TBD" cards). Same SQL sweep as D1 — surface remaining events in admin home alerts lane until cleaned. Overlaps with B2 from L99 v6 5.1 (alert-lane fix).
+
+**P4 — process / discipline (compounds):**
+- **E1.** Anti-pattern #46 CI guard. GitHub Actions step that fails CI if a `*Card.jsx` / `*Row.jsx` / `*Tile.jsx` file is in the diff WITHOUT an accompanying invariant test added in the same PR. Simple grep job.
+- **E2.** PR template checklist at `.github/PULL_REQUEST_TEMPLATE.md`: 4 items (anti-pattern #46, #21 migration mirror, admin-home visual verify, #36 null-in-filter). ~10 min add.
+
+**P-deferred (Frank to confirm pain):**
+- **C4.** Members list — guardian/family grouping enhancement. ~3 guardians per family but no family grouping in the list. Possible enhancement to spot duplicates. Defer until Frank confirms real pain.
+
+**Open decisions for Frank (block P2 work):**
+1. Engine Preview placement (C1) — keep / move / remove?
+2. Tournament conflict warning style (C2) — soft banner or hard block?
+3. Required-field marker (C3) — adopt red asterisk pattern everywhere?
+4. PR template (E2) — adopt or skip?
+
+**Things Frank already locked this session (do NOT re-litigate):**
+- Records page stays (H from earlier triage)
+- "+ Player" stays as "+ Member" → /admin/members (PR #360)
+- Attendance metric replaced by **Active teams** (NOT active players — Frank's explicit preference for "programs or teams")
+- Engine Preview is currently in MANAGE grid (C1 will move it if Frank approves)
+
+**Anti-pattern #46 registered:** PRs that touch `*Card.jsx` / `*Row.jsx` / `*Tile.jsx` ship with one of: (a) a cross-surface invariant test, (b) a before/after screenshot, or (c) a typography token reference. Origin case in L99 v6 Part 1.2.
+
+**Trigger pattern established (audit candidates for next session):**
+- `team_achievements` aggregates (currently no manual columns — safe)
+- Future per-player season stats if/when we add them
+- Coach payouts derivable from `events × coach_assignments` — currently manual; potential next target
+
+**Operator-CC discipline observations from this session:**
+- Frank's "auto proceed" delegation pattern unlocks rapid serial shipping; CC's calibration is: if item involves DELETION / NEW SURFACE / non-obvious LABEL change, ask. Otherwise execute.
+- Branch-reset hazard: twice CC did `git reset --hard origin/main` on a feature branch with uncommitted work, wiping work. ~5 min recovery each time. Discipline: switch to main first, then branch. Promote to anti-pattern #47 if it recurs.
+- Webhook PR subscription pattern paid for itself: PR #361 CI failure caught and fixed within minutes via subscription, vs hours later via Frank's smoke.
+
+**§4.S close conditions:**
+- ✅ Anti-pattern #45 compliance — L99 v6 doc creation paired with ledger §4.S in same commit
+- ✅ Forward queue captured with tier, scope, effort, recommendation per item
+- ✅ Open decisions enumerated for Frank
+- ✅ Locked decisions enumerated to prevent re-litigation
+
+**Recommended next-session opener:**
+- If shipping mode: start with B1 (lowest risk, surfaces visible bug)
+- If process mode: start with E2 (compounds over every future PR; ~10 min)
+- If discussion mode: walk Frank through the 4 open decisions, then route from there
