@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useEventArrivals } from '../../hooks/useEventArrivals';
 import { useNow } from '../../hooks/useNow';
+import { PARENT_ARRIVAL_WINDOW_AFTER_MS, PARENT_ARRIVAL_WINDOW_BEFORE_MS } from '../../lib/eventWindows';
 
 export default function ParentArrivalActions({ event }) {
   const { myChildren } = useAuth();
@@ -12,7 +13,7 @@ export default function ParentArrivalActions({ event }) {
   const kids = (myChildren || []).filter((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
   const msUntil = new Date(event.start_at).getTime() - now;
   const msAfter = now - new Date(event.start_at).getTime();
-  if (msUntil > 2 * 60 * 60 * 1000 || msAfter > 60 * 60 * 1000) return null;
+  if (msUntil > PARENT_ARRIVAL_WINDOW_BEFORE_MS || msAfter > PARENT_ARRIVAL_WINDOW_AFTER_MS) return null;
   if (kids.length === 0) return null;
 
   return (

@@ -6,10 +6,12 @@
 // and game-day mode appears live without a refresh).
 
 import { useEffect, useState } from 'react';
+import {
+  DEFAULT_EVENT_DURATION_MS as DEFAULT_DURATION_MS,
+  GAME_DAY_WINDOW_AFTER_MS as GAME_DAY_POST_MS,
+  GAME_DAY_WINDOW_BEFORE_MS as GAME_DAY_PRE_MS,
+} from '../lib/eventWindows';
 
-const GAME_DAY_PRE_MS = 4 * 60 * 60 * 1000;   // 4h before start
-const GAME_DAY_POST_MS = 3 * 60 * 60 * 1000;  // 3h after end
-const DEFAULT_DURATION_MS = 60 * 60 * 1000;   // 60 min when end_at missing
 const TICK_MS = 60 * 1000;
 
 export function computeFlags(event, now) {
