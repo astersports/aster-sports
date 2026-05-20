@@ -2,6 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
+// May 16 audit P2 item 10 (PR #319): the realtime channel name and
+// postgres_changes filter were both global pre-fix — `unread-badge`
+// shared across every connected user, and the INSERT subscription
+// fired for ALL message rows regardless of org. Refactored to scope
+// both the channel name and the row filter by orgId so multi-tenant
+// installations don't burn channel slots or refetch on cross-org
+// inserts. Single-tenant LH today: same behavior, less server work.
+
 export function useHasUnread() {
   const { user, orgId } = useAuth();
   const [hasUnread, setHasUnread] = useState(false);
@@ -26,8 +34,13 @@ export function useHasUnread() {
 
   useEffect(() => {
     if (!orgId) return;
-    const ch = supabase.channel('unread-badge')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, check)
+    const ch = supabase.channel(`unread-badge-${orgId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `org_id=eq.${orgId}`,
+      }, check)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [orgId, check]);
