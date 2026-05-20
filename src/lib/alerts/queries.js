@@ -119,16 +119,20 @@ export function createSupabaseQueryExecutor(supabase) {
     },
 
     // L99 v6 §5.1 B2 — opponent_unassigned alert. Same shape as
-    // getEventsWithoutLocation but on event_type IN ('game','tournament')
-    // (no opponent concept for practice events) and matches three forms
-    // of "no opponent": NULL, empty string, literal 'TBD'.
+    // getEventsWithoutLocation but on event_type = 'game' only (tournament
+    // anchor events legitimately have no opponent — the tournament IS the
+    // event), AND is_bracket_placeholder = false (placeholder games will
+    // have an opponent once the bracket releases — alerting now is noise
+    // per CLAUDE.md §15 "Schedule releases Wednesday" pattern).
+    // Matches three forms of "no opponent": NULL, empty string, literal 'TBD'.
     async getEventsWithoutOpponent(orgId, withinHours) {
       const start = new Date().toISOString();
       const end = isoForward(withinHours / 24);
       const { data, error } = await supabase.from('events')
         .select('id, team_id, start_at, opponent, event_type, teams!inner(org_id, name)')
         .eq('teams.org_id', orgId)
-        .in('event_type', ['game', 'tournament'])
+        .eq('event_type', 'game')
+        .or('is_bracket_placeholder.is.null,is_bracket_placeholder.eq.false')
         .or('opponent.is.null,opponent.eq.,opponent.eq.TBD')
         .gte('start_at', start).lte('start_at', end).neq('status', 'cancelled');
       if (error) throw error;

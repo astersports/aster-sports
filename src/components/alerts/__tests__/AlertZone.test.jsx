@@ -10,10 +10,18 @@
 // amber/red state.
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render as rtlRender, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import AlertZone from '../AlertZone';
 
 afterEach(cleanup);
+
+// L99 v6 §5.1 B2 follow-up — AlertCard now uses useNavigate() to route
+// to /events/:id?edit=1 on tap, requires Router context. Wrap render()
+// so every test in this file gets it.
+function render(ui, options) {
+  return rtlRender(ui, { wrapper: MemoryRouter, ...options });
+}
 
 const SAMPLE_ALERT = {
   config_id: 'alert-1',
