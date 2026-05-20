@@ -152,7 +152,7 @@ chat's L99 ordering.
 - **Anti-pattern #44 corollary:** CC should have traced `git log -- src/pages/CoachHomePage.jsx` before confirming OPEN status last night. Stopping at the §2 entry was the gate-check failure. Trace-the-full-pipeline applies to ledger reads too, not just regression triage.
 
 ### Cluster 6 — Admin Home cache/query race (A2 + A3)
-- Status: **A3 RESOLVED via PR #241; A2 OPEN**
+- Status: **A3 RESOLVED via PR #241; A2 RESOLVED via PR #327**
 - Severity: HIGH (A3 confirmed regression) / MEDIUM (A2 state-transition flicker)
 - A3 final root cause: **PR #235 regression** in `useAlertEvaluator.js`, not in AlertZone.
   - CC's D5 diagnostic missed this — focused on AlertZone gate logic (structurally correct) and didn't trace upstream evaluator timing.
@@ -160,7 +160,9 @@ chat's L99 ordering.
   - Actual race: `useState([])` for configs made the initial state and "fetched + empty" state indistinguishable. The evaluate callback fired on mount with `configs=[]`, hit its empty-configs early return (`setAlerts([]); setLoading(false); return`), and flipped `loading=false` BEFORE the configs fetch completed. AlertZone briefly rendered the green AllClearPill before re-rendering with the real alerts once configs loaded and evaluate re-fired.
   - Fix in PR #241: `useState(null)` as "not yet fetched" sentinel. The evaluate's null branch returns without touching loading. AlertZone's loading gate stays armed through the configs-fetch window.
   - Drift-hedge test (`useAlertEvaluator.loadingGate.test.js`) asserts `loading=true` persists through the configs-fetch phase + only flips to false after evaluate completes.
-- A2 (count flip 63→31 / 159→77): identified as season-context state-transition flicker. Downgraded HIGH → MEDIUM. Fix candidate: skeleton on KpiGrid until useSeason settles. Not in PR #241 scope.
+- A2 (count flip 63→31 / 159→77): identified as season-context state-transition flicker. Downgraded HIGH → MEDIUM.
+- A2 final root cause: `useAdminStats` effect re-fired when `seasonId` changed from `null` (no active season resolved yet) to a real UUID (active season resolved post-mount), but `counts.loading` stayed `false` from the prior fetch. KpiGrid rendered the placeholder-bypass flicker — stale/zero values briefly visible before the new values landed. Same structural shape as Cluster 6 A3's `useAlertEvaluator` configs race, just on a different upstream signal.
+- Fix in PR #327: `setCounts((prev) => ({ ...prev, loading: true }))` at the start of every effect run. KpiGrid renders the placeholder during the refetch window, preventing the flicker. Anti-pattern #44 reinforced — trace the full state pipeline; downstream gate (KpiGrid placeholder) was structurally correct, but upstream loading-state never returned to true after first fetch.
 - Lesson registered for CLAUDE.md anti-pattern future-extension: code-side review of a downstream gate isn't sufficient when an upstream hook can output values that bypass the gate. Trace the FULL state pipeline before ruling out a regression.
 
 ### Cluster 7 — Admin Home greeting not NY-pinned

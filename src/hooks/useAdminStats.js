@@ -47,6 +47,14 @@ export function useAdminStats() {
     let cancelled = false;
     Promise.resolve().then(async () => {
       if (cancelled) return;
+      // §2 Cluster 6 A2 fix (PR #327): reset loading=true at the start
+      // of every effect run so KpiGrid renders its placeholder during
+      // the refetch window. Pre-fix, when seasonId changed mid-mount
+      // (initial null → resolved active season, or admin switching
+      // seasons), counts.loading stayed false from the prior fetch
+      // — KpiGrid rendered stale/zero values until the new values
+      // landed, producing the documented 63→31 / 159→77 flicker.
+      setCounts((prev) => ({ ...prev, loading: true }));
 
       let teamIds = [];
       if (seasonId) {
