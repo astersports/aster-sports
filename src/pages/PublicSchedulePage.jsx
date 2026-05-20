@@ -7,6 +7,12 @@ import { formatEventTitleString } from '../lib/eventTitle';
 import { downloadTeamIcs } from '../lib/icalHelpers';
 import BottomSheet from '../components/shared/BottomSheet';
 
+// FEED_HOST = host of VITE_SUPABASE_URL. Subscribe URLs point to the
+// Supabase project's functions origin (not the Vercel app origin).
+const FEED_HOST = (() => {
+  try { return new URL(import.meta.env.VITE_SUPABASE_URL).host; } catch { return null; }
+})();
+
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric',
@@ -24,7 +30,7 @@ export default function PublicSchedulePage() {
   useEffect(() => {
     (async () => {
       const [teamRes, eventsRes] = await Promise.all([
-        supabase.from('teams').select('id, name, team_color, org_id, organizations(name, display_name)').eq('id', teamId).maybeSingle(),
+        supabase.from('teams').select('id, name, team_color, org_id, team_feed_token, organizations(name, display_name)').eq('id', teamId).maybeSingle(),
         supabase.from('events').select('id, title, event_type, start_at, end_at, opponent, location_name, status')
           .eq('team_id', teamId).neq('status', 'cancelled')
           .gte('start_at', new Date().toISOString())
@@ -84,26 +90,14 @@ export default function PublicSchedulePage() {
       ))}
 
       {events.length > 0 && (
-        <button type="button" onClick={() => downloadTeamIcs(team.name, events)} className="sf-press"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            width: '100%', minHeight: 44, marginTop: 16, borderRadius: 10,
-            border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
-            color: 'var(--em-accent)', fontSize: 15, fontWeight: 500,
-          }}>
+        <button type="button" onClick={() => downloadTeamIcs(team.name, events)} className="sf-press" style={ctaBtnStyle}>
           <Download size={16} strokeWidth={1.75} />
           Download Schedule (.ics)
         </button>
       )}
 
       {events.length > 0 && (
-        <button type="button" onClick={() => setShowSubscribe(true)} className="sf-press"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            width: '100%', minHeight: 44, marginTop: 8, borderRadius: 10,
-            border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
-            color: 'var(--em-accent)', fontSize: 15, fontWeight: 500,
-          }}>
+        <button type="button" onClick={() => setShowSubscribe(true)} className="sf-press" style={{ ...ctaBtnStyle, marginTop: 8 }}>
           <Calendar size={16} strokeWidth={1.75} />
           Subscribe to Calendar
         </button>
@@ -111,16 +105,24 @@ export default function PublicSchedulePage() {
 
       <BottomSheet open={showSubscribe} onClose={() => setShowSubscribe(false)} initialHeight="30%">
         <h3 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 16 }}>Subscribe to Calendar</h3>
-        <a href={`webcal://${window.location.host}/api/calendar?team=${teamId}`}
-          style={calOptStyle} aria-label="Subscribe via Apple Calendar">
-          <Calendar size={20} strokeWidth={1.75} style={{ color: 'var(--em-accent)' }} />
-          <span>Apple Calendar</span>
-        </a>
-        <a href={`https://calendar.google.com/calendar/r?cid=webcal://${window.location.host}/api/calendar?team=${teamId}`}
-          target="_blank" rel="noopener noreferrer" style={calOptStyle} aria-label="Subscribe via Google Calendar">
-          <Calendar size={20} strokeWidth={1.75} style={{ color: 'var(--em-accent)' }} />
-          <span>Google Calendar</span>
-        </a>
+        {FEED_HOST && team?.team_feed_token ? (() => {
+          const wc = `webcal://${FEED_HOST}/functions/v1/team-feed?token=${team.team_feed_token}`;
+          return (
+            <>
+              <a href={wc} style={calOptStyle} aria-label="Subscribe via Apple Calendar">
+                <Calendar size={20} strokeWidth={1.75} style={{ color: 'var(--em-accent)' }} /><span>Apple Calendar</span>
+              </a>
+              <a href={`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(wc)}`}
+                target="_blank" rel="noopener noreferrer" style={calOptStyle} aria-label="Subscribe via Google Calendar">
+                <Calendar size={20} strokeWidth={1.75} style={{ color: 'var(--em-accent)' }} /><span>Google Calendar</span>
+              </a>
+            </>
+          );
+        })() : (
+          <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 13, textAlign: 'center' }}>
+            Subscription unavailable. Use Download Schedule (.ics) above.
+          </div>
+        )}
       </BottomSheet>
 
       <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--em-text-tertiary)' }}>
@@ -129,6 +131,13 @@ export default function PublicSchedulePage() {
     </div>
   );
 }
+
+const ctaBtnStyle = {
+  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+  width: '100%', minHeight: 44, marginTop: 16, borderRadius: 10,
+  border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+  color: 'var(--em-accent)', fontSize: 15, fontWeight: 500,
+};
 
 const calOptStyle = {
   display: 'flex', alignItems: 'center', gap: 12,

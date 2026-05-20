@@ -57,3 +57,6 @@ verify_jwt = false
 [functions.callup-token-handler]
 verify_jwt = false
 
+[functions.team-feed]
+verify_jwt = false
+
