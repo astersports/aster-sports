@@ -6,6 +6,7 @@ import { useTournaments } from '../hooks/useTournaments';
 import Button from '../components/shared/Button';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import TournamentListItem from '../components/tournament/TournamentListItem';
+import AdminBackHeader from '../components/admin/AdminBackHeader';
 import TournamentFormSheet from '../components/tournament/TournamentFormSheet';
 import TournamentRowMenu from '../components/tournament/TournamentRowMenu';
 import TournamentStatusChips from '../components/tournament/TournamentStatusChips';
@@ -37,6 +38,7 @@ export default function TournamentsPage() {
 
   return (
     <div style={{ padding: 16, paddingBottom: 80 }}>
+      <AdminBackHeader />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0 }}>
           Tournaments

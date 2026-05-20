@@ -3,6 +3,7 @@ import { Calendar, MapPin, Plus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSeason } from '../context/SeasonContext';
 import { useLocations } from '../hooks/useLocations';
+import AdminBackHeader from '../components/admin/AdminBackHeader';
 import LocationFormSheet from '../components/location/LocationFormSheet';
 import ManageSeasonLocationsSheet from '../components/location/ManageSeasonLocationsSheet';
 import LocationCard from '../components/location/LocationCard';
@@ -36,6 +37,7 @@ export default function LocationsPage() {
 
   return (
     <div style={{ padding: 16, paddingBottom: 80 }}>
+      <AdminBackHeader />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0 }}>Locations</h1>

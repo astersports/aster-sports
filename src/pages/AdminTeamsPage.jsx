@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Users } from 'lucide-react';
 import { usePrograms } from '../hooks/usePrograms';
 import { useSeason } from '../context/SeasonContext';
+import AdminBackHeader from '../components/admin/AdminBackHeader';
 import TeamFormSheet from '../components/admin/TeamFormSheet';
 import Badge from '../components/shared/Badge';
 import Button from '../components/shared/Button';
@@ -45,6 +46,7 @@ export default function AdminTeamsPage() {
   if (!activeSeason && !loading && programs.length === 0) {
     return (
       <div className="px-4 py-4">
+        <AdminBackHeader />
         <EmptyState
           icon={Users}
           title="No active season"
@@ -56,6 +58,7 @@ export default function AdminTeamsPage() {
 
   return (
     <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
+      <AdminBackHeader />
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20 }}>
