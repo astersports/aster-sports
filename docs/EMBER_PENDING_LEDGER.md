@@ -485,21 +485,57 @@ Source: `CC_SESSION_HANDOFF_2026-05-13.md` + CLAUDE.md §16.7.1.
 
 ### §4.G — Quick wins (small, ship anytime)
 
-Items <30 min each. Bundle into a single Monday-AM warm-up PR.
+Items <30 min each.
 
 - ~~**Cluster 3** event title centralization~~ — **DONE** (PR #298, 2026-05-19).
   Migration 021 sanitization still queued under §2 Cluster 3.1.
-- **Cluster 4** bell badge removal (~15 min, see §2)
-- **Cluster 7** admin greeting NY-pin (~5-10 min, see §2)
+- ~~**Cluster 4** bell badge removal~~ — **DONE** (PR #295, 2026-05-19;
+  §2 Cluster 4 marked RESOLVED). Ledger referent here was stale —
+  rediscovered + closed via sweep audit 2026-05-20 PM.
+- ~~**Cluster 7** admin greeting NY-pin~~ — **DONE** (PR #295,
+  2026-05-19; §2 Cluster 7 marked RESOLVED). Same stale referent
+  shape as Cluster 4 above.
 - **Cluster 6.A2** KpiGrid loading gate refinement (downgraded MEDIUM)
 - Async-ordering test replication for `useAdminStats`, `useHomeRole`,
   `useAttendanceData`, `useActivities` per anti-pattern #44 (see §11)
-- **P6 RSVP copy normalization** — chat's L99 parent review flagged
-  inconsistent decline copy ("Can't" vs "Not Going"). Pick canonical
-  label (likely "Not Going" matching `PlayerRow.jsx`/`MyChildSpotlight.jsx`
-  category set) and unify across RSVP UI surfaces. ~5-10 min.
-  Found post-PR-#243 via anti-pattern #45 acid-test scan — captured
-  same-session via this PR #244 amendment.
+- ~~**P6 RSVP copy normalization**~~ — **DONE** (PR #399, 2026-05-20 PM).
+  Canonical: buttons → "Can't" everywhere; status/headers → "Not Going"
+  everywhere. RsvpPlayerRow.BUTTONS was the lone outlier ("Not going");
+  fixed + test updated.
+
+#### §4.G close (2026-05-20 PM, post-sweep audit)
+
+Frank-requested late-night sweep of §4.G + §4.S P1 surfaced that
+several items were already shipped in prior PRs but the ledger
+referents stayed stale. Acid-test catch (anti-pattern #45 corollary —
+same pattern as Clusters 4/5/7 staleness on 2026-05-19):
+
+| Ledger referent | Actual status | Closed in |
+|---|---|---|
+| §4.G Cluster 4 (bell badge) | DONE | PR #295 |
+| §4.G Cluster 7 (admin NY-pin) | DONE | PR #295 |
+| §4.S B1 (Tournament checkbox) | DONE | TeamMultiSelect comment cites L99 v6 §5.1 B1 |
+| §4.S B3 (Financials empty seasons) | DONE | FinancialDashboardPage comment cites L99 v6 §5.1 B3 |
+| §4.S B4 (sparse RSVP %) | DONE | PlayerRow comment cites L99 v6 §5.1 B4 |
+| §4.G P6 (RSVP copy) | SHIPPED THIS SWEEP | PR #399 |
+| §4.S C1 (Engine Preview placement) | SHIPPED THIS SWEEP — route+page deleted | PR #398 |
+| §4.S C2 (Tournament conflict warning) | DONE | TournamentFormSheet `conflictMessage` lines 57-68 |
+| §4.S C3 (Red asterisk pattern) | DONE | PR #374 (merged earlier this PM after rebase unblock) |
+| §4.S D1 (30 opponent strings) | SHIPPED THIS SWEEP — actually 1 row | direct SQL backfill 2026-05-20 PM (PHD - McCurdy linked to existing opponents row) |
+| §4.S B2 (1 historical TBD-opponent row) | SKIPPED — Frank-manual task (1-tap edit) |
+| §4.S E1 (anti-pattern #46 CI guard) | SHIPPED THIS SWEEP | PR #400 |
+| §4.S E2 (PR template) | DONE | `.github/PULL_REQUEST_TEMPLATE.md` already exists |
+
+Net new this sweep: PRs #398, #399, #400 + 1 SQL backfill. Other
+items were already done; the sweep proved them via grep + db query
+rather than re-shipping.
+
+**Process discipline reinforced:** before re-shipping a ledger item,
+grep the codebase for an L99 §X.Y comment marker (the doc-author
+adds these inline when closing an item from a §). The reverse —
+ledger marked DONE but code missing — has yet to occur in this
+codebase; ledger marked OPEN but code already done is the recurring
+staleness shape, registered as a corollary to anti-pattern #45.
 
 ---
 
