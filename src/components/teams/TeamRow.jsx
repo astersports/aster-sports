@@ -2,7 +2,7 @@
 // on bottom. Presentational — `summary` flows from TeamsPage, which
 // calls useOrgTeamRecords once.
 import { useNavigate } from 'react-router-dom';
-import { EMPTY_SUMMARY } from '../../lib/teamRecords';
+import { EMPTY_SUMMARY, fmt1 } from '../../lib/teamRecords';
 
 const CIRCUIT_LABELS = { aau: 'AAU', league_play: 'League Play', tournament: 'Tournament' };
 
@@ -11,8 +11,8 @@ function buildMetaLine(team, summary) {
   if (summary.gamesPlayed > 0) {
     parts.push(summary.record);
     if (summary.streak !== '—') parts.push(summary.streak);
-    parts.push(`${summary.ppg} PPG`);
-    parts.push(`${summary.allowed} PA`);
+    parts.push(`${fmt1(summary.ppg)} PPG`);
+    parts.push(`${fmt1(summary.allowed)} PA`);
   }
   return parts.filter(Boolean).join(' · ');
 }

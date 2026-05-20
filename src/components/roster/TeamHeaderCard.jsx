@@ -1,5 +1,5 @@
 import { formatDiff } from '../../lib/formatters';
-import { EMPTY_SUMMARY } from '../../lib/teamRecords';
+import { EMPTY_SUMMARY, fmt1 } from '../../lib/teamRecords';
 
 const CIRCUIT_LABELS = { aau: 'AAU', league_play: 'League Play', tournament: 'Tournament' };
 
@@ -68,8 +68,8 @@ export default function TeamHeaderCard({ team, summary, loading }) {
             marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--em-border-subtle)',
             display: 'flex', alignItems: 'center', gap: 4,
           }}>
-            <Cell value={v(s.ppg)} label="PPG" />
-            <Cell value={v(s.allowed)} label="Allowed" />
+            <Cell value={v(fmt1(s.ppg))} label="PPG" />
+            <Cell value={v(fmt1(s.allowed))} label="Allowed" />
             <Cell value={v(formatDiff(s.diff))} label="Diff" />
             <Cell value={v(`${s.winPct}%`)} label="Win %" />
             <Cell value={v(s.gamesPlayed)} label="Games" />

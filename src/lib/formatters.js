@@ -29,14 +29,16 @@ export function formatDateFull(date) {
   });
 }
 
-// "+5.3" / "-2.1" / "0.0" / "—" — point-differential cell. Pre-rounded
-// numerics are passed in (computeSummary already toFixed(1)s); helper
-// only handles the sign prefix + null/NaN guards.
+// "+5.3" / "-2.1" / "0.0" / "—" — point-differential cell. Always 1
+// decimal so columns align even when value is an exact integer (e.g.
+// the diff lands on +5.0, prior version rendered "+5" and broke
+// rhythm). 2026-05-20 fix per Frank-flagged "9U Boys · 21 PA" sibling.
 export function formatDiff(d) {
   if (d == null) return '—';
   const n = Number(d);
   if (Number.isNaN(n)) return '—';
-  return n > 0 ? `+${n}` : `${n}`;
+  const fixed = n.toFixed(1);
+  return n > 0 ? `+${fixed}` : fixed;
 }
 
 // "Just now" / "5 minutes ago" / "2 hours ago" / "3 days ago" within
