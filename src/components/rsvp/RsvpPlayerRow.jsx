@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 const BUTTONS = [
   { key: 'going', icon: Check, color: 'var(--em-success)', bg: 'var(--em-success-soft)', label: 'Going' },
   { key: 'maybe', icon: HelpCircle, color: 'var(--em-warning)', bg: 'var(--em-warning-soft)', label: 'Maybe' },
-  { key: 'not_going', icon: X, color: 'var(--em-danger)', bg: 'var(--em-danger-soft)', label: 'Not going' },
+  { key: 'not_going', icon: X, color: 'var(--em-danger)', bg: 'var(--em-danger-soft)', label: "Can't" },
 ];
 
 const STATUS_LABELS = {
