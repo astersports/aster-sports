@@ -73,7 +73,7 @@ export default function AdminHomePage() {
 
       <AlertZone alerts={alerts} loading={alertsLoading} variant="always_visible" sectionLabel="ALERTS" />
       <ActionZone items={adminActionItems} loading={adminActionLoading} sectionKey="admin-action-zone" />
-      <PendingQueuesLanes lanes={pendingLanes} loading={pendingLanesLoading} />
+      <PendingQueuesLanes lanes={pendingLanes} loading={pendingLanesLoading} sectionKey="admin-pending-queues" />
 
       <section className="min-w-0" aria-label="Key metrics">
         <KpiGrid stats={stats} />
