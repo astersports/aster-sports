@@ -1,7 +1,5 @@
 import { useMemo } from 'react';
 import { useNow } from './useNow';
-import { useEventRsvpCounts } from './useEventRsvpCounts';
-import { useLowRsvpEvents } from './useLowRsvpEvents';
 import { useUnscoredGames } from './useUnscoredGames';
 import { usePendingInvitations } from './usePendingInvitations';
 import { usePendingAchievementsOrg } from './usePendingAchievementsOrg';
@@ -16,20 +14,15 @@ import { useSeasonFinancials } from './useSeasonFinancials';
 // (anti-pattern #11). Caller passes activities + orgId; hook owns
 // the rest of the wiring.
 
-const SEVENTY_TWO_HOURS_MS = 72 * 60 * 60 * 1000;
-
 export function useAdminHomeSignals(activities, orgId, activeSeasonId) {
   const now = useNow();
-  const next72hActivities = useMemo(
-    () => (activities || []).filter((a) => {
-      if (!a?.start_at || a.status === 'cancelled') return false;
-      const ms = new Date(a.start_at).getTime();
-      return ms >= now && ms <= now + SEVENTY_TWO_HOURS_MS;
-    }),
-    [activities, now],
-  );
-  const { counts: rsvpCounts } = useEventRsvpCounts(next72hActivities);
-  const lowRsvpItems = useLowRsvpEvents(next72hActivities, rsvpCounts, now);
+  void activities;
+  // Frank-reported 2026-05-20: "Actions for admin should only include
+  // scores and not RSVPs updates or it becomes a long list." Dropped
+  // the lowRsvpEvents feed from the ActionZone. RSVP triage still
+  // surfaces per-event on the Schedule page; the admin home lane is
+  // now scoped to scores-not-entered + pending team invites — the two
+  // items that genuinely block admin action.
   const { items: unscoredGames, loading: unscoredLoading } = useUnscoredGames(orgId, now);
   const { items: pendingInvitations, loading: invitationsLoading } = usePendingInvitations(orgId, now);
   const { count: achievementsPendingCount, loading: achievementsLoading } = usePendingAchievementsOrg(orgId);
@@ -38,8 +31,8 @@ export function useAdminHomeSignals(activities, orgId, activeSeasonId) {
   const familiesOwingCount = financialStats?.familiesOwing || 0;
 
   const actionItems = useMemo(
-    () => [...(lowRsvpItems || []), ...(unscoredGames || []), ...(pendingInvitations || [])],
-    [lowRsvpItems, unscoredGames, pendingInvitations],
+    () => [...(unscoredGames || []), ...(pendingInvitations || [])],
+    [unscoredGames, pendingInvitations],
   );
   const actionLoading = unscoredLoading || invitationsLoading;
 
