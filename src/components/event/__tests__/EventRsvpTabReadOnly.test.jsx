@@ -39,7 +39,7 @@ describe('EventRsvpTab readOnly invariant', () => {
     );
     expect(queryByLabelText('Going')).toBeNull();
     expect(queryByLabelText('Maybe')).toBeNull();
-    expect(queryByLabelText('Not going')).toBeNull();
+    expect(queryByLabelText("Can't")).toBeNull();
     expect(container.textContent).toMatch(/Going/);
   });
 
