@@ -43,11 +43,13 @@ function diffFields(before = {}, after = {}) {
   const timeChanged = (before.start_at || null) !== (after.start_at || null)
     || (before.end_at || null) !== (after.end_at || null);
   const locChanged = (before.location || null) !== (after.location || null);
+  const oppChanged = (before.opponent || null) !== (after.opponent || null);
   const cancelled = after.status === 'cancelled' && before.status !== 'cancelled';
   if (cancelled) changed.push({ kind: 'cancelled' });
   else {
     if (timeChanged) changed.push({ kind: 'time', prev: timeRange(before.start_at, before.end_at), next: timeRange(after.start_at, after.end_at) });
     if (locChanged) changed.push({ kind: 'location', prev: before.location || '—', next: after.location || '—' });
+    if (oppChanged) changed.push({ kind: 'opponent', prev: before.opponent || 'TBD', next: after.opponent || 'TBD' });
   }
   return changed;
 }
@@ -71,7 +73,7 @@ function cancelledHtml() {
     + '</div>';
 }
 
-const LABELS = { time: 'When', location: 'Where' };
+const LABELS = { time: 'When', location: 'Where', opponent: 'Opponent' };
 
 export default function render(section) {
   const title = section?.eventTitle || '';

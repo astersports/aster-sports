@@ -64,9 +64,9 @@ export default function ScheduleChangeComposer({ event, diff, onClose, onDone })
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 600, margin: '0 auto', padding: 16 }}>
         <div style={{ padding: 14, border: '1px solid var(--em-border-default)', borderRadius: 10, backgroundColor: 'var(--em-bg-card)' }}>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 6 }}>Previous</div>
-          <div style={{ fontSize: 14, color: 'var(--em-text-secondary)', textDecoration: 'line-through' }}>{fmt(diff?.before?.start_at)}{diff?.before?.location ? ` · ${diff.before.location}` : ''}</div>
+          <div style={{ fontSize: 14, color: 'var(--em-text-secondary)', textDecoration: 'line-through' }}>{fmt(diff?.before?.start_at)}{diff?.before?.location ? ` · ${diff.before.location}` : ''}{diff?.before?.opponent ? ` · vs ${diff.before.opponent}` : ''}</div>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--em-text-primary)', marginTop: 10, marginBottom: 6 }}>Updated</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--em-text-primary)' }}>{fmt(diff?.after?.start_at)}{diff?.after?.location ? ` · ${diff.after.location}` : ''}</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--em-text-primary)' }}>{fmt(diff?.after?.start_at)}{diff?.after?.location ? ` · ${diff.after.location}` : ''}{diff?.after?.opponent ? ` · vs ${diff.after.opponent}` : ''}</div>
         </div>
         <label style={{ display: 'block' }}>
           <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--em-text-tertiary)', display: 'block', marginBottom: 6 }}>Signoff message (optional)</span>

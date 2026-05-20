@@ -94,6 +94,20 @@ describe('schedule_change resolver — contract', () => {
     expect(narrative.body).toContain('Gym closed');
   });
 
+  it('10a. opponent-only change: opponent narrative + diff (Frank 11U Girls championship, 2026-05-20)', async () => {
+    const audit = [{ ...event_change_audit[0], change_kind: 'other', before_jsonb: { start_at: '2026-05-11T23:35:00+00:00', end_at: '2026-05-12T01:05:00+00:00', location: "St. Patrick's", opponent: null }, after_jsonb: { start_at: '2026-05-11T23:35:00+00:00', end_at: '2026-05-12T01:05:00+00:00', location: "St. Patrick's", opponent: 'PHD - McCurdy' } }];
+    const { context, slices } = await resolveScheduleChange({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient({ ...FIXTURES, event_change_audit: audit }), now: NOW });
+    expect(context.diff.changed_fields).toEqual(['opponent']);
+    const { content_sections } = composeScheduleChange(context, slices[0], {});
+    const narrative = content_sections.find((s) => s.kind === 'stats_narrative');
+    expect(narrative.body).toContain('Opponent has changed from');
+    expect(narrative.body).toContain('PHD - McCurdy');
+    const diff = content_sections.find((s) => s.kind === 'schedule_change_diff');
+    expect(diff.changed_fields).toEqual(['opponent']);
+    expect(diff.after.opponent).toBe('PHD - McCurdy');
+    expect(diff.before.opponent).toBeNull();
+  });
+
   it('10. recurrence_scope=series: narrative prepended with "All future {team} {type}s: "', async () => {
     const audit = [{ ...event_change_audit[0], recurrence_scope: 'series' }];
     const { context, slices } = await resolveScheduleChange({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient({ ...FIXTURES, event_change_audit: audit }), now: NOW });
