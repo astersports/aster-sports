@@ -24,7 +24,10 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
   const isToday = new Date(event.start_at).toDateString() === new Date().toDateString();
   const dimmed = isCancelled || isPast;
   const msUntil = new Date(event.start_at).getTime() - now;
-  const showCountdown = isNext && msUntil > 0 && msUntil < 24 * 60 * 60 * 1000;
+  // 2026-05-20 — cancelled events were showing live "in 7h 12m" countdown
+  // because showCountdown only checked time, not status. Frank-flagged on
+  // parent schedule view: the cancelled card looked half-cancelled.
+  const showCountdown = isNext && msUntil > 0 && msUntil < 24 * 60 * 60 * 1000 && !isCancelled;
   const { prefix: titlePrefix, body: titleBody } = formatEventTitle(event);
   const titleAria = `${titlePrefix}${titleBody}`;
   const mapsUrl = useMapsUrl(event.location_name || null);
@@ -138,7 +141,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
         )}
         {density !== 'minimal' && role === 'parent' && childrenOnTeam.length > 0 && (
           <div style={{ marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
-            {childrenOnTeam.map((child) => (<ChildRsvp key={child.playerId} child={child} eventId={event.id} eventType={event.event_type} compact disabled={isPast} onSave={onRsvpChange} />))}
+            {childrenOnTeam.map((child) => (<ChildRsvp key={child.playerId} child={child} eventId={event.id} eventType={event.event_type} compact disabled={isPast || isCancelled} onSave={onRsvpChange} />))}
           </div>
         )}
       </div>
