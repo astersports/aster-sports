@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { aggregateRidesSummary } from '../lib/ridesSummary';
 
 // HOME_DESIGN_SPEC + RIDES_DESIGN_SPEC §5/§6 — rides today widget data.
 // Returns aggregate ride-coordination state for events happening
@@ -85,44 +86,11 @@ export function useRidesTodaySummary(orgId, nowMs, teamIds = null) {
       setLoading(false);
       return;
     }
-    const offerByEvent = {};
-    for (const o of offersRes.data || []) {
-      offerByEvent[o.event_id] = (offerByEvent[o.event_id] || 0) + (o.seats_offered || 0);
-    }
-    const claimByEvent = {};
-    for (const c of claimsRes.data || []) {
-      if (!['confirmed', 'pending', 'waitlisted'].includes(c.status)) continue;
-      claimByEvent[c.event_id] = (claimByEvent[c.event_id] || 0) + (c.seats_requested || 0);
-    }
-    const byTeamMap = {};
-    let totalOffered = 0;
-    let totalClaimed = 0;
-    for (const e of ridesEvents) {
-      const tid = e.teams.id;
-      const offered = offerByEvent[e.id] || 0;
-      const claimed = claimByEvent[e.id] || 0;
-      totalOffered += offered;
-      totalClaimed += claimed;
-      if (!byTeamMap[tid]) {
-        byTeamMap[tid] = { teamId: tid, teamName: e.teams.name, teamColor: e.teams.team_color, eventCount: 0, offered: 0, claimed: 0 };
-      }
-      byTeamMap[tid].eventCount += 1;
-      byTeamMap[tid].offered += offered;
-      byTeamMap[tid].claimed += claimed;
-    }
-    const byTeam = Object.values(byTeamMap).map((t) => ({
-      ...t,
-      coveragePct: t.offered > 0 ? Math.min(100, Math.round((t.claimed / t.offered) * 100)) : null,
-    })).sort((a, b) => a.teamName.localeCompare(b.teamName));
-    const coveragePct = totalOffered > 0 ? Math.min(100, Math.round((totalClaimed / totalOffered) * 100)) : null;
+    // Aggregation extracted to lib/ridesSummary.js as a pure helper
+    // (PR #335) so the math is unit-testable in isolation.
+    const summary = aggregateRidesSummary(ridesEvents, offersRes.data, claimsRes.data);
     setError(null);
-    setData({
-      eventCount: ridesEvents.length,
-      totalSeatsOffered: totalOffered,
-      totalSeatsClaimed: totalClaimed,
-      coveragePct,
-      byTeam,
-    });
+    setData(summary);
     setLoading(false);
   // teamIdsKey is the join-string memo; safe in the deps array.
   // eslint-disable-next-line react-hooks/exhaustive-deps
