@@ -15,13 +15,15 @@ const STATUS_LABELS = {
   not_going: { label: 'Not Going', color: 'var(--em-danger)' },
 };
 
-export default function RsvpPlayerRow({ player, response, existingNote, teamColor, onSetRsvp, onSaveNote }) {
+export default function RsvpPlayerRow({ player, response, existingNote, teamColor, onSetRsvp, onSaveNote, forceReadOnly = false }) {
   const { role, myChildren } = useAuth();
   const [showNote, setShowNote] = useState(false);
   const [noteText, setNoteText] = useState(existingNote || '');
   useEffect(() => { Promise.resolve().then(() => setNoteText(existingNote || '')); }, [existingNote]);
   const isMyChild = (myChildren || []).some((c) => c.playerId === player.id);
-  const readOnly = role === 'parent' && !isMyChild;
+  // forceReadOnly comes from EventRsvpTab when the event is past — admins
+  // and coaches still see the rows, just can't toggle status on history.
+  const readOnly = forceReadOnly || (role === 'parent' && !isMyChild);
 
   return (
     <div style={{

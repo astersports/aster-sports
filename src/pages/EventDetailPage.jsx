@@ -78,7 +78,11 @@ export default function EventDetailPage() {
   const rsvpMap = {};
   rsvps.forEach((r) => { rsvpMap[r.player_id] = r.response; });
   const isGameType = event.event_type === 'game' || event.event_type === 'tournament';
-  const isPastGame = isStaff && isGameType && (event.end_at ? new Date(event.end_at) < new Date() : new Date(event.start_at).getTime() + 14400000 < new Date().getTime());
+  // 2026-05-20 — isPast freezes Cancel/Lock/Academy/RSVP affordances on
+  // events whose end has passed (Frank-flagged: a 3-day-old game still
+  // showed all of them live). Enter Score stays actionable for games.
+  const isPast = event.end_at ? new Date(event.end_at) < new Date() : new Date(event.start_at).getTime() + 14400000 < new Date().getTime();
+  const isPastGame = isStaff && isGameType && isPast;
 
   const openEdit = () => {
     if (event.parent_event_id) {
@@ -99,7 +103,7 @@ export default function EventDetailPage() {
       {isStaff && <GameDayMode event={event} isStaff={isStaff} isGameType={isGameType} />}
       {isPastGame && <Button variant="secondary" onClick={() => setShowScoreSheet(true)} style={{ width: 'calc(100% - 32px)', margin: '12px 16px', backgroundColor: 'var(--em-accent-soft)' }}>Enter Score</Button>}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
-      {isStaff && <EventRosterLockSection event={event} team={team} isStaff={isStaff} rsvps={rsvps} roster={roster} onChange={refetchAll} />}
+      {isStaff && !isPast && <EventRosterLockSection event={event} team={team} isStaff={isStaff} rsvps={rsvps} roster={roster} onChange={refetchAll} />}
       {event.parent_event_id && (
         <div style={{ padding: '6px 16px', fontSize: 13, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Repeat size={12} strokeWidth={1.75} /> Part of a recurring series
@@ -117,15 +121,15 @@ export default function EventDetailPage() {
         <EventRidesTab event={event} />
       </CollapsibleSection>
       <CollapsibleSection title="RSVPs" sectionKey="rsvps" defaultOpen={isStaff} count={`${rsvps.filter((r) => r.response === 'going').length}/${roster.length}`}>
-        <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} />
+        <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} readOnly={isPast} />
       </CollapsibleSection>
-      {isStaff && isGameType && teamId && <Suspense fallback={null}><AcademyActivationPanel eventId={event.id} teamId={teamId} /></Suspense>}
+      {isStaff && isGameType && teamId && !isPast && <Suspense fallback={null}><AcademyActivationPanel eventId={event.id} teamId={teamId} /></Suspense>}
       {dutyCount > 0 && <CollapsibleSection title="Volunteers" sectionKey="duties" defaultOpen={false} count={`${dutyCount}`}><EventDutiesTab eventId={event.id} /></CollapsibleSection>}
       {(event.notes || event.coach_notes) && <CollapsibleSection title="Notes" sectionKey="notes" defaultOpen={false}><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></CollapsibleSection>}
       <CollapsibleSection title="Comments" sectionKey="comments" defaultOpen={false}><EventCommentsTab eventId={event.id} /></CollapsibleSection>
       {isStaff && <EventBriefingHistory event={event} />}
 
-      {isStaff && <EventCancelActions event={event} onStatusChange={(status) => { patchEvent({ status }); refetch(); }} />}
+      {isStaff && !isPast && <EventCancelActions event={event} onStatusChange={(status) => { patchEvent({ status }); refetch(); }} />}
 
       {editing && <Suspense fallback={null}><CreateActivityWizard orgId={orgId} editEvent={event} editMode={editMode} onClose={() => setEditing(false)} onCreated={onWizardCreated} /></Suspense>}
       {pendingDiff && <Suspense fallback={null}><ScheduleChangeComposer event={event} diff={pendingDiff} onClose={() => setPendingDiff(null)} onDone={refetch} /></Suspense>}
