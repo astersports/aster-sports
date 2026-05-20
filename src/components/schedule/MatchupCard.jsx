@@ -6,7 +6,14 @@ export default function MatchupCard({ event, gameResult }) {
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--em-neutral)';
   const teamName = team?.name || '';
+  // 2026-05-20 — tournament-anchor events (no bracket released yet) have
+  // no opponent. Rendering "vs TBD" looked like a regular game admins
+  // forgot to fill out. When event is a tournament with null opponent,
+  // surface the tournament name instead and drop the placeholder 8:00 AM.
+  const isTournamentAnchor = event.event_type === 'tournament'
+    && !event.opponent_name && !event.opponent;
   const opponent = event.opponent_name || event.opponent || 'TBD';
+  const tournamentLabel = event.tournament_name || 'Tournament';
   const isAway = event.home_away === 'away';
   const isCancelled = event.status === 'cancelled';
   const isPast = new Date(event.start_at) < new Date();
@@ -67,8 +74,9 @@ export default function MatchupCard({ event, gameResult }) {
           // EventCard typography hierarchy (time is the primary signal).
           // "vs"/"@" moved to the opponent prefix (also matches EventCard
           // pattern: time is bare, opponent carries the home/away mark).
+          // Tournament anchors suppress the placeholder time entirely.
           <div style={{ width: 80, flexShrink: 0, textAlign: 'center' }}>
-            {!isPast && (
+            {!isPast && !isTournamentAnchor && (
               <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)', whiteSpace: 'nowrap' }}>
                 {formatTime(event.start_at)}
               </span>
@@ -82,9 +90,14 @@ export default function MatchupCard({ event, gameResult }) {
             upcoming cards despite PR #351 matching the score size. */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>
-            {isPast ? opponent : `${isAway ? '@ ' : 'vs '}${opponent}`}
+            {isTournamentAnchor ? tournamentLabel : (isPast ? opponent : `${isAway ? '@ ' : 'vs '}${opponent}`)}
           </span>
-          {isPast && (
+          {isTournamentAnchor && (
+            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>
+              Schedule pending
+            </span>
+          )}
+          {!isTournamentAnchor && isPast && (
             <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>
               {new Date(event.start_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}
             </span>
