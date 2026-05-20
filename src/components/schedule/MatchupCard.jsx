@@ -75,14 +75,19 @@ export default function MatchupCard({ event, gameResult }) {
             )}
           </div>
         )}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Right column inlines opponent + date on a single line in
+            the past state so the result row height matches the
+            upcoming row height. Frank-reported 2026-05-20: 2-line
+            opponent column made result cards visibly taller than
+            upcoming cards despite PR #351 matching the score size. */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>
             {isPast ? opponent : `${isAway ? '@ ' : 'vs '}${opponent}`}
           </span>
           {isPast && (
-            <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 1 }}>
+            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>
               {new Date(event.start_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}
-            </div>
+            </span>
           )}
         </div>
       </div>
