@@ -138,15 +138,19 @@ chat's L99 ordering.
 - Drift-hedge test per #43: assert bell badge behavior consistent across all 3 role headers
 
 ### Cluster 5 — Coach Home MY TEAMS source divergence
-- Status: **OPEN**, root cause validated, fix shape clear
+- Status: **RESOLVED** via PR #239 (2026-05-18)
 - Severity: HIGH
-- CC code-validated:
-  - `CoachHomePage.jsx:47-51` builds `myTeams` from direct `team_staff` query — no records data
-  - `ParentHomePage.jsx:124` passes `byTeamId={recordsByTeam}` from `useOrgTeamRecords(orgId)` to same downstream component
-  - Both use `ParentHomeTeamCard`; one passes records, one doesn't
-- Resolution: add `useOrgTeamRecords` to CoachHomePage + thread records prop through (~10-15 min)
-- Drift-hedge test per #43: assert MY TEAMS panel renders matching records across CoachHomePage + ParentHomePage + TeamsPage for same fixture
-- Anticipated PR: #239 (tonight per L99 routing lock)
+- Root cause (CC code-validated):
+  - `CoachHomePage.jsx:47-51` built `myTeams` from direct `team_staff` query — no records data
+  - `ParentHomePage.jsx:124` passed `byTeamId={recordsByTeam}` from `useOrgTeamRecords(orgId)` to same downstream component
+  - Both used `ParentHomeTeamCard`; one passed records, one didn't
+- PR #239 resolution:
+  - Added `useOrgTeamRecords(orgId)` to `CoachHomePage.jsx:35` (cobranching ParentHomePage's pattern)
+  - Threaded `summary={recordsByTeam[t.id]}` + `loading={recordsLoading}` to `ParentHomeTeamCard` at `:143-144`
+  - Cross-surface invariant test landed at `src/components/home/__tests__/myTeamsCrossSurfaceInvariant.test.jsx` (anti-pattern #43)
+  - Production cross-check confirmed 35 published games aggregate correctly across all 5 teams (see §15 Layer 4 entry for PR #239)
+- **Anti-pattern #45 catch (registered 2026-05-20 morning):** PR #239's ledger update covered §1 SHIPPED row and the §15 Layer 4 verification table, but this §2 entry stayed stale ("Status: OPEN, Anticipated PR: #239 (tonight)") for two days post-merge. The §4.P Tuesday session-contract pre-flight surfaced the staleness when CC went to execute "Move 2 = Cluster 5 closure" on what turned out to be already-closed work. Both Frank's pressure-test letter Monday night ("root cause pre-validated in ledger lines 137-144, fix is mechanical") and CC's recap ("1 OPEN MEDIUM (Cluster 5)") were operating off this stale entry. The trap that anti-pattern #45 catches in real time on session 1 of the post-#45-registration window. Reinforces the discipline: planning-doc updates ship as a coordinated set across ALL surfaces (§1 SHIPPED + §2 ACTIVE BUGS + §15 verification + helper-extraction backlog if relevant) — not selectively.
+- **Anti-pattern #44 corollary:** CC should have traced `git log -- src/pages/CoachHomePage.jsx` before confirming OPEN status last night. Stopping at the §2 entry was the gate-check failure. Trace-the-full-pipeline applies to ledger reads too, not just regression triage.
 
 ### Cluster 6 — Admin Home cache/query race (A2 + A3)
 - Status: **A3 RESOLVED via PR #241; A2 OPEN**
