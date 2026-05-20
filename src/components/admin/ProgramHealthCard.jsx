@@ -6,10 +6,10 @@ import Label from '../shared/Label';
 //
 // v1 (PR #307): Season progress + Payment collection.
 // v2 (PR #311): adds RSVP rate, Attendance, Registration pipeline.
-//
-// Attendance gracefully renders '—' when no check-ins recorded
-// yet — better than calculating 0% from null and showing a
-// misleading metric.
+// v3 (2026-05-20, Frank-reported): Attendance row replaced by
+//   "Active teams" — attendance had been rendering '—' because no
+//   check-ins have been recorded; a static team count is a more
+//   honest program-health signal at this org's scale.
 //
 // Per anti-pattern #42: payment slice flows through
 // useProgramHealthMetrics → useSeasonFinancials (same source as
@@ -40,7 +40,7 @@ function MetricRow({ label, value }) {
 
 export default function ProgramHealthCard({ season, nowMs }) {
   const { orgId } = useAuth();
-  const { paymentPct, rsvpPct, attendancePct, newRegistrationsCount } = useProgramHealthMetrics(orgId, season?.id);
+  const { paymentPct, rsvpPct, activeTeamsCount, newRegistrationsCount } = useProgramHealthMetrics(orgId, season?.id);
   if (!season) return null;
   const progress = seasonProgress(season, nowMs);
   if (!progress) return null;
@@ -82,7 +82,7 @@ export default function ProgramHealthCard({ season, nowMs }) {
         </div>
         <MetricRow label="Payment collection" value={`${paymentPct}%`} />
         <MetricRow label="RSVP rate" value={rsvpPct === null ? '—' : `${rsvpPct}%`} />
-        <MetricRow label="Attendance" value={attendancePct === null ? '—' : `${attendancePct}%`} />
+        <MetricRow label="Active teams" value={activeTeamsCount === 1 ? '1 team' : `${activeTeamsCount} teams`} />
         <MetricRow label="Registration pipeline" value={newRegistrationsCount === 1 ? '1 new this week' : `${newRegistrationsCount} new this week`} />
       </div>
     </section>
