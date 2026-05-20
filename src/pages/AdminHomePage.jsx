@@ -54,7 +54,7 @@ export default function AdminHomePage() {
     actionLoading: adminActionLoading,
     pendingLanes,
     pendingLanesLoading,
-  } = useAdminHomeSignals(activities, orgId);
+  } = useAdminHomeSignals(activities, orgId, activeSeason?.id);
 
   // overflow-x-hidden + max-w-full on the page wrapper is defense in
   // depth — even if a child component escapes its box, nothing drags

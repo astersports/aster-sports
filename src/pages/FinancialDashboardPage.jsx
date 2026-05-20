@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Upload } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { useSeasonFinancials } from '../hooks/useSeasonFinancials';
 import FamilyBalanceList from '../components/admin/FamilyBalanceList';
 import RecordPaymentForm from '../components/admin/RecordPaymentForm';
 import CoachPayoutsSection from '../components/admin/CoachPayoutsSection';
@@ -12,9 +13,7 @@ export default function FinancialDashboardPage() {
   const navigate = useNavigate();
   const [seasons, setSeasons] = useState([]);
   const [selectedSeasonId, setSelectedSeasonId] = useState(null);
-  const [data, setData] = useState(null);
   const [payingAccount, setPayingAccount] = useState(null);
-  const fetchIdRef = useRef(0);
 
   useEffect(() => {
     if (!orgId) return;
@@ -28,45 +27,10 @@ export default function FinancialDashboardPage() {
     || seasons[0]?.id
     || null;
 
-  const refetch = useCallback(() => {
-    if (!orgId || !seasonId) return;
-    const id = ++fetchIdRef.current;
-    Promise.all([
-      supabase.from('financial_accounts').select('*, guardians(first_name, last_name, user_id)').eq('org_id', orgId).eq('season_id', seasonId),
-      supabase.from('financial_transactions').select('*').eq('org_id', orgId).order('occurred_at', { ascending: false }),
-    ]).then(([aRes, tRes]) => {
-      if (id !== fetchIdRef.current) return;
-      const accts = aRes.data || [];
-      const acctIds = new Set(accts.map((a) => a.id));
-      setData({ accounts: accts, transactions: (tRes.data || []).filter((t) => acctIds.has(t.account_id)) });
-    });
-  }, [orgId, seasonId]);
-
-  useEffect(() => { refetch(); }, [refetch]);
-
-  // Wave 4.8 hygiene PR #126 — stabilize derived state so the downstream
-  // useMemo at `stats` actually memoizes. Without the wrapper memos,
-  // `data?.accounts || []` returned a fresh empty array on every render
-  // during the null-data phase, defeating the `stats` memo and forcing
-  // its (heavy: 2 forEach loops over accounts + transactions) computation
-  // to recompute on every render of this page.
-  const accounts = useMemo(() => data?.accounts || [], [data]);
-  const transactions = useMemo(() => data?.transactions || [], [data]);
-  const loading = !data;
-
-  const stats = useMemo(() => {
-    let billed = 0, paid = 0, fees = 0;
-    const balances = {};
-    accounts.forEach((a) => { billed += a.season_fee_cents - a.discount_cents; balances[a.id] = a.season_fee_cents - a.discount_cents; });
-    transactions.forEach((t) => {
-      if (t.transaction_type === 'payment') { paid += t.amount_cents; fees += (t.processing_fee_cents || 0); balances[t.account_id] = (balances[t.account_id] || 0) - t.amount_cents; }
-      if (t.transaction_type === 'refund') { paid -= t.amount_cents; balances[t.account_id] = (balances[t.account_id] || 0) + t.amount_cents; }
-    });
-    const outstanding = billed - paid;
-    const net = paid - fees;
-    const familiesOwing = accounts.filter((a) => (balances[a.id] || 0) > 0).length;
-    return { billed, paid, outstanding, net, fees, familiesOwing, pct: billed > 0 ? Math.round((paid / billed) * 100) : 0 };
-  }, [accounts, transactions]);
+  // Per anti-pattern #42 — single source of truth for financial
+  // state across this page and admin-home's payment-overdue lane.
+  // Previously inline at :57-69 here; extracted PR #303.
+  const { accounts, transactions, stats, loading, refetch } = useSeasonFinancials(orgId, seasonId);
 
   const fmt = (cents) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   const currentSeason = seasons.find((s) => s.id === seasonId);
