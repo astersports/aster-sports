@@ -861,14 +861,54 @@ Layer 3 scope confirmed locked Sunday 2026-05-18 (Option α): sequential `recent
 - §4.D Sprint G aggregate signal SHIPPED end-to-end (parent UI was
   already shipped pre-Wed; coach + admin widgets shipped today)
 
-**Anti-pattern #48 status — promotion data points:**
-- Tuesday: contract held but session atypically short → HOLD CANDIDATE
-- Wednesday: contract holding at 74% PRs / 49% time / well before
-  midnight cap. STRONG data point, BUT pause-after-each-Move was
-  removed mid-session (Frank explicit). Promotion would be on the
-  weaker claim ("budget numbers held as soft ceilings"), not the
-  original test ("pause-after-each-Move under load"). Honest
-  framing left for Frank's review before promotion.
+**Anti-pattern #48 status — Framing C resolution (Frank-locked Wednesday eve):**
+
+CC's mid-session checkpoint framed promotion as a binary (promote /
+hold candidate). Frank's end-of-Wed letter introduced Framing C —
+split the candidate into two distinct rules so each can be tested
+honestly against the data that actually exists.
+
+**Anti-pattern #48 (CANDIDATE, ORIGINAL FORM) — STILL UNTESTED.**
+Claim: pre-set exit conditions need an external commitment mechanism
+to fire reliably; internal intention does not produce stops.
+Status: not testable in the Wednesday session because Frank explicitly
+removed the pause-after-each-Move structural commitment mid-session.
+Re-test required: a future under-load session WITH the
+pause-after-each discipline intact + a real cap-approach scenario.
+Risk if never tested: stays candidate forever — accept that as the
+honest state rather than promote on weaker data.
+
+**Anti-pattern #48' (CANDIDATE, MODIFIED FORM) — WEDNESDAY DATA.**
+Claim: stated maximums written to ledger at session-start, with
+self-monitoring against caps during execution, produces stops in
+advance of cap-hit when work is engaging.
+Tuesday data: 2 PRs / 33min / well before midnight cap → atypically
+short, doesn't stress budget-holding-under-load. Weak data point.
+Wednesday data: 39 PRs / ~5h / well under all 3 caps under sustained
+under-load execution. Strong data point on the soft-ceiling claim.
+Promotion criteria: holds across ONE more under-load session
+(matches the test design — empirical confirmation across multiple
+sessions before durable rule).
+
+**Why split rather than promote either form alone:**
+- Promoting original #48 over-claims (the data tests a weaker thing).
+- Holding everything as candidate under-claims (the soft-ceiling
+  data is real and useful; encode it).
+- Modifying original #48 retroactively risks losing the original
+  insight.
+- Framing C respects the data without overclaiming what either form
+  was tested for. Captured durably; reviewable across sessions.
+
+**Generalization status note for anti-pattern #44 (CLAUDE.md §11 #44):**
+Four distinct work-class applications across three sessions:
+  - PR #241 (Sunday)      regression triage at gate vs upstream
+  - PR #260 (Monday)      doc claims vs production evidence
+  - PR #277 (Monday)      perf root-cause validation
+  - PR #330 (Wednesday)   audit-output verification (recursive)
+The principle is generalized — not situational. Worth registering
+inline on the #44 entry in CLAUDE.md when next that section is
+touched. Not promoted via this PR (CLAUDE.md edit is its own
+discipline; this is a ledger note flagging the durable observation).
 
 **Next-session opener — clean read state:**
 - §2 ACTIVE BUGS: 2 Frank-gated items only
@@ -880,10 +920,16 @@ Layer 3 scope confirmed locked Sunday 2026-05-18 (Option α): sequential `recent
   over-fetch) deferred as perf-only
 - V-23 iCal subscription URL: PARTIAL (download yes, subscribe no);
   deferred as polish-tier
-- Anti-pattern #48: pending Frank's promotion decision
+- Anti-pattern #48: split via Framing C per Wednesday-eve letter.
+  #48 (original) stays candidate, untested. #48' (modified, soft-
+  ceiling) stays candidate, awaits one more under-load session.
 
 Next-session candidate moves (no priority assigned):
-- Anti-pattern #48 promotion decision + CLAUDE.md §11 entry
+- Anti-pattern #48' re-test on a future under-load session (then
+  promote if holds). Anti-pattern #48 (original) re-test requires
+  reinstating pause-after-each discipline first.
+- Anti-pattern #44 generalization note inline on CLAUDE.md §11 #44
+  (four-class evidence: PRs #241/#260/#277/#330)
 - Sprint G v2 — interactive CTAs (broadcast, suggest match, etc.)
 - Sprint G v2 — arrival/return split
 - iCal subscription URL feature build
