@@ -1,19 +1,20 @@
+import { useAuth } from '../../context/AuthContext';
+import { useProgramHealthMetrics } from '../../hooks/useProgramHealthMetrics';
 import Label from '../shared/Label';
 
-// HOME_DESIGN_SPEC §3.1.5 — admin program health card. v1 metrics:
-//   - Season progress (Week X of Y + progress bar)
-//   - Payment collection % (from useSeasonFinancials.stats.pct)
+// HOME_DESIGN_SPEC §3.1.5 — admin program health card.
 //
-// Deferred to follow-ups (each needs new data wiring):
-//   - Attendance % (check-ins / arrivals workflow not fully wired)
-//   - RSVP rate (different aggregation than payment collection)
-//   - Registration pipeline (new registrations count)
+// v1 (PR #307): Season progress + Payment collection.
+// v2 (PR #311): adds RSVP rate, Attendance, Registration pipeline.
 //
+// Attendance gracefully renders '—' when no check-ins recorded
+// yet — better than calculating 0% from null and showing a
+// misleading metric.
+//
+// Per anti-pattern #42: payment slice flows through
+// useProgramHealthMetrics → useSeasonFinancials (same source as
+// KPI grid + admin home lane + parent reminder + financial dashboard).
 // Hide entirely when no active season.
-//
-// Per anti-pattern #42: receives pct as prop from useAdminStats's
-// extended return — single useSeasonFinancials call across admin
-// home, not a parallel fetch from inside this component.
 
 function seasonProgress(season, nowMs) {
   if (!season?.start_date || !season?.end_date) return null;
@@ -23,14 +24,23 @@ function seasonProgress(season, nowMs) {
   const totalMs = end - start;
   const elapsedMs = Math.max(0, Math.min(nowMs - start, totalMs));
   const pct = Math.round((elapsedMs / totalMs) * 100);
-  // Weeks: integer division, both numerator and denominator. Cap
-  // current week at total weeks (season can run past end_date).
   const totalWeeks = Math.max(1, Math.ceil(totalMs / (7 * 24 * 60 * 60 * 1000)));
   const currentWeek = Math.min(totalWeeks, Math.floor(elapsedMs / (7 * 24 * 60 * 60 * 1000)) + 1);
   return { pct, currentWeek, totalWeeks };
 }
 
-export default function ProgramHealthCard({ season, paymentPct, nowMs }) {
+function MetricRow({ label, value }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--em-text-primary)', marginTop: 4 }}>
+      <span>{label}</span>
+      <span style={{ fontWeight: 600 }}>{value}</span>
+    </div>
+  );
+}
+
+export default function ProgramHealthCard({ season, nowMs }) {
+  const { orgId } = useAuth();
+  const { paymentPct, rsvpPct, attendancePct, newRegistrationsCount } = useProgramHealthMetrics(orgId, season?.id);
   if (!season) return null;
   const progress = seasonProgress(season, nowMs);
   if (!progress) return null;
@@ -70,10 +80,10 @@ export default function ProgramHealthCard({ season, paymentPct, nowMs }) {
             }}
           />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--em-text-primary)' }}>
-          <span>Payment collection</span>
-          <span style={{ fontWeight: 600 }}>{paymentPct}%</span>
-        </div>
+        <MetricRow label="Payment collection" value={`${paymentPct}%`} />
+        <MetricRow label="RSVP rate" value={rsvpPct === null ? '—' : `${rsvpPct}%`} />
+        <MetricRow label="Attendance" value={attendancePct === null ? '—' : `${attendancePct}%`} />
+        <MetricRow label="Registration pipeline" value={newRegistrationsCount === 1 ? '1 new this week' : `${newRegistrationsCount} new this week`} />
       </div>
     </section>
   );
