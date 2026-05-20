@@ -22,6 +22,7 @@ import AlertZone from '../components/alerts/AlertZone';
 import ActionZone from '../components/home/ActionZone';
 import CoachRosterSnapshot from '../components/coach/CoachRosterSnapshot';
 import Label from '../components/shared/Label';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import CoachMessageBlock from '../components/home/CoachMessageBlock';
 import CoachHomeQuickActions from '../components/home/CoachHomeQuickActions';
 import UpcomingPrepCard from '../components/home/UpcomingPrepCard';
@@ -66,6 +67,13 @@ export default function CoachHomePage() {
   // Next event across all coached teams. Pulse-glow wrapper draws
   // the eye to the upcoming game per Q4 highlight #1.
   const nextEvent = thisWeek[0];
+
+  // Top-level loading gate mirrors ParentHomePage:84 (PR #339). Without
+  // this, coach home rendered its shell immediately and cards populated
+  // independently as each fetch resolved — visible to Frank-on-mobile
+  // as "old screens load first." Asymmetric vs parent home, which had
+  // the gate since Sprint B. Symmetry restored.
+  if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
     <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
