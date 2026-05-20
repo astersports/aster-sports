@@ -19,7 +19,9 @@ import PendingQueuesLanes from '../components/home/PendingQueuesLanes';
 import KpiGrid from '../components/admin/KpiGrid';
 import ProgramHealthCard from '../components/admin/ProgramHealthCard';
 import RecentActivityFeed from '../components/admin/RecentActivityFeed';
+import RidesTodayCard from '../components/admin/RidesTodayCard';
 import { useRecentActivity } from '../hooks/useRecentActivity';
+import { useRidesTodaySummary } from '../hooks/useRidesTodaySummary';
 import QuickActions from '../components/admin/QuickActions';
 import AdminManageLinks from '../components/admin/AdminManageLinks';
 import ActiveSeasonCard from '../components/admin/ActiveSeasonCard';
@@ -61,6 +63,7 @@ export default function AdminHomePage() {
     pendingLanesLoading,
   } = useAdminHomeSignals(activities, orgId, activeSeason?.id);
   const { items: recentActivityItems, loading: recentActivityLoading } = useRecentActivity(orgId, activeSeason?.id);
+  const ridesSummary = useRidesTodaySummary(orgId, nowMs);
 
   // overflow-x-hidden + max-w-full on the page wrapper is defense in
   // depth — even if a child component escapes its box, nothing drags
@@ -80,6 +83,8 @@ export default function AdminHomePage() {
       </section>
 
       <ProgramHealthCard season={activeSeason} nowMs={nowMs} />
+
+      <RidesTodayCard summary={ridesSummary} loading={ridesSummary.loading} />
 
       <RecentActivityFeed items={recentActivityItems} loading={recentActivityLoading} nowMs={nowMs} />
 
