@@ -17,7 +17,7 @@ import EventDutiesTab from '../components/event/EventDutiesTab';
 import EventCommentsTab from '../components/event/EventCommentsTab';
 import EventRidesTab from '../components/event/EventRidesTab';
 import EventNotes from '../components/event/EventNotes';
-import EventCancelActions from '../components/event/EventCancelActions';
+import { useToast } from '../context/useToast';
 import EventRosterLockSection from '../components/event/EventRosterLockSection';
 import AcademyCallupPicker from '../components/event/AcademyCallupPicker';
 import { useEventRosterLock } from '../hooks/useEventRosterLock';
@@ -36,6 +36,7 @@ export default function EventDetailPage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const { orgId, role } = useAuth();
+  const { showToast } = useToast();
   const { event, loading: eventLoading, refetch, patchEvent } = useEventDetail(id, location.state?.event);
   const teamId = event?.team_id || null;
   const { rsvps, roster, loading: rsvpLoading, setRsvp, saveNote, refetch: refetchRsvps } = useRsvps(id, teamId);
@@ -90,10 +91,15 @@ export default function EventDetailPage() {
     }
   };
   const onWizardCreated = (diff) => { refetch(); if (diff) setPendingDiff(diff); };
+  const setEventStatus = async (status) => {
+    const { error } = await supabase.from('events').update({ status }).eq('id', event.id);
+    if (error) { showToast(status === 'cancelled' ? "Couldn't cancel. Try again?" : "Couldn't reinstate. Try again?", 'error'); return; }
+    patchEvent({ status }); refetch();
+  };
 
   return (
     <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
-      <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} />
+      <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} onCancel={() => setEventStatus('cancelled')} onReinstate={() => setEventStatus('scheduled')} />
       <EventDetailHero event={event} isStaff={isStaff} isPast={isPast} rsvps={rsvps} roster={roster} onEnterScore={() => setShowScoreSheet(true)} onLockRoster={() => document.querySelector('[data-section="lock-roster"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} onNotify={() => window.location.assign(`/admin/briefings/compose?anchor=event&id=${event.id}`)} onRsvpChange={refetchRsvps} />
       {isStaff && <GameDayMode event={event} isStaff={isStaff} isGameType={isGameType} />}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
@@ -120,7 +126,6 @@ export default function EventDetailPage() {
       <CollapsibleSection title="Comments" sectionKey="comments" defaultOpen={false}><EventCommentsTab eventId={event.id} /></CollapsibleSection>
       {isStaff && <CollapsibleSection title="Briefings" sectionKey="briefings" defaultOpen={false}><EventBriefingHistory event={event} /></CollapsibleSection>}
 
-      {isStaff && !isPast && <EventCancelActions event={event} onStatusChange={(status) => { patchEvent({ status }); refetch(); }} />}
 
       {editing && <Suspense fallback={null}><CreateActivityWizard orgId={orgId} editEvent={event} editMode={editMode} onClose={() => setEditing(false)} onCreated={onWizardCreated} /></Suspense>}
       {pendingDiff && <Suspense fallback={null}><ScheduleChangeComposer event={event} diff={pendingDiff} onClose={() => setPendingDiff(null)} onDone={refetch} /></Suspense>}

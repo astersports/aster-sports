@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Ban, Pencil, Trash2, UserCheck } from 'lucide-react';
+import { ArrowLeft, Ban, MoreHorizontal, Pencil, Trash2, UserCheck } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
-import ComposeAnchorCta from '../briefings/ComposeAnchorCta';
 import SendBriefingButton from '../briefings/SendBriefingButton';
+import BottomSheet from '../shared/BottomSheet';
 
 function eventBriefingKinds(event) {
   const kinds = ['schedule_change', 'announcement', 'custom_message'];
@@ -29,59 +29,48 @@ function buildSummary({ event, team, typeLabel }) {
   return parts.join(' · ');
 }
 
-export default function EventDetailHeader({ event, team, isStaff, onEdit, onDelete, onCheckin }) {
+const sheetItemBtn = { display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 56, padding: '0 16px', borderRadius: 10, border: 'none', backgroundColor: 'transparent', fontSize: 15, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' };
+
+export default function EventDetailHeader({ event, team, isStaff, onEdit, onDelete, onCheckin, onCancel, onReinstate }) {
   const navigate = useNavigate();
+  const [overflowOpen, setOverflowOpen] = useState(false);
   const teamColor = team?.team_color || 'var(--em-text-tertiary)';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
   const summary = buildSummary({ event, team, typeLabel });
   const briefingKinds = useMemo(() => eventBriefingKinds(event), [event]);
-  const isPastGame = event.event_type === 'game'
-    && !!event.start_at && new Date(event.start_at) < new Date()
-    && event.status !== 'cancelled';
+  const isCancelled = event.status === 'cancelled';
+
+  // L99 PR C: Cancel/Reinstate + Delete moved into an overflow sheet.
+  // Cancel button used to float at page bottom (orange, full-width);
+  // delete used to sit as a standalone icon in the header row. Both
+  // are rare-and-destructive — overflow is the right home for both.
+  const handleOverflowItem = (fn) => () => { setOverflowOpen(false); fn?.(); };
 
   return (
-    <>
-      <div style={{ backgroundColor: teamColor, padding: '0 8px 16px 4px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button type="button" onClick={() => navigate(-1)} className="sf-press" aria-label="Go back" style={iconBtn}>
-            <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-inverse)" />
-          </button>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {isStaff && (
-              <button type="button" onClick={onCheckin} className="sf-press" aria-label="Take attendance" style={iconBtn}>
-                <UserCheck size={20} strokeWidth={1.75} color="var(--em-text-inverse)" />
-              </button>
-            )}
-            {isStaff && (
-              <>
-                <button type="button" onClick={onEdit} className="sf-press" aria-label="Edit event" style={iconBtn}>
-                  <Pencil size={20} strokeWidth={1.75} color="var(--em-text-inverse)" />
-                </button>
-                <SendBriefingButton anchorKind="event" anchorId={event.id} kindFilter={briefingKinds} variant="icon-only" iconColor="var(--em-text-inverse)" />
-                <button type="button" onClick={onDelete} className="sf-press" aria-label="Delete event" style={iconBtn}>
-                  <Trash2 size={20} strokeWidth={1.75} color="var(--em-text-inverse)" />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-        <div style={{ padding: '0 12px', marginTop: 4 }}>
-          <h1 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-inverse)', margin: 0, lineHeight: 1.3 }}>
-            {summary}
-          </h1>
+    <div style={{ backgroundColor: teamColor, padding: '0 8px 16px 4px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <button type="button" onClick={() => navigate(-1)} className="sf-press" aria-label="Go back" style={iconBtn}>
+          <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-inverse)" />
+        </button>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {isStaff && <button type="button" onClick={onCheckin} className="sf-press" aria-label="Take attendance" style={iconBtn}><UserCheck size={20} strokeWidth={1.75} color="var(--em-text-inverse)" /></button>}
+          {isStaff && <>
+            <button type="button" onClick={onEdit} className="sf-press" aria-label="Edit event" style={iconBtn}><Pencil size={20} strokeWidth={1.75} color="var(--em-text-inverse)" /></button>
+            <SendBriefingButton anchorKind="event" anchorId={event.id} kindFilter={briefingKinds} variant="icon-only" iconColor="var(--em-text-inverse)" />
+            <button type="button" onClick={() => setOverflowOpen(true)} className="sf-press" aria-label="More actions" style={iconBtn}><MoreHorizontal size={20} strokeWidth={1.75} color="var(--em-text-inverse)" /></button>
+          </>}
         </div>
       </div>
-      {isStaff && isPastGame && <ComposeAnchorCta anchorKind="event" anchor={event} kind="game_recap" />}
-      {event.status === 'cancelled' && (
-        <div style={{
-          backgroundColor: 'var(--em-danger-soft)', padding: '8px 16px',
-          display: 'flex', alignItems: 'center', gap: 8,
-          fontSize: 15, fontWeight: 500, color: 'var(--em-danger)',
-        }}>
-          <Ban size={16} strokeWidth={1.75} />
-          This event has been cancelled
+      <div style={{ padding: '0 12px', marginTop: 4 }}>
+        <h1 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-inverse)', margin: 0, lineHeight: 1.3 }}>{summary}</h1>
+      </div>
+      <BottomSheet open={overflowOpen} onClose={() => setOverflowOpen(false)} initialHeight="auto" expandedHeight="auto">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '8px 0 16px' }}>
+          {!isCancelled && onCancel && <button type="button" onClick={handleOverflowItem(onCancel)} className="sf-press" style={{ ...sheetItemBtn, color: 'var(--em-warning)' }}><Ban size={18} strokeWidth={1.75} />Cancel event</button>}
+          {isCancelled && onReinstate && <button type="button" onClick={handleOverflowItem(onReinstate)} className="sf-press" style={{ ...sheetItemBtn, color: 'var(--em-text-primary)' }}><Ban size={18} strokeWidth={1.75} />Reinstate event</button>}
+          {onDelete && <button type="button" onClick={handleOverflowItem(onDelete)} className="sf-press" style={{ ...sheetItemBtn, color: 'var(--em-danger)' }}><Trash2 size={18} strokeWidth={1.75} />Delete event</button>}
         </div>
-      )}
-    </>
+      </BottomSheet>
+    </div>
   );
 }
