@@ -29,11 +29,31 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PAGES_DIR = join(__dirname, '..');
+const SRC_DIR = join(__dirname, '..', '..');
 
 const HOMES = [
   { file: 'ParentHomePage.jsx', hook: 'useParentHomeSignals' },
   { file: 'CoachHomePage.jsx',  hook: 'useCoachHomeSignals'  },
   { file: 'AdminHomePage.jsx',  hook: 'useAdminHomeSignals'  },
+];
+
+// Cross-role home cards/widgets shipped through today's session arc
+// (Wednesday 2026-05-20). Pinning their line-count cap here prevents
+// silent growth past anti-pattern #11's threshold on any of the
+// signal-agnostic shells or the small role-specific cards.
+const HOME_COMPONENTS = [
+  'components/home/ActionZone.jsx',
+  'components/home/PendingQueuesLanes.jsx',
+  'components/home/UpcomingPrepCard.jsx',
+  'components/home/RegistrationReminderCard.jsx',
+  'components/home/CoachMessageBlock.jsx',
+  'components/home/CoachHomeQuickActions.jsx',
+  'components/home/LiveNowCard.jsx',
+  'components/home/TournamentWeekendBanner.jsx',
+  'components/home/RecognitionCard.jsx',
+  'components/admin/ProgramHealthCard.jsx',
+  'components/admin/RecentActivityFeed.jsx',
+  'components/admin/RidesTodayCard.jsx',
 ];
 
 const LINE_CAP = 150;
@@ -55,4 +75,14 @@ describe('home-page invariant audit', () => {
       });
     });
   }
+
+  describe('home-arc components stay under 150-line cap', () => {
+    for (const rel of HOME_COMPONENTS) {
+      const path = join(SRC_DIR, rel);
+      const lineCount = readFileSync(path, 'utf-8').split('\n').length;
+      it(`${rel.split('/').pop()} (${lineCount} lines) ≤ ${LINE_CAP}`, () => {
+        expect(lineCount).toBeLessThanOrEqual(LINE_CAP);
+      });
+    }
+  });
 });
