@@ -92,7 +92,7 @@ export default function TournamentFormSheet({ tournament, onClose }) {
   return (
     <FullScreenForm open={true} title={tournament ? 'Edit Tournament' : 'New Tournament'} onClose={onClose}>
       <div style={SECTION}>
-        <Input id="t-name" label="Name" type="text" value={form.name} onChange={(e) => patch({ name: e.target.value })} placeholder="ZG NY Metro Showdown" />
+        <Input id="t-name" label="Name" type="text" value={form.name} onChange={(e) => patch({ name: e.target.value })} placeholder="ZG NY Metro Showdown" required />
       </div>
       <div style={SECTION}>
         <label style={LABEL} htmlFor="t-circuit">Circuit</label>
@@ -102,14 +102,14 @@ export default function TournamentFormSheet({ tournament, onClose }) {
       </div>
       <div style={{ ...SECTION, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
-          <Input id="t-start" label="Start date" type="date" value={form.start_date} onChange={(e) => patch({ start_date: e.target.value })} />
+          <Input id="t-start" label="Start date" type="date" value={form.start_date} onChange={(e) => patch({ start_date: e.target.value })} required />
         </div>
         <div>
-          <Input id="t-end" label="End date" type="date" value={form.end_date} onChange={(e) => patch({ end_date: e.target.value })} />
+          <Input id="t-end" label="End date" type="date" value={form.end_date} onChange={(e) => patch({ end_date: e.target.value })} required />
         </div>
       </div>
       <div style={SECTION}>
-        <label style={LABEL}>Teams attending</label>
+        <label style={LABEL}>Teams attending<span style={{ color: 'var(--em-danger)', marginLeft: 4 }} aria-hidden="true">*</span></label>
         <TeamMultiSelect selectedIds={form.teamIds} onChange={(ids) => patch({ teamIds: ids })} />
       </div>
       <div style={SECTION}>

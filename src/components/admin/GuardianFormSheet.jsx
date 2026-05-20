@@ -57,7 +57,7 @@ function Body({ guardian, onSave }) {
   return (
     <div>
       <div className="mb-4">
-        <label htmlFor="guardian-first-name" style={label}>First name</label>
+        <label htmlFor="guardian-first-name" style={label}>First name<span style={{ color: 'var(--em-danger)', marginLeft: 4 }} aria-hidden="true">*</span></label>
         <Input
           id="guardian-first-name"
           value={firstName}
@@ -67,7 +67,7 @@ function Body({ guardian, onSave }) {
         />
       </div>
       <div className="mb-4">
-        <label htmlFor="guardian-last-name" style={label}>Last name</label>
+        <label htmlFor="guardian-last-name" style={label}>Last name<span style={{ color: 'var(--em-danger)', marginLeft: 4 }} aria-hidden="true">*</span></label>
         <Input
           id="guardian-last-name"
           value={lastName}

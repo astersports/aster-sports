@@ -2,11 +2,12 @@
 // TeamFormSheet and SeasonFormSheet don't each reinvent the same input
 // styles — everything that writes to --em-* tokens lives here.
 
-export function Field({ label, children }) {
+export function Field({ label, children, required }) {
   return (
     <div className="mb-3">
       <div style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginBottom: 6 }}>
         {label}
+        {required && <span style={{ color: 'var(--em-danger)', marginLeft: 4 }} aria-hidden="true">*</span>}
       </div>
       {children}
     </div>
@@ -38,9 +39,9 @@ export function Input({ value, onChange, placeholder, type = 'text' }) {
 // Radio-style chip row for single-value selectors (age group, gender,
 // competition type, day of week, etc.). `options` is an array of
 // { key, label }; the key is what gets persisted.
-export function ChipField({ label, options, value, onChange }) {
+export function ChipField({ label, options, value, onChange, required }) {
   return (
-    <Field label={label}>
+    <Field label={label} required={required}>
       <div className="flex flex-wrap gap-2">
         {options.map(({ key, label: optLabel }) => {
           const active = value === key;
