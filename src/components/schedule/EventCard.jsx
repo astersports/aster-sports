@@ -22,12 +22,10 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
   const isCancelled = event.status === 'cancelled';
   const isPast = event.end_at ? new Date(event.end_at) < new Date() : false;
   const isToday = new Date(event.start_at).toDateString() === new Date().toDateString();
+  const isTournamentDraft = event.event_type === 'tournament' && !event.opponent;
   const dimmed = isCancelled || isPast;
   const msUntil = new Date(event.start_at).getTime() - now;
-  // 2026-05-20 — cancelled events were showing live "in 7h 12m" countdown
-  // because showCountdown only checked time, not status. Frank-flagged on
-  // parent schedule view: the cancelled card looked half-cancelled.
-  const showCountdown = isNext && msUntil > 0 && msUntil < 24 * 60 * 60 * 1000 && !isCancelled;
+  const showCountdown = isNext && msUntil > 0 && msUntil < 24 * 60 * 60 * 1000 && !isCancelled; // PR #379: !isCancelled drops countdown chip on cancelled events.
   const { prefix: titlePrefix, body: titleBody } = formatEventTitle(event);
   const titleAria = `${titlePrefix}${titleBody}`;
   const mapsUrl = useMapsUrl(event.location_name || null);
@@ -60,6 +58,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: 1 }}>
                 <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)' }}>{formatTime(event.start_at)}</span>
                 <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>· {typeLabel}</span>
+                {isTournamentDraft && <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-secondary)', textTransform: 'uppercase' }}>Draft</span>}
                 {isToday && !showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-info-soft)', color: 'var(--em-info)' }}>Today</span>}
                 {gameResult?.published_at && <span style={{ fontSize: 13, fontWeight: 700, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)', marginLeft: 'auto' }}>{gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}</span>}
                 {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
@@ -93,6 +92,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
                 {showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>{formatCountdown(event.start_at)}</span>}
                 {isToday && !showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-info-soft)', color: 'var(--em-info)' }}>Today</span>}
                 <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>· {typeLabel}</span>
+                {isTournamentDraft && <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-secondary)', textTransform: 'uppercase' }}>Draft</span>}
                 {gameResult?.published_at && <span style={{ fontSize: 13, fontWeight: 700, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>{gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}</span>}
                 {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
               </div>
