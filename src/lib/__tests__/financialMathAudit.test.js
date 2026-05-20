@@ -4,11 +4,12 @@
 //
 // Origin (PRs #303 / #304 / #305 / #306): five separate implementations
 // of the same "billed/paid/outstanding" math had accumulated across
-// the codebase — FinancialDashboardPage:60-68, useAdminStats:82-111,
-// useAdminHomeSignals (via separate hook), useParentHomeSignals (via
-// separate hook), FamilyBalanceList:8-17. PRs #303-#306 consolidated
-// all five through useSeasonFinancials. This test prevents the next
-// developer from silently introducing a sixth.
+// the codebase — FinancialDashboardPage:60-68, the (later-removed)
+// admin stats hook :82-111, useAdminHomeSignals (via separate hook),
+// useParentHomeSignals (via separate hook), FamilyBalanceList:8-17.
+// PRs #303-#306 consolidated all five through useSeasonFinancials.
+// This test prevents the next developer from silently introducing a
+// sixth.
 //
 // Patterns flagged (any one fires):
 //   - `season_fee_cents - discount_cents` accumulation

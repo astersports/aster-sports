@@ -24,20 +24,40 @@ import { supabase } from '../lib/supabase';
 //
 // Per anti-pattern #36 (data + error destructured separately) +
 // #37 (org_id filter first on the chain).
+//
+// Stale-gate (§4.G Cluster 6.A2, 2026-05-20 PM): consumers gate on
+// `loading` but the microtask-deferred refetch left a one-render
+// window with prior-season `accounts` + `loading=false`. Same shape
+// as PR #241's useAlertEvaluator fix (anti-pattern #43). Fix: derive
+// `isStale` in render from a (orgId,seasonId,guardianId) key vs. the
+// last fetched key; visible `loading` is `loading || isStale`.
 
 const EMPTY_STATS = { billed: 0, paid: 0, fees: 0, net: 0, outstanding: 0, familiesOwing: 0, pct: 0 };
+
+function keyFor(orgId, seasonId, guardianId) {
+  if (!orgId || !seasonId) return null;
+  return `${orgId}:${seasonId}:${guardianId || ''}`;
+}
 
 export function useSeasonFinancials(orgId, seasonId, guardianId = null) {
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // fetchedKey lives in state (not a ref) so that comparing it to
+  // currentKey in render is lint-clean and reactive: the next render
+  // after a successful fetch picks up the new key and flips isStale.
+  const [fetchedKey, setFetchedKey] = useState(null);
   const fetchIdRef = useRef(0);
+
+  const currentKey = keyFor(orgId, seasonId, guardianId);
+  const isStale = currentKey !== null && fetchedKey !== currentKey;
 
   const refetch = useCallback(async () => {
     if (!orgId || !seasonId) {
       setAccounts([]);
       setTransactions([]);
+      setFetchedKey(null);
       setLoading(false);
       return;
     }
@@ -67,6 +87,7 @@ export function useSeasonFinancials(orgId, seasonId, guardianId = null) {
       setError(msg);
       setAccounts([]);
       setTransactions([]);
+      setFetchedKey(null);
       setLoading(false);
       return;
     }
@@ -75,6 +96,7 @@ export function useSeasonFinancials(orgId, seasonId, guardianId = null) {
     setError(null);
     setAccounts(accts);
     setTransactions((tRes.data || []).filter((t) => acctIds.has(t.account_id)));
+    setFetchedKey(keyFor(orgId, seasonId, guardianId));
     setLoading(false);
   }, [orgId, seasonId, guardianId]);
 
@@ -82,9 +104,10 @@ export function useSeasonFinancials(orgId, seasonId, guardianId = null) {
 
   // Single computation of per-account balance + aggregate stats.
   // Memoized off accounts + transactions so consumers don't recompute
-  // on every render (PR #126 stabilization concern).
+  // on every render (PR #126 stabilization concern). When isStale,
+  // short-circuit to EMPTY_STATS so consumers don't see prior-key data.
   const { balances, stats } = useMemo(() => {
-    if (!accounts.length) return { balances: {}, stats: EMPTY_STATS };
+    if (isStale || !accounts.length) return { balances: {}, stats: EMPTY_STATS };
     let billed = 0; let paid = 0; let fees = 0;
     const bal = {};
     accounts.forEach((a) => {
@@ -113,7 +136,15 @@ export function useSeasonFinancials(orgId, seasonId, guardianId = null) {
         pct: billed > 0 ? Math.round((paid / billed) * 100) : 0,
       },
     };
-  }, [accounts, transactions]);
+  }, [accounts, transactions, isStale]);
 
-  return { accounts, transactions, balances, stats, loading, error, refetch };
+  return {
+    accounts: isStale ? [] : accounts,
+    transactions: isStale ? [] : transactions,
+    balances,
+    stats,
+    loading: loading || isStale,
+    error,
+    refetch,
+  };
 }

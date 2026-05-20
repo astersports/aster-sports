@@ -495,9 +495,25 @@ Items <30 min each.
 - ~~**Cluster 7** admin greeting NY-pin~~ — **DONE** (PR #295,
   2026-05-19; §2 Cluster 7 marked RESOLVED). Same stale referent
   shape as Cluster 4 above.
-- **Cluster 6.A2** KpiGrid loading gate refinement (downgraded MEDIUM)
-- Async-ordering test replication for `useAdminStats`, `useHomeRole`,
-  `useAttendanceData`, `useActivities` per anti-pattern #44 (see §11)
+- ~~**Cluster 6.A2** KpiGrid loading gate refinement~~ — **DONE**
+  (2026-05-20 PM, current-surface follow-up). Original referent
+  ("KpiGrid" / "useAdminStats") was removed in a later refactor; PR
+  #327 fixed the now-defunct surface. The equivalent shape on the
+  current shared hook (`useSeasonFinancials`) carried the same
+  one-render stale gap on `seasonId` change — pre-fix, consumers saw
+  prior-season `accounts` with `loading=false` for one render before
+  the microtask-deferred refetch scheduled `setLoading(true)`. Fix:
+  `fetchedKeyRef` + `isStale` derived in render; visible `loading` is
+  `loading || isStale`. Same shape as PR #241 / anti-pattern #43.
+  Drift-hedge test: `useSeasonFinancials.loadingGate.test.js`. Stale
+  comments referencing the removed `useAdminStats` cleared from
+  `SeasonContext.jsx` + `financialMathAudit.test.js`.
+- Async-ordering test replication for `useHomeRole`,
+  `useAttendanceData`, `useActivities` per anti-pattern #44 (see §11).
+  Note: `useAdminStats` was removed by the same refactor that closed
+  Cluster 6.A2; the equivalent target on the current surface is
+  `useSeasonFinancials` (already covered by the loadingGate test
+  above) + `useProgramHealthMetrics`.
 - ~~**P6 RSVP copy normalization**~~ — **DONE** (PR #399, 2026-05-20 PM).
   Canonical: buttons → "Can't" everywhere; status/headers → "Not Going"
   everywhere. RsvpPlayerRow.BUTTONS was the lone outlier ("Not going");
