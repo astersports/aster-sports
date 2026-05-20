@@ -42,7 +42,10 @@ export default function RecordsPage() {
 
   const tournamentStats = useMemo(() => ({
     champs: tournaments.reduce((s, t) => s + (t.participants?.filter((p) => p.final_place === 'Champions').length || 0), 0),
-    nationalsQualified: tournaments.filter((t) => /nationals/i.test(t.name)).reduce((s, t) => s + (t.participants?.length || 0), 0),
+    // Broadened from /nationals/i to /national/i 2026-05-20 — Frank's
+    // tournament names are "Zero Gravity Boys/Girls National Finals"
+    // (singular "National"), so the plural-only regex matched zero.
+    nationalsQualified: tournaments.filter((t) => /national/i.test(t.name)).reduce((s, t) => s + (t.participants?.length || 0), 0),
   }), [tournaments]);
 
   return (
