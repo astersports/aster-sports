@@ -23,10 +23,9 @@ import { supabase as defaultSupabase } from './supabase';
 import { RESOLVER_REGISTRY } from './engine/resolvers/registry';
 import { renderSections, renderSectionsPlainText } from './engine/composer';
 import { applyUnsubscribeUrls } from './unsubscribeUrl';
+import { EMAIL_WRAPPER_CLOSE, EMAIL_WRAPPER_OPEN } from './emailWrapper';
 
 const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
-const HTML_OPEN = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">';
-const HTML_CLOSE = '</div>';
 
 export async function sendScheduleChange({ state, supabase: sb, now = new Date() }) {
   if (!state) throw new Error('sendScheduleChange: missing state.');
@@ -42,7 +41,7 @@ export async function sendScheduleChange({ state, supabase: sb, now = new Date()
 
   const sampleSlice = slices[0] || { kind: 'family', guardian_id: null, email: '', kid_first_names: [], team_id: context.event?.team_id };
   const { subject, content_sections } = entry.compose(context, sampleSlice, overrides);
-  const html = HTML_OPEN + renderSections(content_sections) + HTML_CLOSE;
+  const html = EMAIL_WRAPPER_OPEN + renderSections(content_sections) + EMAIL_WRAPPER_CLOSE;
   const plainText = renderSectionsPlainText(content_sections);
 
   const teamId = context.event?.team_id || null;

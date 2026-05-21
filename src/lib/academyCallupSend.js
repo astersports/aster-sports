@@ -24,9 +24,8 @@ import { NoRecipientsError, RESOLVER_REGISTRY } from './engine/resolvers/registr
 import { renderSections, renderSectionsPlainText } from './engine/composer';
 import { substituteCallupTokens } from './engine/substitution/callupTokens';
 import { queueComposedMessages } from './briefings/queueComposedMessages';
+import { EMAIL_WRAPPER_CLOSE, EMAIL_WRAPPER_OPEN } from './emailWrapper';
 
-const HTML_OPEN = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">';
-const HTML_CLOSE = '</div>';
 const CALLUP_HANDLER_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/callup-token-handler`;
 
 async function mintCallupToken(supabase, eventId, playerId, guardianId, response) {
@@ -68,7 +67,7 @@ export async function sendAcademyCallupNotice({ state, supabase, now = new Date(
 
   const orgId = context.org?.id;
   const teamId = context.receiving_team?.id || context.event?.team_id || null;
-  const sampleHtml = HTML_OPEN + renderSections(sampleComposed.content_sections) + HTML_CLOSE;
+  const sampleHtml = EMAIL_WRAPPER_OPEN + renderSections(sampleComposed.content_sections) + EMAIL_WRAPPER_CLOSE;
   const samplePlain = renderSectionsPlainText(sampleComposed.content_sections);
 
   const { data: msg, error: msgErr } = await supabase.from('comms_messages').insert({
