@@ -80,7 +80,7 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle, s
       </div>
 
       <TeamPulseScrollFade>
-        <div role="grid" aria-label="Team attendance pulse grid" style={{ display: 'grid', gridTemplateColumns: `140px repeat(${events.length}, 32px) 80px`, gap: 3, alignItems: 'center' }}>
+        <div role="grid" aria-label={`${pulseLabel} attendance grid — ${rangeLabel}, ${visibleGrid.length} ${visibleGrid.length === 1 ? 'player' : 'players'} across ${events.length} ${events.length === 1 ? 'event' : 'events'}`} style={{ display: 'grid', gridTemplateColumns: `140px repeat(${events.length}, 32px) 80px`, gap: 3, alignItems: 'center' }}>
           <div role="columnheader" style={{ fontSize: 10, fontWeight: 600, color: 'var(--em-text-tertiary)' }}>Player</div>
           {events.map((e) => (
             <div key={e.id} role="columnheader" style={{ fontSize: 9, color: 'var(--em-text-tertiary)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden' }}>
