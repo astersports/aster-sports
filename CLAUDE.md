@@ -428,7 +428,11 @@ to prevent drift.
 
 48. **PostgREST `.order(col, { foreignTable: 'X' })` applies to embedded subarrays, NOT to top-level parent rows.** Sorting parent result rows by a joined table's column requires JS-side sort after fetch. Two separate hooks (`useTeamGamesByTournament`, `useOrgTeamRecords`) shipped this bug class — both passed `foreignTable: 'events'` to `.order('start_at', ...)` expecting parent-row ordering and got DB insertion order instead. PR #349 and PR #358 both fixed by sorting in JS. Discipline forward: when you need parent rows ordered by a joined table's column, **always sort in JS after fetch** — the `.order` foreignTable hint is at best a no-op safety belt for parent-row sort. Pair with anti-pattern #36 corollary: when destructuring the response, include `error` and check it before trusting `data`. Registered 2026-05-20 PM as a corollary discipline (short entry, not a full anti-pattern per chat-side pressure-test recommendation).
 
-49. **Docs intended for claude.ai review must be pasted in chat as plain text, not referenced by repo path.** Claude.ai (the conversation surface where Frank reviews CC's planning/audit/spec/handoff artifacts) cannot read files from the GitHub repo through this conversation — it has no file-read tool, no GitHub MCP, no repo access. When CC writes a doc intended for claude.ai review (`docs/L99_*.txt`, `docs/AUDIT_*.md`, `docs/CC_SESSION_*.txt`, `docs/EMBER_PENDING_LEDGER.md` deltas, anti-pattern proposals, design specs, handoff recaps), the routine is: (a) create the doc, (b) commit + push + open PR per §12 + §15, (c) **paste the full contents in chat as plain text in the same turn**. Plain text — no triple-backtick code fence around the whole doc, since some surfaces render fenced blocks oddly or truncate. For docs > ~600 lines that exceed a single chat message, break into 2-3 sequential messages with a header line ("part 1 of 3"). Origin case 2026-05-21: tools-inventory paste and Teams-audit paste both required a follow-up "I can't read files from your repo, paste the contents" round-trip from claude.ai before review could happen — wasted a turn each time, and on the inventory the first attempted paste was code-fenced and didn't render. The failure mode is silent: CC writes the doc, says "doc is at docs/X.txt", session moves on, the review never happens because claude.ai is waiting for the paste and Frank is waiting for the review. Discipline forward: when the deliverable is "claude.ai reviews this," the doc-creation routine has THREE steps (write, push, paste), not two. Registered 2026-05-21 from tools-inventory + Teams-audit paste round-trips.
+49. **Full-paste discipline for planning/audit/spec/handoff docs.** When CC writes a planning, audit, spec, or handoff doc, the routine is: (a) create the doc, (b) commit + push + open PR per §12 + §15, (c) **paste FULL contents in chat in the same turn**. Plain text only. No triple-backtick wrap around the whole doc. Multi-message splits are allowed only when the doc exceeds single-message capacity. Splits ship in sequential messages within the same turn (not across turns). Header each split: "part N of M". If the doc exceeds reasonable multi-message capacity (>2000 lines), pause and ask claude.ai which sections need review. Never auto-summarize. Never defer the paste. The full doc IS the deliverable. The chat paste IS how claude.ai receives it. "I created the doc" without paste is not delivery. Origin cases: tools-inventory paste round-trip (2026-05-21, fenced and didn't render), Teams audit handoff (2026-05-21, summary-instead-of-full-paste). Widening rationale: original #49 covered "docs intended for claude.ai review" — the amendment widens to "any planning/audit/spec/handoff doc" because the operative question isn't intent but whether the doc will be reviewed at any point. Every audit/spec/handoff eventually needs review; pre-judging which ones need it now produces gaps.
+
+50. **L99 audit-cascade pattern (CANDIDATE — promote on third instance at any scope).** L99 redesigns require a deep-read addendum across the full mount tree before PR A scopes are locked. Initial-pass audits have ~40% miss rate per the Teams audit (2026-05-21) and platform audit (2026-05-21) data. Pattern: initial pass + deep-read addendum + anti-pattern catalog cross-reference + per-role wireframes + explicit out-of-scope list. Before any PR A code lands. Promotion criterion: third L99 redesign at any scope (scale-invariant pattern). The next L99 redesign (whatever surface) becomes the test. Pattern is "initial-pass audits miss material findings; deep-read addendum catches them" regardless of audit surface size.
+
+51. **Dead-feature mount retirement (CANDIDATE — promote on third NEW surface).** Surfaces that serve no current Frank workflow get retired, not gated by config. Engine Preview removal (PR #398, 2026-05-20) established the precedent. TeamPlayerStats removal (Teams PR C) is the next instance. The gate-by-config pattern produces confusing future-Frank ("why is this here?") and accumulates dead-code mass. Promotion criterion: third instance must be a NEW surface, not re-application of existing two. Candidates: LiveScorePage (if no org uses live-scoring), suggest-briefing-closer edge function (if no production flow consumes the suggestion), broadcast components (if half-built). If any of those retires in the next 30 days, #51 promotes to registered.
 
 ---
 
@@ -793,3 +797,35 @@ else. Avoid mid-page always-on chrome.
 When building a new detail page, the hero exists before the first
 collapsible. When refactoring an old one, find the floating chrome
 first.
+
+### 16.15 L99 redesign template
+
+L99 page/surface redesigns follow a canonical methodology before any
+PR A code lands:
+
+(a) Initial audit pass — file-by-file code-level read of the full
+    mount tree, screenshots if available, findings catalogued by
+    severity (P0/P1/P2/P3) with file:line references.
+
+(b) Deep-read addendum — second pass across the full mount tree
+    catching what the initial pass missed. Cascade pattern from
+    anti-pattern #50 candidate: ~40% miss rate without the addendum.
+
+(c) Anti-pattern catalog cross-reference — every finding tagged
+    against the registered anti-patterns in §11. Surfaces "patterns
+    we already have rules for" vs. "new pattern surfacing here."
+
+(d) Per-role wireframes — for any surface that renders different
+    UX per role (parent / coach / admin / view-as), wireframes
+    drawn for each variant before PR A scope locks.
+
+(e) Explicit out-of-scope list — what this redesign does NOT touch
+    so the deferred surface area is visible.
+
+All five elements ship in the audit doc before any PR A code lands.
+The audit doc is the canonical artifact; the PR sequence implements
+the locked decisions.
+
+Reference instances: L99 event detail redesign (PRs #392/#393/#394,
+2026-05-19), L99 Teams audit (PR #408, 2026-05-21), L99 platform-wide
+audit (PR #409, 2026-05-21).
