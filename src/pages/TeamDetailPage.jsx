@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -9,18 +9,18 @@ import { useRoster } from '../hooks/useRoster';
 import { useFilteredRoster } from '../hooks/useFilteredRoster';
 import { useAttendanceData } from '../hooks/useAttendanceData';
 import { useTeamRecords } from '../hooks/useTeamRecords';
-import { usePlayerSeasonStats } from '../hooks/usePlayerSeasonStats';
 import { useActivities } from '../hooks/useActivities';
 import { useNow } from '../hooks/useNow';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
+import { usePlayerSortOrder } from '../hooks/usePlayerSortOrder';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import CollapsibleSection from '../components/shared/CollapsibleSection';
 import TeamDetailHero from '../components/roster/TeamDetailHero';
+import TeamDetailOverflowMenu from '../components/roster/TeamDetailOverflowMenu';
 import TeamAchievements from '../components/roster/TeamAchievements';
 import RosterSection from '../components/roster/RosterSection';
 import TeamSwitcher from '../components/roster/TeamSwitcher';
-import TeamPlayerStats from '../components/roster/TeamPlayerStats';
 import TeamHeatmap from '../components/gameday/TeamHeatmap';
 import UpcomingEvents from '../components/roster/UpcomingEvents';
 
@@ -40,13 +40,28 @@ export default function TeamDetailPage() {
   const switcherPrograms = role === 'parent' ? programs.filter((p) => (myTeamIds || []).includes(p.id)) : programs;
   const { players, loading: rosterLoading, refetch: rosterRefetch } = useRoster(teamId);
   useRefetchOnVisible(rosterRefetch);
+  // 2026-05-21 (Teams PR C / Q13) — track last roster fetch for the
+  // RosterControls "Last updated · tap to refresh" affordance.
+  // Microtask wrap matches useTeamHeadCoach / useTeamRecords pattern —
+  // defers setState out of the effect body to satisfy
+  // react-hooks/set-state-in-effect.
+  const [lastFetchedAt, setLastFetchedAt] = useState(() => Date.now());
+  useEffect(() => {
+    if (rosterLoading) return undefined;
+    let cancelled = false;
+    Promise.resolve().then(() => { if (!cancelled) setLastFetchedAt(Date.now()); });
+    return () => { cancelled = true; };
+  }, [rosterLoading]);
+  const handleRefresh = useCallback(() => { rosterRefetch(); setLastFetchedAt(Date.now()); }, [rosterRefetch]);
   const { grid } = useAttendanceData(teamId);
   const { summary, loading: recordsLoading } = useTeamRecords(teamId);
-  const { stats: playerStats, loading: statsLoading } = usePlayerSeasonStats(teamId);
   const { activities } = useActivities();
   const now = useNow();
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('jersey');
+  // 2026-05-21 (Teams PR C / Q10) — shared sort state so RosterControls
+  // chip changes propagate into TeamHeatmap's player ordering. Default
+  // 'jersey' matches both surfaces' historical default.
+  const { sortOrder, setSortOrder } = usePlayerSortOrder('jersey');
   const [pulseRange, setPulseRange] = useState('season');
   const enrichedPlayers = useMemo(() => {
     if (!grid?.length) return players;
@@ -58,8 +73,16 @@ export default function TeamDetailPage() {
       return { ...p, attendance_pct: s.pct, goingCount: s.goingCount, maybeCount: s.maybeCount, declinedCount: s.declinedCount, noResponseCount: s.noResponseCount, totalPast: s.totalPast, streak: s.streak };
     });
   }, [players, grid]);
-  const sortedPlayers = useFilteredRoster(enrichedPlayers, search, sortBy);
+  const sortedPlayers = useFilteredRoster(enrichedPlayers, search, sortOrder);
   const team = programs.find((p) => p.id === teamId);
+  // 2026-05-21 (Teams PR C / Q14 (c)) — sync document.title for tab/back
+  // affordances + assistive tech. Restored on unmount.
+  useEffect(() => {
+    if (!team?.name) return;
+    const prev = document.title;
+    document.title = `${team.name} — Skyfire`;
+    return () => { document.title = prev; };
+  }, [team?.name]);
   const nextEvent = useMemo(() =>
     (activities || []).filter(a => a.team_id === teamId && a.status !== 'cancelled' && a.start_at)
       .sort((a, b) => new Date(a.start_at) - new Date(b.start_at))
@@ -72,17 +95,26 @@ export default function TeamDetailPage() {
   if (!team) return <div className="px-4 py-4"><EmptyState icon={Users} title="Team not found" description="This team doesn't exist or has been removed." /></div>;
 
   return (
-    <div style={{ padding: 16, minHeight: '100%', background: team?.team_color ? `linear-gradient(180deg, ${team.team_color}08 0%, transparent 200px)` : undefined }}>
-      <button type="button" onClick={() => navigate('/teams')} className="flex items-center sf-press mb-2" style={{ minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
-        <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
-      </button>
+    <div
+      aria-label={`Team detail — ${team?.name || ''}`}
+      style={{ padding: 16, minHeight: '100%', background: team?.team_color ? `linear-gradient(180deg, ${team.team_color}08 0%, transparent 200px)` : undefined }}>
+      {/* 2026-05-21 (Teams PR C / §9.3) — back chevron strip now carries the
+          overflow menu (⋯) on the right. Page-level destructive / staff
+          actions live there per §16.14 detail-page contract. */}
+      <div className="flex items-center justify-between mb-2">
+        <button type="button" onClick={() => navigate('/teams')} className="flex items-center sf-press" style={{ minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
+          <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
+        </button>
+        <TeamDetailOverflowMenu team={team} role={role} />
+      </div>
       {switcherPrograms.length > 1 && <TeamSwitcher programs={switcherPrograms} teamId={teamId} navigate={navigate} />}
-      {/* 2026-05-21 (Teams PR B / §16.14) — single hero replaces
-          TeamHeaderCard + MyChildSpotlight + CoachQuickActions +
-          the floating Send-briefing chip. MessageTeamFAB also retired
-          (action lives inside the hero now). Everything below the hero
-          is a collapsible section per the detail-page contract. */}
+      {/* PR B: hero replaces TeamHeaderCard+MyChildSpotlight+CoachQuickActions
+          per §16.14. PR C / V8: "Spring 2026" scope tag below the hero
+          surfaces season scope (data IS season-scoped). */}
       <TeamDetailHero team={team} role={role} summary={recordsLoading ? null : summary} myChild={myChild} myChildPlayer={myChildPlayer} nextEvent={nextEvent} />
+      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', padding: '0 4px 8px' }}>
+        Spring 2026
+      </div>
       <CollapsibleSection title="Upcoming" subtitle="next 7 days">
         <UpcomingEvents teamId={teamId} />
       </CollapsibleSection>
@@ -96,11 +128,20 @@ export default function TeamDetailPage() {
           <EmptyState icon={Users} title="Roster not posted yet" description="The coach is still setting up this team's roster. Check back soon." />
         )
       ) : (
-        <RosterSection team={team} sortedPlayers={sortedPlayers} search={search} setSearch={setSearch} sortBy={sortBy} setSortBy={setSortBy} />
+        <RosterSection team={team} sortedPlayers={sortedPlayers} search={search} setSearch={setSearch}
+          sortBy={sortOrder} setSortBy={setSortOrder}
+          lastFetchedAt={lastFetchedAt} onRefresh={handleRefresh} />
       )}
 
-      {!rosterLoading && players.length > 0 && <TeamHeatmap teamId={teamId} range={pulseRange} onRangeToggle={() => setPulseRange((r) => r === 'season' ? '4weeks' : 'season')} />}
-      {!rosterLoading && players.length > 0 && isStaff(role) && <TeamPlayerStats players={players} stats={playerStats} loading={statsLoading} />}
+      {/* PR C / Obs 1 / anti-pattern #51 — TeamPlayerStats mount REMOVED.
+          Live-scoring isn't a real Skyfire feature yet; mount was
+          permanent dead space. Second instance after Engine Preview
+          retirement (PR #398). */}
+      {!rosterLoading && players.length > 0 && (
+        <TeamHeatmap teamId={teamId} range={pulseRange}
+          onRangeToggle={() => setPulseRange((r) => r === 'season' ? '4weeks' : 'season')}
+          sortOrder={sortOrder} />
+      )}
       <TeamAchievements teamId={teamId} />
     </div>
   );

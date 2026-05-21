@@ -37,10 +37,16 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
         onTouchEnd={(e) => { e.currentTarget.style.backgroundColor = isMyChild ? '' : 'transparent'; }}
         style={{ padding: '10px 16px', minHeight: 56, transition: 'background-color 150ms ease-out' }}
       >
+        {/* 2026-05-21 (Teams PR C / V6 / Q11(a)) — futures-academy rows
+            get a dashed purple border on the avatar. Minimal visual,
+            non-academy rows render identically (no extra border) so the
+            treatment doesn't add noise to the common case. */}
         <div style={{
           width: 40, height: 40, borderRadius: '50%', backgroundColor: teamColor || 'var(--em-neutral)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 700, flexShrink: 0,
+          border: isAcademy ? '2px dashed var(--em-academy)' : undefined,
+          boxSizing: 'border-box',
         }}>{initial}</div>
         <div style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
           <div className="flex items-center gap-2">

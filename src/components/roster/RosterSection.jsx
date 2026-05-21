@@ -5,7 +5,7 @@ import CollapsibleSection from '../shared/CollapsibleSection';
 import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/permissions';
 
-export default function RosterSection({ team, sortedPlayers, search, setSearch, sortBy, setSortBy }) {
+export default function RosterSection({ team, sortedPlayers, search, setSearch, sortBy, setSortBy, lastFetchedAt, onRefresh }) {
   const { role, myChildren } = useAuth();
   const myPlayerIds = (myChildren || []).map((c) => c.playerId);
   // 2026-05-21 (Teams PR A / B3) — subtitle gives staff/parents a peek of
@@ -17,7 +17,8 @@ export default function RosterSection({ team, sortedPlayers, search, setSearch, 
   const subtitle = responded > 0 ? `${responded} responded last event` : null;
   return (
     <CollapsibleSection title="Roster" sectionKey="roster" count={`${sortedPlayers.length}`} subtitle={subtitle} defaultOpen={false}>
-      <RosterControls search={search} setSearch={setSearch} sortBy={sortBy} setSortBy={setSortBy} role={role} />
+      <RosterControls search={search} setSearch={setSearch} sortBy={sortBy} setSortBy={setSortBy} role={role}
+        lastFetchedAt={lastFetchedAt} onRefresh={onRefresh} />
       <div className="flex items-center justify-end" style={{ marginBottom: 8 }}>
         {isStaff(role) && <CopyRosterButton team={team} sortedPlayers={sortedPlayers} />}
       </div>

@@ -84,11 +84,11 @@ describe('Cross-surface invariant — per-player "Going" label (anti-pattern #43
     expect(src).toMatch(/goingCount/);
   });
 
-  it('d. MyChildSpotlight renders "Going" label paired with goingCount (static-grep)', () => {
-    const src = readFileSync('src/components/roster/MyChildSpotlight.jsx', 'utf8');
-    expect(src).toMatch(/\}\s*Going\b/);
-    expect(src).toMatch(/goingCount/);
-  });
+  // (d) removed 2026-05-21 (Teams PR C) — MyChildSpotlight.jsx was
+  // retired alongside TeamHeaderCard / CoachQuickActions / MessageTeamFAB
+  // when TeamDetailHero consolidated those four surfaces per §16.14. The
+  // parent's "Going" label now renders exclusively via PlayerRow (case c)
+  // when their child appears in the roster list.
 
   it('e. CoachRosterSnapshotTeam locks the new "% Going" label (static-grep)', () => {
     const src = readFileSync('src/components/coach/CoachRosterSnapshotTeam.jsx', 'utf8');
