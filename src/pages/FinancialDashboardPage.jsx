@@ -62,7 +62,7 @@ export default function FinancialDashboardPage() {
         <div style={{ display: 'flex', gap: 6, marginBottom: 16, overflowX: 'auto' }}>
           {seasons.map((s) => (
             <button key={s.id} type="button" onClick={() => setSelectedSeasonId(s.id)} className="sf-press" style={{
-              minHeight: 36, padding: '0 14px', borderRadius: 9999, fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap',
+              minHeight: 44, padding: '0 14px', borderRadius: 9999, fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap',
               border: s.id === seasonId ? 'none' : '1px solid var(--em-border-default)',
               backgroundColor: s.id === seasonId ? 'var(--em-accent)' : 'var(--em-bg-card)',
               color: s.id === seasonId ? 'var(--em-text-inverse)' : 'var(--em-text-secondary)',

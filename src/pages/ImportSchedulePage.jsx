@@ -56,7 +56,7 @@ export default function ImportSchedulePage() {
         <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
           <label htmlFor="t-pick" style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>Tournament:</label>
           <select id="t-pick" value={tournamentId} onChange={(e) => setTournamentId(e.target.value)}
-            style={{ minHeight: 36, padding: '0 10px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', fontSize: 13, fontFamily: 'inherit' }}>
+            style={{ minHeight: 44, padding: '0 10px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', fontSize: 13, fontFamily: 'inherit' }}>
             <option value="">Select…</option>
             {tournaments.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.start_date} – {t.end_date})</option>)}
           </select>
