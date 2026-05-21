@@ -3,6 +3,10 @@ import { useAuth } from '../../context/AuthContext';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
 import AppShell from './AppShell';
 
+// Auth gate. Reads useAuth().role — the RLS-authoritative real role.
+// Permissions MUST be gated on real role, not view-as. Header reads
+// useHomeRole().activeRole for label display only — those two are
+// deliberately split (see Header.jsx comment).
 export default function RequireAuth({ children, allowedRoles }) {
   const { user, role, loading } = useAuth();
   const location = useLocation();

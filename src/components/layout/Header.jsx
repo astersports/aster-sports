@@ -1,24 +1,25 @@
 import { useState } from 'react';
-import { Bell, Eye, Settings } from 'lucide-react';
+import { Eye, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useHomeRole } from '../../hooks/useHomeRole';
 import { EMBER_DISPLAY_NAME } from '../../lib/emberDefaults';
 import RoleSwitcherSheet from '../RoleSwitcherSheet';
 
-// Cluster 4 fix (2026-05-19): notification bell renders as a route
-// affordance to /account, no badge count. The previous badge bubble
-// implied an inbox that doesn't exist; per ledger §2 Cluster 4 the
-// near-term resolution is "remove badge count + route bell to
-// settings shortcut without count". A real inbox lands in Phase 2.
+// Bell removed pending Phase 2 inbox surface — see ledger §2 Cluster 4.
+// Bell returns when real notification UI lands; until then settings cog
+// at /account is the canonical destination. (Previous bell routed to
+// /account, duplicating the settings cog with mismatched user expectation.)
 
 export default function Header() {
   const { org, orgName } = useAuth();
+  // activeRole is for label DISPLAY only — permissions use
+  // useAuth().role (see RequireAuth.jsx). Do not branch behavior on
+  // activeRole; if you need permission-aware Header logic, read
+  // useAuth().role explicitly.
   const { activeRole, isViewingAs, canSwitchRoles } = useHomeRole();
   const navigate = useNavigate();
   const [sheetOpen, setSheetOpen] = useState(false);
-
-  const handleBellTap = () => navigate('/account');
 
   const stripeHeight = isViewingAs ? 6 : 0;
 
@@ -75,14 +76,6 @@ export default function Header() {
             <Eye className="w-5 h-5" />
           </button>
         )}
-
-        <button
-          onClick={handleBellTap}
-          aria-label="Notifications"
-          className="relative w-11 h-11 flex items-center justify-center"
-        >
-          <Bell className="w-5 h-5" />
-        </button>
 
         <button
           onClick={() => navigate('/account')}
