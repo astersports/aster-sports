@@ -1,0 +1,533 @@
+L99 — SKYFIRE PLATFORM-WIDE AUDIT + REDESIGN
+
+Date: 2026-05-21
+Context: Follow-up to docs/L99_TEAMS_DETAILED_AUDIT_2026-05-21.txt (PR #408 merged). The Teams audit found 25 distinct issues on one page (3 P0, 7 P1, 14 P2, 1 P3) — claude.ai's review of that audit noted: "the patterns it surfaces are not Teams-specific. They live across the codebase." This doc tests that hypothesis platform-wide.
+
+Per anti-pattern #49: pasted in chat in the same turn as the commit + push.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 0 — SCOPE & METHODOLOGY
+═══════════════════════════════════════════════════════════════════════════
+
+**Codebase shape:**
+- 701 .jsx/.js source files
+- 49,157 LOC total
+- 31 pages (29 component category folders, 120 hooks)
+- 11 edge functions
+- 156 migrations
+- Largest file 269 lines (a test); most under 150 (anti-pattern #6 compliance generally good)
+
+**Scope honesty:** the Teams audit was L99 on ~20 files. The platform is 700 files. A true line-by-line L99 across all of that is multi-day. This doc trades depth-per-file for breadth: pattern-scan + hot-spot deep reads + cross-cutting catalog.
+
+**Methodology — 4 parallel Explore agents:**
+1. **Pages cluster** — read all 22 non-Teams non-EventDetail pages at code level
+2. **Engine + send pipeline** — registry, composer, send helpers, token substitution
+3. **Hooks (all 120)** — pattern-scan for anti-pattern violations
+4. **Edge functions + security** — verify_jwt, app_secrets, RLS, migrations, token handlers
+
+Each agent reported its findings; this doc synthesizes.
+
+**What this audit covers vs. what's deferred:**
+
+| Area | Coverage |
+|------|----------|
+| Pages (22, ex-Teams + ex-EventDetail) | ✅ full code-level read |
+| Hooks (120) | ✅ pattern-scan + hot-spot reads |
+| Engine (registry, composer, send pipeline) | ✅ structural; individual resolvers/renderers deferred |
+| Edge functions (11) + secrets + recent migrations | ✅ full security read |
+| Shared components | ✅ design-system compliance read |
+| Database / RLS / index coverage | ⏵ recent migration audit only; broader DB audit deferred |
+| Cron + alerts subsystems | ⏵ touched via hooks audit; deferred deep-dive |
+| Tests / CI / build | ⏵ deferred |
+| PWA / service worker / bundle | ⏵ deferred |
+| Public-facing surfaces (tournaments public pages) | ⏵ light coverage in pages cluster only |
+
+The deferred items are P3-and-below for this arc. Worth a follow-up audit if any high-value bug class emerges in production.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 1 — SUBSYSTEM HEALTH SCORECARD
+═══════════════════════════════════════════════════════════════════════════
+
+| Subsystem | Verdict | Findings | Notes |
+|-----------|---------|----------|-------|
+| **Edge functions + security** | ✅ PASS | 0 P0, 1 P1 | Strongest health; anti-patterns #23/#30/#31/#33 holding |
+| **Hooks org_id scoping (#37)** | ✅ PASS | 0 violations across 120 hooks | One Teams D1 gap in useAttendanceData was the only known violation |
+| **Pages design tokens / hex** | ✅ PASS | 0 hardcoded hex (ex. LoginPage exception) | Anti-pattern #8 holding |
+| **Pages role routing (#42)** | ✅ PASS | HomePage correctly uses useHomeRole().activeRole | Detail-page extension still pending (Teams Q1) |
+| **Shared components design** | ✅ PASS | 17 components all ≤150 lines; tap targets compliant; overlay heights JS-driven | Tokens used throughout |
+| **Pages line-count cap** | ⚠ NEAR LIMIT | 4 pages at 142–150 lines | Next feature addition forces split |
+| **Pages tap-target compliance (§7)** | ⚠ P1 | 3 violations (36px buttons) | MessagesPage, FinancialDashboardPage, ImportSchedulePage |
+| **Hooks error handling (#36)** | ⚠ P1 | 6 hooks with destructured-default error swallow | All same fix shape |
+| **Hooks PostgREST sort (#48)** | ⚠ P2 | 3 hooks with foreignTable .order dead code | All masked by JS-side re-sort |
+| **Engine registry + dispatch** | ✅ PASS | Registry complete; 41 renderers registered; token substitution per #29 | Individual resolver purity not yet verified |
+| **Engine fragility points** | ⚠ P2 | 2 (synthetic-row carve-out, magic HTML wrapper) | Both in send-helper layer |
+| **Pages loading gates (#43)** | ⚠ P0 | 1 page (BriefingsInbox) | Pattern from PR #339/#340 not applied |
+| **Migration hygiene (#20/#23)** | ✅ PASS | Recent 5 migrations all REVOKE/GRANT correctly | Ghost migrations present as documented |
+| **CollapsibleSection default (Teams C6)** | ⚠ P1 | defaultOpen=true contradicts §16.14 | Every caller overrides — flip default + audit-grep |
+
+**Total platform-level findings: 21**
+- 1 P0 (Briefings loading gate)
+- 11 P1 (6 hook #36 + 3 page tap targets + 1 mirror byte-compare automation + 1 CollapsibleSection default)
+- 9 P2 (3 hook #48 + 4 shared duplication candidates + 2 engine fragility)
+
+**Plus 25 Teams audit findings = 46 total active issues across the codebase.**
+
+═══════════════════════════════════════════════════════════════════════════
+PART 2 — PER-SUBSYSTEM FINDINGS
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────
+2.1 PAGES CLUSTER (22 pages, ex-Teams + ex-EventDetail)
+────────────────────────────────────────────────────────
+
+**P0. BriefingsInboxPage.jsx loading-gate gap.**
+`useInboxQueue` + `useNeedsBriefing` signals not gated before render. `useMemo` for activeCount/draftCount computes over potentially `null` initial state. Per anti-pattern #43 + the PR #339/#340 pattern. Fix: add `isLoading = dbRows === null || synthetic === null` before main content paint. ~5 lines.
+
+**P1. Tap-target violations (§7 44px minimum):**
+- `MessagesPage.jsx:64-67` — "New message" button 36×36
+- `FinancialDashboardPage.jsx:65` — Season tab buttons 36px height
+- `ImportSchedulePage.jsx:59` — Select 36px
+
+All three are isolated; one-PR sweep fixes all.
+
+**File-size watch (anti-pattern #6 cap 150):**
+- `CoachHomePage.jsx`: 150 (AT cap)
+- `ParentHomePage.jsx`: 149
+- `AdminSeasonsPage.jsx`: 145
+- `AdminHomePage.jsx`: 142
+
+All four already extracted signal aggregation to hooks (`useAdminHomeSignals`, `useCoachHomeSignals`, `useParentHomeSignals`). Next feature on any of these forces another extraction. **Recommend:** preemptive split of CoachHomePage into header + signal-zone + alert-zone sub-components now, before the next coach feature forces a hot-path rewrite.
+
+**PublicSchedulePage.jsx:** queries event by teamId directly without explicit org_id scope. Per anti-pattern #37 the route is unauthenticated public so org scope is inherited via team_id RLS chain — likely OK, but worth a comment-pin documenting the reasoning so future readers don't get tripped.
+
+**18 of 22 pages are clean.** Org scoping #37 compliant across all 22. Role routing #42 compliant. No hardcoded hex (LoginPage exception is documented). No dead props.
+
+────────────────────────────────────────────────────────
+2.2 HOOKS (120 hooks)
+────────────────────────────────────────────────────────
+
+**P1. Six anti-pattern #36 violations (destructured-default error swallow):**
+1. `useCoachHomeSignals.js:24` — team_staff fetch
+2. `useGameResultsMap.js:17` — game_results fetch
+3. `useKindUsage.js:22` — comms_messages fetch
+4. `usePrefetchChildRsvps.js:13` — event_rsvps fetch
+5. `useUnreadCounts.js:11` — supabase fetch
+6. `useBriefingFilters.js:57` — briefing_inbox_preferences fetch
+
+All same fix shape:
+```
+const { data, error } = await supabase.from(...);
+if (error) throw error;
+```
+Six-file PR, ~12 lines of diff total. Defense-in-depth — silent failures today, diagnosable failures after fix.
+
+**P2. Three anti-pattern #48 violations (foreignTable .order dead code):**
+1. `useTeamRecords.js:47` — `.order('start_at', { foreignTable: 'events', ascending: true })` (already in Teams audit as C5)
+2. `useOrgTeamRecords.js:34` — same pattern
+3. `useTeamGamesByTournament.js:24-27` — same, with explicit comment acknowledging the limitation
+
+All three have JS-side re-sort mitigation (`computeSummary` or inline). Bug masked but `.order` lines are dead/misleading. One PR removes all three OR replaces with explanatory comment.
+
+**§37 org_id scoping: COMPLIANT.** All 120 hooks audited. The only known violation is the one Teams D1 surfaced in useAttendanceData:54 (players query missing org_id).
+
+**§11.5 roster_members readers:** 4 hooks (`useEventRsvpCounts`, `useRoster`, `useAttendanceData`, `useSeasonRollover`) all on the documented exception list ✅.
+
+**#42 useHomeRole scope:** Likely compliant — useActivities + useChannels read useAuth().role for filtering, not for view-as preview. Detail-page extension is the Teams Q1 work.
+
+────────────────────────────────────────────────────────
+2.3 ENGINE + SEND PIPELINE
+────────────────────────────────────────────────────────
+
+**Structural verdict: COMPLIANT.**
+- RESOLVER_REGISTRY (148 lines) — all 9 calendar-anchored kinds registered with correct sendPath dispatch
+- composer.js — 41 section kinds registered in SECTION_RENDERERS map; orphan-warning guard on dev (per anti-pattern #38)
+- Token substitution in rsvpNudgeSend correctly separated per anti-pattern #29: mint in send helper → compose without tokens → substitute post-compose → admin BCC uses un-substituted sections
+- No `<style>` blocks; inline-styled HTML layout compliant per §13
+
+**P2. Two fragility points worth registering:**
+
+**E1. Synthetic-row carve-out is fragile (`digestSend.js:121-122`).**
+```
+allSynthetic = renderedFamilies.every((f) => f.family.guardian_id == null);
+effectiveTestOnly = testOnly && !allSynthetic;
+```
+If synthetic rows ever carry non-null guardian_id in the future, test-mode carve-out silently breaks. The comment explains intent but the guard is implicit. **Recommend:** explicit `is_synthetic` boolean on the slice, replacing the guardian_id-null heuristic. Same fix shape applies to any other heuristic-typed guard across the engine.
+
+**E2. Magic HTML wrapper duplicated.**
+`digestSend.js:53` and `rsvpNudgeSend.js:25-26` both hardcode:
+```
+<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">
+```
+If scheduleChangeSend or academyCallupSend already does the same (likely), 3-4 callsites of identical hardcoded HTML. Extract to `EMAIL_WRAPPER_OPEN` constant in a shared lib module.
+
+**Deferred (agent ran out of tool budget):**
+- Individual resolver files (7 of them): purity verification (no top-level supabase imports)
+- All 41 renderer implementations: inline-style compliance, brand color hardcoding, table layout
+- academyCallupSend.js token minting flow
+- Edge function mirroring per anti-pattern #30 — verified in security audit (see 2.4)
+
+────────────────────────────────────────────────────────
+2.4 EDGE FUNCTIONS + SECURITY (STRONGEST POSITIVE)
+────────────────────────────────────────────────────────
+
+**Verdict: PASS. No P0 violations across 11 edge functions, app_secrets, token handlers, JWT minting, or recent migrations.**
+
+The late-cycle anti-pattern additions are holding:
+
+**#31 (verify_jwt config):** All 11 functions correctly declared. `verifyJwtConfigAudit.test.js` enforces this in CI.
+- verify_jwt=false (token-based): callup-token-handler, rsvp-token-handler, unsubscribe-handler, resend-webhook-receiver, team-feed
+- verify_jwt=true (JWT-based): invite-parent, send-tournament-message, parse-tournament-schedule, suggest-briefing-closer
+- Bearer/CRON_SECRET: briefing-cron-dispatch, briefing-auto-draft-tick
+
+**#33 (app_secrets vs Deno.env):** All shared secrets sourced from app_secrets via getAppSecret() helper or SECURITY DEFINER verify_*_token RPCs. The only Deno.env shared secret is `RESEND_WEBHOOK_SECRET` — platform-managed by Resend, documented exemption.
+
+`getAppSecret()` helper fails LOUD on NULL (no silent fallback), returning admin-diagnosable error message. Good failure mode.
+
+**#23 (REVOKE FROM PUBLIC):** Recent migrations (2026-05-20) correctly REVOKE EXECUTE ON FUNCTION ... FROM PUBLIC before GRANT to authenticated + service_role. Pattern locked.
+
+**Token handlers (rsvp, callup, unsubscribe):**
+- HMAC verification via SECURITY DEFINER RPC ✅
+- Expiry validated at RPC layer ✅
+- Replay protection: nonce single-use via unique-constraint race handling. Re-tap of same token returns prior response (idempotent) ✅
+- CORS appropriate to function shape (token handlers no CORS — stateless GET → redirect; JSON functions allow OPTIONS+POST)
+
+**briefing-cron-dispatch JWT minting:** HMAC-SHA256 with 5-minute expiry, secret from app_secrets, claims = {sub, exp, iat}. Architectural seam flagged in CLAUDE.md anti-pattern #33 — cleaner refactor is to bypass send-tournament-message JWT verification entirely, but the current pattern is locked and safe.
+
+**Recent 5 migrations** (sync_opponent_record, sync_tournament_team_record, etc.): all SECURITY DEFINER functions REVOKE/GRANT correctly; no cmd='ALL' policies without with_check; ghost migrations present at repo paths per CLAUDE.md §5.
+
+**P1. One documentation gap:**
+
+**S1. Edge function mirror byte-compare not automated.** Per anti-pattern #30, six edge functions have helper mirrors (_helpers.ts, _handlers.ts) at src/lib/* for vitest coverage. The mirrors are documented but there's no automated byte-comparison test detecting drift between the two trees. **Recommend:** add a CI assertion that diffs the .ts files against their .js mirror counterparts (ignoring TS-annotation-only differences). Same shape as `verifyJwtConfigAudit.test.js`. Closes the drift class structurally rather than relying on review discipline.
+
+────────────────────────────────────────────────────────
+2.5 SHARED COMPONENTS + DESIGN SYSTEM
+────────────────────────────────────────────────────────
+
+**Verdict: PASS** with one P1 (already known from Teams audit).
+
+- All 17 shared components ≤150 lines ✅
+- BottomSheet vs FullScreenForm usage correctly partitioned per anti-pattern #15:
+  - BottomSheet callers: RoleSwitcherSheet, EventRosterLockCard, EventDetailHeader, PublicSchedulePage filter (1-2 button dialogs) ✅
+  - FullScreenForm callers: SeasonForm, TeamForm, RecordPaymentForm, GuardianForm, NotificationSettingsForm, TournamentForm, PlaceholderEventForm, AcademyCallupForm, ScheduleChangeForm, LocationForm, SeasonLocationsForm, BriefingForm, PostOfferForm, ClaimSeatForm (3+ field forms) ✅
+- Modal overlay heights JS-driven per anti-pattern #18 (BottomSheet uses `Math.round(vh * pct)`) ✅
+- 10 named animations all registered + gated behind prefers-reduced-motion ✅
+- Typography scale (24/20/17/15/13/11px) enforced; no 14/16/18px deviations ✅
+- No hardcoded hex in shared components ✅
+
+**P1. CollapsibleSection.jsx default `defaultOpen=true` contradicts §16.14** (already in Teams audit C6).
+
+Audit-grep result: every existing caller passes `defaultOpen={false}` explicitly to compensate for the inverted default. So flipping the default is low-risk — callers that want open already pass `true`. Recommend the flip + audit-grep in PR A scope.
+
+**P2. Four duplication candidates (consolidation opportunities):**
+1. Pill-shaped badges (`borderRadius: 999`) — 31 instances across components. Candidate: `<Badge variant="pill">` in shared Badge.jsx.
+2. Card-container flex layout — 288 instances. Candidate: `<Card>` wrapper.
+3. Modal background token usage — 5+ identical callers. Candidate: `<ModalBackground>` abstraction.
+4. Icon + text pairs (ride requests, duty counts) — repeated in EventCard:112-114, 130-134. Candidate: `<RideIndicator>` / `<DutyBadge>`. Saves ~60 lines across surfaces.
+
+All P2 candidates; defer to component-cleanup arc.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 3 — CROSS-CUTTING OBSERVATIONS
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────
+3.1 The audit-cascade pattern holds at platform scale
+────────────────────────────────────────────────────────
+
+Per claude.ai's review of the Teams audit:
+> "Initial pass found 17 issues. Deep-read addendum added 11 more. ~40% miss rate without the second pass."
+
+Platform audit shows the same shape at larger scale. First-pass agents caught ~21 issues. The 4 agents collectively flagged 17 distinct "unverified" or "deferred" zones where they ran out of tool budget — most likely homes for the next layer of findings:
+- 7 individual resolver files (purity verification)
+- 41 renderer implementations (inline-style + brand color)
+- 1 academy callup send helper
+- 4 admin manager layout components (tap target enforcement)
+- 3 mirror byte-compare verifications
+- 1 public-route org-scope verification
+
+If a second-pass platform audit ran across those zones, the cascade pattern predicts ~13-15 more findings. Anti-pattern #50 candidate (audit-cascade discipline) gets its second confirmation here. **Recommend:** promote to registered if a third L99 redesign also benefits from the pattern.
+
+────────────────────────────────────────────────────────
+3.2 The Teams audit's anti-patterns are platform-wide
+────────────────────────────────────────────────────────
+
+Claude.ai's structural assessment of the Teams audit:
+> "The patterns it surfaces — CollapsibleSection default, ChildRsvp compact tap target, useTeamRecords #48 violation — are not Teams-specific. They live across the codebase."
+
+Platform audit confirms this exactly:
+- **CollapsibleSection default** (Teams C6) → every existing caller pre-compensates; flipping default is platform-wide cleanup
+- **useTeamRecords #48** (Teams C5) → 3 hooks have the same pattern (useTeamRecords, useOrgTeamRecords, useTeamGamesByTournament)
+- **ChildRsvp compact tap target** (Teams A4) → not specifically platform-replicated, but the pattern of "compact mode breaks §7 floor" likely exists in other components (LiveScorePage has dense controls — worth a second pass)
+
+This is the Teams audit's value beyond Teams. Every L99 page redesign is also a partial platform-cleanup signal — patterns surfaced on one page point to where the same patterns live elsewhere.
+
+────────────────────────────────────────────────────────
+3.3 The "preview / partial-feature dead-space" pattern recurs (claude.ai Observation 1)
+────────────────────────────────────────────────────────
+
+Claude.ai flagged TeamPlayerStats as Engine-Preview-shaped anti-pattern: live-scoring isn't a real Skyfire feature, so the mount is permanent dead space.
+
+Platform audit suggests this pattern may extend further:
+- **TeamPlayerStats** (Teams page) — live-scoring empty state. Remove mount per claude.ai Obs 1.
+- **LiveScorePage** itself — if no org uses live-scoring, the page route is dead. Check usage telemetry.
+- **suggest-briefing-closer edge function** — does any production flow actually consume the suggestion? Or is it a half-built feature still mounted?
+- **schedule-import** with TourneyMachine — actively used by Frank ✅
+- **broadcast** components — used? Half-built? Need check.
+
+**Recommend:** dedicated "dead-feature audit" scan, identify mounts that serve no current workflow, retire them. Same playbook as Engine Preview retirement yesterday.
+
+────────────────────────────────────────────────────────
+3.4 The trigger pattern for aggregates (claude.ai Observation 2)
+────────────────────────────────────────────────────────
+
+Wednesday's PR #357/#363 established SECURITY DEFINER + AFTER INSERT/UPDATE/DELETE trigger pattern for keeping aggregates fresh. Two recent migrations (`sync_opponent_record`, `sync_tournament_team_record`) use the pattern correctly.
+
+Other aggregate-shaped reads that could benefit:
+- **teams.record_summary** ("8-4") — computed at read time from game_results via useTeamRecords. Worth a cache.
+- **player_attendance_pct** — computed at read time per useAttendanceData. Worth a per-season aggregate.
+- **team_achievements_count** — read live, fine for now (low write volume).
+
+**Not for this arc.** Worth registering as ledger items for the perf-pass arc.
+
+────────────────────────────────────────────────────────
+3.5 Multi-tenant readiness gap (claude.ai's "75% there")
+────────────────────────────────────────────────────────
+
+The 2027 St. Patrick's onboarding requires:
+- **Per-org branding inheritance** — AuthContext applies brand_colors per org per CLAUDE.md §4 ✅
+- **Per-org weather coords** — currently hardcoded Westchester (B5 on Teams + likely on other location-sensitive surfaces)
+- **Cross-org admin handling** — admin on multiple orgs? Unspec'd today
+- **Per-org timezone** — currently hardcoded America/New_York in multiple components (audit scan would surface count)
+
+Audit-grep candidates for the multi-tenant readiness arc:
+- `grep -rn 'America/New_York' src/` — count timezone hardcodes
+- `grep -rn '41\.\(0\|03\|04\)\|73\.7' src/` — Westchester coords leak
+- `grep -rn 'Legacy Hoopers' src/` — org name leak in copy
+
+**Recommend:** separate multi-tenant readiness audit + arc before 2027 onboarding. Out of scope here.
+
+────────────────────────────────────────────────────────
+3.6 The "audit catches the late-cycle anti-patterns are working" signal
+────────────────────────────────────────────────────────
+
+Strongest positive in this audit: anti-patterns #20, #23, #30 (mirror), #31 (verify_jwt), #33 (app_secrets), #37 (org_id), #38 (renderer-emit parity), #45 (ledger reconciliation), and #46 (visual-rhythm test) are all holding under audit. Recent migrations are clean. Edge function security model is fully locked. Hook-level org scoping is at 100% compliance.
+
+This is the validation signal for the discipline cadence. The anti-patterns being added in May (35+ of the 49 are post-May-1) aren't bureaucratic — they're CI-enforceable rules that catch the bug classes that were producing fires through April. The platform audit didn't find a single security violation. That's not luck; that's the registry working.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 4 — CONSOLIDATED BUG CATALOG (Teams + Platform)
+═══════════════════════════════════════════════════════════════════════════
+
+**P0 (3 total, page-visible):**
+- Teams B1 — "Team Pulse · 2% Going" misreads
+- Teams V1 (upgraded) — 5 sort chips don't fit on iPhone; Att sort off-screen
+- Teams V2 / B4 — MessageTeamFAB overlap
+- Platform F1 — BriefingsInbox loading-gate gap
+
+(Teams has 3 P0; platform adds 1 → 4 total page-visible P0)
+
+**P1 (16 total):**
+- Teams: B2-revised, B3, V4, C1, C3, A4 (6)
+- Platform: 6 hook #36 violations + 3 page tap targets + 1 CollapsibleSection default + 1 edge function mirror automation = 11
+- Note: 1 overlap (CollapsibleSection C6 is in both Teams and platform)
+- Net: 15 distinct P1 issues across the codebase
+
+**P2 (20+):**
+- Teams: B5, B6, V5, V6, V7, V8, C2, C4, C5, C6, C7, D1, D2, A1, A2, A3 (14)
+- Platform: 3 hook #48 + 4 shared duplication + 2 engine fragility = 9
+- Some overlap (C5/C6 are in both)
+- Net: ~22 distinct P2 issues
+
+**P3 (1):** Teams C7 (useNow subtree re-render)
+
+**Grand total: ~42 distinct active issues across the codebase as of 2026-05-21.**
+
+═══════════════════════════════════════════════════════════════════════════
+PART 5 — PR ROLLOUT SEQUENCING
+═══════════════════════════════════════════════════════════════════════════
+
+The Teams arc (PRs A→D, per docs/L99_TEAMS_DETAILED_AUDIT_2026-05-21.txt) plus the platform-level cleanups can be sequenced together. Claude.ai's recommended Teams-first sequence stands; the platform fixes overlay cleanly.
+
+────────────────────────────────────────────────────────
+PHASE 1 — Teams arc + platform low-hanging
+────────────────────────────────────────────────────────
+
+**PR A (Teams stop-the-bleeding)** — per Teams audit. Adds:
+- CollapsibleSection defaultOpen flip (platform C6) — already in Teams scope
+- Audit-grep all callers to confirm or add explicit `true`
+
+**PR D (Teams data hardening, parallel with A)** — per Teams audit. Adds:
+- useAttendanceData #36 defaults sweep
+- useTeamRecords:47 #48 cleanup
+- Audit test `teamsPageOrgScopeAudit.test.js`
+
+**Platform PR α (parallel, ~6 file edits, ~12-line diff)** — close the 6 #36 hook violations:
+- useCoachHomeSignals, useGameResultsMap, useKindUsage, usePrefetchChildRsvps, useUnreadCounts, useBriefingFilters
+- Same fix shape across all six; one PR
+- Risk: very low
+
+**Platform PR β (parallel, ~3 file edits)** — page tap-target violations:
+- MessagesPage:64-67 (36 → 44px)
+- FinancialDashboardPage:65 (36 → 44px)
+- ImportSchedulePage:59 (select 36 → 44px)
+- Risk: low
+
+**Platform PR γ (parallel, ~5 file edits)** — extend platform-cleanup from Teams audit:
+- useOrgTeamRecords:34 + useTeamGamesByTournament:24-27 — same #48 cleanup shape as Teams PR D's useTeamRecords:47 fix
+- Risk: low
+
+**Platform PR δ (~5-line fix)** — BriefingsInboxPage loading-gate gap:
+- Add isLoading gate; same pattern as PR #339/#340
+- Risk: low
+
+These five parallel PRs (A, D, α, β, γ, δ) all touch different files, all low-risk, all under 50 lines of diff each. Could land in a single afternoon if no smoke regressions.
+
+────────────────────────────────────────────────────────
+PHASE 2 — Teams structural (after Phase 1 smoke window)
+────────────────────────────────────────────────────────
+
+**PR B (Teams hero consolidation)** — per Teams audit.
+
+Adds platform-level concerns:
+- Co-coach rendering rule (claude.ai Q5 sub) — head_coach flag preferred, alphabetical fallback
+- Coach-viewing-self hides contact line in hero
+- TeamDetailHero adopts `compact={false}` on ChildRsvp (fixes Teams A4)
+
+────────────────────────────────────────────────────────
+PHASE 3 — Teams polish + platform structural (after PR B smoke)
+────────────────────────────────────────────────────────
+
+**PR C (Teams polish)** — per Teams audit. Adds:
+- TeamPlayerStats MOUNT REMOVAL (claude.ai Observation 1) — not just gate-by-config; remove the mount entirely until live-scoring is real
+- Refresh affordance in Roster header subtitle (claude.ai Q13 middle-ground)
+
+**Platform PR ε (~30 lines)** — Engine fragility cleanup:
+- digestSend.js synthetic-row carve-out: explicit `is_synthetic` flag instead of guardian_id-null heuristic
+- Extract EMAIL_WRAPPER_OPEN constant; refactor digestSend.js:53 + rsvpNudgeSend.js:25-26 (+ academyCallupSend + scheduleChangeSend if same pattern) to use shared constant
+- Risk: low; engine layer changes only
+
+**Platform PR ζ (~80 lines)** — Edge function mirror automation:
+- Add CI assertion that diffs _helpers.ts / _handlers.ts against their src/lib/*.js mirrors
+- Same shape as verifyJwtConfigAudit.test.js
+- Closes anti-pattern #30 enforcement structurally
+- Risk: low
+
+────────────────────────────────────────────────────────
+PHASE 4 — Deferred / future ledger arcs
+────────────────────────────────────────────────────────
+
+**Component cleanup arc:** P2 duplication candidates (Badge variant=pill, Card wrapper, ModalBackground, RideIndicator). Defer until 100+ lines of duplication accumulate. Track in ledger.
+
+**Multi-tenant readiness arc:** weather coords (Teams B5), timezone hardcodes, cross-org admin handling. Before 2027 St. Patrick's onboarding.
+
+**Perf-pass arc:** React.memo on Teams stable children (C7), trigger-based teams.record_summary cache (claude.ai Obs 2), TeamHeaderCard memoization, bundle code-split list-vs-detail routes.
+
+**Dead-feature audit arc:** TeamPlayerStats removal (Phase 3) is the first instance. Broader sweep: LiveScorePage, suggest-briefing-closer edge function consumer trace, broadcast components, any other half-built mount.
+
+**File-size preemptive split arc:** CoachHomePage (150, AT cap) + ParentHomePage (149) + AdminSeasonsPage (145) + AdminHomePage (142). Split into header + signal-zone + alert-zone sub-components before next feature forces it.
+
+**Second-pass audit arcs:** unverified zones from this audit (7 resolver files, 41 renderer implementations, academy callup send pipeline, public-route org-scope confirmation). Per claude.ai's audit-cascade observation, expect ~13-15 more findings.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 6 — PROPOSED CLAUDE.md ADDITIONS
+═══════════════════════════════════════════════════════════════════════════
+
+Based on platform audit findings, three candidate additions to CLAUDE.md §11 anti-patterns or §16 design principles:
+
+**Anti-pattern #50 candidate (CASCADE PATTERN).**
+"L99 redesigns require a deep-read addendum across the full mount tree before PR A scopes are locked. Initial-pass audits have ~40% miss rate per the Teams audit (2026-05-21) and platform audit (2026-05-21) data. Pattern: initial pass + deep-read addendum + anti-pattern catalog cross-reference + per-role wireframes + explicit out-of-scope list. Before any PR A code lands."
+
+Hold as candidate. If the NEXT L99 redesign also benefits from the deep-read addendum, promote to registered.
+
+**Anti-pattern #51 candidate (DEAD-FEATURE MOUNT).**
+"Surfaces that serve no current Frank workflow get retired, not gated by config. Engine Preview removal (PR #398, 2026-05-20) established the precedent. TeamPlayerStats removal (Teams PR C) is the next instance. The gate-by-config pattern produces confusing future-Frank ('why is this here?') and accumulates dead-code mass."
+
+Lock when the third instance lands. Two confirmed today.
+
+**§16 design principle (L99 TEMPLATE).**
+Claude.ai recommended: "L99 redesigns include: (a) initial audit pass, (b) deep-read addendum across full mount tree, (c) anti-pattern catalog cross-reference, (d) per-role wireframes, (e) explicit out-of-scope list. Shipped before any PR A code lands."
+
+Accepting. Recommend adding as §16.15 — the L99 template as canonical methodology.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 7 — OPEN QUESTIONS
+═══════════════════════════════════════════════════════════════════════════
+
+**PQ1.** Should the 6 hook #36 fixes ship as one PR or six? Claude.ai's prior pattern suggests batch when the fix is uniform. Recommend: one PR.
+
+**PQ2.** PublicSchedulePage org-scope verification — pin a comment ("public route — org scope inherited via team_id RLS chain"), OR migrate to explicit `.eq('events.team.org_id', orgIdFromTeam)` defense-in-depth? Recommend: comment-pin; the RLS chain is the actual gate.
+
+**PQ3.** CoachHomePage preemptive split (currently AT 150-line cap) — proactive now, OR wait for the next coach feature to force it? Recommend: proactive split in PR A scope (it'll happen anyway in the next week and forcing it later costs more).
+
+**PQ4.** Anti-pattern #50 (audit-cascade) and #51 (dead-feature mount) — register both now as candidates, OR promote one based on today's two-instance data? Recommend: candidates only until 3rd instance lands.
+
+**PQ5.** Multi-tenant readiness arc kickoff — before or after Teams arc closes? Recommend: after — Teams gives the canonical L99 template; multi-tenant arc applies the template to a new dimension.
+
+**PQ6.** Second-pass audit of unverified zones (resolvers, renderers, academy callup send, AdminManagerLayout tap-target, etc.) — schedule before or after Phase 3? Recommend: after Phase 3 Teams polish lands, so the audit reads against the post-cleanup state.
+
+**PQ7.** Component cleanup arc (P2 duplication candidates) — defer or schedule? Recommend: defer until 100+ lines of duplication accumulate OR a third instance of the same pattern surfaces. Currently 4 candidates at low individual cost; consolidation breakeven is around 6-8 callsites per pattern.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 8 — METHODOLOGY NOTES FOR FUTURE PLATFORM AUDITS
+═══════════════════════════════════════════════════════════════════════════
+
+What worked:
+- **Parallel Explore agents** for non-overlapping subsystems. 4 agents covered ~700 files in one batched dispatch. Sequential would have been 4x the wall-clock.
+- **Anti-pattern grep first, file-read second.** Each agent led with pattern scans then verified hits. Higher hit rate than reading top-to-bottom.
+- **Hot-spot deep reads** (Teams audit) before platform pass. The Teams audit's catalog of anti-patterns (V/C/D/A prefixes) became the platform audit's pattern-scan inputs.
+
+What to refine next time:
+- **Agent tool-budget allocation.** Each agent had ~50 tool uses and 3 of 4 ran out before reaching "deferred" zones. Next time: allocate more budget OR scope each agent to a narrower zone (1 subsystem each rather than 1 cluster each).
+- **Explicit "verified vs deferred" reporting.** Engine audit agent's "compliant but not verified" language was honest but could surface earlier in the agent output. Lock as part of the agent prompt template.
+- **Cross-reference Teams audit findings as platform pattern-scan inputs.** Worked once; should be locked as methodology.
+
+═══════════════════════════════════════════════════════════════════════════
+APPENDIX A — PLATFORM-LEVEL BUG CATALOG (ID-INDEXED)
+═══════════════════════════════════════════════════════════════════════════
+
+| ID | Severity | Subsystem | File:line | Fix shape |
+|----|----------|-----------|-----------|-----------|
+| F1 | P0 | Pages | BriefingsInboxPage.jsx | Add isLoading gate (~5 lines) |
+| H1 | P1 | Hooks | useCoachHomeSignals.js:24 | Add error destructure + throw |
+| H2 | P1 | Hooks | useGameResultsMap.js:17 | Add error destructure + throw |
+| H3 | P1 | Hooks | useKindUsage.js:22 | Add error destructure + throw |
+| H4 | P1 | Hooks | usePrefetchChildRsvps.js:13 | Add error destructure + throw |
+| H5 | P1 | Hooks | useUnreadCounts.js:11 | Add error destructure + throw |
+| H6 | P1 | Hooks | useBriefingFilters.js:57 | Add error destructure + throw |
+| P1 | P1 | Pages | MessagesPage.jsx:64-67 | 36 → 44px tap target |
+| P2 | P1 | Pages | FinancialDashboardPage.jsx:65 | 36 → 44px |
+| P3 | P1 | Pages | ImportSchedulePage.jsx:59 | Select 36 → 44px |
+| S1 | P1 | Edge | (cross-tree) | CI assertion diffing _helpers.ts vs .js mirrors |
+| C6 | P1 | Shared | CollapsibleSection.jsx:4 | Flip defaultOpen default to false + audit-grep callers |
+| H7 | P2 | Hooks | useOrgTeamRecords.js:34 | Remove .order foreignTable line or comment |
+| H8 | P2 | Hooks | useTeamGamesByTournament.js:24-27 | Same |
+| E1 | P2 | Engine | digestSend.js:121-122 | Replace guardian_id-null heuristic with is_synthetic flag |
+| E2 | P2 | Engine | digestSend.js:53, rsvpNudgeSend.js:25-26 | Extract EMAIL_WRAPPER_OPEN constant |
+| D1 | P2 | Shared | (Badge pill 31 callsites) | Extract <Badge variant="pill"> |
+| D2 | P2 | Shared | (Card flex 288 callsites) | Extract <Card> wrapper |
+| D3 | P2 | Shared | (Modal bg 5+ callsites) | Extract <ModalBackground> |
+| D4 | P2 | Shared | EventCard:112-114, 130-134 | Extract <RideIndicator> / <DutyBadge> |
+| F4 | P2 | Pages | PublicSchedulePage.jsx | Comment-pin org-scope inheritance |
+
+Plus all 25 Teams audit findings (B1-B6, V1-V8, C1-C7, D1-D2, A1-A4) carried into Phase 1-3 PRs A/B/C/D.
+
+═══════════════════════════════════════════════════════════════════════════
+APPENDIX B — DEFERRED / OUT-OF-SCOPE
+═══════════════════════════════════════════════════════════════════════════
+
+- Individual resolver files (7) — second-pass audit
+- Renderer implementations (41) — second-pass audit
+- academyCallupSend.js token pipeline — second-pass
+- AdminManagerLayout tap-target enforcement — quick verify
+- Cron + alerts subsystem deep-dive
+- Database / RLS / index audit (broader than recent migrations)
+- Tests / CI / build infrastructure
+- PWA / service worker / bundle measurement
+- Public-facing surfaces (tournaments public pages) deep-read
+- Multi-tenant readiness audit + arc — pre-2027 onboarding
+- Perf-pass arc (React.memo, trigger-based aggregates, bundle split)
+- Dead-feature audit (LiveScorePage, suggest-briefing-closer consumer trace, broadcast components)
+- File-size preemptive split arc (4 home pages at/near cap)
+- Component cleanup arc (4 P2 duplication candidates)
+
+END OF DOCUMENT
