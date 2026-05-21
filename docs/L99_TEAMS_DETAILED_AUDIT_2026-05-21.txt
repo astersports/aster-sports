@@ -1,0 +1,1263 @@
+# L99 — TEAMS PAGE DETAILED AUDIT + REDESIGN
+
+Date: 2026-05-21
+Context: Frank shared 5 iPhone screenshots of the Teams page (admin view, 11U Girls) and asked for a deep code-level audit + redesign suitable for claude.ai review. This doc EXTENDS `docs/L99_TEAMS_REDESIGN_2026-05-20.txt` (which captured the structural redesign at proposal-level) with: visual ground-truth from the screenshots, per-component code walkthrough, data-layer audit, anti-pattern catalog, accessibility audit, and a deeper redesign with per-role wireframes + a 4-PR rollout.
+
+The prior doc's 6 bugs (B1–B6) and 8 open questions (Q1–Q8) are still load-bearing. This doc adds 12 new findings (V1–V8 visual, C1–C4 code, D1–D2 data, A1–A3 a11y) and re-frames the redesign with the screenshot evidence.
+
+Per anti-pattern #49: pasted in chat in the same turn as the commit + push.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 0 — METHODOLOGY & SOURCES
+═══════════════════════════════════════════════════════════════════════════
+
+**Files read at code-level:**
+- `src/pages/TeamDetailPage.jsx` (111 lines)
+- `src/components/roster/TeamHeaderCard.jsx` (81 lines)
+- `src/components/roster/RosterSection.jsx` (32 lines)
+- `src/components/roster/PlayerRow.jsx` (131 lines)
+- `src/components/roster/MyChildSpotlight.jsx` (81 lines)
+- `src/components/roster/CoachQuickActions.jsx` (24 lines)
+- `src/components/roster/UpcomingEvents.jsx` (55 lines)
+- `src/components/roster/TeamPlayerStats.jsx` (24 lines)
+- `src/components/roster/MessageTeamFAB.jsx` (30 lines)
+- `src/components/roster/TeamSwitcher.jsx` (14 lines)
+- `src/components/roster/TeamAchievements.jsx` (62 lines)
+- `src/components/gameday/TeamHeatmap.jsx` (95 lines)
+- `src/hooks/useAttendanceData.js` (146 lines)
+
+**Visual sources:** 5 iPhone screenshots, 2026-05-21 11:38-11:39, admin viewing 11U Girls. Stitched together they cover: hero → CoachQuickActions → UpcomingEvents → Roster (top + middle) → Team Pulse expanded → Player Stats expanded.
+
+**Prior docs:**
+- `docs/L99_TEAMS_REDESIGN_2026-05-20.txt` (614 lines, structural redesign — the proposal layer)
+- `docs/L99_EVENT_DETAIL_REDESIGN_2026-05-20.txt` (the template; event hero pattern from PRs #392/#393/#394)
+- `docs/EMBER_PENDING_LEDGER.md` §2 Cluster 2 (player-row Going-suffix precedent)
+- CLAUDE.md §16.14 (hero + collapsibles doctrine)
+
+═══════════════════════════════════════════════════════════════════════════
+PART 1 — VISUAL GROUND TRUTH (5 screenshots stitched)
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────
+1.1 Screenshot composite: top-to-bottom what admin sees
+────────────────────────────────────────────────────────
+
+Reading the 5 screenshots in scroll order (admin role, 11U Girls team, Spring 2026 season):
+
+```
+[ navy strip: Legacy Hoopers LLC · ADMIN · 👁 🔔 ⚙ ]      ~64px
+
+[ < Teams ]                                              ~44px
+[ 11U Girls ▼ ]   (TeamSwitcher chip)                    ~36px
+┌──────────────────────────────────────────┐
+│ ▮▮ purple stripe                          │            ~6px
+│ 11U Girls                       [ 11U ]   │            ~32px
+│ 11U · AAU · 8-4 · L1                      │            ~20px
+│ ──────────────────────────────────────── │
+│ 23.3   20.4   +2.9   67%    12            │            ~40px
+│ PPG  ALLOWED  DIFF  WIN %  GAMES          │            ~20px
+└──────────────────────────────────────────┘
+                          [ ✉ Send briefing ]            ~44px  (right-aligned)
+[ 💬 Message ]      [ ↗ Schedule ]                        ~60px  (CoachQuickActions tile row)
+
+UPCOMING (NEXT 7 DAYS)                                   ~24px
+       Clear week ahead                                  ~24px
+       Time to work on those crossovers.                 ~20px
+[ View full schedule → ]                                 ~44px
+
+[ 🔍 Search players... ] [ # | A-Z | Gr | Ag(e) ]        ~44px  (sort chip "Age" CLIPPED)
+Roster  13                                  ⌄            ~32px
+                                         [ ⧉ Copy ]      ~36px
+┌──────────────────────────────────────────┐
+│ ⓐ Lily Alexander ●     5th  [No RSVPs] (1)⌄│           ~80px
+│ ⓗ Ayana Hatano ●  [Academy] 5th [No...] (3)│           ~80px
+│ ⓜ Olivia Macli ●       5th  [No RSVPs] (4)│           ~80px
+│ … 10 more rows …                          │           ~800px total
+└──────────────────────────────────────────┘
+Team Pulse · 2% Going                       ⌄            ~44px  (collapsed)
+                                                                (then expanded ⌃):
+   [season]                          [ All ▼ ]           ~32px
+   Player    6/14 6/13 6/10 6/8 6/3 6/1    ATT%          ~24px
+   #4 Olivia  □   □   □   □   □   □         —            ~24px × 13 rows
+   …          (all empty squares except…)
+   #25 Maddie ─   ─   □   □   □   □         —
+   #3 Ayana   ─   ─   □   □   □   □         —
+   …
+Player Stats                                ⌃            ~44px  (open)
+              [Per Game]                                 ~36px  (toggle)
+   Per-player stats appear only when a game is sco[red    ~60px (TEXT TRUNCATED by FAB)
+   in] live-scoring mode. Team totals are tracked ab[ove]
+                                       ●●● FAB ●●●       ~56px  (overlapping above)
+[ Home | Schedule | Records | Teams • | Messages ]       ~60px  (bottom nav)
+```
+
+Total page scroll height (staff, roster expanded, pulse expanded): **~1900px** on iPhone 13/14 (≥7 screens of vertical scroll). Prior L99 estimate was 1500–1800; visual confirms it's at the upper bound and tips over when both Pulse and Player Stats are expanded.
+
+────────────────────────────────────────────────────────
+1.2 Above-the-fold reality (iPhone 13/14 ≈ 844px viewport)
+────────────────────────────────────────────────────────
+
+Admin landing on `/teams/<11U Girls>` sees, without scrolling:
+- Navy top strip with org name + 3 icons (64px)
+- Back chevron (44px)
+- TeamSwitcher chip (36px)
+- TeamHeaderCard with stat strip (~140px)
+- Send briefing chip (44px)
+- CoachQuickActions row (60px)
+- UPCOMING header (24px)
+- "Clear week ahead" empty-state heading (24px)
+
+That's ~436px of decisive UI before the bottom edge. The empty-state subtitle ("Time to work on those crossovers"), the "View full schedule →" CTA, the Search bar, the Roster collapsible — all below the fold.
+
+**The "primary action" question (per §16.14 hero doctrine):** what is the admin supposed to do here? The screenshot shows THREE message-family entry points (Send briefing chip + Message tile + MessageTeamFAB) and ZERO event-context actions visible above the fold. The hero is a record card, not an action surface.
+
+────────────────────────────────────────────────────────
+1.3 Visual bugs surfaced (V-prefix; V1 onwards are NEW vs prior B1–B6)
+────────────────────────────────────────────────────────
+
+**V1. Sort chip "Age" is CLIPPED.**
+Screenshot 3 row "[ 🔍 Search players... ][ # | A-Z | Gr | Ag(e) ]". With 4 chips + search bar on a 390px iPhone, the rightmost chip clips. The chip is a 44px touch target — the visible text "Ag" is the first sign a user can't tell if Age and Grade are different sorts. RosterControls layout doesn't accommodate the chip set + search at iPhone width.
+
+**V2. MessageTeamFAB overlaps Player Stats empty-state copy.**
+Screenshot 5 clearly shows the FAB sitting on top of "...sco[red in]... ab[ove]" — the empty-state text is cut by the FAB's 56×56 circle. This is the §16.14 "no floating destructive surfaces" violation in action; same shape as the L99 event-detail RSVP-summary overlap that #392 reverted. Note: the FAB has `position: fixed; right: 16px` — it overlaps EVERY page surface in that footprint, not just Player Stats.
+
+**V3. UPCOMING empty-state copy is admin-flavored on the parent surface.**
+"Time to work on those crossovers." reads charming for coaches, confusing for parents. Per §16.3 kindness microcopy mandate — this is in the prior B6 catalog but visually confirmed; the copy is more prominent than the layout implies because it's the only thing on screen between the action row and the Roster collapsible.
+
+**V4. Pulse grid row order is NOT jersey-sorted, NOT alphabetical, NOT visible sort.**
+Screenshot 1 shows: Olivia #4, Lily #1, Charlie #5, Bianca #15, Karina #14, Sofia #24, Demi #16, Yena #7, Krystalenia #91, Maddie #25, Ayana #3, Hannah #8, Sloane #11. This is NOT jersey ascending (would be #1, #3, #4, #5, #7...). NOT alphabetical first name (would be Ayana, Bianca, Charlie...). NOT alphabetical last name. Source: `useAttendanceData.js:137` sorts by `pct desc`, but with all-null pcts the sort is stable to insertion order (= rows came back from Supabase in `roster_members` insert order). The Roster collapsible above sorts by jersey number (admin default). **Two adjacent surfaces showing the same roster in two different orders.** §11.5 cross-surface invariant class.
+
+**V5. Pulse grid has 6 visible date columns; horizontal scroll for older.**
+Grid template: `140px (name) | 32px × N (dates) | 80px (ATT%)`. On a 390px iPhone, only 6 date columns fit (140 + 6×35 = 350 + 80 = ~430 → scrolls). The 7-event lookback is fine, but for season-scoped pulse (180 days) the user has to swipe horizontally on a content surface they're not expecting to — no visual scroll indicator, no fade-edge. A parent who never scrolls horizontally won't see the earlier dates.
+
+**V6. Avatar color = team_color; nothing distinguishes Futures Academy on avatar.**
+All 13 player avatars are purple (matches 11U Girls team_color = `var(--em-academy)` purple — though confirmed against TEAM_COLORS in `constants.js` not this audit). Maddie Wong + Ayana Hatano have the "Academy" purple text pill but the avatar itself doesn't read differently. For a parent scanning the roster, "which kids are my kid's full-roster teammates" vs "which are academy call-ups" requires reading the pill text, not the visual hierarchy. Per §10 reference table — Futures Academy is the headline selling point per CLAUDE.md, but visually it's a small purple text badge.
+
+**V7. Stat strip "67% WIN %" line-break: header wraps awkwardly.**
+Screenshot 4 — "WIN %" wraps to second line on the strip because "%" sign + "WIN" + cell width 70px = wrap. "GAMES" also wraps. Three of five cells have wrapped labels at iPhone width. Readable but not crisp — and the wrap behavior depends on cell content width (23.3 vs +2.9 vs 67% sets different padding pressures).
+
+**V8. No visible "this is the active season" indicator anywhere on the page.**
+Spring 2026 is active per CLAUDE.md §10; the page shows "12 GAMES" with no scope marker. A coach looking at this could legitimately wonder "12 games THIS season, or all-time?" The meta line "11U · AAU · 8-4 · L1" doesn't say either way. Fall 2025 had its own 8-4 record (different opponents); the page is silently season-scoped but not visibly so.
+
+────────────────────────────────────────────────────────
+1.4 Visual confirmation of prior B1–B6
+────────────────────────────────────────────────────────
+
+- **B1 ("2% Going" misreads)** — CONFIRMED screenshot 1. Pulse header says "2% Going"; pulse grid below shows mostly empty cells with two red-dash cells (no_response_past) on Maddie + Ayana for 6/14 and 6/13. The 2% reflects historical data far enough back that those families pressed Going once; the visible week shows no activity. Two conflicting signals on the same surface, both technically correct, jointly incoherent.
+
+- **B2 ("No RSVPs yet" leaks to parents)** — CONFIRMED screenshot 2 + 3. Every single one of the 13 player rows has the gray "No RSVPs yet" pill. Admin sees this and reads "OK, families haven't engaged yet." Parent landing here sees their kid's row AND all 12 peer rows with the same pill — reads as "everyone is missing." Reverse of admin intent.
+
+- **B3 (Roster defaultOpen for staff)** — CONFIRMED screenshot 3. Roster header shows chevron-up (open). 13 player cards expanded. ~800px of always-on roster real estate the admin didn't ask for.
+
+- **B4 (FAB overlap)** — CONFIRMED screenshot 5 (overlaps Player Stats text) AND screenshot 1 (overlaps Team Pulse area when scrolled there). FAB is fixed-position; it overlaps wherever you scroll.
+
+- **B5 (Hardcoded weather coords)** — NOT directly visible in screenshots but `UpcomingEvents.jsx:16` confirms `useWeather(41.03, -73.76)` at file-read.
+
+- **B6 (Admin-flavored empty copy)** — CONFIRMED screenshot 4. "Time to work on those crossovers." appears directly under "Clear week ahead" with no role-gating.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 2 — CODE-LEVEL WALKTHROUGH
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────
+2.1 TeamDetailPage.jsx — page composition
+────────────────────────────────────────────────────────
+
+Lines 31–43: declares `role`, `myTeamIds`, `myChildren` from `useAuth()` directly. **Anti-pattern #42 violation** — should use `useHomeRole().activeRole` for page-level rendering (so admin "view as parent/coach" preview reaches this page). Prior Q1 in the L99 Teams doc flagged this.
+
+Lines 44–53: `enrichedPlayers` `useMemo` joins `players` (from useRoster) with `grid` (from useAttendanceData) — i.e., the page fires BOTH hooks against the same teamId and reconciles them client-side. The two hooks return different shapes (useRoster gives jersey/grade/guardians from `roster_members` + `players` join; useAttendanceData gives goingCount/streak from `event_rsvps` + `event_arrivals` + `check_ins` aggregates). The enrichment is correct but means the page does the join the database could do.
+
+Line 55: `team = programs.find((p) => p.id === teamId)` — O(N) lookup against the full programs list every render. For 5 programs this is a no-op; for orgs with 30+ teams it becomes warming-pressure on every re-render. Should be `useMemo`'d.
+
+Lines 56–60: `nextEvent` derives from full `activities` list, filters by team_id + status + start_at, sorts ascending, finds first ≥ now. Correct, memoized. Note: depends on `useNow()` ticking, which re-runs the memo every minute and re-sorts the list.
+
+Lines 61–62: `myChild` uses `myChildren.find` with two predicates (`teamIds.includes(teamId) || teamId === teamId`) — the second clause looks like a typo/legacy single-team shape; modern AuthContext should expose `teamIds` array uniformly. Hardly affects function but smells like a backwards-compatibility shim per §11 anti-pattern #16. Also returns ONE myChild — Q8 in prior doc flagged the sibling case (two kids on same team).
+
+Lines 67–110: render tree.
+- Line 68: page background uses `team.team_color + '08'` (8% alpha hex appended) — non-standard hex syntax (`#xxxxxxAA` works in modern browsers but is opaque to some old Safari versions; per CLAUDE.md anti-pattern #11 the project uses `rgba()` not hex+alpha). Subtle compat risk.
+- Lines 73–87: TeamHeaderCard + standalone Send-briefing chip stacked. The chip is a `<Link>` styled as a button — semantically a link, visually a button. Right-aligned with negative top margin (`marginTop: -8`) — a layout hack signaling "this would be nicer inside the card."
+- Line 89: MyChildSpotlight renders unconditionally if `myChildPlayer` exists. Sandwich between hero and CoachQuickActions for parents. For staff, this is null.
+- Line 90: CoachQuickActions renders for staff. Two tiles: Message + Schedule.
+- Line 91: UpcomingEvents renders for everyone (no role gate).
+- Lines 93–103: Roster section, with loading skeleton + empty state branches.
+- Line 105: TeamHeatmap. Renders for everyone (parent-filtered internally per `TeamHeatmap.jsx:27-28`).
+- Line 106: TeamPlayerStats — staff only.
+- Line 107: TeamAchievements — renders only if achievements exist (gated inside component).
+- Line 108: MessageTeamFAB — staff only.
+
+────────────────────────────────────────────────────────
+2.2 TeamHeaderCard.jsx — hero pattern half-implemented
+────────────────────────────────────────────────────────
+
+The file is well-structured for what it does (81 lines, presentational). What it MISSES per §16.14 hero contract:
+
+- **No action stack** (per-role buttons). Hero contract Slot 4 says hero ends with the role's 1–2 primary actions. Today's hero ends at the stat strip.
+- **No next-event mini-block**. Hero contract Slot 3 says hero includes "next-event state at a glance" — date, location, RSVP progress. Today's TeamHeaderCard takes a `nextEvent` prop on line 36 but never reads it. Dead prop.
+- **No state summary**. Hero shows record + stat strip. Per §16.14 hero contract Slot 2 says hero shows "state at a glance" — for a team page, that's "who's coming to the next game" or "season win rate," and one of those should bubble up visually. Today both are present but neither is salient.
+
+Color-stripe height: 6px (line 48). Matches EventDetailHero per #393 — that's good, cross-surface rhythm preserved.
+
+Stat strip (lines 66–77): renders only when `gamesPlayed > 0`. Fine. The 5-cell layout uses `flex: 1` on each Cell — equal-width cells regardless of content width. That's why the labels wrap on iPhone (V7) — cells are 70px wide but "WIN %" + 70px = wrap.
+
+────────────────────────────────────────────────────────
+2.3 TeamHeatmap.jsx — the "2% Going" bug deconstructed
+────────────────────────────────────────────────────────
+
+Line 30: `totalGoing = visibleGrid.reduce((s, r) => s + (r.goingCount || 0), 0)`.
+Line 31: `totalPast = visibleGrid.reduce((s, r) => s + (r.totalPast || 0), 0)`.
+Line 32: `teamPct = totalPast > 0 ? Math.round((totalGoing / totalPast) * 100) : 0`.
+
+`goingCount` is incremented in `useAttendanceData.js:111` only when:
+```
+arrival === 'arrived' || checkedIn || rsvp === 'going'
+```
+
+So for the 11U Girls team in Spring 2026 with check-ins not actively run AND parents not actively pressing Going buttons, `goingCount` floors at near-zero — but `totalPast` increments on every past event the player was eligible for (line 110). The denominator stays large; the numerator stays near-zero; the headline reads "2% Going" or similar.
+
+The bug class is the same one Cluster 2 / PR #240 closed at the player-row scope. That fix added the "Going" suffix to the row pills so `goingCount=1` reads "1 Going" not "100%." This fix needs to extend up to the team-level pulse header.
+
+Lines 35–41: `pulseTitle` constructs the header. Comment block at lines 35–38 acknowledges the ambiguity from the prior round of feedback. But the fix landed at the LABEL level, not the LOGIC level — "2% Going" reads honestly about WHAT the percent measures (per the comment) but doesn't acknowledge the metric is noise when check-ins haven't run.
+
+Line 43: `defaultOpen={false}` — correct per §16.14.
+Lines 71–90: grid render. Note line 137 of `useAttendanceData.js` sorts the grid by `pct desc` — explaining V4.
+
+────────────────────────────────────────────────────────
+2.4 PlayerRow.jsx — sparse-RSVP gating, role-gating gaps
+────────────────────────────────────────────────────────
+
+Line 16: `const showRsvp = player.totalPast > 0 && (role !== 'parent' || isMyChild)`.
+
+This SHOULD gate the entire pill block — but doesn't. Reading further:
+
+Line 23–24:
+```
+const responsesReceived = (player.goingCount || 0) + (player.maybeCount || 0) + (player.declinedCount || 0);
+const sparseRsvp = responsesReceived <= 1;
+```
+
+Lines 61–65 (the "No RSVPs yet" pill):
+```
+{showRsvp && sparseRsvp && (
+  <div ...>
+    <span ...>No RSVPs yet</span>
+  </div>
+)}
+```
+
+So the diagnostic shows when `showRsvp && sparseRsvp` — `showRsvp` for a parent is `role !== 'parent' || isMyChild`. Wait, that means parents SHOULD only see the pill on their own kid's row. Let me re-read.
+
+`(role !== 'parent' || isMyChild)`:
+- If role is admin/coach: `true || X` → true (shows for all).
+- If role is parent + `isMyChild === true`: `false || true` → true (shows only for own kid).
+- If role is parent + `isMyChild === false`: `false || false` → false (doesn't show for peers).
+
+So the gating IS correct in code. But screenshots 2–3 show admin view where everyone sees the diagnostic — that's correct admin behavior. The prior B2 claim was "diagnostic bleeds to parent view from peer rows" — re-reading the code, that's NOT what's happening today. Either the bug was fixed silently after the prior audit (line 16 was changed) or the prior audit was incorrect.
+
+**REVISION TO B2:** The diagnostic correctly hides from parents on peer rows. The actual issue is different — for admin/coach, EVERY ROW shows "No RSVPs yet" when the team hasn't engaged with RSVPs yet. That's not a privacy leak; it's a wall of negative-state pills that bury actionable signal under repetition. The fix is different: cluster the diagnostic into a single team-level "11 of 13 families haven't RSVP'd for this week" call-out at the Roster header level, not 13 per-row pills.
+
+This is a meaningful audit revision. The bug exists, but its scope is admin-noise, not parent-privacy.
+
+Other PlayerRow notes:
+- Line 14: `age` derived from `dob` using `NOW = Date.now()` at module top (line 6). NOW is captured at import time, not per-render — birthday-crossing fragility (a kid turns 11 on June 1; the page still shows "10y" until the module re-imports). Minor.
+- Line 47–54: payment_status dot — admin/coach only. Per §11.5 ground-truth table, `payment_status` lives in `financial_accounts` now, not roster_members. This is the legacy column being read. Schema migration backlog.
+- Line 50: `payment_status === 'partial' ? warning : payment_status === 'overdue' ? danger : success` — defaults to green when payment_status is null/missing. False-green for kids without a financial_account row. Reads "paid" when reality is "unknown."
+
+────────────────────────────────────────────────────────
+2.5 MyChildSpotlight.jsx — duplicated sparse-RSVP logic
+────────────────────────────────────────────────────────
+
+Lines 20–26 mirror PlayerRow lines 16, 23–24. Same sparse-RSVP logic, copied. Same comment ("Frank-reported 2026-05-20 L99 v6 §5.1 B4"). Per anti-pattern #34 / DRY: a shared `useSparseRsvp(player)` hook or `<RsvpPills player>` component would eliminate the drift risk. Today they happen to match; tomorrow's edit to one is silent drift from the other.
+
+Lines 65–77 render the next-event RSVP picker INSIDE the spotlight card. This is the per-kid action the parent came for. Per the prior L99 doc Part 4 [B], this is the slot the redesigned hero would absorb.
+
+────────────────────────────────────────────────────────
+2.6 UpcomingEvents.jsx — three issues in 55 lines
+────────────────────────────────────────────────────────
+
+Line 16: `useWeather(41.03, -73.76)` — hardcoded Westchester coords (B5 confirmed). This is in a multi-tenant codebase. Other orgs in Albuquerque or Seattle will see Westchester weather forecasts.
+
+Lines 32–37: always-on UPPERCASE "UPCOMING (NEXT 7 DAYS)" header even when there are no events. Visual chrome that earns its space only when content exists.
+
+Line 39: empty state text "Time to work on those crossovers." — hardcoded basketball metaphor. Per §16.3 + V3 / B6 above.
+
+Lines 47–52: full-width "View full schedule →" button rendered ALWAYS, even when there are 0 upcoming events and the page just told the user "Clear week ahead." Two CTAs in adjacent space competing for attention.
+
+────────────────────────────────────────────────────────
+2.7 CoachQuickActions.jsx — two-tile redundancy
+────────────────────────────────────────────────────────
+
+24 lines, 2 tiles (Message + Schedule). Both deep-link to query-string routes (`/messages?team=X`, `/schedule?team=X`).
+
+Same Message destination as MessageTeamFAB (line 7 of CoachQuickActions = line 15 of MessageTeamFAB = `/messages?team=${teamId}`). **Two surfaces, one destination.** §16.14 "one canonical action per concern" violation.
+
+The Send-briefing chip on TeamDetailPage:81 routes to `/admin/briefings/compose?anchor=team&id=${teamId}` — that's a third "message families about this team" surface, but the destination is different (briefing portal vs chat). Still, a parent landing on this page sees three buttons that all read like the same action.
+
+────────────────────────────────────────────────────────
+2.8 MessageTeamFAB.jsx — fixed positioning hazard
+────────────────────────────────────────────────────────
+
+Lines 8–11: `position: fixed; bottom: calc(80px + env(safe-area-inset-bottom, 0px) + 16px); right: 16px; zIndex: 40`. The 80px is the bottom-nav height. The FAB sits 16px above the nav.
+
+This is structurally fine in isolation — every page that uses MessageTeamFAB renders it the same way. But TeamDetailPage scrolls 1900px tall and the FAB overlaps everything in its 72×72 footprint. V2 confirmed visually.
+
+Worse: `zIndex: 40` is below the modal layer (usually 50) but above content. Tap-target collisions are inevitable when content is in the FAB's footprint. The empty-state Player Stats copy is one example; the bottom edge of any expanded Pulse grid row is another.
+
+────────────────────────────────────────────────────────
+2.9 RosterSection.jsx — 32 lines, two issues
+────────────────────────────────────────────────────────
+
+Line 14: `defaultOpen={isStaff(role)}` — B3 confirmed.
+
+Line 13: `<RosterControls ... />` rendered OUTSIDE the CollapsibleSection. So search + sort controls show on the page even when roster is collapsed. This is the §16.14 "no mid-page always-on chrome" violation. The controls only sort the contents of the section directly below them — they should live inside it.
+
+────────────────────────────────────────────────────────
+2.10 Other components
+────────────────────────────────────────────────────────
+
+- **TeamSwitcher.jsx (14 lines):** thin wrapper around `FilterSelect`. Renders only when `switcherPrograms.length > 1` per TeamDetailPage:72. Single-team orgs never see it. Fine.
+
+- **TeamPlayerStats.jsx (24 lines):** correct — collapsed by default, header carries the toggle. Empty-state text inside is what gets clipped by FAB (V2). The empty state for "no live-scored games yet" never resolves to actual content for orgs that don't use live-scoring — Legacy Hoopers doesn't, so this block is permanent dead space.
+
+- **TeamAchievements.jsx (62 lines):** filters by `org_id` AND `team_id` (line 32–33) per anti-pattern #37 ✅. Filters by `confirmed_at IS NOT NULL` (line 34) so only confirmed achievements render. Returns null if zero achievements (line 42). Good. Rendered always-on inline above MessageTeamFAB (line 107 of TeamDetailPage).
+
+═══════════════════════════════════════════════════════════════════════════
+PART 3 — DATA LAYER AUDIT
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────
+3.1 Query count per page load (cold)
+────────────────────────────────────────────────────────
+
+For an admin landing on `/teams/<id>`:
+
+| Hook | Queries fired | Tables |
+|------|---------------|--------|
+| usePrograms | 1 | teams |
+| useRoster | 1 | roster_members + players + player_guardians + guardians (joined) |
+| useAttendanceData | 7 | events, roster_members, players, event_rsvps, event_arrivals, check_ins, player_activations |
+| useTeamRecords | 1 | game_results (joined) |
+| usePlayerSeasonStats | 1 | game_plays (joined) |
+| useActivities | 1 | activities + teams + locations |
+| TeamAchievements | 1 | team_achievements |
+
+**Total: ~13 queries per cold page load.** Several fire in `Promise.all` so wall-clock time is dominated by the slowest (likely the activities composite join). Still significant. Caching is warm-only — useActivities uses a context-level cache that warms when /home loads; entering /teams/:id directly hits cold.
+
+────────────────────────────────────────────────────────
+3.2 RLS scoping verification per anti-pattern #37
+────────────────────────────────────────────────────────
+
+Anti-pattern #37: org-scoped tables MUST have `.eq('org_id', orgId)` as the first filter.
+
+| Query | Table | org-scoped? | Has `.eq('org_id', orgId)`? |
+|-------|-------|-------------|------------------------------|
+| usePrograms | teams | yes | check usePrograms.js |
+| useRoster | roster_members | FK-scoped (via team) | exempt per #37 |
+| useAttendanceData | events | FK-scoped (via team) | exempt |
+| useAttendanceData | roster_members | FK-scoped | exempt |
+| useAttendanceData | players | yes | check (line 54 — no `.eq('org_id', orgId)` visible) |
+| useAttendanceData | event_rsvps | FK-scoped (via event) | exempt |
+| useAttendanceData | event_arrivals | FK-scoped (via event) | exempt |
+| useAttendanceData | check_ins | FK-scoped | exempt |
+| useAttendanceData | player_activations | FK-scoped | exempt |
+| useTeamRecords | game_results | check | check |
+| TeamAchievements | team_achievements | yes | ✅ line 32 |
+
+**D1. `useAttendanceData.js:54` queries `players` table by `.in('id', playerIds)` with NO `.eq('org_id', orgId)`.**
+The playerIds come from a teamId-filtered roster_members query, so via FK chain the player IDs are already org-scoped. But the query itself doesn't carry org_id — if RLS on `players` ever loosens, this query becomes a vector. Defense-in-depth per #37: add `.eq('org_id', orgId)`. Same call site at line 54.
+
+**D2. Verify `usePrograms` and `useTeamRecords` org_id scoping.**
+Quick check needed in PR-pre-flight: both queries should start with `.eq('org_id', orgId)` even though `teams` and `game_results` are org-scoped. (The audit grep `grep -rEn "supabase\\.from\\('(teams|game_results)'\\)" src/` would surface every callsite for verification — see anti-pattern #37 audit method.)
+
+────────────────────────────────────────────────────────
+3.3 Refetch behavior
+────────────────────────────────────────────────────────
+
+`TeamDetailPage.jsx:35`: `useRefetchOnVisible(rosterRefetch)` — refetches roster on tab visibility change. Good for staleness.
+
+`useAttendanceData.js:80`: also `useRefetchOnVisible(refetch)`. Good.
+
+`useActivities` — refetches on visibility per its own internal hook. Good.
+
+But: no realtime subscription on this page. RSVPs that come in while a coach is staring at the page don't update until tab-hide/show. For game-day live use, the pulse grid is stale.
+
+────────────────────────────────────────────────────────
+3.4 N+1 / inefficient query risks
+────────────────────────────────────────────────────────
+
+`useAttendanceData` fires 4 sequential awaits (line 43, 53–54, 62–66, then state set). The Promise.all collapses 2 batches:
+- Batch 1: events + roster_members (parallel)
+- Batch 2: players (await sequential after batch 1)
+- Batch 3: rsvps + arrivals + check_ins + activations (parallel after batch 2)
+
+That's 3 round-trips, not 7. Acceptable. Could be improved to 2 if the players query merged into batch 3 (no dependency on player_ids for batch 3 — they only use event_ids).
+
+`TeamHeaderCard` reads from `summary` prop — no query.
+
+No N+1 risks observed.
+
+────────────────────────────────────────────────────────
+3.5 RLS holes / cross-org leak risk
+────────────────────────────────────────────────────────
+
+Quick mental audit:
+- An admin navigates to `/teams/<another-org's-team-id>` directly via URL.
+- `usePrograms()` returns their own org's teams.
+- `programs.find(p => p.id === teamId)` returns undefined.
+- Line 65: renders EmptyState "Team not found." ✅ Correct fallback.
+
+But: `useAttendanceData(teamId)` STILL FIRES against the other org's teamId because the hook doesn't check programs first. The `events` query has RLS on team_id → teams → org_id, so it returns []. Same for roster_members. So the queries are safe-by-RLS but waste round-trips. Defense-in-depth: gate the hook fires on `team` truthiness, not just `teamId`.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 4 — ANTI-PATTERN VIOLATION CATALOG (vs #1–#49)
+═══════════════════════════════════════════════════════════════════════════
+
+Walking the 49 registered anti-patterns against this page:
+
+| # | Anti-pattern | Violation on this page? |
+|---|--------------|-------------------------|
+| 1 | current_user_org_id on org_members | No |
+| 2 | bg-black/50 | No |
+| 3 | max-height expand/collapse | No |
+| 4 | Sequential await in loops | useAttendanceData has Promise.all — OK |
+| 5 | document.getElementById | No |
+| 6 | Rewrite files >150 lines | TeamDetailPage is 111 (OK), PlayerRow is 131 (OK), heatmap 95 (OK) |
+| 7 | Constants in multiple files | Sparse-RSVP logic duplicated PlayerRow + MyChildSpotlight (mild) |
+| 8 | Hardcode hex | `'#FFFFFF'` not used in components ✅; team_color from DB is the only inline hex ✅ |
+| 9 | "CYO" publicly | TeamHeaderCard meta line uses "League Play" label map ✅ |
+| 10 | "Boys 10U" | Team names sourced from teams.name (DB), follow naming rules |
+| 11 | Sky blue #29b6f6 | No |
+| 12 | Scrimmage as activity type | No |
+| 13 | Duties one row | No (page doesn't write duties) |
+| 14 | Futures Academy as role | Correctly uses `member_type === 'futures_academy'` ✅ |
+| 15 | BottomSheet for multi-field forms | No (page is read-only) |
+| 16 | Invent CSS tokens | No |
+| 17 | Change CSS token values | No |
+| 18 | CSS %/dvh for overlay heights | FAB uses calc + safe-area ✅ |
+| 19 | Commit directly to main | N/A |
+| 20 | cmd='ALL' RLS with_check=NULL | Not application code |
+| 21 | Migration mirror | N/A |
+| 22 | Trust CC's "committed and pushed" | N/A |
+| 23 | REVOKE PUBLIC then role | N/A |
+| 24 | RLS audit relkind='r' | N/A |
+| 25 | onConflict on composite UNIQUE | N/A |
+| 26 | Replay failing op via MCP | N/A |
+| 27 | Resolver/composer pure | N/A (page is UI) |
+| 28 | RESOLVER_REGISTRY dispatch | N/A |
+| 29 | Per-recipient token substitution | N/A |
+| 30 | Edge-function mirror | N/A |
+| 31 | verify_jwt = false | N/A |
+| 32 | Migration verification SQL-only | N/A |
+| 33 | app_secrets vs Deno.env | N/A |
+| 34 | Registry removal w/ caller migration | Duplicated sparse-RSVP logic in PlayerRow + MyChildSpotlight is the small-scale instance — extract a shared piece and migrate both callers together ✅ as a fix |
+| 35 | Branch-divergence pre-flight | N/A workflow |
+| 36 | Destructured defaults swallow errors | Multiple hooks use `const { data } = await ...; ... data \|\| []` pattern — needs audit per #36. `TeamAchievements.jsx:36` is `({ data })` without error check; `useAttendanceData` likewise. **VIOLATIONS:** TeamAchievements line 36, useAttendanceData lines 43–66 (any error path silent) |
+| 37 | org_id first on org-scoped tables | D1 above — useAttendanceData line 54 missing org_id on players query. TeamAchievements line 32 ✅ |
+| 38 | Renderer-emit parity | N/A (not an engine page) |
+| 39 | Position+hedge | N/A reasoning |
+| 40 | Existing-infra hedge | Watch in redesign — proposing a useTeamHeadCoach hook is correct-NOT-reuse-existing |
+| 41 | Routing-signal overshadow | N/A reasoning |
+| 42 | Parallel-system buildup | **VIOLATION:** TeamDetailPage uses `useAuth().role` directly when `useHomeRole().activeRole` exists for "view as" preview (prior Q1 confirmed) |
+| 43 | Cross-surface invariant test | NEEDED for the redesign — no `TeamPulseHeaderInvariant.test.jsx` exists yet |
+| 44 | Trace state pipeline | N/A specific bug |
+| 45 | EMBER_PENDING_LEDGER §4 reconciliation | This audit triggers a §4 entry update ✅ to add as redesign arc |
+| 46 | Card-row visual rhythm test | NEEDED for TeamDetailHero PR — invariant test or screenshot per §46 |
+| 47 | Branch reset hazard | N/A workflow |
+| 48 | PostgREST .order foreignTable | Useful corollary — Pulse grid sort happens client-side ✅ (line 137 useAttendanceData) |
+| 49 | Paste review-bound docs in chat | ✅ This doc pasted per #49 |
+
+**Anti-pattern summary:** 3 hard violations (#36, #37, #42), 2 documentation needs (#43, #46 — for the redesign PR), 1 minor pattern smell (#7/#34 — duplicated sparse-RSVP logic).
+
+═══════════════════════════════════════════════════════════════════════════
+PART 5 — ACCESSIBILITY AUDIT
+═══════════════════════════════════════════════════════════════════════════
+
+Per CLAUDE.md §16.4 — accessibility is table stakes.
+
+**A1. Tap target sizes:** ✅ All tappable surfaces hit 44px min — back button (line 69), TeamSwitcher chip, PlayerRow (56px min), CoachQuickActions tiles (44px), MessageTeamFAB (56px), Send briefing chip (44px). Sort chips inside RosterControls likely 44px (not read but standard pattern).
+
+**A2. aria-labels:** Mostly present. MessageTeamFAB has `aria-label="Message team"` ✅. Back button has aria via `<ChevronLeft aria-hidden="true">` + visible text. **MISSING: aria-label on the page itself or H1 landmark for "Team detail for X."** The H1 reads "11U Girls" — fine semantically but a screen reader user landing here doesn't know they're on a team detail page (vs the teams list). Suggest aria-label on the wrapper div or document.title sync.
+
+**A3. Tab order:** Visual scan suggests OK — back → switcher → header → send-briefing chip → coach actions → upcoming → search → sort chips → roster rows → pulse → player stats → FAB. The FAB at position:fixed; in tab order it lands LAST per DOM order — but visually it floats above content the user already passed. Screen reader user tabbing in DOM order hits the FAB after Player Stats — which is fine functionally but the FAB has no "skip to FAB" affordance and a keyboard user has to tab through 13 player rows to reach it.
+
+**A4. Color contrast:** Sample check on `var(--em-text-tertiary)` (#8896AB) against `var(--em-bg-page)` (#F7F8FA) — that's ~3.4:1 contrast. Per WCAG AA, body text needs 4.5:1. **Tertiary text fails AA on this page background.** Used for sort labels ("UPCOMING (NEXT 7 DAYS)" header), meta lines, "5th" grade pills. Borderline but cumulatively significant. The same tokens elsewhere may render against `var(--em-bg-card)` (#FFFFFF) where contrast is ~4.0:1 — still below AA.
+
+**A5. prefers-reduced-motion:** `sf-press`, `sf-fade-in`, `sf-stagger-N` animations are defined in `index.css` per CLAUDE.md §7 with `prefers-reduced-motion` guard. ✅
+
+**A6. Focus visible:** No explicit `:focus-visible` styling observed on any tap target. Touch-screen primary surface so low-priority, but keyboard users get default browser ring which is inconsistent with the design language.
+
+**A7. Screen reader for Pulse grid:** The grid uses CSS grid + `display: contents` (line 72). Cells have no aria-label — a screen reader reads "blank" for empty cells, "✕" for no_show, etc. without context. Better: each cell could carry `aria-label="May 14, no response"` or wrap the grid in a `<table>` semantic.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 6 — PERFORMANCE AUDIT
+═══════════════════════════════════════════════════════════════════════════
+
+**P1. Re-render triggers.** TeamDetailPage `useNow()` ticks every minute. That re-evaluates `nextEvent` memo (correct) AND re-renders the entire page tree because `now` is in the closure. PlayerRow's `NOW = Date.now()` is module-level — doesn't re-render, but doesn't update age either.
+
+**P2. enrichedPlayers memo.** Re-runs whenever `players` or `grid` change. `grid` re-computes whenever useAttendanceData's inputs change OR useNow ticks. So enrichedPlayers re-runs every minute. The reduce is cheap (13 players) — no concern.
+
+**P3. Pulse grid render cost.** 13 players × ~6 events visible = 78 cells per pass. Each cell renders a div with 2 lookups. Cheap. The horizontal scroll for season range (180d / ~26 events) bumps to 13×26 = 338 cells — still cheap.
+
+**P4. Bundle.** All 12 components on this page are tree-shaken individually — no lazy import. TeamPlayerStats imports PlayerStatsTable from records, which pulls in a stats fixture set. The Roster section depends on PlayerRow + GuardianRow which depends on InviteButton. Total subtree from this page is moderate but unmeasured. Per CLAUDE.md §16.10 (350KB total compressed budget), worth a `npm run build` baseline. None of this page should code-split — it's a primary route — but a route-split between /teams (list) and /teams/:id (detail) might shed 30–50KB of FAB / Achievements / pulse code from the list-view's first paint.
+
+**P5. Empty-state Player Stats permanent dead space.** For Legacy Hoopers (no live-scoring), the Player Stats section renders for staff with permanent "no live-scored games yet" text. It costs DOM + render + the empty-state subtree. Should gate on org-level "live-scoring active" rather than just role.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 7 — CROSS-SURFACE INVARIANT AUDIT (per anti-pattern #43)
+═══════════════════════════════════════════════════════════════════════════
+
+Concepts on this page that also appear elsewhere — drift risk surface.
+
+**X1. Team Pulse % metric.** Appears on:
+- TeamHeatmap (this page)
+- CoachHomePage TeamPerformanceStrip (alpha — admin home)
+- Possibly TeamMetricsCard somewhere (search)
+A team-pulse-metric change must propagate to all surfaces or they drift. Today's "2% Going" reads one way here; the admin home strip reads a different number. Cross-surface test needed.
+
+**X2. Player row pills (Going/Maybe/No/NR).** Appears on:
+- PlayerRow (this page Roster section)
+- MyChildSpotlight (this page top — parent)
+- Possibly EventDetail attendance pill stack
+- Possibly admin roster page
+The sparse-RSVP gating logic was copied between PlayerRow + MyChildSpotlight in 2026-05-20 with a comment but no shared module. Test: render same fixture player into both, assert pill set is identical. Cross-surface invariant test #43.
+
+**X3. Stat strip (PPG / Allowed / Diff / Win% / Games).** Appears on:
+- TeamHeaderCard (this page)
+- Records page (per CLAUDE.md §8 prompt 5-A done)
+- Admin TeamPerformanceStrip (alpha home)
+Three surfaces, one underlying season scope. If Records starts showing "season" while TeamHeaderCard shows "all time," that's a silent drift bug. V8 above flagged this.
+
+**X4. "No RSVPs yet" diagnostic.** Appears on:
+- PlayerRow + MyChildSpotlight (this page)
+- Probably EventCard / EventDetailPage participant lists
+Cross-surface test: the diagnostic threshold (responsesReceived <= 1) should be the SAME numeric across surfaces.
+
+**X5. UpcomingEvents empty-state copy.** "Clear week ahead" / "Time to work on those crossovers." appears here and likely on a few other empty-state surfaces. Centralize per §16.3 micro-copy.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 8 — BUG CATALOG (consolidated, prior + new)
+═══════════════════════════════════════════════════════════════════════════
+
+| ID | Class | Severity | Origin | Fix shape |
+|----|-------|----------|--------|-----------|
+| B1 | Logic | P0 | prior | Gate pulse % on responseRate ≥ 50% AND totalPast ≥ 2; below = "Not enough data yet" |
+| B2 | (REVISED) UX | P1 | prior | NOT a privacy leak; admin-noise. Cluster into team-level call-out at Roster header |
+| B3 | UX | P1 | prior | Flip Roster defaultOpen to false for both roles |
+| B4 | UX | P1 | prior + V2 | Retire MessageTeamFAB on this page; rely on header chip |
+| B5 | Multi-tenancy | P2 | prior | Per-org weather coords from team.location or org.timezone |
+| B6 | Copy | P2 | prior + V3 | Role-flavored empty-state copy |
+| V1 | Layout | P1 | new | RosterControls layout fails at 390px — clipped sort chip |
+| V2 | Layout | P0 (visual) | new | FAB overlap on Player Stats + other content (see B4 fix) |
+| V3 | Copy | P2 | new | (= B6) |
+| V4 | UX | P1 | new | Pulse grid row order differs from Roster sort order — pick one |
+| V5 | UX | P2 | new | Horizontal scroll on Pulse grid season range without indicator |
+| V6 | UX | P2 | new | Academy member visual indicator weaker than text pill |
+| V7 | Layout | P2 | new | Stat strip label wrapping on iPhone |
+| V8 | Clarity | P2 | new | No "season scope" indicator on stat numbers |
+| C1 | Code | P1 | new | Duplicated sparse-RSVP logic PlayerRow + MyChildSpotlight |
+| C2 | Code | P2 | new | enrichedPlayers re-runs every minute via useNow chain |
+| C3 | Code | P1 | new | Role read via useAuth().role not useHomeRole().activeRole (= prior Q1) |
+| C4 | Code | P2 | new | Dead `nextEvent` prop on TeamHeaderCard |
+| D1 | Data | P2 | new | useAttendanceData players query missing .eq('org_id', orgId) |
+| D2 | Data | P2 | new | Destructured-default error swallow pattern (anti-pattern #36) in 3+ callsites on this page |
+| A1 | A11y | P2 | new | No landmark/page-title for screen reader context |
+| A2 | A11y | P2 | new | Tertiary text fails WCAG AA against page bg (~3.4:1) |
+| A3 | A11y | P2 | new | Pulse grid cells have no aria-labels |
+
+**P0 count: 2** (B1 + V2/B4)
+**P1 count: 6** (B2 revised, B3, V1, V4, C1, C3)
+**P2 count: 11**
+**Total: 19 distinct issues**
+
+═══════════════════════════════════════════════════════════════════════════
+PART 9 — REDESIGN PROPOSAL (extends prior L99 doc Part 4)
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────
+9.1 Design principles (recap + 2 new locks from this audit)
+────────────────────────────────────────────────────────
+
+Prior locks (from L99_TEAMS_REDESIGN 2026-05-20):
+- Hero + collapsibles per §16.14
+- Per-role action stack
+- No mid-page always-on chrome
+- One canonical action per concern
+- No diagnostic copy parents can't act on
+- No auto-expand on signal alone
+
+NEW locks from this audit:
+- **Cross-surface row-order invariant** (V4): Roster and Pulse grid show the same players in the same order. If admin sorts roster by Att%, pulse follows. Lock via shared `usePlayerSortOrder` hook + invariant test.
+- **Visual season scope marker** (V8): every stat surface carries a one-word scope ("Spring 2026" or "season" or "all-time") near the numbers. No bare numbers without scope.
+
+────────────────────────────────────────────────────────
+9.2 Hero card contract (refined from prior Part 4)
+────────────────────────────────────────────────────────
+
+Hero card has 4 slots, top to bottom:
+
+```
+┌─ HERO CARD ─────────────────────────────────────────┐
+│ SLOT 1: identity                                     │
+│  ▮▮▮▮▮▮▮ team_color stripe 6px                       │
+│  Team name (20px bold)          [age circle 40×40]   │
+│  Meta line (13px tertiary)                           │
+│   age · circuit · record · streak · season-scope     │
+│                                                      │
+│ SLOT 2: stats (staff only, gamesPlayed > 0)          │
+│  ─────────────────────────────────────────────       │
+│  PPG  | ALLOWED | DIFF | WIN% | GAMES                │
+│   ↑ on iPhone, wrap-safe single-line variant:        │
+│   "8-4 · L1 · +2.9 PPG diff"                         │
+│                                                      │
+│ SLOT 3: next-event (state at a glance)               │
+│  ─────────────────────────────────────────────       │
+│  Wed May 20 · 7:00 PM · CYO Spellman                 │
+│  ████████░░░░░ 9/13 RSVP'd · 4 pending               │
+│                                                      │
+│ SLOT 4: per-role action stack                        │
+│  ─────────────────────────────────────────────       │
+│  STAFF future game: [Send briefing] [Message]        │
+│  STAFF off-week:    [Send briefing] [Plan practice]  │
+│  STAFF game-day:    [Open game-day mode →]           │
+│  PARENT (single kid): [Going] [Maybe] [Can't] picker │
+│  PARENT (siblings):   one picker per kid             │
+└─────────────────────────────────────────────────────┘
+```
+
+The hero ALWAYS has Slot 1. Slot 2 hides for parents and zero-games. Slot 3 hides on "clear week ahead." Slot 4 is mandatory — page MUST have a primary action.
+
+────────────────────────────────────────────────────────
+9.3 Below-hero structure
+────────────────────────────────────────────────────────
+
+After the hero, the page is collapsibles. Closed by default unless context demands. Each header carries a summary line so the user reads state without expanding.
+
+```
+HERO  (~280–340px depending on slots)
+▶ Upcoming (next 7 days) · 3 events
+▶ Roster · 13 players · 11 responded last event
+▶ Team Pulse · 65% responded · last 4 weeks
+▶ Player Stats · no live-scored games yet  [hides if org doesn't use live-scoring]
+▶ Achievements · 1 trophy  [renders only if achievements exist]
+```
+
+Search + sort live INSIDE the Roster collapsible expanded body, not above it.
+
+No FAB. The hero action row owns the message destination.
+
+Overflow menu in the back-chevron strip carries the rare admin operations:
+- Edit team (deep-link to /admin/teams form sheet)
+- Send briefing (also in hero for fast access)
+- Copy roster
+- Manage jersey numbers
+- Toggle realtime updates (future)
+
+────────────────────────────────────────────────────────
+9.4 Per-role wireframes
+────────────────────────────────────────────────────────
+
+**[A] PARENT — kid Charlie on 10U Blue, next game in 2 days**
+
+```
+┌─ navy strip ──────────────────────────────────────────┐
+│ Legacy Hoopers LLC · PARENT · 👁 🔔 ⚙                │
+└─────────────────────────────────────────────────────┘
+┌─ header strip ──────────────────────────────────────┐
+│ ← Teams                                              │
+└─────────────────────────────────────────────────────┘
+┌─ HERO ──────────────────────────────────────────────┐
+│ ▮▮ 10U Blue                                  [10U]  │
+│ 10U · AAU · Spring 2026 · 8-4                       │   no win% / no diff for parent
+│ Practice Mon @ Rippowam · Coach Mike 914-555-0140   │
+│ ─────────────────────────────────────────────────── │
+│ Charlie #14                                          │
+│  [ Going ]  [ Maybe ]  [ Can't ]                    │   inline picker
+│ ─────────────────────────────────────────────────── │
+│ Next: Wed May 20 · 7:00 PM · CYO Spellman           │
+│ ████████░░░░░ 9/13 going                            │   honest count, no %
+└─────────────────────────────────────────────────────┘
+▶ Upcoming (next 7 days) · 3 events
+▶ Teammates · 13 players                              │   "Roster" → "Teammates" for parents
+▶ My attendance · 8 of 10 events                       │   honest count, no %
+▶ Achievements · 1 (Pool Winner)
+```
+
+Notes:
+- Stat strip hidden for parents.
+- Coach contact line is new (depends on useTeamHeadCoach — see prior Q5).
+- "My attendance" uses honest counts not percentages until B1 logic shipped.
+- "Teammates" hides per-kid attendance pills from peer rows (per prior Q4).
+
+**[A2] PARENT — siblings on same team**
+
+```
+┌─ HERO ──────────────────────────────────────────────┐
+│ ▮▮ 10U Blue                                  [10U]  │
+│ meta                                                 │
+│ ─────────────────────────────────────────────────── │
+│ Charlie #14                                          │
+│  [ Going ]  [ Maybe ]  [ Can't ]                    │
+│                                                      │
+│ Sam #22                                              │
+│  [ Going ]  [ Maybe ]  [ Can't ]                    │
+│ ─────────────────────────────────────────────────── │
+│ Next: Wed May 20 · 7:00 PM · CYO Spellman           │
+└─────────────────────────────────────────────────────┘
+```
+
+Per prior Q8: render `myChildren.filter(c => c.teamIds.includes(teamId))` and one picker per kid. Same as L99 event-detail hero [D].
+
+**[B] COACH — own team, next practice tomorrow**
+
+```
+┌─ HERO ──────────────────────────────────────────────┐
+│ ▮▮ 10U Blue                                  [10U]  │
+│ 10U · AAU · Spring 2026 · 8-4 · L1                  │
+│ ─────────────────────────────────────────────────── │
+│ 23.3   20.4   +2.9   67%    12                       │   stat strip
+│ PPG   ALLOWED  DIFF  WIN %  GAMES                    │
+│ ─────────────────────────────────────────────────── │
+│ Next: Wed May 20 · 7:00 PM · Rippowam (practice)    │
+│ ████████░░░░░ 9/13 RSVP'd · 4 pending               │
+│                                                      │
+│ [ Send briefing ]    [ Message families ]            │
+└─────────────────────────────────────────────────────┘
+▶ Upcoming (next 7 days) · 3 events
+▶ Roster · 13 players · 11 responded last event
+▶ Team Pulse · 65% responded · last 4 weeks
+▶ Player Stats · no live-scored games yet
+```
+
+Notes:
+- Action row inside hero. No CoachQuickActions tiles below. No FAB.
+- Pulse and stats collapsed, headers carry summary.
+- Roster collapsed, header tells coach "11/13 responded last event" — the question they came to answer.
+
+**[C] COACH — game-day mode (within 4h of tip)**
+
+Action row swaps from `[Send briefing][Message families]` to `[Open game-day mode →]` which deep-links to EventDetailPage of nextEvent in arrival-board mode. Coach taps once and is in the right tool for the next 90 minutes.
+
+**[D] ADMIN — landing from /teams**
+
+Same as Coach but:
+- Overflow menu (⋯ in back-chevron strip) carries admin operations.
+- Optional v2: inline mini-strip of sibling teams' W-L chips next to back chevron so admin can hop between teams without back-tap.
+
+**[E] ADMIN viewing-as-parent / viewing-as-coach**
+
+`useHomeRole().activeRole` drives the render. The page looks exactly like [A] / [B]. The 👁 toggle in the navy strip is the escape hatch back to admin view. This is the parallel-systems fix per anti-pattern #42 — page renders against activeRole, in-row admin permissions check realRole.
+
+────────────────────────────────────────────────────────
+9.5 Responsive behavior (extends prior Part 5)
+────────────────────────────────────────────────────────
+
+**iPhone (<600px):**
+- Hero: full-width with 16px padding.
+- Stat strip: 5 cells fit at 70px each (V7 wrap concern handled by abbreviating "WIN%" → "W%" and "GAMES" → "GMS" on the strip, OR collapsing the strip to single-line "8-4 · L1 · +2.9 diff" — pick via redesign Q).
+- Action row: stacks vertical, full-width buttons.
+- Next-event mini-block: date wraps if location is long.
+
+**iPad (≥600px):**
+- Hero: max-width 760px centered.
+- Stat strip: 5 cells full labels.
+- Action row: side-by-side.
+
+**Pulse grid:**
+- iPhone: 6 visible date columns, fade-right gradient indicating horizontal scroll, sticky player-name column on the left during scroll.
+- iPad: more columns fit, no scroll for 4-week range, season range still scrolls but with fade.
+
+**Above-the-fold post-redesign (iPhone 13/14):**
+- Staff: hero (full) + 2 collapsible headers (Upcoming + Roster summaries readable without scroll). Send briefing + Message tappable without scrolling.
+- Parent: hero (full, with kid RSVP picker) + 1–2 collapsible headers. RSVP tappable without scrolling.
+
+────────────────────────────────────────────────────────
+9.6 New components (extends prior Part 6)
+────────────────────────────────────────────────────────
+
+| Component | Lines (est) | Replaces |
+|-----------|-------------|----------|
+| TeamDetailHero | ~140 | TeamHeaderCard + MyChildSpotlight + standalone Send-briefing chip + CoachQuickActions |
+| useTeamHeadCoach | ~30 | (new — for coach contact line) |
+| TeamDetailOverflowMenu | ~50 | (new — back-strip ⋯) |
+| usePlayerSortOrder | ~20 | (new — shared sort between Roster + Pulse, V4 fix) |
+| useSparseRsvp | ~10 | (new — extract duplicated logic C1) |
+| RsvpProgressBar | ~25 | (new — shared between hero Slot 3 and prior surfaces) |
+
+Components retired:
+- TeamHeaderCard (replaced)
+- MyChildSpotlight (folded into hero)
+- CoachQuickActions (folded into hero)
+- MessageTeamFAB (retired on this page; component file kept for other surfaces if used)
+
+═══════════════════════════════════════════════════════════════════════════
+PART 10 — 4-PR ROLLOUT (extends prior 3-PR plan)
+═══════════════════════════════════════════════════════════════════════════
+
+Mirrors L99 event-detail #392/#393/#394 plus adds PR D for the data-layer cleanup that's now in scope.
+
+────────────────────────────────────────────────────────
+PR A — STOP-THE-BLEEDING (~4 file edits, ~20-line invariant test)
+────────────────────────────────────────────────────────
+
+Closes: B1, B3, C3, plus V1 if the chip layout fix is small.
+
+- `TeamHeatmap.jsx`: gate pulse % on `responseRate >= 50% && totalPast >= 2`. Below threshold, header reads "Team Pulse · Not enough data yet" (range/filter still visible).
+- `RosterSection.jsx`: flip `defaultOpen={isStaff(role)}` → `defaultOpen={false}`. Move `<RosterControls>` INSIDE the CollapsibleSection. Pass count + subtitle "11 responded last event" via CollapsibleSection props (already supported per prior D2).
+- `PlayerRow.jsx`: leave the sparse-RSVP role gate as-is (verified correct). Lower the diagnostic visual weight — replace the pill with a tertiary-color asterisk or move to expand-only.
+- `TeamDetailPage.jsx`: swap `useAuth()` for `useHomeRole()` for `role` (not for `myTeamIds`/`myChildren` — those still come from useAuth).
+- `RosterControls.jsx` (or wherever): fix V1 chip layout — move sort chips to a row BELOW search at iPhone width, OR drop one chip (Gr vs Age = probably redundant, pick one).
+- New test: `src/components/gameday/__tests__/TeamPulseHeaderInvariant.test.jsx` — assert header never shows numeric % when `responseRate < 50%`. Per anti-pattern #43.
+
+Risk: Low. No new components. All files stay under 150 lines.
+Reclaim: ~600–900px on staff load. B1 user-visible bug class closed.
+
+────────────────────────────────────────────────────────
+PR B — HERO CARD CONSOLIDATION (~140-line new component)
+────────────────────────────────────────────────────────
+
+Closes: B4, V2, C1, C4, plus the structural cleanup.
+
+- New `src/components/roster/TeamDetailHero.jsx` (~140 lines). 4 slots per 9.2.
+- New `src/hooks/useTeamHeadCoach.js` (~30 lines) — `team_staff` joined to `staff_profiles`, returns `{ name, phone, email }` or null.
+- New `src/components/shared/RsvpProgressBar.jsx` (~25 lines).
+- New `src/hooks/useSparseRsvp.js` (~10 lines) — extract duplicated logic from PlayerRow + MyChildSpotlight (C1 fix).
+- Retire MessageTeamFAB mount from TeamDetailPage line 108. Component file stays (other pages may import).
+- Retire TeamHeaderCard, MyChildSpotlight, CoachQuickActions mounts. Files kept 1 session per L99 #393 playbook then deleted.
+- Wrap `UpcomingEvents` in `<CollapsibleSection title="Upcoming (next 7 days)" subtitle={`${upcoming.length} events`}>`.
+- Update PlayerRow + MyChildSpotlight to consume `useSparseRsvp` hook (deletes the duplicated logic).
+- New test: `TeamDetailHeroPerRoleInvariant.test.jsx` — render hero for parent/coach/admin, assert per-role element presence/absence.
+- New test: `RsvpProgressBarCrossSurface.test.jsx` — shared component must render identically inside hero + EventCard.
+- Pre-flight grep per anti-pattern #34: confirm TeamHeaderCard / MyChildSpotlight / CoachQuickActions have ZERO callers outside TeamDetailPage before retiring.
+- Per anti-pattern #46: PR ships with before/after screenshots of all 5 role variants (parent / coach / admin / admin-viewing-as-parent / admin-viewing-as-coach).
+
+Risk: Medium. New top-level component + mount-tree swap. Mitigation: keep retired components in tree but unreferenced 1 session before delete.
+Reclaim: another ~300–400px. Three cards collapse into one hero.
+
+────────────────────────────────────────────────────────
+PR C — POLISH + OVERFLOW MENU + RHYTHM (~80-line new + microcopy pass)
+────────────────────────────────────────────────────────
+
+Closes: V3, V4, V6, V7, V8, B6.
+
+- New `src/components/roster/TeamDetailOverflowMenu.jsx` (~50 lines) — ⋯ button in back-chevron strip. Staff items per 9.3.
+- New `src/hooks/usePlayerSortOrder.js` (~20 lines) — shared sort state Roster + Pulse use. Pulse grid stops sorting client-side; reads `useAttendanceData(teamId, filter, range)` then re-sorts by the shared order.
+- TeamAchievements wraps in CollapsibleSection with summary "1 trophy" / "2 trophies."
+- "View full schedule →" CTA moves to inline link in collapsed UpcomingEvents header subtitle.
+- Microcopy pass for parent-flavored empty-states. New strings extractable for §16.6 i18n.
+- Stat strip iPhone variant: pick abbreviation OR single-line collapse (Q in Part 12).
+- Academy visual hierarchy: add subtle border/avatar treatment per V6 (e.g., dashed purple border on avatar).
+- Add "Spring 2026" scope tag near stat strip per V8.
+- Add `aria-label="Team detail — {team.name}"` on page wrapper per A1.
+
+Risk: Low. Mostly visual + microcopy.
+
+────────────────────────────────────────────────────────
+PR D — DATA-LAYER HARDENING (smaller, can ship parallel to B)
+────────────────────────────────────────────────────────
+
+Closes: D1, D2.
+
+- `useAttendanceData.js:54`: add `.eq('org_id', orgId)` to players query (need orgId from useAuth into the hook).
+- Audit pass on `useAttendanceData` lines 43–66, `useTeamRecords`, `useTeamHeadCoach` (new), `TeamAchievements`: every `const { data } = await ...` becomes `const { data, error } = await ...; if (error) throw error;` per anti-pattern #36.
+- New audit test: `src/lib/__tests__/teamsPageOrgScopeAudit.test.js` — grep-style assertion that every `supabase.from('<org_scoped_table>')` call in the Teams page hook tree starts with `.eq('org_id', ...)`. Anti-pattern #37 lock.
+
+Risk: Low. Defense-in-depth.
+
+────────────────────────────────────────────────────────
+Sequencing
+────────────────────────────────────────────────────────
+
+- PR A and PR D can ship in parallel (different files).
+- PR B requires PR A landed (hero depends on the activeRole switch).
+- PR C requires PR B landed (overflow + collapsibles depend on the hero shape).
+
+If PR B regresses: revert. PR A's bug closures stay shipped.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 11 — RISKS & DEPENDENCIES
+═══════════════════════════════════════════════════════════════════════════
+
+**R1 (extends prior R1). Admin power-feature regression.** PR B retires CoachQuickActions Schedule tile. Preserve in PR C overflow menu. ✅ planned.
+
+**R2 (extends prior R2). Role-detection drift.** Adopting `useHomeRole().activeRole` on the page introduces page-vs-row split. **Lock in CLAUDE.md §16.14 as an extension:** "Detail pages render against `activeRole`. In-row permission checks (InviteButton, CopyRosterButton, edit affordances) read `realRole` via `useAuth().role`." Without this lock the pattern drifts within weeks.
+
+**R3 (extends prior R3). Cross-surface invariant tests not yet load-bearing.** PR A's `TeamPulseHeaderInvariant.test.jsx` and PR B's `TeamDetailHeroPerRoleInvariant.test.jsx` + `RsvpProgressBarCrossSurface.test.jsx` are new shapes. Mention in PR descriptions; these are anti-pattern #43 instances.
+
+**R4 (NEW). useTeamHeadCoach data shape unknown.** `team_staff` table joined to `staff_profiles` — exact shape needs verification before PR B (the hero uses the data). Pre-flight via `mcp__supabase__execute_sql` listing the schemas. If `team_staff` has multiple "head coach" rows for one team, pick rule needed (most recent? primary flag? alphabetical?).
+
+**R5 (NEW). Stat-strip iPhone wrap.** Either pick the abbreviation OR the single-line collapse — Q below. Both have tradeoffs.
+
+**R6 (NEW). MessageTeamFAB retirement scope.** Does it ship on other pages? If so, the retirement is scoped to TeamDetailPage only. If not, file deletion is in scope. Need grep before PR B.
+
+**R7 (NEW). Realtime subscription.** Page is currently visibility-refetch only. Coach using during game-day sees stale RSVP counts. Future PR (post-this-arc) adds realtime subscription on `event_rsvps` for the next-event. Out of this arc's scope.
+
+**Dependencies:**
+- useHomeRole exists per `useHomeRole.js` ✅
+- CollapsibleSection supports subtitle prop ✅
+- `team_staff` table exists ✅ (used by CoachHomePage)
+- `staff_profiles` table exists (✅ implied by anti-pattern #25 PR #38 history)
+- New hooks/components fit under 150-line cap
+
+**Per anti-pattern #45:** PRs A/B/C/D all touch this spec doc → must update `docs/EMBER_PENDING_LEDGER.md` §4 in the same commit. Suggested entry: `§4.Y — Teams page hero/collapsibles + data-layer arc (PRs A/B/C/D)`.
+
+═══════════════════════════════════════════════════════════════════════════
+PART 12 — OPEN QUESTIONS (extends prior Q1–Q8)
+═══════════════════════════════════════════════════════════════════════════
+
+Prior Q1–Q8 still pending. New questions from this audit:
+
+**Q9. Stat strip iPhone variant — abbreviate or collapse?**
+- (a) Keep 5 cells, abbreviate "WIN %" → "W%", "GAMES" → "GMS" so labels fit on one line.
+- (b) Collapse strip to single line "8-4 · L1 · +2.9 diff" on <414px and show 5-cell only on ≥414px.
+Recommend (b) — the 5-cell strip is admin-scoped insight; on iPhone the single-line meta is enough for staff at-a-glance, and the full-detail consumer is on Records anyway.
+
+**Q10. Pulse grid + Roster row order — adopt usePlayerSortOrder shared hook?**
+Today they diverge (V4). Lock: same order across both surfaces. Default sort: jersey ascending. Admin can change via Roster sort chips and Pulse follows. Confirm.
+
+**Q11. Academy visual treatment (V6).**
+Options: (a) dashed purple border on avatar, (b) overlay icon, (c) leave text-pill-only.
+Recommend (a) — minimal, accessible, doesn't add noise for non-academy rows.
+
+**Q12. "No RSVPs yet" diagnostic placement (B2 revised).**
+For admin/coach views with no RSVPs yet, options:
+- (a) Keep per-row pills (today's behavior; 13 pills).
+- (b) Single Roster-header summary "13 of 13 families haven't RSVP'd to recent events" + hide per-row pills.
+- (c) Hide entirely; coach reads "11 of 13 responded last event" subtitle (PR A) and infers state.
+Recommend (b) — cluster the diagnostic, keep it admin-actionable.
+
+**Q13. Realtime subscription on `event_rsvps` for next-event RSVP count.**
+In-scope for this arc or defer? Recommend defer — game-day live updates is its own arc (per R7).
+
+**Q14. Page wrapper aria-label / page title sync (A1).**
+- (a) Add `aria-label="Team detail — {team.name}"` on wrapper div.
+- (b) Sync `document.title = "{team.name} — Skyfire"` via useEffect.
+- (c) Both.
+Recommend (c). Cost ~5 lines.
+
+**Q15. PR D ship in parallel with PR A, or sequence after PR C?**
+Defense-in-depth fixes don't user-block. But shipping with the bug fixes makes the audit story clean. Recommend parallel with PR A.
+
+═══════════════════════════════════════════════════════════════════════════
+APPENDIX A — FILES TOUCHED PER PR
+═══════════════════════════════════════════════════════════════════════════
+
+PR A (edits):
+- src/components/gameday/TeamHeatmap.jsx
+- src/components/roster/RosterSection.jsx
+- src/components/roster/RosterControls.jsx
+- src/components/roster/PlayerRow.jsx (minor)
+- src/pages/TeamDetailPage.jsx (1 import + 1 line)
+PR A (new):
+- src/components/gameday/__tests__/TeamPulseHeaderInvariant.test.jsx
+- docs/EMBER_PENDING_LEDGER.md (§4 entry)
+
+PR B (new):
+- src/components/roster/TeamDetailHero.jsx
+- src/hooks/useTeamHeadCoach.js
+- src/hooks/useSparseRsvp.js
+- src/components/shared/RsvpProgressBar.jsx
+- src/components/roster/__tests__/TeamDetailHeroPerRoleInvariant.test.jsx
+- src/components/shared/__tests__/RsvpProgressBarCrossSurface.test.jsx
+PR B (edits):
+- src/pages/TeamDetailPage.jsx (mount-tree swap)
+- src/components/roster/PlayerRow.jsx (consume useSparseRsvp)
+- src/components/roster/MyChildSpotlight.jsx (consume useSparseRsvp; OR retire if all logic moved to hero)
+- src/components/roster/UpcomingEvents.jsx (wrap in CollapsibleSection)
+PR B (retire / kept-but-unreferenced):
+- src/components/roster/TeamHeaderCard.jsx
+- src/components/roster/MyChildSpotlight.jsx (if hero fully absorbs)
+- src/components/roster/CoachQuickActions.jsx
+- src/components/roster/MessageTeamFAB.jsx (mount-only retirement)
+
+PR C (new):
+- src/components/roster/TeamDetailOverflowMenu.jsx
+- src/hooks/usePlayerSortOrder.js
+PR C (edits):
+- src/pages/TeamDetailPage.jsx (overflow menu mount + scope tag + aria)
+- src/components/gameday/TeamHeatmap.jsx (consume usePlayerSortOrder)
+- src/components/roster/TeamAchievements.jsx (wrap in CollapsibleSection)
+- src/components/roster/UpcomingEvents.jsx (CTA→inline link in header subtitle; parent-flavored empty)
+- src/components/roster/TeamHeaderCard.jsx → TeamDetailHero.jsx (stat strip variant)
+
+PR D (edits):
+- src/hooks/useAttendanceData.js
+- src/hooks/useTeamRecords.js
+- src/components/roster/TeamAchievements.jsx (error check)
+PR D (new):
+- src/lib/__tests__/teamsPageOrgScopeAudit.test.js
+
+═══════════════════════════════════════════════════════════════════════════
+PART 13 — DEEP-READ ADDENDUM (post-initial-pass findings)
+═══════════════════════════════════════════════════════════════════════════
+
+After the first audit pass closed, a deeper read of every file on the page's mount tree surfaced 11 additional findings. Reading in order: RosterControls, CollapsibleSection, useHomeRole, useFilteredRoster, useTeamRecords, EventCard, useActivities, ChildRsvp, teamRecords, FilterSelect, permissions, usePlayerSeasonStats, useNow, useRefetchOnVisible, useWeather. The findings below extend/correct Parts 1–12.
+
+──────────────────────────────────────────
+13.1 RosterControls has FIVE sort chips, not four (revises V1)
+──────────────────────────────────────────
+`src/components/roster/RosterControls.jsx:37-39`:
+```
+((role === 'admin' || role === 'coach')
+  ? [#, A-Z, Gr, Age, Att]  // 5 chips
+  : [#, A-Z])
+```
+
+Screenshot 3 showed "# | A-Z | Gr | Ag(e)" with Age clipped. The fifth chip "Att" wasn't visible AT ALL — it was off-screen entirely. The clipping is worse than V1 described: staff lose access to two sort options (Age + Att) at iPhone width unless they horizontally scroll the chip row (which doesn't appear to be a styled scroll affordance).
+
+**V1 severity upgrade: P0** — staff CAN'T select Att sort on iPhone without finding an undiscoverable horizontal scroll. The Att sort is the most data-rich admin sort (per useFilteredRoster lines 32-35: by attendance_pct desc), so losing it removes the admin's #1 reason to visit this page mid-season.
+
+**Fix shape:** the 5 chips don't fit. Options:
+- (a) Drop "Gr" (grade) — redundant with "Age" for AAU age-grouped teams.
+- (b) Move sort chips to row BELOW search at iPhone width.
+- (c) Replace chip row with FilterSelect dropdown on iPhone (one tap → menu).
+Recommend (a)+(b) combined — drop Gr, move below search. Cleaner desktop too.
+
+──────────────────────────────────────────
+13.2 useHomeRole docstring explicitly limits scope (revises Q1 / R2)
+──────────────────────────────────────────
+`src/hooks/useHomeRole.js:14-15`:
+> "SCOPE: home page rendering only. Other pages use useAuth().role for permissions checks. View-as is a preview affordance, not a permissions sandbox."
+
+This is a documented scope boundary, not an architectural accident. Adopting useHomeRole on TeamDetailPage is NOT a drop-in fix — it requires updating the docstring AND a CLAUDE.md §16.14 extension lock per prior R2, AND a sweep for other detail pages that should adopt it (EventDetailPage, PlayerDetailPage if it exists).
+
+**Revised recommendation for Q1:** the page-level adoption is still the right call per anti-pattern #42, but the scope of the work expands:
+- Update useHomeRole.js docstring: "SCOPE: home page + detail pages."
+- Lock §16.14 extension: "Detail pages render against `activeRole`. In-row permissions (Invite, Copy roster, edit affordances) read `realRole`."
+- Audit-grep: every detail page currently importing useAuth for `role` → confirm intentional. TeamDetailPage is the load-bearing case for THIS audit; EventDetailPage / TournamentDetailPage may also need the swap for consistency.
+- Cross-surface test: assert page-level render reads activeRole; assert in-row permissions read realRole. New invariant test class.
+
+Promote Q1 from "confirm boundary" to "approve scope expansion."
+
+──────────────────────────────────────────
+13.3 useTeamRecords violates anti-pattern #48 (NEW finding C5)
+──────────────────────────────────────────
+`src/hooks/useTeamRecords.js:47`:
+```
+.order('start_at', { foreignTable: 'events', ascending: true })
+```
+
+This is the exact bug class anti-pattern #48 documents — PostgREST `.order` with `foreignTable` does NOT sort top-level parent rows by the joined table's column. The query returns `game_results` rows; ordering them by `events.start_at` via the foreignTable hint is a no-op for the parent ordering.
+
+**Mitigation already in place:** `computeSummary` in `src/lib/teamRecords.js:38-42` re-sorts the games array in JS:
+```
+const sorted = [...games].sort((a, b) => {
+  const da = a.event?.start_at || a.start_at || '';
+  const db = b.event?.start_at || b.start_at || '';
+  return da < db ? -1 : da > db ? 1 : 0;
+});
+```
+
+So the bug is masked at the consumer level — but the `.order` call on line 47 is dead/misleading code. A future reader (or a future hook copying this pattern without copying computeSummary's re-sort) inherits the same bug. PR D should remove the `.order` line OR replace with a comment explaining the JS-side re-sort.
+
+──────────────────────────────────────────
+13.4 ChildRsvp compact mode = 32px tap target (NEW finding A4)
+──────────────────────────────────────────
+`src/components/schedule/ChildRsvp.jsx:87-88`:
+```
+const minH = compact ? 32 : 44;
+```
+
+CLAUDE.md §7 "Tap targets: 44px minimum (non-negotiable)."
+
+MyChildSpotlight (line 76) renders `<ChildRsvp ... compact />` — so on TeamDetailPage, the PARENT's RSVP picker for the next event is 32px tall. Below the 44px floor. Visible in the prior L99 v6 doc as a "compact pill row" but not flagged as the §7 violation it is.
+
+Same call site in PR B's TeamDetailHero Slot 4 would inherit the violation if it preserves the `compact` prop. **Fix:** the hero adopts `compact=false` for the per-kid picker (44px) and accepts the extra vertical space.
+
+This is the entire reason "the hero is 280–340px depending on slots" — the picker line jumps from 32 to 44 + comfortable spacing = ~16px taller per kid. Worth surfacing in the PR B PR description.
+
+──────────────────────────────────────────
+13.5 EventCard `compact=false` pattern for sibling-on-team (revises Q8)
+──────────────────────────────────────────
+`src/components/schedule/EventCard.jsx:17`:
+```
+const childrenOnTeam = (myChildren || []).filter(
+  (c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id
+);
+```
+
+This is the CORRECT sibling-aware pattern. TeamDetailPage:61 uses `.find()` returning ONE — confirmed Q8 is real, and the fix is to mirror EventCard's `.filter()` pattern. The `c.teamId === event.team_id` fallback (vs `teamIds.includes`) suggests AuthContext has dual shape — useful pre-flight check for PR B.
+
+──────────────────────────────────────────
+13.6 EventCard is AT the 150-line cap (NEW finding code-quality)
+──────────────────────────────────────────
+`src/components/schedule/EventCard.jsx`: 150 lines (per wc -l). Anti-pattern #6 / §6: files >150 lines split. The card's density branching (minimal / medium / maximum) is the bulk; pulling each density variant into its own component would put the parent under 80 lines. Not in scope for the Teams arc but worth flagging for the schedule arc.
+
+──────────────────────────────────────────
+13.7 useActivities has module-level cache; usePrograms doesn't
+──────────────────────────────────────────
+`src/hooks/useActivities.js:7-8` — module-level cache with cacheBuster registration. Second visit to /teams/:id reuses the cache. ✅
+
+`src/hooks/usePrograms.js` — NO cache. Every navigation to /teams/:id re-fires the teams query. For 5 programs it's trivial, but the inconsistency is a smell — same shape, different caching strategy. Out of scope for Teams arc; ledger for a hooks-caching consolidation PR.
+
+──────────────────────────────────────────
+13.8 usePrograms is BOTH org-scoped AND season-scoped
+──────────────────────────────────────────
+`src/hooks/usePrograms.js:29-30`:
+```
+.eq('org_id', orgId)
+.eq('season_id', seasonId)
+```
+
+The page is implicitly Spring 2026-scoped via `useSeason().activeSeason`. V8 (no visible season scope marker) is even more important than the initial finding made it sound — the data IS season-scoped but the UI gives users no clue. A coach toggling Fall 2025 in their season picker would see DIFFERENT stat numbers on the same team detail page. PR C's "Spring 2026" scope tag near the stat strip closes this.
+
+──────────────────────────────────────────
+13.9 useNow tick on TeamDetailPage triggers full subtree re-render every 60s
+──────────────────────────────────────────
+`src/hooks/useNow.js:13-16` — setInterval at 60_000ms by default.
+
+TeamDetailPage line 40 reads `const now = useNow()` and uses it in the `nextEvent` memo (line 56). When `now` advances, the page re-renders. The downstream consumers (TeamHeaderCard, RosterSection, TeamHeatmap, etc.) all re-render because their parent did, even though their props haven't changed.
+
+For a 13-player roster with expanded rows, this is ~13 PlayerRow re-renders every minute. Cheap individually, ~maybe 5–10ms per tick. Not a perf problem at LH scale; would become one at 30+ players per team.
+
+**Mitigation:** memoize the children that don't depend on `now`. TeamHeaderCard is already props-stable; React.memo on the export would eliminate its re-render. RosterSection likewise. Out of scope for Teams arc bug fixes; ledger as perf-pass item.
+
+──────────────────────────────────────────
+13.10 CollapsibleSection supports `count` AND `subtitle` (confirms prior D2)
+──────────────────────────────────────────
+`src/components/shared/CollapsibleSection.jsx:4`:
+```
+export default function CollapsibleSection({ title, sectionKey, defaultOpen = true, count, subtitle, children })
+```
+
+Line 23: count renders inline with title (tertiary color).
+Line 24: subtitle renders ONLY when `!open` and prefixed with " · ".
+
+PR A + PR B headers use both: `<CollapsibleSection title="Roster" count="13" subtitle="11 responded last event">` — drops in cleanly. The subtitle hides when open so the user reads the summary on the closed state and the actual content when expanded. Good ergonomics.
+
+──────────────────────────────────────────
+13.11 Defaults: CollapsibleSection's `defaultOpen={true}` (NEW finding)
+──────────────────────────────────────────
+`CollapsibleSection.jsx:4`: `defaultOpen = true` (default).
+
+Every consumer that wants `false` must pass it explicitly. RosterSection passes `defaultOpen={isStaff(role)}` — staff get true, parents get false. TeamHeatmap passes `defaultOpen={false}` explicitly. TeamPlayerStats passes `defaultOpen={false}` explicitly.
+
+The default-true is opposite §16.14's "closed by default unless context demands otherwise." Component default contradicts the design system rule. Future component additions will inherit the wrong default unless callers remember to pass `false`.
+
+**Fix:** flip the default to `defaultOpen = false` in CollapsibleSection.jsx; all callers that currently rely on the default must explicitly pass `true` (audit-grep first). Low-risk if the audit is clean. Could be a 1-file PR before PR A.
+
+──────────────────────────────────────────
+13.12 useRoster has proper error handling (revises D2)
+──────────────────────────────────────────
+`src/hooks/useRoster.js:24-49` — destructures `{ data, error }`, throws on error, catches in outer try/catch, sets `[]` on failure. ✅ Per anti-pattern #36, this is the correct pattern.
+
+D2's "destructured-default error swallow pattern in 3+ callsites on this page" should be NARROWED:
+- useRoster: ✅ correct (extracted from D2)
+- useAttendanceData: ✅ correct (Promise.all returns objects, but `.data` access defaults silently — borderline; the `data: []` defaults on lines 63-66 ARE the swallow pattern when rsvps query errors)
+- TeamAchievements.jsx:36: ❌ violation — destructures `{ data }` without error
+- usePlayerSeasonStats.jsx:15: ✅ correct (destructures `{ data, error }`, logs error)
+- useTeamRecords.jsx:51-53: ✅ correct
+- useActivities.jsx:44-45: ✅ correct (throws on error)
+- ChildRsvp.jsx:33-34: ⚠️ logs error but uses `data?.response` — fine since fetchRsvp is fire-and-forget; technically correct
+
+**D2 narrowed:** the only hard violation on the page is TeamAchievements.jsx:36. PR D scope shrinks to one file edit + the useAttendanceData defaults-cleanup.
+
+══════════════════════════════════════════
+13.13 New bugs/findings consolidated
+══════════════════════════════════════════
+
+| ID | Class | Severity | Source | Fix shape |
+|----|-------|----------|--------|-----------|
+| V1 (upgraded) | Layout | P0 | revised | 5 sort chips don't fit; drop Gr + stack below search |
+| C5 | Code | P2 | new | useTeamRecords:47 anti-pattern #48 violation (dead .order line); remove or comment-explain |
+| C6 | Code | P2 | new | CollapsibleSection defaultOpen=true contradicts §16.14 default-closed; flip default |
+| C7 | Perf | P3 | new | useNow tick re-renders TeamDetailPage subtree every 60s; React.memo on stable children |
+| A4 | A11y | P1 | new | ChildRsvp compact=32px below §7 44px floor; hero uses non-compact |
+| (Q1 upgraded) | Process | — | revised | useHomeRole scope expansion needs explicit docstring + §16.14 lock |
+| (Q8 confirmed) | UX | P2 | confirmed | sibling-on-team filter pattern exists in EventCard:17; mirror in hero |
+| (D2 narrowed) | Data | P2 | revised | Only TeamAchievements:36 + useAttendanceData defaults; smaller PR D scope |
+
+══════════════════════════════════════════
+13.14 Updated PR scope
+══════════════════════════════════════════
+
+**PR A additions:**
+- RosterControls: drop "Gr" chip + stack 4 chips below search at iPhone width. (V1)
+- CollapsibleSection: flip `defaultOpen` default to `false`. Sweep callers (audit-grep) to confirm or add explicit `true`. (C6)
+
+**PR B additions:**
+- TeamDetailHero Slot 4: ChildRsvp called with `compact={false}` (44px picker). (A4)
+- TeamDetailHero sibling iteration: mirror EventCard:17 `.filter()` pattern. (Q8 confirmed)
+- useHomeRole scope extension: doc update in PR B's commit message + §16.14 lock + audit-grep for other detail pages. (Q1 upgraded)
+
+**PR C additions:**
+- "Spring 2026" scope tag near stat strip is now more critical given 13.8. (V8)
+- TeamAchievements:36 error check. (D2 narrowed scope)
+
+**PR D additions:**
+- useTeamRecords:47 anti-pattern #48 fix — remove `.order` foreignTable line, add comment. (C5)
+- useAttendanceData defaults sweep (lines 63-66). (D2 narrowed scope)
+
+**Out-of-scope (ledger):**
+- EventCard >=150 line split (schedule arc).
+- usePrograms caching consistency.
+- React.memo perf pass.
+- payment_status migration to financial_accounts.
+
+══════════════════════════════════════════
+13.15 Files audited (audit completeness check)
+══════════════════════════════════════════
+
+Direct page imports + everything they import recursively. ✅ = code-level read; ⏵ = listed-only (LOC count only).
+
+Page:
+✅ src/pages/TeamDetailPage.jsx (111 lines)
+
+Page-direct components:
+✅ src/components/roster/TeamHeaderCard.jsx (81)
+✅ src/components/roster/RosterSection.jsx (32)
+✅ src/components/roster/PlayerRow.jsx (131)
+✅ src/components/roster/MyChildSpotlight.jsx (81)
+✅ src/components/roster/CoachQuickActions.jsx (24)
+✅ src/components/roster/UpcomingEvents.jsx (55)
+✅ src/components/roster/TeamPlayerStats.jsx (24)
+✅ src/components/roster/MessageTeamFAB.jsx (30)
+✅ src/components/roster/TeamSwitcher.jsx (14)
+✅ src/components/roster/TeamAchievements.jsx (62)
+✅ src/components/roster/RosterControls.jsx (59)
+✅ src/components/gameday/TeamHeatmap.jsx (95)
+
+Page-transitive components:
+✅ src/components/shared/CollapsibleSection.jsx (37)
+✅ src/components/shared/FilterSelect.jsx (34)
+✅ src/components/schedule/EventCard.jsx (150)
+✅ src/components/schedule/ChildRsvp.jsx (123)
+⏵ src/components/roster/InviteButton.jsx (57)
+⏵ src/components/roster/CopyRosterButton.jsx (51)
+⏵ src/components/records/PlayerStatsTable.jsx (95)
+⏵ src/components/shared/{EmptyState, LoadingSkeleton, TextEmptyState}.jsx (small)
+⏵ src/components/schedule/RsvpCountRow.jsx (small)
+
+Page-direct hooks:
+✅ src/hooks/useRoster.js (58)
+✅ src/hooks/useAttendanceData.js (146)
+✅ src/hooks/usePrograms.js (69)
+✅ src/hooks/useTeamRecords.js (66)
+✅ src/hooks/usePlayerSeasonStats.js (45)
+✅ src/hooks/useActivities.js (68)
+✅ src/hooks/useNow.js (~25)
+✅ src/hooks/useRefetchOnVisible.js (~12)
+✅ src/hooks/useWeather.js (peeked — pattern clear)
+✅ src/hooks/useHomeRole.js (99)
+✅ src/hooks/useFilteredRoster.js (45)
+⏵ src/hooks/useMapsUrl.js (used by EventCard, not directly by page)
+
+Page-direct lib:
+✅ src/lib/permissions.js (19)
+✅ src/lib/teamRecords.js (82)
+⏵ src/lib/formatters.js (used by TeamHeaderCard for formatDiff)
+⏵ src/lib/constants.js (used by MyChildSpotlight for TYPE_LABELS)
+
+Context:
+⏵ src/context/AuthContext.jsx (read indirectly via myChildren/teamIds shape inference)
+⏵ src/context/SeasonContext.jsx (read indirectly via usePrograms)
+
+═══════════════════════════════════════════════════════════════════════════
+APPENDIX B — DEFERRED / OUT-OF-SCOPE
+═══════════════════════════════════════════════════════════════════════════
+
+- Multi-tenant weather coords (B5) → §4 ledger separate cluster
+- Realtime subscription on event_rsvps for live RSVP counts (Q13/R7) → separate arc
+- Bundle code-split between /teams list and /teams/:id detail → measure first, defer
+- payment_status migration from roster_members to financial_accounts (PlayerRow:50) → §11.5 backlog
+- A11y full pass (focus rings, screen reader pulse grid, dynamic type) → separate arc; PR C closes the highest-priority subset (page landmark + scope marker)
+
+END OF DOCUMENT
