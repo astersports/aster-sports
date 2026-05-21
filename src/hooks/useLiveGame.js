@@ -31,7 +31,11 @@ export function useLiveGame(eventId, { teamId, orgId } = {}) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'game_plays', filter: `event_id=eq.${eventId}` }, () => {
         supabase.from('game_plays').select('*').eq('event_id', eventId).eq('is_voided', false)
           .order('created_at', { ascending: true })
-          .then(({ data }) => { if (data) setPlays(data); });
+          .then(({ data, error }) => {
+            // anti-pattern #36: log via console.error (do NOT throw — would desync the channel subscription)
+            if (error) console.error('useLiveGame realtime refetch:', error.message);
+            if (data) setPlays(data);
+          });
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };

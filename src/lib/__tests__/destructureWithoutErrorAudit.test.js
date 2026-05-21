@@ -47,7 +47,7 @@ const IGNORE_FILE_RE = /\.test\.(js|jsx|ts)$/;
 // PRs that fix existing sites lower this number in the same PR (visible in
 // review). Mirrors `edgeFunctionMirrorAudit.test.js` baseline-lowering
 // pattern.
-const BASELINE_VIOLATIONS = 44;
+const BASELINE_VIOLATIONS = 32;
 
 // Pattern A — `const { ...data... } = await (supabase|sb|sbClient|client)
 // .(from|rpc)(...)` with no `error` in the destructure block.
