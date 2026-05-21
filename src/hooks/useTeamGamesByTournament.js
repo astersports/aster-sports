@@ -20,8 +20,7 @@ export function useTeamGamesByTournament(teamId) {
           )
         `)
         .not('published_at', 'is', null)
-        .eq('events.team_id', teamId)
-        .order('start_at', { foreignTable: 'events', ascending: true });
+        .eq('events.team_id', teamId);
       if (cancelled) return;
       if (error) console.error('useTeamGamesByTournament:', error.message);
       // PostgREST's `.order(..., { foreignTable: 'events' })` applies to
