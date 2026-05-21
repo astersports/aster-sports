@@ -27,24 +27,21 @@ OUTPUT
 Return ONLY the closing paragraph as plain prose. No JSON, no markdown, no surrounding quotes, no leading label. If you have nothing genuine to say, return an empty string.
 `;
 
-function trim(s: unknown): string { return typeof s === "string" ? s.trim() : ""; }
+function trim(s: unknown): string { return typeof s === 'string' ? s.trim() : ''; }
 
-export function buildSuggestCloserPrompt(
-  { tournamentName, teamName, scheduleGapsText, voiceExamples = [] }:
-  { tournamentName?: string; teamName?: string; scheduleGapsText?: string; voiceExamples?: string[] } = {},
-) {
+export function buildSuggestCloserPrompt({ tournamentName, teamName, scheduleGapsText, voiceExamples = [] }: { tournamentName?: string; teamName?: string; scheduleGapsText?: string; voiceExamples?: string[] } = {}) {
   const examples = (voiceExamples || []).map(trim).filter(Boolean).slice(0, 5);
   const exampleBlock = examples.length
-    ? `Recent closers from the same coach (voice grounding):\n${examples.map((e) => `- "${e}"`).join("\n")}`
-    : "Recent closers: (none yet — rely on the VOICE rules above).";
+    ? `Recent closers from the same coach (voice grounding):\n${examples.map((e) => `- "${e}"`).join('\n')}`
+    : 'Recent closers: (none yet — rely on the VOICE rules above).';
   const scheduleBlock = trim(scheduleGapsText)
     ? `Schedule shape for context:\n${trim(scheduleGapsText)}`
-    : "Schedule shape: (not provided).";
+    : 'Schedule shape: (not provided).';
   return `${STATIC_INSTRUCTIONS}
 
 This weekend:
-- Team: ${trim(teamName) || "(unknown team)"}
-- Tournament: ${trim(tournamentName) || "(unnamed tournament)"}
+- Team: ${trim(teamName) || '(unknown team)'}
+- Tournament: ${trim(tournamentName) || '(unnamed tournament)'}
 
 ${scheduleBlock}
 
@@ -53,10 +50,13 @@ ${exampleBlock}
 Write the closer now.`;
 }
 
+// Output is plain text; we strip surrounding quotes / markdown fences
+// that Claude sometimes adds despite the instructions, then trim
+// whitespace. Returns '' if the model deliberately produced empty.
 export function parseSuggestCloserOutput(rawText: unknown): string {
-  if (!rawText || typeof rawText !== "string") return "";
+  if (!rawText || typeof rawText !== 'string') return '';
   let t = rawText.trim();
-  t = t.replace(/^```(?:\w+)?\n?/, "").replace(/\n?```$/, "");
-  t = t.replace(/^["'"']\s*/, "").replace(/\s*["'"']$/, "");
+  t = t.replace(/^```(?:\w+)?\n?/, '').replace(/\n?```$/, '');
+  t = t.replace(/^["'"']\s*/, '').replace(/\s*["'"']$/, '');
   return t.trim();
 }

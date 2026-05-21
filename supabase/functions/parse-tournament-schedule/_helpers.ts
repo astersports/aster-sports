@@ -52,40 +52,39 @@ Return ONLY a JSON array of event objects. No prose, no markdown
 fences. If the input has no parseable events, return [].
 `;
 
-export function buildPrompt(paste: string, ctx: { teams?: { name: string }[]; venues?: { name: string }[] } = {}) {
-  const teams = ctx.teams || [];
-  const venues = ctx.venues || [];
-  const teamList = teams.map((t) => `- ${t.name}`).join("\n");
-  const venueList = venues.map((v) => `- ${v.name}`).join("\n");
+export function buildPrompt(paste: string, { teams = [], venues = [] }: { teams?: { name: string }[]; venues?: { name: string }[] } = {}) {
+  const teamList = (teams || []).map((t) => `- ${t.name}`).join('\n');
+  const venueList = (venues || []).map((v) => `- ${v.name}`).join('\n');
   return `${STATIC_INSTRUCTIONS}
 
 Known Legacy Hoopers teams (map team identifiers to these):
-${teamList || "(none)"}
+${teamList || '(none)'}
 
 Known venues (prefer matching to these by name):
-${venueList || "(none)"}
+${venueList || '(none)'}
 
 Input:
 ${paste}`;
 }
 
 export function parseClaudeOutput(rawText: string) {
-  if (!rawText || typeof rawText !== "string") throw new Error("Empty parser output");
-  const trimmed = rawText.trim().replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+  if (!rawText || typeof rawText !== 'string') throw new Error('Empty parser output');
+  const trimmed = rawText.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
   let parsed;
   try { parsed = JSON.parse(trimmed); }
+  // (e as Error) cast — TS-only annotation, stripped at audit-normalize time.
   catch (e) { throw new Error(`Malformed JSON from parser: ${(e as Error).message}`); }
-  if (!Array.isArray(parsed)) throw new Error("Parser output is not an array");
+  if (!Array.isArray(parsed)) throw new Error('Parser output is not an array');
   return parsed.map((row, i) => {
-    if (!row || typeof row !== "object") throw new Error(`Row ${i} is not an object`);
+    if (!row || typeof row !== 'object') throw new Error(`Row ${i} is not an object`);
     return {
-      team: String(row.team || "").trim(),
-      date: String(row.date || "").trim(),
-      time: String(row.time || "").trim(),
-      opponent: String(row.opponent || "").trim(),
-      venue: String(row.venue || "").trim(),
-      court: String(row.court || "").trim(),
-      home_away: row.home_away === "away" ? "away" : "home",
+      team: String(row.team || '').trim(),
+      date: String(row.date || '').trim(),
+      time: String(row.time || '').trim(),
+      opponent: String(row.opponent || '').trim(),
+      venue: String(row.venue || '').trim(),
+      court: String(row.court || '').trim(),
+      home_away: row.home_away === 'away' ? 'away' : 'home',
     };
   });
 }

@@ -9,7 +9,7 @@
 // Logic uses only standard ES + Intl, so the two files are
 // near-identical apart from TypeScript annotations.
 
-const ORG_TIMEZONE_DEFAULT = "America/New_York";
+const ORG_TIMEZONE_DEFAULT = 'America/New_York';
 
 // Wave 4.8 6c — kind-scoped expiry windows for the Active queue.
 // MUST stay in sync with the SQL CASE branches in
@@ -24,28 +24,24 @@ const ORG_TIMEZONE_DEFAULT = "America/New_York";
 // rsvp_nudge        until event starts (or +3d fallback)
 // custom_message    30d post-edit
 // academy_callup    7d post-edit
-export function computeExpiryForKind(
-  kind: string,
-  anchorTime: Date | null,
-  fallbackEdit: Date,
-): Date {
+export function computeExpiryForKind(kind: string, anchorTime: Date | null, fallbackEdit: Date): Date {
   const fallback = fallbackEdit ?? new Date();
   switch (kind) {
-    case "game_recap":
+    case 'game_recap':
       return new Date((anchorTime ?? fallback).getTime() + 14 * 86400000);
-    case "tournament_prelim":
+    case 'tournament_prelim':
       return anchorTime ?? new Date(fallback.getTime() + 14 * 86400000);
-    case "tournament_recap":
+    case 'tournament_recap':
       return new Date((anchorTime ?? fallback).getTime() + 30 * 86400000);
-    case "schedule_change":
-    case "weekly_digest":
+    case 'schedule_change':
+    case 'weekly_digest':
       return new Date(fallback.getTime() + 7 * 86400000);
-    case "announcement":
-    case "custom_message":
+    case 'announcement':
+    case 'custom_message':
       return new Date(fallback.getTime() + 30 * 86400000);
-    case "rsvp_nudge":
+    case 'rsvp_nudge':
       return anchorTime ?? new Date(fallback.getTime() + 3 * 86400000);
-    case "academy_callup_notice":
+    case 'academy_callup_notice':
       return new Date(fallback.getTime() + 7 * 86400000);
     default:
       return new Date(fallback.getTime() + 14 * 86400000);
@@ -61,9 +57,11 @@ export interface DateParts {
   minute: number;
 }
 
-export function partsInTimeZone(date: Date, timeZone: string = ORG_TIMEZONE_DEFAULT): DateParts {
-  const fmt = new Intl.DateTimeFormat("en-US", {
-    timeZone, weekday: "long", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
+// Parts of a date in the org timezone. Output is plain integers + a
+// weekday string ('Sunday' etc.). Avoids any Date.getDay() drift.
+export function partsInTimeZone(date: Date, timeZone = ORG_TIMEZONE_DEFAULT) {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone, weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
   });
   const parts = Object.fromEntries(fmt.formatToParts(date).map((p) => [p.type, p.value]));
   return {
@@ -71,25 +69,31 @@ export function partsInTimeZone(date: Date, timeZone: string = ORG_TIMEZONE_DEFA
     year: Number(parts.year),
     month: Number(parts.month),
     day: Number(parts.day),
-    hour: Number(parts.hour === "24" ? "00" : parts.hour),
+    hour: Number(parts.hour === '24' ? '00' : parts.hour),
     minute: Number(parts.minute),
   };
 }
 
-export function localDateIso(date: Date, timeZone: string = ORG_TIMEZONE_DEFAULT): string {
+// Returns the local date (YYYY-MM-DD) for `date` in the given timezone.
+export function localDateIso(date: Date, timeZone = ORG_TIMEZONE_DEFAULT) {
   const p = partsInTimeZone(date, timeZone);
-  return `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
+  return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
 }
 
-export function addDaysIso(dateIso: string, days: number): string {
+// Adds N days to a YYYY-MM-DD string, returns YYYY-MM-DD.
+export function addDaysIso(dateIso: string, days: number) {
+  // Anchor at noon UTC to dodge DST boundary drift; the date arithmetic
+  // only needs day-precision, so the time-of-day is irrelevant.
   const d = new Date(`${dateIso}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
 
-export function isWeeklySundayWindow(now: Date, timeZone: string = ORG_TIMEZONE_DEFAULT): boolean {
+// TZ gate for weekly_sunday triggers: fire when local time is Sunday
+// between 08:00:00 and 08:59:59 in the org timezone. Returns boolean.
+export function isWeeklySundayWindow(now: Date, timeZone = ORG_TIMEZONE_DEFAULT) {
   const p = partsInTimeZone(now, timeZone);
-  return p.weekday === "Sunday" && p.hour === 8;
+  return p.weekday === 'Sunday' && p.hour === 8;
 }
 
 export interface WeeklyDigestPeriod {
@@ -97,41 +101,51 @@ export interface WeeklyDigestPeriod {
   period_end: string;
 }
 
-export function weeklyDigestPeriod(now: Date, timeZone: string = ORG_TIMEZONE_DEFAULT): WeeklyDigestPeriod {
+// Compute the [period_start, period_end] for a weekly_digest anchored
+// at `now`. period_start = today's local date (Sunday), period_end =
+// Saturday 6 days later. Both YYYY-MM-DD.
+export function weeklyDigestPeriod(now: Date, timeZone = ORG_TIMEZONE_DEFAULT) {
   const start = localDateIso(now, timeZone);
   const end = addDaysIso(start, 6);
   return { period_start: start, period_end: end };
 }
 
-export function buildWeeklyDigestDraftRow(
-  { orgId, period, now, triggerId = null }: { orgId: string; period: WeeklyDigestPeriod; now: Date; triggerId?: string | null },
-) {
-  // body_html + body_plain are NOT NULL on comms_messages with no
-  // default — empty strings are placeholders until admin previews via
-  // the resolver-driven path (wave-4.2-A-8a). content_sections gets
-  // [] to satisfy its NOT NULL constraint (default is '[]'::jsonb).
-  // Subject stays NULL so admin preview shows the resolver-rendered
-  // subject fresh at send time.
+// Shape of the draft row inserted into comms_messages for a
+// weekly_digest auto-draft. Subject stays NULL so admin preview shows
+// the resolver-rendered subject fresh at send time per the
+// wave-4.2-A-8a locked behavior. body_html + body_plain are NOT NULL
+// on comms_messages with no default — empty strings are placeholders
+// until admin previews. content_sections gets [] to satisfy its NOT
+// NULL constraint (default is '[]'::jsonb). last_edited_by is NULL:
+// the cron service has no user identity.
+export function buildWeeklyDigestDraftRow({ orgId, period, now, triggerId = null }: { orgId: string; period: WeeklyDigestPeriod; now: Date; triggerId?: string | null }) {
   return {
     org_id: orgId,
     created_by_trigger: triggerId,
-    kind: "weekly_digest",
-    anchor_kind: "org",
+    kind: 'weekly_digest',
+    anchor_kind: 'org',
     anchor_id: orgId,
     period_start: period.period_start,
     period_end: period.period_end,
-    status: "draft",
+    status: 'draft',
     subject: null,
-    body_html: "",
-    body_plain: "",
+    body_html: '',
+    body_plain: '',
     content_sections: [],
-    audience_type: "org_all",
+    audience_type: 'org_all',
     audience_filter: null,
-    delivery_method: "queued",
+    delivery_method: 'queued',
     last_edited_at: now.toISOString(),
     last_edited_by: null,
-    expires_at: computeExpiryForKind("weekly_digest", null, now).toISOString(),
+    expires_at: computeExpiryForKind('weekly_digest', null, now).toISOString(),
   };
+}
+
+// Idempotency check args for a weekly_digest auto-draft. Returns the
+// (org_id, kind, period_start) tuple a caller uses to look up an
+// existing row before inserting.
+export function weeklyDigestIdempotencyKey(orgId: string, periodStart: string) {
+  return { org_id: orgId, kind: 'weekly_digest', period_start: periodStart };
 }
 
 export const ORG_TIMEZONE = ORG_TIMEZONE_DEFAULT;
