@@ -10,9 +10,10 @@ export function usePrefetchChildRsvps(activities, myChildren) {
     if (!playerIds.length || !eventIds.length) return;
     let cancelled = false;
     Promise.resolve().then(async () => {
-      const { data } = await supabase.from('event_rsvps').select('event_id, player_id, response')
+      const { data, error } = await supabase.from('event_rsvps').select('event_id, player_id, response')
         .in('event_id', eventIds).in('player_id', playerIds);
       if (cancelled) return;
+      if (error) throw error;
       for (const r of (data || [])) responseCache.set(cacheKey(r.event_id, r.player_id), r.response);
     });
     return () => { cancelled = true; };

@@ -14,11 +14,12 @@ export function useGameResultsMap(activities) {
     if (!gameIds.length) return;
     let cancelled = false;
     Promise.resolve().then(async () => {
-      const { data } = await supabase.from('game_results')
+      const { data, error } = await supabase.from('game_results')
         .select('event_id, result, our_score, opponent_score, published_at')
         .in('event_id', gameIds)
         .not('published_at', 'is', null);
       if (cancelled) return;
+      if (error) throw error;
       const m = {};
       for (const r of (data || [])) m[r.event_id] = r;
       setMap(m);

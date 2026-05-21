@@ -21,10 +21,11 @@ export function useCoachHomeSignals(userId, nowMs) {
   useEffect(() => {
     if (!userId) return;
     Promise.resolve().then(async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('team_staff')
         .select('team_id, teams(id, name, team_color, sort_order)')
         .eq('user_id', userId);
+      if (error) throw error;
       const teams = (data || [])
         .filter((r) => r.teams)
         .map((r) => ({ id: r.teams.id, name: r.teams.name, team_color: r.teams.team_color, sort_order: r.teams.sort_order ?? 999 }));

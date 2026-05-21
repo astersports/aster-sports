@@ -19,11 +19,12 @@ export function useKindUsage() {
     let cancelled = false;
     Promise.resolve().then(async () => {
       if (!orgId) { setLoading(false); return; }
-      const { data } = await supabase.from('comms_messages')
+      const { data, error } = await supabase.from('comms_messages')
         .select('kind, sent_at')
         .eq('org_id', orgId).eq('status', 'sent')
         .order('sent_at', { ascending: false }).limit(200);
       if (cancelled) return;
+      if (error) throw error;
       const u = {}; const c = {};
       (data || []).forEach((row) => {
         const ms = row.sent_at ? new Date(row.sent_at).getTime() : 0;
