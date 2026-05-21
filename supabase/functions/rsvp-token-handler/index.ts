@@ -68,8 +68,9 @@ Deno.serve(async (req) => {
   }
 
   if (payload._already_used) {
-    const { data: prior } = await sb.from("rsvp_token_uses")
+    const { data: prior, error: priorErr } = await sb.from("rsvp_token_uses")
       .select("response").eq("nonce", payload.n).single();
+    if (priorErr) console.error("[rsvp-token-handler] prior lookup:", priorErr.message);
     return htmlPage(`Already recorded as ${LABELS[prior?.response || payload.r] || payload.r}`, "");
   }
 
@@ -97,10 +98,12 @@ Deno.serve(async (req) => {
     return htmlPage("Hmm", "Recorded the tap but couldn't update the RSVP. Open the app to confirm.");
   }
 
-  const { data: ctx } = await sb.from("events")
+  const { data: ctx, error: ctxErr } = await sb.from("events")
     .select("title, start_at, location").eq("id", payload.e).maybeSingle();
-  const { data: player } = await sb.from("players")
+  if (ctxErr) console.error("[rsvp-token-handler] event lookup:", ctxErr.message);
+  const { data: player, error: playerErr } = await sb.from("players")
     .select("first_name").eq("id", payload.p).maybeSingle();
+  if (playerErr) console.error("[rsvp-token-handler] player lookup:", playerErr.message);
 
   const playerName = player?.first_name || "your kid";
   const niceAction = LABELS[payload.r] || payload.r;

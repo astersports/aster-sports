@@ -105,12 +105,13 @@ Deno.serve(async (req) => {
   // delivery_status doesn't duplicate when handler.ts is null.
   const colSet = new Set<string>(["id", "delivery_status"]);
   if (handler.ts) colSet.add(handler.ts);
-  const { data: rec } = await sb.from("comms_message_recipients")
+  const { data: rec, error: recErr } = await sb.from("comms_message_recipients")
     .select([...colSet].join(", "))
     .eq("email_at_send", recipientEmail)
     .gte("created_at", sevenDaysAgo)
     .order("created_at", { ascending: false })
     .limit(1).maybeSingle();
+  if (recErr) { log("error", "recipient lookup failed", { event_type: eventType, email: recipientEmail, reason: recErr.message }); return json({ error: recErr.message }, 500); }
   if (!rec) { log("warn", "no matching recipient row", { event_type: eventType, email: recipientEmail }); return json({ ok: true, note: "no matching recipient row" }); }
 
   const recId = (rec as { id: string }).id;

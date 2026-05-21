@@ -96,12 +96,13 @@ Deno.serve(async (req) => {
   if (msgErr || !message) return json({ error: "Message not found" }, 404);
   if (message.sent_at) return json({ error: "Already sent" }, 409);
 
-  const { data: roles } = await sb
+  const { data: roles, error: rolesErr } = await sb
     .from("user_roles")
     .select("role")
     .eq("user_id", user.id)
     .eq("organization_id", message.org_id)
     .in("role", ["admin", "coach"]);
+  if (rolesErr) return json({ error: `Role lookup failed: ${rolesErr.message}` }, 500);
   if (!roles || roles.length === 0) return json({ error: "Not authorized" }, 403);
 
   const { data: recipients, error: recErr } = await sb
@@ -113,11 +114,12 @@ Deno.serve(async (req) => {
   if (!recipients || recipients.length === 0) return json({ error: "No queued recipients" }, 400);
 
   // Pilot-mode defense in depth + reply-to lookup (Wave 3.5 §B5.1 + 3.6 §D6).
-  const { data: orgSettings } = await sb
+  const { data: orgSettings, error: orgErr } = await sb
     .from("organization_settings")
     .select("pilot_mode_enabled, reply_to_email, from_name")
     .eq("organization_id", message.org_id)
     .maybeSingle();
+  if (orgErr) return json({ error: `Org settings lookup failed: ${orgErr.message}` }, 500);
   const pilotMode = orgSettings?.pilot_mode_enabled ?? true;
   const replyTo = orgSettings?.reply_to_email ?? REPLY_TO_FALLBACK;
   const fromName = orgSettings?.from_name ?? FROM_NAME_FALLBACK;
