@@ -38,10 +38,11 @@ export function useSeasonRollover(fromSeason, orgId) {
       }
 
       for (const t of (plan.teams || [])) {
-        const { data: newTeam } = await supabase.from('teams').insert({
+        const { data: newTeam, error: newTeamErr } = await supabase.from('teams').insert({
           org_id: orgId, season_id: newSeason.id, name: t.name, team_color: t.team_color, sort_order: t.sort_order,
           age_group: t.age_group, division: t.division, circuit: t.circuit,
         }).select().single();
+        if (newTeamErr) throw newTeamErr;
         if (newTeam) teamsRecreated++;
 
         for (const p of (t.players || [])) {
@@ -60,12 +61,13 @@ export function useSeasonRollover(fromSeason, orgId) {
         }
       }
 
-      const { data: rollover } = await supabase.from('season_rollovers').insert({
+      const { data: rollover, error: rolloverErr } = await supabase.from('season_rollovers').insert({
         from_season_id: fromSeason.id, to_season_id: newSeason.id, org_id: orgId,
         initiated_by: user.id, players_carried: playersCarried, players_advanced_age: playersAdvanced,
         players_dropped: playersDropped, coaches_carried: coachesCarried, teams_recreated: teamsRecreated,
         financial_balances_carried_cents: 0, status: 'complete', completed_at: new Date().toISOString(),
       }).select().single();
+      if (rolloverErr) throw rolloverErr;
 
       showToast('Season rolled over successfully.', 'success');
       setLoading(false);
