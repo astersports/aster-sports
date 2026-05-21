@@ -63,11 +63,18 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle, s
   // 2026-05-21 (Teams PR A / B1) — gate the % on enough signal. With sparse
   // data ("3% Going · 97% NR" with 1 of 13 families responding) the metric
   // misleads. Below threshold render "Not enough data yet" — chips stay.
+  // 2026-05-21 (Bug 1 follow-up) — drop the "Not enough data yet" qualifier
+  // entirely per CLAUDE.md §16.3 kindness microcopy mandate. The qualifier
+  // fired on the production 11U Girls team (8-4 record, ATT% populated) and
+  // contradicted what the grid clearly showed. Heading is now just
+  // "{label}" when below threshold; "{label} · N% Going" when enough signal.
+  // The grid itself is the empty-state surface — if every cell is blank,
+  // that reads as "no data" without the header asserting it.
   const enoughData = responseRate >= 50 && totalPast >= 2;
   const pulseLabel = role === 'parent' ? 'RSVP Pulse' : 'Team Pulse';
   const pulseTitle = enoughData
     ? `${pulseLabel} · ${teamPct}% Going`
-    : `${pulseLabel} · Not enough data yet`;
+    : pulseLabel;
   return (
     <CollapsibleSection title={pulseTitle} sectionKey="heatmap" defaultOpen={false}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 16px 8px' }}>
