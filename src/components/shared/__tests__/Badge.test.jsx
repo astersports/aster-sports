@@ -52,7 +52,6 @@ describe('Badge', () => {
 
 // Files allowed to keep inline pill spans (see PR commit message for reasons).
 const INLINE_REMAINING = new Set([
-  'src/components/event/RsvpSummaryBlock.jsx',
   'src/components/tournament/TournamentHeader.jsx',
   'src/components/tournament/TournamentListItem.jsx',
   'src/components/briefings/inbox/ActionQueueRow.jsx',
