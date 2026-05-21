@@ -11,18 +11,24 @@ export function useComments(eventId) {
   const { showToast } = useToast();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const didInitialLoad = useRef(false);
   const cancelledRef = useRef(false);
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
     if (!didInitialLoad.current) setLoading(true);
-    const { data, error } = await supabase
+    const { data, error: fetchErr } = await supabase
       .from('event_comments').select('*').eq('event_id', eventId)
       .order('pinned', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: true });
     if (cancelledRef.current) return;
-    if (error) console.error('useComments:', error.message);
+    if (fetchErr) {
+      console.error('useComments:', fetchErr.message);
+      setError(fetchErr);
+      setLoading(false);
+      return;
+    }
     setComments(data || []);
     didInitialLoad.current = true;
     setLoading(false);
@@ -56,5 +62,5 @@ export function useComments(eventId) {
     return true;
   };
 
-  return { comments, loading, post, refetch: fetch };
+  return { comments, loading, error, post, refetch: fetch };
 }

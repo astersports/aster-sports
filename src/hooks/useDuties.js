@@ -12,17 +12,23 @@ export function useDuties(eventId) {
   const { showToast } = useToast();
   const [duties, setDuties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const didInitialLoad = useRef(false);
   const cancelledRef = useRef(false);
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
     if (!didInitialLoad.current) setLoading(true);
-    const { data, error } = await supabase
+    const { data, error: fetchErr } = await supabase
       .from('event_duties').select('*').eq('event_id', eventId)
       .order('duty_name', { ascending: true });
     if (cancelledRef.current) return;
-    if (error) console.error('useDuties:', error.message);
+    if (fetchErr) {
+      console.error('useDuties:', fetchErr.message);
+      setError(fetchErr);
+      setLoading(false);
+      return;
+    }
     setDuties(data || []);
     didInitialLoad.current = true;
     setLoading(false);
@@ -61,5 +67,5 @@ export function useDuties(eventId) {
     return true;
   };
 
-  return { duties, loading, claim, unclaim, refetch: fetch };
+  return { duties, loading, error, claim, unclaim, refetch: fetch };
 }

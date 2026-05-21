@@ -13,17 +13,23 @@ import { supabase } from '../lib/supabase';
 export function useEventActivations(eventId, enabled) {
   const [activated, setActivated] = useState(() => new Set());
   const [loading, setLoading] = useState(enabled);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     Promise.resolve().then(async () => {
       if (!enabled || !eventId) { setLoading(false); return; }
-      const { data, error } = await supabase
+      const { data, error: fetchErr } = await supabase
         .from('player_activations')
         .select('player_id')
         .eq('event_id', eventId);
       if (cancelled) return;
-      if (error) { console.error('useEventActivations:', error.message); setLoading(false); return; }
+      if (fetchErr) {
+        console.error('useEventActivations:', fetchErr.message);
+        setError(fetchErr);
+        setLoading(false);
+        return;
+      }
       setActivated(new Set((data || []).map((a) => a.player_id)));
       setLoading(false);
     });
@@ -50,5 +56,5 @@ export function useEventActivations(eventId, enabled) {
     }
   }, [activated, eventId]);
 
-  return { activatedSet: activated, toggle, loading };
+  return { activatedSet: activated, toggle, loading, error };
 }
