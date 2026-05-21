@@ -19,8 +19,9 @@ export async function fetchParentContext(userId) {
   }
 
   const guardianId = data[0].guardian_id;
-  const { data: gRow } = await supabase
+  const { data: gRow, error: gErr } = await supabase
     .from('guardians').select('first_name').eq('id', guardianId).maybeSingle();
+  if (gErr) console.error('[parentContext] guardians:', gErr.message);
 
   const childMap = new Map();
   const teamIdSet = new Set();
@@ -39,9 +40,10 @@ export async function fetchParentContext(userId) {
 
   const playerIds = [...childMap.keys()];
   if (playerIds.length > 0) {
-    const { data: types } = await supabase
+    const { data: types, error: typesErr } = await supabase
       .from('players').select('id, member_type')
       .in('id', playerIds);
+    if (typesErr) console.error('[parentContext] players member_type:', typesErr.message);
     (types || []).forEach((t) => {
       const child = childMap.get(t.id);
       if (child) child.memberType = t.member_type;
