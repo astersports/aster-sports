@@ -16,9 +16,9 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import ModalBackground from '../shared/ModalBackground';
 
-const overlay = { position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 };
-const sheet = { backgroundColor: 'var(--em-bg-card)', width: '100%', maxWidth: 520, borderRadius: 16, padding: 16, paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' };
+const sheet = { backgroundColor: 'var(--em-bg-card)', width: '100%', maxWidth: 520, margin: 16, borderRadius: 16, padding: 16, paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' };
 const btnRow = { display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 };
 const btnBase = { width: '100%', minHeight: 80, borderRadius: 12, fontSize: 16, fontFamily: 'inherit', textAlign: 'left', padding: '12px 16px', cursor: 'pointer', border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4 };
 const btnCancel = { width: '100%', minHeight: 44, borderRadius: 10, fontSize: 14, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer', backgroundColor: 'transparent', color: 'var(--em-text-tertiary)', border: 'none' };
@@ -56,8 +56,8 @@ export default function ScopeChoiceDialog({ event, onChoose, onCancel }) {
   );
 
   return createPortal(
-    <div style={overlay} role="dialog" aria-modal="true" aria-labelledby="scope-title" onClick={onCancel}>
-      <div style={sheet} onClick={(e) => e.stopPropagation()}>
+    <ModalBackground onClick={onCancel} zIndex={9999}>
+      <div style={sheet} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="scope-title">
         <div id="scope-title" style={{ fontSize: 18, fontWeight: 700, color: 'var(--em-text-primary)', marginBottom: 4 }}>Edit recurring event</div>
         <div style={{ fontSize: 14, color: 'var(--em-text-secondary)' }}>Pick how the change applies.</div>
         <div style={btnRow}>
@@ -67,7 +67,7 @@ export default function ScopeChoiceDialog({ event, onChoose, onCancel }) {
           <button type="button" className="sf-press" style={btnCancel} onClick={onCancel}>Cancel</button>
         </div>
       </div>
-    </div>,
+    </ModalBackground>,
     document.body
   );
 }
