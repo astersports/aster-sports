@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import { resolveLoginRedirect } from '../lib/loginRedirectAllowlist';
 import LoginForm from '../components/auth/LoginForm';
 
 // Skyfire brand landing + sign-in. Email auto-trims on submit. Inline field
@@ -10,9 +11,8 @@ export default function LoginPage() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const REDIRECT_ALLOWLIST = ['/events/', '/tournaments/', '/teams/', '/schedule', '/records', '/account', '/admin/locations', '/messages'];
   const stickyFrom = location.state?.from?.pathname;
-  const from = REDIRECT_ALLOWLIST.some(p => stickyFrom?.startsWith(p)) ? stickyFrom : '/';
+  const from = resolveLoginRedirect(stickyFrom);
 
   const [searchParams] = useSearchParams();
   const teamParam = searchParams.get('team');
@@ -27,7 +27,8 @@ export default function LoginPage() {
     if (!teamParam) return;
     supabase.from('teams').select('name, organizations(name)')
       .eq('id', teamParam).maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error('[LoginPage] team-context fetch:', error.message);
         if (data) setTeamContext({ teamName: data.name, orgName: data.organizations?.name });
       });
   }, [teamParam]);
