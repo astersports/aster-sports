@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Trophy } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import CollapsibleSection from '../shared/CollapsibleSection';
 
 const TYPE_LABELS = {
   tournament_champion: 'Champion',
@@ -44,22 +45,28 @@ export default function TeamAchievements({ teamId }) {
 
   if (achievements.length === 0) return null;
 
+  // 2026-05-21 (Teams PR C) — wrap in CollapsibleSection (defaultOpen=false
+  // per §16.14 detail-page contract). Summary string in subtitle so the
+  // user reads the count without expanding.
+  const subtitle = achievements.length === 1 ? '1 trophy' : `${achievements.length} trophies`;
   return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {achievements.map((a) => {
-          const color = TYPE_COLORS[a.achievement_type] || 'var(--em-accent)';
-          return (
-            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 10, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', boxShadow: 'var(--em-shadow-sm)' }}>
-              <Trophy size={14} strokeWidth={1.75} color={color} />
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color }}>{TYPE_LABELS[a.achievement_type] || a.achievement_type}</div>
-                <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{a.tournament_name || a.opponent_team_name || ''}</div>
+    <CollapsibleSection title="Achievements" sectionKey="achievements" subtitle={subtitle} defaultOpen={false}>
+      <div style={{ padding: '4px 16px 12px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {achievements.map((a) => {
+            const color = TYPE_COLORS[a.achievement_type] || 'var(--em-accent)';
+            return (
+              <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 10, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', boxShadow: 'var(--em-shadow-sm)' }}>
+                <Trophy size={14} strokeWidth={1.75} color={color} />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color }}>{TYPE_LABELS[a.achievement_type] || a.achievement_type}</div>
+                  <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{a.tournament_name || a.opponent_team_name || ''}</div>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </CollapsibleSection>
   );
 }

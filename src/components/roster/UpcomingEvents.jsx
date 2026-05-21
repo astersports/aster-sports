@@ -29,27 +29,35 @@ export default function UpcomingEvents({ teamId }) {
       .slice(0, MAX_EVENTS);
   }, [activities, teamId, now]);
 
+  // 2026-05-21 (Teams PR C) — CTA dropped from body in favor of an inline
+  // link (lighter visual weight). The section header CollapsibleSection
+  // already conveys "Upcoming · {n} events" so the heavy 44px outlined
+  // button was redundant. Empty-state microcopy warmed per §16.3 — strings
+  // remain translation-extractable per §16.6.
   return (
-    <div style={{ marginTop: 24 }}>
-      <div style={{
-        fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-        textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 8,
-      }}>UPCOMING (NEXT 7 DAYS)</div>
+    <div style={{ padding: '4px 16px 12px' }}>
       {upcoming.length === 0 ? (
-        <TextEmptyState heading="Clear week ahead" message="Time to work on those crossovers." />
+        <TextEmptyState
+          heading="No events here yet"
+          message="But Coach Kenny is plotting something good."
+        />
       ) : (
-        upcoming.map((evt, i) => (
-          <div key={evt.id} style={{ marginBottom: i < upcoming.length - 1 ? 6 : 0 }}>
-            <EventCard event={evt} density="minimal" weather={getWeatherForTime(weather, evt.start_at)} />
-          </div>
-        ))
+        <>
+          {upcoming.map((evt, i) => (
+            <div key={evt.id} style={{ marginBottom: i < upcoming.length - 1 ? 6 : 0 }}>
+              <EventCard event={evt} density="minimal" weather={getWeatherForTime(weather, evt.start_at)} />
+            </div>
+          ))}
+          <button type="button" onClick={() => { navigator.vibrate?.(10); navigate(`/schedule?team=${teamId}`); }}
+            className="sf-press" aria-label="View full schedule for this team"
+            style={{ marginTop: 6, minHeight: 32, padding: '0 4px',
+              border: 'none', background: 'none', color: 'var(--em-accent)',
+              fontSize: 13, fontWeight: 500 }}>
+            View full schedule →
+          </button>
+        </>
       )}
-      <button type="button" onClick={() => { navigator.vibrate?.(10); navigate(`/schedule?team=${teamId}`); }}
-        className="w-full sf-press" style={{ marginTop: 8, minHeight: 44, borderRadius: 10,
-          border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
-          color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
-        View full schedule →
-      </button>
     </div>
   );
 }
+
