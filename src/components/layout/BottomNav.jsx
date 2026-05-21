@@ -36,6 +36,9 @@ export default function BottomNav() {
 
 function NavItem(tab) {
   const Icon = tab.icon;
+  const ariaLabel = tab.to === '/messages'
+    ? (tab.showBadge ? 'Messages (has unread)' : 'Messages')
+    : tab.label;
   return (
     <NavLink
       to={tab.to}
@@ -46,7 +49,7 @@ function NavItem(tab) {
         minHeight: 44,
         color: isActive ? 'var(--em-accent)' : 'var(--em-text-tertiary)',
       })}
-      aria-label={tab.label}
+      aria-label={ariaLabel}
     >
       {({ isActive }) => (
         <div className="flex flex-col items-center justify-center" style={{ gap: 2, paddingTop: 6, paddingBottom: 2, position: 'relative' }}>

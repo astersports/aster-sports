@@ -19,14 +19,17 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={useMemo(() => ({ showToast }), [showToast])}>
       {children}
       {toast && (
-        <div style={{
-          position: 'fixed',
-          bottom: 'calc(80px + env(safe-area-inset-bottom, 0px) + 8px)',
-          left: 16, right: 16,
-          zIndex: 10000,
-          display: 'flex',
-          justifyContent: 'center',
-        }}>
+        <div
+          role={toast.variant === 'error' ? 'alert' : 'status'}
+          aria-live={toast.variant === 'error' ? 'assertive' : 'polite'}
+          style={{
+            position: 'fixed',
+            bottom: 'calc(80px + env(safe-area-inset-bottom, 0px) + 8px)',
+            left: 16, right: 16,
+            zIndex: 10000,
+            display: 'flex',
+            justifyContent: 'center',
+          }}>
           <div
             style={{
               display: 'flex',

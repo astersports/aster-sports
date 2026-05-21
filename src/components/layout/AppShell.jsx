@@ -17,15 +17,19 @@ export default function AppShell({ children }) {
     >
       <Header />
       {!online && (
-        <div style={{
-          backgroundColor: 'var(--em-danger)',
-          color: 'var(--em-text-inverse)',
-          textAlign: 'center',
-          padding: '6px 16px',
-          fontSize: 13,
-          fontWeight: 500,
-          flexShrink: 0,
-        }}>
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            backgroundColor: 'var(--em-danger)',
+            color: 'var(--em-text-inverse)',
+            textAlign: 'center',
+            padding: '6px 16px',
+            fontSize: 13,
+            fontWeight: 500,
+            flexShrink: 0,
+          }}
+        >
           You're offline — some features may not work
         </div>
       )}
