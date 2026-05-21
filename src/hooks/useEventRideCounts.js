@@ -22,6 +22,7 @@ export function useEventRideCounts(activities) {
     ]).then(([offersRes, claimsRes, requestsRes]) => {
       if (offersRes.error) { console.error('useEventRideCounts offers:', offersRes.error.message); return; }
       if (claimsRes.error) { console.error('useEventRideCounts claims:', claimsRes.error.message); return; }
+      if (requestsRes?.error) { console.error('useEventRideCounts requests:', requestsRes.error.message); return; }
       const map = {};
       for (const o of (offersRes.data || [])) {
         if (!map[o.event_id]) map[o.event_id] = { offers: 0, requests: 0, urgent: false };

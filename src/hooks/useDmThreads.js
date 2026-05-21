@@ -20,12 +20,14 @@ export function useDmThreads() {
     const enriched = await Promise.all(raw.map(async (t) => {
       const otherId = t.user_a === user.id ? t.user_b : t.user_a;
       // Beta B1 audit defense-in-depth — anti-pattern #37.
-      const { data: lastMsg } = await supabase
+      const { data: lastMsg, error: lastMsgErr } = await supabase
         .from('messages').select('sender_name, body, created_at')
         .eq('org_id', orgId)
         .eq('dm_thread_id', t.id).order('created_at', { ascending: false }).limit(1);
-      const { data: roleRow } = await supabase
+      if (lastMsgErr) console.error('useDmThreads lastMsg:', lastMsgErr.message);
+      const { data: roleRow, error: roleErr } = await supabase
         .from('user_roles').select('role').eq('user_id', otherId).maybeSingle();
+      if (roleErr) console.error('useDmThreads user_roles:', roleErr.message);
       let otherName = 'User';
       if (roleRow?.role === 'parent') {
         const { data: g, error: gErr } = await supabase
