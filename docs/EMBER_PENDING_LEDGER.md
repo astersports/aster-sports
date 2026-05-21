@@ -1101,6 +1101,35 @@ but with different implementations.
 - **Home greeting NY-pin** — admin doesn't, parent + coach do (Cluster 7)
 - **Density toggle convention** — Home vs Schedule may diverge (B6)
 
+### Propagation patterns locked 2026-05-21
+
+- **Density-aware Card extraction (288 callsites)**
+  Status: design call locked (Card v1 API decided 2026-05-21).
+  Propagation arc: ~10-15 PRs across multiple sessions, gradual
+  migration per surface (Records → Schedule → Event Detail → Briefings
+  → Roster). First available no-urgent-work week as trigger. Per
+  anti-pattern #42 (parallel-system buildup) — closes 288 instances of
+  the same visual treatment that have drifted into 6+ variants. Pure
+  function migration with cross-surface invariant test per #43.
+
+- **A11y live regions across loading states**
+  Status: pattern locked PR #438 (RecordsPage loading-state live region).
+  Propagation: extend to other async-loading surfaces (BriefingsInbox,
+  ScheduleListSections, RosterSection, FinancialsPage). Each surface gets
+  `<div role="status" aria-live="polite">` for loading state announcement.
+  Per anti-pattern #43 cross-surface invariant: if pattern recurs >3
+  surfaces, extract a shared `<LoadingLiveRegion />` component.
+
+- **Serial-merge-discipline-at-scale (workflow learning)**
+  Origin: 2026-05-21 session (33 PRs merged with zero cross-PR
+  interaction failures). Discipline: serial merges with smoke gates
+  between PRs (not parallel batch-merging). Sequential rather than
+  parallel batch-merging means each PR's effects are observed before
+  the next lands. Scales to 30+ PR days without producing cross-PR
+  regressions that smaller batches in earlier sessions exhibited.
+  Registered as workflow learning — informs how future high-output
+  sessions sequence PRs.
+
 ---
 
 ## 6. VERIFICATION ITEMS WAITING ON FRANK
