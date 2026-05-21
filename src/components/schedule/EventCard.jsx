@@ -10,6 +10,7 @@ import { useMapsUrl } from '../../hooks/useMapsUrl';
 import ChildRsvp from './ChildRsvp';
 import RsvpCountRow from './RsvpCountRow';
 import RideIndicator from '../shared/RideIndicator';
+import Badge from '../shared/Badge';
 
 export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'medium', gameResult, weather, onRsvpChange }) {
   const navigate = useNavigate();
@@ -60,7 +61,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
                 <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)' }}>{formatTime(event.start_at)}</span>
                 <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>· {typeLabel}</span>
                 {isTournamentDraft && <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-secondary)', textTransform: 'uppercase' }}>Draft</span>}
-                {isToday && !showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-info-soft)', color: 'var(--em-info)' }}>Today</span>}
+                {isToday && !showCountdown && <Badge variant="info" pill>Today</Badge>}
                 {gameResult?.published_at && <span style={{ fontSize: 13, fontWeight: 700, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)', marginLeft: 'auto' }}>{gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}</span>}
                 {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
               </div>
@@ -90,8 +91,8 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
                 <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)' }}>{formatTime(event.start_at)}</span>
-                {showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)' }}>{formatCountdown(event.start_at)}</span>}
-                {isToday && !showCountdown && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, backgroundColor: 'var(--em-info-soft)', color: 'var(--em-info)' }}>Today</span>}
+                {showCountdown && <Badge variant="accent" pill>{formatCountdown(event.start_at)}</Badge>}
+                {isToday && !showCountdown && <Badge variant="info" pill>Today</Badge>}
                 <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>· {typeLabel}</span>
                 {isTournamentDraft && <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-secondary)', textTransform: 'uppercase' }}>Draft</span>}
                 {gameResult?.published_at && <span style={{ fontSize: 13, fontWeight: 700, color: gameResult.result === 'W' ? 'var(--em-success)' : gameResult.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>{gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}</span>}
