@@ -1261,3 +1261,50 @@ APPENDIX B — DEFERRED / OUT-OF-SCOPE
 - A11y full pass (focus rings, screen reader pulse grid, dynamic type) → separate arc; PR C closes the highest-priority subset (page landmark + scope marker)
 
 END OF DOCUMENT
+
+═══════════════════════════════════════════════════════════════════════════
+PART 14 — CLOSURE ADDENDUM (2026-05-21 PM session)
+═══════════════════════════════════════════════════════════════════════════
+
+All 4 Teams arc PRs landed in single sustained session.
+
+PR A (#417) — STOP-THE-BLEEDING
+- B1, B3, V1, C3 closed
+- useHomeRole adoption for activeRole (anti-pattern #42)
+- CollapsibleSection default flipped (platform audit C6)
+- TeamPulseHeaderInvariant.test.jsx — 5 cases passing
+
+PR B (#419) — HERO CARD CONSOLIDATION
+- B4, V2, C1, C4, A4 closed
+- TeamDetailHero replaces TeamHeaderCard + MyChildSpotlight + CoachQuickActions mounts
+- useTeamHeadCoach + useSparseRsvp + RsvpProgressBar shipped
+- Co-coach rule via team_staff.role + alphabetical fallback (head_coach boolean NOT in production schema — verified via MCP)
+- Coach-viewing-self contact line hide
+- 6 per-role variant tests + 4 cross-surface tests passing
+
+PR C (#423) — POLISH + CLEANUP + DEAD-FEATURE RETIREMENT
+- V3, V4, V6, V7, V8, B6, Q13, Q14(c) closed
+- TeamPlayerStats mount REMOVED (anti-pattern #51 second instance)
+- 4 retired files deleted: TeamHeaderCard, CoachQuickActions, MessageTeamFAB, MyChildSpotlight
+- usePlayerSortOrder + TeamDetailOverflowMenu shipped
+- PlayerRowAcademyAvatar.test.jsx invariant added
+
+PR D (#418) — DATA-LAYER HARDENING
+- D1 closed: useAttendanceData:54 added .eq('org_id', orgId)
+- D2 closed: anti-pattern #36 sweep across useAttendanceData, useTeamRecords, TeamAchievements
+- C5 closed: useTeamRecords:47 dead foreignTable .order removed (anti-pattern #48)
+- Drive-by usePlayerSeasonStats org_id added (caught by new audit test)
+- teamsPageOrgScopeAudit.test.js added (drift-hedge against future regressions)
+
+ARC STATUS: 21 of 27 catalogued Teams audit findings closed (B1, B2, B3, B4, B6, V1, V2, V3, V4, V6, V7, V8, C1, C3, C4, C5, C6, D1, D2, A1, A4-revised). 6 remain deferred per Appendix B routing:
+- B5 (multi-tenant weather coords) → §4 ledger separate cluster
+- V5 (Pulse grid horizontal scroll indicator) → ledger UX backlog
+- C2 (enrichedPlayers re-runs every minute via useNow chain) → perf-pass arc
+- C7 (useNow tick re-renders TeamDetailPage subtree every 60s) → perf-pass arc
+- A2 (tertiary text fails WCAG AA against page bg ~3.4:1) → A11y full pass arc
+- A3 (Pulse grid cells lack aria-labels) → A11y full pass arc
+
+ANTI-PATTERN #51 CANDIDATE STATUS: 2 instances (Engine Preview PR #398, TeamPlayerStats Teams PR C). Dead-feature audit (separate research agent in same session) found NO third NEW surface — LiveScorePage, suggest-briefing-closer, broadcast components all confirmed ACTIVE. #51 stays at candidate.
+
+FOLLOWUP: docs/L99_PLATFORM_WIDE_AUDIT_2026-05-21.txt closure addendum (separate Part 11) covers platform PRs landed in same session.
+

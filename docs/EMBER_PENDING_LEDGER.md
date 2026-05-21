@@ -2261,8 +2261,18 @@ family-visible bugs).
   `RsvpProgressBarCrossSurface` (4 cases). Retired components stay in
   tree but unreferenced 1 session per L99 #393 playbook before deletion
   in PR C follow-up.
-- **PR C** PENDING — overflow menu + TeamAchievements collapsible +
-  retired-file deletion + microcopy parent-variant pass.
+- **PR C** SHIPPED (PR #423 `feat(teams): Teams PR C — polish + cleanup
+  + dead-feature retirement`). Overflow menu + `usePlayerSortOrder`
+  hook + retired-file deletion (TeamHeaderCard, CoachQuickActions,
+  MessageTeamFAB, MyChildSpotlight) + microcopy parent-variant pass +
+  TeamPlayerStats mount REMOVED (anti-pattern #51 second instance).
+  `PlayerRowAcademyAvatar.test.jsx` invariant added. Closes V3, V4,
+  V6, V7, V8, B6, Q13, Q14(c).
+
+**§4.U arc CLOSED 2026-05-21.** 21 of 27 catalogued findings closed
+across all 4 PRs (A/B/C/D). 6 deferred to other arcs per Appendix B
+routing (B5 multi-tenant weather, V5 pulse grid scroll indicator, C2
++ C7 perf-pass arc, A2 + A3 a11y full pass arc).
 
 ---
 
@@ -2332,3 +2342,115 @@ Reinforces anti-pattern #43 (cross-surface invariant test).
 useAttendanceData.js) now reconciled — three split, one deferred
 with headroom note. §12 itself can be re-scoped to a running watch
 list rather than the specific four-line bullet.
+
+**PR reference:** SHIPPED via PR #424
+`refactor(home-pages): preemptive split per PQ3 (3 pages, 9
+sub-components)`.
+
+---
+
+### §4.X — L99 platform-wide audit arc (CLOSED 2026-05-21)
+
+Sustained PM session shipped 14 PRs closing Phase 1 + Phase 2 +
+Phase 3 + Phase 4 partial from `docs/L99_PLATFORM_WIDE_AUDIT_2026-05-21.txt`
+(v3) and `docs/L99_TEAMS_DETAILED_AUDIT_2026-05-21.txt`. See those
+docs' closure addendums (Part 11 platform / Part 14 Teams) for the
+full per-PR breakdown.
+
+**Phase 1 (8 PRs):**
+- **PR α** SHIPPED (PR #412) — 6 hook anti-pattern #36 batch
+  (useCoachHomeSignals, useGameResultsMap, useKindUsage,
+  usePrefetchChildRsvps, useUnreadCounts, useBriefingFilters).
+- **PR β** SHIPPED (PR #411) — 3 page tap-target fixes (Messages,
+  FinancialDashboard, ImportSchedule).
+- **PR γ** SHIPPED (PR #410) — 2 hook anti-pattern #48 cleanups
+  (useOrgTeamRecords, useTeamGamesByTournament).
+- **PR δ** SHIPPED (PR #416) — BriefingsInbox loading gate (P0 closed).
+- Companion: audit doc v3 (PR #413), CLAUDE.md amendments per
+  amended AP #49 + AP #50/#51 candidates + §16.15 L99 template
+  (PR #414), `.gitignore .claude/` chore (PR #415), Teams PR A
+  (PR #417, see §4.U).
+
+**Phase 2 (2 PRs, all in §4.U):** Teams PR B (#419) + Teams PR D
+(#418).
+
+**Phase 3 (3 PRs):**
+- **PR ζ** SHIPPED (PR #420) — edge function mirror byte-compare
+  audit shipped with 4-baseline allow-list (102 lines of drift
+  recorded). CI-enforces anti-pattern #30.
+- **PR ε** SHIPPED (PR #421) — E1 synthetic flag + E2
+  `EMAIL_WRAPPER_OPEN` extraction across 4 send helpers.
+- Teams PR C (#423, see §4.U).
+
+**Phase 4 partial (2 PRs + 1 research):**
+- **Mirror drift cleanup** SHIPPED (PR #422) — 4 pairs closed
+  (102 → 17 irreducible TS-only residuals).
+- **Home-page preemptive split** SHIPPED (PR #424, see §4.W).
+- **Dead-feature audit** (research-only): no third NEW surface
+  found for anti-pattern #51 promotion (LiveScorePage,
+  suggest-briefing-closer, broadcast components all confirmed
+  ACTIVE). #51 stays at candidate.
+
+**Anti-pattern net additions/closures this arc:**
+- #30 (mirror discipline): CI-enforced via PR #420 + drift closed
+  via PR #422.
+- #36 (destructured-default error swallow): 7 callsites closed
+  across PRs #410 + #412 + #418.
+- #37 (org_id scoping): 100% compliant verified by PR #418's audit
+  test (`teamsPageOrgScopeAudit.test.js`).
+- #43 (cross-surface invariant tests): 5 new invariant tests
+  shipped (TeamPulseHeader, TeamDetailHeroPerRole,
+  RsvpProgressBarCrossSurface, PlayerRowAcademyAvatar,
+  edgeFunctionMirrorAudit).
+- #48 (foreignTable .order): 3 callsites closed (PR γ + Teams PR D).
+- #49 (full-paste discipline): amended via PR #414.
+- #50 (audit-cascade): CANDIDATE — promotion pending second-pass
+  results.
+- #51 (dead-feature retirement): CANDIDATE — 2 instances
+  (Engine Preview + TeamPlayerStats); no third NEW surface found
+  tonight.
+- §16.15 (L99 template): registered via PR #414.
+
+---
+
+### §4.Y — Deferred / future arc backlog (post-L99 close)
+
+Per claude.ai PQ5/PQ7 routing — these arcs were intentionally
+scoped OUT of the L99 closure session. They live here as the
+canonical "next arc to pick up" surface.
+
+**Multi-tenant readiness arc (PQ5)**
+Scoped to St. Patrick's 2027 onboarding kickoff. Target window:
+Q1 2027 unless St. Patrick's accelerates. Touches B5 (per-org
+weather coords), per-org branding edge cases, RLS hardening for
+multi-org seasonality, org_id surface audit for any new tables
+landed in 2026-Q4. See L99 platform audit PART 5 Phase 4 for the
+full scope frame.
+
+**Component cleanup arc (PQ7)**
+Defer until "first available week with no urgent shipping work."
+Scope: TeamPlayerStats / TeamHeaderCard / CoachQuickActions /
+MessageTeamFAB / MyChildSpotlight already deleted via Teams PR C;
+remaining file-cleanup candidates live in §14 helper-extraction
+backlog and §12 line-cap watch.
+
+**Perf-pass arc**
+Deferred. Holding C2 + C7 from Teams audit (useNow tick
+re-renders TeamDetailPage subtree every 60s; React.memo on stable
+children would resolve), V5 (Pulse grid scroll indicator), §4.M.1
+P1-4 (`financial_transactions` over-fetch). Triggered when row
+counts grow or FPS drops on iPhone 11 baseline.
+
+**A11y full pass arc**
+Deferred. Holding Teams audit A2 (tertiary text contrast against
+page bg) + A3 (Pulse grid cells aria-labels) + focus ring
+consistency + dynamic type support. Triggered before any parent
+beta-test cohort that includes accessibility-need users.
+
+**Second-pass platform audit (anti-pattern #50 test)**
+Running in parallel research agent during the L99 close session.
+Results pending. If yields ≥3 findings on a new surface for
+anti-pattern #51, register #51's third instance (could be the
+suggest-briefing-closer if active-but-half-built emerges). If
+cascade prediction (13-15 findings per platform audit Part 3.1)
+holds, anti-pattern #50 promotes from CANDIDATE to registered.
