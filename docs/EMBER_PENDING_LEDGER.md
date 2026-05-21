@@ -2238,6 +2238,29 @@ as the proposal doc per #45 rule.
 first. PR A is the stop-the-bleeding ship (closes B1 + B2 which are
 family-visible bugs).
 
+#### §4.U close progress (2026-05-21)
+
+- **PR A** SHIPPED (PR #417 `fix(teams): Teams PR A — stop-the-bleeding`).
+- **PR D** SHIPPED (PR #418 `fix(teams): data-layer hardening`).
+- **PR B** SHIPPED (this commit, `feat(teams): Teams PR B — hero card
+  consolidation`). New `TeamDetailHero` (~142 lines) replaces
+  `TeamHeaderCard` + `MyChildSpotlight` + `CoachQuickActions` mounts +
+  the floating `Send-briefing` chip + `MessageTeamFAB` mount. Four
+  slots per §9.2: identity, state-at-a-glance with `RsvpProgressBar`,
+  per-role action stack, head-coach contact line. PLATFORM ADDITIONS
+  shipped: co-coach rule via alphabetical sort (head_coach boolean not
+  present in `team_staff` schema — verified via MCP), coach-viewing-
+  self hides contact line, hero `ChildRsvp` uses `compact={false}` for
+  A4. New `useTeamHeadCoach` hook, `isSparseRsvp` shared helper
+  (deletes the duplicated detector across PlayerRow + MyChildSpotlight
+  + hero). Both new invariant tests pass: `TeamDetailHeroPerRoleInvariant`
+  (6 cases across parent/coach/admin/view-as variants) and
+  `RsvpProgressBarCrossSurface` (4 cases). Retired components stay in
+  tree but unreferenced 1 session per L99 #393 playbook before deletion
+  in PR C follow-up.
+- **PR C** PENDING — overflow menu + TeamAchievements collapsible +
+  retired-file deletion + microcopy parent-variant pass.
+
 ---
 
 ### §4.V — Bug-sweep follow-ups (2026-05-20 PM)

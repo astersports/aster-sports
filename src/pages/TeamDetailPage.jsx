@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Mail, Users } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ChevronLeft, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useHomeRole } from '../hooks/useHomeRole';
 import { isStaff } from '../lib/permissions';
@@ -15,15 +15,13 @@ import { useNow } from '../hooks/useNow';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
-import TeamHeaderCard from '../components/roster/TeamHeaderCard';
+import CollapsibleSection from '../components/shared/CollapsibleSection';
+import TeamDetailHero from '../components/roster/TeamDetailHero';
 import TeamAchievements from '../components/roster/TeamAchievements';
 import RosterSection from '../components/roster/RosterSection';
 import TeamSwitcher from '../components/roster/TeamSwitcher';
 import TeamPlayerStats from '../components/roster/TeamPlayerStats';
 import TeamHeatmap from '../components/gameday/TeamHeatmap';
-import MessageTeamFAB from '../components/roster/MessageTeamFAB';
-import CoachQuickActions from '../components/roster/CoachQuickActions';
-import MyChildSpotlight from '../components/roster/MyChildSpotlight';
 import UpcomingEvents from '../components/roster/UpcomingEvents';
 
 export default function TeamDetailPage() {
@@ -79,25 +77,15 @@ export default function TeamDetailPage() {
         <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
       </button>
       {switcherPrograms.length > 1 && <TeamSwitcher programs={switcherPrograms} teamId={teamId} navigate={navigate} />}
-      <TeamHeaderCard team={team} summary={summary} loading={recordsLoading} nextEvent={nextEvent} />
-      {isStaff(role) && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -8, marginBottom: 12 }}>
-          {/* Wave 4.4-B Session 1: deep-link to the briefing portal. The
-              old <SendBriefingButton> that lazy-mounted BriefingComposer
-              inline is retired in favor of one route + URL params, so
-              the portal becomes the single entry point. Team-scoped
-              audience auto-fills via the anchor=team param. */}
-          <Link to={`/admin/briefings/compose?anchor=team&id=${teamId}`} aria-label="Send briefing about this team"
-            className="sf-press"
-            style={{ minHeight: 44, padding: '0 14px', borderRadius: 10, fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer', border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
-            <Mail size={14} strokeWidth={1.75} />
-            <span>Send briefing</span>
-          </Link>
-        </div>
-      )}
-      {myChildPlayer && <MyChildSpotlight player={myChildPlayer} team={team} child={myChild} nextEvent={nextEvent} />}
-      {isStaff(role) && <CoachQuickActions teamId={teamId} />}
-      <UpcomingEvents teamId={teamId} />
+      {/* 2026-05-21 (Teams PR B / §16.14) — single hero replaces
+          TeamHeaderCard + MyChildSpotlight + CoachQuickActions +
+          the floating Send-briefing chip. MessageTeamFAB also retired
+          (action lives inside the hero now). Everything below the hero
+          is a collapsible section per the detail-page contract. */}
+      <TeamDetailHero team={team} role={role} summary={recordsLoading ? null : summary} myChild={myChild} myChildPlayer={myChildPlayer} nextEvent={nextEvent} />
+      <CollapsibleSection title="Upcoming" subtitle="next 7 days">
+        <UpcomingEvents teamId={teamId} />
+      </CollapsibleSection>
 
       {rosterLoading ? (
         <LoadingSkeleton variant="list" count={6} />
@@ -114,7 +102,6 @@ export default function TeamDetailPage() {
       {!rosterLoading && players.length > 0 && <TeamHeatmap teamId={teamId} range={pulseRange} onRangeToggle={() => setPulseRange((r) => r === 'season' ? '4weeks' : 'season')} />}
       {!rosterLoading && players.length > 0 && isStaff(role) && <TeamPlayerStats players={players} stats={playerStats} loading={statsLoading} />}
       <TeamAchievements teamId={teamId} />
-      {isStaff(role) && <MessageTeamFAB teamId={teamId} />}
     </div>
   );
 }
