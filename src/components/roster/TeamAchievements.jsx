@@ -33,8 +33,11 @@ export default function TeamAchievements({ teamId }) {
       .eq('team_id', teamId)
       .not('confirmed_at', 'is', null)
       .order('event_date', { ascending: false })
-      .then(({ data }) => {
-        if (!cancelled) setAchievements(data || []);
+      .then(({ data, error }) => {
+        // Anti-pattern #36: destructure error + surface it before using data.
+        if (cancelled) return;
+        if (error) { console.error('TeamAchievements:', error.message); return; }
+        setAchievements(data || []);
       });
     return () => { cancelled = true; };
   }, [teamId, orgId]);
