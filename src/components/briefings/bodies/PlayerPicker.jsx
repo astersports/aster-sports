@@ -12,9 +12,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../context/AuthContext';
+import ModalBackground from '../../shared/ModalBackground';
 
-const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 };
-const sheetStyle = { backgroundColor: 'var(--em-bg-card)', borderRadius: 14, maxWidth: 480, width: '100%', maxHeight: '82vh', display: 'flex', flexDirection: 'column' };
+const sheetStyle = { backgroundColor: 'var(--em-bg-card)', borderRadius: 14, maxWidth: 480, width: '100%', maxHeight: '82vh', margin: 16, display: 'flex', flexDirection: 'column' };
 const headerStyle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottom: '1px solid var(--em-border-subtle)' };
 const inputStyle = { width: '100%', minHeight: 40, padding: '0 12px', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)' };
 const listStyle = { flex: 1, overflowY: 'auto', padding: 8 };
@@ -59,8 +59,8 @@ export default function PlayerPicker({ selected, onSelect, onClose }) {
   const apply = () => { onSelect(draft); onClose(); };
 
   return (
-    <div style={overlayStyle} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={sheetStyle}>
+    <ModalBackground onClick={onClose} zIndex={60}>
+      <div style={sheetStyle} onClick={(e) => e.stopPropagation()}>
         <div style={headerStyle}>
           <strong style={{ fontSize: 15 }}>Pick Academy player(s)</strong>
           <button type="button" onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--em-text-secondary)' }}><X size={18} /></button>
@@ -87,6 +87,6 @@ export default function PlayerPicker({ selected, onSelect, onClose }) {
           <button type="button" onClick={apply} style={{ ...btn, backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)' }}>Done · {draft.length}</button>
         </div>
       </div>
-    </div>
+    </ModalBackground>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useAuth } from '../../context/AuthContext';
+import ModalBackground from '../shared/ModalBackground';
 
 const baseBtnStyle = {
   flex: 1, minHeight: 44, borderRadius: 10, fontSize: 15, fontWeight: 600,
@@ -47,19 +48,15 @@ export default function SendConfirmDialog({
   const canSend = count > 0 && !sending && !showResult;
 
   return createPortal(
-    <div
-      ref={trapRef}
-      className="fixed inset-0 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 9998 }}
-      role="dialog" aria-modal="true" aria-labelledby="send-confirm-title"
-      onClick={() => { if (!sending) onClose(); }}
-    >
+    <ModalBackground onClick={() => { if (!sending) onClose(); }} zIndex={9998}>
       <div
+        ref={trapRef}
         className="sf-fade-in"
         onClick={(e) => e.stopPropagation()}
+        role="dialog" aria-modal="true" aria-labelledby="send-confirm-title"
         style={{
           backgroundColor: 'var(--em-bg-card)', borderRadius: 16, padding: 24,
-          width: '100%', maxWidth: 440, boxShadow: 'var(--em-shadow-lg)',
+          width: '100%', maxWidth: 440, margin: 16, boxShadow: 'var(--em-shadow-lg)',
         }}
       >
         <h2 id="send-confirm-title" style={{ fontSize: 18, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 12 }}>
@@ -125,7 +122,7 @@ export default function SendConfirmDialog({
           )}
         </div>
       </div>
-    </div>,
+    </ModalBackground>,
     document.body,
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import ModalBackground from './ModalBackground';
 
 export default function ConfirmDialog({
   title,
@@ -25,16 +26,9 @@ export default function ConfirmDialog({
   const confirmBg = destructive ? 'var(--em-danger)' : 'var(--em-accent)';
 
   return createPortal(
-    <div
-      ref={trapRef}
-      className="fixed inset-0 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 9998 }}
-      onClick={onCancel}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="confirm-title"
-    >
+    <ModalBackground onClick={onCancel} zIndex={9998}>
       <div
+        ref={trapRef}
         className="sf-fade-in"
         style={{
           backgroundColor: 'var(--em-bg-card)',
@@ -42,9 +36,13 @@ export default function ConfirmDialog({
           padding: 20,
           width: '100%',
           maxWidth: 360,
+          margin: 16,
           boxShadow: 'var(--em-shadow-lg)',
         }}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-title"
       >
         {title && (
           <h2 id="confirm-title" className="font-semibold"
@@ -64,7 +62,7 @@ export default function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>,
+    </ModalBackground>,
     document.body
   );
 }
