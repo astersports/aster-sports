@@ -20,6 +20,7 @@ import { renderSections, renderSectionsPlainText } from './engine/composer';
 import { formatPeriodLabel } from './engine/digestPeriod';
 import { composeWeeklyDigest } from './engine/resolvers/weeklyDigest';
 import { applyUnsubscribeUrls } from './unsubscribeUrl';
+import { EMAIL_WRAPPER_CLOSE, EMAIL_WRAPPER_OPEN } from './emailWrapper';
 
 const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
 const ORG_NAME_DEFAULT = 'Legacy Hoopers';
@@ -42,15 +43,17 @@ function buildContext({ orgId, period, events, teams, tournaments, coaches, rsvp
   };
 }
 
+// E1 (Platform PR ε, L99 audit PART 2.3): tag is_synthetic at slice producer
+// so carve-out reads an explicit flag, not the fragile guardian_id==null.
 function buildSlicesFromRecipients(recipients) {
   return (recipients || [])
-    .map((r) => ({ kind: 'family', guardian_id: r.guardian_id, email: r.email, kid_first_names: r.kid_first_names || [], team_ids: (r.team_ids || []).slice() }))
+    .map((r) => ({ kind: 'family', guardian_id: r.guardian_id, email: r.email, kid_first_names: r.kid_first_names || [], team_ids: (r.team_ids || []).slice(), is_synthetic: r.guardian_id == null }))
     .sort((a, b) => (a.guardian_id < b.guardian_id ? -1 : a.guardian_id > b.guardian_id ? 1 : 0));
 }
 
 function renderSlice(context, slice, overrides) {
   const { subject, content_sections } = composeWeeklyDigest(context, slice, overrides);
-  const html = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">' + renderSections(content_sections) + '</div>';
+  const html = EMAIL_WRAPPER_OPEN + renderSections(content_sections) + EMAIL_WRAPPER_CLOSE;
   const plainText = renderSectionsPlainText(content_sections);
   return { subject, html, plainText, sections: content_sections, teams_included: slice.team_ids };
 }
@@ -113,12 +116,9 @@ export async function sendWeeklyDigest({
   if (msgErr) throw msgErr;
 
   // Build per-recipient queue rows. In test mode, only admin@ row is queued.
-  // Wave 4.3-K: when ALL rendered families are synthetic (guardian_id=null,
-  // routed to pilot_test_recipient_email already), testOnly is effectively
-  // a no-op — the synthetic rows ARE the test send and they must pass
-  // through. Without this carve-out testOnly drops the per-team synthetic
-  // rows and only the single admin BCC row survives (recipient_count=1).
-  const allSynthetic = renderedFamilies.length > 0 && renderedFamilies.every((f) => f.family.guardian_id == null);
+  // Wave 4.3-K carve-out: when ALL families are synthetic, testOnly is a no-op
+  // (synthetic rows ARE the test send). E1: explicit is_synthetic flag.
+  const allSynthetic = renderedFamilies.length > 0 && renderedFamilies.every((f) => f.family.is_synthetic === true);
   const effectiveTestOnly = testOnly && !allSynthetic;
   const familyRows = effectiveTestOnly ? [] : renderedFamilies.map((f) => ({
     message_id: msg.id, guardian_id: f.family.guardian_id,
