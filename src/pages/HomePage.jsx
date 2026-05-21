@@ -8,8 +8,6 @@ import { House } from 'lucide-react';
 import { useHomeRole } from '../hooks/useHomeRole';
 import ParentHomePage from './ParentHomePage';
 import PlaceholderPage from './PlaceholderPage';
-import WelcomeOverlay from '../components/shared/WelcomeOverlay';
-import InstallPrompt from '../components/shared/InstallPrompt';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 
 const AdminHomePage = lazy(() => import('./AdminHomePage'));
@@ -22,15 +20,9 @@ const FALLBACK = (
   </div>
 );
 
-// Wrap every branch with the same shared UI: welcome overlay + PWA install prompt.
+// Pass-through wrapper retained for branch-render symmetry.
 function withChrome(content) {
-  return (
-    <>
-      <WelcomeOverlay />
-      <InstallPrompt />
-      {content}
-    </>
-  );
+  return <>{content}</>;
 }
 
 export default function HomePage() {
