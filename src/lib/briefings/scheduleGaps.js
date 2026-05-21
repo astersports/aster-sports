@@ -40,7 +40,7 @@ function toEt(iso) {
 
 export function describeScheduleGaps(events, { minGapMinutes = MIN_GAP_MINUTES } = {}) {
   const valid = (events || []).filter((e) => e && e.start_at).slice()
-    .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+    .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
   if (!valid.length) return '';
 
   const byDay = new Map();

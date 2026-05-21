@@ -9,10 +9,13 @@
 // per-pair baseline. New drift → diff grows → fail. Drift closed → diff
 // shrinks → baseline lowered in same PR (visible in review).
 //
-// 2026-05-21 first-run discovery: all 4 pairs carry pre-existing drift
+// 2026-05-21 first-run discovery: all 4 pairs carried pre-existing drift
 // (function renames, destructuring shape, quote style inside template
-// `${}` interpolations, header-comment content). Baselines below capture
-// as-of-today state; closing drift = lowering the baseline in a follow-up.
+// `${}` interpolations, header-comment content). PR ζ follow-up
+// (chore/mirror-drift-cleanup) harmonized stylistic drift and lowered
+// the baselines. Residual diff per pair = unavoidable TS-only annotation
+// (typed Map<>, typed empty array, inline type-object on destructured
+// param, `(e as Error)` cast) that the normalizer cannot fully strip.
 //
 // Deferred (spec edge cases + 150-line cap):
 //   - team-feed/index.ts inline ICS block ↔ src/lib/icalHelpers.js
@@ -26,10 +29,10 @@ import { readFileSync } from 'fs';
 const TS_KEYWORDS = ['string', 'number', 'boolean', 'void', 'any', 'unknown', 'never', 'null', 'undefined', 'object'];
 
 const PAIRS = [
-  { ts: 'supabase/functions/briefing-auto-draft-tick/_helpers.ts', js: 'src/lib/cron/briefingCronHelpers.js', baseline: 22 },
-  { ts: 'supabase/functions/parse-tournament-schedule/_helpers.ts', js: 'src/lib/import/parseTournamentSchedulePrompt.js', baseline: 16 },
-  { ts: 'supabase/functions/suggest-briefing-closer/_helpers.ts', js: 'src/lib/briefings/suggestCloserPrompt.js', baseline: 15 },
-  { ts: 'supabase/functions/suggest-briefing-closer/_scheduleGaps.ts', js: 'src/lib/briefings/scheduleGaps.js', baseline: 49 },
+  { ts: 'supabase/functions/briefing-auto-draft-tick/_helpers.ts', js: 'src/lib/cron/briefingCronHelpers.js', baseline: 2 },
+  { ts: 'supabase/functions/parse-tournament-schedule/_helpers.ts', js: 'src/lib/import/parseTournamentSchedulePrompt.js', baseline: 4 },
+  { ts: 'supabase/functions/suggest-briefing-closer/_helpers.ts', js: 'src/lib/briefings/suggestCloserPrompt.js', baseline: 2 },
+  { ts: 'supabase/functions/suggest-briefing-closer/_scheduleGaps.ts', js: 'src/lib/briefings/scheduleGaps.js', baseline: 9 },
 ];
 
 function stripComments(src) {
