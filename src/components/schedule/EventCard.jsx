@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Car, MapPin, Repeat } from 'lucide-react';
+import { MapPin, Repeat } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCountdown, formatTime } from '../../lib/formatters';
 import { TYPE_LABELS } from '../../lib/constants';
@@ -9,6 +9,7 @@ import { useNow } from '../../hooks/useNow';
 import { useMapsUrl } from '../../hooks/useMapsUrl';
 import ChildRsvp from './ChildRsvp';
 import RsvpCountRow from './RsvpCountRow';
+import RideIndicator from '../shared/RideIndicator';
 
 export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'medium', gameResult, weather, onRsvpChange }) {
   const navigate = useNavigate();
@@ -109,9 +110,8 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
                 </div>
               )}
               {density !== 'maximum' && rideCount?.requests > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, marginTop: 4 }}>
-                  <Car size={11} strokeWidth={1.75} color="var(--em-warning)" />
-                  <span style={{ color: 'var(--em-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>
+                <div style={{ marginTop: 4 }}>
+                  <RideIndicator count={rideCount.requests} kind="requests" compact />
                 </div>
               )}
             </div>
@@ -128,10 +128,9 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
           <>
             {event.notes && <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2, WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', display: '-webkit-box', overflow: 'hidden' }}>{event.notes}</div>}
             {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 4 }}>
-                <Car size={12} strokeWidth={1.75} color={rideCount.urgent ? 'var(--em-danger)' : rideCount.requests > 0 ? 'var(--em-warning)' : 'var(--em-text-tertiary)'} />
-                {rideCount.offers > 0 && <span style={{ color: 'var(--em-text-secondary)' }}>{rideCount.offers} seat{rideCount.offers !== 1 ? 's' : ''}</span>}
-                {rideCount.requests > 0 && <span style={{ color: rideCount.urgent ? 'var(--em-danger)' : 'var(--em-warning)', fontWeight: 500 }}>{rideCount.requests} ride{rideCount.requests !== 1 ? 's' : ''} needed</span>}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                {rideCount.offers > 0 && <RideIndicator count={rideCount.offers} kind="offers" />}
+                {rideCount.requests > 0 && <RideIndicator count={rideCount.requests} kind="requests" urgent={rideCount.urgent} />}
               </div>
             )}
             {dutyCount && dutyCount.total > 0 && (
