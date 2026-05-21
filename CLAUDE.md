@@ -840,6 +840,29 @@ Migration 039 (Phase 1 Step 5G) adds Realtime publication to event_rsvps.
 - 60fps scrolling on iPhone 11
 - Long lists (>30 items) must virtualize
 
+### 16.10.1 ErrorBoundary exemption from bundle-budget lazy-load discipline
+
+ErrorBoundary (`src/components/ErrorBoundary.jsx`) is the last-resort
+error capture for the app. It uses a STATIC `import * as Sentry from
+'@sentry/react'` import despite §16.10's lazy-load preference for
+third-party SDKs.
+
+Rationale: lazy-loading Sentry inside `componentDidCatch` means error
+capture itself depends on a chunk loading successfully — exactly when
+chunk loading may be failing (the typical cause of the error reaching
+ErrorBoundary). The failure mode "error happens → ErrorBoundary catches
+→ tries to lazy-load Sentry to report → lazy-load fails because of the
+same network issue → Sentry never reports" makes the bundle savings
+worthless and loses observability of the most-important error class.
+
+Discipline: ErrorBoundary is the documented exception. Other Sentry
+consumers (AuthContext SDK identify, etc.) continue to lazy-load via
+`requestIdleCallback` per §16.10. Adding a second exception requires
+the same fail-loud reliability rationale.
+
+Bundle cost: ~80KB chunk space, one-time at app load. Acceptable
+trade-off for last-resort error capture reliability.
+
 ### 16.11 First impressions
 
 - Login: cobalt #4a8fd4 + phoenix mark (ELITE-49)
