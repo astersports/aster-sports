@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, memo, Suspense, useMemo, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { useAcademyCallupCandidates } from '../../hooks/useAcademyCallupCandidates';
 import { useNow } from '../../hooks/useNow';
@@ -22,7 +22,10 @@ const cardStyle = {
 };
 const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)' };
 
-export default function AcademyCallupPicker({ event, team, isStaff, isLocked, academyCallupPlayerIds, addCallup, removeCallup }) {
+// 2026-05-21 EventDetail perf pass (PR #428 pattern): memo-wrapped so
+// parent re-renders skip this subtree when props are referentially equal.
+// Internal useNow() still drives the short-notice banner tick locally.
+function AcademyCallupPicker({ event, team, isStaff, isLocked, academyCallupPlayerIds, addCallup, removeCallup }) {
   const { candidates, loading } = useAcademyCallupCandidates({ eventTeamName: team?.name });
   const [emailStatus, setEmailStatus] = useState({});
   const [composingFor, setComposingFor] = useState(null);
@@ -119,3 +122,5 @@ export default function AcademyCallupPicker({ event, team, isStaff, isLocked, ac
     </div>
   );
 }
+
+export default memo(AcademyCallupPicker);
