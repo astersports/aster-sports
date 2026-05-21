@@ -4,6 +4,7 @@ import { CheckCircle2, Circle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import Label from '../shared/Label';
+import Badge from '../shared/Badge';
 
 export default function GettingStarted({ hasSeasons, hasPrograms }) {
   const { orgId } = useAuth();
@@ -63,16 +64,9 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
             Getting started
           </span>
           {remaining > 0 && (
-            <span style={{
-              fontSize: 11,
-              fontWeight: 600,
-              padding: '2px 8px',
-              borderRadius: 999,
-              backgroundColor: 'var(--em-neutral-soft)',
-              color: 'var(--em-text-secondary)',
-            }}>
+            <Badge variant="neutral" pill style={{ color: 'var(--em-text-secondary)' }}>
               {remaining} left
-            </span>
+            </Badge>
           )}
         </div>
         <svg

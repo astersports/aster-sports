@@ -8,6 +8,7 @@ import { ChevronRight } from 'lucide-react';
 import StandingsTable from './StandingsTable';
 import MatchupCard from './MatchupCard';
 import FilterSelect from '../shared/FilterSelect';
+import Badge from '../shared/Badge';
 
 function useGameResults(eventIds) {
   const [byEventId, setByEventId] = useState({});
@@ -116,12 +117,9 @@ export default function GamesView({ activities, orgId }) {
         <div key={i} style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             {group.weekNum && (
-              <span style={{
-                fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999,
-                backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-secondary)',
-              }}>
+              <Badge variant="neutral" pill style={{ backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-secondary)' }}>
                 WEEK {group.weekNum}
-              </span>
+              </Badge>
             )}
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
               {group.dateLabel}
