@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, Copy, Share2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import ModalBackground from '../shared/ModalBackground';
 
 export default function ShareScheduleButton({ teamId, teamName }) {
   const [open, setOpen] = useState(false);
@@ -28,8 +29,8 @@ export default function ShareScheduleButton({ teamId, teamName }) {
         <Share2 size={16} strokeWidth={1.75} /> Share
       </button>
       {open && createPortal(
-        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 9998 }} onClick={() => setOpen(false)} role="dialog" aria-modal="true">
-          <div className="sf-fade-in" style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 16, padding: 20, width: '100%', maxWidth: 360, boxShadow: 'var(--em-shadow-lg)' }} onClick={(e) => e.stopPropagation()}>
+        <ModalBackground onClick={() => setOpen(false)} zIndex={9998}>
+          <div className="sf-fade-in" role="dialog" aria-modal="true" style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 16, padding: 20, width: '100%', maxWidth: 360, margin: 16, boxShadow: 'var(--em-shadow-lg)' }} onClick={(e) => e.stopPropagation()}>
             <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 12 }}>Share {teamName} Schedule</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', backgroundColor: 'var(--em-bg-secondary)', borderRadius: 10, marginBottom: 12 }}>
               <span style={{ flex: 1, fontSize: 13, color: 'var(--em-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{url}</span>
@@ -41,7 +42,7 @@ export default function ShareScheduleButton({ teamId, teamName }) {
               Anyone with this link can view the schedule — no login required.
             </div>
           </div>
-        </div>,
+        </ModalBackground>,
         document.body
       )}
     </>
