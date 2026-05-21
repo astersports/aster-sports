@@ -10,32 +10,22 @@ import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
 import { useGameResultsMap } from '../hooks/useGameResultsMap';
-import { getWeatherForTime, useWeather } from '../hooks/useWeather';
+import { useWeather } from '../hooks/useWeather';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { useDensity } from '../hooks/useDensity';
 import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
 import { useParentHomeSignals } from '../hooks/useParentHomeSignals';
-import RegistrationReminderCard from '../components/home/RegistrationReminderCard';
-import UpcomingPrepCard from '../components/home/UpcomingPrepCard';
-import ActionZone from '../components/home/ActionZone';
-import LiveNowCard from '../components/home/LiveNowCard';
-import TournamentWeekendBanner from '../components/home/TournamentWeekendBanner';
-import RecognitionCard from '../components/home/RecognitionCard';
-import CoachMessageBlock from '../components/home/CoachMessageBlock';
-import DateGroupedList from '../components/schedule/DateGroupedList';
-import ChildFilterChips from '../components/schedule/ChildFilterChips';
-import PastEventsSection from '../components/schedule/PastEventsSection';
-import MyTeamsStrip from '../components/home/MyTeamsStrip';
-import DensityToggle from '../components/home/DensityToggle';
-import ConflictCallout from '../components/home/ConflictCallout';
-import AlertZone from '../components/alerts/AlertZone';
-import NextEventCard from '../components/admin/NextEventCard';
-import TextEmptyState from '../components/shared/TextEmptyState';
+import ParentHomeHeader from '../components/parent-home/ParentHomeHeader';
+import ParentHomeAlertZone from '../components/parent-home/ParentHomeAlertZone';
+import ParentHomeSignalZone from '../components/parent-home/ParentHomeSignalZone';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
-import Label from '../components/shared/Label';
-import { firstNameFrom, greetingFor } from '../lib/greetings';
+import { firstNameFrom } from '../lib/greetings';
 import { filterAlertsForParent } from '../lib/alerts/relevanceFilters';
 
+// Orchestration only — header / alert-zone / signal-zone surfaces live
+// in src/components/parent-home/. Signal hook lives in useParentHomeSignals
+// (PR #304). Page split into sub-components in the preemptive split arc
+// per L99 platform audit PART 5 Phase 4 / PQ3 (2026-05-21).
 export default function ParentHomePage() {
   const { user, guardianFirstName, guardianId, myChildren, myTeamIds, orgId, orgName } = useAuth();
   const { activeSeason } = useSeason();
@@ -48,102 +38,42 @@ export default function ParentHomePage() {
   const now = useNow();
   useRefetchOnVisible(refetch);
   const { density } = useDensity('parent-home');
-
-  // All HOME_DESIGN_SPEC §1.1 schedule derivations + signal hooks
-  // (action zone, live now, tournament banner, recognition,
-  // announcements, conflicts, payment reminder) live in
-  // useParentHomeSignals — extracted in PR #304 to keep this page
-  // under the 150-line cap (anti-pattern #11). Mirrors the
-  // useAdminHomeSignals pattern from PR #297.
-  const {
-    myTeams, nextEventByTeam, filteredNext7, nextEventId,
-    actionItems, actionItemsLoading,
-    liveNowItems,
-    upcomingTournament,
-    recentAchievements,
-    recentAnnouncements,
-    financialStats, financialsLoading,
-    upcomingPrep,
-    conflicts,
-  } = useParentHomeSignals({
+  const signals = useParentHomeSignals({
     activities, myChildren, myTeamIds, now, activeKidFilter,
-    userId: user?.id,
-    orgId, activeSeasonId: activeSeason?.id, guardianId,
+    userId: user?.id, orgId, activeSeasonId: activeSeason?.id, guardianId,
   });
-
+  const { filteredNext7, actionItemsLoading, financialsLoading } = signals;
   const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(filteredNext7);
   const { counts: rideCounts } = useEventRideCounts(filteredNext7);
   const { counts: dutyCounts } = useEventDutyCounts(filteredNext7);
   const gameResults = useGameResultsMap(filteredNext7);
   const weather = useWeather(41.03, -73.76);
-
-  // Alerts: hook is role-agnostic. Page applies data-ownership
-  // filter so parent sees only alerts touching their kids' teams.
   const { alerts: allAlerts, loading: alertsLoading } = useAlertEvaluator();
   const parentAlerts = useMemo(() => filterAlertsForParent(allAlerts, myChildren), [allAlerts, myChildren]);
 
-  // Top-level loading gate covers ALL primary data hooks — not just
-  // activities `loading`. Pre-2026-05-20 the gate watched a single
-  // signal, releasing too early and letting alerts/action-queue/
-  // financials populate in cascade. Symmetric extension across role
-  // homes per anti-pattern #43 (Frank-reported 2026-05-20 from the
-  // admin-home capture; parent home shares the pattern).
+  // Multi-signal loading gate — anti-pattern #43 invariant (cascade
+  // flash fix, 2026-05-20). Audit test in homePageLoadingGateAudit.
   const isLoading = loading || alertsLoading || actionItemsLoading || financialsLoading;
   if (isLoading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
     <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
-      <section>
-        <div style={{ color: 'var(--em-text-tertiary)', fontSize: 13 }}>{greetingFor()},</div>
-        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 24, letterSpacing: '-0.025em', lineHeight: 1.2 }}>{name}</h1>
-        {orgName && <div style={{ color: 'var(--em-text-tertiary)', fontSize: 13, marginTop: 2 }}>{orgName}{myTeams.length > 0 ? ` · ${myTeams.length} team${myTeams.length !== 1 ? 's' : ''}` : ''}</div>}
-      </section>
-
-      {/* 2026-05-20 — parent up-next hero matches admin/coach pattern. */}
-      {(() => { const ne = filteredNext7.find((e) => e.id === nextEventId); return ne ? <NextEventCard event={ne} weather={getWeatherForTime(weather, ne.start_at)} /> : null; })()}
-
-      <AlertZone alerts={parentAlerts} loading={alertsLoading} variant="collapsible" sectionLabel="ALERTS" />
-      <ConflictCallout conflicts={conflicts} />
-      <RegistrationReminderCard stats={financialStats} seasonName={activeSeason?.name} loading={financialsLoading} />
-      <UpcomingPrepCard prep={upcomingPrep} />
-      <ActionZone items={actionItems} loading={actionItemsLoading} sectionKey="parent-action-zone" />
-      <LiveNowCard items={liveNowItems} nowMs={now} />
-      <TournamentWeekendBanner tournament={upcomingTournament} />
-      <RecognitionCard achievements={recentAchievements} nowMs={now} />
-      <CoachMessageBlock messages={recentAnnouncements} nowMs={now} />
-
-      {!loading && myTeams.length === 0 && (
-        <div style={{ padding: 20, backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>🏀</div>
-          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 4 }}>Welcome to {orgName || 'the team'}</div>
-          <div style={{ fontSize: 14, color: 'var(--em-text-secondary)', lineHeight: 1.5 }}>Your coach is getting things set up. Once your child is added to a team, their schedule and events will appear here.</div>
-        </div>
-      )}
-
-      {myTeams.length > 0 && (
-        <>
-          <MyTeamsStrip teams={myTeams} byTeamId={recordsByTeam} loading={recordsLoading} nextEventByTeam={nextEventByTeam} onSelect={(teamId) => navigate(`/teams/${teamId}`)} />
-          <button type="button" onClick={() => navigate('/records')} className="sf-press"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 16px', minHeight: 44, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
-            <span>View full season records</span>
-            <span style={{ fontSize: 17, color: 'var(--em-text-tertiary)' }}>›</span>
-          </button>
-        </>
-      )}
-
-      <section>
-        <ChildFilterChips kids={myChildren} activeFilter={activeKidFilter} onChange={setActiveKidFilter} />
-        <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-          <Label style={{ marginBottom: 0 }}>NEXT 7 DAYS</Label>
-          <DensityToggle sectionKey="parent-home" />
-        </div>
-        {filteredNext7.length > 0 ? (
-          <DateGroupedList events={filteredNext7} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} nextEventId={nextEventId} density={density} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
-        ) : (
-          <TextEmptyState heading="Clear week ahead" message="No events coming up. Time to work on those crossovers." />
-        )}
-        <PastEventsSection activities={activities} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} />
-      </section>
+      <ParentHomeHeader name={name} orgName={orgName} myTeamsCount={signals.myTeams.length} />
+      <ParentHomeAlertZone
+        alerts={parentAlerts} alertsLoading={alertsLoading}
+        conflicts={signals.conflicts}
+        actionItems={signals.actionItems} actionItemsLoading={actionItemsLoading}
+      />
+      <ParentHomeSignalZone
+        signals={signals} loading={loading} orgName={orgName}
+        recordsByTeam={recordsByTeam} recordsLoading={recordsLoading}
+        activities={activities} weather={weather}
+        rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts}
+        gameResults={gameResults} refetchRsvpCounts={refetchRsvpCounts}
+        density={density} myChildren={myChildren}
+        activeKidFilter={activeKidFilter} onKidFilterChange={setActiveKidFilter}
+        activeSeasonName={activeSeason?.name} nowMs={now} onNavigate={navigate}
+      />
     </div>
   );
 }
