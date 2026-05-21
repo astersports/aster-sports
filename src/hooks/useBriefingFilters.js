@@ -54,8 +54,9 @@ export function useBriefingFilters() {
     let cancelled = false;
     Promise.resolve().then(async () => {
       if (!user?.id || !orgId) return;
-      const { data } = await supabase.from('briefing_inbox_preferences').select('*').eq('user_id', user.id).eq('org_id', orgId).maybeSingle();
+      const { data, error } = await supabase.from('briefing_inbox_preferences').select('*').eq('user_id', user.id).eq('org_id', orgId).maybeSingle();
       if (cancelled) return;
+      if (error) throw error;
       setFilters(fromRow(data));
       setLoaded(true);
     });

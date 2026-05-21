@@ -8,9 +8,10 @@ export function useUnreadCounts() {
 
   const fetchReads = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('message_reads').select('channel_key, last_read_at')
       .eq('user_id', user.id);
+    if (error) throw error;
     const map = {};
     (data || []).forEach((r) => { map[r.channel_key] = r.last_read_at; });
     setReads(map);
