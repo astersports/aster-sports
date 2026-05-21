@@ -30,9 +30,9 @@ export default function NewDmPicker({ onSelect, onClose }) {
             if (gErr) console.error('NewDmPicker guardians:', gErr.message);
             r.name = g ? `${g.first_name} ${g.last_name}` : 'Parent';
           } else {
-            const { data: m, error: mErr } = await supabase.from('org_members').select('first_name, last_name').eq('user_id', r.userId).maybeSingle();
-            if (mErr) console.error('NewDmPicker org_members:', mErr.message);
-            r.name = m ? `${m.first_name} ${m.last_name}` : r.role;
+            const { data: m, error: mErr } = await supabase.from('staff_profiles').select('display_name').eq('user_id', r.userId).eq('org_id', orgId).maybeSingle();
+            if (mErr) console.error('NewDmPicker staff_profiles:', mErr.message);
+            r.name = m?.display_name || r.role;
           }
           return r;
         })).then(setMembers);
