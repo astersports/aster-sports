@@ -1,6 +1,6 @@
 L99 — SKYFIRE PLATFORM-WIDE AUDIT + REDESIGN (v2)
 
-Date: 2026-05-21 (v2 — incorporates claude.ai review feedback)
+Date: 2026-05-21 (v3 — incorporates claude.ai v2 review refinements)
 Branch: docs/platform-wide-audit-2026-05-21
 Predecessors:
   v1: this file, 533 lines, pasted in chat earlier this session
@@ -18,6 +18,11 @@ v2 changes from v1:
   - Multi-tenant arc scoped explicitly to St. Patrick's 2027 onboarding (PQ5)
   - Component cleanup arc trigger sharpened: "first week without urgent shipping work" (PQ7)
   - Strategic frame on discipline-cycle compounding interest added (PART 9)
+
+v3 changes from v2:
+  - Cascade-prediction methodology caveat added (PART 3.1)
+  - Multi-tenant arc calendar target added (PART 5 Phase 4)
+  - Appendix C.5 logs v2→v3 deltas
 
 Per anti-pattern #49 (amended): pasted in chat in the same turn as commit + push.
 
@@ -285,6 +290,8 @@ The audit explicitly predicts 13-15 more findings if a second-pass platform audi
 (b) refutes or refines it (< 5 findings, or > 25 findings) — refines the model
 Either outcome is informative. Pattern matures via testable predictions, not assertions.
 
+**Methodology caveat (v3 addition):** the 13-15 prediction extrapolates from the Teams audit's 40% miss rate (line-by-line on 20 files). Platform audit was breadth-over-depth on 700 files via parallel agents — different methodology. The miss rates of these two approaches may not transfer cleanly. If second-pass yields <5 findings: cascade pattern is real but smaller at platform scale (or first-pass platform agents were unusually thorough). If second-pass yields >25 findings: first-pass platform audit had higher miss rate than Teams audit. Both are informative; both are within the prediction's broader frame.
+
 3.2 The Teams audit's anti-patterns are platform-wide
 
 Claude.ai's structural assessment of the Teams audit:
@@ -444,6 +451,7 @@ Multi-tenant readiness arc (scoped per PQ5):
 - NOT "make Skyfire fully multi-tenant ready" (open-ended)
 - Audit-greps: timezone hardcodes, Westchester coords, "Legacy Hoopers" string leaks
 - Per-org weather coords, per-org timezone, cross-org admin handling
+- **Calendar target: multi-tenant audit kickoff Q1 2027 unless St. Patrick's onboarding accelerates.** Working backward from fall 2027 onboarding: audit + design (~1 week) + execution (~2-3 weeks) + smoke window (~2 months) = kickoff by Q1 2027 latest. Without a calendar marker the arc drifts in the "after Teams" floating bucket indefinitely.
 
 Component cleanup arc (triggered per PQ7):
 - 288-instance Card flex pattern is already well over threshold
@@ -683,5 +691,24 @@ What changed v1 → v2 (incorporating claude.ai feedback):
 10. PQ5 scope tightened — multi-tenant arc bounded to "make Skyfire ready for second org to onboard cleanly" (St. Patrick's 2027), NOT open-ended.
 
 11. PQ7 trigger sharpened — "first available week with no urgent shipping work," not "wait for more accumulation."
+
+═══════════════════════════════════════════════════════════════════════════
+APPENDIX C.5 — v3 CHANGE LOG (from v2)
+═══════════════════════════════════════════════════════════════════════════
+
+v2 → v3 changes (incorporating claude.ai's v2 review refinements):
+
+1. PART 3.1 extended — Cascade-prediction methodology caveat added.
+   Names that the 13-15 prediction extrapolates from Teams (line-by-line)
+   to platform (breadth-via-agents) methodology. Prediction stays
+   falsifiable; methodology difference is now explicit, not implicit.
+
+2. PART 5 Phase 4 multi-tenant section — Calendar target added.
+   "Multi-tenant audit kickoff Q1 2027 unless St. Patrick's accelerates."
+   Anchor against drift; the arc needed a date, not just a phase ordering.
+
+Items deferred from claude.ai's v2 review (not in v3 scope):
+- Sustained-session framing critique (PART 5 Phase 1) — handled in the
+  Phase 1 PR descriptions directly, not via doc amendment.
 
 END OF DOCUMENT (v2)
