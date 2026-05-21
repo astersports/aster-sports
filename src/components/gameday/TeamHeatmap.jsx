@@ -17,6 +17,14 @@ const CELL_COLORS = {
   not_applicable: { bg: 'var(--em-bg-secondary)', border: 'none', icon: '—' },
 };
 
+// 2026-05-21 (Teams audit A3) — readable status strings for SR aria-labels
+// on Pulse grid cells (otherwise rendered as opaque colored squares).
+const CELL_STATUS_LABELS = {
+  attended: 'attended', no_show: 'did not attend', declined: 'declined',
+  rsvp_yes: 'going', rsvp_maybe: 'maybe', rsvp_no: 'out',
+  no_response: 'no response', no_response_past: 'no response', not_applicable: 'not applicable',
+};
+
 export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle, sortOrder }) {
   const { role, myChildren } = useAuth();
   const [filter, setFilter] = useState('all');
@@ -71,30 +79,32 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle, s
       </div>
 
       <div style={{ overflowX: 'auto', padding: '0 16px 16px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `140px repeat(${events.length}, 32px) 80px`, gap: 3, alignItems: 'center' }}>
-          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--em-text-tertiary)' }}>Player</div>
+        <div role="grid" aria-label="Team attendance pulse grid" style={{ display: 'grid', gridTemplateColumns: `140px repeat(${events.length}, 32px) 80px`, gap: 3, alignItems: 'center' }}>
+          <div role="columnheader" style={{ fontSize: 10, fontWeight: 600, color: 'var(--em-text-tertiary)' }}>Player</div>
           {events.map((e) => (
-            <div key={e.id} style={{ fontSize: 9, color: 'var(--em-text-tertiary)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+            <div key={e.id} role="columnheader" style={{ fontSize: 9, color: 'var(--em-text-tertiary)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden' }}>
               {new Date(e.start_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', timeZone: 'America/New_York' })}
             </div>
           ))}
-          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--em-text-tertiary)', textAlign: 'right' }}>ATT%</div>
+          <div role="columnheader" style={{ fontSize: 10, fontWeight: 600, color: 'var(--em-text-tertiary)', textAlign: 'right' }}>ATT%</div>
 
           {visibleGrid.map((row) => (
-            <div key={row.player.id} style={{ display: 'contents' }}>
-              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--em-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div key={row.player.id} role="row" style={{ display: 'contents' }}>
+              <div role="rowheader" style={{ fontSize: 13, fontWeight: 500, color: 'var(--em-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginRight: 4 }}>#{row.player.jersey_number || '—'}</span>
                 {row.player.first_name}
               </div>
               {row.cells.map((c, i) => {
                 const s = CELL_COLORS[c.state] || CELL_COLORS.no_response;
+                const evt = events[i];
+                const evtLabel = evt ? `${evt.title || 'Event'} — ${new Date(evt.start_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}` : 'Event';
                 return (
-                  <div key={events[i]?.id || i} style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: s.bg, border: s.border, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: 'var(--em-danger)' }}>
+                  <div key={evt?.id || i} role="gridcell" aria-label={`${row.player.first_name} — ${evtLabel} — ${CELL_STATUS_LABELS[c.state] || 'no response'}`} style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: s.bg, border: s.border, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: 'var(--em-danger)' }}>
                     {s.icon || ''}
                   </div>
                 );
               })}
-              <div style={{ textAlign: 'right' }}>
+              <div role="gridcell" aria-label={`${row.player.first_name} attendance ${row.pct != null ? `${row.pct} percent` : 'no data'}${row.streak >= 3 ? `, ${row.streak} event streak` : ''}`} style={{ textAlign: 'right' }}>
                 <span style={{ fontSize: 17, fontWeight: 800, color: row.pct !== null && row.pct < 60 ? 'var(--em-danger)' : row.pct !== null && row.pct >= 80 ? 'var(--em-success)' : 'var(--em-text-primary)' }}>{row.pct != null ? `${row.pct}%` : '—'}</span>
                 {row.streak >= 3 && <div style={{ fontSize: 11, color: 'var(--em-warning)' }}>🔥 {row.streak}</div>}
               </div>
