@@ -3,17 +3,15 @@ import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { shouldAutoExpandLocation } from '../lib/eventWindows';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import { useEventDetail } from '../hooks/useEventDetail';
 import { useRsvps } from '../hooks/useRsvps';
 import { useEventActivations } from '../hooks/useEventActivations';
 import useEventDelete from '../hooks/useEventDelete';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
-import { useNow } from '../hooks/useNow';
 import EventDetailHeader from '../components/event/EventDetailHeader';
 import EventDetailHero from '../components/event/EventDetailHero';
-import EventLocationTab from '../components/event/EventLocationTab';
+import EventLocationSlot from '../components/event/EventLocationSlot';
 import EventRsvpTab from '../components/event/EventRsvpTab';
 import EventDutiesTab from '../components/event/EventDutiesTab';
 import EventCommentsTab from '../components/event/EventCommentsTab';
@@ -38,7 +36,6 @@ export default function EventDetailPage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const { orgId, role, myChildren } = useAuth();
-  const nowMs = useNow();
   const { showToast } = useToast();
   const { event, loading: eventLoading, refetch, patchEvent } = useEventDetail(id, location.state?.event);
   const teamId = event?.team_id || null;
@@ -94,7 +91,6 @@ export default function EventDetailPage() {
     }
   };
   const onWizardCreated = (diff) => { refetch(); if (diff) setPendingDiff(diff); };
-  const locationAutoExpand = shouldAutoExpandLocation({ role, event, nowMs, teamId, myChildren, rsvps });
   const setEventStatus = async (status) => {
     const { error } = await supabase.from('events').update({ status }).eq('id', event.id);
     if (error) { showToast(status === 'cancelled' ? "Couldn't cancel. Try again?" : "Couldn't reinstate. Try again?", 'error'); return; }
@@ -115,9 +111,7 @@ export default function EventDetailPage() {
         </div>
       )}
 
-      <CollapsibleSection title="Location" sectionKey="location" defaultOpen={locationAutoExpand} subtitle={event.location || 'TBD'}>
-        <EventLocationTab event={event} />
-      </CollapsibleSection>
+      <EventLocationSlot role={role} event={event} teamId={teamId} myChildren={myChildren} rsvps={rsvps} />
       <CollapsibleSection title="Rides" sectionKey="rides" defaultOpen={false}>
         <EventRidesTab event={event} />
       </CollapsibleSection>

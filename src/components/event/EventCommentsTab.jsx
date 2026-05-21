@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Pin, Send } from 'lucide-react';
 import Input from '../shared/Input';
 import { useComments } from '../../hooks/useComments';
@@ -7,7 +7,9 @@ import LoadingSkeleton from '../shared/LoadingSkeleton';
 // Comments thread for an event. Pinned comments float to the top with
 // a pin icon, then chronological oldest-first like a chat transcript.
 // Text input at the bottom posts a new comment.
-export default function EventCommentsTab({ eventId }) {
+// 2026-05-21 EventDetail perf pass (PR #428 pattern): memo-wrapped so
+// parent re-renders skip this subtree when eventId is unchanged.
+function EventCommentsTab({ eventId }) {
   const { comments, loading, post } = useComments(eventId);
   const [draft, setDraft] = useState('');
 
@@ -63,3 +65,5 @@ export default function EventCommentsTab({ eventId }) {
     </div>
   );
 }
+
+export default memo(EventCommentsTab);

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useDuties } from '../../hooks/useDuties';
 import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/permissions';
@@ -5,7 +6,9 @@ import { isStaff } from '../../lib/permissions';
 // Duties tab — grouped by duty_name. Each row in event_duties is one
 // claimable slot (guardian_id nullable). Users tap Claim to take an
 // open slot; Release if it's theirs. Staff can release any duty.
-export default function EventDutiesTab({ eventId }) {
+// 2026-05-21 EventDetail perf pass (PR #428 pattern): memo-wrapped so
+// parent re-renders skip this subtree when eventId is unchanged.
+function EventDutiesTab({ eventId }) {
   const { guardianId, role } = useAuth();
   const { duties, loading, claim, unclaim } = useDuties(eventId);
   const staff = isStaff(role);
@@ -75,3 +78,5 @@ const btnStyle = (bg, color, bordered) => ({
   border: bordered ? '1px solid var(--em-border-default)' : 'none',
   fontSize: 13, fontWeight: 600,
 });
+
+export default memo(EventDutiesTab);
