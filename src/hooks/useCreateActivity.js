@@ -40,10 +40,14 @@ export function useCreateActivity() {
       // end via team → season and default to last-weekday-before-end.
       let safeForm = formData;
       if (pattern !== 'once' && !formData.recurrence?.until && formData.teamId && formData.date) {
-        const { data: team } = await supabase.from('teams').select('season_id').eq('id', formData.teamId).single();
-        const { data: season } = team?.season_id
-          ? await supabase.from('seasons').select('end_date').eq('id', team.season_id).single()
-          : { data: null };
+        const { data: team, error: teamErr } = await supabase.from('teams').select('season_id').eq('id', formData.teamId).single();
+        if (teamErr) throw teamErr;
+        let season = null;
+        if (team?.season_id) {
+          const { data: seasonRow, error: seasonErr } = await supabase.from('seasons').select('end_date').eq('id', team.season_id).single();
+          if (seasonErr) throw seasonErr;
+          season = seasonRow;
+        }
         const until = computeDefaultUntil(formData.date, pattern, season?.end_date);
         safeForm = { ...formData, recurrence: { pattern, until } };
       }

@@ -47,9 +47,10 @@ export function useTournaments({ teamId, statusFilter = 'all', seasonFilter = 'a
       else if (statusFilter !== 'all') query = query.eq('status', statusFilter);
 
       if (seasonFilter === 'active') {
-        const { data: season } = await supabase
+        const { data: season, error: seasonErr } = await supabase
           .from('seasons').select('start_date, end_date')
           .eq('org_id', orgId).eq('status', 'active').maybeSingle();
+        if (seasonErr) throw seasonErr;
         if (season) {
           query = query.gte('start_date', season.start_date).lte('start_date', season.end_date);
         }
@@ -107,8 +108,9 @@ export function useTournaments({ teamId, statusFilter = 'all', seasonFilter = 'a
     const { error: err } = await supabase.from('tournaments').update(fields).eq('id', id);
     if (err) return { error: err };
     if (teamIds) {
-      const { data: existing } = await supabase
+      const { data: existing, error: existingErr } = await supabase
         .from('tournament_teams').select('team_id').eq('tournament_id', id);
+      if (existingErr) return { error: existingErr };
       const existingIds = (existing || []).map((r) => r.team_id);
       const toAdd = teamIds.filter((x) => !existingIds.includes(x));
       const toRemove = existingIds.filter((x) => !teamIds.includes(x));
