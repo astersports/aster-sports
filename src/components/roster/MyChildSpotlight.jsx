@@ -1,5 +1,6 @@
 import { Calendar } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
+import { isSparseRsvp } from '../../hooks/useSparseRsvp';
 import ChildRsvp from '../schedule/ChildRsvp';
 
 const PILL = { fontSize: 11, fontWeight: 500, padding: '1px 5px', borderRadius: 4, lineHeight: '16px' };
@@ -22,8 +23,8 @@ export default function MyChildSpotlight({ player, team, child, nextEvent }) {
   // Frank-reported 2026-05-20 L99 v6 §5.1 B4 — match PlayerRow's
   // sparse-RSVP empty state so the spotlight and roster row stay
   // consistent across surfaces.
-  const responsesReceived = (player.goingCount || 0) + (player.maybeCount || 0) + (player.declinedCount || 0);
-  const sparseRsvp = responsesReceived <= 1;
+  // Teams PR B / C1: detector extracted to isSparseRsvp shared helper.
+  const sparseRsvp = isSparseRsvp(player);
 
   return (
     <div style={{

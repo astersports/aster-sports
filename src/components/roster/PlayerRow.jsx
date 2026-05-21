@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronDown, Mail, MessageSquare, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { isSparseRsvp } from '../../hooks/useSparseRsvp';
 import InviteButton from './InviteButton';
 
 const NOW = Date.now();
@@ -20,8 +21,10 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
   // when the family has only submitted 0-1 responses across all past
   // events. Render "No RSVPs yet" empty state instead so the row
   // reads honestly until real signal accumulates.
-  const responsesReceived = (player.goingCount || 0) + (player.maybeCount || 0) + (player.declinedCount || 0);
-  const sparseRsvp = responsesReceived <= 1;
+  // Teams PR B / C1: detector extracted to isSparseRsvp shared helper
+  // (pure function) so PlayerRow + MyChildSpotlight + TeamDetailHero
+  // stay in sync.
+  const sparseRsvp = isSparseRsvp(player);
 
   return (
     <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--em-border-subtle)', borderLeft: isMyChild ? '3px solid var(--em-accent)' : 'none', backgroundColor: isMyChild ? 'var(--em-accent-soft)' : undefined }}>
