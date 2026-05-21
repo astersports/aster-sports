@@ -48,14 +48,26 @@ describe('Cross-surface invariant — MY TEAMS records (anti-pattern #43)', () =
     expect(src).toMatch(/from ['"]\.\.\/hooks\/useOrgTeamRecords['"]/);
   });
 
-  it('c. CoachHomePage MY TEAMS threads recordsByTeam to ParentHomeTeamCard', () => {
-    const src = readFileSync('src/pages/CoachHomePage.jsx', 'utf8');
-    expect(src).toMatch(/summary=\{recordsByTeam\[/);
+  it('c. CoachHomeSignalZone MY TEAMS threads recordsByTeam to ParentHomeTeamCard', () => {
+    // Post-PR-#422 preemptive split: MY TEAMS render moved from
+    // CoachHomePage into CoachHomeSignalZone. CoachHomePage threads
+    // `recordsByTeam` prop into the zone; zone consumes it as
+    // `summary={recordsByTeam[t.id]}`.
+    const pageSrc = readFileSync('src/pages/CoachHomePage.jsx', 'utf8');
+    expect(pageSrc).toMatch(/recordsByTeam=\{recordsByTeam\}/);
+    const zoneSrc = readFileSync('src/components/coach-home/CoachHomeSignalZone.jsx', 'utf8');
+    expect(zoneSrc).toMatch(/summary=\{recordsByTeam\[/);
   });
 
-  it('d. ParentHomePage MY TEAMS threads recordsByTeam (via MyTeamsStrip)', () => {
-    const src = readFileSync('src/pages/ParentHomePage.jsx', 'utf8');
-    expect(src).toMatch(/useOrgTeamRecords/);
-    expect(src).toMatch(/byTeamId=\{recordsByTeam\}/);
+  it('d. ParentHomeSignalZone MY TEAMS threads recordsByTeam (via MyTeamsStrip)', () => {
+    // Post-PR-#422 preemptive split: MY TEAMS render moved from
+    // ParentHomePage into ParentHomeSignalZone. ParentHomePage owns
+    // useOrgTeamRecords + threads `recordsByTeam` into the zone;
+    // zone passes it to MyTeamsStrip as `byTeamId={recordsByTeam}`.
+    const pageSrc = readFileSync('src/pages/ParentHomePage.jsx', 'utf8');
+    expect(pageSrc).toMatch(/useOrgTeamRecords/);
+    expect(pageSrc).toMatch(/recordsByTeam=\{recordsByTeam\}/);
+    const zoneSrc = readFileSync('src/components/parent-home/ParentHomeSignalZone.jsx', 'utf8');
+    expect(zoneSrc).toMatch(/byTeamId=\{recordsByTeam\}/);
   });
 });

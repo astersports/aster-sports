@@ -1281,11 +1281,14 @@ parallel systems for no current benefit. List here is informational.
 
 > CC needs to grep current line counts to populate. Will run during
 > next session and update this section. Initial known candidates:
-> - `CoachHomePage.jsx` (likely close)
-> - `AdminHomePage.jsx`
-> - `ParentHomePage.jsx`
+> - ~~`CoachHomePage.jsx` (likely close)~~ — SPLIT in §4.W (149 → 78)
+> - `AdminHomePage.jsx` (142) — deferred per PQ3 (more headroom)
+> - ~~`ParentHomePage.jsx`~~ — SPLIT in §4.W (149 → 79)
 > - `formatters.js` (137 lines post-PR-#234, room left)
 > - `useAttendanceData.js`
+>
+> §4.W also closed `AdminSeasonsPage.jsx` (145 → 71) which was at
+> equal risk per the L99 platform audit PART 5 Phase 4 / PQ3.
 
 ---
 
@@ -2289,3 +2292,43 @@ applying the FK-scoped exception):
 
 Three small fixes; no behavior change in the happy path. Bug
 diagnostics now surface when PostgREST returns an error.
+
+---
+
+### §4.W — Home-page preemptive split arc (CLOSED 2026-05-21)
+
+Per claude.ai's PQ3 routing (locked in L99 platform audit PART 5
+Phase 4): three home pages at/near the 150-line cap split into
+header + signal-zone + alert-zone sub-components before feature-
+shipping pressure forces a hurried split.
+
+**Status:** CLOSED. Single PR (refactor branch
+`refactor/home-pages-preemptive-split`).
+
+**Scope:**
+- `CoachHomePage.jsx` (149 → 78) — `src/components/coach-home/`
+  - `CoachHomeHeader.jsx` (15)
+  - `CoachHomeAlertZone.jsx` (23)
+  - `CoachHomeSignalZone.jsx` (94)
+- `ParentHomePage.jsx` (149 → 79) — `src/components/parent-home/`
+  - `ParentHomeHeader.jsx` (18)
+  - `ParentHomeAlertZone.jsx` (25)
+  - `ParentHomeSignalZone.jsx` (89)
+- `AdminSeasonsPage.jsx` (145 → 71) — `src/components/admin-seasons/`
+  - `AdminSeasonsHeader.jsx` (21)
+  - `AdminSeasonsActions.jsx` (15)
+  - `AdminSeasonsList.jsx` (80)
+
+**Deferred (per PQ3):** `AdminHomePage.jsx` (142) — more headroom.
+
+**Test impact:** `myTeamsCrossSurfaceInvariant.test.jsx` updated to
+read the post-split locations — MY TEAMS render moved into the
+SignalZone sub-components. Audit `homePageLoadingGateAudit.test.js`
+unaffected (`const isLoading = ...` stays in the parent page).
+Reinforces anti-pattern #43 (cross-surface invariant test).
+
+**§12 watch reconciliation:** all four candidates that §12 named
+(CoachHomePage, AdminHomePage, ParentHomePage, formatters.js,
+useAttendanceData.js) now reconciled — three split, one deferred
+with headroom note. §12 itself can be re-scoped to a running watch
+list rather than the specific four-line bullet.
