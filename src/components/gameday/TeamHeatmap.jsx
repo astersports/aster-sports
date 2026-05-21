@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useAttendanceData } from '../../hooks/useAttendanceData';
+import { sortPlayersByOrder } from '../../lib/playerSort';
 import CollapsibleSection from '../shared/CollapsibleSection';
 import FilterSelect from '../shared/FilterSelect';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
@@ -31,14 +32,21 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle, s
   const [filter, setFilter] = useState('all');
   const { grid, events, loading } = useAttendanceData(teamId, filter, range);
 
-  if (loading) return <div style={{ padding: 16 }}><LoadingSkeleton variant="card" count={1} /></div>;
-
   const myPlayerIds = role === 'parent' ? (myChildren || []).map((c) => c.playerId) : null;
   const filteredGrid = myPlayerIds ? grid.filter((r) => myPlayerIds.includes(r.player.id)) : grid;
   // 2026-05-21 (Teams PR C / Q10) — shared sort order with Roster. Default
   // "jersey" matches the Roster default; admin chip changes propagate via
-  // the parent-supplied sortOrder prop.
-  const visibleGrid = sortByOrder(filteredGrid, sortOrder || 'jersey');
+  // the parent-supplied sortOrder prop. Sort impl is the canonical helper
+  // in src/lib/playerSort.js (shared with useFilteredRoster).
+  const visibleGrid = useMemo(
+    () => sortPlayersByOrder(filteredGrid, sortOrder || 'jersey', {
+      getPlayer: (row) => row.player,
+      getAttendancePct: (row) => row.pct ?? -1,
+    }),
+    [filteredGrid, sortOrder],
+  );
+
+  if (loading) return <div style={{ padding: 16 }}><LoadingSkeleton variant="card" count={1} /></div>;
 
   const totalGoing = visibleGrid.reduce((s, r) => s + (r.goingCount || 0), 0);
   const totalResponses = visibleGrid.reduce((s, r) =>
@@ -115,33 +123,4 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle, s
       </TeamPulseScrollFade>
     </CollapsibleSection>
   );
-}
-
-// 2026-05-21 (Teams PR C / Q10) — mirrors useFilteredRoster's sort logic
-// for grid rows ({ player, pct, ... }). Kept inline to avoid adding a
-// second canonical sort impl; if a third caller surfaces, extract.
-function sortByOrder(rows, sortOrder) {
-  const copy = [...rows];
-  if (sortOrder === 'name') {
-    copy.sort((a, b) => (a.player.last_name || '').localeCompare(b.player.last_name || '')
-      || (a.player.first_name || '').localeCompare(b.player.first_name || ''));
-  } else if (sortOrder === 'age') {
-    copy.sort((a, b) => {
-      const aD = a.player.dob ? new Date(a.player.dob).getTime() : Infinity;
-      const bD = b.player.dob ? new Date(b.player.dob).getTime() : Infinity;
-      return aD - bD;
-    });
-  } else if (sortOrder === 'attendance') {
-    copy.sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
-  } else { // 'jersey' (default)
-    copy.sort((a, b) => {
-      const aJ = a.player.jersey_number != null ? parseInt(a.player.jersey_number, 10) : NaN;
-      const bJ = b.player.jersey_number != null ? parseInt(b.player.jersey_number, 10) : NaN;
-      if (isNaN(aJ) && isNaN(bJ)) return 0;
-      if (isNaN(aJ)) return 1;
-      if (isNaN(bJ)) return -1;
-      return aJ - bJ;
-    });
-  }
-  return copy;
 }
