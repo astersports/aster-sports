@@ -75,6 +75,9 @@ export default function RecordsPage() {
         <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1.05, marginBottom: 16 }}>
           SEASON <span style={{ color: 'var(--sf-bc-cobalt)' }}>RECORDS</span>
         </h2>
+        <div role="status" aria-live="polite" aria-atomic="true" style={{ position: 'absolute', left: -9999, width: 1, height: 1, overflow: 'hidden' }}>
+          {teamsLoading ? 'Loading records...' : `Loaded ${teams.length} teams.`}
+        </div>
         {teamsLoading && Array.from({ length: 5 }).map((_, i) => <div key={i} className="bc-team-skeleton" />)}
         {teams.map((team) => (
           <TeamAccordion
