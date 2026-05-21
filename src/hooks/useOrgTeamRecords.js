@@ -30,8 +30,12 @@ export function useOrgTeamRecords(orgId) {
       .from('game_results')
       .select('result, our_score, opponent_score, events!inner(team_id, start_at, teams!inner(org_id))')
       .eq('events.teams.org_id', orgId)
-      .not('published_at', 'is', null)
-      .order('start_at', { foreignTable: 'events', ascending: true });
+      .not('published_at', 'is', null);
+    // Per anti-pattern #48: parent rows are ordered in JS via
+    // computeSummary's start_at sort (teamRecords.js:28). PostgREST's
+    // `.order(..., { foreignTable: 'events' })` would apply only to
+    // embedded subarrays, not to top-level result rows — so it was
+    // dead code here.
     if (fetchErr) { setError(fetchErr); setLoading(false); return; }
 
     const grouped = {};
