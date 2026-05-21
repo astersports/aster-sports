@@ -39,3 +39,6 @@ test-results/
 /rides-audit-source.zip
 /WAVE_3A_PROMPT_v2.md
 .mcp.json
+
+# Claude Code worktree storage (per-session ephemera)
+.claude/
