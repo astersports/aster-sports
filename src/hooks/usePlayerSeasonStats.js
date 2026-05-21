@@ -1,23 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 export function usePlayerSeasonStats(teamId) {
+  const { orgId } = useAuth();
   const [rows, setRows] = useState(null);
   const fetchIdRef = useRef(0);
 
   const fetch = useCallback(() => {
-    if (!teamId) return;
+    if (!teamId || !orgId) return;
     const id = ++fetchIdRef.current;
     supabase
       .from('player_game_stats')
       .select('player_id, pts, pf, fg_made, fg_att, three_made, three_att, ft_made, ft_att, to_count, orb, drb, reb, ast, stl, blk, plus_minus')
+      // Anti-pattern #37: org_id scoped FIRST as defense-in-depth above RLS.
+      .eq('org_id', orgId)
       .eq('team_id', teamId)
       .then(({ data, error }) => {
         if (id !== fetchIdRef.current) return;
         if (error) console.error('usePlayerSeasonStats:', error.message);
         setRows(data || []);
       });
-  }, [teamId]);
+  }, [teamId, orgId]);
 
   useEffect(() => { fetch(); }, [fetch]);
 

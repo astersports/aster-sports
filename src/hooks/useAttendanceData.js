@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 import { useRefetchOnVisible } from './useRefetchOnVisible';
 
 export function useAttendanceData(teamId, filter = 'all', range = 'season') {
+  const { orgId } = useAuth();
   const [events, setEvents] = useState([]);
   const [rsvps, setRsvps] = useState([]);
   const [arrivals, setArrivals] = useState([]);
@@ -15,12 +17,14 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
   const lastKeyRef = useRef(null);
 
   useEffect(() => {
-    if (!teamId) return;
+    if (!teamId || !orgId) return;
     const key = `${teamId}-${filter}-${range}-${version}`;
     if (lastKeyRef.current === key) return;
     lastKeyRef.current = key;
     (async () => {
       setLoading(true);
+      // Anti-pattern #36: surface PostgREST errors instead of silently substituting [].
+      const ck = (r) => { if (r.error) throw r.error; return r.data || []; };
       const lookbackDays = range === '4weeks' ? 28 : 180;
       const now = new Date();
       const lookbackDate = new Date(now.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
@@ -45,20 +49,21 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
         supabase.from('roster_members').select('player_id, jersey_number').eq('team_id', teamId),
       ]);
 
-      const rosterData = rmRes.data || [];
+      const rosterData = ck(rmRes);
       const playerIds = [...new Set(rosterData.map((r) => r.player_id).filter(Boolean))];
       const jerseyMap = {};
       rosterData.forEach((r) => { jerseyMap[r.player_id] = r.jersey_number; });
 
       const plRes = playerIds.length > 0
-        ? await supabase.from('players').select('id, first_name, last_name, member_type').in('id', playerIds)
+        // Anti-pattern #37: org_id scoped FIRST as defense-in-depth above RLS.
+        ? await supabase.from('players').select('id, first_name, last_name, member_type').eq('org_id', orgId).in('id', playerIds)
         : { data: [] };
 
-      const enrichedPlayers = (plRes.data || []).map((p) => ({
+      const enrichedPlayers = ck(plRes).map((p) => ({
         ...p, jersey_number: jerseyMap[p.id] || null,
       }));
 
-      const evtIds = (evtRes.data || []).map((e) => e.id);
+      const evtRows = ck(evtRes); const evtIds = evtRows.map((e) => e.id);
       const [rsvpRes, arrRes, ciRes, actRes] = await Promise.all([
         evtIds.length > 0 ? supabase.from('event_rsvps').select('event_id, player_id, response').in('event_id', evtIds) : { data: [] },
         evtIds.length > 0 ? supabase.from('event_arrivals').select('event_id, player_id, status').in('event_id', evtIds) : { data: [] },
@@ -66,15 +71,12 @@ export function useAttendanceData(teamId, filter = 'all', range = 'season') {
         evtIds.length > 0 ? supabase.from('player_activations').select('event_id, player_id').in('event_id', evtIds) : { data: [] },
       ]);
 
-      setEvents(evtRes.data || []);
-      setPlayers(enrichedPlayers);
-      setRsvps(rsvpRes.data || []);
-      setArrivals(arrRes.data || []);
-      setCheckIns(ciRes.data || []);
-      setActivations(actRes.data || []);
+      setEvents(evtRows); setPlayers(enrichedPlayers);
+      setRsvps(ck(rsvpRes)); setArrivals(ck(arrRes));
+      setCheckIns(ck(ciRes)); setActivations(ck(actRes));
       setLoading(false);
     })();
-  }, [teamId, filter, range, version]);
+  }, [teamId, orgId, filter, range, version]);
 
   const refetch = useCallback(() => { lastKeyRef.current = null; setVersion((v) => v + 1); setNowMs(Date.now()); }, []);
   useRefetchOnVisible(refetch);

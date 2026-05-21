@@ -32,6 +32,9 @@ export function useTeamRecords(teamId) {
       setLoading(true);
       setError(null);
 
+      // Anti-pattern #48: PostgREST .order with foreignTable hint applies
+      // to embedded subarrays, NOT parent rows. Removed — computeSummary
+      // sorts JS-side by event.start_at (src/lib/teamRecords.js).
       let q = supabase
         .from('game_results')
         .select(`
@@ -43,11 +46,11 @@ export function useTeamRecords(teamId) {
           point_differential,
           event:events!inner ( id, team_id, opponent, start_at, is_championship_final )
         `)
-        .not('published_at', 'is', null)
-        .order('start_at', { foreignTable: 'events', ascending: true });
+        .not('published_at', 'is', null);
 
       if (teamId) q = q.eq('events.team_id', teamId);
 
+      // Anti-pattern #36: destructure error + throw.
       const { data, error } = await q;
       if (cancelled) return;
       if (error) { setError(error); setLoading(false); return; }
