@@ -50,7 +50,7 @@ export default function UpcomingEvents({ teamId }) {
           ))}
           <button type="button" onClick={() => { navigator.vibrate?.(10); navigate(`/schedule?team=${teamId}`); }}
             className="sf-press" aria-label="View full schedule for this team"
-            style={{ marginTop: 6, minHeight: 32, padding: '0 4px',
+            style={{ marginTop: 6, minHeight: 44, padding: '0 4px',
               border: 'none', background: 'none', color: 'var(--em-accent)',
               fontSize: 13, fontWeight: 500 }}>
             View full schedule →
