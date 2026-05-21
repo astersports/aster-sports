@@ -5,7 +5,7 @@
 > re-discovery. Updated per session and per PR.
 >
 > Created: 2026-05-18 (Italy CEST) from L99 cross-role audit consolidation
-> Last updated: 2026-05-18
+> Last updated: 2026-05-22 (§4.Z reconciliation against 49-PR session 2026-05-21)
 
 This doc complements (not replaces):
 - `docs/SKYFIRE_BUILD_QUEUE_v2.md` — shipped-log roadmap, forward-only
@@ -44,6 +44,133 @@ the next round of silent divergence.
 
 Five-PR Sunday from Italy CEST. Audit immediately after surfaced the
 items below.
+
+### Session 2026-05-21 — L99 platform-wide audit + Teams arc + session-cleanup wave (49 PRs)
+
+Categories preserve dispatch arcs (Phase 1 platform audit → Teams →
+Phase 5 micro-fixes → perf-pass → a11y polish → session-cleanup →
+discipline lock → foundation #36 sweep → edge function #36 sweep →
+header bell + RequireAuth → relkind audit migrations → team-feed RFC
+5545 → #36 audit test → SECDEF helper library → messaging P0 cluster).
+
+#### Phase 1 platform-audit-v2 (PRs #410-#418)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #410  | 2026-05-21 | Hook anti-pattern #48 dead `foreignTable .order` cleanups (PR γ)   | useOrgTeamRecords + useTeamGamesByTournament |
+| #411  | 2026-05-21 | Page tap-target fixes — 3 surfaces to §7 44px (PR β)               | Messages + FinancialDashboard + ImportSchedule |
+| #412  | 2026-05-21 | Hook anti-pattern #36 batch — 6 violations (PR α)                  | useCoachHomeSignals + useGameResultsMap + useKindUsage + usePrefetchChildRsvps + useUnreadCounts + useBriefingFilters |
+| #413  | 2026-05-21 | L99 platform audit v3 — claude.ai v2 review refinements            | Docs                |
+| #414  | 2026-05-21 | CLAUDE.md amend #49 + add #50/#51 candidates + §16.15              | Docs + doctrine     |
+| #415  | 2026-05-21 | gitignore `.claude/` worktree storage                              | Repo hygiene        |
+| #416  | 2026-05-21 | BriefingsInboxPage loading-gate gap (PR δ; P0 closed)              | Briefings inbox     |
+| #417  | 2026-05-21 | Teams PR A — stop-the-bleeding (B1 + B2 + B3 + B4)                 | Team detail / Heatmap |
+| #418  | 2026-05-21 | Teams PR D — data-layer hardening                                  | Teams data layer    |
+
+#### Teams arc + cleanup (PRs #419-#425)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #419  | 2026-05-21 | Teams PR B — hero card consolidation (TeamDetailHero)              | Team detail         |
+| #420  | 2026-05-21 | Edge function mirror byte-compare audit (Platform PR ζ; CI-enforced #30) | Edge functions |
+| #421  | 2026-05-21 | Engine fragility cleanup E1 + E2 (Platform PR ε)                   | Engine send helpers |
+| #422  | 2026-05-21 | Mirror drift cleanup — 4 pairs closed (102 → 17 TS-only residuals) | Edge functions      |
+| #423  | 2026-05-21 | Teams PR C — polish + cleanup + dead-feature retirement (anti-pattern #51 candidate, second instance) | Team detail / Player rows |
+| #424  | 2026-05-21 | Home-page preemptive split per PQ3 — 3 pages, 9 sub-components     | Home pages          |
+| #425  | 2026-05-21 | L99 audit arc closure addendum (Teams + platform)                  | Docs                |
+
+#### Phase 5 micro-fixes (PRs #426-#434)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #426  | 2026-05-21 | callup-handler `alts` parameter for rsvp-handler parity            | Edge functions      |
+| #427  | 2026-05-21 | Button sm tap target + PublicSchedulePage RLS comment-pin          | Shared Button + Public schedule |
+| #428  | 2026-05-21 | Teams A3 aria-labels + C2/C7 perf-pass (Teams Phase 5)             | Team detail a11y + perf |
+| #429  | 2026-05-21 | Extract RideIndicator + DutyBadge (component cleanup arc start)    | Shared components   |
+| #430  | 2026-05-21 | V5 Pulse grid horizontal scroll indicator                          | TeamHeatmap         |
+| #431  | 2026-05-21 | CLAUDE.md register anti-pattern #52 candidate (worktree-path)      | Docs + doctrine     |
+| #432  | 2026-05-21 | Extract ModalBackground from 4 centered-modal callsites (L99 P2.5 D3) | Shared modals    |
+| #433  | 2026-05-21 | ScopeChoiceDialog backdrop canonical rgba(0,0,0,0.3)               | Event scope dialog  |
+| #434  | 2026-05-21 | Schedule perf — lift useNow into ScheduleListSections slot         | Schedule list       |
+
+#### Perf-pass on hot pages (PRs #435, #437)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #435  | 2026-05-21 | Extract `<Badge variant='pill'>` (PQ7 cleanup continuation)        | Shared Badge        |
+| #437  | 2026-05-21 | Event detail perf — lift useNow into EventLocationSlot + memo stable children | EventDetailPage |
+
+#### A11y polish (PRs #436, #438)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #436  | 2026-05-21 | aria-label on TeamHeatmap container (A11y P2)                      | TeamHeatmap         |
+| #438  | 2026-05-21 | FormGuide + TeamAccordion + RecordsPage + BriefingComposer a11y polish | 4 surfaces      |
+
+#### Session-cleanup wave (PRs #439-#442)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #439  | 2026-05-21 | 2 tap-target regressions introduced in PR #423                     | Teams PR C followup |
+| #440  | 2026-05-21 | Delete DutyBadge orphan (anti-pattern #42)                         | Shared cleanup      |
+| #441  | 2026-05-21 | Consolidate 3 player-sort impls into pure helper (anti-pattern #42) | Player sort        |
+| #442  | 2026-05-21 | Team-pulse — drop misleading 'Not enough data yet' qualifier       | TeamPulseHeader     |
+
+#### Discipline-lock CLAUDE.md amendments (PR #443) + ErrorBoundary §16.10 exemption (PR #444)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #443  | 2026-05-21 | Bundle 7 discipline amendments from session 2026-05-21             | Docs + doctrine     |
+| #444  | 2026-05-21 | Document ErrorBoundary §16.10 bundle-budget exemption              | Docs + doctrine     |
+
+#### LoginPage combo (PRs #445, #447) + foundation aria-live (PR #446)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #445  | 2026-05-21 | Lock LoginPage brand-reset behavior per #43 invariant              | LoginPage           |
+| #446  | 2026-05-21 | Foundation aria-live sweep — toast, offline banner, unread badge   | Foundation a11y     |
+| #447  | 2026-05-21 | LoginPage #36 destructure + REDIRECT_ALLOWLIST admin route expansion | LoginPage         |
+
+#### Foundation #36 sweep (PR #448) + Header bell + RequireAuth (PR #449)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #448  | 2026-05-21 | Foundation bundle — 5 anti-pattern #36 destructure-without-error fixes | Foundation hooks |
+| #449  | 2026-05-21 | Header — remove duplicate bell + lock role-resolution contract     | Header + RequireAuth |
+
+#### relkind verification migrations (PRs #450, #451)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #450  | 2026-05-21 | Migration audit relkind='r' filter on player_game_stats RLS check  | DB / migrations     |
+| #451  | 2026-05-21 | Migration audit relkind='r' filter on team_types RLS check         | DB / migrations     |
+
+#### Edge function #36 sweep (PR #452) + team-feed RFC 5545 (PR #453)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #452  | 2026-05-21 | Bundle anti-pattern #36 destructure-without-error sweep (edge functions) | Edge functions |
+| #453  | 2026-05-21 | Team-feed bound events query + RFC 5545 ICS compliance             | team-feed edge function |
+
+#### #36 audit test (PR #454) + SECDEF helper library (PR #455)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #454  | 2026-05-21 | Static-grep gate for anti-pattern #36 destructure-without-error    | Audit tests         |
+| #455  | 2026-05-21 | `assert_org_owns_*` SECDEF helper library for cross-org validation | DB security helpers |
+
+#### Messaging P0 cluster (PRs #456, #457)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #456  | 2026-05-21 | P0 — NewDmPicker query nonexistent `org_members` table             | Messaging DM picker |
+| #457  | 2026-05-21 | P0 — useDmThreads `otherName` mislabels partner as self            | Messaging DM thread |
+
+49-PR session. L99 platform-wide audit (14 batches dispatched +
+executed, ~204 findings) + Teams arc close + session-cleanup wave +
+2 P0 messaging fixes at session-end. See §4.Z for the
+audit-findings synthesis and §4.X (closed) + Teams §4.U (closed)
+for arc-level closure narratives.
 
 ---
 
@@ -1130,6 +1257,53 @@ but with different implementations.
   Registered as workflow learning — informs how future high-output
   sessions sequence PRs.
 
+### Propagation patterns locked 2026-05-22 (post 49-PR L99 session)
+
+- **Pattern ALPHA — anti-pattern #36 destructure cascade**
+  Status: foundation half CLOSED (PR #448, 5 callsites) + edge function
+  half CLOSED (PR #452, bundle). Audit-test static-grep gate locked
+  (PR #454).
+  Propagation queued: hooks layer (~34 sites surfaced by audit) — large
+  enough to warrant Cluster 3 routing as a dedicated arc. Each callsite
+  follows the anti-pattern #36 pattern: destructure `error` alongside
+  `data` + throw or log error before consuming data + `|| []` fallback
+  only for empty-success case. Drift-hedge audit test (PR #454) catches
+  regressions on land.
+
+- **Pattern BETA — aria-live regions**
+  Status: foundation half CLOSED (PR #446) — toast, offline banner,
+  unread badge each got `aria-live`. RecordsPage covered earlier
+  (PR #438).
+  Propagation queued: messaging surface remaining (DM thread + new-
+  message surfaces); pattern extraction to shared `<LoadingLiveRegion />`
+  per the earlier §5 entry's ≥3-surface threshold (now met).
+
+- **Pattern DELTA — focus-visible (RECONCILED — false alarm)**
+  Status: audit candidate raised, then withdrawn — global `:focus-visible`
+  rule in foundation CSS already covers the surface. No propagation
+  work needed; entry recorded so future audits don't re-raise the same
+  concern.
+
+- **Latent timezone bug — `coachRoundupHelpers` + `familyGuideHelpers`**
+  EDT-only hardcoded offset (UTC-4) baked into helper code. Currently
+  invisible because Frank is in EDT through the May-October window;
+  trips silently Nov-Mar when NY shifts to EST (UTC-5). The result
+  would be every briefing emitting times shifted +1 hour during the
+  EST window. Fix: replace inline `-04:00` literal with a timezone-aware
+  helper (`formatInTimeZone(date, 'America/New_York', format)` via
+  `date-fns-tz` or equivalent). Drift-hedge per #43:
+  `coachRoundupHelpers.tz.test.js` + `familyGuideHelpers.tz.test.js`
+  using `vi.setSystemTime` to simulate EST dates. Trigger window: ship
+  before 2026-11-02 (DST end). P1, not P0 — silent today, breaks
+  silently on a calendar boundary.
+
+- **Multi-tenant readiness — 3 P0 season-rollover blockers (NEW)**
+  Surfaced from Batch 11 P0s in the L99 audit. SeasonRolloverPage +
+  useSeasonRollover assume single-org context; 3 distinct multi-tenant
+  blockers identified for routing forward (see §4.Z table for tags
+  P0-E/P0-F/P0-G). Joins the §4.Y multi-tenant readiness arc; promotes
+  PQ5 timeline forward if St. Patrick's onboarding accelerates.
+
 ---
 
 ## 6. VERIFICATION ITEMS WAITING ON FRANK
@@ -1376,6 +1550,31 @@ Ordered by inferred ROI (most-impactful first):
    (needs inventory).
 7. **`<EventLocationLink location={} />`** — map URL priority
    per CLAUDE.md §15.
+
+### Helper-extraction candidates added 2026-05-22 (post L99 audit)
+
+8. **`ORG_NAME_DEFAULT` + sibling constants — 8 copies across 7
+   resolvers + `digestSend`** (Batch 8a P2-4 finding). Each resolver
+   re-declares the org-name fallback string locally; if the canonical
+   default ever changes (e.g., Skyfire → Ember rebrand), 8 files must
+   change in lockstep. Extract to `src/lib/engine/resolvers/constants.js`
+   + import everywhere. Drift-hedge static-grep audit.
+9. **`formatDayLabel` + `formatTime` — 2 copies between Wave 5 PR 4b
+   + PR 5b files** (Batch 8a P2-5 finding). Same helper logic duplicated
+   across `coachRoundupHelpers.js` + `familyGuideHelpers.js`. Extract
+   to shared `src/lib/engine/timeFormatters.js`. **NOTE:** ties to the
+   §5 latent-timezone bug — the helpers' inline EDT offset is the
+   same bug class; extraction is the natural moment to fix both.
+10. **9 inline formatter duplicates across send helpers** (Batch 2b
+    finding). Common patterns: phone number formatting, currency
+    formatting, date-range labels. Inventory pending; estimate 9 sites
+    across `*Send.js` files. Extract to `src/lib/formatters.js`
+    (already canonical for date formatters).
+11. **`CIRCUIT_LABELS` constant in 4 files** (Batch 7 P3-1 finding).
+    Mapping of `circuit_type` enum to display label ("AAU (Zero Gravity)"
+    / "League Play" / etc.). Lives in 4 files independently. Extract to
+    `src/lib/constants.js` (where `TEAM_COLORS` already lives per
+    CLAUDE.md §10).
 
 Each extraction PR ships with:
 - The helper / component
@@ -2483,3 +2682,133 @@ anti-pattern #51, register #51's third instance (could be the
 suggest-briefing-closer if active-but-half-built emerges). If
 cascade prediction (13-15 findings per platform audit Part 3.1)
 holds, anti-pattern #50 promotes from CANDIDATE to registered.
+
+---
+
+### §4.Z — L99 platform audit close + 49-PR session synthesis (2026-05-21)
+
+Sustained session 2026-05-21 dispatched the L99 platform-wide audit
+across 14 batches, executed in parallel by sub-agents per anti-pattern
+#50's breadth-via-parallel-agents methodology. Cascade-near-zero
+characteristic held (matches #50 origin case prediction). 49 PRs
+merged session-end. This entry captures the audit-findings synthesis +
+arc closures + new gaps that surfaced.
+
+**Audit findings summary (full L99 platform-wide audit):**
+
+- Batches dispatched: 14 (parallel sub-agent execution)
+- Total findings: ~204 (7 P0, 45 P1, 86 P2, 66 P3)
+- 2 P0s closed at session-end via PR #456 + #457 (messaging DM picker
+  + useDmThreads otherName)
+- 5 P0s remaining for routing: P0-C academy callup, P0-D doctrine,
+  P0-E / P0-F / P0-G season rollover multi-tenant blockers
+- 4 routing clusters deferred: Cluster 3 (#36 hooks layer ~34 sites),
+  Cluster 4 (#51 retirement bundle), Clusters 5-8 (broader cleanup)
+
+**Arc-level outcomes:**
+
+- §4.X L99 platform-wide audit arc — CLOSED (see §4.X full breakdown
+  for Phase 1-4 PRs; +1 closure addendum PR #425)
+- §4.U Teams page redesign — CLOSED (PR A #417 + PR D #418 + PR B
+  #419 + PR C #423 + Phase 5 #428 + V5 scroll #430 + tap-target
+  regressions #439 closure)
+- §4.W home-page preemptive split — CLOSED (PR #424; 3 pages split
+  into 9 sub-components)
+- New: foundation #36 sweep (PR #448) — 5 callsites closed
+- New: edge function #36 sweep (PR #452) — bundle closure
+- New: #36 audit test (PR #454) — static-grep gate locked
+- New: SECDEF helper library (PR #455) — assert_org_owns_* helpers
+  for cross-org validation; defense-in-depth over RLS
+- New: Header bell removal + RequireAuth role-resolution contract
+  (PR #449) — closes duplicate bell across role variants
+- New: relkind='r' audit migrations (PRs #450, #451) — closes
+  anti-pattern #24 corollary on player_game_stats + team_types
+- New: team-feed RFC 5545 ICS compliance + bounded events query
+  (PR #453) — completes V-23 SHIPPED-end-to-end work with strict
+  RFC conformance
+- New: foundation aria-live sweep (PR #446) — toast, offline
+  banner, unread badge; pattern locked, propagation queued
+
+**P0s remaining (routing forward):**
+
+| Tag | Item | Scope | Routing |
+|-----|------|-------|---------|
+| P0-C | Academy callup token-handler P0 | Edge function path latent regression | TBD |
+| P0-D | Doctrine P0 (CLAUDE.md mechanical edit) | Catalog amendment | Separate CLAUDE.md PR (parallel) |
+| P0-E | Season rollover multi-tenant blocker #1 | RLS / org-scope gap | §4.Z routing forward |
+| P0-F | Season rollover multi-tenant blocker #2 | Similar shape | §4.Z routing forward |
+| P0-G | Season rollover multi-tenant blocker #3 | Similar shape | §4.Z routing forward |
+
+**Multi-tenant readiness gaps (NEW — surfaced from Batch 11 P0s):**
+
+3 P0 blockers in season rollover surface (`SeasonRolloverPage.jsx` +
+`useSeasonRollover.js`) that prevent St. Patrick's onboarding from
+proceeding cleanly. Joins the §4.Y multi-tenant readiness arc as
+P0-blocking items (PQ5 scope expansion).
+
+**Anti-pattern catalog amendments (deferred to separate PR):**
+
+Per the scope constraint (this PR touches `docs/EMBER_PENDING_LEDGER.md`
+ONLY per anti-pattern #9), CLAUDE.md amendments ship in a parallel PR:
+- Anti-pattern #55 candidate registration
+- Anti-pattern #56 candidate registration
+- Anti-pattern #57 candidate registration
+- Anti-pattern #58 candidate registration
+- Anti-pattern #59 candidate registration
+- auth.uid() wrapper pattern lock
+- Anti-pattern #51 promotion (overwhelmingly met by Teams PR C
+  TeamPlayerStats removal + Engine Preview retirement + audit-pass
+  candidate findings) — promotion is queued for the catalog PR
+
+**Methodology validation (anti-pattern #50 candidate):**
+
+L99 platform-wide audit cascade dynamics:
+- Methodology: breadth-via-parallel-agents (14 batch boundaries)
+- First-pass yield: ~204 findings
+- Second-pass cascade prediction (per #50 origin case): near-zero
+- Actual second-pass: pending second-pass agent results (per §4.Y
+  "Second-pass platform audit" entry); if cascade stays low, #50
+  promotes from CANDIDATE to registered.
+
+**Discipline locks promoted this session (per PR #443):**
+
+7 discipline amendments bundled into CLAUDE.md PR #443:
+- Anti-pattern #52 candidate (worktree-path pwd-first) via PR #431
+- Section 9.1 pre-flight three-item opener (registered)
+- Anti-pattern #54 candidate (same-MCP-burst ready-flip + auto-merge)
+- ErrorBoundary §16.10 exemption (PR #444)
+- Additional discipline locks: see PR #443 body
+
+**Session-close pre-flight catch (this PR):**
+
+Per Section 9.1 pre-flight discipline registered via PR #443, the
+session-open audit on 2026-05-22 caught EMBER_PENDING_LEDGER §4
+staleness — last entry was 2026-05-20. This PR closes the gap at
+exactly one session boundary. Anti-pattern #45's drift-hedge
+discipline holds: planning-doc changes accumulated across PRs
+without ledger reconciliation cause silent drift; sub-2-min Section
+9.1 pre-flight check (`git fetch && git log` + ledger §4 read) is
+sufficient to catch the staleness deterministically.
+
+**Anti-pattern #45 acid-test cycle 14:** session-close reconciliation
+PR shipped within one session boundary of the originating work.
+Cycle holds.
+
+**Closure conditions:**
+
+- ✅ Anti-pattern #9 compliance — ONLY `docs/EMBER_PENDING_LEDGER.md`
+  touched in this PR; CLAUDE.md amendments ship in parallel PR
+- ✅ Anti-pattern #45 compliance — ledger reconciled within one
+  session of the 49-PR work
+- ✅ Anti-pattern #54 compliance — PR created, flipped ready, auto-
+  merge enabled in same MCP burst
+- ✅ §1 SHIPPED entries added (49 PRs in 14 sub-tables)
+- ✅ §4 closures for §4.X / §4.U / §4.W documented above; §4.Z
+  captures new pending items (P0-C through P0-G + multi-tenant
+  readiness expansion)
+- ✅ §5 propagation patterns added (Pattern ALPHA #36 cascade,
+  Pattern BETA aria-live, Pattern DELTA reconciliation, latent
+  timezone bug, multi-tenant readiness gaps)
+- ✅ §14 helper-extraction candidates added (8 ORG_NAME_DEFAULT
+  copies, 2 formatDayLabel/formatTime copies, 9 inline formatter
+  dupes, 4 CIRCUIT_LABELS files)
