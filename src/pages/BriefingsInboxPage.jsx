@@ -21,6 +21,7 @@ import { useInboxQueue } from '../hooks/useInboxQueue';
 import { useNeedsBriefing } from '../hooks/useNeedsBriefing';
 import { useBriefingFilters } from '../hooks/useBriefingFilters';
 import { isActiveBadgeItem } from '../lib/briefings/statusTable';
+import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import BriefingsHero from '../components/briefings/inbox/BriefingsHero';
 import InboxTabs from '../components/briefings/inbox/InboxTabs';
 import InboxSearch from '../components/briefings/inbox/InboxSearch';
@@ -45,13 +46,17 @@ export default function BriefingsInboxPage() {
   const [composer, setComposer] = useState(null); // null | { kind, anchor_kind, anchor_id, draft_id }
   const deepLink = useBriefingDeepLink();
 
-  const { rows: dbRows } = useInboxQueue({
+  const { rows: dbRows, isLoading: inboxLoading } = useInboxQueue({
     orgId,
     kind: filters.kind,
     teamIds: filters.teams,
     dateRange: filters.dateRange,
   });
-  const { items: synthetic } = useNeedsBriefing({ orgId });
+  const { items: synthetic, loading: needsLoading } = useNeedsBriefing({ orgId });
+  // PR δ (platform audit P0 F1) — gate render until both fetches resolve;
+  // otherwise useMemo computes counts over initial [] and InboxTabs flashes
+  // 0/0. Matches AdminHomePage skeleton pattern (PR #339/#340, anti-pattern #44).
+  const isLoading = inboxLoading || needsLoading;
   const activeCount = useMemo(() => {
     const all = [...(dbRows || []), ...(synthetic || [])];
     return all.filter(isActiveBadgeItem).length;
@@ -102,6 +107,17 @@ export default function BriefingsInboxPage() {
       setComposer({ draft_id: row.id });
     }
   };
+
+  if (isLoading) {
+    return (
+      <div style={wrap}>
+        <div style={inner}>
+          <AdminBackHeader />
+          <div role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={wrap}>
