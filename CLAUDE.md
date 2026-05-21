@@ -222,6 +222,38 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 -- NEVER call this on org_members — infinite recursion
 ```
 
+### RLS Pattern: `auth.uid()` subselect wrapper
+
+When writing RLS policies that reference `auth.uid()` (or any
+`auth.<function>()`), wrap the call in a subselect:
+`(SELECT auth.uid())` instead of bare `auth.uid()`.
+
+Reason: bare `auth.uid()` causes Postgres to evaluate the function
+once per row in the query plan. Subselect wrapping causes the planner
+to evaluate once per query as an initplan. Significant query plan
+improvement on large tables.
+
+Detection: `get_advisors` flags this as `auth_rls_initplan` WARN
+advisory.
+
+```sql
+-- BAD (per-row evaluation):
+CREATE POLICY foo ON bar
+  FOR SELECT
+  USING (user_id = auth.uid());
+
+-- GOOD (initplan, evaluated once per query):
+CREATE POLICY foo ON bar
+  FOR SELECT
+  USING (user_id = (SELECT auth.uid()));
+```
+
+Apply to all `auth.<function>()` references in RLS policies:
+`auth.uid()`, `auth.role()`, `auth.jwt()`, `auth.email()`.
+
+Origin: surfaced via `team_types` `auth_rls_initplan` advisory from
+PR #451; fixed in parallel advisor hygiene migration 2026-05-22.
+
 ### Key Field Decisions (locked)
 - `is_scrimmage` boolean on activities — NOT a separate activity_type
 - `roster_type` on roster_members — NOT a separate role
@@ -552,6 +584,151 @@ ready in same burst).
 Promotion criteria: third instance with explicit-prompt discipline holding
 across all three. After three sessions where every PR ships ready in same
 MCP burst, promote to registered.
+
+55. **Agents must use actual PR# from create_pull_request response
+    (CANDIDATE — promote on third instance).**
+
+Agents creating PRs in same-MCP-burst order sometimes call
+`enable_pr_auto_merge` before `create_pull_request` returns the actual
+PR#, then guess at a PR# (which lands on a different PR than intended).
+Two recurrences observed in session 2026-05-21:
+
+- PR #446 agent guessed PR#444 before its own PR returned as #446
+- PR #453 agent guessed PR#450 before its own PR returned as #453
+
+Both stray calls landed on PRs that auto-merged anyway by design (no
+observable harm), but the failure class is "auto-merge enabled on PR
+you don't own." If the stray-target PR was held with `do-not-auto-merge`
+label, the stray call would have force-shipped it.
+
+Discipline: agent prompts must explicitly say "Use the actual PR number
+from the create_pull_request response — do not guess." Enforcement:
+`pull_request_read` confirmation after `enable_pr_auto_merge`.
+
+Promotion: third instance with the explicit-prompt discipline still
+holding (caught + fixed mid-flight).
+
+Origin: session 2026-05-21 PRs #446 and #453.
+
+56. **Audit cycles need external stop conditions (CANDIDATE — promote
+    on third instance).**
+
+The audit cycle's internal logic always justifies the next audit. Every
+audit produces findings that justify another audit. Session-level diff
+audit validates anti-pattern #50 → justifies platform-wide audit master
+plan → dispatches Batches 1+12 → produces findings + design calls →
+justifies more audits and helper library migrations → no natural stopping
+point inside the audit cycle.
+
+External stop conditions must come from outside the cycle (user/operator).
+When the user is the one driving audit dispatch AND consuming findings
+AND routing fix PRs, the same person provides both the engine and the
+brakes. The brakes don't engage automatically.
+
+Discipline: audit-cycle sessions need pre-locked session contracts (max
+PRs, hard stop time, design call moratorium, cluster engagement gate)
+that exist before the opener move dispatches. After-the-fact discretion
+at each gate compounds toward audit-cycle generation rather than
+audit-cycle validation.
+
+Promotion: third instance with explicit session-contract discipline
+holding.
+
+Origin: session 2026-05-21 11pm stop-hold moment when Claude pushed back
+and Frank held the line.
+
+57. **Supabase default privileges auto-grant EXECUTE to anon despite
+    REVOKE FROM PUBLIC (extends anti-pattern #23).**
+
+When creating SECURITY DEFINER functions in a Supabase project,
+`REVOKE EXECUTE FROM PUBLIC` alone is INSUFFICIENT to deny anon
+execution. Supabase project default privileges auto-grant EXECUTE on
+new functions to the `anon` role regardless of PUBLIC grant state. The
+discipline extension: also `REVOKE EXECUTE FROM anon` explicitly after
+the PUBLIC revoke.
+
+Verification: after CREATE FUNCTION + REVOKE FROM PUBLIC, inspect
+`routine_privileges` for the actual grant chain. If `anon` still appears
+with EXECUTE, an explicit REVOKE FROM anon is required.
+
+Origin: session 2026-05-21 PR #455 (`assert_org_owns_*` SECDEF helper
+library). Initial migration had REVOKE FROM PUBLIC; post-apply privilege
+check showed anon retained EXECUTE; explicit REVOKE FROM anon added in
+same PR.
+
+Discipline extension: anti-pattern #23's "REVOKE FROM PUBLIC before
+role" rule remains correct but isn't sufficient on Supabase. Migration
+patterns for new SECDEF functions must include both REVOKE FROM PUBLIC
+AND explicit per-role REVOKEs.
+
+Promotion: third Supabase project encountering the same default-privilege
+override. Likely promotes quickly because every new SECDEF function
+exposes the pattern.
+
+58. **Cross-batch pattern check in audit findings TXT (CANDIDATE —
+    promote on third multi-batch audit).**
+
+When multi-batch audits run sequentially (or in parallel waves with
+findings synthesis between batches), each batch's findings TXT should
+include a "cross-batch pattern check" section that compares its findings
+against prior batches' findings.
+
+Without synthesis, each batch surfaces its own findings independently,
+missing the cumulative signal. With synthesis, cross-cutting patterns
+(Pattern ALPHA #36 cascade, Pattern GAMMA #42 helper duplication, Pattern
+BETA aria-live, latent timezone bugs) surface as single concerns
+affecting multiple surfaces, rather than as N independent surface-specific
+findings.
+
+Origin: session 2026-05-21 L99 platform audit Batches 1, 12, 2a, 2b,
+3, 4-11. Each batch's findings TXT included a "Pattern continuation from
+prior batches" section. Validated across 14 batches — Pattern ALPHA grew
+from 7 sites (Batch 1) to 25+ (after Batch 2b) to 55+ (after Batch 3),
+and the cumulative signal justified a platform-wide sweep PR + audit
+test rather than per-surface fixes.
+
+Discipline: every audit batch's findings TXT includes a
+pattern-continuation section referencing prior batches' patterns by name
+(ALPHA, BETA, GAMMA, etc.). New patterns get registered with letter
+names in the same TXT for downstream batches to reference.
+
+Promotion: third multi-batch audit where the synthesis discipline catches
+a cross-cutting pattern that wouldn't have surfaced from any single batch
+alone.
+
+59. **Close session when audits run ahead of routing capacity (CANDIDATE
+    — promote on third instance).**
+
+When the gap between "audit produces findings" and "human routes findings
+into shipping decisions" closes to zero — when audits dispatch faster
+than findings can be reviewed — the discipline cycle has stopped working
+as a check and started working as an accelerator.
+
+Indicators of capacity exhaustion:
+
+- 47+ PRs merged in one session
+- Multiple parallel agents producing findings TXTs faster than the
+  operator can read them
+- Routing decisions being made without claude.ai review pause
+- 3+ structural audit artifacts produced in same session
+- "Take stock" moments where momentum suggests engaging the next cluster
+  without explicit reason for today vs. tomorrow
+
+When 2 or more of these indicators are present, the right move is to
+close the session, ship the immediately-shippable work (P0 production
+bugs only), and resume tomorrow with fresh eyes.
+
+Origin: session 2026-05-21. 47 PRs merged. 14 audit batches dispatched
+in parallel. ~204 findings surfaced. Claude pushed back at 11pm "close
+the session." Frank held the line: shipped 2 P0 messaging fixes (#456,
+#457), deferred remaining 5 P0s + 8 design calls + 4 routing clusters
+to next morning.
+
+The 11pm stop-hold worked. Today's session-open could engage the catalog
+with fresh-eyes routing rather than fatigue-driven escalation.
+
+Promotion: third session where the audit cycle ran ahead of routing
+capacity AND the operator/agent successfully held the line.
 
 ---
 
