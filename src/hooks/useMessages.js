@@ -8,6 +8,7 @@ export function useMessages(channel, channelId, dmThreadId) {
   const { showToast } = useToast();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const didInit = useRef(false);
 
   const fetch = useCallback(async () => {
@@ -17,8 +18,13 @@ export function useMessages(channel, channelId, dmThreadId) {
     if (channel === 'team' && channelId) q = q.eq('team_id', channelId);
     if (channel === 'dm' && dmThreadId) q = q.eq('dm_thread_id', dmThreadId);
     q = q.order('created_at', { ascending: true }).limit(200);
-    const { data, error } = await q;
-    if (error) console.error('useMessages:', error.message);
+    const { data, error: fetchErr } = await q;
+    if (fetchErr) {
+      console.error('useMessages:', fetchErr.message);
+      setError(fetchErr);
+      setLoading(false);
+      return;
+    }
     setMessages(data || []);
     didInit.current = true;
     setLoading(false);
@@ -75,5 +81,5 @@ export function useMessages(channel, channelId, dmThreadId) {
     return true;
   };
 
-  return { messages, loading, send, deleteMessage, refetch: fetch };
+  return { messages, loading, error, send, deleteMessage, refetch: fetch };
 }

@@ -6,16 +6,22 @@ export function useCheckIns(eventId) {
   const { showToast } = useToast();
   const [checkIns, setCheckIns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const didInitialLoad = useRef(false);
   const cancelledRef = useRef(false);
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
     if (!didInitialLoad.current) setLoading(true);
-    const { data, error } = await supabase
+    const { data, error: fetchErr } = await supabase
       .from('check_ins').select('*').eq('event_id', eventId);
     if (cancelledRef.current) return;
-    if (error) console.error('useCheckIns:', error.message);
+    if (fetchErr) {
+      console.error('useCheckIns:', fetchErr.message);
+      setError(fetchErr);
+      setLoading(false);
+      return;
+    }
     setCheckIns(data || []);
     didInitialLoad.current = true;
     setLoading(false);
@@ -38,5 +44,5 @@ export function useCheckIns(eventId) {
     return true;
   };
 
-  return { checkIns, loading, toggle, refetch: fetch };
+  return { checkIns, loading, error, toggle, refetch: fetch };
 }

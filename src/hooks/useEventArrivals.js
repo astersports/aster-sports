@@ -8,16 +8,20 @@ export function useEventArrivals(eventId) {
   const { showToast } = useToast();
   const [arrivals, setArrivals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetch = useCallback(async () => {
     if (!eventId) { setLoading(false); return; }
-    const { data, error } = await supabase
+    const { data, error: fetchErr } = await supabase
       .from('event_arrivals')
       .select('id, event_id, player_id, guardian_id, status, eta_minutes, reason, status_changed_at')
       .eq('event_id', eventId);
-    if (error) {
-      console.error('useEventArrivals:', error.message);
+    if (fetchErr) {
+      console.error('useEventArrivals:', fetchErr.message);
       showToast("Couldn't load arrivals. Try again in a moment.", 'error');
+      setError(fetchErr);
+      setLoading(false);
+      return;
     }
     setArrivals(data || []);
     setLoading(false);
@@ -52,5 +56,5 @@ export function useEventArrivals(eventId) {
 
   const getStatus = (playerId) => arrivals.find((a) => a.player_id === playerId);
 
-  return { arrivals, loading, setArrival, getStatus };
+  return { arrivals, loading, error, setArrival, getStatus };
 }
