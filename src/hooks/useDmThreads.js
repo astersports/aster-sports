@@ -26,10 +26,30 @@ export function useDmThreads() {
         .eq('dm_thread_id', t.id).order('created_at', { ascending: false }).limit(1);
       const { data: roleRow } = await supabase
         .from('user_roles').select('role').eq('user_id', otherId).maybeSingle();
+      let otherName = 'User';
+      if (roleRow?.role === 'parent') {
+        const { data: g, error: gErr } = await supabase
+          .from('guardians')
+          .select('first_name, last_name')
+          .eq('user_id', otherId)
+          .eq('org_id', orgId)
+          .maybeSingle();
+        if (gErr) console.error('useDmThreads guardians:', gErr.message);
+        otherName = g ? `${g.first_name ?? ''} ${g.last_name ?? ''}`.trim() || 'User' : 'User';
+      } else if (roleRow?.role === 'coach' || roleRow?.role === 'admin') {
+        const { data: s, error: sErr } = await supabase
+          .from('staff_profiles')
+          .select('display_name')
+          .eq('user_id', otherId)
+          .eq('org_id', orgId)
+          .maybeSingle();
+        if (sErr) console.error('useDmThreads staff_profiles:', sErr.message);
+        otherName = s?.display_name || roleRow.role;
+      }
       return {
         ...t,
         otherId,
-        otherName: lastMsg?.[0]?.sender_name || 'User',
+        otherName,
         otherRole: roleRow?.role || 'parent',
         lastMessage: lastMsg?.[0] || null,
       };
