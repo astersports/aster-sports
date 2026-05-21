@@ -10,13 +10,12 @@ import { useFilteredRoster } from '../hooks/useFilteredRoster';
 import { useAttendanceData } from '../hooks/useAttendanceData';
 import { useTeamRecords } from '../hooks/useTeamRecords';
 import { useActivities } from '../hooks/useActivities';
-import { useNow } from '../hooks/useNow';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { usePlayerSortOrder } from '../hooks/usePlayerSortOrder';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import CollapsibleSection from '../components/shared/CollapsibleSection';
-import TeamDetailHero from '../components/roster/TeamDetailHero';
+import TeamDetailHeroSlot from '../components/roster/TeamDetailHeroSlot';
 import TeamDetailOverflowMenu from '../components/roster/TeamDetailOverflowMenu';
 import TeamAchievements from '../components/roster/TeamAchievements';
 import RosterSection from '../components/roster/RosterSection';
@@ -56,7 +55,9 @@ export default function TeamDetailPage() {
   const { grid } = useAttendanceData(teamId);
   const { summary, loading: recordsLoading } = useTeamRecords(teamId);
   const { activities } = useActivities();
-  const now = useNow();
+  // 2026-05-21 (Teams audit C7) — useNow lifted INTO TeamDetailHeroSlot so
+  // the 60s tick no longer re-renders the full page subtree. Also closes
+  // C2 — enrichedPlayers no longer sits under a 60s-ticking parent.
   const [search, setSearch] = useState('');
   // 2026-05-21 (Teams PR C / Q10) — shared sort state so RosterControls
   // chip changes propagate into TeamHeatmap's player ordering. Default
@@ -83,11 +84,6 @@ export default function TeamDetailPage() {
     document.title = `${team.name} — Skyfire`;
     return () => { document.title = prev; };
   }, [team?.name]);
-  const nextEvent = useMemo(() =>
-    (activities || []).filter(a => a.team_id === teamId && a.status !== 'cancelled' && a.start_at)
-      .sort((a, b) => new Date(a.start_at) - new Date(b.start_at))
-      .find(a => new Date(a.start_at).getTime() >= now),
-    [activities, teamId, now]);
   const myChild = role === 'parent' ? (myChildren || []).find((c) => c.teamIds?.includes(teamId) || c.teamId === teamId) : null;
   const myChildPlayer = myChild ? enrichedPlayers.find((p) => p.id === myChild.playerId) : null;
 
@@ -111,7 +107,7 @@ export default function TeamDetailPage() {
       {/* PR B: hero replaces TeamHeaderCard+MyChildSpotlight+CoachQuickActions
           per §16.14. PR C / V8: "Spring 2026" scope tag below the hero
           surfaces season scope (data IS season-scoped). */}
-      <TeamDetailHero team={team} role={role} summary={recordsLoading ? null : summary} myChild={myChild} myChildPlayer={myChildPlayer} nextEvent={nextEvent} />
+      <TeamDetailHeroSlot team={team} role={role} summary={recordsLoading ? null : summary} myChild={myChild} myChildPlayer={myChildPlayer} activities={activities} teamId={teamId} />
       <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', padding: '0 4px 8px' }}>
         Spring 2026
       </div>
