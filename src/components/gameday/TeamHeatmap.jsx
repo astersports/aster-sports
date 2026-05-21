@@ -4,6 +4,7 @@ import { useAttendanceData } from '../../hooks/useAttendanceData';
 import CollapsibleSection from '../shared/CollapsibleSection';
 import FilterSelect from '../shared/FilterSelect';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
+import TeamPulseScrollFade from './TeamPulseScrollFade';
 
 const CELL_COLORS = {
   attended: { bg: 'var(--em-success)', border: 'none' },
@@ -78,7 +79,7 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle, s
         )}
       </div>
 
-      <div style={{ overflowX: 'auto', padding: '0 16px 16px' }}>
+      <TeamPulseScrollFade>
         <div role="grid" aria-label="Team attendance pulse grid" style={{ display: 'grid', gridTemplateColumns: `140px repeat(${events.length}, 32px) 80px`, gap: 3, alignItems: 'center' }}>
           <div role="columnheader" style={{ fontSize: 10, fontWeight: 600, color: 'var(--em-text-tertiary)' }}>Player</div>
           {events.map((e) => (
@@ -111,7 +112,7 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle, s
             </div>
           ))}
         </div>
-      </div>
+      </TeamPulseScrollFade>
     </CollapsibleSection>
   );
 }
