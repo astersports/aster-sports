@@ -21,14 +21,24 @@ function escape(s: string): string {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function htmlPage(title: string, body: string): Response {
+function htmlPage(title: string, body: string, alts = ""): Response {
   const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(title)}</title></head><body style="margin:0;padding:32px 16px;background:#f8fafc;font-family:Inter,system-ui,sans-serif;color:#0f172a;">
 <div style="max-width:480px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;">
   <h1 style="margin:0 0 8px;font-size:22px;color:#4a8fd4;line-height:1.2;">${escape(title)}</h1>
   ${body ? `<div style="font-size:14px;color:#475569;line-height:1.5;margin-bottom:18px;">${body}</div>` : ""}
+  ${alts}
   <div style="margin-top:20px;font-size:12px;color:#94a3b8;">Or open the Legacy Hoopers app for the full schedule.</div>
 </div></body></html>`;
   return new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
+}
+
+function altButtons(currentAction: string, _fnUrl: string, _ctx: { e: string; p: string; g: string }): string {
+  // Re-mint not implemented at this layer (mirror rsvp-token-handler's
+  // deferred per-action re-mint). We render plain copy so the parent can
+  // re-open the original email and tap the inverse action (accept ↔
+  // decline). Per-action re-mint deferred to a follow-up.
+  void currentAction; void _fnUrl; void _ctx;
+  return `<div style="font-size:12px;color:#475569;margin-top:12px;">Need to change? Reply to the email or open the app.</div>`;
 }
 
 Deno.serve(async (req) => {
@@ -109,5 +119,9 @@ Deno.serve(async (req) => {
   const playerName = player?.first_name || "Your player";
   const verbPhrase = payload.r === "accept" ? "is in" : "is out";
   const eventLine = ctx ? `${ctx.title || "Event"} · ${new Date(ctx.start_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}${ctx.location ? " · " + escape(ctx.location) : ""}` : "";
-  return htmlPage(`Got it — ${escape(playerName)} ${verbPhrase}`, eventLine);
+  return htmlPage(
+    `Got it — ${escape(playerName)} ${verbPhrase}`,
+    eventLine,
+    altButtons(payload.r, url.origin + url.pathname, { e: payload.e, p: payload.p, g: payload.g }),
+  );
 });
