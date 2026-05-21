@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Mail, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useHomeRole } from '../hooks/useHomeRole';
 import { isStaff } from '../lib/permissions';
 import { usePrograms } from '../hooks/usePrograms';
 import { useRoster } from '../hooks/useRoster';
@@ -28,7 +29,15 @@ import UpcomingEvents from '../components/roster/UpcomingEvents';
 export default function TeamDetailPage() {
   const { teamId } = useParams();
   const navigate = useNavigate();
-  const { role, myTeamIds, myChildren } = useAuth();
+  // 2026-05-21 (Teams PR A) — page-level render reads activeRole per
+  // anti-pattern #42 (useHomeRole is the existing infra; don't build a
+  // parallel role context). myTeamIds + myChildren still come from
+  // useAuth — those are user-identity, not preview-affordance. Per
+  // CLAUDE.md §16.14 follow-up: in-row permission checks (InviteButton
+  // etc.) still read realRole via useAuth().
+  const { myTeamIds, myChildren } = useAuth();
+  const { activeRole } = useHomeRole();
+  const role = activeRole;
   const { programs, loading: teamsLoading } = usePrograms();
   const switcherPrograms = role === 'parent' ? programs.filter((p) => (myTeamIds || []).includes(p.id)) : programs;
   const { players, loading: rosterLoading, refetch: rosterRefetch } = useRoster(teamId);

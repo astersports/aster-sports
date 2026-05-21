@@ -28,17 +28,25 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle })
   const visibleGrid = myPlayerIds ? grid.filter((r) => myPlayerIds.includes(r.player.id)) : grid;
 
   const totalGoing = visibleGrid.reduce((s, r) => s + (r.goingCount || 0), 0);
+  const totalResponses = visibleGrid.reduce((s, r) =>
+    s + (r.goingCount || 0) + (r.maybeCount || 0) + (r.declinedCount || 0), 0);
   const totalPast = visibleGrid.reduce((s, r) => s + (r.totalPast || 0), 0);
   const teamPct = totalPast > 0 ? Math.round((totalGoing / totalPast) * 100) : 0;
+  const responseRate = totalPast > 0 ? (totalResponses / totalPast) * 100 : 0;
   const rangeLabel = range === '4weeks' ? 'last 4 weeks' : 'season';
 
   // 2026-05-20 — was "Team Pulse · 3%" which reads ambiguously (% of what?).
   // Suffix makes the metric explicit: percent of past RSVPs that were
   // "Going" responses. Parent view filters to their own kid only, so the
   // "Team" prefix doesn't apply.
-  const pulseTitle = role === 'parent'
-    ? `RSVP Pulse · ${teamPct}% Going`
-    : `Team Pulse · ${teamPct}% Going`;
+  // 2026-05-21 (Teams PR A / B1) — gate the % on enough signal. With sparse
+  // data ("3% Going · 97% NR" with 1 of 13 families responding) the metric
+  // misleads. Below threshold render "Not enough data yet" — chips stay.
+  const enoughData = responseRate >= 50 && totalPast >= 2;
+  const pulseLabel = role === 'parent' ? 'RSVP Pulse' : 'Team Pulse';
+  const pulseTitle = enoughData
+    ? `${pulseLabel} · ${teamPct}% Going`
+    : `${pulseLabel} · Not enough data yet`;
   return (
     <CollapsibleSection title={pulseTitle} sectionKey="heatmap" defaultOpen={false}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 16px 8px' }}>
