@@ -58,9 +58,13 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
             {(role === 'admin' || role === 'coach') && player.grade && <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{ordinalGrade(player.grade)}</span>}
             {(role === 'admin' || role === 'coach') && age != null && <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' }}>{age}y</span>}
           </div>
+          {/* 2026-05-21 (Teams PR A / C3) — sparse-RSVP diagnostic was a
+              full pill (~same weight as Going/Maybe/No counts). Lowered to
+              a tertiary-color asterisk so the row reads as "no signal yet"
+              rather than as one more pill competing for attention. */}
           {showRsvp && sparseRsvp && (
             <div className="flex items-center gap-1" style={{ marginTop: 3 }}>
-              <span style={{ ...PILL, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-tertiary)' }}>No RSVPs yet</span>
+              <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--em-text-tertiary)' }} title="No RSVPs yet">* No RSVPs yet</span>
             </div>
           )}
           {showRsvp && !sparseRsvp && (

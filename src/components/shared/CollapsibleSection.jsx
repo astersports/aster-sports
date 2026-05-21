@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
-export default function CollapsibleSection({ title, sectionKey, defaultOpen = true, count, subtitle, children }) {
+// 2026-05-21 (Teams PR A / platform audit C6) — defaultOpen flipped
+// true→false. Pre-flight grep confirmed every existing caller passes
+// defaultOpen explicitly (literal false, computed locationAutoExpand,
+// or isStaff(role)) — no caller relied on the previous default. New
+// detail-page sections per CLAUDE.md §16.14 are closed-by-default;
+// surfaces that need open-by-default now opt in explicitly.
+export default function CollapsibleSection({ title, sectionKey, defaultOpen = false, count, subtitle, children }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div>
