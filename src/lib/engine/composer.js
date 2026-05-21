@@ -12,22 +12,14 @@
 
 import { renderHeader } from './renderers/header';
 import { renderGameCard } from './renderers/gameCard';
-import { renderChampionshipScenarios } from './renderers/championshipScenarios';
 import { renderFooter } from './renderers/footer';
 import { composeAcademyCallupNotice } from './renderers/academyCallupNotice';
 import { composeWeeklyDigest } from './renderers/weeklyDigest';
 import { composeAnnouncement } from './renderers/announcement';
 import { composeCustomMessage } from './renderers/customMessage';
 import scheduleChangeDiff from './renderers/scheduleChangeDiff';
-import statGrid from './renderers/statGrid';
-import poolStandings from './renderers/poolStandings';
-import resultsTable from './renderers/resultsTable';
 import weeklySchedule from './renderers/weeklySchedule';
-import labeledKeys from './renderers/labeledKeys';
 import hotelBlock from './renderers/hotelBlock';
-import championCallout from './renderers/championCallout';
-import tiebreakerExplainer from './renderers/tiebreakerExplainer';
-import otherGames from './renderers/otherGames';
 import opsNotes from './renderers/opsNotes';
 import ctaButtons from './renderers/ctaButtons';
 import statsNarrative from './renderers/statsNarrative';
@@ -76,17 +68,9 @@ import quickLinkNav from './renderers/quickLinkNav';
 const SECTION_RENDERERS = {
   header: renderHeader,
   game_card: renderGameCard,
-  championship_scenarios: renderChampionshipScenarios,
   footer: renderFooter,
-  stat_grid: statGrid,
-  pool_standings: poolStandings,
-  results_table: resultsTable,
   weekly_schedule: weeklySchedule,
-  labeled_keys: labeledKeys,
   hotel_block: hotelBlock,
-  champion_callout: championCallout,
-  tiebreaker_explainer: tiebreakerExplainer,
-  other_games: otherGames,
   ops_notes: opsNotes,
   cta_buttons: ctaButtons,
   stats_narrative: statsNarrative,
