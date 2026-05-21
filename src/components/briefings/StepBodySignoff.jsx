@@ -97,7 +97,7 @@ export default function StepBodySignoff({ state, dispatch, audience, hasParentTo
           )}
         </div>
         <textarea value={state.signoff_message} onChange={(e) => dispatch({ type: 'UPDATE_SIGNOFF', value: e.target.value })} style={{ ...textareaStyle, minHeight: 80 }} placeholder="Add a closing note…" />
-        {suggestErr && <div style={{ fontSize: 12, color: 'var(--em-danger)', marginTop: 4 }}>{suggestErr}</div>}
+        {suggestErr && <div role="alert" aria-live="assertive" style={{ fontSize: 12, color: 'var(--em-danger)', marginTop: 4 }}>{suggestErr}</div>}
       </label>
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--em-text-secondary)' }}>
         <input type="checkbox" checked={state.test_only} onChange={(e) => dispatch({ type: 'TOGGLE_TEST', value: e.target.checked })} />

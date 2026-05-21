@@ -14,9 +14,10 @@ export default function TeamAccordion({ team, summary, expanded, onToggle }) {
       <button
         type="button" onClick={onToggle} className="sf-press"
         aria-expanded={expanded}
-        aria-label={`${team.name} ${s.record}`}
+        aria-label={`${team.name}, ${s.record} record`}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px',
+          minHeight: 44,
           background: 'var(--sf-bc-card)', border: `1px solid ${expanded ? team.team_color : 'rgba(74,143,212,0.18)'}`,
           borderLeft: `4px solid ${team.team_color}`, borderRadius: 10, cursor: 'pointer',
           textAlign: 'left', fontFamily: 'inherit', transition: 'border-color 200ms',
