@@ -31,11 +31,12 @@ export async function autoLinkGuardian(user) {
     .insert({ user_id: user.id, organization_id: guardian.org_id, role: 'parent' });
   if (insErr) { console.error('autoLinkGuardian insert:', insErr.message); return null; }
 
-  const { data: organization } = await supabase
+  const { data: organization, error: orgErr } = await supabase
     .from('organizations')
     .select('id, name, slug, logo_url, brand_colors')
     .eq('id', guardian.org_id)
     .single();
+  if (orgErr) console.error('[autoLinkGuardian] organization:', orgErr.message);
 
   return { role: 'parent', organization: organization ?? null };
 }

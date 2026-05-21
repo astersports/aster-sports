@@ -86,7 +86,8 @@ export function AuthProvider({ children }) {
       setMyChildren(ctx.myChildren); setMyTeamIds(ctx.myTeamIds); setGuardianId(ctx.guardianId);
       setGuardianFirstName(ctx.guardianFirstName ?? null);
     } else if (resolvedRole === 'coach') {
-      const { data: staffRows } = await supabase.from('team_staff').select('team_id').eq('user_id', authUser.id);
+      const { data: staffRows, error: staffErr } = await supabase.from('team_staff').select('team_id').eq('user_id', authUser.id);
+      if (staffErr) { console.error('[AuthContext] coach team_staff:', staffErr.message); }
       if (id !== fetchIdRef.current) return;
       setMyTeamIds((staffRows || []).map((r) => r.team_id));
       setMyChildren([]); setGuardianId(null); setGuardianFirstName(null);

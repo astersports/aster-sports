@@ -16,17 +16,19 @@ export function useHasUnread() {
 
   const check = useCallback(async () => {
     if (!user || !orgId) return;
-    const { data: reads } = await supabase
+    const { data: reads, error: readsErr } = await supabase
       .from('message_reads').select('channel_key, last_read_at')
       .eq('user_id', user.id);
+    if (readsErr) { console.error('[useHasUnread] reads:', readsErr.message); return; }
     const readMap = {};
     (reads || []).forEach((r) => { readMap[r.channel_key] = r.last_read_at; });
 
-    const { count } = await supabase.from('messages')
+    const { count, error: countErr } = await supabase.from('messages')
       .select('*', { count: 'exact', head: true })
       .eq('org_id', orgId)
       .neq('sender_id', user.id)
       .gt('created_at', readMap.global_last_check || '2020-01-01');
+    if (countErr) { console.error('[useHasUnread] count:', countErr.message); return; }
     setHasUnread((count || 0) > 0);
   }, [user, orgId]);
 
@@ -34,13 +36,17 @@ export function useHasUnread() {
 
   useEffect(() => {
     if (!orgId) return;
+    const safeCheck = () => {
+      try { check(); }
+      catch (err) { console.error('[useHasUnread] realtime callback:', err); }
+    };
     const ch = supabase.channel(`unread-badge-${orgId}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'messages',
         filter: `org_id=eq.${orgId}`,
-      }, check)
+      }, safeCheck)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [orgId, check]);
