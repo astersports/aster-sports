@@ -519,7 +519,7 @@ Applied operationally: the L99 platform-wide audit (planned 2026-05-21,
 ~14 batches) draws batch boundaries where each is narrow enough to stay
 under the ~40% cascade threshold. The batching IS the methodology.
 
-51. **Dead-feature mount retirement (CANDIDATE — promote on third NEW surface).** Surfaces that serve no current Frank workflow get retired, not gated by config. Engine Preview removal (PR #398, 2026-05-20) established the precedent. TeamPlayerStats removal (Teams PR C) is the next instance. The gate-by-config pattern produces confusing future-Frank ("why is this here?") and accumulates dead-code mass. Promotion criterion: third instance must be a NEW surface, not re-application of existing two. Candidates: LiveScorePage (if no org uses live-scoring), suggest-briefing-closer edge function (if no production flow consumes the suggestion), broadcast components (if half-built). If any of those retires in the next 30 days, #51 promotes to registered.
+51. **Dead-feature mount retirement.** Surfaces that serve no current Frank workflow get retired, not gated by config. Engine Preview removal (PR #398, 2026-05-20) established the precedent. TeamPlayerStats removal (Teams PR C) is the next instance. The gate-by-config pattern produces confusing future-Frank ("why is this here?") and accumulates dead-code mass. Promoted 2026-05-22: 17+ NEW dead-feature surfaces accumulated post-candidate-registration across Engine Preview (PR #398), TeamPlayerStats mount (Teams PR C), Header bell button (PR #449), InstallPrompt + WelcomeOverlay (Batch 2a — still mounted at HomePage:29/30), 5 src/components/event/ orphans (Batch 5), TeamPlayerStats.jsx + PlayerStatsTable.jsx orphan files (Batches 6 + 7), 8 orphan SECTION_RENDERERS entries (Batch 8b), scheduleChange.js legacy composer (Batch 8b F-7), useSortedPlayers dead export (Batch 6 P2-2), useComposeBriefing.js (deleted via PR #462). Promotion criterion (third NEW surface) overwhelmingly met.
 
 52. **Worktree-path discipline — agents working in isolated worktrees must
 `pwd` confirm before any file write.**
@@ -540,6 +540,24 @@ Origin: 2026-05-21 PR #431 registered #52 as candidate. Pre-promoted to
 registered under the cost-asymmetry rationale before second occurrence
 to prevent accumulation.
 
+   **Refinement (registered 2026-05-22):** `pwd` confirm is necessary
+   but not sufficient. The Edit tool's path resolution defaults to the
+   parent checkout (`/home/user/skyfire-app/...`) even when the agent's
+   current working directory IS the worktree. Writes via implicit
+   relative paths can appear to succeed but silently fail to persist
+   in the worktree's commit (the file edit lands in the parent
+   checkout, doesn't get included in the agent's branch, force-pull
+   from worktree later overwrites it).
+
+   Discipline extension: every Edit/Write tool call in a worktree-
+   isolated agent MUST use the EXPLICIT worktree path including the
+   `/home/user/skyfire-app/.claude/worktrees/agent-XXX/` prefix. Not
+   `docs/foo.md`, but `/home/user/skyfire-app/.claude/worktrees/agent-XXX/docs/foo.md`.
+
+   Origin: 2026-05-22 PR #460 (ledger reconciliation) agent reported
+   "edits silently reverted" when targeting parent path; switched to
+   explicit worktree path and writes persisted.
+
 53. **Session-level diff audits after high-output sessions (CANDIDATE —
 promote on third instance with stable findings rate).**
 
@@ -558,7 +576,7 @@ scope (per anti-pattern #50 refined criteria) catches subtle cross-PR
 + diff-shape findings that breadth audits would miss.
 
 54. **Agent prompts mandate same-MCP-burst PR ready-flip + auto-merge
-enable (CANDIDATE — promote on third instance).**
+enable.**
 
 Agents creating PRs in draft state without flipping ready in the same
 MCP burst as `create_pull_request` leave PRs stranded. GitHub doesn't
@@ -581,9 +599,9 @@ Recurrence: PRs #439, #440, #441 (2026-05-21 — same slip class, same
 session). Closure: PR #442 (2026-05-21 — explicit prompt held, PR shipped
 ready in same burst).
 
-Promotion criteria: third instance with explicit-prompt discipline holding
-across all three. After three sessions where every PR ships ready in same
-MCP burst, promote to registered.
+Promoted 2026-05-22: 21 consecutive same-MCP-burst holds across two
+sessions — 2026-05-21 (PRs #444-#457, 14 holds) + 2026-05-22 (PRs
+#458-#464, 7 holds). Mechanism reliable, discipline locked.
 
 55. **Agents must use actual PR# from create_pull_request response
     (CANDIDATE — promote on third instance).**
