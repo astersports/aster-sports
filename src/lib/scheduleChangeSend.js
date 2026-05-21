@@ -19,6 +19,21 @@
 // BEFORE invoking this — the resolver reads from that table to compute
 // the diff. Ordering is enforced by the caller, not this file.
 
+// ARCHITECTURAL ASYMMETRY: This send pipeline composes a SINGLE body
+// and fans out to all recipients. Other pipelines (digestSend,
+// rsvpNudgeSend, academyCallupSend) compose per-slice (per-recipient).
+//
+// Today: schedule_change body content is slice-invariant (no
+// per-recipient personalization), so the fan-out pattern produces
+// identical results to per-slice.
+//
+// FUTURE-TRAP: If per-recipient personalization is added to
+// schedule_change (e.g., "Hi {first_name}, the Skills Lab moved"),
+// the current fan-out will silently drop the personalization. At that
+// point, refactor to per-slice loop pattern mirroring rsvpNudgeSend.
+//
+// Decision: 2026-05-22 (Phase 3 Q7, claude.ai routing).
+
 import { supabase as defaultSupabase } from './supabase';
 import { RESOLVER_REGISTRY } from './engine/resolvers/registry';
 import { renderSections, renderSectionsPlainText } from './engine/composer';

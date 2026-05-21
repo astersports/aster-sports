@@ -6,6 +6,15 @@
 // Wave 4.4-T0c — preview surface delegates to DevicePreviewFrame
 // (375 / 600 / plain) per CLAUDE.md §12 rule #12.
 
+// DUAL-COMPOSE: PreviewPanel uses renderers/weeklyDigest.js (1-arg legacy
+// shape) for admin preview; digestSend.js uses resolvers/weeklyDigest.js
+// (3-arg registry shape) for actual send. Today the bodies are
+// observationally identical because section data is invariant between
+// paths. If a future change adds per-recipient data to the registry
+// resolver, preview will silently drift from send. Either align both
+// paths or remove this comment when the drift is closed.
+// Decision: 2026-05-22 (Phase 3 Q5, claude.ai routing).
+
 import { useMemo, useState } from 'react';
 import { compose, renderSections, renderSectionsPlainText } from '../../lib/engine/composer';
 import { getDispatchSendPath, RESOLVER_REGISTRY } from '../../lib/engine/resolvers/registry';
