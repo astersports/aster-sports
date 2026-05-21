@@ -27,6 +27,8 @@ export default function PublicSchedulePage() {
   const [loading, setLoading] = useState(true);
   const [showSubscribe, setShowSubscribe] = useState(false);
 
+  // RLS (anon): teams_select_public (mig 025) gates teams by hardcoded LH org_id; events_select_public
+  // (mig 20260505194020_wave1_p0_security_fixes) gates events by team org_id + publish_status='published'.
   useEffect(() => {
     (async () => {
       const [teamRes, eventsRes] = await Promise.all([
