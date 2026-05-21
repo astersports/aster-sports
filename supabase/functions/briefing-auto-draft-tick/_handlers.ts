@@ -22,11 +22,12 @@ import { draftExists, HandlerResult, placeholderDraft, Trigger, tryInsert } from
 export async function handleGameCompleted(sb: SupabaseClient, trigger: Trigger, now: Date): Promise<HandlerResult[]> {
   const nowIso = now.toISOString();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
-  const { data: rows = [], error } = await sb.from("game_results")
+  const { data, error } = await sb.from("game_results")
     .select("event_id, events!inner(id, team_id, start_at, teams!inner(org_id))")
     .not("published_at", "is", null).gt("published_at", sevenDaysAgo).lte("published_at", nowIso);
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "game_recap", error: error.message }];
-  const orgRows = (rows || []).filter((r: any) => r.events?.teams?.org_id === trigger.org_id);
+  const rows = data || [];
+  const orgRows = rows.filter((r: any) => r.events?.teams?.org_id === trigger.org_id);
   const out: HandlerResult[] = [];
   for (const r of orgRows as any[]) {
     const anchorTime = r.events?.start_at ? new Date(r.events.start_at) : null;
@@ -41,12 +42,13 @@ export async function handleTournamentApproaching(sb: SupabaseClient, trigger: T
   const leadH = trigger.lead_time_hours ?? 72;
   const windowEnd = new Date(now.getTime() + leadH * 3600000).toISOString().slice(0, 10);
   const today = now.toISOString().slice(0, 10);
-  const { data: rows = [], error } = await sb.from("tournaments")
+  const { data, error } = await sb.from("tournaments")
     .select("id, start_date, org_id")
     .eq("org_id", trigger.org_id).gte("start_date", today).lte("start_date", windowEnd);
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "tournament_prelim", error: error.message }];
+  const rows = data || [];
   const out: HandlerResult[] = [];
-  for (const t of rows || []) {
+  for (const t of rows) {
     // start_date is a DATE — bind it to midnight Eastern via the SQL
     // text-cast pattern mirrored from the migration (EDT-fixed offset
     // is acceptable for May; full DST correctness ships with the
@@ -62,11 +64,12 @@ export async function handleTournamentApproaching(sb: SupabaseClient, trigger: T
 export async function handleTournamentCompleted(sb: SupabaseClient, trigger: Trigger, now: Date): Promise<HandlerResult[]> {
   const today = now.toISOString().slice(0, 10);
   const fourteenAgo = new Date(now.getTime() - 14 * 86400000).toISOString().slice(0, 10);
-  const { data: rows = [], error } = await sb.from("tournaments")
+  const { data, error } = await sb.from("tournaments")
     .select("id, end_date").eq("org_id", trigger.org_id).gte("end_date", fourteenAgo).lt("end_date", today);
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "tournament_recap", error: error.message }];
+  const rows = data || [];
   const out: HandlerResult[] = [];
-  for (const t of rows || []) {
+  for (const t of rows) {
     // end_date DATE → end-of-day Eastern (03:59 UTC the next morning).
     const anchorTime = new Date(`${t.end_date}T23:59:59Z`);
     const expiresAt = computeExpiryForKind("tournament_recap", anchorTime, now);
@@ -78,10 +81,11 @@ export async function handleTournamentCompleted(sb: SupabaseClient, trigger: Tri
 
 export async function handleScheduleChanged(sb: SupabaseClient, trigger: Trigger, now: Date): Promise<HandlerResult[]> {
   const cutoff = new Date(now.getTime() - 24 * 3600000).toISOString();
-  const { data: rows = [], error } = await sb.from("event_change_audit")
+  const { data, error } = await sb.from("event_change_audit")
     .select("id, event_id, changed_at, events!inner(team_id)")
     .eq("org_id", trigger.org_id).gt("changed_at", cutoff).is("dispatch_email_id", null);
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "schedule_change", error: error.message }];
+  const rows = data || [];
   const out: HandlerResult[] = [];
   const expiresAt = computeExpiryForKind("schedule_change", null, now);
   for (const r of rows as any[]) {
@@ -111,10 +115,11 @@ export async function handleRsvpLow24h(sb: SupabaseClient, trigger: Trigger, now
   const { data: orgSettings } = await sb.from("organization_settings")
     .select("nudge_rules").eq("organization_id", trigger.org_id).maybeSingle();
   const threshold = (orgSettings?.nudge_rules as { rsvp_coverage_threshold?: number } | null)?.rsvp_coverage_threshold ?? 0.7;
-  const { data: events = [], error } = await sb.from("events")
+  const { data: eventsData, error } = await sb.from("events")
     .select("id, team_id, start_at, teams!inner(org_id)").gt("start_at", nowIso).lte("start_at", in24h);
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "rsvp_nudge", error: error.message }];
-  const orgEvents = (events || []).filter((e: any) => e.teams?.org_id === trigger.org_id);
+  const events = eventsData || [];
+  const orgEvents = events.filter((e: any) => e.teams?.org_id === trigger.org_id);
   const out: HandlerResult[] = [];
   for (const e of orgEvents as any[]) {
     const { count: total } = await sb.from("team_players")

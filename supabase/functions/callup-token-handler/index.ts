@@ -66,8 +66,9 @@ Deno.serve(async (req) => {
   }
 
   if (payload._already_used) {
-    const { data: prior } = await sb.from("callup_token_uses")
+    const { data: prior, error: priorErr } = await sb.from("callup_token_uses")
       .select("response").eq("nonce", payload.n).single();
+    if (priorErr) console.error("[callup-token-handler] prior lookup:", priorErr.message);
     return htmlPage(`Already recorded as ${LABELS[prior?.response || payload.r] || payload.r}`, "");
   }
 
@@ -111,10 +112,12 @@ Deno.serve(async (req) => {
   }
 
   // Confirmation page.
-  const { data: ctx } = await sb.from("events")
+  const { data: ctx, error: ctxErr } = await sb.from("events")
     .select("title, start_at, location").eq("id", payload.e).maybeSingle();
-  const { data: player } = await sb.from("players")
+  if (ctxErr) console.error("[callup-token-handler] event lookup:", ctxErr.message);
+  const { data: player, error: playerErr } = await sb.from("players")
     .select("first_name").eq("id", payload.p).maybeSingle();
+  if (playerErr) console.error("[callup-token-handler] player lookup:", playerErr.message);
 
   const playerName = player?.first_name || "Your player";
   const verbPhrase = payload.r === "accept" ? "is in" : "is out";

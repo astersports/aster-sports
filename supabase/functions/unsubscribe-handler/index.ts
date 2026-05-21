@@ -48,8 +48,9 @@ Deno.serve(async (req) => {
     return htmlPage("Invalid link", "This unsubscribe link is invalid or expired. Reply to the email if you need help.");
   }
 
-  const { data: existing } = await sb.from("guardian_email_preferences")
+  const { data: existing, error: existingErr } = await sb.from("guardian_email_preferences")
     .select("unsubscribed_at").eq("guardian_id", guardianId).maybeSingle();
+  if (existingErr) console.error("[unsubscribe-handler] preference lookup:", existingErr.message);
 
   if (existing?.unsubscribed_at) {
     return htmlPage(
