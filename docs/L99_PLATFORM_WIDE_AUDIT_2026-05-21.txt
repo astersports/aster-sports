@@ -712,3 +712,63 @@ Items deferred from claude.ai's v2 review (not in v3 scope):
   Phase 1 PR descriptions directly, not via doc amendment.
 
 END OF DOCUMENT (v2)
+
+═══════════════════════════════════════════════════════════════════════════
+PART 11 — CLOSURE ADDENDUM (2026-05-21 PM session)
+═══════════════════════════════════════════════════════════════════════════
+
+Phase 1 + Phase 2 + Phase 3 + Phase 4 partial landed in single sustained session — 14 PRs merged.
+
+PHASE 1 (8 PRs)
+- #410 PR γ: 2 hook #48 cleanups (useOrgTeamRecords, useTeamGamesByTournament)
+- #411 PR β: 3 page tap-target fixes (Messages, FinancialDashboard, ImportSchedule)
+- #412 PR α: 6 hook #36 batch (useCoachHomeSignals, useGameResultsMap, useKindUsage, usePrefetchChildRsvps, useUnreadCounts, useBriefingFilters)
+- #413 audit doc v3 (claude.ai v2 review refinements)
+- #414 CLAUDE.md amendments (#49 amendment, #50/#51 candidates, §16.15 L99 template)
+- #415 .gitignore .claude/ chore
+- #416 PR δ: BriefingsInbox loading gate (P0 closed)
+- #417 Teams PR A: stop-the-bleeding (see Teams audit Part 14)
+
+PHASE 2 (1 PR + Teams PR D)
+- #418 Teams PR D: data hardening (see Teams audit Part 14)
+- #419 Teams PR B: hero card consolidation (see Teams audit Part 14)
+
+PHASE 3 (3 PRs)
+- #420 Platform PR ζ: edge function mirror byte-compare audit shipped with 4 baseline allow-list (102 lines of drift recorded)
+- #421 Platform PR ε: E1 synthetic flag + E2 EMAIL_WRAPPER_OPEN extraction across 4 send helpers
+- #423 Teams PR C: polish + cleanup + dead-feature retirement (see Teams audit Part 14)
+
+PHASE 4 PARTIAL (2 PRs + 1 research)
+- #422 Mirror drift cleanup: 4 pairs closed (102 → 17 irreducible TS-only residuals)
+- #424 Home-page preemptive split: CoachHomePage 149→78, ParentHomePage 149→79, AdminSeasonsPage 145→71 (9 new sub-components)
+- Dead-feature audit (research-only): NO third instance found for anti-pattern #51 promotion
+
+PHASE 4 DEFERRED (per PQ5/PQ7 routing)
+- Multi-tenant readiness arc: scoped to St. Patrick's 2027 onboarding kickoff Q1 2027 (per PQ5 calendar marker)
+- Component cleanup arc: defer per PQ7 ("first available week with no urgent shipping work")
+- Perf-pass arc: deferred
+- Second-pass platform audit: results pending (running in parallel agent this session)
+
+YIELD vs PREDICTION
+- Phase 1 prediction: 1 P0 + 10 P1 + 3 P2 closed (claude.ai v2 review)
+- Phase 1 actual: 1 P0 + 10 P1 + 4 P2 (beat prediction by 1 — drive-by usePlayerSeasonStats org_id catch via PR D's audit test)
+- Cascade pattern (anti-pattern #50): platform audit Part 3.1 predicts 13-15 findings on second-pass. Second-pass audit ran this session; report pending.
+
+ANTI-PATTERN STATUS
+- #30 (mirror discipline): CI-enforced via PR #420 + drift closed via PR #422
+- #31 (verify_jwt config): already CI-enforced
+- #36 (destructured-default error swallow): 7 callsites closed across PRs #410 + #412 + #418
+- #37 (org_id scoping): 100% compliant verified by PR #418's audit test
+- #43 (cross-surface invariant tests): 5 new invariant tests shipped (TeamPulseHeader, TeamDetailHeroPerRole, RsvpProgressBarCrossSurface, PlayerRowAcademyAvatar, edgeFunctionMirrorAudit)
+- #48 (foreignTable .order): 3 callsites closed (PR γ + Teams PR D)
+- #49 (full-paste discipline): amended via PR #414 with two refinements
+- #50 (audit-cascade): CANDIDATE — promotion pending second-pass results
+- #51 (dead-feature retirement): CANDIDATE — 2 instances (Engine Preview + TeamPlayerStats); dead-feature audit found no third NEW surface tonight
+- §16.15 (L99 template): registered via PR #414
+
+NEXT ACTIONS
+1. Review second-pass platform audit results (parallel agent in this session)
+2. If second-pass yields ≥3 findings on a new surface for anti-pattern #51, register a third instance (could be the suggest-briefing-closer if active-but-half-built emerges, etc.)
+3. Component cleanup arc kickoff per PQ7 trigger
+4. Multi-tenant readiness arc per PQ5 calendar (Q1 2027 latest)
+
