@@ -1,0 +1,503 @@
+═══════════════════════════════════════════════════════════════════════════
+CC SESSION TOOLS INVENTORY — for review with Claude.ai
+Captured: 2026-05-21
+Session: claude/event-detail-redesign-ivegl @ skyfire-app
+═══════════════════════════════════════════════════════════════════════════
+
+Purpose: complete dump of the deferred tools, MCP server instructions, and
+skills that were surfaced to this Claude Code session via system-reminder.
+Posted here so claude.ai can review what tooling CC has at its disposal
+and reason about which integrations are worth keeping wired, which are
+dead weight, and which carry risk surface that needs auditing.
+
+═══════════════════════════════════════════════════════════════════════════
+SECTION 1 — DEFERRED TOOLS (schemas not auto-loaded)
+═══════════════════════════════════════════════════════════════════════════
+
+These tools are visible by name only. Calling them requires a ToolSearch
+"select:<name>" round-trip to load the schema first.
+
+──── 1.1 Built-in deferred ────
+- ExitPlanMode
+- Monitor
+- NotebookEdit
+- WebFetch
+- WebSearch
+
+──── 1.2 Vercel MCP (04674ec0-d8be-4f82-af57-55ece2f38417) ────
+- add_toolbar_reaction
+- change_toolbar_thread_resolve_status
+- check_domain_availability_and_price
+- deploy_to_vercel
+- edit_toolbar_message
+- get_access_to_vercel_url
+- get_deployment
+- get_deployment_build_logs
+- get_project
+- get_runtime_logs
+- get_toolbar_thread
+- list_deployments
+- list_projects
+- list_teams
+- list_toolbar_threads
+- reply_to_toolbar_thread
+- search_vercel_documentation
+- web_fetch_vercel_url
+
+──── 1.3 Bitly MCP (12d92682-af48-4db2-8f65-7873350f7ed5) ────
+- bulk_upload_file
+- bulk_upload_validate
+- create_qr_code
+- create_short_link
+- create_short_link_with_qr
+- delete_short_link
+- expand
+- get_custom_domains
+- get_custom_link_details
+- get_group_details
+- get_group_engagements_cities
+- get_group_engagements_countries
+- get_group_engagements_devices
+- get_group_engagements_over_time
+- get_group_engagements_referrers
+- get_group_engagements_referring_networks
+- get_group_engagements_top
+- get_group_links_clicks_cities
+- get_group_links_clicks_countries
+- get_group_links_clicks_devices
+- get_group_links_clicks_over_time
+- get_group_links_clicks_referrers
+- get_group_links_clicks_top
+- get_group_links_scans_cities
+- get_group_links_scans_countries
+- get_group_links_scans_over_time
+- get_group_links_scans_top
+- get_group_qr_codes
+- get_group_short_links
+- get_group_short_links_sorted
+- get_groups
+- get_organizations
+- get_qr_code
+- get_qr_code_image
+- get_qr_scan_metrics
+- get_qr_scan_summary
+- get_qr_scans_by_browser
+- get_qr_scans_by_city
+- get_qr_scans_by_country
+- get_qr_scans_by_device
+- get_short_link_details
+- get_user
+- link_cities
+- link_clicks_summary
+- link_countries
+- link_devices
+- link_engagements
+- link_engagements_summary
+- link_metrics
+- link_referrers
+- link_referring_domains
+- update_qr_code
+- update_short_link
+
+──── 1.4 Calendar MCP (18e0171e-1f18-4225-b499-9ef2d8ed3b15) ────
+- create_event
+- delete_event
+- get_event
+- list_calendars
+- list_events
+- respond_to_event
+- suggest_time
+- update_event
+
+──── 1.5 Gmail MCP (1b7ed436-b5c4-4c6f-b07b-0498863eaf80) ────
+- create_draft
+- create_label
+- delete_label
+- get_thread
+- label_message
+- label_thread
+- list_drafts
+- list_labels
+- search_threads
+- unlabel_message
+- unlabel_thread
+- update_label
+
+──── 1.6 Supabase MCP (2d429e9c-ea96-4821-8322-375ebb65e523) ────
+- apply_migration
+- confirm_cost
+- create_branch
+- create_project
+- delete_branch
+- deploy_edge_function
+- execute_sql
+- generate_typescript_types
+- get_advisors
+- get_cost
+- get_edge_function
+- get_logs
+- get_organization
+- get_project
+- get_project_url
+- get_publishable_keys
+- list_branches
+- list_edge_functions
+- list_extensions
+- list_migrations
+- list_organizations
+- list_projects
+- list_tables
+- merge_branch
+- pause_project
+- rebase_branch
+- reset_branch
+- restore_project
+- search_docs
+
+──── 1.7 Cloudflare MCP (56163600-636a-4467-b7f3-5bd301c577c3) ────
+- accounts_list
+- d1_database_create
+- d1_database_delete
+- d1_database_get
+- d1_database_query
+- d1_databases_list
+- hyperdrive_config_delete
+- hyperdrive_config_edit
+- hyperdrive_config_get
+- hyperdrive_configs_list
+- kv_namespace_create
+- kv_namespace_delete
+- kv_namespace_get
+- kv_namespace_update
+- kv_namespaces_list
+- migrate_pages_to_workers_guide
+- r2_bucket_create
+- r2_bucket_delete
+- r2_bucket_get
+- r2_buckets_list
+- search_cloudflare_documentation
+- set_active_account
+- workers_get_worker
+- workers_get_worker_code
+- workers_list
+
+──── 1.8 Mermaid MCP (8789fe92-ca7d-43f5-94af-9d4c4958b1d5) ────
+- validate_and_render_mermaid_diagram
+
+──── 1.9 Canva MCP (8aca7a62-d5b4-4483-9d54-4e3de4779e91) ────
+- cancel-editing-transaction
+- comment-on-design
+- commit-editing-transaction
+- copy-design
+- create-design-from-brand-template
+- create-design-from-candidate
+- create-folder
+- export-design
+- generate-design
+- generate-design-structured
+- get-assets
+- get-brand-template-dataset
+- get-design
+- get-design-content
+- get-design-pages
+- get-design-thumbnail
+- get-export-formats
+- get-presenter-notes
+- help
+- import-design-from-url
+- list-brand-kits
+- list-comments
+- list-folder-items
+- list-replies
+- merge-designs
+- move-item-to-folder
+- perform-editing-operations
+- reply-to-comment
+- request-outline-review
+- resize-design
+- resolve-shortlink
+- search-brand-templates
+- search-designs
+- search-folders
+- start-editing-transaction
+- upload-asset-from-url
+
+──── 1.10 Wix MCP (926026bf-f7d2-4642-bf70-bca9029b3d92) ────
+- BrowseWixRESTDocsMenu
+- CallWixSiteAPI
+- CreateWixBusinessGuide
+- ExecuteWixAPI
+- ListWixSites
+- ManageWixSite
+- ReadFullDocsArticle
+- ReadFullDocsMethodSchema
+- SearchBuildAppsDocumentation
+- SearchWixAPISpec
+- SearchWixCLIDocumentation
+- SearchWixHeadlessDocumentation
+- SearchWixRESTDocumentation
+- SearchWixSDKDocumentation
+- SearchWixWDSDocumentation
+- SupportAndFeedback
+- UploadImageToWixSite
+- WixREADME
+- WixSiteBuilder
+- pullSiteCreationJob
+
+──── 1.11 Sentry MCP (93ee6fb2-cd62-467f-8f8d-4c3e79c73498) ────
+- analyze_issue_with_seer
+- create_dsn
+- create_project
+- create_team
+- find_dsns
+- find_organizations
+- find_projects
+- find_releases
+- find_teams
+- get_doc
+- get_event_attachment
+- get_issue_tag_values
+- get_profile_details
+- get_replay_details
+- get_sentry_resource
+- search_docs
+- search_events
+- search_issue_events
+- search_issues
+- update_issue
+- update_project
+- whoami
+
+──── 1.12 Generic auth MCP (baa24a37-f530-4d5b-8421-bfc46333ba8b) ────
+- authenticate
+- complete_authentication
+
+──── 1.13 Google Drive / Files MCP (c20def34-4e82-402d-bfa4-317191c7e3d6) ────
+- copy_file
+- create_file
+- download_file_content
+- get_file_metadata
+- get_file_permissions
+- list_recent_files
+- read_file_content
+- search_files
+
+──── 1.14 Generic auth MCP (f3644388-74cc-4c11-9b9d-c77440f45687) ────
+- authenticate
+- complete_authentication
+
+──── 1.15 GitHub MCP (mcp__github__*) ────
+- add_comment_to_pending_review
+- add_issue_comment
+- add_reply_to_pull_request_comment
+- create_branch
+- create_or_update_file
+- create_pull_request
+- create_repository
+- delete_file
+- disable_pr_auto_merge
+- enable_pr_auto_merge
+- fork_repository
+- get_commit
+- get_file_contents
+- get_label
+- get_latest_release
+- get_me
+- get_release_by_tag
+- get_tag
+- get_team_members
+- get_teams
+- issue_read
+- issue_write
+- list_branches
+- list_commits
+- list_issue_types
+- list_issues
+- list_pull_requests
+- list_releases
+- list_repository_collaborators
+- list_tags
+- merge_pull_request
+- pull_request_read
+- pull_request_review_write
+- push_files
+- request_copilot_review
+- resolve_review_thread
+- run_secret_scanning
+- search_code
+- search_issues
+- search_pull_requests
+- search_repositories
+- search_users
+- sub_issue_write
+- subscribe_pr_activity
+- unresolve_review_thread
+- unsubscribe_pr_activity
+- update_pull_request
+- update_pull_request_branch
+
+═══════════════════════════════════════════════════════════════════════════
+SECTION 2 — MCP SERVER INSTRUCTIONS (vendor-provided guidance)
+═══════════════════════════════════════════════════════════════════════════
+
+──── 2.1 Bitly (12d92682-...) ────
+Bitly MCP Server — Provides URL shortening, QR code creation, and link
+management capabilities using Bitly's v4 API. All tools support a
+`response_format` parameter (string) accepting:
+  - 'json' → underlying API's JSON response wrapped with status code
+  - 'text' (default) → human-readable formatted text
+
+──── 2.2 Supabase (2d429e9c-...) ────
+Guidelines for using Supabase tools effectively:
+
+- Before making schema changes, use `list_tables` to understand the
+  existing structure.
+- When debugging issues, start with `get_logs` and `get_advisors`
+  before making changes.
+- Use `get_project_url` and `get_publishable_api_key` when helping
+  users configure client-side integrations.
+
+If you have access to a local development environment with a filesystem
+and shell:
+  - Install the Supabase agent skill for critical development and
+    security guidance:
+      `npx skills add supabase/agent-skills`
+      (https://supabase.com/docs/guides/getting-started/ai-skills.md)
+  - Use the Supabase CLI (`supabase`) for local development workflows
+    such as starting a local stack, managing migrations, and running
+    edge functions locally
+    (https://supabase.com/docs/guides/local-development.md)
+  - Prefer local development and testing before applying changes to a
+    remote project.
+
+If running in a web-only or remote environment without filesystem or
+shell access:
+  - Rely on the MCP tools directly for all Supabase interactions.
+  - Use `apply_migration` carefully — changes go directly to the
+    remote project.
+
+═══════════════════════════════════════════════════════════════════════════
+SECTION 3 — SKILLS (invocable via the Skill tool)
+═══════════════════════════════════════════════════════════════════════════
+
+- session-start-hook
+    Creating and developing startup hooks for Claude Code on the web.
+    Use when the user wants to set up a repository for Claude Code on
+    the web, or create a SessionStart hook so the project can run tests
+    and linters during web sessions.
+
+- update-config
+    Configure the Claude Code harness via settings.json. Automated
+    behaviors ("from now on when X", "each time X", "whenever X",
+    "before/after X") require hooks configured in settings.json — the
+    harness executes these, not Claude, so memory/preferences cannot
+    fulfill them. Also use for permissions ("allow X", "add permission",
+    "move permission to"), env vars ("set X=Y"), hook troubleshooting,
+    or any changes to settings.json/settings.local.json. Examples:
+    "allow npm commands", "add bq permission to global settings",
+    "move permission to user settings", "set DEBUG=true", "when claude
+    stops show X". For simple settings like theme/model, suggest the
+    /config command.
+
+- keybindings-help
+    Use when the user wants to customize keyboard shortcuts, rebind
+    keys, add chord bindings, or modify ~/.claude/keybindings.json.
+    Examples: "rebind ctrl+s", "add a chord shortcut", "change the
+    submit key", "customize keybindings".
+
+- verify
+    Verify that a code change actually does what it's supposed to by
+    running the app and observing behavior. Use when asked to verify a
+    PR, confirm a fix works, test a change manually, check that a
+    feature works, or validate local changes before pushing.
+
+- code-review
+    Review changed code for reuse, quality, and efficiency, then fix
+    any issues found.
+
+- fewer-permission-prompts
+    Scan transcripts for common read-only Bash and MCP tool calls,
+    then add a prioritized allowlist to project .claude/settings.json
+    to reduce permission prompts.
+
+- loop
+    Run a prompt or slash command on a recurring interval (e.g.
+    `/loop 5m /foo`). Omit the interval to let the model self-pace.
+    Use when the user wants a recurring task, status poll, or repeated
+    run on an interval ("check the deploy every 5 minutes", "keep
+    running /babysit-prs"). Do NOT invoke for one-off tasks.
+
+- claude-api
+    Build, debug, and optimize Claude API / Anthropic SDK apps. Apps
+    built with this skill should include prompt caching. Also handles
+    migrating existing Claude API code between Claude model versions
+    (4.5 → 4.6, 4.6 → 4.7, retired-model replacements).
+    TRIGGER when: code imports `anthropic`/`@anthropic-ai/sdk`; user
+      asks for the Claude API, Anthropic SDK, or Managed Agents; user
+      adds/modifies/tunes a Claude feature (caching, thinking,
+      compaction, tool use, batch, files, citations, memory) or model
+      (Opus/Sonnet/Haiku) in a file; questions about prompt caching /
+      cache hit rate in an Anthropic SDK project.
+    SKIP: file imports `openai`/other-provider SDK, filename like
+      `*-openai.py`/`*-generic.py`, provider-neutral code, general
+      programming/ML.
+
+- run
+    Launch and drive this project's app to see a change working. Use
+    when asked to run, start, or screenshot the app, or to confirm a
+    change works in the real app (not just tests). First looks for a
+    project skill that already covers launching the app; otherwise
+    falls back to built-in patterns per project type (CLI, server, TUI,
+    Electron, browser-driven, library).
+
+- init
+    Initialize a new CLAUDE.md file with codebase documentation.
+
+- review
+    Review a pull request.
+
+- security-review
+    Complete a security review of the pending changes on the current
+    branch.
+
+═══════════════════════════════════════════════════════════════════════════
+SECTION 4 — OBSERVATIONS / QUESTIONS FOR CLAUDE.AI REVIEW
+═══════════════════════════════════════════════════════════════════════════
+
+Some patterns worth surfacing for review:
+
+1. **MCP server surface area is large.** Vercel, Bitly, Calendar, Gmail,
+   Supabase, Cloudflare, Mermaid, Canva, Wix, Sentry, two unidentified
+   `authenticate`/`complete_authentication` pairs (baa24a37 and
+   f3644388 — unclear which vendor each is), Google Drive / Files,
+   GitHub. Skyfire actively uses Supabase + GitHub + Vercel + Sentry.
+   The rest are dormant — Wix in particular looks orphaned.
+
+2. **Two anonymous auth MCPs** (baa24a37 and f3644388). Identical
+   tool shape (`authenticate`, `complete_authentication`). Worth
+   identifying / pruning one if duplicate.
+
+3. **Cloudflare** is wired but Skyfire deploys via Vercel, not
+   Cloudflare. D1, KV, R2, Workers, Hyperdrive all visible — unused
+   surface.
+
+4. **Canva + Wix** appear unused in any Skyfire workflow surfaced in
+   CLAUDE.md or the docs/ ledger. Candidates for removal.
+
+5. **Bitly** is potentially useful for the future QR-invite work
+   (prompt 6-A in §8 of CLAUDE.md is "Parent onboarding + QR invites"
+   ⚠ PARTIAL — auto-link guardians done, QR invites not). Keep wired.
+
+6. **Skills inventory is short** (12 entries). Notable: no
+   project-specific skills for the Skyfire repo (e.g., no
+   `skyfire-verify` or `skyfire-rls-audit`). Could be a useful
+   add — `security-review` and `code-review` are generic.
+
+7. **Deferred-tool pattern** means each MCP tool costs an extra
+   ToolSearch round-trip before first use. Frequently-used tools
+   (e.g., `mcp__supabase__execute_sql`, `mcp__github__create_pull_request`)
+   might be worth promoting to always-loaded if the harness supports it.
+
+═══════════════════════════════════════════════════════════════════════════
+END OF INVENTORY
+═══════════════════════════════════════════════════════════════════════════
