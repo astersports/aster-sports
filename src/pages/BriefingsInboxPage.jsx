@@ -29,6 +29,7 @@ import InboxFilters from '../components/briefings/inbox/InboxFilters';
 import ActiveQueue from '../components/briefings/inbox/ActiveQueue';
 import HistoryView from '../components/briefings/inbox/HistoryView';
 import ComposeFab from '../components/briefings/inbox/ComposeFab';
+import CutoverGateChip from '../components/admin/CutoverGateChip';
 
 const BriefingComposer = lazy(() => import('../components/briefings/BriefingComposer'));
 
@@ -124,6 +125,7 @@ export default function BriefingsInboxPage() {
       <div style={inner}>
         <AdminBackHeader />
         <BriefingsHero activeCount={activeCount} onCompose={() => setComposer({})} pilotModeEnabled={pilotModeEnabled} tab={tab} />
+        <div style={{ marginBottom: 12 }}><CutoverGateChip /></div>
         <InboxTabs activeTab={tab} activeCount={activeCount} draftCount={draftCount} historyCount={0} onChange={setTab} />
         <InboxSearch value={search} onChange={setSearch} placeholder={tab === 'history' ? 'Search subject + body…' : 'Search briefings…'} />
         <InboxFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
