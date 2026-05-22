@@ -409,6 +409,14 @@ before any new work dispatches:
    the ledger reflects the prior session's PR closures. If the ledger is
    stale relative to merged PRs, reconcile before any new work dispatches.
 
+4. **Parent-checkout leakage detection** (anti-pattern #52 refinement) —
+   run `git diff --quiet HEAD || echo "WARN: parent checkout has
+   unstaged changes — verify they are intentional, not agent-worktree
+   leakage from prior session"`. Catches accumulated leakage from prior
+   sessions' agent path-construction errors. If output shows WARN, run
+   `git status --short` and `git stash list` to surface the leakage
+   for review before any new work.
+
 This discipline closes the gap between sessions — drift catches early
 instead of accumulating across sessions. Cheap to run (< 2 minutes
 total), high-ROI when it surfaces drift.
@@ -572,23 +580,40 @@ Origin: 2026-05-21 PR #431 registered #52 as candidate. Pre-promoted to
 registered under the cost-asymmetry rationale before second occurrence
 to prevent accumulation.
 
-   **Refinement (registered 2026-05-22):** `pwd` confirm is necessary
-   but not sufficient. The Edit tool's path resolution defaults to the
-   parent checkout (`/home/user/skyfire-app/...`) even when the agent's
-   current working directory IS the worktree. Writes via implicit
-   relative paths can appear to succeed but silently fail to persist
-   in the worktree's commit (the file edit lands in the parent
-   checkout, doesn't get included in the agent's branch, force-pull
-   from worktree later overwrites it).
+   **Refinement (revised 2026-05-22 PM after empirical investigation):**
+   `pwd` confirm is necessary but not sufficient. Edit tool is path-
+   honest — it writes to whatever absolute path is given. The failure
+   mode is AGENT path construction error: agents intend to edit a file
+   in their worktree, construct the absolute path missing the
+   `.claude/worktrees/agent-XXX/` prefix, and the edit lands at the
+   parent checkout. Agents then check the worktree (which shows
+   unchanged) and incorrectly report "silent revert" or "tool defaulted
+   to parent."
 
    Discipline extension: every Edit/Write tool call in a worktree-
-   isolated agent MUST use the EXPLICIT worktree path including the
-   `/home/user/skyfire-app/.claude/worktrees/agent-XXX/` prefix. Not
-   `docs/foo.md`, but `/home/user/skyfire-app/.claude/worktrees/agent-XXX/docs/foo.md`.
+   isolated agent MUST construct the absolute path by prepending the
+   agent's known worktree prefix (`/home/user/skyfire-app/.claude/
+   worktrees/agent-XXX/`) to any source-tree path. The prefix must be
+   computed at agent session start and applied mechanically, not
+   remembered attentionally.
 
-   Origin: 2026-05-22 PR #460 (ledger reconciliation) agent reported
-   "edits silently reverted" when targeting parent path; switched to
-   explicit worktree path and writes persisted.
+   Empirical evidence (A.4 investigation 2026-05-22):
+   - Edit with parent absolute path → modifies parent only (worktree
+     unchanged)
+   - Edit with worktree absolute path → modifies worktree only (parent
+     unchanged)
+   - 10-second wait test: no silent revert detected
+   - Audit at investigation close: 9 git stashes existed in parent
+     checkout, of which 6 are explicitly marked as agent-leakage from
+     2026-05-21 and 2026-05-22 sessions. The prose discipline broke
+     on its registration day (PR #473) despite explicit prompt
+     instructions.
+
+   Origin: 2026-05-21 PR #431 registered #52 as candidate. Initial
+   refinement registered 2026-05-22 AM via PR #465. Empirical
+   investigation 2026-05-22 PM confirmed the tool is path-honest;
+   failure mode is agent input construction. CI gate proposed (see
+   companion PR + EMBER_PENDING_LEDGER tracking).
 
 53. **Session-level diff audits after high-output sessions (CANDIDATE —
 promote on third instance with stable findings rate).**
