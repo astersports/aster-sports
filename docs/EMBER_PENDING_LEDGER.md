@@ -3203,3 +3203,36 @@ captures the same-commit ledger discipline that this followup PR
 embodies. Anti-pattern #51 promoted (third-instance criterion).
 Anti-pattern #52 watch list: broke twice today on registration day.
 Anti-pattern #54 watch list: broke once today in 22+ holds.
+
+### §4.AC — Q8 AdminHomePage decomposition (deferred 2026-05-22)
+
+**Status: DEFERRED. Trigger: cap pressure (next material change requires >150 lines).**
+
+AdminHomePage.jsx is at 142/150 lines (anti-pattern #6 cap). Yesterday's
+Phase 3 Q8 routing attempted to ship an inline deferral comment; the
+irony test fired (13-line comment block would push the file to 155
+lines). Routing pivoted to Option B: documentation lives in CLAUDE.md
+§6 (zone decomposition pattern) + this ledger entry tracking the
+deferred work.
+
+**When triggered, execute:**
+1. Decompose AdminHomePage.jsx into `src/components/admin-home/`:
+   - AdminHomeAlertZone.jsx
+   - AdminHomeSignalZone.jsx
+   - AdminHomeHeader.jsx
+2. AdminHomePage.jsx becomes a thin wrapper (~50 lines)
+3. Cross-surface invariant test per anti-pattern #43 locks per-role
+   behavior
+
+**Reference implementations:** parent-home (PR #424) + coach-home (PR
+#424 same session) zone components shipped 2026-05-21.
+
+**Trigger condition:** the next admin-home feature requiring material
+change to AdminHomePage.jsx. Do not decompose preemptively per §16.13
+"ship not gate by config."
+
+**Why this lives here and not as inline comment:** the 13-line guidance
+comment would itself breach the 150-line cap the guidance warns about
+(Q8 irony test, 2026-05-22 Phase 3 routing).
+
+Decision routing: 2026-05-22 (Phase 3 Q8, claude.ai Option B locked).
