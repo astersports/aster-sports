@@ -60,3 +60,6 @@ verify_jwt = false
 [functions.team-feed]
 verify_jwt = false
 
+[functions.feedback-token-handler]
+verify_jwt = false
+
