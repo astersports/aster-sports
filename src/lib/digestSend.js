@@ -16,47 +16,12 @@
 // stabilizes the "sample" content_sections written to the message row.
 
 import { supabase } from './supabase';
-import { renderSections, renderSectionsPlainText } from './engine/composer';
 import { formatPeriodLabel } from './engine/digestPeriod';
-import { composeWeeklyDigest } from './engine/resolvers/weeklyDigest';
 import { applyUnsubscribeUrls } from './unsubscribeUrl';
-import { EMAIL_WRAPPER_CLOSE, EMAIL_WRAPPER_OPEN } from './emailWrapper';
+import { substituteFeedbackForFamily } from './digestFeedback';
+import { buildContext, buildSlicesFromRecipients, renderSlice } from './digestSendHelpers';
 
 const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
-const ORG_NAME_DEFAULT = 'Legacy Hoopers';
-const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
-const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
-const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
-
-function buildContext({ orgId, period, events, teams, tournaments, coaches, rsvpCountsByEvent }) {
-  const counts = rsvpCountsByEvent instanceof Map ? rsvpCountsByEvent : new Map(Object.entries(rsvpCountsByEvent || {}));
-  return {
-    org: {
-      id: orgId, name: ORG_NAME_DEFAULT,
-      branding: { eyebrowLink: ORG_WEBSITE_DEFAULT, contactEmail: ORG_CONTACT_DEFAULT, logoUrl: ORG_LOGO_DEFAULT },
-      voice_config: null, brand_colors: null,
-      coaches: coaches || [],
-    },
-    period: { start: period.start, end: period.end, label: formatPeriodLabel(period) },
-    events: events || [], teams: teams || [], tournaments: tournaments || [],
-    rsvpCountsByEvent: counts,
-  };
-}
-
-// E1 (Platform PR ε, L99 audit PART 2.3): tag is_synthetic at slice producer
-// so carve-out reads an explicit flag, not the fragile guardian_id==null.
-function buildSlicesFromRecipients(recipients) {
-  return (recipients || [])
-    .map((r) => ({ kind: 'family', guardian_id: r.guardian_id, email: r.email, kid_first_names: r.kid_first_names || [], team_ids: (r.team_ids || []).slice(), is_synthetic: r.guardian_id == null }))
-    .sort((a, b) => (a.guardian_id < b.guardian_id ? -1 : a.guardian_id > b.guardian_id ? 1 : 0));
-}
-
-function renderSlice(context, slice, overrides) {
-  const { subject, content_sections } = composeWeeklyDigest(context, slice, overrides);
-  const html = EMAIL_WRAPPER_OPEN + renderSections(content_sections) + EMAIL_WRAPPER_CLOSE;
-  const plainText = renderSectionsPlainText(content_sections);
-  return { subject, html, plainText, sections: content_sections, teams_included: slice.team_ids };
-}
 
 export async function sendWeeklyDigest({
   orgId, period,
@@ -115,12 +80,21 @@ export async function sendWeeklyDigest({
     .select('id').single();
   if (msgErr) throw msgErr;
 
+  // Cutover PR 7b-2.5: per-family feedback token substitution. Runs AFTER
+  // the message INSERT (need msg.id to mint) but BEFORE the recipient row
+  // build (rows need the substituted body_html_rendered). Admin BCC row
+  // below intentionally keeps the placeholder sample body — admin sees
+  // {{feedback_*_url}} placeholders, not a real family's tokens.
+  const substitutedFamilies = await Promise.all(
+    renderedFamilies.map((f) => substituteFeedbackForFamily(supabase, msg.id, f)),
+  );
+
   // Build per-recipient queue rows. In test mode, only admin@ row is queued.
   // Wave 4.3-K carve-out: when ALL families are synthetic, testOnly is a no-op
   // (synthetic rows ARE the test send). E1: explicit is_synthetic flag.
-  const allSynthetic = renderedFamilies.length > 0 && renderedFamilies.every((f) => f.family.is_synthetic === true);
+  const allSynthetic = substitutedFamilies.length > 0 && substitutedFamilies.every((f) => f.family.is_synthetic === true);
   const effectiveTestOnly = testOnly && !allSynthetic;
-  const familyRows = effectiveTestOnly ? [] : renderedFamilies.map((f) => ({
+  const familyRows = effectiveTestOnly ? [] : substitutedFamilies.map((f) => ({
     message_id: msg.id, guardian_id: f.family.guardian_id,
     email_at_send: f.family.email,
     delivery_method: 'resend_api', delivery_status: 'queued',
