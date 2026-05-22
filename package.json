@@ -13,6 +13,9 @@
     "prepare": "husky"
   },
   "lint-staged": {
+    "*": [
+      "bash scripts/check-parent-checkout-leakage.sh"
+    ],
     "src/**/*.{js,jsx}": [
       "eslint --fix",
       "bash scripts/check-file-length.sh"
