@@ -17,6 +17,7 @@ export default function RosterControls({ search, setSearch, sortBy, setSortBy, r
       <div style={{ display: 'flex', gap: 8 }}>
         <div style={{
           flex: 1,
+          minWidth: 0,
           display: 'flex',
           alignItems: 'center',
           backgroundColor: 'var(--em-bg-secondary)',
@@ -45,8 +46,11 @@ export default function RosterControls({ search, setSearch, sortBy, setSortBy, r
           />
         </div>
         {/* 2026-05-21 (Teams PR A / V1) — dropped 'Gr' chip (redundant with
-            Age for AAU age-grouped teams). With Gr gone the staff chip row
-            [# A-Z Age Att] fits at iPhone width without clipping. */}
+            Age for AAU age-grouped teams). 2026-05-22 fix: minWidth:0 on
+            the search container above lets flex actually shrink the input
+            so the 4-chip staff row [# A-Z Age Att] no longer bleeds off
+            the right edge on iPhone width. Without minWidth:0 the input's
+            intrinsic content width acted as a floor and forced overflow. */}
         <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--em-border-default)', flexShrink: 0 }}>
           {((role === 'admin' || role === 'coach')
             ? [{ key: 'jersey', label: '#' }, { key: 'name', label: 'A-Z' }, { key: 'age', label: 'Age' }, { key: 'attendance', label: 'Att' }]
