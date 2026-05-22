@@ -19,6 +19,16 @@
     ]
   },
   {
+    "kind": "feedback_survey",
+    "feedback_token_placeholders": {
+      "1": "{{feedback_1_url}}",
+      "2": "{{feedback_2_url}}",
+      "3": "{{feedback_3_url}}",
+      "4": "{{feedback_4_url}}",
+      "5": "{{feedback_5_url}}"
+    }
+  },
+  {
     "kind": "footer",
     "logoUrl": "https://skyfire-app.vercel.app/knight-logo-240.png",
     "orgName": "Legacy Hoopers",
