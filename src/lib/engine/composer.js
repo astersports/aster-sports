@@ -64,6 +64,11 @@ import coachReflection from './renderers/coachReflection';
 import vipHeader from './renderers/vipHeader';
 import kidColorPill from './renderers/kidColorPill';
 import quickLinkNav from './renderers/quickLinkNav';
+// Cutover PR 7b-1 — feedback_survey renderer registered before any
+// resolver emits the kind (PR 7b-2 wires the emit). Per AP #38:
+// register the renderer first; orphan-kind guard then catches any
+// premature emit.
+import feedbackSurvey from './renderers/feedbackSurvey';
 
 const SECTION_RENDERERS = {
   header: renderHeader,
@@ -99,6 +104,7 @@ const SECTION_RENDERERS = {
   vip_header: vipHeader,
   kid_color_pill: kidColorPill,
   quick_link_nav: quickLinkNav,
+  feedback_survey: feedbackSurvey,
 };
 
 // KIND_COMPOSERS — legacy compose() path for kinds NOT in
