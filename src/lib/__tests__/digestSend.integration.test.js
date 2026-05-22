@@ -37,6 +37,14 @@ vi.mock('../supabase', () => ({
   supabase: {
     from: vi.fn((table) => tableChain(table)),
     functions: { invoke: vi.fn((name, opts) => { dispatchCalls.push({ name, opts }); return Promise.resolve({ data: { ok: true }, error: null }); }) },
+    // Cutover PR 7b-2.5: digestSend now calls mint_feedback_token RPC
+    // per family. Stub returns a deterministic token per (email, rating).
+    rpc: vi.fn((name, args) => {
+      if (name === 'mint_feedback_token') {
+        return Promise.resolve({ data: `tok-${args.p_recipient_email}-${args.p_rating}`, error: null });
+      }
+      return Promise.resolve({ data: null, error: { message: `unmocked rpc: ${name}` } });
+    }),
   },
 }));
 
