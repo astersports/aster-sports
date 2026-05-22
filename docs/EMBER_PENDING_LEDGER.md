@@ -439,21 +439,10 @@ Status: **5 OF 7 PRs SHIPPED OR CODE-COMPLETE; PR 7a SHIPPED 2026-05-22; PR 6 + 
 
 ### §4.B — Briefing IA remainder (Wave 4.4-B)
 
-Status: Session 1 partially shipped. Remainder OPEN.
+Status: ✅ **CLOSED 2026-05-22** — Session 1 partially shipped May 13; remainder shipped this session (TournamentHeader relocation + IA_FRAMING.md doc). §4.B fully closed.
 
-- **TournamentHeader Send Briefing relocation** — Wave 4.4-B Session 1
-  shipped for AdminHome + TeamDetailPage (deep-link to
-  `/admin/briefings/compose?anchor=team&id=<team.id>`), but
-  TournamentHeader still uses the legacy inline `SendBriefingButton`
-  (verified 2026-05-18 in `src/components/tournament/TournamentHeader.jsx:103`).
-  Fix: replace `<SendBriefingButton>` with a deep-link to
-  `/admin/briefings/compose?anchor=tournament&id=<tournament.id>&kind=<ctaKind>`.
-  Verify portal's URL param hydration handles the `tournament` anchor
-  kind. Estimate: ~30-45 min including cross-surface invariant test per #43.
-- **docs/IA_FRAMING.md** — May 13 Decision D (IA framing addendum)
-  never shipped. Light doc capturing the briefing IA strategy (one
-  home Quick Action + portal as canonical entry, deep-link buttons on
-  team/tournament detail surfaces as convenience). ~10 min.
+- ~~**TournamentHeader Send Briefing relocation**~~ ✅ **SHIPPED (this commit)** — `src/components/tournament/TournamentHeader.jsx` now uses a `<Link>` deep-link to `/admin/briefings/compose?anchor=tournament&id=<tournament.id>` (no kind preset; admin lands at Kind step). Removed legacy `SendBriefingButton` import + the now-unused `tournamentBriefingKinds` helper. `ComposeAnchorCta` (kind-specific CTA gated on ctaKind) preserved as the moment-specific primary CTA when applicable. Cross-surface invariant test at `src/components/tournament/__tests__/TournamentHeaderSendBriefingDeepLink.test.jsx` (5/5 pass) locks: anchor-only URL shape, ctaKind-independence (in-flight tournaments still get the link), staff gating, no kind preset, and that the legacy `SendBriefingButton` import never returns. EventDetailHeader.jsx:59 still uses `SendBriefingButton` (icon-only overflow variant) — explicitly out of §4.B scope per IA_FRAMING.md follow-up note.
+- ~~**docs/IA_FRAMING.md**~~ ✅ **SHIPPED (this commit)** — Light reference doc capturing the locked briefing IA strategy: one canonical portal (`/admin/briefings/compose`) + three classes of entry surfaces (cold start Quick Action, anchor-only deep-link, anchor+kind deep-link). Includes per-surface shipped table, URL param hydration decision tree, anti-pattern compliance notes (#34, #42, #43). Closes Decision D from Wave 4.4-B Session 1 (2026-05-13).
 
 ---
 
