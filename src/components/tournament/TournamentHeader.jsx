@@ -1,16 +1,9 @@
-import { useMemo, useState } from 'react';
-import { Calendar, Edit2, ExternalLink, MapPin, Trophy } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Calendar, Edit2, ExternalLink, Mail, MapPin, Trophy } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import TournamentFormSheet from './TournamentFormSheet';
 import ComposeAnchorCta from '../briefings/ComposeAnchorCta';
-import SendBriefingButton from '../briefings/SendBriefingButton';
-
-function tournamentBriefingKinds(t) {
-  const kinds = ['announcement', 'custom_message'];
-  if (t?.start_date && new Date(t.start_date) > new Date()) kinds.unshift('tournament_prelim');
-  if (t?.end_date && new Date(t.end_date) < new Date()) kinds.unshift('tournament_recap');
-  return kinds;
-}
 
 function formatRange(start, end) {
   if (!start || !end) return '';
@@ -27,10 +20,9 @@ function formatRange(start, end) {
 export default function TournamentHeader({ tournament, isStaff, onChange }) {
   const [editing, setEditing] = useState(false);
   const dateRange = formatRange(tournament.start_date, tournament.end_date);
-  const briefingKinds = useMemo(() => tournamentBriefingKinds(tournament), [tournament]);
   // Wave 4.8 6b Session 2: gate Compose CTA on upcoming/completed.
   // In-flight tournaments (mid-event) render no CTA — neither prelim nor
-  // recap fits the moment. Mirrors tournamentBriefingKinds:9-10 predicates.
+  // recap fits the moment.
   const now = new Date();
   const ctaKind = tournament.start_date && new Date(tournament.start_date) > now
     ? 'tournament_prelim'
@@ -100,7 +92,17 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
           }}>
             <Edit2 size={14} strokeWidth={1.75} /> Edit
           </button>
-          <SendBriefingButton anchorKind="tournament" anchorId={tournament.id} kindFilter={briefingKinds} />
+          <Link to={`/admin/briefings/compose?anchor=tournament&id=${tournament.id}`}
+            aria-label="Send briefing about this tournament" className="sf-press"
+            style={{
+              minHeight: 44, padding: '0 14px', borderRadius: 10,
+              border: '1.5px solid var(--em-border-default)',
+              backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
+              fontSize: 13, fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 6,
+              textDecoration: 'none', cursor: 'pointer',
+            }}>
+            <Mail size={14} strokeWidth={1.75} /> Send briefing
+          </Link>
         </div>
       )}
 
