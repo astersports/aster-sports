@@ -60,6 +60,7 @@ const INLINE_REMAINING = new Set([
   'src/components/briefings/SaveStatusPill.jsx',
   'src/components/ride/ClaimStatusPill.jsx',
   'src/components/alerts/AllClearPill.jsx',
+  'src/components/admin/CutoverGateChip.jsx',
   'src/components/shared/Badge.jsx',
 ]);
 
