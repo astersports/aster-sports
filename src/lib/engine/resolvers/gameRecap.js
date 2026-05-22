@@ -23,6 +23,7 @@ import {
   buildSubject, fetchSlices, formatSubContext,
   GameRecapNotPublishedError, trim,
 } from './gameRecapHelpers';
+import { buildFeedbackSurveySection } from './feedbackSurveySection';
 
 export { GameRecapNotPublishedError } from './gameRecapHelpers';
 
@@ -121,6 +122,7 @@ export function composeGameRecap(context, slice, overrides = {}) {
   const signoffProse = trim(overrides.signoff_message);
   if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
 
+  sections.push(buildFeedbackSurveySection());
   sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
 
   return { subject: buildSubject(team, event, gr), content_sections: sections };

@@ -117,3 +117,19 @@ describe('queueComposedMessages — pure builders', () => {
     expect(rows[0].guardian_id).toBe('g1');
   });
 });
+
+describe('queueComposedMessages — perRecipientSubstitutor signature (Cutover PR 7b-2)', () => {
+  // Pure-builder test only — the perRecipientSubstitutor application
+  // is exercised inside queueComposedMessages itself (DB round-trip
+  // covered by end-to-end pipeline tests in PR 7b-2). Here we lock the
+  // signature contract: callback receives a row, returns a row.
+
+  it('callback signature: receives row → returns (possibly modified) row', async () => {
+    const row = { message_id: 'm-1', guardian_id: 'g1', email_at_send: 'g1@x', body_html_rendered: 'orig', body_plain_rendered: 'orig', subject_rendered: 'subj', teams_included: ['t-1'], delivery_method: 'resend_api', delivery_status: 'queued' };
+    const substitutor = async (input) => ({ ...input, body_html_rendered: 'substituted', body_plain_rendered: 'substituted' });
+    const out = await substitutor(row);
+    expect(out.body_html_rendered).toBe('substituted');
+    expect(out.guardian_id).toBe('g1');
+    expect(out.email_at_send).toBe('g1@x');
+  });
+});

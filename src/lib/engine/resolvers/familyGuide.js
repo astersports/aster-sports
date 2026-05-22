@@ -20,6 +20,7 @@ import {
   buildQuickLinkNav, buildSignoffSection, buildVipHeaderSection,
 } from './familyGuideSections';
 import { detectConflicts, groupEventsByKid } from './familyGuideHelpers';
+import { buildFeedbackSurveySection } from './feedbackSurveySection';
 
 export async function resolveFamilyGuide({ parentUserId, dateRange }, { supabase } = {}) {
   if (!parentUserId) throw new Error('Missing parentUserId');
@@ -112,6 +113,7 @@ export function composeFamilyGuide(context, slice, overrides = {}) {
   if (navSection) sections.push(navSection);
   const signoff = buildSignoffSection(overrides, coaches);
   if (signoff) sections.push(signoff);
+  sections.push(buildFeedbackSurveySection());
   sections.push(buildBrandFooter(orgName));
   return {
     subject: `Your family guide — ${slice.parent_name || parent?.first_name || 'Family'}`,

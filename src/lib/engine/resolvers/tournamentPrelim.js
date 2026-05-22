@@ -22,6 +22,7 @@ import {
   buildVenueListSection, buildVenueNotesSection,
 } from './tournamentPrelimSections';
 import { buildSubject, buildTeamSlices, fetchRecipientGuardians, trim } from './tournamentPrelimHelpers';
+import { buildFeedbackSurveySection } from './feedbackSurveySection';
 
 const ORG_NAME_DEFAULT = 'Legacy Hoopers';
 const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
@@ -131,6 +132,7 @@ export function composeTournamentPrelim(context, slice, overrides = {}) {
 
   const tagline = buildTaglineFooter(overrides);
   if (tagline) sections.push(tagline);
+  sections.push(buildFeedbackSurveySection());
   sections.push(buildBrandFooter(org.name));
 
   return { subject: buildSubject(slice, tournament), content_sections: sections };
