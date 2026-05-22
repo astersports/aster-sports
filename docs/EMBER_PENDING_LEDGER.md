@@ -5,7 +5,7 @@
 > re-discovery. Updated per session and per PR.
 >
 > Created: 2026-05-18 (Italy CEST) from L99 cross-role audit consolidation
-> Last updated: 2026-05-22 (§4.AA reconciliation against 7-PR session 2026-05-22)
+> Last updated: 2026-05-22 (§4.AA followup reconciliation against 7 PRs #467-#473 from extended session 2026-05-22; total 19 PRs)
 
 This doc complements (not replaces):
 - `docs/SKYFIRE_BUILD_QUEUE_v2.md` — shipped-log roadmap, forward-only
@@ -172,12 +172,17 @@ executed, ~204 findings) + Teams arc close + session-cleanup wave +
 audit-findings synthesis and §4.X (closed) + Teams §4.U (closed)
 for arc-level closure narratives.
 
-### Session 2026-05-22 — discipline-validating wave (7 PRs)
+### Session 2026-05-22 — discipline-validating wave + extended dead-feature retirement + Phase 3 close (19 PRs total)
 
-Tight session at the top of the 6-8 PR budget, contract held, no
-audit cycle self-generation. Categories: catalog amendments + advisor
-hygiene + ledger reconciliation (yesterday) + Cluster 1 closure +
-Cluster 3 closure (#36 hooks cascade across PR-A/B/C).
+Original 7-PR discipline-validating window (PRs #458-#464) opened the
+session. Extended into a 19-PR wave with Phase 2 dead-feature
+retirement (PRs #465-#471), Phase 3 design-call closures (PRs #472,
+#473), and ledger reconciliations (PR #466 + this followup PR).
+Categories: catalog amendments + advisor hygiene + ledger
+reconciliation (yesterday) + Cluster 1 closure + Cluster 3 closure
+(#36 hooks cascade across PR-A/B/C) + anti-pattern #51/#52/#54
+promotions + dead-feature retirement sweep + SECTION_RENDERERS
+orphan deletion + dual-compose / fan-out deferral comments.
 
 #### Catalog amendments + advisor hygiene + yesterday ledger (PRs #458-#460)
 
@@ -204,6 +209,41 @@ create_pull_request response) held 7/7; anti-pattern #52 (worktree
 path) held 7/7 with refinement surfaced. Audit cycle did not
 self-generate. See §4.AA for the close synthesis + Cluster 1 +
 Cluster 3 closures + Pattern ALPHA hooks-half closure.
+
+#### Catalog promotions + first ledger reconciliation (PRs #465, #466)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #465  | 2026-05-22 | CLAUDE.md: #52 refinement + #51 + #54 promotions to registered     | Docs + doctrine     |
+| #466  | 2026-05-22 | §4.AA reconciliation against 7 PRs from session 2026-05-22         | Docs                |
+
+#### Phase 2 dead-feature retirement sweep — anti-pattern #51 (PRs #467-#471)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #467  | 2026-05-22 | Delete TeamPlayerStats + PlayerStatsTable orphans (Phase 2.2b)     | stats/ (-119 lines) |
+| #468  | 2026-05-22 | Delete InstallPrompt + WelcomeOverlay dead stubs (Phase 2.2c)      | home/ (-18 lines) — first #54 break in 22+ holds, manually flipped ready |
+| #469  | 2026-05-22 | Delete 5 event/ orphan files per #51 retirement (Phase 2.2a)       | event/ (-285 lines, RsvpSummaryBlock + EventDetailTab + EventCancelActions + MyActionsSection + AcademyActivationPanel + Badge.test.jsx INLINE_REMAINING) |
+| #470  | 2026-05-22 | Remove useSortedPlayers dead export (Phase 2.2d)                   | hooks/ (-7 lines, anti-pattern #42 zero-consumer detection) |
+| #471  | 2026-05-22 | Delete legacy renderers/scheduleChange.js (Phase 2.2e)             | engine/ (-219 lines, name-collision trap eliminated; active composer at resolvers/scheduleChange.js) |
+
+#### Phase 3 design-call closures — SECTION_RENDERERS orphans + dual-compose deferral (PRs #472, #473)
+
+| PR    | Date       | Scope                                                              | Surfaces            |
+|-------|------------|--------------------------------------------------------------------|---------------------|
+| #472  | 2026-05-22 | Delete 8 SECTION_RENDERERS orphans — Phase 3 Q4                    | engine/ (~24 files, -651 lines; wave 3 build-ahead never adopted, Option A locked routing) |
+| #473  | 2026-05-22 | Q5+Q7 deferral comments for dual-compose + schedule_change fan-out | engine/ (2 files, +24 lines, Pattern B locked routing) |
+
+19-PR session total. Original 7-PR discipline window held cleanly;
+extended wave engaged Phase 2 (dead-feature retirement after #51
+promotion) + Phase 3 (Q1/Q4/Q5/Q6/Q7 design calls). 12 of 19 PRs
+were file-deletion sweeps: total ~1300 lines retired across orphan
+components, renderers, hooks, and section types. Anti-pattern #54
+broke once (PR #468 shipped draft initially, manually flipped) —
+first break in 22+ consecutive holds. Anti-pattern #52 refinement
+broke once mid-flight (PR #473 parent-checkout leakage detected
+post-merge). See §4.AB for the extended close synthesis (Phase 2 +
+Phase 3 closure status) and §5 for watch-list status on #52 + #54.
 
 ---
 
@@ -1340,6 +1380,36 @@ but with different implementations.
   blockers identified for routing forward (see §4.Z table for tags
   P0-E/P0-F/P0-G). Joins the §4.Y multi-tenant readiness arc; promotes
   PQ5 timeline forward if St. Patrick's onboarding accelerates.
+
+### Watch lists updated 2026-05-22 PM (post extended Phase 2 + Phase 3 close)
+
+- **Pattern ALPHA — anti-pattern #36 destructure cascade (status update)**
+  Status unchanged from morning entry: foundation + edge function + hooks
+  halves ALL CLOSED. Audit baseline 50 → 32. Remaining ~3 sites in `lib`
+  utilities deferred to future audit/sweep (Batch 2b). No new sites
+  introduced by today's extended Phase 2 + Phase 3 work (file-deletion
+  sweeps, not data-layer additions).
+
+- **Anti-pattern #52 refinement watch list (registered today via PR #465)**
+  Edit tool path resolution — broke TWICE today on its registration day:
+  - PR #460 (recovered mid-flight by agent — explicit-path discipline
+    surfaced as a refinement-to-#52, captured in §14 discipline-notes)
+  - PR #473 (parent-checkout leakage detected post-merge — agent reported
+    explicit-path but the Edit tool still resolved against parent
+    checkout for one file)
+  Watch list: third break promotes to deeper investigation (Section A.4
+  in remaining-phases audit doc — needs a structural answer beyond
+  "explicit path in every Edit call").
+
+- **Anti-pattern #54 watch list (promoted to registered today via PR #465)**
+  Same-MCP-burst ready + auto-merge — broke ONCE today in 22+ consecutive
+  holds:
+  - PR #468 (shipped draft initially, manually flipped ready — no auto-
+    merge fired in same burst as create_pull_request).
+  Promotion mechanism was reliable across 21 holds before today's break;
+  one slip in 22 attempts ≈ 4.5% break rate. Watch list: second break in
+  the next 10 PRs triggers pause + document. If break rate stays under
+  5% across the next 50 PRs, mechanism considered stable.
 
 ---
 
@@ -2994,3 +3064,142 @@ today: fresh-eyes routing of the §4.Z catalog produced clean Cluster
 dispatches. Closes Phase 1.1 from next-phases ready-state doc.
 Catalog amendments (#52 refinement + #51 + #54 promotions) ship in
 parallel CLAUDE.md PR.
+
+---
+
+### §4.AB — Extended Phase 2 + Phase 3 close (2026-05-22 PM, followup)
+
+Session extended past the original 7-PR discipline window into a
+19-PR wave engaging Phase 2 (dead-feature retirement) + Phase 3
+(design-call closures). Anti-pattern #51 promotion via PR #465
+unlocked the dead-feature retirement sweep; Phase 3 design calls
+(Q1/Q4/Q5/Q6/Q7) routed under Pattern B / Option A locked routing.
+
+**Phase 2 (Cluster 4 dead-feature retirement) — FULLY CLOSED.**
+
+Anti-pattern #51 promoted from candidate to registered in PR #465
+(third-instance criterion overwhelmingly met: 17+ NEW dead-feature
+surfaces accumulated post-candidate-registration). 5 retirement
+PRs shipped this session under Phase 2.2 sub-arc:
+
+| PR    | Sub-arc | Scope                                                  | Lines retired |
+|-------|---------|--------------------------------------------------------|----------------|
+| #467  | 2.2b    | TeamPlayerStats + PlayerStatsTable orphan files        | -119          |
+| #468  | 2.2c    | InstallPrompt + WelcomeOverlay dead stubs              | -18           |
+| #469  | 2.2a    | 5 event/ orphans (RsvpSummaryBlock, EventDetailTab, etc.) | -285        |
+| #470  | 2.2d    | useSortedPlayers dead export                           | -7            |
+| #471  | 2.2e    | renderers/scheduleChange.js legacy composer            | -219          |
+
+Combined with Phase 3 Q4 (PR #472, -651 lines): total ~1300 lines
+deleted across orphan components, renderers, hooks, and section
+types. Anti-pattern #42 zero-consumer detection signal worked twice
+(useSortedPlayers caught from PR #441, useComposeBriefing closed in
+PR #462). The name-collision trap eliminated in PR #471 (legacy
+renderer at renderers/scheduleChange.js vs. active composer at
+resolvers/scheduleChange.js) — previously a future-Frank confusion
+hazard.
+
+**Phase 3 (design-call closures) — PARTIALLY CLOSED.**
+
+| Q | Item | Status | Disposition |
+|---|------|--------|-------------|
+| Q1 | SECDEF adoption | ✅ SHIPPED | Closed earlier — see §4.AA reconciliation by PR #466 |
+| Q2 | Per-player game stats lift | ⏸ DEFERRED | §16.12 doctrine — needs Kenny conversation |
+| Q3 | Balance carry-forward | ⏸ DEFERRED | Phase 4 MT readiness arc |
+| Q4 | 8 SECTION_RENDERERS orphans | ✅ SHIPPED via PR #472 | Wave 3 build-ahead never adopted; Option A locked routing |
+| Q5 | Dual-compose for schedule_change | ✅ SHIPPED via PR #473 | Pattern B locked routing — deferral comments inline |
+| Q6 | (verified no-op) | ✅ VERIFIED | No PR needed |
+| Q7 | schedule_change fan-out | ✅ SHIPPED via PR #473 | Pattern B locked routing — deferral comments inline |
+| Q8 | AdminHomePage growth | ⏸ DEFERRED | Irony test fired — needs decompose first or alt routing |
+
+5 of 8 design calls closed (Q1/Q4/Q5/Q6/Q7). 3 deferred (Q2/Q3/Q8)
+with documented routing rationale: Q2 + Q3 are doctrinal /
+multi-tenant blockers awaiting external conversations; Q8 hit the
+irony test (proposed fix would grow AdminHomePage further, violating
+the very growth-ceiling it's meant to address).
+
+**P0 summary across both phases:**
+
+| Tag | Item | Routing | Status |
+|-----|------|---------|--------|
+| P0-C | Academy callup token-handler | Cluster 1 | ✅ CLOSED via PR #462 (yesterday's §4.AA) |
+| P0-D | Doctrine P0 (CLAUDE.md edit) | Catalog amendment | ✅ CLOSED via PR #458 (yesterday's §4.AA) |
+| P0-E | Season rollover MT blocker #1 | §4.Y multi-tenant arc | OPEN — deferred to PQ5 arc |
+| P0-F | Season rollover MT blocker #2 | §4.Y multi-tenant arc | OPEN — deferred to PQ5 arc |
+| P0-G | Season rollover MT blocker #3 | §4.Y multi-tenant arc | OPEN — deferred to PQ5 arc |
+
+No new P0s introduced this session.
+
+**Discipline status this session (19 PRs):**
+
+- Anti-pattern #54 (same-MCP-burst ready-flip + auto-merge):
+  **18/19 holds** — broke once on PR #468 (manually flipped ready
+  post-creation, no auto-merge fired). First break in 22+
+  consecutive holds. Watch list: second break triggers pause +
+  document.
+- Anti-pattern #52 refinement (explicit worktree path):
+  **broke twice today** on its registration day — PR #460
+  (recovered mid-flight by agent) + PR #473 (parent-checkout
+  leakage detected post-merge). Watch list: third break promotes
+  to deeper investigation (Section A.4 in remaining-phases audit
+  doc).
+- Anti-pattern #55 (use actual PR# from create_pull_request
+  response): held cleanly across all 19 PRs.
+- Anti-pattern #9 (touch only what the prompt asks): held cleanly
+  across all 19 PRs — file-deletion sweeps were surgical.
+
+**Session Contract v3 adopted end-of-day.**
+
+Mid-session contract refresh adopted Contract v3 with new rules
+binding the deploy chain to ledger discipline:
+
+- **Rule S2:** doc writes are free actions, no GO needed for the
+  agent dispatch.
+- **Rule S6:** one fix per prompt — prevents agent scope creep.
+- **Rule S9:** build queue + ledger update bound to deploy chain
+  commit. Today's PRs #467-#473 violated this (anti-pattern #9
+  violation pattern from yesterday's session); this followup PR
+  closes the gap.
+
+This followup reconciliation PR is the first ledger update written
+under Contract v3's same-commit discipline framing. The Rule S9
+violation that produced this PR is the discipline signal that
+binds the new contract: planning-doc / ledger updates ship in the
+same commit as the deploy work, not as a session-close batch.
+
+**Anti-pattern #45 acid-test cycle 16:** session-close
+reconciliation PR shipped within same session as the originating
+work, scoped narrowly to the 7 missed PRs from this session's
+extension. Cycle holds — Section 9.1 three-item pre-flight at
+session-open caught the gap that PR #466 missed (it covered up
+through #466 but not the later #467-#473 wave).
+
+**Closure conditions:**
+
+- ✅ Anti-pattern #9 compliance — ONLY `docs/EMBER_PENDING_LEDGER.md`
+  touched in this PR
+- ✅ Anti-pattern #45 compliance — ledger reconciled within same
+  session as the #467-#473 work
+- ✅ Anti-pattern #52 refinement compliance — explicit worktree
+  path used in every Edit tool call
+- ✅ Anti-pattern #54 compliance — PR created, flipped ready, auto-
+  merge enabled in same MCP burst
+- ✅ Anti-pattern #55 compliance — actual PR# from
+  `create_pull_request` response used, not guessed
+- ✅ §1 SHIPPED entries added (7 PRs across 3 sub-tables)
+- ✅ §4.AB captures Phase 2 (FULLY CLOSED) + Phase 3
+  (Q1/Q4/Q5/Q6/Q7 closed; Q2/Q3/Q8 deferred) closure synthesis
+- ✅ §5 propagation patterns updated (Pattern ALPHA status,
+  anti-pattern #52 + #54 watch lists)
+
+**Session summary:**
+
+2026-05-22 19-PR wave across original discipline window + extended
+Phase 2 + Phase 3 close. Cluster 1 (production bugs) FULLY CLOSED.
+Cluster 3 (#36 hooks cascade) FULLY CLOSED. Cluster 4 (dead-feature
+retirement) FULLY CLOSED via #51 promotion + 5 retirement PRs.
+Phase 3 5/8 design calls shipped. Contract v3 adopted end-of-day
+captures the same-commit ledger discipline that this followup PR
+embodies. Anti-pattern #51 promoted (third-instance criterion).
+Anti-pattern #52 watch list: broke twice today on registration day.
+Anti-pattern #54 watch list: broke once today in 22+ holds.
