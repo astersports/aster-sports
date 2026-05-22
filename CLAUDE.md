@@ -276,6 +276,38 @@ Key rules:
 - All shared components in `src/components/shared/`
 - All admin components in `src/components/admin/`
 
+### Zone decomposition pattern for role-specific home pages
+
+When a role-specific home page approaches the 150-line cap (anti-pattern
+#6), mirror the established parent-home + coach-home decomposition pattern:
+
+- `src/components/<role>-home/<Role>HomeAlertZone.jsx` — alert/notification
+  surfaces (pending RSVPs, urgent items)
+- `src/components/<role>-home/<Role>HomeSignalZone.jsx` — signal aggregation
+  + display (recent activity, upcoming items)
+- `src/components/<role>-home/<Role>HomeHeader.jsx` — page header
+  sub-component
+
+Reference instances: `src/components/parent-home/` (3 zone components,
+established 2026-05-21) + `src/components/coach-home/` (3 zone components,
+established 2026-05-21).
+
+**Pending application:** `src/pages/AdminHomePage.jsx` is at 142/150
+lines as of 2026-05-22. The next material change likely requires
+decomposition into `src/components/admin-home/`. Don't decompose
+preemptively (§16.13: ship not gate by config) — wait for the cap
+pressure trigger.
+
+When the cap pressure triggers:
+1. Create the 3 zone files in `src/components/admin-home/`
+2. Extract corresponding sections from AdminHomePage.jsx
+3. AdminHomePage.jsx becomes a thin wrapper (~50 lines)
+4. Cross-surface invariant test per anti-pattern #43 to lock the
+   per-role behavior
+
+Decision routing: 2026-05-22 (Phase 3 Q8, claude.ai routing — Option B
+locked after Q8 irony test fired on initial Option C single-line comment).
+
 ---
 
 ## 7. DESIGN SYSTEM (LOCKED — NO INTERPRETATION)
