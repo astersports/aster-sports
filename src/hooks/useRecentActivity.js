@@ -32,10 +32,15 @@ export function useRecentActivity(orgId, seasonId, { limit = DEFAULT_LIMIT } = {
     }
     setLoading(true);
     const cutoffIso = new Date(Date.now() - TWENTY_FOUR_HOURS_MS).toISOString();
+    // §4.AD BUG-D fix (2026-05-24): event_rsvps has no declared FK to
+    // players (player_id column exists; no FK constraint). PostgREST embed
+    // `players(...)` was failing with "Could not find a relationship".
+    // Restructured: drop the embed, select player_id from event_rsvps,
+    // fetch players separately by id, join in JS at merge time.
     const [rsvpRes, msgRes, gameRes] = await Promise.all([
       supabase
         .from('event_rsvps')
-        .select('id, response, responded_at, events!inner(id, teams!inner(id, name, team_color, season_id)), players(first_name, last_name)')
+        .select('id, response, responded_at, player_id, events!inner(id, teams!inner(id, name, team_color, season_id))')
         .eq('events.teams.season_id', seasonId)
         .gte('responded_at', cutoffIso)
         .order('responded_at', { ascending: false })
@@ -65,9 +70,24 @@ export function useRecentActivity(orgId, seasonId, { limit = DEFAULT_LIMIT } = {
       setLoading(false);
       return;
     }
+    // §4.AD BUG-D fix: fetch players separately (FK embed not available)
+    // and build a Map keyed by id for the merge step below.
+    const playerIds = [...new Set((rsvpRes.data || []).map((r) => r.player_id).filter(Boolean))];
+    let playerMap = new Map();
+    if (playerIds.length) {
+      const { data: players, error: playersErr } = await supabase
+        .from('players').select('id, first_name, last_name').in('id', playerIds);
+      if (playersErr) {
+        console.error('useRecentActivity players fetch:', playersErr.message);
+        // Non-fatal: continue with empty playerMap; RSVP items show "Someone".
+      } else {
+        playerMap = new Map((players || []).map((p) => [p.id, p]));
+      }
+    }
     const merged = [
       ...(rsvpRes.data || []).map((r) => {
-        const kid = r.players ? `${r.players.first_name} ${r.players.last_name?.[0] || ''}`.trim() : 'Someone';
+        const player = playerMap.get(r.player_id);
+        const kid = player ? `${player.first_name} ${player.last_name?.[0] || ''}`.trim() : 'Someone';
         const verb = r.response === 'going' ? "RSVP'd Going" : r.response === 'maybe' ? "RSVP'd Maybe" : "RSVP'd Can't";
         const team = r.events?.teams?.name || '';
         return { ts: r.responded_at, kind: 'rsvp', text: `${kid} ${verb}${team ? ` · ${team}` : ''}`, team_color: r.events?.teams?.team_color || NEUTRAL };
