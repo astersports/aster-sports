@@ -49,7 +49,7 @@ export function useFavoriteAudiences() {
     setFavorites(next);
     const { error } = await supabase
       .from('user_preferences')
-      .upsert({ user_id: userId, org_id: orgId, favorite_audiences: next }, { onConflict: 'user_id' });
+      .upsert({ user_id: userId, org_id: orgId, favorite_audiences: next }, { onConflict: 'user_id,org_id' });
     if (error) { setFavorites(prev); console.warn('[useFavoriteAudiences] persist failed', error.message); }
   }, [favorites, userId, orgId]);
 
