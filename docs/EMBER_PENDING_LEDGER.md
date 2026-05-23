@@ -3434,11 +3434,10 @@ Six-batch parallel line-by-line audit (~89 source files, ~51 test files, 17 sche
 - Batch H2 — 8 wizard editors for general kinds + audience pickers (Announcement, CustomMessage, WeeklyDigest, CoachRoundup, FamilyGuide, PlayerPicker, RecentAndFavorites, TeamGroupedPicker)
 - Batch I — 4 incomplete tournament/game resolver reads from §4.AE deferral (gameRecap, gameRecapHelpers, scheduleChange, tournamentRecapHelpers) + feedbackSurveySection
 
-**Shipped in this PR (2 P1 + audit doc + this ledger entry):**
-1. AP #25 — `useFavoriteAudiences.js:52` onConflict `'user_id'` → `'user_id,org_id'` (composite PK match). Closes §4.AD BUG-E via orthogonal discovery (Batch H2 surfaced from code-grep + pg_constraint cross-check; agent had no prior §4.AD context)
-2. AP #36 — `PlayerPicker.jsx:36` destructured `{ data }` → `{ data, error }` + error guard + early-return. Closes silent-failure path on RLS denial / column errors
+**Shipped in this PR (1 unique P1 + audit doc + this ledger entry):**
+1. AP #36 — `PlayerPicker.jsx:36` destructured `{ data }` → `{ data, error }` + error guard + early-return. Closes silent-failure path on RLS denial / column errors
 
-Test for useFavoriteAudiences updated to assert the corrected composite onConflict pattern (cross-surface invariant lock per AP #43).
+**Parallel shipping note:** AP #25 useFavoriteAudiences.js:52 onConflict fix was independently shipped by Frank's terminal session as PR #497 (§4.AD BUG-E close) while this PR was in-flight. After merge resolution, the useFavoriteAudiences.js + test changes collapse to no-op in this PR's unique diff (both sides made identical changes). The orthogonal-discovery observation stands: two parallel sessions independently surfaced the same fix from the same anti-pattern, validating AP #25 detection methodology.
 
 **False positives caught at synthesis (3 of 4 H2 findings — 75% FP rate):**
 - `CoachRoundupBody.jsx:49` "silent on error" — file actually destructures `{ data, error }` and checks `if (error)` first. The `data || []` is the correct defensive fallback for success-with-zero-rows
@@ -3456,8 +3455,9 @@ Test for useFavoriteAudiences updated to assert the corrected composite onConfli
 Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there is no unique or exclusion constraint matching the ON CONFLICT specification`. Today's Phase 3 Batch H2 agent independently surfaced the exact same fix from code-grep + pg_constraint check, without §4.AD context. Validates AP #25 detection methodology: agents applying the discipline DO catch the bug class without needing prior console signal.
 
 **§4.AD bug closure status:**
-- BUG-E ✅ closed in this PR (useFavoriteAudiences onConflict)
-- BUG-A through BUG-D remain open in §4.AD backlog
+- BUG-A ✅ closed by PR #496 (parallel terminal session — comms_messages.created_at → last_edited_at on briefing_overdue alert query)
+- BUG-E ✅ closed by PR #497 (parallel terminal session — useFavoriteAudiences onConflict composite)
+- BUG-B/C/D remain open in §4.AD backlog
 
 **Methodology yield (afternoon Phase 3):**
 - Batches G + H1 + I: 0% false-positive yield (clean reads)

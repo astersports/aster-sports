@@ -37,7 +37,7 @@ afterEach(() => { cleanup(); vi.clearAllMocks(); });
 beforeEach(() => { initialFavorites = null; });
 
 describe('useFavoriteAudiences', () => {
-  it('a. add() appends entry + persists via upsert with composite onConflict (AP #25 — user_preferences PK is (user_id, org_id))', async () => {
+  it('a. add() appends entry + persists via upsert with onConflict user_id,org_id (composite PK)', async () => {
     initialFavorites = [];
     const { result } = renderHook(() => useFavoriteAudiences());
     await waitFor(() => expect(result.current.loading).toBe(false));
