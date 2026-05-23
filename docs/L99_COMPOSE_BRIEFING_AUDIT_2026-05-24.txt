@@ -1,0 +1,286 @@
+L99 COMPOSE-BRIEFING AUDIT — 2026-05-24
+
+Date: 2026-05-24 (PM)
+Methodology: parallel Explore agents per AP #50 batching ("the batching IS
+the methodology"). Each agent ran narrow LBL within their assigned cluster.
+Out-of-scope files deferred to next session per AP #59 capacity discipline.
+
+
+═══════════════════════════════════════════════════════════════════
+PART 0 — DISCOVERY CONTEXT
+═══════════════════════════════════════════════════════════════════
+
+Yesterday's wizard send error `TypeError: Cannot read properties of
+undefined (reading 'from')` was root-caused via this audit's Agent 2
+(send pipeline), FINDING-2:
+
+  queueComposedMessages.js used dynamic mid-function imports:
+    const { applyUnsubscribeUrls } = await import('../unsubscribeUrl');
+    const { supabase } = await import('../supabase');
+
+  Under PWA stale-cache conditions (per STATE_OF_AFFAIRS_L99_v6 §3.3
+  + yesterday's adjacent SW "Failed to convert value to Response"
+  error), the Vite chunk for '../supabase' resolved malformed.
+  Destructure made supabase undefined; line 78
+  `supabase.from('comms_message_recipients').insert(...)` threw
+  TypeError "Cannot read properties of undefined (reading 'from')"
+  — exact match.
+
+Fix shipped via PR #493 (static imports at top of file). After
+Vercel deploy, Frank's coach_roundup wizard send should succeed
+(symmetric across all 4 composerSubmit-path kinds — family_guide,
+game_recap, tournament_prelim, tournament_recap, schedule_change
+all flow through queueComposedMessages).
+
+Investigation discipline note: PR #491 (yesterday's earlier fix
+addressing slice.kind contract gap) was a real fix for a real bug,
+but NOT the user-visible error. The premise that slice.kind throw
+was the visible error was inferred from section_count=0
+correlation, not verified against literal error text. Memory
+`distinguish-inferred-vs-confirmed-error-source` saved at session
+close yesterday captures this discipline gap.
+
+
+═══════════════════════════════════════════════════════════════════
+PART 1 — AUDIT TOTALS
+═══════════════════════════════════════════════════════════════════
+
+  Layer                                Files  Findings  P0  P1  P2
+  ─────────────────────────────────────────────────────────────────
+  Send pipeline (Agent 2)              12     31        5   14  12
+  Wave 5 resolvers (Agent A)           6      18        0   7   11
+  Tournament+game resolvers (Agent B)  3/7    21        0   11  10  (4 incomplete reads)
+  Engine dispatch + hooks (Agent C)    7      12        0   4   8
+  ─────────────────────────────────────────────────────────────────
+  TOTAL                                28     82        5   36  41
+
+  P0 distribution: ALL 5 in send pipeline (Agent 2). Send-path
+  surface is the highest-density bug area, consistent with recent
+  PR 7b-2 (cutover gate) per-recipient pipeline complexity.
+
+  P3 count: 0. Both signals — agents either flagged P2 (discipline
+  gap worth tracking) or skipped pure cosmetic items.
+
+
+═══════════════════════════════════════════════════════════════════
+PART 2 — P0 FINDINGS (5 — ALL FROM AGENT 2 SEND PIPELINE)
+═══════════════════════════════════════════════════════════════════
+
+P0-2  queueComposedMessages.js:78 — `.from` on undefined supabase
+      from failed dynamic import. ✅ FIXED via PR #493 (static
+      imports). VALIDATED by hypothesis match against literal
+      error text.
+
+P0-8  rsvpNudgeSend.js:89 — calls queueComposedMessages without
+      perRecipientSubstitutor. Agent 2 flagged this as throw on
+      unconditional call at "line 40" — VERIFY: my re-read shows
+      queueComposedMessages already handles undefined substitutor
+      conditionally at lines 57-65. Agent 2 may have been reading
+      outdated state. Per verify-before-execute discipline: do
+      NOT ship a fix without re-reading current state.
+
+P0-13 scheduleChangeSend.js:91 — `db.functions.invoke()` without
+      null-guard on `db`. Could throw `.functions` on undefined
+      `db` (variant of the .from pattern). Verify current state +
+      apply guard if real.
+
+P0-18 digestSend.js:114 — `supabase.from('comms_message_recipients')
+      .insert(...)` without null-guard. SAME pattern as P0-2 but
+      in digestSend code path. Likely also dynamic-import-failure
+      candidate. Verify + apply same fix (static import).
+
+P0-20 digestSend.js:117-119 — `supabase.functions.invoke()` without
+      null-guard. Variant of P0-18 in same file. Likely bundles
+      with P0-18 fix.
+
+
+═══════════════════════════════════════════════════════════════════
+PART 3 — P1 FINDINGS (36 — BUCKETED BY AREA + FIX CLASS)
+═══════════════════════════════════════════════════════════════════
+
+3.1 Null-guards / input validation (16 findings)
+  Most common pattern. Functions accept parameters without
+  validating non-null/correct-shape, throw cryptic errors downstream.
+
+  Agent 2:  F1, F3, F5, F6, F8, F9, F10, F11, F12, F23, F25, F27
+  Agent A:  R01, R03, R09, R11, R13
+  Agent B:  T03, T06, T08, T13
+  Agent C:  E07, E11
+
+3.2 Org/contract validation gaps (4 findings)
+  Org-scope, multi-tenant assertions, branding fallback.
+
+  Agent 2:  F4
+  Agent B:  T02, T05, T12
+  Agent C:  (none)
+
+3.3 Discipline gap — AP #36 destructure-error patterns (5 findings)
+  Agent 2:  F2 (the .from bug) — addressed by PR #493
+  Agent A:  R01 (RPC shape)
+  Agent B:  T03 (broken fallback), T13 (inconsistent error handling)
+  Agent C:  E06 (state overwrite — useBriefingDraft.flush())
+
+3.4 AP #28 dispatch/state validation (4 findings)
+  Agent A:  (none)
+  Agent C:  E09, E10, E11, E12 — registry.js anchorFromState
+             entries lack pre-dispatch null-validation. Symmetric
+             pattern across rsvp_nudge / academy_callup_notice /
+             family_guide / coach_roundup. Single-PR bundle fit.
+
+3.5 Timezone / DST handling (2 findings)
+  Agent A:  R04 (toEt() static -4h offset, breaks on DST), R05
+             (formatDayLabel UTC after ET conversion)
+  Could be high-impact if DST transition hits. Defer to dedicated
+  timezone PR.
+
+3.6 Hardcoded URLs / constants (2 findings)
+  Agent A:  R17 (APP_BASE_URL hardcoded in familyGuideSections)
+  Agent C:  E01 (purity-contract JSDoc)
+
+3.7 Substitution token validation (3 findings)
+  Agent C:  E03, E04, E05 — callup/feedback/rsvp tokens substitution
+             missing field-validation before lookup. Symmetric
+             pattern across all three; single-PR fit.
+
+
+═══════════════════════════════════════════════════════════════════
+PART 4 — P2 FINDINGS (41 — BUCKETED, DEFERRED CATEGORIES)
+═══════════════════════════════════════════════════════════════════
+
+4.1 Pure-function input validation (defensive) — 18 findings
+4.2 Discipline / consistency cleanup — 8 findings
+4.3 Schema / contract documentation — 6 findings
+4.4 Perf / DB query optimization — 5 findings
+4.5 Error recovery / retry logic — 4 findings
+
+These get rolled into a separate cleanup arc — too many for the
+current session per AP #59. Defer to next available session with
+no urgent shipping work.
+
+
+═══════════════════════════════════════════════════════════════════
+PART 5 — RECOMMENDED SHIP SEQUENCE (12 PR CAP)
+═══════════════════════════════════════════════════════════════════
+
+  Slot  Type        Target                              Status
+  ─────────────────────────────────────────────────────────────────
+  1     fix         PR #493 — .from fix (P0-2)         ✅ MERGED
+  2     docs        This audit doc + §4.AE ledger      pending
+                    (current PR)
+  3     fix         P0-13/P0-18/P0-20 bundle — add     pending
+                    static imports + null-guards in
+                    scheduleChangeSend + digestSend
+                    (mirrors PR #493 fix shape)
+  4     fix         P0-8 verification (likely NOT a   pending
+                    real bug; current code handles
+                    undefined substitutor already)
+  5-6   fix         Send pipeline P1 batch — Agent 2  pending
+                    F5/F6/F9/F10/F11/F12 (null-guards)
+  7     fix         Registry pre-dispatch validation   pending
+                    bundle — E09/E10/E11/E12 (4 kinds)
+  8     fix         Token substitution validation      pending
+                    bundle — E03/E04/E05 (callup/
+                    feedback/rsvp)
+  9     fix         useBriefingDraft state-overwrite   pending
+                    fix — E06 (highest-impact P1)
+  10    fix         tournamentRecap.js org-name bug    pending
+                    — T12 (high-impact P1)
+  11    fix         tournamentPrelim broken fallback   pending
+                    — T03 (high-impact P1)
+  12    docs        Session-close TXT + final ledger   pending
+                    reconciliation
+
+
+═══════════════════════════════════════════════════════════════════
+PART 6 — OUT-OF-SCOPE (DEFERRED TO NEXT SESSION)
+═══════════════════════════════════════════════════════════════════
+
+6.1 Renderers (~30 files in src/lib/engine/renderers/)
+    Atomic HTML emitters. Lower complexity, lower bug density
+    expected. Deferred to dedicated render-layer audit pass.
+
+6.2 Wizard UI body editors (~34 files)
+    Agent 1 was incomplete — only 10/44 files audited. Files
+    remaining: all *Body.jsx (~13), audience sub-pickers (~2),
+    helper components (~19). Resume in next session.
+
+6.3 Edge function detail
+    Agents 4 + 5 failed yesterday with autocompact thrashing.
+    send-tournament-message read at Agent 5 level; cron dispatch
+    + token handlers not deep-audited.
+
+6.4 4 incomplete reads in Agent B (tournament/game resolvers)
+    - tournamentRecapHelpers.js
+    - gameRecap.js
+    - gameRecapHelpers.js
+    - scheduleChange.js
+    - feedbackSurveySection.js
+    Re-dispatch needed at smaller scope (~4-5 files / agent).
+
+6.5 Cross-cutting themes worth a dedicated pass
+    - Timezone / DST handling (currently 2 findings; likely more
+      across codebase)
+    - PostgREST `.in()` empty-array guard pattern
+    - Foreign-key validation in joined queries
+    - Org scope assertion across all org-scoped queries
+
+
+═══════════════════════════════════════════════════════════════════
+PART 7 — ANTI-PATTERN CATALOG EVIDENCE (CONTINUED VALIDATION)
+═══════════════════════════════════════════════════════════════════
+
+Anti-patterns surfacing multiple instances across the audit:
+
+  AP #25  onConflict composite — 1 instance (§4.AD BUG-E,
+          previously catalogued)
+  AP #27  pure function with injected IO — 9 instances (purity
+          contracts loose; defensive injection inconsistent)
+  AP #28  RESOLVER_REGISTRY dispatch — 5 instances (anchor
+          pre-validation missing in 4 registry entries + state
+          dispatch contract gap)
+  AP #29  per-recipient substitute helper — 6 instances (token
+          validation, RPC contract validation)
+  AP #36  destructure error not data — 9 instances (most P0s
+          including .from bug; also state-overwrite pattern in
+          useBriefingDraft)
+  AP #37  org_id filter first — 3 instances (org-scoped queries
+          lead with .eq('org_id', orgId))
+  AP #43  cross-role invariant tests — 4 instances (missing
+          invariant assertions on aggregation contracts)
+  AP #48  foreignTable .order — 2 instances (.order on foreign
+          tables doesn't sort parent rows)
+  AP #50  audit cascade — methodology applied, batching held,
+          this audit IS the validation per CLAUDE.md AP #50
+          closing note.
+
+Patterns validate the catalog continues to pay; no NEW anti-pattern
+candidates surfaced from this audit.
+
+
+═══════════════════════════════════════════════════════════════════
+PART 8 — DISCIPLINE OBSERVATIONS
+═══════════════════════════════════════════════════════════════════
+
+  Agent autocompact thrashing (3 of 5 first-pass agents failed)
+  Lesson: 15-30 files per Explore agent exceeds context budget.
+  Re-dispatch at 5-8 files / agent succeeded (Agents A, B, C
+  returned with findings; Agent B partially due to its 9-file
+  scope still being too large for full reads).
+  Refinement: target 5-6 files per agent for L99 narrow-LBL
+  agent passes.
+
+  Inferred-vs-confirmed error source (yesterday's PR #491 vs
+  today's PR #493)
+  Yesterday's PR #491 fixed a real bug (slice.kind contract) but
+  not the user-visible .from error. Today's audit Agent 2 found
+  the actual root cause. Memory
+  `distinguish-inferred-vs-confirmed-error-source` saved
+  yesterday captures the discipline. Continued validation.
+
+  Actor walk as audit gate
+  Frank's wizard send attempt surfaced the .from bug that pure
+  code review hadn't caught. PR 4 + PR 5 sat "code-complete"
+  for 5+ days before this discovery. Validates the "actor
+  validation as audit gate" framing on those PRs' status fields.
+
+End of audit.
