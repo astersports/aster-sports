@@ -42,6 +42,8 @@ export default function EventRidesTab({ event }) {
   const requestNames = useDriverNames(orgId, openRequests.map((r) => r.requester_user_id));
   const [childNames, setChildNames] = useState({});
   const [postOfferOpen, setPostOfferOpen] = useState(false);
+  // BUG-004: symmetric guard — same user can't both offer + request.
+  const myActiveOffer = offers.some((o) => o.driver_user_id === user?.id && o.status === 'active');
 
   useEffect(() => {
     const ids = openRequests.map((r) => r.for_child_id).filter(Boolean);
@@ -63,14 +65,12 @@ export default function EventRidesTab({ event }) {
     <div style={{ padding: '12px 16px 80px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
         <div style={{ flex: 1 }}>{offers.length > 0 && <DensityToggle sectionKey="rides-list" />}</div>
-        {!myOpenRequest && (
+        {!myOpenRequest && !myActiveOffer && (
           <Button size="sm" variant="secondary" onClick={() => setRequestFormOpen(true)} aria-label="Request a ride">
             <Hand size={14} strokeWidth={2} /> Need ride
           </Button>
         )}
-        <Button size="sm" onClick={() => setPostOfferOpen(true)} aria-label="Offer a ride">
-          <Plus size={14} strokeWidth={2} /> Offer ride
-        </Button>
+        {!myOpenRequest && (<Button size="sm" onClick={() => setPostOfferOpen(true)} aria-label="Offer a ride"><Plus size={14} strokeWidth={2} /> Offer ride</Button>)}
       </div>
 
       {openRequests.length > 0 && (
