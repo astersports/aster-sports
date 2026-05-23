@@ -155,13 +155,30 @@ export function createSupabaseQueryExecutor(supabase) {
 
     // family_balances view reuse for payment_overdue. Q7-style sub:
     // view already gates by RLS + org_id.
+    //
+    // §4.AD BUG-B fix (2026-05-24): the original query referenced 3 columns
+    // that don't exist on family_balances: family_id, outstanding_amount,
+    // oldest_outstanding_age_days. Actual schema: guardian_id, balance_cents,
+    // last_payment_at. Query rewritten to read actual columns + return-shape
+    // mapped to preserve the legacy field names so evaluator.js:101 (which
+    // reads r.outstanding_amount) keeps working. Edge case: rows with NULL
+    // last_payment_at (families that never paid) are EXCLUDED by the .lt
+    // filter — matches prior behavior since oldest_outstanding_age_days NULL
+    // would not have satisfied .gt either. Document as follow-up if real
+    // "never paid" alerts are needed.
     async getOverdueFamilyBalances(orgId, ageThresholdDays, minimumAmountDollars) {
+      const ageThresholdIso = new Date(Date.now() - ageThresholdDays * 86400000).toISOString();
       const { data, error } = await supabase.from('family_balances')
-        .select('family_id, outstanding_amount, oldest_outstanding_age_days')
-        .eq('org_id', orgId).gt('outstanding_amount', minimumAmountDollars * 100)
-        .gt('oldest_outstanding_age_days', ageThresholdDays);
+        .select('guardian_id, balance_cents, last_payment_at')
+        .eq('org_id', orgId)
+        .gt('balance_cents', minimumAmountDollars * 100)
+        .lt('last_payment_at', ageThresholdIso);
       if (error) throw error;
-      return data || [];
+      return (data || []).map((r) => ({
+        family_id: r.guardian_id,
+        outstanding_amount: r.balance_cents,
+        oldest_outstanding_age_days: Math.floor((Date.now() - new Date(r.last_payment_at).getTime()) / 86400000),
+      }));
     },
   };
 }

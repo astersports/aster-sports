@@ -42,7 +42,11 @@ export default function NotificationHistory({ orgId }) {
     if (!orgId) return;
     let cancelled = false;
     supabase.from('event_notifications')
-      .select('id, notification_type, title, body, status, created_at, delivered_at, recipient_type')
+      // §4.AD BUG-C fix (2026-05-24): event_notifications has no title/body
+      // columns — both live inside the payload JSONB. PostgREST `col->>key`
+      // extracts text values; aliased to title/body so the JSX below
+      // (n.title / n.body access) keeps working unchanged.
+      .select('id, notification_type, title:payload->>title, body:payload->>body, status, created_at, delivered_at, recipient_type')
       .eq('org_id', orgId)
       .order('created_at', { ascending: false })
       .limit(30)
