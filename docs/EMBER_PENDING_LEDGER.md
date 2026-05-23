@@ -3338,3 +3338,48 @@ that only surface in production browsers.
   framing in PR 4 + PR 5's status fields.
 
 ---
+
+### §4.AE — L99 compose briefing subsystem audit (2026-05-24)
+
+Six-batch parallel line-by-line audit of the compose briefing subsystem (~89 source files, ~51 test files, 17 schema migrations). Methodology per AP #50 narrow-scope rule. Canonical artifact: `docs/L99_COMPOSE_BRIEFING_AUDIT_2026_05_24.md`. Ships with this PR alongside 4 P1 fixes + 1 P2 fix.
+
+**Shipped in this PR (4 P1 + 1 P2):**
+1. AP #37 — `useBriefingFilters.js:57` org_id ordering
+2. AP #37 — `BriefingHistoryDetail.jsx:38` org_id ordering
+3. AP #15 — `briefing_inbox_preferences_own` policy wrap `auth.uid()` in `(SELECT)` (migration 20260523195203)
+4. AP #6 — `composer.js` 163L → 34L; SECTION_RENDERERS extracted to `sectionRenderers.js` (re-exported for caller stability)
+5. P2 — `BriefingHistoryDetail.jsx:22` iframeStyle hex literal → token
+
+**False positives caught during synthesis (do not act):**
+- Batch D's `recipientFilter.js` org_id miss — `events` and `tournament_teams` are FK-scoped (no org_id column) per AP #37 exception
+- Batch C's "tournamentRecap.js renderer missing" — recap renders via section composition (placementBlock + standoutMoments + gameLog + bracketCallout); template-driven dispatch is by design
+- Batch C's renderer hex literals flagged as §3 violations — email HTML cannot use CSS variables (§13 #1); raw hex required for email-client compatibility
+- Batch F's "3 RLS policies" on briefing_inbox_preferences — actually 1 policy with `polcmd='*'` (ALL); USING + WITH CHECK count as one policy, fixed by single DROP+CREATE
+- Batch F's AP #57 P2 EXTERNAL anon access — `has_function_privilege('anon', briefing_active_queue, 'EXECUTE')` already returns FALSE. Lowered to P3 hardening (defense-in-depth only)
+
+**Open follow-ups (P2/P3, do not block):**
+
+| Item | Severity | Routing |
+|---|---|---|
+| `BriefingComposer` Step 2 recipient preview chip (§13 #7) | P2 | Design call: where to mount + admin BCC implications. Defer until next compose-briefing iteration |
+| AP #57 hardening migration for `briefing_active_queue` (add explicit REVOKE FROM PUBLIC + REVOKE FROM anon) | P3 | Defense-in-depth only — anon already cannot execute per live `has_function_privilege` check. Bundle with next briefing schema migration |
+| `familyGuideHelpers.js` (155L) over AP #6 cap | P3 | Same shape as composer.js split; next material change to family_guide triggers the action |
+| `supabase/functions/briefing-cron-dispatch/_helpers.ts` (152L) Deno mirror at cap | P3 | TS annotation overhead. Split next time the cron-dispatch logic gets material work |
+| `_lib.ts` token handler — `any` types + silent error swallow in `mintUnsubscribeUrl` | P3 | Edge function hardening pass |
+| Renderer hex literals → constants in `colors.js` | P3 | 4 files (hotelBlock, gameCard, callupResponse, rsvpRequest), ~15 hex literals. Email HTML still uses inline hex, just sourced from a const map for diff-friendly future swaps |
+| Test-coverage audit completion (resolvers + renderers) | P3 | Batch B + C agents self-truncated at the test-file boundary; the coverage gaps are not enumerated. Dispatch a focused test-only audit batch when there's session capacity |
+| Tournament_recap rendering architecture (resolver + 4 sections, no dedicated renderer file) | P3-doc | Section-composition is by design. One-line architecture note in §13 or §16.x would prevent the next batch agent from flagging it as missing |
+
+**Pattern locks from this audit:**
+- **PATTERN ALPHA — AP #37 org_id ordering compliance** (locked): 2 real instances post-FP-1 reclassification (`useBriefingFilters` + `BriefingHistoryDetail`). The FK-scoped exception (events, tournament_teams, event_rsvps, team_players, player_guardians, comms_message_recipients, etc. — tables without an `org_id` column) is the dominant false-positive mode for agents auditing AP #37. Future AP #37 audit prompts should include the exception list explicitly to prevent FP-1 recurrence
+- **PATTERN BETA — authentication discipline drift** (locked): 2 findings in Batch F briefing infrastructure (AP #15 real, AP #57 hardening). Per-subsystem migration sweeps for `auth.uid()` literals and `SECURITY DEFINER` grant chains should be replicated for other subsystems
+
+**Batch-agent self-truncation observation:**
+3 of 6 batches' continuation runs self-truncated at the test-file boundary, citing imagined "no tools" constraints never present in the prompt. Likely cause: context-window pressure as findings accumulate; agent confabulates a stop instruction to gracefully degrade. Mitigation for future multi-batch audits: split test-file audit into a separate agent dispatch, OR set explicit progress checkpoints in the prompt.
+
+**Anti-pattern catalog evidence (continued validation):**
+- AP #50 (methodology matches scope): six-batch parallel line-by-line at narrow scope produced clean findings with ~15-20% false-positive rate caught at synthesis. Validates the discipline
+- AP #45 (planning-doc → ledger reconciliation): this entry shipped in same commit as the audit doc, holding the discipline
+- AP #15 / AP #37 (recurring drift classes): both still surface despite registered anti-patterns. Per-subsystem audit sweeps are the recovery mechanism
+
+---
