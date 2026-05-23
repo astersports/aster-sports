@@ -3339,16 +3339,55 @@ that only surface in production browsers.
 
 ---
 
-### §4.AE — L99 compose briefing subsystem audit (2026-05-24)
+### §4.AE — L99 Compose-Briefing Audit (2026-05-24)
 
-Six-batch parallel line-by-line audit of the compose briefing subsystem (~89 source files, ~51 test files, 17 schema migrations). Methodology per AP #50 narrow-scope rule. Canonical artifact: `docs/L99_COMPOSE_BRIEFING_AUDIT_2026_05_24.md`. Ships with this PR alongside 4 P1 fixes + 1 P2 fix.
+**Status:** Phase 1 audit complete (PARTIAL — 28 files audited, ~64 deferred). PR #493 shipped the root-cause `.from`-on-undefined fix during the audit. Audit doc lives at `docs/L99_COMPOSE_BRIEFING_AUDIT_2026-05-24.txt`.
 
-**Shipped in this PR (4 P1 + 1 P2):**
+**Surface:** ~28 files across send pipeline + Wave 5 resolvers + tournament/game resolvers (partial) + engine dispatch + hooks. Deferred: ~30 renderers, ~34 wizard UI body editors, edge function detail.
+
+**Findings: 82 total** (5 P0 / 36 P1 / 41 P2 / 0 P3). All 5 P0s concentrated in send pipeline (Agent 2) due to recent PR 7b-2 cutover gate complexity. Other surfaces clean of P0.
+
+**Discovery context:** Yesterday's wizard send `.from`-on-undefined error root-caused via Agent 2 FINDING-2: `queueComposedMessages.js` dynamic `await import('../supabase')` resolving malformed under PWA stale-cache → supabase undefined → `.from` threw. Fix shipped PR #493 (static imports). Symmetric across all 4 composerSubmit-path kinds.
+
+**Investigation discipline note:** PR #491 (yesterday's earlier fix for slice.kind contract gap) addressed a real but separate bug — not the user-visible error. Memory `distinguish-inferred-vs-confirmed-error-source` saved at yesterday's session close captures the inferred-vs-confirmed error-source discipline gap. This audit applied that lesson: Agent 2's FINDING-2 was verified against literal error text + module export contract before PR #493 shipped.
+
+**Recommended ship sequence (12 PR cap):**
+1. PR #493 — `.from` fix ✅ MERGED
+2. This PR — audit doc + §4.AE entry
+3. P0 bundle — `scheduleChangeSend` + `digestSend` static-imports/null-guards (P0-13/18/20)
+4. P0-8 verification (likely false-positive from Agent 2 reading outdated state — confirm before ship)
+5-6. Send pipeline P1 batch — null-guard fixes
+7. Registry pre-dispatch validation bundle (4 anchor entries — E09/E10/E11/E12)
+8. Token substitution validation bundle (callup/feedback/rsvp — E03/E04/E05)
+9. `useBriefingDraft` state-overwrite fix (E06)
+10. `tournamentRecap.js` org-name bug (T12)
+11. `tournamentPrelim.js` broken fallback (T03)
+12. Session-close TXT + final reconciliation
+
+**Out-of-scope (next session):** renderers, wizard UI body editors, edge function detail, 4 incomplete tournament/game reads (`gameRecap.js`, `gameRecapHelpers.js`, `scheduleChange.js`, `feedbackSurveySection.js`, `tournamentRecapHelpers.js`).
+
+**Anti-pattern catalog evidence:** AP #25 / #27 / #28 / #29 / #36 / #37 / #43 / #48 / #50 all surfaced multiple instances. Catalog continues to pay. No NEW AP candidates from this audit.
+
+**Discipline observations:**
+- **Agent autocompact thrashing:** 3 of 5 first-pass agents failed at 15-30 files. Re-dispatch at 5-8 files succeeded. Refinement: target 5-6 files per agent for L99 narrow-LBL passes.
+- **Actor walk as audit gate:** Frank's wizard send surfaced the `.from` bug pure code review hadn't caught. PR 4 + PR 5 sat "code-complete" for 5+ days before this discovery. Validates the framing on those PRs' status fields.
+
+---
+
+### §4.AF — L99 Compose-Briefing Chat-Side Audit (2026-05-24)
+
+**Companion to §4.AE.** Independent parallel audit dispatched from chat-side claude.ai (terminal-CC ran §4.AE). Complementary coverage: §4.AE focused 28 files on send pipeline + resolvers; §4.AF covered the broader 89-file surface (composer wizard + hooks + RLS migrations + schema + advisors). Conflict on §4.AE position resolved by promoting this entry to §4.AF.
+
+Six-batch parallel line-by-line audit (~89 source files, ~51 test files, 17 schema migrations). Methodology per AP #50 narrow-scope rule. Canonical artifact: `docs/L99_COMPOSE_BRIEFING_AUDIT_2026_05_24.md`. Ships with PR #495 alongside 4 P1 fixes + 1 P2 fix.
+
+**Shipped in PR #495 (4 P1 + 1 P2):**
 1. AP #37 — `useBriefingFilters.js:57` org_id ordering
 2. AP #37 — `BriefingHistoryDetail.jsx:38` org_id ordering
 3. AP #15 — `briefing_inbox_preferences_own` policy wrap `auth.uid()` in `(SELECT)` (migration 20260523195203)
 4. AP #6 — `composer.js` 163L → 34L; SECTION_RENDERERS extracted to `sectionRenderers.js` (re-exported for caller stability)
 5. P2 — `BriefingHistoryDetail.jsx:22` iframeStyle hex literal → token
+
+**Cross-coverage check vs §4.AE:** §4.AE caught the real send-pipeline P0s (queueComposedMessages dynamic-import, scheduleChangeSend/digestSend null-guards) that §4.AF missed. §4.AF caught AP #37 ordering + AP #15 RLS + AP #6 file-length that §4.AE didn't surface. Complementary, not redundant. The .from-on-undefined root cause (PR #493) was uniquely §4.AE's discovery via Agent 2.
 
 **False positives caught during synthesis (do not act):**
 - Batch D's `recipientFilter.js` org_id miss — `events` and `tournament_teams` are FK-scoped (no org_id column) per AP #37 exception
@@ -3369,13 +3408,14 @@ Six-batch parallel line-by-line audit of the compose briefing subsystem (~89 sou
 | Renderer hex literals → constants in `colors.js` | P3 | 4 files (hotelBlock, gameCard, callupResponse, rsvpRequest), ~15 hex literals. Email HTML still uses inline hex, just sourced from a const map for diff-friendly future swaps |
 | Test-coverage audit completion (resolvers + renderers) | P3 | Batch B + C agents self-truncated at the test-file boundary; the coverage gaps are not enumerated. Dispatch a focused test-only audit batch when there's session capacity |
 | Tournament_recap rendering architecture (resolver + 4 sections, no dedicated renderer file) | P3-doc | Section-composition is by design. One-line architecture note in §13 or §16.x would prevent the next batch agent from flagging it as missing |
+| Audit doc filename consolidation — `.md` (§4.AF) vs `.txt` (§4.AE) on same day at near-identical paths | P3-doc | Project convention is `.txt` per `L99_PLATFORM_WIDE_AUDIT_2026-05-21.txt`. Follow-up PR to rename `L99_COMPOSE_BRIEFING_AUDIT_2026_05_24.md` → `_chat.txt` or merge content into the .txt doc |
 
 **Pattern locks from this audit:**
 - **PATTERN ALPHA — AP #37 org_id ordering compliance** (locked): 2 real instances post-FP-1 reclassification (`useBriefingFilters` + `BriefingHistoryDetail`). The FK-scoped exception (events, tournament_teams, event_rsvps, team_players, player_guardians, comms_message_recipients, etc. — tables without an `org_id` column) is the dominant false-positive mode for agents auditing AP #37. Future AP #37 audit prompts should include the exception list explicitly to prevent FP-1 recurrence
 - **PATTERN BETA — authentication discipline drift** (locked): 2 findings in Batch F briefing infrastructure (AP #15 real, AP #57 hardening). Per-subsystem migration sweeps for `auth.uid()` literals and `SECURITY DEFINER` grant chains should be replicated for other subsystems
 
 **Batch-agent self-truncation observation:**
-3 of 6 batches' continuation runs self-truncated at the test-file boundary, citing imagined "no tools" constraints never present in the prompt. Likely cause: context-window pressure as findings accumulate; agent confabulates a stop instruction to gracefully degrade. Mitigation for future multi-batch audits: split test-file audit into a separate agent dispatch, OR set explicit progress checkpoints in the prompt.
+3 of 6 batches' continuation runs self-truncated at the test-file boundary, citing imagined "no tools" constraints never present in the prompt. Likely cause: context-window pressure as findings accumulate; agent confabulates a stop instruction to gracefully degrade. Mitigation for future multi-batch audits: split test-file audit into a separate agent dispatch, OR set explicit progress checkpoints in the prompt. Matches §4.AE's "agent autocompact thrashing" observation independently — same failure class surfaced in two parallel sessions.
 
 **Anti-pattern catalog evidence (continued validation):**
 - AP #50 (methodology matches scope): six-batch parallel line-by-line at narrow scope produced clean findings with ~15-20% false-positive rate caught at synthesis. Validates the discipline
