@@ -37,7 +37,7 @@ afterEach(() => { cleanup(); vi.clearAllMocks(); });
 beforeEach(() => { initialFavorites = null; });
 
 describe('useFavoriteAudiences', () => {
-  it('a. add() appends entry + persists via upsert with onConflict user_id', async () => {
+  it('a. add() appends entry + persists via upsert with onConflict user_id,org_id (composite PK)', async () => {
     initialFavorites = [];
     const { result } = renderHook(() => useFavoriteAudiences());
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -48,7 +48,7 @@ describe('useFavoriteAudiences', () => {
     expect(result.current.favorites[0].id).toBeTruthy();
     const upsertCall = upsertFn.mock.calls[0];
     expect(upsertCall[0]).toMatchObject({ user_id: 'user-1', org_id: 'org-1' });
-    expect(upsertCall[1]).toEqual({ onConflict: 'user_id' });
+    expect(upsertCall[1]).toEqual({ onConflict: 'user_id,org_id' });
   });
 
   it('b. remove(id) filters favorites + persists', async () => {
