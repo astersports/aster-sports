@@ -641,16 +641,38 @@ V2 chunks (deferred, priority order):
 
 Source: `SKYFIRE_BUILD_QUEUE_v2.md` §P0 Bugs.
 
-Status: **LIKELY CLOSED by Migration 022** but **NOT VERIFIED**. See §15.
+**Status: SECTION CLOSED (2026-05-23 triage).** Three already shipped via
+intermediate refactors (ledger referent was stale per AP #45 corollary);
+BUG-004 shipped via fresh PR + invariant test.
 
-- **BUG-001** — Admin home "Next Up" card data stale/broken. Fix phase
-  Phase 1 after Migration 022; Mig 022 shipped 2026-04-24.
-- **BUG-002** — `src/hooks/useEventDutyCounts.js`. Phase 1.
-- **BUG-003** — `src/hooks/useEventRideCounts.js`. Phase 1.
-- **BUG-004** — DB CHECK or frontend guard in `RideFormOverlay.jsx`.
+- ~~**BUG-001**~~ ✅ **CLOSED — pre-existing**. `NextEventCard.jsx:28-29,52` renders
+  `dateStr + timeStr + location` from `event.start_at` + `event.location`.
+  Original April 23 hypothesis (stale row from duplicate 11U Girls
+  practice) likely correct — Migration 022 cleaned the data, the rendering
+  was never broken in code.
+- ~~**BUG-002**~~ ✅ **CLOSED — pre-existing**. `useEventDutyCounts.js:28,31`
+  only increments `claimed` when `guardian_id OR claimed_by_name` is set.
+  Original "2/2 volunteers filled" symptom can no longer reproduce with
+  current aggregation logic.
+- ~~**BUG-003**~~ ✅ **CLOSED — pre-existing**. `useEventRideCounts.js:33,37`
+  uses `SUM(seats_requested || 1)` and `SUM(seats_needed || 1)` — the
+  original `COUNT(*)` aggregation that caused the undercount has been
+  replaced. Multi-seat requests now sum correctly.
+- ~~**BUG-004**~~ ✅ **SHIPPED 2026-05-23**. Symmetric guard in
+  `EventRidesTab.jsx`: when user has open request, BOTH "Need ride" and
+  "Offer ride" hide; when user has active offer, "Need ride" hides
+  (PostOfferForm's existing `hasActiveOffer` prop handles the offer-
+  duplicate side internally). Pre-fix only the request-duplicate
+  direction was guarded — the cross-direction (offer + request by same
+  user on same event) was unguarded. 5-test invariant suite locks all
+  combinations per AP #43.
 
-Build queue states "All 5 fixed in Migration 022" but only 4 BUGs
-listed. Verification pass needed Monday.
+Discipline note: 3-of-4 closures came from grepping the referenced files
+against the original symptom rather than re-shipping the same fix. This
+is the AP #45 corollary staleness pattern (ledger marked OPEN but code
+already done) — the same shape that closed Clusters 4/5/7 in 2026-05-19's
+sweep audit. Counter-anti-pattern: never re-ship without grep-verifying
+the symptom can still reproduce.
 
 ---
 
