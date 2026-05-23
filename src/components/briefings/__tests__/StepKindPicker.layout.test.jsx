@@ -14,6 +14,15 @@ vi.mock('../../../hooks/useKindUsage', () => ({
   useKindUsage: () => ({ usageByKind: {}, countsByKind: {}, loading: false }),
 }));
 
+// §4.AI Option C PR A — DraftResumeRow (new import chain in StepKindPicker)
+// pulls AuthContext → supabase. The mock keeps the test from blowing up at
+// load time when ENV vars aren't set; the row itself doesn't render when
+// `onResume` is omitted, so behavior unchanged.
+vi.mock('../../../lib/supabase', () => ({ supabase: { from: () => ({}) } }));
+vi.mock('../../../hooks/useAvailableDrafts', () => ({
+  useAvailableDrafts: () => ({ drafts: [], loading: false, error: null }),
+}));
+
 const { default: StepKindPicker } = await import('../../briefings/StepKindPicker');
 
 afterEach(cleanup);

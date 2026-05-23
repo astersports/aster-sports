@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 import { CalendarPlus, DollarSign, Inbox, Megaphone, Trophy, Upload, UserPlus } from 'lucide-react';
 
-// 2026-05-23: 'Compose Briefing' tile retired — it landed on the same
-// page as the 'Briefings' tile (BriefingsInboxPage) with a composer modal
-// auto-opening on top, which read as the same destination. The inbox's
-// own "Compose" CTA covers the new-briefing flow, so the COMMUNICATE
-// group keeps a single 'Briefings' entry. The /admin/briefings/compose
-// route stays alive for deep links from event/team/tournament headers.
+// 2026-05-23 (§4.AI Option C): the 'Briefings' tile now points directly
+// at /admin/briefings/compose. The inbox surface (BriefingsInboxPage)
+// has been retired in favor of compose-first navigation; sent history
+// lives at /admin/briefings/history, reachable via the "View sent" link
+// in the wizard header. Synthetic alerts (recap pending, tournament
+// wrap-up, schedule-change followup) surface in the Admin Home
+// AlertZone via PR B follow-up.
 //
 // Wave 5 PR 2 (2026-05-15): 'Import Schedule' added after Tournaments —
 // natural grouping (you import the schedule for a tournament). Lands on
@@ -45,7 +46,7 @@ const GROUPS = [
   {
     label: 'COMMUNICATE',
     tiles: [
-      { label: 'Briefings', icon: Inbox,     to: '/admin/briefings'     },
+      { label: 'Briefings', icon: Inbox,     to: '/admin/briefings/compose' },
       { label: 'Announce',  icon: Megaphone, to: '/messages?announce=1' },
     ],
   },

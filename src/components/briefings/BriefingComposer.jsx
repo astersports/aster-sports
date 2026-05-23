@@ -2,7 +2,7 @@
 // body+signoff) with live preview. Auto-saves via useBriefingDraft.
 // Bug fixes locked in wave 4.1b + 4.2-A-8d (weekly_digest short-circuit).
 
-import { useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { useResetOnOrgChange } from '../../hooks/useResetOnOrgChange';
 import FullScreenForm from '../shared/FullScreenForm';
 import { useToast } from '../../context/useToast';
@@ -51,16 +51,13 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
     return undefined;
   }, [state.kindFilter, state.kind, state.step, state.anchor_kind, state.audience_type]);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (!initialDraftId) return undefined;
-    Promise.resolve().then(async () => {
-      const { data } = await supabase.from('comms_messages').select('*').eq('id', initialDraftId).maybeSingle();
-      if (cancelled || !data) return;
-      dispatch({ type: 'HYDRATE_DRAFT', payload: { kind: data.kind, anchor_kind: data.anchor_kind, anchor_id: data.anchor_id, audience_type: data.audience_type, audience_filter: data.audience_filter, body: data.content_sections?.body || {}, signoff_message: data.signoff_message || '', draft_id: data.id } });
-    });
-    return () => { cancelled = true; };
-  }, [initialDraftId]);
+  const loadDraft = useCallback(async (id) => {
+    if (!id) return;
+    const { data, error } = await supabase.from('comms_messages').select('*').eq('id', id).maybeSingle();
+    if (error || !data) return;
+    dispatch({ type: 'HYDRATE_DRAFT', payload: { kind: data.kind, anchor_kind: data.anchor_kind, anchor_id: data.anchor_id, audience_type: data.audience_type, audience_filter: data.audience_filter, body: data.content_sections?.body || {}, signoff_message: data.signoff_message || '', draft_id: data.id } });
+  }, []);
+  useEffect(() => { if (initialDraftId) Promise.resolve().then(() => loadDraft(initialDraftId)); }, [initialDraftId, loadDraft]);
 
   // Wave 4.3-H: keep state.pilot_only in sync with org-level pilot
   // mode so preview-vs-send filters stay consistent (without this,
@@ -129,9 +126,9 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   return (
     <FullScreenForm open onClose={onClose} title={`Compose · ${STEPS[stepIndex]}`}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <WizardHeader step={state.step} totalSteps={STEPS.length} onBack={() => dispatch({ type: 'GO_BACK' })} draft={draft} hasKind={!!state.kind} />
+        <WizardHeader step={state.step} totalSteps={STEPS.length} onBack={() => dispatch({ type: 'GO_BACK' })} draft={draft} hasKind={!!state.kind} viewSentTo="/admin/briefings/history" />
         <ScheduleForLaterPicker mode={state.send_mode === 'scheduled' ? 'schedule_for_later' : 'send_now'} scheduledFor={state.scheduled_for} onChange={(payload) => dispatch({ type: 'SET_SCHEDULE', payload })} />
-        {state.step === 1 && <StepKindPicker visibleKinds={state.kindFilter} onPick={(kind, meta) => dispatch({ type: 'SET_KIND', kind, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType, defaultBody: {} }) || dispatch({ type: 'GO_FORWARD' })} />}
+        {state.step === 1 && <StepKindPicker visibleKinds={state.kindFilter} onResume={(d) => loadDraft(d.id)} onPick={(kind, meta) => dispatch({ type: 'SET_KIND', kind, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType, defaultBody: {} }) || dispatch({ type: 'GO_FORWARD' })} />}
         {state.step === 2 && <StepAnchorAudience state={state} dispatch={dispatch} audience={audience} recipientsLoading={recipientsLoading} pilotTestRecipientEmail={pilotTestRecipientEmail} />}
         {state.step === 3 && <StepBodySignoff state={state} dispatch={dispatch} audience={audience} hasParentTournament={hasParentTournament} onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose} />}
         {state.step === STEPS.length && <StepSendConfirm state={state} audience={audience} onSend={onSend} sending={busy} pilotModeEnabled={pilotModeEnabled} />}

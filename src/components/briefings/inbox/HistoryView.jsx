@@ -35,7 +35,7 @@ export default function HistoryView({ filters, search, onCompose }) {
 
   if (!loading && !rows.length) {
     const filterActive = !!(filters?.kind || filters?.teams?.length || search?.trim() || filters?.dateRange !== 'all');
-    if (filterActive) return <EmptyState kind="filtered" onClearFilters={() => navigate('/admin/briefings?tab=history')} />;
+    if (filterActive) return <EmptyState kind="filtered" onClearFilters={() => navigate('/admin/briefings/history')} />;
     return <EmptyState kind="history" onCompose={onCompose} />;
   }
 
