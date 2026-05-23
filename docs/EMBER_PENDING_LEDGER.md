@@ -3487,3 +3487,61 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 - AP #50: 4-batch parallel narrow-LBL methodology validated again. Per-batch variance (0% to 75% FP rate) is acceptable as long as synthesis catches it
 
 ---
+
+### §4.AH — §4.AE Batch I close-out (2026-05-25 AM)
+
+**Closes:** §4.AE deferral on 4 incomplete tournament/game resolver reads from yesterday's audit.
+
+**Session contract:** max 1 PR, deeper integration synthesis pass on top of §4.AG's narrow-LBL Phase 3 Batch I (which returned 0 findings but at code-level only, not integration-level).
+
+**Scope (files read in deeper synthesis pass):**
+- Primary (5): `gameRecap.js`, `gameRecapHelpers.js`, `scheduleChange.js`, `tournamentRecapHelpers.js`, `feedbackSurveySection.js`
+- Cross-reference (8+): `registry.js`, `composer.js`, `sectionRenderers.js`, `scheduleChangeSend.js`, `composerSubmit.js`, `feedbackTokens.js`, `feedbackSubstitutor.js`, `briefingCronHelpers.js` + selective reads of `tournamentRecap.js`, `tournamentPrelimHelpers.js`, `scheduleChangeHelpers.js`
+
+**Findings:** 0 P0 / 0 P1 / 0 P2. **CLEAN.**
+
+**Integration invariants confirmed (8/8):**
+- AP #27 — no static supabase imports in any resolver; all throw early on missing `options.supabase`
+- AP #28 — no per-kind branching outside `registry.js` (verified: `briefingCronHelpers.js:34` switch is a data table, not dispatch; `AudiencePicker.jsx:36-37` per-kind branches are UI affordance gates, not dispatch)
+- AP #29 — token field naming symmetry holds for feedback survey: `feedback_token_placeholders` (compose-emit) → `feedback_token_urls` (post-substitution, separate field); URL wrap lives in `feedbackSubstitutor.js:39-44` send-side helper, not in substitute helper or renderer
+- AP #34 — no orphan callers for game_recap / schedule_change / tournament_recap; the 3 grep hits on `compose({kind:'schedule_change'})` are all comment-text references to the prior orphan that PR #99 closed
+- AP #36 — every Supabase chain in the 5 files destructures `{ data, error }` and throws on error before using data (20+ call sites confirmed)
+- AP #37 — all tables queried are either FK-scoped (exempt) or filter on `org_id`/`organization_id` first
+- AP #38 — all 10 emitted section kinds (header, footer, signoff, stats_narrative, schedule_change_diff, coach_reflection, standout_moments, game_log, placement_block, feedback_survey) present in `SECTION_RENDERERS` (sectionRenderers.js:53-86, chat-side spot-checked `signoff` at line 61 to verify agent claim)
+- AP #44 — no gate-style findings to trace; resolvers are linear async chains with throw-on-error at every step
+
+**P3 watch-item (NOT a fix candidate — documented design choice, recorded for future-watch only):**
+
+`gameRecap.js:84` + `scheduleChange.js:94` + `tournamentRecap.js:115` all hardcode `name: ORG_NAME_DEFAULT` ('Legacy Hoopers') in the returned `context.org` while the upstream query fetches `org.name` from the DB and discards it. Under single-org pilot (current state), this renders correctly. Under multi-tenant rollout (CLAUDE.md §4 "Multi-Tenant Architecture"), every org's briefing would render "Legacy Hoopers" regardless of actual org. Pattern is consistent across all calendar-anchored resolvers (5+ instances) — this is a documented design choice, not drift. Re-evaluate when multi-tenant rollout becomes the active arc.
+
+**Cross-batch pattern observations:**
+
+- No new patterns. Pattern ALPHA (AP #36 destructure cascade) — all destructures in scope already migrated to safe form during Beta B6 audit (`// Beta B6 audit — anti-pattern #36.` comments mark migration sites in gameRecap.js:73, scheduleChange.js:39/69/81, tournamentRecap.js:47/67)
+- §4.AG narrow-LBL claim verified: code-level read returned 0 findings, deeper synthesis pass also returns 0 findings. Per AP #50: "narrow scope line-by-line = high signal-to-noise, low miss rate" — Batch I is a true clean batch, not a missed-finding cascade. §4.AG's clean read was sufficient; §4.AH's deeper pass confirms rather than supersedes
+- Intentional asymmetry verified: `tournament_recap` does not emit `buildFeedbackSurveySection()` while the other 4 composerSubmit-path kinds + weekly_digest do. Confirmed against PR 7b-2 + PR 7b-2.5 routing lock: the 5 feedback-enabled kinds are tournament_prelim, family_guide, coach_roundup, game_recap, weekly_digest. tournament_recap is intentionally excluded per Frank's 2026-05-22 routing decision
+
+**Methodology yield:**
+
+- 1 agent dispatch, 1 PR (this ledger entry)
+- 0 fixes shipped (clean close)
+- 1 chat-side spot-check verification (AP #38 `signoff` line 61) — agent claim held
+- Session contract held: max 1 PR, no second-cycle dispatch
+
+**Audit catalog evidence (continued):**
+
+- AP #50 validated again: deeper synthesis pass on §4.AG's narrow-LBL clean batch confirmed the prior result rather than overturning it. The methodology calibration ("narrow-LBL clean ⇒ probably actually clean") held this round. Deeper pass remains worth running on deferral close-outs as defense-in-depth, but the prior-clean signal was load-bearing
+- AP #59 session contract discipline: pre-locked at session-open before any dispatch (Batch I close-out only, max 1 PR). Held cleanly — agent returned in single pass, no scope creep, no second cluster engagement
+- AP #56 external stop condition: contract was set externally (operator routing) rather than driven by the audit-cycle's internal momentum
+
+**Standing pending surface (carried forward unchanged):**
+
+- Frank's wizard test on PR #493 (A.1.b) — operator action; unblocks A.2/A.3
+- 36 P1 + 41 P2 from §4.AE / §4.AF audits — large catalog, requires per-finding verify-before-execute
+- B.1/B.2 PreToolUse hook arc (A.4 Option 3)
+- §4.AF P2 BriefingComposer recipient preview chip
+- ~30 renderers + ~34 wizard UI body editors deferred audit surface
+- Multi-tenant org_name shadowing (P3 watch-item from this audit — defer to multi-tenant arc)
+
+§4.AE Batch I closes as expected. Audit cycle complete on this surface.
+
+---
