@@ -24,6 +24,8 @@ import {
   expandSliceToRows,
   renderBody,
 } from './queueComposedMessagesBuilders';
+import { applyUnsubscribeUrls } from '../unsubscribeUrl';
+import { supabase } from '../supabase';
 
 export { buildFanoutRows } from './queueComposedMessagesBuilders';
 
@@ -65,8 +67,13 @@ export async function queueComposedMessages({ messageId, messages, testOnly, adm
     : familyRows;
 
   const allRows = [...substitutedFamilyRows, ...(adminRow ? [adminRow] : [])];
-  const { applyUnsubscribeUrls } = await import('../unsubscribeUrl');
-  const { supabase } = await import('../supabase');
+  // A.1.a-2 fix (2026-05-24): converted from dynamic `await import('../supabase')`
+  // to static import at top of file. Dynamic-import failure surface (Vite chunk
+  // load failure under PWA stale-cache conditions per STATE_OF_AFFAIRS_L99_v6 §3.3)
+  // resolved supabase to undefined → `supabase.from(...)` threw "Cannot read
+  // properties of undefined (reading 'from')" at runtime. Static import
+  // eliminates the runtime resolution failure path. See ledger §4.AE for
+  // Agent 2 audit FINDING-2 root-cause analysis.
   const stamped = await applyUnsubscribeUrls(allRows);
   // Cutover PR 7b-2: strip transient __content_sections before INSERT —
   // comms_message_recipients has no such column.
