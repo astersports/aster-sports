@@ -69,9 +69,19 @@ export async function resolveCoachRoundup({ coachUserId, dateRange }, { supabase
     if (orgRow?.name) orgName = orgRow.name;
   }
 
+  // Fetch coach email via SECDEF RPC. staff_profiles has no email
+  // column; auth.users does. get_staff_email checks the requested
+  // user_id is a staff member in the caller's org before returning
+  // (defense-in-depth alongside RLS). Added 2026-05-23 per A.1.a fix.
+  const { data: coachEmail, error: emailErr } = await supabase.rpc(
+    'get_staff_email', { p_user_id: coachUserId },
+  );
+  if (emailErr) throw emailErr;
+  if (!coachEmail) throw new Error(`Coach ${coachUserId} has no auth.users email`);
+
   return {
     context: { coach, teamsWithEvents, conflicts, dateRange, coaches, orgName },
-    slices: [{ recipient_user_id: coach.user_id, coach_name: coach.display_name }],
+    slices: [{ kind: 'single_recipient', guardian_id: null, email: coachEmail, coach_name: coach.display_name }],
   };
 }
 

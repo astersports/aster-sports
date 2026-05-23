@@ -98,7 +98,7 @@ export async function resolveFamilyGuide({ parentUserId, dateRange }, { supabase
 
   return {
     context: { parent, kidsWithEvents, conflicts, dateRange, coaches, orgName },
-    slices: [{ recipient_user_id: parent.user_id, parent_name: parent.first_name, parent_email: parent.email }],
+    slices: [{ kind: 'single_recipient', guardian_id: parent.id, email: parent.email, parent_name: parent.first_name }],
   };
 }
 

@@ -43,6 +43,20 @@ describe('resolveFamilyGuide', () => {
     expect(r.context.kidsWithEvents).toEqual([]);
     expect(r.context.conflicts).toEqual([]);
   });
+  it('returns slice with kind=single_recipient + parent email + guardian_id (A.1.a fix — PR 5 actor send unblock)', async () => {
+    const r = await resolveFamilyGuide(
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { supabase: mockSb({ parent: PARENT }) },
+    );
+    expect(r.slices).toHaveLength(1);
+    expect(r.slices[0]).toMatchObject({
+      kind: 'single_recipient',
+      guardian_id: 'g1',
+      email: 'frank@ex.com',
+      parent_name: 'Frank',
+    });
+  });
+
   it('aggregates events per kid×team', async () => {
     const r = await resolveFamilyGuide(
       { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
