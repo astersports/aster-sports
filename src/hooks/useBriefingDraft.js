@@ -22,13 +22,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { computeExpiryForKind } from '../lib/cron/briefingCronHelpers';
 
 const DEBOUNCE_MS = 3000;
 
 function buildPayload({ orgId, userId, draft }) {
+  const now = new Date();
+  const kind = draft.kind || 'custom_message';
   return {
     org_id: orgId,
-    kind: draft.kind || 'custom_message',
+    kind,
     anchor_kind: draft.anchor_kind || null,
     anchor_id: draft.anchor_id || null,
     audience_type: draft.audience_type || null,
@@ -38,10 +41,17 @@ function buildPayload({ orgId, userId, draft }) {
     body_plain: draft.body_plain || '',
     content_sections: draft.content_sections || [],
     signoff_message: draft.signoff_message || null,
-    last_edited_at: new Date().toISOString(),
+    last_edited_at: now.toISOString(),
     last_edited_by: userId,
     language_code: draft.language_code || 'en',
     delivery_method: 'queued',
+    // §4.AI Option C PR D — set expires_at on every save so the
+    // existing briefing-auto-draft-tick sweep can archive untouched
+    // admin drafts the same way it archives untouched cron drafts.
+    // anchorTime stays null (avoiding an extra anchor fetch on each
+    // save); fallback = now means the expiry window rolls forward
+    // each time admin edits, matching the "N days untouched" semantic.
+    expires_at: computeExpiryForKind(kind, null, now).toISOString(),
   };
 }
 
