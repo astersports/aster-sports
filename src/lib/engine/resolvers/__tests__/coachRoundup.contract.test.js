@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { composeCoachRoundup, resolveCoachRoundup } from '../coachRoundup';
 import { detectConflicts, formatDateRange, groupEventsByTeam } from '../coachRoundupHelpers';
 
-function mockSb({ coach = null, staffRows = [], events = [], coaches = [], org = null }) {
+function mockSb({ coach = null, staffRows = [], events = [], coaches = [], org = null, coachEmail = 'coach@example.com' }) {
   return {
     from(table) {
       const builder = {
@@ -33,6 +33,13 @@ function mockSb({ coach = null, staffRows = [], events = [], coaches = [], org =
       };
       return builder;
     },
+    // 2026-05-23 A.1.a fix: resolver now fetches coach email via SECDEF RPC.
+    // mock returns the configured coachEmail (default fixture) or null for the
+    // explicit no-email branch.
+    async rpc(name) {
+      if (name === 'get_staff_email') return { data: coachEmail, error: null };
+      return { data: null, error: null };
+    },
   };
 }
 
@@ -56,6 +63,27 @@ describe('resolveCoachRoundup (PR 4b real aggregation)', () => {
     );
     expect(r.context.teamsWithEvents).toEqual([]);
     expect(r.context.conflicts).toEqual([]);
+  });
+
+  it('throws when coach has no auth.users email (A.1.a fix — get_staff_email RPC returned null)', async () => {
+    await expect(resolveCoachRoundup(
+      { coachUserId: 'c1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { supabase: mockSb({ coach: COACH, coachEmail: null }) },
+    )).rejects.toThrow(/has no auth.users email/);
+  });
+
+  it('returns slice with kind=single_recipient + coach email (A.1.a fix — PR 4 actor send unblock)', async () => {
+    const r = await resolveCoachRoundup(
+      { coachUserId: 'c1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { supabase: mockSb({ coach: COACH, coachEmail: 'kenny@example.com' }) },
+    );
+    expect(r.slices).toHaveLength(1);
+    expect(r.slices[0]).toMatchObject({
+      kind: 'single_recipient',
+      guardian_id: null,
+      email: 'kenny@example.com',
+      coach_name: 'Coach Kenny',
+    });
   });
 
   it('aggregates events per team and sorts by sort_order', async () => {

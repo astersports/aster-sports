@@ -41,6 +41,16 @@ export function expandSliceToRows(messageId, message, rendered) {
   if (slice.kind === 'team') {
     return (slice.recipient_guardians || []).map((g) => ({ ...base, guardian_id: g.guardian_id, email_at_send: g.email, teams_included: [slice.team_id] }));
   }
+  // Single-recipient kinds (coach_roundup, family_guide): one row, one
+  // email, guardian_id null when recipient is a non-guardian role like
+  // coach. No fan-out across teams or guardians — the resolver chose
+  // exactly one recipient at resolve time. Added 2026-05-23 per A.1.a
+  // bug fix; resolvers previously emitted slices without slice.kind
+  // and hit the throw below at queue time, breaking actor sends for
+  // PR 4 (coach_roundup) and PR 5 (family_guide).
+  if (slice.kind === 'single_recipient') {
+    return [{ ...base, guardian_id: slice.guardian_id ?? null, email_at_send: slice.email, teams_included: slice.team_ids || [] }];
+  }
   throw new Error(`queueComposedMessages: unknown slice.kind '${slice?.kind}'`);
 }
 

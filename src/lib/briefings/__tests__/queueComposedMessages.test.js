@@ -56,6 +56,30 @@ describe('queueComposedMessages — pure builders', () => {
     expect(rows).toEqual([]);
   });
 
+  // 2026-05-23 A.1.a fix: single_recipient kind for coach_roundup + family_guide.
+  // PR 4 / PR 5 actor sends hit the throw at expandSliceToRows because their
+  // resolvers emitted slices without slice.kind. New kind unblocks both.
+  it('single_recipient slice -> 1 row, guardian_id null (coach_roundup shape)', () => {
+    const slice = { kind: 'single_recipient', guardian_id: null, email: 'coach@x', coach_name: 'Coach K' };
+    const rows = buildFanoutRows({ messageId: 'm-1', messages: [{ slice, subject: 'Coach roundup', content_sections: sectionsA }], testOnly: false });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ message_id: 'm-1', guardian_id: null, email_at_send: 'coach@x', teams_included: [], delivery_status: 'queued' });
+    expect(rows[0].subject_rendered).toBe('Coach roundup');
+  });
+
+  it('single_recipient slice -> 1 row, guardian_id set (family_guide shape)', () => {
+    const slice = { kind: 'single_recipient', guardian_id: 'g1', email: 'parent@x', parent_name: 'Frank' };
+    const rows = buildFanoutRows({ messageId: 'm-1', messages: [{ slice, subject: 'Family guide', content_sections: sectionsA }], testOnly: false });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ message_id: 'm-1', guardian_id: 'g1', email_at_send: 'parent@x', teams_included: [] });
+  });
+
+  it('single_recipient slice with team_ids array -> teams_included propagates', () => {
+    const slice = { kind: 'single_recipient', guardian_id: 'g1', email: 'parent@x', team_ids: ['t-1', 't-2'], parent_name: 'F' };
+    const rows = buildFanoutRows({ messageId: 'm-1', messages: [{ slice, subject: 'X', content_sections: sectionsA }], testOnly: false });
+    expect(rows[0].teams_included).toEqual(['t-1', 't-2']);
+  });
+
   it('renderBody wraps HTML + emits plainText + subject', () => {
     const out = __test.renderBody({ subject: 'Hi', content_sections: sectionsA });
     expect(out.subject).toBe('Hi');
