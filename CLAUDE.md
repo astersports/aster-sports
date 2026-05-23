@@ -685,8 +685,7 @@ holding (caught + fixed mid-flight).
 
 Origin: session 2026-05-21 PRs #446 and #453.
 
-56. **Audit cycles need external stop conditions (CANDIDATE — promote
-    on third instance).**
+56. **Audit cycles need external stop conditions.**
 
 The audit cycle's internal logic always justifies the next audit. Every
 audit produces findings that justify another audit. Session-level diff
@@ -706,11 +705,20 @@ that exist before the opener move dispatches. After-the-fact discretion
 at each gate compounds toward audit-cycle generation rather than
 audit-cycle validation.
 
-Promotion: third instance with explicit session-contract discipline
-holding.
-
 Origin: session 2026-05-21 11pm stop-hold moment when Claude pushed back
 and Frank held the line.
+
+**Promoted 2026-05-25** after third instance with explicit
+session-contract discipline holding:
+- 2026-05-21 11pm: 47-PR session, Claude pushed back, Frank held the
+  line; shipped 2 P0 fixes (#456, #457), deferred the rest to next
+  morning
+- 2026-05-23 PM: Frank's explicit "Pause. Don't clone, don't fan out
+  audit agents, don't propose alternate work plans" message; terminal-CC
+  redirected from broad audit dispatch to locked A.4 / Phase 3 scope
+- 2026-05-24 PM: chat-side §4.AG entry explicitly cited "closing per
+  AP #56 + AP #59" — discipline self-invoked at session close to
+  prevent a second-cycle audit dispatch on top of the Phase 3 catalog
 
 57. **Supabase default privileges auto-grant EXECUTE to anon despite
     REVOKE FROM PUBLIC (extends anti-pattern #23).**
@@ -740,8 +748,7 @@ Promotion: third Supabase project encountering the same default-privilege
 override. Likely promotes quickly because every new SECDEF function
 exposes the pattern.
 
-58. **Cross-batch pattern check in audit findings TXT (CANDIDATE —
-    promote on third multi-batch audit).**
+58. **Cross-batch pattern check in audit findings TXT.**
 
 When multi-batch audits run sequentially (or in parallel waves with
 findings synthesis between batches), each batch's findings TXT should
@@ -767,12 +774,23 @@ pattern-continuation section referencing prior batches' patterns by name
 (ALPHA, BETA, GAMMA, etc.). New patterns get registered with letter
 names in the same TXT for downstream batches to reference.
 
-Promotion: third multi-batch audit where the synthesis discipline catches
-a cross-cutting pattern that wouldn't have surfaced from any single batch
-alone.
+**Promoted 2026-05-25** after third multi-batch audit with synthesis
+discipline catching cross-cutting patterns:
+- 2026-05-21 L99 platform audit (14 batches): Pattern ALPHA #36 cascade
+  grew 7→25+→55+ across batches, justified a platform-wide sweep PR +
+  audit test instead of per-surface fixes
+- 2026-05-24 AM L99 compose-briefing audit (Batches A-F): PATTERN ALPHA
+  (#37 ordering) + PATTERN BETA (auth discipline) registered and locked
+  in §4.AF
+- 2026-05-24 PM L99 compose-briefing Phase 3 (Batches G/H1/H2/I):
+  PATTERN GAMMA candidate (AP #36 destructured-default) evaluated, did
+  NOT lock (only 1 real instance survived synthesis after 3 H2 false
+  positives); PATTERN ALPHA/BETA reconfirmed as non-recurring. The
+  synthesis gate caught a 75% false-positive yield in Batch H2 before
+  shipping, validating the "lock only at 3+ real instances post-
+  synthesis" heuristic.
 
-59. **Close session when audits run ahead of routing capacity (CANDIDATE
-    — promote on third instance).**
+59. **Close session when audits run ahead of routing capacity.**
 
 When the gap between "audit produces findings" and "human routes findings
 into shipping decisions" closes to zero — when audits dispatch faster
@@ -802,8 +820,25 @@ to next morning.
 The 11pm stop-hold worked. Today's session-open could engage the catalog
 with fresh-eyes routing rather than fatigue-driven escalation.
 
-Promotion: third session where the audit cycle ran ahead of routing
-capacity AND the operator/agent successfully held the line.
+**Promoted 2026-05-25** after third session where the audit cycle ran
+ahead of routing capacity AND the operator/agent successfully held the
+line:
+- 2026-05-21 11pm: 47 PRs, 14 batches, ~204 findings; Claude pushed back
+  "close the session"; Frank held the line; deferred 5 P0s + 8 design
+  calls + 4 routing clusters to next morning
+- 2026-05-23 PM: Frank's "Pause" message arrested a session opener that
+  was about to fan out audit agents; redirected to locked A.4 / Phase 3
+  scope
+- 2026-05-24 PM: chat-side §4.AG entry explicitly cited AP #59 at
+  session close ("Max 2 PRs from Phase 3 arc — only 1 needed");
+  Frank's "Standing by. Genuinely clean close this time." sealed the
+  discipline hold
+
+Tightly coupled with AP #56 (audit cycles need external stop
+conditions) — the two are different surfaces of the same restraint:
+#56 is the rule (audit cycles can't self-stop, brakes come from
+outside); #59 is the close-out application when #56's pre-locked
+contracts get pressure-tested mid-session.
 
 ---
 
