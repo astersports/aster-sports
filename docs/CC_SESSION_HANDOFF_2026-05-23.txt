@@ -1,0 +1,269 @@
+CC SESSION HANDOFF — 2026-05-23 (AM/MIDDAY)
+
+Session shape: ground-truth reload + A.4 investigation + Q8 verification
++ Cluster 8 (C) consolidation. 2 PRs (#488 merged, #489 auto-merge
+enabled awaiting CI). Discipline-validating; no audit cycle generated.
+
+═══════════════════════════════════════════════════════════════════
+PART 1 — TODAY'S CATCHES (three instances of mechanical-verification-before-action)
+═══════════════════════════════════════════════════════════════════
+
+Today produced three distinct positive-mirror instances of
+mechanical-verification-before-action: on corrections from outside
+(Correction 1 chronology), on task framings from outside (Q8
+staleness), on catalog assumptions (Cluster 8 C name collision). All
+three caught real issues that would have shipped wrong content /
+wrong code / wrong consolidation otherwise. Same underlying
+discipline, three different input surfaces.
+
+1.1 Verify on corrections — Correction 1 chronology pivot
+
+Frank's chat-side correction round on the A.4 doc outline named three
+structural issues. Terminal-CC did NOT blindly apply them — it grepped
+the repo first (scripts/check-parent-checkout-leakage.sh + git log)
+and discovered Correction 1's premise didn't hold: the pre-commit hook
+did not exist at the time PR #473 leaked. PR #477 *created* it as a
+response to that leakage.
+
+The corrections were applied with that chronology pivot, producing a
+more honest diagnostic than either Frank's framing or terminal-CC's
+first draft would have shipped.
+
+1.2 Verify on task framings — Q8 doc PR already shipped (AP #45 corollary)
+
+Frank's pivot framing included "Phase 3 cleanup: Q8 doc PR" as today's
+locked work. Terminal-CC investigated via git log + commit diff and
+found: PR #475 (commit 439c005, 2026-05-22 06:06 +02:00) already
+shipped exactly the Q8 doc content — CLAUDE.md §6 zone-decomposition
+pattern (32 lines) + ledger §4.AC entry (33 lines). The PR commit
+message explicitly says "Closes Phase 3 Q8 from L99 remaining-phases
+audit 2026-05-22."
+
+Frank's mental model of "pending work" was 1 day stale relative to
+actual main state. Same shape as §4.E P0 BUG-001/002/003 closures
+2026-05-23 — ledger framing said OPEN, code/docs already done. See
+Part 4 for the AP #45 corollary instance count this session.
+
+The discipline that surfaced it: read main first before assuming
+what's queued. Memory referenced:
+check-main-before-framing-revive-options.md.
+
+1.3 Verify on catalog assumptions — Cluster 8 (C) name-collision catch
+
+The §4.Z §14 helper-extraction backlog framed "9 inline formatter
+dupes" as consolidatable. Terminal-CC investigated each candidate
+before editing and discovered OfferCard's local formatTime wasn't
+actually a duplicate of canonical formatTime — same name, different
+behavior (weekday+time "Mon, 6:00 PM" vs time-only "6:00 PM"). Naive
+consolidation under the same name would have silently regressed every
+ride pickup/return label (AP #46 visual rhythm class).
+
+Fix routed through a new formatDayTime helper for OfferCard's shape,
+preserving the original render exactly. Catalog assumption verified
+against actual code before action — see PR #489 commit message for
+the empirical chain.
+
+Pattern synthesis: all three instances demonstrate mechanical
+verification of INPUT premise (correction / task framing / catalog
+claim) before action. Same root, different input surfaces. Worth
+naming as a class in the candidate AP framing — see Part 3.
+
+═══════════════════════════════════════════════════════════════════
+PART 2 — PRs THIS SESSION
+═══════════════════════════════════════════════════════════════════
+
+PR #488 ✅ MERGED 2026-05-23T15:15:28Z (merge commit e8f7643)
+  docs(remaining-phases): scaffold A.4 — AP #52 third-break
+  structural investigation
+  Files: docs/REMAINING_PHASES_AUDIT.md (new, 350 lines)
+  Closes forward references at EMBER_PENDING_LEDGER.md:1407 + :3151
+  Catalog: 4 options (CI gate / SHIPPED hook reframed / PreToolUse
+  bridge / no-persistent-parent north star)
+  Appendix: candidate AP "mechanical gates over verbal acknowledgments"
+
+PR #489 ⏳ open, auto-merge SQUASH enabled (CI pending)
+  chore(formatters): consolidate formatTime + add formatDayTime
+  helper (Cluster 8 C)
+  Files: 4 changed, +44 / -10
+    - src/lib/formatters.js (+formatDayTime export, NY-pinned)
+    - src/lib/__tests__/formatters.timezone.test.js (+test block,
+      4 assertions including null/undefined input)
+    - src/components/roster/TeamDetailHero.jsx (local def → import)
+    - src/components/ride/OfferCard.jsx (local def → import via new
+      formatDayTime helper; rename collision resolved)
+
+═══════════════════════════════════════════════════════════════════
+PART 3 — A.4 DOC FRAMING (key takeaways for next session)
+═══════════════════════════════════════════════════════════════════
+
+Recommended sequence post-PR-#488:
+  1. Option 3 PreToolUse hook — next concrete PR. Scope: hook script
+     + .claude/settings.json entry + agent-spawn prefix-write +
+     test fixture. Single-scope PR. Frank to confirm Claude Code
+     harness PreToolUse mechanics before scoping.
+  2. Option 2 retained — existing PR #477 warning hook (does not
+     block; surfaces at commit time in parent checkout)
+  3. Option 1 deferred — CI gate, defense-in-depth only
+  4. Option 4 archived as north star — no persistent parent checkout.
+     Design arc opens when Option 3 empirical data is in hand
+     (~10 sessions post-Option-3).
+
+Candidate AP "mechanical gates over verbal acknowledgments":
+
+  Today's instances — five categories (3 failures + 2 positive
+  mirrors), with the verify-before-execute positive mirror fired
+  three times across distinct input surfaces:
+
+  Failures (count toward promotion criterion):
+    1. AP #52 prose-discipline failure on registration day (PR #473)
+    2. Verbal-pivot pattern (terminal-CC, 2026-05-23 session opener)
+       — said "Pivoting" while task list still held old audit-fan-out
+       plan
+    3. Bash-compound cd ... 2>/dev/null pattern (terminal-CC, same
+       opener) — same path-resolution failure mode as AP #52,
+       different tool surface (bash composition vs Edit input
+       construction)
+
+  Positive mirrors (supporting evidence; framing works both directions):
+    4. Per-command-vs-blanket-approval framework articulation
+       (chat-side decision today: declined "Yes, don't ask again for
+       grep *" in favor of per-command approval; named the criteria
+       for when blanket CAN be granted — catalog-loading complete,
+       locked work identified, N consecutive holds, repetitive
+       command class)
+    5. Verify-before-execute pattern — fired three times today across
+       three distinct input surfaces (see Part 1 for sub-instances):
+         5a. Correction 1 chronology pivot — verify on corrections
+         5b. Q8 staleness catch — verify on task framings
+         5c. Cluster 8 (C) name-collision catch — verify on catalog
+             assumptions
+
+  Promotion criterion: third FAILURE instance + mechanical-gate
+  solution shipping. Failures #1-#3 already meet the third-instance
+  threshold. Option 3's PR (PreToolUse hook) is the validation
+  signal that closes the criterion.
+
+A.4 exit criteria (when section closes):
+  (a) Option 3 implementation PR shipped
+  (b) 10 consecutive agent sessions with zero new parent-checkout
+      agent-leakage stashes
+  (c) CLAUDE.md AP #52 entry updated to reference Option 3 as
+      primary mechanism
+
+═══════════════════════════════════════════════════════════════════
+PART 4 — DISCIPLINE OBSERVATIONS
+═══════════════════════════════════════════════════════════════════
+
+Pre-flight per §9.1 — clean
+  Branch state: aligned (origin/main..HEAD empty both directions)
+  diff --quiet HEAD: clean (fresh clone, no leakage from this side)
+  get_advisors:
+    Performance: 178 WARN baseline (150 multiple_permissive_policies,
+      55 unused_index, 53 unindexed_FK, 27 auth_rls_initplan)
+    Security: 48 WARN baseline (38 authenticated_secdef_executable,
+      9 anon_secdef_executable). No new advisories from morning's PRs.
+  Ledger §4 reconciliation: complete via targeted reads of §4.A /
+    §4.E / §4.X / §4.Z / §4.AA / §4.AB / §4.AC.
+
+AP #54 (same-MCP-burst ready + auto-merge): 2/2 holds this session
+  PR #488: REST POST create + gh pr merge --auto in same response.
+    Merged within seconds.
+  PR #489: REST POST create + gh pr merge --auto in same response.
+    Auto-merge enabled; awaiting CI green.
+
+AP #55 (use actual PR# from create_pull_request response): 2/2 holds
+  PR # captured from REST POST response in both cases.
+
+AP #45 corollary (ledger marked OPEN but code already done): 3
+  instances this session, all caught by grep-before-action.
+    - §4.E P0 BUG-001/002/003 closures 2026-05-23 (already shipped via
+      intermediate refactors; ledger was stale)
+    - Q8 doc PR (already shipped via PR #475 2026-05-22; user pivot
+      framing was 1 day stale)
+    - Cluster 8 (C) name-collision (§14 catalog said "9 inline
+      formatter dupes"; verification found OfferCard's was a different
+      function with same name, not a duplicate)
+  Discipline continues to perform as designed.
+
+AP #52 Edit-tool variant: not applicable this session (no worktree;
+  fresh clone — all Edit/Write tool calls used absolute paths in the
+  parent-clone tree).
+AP #52 widening to bash-compound silent-stderr: applicable — broke
+  once at session opener (cd ... 2>/dev/null; <fileop> shape), caught
+  + restructured via Frank's chat-side feedback. The widening itself
+  is one of today's catalog-evolution candidates per Part 3
+  (counts as Failure #3 in the mechanical-gates instance list).
+
+Slips caught + corrected mid-session:
+  1. Verbal-pivot pattern: said "Pivoting" while task list still held
+     the old audit-fan-out plan. Caught by Frank's chat-side feedback.
+     Discipline going forward: task list rewrite happens in the same
+     response as the verbal acknowledgment.
+     Memory: verbal-pivot-without-task-rewrite.md
+
+  2. Bash-compound cd ... 2>/dev/null; <fileop> pattern queued in
+     session opener. Same path-resolution failure mode as AP #52
+     (different tool surface — bash composition instead of Edit input
+     construction). Caught by Frank's chat-side feedback.
+     Discipline going forward: discrete commands with absolute paths,
+     no stderr redirect on path-sensitive ops.
+     Memory: no-compound-bash-with-silent-stderr.md
+
+Both memories now persist across sessions.
+
+═══════════════════════════════════════════════════════════════════
+PART 5 — NON-BLOCKING OBSERVATIONS FOR FUTURE SESSIONS
+═══════════════════════════════════════════════════════════════════
+
+Surfaced from pre-flight + Cluster 8 investigation:
+
+- mint_feedback_token has authenticated EXECUTE (sibling of
+  verify_feedback_token which PR #486 fixed). Hygiene PR candidate
+  applying the same REVOKE pattern. Same shape as AP #57 — Supabase
+  default privileges auto-grant EXECUTE.
+
+- 27 auth_rls_initplan advisor WARNs (CLAUDE.md §5 subselect-wrap
+  cleanup needed). Top tables: event_comments (25 instances),
+  event_rsvps (24), event_duties (12). Bounded sweep candidate.
+
+- Cluster 8 (A) CIRCUIT_LABELS — 4 duplicates (TeamDetailHero,
+  TeamRow, AdminOpponentsPage, AdminTeamsPage). All identical 3-key
+  object. ~30-line PR if scoped surgically. Caution: per AP #43,
+  ship with a cross-surface invariant test asserting all callsites
+  render the same label for the same circuit value.
+
+- Cluster 8 (B) ORG_*_DEFAULT — 10 file duplicates spanning renderers
+  (6) + resolvers (4). Bigger blast radius; coordinate with the
+  multi-tenant branding doctrine (CLAUDE.md §4 — these should
+  ideally source from the org record at runtime; the duplicates are
+  the fallback shape).
+
+- Cluster 8 (D) formatDayLabel duplication — needs deeper read of
+  familyGuideHelpers + coachRoundupHelpers + others. May or may not
+  be a name-collision like OfferCard's formatTime was. Investigate
+  before consolidating.
+
+═══════════════════════════════════════════════════════════════════
+PART 6 — HAND-BACK
+═══════════════════════════════════════════════════════════════════
+
+Session work complete pending PR #489's CI.
+
+Memory state for next session:
+  4 prior memories + 2 new this session:
+    - check-main-before-framing-revive-options.md (prior)
+    - use-gh-pr-merge-auto-not-bash-wait-loops.md (prior)
+    - ask-receipts-when-reviewer-cites-off-cc-work.md (prior)
+    - verify-sdk-mechanism-against-installed-source.md (prior)
+    - verbal-pivot-without-task-rewrite.md (NEW today)
+    - no-compound-bash-with-silent-stderr.md (NEW today)
+
+Watch list for next session:
+  - PR #489 status (auto-merge fires on CI green; surface failure
+    inline if not)
+  - AP #52 #3 break already occurred in this session's opener (bash
+    compound) — counts toward "mechanical gates" candidate framing's
+    third-instance criterion
+  - Option 3 PreToolUse hook = the next concrete A.4 work
+
+End of handoff.
