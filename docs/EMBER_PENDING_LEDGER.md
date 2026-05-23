@@ -3457,7 +3457,8 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 **§4.AD bug closure status:**
 - BUG-A ✅ closed by PR #496 (parallel terminal session — comms_messages.created_at → last_edited_at on briefing_overdue alert query)
 - BUG-E ✅ closed by PR #497 (parallel terminal session — useFavoriteAudiences onConflict composite)
-- BUG-B/C/D remain open in §4.AD backlog
+- BUG-B/C/D ✅ closed by PR #498 (parallel terminal session — family_balances column remap with return-shape map preserving evaluator.js contract + event_notifications JSONB title/body extraction via PostgREST `col->>key` aliases + event_rsvps→players embed restructure to separate fetch + JS Map join, since no FK constraint exists)
+- **§4.AD arc fully closed (2026-05-24 PM).** All 5 console-triage bugs landed in main across PRs #496/#497/#498. Reconciliation per AP #45 same-commit ledger discipline applied 2026-05-25 (this edit, post-PR-#498-merge)
 
 **Methodology yield (afternoon Phase 3):**
 - Batches G + H1 + I: 0% false-positive yield (clean reads)
@@ -3480,6 +3481,7 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 **Audit catalog evidence (continued):**
 - AP #25: third confirmed instance in codebase (PR #38 staff_profiles, PR #37 same line, this PR useFavoriteAudiences). Discipline still pays
+- **AP #25 — orthogonal-discovery validation (promoted 2026-05-25 from §4.AG "Orthogonal verification" subsection).** Two parallel sessions (chat-side Phase 3 Batch H2 + terminal-side §4.AD console-triage) converged on the identical useFavoriteAudiences composite-PK fix with zero shared context. One path started from a literal console error (`there is no unique or exclusion constraint matching the ON CONFLICT specification`); the other started from a `pg_constraint` + code-grep audit pass with no console signal. **Independent paths surfacing the same finding ⇒ strongest validation signal for an anti-pattern detection methodology.** AP #25's pg_constraint cross-check rule is durable enough that re-running it (even partially, even without prior context) re-surfaces the same bug. Promoted as durable structural signal, not a one-off coincidence
 - AP #36: refinement noted — verification gate must read 3-line context block, not single-line string match
 - AP #58 candidate (cross-batch pattern check): worked as designed. PATTERN GAMMA evaluated, did not lock, follow-up registered. The "lock only at 3+ real instances post-synthesis" heuristic held
 - AP #50: 4-batch parallel narrow-LBL methodology validated again. Per-batch variance (0% to 75% FP rate) is acceptable as long as synthesis catches it
