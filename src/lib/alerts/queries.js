@@ -77,10 +77,10 @@ export function createSupabaseQueryExecutor(supabase) {
     // as "sent enough" because the operational work is done at dispatch.
     async getMostRecentBriefingByKind(orgId, kind, sinceTs) {
       const { data, error } = await supabase.from('comms_messages')
-        .select('id, kind, status, created_at')
+        .select('id, kind, status, last_edited_at')
         .eq('org_id', orgId).eq('kind', kind)
-        .in('status', ['queued', 'sent']).gte('created_at', sinceTs)
-        .order('created_at', { ascending: false }).limit(1);
+        .in('status', ['queued', 'sent']).gte('last_edited_at', sinceTs)
+        .order('last_edited_at', { ascending: false }).limit(1);
       if (error) throw error;
       return (data && data[0]) || null;
     },
