@@ -4,18 +4,23 @@
 // (alertConfigs, queryExecutor) and returns firing alerts. v1 invocation
 // passes a Supabase-client-backed executor; future v2+ migration to
 // server-side edge function or scheduled cron swaps ONLY the executor.
-// Evaluator logic doesn't change.
 //
-// Per the alert-type-to-query mapping sub-question (Frank's pre-flight
-// flag): compile-time function map. Adding a new alert kind requires
-// code change + seed change. Acceptable for v1's 5 alert types where
-// additions are rare; revisit when v2 admin settings UI ships.
+// §4.AI Option C PR B (2026-05-23): briefing_overdue evaluators moved
+// to briefingOverdueEvaluators.js so this file stays under the 150-line
+// cap after adding 2 new sub-keys (game_recap + tournament_recap).
 //
 // Per per-evaluator contract: each evaluator function takes
 // (config, queryExecutor) and returns either null (no fire) OR
 // { config_id, alert_type_key, instance_key, severity, data }.
 
 import { thresholdForTeam } from './thresholds';
+import {
+  computeWeekStartIso,
+  evalBriefingOverdue,
+  evalBriefingOverdueGameRecap,
+  evalBriefingOverdueTournament,
+  evalBriefingOverdueTournamentRecap,
+} from './briefingOverdueEvaluators';
 
 // ─── Per-instance evaluators ─────────────────────────────────────
 
@@ -43,25 +48,6 @@ async function evalRsvpShortfallYesCount(config, qx, params) {
     data: { events: firing, affected_count: firing.length } };
 }
 
-async function evalBriefingOverdue(config, qx) {
-  const cfg = config.threshold_config || {};
-  const sinceTs = computeWeekStartIso(cfg.week_start_local || 'Sunday');
-  const recent = await qx.getMostRecentBriefingByKind(config.org_id, cfg.briefing_kind, sinceTs);
-  if (recent) return null;
-  return { config_id: config.id, alert_type_key: 'briefing_overdue', instance_key: config.instance_key,
-    severity: cfg.severity || 'warning',
-    data: { briefing_kind: cfg.briefing_kind, expected_send_by: cfg.expected_send_by_local } };
-}
-
-async function evalBriefingOverdueTournament(config, qx) {
-  const cfg = config.threshold_config || {};
-  const tournaments = await qx.getTournamentsWithoutPrelim(config.org_id, 3);
-  if (!tournaments.length) return null;
-  return { config_id: config.id, alert_type_key: 'briefing_overdue', instance_key: config.instance_key,
-    severity: cfg.severity || 'warning',
-    data: { tournaments, expected_send_by: cfg.alert_fire_time_local } };
-}
-
 async function evalLocationUnassigned(config, qx) {
   const cfg = config.threshold_config || {};
   const warnHours = cfg.severity_warning_window_hours ?? 48;
@@ -76,11 +62,6 @@ async function evalLocationUnassigned(config, qx) {
 }
 
 // L99 v6 §5.1 B2 — mirror of evalLocationUnassigned for opponent.
-// Same window + severity escalation logic. Reuses the same
-// filterEventsByTeamScope path in relevanceFilters.js (location_
-// unassigned branch recomputes severity from filtered critical count;
-// opponent_unassigned passes through since it doesn't get
-// per-event-team rescoping from the parent admin scope).
 async function evalOpponentUnassigned(config, qx) {
   const cfg = config.threshold_config || {};
   const warnHours = cfg.severity_warning_window_hours ?? 336;
@@ -120,6 +101,8 @@ const EVALUATORS = {
   'rsvp_shortfall:league_24h': (c, qx) => evalRsvpShortfallNonResponder(c, qx, { eventTypeFilter: 'game', withinHours: 24 }),
   'briefing_overdue:weekly_digest': evalBriefingOverdue,
   'briefing_overdue:tournament_prelim': evalBriefingOverdueTournament,
+  'briefing_overdue:game_recap': evalBriefingOverdueGameRecap,
+  'briefing_overdue:tournament_recap': evalBriefingOverdueTournamentRecap,
   'location_unassigned': evalLocationUnassigned,
   'opponent_unassigned': evalOpponentUnassigned,
   'payment_overdue': evalPaymentOverdue,
@@ -129,13 +112,6 @@ const EVALUATORS = {
 function evaluatorKey(config) {
   const k = config.alert_type?.key || config.alert_type_key;
   return config.instance_key ? `${k}:${config.instance_key}` : k;
-}
-
-function computeWeekStartIso(weekStartLocal) {
-  const day = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 }[weekStartLocal] ?? 0;
-  const now = new Date();
-  const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() - day + 7) % 7));
-  return dt.toISOString();
 }
 
 // ─── Orchestrator (clean-seam entry point) ───────────────────────

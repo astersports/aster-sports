@@ -20,6 +20,9 @@ export function makeExec(overrides = {}) {
     getEventsWithoutOpponent: vi.fn(overrides.getEventsWithoutOpponent || noop),
     getEventsWithBrokenLocationData: vi.fn(overrides.getEventsWithBrokenLocationData || noop),
     getOverdueFamilyBalances: vi.fn(overrides.getOverdueFamilyBalances || noop),
+    // §4.AI Option C PR B — recap evaluator queries
+    getGameRecapPendingEvents: vi.fn(overrides.getGameRecapPendingEvents || noop),
+    getTournamentRecapPendingTournaments: vi.fn(overrides.getTournamentRecapPendingTournaments || noop),
   };
 }
 

@@ -17,10 +17,13 @@ describe('evaluatorKey', () => {
 });
 
 describe('EVALUATORS map covers all v1 configs', () => {
-  it('has 6 catalog entries + 3 rsvp primitives = 9 keys', () => {
+  it('has all registered alert evaluator keys', () => {
     // L99 v6 §5.1 B2: opponent_unassigned added 2026-05-20.
+    // §4.AI Option C PR B: briefing_overdue:game_recap +
+    // briefing_overdue:tournament_recap added 2026-05-23.
     expect(Object.keys(EVALUATORS).sort()).toEqual([
-      'briefing_overdue:tournament_prelim', 'briefing_overdue:weekly_digest',
+      'briefing_overdue:game_recap', 'briefing_overdue:tournament_prelim',
+      'briefing_overdue:tournament_recap', 'briefing_overdue:weekly_digest',
       'data_integrity_event_location_missing', 'location_unassigned',
       'opponent_unassigned', 'payment_overdue',
       'rsvp_shortfall:friday_noon', 'rsvp_shortfall:league_24h', 'rsvp_shortfall:saturday_6am',
@@ -84,6 +87,41 @@ describe('briefing_overdue:tournament_prelim', () => {
   });
   it('does NOT fire when all tournaments have prelim sent', async () => {
     const qx = makeExec({ getTournamentsWithoutPrelim: () => Promise.resolve([]) });
+    expect(await evaluateAlerts([cfg], qx)).toEqual([]);
+  });
+});
+
+// §4.AI Option C PR B — 2 new briefing_overdue sub-keys.
+describe('briefing_overdue:game_recap', () => {
+  const cfg = makeConfig('briefing_overdue', 'game_recap', { severity: 'warning', since_hours: 24 });
+  it('FIRES when past games have no game_recap sent', async () => {
+    const qx = makeExec({ getGameRecapPendingEvents: () => Promise.resolve([{ id: 'e1', team_id: 't1', start_at: '2026-05-20T12:00Z', end_at: '2026-05-20T14:00Z', opponent: 'Falcons', teams: { name: '11U Girls' } }]) });
+    const out = await evaluateAlerts([cfg], qx);
+    expect(out).toHaveLength(1);
+    expect(out[0].alert_type_key).toBe('briefing_overdue');
+    expect(out[0].instance_key).toBe('game_recap');
+    expect(out[0].severity).toBe('warning');
+    expect(out[0].data.count).toBe(1);
+    expect(out[0].data.events).toHaveLength(1);
+  });
+  it('does NOT fire when all past games have a recap sent', async () => {
+    const qx = makeExec({ getGameRecapPendingEvents: () => Promise.resolve([]) });
+    expect(await evaluateAlerts([cfg], qx)).toEqual([]);
+  });
+});
+
+describe('briefing_overdue:tournament_recap', () => {
+  const cfg = makeConfig('briefing_overdue', 'tournament_recap', { severity: 'warning', since_days: 2 });
+  it('FIRES when past tournaments have no tournament_recap sent', async () => {
+    const qx = makeExec({ getTournamentRecapPendingTournaments: () => Promise.resolve([{ id: 't1', name: 'Spring Showdown', start_date: '2026-05-17', end_date: '2026-05-18' }]) });
+    const out = await evaluateAlerts([cfg], qx);
+    expect(out).toHaveLength(1);
+    expect(out[0].alert_type_key).toBe('briefing_overdue');
+    expect(out[0].instance_key).toBe('tournament_recap');
+    expect(out[0].data.tournaments).toHaveLength(1);
+  });
+  it('does NOT fire when all past tournaments have a recap sent', async () => {
+    const qx = makeExec({ getTournamentRecapPendingTournaments: () => Promise.resolve([]) });
     expect(await evaluateAlerts([cfg], qx)).toEqual([]);
   });
 });

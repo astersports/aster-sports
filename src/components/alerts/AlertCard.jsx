@@ -28,10 +28,19 @@ const EXPANDABLE_TYPES = new Set([
   'data_integrity_event_location_missing',
 ]);
 
+// §4.AI Option C PR B — instance-keyed expandable briefing_overdue
+// kinds. game_recap expands to a list of past games; tournament_recap
+// to past tournaments. Each row taps into the composer pre-filled.
+const EXPANDABLE_BRIEFING_INSTANCES = new Set(['game_recap', 'tournament_recap']);
+
 function alertTitle(alert) {
   switch (alert.alert_type_key) {
     case 'rsvp_shortfall': return alert.instance_key === 'saturday_6am' ? 'Roster shortfall today' : 'RSVP shortfall';
-    case 'briefing_overdue': return alert.instance_key === 'tournament_prelim' ? 'Tournament prelim briefing overdue' : 'Weekly briefing overdue';
+    case 'briefing_overdue':
+      if (alert.instance_key === 'tournament_prelim') return 'Tournament prelim briefing overdue';
+      if (alert.instance_key === 'game_recap') return 'Game recap pending';
+      if (alert.instance_key === 'tournament_recap') return 'Tournament recap pending';
+      return 'Weekly briefing overdue';
     case 'location_unassigned': return 'Event missing location';
     case 'opponent_unassigned': return 'Event missing opponent';
     case 'payment_overdue': return 'Payments overdue';
@@ -44,7 +53,10 @@ function alertBody(alert) {
   const d = alert.data || {};
   switch (alert.alert_type_key) {
     case 'rsvp_shortfall': return `${d.affected_count || 0} event${(d.affected_count || 0) === 1 ? '' : 's'} affected`;
-    case 'briefing_overdue': return d.tournaments ? `${d.tournaments.length} upcoming` : `Expected by ${d.expected_send_by || 'usual window'}`;
+    case 'briefing_overdue':
+      if (alert.instance_key === 'game_recap') return `${d.count || 0} game${(d.count || 0) === 1 ? '' : 's'} need a recap`;
+      if (alert.instance_key === 'tournament_recap') return `${d.count || 0} tournament${(d.count || 0) === 1 ? '' : 's'} need a recap`;
+      return d.tournaments ? `${d.tournaments.length} upcoming` : `Expected by ${d.expected_send_by || 'usual window'}`;
     case 'location_unassigned': return `${(d.events || []).length} event${(d.events || []).length === 1 ? '' : 's'}${d.critical_count ? ` · ${d.critical_count} <24h` : ''}`;
     case 'opponent_unassigned': return `${(d.events || []).length} event${(d.events || []).length === 1 ? '' : 's'}${d.critical_count ? ` · ${d.critical_count} <24h` : ''}`;
     case 'payment_overdue': {
@@ -61,18 +73,28 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
 }
 
-function EventRow({ event, onTap }) {
-  const teamName = event.teams?.name || event.team_name || 'Team';
+function AlertItemRow({ title, subtitle, onTap, cta }) {
   return (
     <button type="button" onClick={onTap} className="sf-press"
       style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%', minHeight: 44, padding: '8px 0', background: 'none', border: 'none', borderTop: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer', textAlign: 'left' }}>
       <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{teamName}</div>
-        <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{fmtDate(event.start_at)}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
+        <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{subtitle}</div>
       </div>
-      <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--em-accent)', flexShrink: 0 }}>Fix →</span>
+      <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--em-accent)', flexShrink: 0 }}>{cta}</span>
     </button>
   );
+}
+
+function rowPropsForItem(alert, item) {
+  if (alert.instance_key === 'tournament_recap') {
+    return { title: item.name, subtitle: `Ended ${fmtDate(item.end_date)}`, cta: 'Compose →' };
+  }
+  const teamName = item.teams?.name || item.team_name || 'Team';
+  const title = `${teamName}${item.opponent ? ` vs. ${item.opponent}` : ''}`;
+  const subtitle = fmtDate(item.start_at);
+  const cta = (alert.alert_type_key === 'briefing_overdue') ? 'Compose →' : 'Fix →';
+  return { title, subtitle, cta };
 }
 
 export default function AlertCard({ alert }) {
@@ -80,8 +102,15 @@ export default function AlertCard({ alert }) {
   const Icon = ICONS[tokens.icon] || Info;
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
+  const isBriefingRecap = alert.alert_type_key === 'briefing_overdue' && EXPANDABLE_BRIEFING_INSTANCES.has(alert.instance_key);
   const events = alert.data?.events || [];
-  const canExpand = EXPANDABLE_TYPES.has(alert.alert_type_key) && events.length > 0;
+  const tournaments = alert.data?.tournaments || [];
+  const items = isBriefingRecap && alert.instance_key === 'tournament_recap' ? tournaments : events;
+  const canExpand = (EXPANDABLE_TYPES.has(alert.alert_type_key) || isBriefingRecap) && items.length > 0;
+  const composeTarget = (item) => alert.instance_key === 'tournament_recap'
+    ? `/admin/briefings/compose?anchor=tournament&id=${item.id}&kind=tournament_recap`
+    : `/admin/briefings/compose?anchor=event&id=${item.id}&kind=game_recap`;
+  const fixTarget = (e) => `/events/${e.id}?edit=1`;
 
   return (
     <div role="alert" aria-label={`${tokens.ariaLabel}: ${alertTitle(alert)}`}
@@ -101,12 +130,13 @@ export default function AlertCard({ alert }) {
       </button>
       {canExpand && expanded && (
         <div style={{ padding: '0 14px 8px 44px' }}>
-          {events.slice(0, 10).map((e) => (
-            <EventRow key={e.id} event={e} onTap={() => navigate(`/events/${e.id}?edit=1`)} />
+          {items.slice(0, 10).map((item) => (
+            <AlertItemRow key={item.id} {...rowPropsForItem(alert, item)}
+              onTap={() => navigate(isBriefingRecap ? composeTarget(item) : fixTarget(item))} />
           ))}
-          {events.length > 10 && (
+          {items.length > 10 && (
             <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', padding: '8px 0 4px' }}>
-              … and {events.length - 10} more
+              … and {items.length - 10} more
             </div>
           )}
         </div>

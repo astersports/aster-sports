@@ -1,9 +1,5 @@
 // Tier 3 v1 PR 2 — alert framework queries.
 //
-// Per Gap 5 + Gap 8 spec: 5 dedicated queries + 1 view reuse. Each
-// query is parameterized for its instance set (rsvp_shortfall covers
-// 3 instances, briefing_overdue covers 2, etc.).
-//
 // Per Gap 8 clean seam: the evaluator only talks to a queryExecutor,
 // not to supabase directly. createSupabaseQueryExecutor wraps a
 // supabase client into the contract the evaluator expects. Future
@@ -15,63 +11,23 @@
 // with .eq('org_id', orgId) where applicable; FK-scoped tables
 // (events, team_players, event_rsvps) inherit org scope through
 // their RLS chain.
+//
+// §4.AI Option C PR B (2026-05-23): getRsvpShortfallEvents moved to
+// rsvpShortfallQueries.js + new game/tournament recap helpers in
+// briefingRecapQueries.js so this file stays under the 150-line cap
+// after adding the 2 new wrapper methods.
+
+import { getRsvpShortfallEvents } from './rsvpShortfallQueries';
+import {
+  getGameRecapPendingEvents,
+  getTournamentRecapPendingTournaments,
+} from './briefingRecapQueries';
 
 function isoForward(days) { return new Date(Date.now() + days * 86400000).toISOString(); }
 
 export function createSupabaseQueryExecutor(supabase) {
   return {
-    // Returns events that need rsvp shortfall evaluation, with their
-    // expected_roster + responded + yes_count counts pre-computed.
-    // Per Q2 lock: expected_roster = active rostered team_players
-    // for the event's team + length of events.academy_callup_player_ids
-    // for the specific event.
-    async getRsvpShortfallEvents(orgId, params) {
-      const { eventTypeFilter, withinHours } = params;
-      const start = new Date().toISOString();
-      const end = isoForward(withinHours / 24);
-      const { data: evs, error: evErr } = await supabase.from('events')
-        .select('id, team_id, start_at, end_at, event_type, opponent, academy_callup_player_ids, teams!inner(org_id, age_group, circuit)')
-        .eq('teams.org_id', orgId).eq('event_type', eventTypeFilter)
-        .gte('start_at', start).lte('start_at', end).neq('status', 'cancelled');
-      if (evErr) throw evErr;
-      const events = evs || [];
-      if (!events.length) return [];
-      const teamIds = [...new Set(events.map((e) => e.team_id))];
-      const { data: roster, error: rErr } = await supabase.from('team_players')
-        .select('team_id, player_id').in('team_id', teamIds)
-        .eq('status', 'active').eq('roster_type', 'rostered');
-      if (rErr) throw rErr;
-      const rosterByTeam = new Map();
-      for (const r of roster || []) {
-        if (!rosterByTeam.has(r.team_id)) rosterByTeam.set(r.team_id, new Set());
-        rosterByTeam.get(r.team_id).add(r.player_id);
-      }
-      const eventIds = events.map((e) => e.id);
-      const { data: rsvps, error: rsvpErr } = await supabase.from('event_rsvps')
-        .select('event_id, player_id, response').in('event_id', eventIds);
-      if (rsvpErr) throw rsvpErr;
-      const rsvpByEvent = new Map();
-      for (const r of rsvps || []) {
-        if (!rsvpByEvent.has(r.event_id)) rsvpByEvent.set(r.event_id, []);
-        rsvpByEvent.get(r.event_id).push(r);
-      }
-      return events.map((e) => {
-        const roster = rosterByTeam.get(e.team_id) || new Set();
-        const callups = new Set(e.academy_callup_player_ids || []);
-        const expected = new Set([...roster, ...callups]);
-        const responses = rsvpByEvent.get(e.id) || [];
-        const respondedIds = new Set(responses.map((r) => r.player_id));
-        const yesIds = new Set(responses.filter((r) => r.response === 'yes').map((r) => r.player_id));
-        return {
-          event_id: e.id, team_id: e.team_id, team: e.teams,
-          start_at: e.start_at, end_at: e.end_at,
-          event_type: e.event_type, opponent: e.opponent,
-          expected_roster: expected.size,
-          responded: [...respondedIds].filter((p) => expected.has(p)).length,
-          yes_count: [...yesIds].filter((p) => expected.has(p)).length,
-        };
-      });
-    },
+    getRsvpShortfallEvents: (orgId, params) => getRsvpShortfallEvents(supabase, orgId, params),
 
     // Per Q3 lock: count status IN ('queued', 'sent') — queued counts
     // as "sent enough" because the operational work is done at dispatch.
@@ -107,6 +63,10 @@ export function createSupabaseQueryExecutor(supabase) {
       return tournaments.filter((t) => !sentSet.has(t.id));
     },
 
+    // §4.AI Option C PR B — pending-recap queries via injected helpers.
+    getGameRecapPendingEvents: (orgId, sinceHours) => getGameRecapPendingEvents(supabase, orgId, sinceHours),
+    getTournamentRecapPendingTournaments: (orgId, sinceDays) => getTournamentRecapPendingTournaments(supabase, orgId, sinceDays),
+
     async getEventsWithoutLocation(orgId, withinHours) {
       const start = new Date().toISOString();
       const end = isoForward(withinHours / 24);
@@ -119,12 +79,7 @@ export function createSupabaseQueryExecutor(supabase) {
     },
 
     // L99 v6 §5.1 B2 — opponent_unassigned alert. Same shape as
-    // getEventsWithoutLocation but on event_type = 'game' only (tournament
-    // anchor events legitimately have no opponent — the tournament IS the
-    // event), AND is_bracket_placeholder = false (placeholder games will
-    // have an opponent once the bracket releases — alerting now is noise
-    // per CLAUDE.md §15 "Schedule releases Wednesday" pattern).
-    // Matches three forms of "no opponent": NULL, empty string, literal 'TBD'.
+    // getEventsWithoutLocation but on event_type = 'game' only.
     async getEventsWithoutOpponent(orgId, withinHours) {
       const start = new Date().toISOString();
       const end = isoForward(withinHours / 24);
@@ -140,9 +95,6 @@ export function createSupabaseQueryExecutor(supabase) {
     },
 
     // Per Q7 lock: 2 trigger conditions, NO orphan check.
-    // Condition 1: location_id IS NULL on a future event.
-    // Condition 2: location_id IS NOT NULL AND events.location IS NULL
-    // (the Finding 1 bug class — location_id set but text column null).
     async getEventsWithBrokenLocationData(orgId) {
       const start = new Date().toISOString();
       const { data, error } = await supabase.from('events')
@@ -153,19 +105,9 @@ export function createSupabaseQueryExecutor(supabase) {
       return data || [];
     },
 
-    // family_balances view reuse for payment_overdue. Q7-style sub:
-    // view already gates by RLS + org_id.
-    //
-    // §4.AD BUG-B fix (2026-05-24): the original query referenced 3 columns
-    // that don't exist on family_balances: family_id, outstanding_amount,
-    // oldest_outstanding_age_days. Actual schema: guardian_id, balance_cents,
-    // last_payment_at. Query rewritten to read actual columns + return-shape
-    // mapped to preserve the legacy field names so evaluator.js:101 (which
-    // reads r.outstanding_amount) keeps working. Edge case: rows with NULL
-    // last_payment_at (families that never paid) are EXCLUDED by the .lt
-    // filter — matches prior behavior since oldest_outstanding_age_days NULL
-    // would not have satisfied .gt either. Document as follow-up if real
-    // "never paid" alerts are needed.
+    // §4.AD BUG-B fix (2026-05-24): query rewritten to read actual
+    // family_balances columns + return-shape mapped to preserve legacy
+    // field names for evaluator.js compatibility.
     async getOverdueFamilyBalances(orgId, ageThresholdDays, minimumAmountDollars) {
       const ageThresholdIso = new Date(Date.now() - ageThresholdDays * 86400000).toISOString();
       const { data, error } = await supabase.from('family_balances')
