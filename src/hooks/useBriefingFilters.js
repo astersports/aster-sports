@@ -54,7 +54,8 @@ export function useBriefingFilters() {
     let cancelled = false;
     Promise.resolve().then(async () => {
       if (!user?.id || !orgId) return;
-      const { data, error } = await supabase.from('briefing_inbox_preferences').select('*').eq('user_id', user.id).eq('org_id', orgId).maybeSingle();
+      // AP #37 — org_id first on org-scoped tables.
+      const { data, error } = await supabase.from('briefing_inbox_preferences').select('*').eq('org_id', orgId).eq('user_id', user.id).maybeSingle();
       if (cancelled) return;
       if (error) throw error;
       setFilters(fromRow(data));

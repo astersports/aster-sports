@@ -19,7 +19,7 @@ const titleStyle = { fontSize: 20, fontWeight: 700, color: 'var(--em-text-primar
 const backBtn = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 8, background: 'transparent', border: 'none', color: 'var(--em-text-secondary)', fontFamily: 'inherit', cursor: 'pointer', fontSize: 13 };
 const tableStyle = { width: '100%', fontSize: 13, borderCollapse: 'collapse' };
 const cellStyle = { padding: '8px 6px', borderBottom: '1px solid var(--em-border-subtle)', textAlign: 'left' };
-const iframeStyle = { width: '100%', minHeight: 400, border: '1px solid var(--em-border-default)', borderRadius: 10, backgroundColor: '#ffffff' };
+const iframeStyle = { width: '100%', minHeight: 400, border: '1px solid var(--em-border-default)', borderRadius: 10, backgroundColor: 'var(--em-bg-card)' };
 
 export default function BriefingHistoryDetail() {
   const { id } = useParams();
@@ -34,8 +34,8 @@ export default function BriefingHistoryDetail() {
     if (!orgId) return;
     let cancelled = false;
     Promise.resolve().then(async () => {
-      // Beta B1 audit defense-in-depth — anti-pattern #37.
-      const { data: m, error: mErr } = await supabase.from('comms_messages').select('*').eq('id', id).eq('org_id', orgId).maybeSingle();
+      // AP #37 — org_id first on org-scoped tables.
+      const { data: m, error: mErr } = await supabase.from('comms_messages').select('*').eq('org_id', orgId).eq('id', id).maybeSingle();
       if (mErr) throw mErr;
       if (cancelled) return;
       setMsg(m);
