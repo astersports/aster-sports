@@ -3243,3 +3243,98 @@ comment would itself breach the 150-line cap the guidance warns about
 (Q8 irony test, 2026-05-22 Phase 3 routing).
 
 Decision routing: 2026-05-22 (Phase 3 Q8, claude.ai Option B locked).
+
+### §4.AD — Console error triage from PR 4 actor walk (2026-05-23 PM)
+
+**Status:** 5 pre-existing bugs surfaced during Frank's PR 4 coach_roundup
+actor-send retry after PR #491 deploy. All P1-P2; none are session-
+introduced (the column / FK / constraint mismatches predate today's
+work). Documented here for next-session routing; **NOT fixed today**
+per AP #59 capacity discipline (today's session at 5 PRs, past the
+6-8 PR budget for sustainable cadence).
+
+**Discovery context:** Frank pasted DevTools console output during the
+PR 4 actor walk. Wizard send still failing — but the `.from`-on-undefined
+error from earlier (which prompted PR #491) is NOT in this paste, suggesting
+either (a) it's now resolved by PR #491's slice-contract fix, (b) it's
+in a stale-cache layer Frank needs to hard-refresh past, or (c) it's
+still firing but buried in console noise Frank didn't include.
+Pending the literal stack trace per A.1.a-2 task — see [[verify-corrections-against-repo-state]]
+discipline applied to error-source claims.
+
+**5 distinct bugs catalogued (all verified against schema via
+information_schema query 2026-05-23T17:30 UTC):**
+
+#### BUG-A — `comms_messages.created_at` does not exist (P1)
+- **Error:** `[alerts/evaluator] briefing_overdue:weekly_digest failed: column comms_messages.created_at does not exist`
+- **Caller:** `src/lib/alerts/evaluator.js` (briefing_overdue check)
+- **Verified:** `comms_messages` columns include `last_edited_at` + `sent_at` + `scheduled_for`, but NO `created_at`.
+- **Fix shape:** swap `created_at` → `last_edited_at` (the alert's intent is "when was the row created/most-recently-touched")
+- **Severity:** P1 — admin home alert silently fails; no briefing_overdue signal reaching admin
+
+#### BUG-B — `family_balances.family_id` does not exist (P1)
+- **Error:** `[alerts/evaluator] payment_overdue failed: column family_balances.family_id does not exist`
+- **Caller:** `src/lib/alerts/evaluator.js` (payment_overdue check)
+- **Verified:** `family_balances` view exists but lacks `family_id` column. Likely renamed to `guardian_id` or `account_id` during a prior wave.
+- **Fix shape:** read `family_balances` columns + remap caller to the actual key. Grep other callers of `family_balances.family_id` for cascade scope.
+- **Severity:** P1 — payment_overdue admin alert silently broken
+
+#### BUG-C — `event_notifications.title` does not exist (P1-P2)
+- **Error:** `NotificationHistory: column event_notifications.title does not exist`
+- **Caller:** `src/components/notifications/NotificationHistory.jsx` (or hook)
+- **Verified:** column missing.
+- **Fix shape:** column likely renamed to `subject` or `headline`. Read schema, remap.
+- **Severity:** P1-P2 — admin notification log broken (visible in admin UI but not blocking workflow)
+
+#### BUG-D — `event_rsvps.player_id` FK relationship missing (P1)
+- **Error:** `useRecentActivity fetch: Could not find a relationship between 'event_rsvps' and 'players' in the schema cache`
+- **Caller:** `src/hooks/useRecentActivity.js` (recent-activity feed on admin home)
+- **Verified:** no `player_id` column on event_rsvps with FK to `players`. event_rsvps is FK-scoped via event_id → events per CLAUDE.md §11.5 / §37; the player relationship goes through team_players, not event_rsvps directly.
+- **Fix shape:** restructure the PostgREST embed. Likely `event_rsvps → events → teams → team_players → players` or read player names via separate query (per CLAUDE.md §36 — destructure error not data).
+- **Severity:** P1 — Frank-facing recent activity feed broken
+
+#### BUG-E — `useFavoriteAudiences` ON CONFLICT mismatch (P2, AP #25)
+- **Error:** `[useFavoriteAudiences] persist failed there is no unique or exclusion constraint matching the ON CONFLICT specification`
+- **Caller:** `src/hooks/useFavoriteAudiences.js` (or similar)
+- **Verified:** `user_preferences_pkey` is composite `PRIMARY KEY (user_id, org_id)`. Hook upserts with `onConflict: 'user_id'` (singular) — doesn't match the composite PK.
+- **Fix shape:** Per AP #25, change `onConflict: 'user_id'` → `onConflict: 'user_id,org_id'` (comma-separated composite). Cross-check `pg_constraint` per AP #25 closing note.
+- **Severity:** P2 — favorite audiences don't persist; user re-selects each session
+
+#### Adjacent observation — Service worker fetch error on `/admin/briefings/compose`
+
+DevTools paste also showed:
+```
+The FetchEvent for "/admin/briefings/compose" resulted in a network
+error response: the promise was rejected.
+Uncaught (in promise) TypeError: Failed to convert value to 'Response'.
+```
+
+Likely PWA stale chunk cache after today's 4-deploy cascade (PRs #488 / #489 / #490 / #491 each triggered a Vercel deploy with fresh Vite hashes). Per STATE_OF_AFFAIRS_L99_v6 §3.3 + PR #356, SW cache + chunk-hashed bundles is a known failure surface; PR #356 added auto-reload on `ChunkLoadError` but may not catch this specific `Failed to convert value to 'Response'` shape.
+
+**Frank-action:** hard refresh (`Cmd+Shift+R` / `Ctrl+Shift+R`) before next PR 4 actor walk. If wizard send succeeds post-refresh → PR #491 fixed the real bug; the prior `.from` error was stale-cache noise. If still fails → A.1.a-2 needs the literal stack trace from fresh cache state.
+
+**Possible PR #356 follow-up:** extend ErrorBoundary's auto-reload trigger to include `TypeError: Failed to convert value to 'Response'` in addition to `ChunkLoadError`. Defer to next session.
+
+**Routing:**
+- BUG-A through BUG-E ship as a single ~5-PR cleanup arc, scoped narrowly per fix (each is a 1-3 line change). Recommended bundling: one PR per bug for review clarity, OR one bundle PR if Frank prefers low ceremony. AP #43 cross-surface invariant tests for the column-rename cases (A, B, C).
+- SW auto-reload extension: small follow-up PR after BUG-A through E land.
+
+**Why these surfaced today:**
+All 5 are pre-existing bugs that were failing silently. Discovery is part
+of the actor-walk value — Frank opening DevTools to investigate the
+wizard send error surfaced ambient console noise that had been there
+for days/weeks. Same pattern as PR #356's `console.error` Sentry gap
+(STATE_OF_AFFAIRS_L99_v6 §3.3): code-only audits miss runtime errors
+that only surface in production browsers.
+
+**Anti-pattern catalog evidence (continued validation):**
+- AP #25 (onConflict composite vs single column): BUG-E is the 3rd
+  observed instance (PR #38 staff_profiles, PR #37 same line, now
+  useFavoriteAudiences). Discipline holding via grep + pg_constraint
+  cross-check.
+- AP #50 (broad surface audits cascade): this isn't an audit but
+  Frank's actor walk surfaced 5 latent bugs that pure code review
+  hadn't caught. Validates the "actor validation as audit gate"
+  framing in PR 4 + PR 5's status fields.
+
+---
