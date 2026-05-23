@@ -3338,3 +3338,38 @@ that only surface in production browsers.
   framing in PR 4 + PR 5's status fields.
 
 ---
+
+### §4.AE — L99 Compose-Briefing Audit (2026-05-24)
+
+**Status:** Phase 1 audit complete (PARTIAL — 28 files audited, ~64 deferred). PR #493 shipped the root-cause `.from`-on-undefined fix during the audit. Audit doc lives at `docs/L99_COMPOSE_BRIEFING_AUDIT_2026-05-24.txt`.
+
+**Surface:** ~28 files across send pipeline + Wave 5 resolvers + tournament/game resolvers (partial) + engine dispatch + hooks. Deferred: ~30 renderers, ~34 wizard UI body editors, edge function detail.
+
+**Findings: 82 total** (5 P0 / 36 P1 / 41 P2 / 0 P3). All 5 P0s concentrated in send pipeline (Agent 2) due to recent PR 7b-2 cutover gate complexity. Other surfaces clean of P0.
+
+**Discovery context:** Yesterday's wizard send `.from`-on-undefined error root-caused via Agent 2 FINDING-2: `queueComposedMessages.js` dynamic `await import('../supabase')` resolving malformed under PWA stale-cache → supabase undefined → `.from` threw. Fix shipped PR #493 (static imports). Symmetric across all 4 composerSubmit-path kinds.
+
+**Investigation discipline note:** PR #491 (yesterday's earlier fix for slice.kind contract gap) addressed a real but separate bug — not the user-visible error. Memory `distinguish-inferred-vs-confirmed-error-source` saved at yesterday's session close captures the inferred-vs-confirmed error-source discipline gap. This audit applied that lesson: Agent 2's FINDING-2 was verified against literal error text + module export contract before PR #493 shipped.
+
+**Recommended ship sequence (12 PR cap):**
+1. PR #493 — `.from` fix ✅ MERGED
+2. This PR — audit doc + §4.AE entry
+3. P0 bundle — `scheduleChangeSend` + `digestSend` static-imports/null-guards (P0-13/18/20)
+4. P0-8 verification (likely false-positive from Agent 2 reading outdated state — confirm before ship)
+5-6. Send pipeline P1 batch — null-guard fixes
+7. Registry pre-dispatch validation bundle (4 anchor entries — E09/E10/E11/E12)
+8. Token substitution validation bundle (callup/feedback/rsvp — E03/E04/E05)
+9. `useBriefingDraft` state-overwrite fix (E06)
+10. `tournamentRecap.js` org-name bug (T12)
+11. `tournamentPrelim.js` broken fallback (T03)
+12. Session-close TXT + final reconciliation
+
+**Out-of-scope (next session):** renderers, wizard UI body editors, edge function detail, 4 incomplete tournament/game reads (`gameRecap.js`, `gameRecapHelpers.js`, `scheduleChange.js`, `feedbackSurveySection.js`, `tournamentRecapHelpers.js`).
+
+**Anti-pattern catalog evidence:** AP #25 / #27 / #28 / #29 / #36 / #37 / #43 / #48 / #50 all surfaced multiple instances. Catalog continues to pay. No NEW AP candidates from this audit.
+
+**Discipline observations:**
+- **Agent autocompact thrashing:** 3 of 5 first-pass agents failed at 15-30 files. Re-dispatch at 5-8 files succeeded. Refinement: target 5-6 files per agent for L99 narrow-LBL passes.
+- **Actor walk as audit gate:** Frank's wizard send surfaced the `.from` bug pure code review hadn't caught. PR 4 + PR 5 sat "code-complete" for 5+ days before this discovery. Validates the framing on those PRs' status fields.
+
+---
