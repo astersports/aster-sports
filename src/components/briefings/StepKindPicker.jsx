@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { KIND_METADATA, sortKinds } from '../../lib/briefings/kindMetadata';
 import { useKindUsage } from '../../hooks/useKindUsage';
 import KindTile from './KindTile';
+import DraftResumeRow from './DraftResumeRow';
 
 const DESKTOP_QUERY = '(min-width: 600px)';
 
@@ -44,7 +45,7 @@ function useColumns() {
   return isDesktop ? 3 : 2;
 }
 
-export default function StepKindPicker({ onPick, visibleKinds = null }) {
+export default function StepKindPicker({ onPick, onResume, visibleKinds = null }) {
   const { usageByKind, countsByKind } = useKindUsage();
   const cols = useColumns();
 
@@ -61,21 +62,24 @@ export default function StepKindPicker({ onPick, visibleKinds = null }) {
   }
 
   return (
-    <div style={gridWrap(cols)} role="grid" aria-label="Briefing kinds">
-      {ordered.map((k) => {
-        const meta = KIND_METADATA[k];
-        if (!meta) return null;
-        return (
-          <KindTile
-            key={k}
-            kind={k}
-            meta={meta}
-            usage={{ lastSentAt: usageByKind[k] || null, count: countsByKind[k] || 0 }}
-            disabled={!!meta.disabled}
-            onClick={(picked) => !meta.disabled && onPick(picked, meta)}
-          />
-        );
-      })}
-    </div>
+    <>
+      {onResume && <DraftResumeRow onResume={onResume} />}
+      <div style={gridWrap(cols)} role="grid" aria-label="Briefing kinds">
+        {ordered.map((k) => {
+          const meta = KIND_METADATA[k];
+          if (!meta) return null;
+          return (
+            <KindTile
+              key={k}
+              kind={k}
+              meta={meta}
+              usage={{ lastSentAt: usageByKind[k] || null, count: countsByKind[k] || 0 }}
+              disabled={!!meta.disabled}
+              onClick={(picked) => !meta.disabled && onPick(picked, meta)}
+            />
+          );
+        })}
+      </div>
+    </>
   );
 }

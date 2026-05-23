@@ -28,7 +28,8 @@ const SeasonRolloverPage = lazy(() => import('./pages/SeasonRolloverPage'));
 const FinancialDashboardPage = lazy(() => import('./pages/FinancialDashboardPage'));
 const FinancialImportPage = lazy(() => import('./pages/FinancialImportPage'));
 const ImportSchedulePage = lazy(() => import('./pages/ImportSchedulePage'));
-const BriefingsInboxPage = lazy(() => import('./pages/BriefingsInboxPage'));
+const BriefingsComposePage = lazy(() => import('./pages/BriefingsComposePage'));
+const BriefingsHistoryPage = lazy(() => import('./pages/BriefingsHistoryPage'));
 const BriefingHistoryDetail = lazy(() => import('./pages/admin/BriefingHistoryDetail'));
 
 const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading...</div>;
@@ -87,8 +88,9 @@ export default function App() {
       <Route path="/admin/financials" element={<Protected allowedRoles={['admin']}><FinancialDashboardPage /></Protected>} />
       <Route path="/admin/financials/import" element={<Protected allowedRoles={['admin']}><FinancialImportPage /></Protected>} />
       <Route path="/admin/import-schedule" element={<Protected allowedRoles={['admin']}><ImportSchedulePage /></Protected>} />
-      <Route path="/admin/briefings" element={<Protected allowedRoles={['admin']}><BriefingsInboxPage /></Protected>} />
-      <Route path="/admin/briefings/compose" element={<Protected allowedRoles={['admin']}><BriefingsInboxPage /></Protected>} />
+      <Route path="/admin/briefings" element={<Navigate to="/admin/briefings/compose" replace />} />
+      <Route path="/admin/briefings/compose" element={<Protected allowedRoles={['admin']}><BriefingsComposePage /></Protected>} />
+      <Route path="/admin/briefings/history" element={<Protected allowedRoles={['admin']}><BriefingsHistoryPage /></Protected>} />
       <Route path="/admin/briefings/history/:id" element={<Protected allowedRoles={['admin']}><BriefingHistoryDetail /></Protected>} />
     </Routes>
       </Suspense>
