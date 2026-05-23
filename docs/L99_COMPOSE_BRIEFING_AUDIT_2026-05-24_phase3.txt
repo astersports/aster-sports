@@ -1,0 +1,203 @@
+L99 Compose-Briefing Audit Phase 3 — 2026-05-24 PM
+====================================================
+
+Branch: claude/nice-thompson-fZWjn (post-merge sync from main at 4fa8f26)
+Methodology: 4 parallel agent batches, narrow line-by-line at <8 files
+per batch (per §4.AE calibration that held in morning session)
+Scope: unaudited surface from morning Phase 2 (Batches G/H1/H2/I)
+
+
+1. PHASE 3 INVENTORY
+--------------------
+
+Batch G: 7 unaudited atomic renderers
+  src/lib/engine/renderers/{brandFooter,bracketCallout,coachReflection,
+  colorStripedRow,venueList,venueNotes,vipHeader}.js
+  Total: 226L
+
+Batch H1: 7 wizard body editors (event-anchored kinds)
+  src/components/briefings/bodies/{TournamentPrelim,TournamentRecap,
+  GameRecap,ScheduleChange,RsvpNudge,AcademyCallup,
+  AcademyCallupRedirectCard}Body.jsx (or .jsx)
+  Total: 421L
+
+Batch H2: 8 wizard editors (general bodies + audience pickers)
+  src/components/briefings/bodies/{Announcement,CustomMessage,
+  WeeklyDigest,CoachRoundup,FamilyGuide}Body.jsx + PlayerPicker.jsx
+  src/components/briefings/audience/{RecentAndFavorites,
+  TeamGroupedPicker}.jsx
+  Total: 591L
+
+Batch I: 4 incomplete resolver reads (from §4.AE deferral) + feedback
+  src/lib/engine/resolvers/{gameRecap,gameRecapHelpers,scheduleChange,
+  tournamentRecapHelpers,feedbackSurveySection}.js
+  Total: 420L
+
+Total Phase 3 surface: ~32 files, ~1658L
+
+
+2. FINDINGS
+-----------
+
+P0 (block release): None.
+
+P1 (must fix this session — both shipped in this PR):
+
+  P1-G1  src/hooks/useFavoriteAudiences.js:52
+         AP #25 — onConflict 'user_id' but user_preferences PK is
+         composite (user_id, org_id). Will fail with 42P10 at runtime.
+         Independent confirmation of yesterday's §4.AD BUG-E discovery.
+         Fix: 'user_id' → 'user_id,org_id' (1-line change).
+         Test also updated to assert the corrected pattern.
+
+  P1-G2  src/components/briefings/bodies/PlayerPicker.jsx:36
+         AP #36 — destructured `{ data }` without error check. Silent
+         failure on RLS denial / column error / transient DB issue;
+         users see empty player list with no diagnostic signal.
+         Fix: destructure error + check + early-return on error.
+
+P2: All 3 H2-flagged P2s confirmed FALSE POSITIVES at synthesis. See §3.
+
+P3: None of note. Renderer hex literals (per §4.AF carryover) still
+deferred to colors.js extraction follow-up.
+
+
+3. FALSE POSITIVES CAUGHT AT SYNTHESIS (4 total)
+-------------------------------------------------
+
+FP-G1 (Batch H2)  CoachRoundupBody.jsx:49 "data || [] silent on error"
+                  VERIFIED: file destructures `{ data, error }`, checks
+                  `if (error)` first, then uses `data || []` as defensive
+                  fallback for success-with-zero-rows. THIS IS THE
+                  CORRECT AP #36 PATTERN, not a violation. Agent
+                  flagged the `|| []` without reading the line above.
+
+FP-G2 (Batch H2)  FamilyGuideBody.jsx:52 "data || [] silent on error"
+                  VERIFIED: same correct pattern as CoachRoundupBody.
+                  Destructures error, checks it, falls through. Not
+                  a violation.
+
+FP-G3 (Batch H2)  RecentAndFavorites.jsx:44 "hook destructure no guard"
+                  VERIFIED: line 44 is just the function declaration
+                  `export default function RecentAndFavorites...`.
+                  No destructure on that line. Agent invented the
+                  finding from filename + dependency reasoning.
+
+FP-G4 (Batch C from morning — closed now)
+                  "tournamentRecap.js renderer file missing"
+                  VERIFIED in Batch I: tournament_recap renders via
+                  section composition (placement_block + standout_
+                  moments + game_log + bracket_callout). No dedicated
+                  renderer file is needed; this was already noted in
+                  §4.AF but Batch I's clean read reconfirms it.
+
+False-positive class: agents flagging AP #36 destructured-default
+violations by string-matching `data ||` patterns without reading the
+surrounding error check. Future AP #36 audit prompts must require
+agents to QUOTE the 3-line context block including the error
+destructure check. Single P1 instance survived synthesis
+(PlayerPicker), which DOES match the violation shape exactly: bare
+`{ data }` with no error variable.
+
+
+4. PATTERN ANALYSIS
+-------------------
+
+PATTERN GAMMA candidate (AP #36 destructured-default error-swallowing):
+DOES NOT LOCK. Only 1 real instance (PlayerPicker.jsx). 3 candidate
+instances all collapsed at synthesis verification. Single-site finding
+doesn't meet cross-batch threshold (3+ instances per AP #58
+candidate-locking heuristic). Re-evaluate on next Phase audit if
+PlayerPicker-shape pattern recurs.
+
+PATTERN ALPHA (AP #37 ordering, locked in §4.AF morning): NO
+RECURRENCE in Phase 3. All AP #37 sites in batches read correctly
+(staff_profiles in gameRecap.js, players in PlayerPicker.jsx, all
+org-scoped tables ordered org_id-first). Pattern continues to hold.
+
+PATTERN BETA (auth discipline, locked in §4.AF morning): NO
+RECURRENCE in Phase 3. No new auth.uid() in RLS or REVOKE chain gaps.
+
+
+5. ORTHOGONAL VERIFICATION — BUG-E CLOSURE
+-------------------------------------------
+
+§4.AD BUG-E (yesterday, console triage):
+  "[useFavoriteAudiences] persist failed there is no unique or
+   exclusion constraint matching the ON CONFLICT specification"
+
+Phase 3 Batch H2 (today, parallel agent without §4.AD context):
+  "useFavoriteAudiences.js:52 — onConflict: 'user_id' does not match
+   composite PK (user_id, org_id). Will fail with 42P10 on upsert.
+   Must be 'user_id,org_id'."
+
+Independent orthogonal discovery. The agent had no prior signal about
+§4.AD BUG-E; it surfaced from code-grep + pg_constraint cross-check
+per AP #25. Validates the discipline: agents applying AP #25
+correctly do catch the bug class without needing prior console signal.
+
+BUG-E closure in this PR also closes one of the 5 §4.AD bugs from
+yesterday's actor-walk triage.
+
+
+6. SHIPPED IN THIS PR
+---------------------
+
+Files changed:
+  src/hooks/useFavoriteAudiences.js:52              (1 line)
+  src/hooks/__tests__/useFavoriteAudiences.test.js  (2 lines)
+  src/components/briefings/bodies/PlayerPicker.jsx  (2 lines + 1 added)
+  docs/L99_COMPOSE_BRIEFING_AUDIT_2026-05-24_phase3.txt  (new)
+  docs/EMBER_PENDING_LEDGER.md (+§4.AG)
+
+Verification:
+  npm run lint clean
+  npm test -- useFavoriteAudiences PlayerPicker: 10/10 pass
+
+
+7. OPEN FOLLOW-UPS → §4.AG
+---------------------------
+
+No NEW follow-ups from Phase 3. Inheriting §4.AF's deferred items
+unchanged:
+  - BriefingComposer recipient preview chip (§13 #7) — design call
+  - AP #57 hardening for briefing_active_queue — defense-in-depth
+  - Renderer hex literals → colors.js constants — 4 files
+  - Test-coverage audit completion — Batch B/C self-truncation gap
+  - 4 of 5 §4.AD bugs still open (BUG-A/B/C/D)
+
+
+8. PATTERNS LOCKED / VALIDATED THIS SESSION
+--------------------------------------------
+
+AP #25 (composite PK onConflict): now 3 confirmed instances in
+codebase (staff_profiles PR #38, same line PR #37, useFavoriteAudiences
+this PR). Pattern continues to pay; grep + pg_constraint check
+remains canonical detection method.
+
+AP #36 verification refinement: agents auditing AP #36 must read the
+3-line context block (destructure line + 2 lines above for error
+check). String-matching `data ||` produces 75% false-positive rate
+(3 of 4 H2 findings).
+
+AP #58 cross-batch pattern check (candidate): worked as designed.
+PATTERN GAMMA candidate evaluated, did NOT lock, follow-up registered.
+The discipline of "only lock at 3+ real instances post-synthesis" held.
+
+AP #50 methodology validation (continued): 4-batch parallel narrow-LBL
+at <8 files per agent produced 75% false-positive yield on H2 (with 1
+real P1) and 0% false-positive yield on G/H1/I. Surface-specific
+agent quality variance is real; the synthesis gate is doing its job.
+
+
+9. SESSION ARC POSITION
+-----------------------
+
+Morning session shipped PR #495 (4 P1 + 1 P2 + audit doc + §4.AF).
+Afternoon Phase 3 ships 2 more P1s in a small bundle. Combined
+session yield: 6 P1 fixes + 1 P2 + 2 audit docs + 2 ledger entries +
+1 schema migration. Auto-merge held across both PRs.
+
+Per session contract: 2 PRs total from Phase 3 arc; only 1 needed.
+Closing the audit cycle now per AP #56 + AP #59. No second-cycle
+dispatch.

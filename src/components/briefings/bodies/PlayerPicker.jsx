@@ -33,12 +33,13 @@ export default function PlayerPicker({ selected, onSelect, onClose }) {
     let cancelled = false;
     Promise.resolve().then(async () => {
       if (!orgId) return;
-      const { data } = await supabase.from('players')
+      const { data, error } = await supabase.from('players')
         .select('id, first_name, last_name, team_players(team_id, teams(name))')
         .eq('org_id', orgId)
         .eq('member_type', 'futures_academy')
         .order('first_name');
       if (cancelled) return;
+      if (error) { console.warn('[PlayerPicker] players fetch failed', error.message); setPlayers([]); return; }
       setPlayers((data || []).map((p) => ({
         id: p.id,
         name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
