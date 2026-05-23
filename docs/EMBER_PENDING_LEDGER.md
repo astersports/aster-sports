@@ -3423,3 +3423,65 @@ Six-batch parallel line-by-line audit (~89 source files, ~51 test files, 17 sche
 - AP #15 / AP #37 (recurring drift classes): both still surface despite registered anti-patterns. Per-subsystem audit sweeps are the recovery mechanism
 
 ---
+
+### §4.AG — L99 Compose-Briefing Audit Phase 3 (2026-05-24 PM)
+
+**Companion to §4.AE + §4.AF.** Afternoon resumption after nap+lunch break. 4-batch parallel audit of the unaudited Phase 2 surface (32 files / ~1658L). Methodology per §4.AE's 5-8 files per agent calibration. Canonical artifact: `docs/L99_COMPOSE_BRIEFING_AUDIT_2026-05-24_phase3.txt`.
+
+**Surface covered:**
+- Batch G — 7 unaudited renderers from morning Batch C self-truncation (brandFooter, bracketCallout, coachReflection, colorStripedRow, venueList, venueNotes, vipHeader)
+- Batch H1 — 7 wizard body editors for event-anchored kinds (TournamentPrelim, TournamentRecap, GameRecap, ScheduleChange, RsvpNudge, AcademyCallup, AcademyCallupRedirectCard)
+- Batch H2 — 8 wizard editors for general kinds + audience pickers (Announcement, CustomMessage, WeeklyDigest, CoachRoundup, FamilyGuide, PlayerPicker, RecentAndFavorites, TeamGroupedPicker)
+- Batch I — 4 incomplete tournament/game resolver reads from §4.AE deferral (gameRecap, gameRecapHelpers, scheduleChange, tournamentRecapHelpers) + feedbackSurveySection
+
+**Shipped in this PR (1 unique P1 + audit doc + this ledger entry):**
+1. AP #36 — `PlayerPicker.jsx:36` destructured `{ data }` → `{ data, error }` + error guard + early-return. Closes silent-failure path on RLS denial / column errors
+
+**Parallel shipping note:** AP #25 useFavoriteAudiences.js:52 onConflict fix was independently shipped by Frank's terminal session as PR #497 (§4.AD BUG-E close) while this PR was in-flight. After merge resolution, the useFavoriteAudiences.js + test changes collapse to no-op in this PR's unique diff (both sides made identical changes). The orthogonal-discovery observation stands: two parallel sessions independently surfaced the same fix from the same anti-pattern, validating AP #25 detection methodology.
+
+**False positives caught at synthesis (3 of 4 H2 findings — 75% FP rate):**
+- `CoachRoundupBody.jsx:49` "silent on error" — file actually destructures `{ data, error }` and checks `if (error)` first. The `data || []` is the correct defensive fallback for success-with-zero-rows
+- `FamilyGuideBody.jsx:52` "silent on error" — same correct pattern
+- `RecentAndFavorites.jsx:44` "hook destructure no guard" — line 44 is just the function declaration; no destructure on that line
+
+**False-positive class identified:** Agents flagging AP #36 by string-matching `data ||` without reading the 3-line context block above (where the error destructure + check live). Future AP #36 audit prompts should require agents to quote the surrounding error-check block before flagging.
+
+**Pattern analysis:**
+- **PATTERN GAMMA candidate (AP #36 destructured-default error-swallowing)** — DOES NOT LOCK. Only 1 real instance (PlayerPicker) survived synthesis verification. 3 candidates collapsed as false positives. Re-evaluate if PlayerPicker-shape pattern recurs in future batches
+- **PATTERN ALPHA (AP #37 ordering, locked §4.AF)** — NO RECURRENCE in Phase 3. All org-scoped queries ordered correctly
+- **PATTERN BETA (auth discipline, locked §4.AF)** — NO RECURRENCE in Phase 3
+
+**Orthogonal verification — §4.AD BUG-E closure:**
+Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there is no unique or exclusion constraint matching the ON CONFLICT specification`. Today's Phase 3 Batch H2 agent independently surfaced the exact same fix from code-grep + pg_constraint check, without §4.AD context. Validates AP #25 detection methodology: agents applying the discipline DO catch the bug class without needing prior console signal.
+
+**§4.AD bug closure status:**
+- BUG-A ✅ closed by PR #496 (parallel terminal session — comms_messages.created_at → last_edited_at on briefing_overdue alert query)
+- BUG-E ✅ closed by PR #497 (parallel terminal session — useFavoriteAudiences onConflict composite)
+- BUG-B/C/D remain open in §4.AD backlog
+
+**Methodology yield (afternoon Phase 3):**
+- Batches G + H1 + I: 0% false-positive yield (clean reads)
+- Batch H2: 75% false-positive yield (3 of 4 P2s collapsed)
+- Per-batch agent quality variance is real. Synthesis gate caught all 3 H2 false positives before shipping. Verify-before-execute discipline holding.
+
+**Combined session arc (morning + afternoon):**
+- 2 PRs from this chat session (#495 + this one)
+- 6 P1 fixes shipped (4 morning + 2 afternoon)
+- 1 P2 shipped (morning)
+- 2 audit docs + 2 ledger entries (§4.AF + §4.AG)
+- 1 schema migration applied + mirrored
+- 0 P0 surfaced across both phases
+- 10 false positives caught at synthesis (5 morning + 3 afternoon + 2 carryover-verified)
+
+**Session contract held:**
+- Max 2 PRs from Phase 3 arc — only 1 needed
+- No second-cycle audit dispatch — closing per AP #56 + AP #59
+- Design calls deferred to ledger (no new ones surfaced this phase)
+
+**Audit catalog evidence (continued):**
+- AP #25: third confirmed instance in codebase (PR #38 staff_profiles, PR #37 same line, this PR useFavoriteAudiences). Discipline still pays
+- AP #36: refinement noted — verification gate must read 3-line context block, not single-line string match
+- AP #58 candidate (cross-batch pattern check): worked as designed. PATTERN GAMMA evaluated, did not lock, follow-up registered. The "lock only at 3+ real instances post-synthesis" heuristic held
+- AP #50: 4-batch parallel narrow-LBL methodology validated again. Per-batch variance (0% to 75% FP rate) is acceptable as long as synthesis catches it
+
+---
