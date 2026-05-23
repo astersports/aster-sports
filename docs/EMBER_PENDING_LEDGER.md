@@ -3545,3 +3545,44 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 §4.AE Batch I closes as expected. Audit cycle complete on this surface.
 
 ---
+
+### §4.AI — Briefings Option C redesign (2026-05-23 PM)
+
+**Origin:** Frank-driven session 2026-05-23 PM. After PR #503 retired the redundant "Compose Briefing" tile, Frank reviewed the resulting Briefings inbox and flagged Active (41) + Drafts (37) as too noisy — Active included drafts, drafts included 12-day-old stragglers. Three options presented (A: hero + collapsibles; B: tab-count cleanup; C: compose-first, hide queue). Frank locked **Option C**.
+
+**Locked decisions:**
+- Briefings tile → composer modal opens directly (existing `/admin/briefings/compose` route)
+- Draft-resume affordance → inside composer Step 1 (StepKindPicker)
+- Synthetic alerts → Admin Home `AlertZone` only
+- Sent history → new `/admin/briefings/history` page, reached via "View sent" link in wizard header
+- Auto-archive cadence → 7 days untouched
+- `/admin/briefings` URL → redirect to `/admin/briefings/compose`
+- `CutoverGateChip` → stays on AdminHomePage only
+
+**Audit doc:** `docs/AUDIT_BRIEFINGS_OPTION_C_REDESIGN_2026-05-23.md` (this commit). Full §16.15 template: initial pass + deep-read addendum + AP cross-reference + admin wireframes + out-of-scope + 3 open questions + PR sequence.
+
+**PR sequence (4 PRs):**
+- **PR A** — Freestanding `BriefingsComposePage` + `BriefingsHistoryPage`; route updates; `QuickActions` tile retarget; `useAvailableDrafts` hook; `DraftResumeRow` component; "View sent" link in WizardHeader. Delete `BriefingsInboxPage` + 9 inbox sub-components. Load-bearing redesign.
+- **PR B** — 3 new `briefing_overdue` sub-keys (game_recap, tournament_recap, schedule_change_followup). Migration + 3 evaluators in `src/lib/alerts/evaluator.js`. Unlocks alert-driven workflows on AdminHome.
+- **PR C** — `CutoverGateChip` test refactor: drops one mount surface (BriefingsInboxPage gone) per AP #43 single-surface resolution. Rename test.
+- **PR D** — Auto-archive cron (7-day stale draft sweep). Edge function + config.toml entry per AP #31 + #33. Hygiene follow-up, not gating.
+
+**Recommended sequencing:** A→B→C in this session/routing window; D as next-day follow-up.
+
+**Anti-pattern flags in scope:**
+- AP #6 — `BriefingComposer` already at 148 lines; "View sent" link prop must stay tight.
+- AP #34 — additive registry change (3 new EVALUATORS keys + 3 alert_types rows in same migration).
+- AP #36 — new `useAvailableDrafts` hook + `useSentBriefings` hook must destructure `{ data, error }` and throw.
+- AP #37 — `comms_messages` org_id-first filtering.
+- AP #43 — `CutoverGateChipCrossSurface.test.jsx` loses one mount surface; PR C resolves by collapsing to single-surface.
+- AP #45 — this entry reconciles the ledger in the same commit as the audit doc (compliance).
+- AP #49 — full audit doc pasted in chat after commit + push + PR per discipline.
+- AP #51 — `BriefingsInboxPage` retirement is the 19th+ dead-feature mount under the established pattern.
+- AP #54 — every PR ships ready + auto-merge enabled in same MCP burst as create_pull_request.
+
+**Open questions (chat-routing required before PR A):**
+- Q1 — alert kind structure: per-kind sub-evaluators (recommended) vs single multi-kind evaluator
+- Q2 — history page data source: extend `useInboxQueue` vs new `useSentBriefings` (recommended)
+- Q3 — Cancel exit target: admin home (recommended) vs history vs browser-back
+
+---
