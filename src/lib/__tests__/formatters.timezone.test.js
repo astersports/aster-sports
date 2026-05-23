@@ -17,7 +17,7 @@
 // loud.
 
 import { describe, expect, it } from 'vitest';
-import { formatCountdown, formatDateFull, formatTime } from '../formatters';
+import { formatCountdown, formatDateFull, formatDayTime, formatTime } from '../formatters';
 
 describe('formatTime NY-pin contract', () => {
   it('renders UTC ISO as NY-local time (EDT window, May)', () => {
@@ -77,5 +77,25 @@ describe('formatCountdown NY-pin contract', () => {
   it('returns "in Nm" for events within the hour', () => {
     const soon = new Date(Date.now() + 35 * 60 * 1000).toISOString();
     expect(formatCountdown(soon)).toMatch(/^in \d+m$/);
+  });
+});
+
+describe('formatDayTime NY-pin contract', () => {
+  it('renders UTC ISO as NY-local weekday + time (EDT window, May)', () => {
+    // 2026-05-18 22:00 UTC = Monday May 18, 6:00 PM EDT
+    expect(formatDayTime('2026-05-18T22:00:00Z')).toMatch(/^Mon,? 6:00 PM$/);
+  });
+
+  it('renders UTC ISO as NY-local weekday + time (EST window, January)', () => {
+    // 2026-01-15 23:00 UTC = Thursday Jan 15, 6:00 PM EST
+    expect(formatDayTime('2026-01-15T23:00:00Z')).toMatch(/^Thu,? 6:00 PM$/);
+  });
+
+  it('returns null on null input (consumer-suppression contract)', () => {
+    expect(formatDayTime(null)).toBe(null);
+  });
+
+  it('returns null on undefined input', () => {
+    expect(formatDayTime(undefined)).toBe(null);
   });
 });

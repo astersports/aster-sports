@@ -5,6 +5,7 @@ import ConfirmDialog from '../shared/ConfirmDialog';
 import { useDensity } from '../../hooks/useDensity';
 import ClaimStatusPill from './ClaimStatusPill';
 import ClaimerRow from './ClaimerRow';
+import { formatDayTime } from '../../lib/formatters';
 
 const SECTION_KEY = 'rides-list';
 
@@ -14,10 +15,6 @@ const RIDE_TYPE_LABEL = {
   return_only: 'Return only',
 };
 
-function formatTime(iso) {
-  if (!iso) return null;
-  return new Date(iso).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
-}
 
 export default function OfferCard({
   offer,
@@ -84,14 +81,14 @@ export default function OfferCard({
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <MapPin size={13} strokeWidth={1.75} color="var(--em-text-tertiary)" aria-hidden="true" />
               <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{offer.pickup_location}</span>
-              {formatTime(offer.pickup_time) && <span style={{ color: 'var(--em-text-tertiary)', fontSize: 12 }}>{formatTime(offer.pickup_time)}</span>}
+              {formatDayTime(offer.pickup_time) && <span style={{ color: 'var(--em-text-tertiary)', fontSize: 12 }}>{formatDayTime(offer.pickup_time)}</span>}
             </div>
           )}
           {density !== 'minimal' && offer.ride_type === 'round_trip' && offer.return_location && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Repeat size={13} strokeWidth={1.75} color="var(--em-text-tertiary)" aria-hidden="true" />
               <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{offer.return_location}</span>
-              {formatTime(offer.return_time) && <span style={{ color: 'var(--em-text-tertiary)', fontSize: 12 }}>{formatTime(offer.return_time)}</span>}
+              {formatDayTime(offer.return_time) && <span style={{ color: 'var(--em-text-tertiary)', fontSize: 12 }}>{formatDayTime(offer.return_time)}</span>}
             </div>
           )}
           {density !== 'minimal' && offer.vehicle_description && (

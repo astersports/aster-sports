@@ -90,3 +90,22 @@ export function formatCountdown(startAt) {
   return dt.toLocaleDateString('en-US', { weekday: 'short', timeZone: NY_TZ }) + ' ' +
     dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: NY_TZ });
 }
+
+// "Mon, 6:30 PM" — short weekday + time render. Used by ride pickup/return
+// labels where day-of-week context matters at a glance. Returns null on
+// null/undefined input so consumers can suppress rendering (same null-guard
+// shape as formatRelativeTime). NY-pinned and handles time-only-string
+// inputs the same way as formatTime.
+export function formatDayTime(time) {
+  if (!time) return null;
+  const d = typeof time === 'string' && time.length <= 8 && time.includes(':')
+    ? new Date(`1970-01-01T${time}`)
+    : new Date(time);
+  return d.toLocaleString('en-US', {
+    weekday: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: NY_TZ,
+  });
+}

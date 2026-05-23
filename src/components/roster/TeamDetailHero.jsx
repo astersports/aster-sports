@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/permissions';
 import { TYPE_LABELS } from '../../lib/constants';
+import { formatTime } from '../../lib/formatters';
 import { useTeamHeadCoach } from '../../hooks/useTeamHeadCoach';
 import { useEventRsvpCounts } from '../../hooks/useEventRsvpCounts';
 import ChildRsvp from '../schedule/ChildRsvp';
@@ -12,9 +13,6 @@ const CIRCUIT_LABELS = { aau: 'AAU', league_play: 'League Play', tournament: 'To
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
-}
-function formatTime(iso) {
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
 }
 
 // 2026-05-21 (Teams PR B / §9.2) — single hero replacing TeamHeaderCard +
