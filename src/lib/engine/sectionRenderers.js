@@ -47,7 +47,6 @@ import coachReflection from './renderers/coachReflection';
 import vipHeader from './renderers/vipHeader';
 import kidColorPill from './renderers/kidColorPill';
 import quickLinkNav from './renderers/quickLinkNav';
-import feedbackSurvey from './renderers/feedbackSurvey';
 
 export const SECTION_RENDERERS = {
   header: renderHeader,
@@ -83,7 +82,6 @@ export const SECTION_RENDERERS = {
   vip_header: vipHeader,
   kid_color_pill: kidColorPill,
   quick_link_nav: quickLinkNav,
-  feedback_survey: feedbackSurvey,
 };
 
 function warnUnknownKind(kind) {

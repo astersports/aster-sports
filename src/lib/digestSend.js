@@ -18,7 +18,6 @@
 import { supabase } from './supabase';
 import { formatPeriodLabel } from './engine/digestPeriod';
 import { applyUnsubscribeUrls } from './unsubscribeUrl';
-import { substituteFeedbackForFamily } from './digestFeedback';
 import { buildContext, buildSlicesFromRecipients, renderSlice } from './digestSendHelpers';
 
 const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
@@ -80,21 +79,12 @@ export async function sendWeeklyDigest({
     .select('id').single();
   if (msgErr) throw msgErr;
 
-  // Cutover PR 7b-2.5: per-family feedback token substitution. Runs AFTER
-  // the message INSERT (need msg.id to mint) but BEFORE the recipient row
-  // build (rows need the substituted body_html_rendered). Admin BCC row
-  // below intentionally keeps the placeholder sample body — admin sees
-  // {{feedback_*_url}} placeholders, not a real family's tokens.
-  const substitutedFamilies = await Promise.all(
-    renderedFamilies.map((f) => substituteFeedbackForFamily(supabase, msg.id, f)),
-  );
-
   // Build per-recipient queue rows. In test mode, only admin@ row is queued.
   // Wave 4.3-K carve-out: when ALL families are synthetic, testOnly is a no-op
   // (synthetic rows ARE the test send). E1: explicit is_synthetic flag.
-  const allSynthetic = substitutedFamilies.length > 0 && substitutedFamilies.every((f) => f.family.is_synthetic === true);
+  const allSynthetic = renderedFamilies.length > 0 && renderedFamilies.every((f) => f.family.is_synthetic === true);
   const effectiveTestOnly = testOnly && !allSynthetic;
-  const familyRows = effectiveTestOnly ? [] : substitutedFamilies.map((f) => ({
+  const familyRows = effectiveTestOnly ? [] : renderedFamilies.map((f) => ({
     message_id: msg.id, guardian_id: f.family.guardian_id,
     email_at_send: f.family.email,
     delivery_method: 'resend_api', delivery_status: 'queued',

@@ -30,7 +30,6 @@ import GettingStarted from '../components/admin/GettingStarted';
 import AdminGreeting from '../components/admin/AdminGreeting';
 import NotificationHistory from '../components/admin/NotificationHistory';
 import AutoNotificationSettingsSheet from '../components/admin/AutoNotificationSettingsSheet';
-import CutoverGateChip from '../components/admin/CutoverGateChip';
 import PastEventsSection from '../components/schedule/PastEventsSection';
 import DensityToggle from '../components/home/DensityToggle';
 import Label from '../components/shared/Label';
@@ -80,8 +79,6 @@ export default function AdminHomePage() {
   return (
     <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
       <AdminGreeting user={user} />
-
-      <div style={{ display: 'flex', justifyContent: 'flex-start' }}><CutoverGateChip /></div>
 
       <AlertZone alerts={alerts} loading={alertsLoading} variant="always_visible" sectionLabel="ALERTS" />
       <ActionZone items={adminActionItems} loading={adminActionLoading} sectionKey="admin-action-zone" />

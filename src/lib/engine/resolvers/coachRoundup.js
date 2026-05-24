@@ -18,7 +18,6 @@ import {
   buildSignoffSection, buildTeamSections,
 } from './coachRoundupSections';
 import { detectConflicts, groupEventsByTeam } from './coachRoundupHelpers';
-import { buildFeedbackSurveySection } from './feedbackSurveySection';
 
 export async function resolveCoachRoundup({ coachUserId, dateRange }, { supabase } = {}) {
   if (!coachUserId) throw new Error('Missing coachUserId');
@@ -94,7 +93,6 @@ export function composeCoachRoundup(context, slice, overrides = {}) {
   sections.push(...buildTeamSections(teamsWithEvents));
   const signoff = buildSignoffSection(overrides, coaches);
   if (signoff) sections.push(signoff);
-  sections.push(buildFeedbackSurveySection());
   sections.push(buildBrandFooter(orgName));
   return {
     subject: `Coach roundup — ${slice.coach_name || coach?.display_name || 'Coach'}`,

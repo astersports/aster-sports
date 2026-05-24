@@ -5,7 +5,6 @@
 
 import { formatSubject } from '../digestPeriod';
 import { buildScheduleSection } from './weeklyDigestSchedule';
-import { buildFeedbackSurveySection } from './feedbackSurveySection';
 
 const HEADLINE_DEFAULT = 'WEEK AHEAD';
 
@@ -36,7 +35,6 @@ export function composeWeeklyDigest(context, slice, overrides = {}) {
   const validCoaches = (context.org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
   const hasSignoff = (signoff_message && signoff_message.trim()) || validCoaches.length;
   if (hasSignoff) sections.push({ kind: 'signoff', prose: (signoff_message || '').trim(), coaches: validCoaches });
-  sections.push(buildFeedbackSurveySection());
   sections.push({ kind: 'footer', logoUrl: context.org.branding.logoUrl, orgName: context.org.name, websiteUrl: context.org.branding.eyebrowLink, contactEmail: context.org.branding.contactEmail });
   return { subject: formatSubject(context.period), content_sections: sections };
 }

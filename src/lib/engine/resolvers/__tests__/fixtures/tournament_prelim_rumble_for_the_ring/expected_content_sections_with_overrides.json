@@ -82,16 +82,6 @@
     ]
   },
   {
-    "kind": "feedback_survey",
-    "feedback_token_placeholders": {
-      "1": "{{feedback_1_url}}",
-      "2": "{{feedback_2_url}}",
-      "3": "{{feedback_3_url}}",
-      "4": "{{feedback_4_url}}",
-      "5": "{{feedback_5_url}}"
-    }
-  },
-  {
     "kind": "brand_footer",
     "org_name": "LEGACY HOOPERS LLC",
     "tagline": "GROW YOUR GAME · LEAVE YOUR LEGACY"
