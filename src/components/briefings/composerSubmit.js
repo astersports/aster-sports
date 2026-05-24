@@ -32,17 +32,10 @@ import { supabase } from '../../lib/supabase';
 import { resolveAudience } from '../../lib/briefings/recipientFilter';
 import { queueRecipients } from '../../lib/briefings/queueRecipients';
 import { queueComposedMessages } from '../../lib/briefings/queueComposedMessages';
-import { createFeedbackSubstitutor } from '../../lib/briefings/feedbackSubstitutor';
 import { getDispatchSendPath, NoRecipientsError, RESOLVER_REGISTRY } from '../../lib/engine/resolvers/registry';
 
 const HTML_OPEN = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">';
 const HTML_CLOSE = '</div>';
-
-// Cutover PR 7b-2: kinds that emit feedback_survey sections and need
-// per-recipient token substitution at queue time. weekly_digest is the
-// 5th feedback-enabled kind but routes through digestSend separately.
-const FEEDBACK_ENABLED_KINDS = new Set(['tournament_prelim', 'family_guide', 'coach_roundup', 'game_recap']);
-const FEEDBACK_HANDLER_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/feedback-token-handler`;
 
 async function resolveTourneyUrl(state) {
   if (state.anchor_kind === 'tournament' && state.anchor_id) {
@@ -80,10 +73,7 @@ async function composeLegacy(state, coaches) {
 
 async function queueForDispatch({ messages, composed, state, recipients, messageId }) {
   if (messages) {
-    const perRecipientSubstitutor = FEEDBACK_ENABLED_KINDS.has(state.kind)
-      ? createFeedbackSubstitutor({ supabase, messageId, handlerBase: FEEDBACK_HANDLER_BASE })
-      : undefined;
-    return queueComposedMessages({ messageId, messages, testOnly: state.test_only, perRecipientSubstitutor });
+    return queueComposedMessages({ messageId, messages, testOnly: state.test_only });
   }
   const { teamIds, audience } = await resolveAudience({ recipients, audienceType: state.audience_type, audienceFilter: state.audience_filter, anchorId: state.anchor_id });
   return queueRecipients({ messageId, audience, composed, teamIds, testOnly: state.test_only });

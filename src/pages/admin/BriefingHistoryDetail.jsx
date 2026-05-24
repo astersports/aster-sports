@@ -9,7 +9,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
-import BriefingRatingCard from '../../components/admin/BriefingRatingCard';
 
 const wrap = { backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' };
 const inner = { maxWidth: 760, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 };
@@ -70,7 +69,6 @@ export default function BriefingHistoryDetail() {
             Sent {msg.sent_at ? new Date(msg.sent_at).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : '—'} · {recipients.length} recipient{recipients.length === 1 ? '' : 's'}
           </div>
         </div>
-        <BriefingRatingCard messageId={id} />
         <div style={card}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <span style={labelStyle}>Preview as</span>
