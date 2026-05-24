@@ -1,14 +1,17 @@
 // @vitest-environment jsdom
 //
-// Cross-surface invariant test per CLAUDE.md anti-pattern #43.
+// CutoverGateChip render contract test (per CLAUDE.md anti-pattern #43).
 //
-// CutoverGateChip is mounted on both AdminHomePage and BriefingsInboxPage
-// per Frank's 2026-05-22 routing decision. This test locks the invariant
-// that both surfaces render the SAME data (mean rating, count, threshold
-// state) from the same hook contract — so future refactors can't drift
-// per-surface display.
+// §4.AI Option C PR A retired BriefingsInboxPage, leaving AdminHomePage
+// as the single mount surface. This test was previously
+// CutoverGateChipCrossSurface — renamed in PR C (2026-05-23) to reflect
+// the post-Option C single-surface reality. The render-contract
+// assertions are preserved verbatim: the chip's URL/value contract
+// (mean to 1 decimal, ≥/< 4.0 boundary, loading/empty placeholders)
+// is what the test locks.
 //
-// The test mocks the hook and asserts both mounts read it identically.
+// The test mocks the useBriefingFeedback hook and asserts that the
+// component reads it deterministically across re-mounts.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
@@ -30,7 +33,7 @@ afterEach(() => {
   hookRef.current = { loading: false, meanRating: 4.5, ratingCount: 12, messageCount: 5, atOrAboveThreshold: true };
 });
 
-describe('CutoverGateChip — cross-surface invariant (AP #43)', () => {
+describe('CutoverGateChip — render contract (AP #43)', () => {
   it('1. above threshold: renders mean to 1 decimal + ≥ 4.0 pill + success color', () => {
     const { container } = render(<CutoverGateChip />);
     const chip = container.querySelector('[data-testid="cutover-gate-chip"]');
@@ -76,8 +79,10 @@ describe('CutoverGateChip — cross-surface invariant (AP #43)', () => {
     expect(live).not.toBeNull();
   });
 
-  it('6. invariant: same hook output produces same rendered text regardless of mount surface', () => {
-    // Mount twice (simulating both surfaces). Same hook ref → identical output.
+  it('6. deterministic re-render: same hook output produces identical text across remounts', () => {
+    // Mount twice with the same hook ref → identical output. Locks the
+    // render contract so a future second mount surface (if reintroduced)
+    // would still pass the invariant.
     hookRef.current = { loading: false, meanRating: 4.3, ratingCount: 9, messageCount: 5, atOrAboveThreshold: true };
     const { container: c1 } = render(<CutoverGateChip />);
     const text1 = c1.querySelector('[data-testid="cutover-gate-chip"]').textContent;
