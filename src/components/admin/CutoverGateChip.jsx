@@ -1,8 +1,9 @@
 // Cutover PR 7b-3 — cutover-gate metric chip. Surfaces the rolling
 // average rating across the last 5 sent briefings, with a threshold
-// flag at ≥4.0. Shown on AdminHomePage + BriefingsInboxPage per Frank's
-// 2026-05-22 routing decision. Cross-surface invariant test locks
-// the URL/value contract per AP #43.
+// flag at ≥4.0. Shown on AdminHomePage. (Previously also mounted on
+// BriefingsInboxPage — retired 2026-05-23 §4.AI Option C PR A.)
+// Render contract test (CutoverGateChipRender.test.jsx) locks the
+// URL/value contract per AP #43.
 //
 // Loading state: subtle skeleton-style placeholder (no spinner — chip
 // is small, brief flash is acceptable).
