@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import StatHeroBar from '../components/broadcast/StatHeroBar';
 import TournamentCard from '../components/broadcast/TournamentCard';
 import TeamAccordion from '../components/records/TeamAccordion';
+import AdminBackHeader from '../components/admin/AdminBackHeader';
 
 export default function RecordsPage() {
   const { orgId, org } = useAuth();
@@ -50,7 +51,8 @@ export default function RecordsPage() {
 
   return (
     <div className="bc-root" style={{ minHeight: 'auto', paddingBottom: 80 }}>
-      <div style={{ padding: '20px 16px 0' }}>
+      <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 16px 0' }}>
+        <AdminBackHeader />
         <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 4 }}>
           Spring 2026 · {org?.display_name || org?.name || ''}
         </div>
