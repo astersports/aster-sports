@@ -6,6 +6,7 @@ import useScoreDraft from '../../hooks/useScoreDraft';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import QuarterScoreInput from './QuarterScoreInput';
 import PlayerOfGamePicker from './PlayerOfGamePicker';
+import OpponentInlineField from './OpponentInlineField';
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
@@ -28,6 +29,9 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
   const draft = useScoreDraft(event.id);
   const trapRef = useFocusTrap(true);
   const [confirmAction, setConfirmAction] = useState(null);
+  // Opponent tracked in state so the inline setter (below) unblocks
+  // Publish immediately after writing back to the event — no reopen.
+  const [opponentName, setOpponentName] = useState(event.opponent || '');
 
   const handleDismiss = useCallback(() => {
     if (draft.state === 'dirty' || draft.state === 'saving') {
@@ -44,11 +48,11 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
   }, [handleDismiss]);
 
   // 2026-05-20 — opponent gate. Frank flagged on Records: 10U Black W
-  // 37-30 TBD May 17 (game scored with blank opponent). Block publish
-  // when event.opponent is null/blank — admin must set opponent on
-  // event detail first. Pairs with the schedule_change opponent fix
-  // (PR #378) as a data-discipline class.
-  const hasOpponent = !!(event.opponent && event.opponent.trim());
+  // 37-30 TBD May 17 (game scored with blank opponent). Publish still
+  // requires an opponent, but 2026-05-24 the dead-end ("leave and edit
+  // the event") was replaced with an inline setter (OpponentInlineField)
+  // so a new user can set it without leaving the sheet.
+  const hasOpponent = !!(opponentName && opponentName.trim());
   const canPublish = draft.result.our_score != null && draft.result.opponent_score != null
     && hasOpponent && !draft.isPublished;
 
@@ -57,7 +61,7 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
   const numChange = (field) => (e) => draft.updateField(field, e.target.value === '' ? null : Number(e.target.value));
 
   return createPortal(
-    <div ref={trapRef} role="dialog" aria-modal="true" aria-label={`Score entry vs ${event.opponent || 'opponent'}`}
+    <div ref={trapRef} role="dialog" aria-modal="true" aria-label={`Score entry vs ${opponentName || 'opponent'}`}
       style={{ position: 'fixed', inset: 0, background: 'var(--em-bg-page)', zIndex: 50, display: 'flex', flexDirection: 'column' }}>
       <div style={{ height: 4, background: team?.team_color || 'var(--em-accent)' }} />
       <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)', gap: 12 }}>
@@ -65,7 +69,7 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
           <X size={20} strokeWidth={1.75} color="var(--em-text-primary)" />
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>vs {event.opponent || 'Opponent'}</div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>vs {opponentName || 'Opponent'}</div>
           <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>{formatDate(event.start_at)}</div>
         </div>
         <SaveBadge state={draft.state} />
@@ -73,9 +77,7 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
 
       <main style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', WebkitOverflowScrolling: 'touch' }}>
         {!hasOpponent && (
-          <div role="alert" style={{ marginBottom: 16, padding: 12, backgroundColor: 'var(--em-warning-soft)', borderLeft: '4px solid var(--em-warning)', borderRadius: 6, fontSize: 14, color: 'var(--em-text-primary)' }}>
-            Set the opponent on this event before publishing — close this sheet, tap the event, and edit the opponent field.
-          </div>
+          <OpponentInlineField eventId={event.id} onSaved={setOpponentName} />
         )}
         <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
           <label style={{ flex: 1 }}>
