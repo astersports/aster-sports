@@ -5,7 +5,7 @@
 > re-discovery. Updated per session and per PR.
 >
 > Created: 2026-05-18 (Italy CEST) from L99 cross-role audit consolidation
-> Last updated: 2026-05-22 (§4.AA followup reconciliation against 7 PRs #467-#473 from extended session 2026-05-22; total 19 PRs)
+> Last updated: 2026-05-27 (§4.AJ reconciliation — 5-day gap close against PRs #486-#513; records the cutover-gate feedback REVERT #509, Option C arc ship #503-#508, and current-surface PRs #512/#513)
 
 This doc complements (not replaces):
 - `docs/SKYFIRE_BUILD_QUEUE_v2.md` — shipped-log roadmap, forward-only
@@ -414,7 +414,9 @@ shipped (status uncertain at audit time).
 
 ### §4.A — Cutover Wave (briefing renderer + parser)
 
-Status: **5 OF 7 PRs SHIPPED OR CODE-COMPLETE; PR 7a SHIPPED 2026-05-22; PR 6 + PR 7b GENUINELY OPEN.** PRs 1, 2, 3 shipped May 15-16; PRs 4 + 5 code-complete pending Frank's actor-validation send; PR 7a (token + schema foundation) shipped 2026-05-22 per session-open routing; **PR 6 + PR 7b remain genuinely unshipped.** 7-PR arc per `CUTOVER_WAVE_GAP_AUDIT.md`. Status corrected via §4.N Layer 2 audit (2026-05-18 evening) — git log confirmed PR 4 = #185/#186/#187, PR 5 = #217/#219/#220. **§4.A second reconciliation 2026-05-22 (this commit)** — git log confirmed PR 1 = #172 (b0efef4, 2026-05-15), PR 2 = #173 (db82f99, 2026-05-15), PR 3 = #182 + #184 (3a + 3b, 2026-05-16). Anti-pattern #45 catch — these three ships were 11+ days stale in the ledger; surfaced when CC went to scope "PR 1 next" and discovered all renderers + parser route + venue notes + LLM closer already in production.
+Status (revised 2026-05-27 per §4.AJ): **PRs 1-3 SHIPPED; PRs 4 + 5 CODE-COMPLETE, ACTOR-VALIDATION-PENDING (send errors unblocked by #491/#493/#496-#498 — only Frank's wizard send remains); PR 6 GENUINELY OPEN (next real build); PR 7 SHIPPED THEN FULLY REVERTED (#509).** Prior status line below is retained as historical context.
+
+Prior status: **5 OF 7 PRs SHIPPED OR CODE-COMPLETE; PR 7a SHIPPED 2026-05-22; PR 6 + PR 7b GENUINELY OPEN.** PRs 1, 2, 3 shipped May 15-16; PRs 4 + 5 code-complete pending Frank's actor-validation send; PR 7a (token + schema foundation) shipped 2026-05-22 per session-open routing; **PR 6 + PR 7b remain genuinely unshipped.** 7-PR arc per `CUTOVER_WAVE_GAP_AUDIT.md`. Status corrected via §4.N Layer 2 audit (2026-05-18 evening) — git log confirmed PR 4 = #185/#186/#187, PR 5 = #217/#219/#220. **§4.A second reconciliation 2026-05-22 (this commit)** — git log confirmed PR 1 = #172 (b0efef4, 2026-05-15), PR 2 = #173 (db82f99, 2026-05-15), PR 3 = #182 + #184 (3a + 3b, 2026-05-16). Anti-pattern #45 catch — these three ships were 11+ days stale in the ledger; surfaced when CC went to scope "PR 1 next" and discovered all renderers + parser route + venue notes + LLM closer already in production.
 
 - ~~**PR 1**~~ ✅ **SHIPPED PR #172** (b0efef4, 2026-05-15) — `tournament_prelim` renderer alignment. 7 new renderers shipped: `dayHeader.js`, `rsvpCallout.js`, `venueList.js`, `logisticsLine.js`, `taglineFooter.js`, `brandFooter.js`, `bracketCallout.js`. Plus `header.js` `variant: 'cobalt_band'` for full cobalt-background + white-text treatment. Plus `tournamentPrelimSections.js` section-builders module. Plus `tagline` body field on TournamentPrelimBody. Plus orphan-kind dev-mode warning in `composer.renderSections` (catches silent empty-renders of unregistered section kinds — root cause of pre-PR-1 `team_schedule_table` orphan). Implementation surfaced two corrections beyond audit framing: (1) cobalt header is visual STRUCTURE not string swap (added `variant: 'cobalt_band'` parameter); (2) `team_schedule_table` was silently orphaned end-to-end before this PR (replaced with day-grouped `game_card` sections). Section 12 of `CUTOVER_WAVE_GAP_AUDIT.md` captures both corrections inline.
 - ~~**PR 2**~~ ✅ **SHIPPED PR #173** (db82f99, 2026-05-15) — Schedule parser at `/admin/import-schedule`. Single-paste TourneyMachine flow. Route live in `src/App.jsx:89` via lazy-loaded `ImportSchedulePage`. Closes V-12 (parser route partial status).
@@ -429,7 +431,8 @@ Status: **5 OF 7 PRs SHIPPED OR CODE-COMPLETE; PR 7a SHIPPED 2026-05-22; PR 6 + 
 - **PR 6** — Coverage delegation schema + UI. New
   `event_coach_assignments` table (Option B); conflict detection at
   parse time + delegation prompt in import preview.
-- **PR 7** ✅ **FULLY SHIPPED (7a + 7b-1 + 7b-2 + 7b-2.5 + 7b-3).** Cutover gate infrastructure complete end-to-end: schema + token RPCs + handler edge function (7a) → renderer + substitute helper (7b-1) → emit + per-recipient pipeline 4/5 kinds (7b-2) → weekly_digest closes 5/5 (7b-2.5) → admin aggregation + cross-surface UI (7b-3). Cutover-gate metric now visible on AdminHomePage + BriefingsInboxPage; per-briefing rating on BriefingHistoryDetail; threshold ≥4.0 across last 5 sent briefings.
+- **PR 7** ⛔ **SHIPPED THEN FULLY REVERTED (#509, 2026-05-27).** 7a + 7b-1 + 7b-2 + 7b-2.5 + 7b-3 all shipped 2026-05-22, then ripped out end-to-end via PR #509 per Frank's 2026-05-24 routing. Rationale: the per-email "How was this briefing? ★–★★★★★" survey served the cutover decision; once cutover is past and the wizard is the locked path, the rating prompt is friction without ongoing operational value. Removal spanned all 3 layers + 14 src file deletions + edge function (`feedback-token-handler`) + DB (`briefing_feedback` table, RPCs, `feedback_token_secret`) via migration `20260524014835_rollback_cutover_feedback_infrastructure`. `queueComposedMessages.js` retains a documented `perRecipientSubstitutor` extension point (header comment) to restore if a real per-recipient personalization use case lands. **Decision pending (→ §7): rebuild feedback differently, or shelve permanently.** The historical sub-bullets below are preserved as the build record of what existed pre-revert.
+  - ⛔ Reverted #509. Sub-bullets below are historical (pre-revert build record), not current state.
   - **PR 7a** ✅ **SHIPPED (this commit)** — Token + schema foundation. Migration `20260522074242_cutover_pr_7a_briefing_feedback_infrastructure` mirrors callup-token pattern: `briefing_feedback` table (nonce PK + message_id FK to comms_messages + recipient_email + rating SMALLINT 1..5 + free_text + ip/ua audit) + `feedback_token_secret` in app_secrets (per AP #33) + `mint_feedback_token` + `verify_feedback_token` + `apply_feedback_submission` RPCs (all SECURITY DEFINER with REVOKE FROM PUBLIC + explicit REVOKE FROM anon per AP #23 + #57) + RLS SELECT policy for admins via comms_messages → user_roles chain (with `auth.uid()` subselect wrapper per CLAUDE.md §5). Edge function `feedback-token-handler` deployed v1 (verify_jwt:false; config.toml entry locks the flag per AP #31; audit test passes). DO $$ verification block confirms mint+verify roundtrip for all 5 ratings + 3 boundary rejections (rating=0, rating=6, empty email). No app-layer code yet — emit/render is PR 7b scope.
   - **PR 7b-1** ✅ **SHIPPED (this commit)** — Rendering infrastructure pure. New `feedback_survey` atomic renderer (5 stacked star buttons with cobalt gradient by rating + fail-loud `{{feedback_*_url}}` fallback per AP #29) + composer.js SECTION_RENDERERS registration + `substituteFeedbackTokens` helper (mirror substituteCallupTokens / substituteRsvpTokens pattern, keyed by recipient_email). No kind emits feedback_survey yet → no production behavior change. Unit tests: 14 across renderer + helper (XSS escape coverage + fail-loud fallback + pure-function guarantees + bad-input rejection). Mid-session re-scope: original plan included tournament_prelim emit + URL wrap in this PR, but architecture investigation surfaced that the send pipeline modification (currently uses team slices with shared body via queueComposedMessages, not per-recipient like rsvp_nudge) wants to ship as a single coherent unit. AP #39 truer-position call: ship infrastructure first, wire emit + pipeline together in PR 7b-2.
   - **PR 7b-2** ✅ **SHIPPED 4-OF-5 KINDS (this commit)** — Emit path + per-recipient send pipeline (composerSubmit-path kinds). Design locks per Frank 2026-05-22: per-recipient tokens + Option A (queueComposedMessages callback) + after-signoff-before-brand_footer position + v1 rating-only. Files: (a) `queueComposedMessages.js` adds optional `perRecipientSubstitutor` callback parameter (additive; backward-compat for all existing callers) — builders extracted to `queueComposedMessagesBuilders.js` to stay under 150-line cap; (b) new `feedbackSubstitutor.js` factory mints 5 tokens × recipient via `mint_feedback_token` RPC, wraps into handler URLs (`?t=<token>&r=<rating>`), runs `substituteFeedbackTokens`, re-renders body_html + body_plain; (c) new `feedbackSurveySection.js` helper exports `buildFeedbackSurveySection()` for resolver emit; (d) 4 resolvers emit `feedback_survey` between signoff and brand_footer (tournament_prelim, family_guide, coach_roundup, game_recap); (e) `composerSubmit.js` wires `createFeedbackSubstitutor` into `queueForDispatch` for the 4 FEEDBACK_ENABLED_KINDS; (f) admin BCC row deliberately excluded from substitution (mirrors `adminSample` isolation in rsvp_nudge — admin sees placeholder body); (g) row-transient `__content_sections` field carried through `buildFanoutRows` for substitutor access, stripped before INSERT. Tests: 9 substitutor unit tests + signature lock in queueComposedMessages test + snapshot fixture updates for tournament_prelim + game_recap. weekly_digest deferred to **PR 7b-2.5** (digestSend uses a separate pipeline at 150-line cap; structural changes warrant their own coherent unit).
@@ -3561,13 +3564,13 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 **Audit doc:** `docs/AUDIT_BRIEFINGS_OPTION_C_REDESIGN_2026-05-23.md` (this commit). Full §16.15 template: initial pass + deep-read addendum + AP cross-reference + admin wireframes + out-of-scope + 3 open questions + PR sequence.
 
-**PR sequence (4 PRs):**
-- **PR A** — Freestanding `BriefingsComposePage` + `BriefingsHistoryPage`; route updates; `QuickActions` tile retarget; `useAvailableDrafts` hook; `DraftResumeRow` component; "View sent" link in WizardHeader. Delete `BriefingsInboxPage` + 9 inbox sub-components. Load-bearing redesign.
-- **PR B** — 3 new `briefing_overdue` sub-keys (game_recap, tournament_recap, schedule_change_followup). Migration + 3 evaluators in `src/lib/alerts/evaluator.js`. Unlocks alert-driven workflows on AdminHome.
-- **PR C** — `CutoverGateChip` test refactor: drops one mount surface (BriefingsInboxPage gone) per AP #43 single-surface resolution. Rename test.
-- **PR D** — Auto-archive cron (7-day stale draft sweep). Edge function + config.toml entry per AP #31 + #33. Hygiene follow-up, not gating.
+**PR sequence (4 PRs) — ✅ ALL SHIPPED 2026-05-23/24:**
+- ~~**PR A**~~ ✅ **SHIPPED #505** — Freestanding `BriefingsComposePage` + `BriefingsHistoryPage`; route updates; `QuickActions` tile retarget; `useAvailableDrafts` hook; `DraftResumeRow` component; "View sent" link in WizardHeader. Deleted `BriefingsInboxPage` + inbox sub-components. (Tile retire shipped separately as #503; audit doc #504.)
+- ~~**PR B**~~ ✅ **SHIPPED #506** — 3 new `briefing_overdue` sub-keys (game_recap, tournament_recap, schedule_change_followup). Migration + 3 evaluators in `src/lib/alerts/evaluator.js`.
+- ~~**PR C**~~ ✅ **SHIPPED #508** — `CutoverGateChip` test refactor to single-surface per AP #43. ⚠ **Note:** the `CutoverGateChip` itself was subsequently removed entirely by the cutover-feedback revert #509 (see §4.A PR 7). The test refactored here was deleted with the rest of the feature.
+- ~~**PR D**~~ ✅ **SHIPPED #507** — Admin drafts set `expires_at` on save (7-day auto-archive cadence).
 
-**Recommended sequencing:** A→B→C in this session/routing window; D as next-day follow-up.
+**Sequencing held:** A→B→C in the 2026-05-23 PM window; D shipped same arc. **§4.AI fully closed** — superseded in part by the #509 revert (PR C surface gone).
 
 **Anti-pattern flags in scope:**
 - AP #6 — `BriefingComposer` already at 148 lines; "View sent" link prop must stay tight.
@@ -3584,5 +3587,47 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 - Q1 — alert kind structure: per-kind sub-evaluators (recommended) vs single multi-kind evaluator
 - Q2 — history page data source: extend `useInboxQueue` vs new `useSentBriefings` (recommended)
 - Q3 — Cancel exit target: admin home (recommended) vs history vs browser-back
+
+---
+
+### §4.AJ — 5-day gap reconciliation (2026-05-27)
+
+**Trigger:** Frank's "what's next for the next few sessions" question
+surfaced that the ledger header read "last updated 2026-05-22" while the
+body had grown through §4.AI (2026-05-25). Per AP #45, reconciled §4
+against `origin/main` PRs #486-#513 before committing to a next-build
+order. The doc was substantially current in its §4.AD-§4.AI arc entries;
+the gaps were (a) the cutover-gate feedback REVERT not recorded anywhere,
+(b) §4.A / §4.AI status lines stale against the revert, (c) the header
+date.
+
+**Shipped since the §4.AB high-water mark (PRs #486-#513):**
+- **#486-#487** — security/rides follow-ups (verify_feedback_token REVOKE; ride symmetric guard BUG-004)
+- **#489-#490** — formatter consolidation (Cluster 8 C) + session handoff doc
+- **#491 + #493** — briefing actor-send UNBLOCK: slice contract + `get_staff_email` RPC (#491); static supabase import fix in `queueComposedMessages` resolving the `.from`-on-undefined wizard send error (#493). These clear the PR 4 / PR 5 send-path errors.
+- **#492 + #494-#502** — §4.AD console-triage (5 bugs) + §4.AE/§4.AF/§4.AG/§4.AH L99 compose-briefing audit arc. All 5 §4.AD bugs closed (#496/#497/#498); 6 P1 + 1 P2 audit fixes; AP #56/#58/#59 promoted (#501). Audit cycle closed clean on the compose surface.
+- **#503-#508** — Briefings Option C redesign (§4.AI): tile retire (#503), audit doc (#504), freestanding compose + sent-only history (#505 PR A), briefing_overdue sub-keys (#506 PR B), CutoverGateChip single-surface test (#508 PR C), drafts expires_at (#507 PR D).
+- **#509** — ⛔ **REVERT: full rip-out of cutover-gate feedback infrastructure.** Per Frank's 2026-05-24 routing: the per-email rating survey served the cutover decision; post-cutover it's friction without value. Removed across resolver emits + send pipeline + admin chips/cards + 14 src deletions + edge function + DB (migration `20260524014835`). `queueComposedMessages.perRecipientSubstitutor` kept as documented extension point. **This invalidates §4.A PR 7's "FULLY SHIPPED" status (now corrected) and supersedes §4.AI PR C's surface.**
+- **#512** — current-surface: inline opponent setter in the score sheet (removes the leave-and-edit dead-end; writes `events.opponent` + `opponent_id` on saved-opponent match). Directly smooths the Cluster 1 / §9 tournament-results backfill workflow.
+- **#513** — current-surface: back button on the Records page (reuses `AdminBackHeader`, theme-matched on the dark broadcast surface).
+
+**Corrected next-build order (locked this reconciliation):**
+
+1. **Cluster 1 tournament-results backfill** (§2 Cluster 1 + §9) — Frank-driven Quick Score session. ~13 Rumble for the Ring results + 10U Blue Games 6-7. Unblocks 9 stale surfaces across all 3 roles. #512 smooths the exact entry flow. Workflow, not code — reopens as code only if aggregates don't propagate post-publish.
+2. **Cutover Wave PR 4 + PR 5 actor sends** (§4.A) — Frank drives one `coach_roundup` + one `family_guide` send through the wizard (~10-15 min each). Send-path errors cleared by #491/#493/#496-#498. Flips CODE-COMPLETE → SHIPPED.
+3. **Cutover Wave PR 6 — coverage delegation** (§4.A) — next real CODE build. `event_coach_assignments` table + parse-time conflict detection + delegation prompt in import preview. Not started.
+4. **Migration 021 data hygiene** (§2 Cluster 1.1 / 3.1 + §3) — null the mis-tagged 10U Blue tournament event, sanitize ad-hoc event titles, dedupe 11U Girls practice. Needs Frank's diagnostic confirmation.
+5. **Backlog (unblocked):** §4.J weather-per-event (~4-6h); §4.K Dependabot/CI token-scope upgrade.
+6. **Blocked on product spec:** §4.I schedule_change rebuild (3-option dialog spec lock from claude.ai).
+
+**Decision pending → §7:** whether to rebuild briefing feedback in a
+lighter form (e.g., a single admin-side thumbs signal, not per-email
+stars) or shelve permanently. Recorded as a product call, not a queued
+build.
+
+**AP compliance:** #45 (ledger reconciled in same commit as the status
+corrections); #49 (changed sections pasted in chat this turn — full doc
+is 3600+ lines, so per the >2000-line clause only the touched sections
+are pasted, not the whole file).
 
 ---
