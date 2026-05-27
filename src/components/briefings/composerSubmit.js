@@ -123,6 +123,13 @@ export async function submitBriefing({ state, draft, recipients, coaches }) {
   const queued = await queueForDispatch({ messages, composed, state, recipients, messageId: r.id });
   const dispatchInvoke = await supabase.functions.invoke('send-tournament-message', { body: { message_id: r.id } });
   if (dispatchInvoke.error) throw dispatchInvoke.error;
-  await supabase.from('comms_messages').update({ status: 'sent' }).eq('id', r.id);
+  // send-tournament-message owns the terminal status='sent' write (service
+  // role, authoritative). A 200 with ok:false means dispatch or the
+  // status write-back failed — surface it instead of reporting success
+  // (the old client-side status update failed silently, stranding rows at
+  // 'queued' — fixed 2026-05-27).
+  if (dispatchInvoke.data && dispatchInvoke.data.ok === false) {
+    throw new Error(dispatchInvoke.data.errors?.join('; ') || 'Dispatch reported failure.');
+  }
   return { sent: true, audienceCount: queued.audienceCount };
 }
