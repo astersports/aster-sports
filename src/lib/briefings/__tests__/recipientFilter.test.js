@@ -68,3 +68,16 @@ describe('resolveAudience for player_specific (G2)', () => {
     expect(out.audience).toEqual([]);
   });
 });
+
+// games_recap (G1) — multi_event_attendees audience plumbing (PR A)
+describe('resolveAudience for multi_event_attendees (games_recap G1)', () => {
+  it('empty / missing / non-array event_ids returns empty without supabase touch', async () => {
+    for (const audienceFilter of [{ event_ids: [] }, null, { event_ids: 'nope' }]) {
+      const out = await resolveAudience({
+        recipients: RECIPIENTS, audienceType: 'multi_event_attendees', audienceFilter, anchorId: null,
+      });
+      expect(out.teamIds).toEqual([]);
+      expect(out.audience).toEqual([]);
+    }
+  });
+});
