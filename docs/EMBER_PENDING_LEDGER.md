@@ -254,7 +254,7 @@ A# = admin review, P# = parent review). Cluster numbers preserve
 chat's L99 ordering.
 
 ### Cluster 1 — Tournament results not propagated to aggregates
-- Status: **WORKFLOW-IN-PROGRESS** (diagnostic D1 confirmed workflow gap, not code)
+- Status: **SUBSTANTIALLY RESOLVED 2026-05-27** (production verified via MCP). Of the 13 tournament games, 11U Girls (5/5) + 10U Black (4/4) + 8U Boys (4/4) are entered + published; 10U Blue Game 6 (May 9) done → Cluster 1.2 closed. 8U Boys corrected this session: CT Wolves score flipped 35-15→15-35 L (swapped-entry error) + missing NY Wild 13-34 L added → 8U Boys now 0-4. **Remaining (Frank's call, left per "unambiguous-only" routing):** the two May 17 "6th Boro 4AB" events — 10U Blue (Cluster 1.3, no result + mis-tagged tournament per 1.1) and 9U Boys (stray: 4AB division but 9U plays 3AB; likely delete). See §9.
 - Severity: HIGH
 - Surfaces affected: 9 across all 3 roles
   - Coach: B4 (10U Black 0% post-championship), B5 (Teams tab records pre-tournament)
@@ -272,7 +272,7 @@ chat's L99 ordering.
 - Surface impact: if this event is counted as a tournament game, it would distort future tournament aggregates once Cluster 1 is published.
 
 ### Cluster 1.2 — 10U Blue Game 6 missing from system
-- Status: **OPEN**, Frank confirmed 3-3 is correct (not 3-2 shown in screenshots)
+- Status: **RESOLVED 2026-05-27** — verified in production: 10U Blue vs Resurrection Blue 4AB (May 9) entered + published as 25-27 L. 10U Blue league record reflects the 6th game.
 - Severity: LOW (workflow data entry)
 - Evidence: Frank's league schedule data dump shows 6 league games played for 10U Blue. Resurrection Blue 4AB (May 9) at 25-27 L is the 6th game. Screenshots at audit time showed 3-2 — that means Game 6 was not yet entered in the system at screenshot capture.
 - Frank-action item: enter Game 6 result (Resurrection Blue 4AB, May 9, 25-27 L) into the system during the Quick Score backfill session.
@@ -1503,10 +1503,31 @@ Issues that look like bugs but actually require behavioral changes
 (Frank or coaches doing something different in production):
 
 ### Cluster 1 — Tournament results publish + league backfill (Rumble for the Ring CT May 16-17 + 10U Blue Games 6-7)
-**Status: WORKFLOW DATA SUPPLIED 2026-05-18 18:15 CEST (REVISED)**
+**Status: SUBSTANTIALLY RESOLVED 2026-05-27 (production verified via MCP).**
 
-Frank-action item: open Quick Score, enter scores for **13-15 games**
-(13 tournament + 1-2 league backfill), publish. Estimated ~30-45 min.
+Backfill is essentially complete — the 13-game inventory below was
+entered + published in production between 2026-05-18 and 2026-05-27.
+Verification 2026-05-27 found three deltas; two were unambiguous and
+fixed this session, two remain Frank's call:
+
+- ✅ **8U Boys vs CT Wolves** — was entered 35-15 (a win); inventory
+  says 15-35 L (8U Boys 0-4). Swapped-score entry. **Flipped to
+  15-35 L** via MCP (game_result `8e6ab437…`).
+- ✅ **8U Boys vs NY Wild (13-34 L)** — was missing entirely. **Created**
+  the event (tournament `196e595d…`, May 16) + published game_result
+  via MCP (event `a74e58e6…`). 8U Boys now reads 0-4.
+- ✅ **10U Blue Game 6 (May 9 Resurrection Blue 4AB 25-27 L)** — already
+  entered + published → **Cluster 1.2 RESOLVED**.
+- ⏳ **10U Blue May 17 vs 6th Boro 4AB** — event exists, no result
+  (Cluster 1.3) + still mis-tagged tournament (Cluster 1.1). Frank:
+  did the game happen? Enter score or remove the event.
+- ⏳ **9U Boys May 17 vs 6th Boro 4AB** — `event_type='tournament'`, no
+  result, 4AB division (9U plays 3AB; real May 18 vs 6th Boro 3AB is
+  entered 12-13 L). Looks like a stray/duplicate — Frank to confirm
+  delete.
+
+Original Frank-action (now mostly done): open Quick Score, enter scores
+for the games below. The inventory is retained for reference.
 
 Tournament inventory (13 games):
 
