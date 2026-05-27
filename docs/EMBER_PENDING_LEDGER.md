@@ -433,11 +433,13 @@ Prior status: **5 OF 7 PRs SHIPPED OR CODE-COMPLETE; PR 7a SHIPPED 2026-05-22; P
   parse time + delegation prompt in import preview.
   **Design pass DONE 2026-05-27** → `docs/AUDIT_COVERAGE_DELEGATION_PR6_2026-05-27.md`
   (§16.15 template: audit + deep-read + AP cross-ref + admin wireframe +
-  out-of-scope + 3-PR sequence A→B→C). **BLOCKED on Frank routing Q1-Q4**
-  before PR A code/migration lands: Q1 assumed game duration (rec 90min),
-  Q2 detection scope (rec batch+same-tournament, YAGNI), Q3 delegate-to
-  set (rec any org coach), Q4 block-vs-soft-warn (rec soft, matching the
-  existing tournament-conflict precedent). No migration until routed.
+  out-of-scope + 3-PR sequence A→B→C). **Q1-Q4 ROUTED by Frank 2026-05-27:**
+  Q1 game duration = 90min; Q2 scope = BROAD (all team events in window,
+  not just same-tournament); Q3 delegate-to = any org coach; Q4 = soft
+  warn (non-blocking commit). **PR A (schema) unblocked.** Build sequence:
+  PR A `event_coach_assignments` migration → PR B detection hook
+  (effectiveCoach + useCoverageConflicts, broad fetch) → PR C preview UI
+  + commit wiring.
 - **PR 7** ⛔ **SHIPPED THEN FULLY REVERTED (#509, 2026-05-27).** 7a + 7b-1 + 7b-2 + 7b-2.5 + 7b-3 all shipped 2026-05-22, then ripped out end-to-end via PR #509 per Frank's 2026-05-24 routing. Rationale: the per-email "How was this briefing? ★–★★★★★" survey served the cutover decision; once cutover is past and the wizard is the locked path, the rating prompt is friction without ongoing operational value. Removal spanned all 3 layers + 14 src file deletions + edge function (`feedback-token-handler`) + DB (`briefing_feedback` table, RPCs, `feedback_token_secret`) via migration `20260524014835_rollback_cutover_feedback_infrastructure`. `queueComposedMessages.js` retains a documented `perRecipientSubstitutor` extension point (header comment) to restore if a real per-recipient personalization use case lands. **Decision pending (→ §7): rebuild feedback differently, or shelve permanently.** The historical sub-bullets below are preserved as the build record of what existed pre-revert.
   - ⛔ Reverted #509. Sub-bullets below are historical (pre-revert build record), not current state.
   - **PR 7a** ✅ **SHIPPED (this commit)** — Token + schema foundation. Migration `20260522074242_cutover_pr_7a_briefing_feedback_infrastructure` mirrors callup-token pattern: `briefing_feedback` table (nonce PK + message_id FK to comms_messages + recipient_email + rating SMALLINT 1..5 + free_text + ip/ua audit) + `feedback_token_secret` in app_secrets (per AP #33) + `mint_feedback_token` + `verify_feedback_token` + `apply_feedback_submission` RPCs (all SECURITY DEFINER with REVOKE FROM PUBLIC + explicit REVOKE FROM anon per AP #23 + #57) + RLS SELECT policy for admins via comms_messages → user_roles chain (with `auth.uid()` subselect wrapper per CLAUDE.md §5). Edge function `feedback-token-handler` deployed v1 (verify_jwt:false; config.toml entry locks the flag per AP #31; audit test passes). DO $$ verification block confirms mint+verify roundtrip for all 5 ratings + 3 boundary rejections (rating=0, rating=6, empty email). No app-layer code yet — emit/render is PR 7b scope.
