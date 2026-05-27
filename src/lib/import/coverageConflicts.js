@@ -90,3 +90,22 @@ export function buildConflictItems(rows, existingEvents) {
     }));
   return [...importItems, ...existingItems];
 }
+
+// Build event_coach_assignments rows from a committed import. newRows +
+// insertedIds are positionally aligned (PostgREST returns bulk-insert
+// RETURNING rows in input order). updatedRows carry matched_event_id.
+// Only rows that staged a delegation produce an assignment.
+export function buildAssignmentRows({ newRows = [], insertedIds = [], updatedRows = [], userId = null }) {
+  const out = [];
+  newRows.forEach((r, i) => {
+    if (r.delegated_coach_user_id && insertedIds[i]) {
+      out.push({ event_id: insertedIds[i], coach_user_id: r.delegated_coach_user_id, assigned_by: userId });
+    }
+  });
+  for (const r of updatedRows) {
+    if (r.delegated_coach_user_id && r.matched_event_id) {
+      out.push({ event_id: r.matched_event_id, coach_user_id: r.delegated_coach_user_id, assigned_by: userId });
+    }
+  }
+  return out;
+}

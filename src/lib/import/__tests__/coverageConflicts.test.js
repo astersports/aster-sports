@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ASSUMED_GAME_MINUTES,
+  buildAssignmentRows,
   buildConflictItems,
   busyWindow,
   detectCoverageConflicts,
@@ -116,5 +117,32 @@ describe('buildConflictItems', () => {
     const rows = [{ status: 'ok', team: 'Boys', opponent: 'X', dedup: 'new', matched_event_id: null, delegated_coach_user_id: 'darien', resolved: { team_id: 'boys', start_at: T(10) } }];
     const items = buildConflictItems(rows, []);
     expect(items[0].delegated_coach_user_id).toBe('darien');
+  });
+});
+
+describe('buildAssignmentRows', () => {
+  it('maps new-row delegations positionally to inserted ids', () => {
+    const newRows = [
+      { delegated_coach_user_id: null },
+      { delegated_coach_user_id: 'darien' },
+    ];
+    const rows = buildAssignmentRows({ newRows, insertedIds: ['evt-A', 'evt-B'], userId: 'admin' });
+    expect(rows).toEqual([{ event_id: 'evt-B', coach_user_id: 'darien', assigned_by: 'admin' }]);
+  });
+
+  it('uses matched_event_id for updated-row delegations', () => {
+    const updatedRows = [{ delegated_coach_user_id: 'darien', matched_event_id: 'evt-X' }];
+    const rows = buildAssignmentRows({ updatedRows, userId: 'admin' });
+    expect(rows).toEqual([{ event_id: 'evt-X', coach_user_id: 'darien', assigned_by: 'admin' }]);
+  });
+
+  it('emits nothing when no rows staged a delegation', () => {
+    const newRows = [{ delegated_coach_user_id: null }];
+    expect(buildAssignmentRows({ newRows, insertedIds: ['evt-A'] })).toEqual([]);
+  });
+
+  it('skips a new-row delegation with no matching inserted id', () => {
+    const newRows = [{ delegated_coach_user_id: 'darien' }];
+    expect(buildAssignmentRows({ newRows, insertedIds: [] })).toEqual([]);
   });
 });

@@ -9,9 +9,10 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { summarize, validateParsedRow } from '../lib/import/scheduleValidation';
 import { classifyRowAgainstExisting, dedupSummary } from '../lib/import/scheduleDeduplication';
+import { buildAssignmentRows } from '../lib/import/coverageConflicts';
 
 export function useImportSchedule(tournamentId) {
-  const { orgId } = useAuth();
+  const { orgId, user } = useAuth();
   const [state, setState] = useState('idle');
   const [paste, setPaste] = useState('');
   const [rows, setRows] = useState([]);
@@ -93,7 +94,8 @@ export function useImportSchedule(tournamentId) {
   const commit = useCallback(async () => {
     setState('committing'); setError(null);
     try {
-      const toInsert = rows.filter((r) => r.status !== 'error' && r.dedup === 'new').map((r) => ({
+      const newRows = rows.filter((r) => r.status !== 'error' && r.dedup === 'new');
+      const toInsert = newRows.map((r) => ({
         team_id: r.resolved.team_id, event_type: 'tournament', title: `${r.team} vs ${r.opponent}`,
         start_at: r.resolved.start_at, end_at: null,
         tournament_id: tournamentId, tournament_name: tournament?.name,
@@ -102,20 +104,32 @@ export function useImportSchedule(tournamentId) {
         is_bonus_game: !!r.is_bonus, status: 'scheduled', publish_status: 'published',
       }));
       const toUpdate = rows.filter((r) => r.status !== 'error' && r.dedup === 'updated' && r.matched_event_id);
+      let insertedIds = [];
       if (toInsert.length) {
-        const { error: insErr } = await supabase.from('events').insert(toInsert);
+        // .select('id') — RETURNING ids in input order so coverage
+        // delegations on new rows map positionally to newRows (PR 6-C).
+        const { data: ins, error: insErr } = await supabase.from('events').insert(toInsert).select('id');
         if (insErr) throw insErr;
+        insertedIds = (ins || []).map((d) => d.id);
       }
       for (const r of toUpdate) {
         const { error: upErr } = await supabase.from('events').update({ start_at: r.resolved.start_at, opponent: r.opponent, location_id: r.resolved.location_id, sub_location: r.court || null }).eq('id', r.matched_event_id);
         if (upErr) throw upErr;
+      }
+      // Coverage delegations (PR 6-C): write event_coach_assignments for
+      // any row the admin reassigned in the conflict banner. Upsert on the
+      // composite unique (event_id, coach_user_id) per AP #25.
+      const assignmentRows = buildAssignmentRows({ newRows, insertedIds, updatedRows: toUpdate, userId: user?.id ?? null });
+      if (assignmentRows.length) {
+        const { error: asErr } = await supabase.from('event_coach_assignments').upsert(assignmentRows, { onConflict: 'event_id,coach_user_id' });
+        if (asErr) throw asErr;
       }
       const result = { inserted: toInsert.length, updated: toUpdate.length };
       setLastCommit(result);
       setState('done');
       return result;
     } catch (e) { setError(e); setState('error'); throw e; }
-  }, [rows, tournamentId, tournament]);
+  }, [rows, tournamentId, tournament, user]);
 
   const validation = summarize(rows);
   const dedup = dedupSummary(rows);
