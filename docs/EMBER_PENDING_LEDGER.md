@@ -980,7 +980,7 @@ P0 — RLS UPDATE policies missing `WITH CHECK`:
 
 P1 — PUBLIC EXECUTE on SECURITY DEFINER (anti-pattern #23):
 - `briefing_active_queue(p_org_id, ...)` — **CLOSED** (V-20: PUBLIC revoked; grants now service_role + authenticated + postgres; authenticated is correct since function checks admin internally)
-- `log_pii_change(p_target_table, ...)` — **PARTIALLY CLOSED, DOWNGRADED P1 → P2** (V-20: PUBLIC revoked, no anon access; but `authenticated` still has EXECUTE — should only be invoked from triggers)
+- `log_pii_change(p_target_table, ...)` — **CLOSED 2026-05-27** (mig `20260527190144`): `authenticated` EXECUTE revoked. It's SECURITY DEFINER, only invoked from inside other SECDEF RPCs (roster-lock `PERFORM public.log_pii_change(...)`, which run as definer) — verified no direct client caller, so revoke is safe. Now EXECUTE = postgres + service_role only. (Was: PARTIALLY CLOSED P2 — PUBLIC revoked but authenticated retained EXECUTE.)
 - `suppress_unsubscribed_recipients()` — **PARTIALLY CLOSED, DOWNGRADED P1 → P2** (V-20: PUBLIC revoked; `authenticated` still has EXECUTE on trigger function)
 
 NOT findings (intentional):
