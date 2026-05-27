@@ -1445,6 +1445,7 @@ Items requiring Frank's product judgment, not technical fixes:
 - **P17 / P18** — Schedule filter density (4 mechanisms). Simplify parent view?
 - **B7** — Color/name mismatch (10U Black blue, 10U Blue gray). Locked v14 palette per CLAUDE.md §10. Could revisit if user confusion is real.
 - **A12 timezone product call** — Greeting "where you are" vs "where the org is". Recommended: NY-pin for consistency (Cluster 7), but worth Frank's explicit lock.
+- ~~**Briefing feedback rebuild-or-shelve**~~ — **RESOLVED 2026-05-27: SHELVED PERMANENTLY.** After the #509 revert of the cutover-gate feedback survey (§4.A PR 7 / §4.AJ), Frank's call is NOT to rebuild — no per-email star survey, no lighter admin-side thumbs signal. The wizard is the locked path; feedback collection is off the roadmap. The `queueComposedMessages.perRecipientSubstitutor` extension point remains for unrelated per-recipient personalization, but no feedback feature is queued. Do not re-propose unless Frank reopens.
 
 ---
 
