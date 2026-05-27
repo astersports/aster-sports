@@ -376,7 +376,7 @@ sf-pulse, sf-fade-in, sf-pulse-dot, sf-bounce-tap, sf-fill-grow, card-expand, sh
 #### Financial data loaded (May 5, 2026)
 LeagueApps import: 70 families, 100 accounts (40 Fall 2025 + 60 Spring 2026), 105 transactions. $102,765 billed, $97,374 net to bank. Email-first dedup, orphan-merge for 2 families (DeMasi, KHOJASTEH).
 
-⬅ NEXT unbuilt: 4-B (auto-notifications), 5-C (player stats), 3-A location mgr UI, 3-B QR (calendar sync shipped via V-23 / PR #342), 6-A QR invites. Plus finish partials: 2-B weather API polish.
+⬅ NEXT unbuilt (reconciled against code 2026-05-27 — see EMBER_PENDING_LEDGER §4.0 for the verified index): **3-B / 6-A QR codes** (public-schedule QR + parent-invite QR) are the only genuine unblocked feature arc — no in-app QR generation exists yet (needs a qrcode dep + render surface). Already DONE since this list was written: 2-B weather (Open-Meteo, wired), 3-A location mgr UI (`/admin/locations`), schedule-change notifications, coach_roundup briefing. Partial: 4-B auto-notifications (settings sheet exists). BLOCKED: 5-C player stats/box score — §16.12 forbids per-player game stats in 2026 (do not build).
 
 ---
 
