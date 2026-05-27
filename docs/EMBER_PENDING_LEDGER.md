@@ -462,7 +462,21 @@ arc bodies.
 - **3-B public-schedule QR → SHIPPED (#531).** `qrcode.react` + `publicScheduleUrl` + `ShareScheduleButton` (QR + copy-link sheet) on TeamDetailHero (staff) and PublicSchedulePage. Encodes `/schedule/:teamId` (public route).
 - **6-A parent-invite QR → SHELVED (Frank, 2026-05-27).** Not a QR-render add: onboarding is email-only via Supabase `inviteUserByEmail` (no `team_invites`/token table, no `/join` page). A real scan-to-join needs a join-token system + public join page + account→guardian linking (email-match or admin-approval) + security hardening — a multi-PR auth-adjacent arc. The email invite already works; at ~60 families the open-join security surface isn't worth it now. Revisit only with a deliberate design pass if in-person mass onboarding becomes a need.
 
-**Queue status after this pass: no unblocked feature build remains.** Everything is shipped, blocked-on-Frank (family_guide actor-send PR 5; §4.K token grant), shelved (6-A), or policy-blocked (5-C §16.12).
+**CORRECTION 2026-05-27:** the "no unblocked feature build remains" claim
+below was WRONG — it had a narrow feature-arc lens and never tracked the
+`LH_OPS_SPEC` / `LH_BRAND_CONTENT_MODEL` / ELITE-stack / push-notification
+surface. A full canonical-doc review (4-agent pass, verified vs code+DB)
+found a substantial real backlog. **See `docs/L99_DELIVERED_VS_REMAINING_2026-05-27.md`
+for the authoritative delivered-vs-remaining assessment + sequenced plan.**
+Highlights: push-notification infra entirely absent (biggest gap);
+`games_recap` kind unbuilt (Frank's primary briefing ask);
+`event_reminder_due` is a `not_implemented` stub; EN↔ES translation has
+zero infra; Phase-2/3 features open (Rotation Planner, Roster Health,
+coach/admin comp, Content CMS); + a per-player-stats §16.12 doctrine
+contradiction (surface built + routed but dormant, 0 rows).
+
+~~Queue status after this pass: no unblocked feature build remains.~~
+(retracted — see correction above)
 
 ---
 
