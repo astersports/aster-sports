@@ -186,14 +186,20 @@ Deno.serve(async (req) => {
     await Promise.all(updates);
   }
 
-  await sb.from("comms_messages")
+  // Finalize the message row. status='sent' is authoritative here (service
+  // role) — the client must NOT own this transition. Surface a failed
+  // write-back instead of swallowing it (the silent failure left messages
+  // stranded at 'queued' despite delivered emails — caught 2026-05-27).
+  const { error: finalizeErr } = await sb.from("comms_messages")
     .update({
+      status: "sent",
       sent_at: new Date().toISOString(),
       sent_by: user.id,
       recipient_count: recipients.length,
       delivery_method: "resend_api",
     })
     .eq("id", body.message_id);
+  if (finalizeErr) errors.push(`Finalize failed: ${finalizeErr.message}`);
 
-  return json({ ok: failed === 0, sent, failed, errors, pilot_mode_active: pilotMode, reply_to: replyTo });
+  return json({ ok: failed === 0 && !finalizeErr, sent, failed, errors, pilot_mode_active: pilotMode, reply_to: replyTo });
 });
