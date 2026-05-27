@@ -5,13 +5,8 @@ import { supabase } from '../lib/supabase';
 import { formatTime } from '../lib/formatters';
 import { formatEventTitleString } from '../lib/eventTitle';
 import { downloadTeamIcs } from '../lib/icalHelpers';
-import BottomSheet from '../components/shared/BottomSheet';
-
-// FEED_HOST = host of VITE_SUPABASE_URL. Subscribe URLs point to the
-// Supabase project's functions origin (not the Vercel app origin).
-const FEED_HOST = (() => {
-  try { return new URL(import.meta.env.VITE_SUPABASE_URL).host; } catch { return null; }
-})();
+import SubscribeSheet from '../components/shared/SubscribeSheet';
+import ShareScheduleButton from '../components/shared/ShareScheduleButton';
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -105,27 +100,9 @@ export default function PublicSchedulePage() {
         </button>
       )}
 
-      <BottomSheet open={showSubscribe} onClose={() => setShowSubscribe(false)} initialHeight="30%">
-        <h3 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 16 }}>Subscribe to Calendar</h3>
-        {FEED_HOST && team?.team_feed_token ? (() => {
-          const wc = `webcal://${FEED_HOST}/functions/v1/team-feed?token=${team.team_feed_token}`;
-          return (
-            <>
-              <a href={wc} style={calOptStyle} aria-label="Subscribe via Apple Calendar">
-                <Calendar size={20} strokeWidth={1.75} style={{ color: 'var(--em-accent)' }} /><span>Apple Calendar</span>
-              </a>
-              <a href={`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(wc)}`}
-                target="_blank" rel="noopener noreferrer" style={calOptStyle} aria-label="Subscribe via Google Calendar">
-                <Calendar size={20} strokeWidth={1.75} style={{ color: 'var(--em-accent)' }} /><span>Google Calendar</span>
-              </a>
-            </>
-          );
-        })() : (
-          <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 13, textAlign: 'center' }}>
-            Subscription unavailable. Use Download Schedule (.ics) above.
-          </div>
-        )}
-      </BottomSheet>
+      <ShareScheduleButton teamId={teamId} label="Share / QR" style={{ ...ctaBtnStyle, marginTop: 8 }} />
+
+      <SubscribeSheet open={showSubscribe} onClose={() => setShowSubscribe(false)} team={team} />
 
       <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--em-text-tertiary)' }}>
         Powered by Ember
@@ -139,12 +116,4 @@ const ctaBtnStyle = {
   width: '100%', minHeight: 44, marginTop: 16, borderRadius: 10,
   border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
   color: 'var(--em-accent)', fontSize: 15, fontWeight: 500,
-};
-
-const calOptStyle = {
-  display: 'flex', alignItems: 'center', gap: 12,
-  width: '100%', minHeight: 44, padding: '0 16px', borderRadius: 10,
-  border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
-  color: 'var(--em-text-primary)', fontSize: 15, fontWeight: 500,
-  textDecoration: 'none', marginBottom: 8,
 };
