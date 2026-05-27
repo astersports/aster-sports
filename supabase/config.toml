@@ -60,3 +60,6 @@ verify_jwt = false
 [functions.team-feed]
 verify_jwt = false
 
+[functions.send-push]
+verify_jwt = false
+
