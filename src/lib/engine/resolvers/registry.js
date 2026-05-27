@@ -38,6 +38,7 @@ import { composeAcademyCallupNotice, resolveAcademyCallupNotice } from './academ
 import { composeCoachRoundup, resolveCoachRoundup } from './coachRoundup';
 import { composeFamilyGuide, resolveFamilyGuide } from './familyGuide';
 import { composeGameRecap, resolveGameRecap } from './gameRecap';
+import { composeGamesRecap, resolveGamesRecap } from './gamesRecap';
 import { composeRsvpNudge, resolveRsvpNudge } from './rsvpNudge';
 import { composeScheduleChange, resolveScheduleChange } from './scheduleChange';
 import { composeTournamentPrelim, resolveTournamentPrelim } from './tournamentPrelim';
@@ -135,6 +136,17 @@ export const RESOLVER_REGISTRY = {
     resolve: resolveFamilyGuide,
     compose: composeFamilyGuide,
     anchorFromState: (state) => ({ parentUserId: state.audience_filter?.parent_user_id, dateRange: state.body?.date_range }),
+    overridesFromState: bodyOverrides,
+    sendPath: 'composerSubmit',
+  },
+  // Wave 5 games_recap (G1) PR B — multi-game digest across N selected
+  // events (anchor_kind='multi_event', event_ids in audience_filter,
+  // anchor_id null). Not yet wizard-exposed — KIND_METADATA + body editor
+  // land in PR C.
+  games_recap: {
+    resolve: resolveGamesRecap,
+    compose: composeGamesRecap,
+    anchorFromState: (state) => ({ eventIds: state.audience_filter?.event_ids, pilotOnly: state.pilot_only }),
     overridesFromState: bodyOverrides,
     sendPath: 'composerSubmit',
   },

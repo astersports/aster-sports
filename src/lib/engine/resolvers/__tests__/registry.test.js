@@ -9,8 +9,8 @@ import {
 } from '../registry';
 
 describe('registry — helpers', () => {
-  it('isCalendarAnchored: 9 kinds true (family_guide added wave 5 PR 5a), free-form + unknown false', () => {
-    expect(CALENDAR_ANCHORED_KINDS.length).toBe(9);
+  it('isCalendarAnchored: 10 kinds true (games_recap added wave 5 G1 PR B), free-form + unknown false', () => {
+    expect(CALENDAR_ANCHORED_KINDS.length).toBe(10);
     for (const k of CALENDAR_ANCHORED_KINDS) expect(isCalendarAnchored(k)).toBe(true);
     expect(isCalendarAnchored('announcement')).toBe(false);
     expect(isCalendarAnchored('custom_message')).toBe(false);
@@ -27,6 +27,7 @@ describe('registry — helpers', () => {
     expect(getDispatchSendPath('academy_callup_notice')).toBe('academyCallupSend');
     expect(getDispatchSendPath('coach_roundup')).toBe('composerSubmit');
     expect(getDispatchSendPath('family_guide')).toBe('composerSubmit');
+    expect(getDispatchSendPath('games_recap')).toBe('composerSubmit');
     expect(getDispatchSendPath('announcement')).toBe('legacy');
     expect(getDispatchSendPath('custom_message')).toBe('legacy');
     expect(getDispatchSendPath('not_a_kind')).toBe('legacy');
@@ -59,6 +60,11 @@ describe('registry — helpers', () => {
     expect(RESOLVER_REGISTRY.schedule_change.anchorFromState(state)).toEqual({ eventId: 'evt-1', pilotOnly: true });
     expect(RESOLVER_REGISTRY.rsvp_nudge.anchorFromState(state)).toEqual({ eventId: 'evt-1', pilotOnly: true });
     expect(RESOLVER_REGISTRY.academy_callup_notice.anchorFromState(state)).toEqual({ eventId: 'evt-1', playerId: 'p-1', pilotOnly: true });
+  });
+
+  it('games_recap anchorFromState pulls event_ids from audience_filter', () => {
+    const state = { audience_filter: { event_ids: ['e-1', 'e-2'] }, pilot_only: false };
+    expect(RESOLVER_REGISTRY.games_recap.anchorFromState(state)).toEqual({ eventIds: ['e-1', 'e-2'], pilotOnly: false });
   });
 
   it('overridesFromState merges state.body + signoff_message', () => {
