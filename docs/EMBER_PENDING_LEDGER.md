@@ -433,6 +433,41 @@ shipped (status uncertain at audit time).
 
 ---
 
+### §4.0 — RECONCILIATION INDEX (verified against code 2026-05-27)
+
+The arcs below trail the codebase badly (anti-pattern #45 staleness).
+This index is the **trustworthy top-level "what's next"** — verified by
+grep + MCP query on 2026-05-27. Read this before trusting the detailed
+arc bodies.
+
+| Arc / item | Verified status | Evidence |
+|---|---|---|
+| §4.A PR 4 coach_roundup | **SHIPPED** (was actor-pending) | 3 `sent` rows, last 2026-05-27 15:48 — Frank actor-validated this session |
+| §4.A PR 5 family_guide | CODE-COMPLETE, **actor-pending** | 0 `sent` rows; one wizard send (fsamaritano@gmail.com / Charlie+Milo) closes it |
+| §4.A PR 6 coverage delegation | SHIPPED (A+B+C) 2026-05-27 | per §4.A body |
+| §4.A PR 7 feedback survey | SHIPPED then REVERTED (#509) | decision in §7 |
+| §4.B Briefing IA | CLOSED | per §4.B |
+| §4.C Sprint B–F home | SUBSTANTIVELY COMPLETE | only UPCOMING PREP blocked (needs `event_prep_notes` schema) |
+| §4.D Rides redesign | aggregate-coverage SHIPPED | v2 interactive (CTAs/waitlist UI) deferred |
+| §4.I schedule-change | **BUILT** (ledger said "zero producers" — stale) | `ScheduleChangeComposer`, `scheduleChangeSend.js`, resolver-registry path, "Notify families" buttons |
+| §4.J weather per event | **BUILT** (Open-Meteo, no API key) | `useWeather` + `getWeatherForTime`; wired to schedule + home. Only "in-briefing, skip indoor" unbuilt — near-no-op for indoor basketball |
+| §4.K Dependabot / CI token | BLOCKED on Frank | needs workflow-read token scope grant |
+| CLAUDE.md §8 3-A locations UI | **BUILT** | `AdminLocationsPage` routed `/admin/locations` |
+| CLAUDE.md §8 4-B auto-notifications | PARTIAL | `AutoNotificationSettingsSheet` exists |
+| CLAUDE.md §8 5-C player box score | **BLOCKED by policy** | §16.12 forbids per-player game stats in 2026 |
+| §4.H density toggle | **BUILT** | `DensityToggle.jsx` |
+| §4.H rotation planner / note-edit cooldown | UNBUILT (no code) | grep empty |
+
+**Genuine unblocked next-build surfaced by this pass:** QR codes
+(3-B public-schedule QR + 6-A parent-invite QR). No in-app QR generation
+exists (`InviteButton` flow is built, but no qrcode lib / QR render).
+Parent-onboarding QR invites is real, valuable, and unblocked — needs a
+qrcode dependency + render surface. **This is the recommended next arc**
+if a feature build is wanted; everything else is shipped, blocked, or
+low-value.
+
+---
+
 ### §4.A — Cutover Wave (briefing renderer + parser)
 
 Status (revised 2026-05-27 per §4.AJ): **PRs 1-3 SHIPPED; PRs 4 + 5 CODE-COMPLETE, ACTOR-VALIDATION-PENDING (send errors unblocked by #491/#493/#496-#498 — only Frank's wizard send remains); PR 6 GENUINELY OPEN (next real build); PR 7 SHIPPED THEN FULLY REVERTED (#509).** Prior status line below is retained as historical context.
