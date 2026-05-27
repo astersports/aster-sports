@@ -28,9 +28,9 @@ const { default: StepKindPicker } = await import('../../briefings/StepKindPicker
 afterEach(cleanup);
 
 describe('StepKindPicker layout', () => {
-  it('a. renders 11 KindTile children when no visibleKinds filter (full KIND_METADATA; family_guide added wave 5 PR 5a)', () => {
+  it('a. renders 12 KindTile children when no visibleKinds filter (full KIND_METADATA; games_recap added wave 5 G1 PR C)', () => {
     render(<StepKindPicker onPick={() => {}} />);
-    expect(screen.getAllByRole('button')).toHaveLength(11);
+    expect(screen.getAllByRole('button')).toHaveLength(12);
   });
 
   it('b. renders subset when visibleKinds=[announcement, custom_message]', () => {

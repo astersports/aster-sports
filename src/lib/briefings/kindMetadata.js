@@ -11,7 +11,7 @@
 // 'player_specific' resolves via player_guardians (recipientFilter.js).
 
 export const KIND_ORDER = [
-  'weekly_digest', 'schedule_change', 'game_recap',
+  'weekly_digest', 'schedule_change', 'game_recap', 'games_recap',
   'tournament_prelim', 'tournament_recap',
   'coach_roundup', 'family_guide',
   'announcement', 'rsvp_nudge', 'academy_callup_notice', 'custom_message',
@@ -42,6 +42,22 @@ export const KIND_METADATA = {
     defaultAudienceType: 'event_attendees',
     bodyModule: 'GameRecapBody',
     disabled: false,
+  },
+  // Wave 5 games_recap (G1) PR C — multi-game digest. Like coach_roundup/
+  // family_guide, anchorKind 'org' is the schema path (anchor_id null);
+  // the real selection is the set of games, stored in
+  // state.audience_filter.event_ids by GamesRecapBody and read by
+  // RESOLVER_REGISTRY.games_recap.anchorFromState. audienceLocked: the
+  // audience (families across the selected games' teams) is derived, not
+  // separately picked.
+  games_recap: {
+    icon: 'Trophy', label: 'Games recap',
+    description: 'Multi-game digest across selected games (tournament weekend, double-header, "this week we played N")',
+    defaultAnchorKind: 'org', anchorKinds: ['org'],
+    defaultAudienceType: 'multi_event_attendees', audienceLocked: true,
+    bodyModule: 'GamesRecapBody',
+    disabled: false,
+    wizardSupported: true,
   },
   tournament_prelim: {
     icon: 'Flag', label: 'Tournament briefing',

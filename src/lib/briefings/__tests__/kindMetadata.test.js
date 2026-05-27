@@ -2,12 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { bodyModuleFor, KIND_METADATA, KIND_ORDER, sortKinds } from '../kindMetadata';
 
 describe('KIND_METADATA', () => {
-  it('all 11 kinds present (family_guide added wave 5 PR 5a)', () => {
-    expect(KIND_ORDER.length).toBe(11);
+  it('all 12 kinds present (games_recap added wave 5 G1 PR C)', () => {
+    expect(KIND_ORDER.length).toBe(12);
     expect(KIND_ORDER.every((k) => KIND_METADATA[k])).toBe(true);
     expect(KIND_ORDER).toContain('academy_callup_notice');
     expect(KIND_ORDER).toContain('coach_roundup');
     expect(KIND_ORDER).toContain('family_guide');
+    expect(KIND_ORDER).toContain('games_recap');
+  });
+
+  it('games_recap (G1) — multi_event_attendees audience, locked, wizard-supported', () => {
+    const meta = KIND_METADATA.games_recap;
+    expect(meta.defaultAudienceType).toBe('multi_event_attendees');
+    expect(meta.audienceLocked).toBe(true);
+    expect(meta.bodyModule).toBe('GamesRecapBody');
+    expect(meta.wizardSupported).toBe(true);
   });
 
   it('every entry has icon + label + description + bodyModule', () => {

@@ -34,6 +34,7 @@ const AUDIENCE_LABEL = {
   tournament_attendees: 'Tournament attendees',
   event_attendees: 'Event attendees',
   player_specific: 'Specific player(s)',
+  multi_event_attendees: 'Selected games’ families',
   org_all: 'All families',
 };
 
