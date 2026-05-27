@@ -22,6 +22,7 @@ const BODY_LAZY = {
   weekly_digest: lazy(() => import('./bodies/WeeklyDigestBody.jsx')),
   schedule_change: lazy(() => import('./bodies/ScheduleChangeBody.jsx')),
   game_recap: lazy(() => import('./bodies/GameRecapBody.jsx')),
+  games_recap: lazy(() => import('./bodies/GamesRecapBody.jsx')),
   tournament_prelim: lazy(() => import('./bodies/TournamentPrelimBody.jsx')),
   tournament_recap: lazy(() => import('./bodies/TournamentRecapBody.jsx')),
   announcement: lazy(() => import('./bodies/AnnouncementBody.jsx')),
