@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@sentry/react": "^10.53.1",
-    "@supabase/supabase-js": "^2.106.0",
+    "@supabase/supabase-js": "^2.106.2",
     "lucide-react": "^1.16.0",
     "posthog-js": "^1.374.2",
     "react": "^19.2.6",
