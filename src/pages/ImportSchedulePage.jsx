@@ -9,8 +9,11 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/useToast';
 import { useImportSchedule } from '../hooks/useImportSchedule';
+import { useCoverageConflicts } from '../hooks/useCoverageConflicts';
+import { useOrgCoaches } from '../hooks/useOrgCoaches';
 import PastePane from '../components/schedule-import/PastePane';
 import PreviewTable from '../components/schedule-import/PreviewTable';
+import CoverageConflictBanner from '../components/schedule-import/CoverageConflictBanner';
 
 const headerStyle = { padding: '24px 24px 16px 24px', borderBottom: '1px solid var(--em-border-default)', marginBottom: 24 };
 const titleStyle = { fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', marginBottom: 4 };
@@ -37,6 +40,8 @@ export default function ImportSchedulePage() {
   }, [orgId]);
 
   const im = useImportSchedule(tournamentId);
+  const { conflicts, coachNameMap } = useCoverageConflicts(im.rows);
+  const coachOptions = useOrgCoaches();
 
   const onCommit = async () => {
     try {
@@ -68,9 +73,14 @@ export default function ImportSchedulePage() {
       ) : null}
 
       {im.state === 'preview' || im.state === 'committing' ? (
-        <PreviewTable rows={im.rows} validation={im.validation} dedup={im.dedup} canCommit={im.canCommit}
-          onUpdateRow={im.updateRow} onRemoveRow={im.removeRow} onCommit={onCommit}
-          committing={im.state === 'committing'} teams={im.teams} />
+        <>
+          <CoverageConflictBanner conflicts={conflicts} coachNameMap={coachNameMap}
+            coachOptions={coachOptions} rows={im.rows}
+            onDelegate={(idx, coachId) => im.updateRow(idx, { delegated_coach_user_id: coachId })} />
+          <PreviewTable rows={im.rows} validation={im.validation} dedup={im.dedup} canCommit={im.canCommit}
+            onUpdateRow={im.updateRow} onRemoveRow={im.removeRow} onCommit={onCommit}
+            committing={im.state === 'committing'} teams={im.teams} />
+        </>
       ) : null}
 
       {im.state === 'done' && (
