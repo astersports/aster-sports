@@ -254,7 +254,7 @@ A# = admin review, P# = parent review). Cluster numbers preserve
 chat's L99 ordering.
 
 ### Cluster 1 — Tournament results not propagated to aggregates
-- Status: **RESOLVED 2026-05-27** (production verified against Frank's TourneyMachine screenshots via MCP). All 4 tournament teams reconciled: 11U Girls (5/5), 10U Black (4/4), 8U Boys (4/4), 10U Blue league backfill complete. Session fixes: (a) 8U Boys CT Wolves flipped 35-15→15-35 L + missing NY Wild 13-34 L added → 0-4; (b) 10U Blue missing St Joseph-Bxville 5C result added (19-23 L, Apr 26) → 3-4 matching TM; (c) 9U Boys stray "6th Boro 4AB" May 17 event deleted (phantom — 9U plays 3AB; real 6th Boro 3AB game May 18 12-13 L already present); (d) 10U Blue May 17 6th Boro 4AB left without result (TM shows unplayed — Cluster 1.3 closed). 11U Girls left at 3-2 (Frank's call): TM shows 2-2 because the asterisked Connecticut Elite "chip game" doesn't count toward TM's pool record; our W-L counts all 5 published games. **Latent gap noted, deferred:** `is_bonus_game` exists but is NOT honored by `computeSummary`/`useTeamRecords`/`useOrgTeamRecords` — wiring it would let chip games show-but-not-count. Frank declined the code change 2026-05-27; 11U Girls 3-2 accepted as the honest record.
+- Status: **RESOLVED 2026-05-27** (production verified against Frank's TourneyMachine screenshots via MCP). All 4 tournament teams reconciled: 11U Girls (5/5), 10U Black (4/4), 8U Boys (4/4), 10U Blue league backfill complete. Session fixes: (a) 8U Boys CT Wolves flipped 35-15→15-35 L + missing NY Wild 13-34 L added → 0-4; (b) 10U Blue missing St Joseph-Bxville 5C result added (19-23 L, Apr 26) → 3-4 matching TM; (c) 9U Boys stray "6th Boro 4AB" May 17 event deleted (phantom — 9U plays 3AB; real 6th Boro 3AB game May 18 12-13 L already present); (d) 10U Blue May 17 6th Boro 4AB left without result (TM shows unplayed — Cluster 1.3 closed). 11U Girls is 3-2 by design (Frank confirmed 2026-05-27): TM shows 2-2 because it excludes the asterisked game from the *tournament* record; AAU calls these **bonus games** (TM's "chip" game) and they are real games that were played, so **they count on OUR team records**. Our W-L counting all 5 published games is correct and intended. **Do NOT wire `is_bonus_game` into `computeSummary`/`useTeamRecords`/`useOrgTeamRecords`** — bonus games counting on our records is the desired behavior. The field's label "doesn't affect seeding" refers to TOURNAMENT seeding (TM's concern), not our team W-L; it's correctly left unwired. (Earlier framing of this as a "latent gap" was backwards — corrected here.)
 - Severity: HIGH
 - Surfaces affected: 9 across all 3 roles
   - Coach: B4 (10U Black 0% post-championship), B5 (Teams tab records pre-tournament)
@@ -1521,10 +1521,12 @@ fixed this session, two remain Frank's call:
   mis-tagged tournament (Cluster 1.1) — minor hygiene, deferred.
 - ✅ **9U Boys May 17 vs 6th Boro 4AB** — confirmed stray (9U plays 3AB;
   no 4AB game in their real schedule). Deleted (0 dependents) per Frank.
-- ℹ️ **11U Girls 3-2 vs TM 2-2** — TM excludes the asterisked Connecticut
-  Elite "chip game"; our record counts all 5. Left at 3-2 (Frank's
-  call). `is_bonus_game` exists but isn't wired into record math —
-  deferred.
+- ✅ **11U Girls 3-2 (by design)** — TM shows 2-2 because it excludes the
+  asterisked game from the *tournament* record. AAU calls these **bonus
+  games** (TM's "chip" game); they are real games played, so they COUNT
+  on our team records (Frank confirmed 2026-05-27). Our 3-2 is correct.
+  `is_bonus_game` ("doesn't affect seeding" = tournament seeding) is
+  correctly NOT wired into our W-L math — do not change.
 
 Original Frank-action (now mostly done): open Quick Score, enter scores
 for the games below. The inventory is retained for reference.
