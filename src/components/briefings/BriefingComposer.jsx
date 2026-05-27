@@ -25,7 +25,7 @@ import ScheduleForLaterPicker from './ScheduleForLaterPicker';
 import WizardHeader from './WizardHeader';
 import { submitBriefing } from './composerSubmit';
 import { sendWeeklyDigestFromWizard } from '../../lib/briefings/sendWeeklyDigestFromWizard';
-import { buildInitial, fmtSchedule, STEPS } from './briefingComposerHelpers';
+import { buildInitial, fmtSchedule, hasAuthoredContent, STEPS } from './briefingComposerHelpers';
 
 export default function BriefingComposer({ onClose, initialKind, initialAnchorKind, initialAnchorId, initialDraftId, initialKindFilter }) {
   const { orgId } = useAuth();
@@ -78,6 +78,11 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
 
   useEffect(() => {
     if (!state.kind || state.step < 2) return;
+    // Don't create an empty scratch draft from clicking through the wizard
+    // and backing out. Only persist once content has been authored (or a
+    // draft row already exists, so later edits — including clearing a
+    // field — keep saving).
+    if (!draft.draftId && !hasAuthoredContent({ body: state.body, signoff_message: state.signoff_message })) return;
     draft.save({ kind: state.kind, anchor_kind: state.anchor_kind, anchor_id: state.anchor_id, audience_type: state.audience_type, audience_filter: state.audience_filter, content_sections: { body: state.body }, signoff_message: state.signoff_message });
   }, [state.kind, state.anchor_kind, state.anchor_id, state.audience_type, state.audience_filter, state.body, state.signoff_message, state.step, draft]);
 
