@@ -9,10 +9,15 @@
 //   plainText  — string rendered into a <pre> for the plain tab
 //
 // The iframe is sandboxed (sandbox="") so scripts in the rendered HTML are
-// inert. The viewport meta tag is set to the tab's pixel width so responsive
-// styles (if any) reflect the device.
+// inert. Content is injected via the srcDoc attribute — NOT by writing to
+// iframe.contentDocument. A sandbox without allow-same-origin gives the
+// frame an opaque origin, so parent access to contentDocument is blocked in
+// real browsers (notably iOS Safari) and the doc.write approach rendered a
+// blank frame. jsdom ignores that restriction, which is why the old
+// contentDocument-write path passed CI but failed on device. srcDoc is
+// parsed by the browser inside the frame and needs no parent access.
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 const TABS = [
   { key: 'mobile',  label: 'Mobile · 375',  viewport: 375 },
@@ -42,21 +47,12 @@ const plainStyle = {
   fontSize: 12, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordWrap: 'break-word',
 };
 
+function buildSrcDoc(viewport, html) {
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=${viewport}"></head><body style="margin:0;padding:0;background:#f8fafc;">${html || ''}</body></html>`;
+}
+
 export default function DevicePreviewFrame({ html, plainText }) {
   const [tab, setTab] = useState('mobile');
-  const iframeRef = useRef(null);
-
-  useEffect(() => {
-    if (tab === 'plain') return;
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    const doc = iframe.contentDocument;
-    if (!doc) return;
-    const viewport = tab === 'mobile' ? 375 : 600;
-    doc.open();
-    doc.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=${viewport}"></head><body style="margin:0;padding:0;background:#f8fafc;">${html || ''}</body></html>`);
-    doc.close();
-  }, [tab, html]);
 
   const viewport = tab === 'mobile' ? 375 : 600;
 
@@ -74,7 +70,7 @@ export default function DevicePreviewFrame({ html, plainText }) {
         ? <pre style={plainStyle}>{plainText || '(no plain-text body)'}</pre>
         : (
           <div style={frameWrap(viewport)}>
-            <iframe ref={iframeRef} title="Briefing preview" sandbox="" style={iframeStyle} />
+            <iframe title="Briefing preview" sandbox="" srcDoc={buildSrcDoc(viewport, html)} style={iframeStyle} />
           </div>
         )}
     </div>
