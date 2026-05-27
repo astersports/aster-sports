@@ -8,6 +8,7 @@ import { useTeamHeadCoach } from '../../hooks/useTeamHeadCoach';
 import { useEventRsvpCounts } from '../../hooks/useEventRsvpCounts';
 import ChildRsvp from '../schedule/ChildRsvp';
 import RsvpProgressBar from '../shared/RsvpProgressBar';
+import ShareScheduleButton from '../shared/ShareScheduleButton';
 
 const CIRCUIT_LABELS = { aau: 'AAU', league_play: 'League Play', tournament: 'Tournament' };
 
@@ -103,6 +104,7 @@ export default function TeamDetailHero({ team, role, summary, myChild, myChildPl
                 style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}>
                 <Mail size={14} strokeWidth={1.75} /> Briefing
               </Link>
+              <ShareScheduleButton teamId={team?.id} />
             </>
           )}
         </div>
