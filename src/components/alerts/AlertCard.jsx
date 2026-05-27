@@ -1,77 +1,27 @@
 // Tier 3 v1 PR 3 — renders a single firing alert.
 //
-// Consumes a firing-alert object from evaluateAlerts() (PR 2). Uses
-// severity tokens (PR 3) for visual treatment. Body shape is
-// alert-type-specific; per-type body content lives in a small inline
-// switch here for v1 (8 alert kinds). Future v2+ could extract per-
-// type body renderers if the inline grows past tractable.
+// Consumes a firing-alert object from evaluateAlerts(). Uses severity
+// tokens for visual treatment. Content + routing helpers live in
+// alertCardHelpers.js (extracted for the 150-line cap).
 //
-// L99 v6 §5.1 B2 follow-up (Frank-reported 2026-05-20 PM, "what are
-// they and what can I do to resolve?"): event-bearing alert types
-// (location_unassigned, opponent_unassigned, data_integrity_event_
-// location_missing) now expand on tap into a per-event list with
-// tap-to-edit affordance. Drill-down resolves Frank's "don't
-// understand the flow" complaint — the alert names what's wrong, the
-// expansion names which events, and the per-row tap routes to the
-// event detail page where the field can be set.
+// Interaction model — every alert is actionable (no dead cards):
+//   - List-bearing alerts (location/opponent/data-integrity events,
+//     game_recap / tournament_recap / tournament_prelim briefings)
+//     expand on tap into a per-item list; each row taps through to the
+//     event editor or the composer pre-filled.
+//   - Single-action alerts (weekly briefing, payments) tap through
+//     directly to their action via navTargetForAlert.
 
 import { useState } from 'react';
-import { AlertCircle, AlertTriangle, ChevronDown, Info } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ChevronDown, ChevronRight, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { tokensForSeverity } from '../../lib/alerts/severityTokens';
+import {
+  alertBody, alertTitle, composeTargetFor,
+  EXPANDABLE_BRIEFING_INSTANCES, EXPANDABLE_TYPES, navTargetForAlert, rowPropsForItem, TOURNAMENT_BRIEFING_INSTANCES,
+} from './alertCardHelpers';
 
 const ICONS = { AlertCircle, AlertTriangle, Info };
-
-const EXPANDABLE_TYPES = new Set([
-  'location_unassigned',
-  'opponent_unassigned',
-  'data_integrity_event_location_missing',
-]);
-
-// §4.AI Option C PR B — instance-keyed expandable briefing_overdue
-// kinds. game_recap expands to a list of past games; tournament_recap
-// to past tournaments. Each row taps into the composer pre-filled.
-const EXPANDABLE_BRIEFING_INSTANCES = new Set(['game_recap', 'tournament_recap']);
-
-function alertTitle(alert) {
-  switch (alert.alert_type_key) {
-    case 'rsvp_shortfall': return alert.instance_key === 'saturday_6am' ? 'Roster shortfall today' : 'RSVP shortfall';
-    case 'briefing_overdue':
-      if (alert.instance_key === 'tournament_prelim') return 'Tournament prelim briefing overdue';
-      if (alert.instance_key === 'game_recap') return 'Game recap pending';
-      if (alert.instance_key === 'tournament_recap') return 'Tournament recap pending';
-      return 'Weekly briefing overdue';
-    case 'location_unassigned': return 'Event missing location';
-    case 'opponent_unassigned': return 'Event missing opponent';
-    case 'payment_overdue': return 'Payments overdue';
-    case 'data_integrity_event_location_missing': return 'Event location data broken';
-    default: return alert.alert_type_key;
-  }
-}
-
-function alertBody(alert) {
-  const d = alert.data || {};
-  switch (alert.alert_type_key) {
-    case 'rsvp_shortfall': return `${d.affected_count || 0} event${(d.affected_count || 0) === 1 ? '' : 's'} affected`;
-    case 'briefing_overdue':
-      if (alert.instance_key === 'game_recap') return `${d.count || 0} game${(d.count || 0) === 1 ? '' : 's'} need a recap`;
-      if (alert.instance_key === 'tournament_recap') return `${d.count || 0} tournament${(d.count || 0) === 1 ? '' : 's'} need a recap`;
-      return d.tournaments ? `${d.tournaments.length} upcoming` : `Expected by ${d.expected_send_by || 'usual window'}`;
-    case 'location_unassigned': return `${(d.events || []).length} event${(d.events || []).length === 1 ? '' : 's'}${d.critical_count ? ` · ${d.critical_count} <24h` : ''}`;
-    case 'opponent_unassigned': return `${(d.events || []).length} event${(d.events || []).length === 1 ? '' : 's'}${d.critical_count ? ` · ${d.critical_count} <24h` : ''}`;
-    case 'payment_overdue': {
-      const dollars = ((d.total_outstanding_cents || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-      return `${dollars} across ${d.family_count || 0} famil${(d.family_count || 0) === 1 ? 'y' : 'ies'}`;
-    }
-    case 'data_integrity_event_location_missing': return `${d.count || 0} event${(d.count || 0) === 1 ? '' : 's'} missing location data`;
-    default: return '';
-  }
-}
-
-function fmtDate(iso) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
-}
 
 function AlertItemRow({ title, subtitle, onTap, cta }) {
   return (
@@ -86,17 +36,6 @@ function AlertItemRow({ title, subtitle, onTap, cta }) {
   );
 }
 
-function rowPropsForItem(alert, item) {
-  if (alert.instance_key === 'tournament_recap') {
-    return { title: item.name, subtitle: `Ended ${fmtDate(item.end_date)}`, cta: 'Compose →' };
-  }
-  const teamName = item.teams?.name || item.team_name || 'Team';
-  const title = `${teamName}${item.opponent ? ` vs. ${item.opponent}` : ''}`;
-  const subtitle = fmtDate(item.start_at);
-  const cta = (alert.alert_type_key === 'briefing_overdue') ? 'Compose →' : 'Fix →';
-  return { title, subtitle, cta };
-}
-
 export default function AlertCard({ alert }) {
   const tokens = tokensForSeverity(alert.severity);
   const Icon = ICONS[tokens.icon] || Info;
@@ -105,34 +44,35 @@ export default function AlertCard({ alert }) {
   const isBriefingRecap = alert.alert_type_key === 'briefing_overdue' && EXPANDABLE_BRIEFING_INSTANCES.has(alert.instance_key);
   const events = alert.data?.events || [];
   const tournaments = alert.data?.tournaments || [];
-  const items = isBriefingRecap && alert.instance_key === 'tournament_recap' ? tournaments : events;
+  const usesTournaments = TOURNAMENT_BRIEFING_INSTANCES.has(alert.instance_key);
+  const items = isBriefingRecap && usesTournaments ? tournaments : events;
   const canExpand = (EXPANDABLE_TYPES.has(alert.alert_type_key) || isBriefingRecap) && items.length > 0;
-  const composeTarget = (item) => alert.instance_key === 'tournament_recap'
-    ? `/admin/briefings/compose?anchor=tournament&id=${item.id}&kind=tournament_recap`
-    : `/admin/briefings/compose?anchor=event&id=${item.id}&kind=game_recap`;
+  const navTarget = canExpand ? null : navTargetForAlert(alert);
+  const interactive = canExpand || !!navTarget;
   const fixTarget = (e) => `/events/${e.id}?edit=1`;
 
   return (
     <div role="alert" aria-label={`${tokens.ariaLabel}: ${alertTitle(alert)}`}
       style={{ borderRadius: 10, backgroundColor: tokens.bg, border: `1px solid ${tokens.border}` }}>
       <button type="button"
-        onClick={() => canExpand && setExpanded((v) => !v)}
+        onClick={() => { if (canExpand) setExpanded((v) => !v); else if (navTarget) navigate(navTarget); }}
         aria-expanded={canExpand ? expanded : undefined}
-        disabled={!canExpand}
+        disabled={!interactive}
         className="sf-press"
-        style={{ display: 'flex', alignItems: 'flex-start', gap: 12, width: '100%', padding: '12px 14px', background: 'none', border: 'none', cursor: canExpand ? 'pointer' : 'default', textAlign: 'left' }}>
+        style={{ display: 'flex', alignItems: 'flex-start', gap: 12, width: '100%', padding: '12px 14px', background: 'none', border: 'none', cursor: interactive ? 'pointer' : 'default', textAlign: 'left' }}>
         <Icon size={18} strokeWidth={1.75} color={tokens.text} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: tokens.text, marginBottom: 2 }}>{alertTitle(alert)}</div>
           <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.4 }}>{alertBody(alert)}</div>
         </div>
         {canExpand && <ChevronDown size={16} strokeWidth={1.75} color={tokens.text} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1, transform: expanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 150ms' }} />}
+        {navTarget && <ChevronRight size={16} strokeWidth={1.75} color={tokens.text} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }} />}
       </button>
       {canExpand && expanded && (
         <div style={{ padding: '0 14px 8px 44px' }}>
           {items.slice(0, 10).map((item) => (
             <AlertItemRow key={item.id} {...rowPropsForItem(alert, item)}
-              onTap={() => navigate(isBriefingRecap ? composeTarget(item) : fixTarget(item))} />
+              onTap={() => navigate(isBriefingRecap ? composeTargetFor(alert, item) : fixTarget(item))} />
           ))}
           {items.length > 10 && (
             <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', padding: '8px 0 4px' }}>
