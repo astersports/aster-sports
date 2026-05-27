@@ -47,6 +47,26 @@ export function buildInitial({ initialKind, initialAnchorKind, initialAnchorId, 
   };
 }
 
+// A draft is only worth persisting once the admin has authored something
+// (a body field or a sign-off). Advancing to the Audience/Body step and
+// backing out must NOT leave an empty scratch draft cluttering the
+// "Resume a draft?" list. body starts as {} and gains keys only on user
+// edits (UPDATE_BODY) or a date-range pick, so an empty body + empty
+// sign-off means nothing has been authored yet.
+export function hasAuthoredContent({ body, signoff_message } = {}) {
+  if (signoff_message && signoff_message.trim()) return true;
+  if (body && typeof body === 'object') {
+    return Object.values(body).some((v) => {
+      if (v == null) return false;
+      if (typeof v === 'string') return v.trim().length > 0;
+      if (Array.isArray(v)) return v.length > 0;
+      if (typeof v === 'object') return Object.keys(v).length > 0;
+      return true;
+    });
+  }
+  return false;
+}
+
 export function fmtSchedule(iso) {
   return new Date(iso).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
 }
