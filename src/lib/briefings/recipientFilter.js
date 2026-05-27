@@ -46,6 +46,18 @@ export async function resolveAudienceTeamIds({ audienceType, audienceFilter, anc
     if (error) throw error;
     return (data || []).map((r) => r.team_id).filter(Boolean);
   }
+  if (audienceType === 'multi_event_attendees') {
+    // games_recap (G1): union of team_ids across the N selected events.
+    // event_ids live in audience_filter (anchor_kind='multi_event',
+    // anchor_id null). Empty-guard returns before any supabase touch.
+    const eventIds = audienceFilter?.event_ids;
+    if (!Array.isArray(eventIds) || !eventIds.length) return [];
+    const { supabase } = await import('../supabase');
+    const { data, error } = await supabase
+      .from('events').select('team_id').in('id', eventIds);
+    if (error) throw error;
+    return Array.from(new Set((data || []).map((r) => r.team_id).filter(Boolean)));
+  }
   return [];
 }
 
