@@ -13,6 +13,7 @@ function makeChain(rows) {
   const chain = {
     select: vi.fn(() => chain),
     eq: vi.fn((col, val) => { calls.push(['eq', col, val]); return chain; }),
+    is: vi.fn((col, val) => { calls.push(['is', col, val]); return chain; }),
     gte: vi.fn((col, val) => { calls.push(['gte', col, val]); return chain; }),
     order: vi.fn(() => chain),
     limit: vi.fn(() => Promise.resolve({ data: rows, error: null })),
@@ -42,15 +43,16 @@ describe('useAvailableDrafts', () => {
     expect(result.current.drafts).toEqual([]);
   });
 
-  it('2. queries comms_messages with org_id first, status=draft, 7-day window', async () => {
+  it('2. queries comms_messages with org_id first, status=draft, no trigger pre-drafts, 7-day window', async () => {
     nextRows = [{ id: 'd1', kind: 'game_recap', subject: 'X', last_edited_at: new Date().toISOString() }];
     const { result } = renderHook(() => useAvailableDrafts({ orgId: 'org-1' }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(calls[0]).toEqual(['from', 'comms_messages']);
     expect(calls[1]).toEqual(['eq', 'org_id', 'org-1']); // AP #37 — org_id first
     expect(calls[2]).toEqual(['eq', 'status', 'draft']);
-    expect(calls[3][0]).toBe('gte');
-    expect(calls[3][1]).toBe('last_edited_at');
+    expect(calls[3]).toEqual(['is', 'created_by_trigger', null]); // hide auto-suggested pre-drafts
+    expect(calls[4][0]).toBe('gte');
+    expect(calls[4][1]).toBe('last_edited_at');
     expect(result.current.drafts).toHaveLength(1);
   });
 

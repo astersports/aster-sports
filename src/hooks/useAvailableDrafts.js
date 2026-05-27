@@ -1,6 +1,11 @@
 // §4.AI Option C — PR A. Lists recent admin briefing drafts
 // (status='draft', last_edited_at within 7 days) for the
 // "Resume a draft?" affordance in BriefingComposer Step 1.
+//
+// Excludes trigger-generated pre-drafts (created_by_trigger IS NOT NULL):
+// those are system-suggested briefings, not drafts the admin started, and
+// have their own home in the briefing inbox (useInboxQueue). Showing them
+// under "Resume a draft?" wrongly implied the admin had started them.
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
@@ -32,6 +37,7 @@ export function useAvailableDrafts({ orgId, limit = 5 } = {}) {
         .select('id,kind,anchor_kind,anchor_id,subject,last_edited_at')
         .eq('org_id', orgId)
         .eq('status', 'draft')
+        .is('created_by_trigger', null)
         .gte('last_edited_at', sinceIso)
         .order('last_edited_at', { ascending: false })
         .limit(limit);
