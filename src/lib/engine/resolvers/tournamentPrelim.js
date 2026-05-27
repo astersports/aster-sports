@@ -76,7 +76,7 @@ export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { sup
   const coachesRes = orgId ? await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null) : { data: [], error: null };
   if (coachesRes.error) throw coachesRes.error;
   const coaches = coachesRes.data || [];
-  const { data: org, error: orgErr } = orgId ? await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle() : { data: null, error: null };
+  const { data: org, error: orgErr } = orgId ? await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config').eq('id', orgId).maybeSingle() : { data: null, error: null };
   if (orgErr) throw orgErr;
   const allRecipients = orgId ? await fetchRecipientGuardians(supabase, orgId, teamIds, effectivePilotOnly) : [];
   const slices = buildTeamSlices(tournament_teams, allRecipients);
@@ -84,7 +84,7 @@ export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { sup
   return {
     context: {
       org: {
-        id: orgId, name: org?.name || ORG_NAME_DEFAULT,
+        id: orgId, name: org?.display_name || org?.name || ORG_NAME_DEFAULT,
         branding: { eyebrowLink: ORG_WEBSITE_DEFAULT, contactEmail: ORG_CONTACT_DEFAULT, logoUrl: ORG_LOGO_DEFAULT },
         voice_config: org?.voice_config || null, brand_colors: org?.brand_colors || null,
         coaches: coaches || [],
