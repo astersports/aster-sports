@@ -2,8 +2,8 @@
 
 > §16.15 L99 redesign-template design doc. Produced 2026-05-27 ahead of
 > any PR 6 code. The audit doc is the canonical artifact; the PR
-> sequence implements the locked decisions. No migration lands until
-> Frank routes the open questions in §7 below.
+> sequence implements the locked decisions. **Q1-Q4 routed by Frank
+> 2026-05-27 (see §7); PR A (schema) is unblocked.**
 >
 > Source decision: `docs/CUTOVER_WAVE_GAP_AUDIT.md` Q3 — **Option B
 > locked** (separate `event_coach_assignments` table; many-to-many
@@ -119,16 +119,30 @@ Proposal: assume a configurable `ASSUMED_GAME_MINUTES = 90` and treat a
 game's window as `[start_at, start_at + 90m)`. Overlap = two windows
 intersect. **Q1 routes the exact value.**
 
-### 2.2 Conflict scope is per-tournament-import for v1
+### 2.2 Conflict scope — broad (Q2 locked: all team events in window)
 
 `useImportSchedule(tournamentId)` is scoped to one tournament; parse only
-loads `existingEvents` for that tournament. v1 detection scope: **within
-the current import batch + against already-existing events in the same
-tournament**. A team's *practice* the same morning, or another
-tournament's game, would not be seen unless we widen the fetch.
-**Q2 routes whether to widen to all events for the involved teams in the
-date window.** Recommendation: v1 = batch + same-tournament (cheap, high
-signal); widen later only if a real miss surfaces (YAGNI / AP #39).
+loads `existingEvents` for that tournament. **Q2 locked to the broad
+option (2026-05-27):** detection compares the import's parsed games
+against **all** events (practices, other tournaments, league games) for
+every team appearing in the import, within the date window spanned by the
+parsed games. This catches a practice the same morning or an
+other-tournament game on the same weekend — not just same-tournament
+clashes.
+
+Implementation impact (PR B): the detection hook needs an additional
+fetch beyond `useImportSchedule`'s tournament-scoped `existingEvents`:
+
+```
+events for team_id IN (<teams in import>)
+  AND start_at BETWEEN (min parsed start - 1 day)
+                   AND (max parsed start + 1 day)
+```
+(±1 day padding absorbs the 90-min window at the boundary). Each fetched
+event contributes its own `[start, start+90m)` busy window under its
+effective coach. Practices have an effective coach (team head coach)
+too, so they count toward a coach's busy windows. Per AP #37 the fetch
+is org-scoped via the team→org FK chain.
 
 ### 2.3 The table is an OVERRIDE; detection runs on the *effective* coach
 
@@ -266,23 +280,18 @@ from `event_coach_assignments` — explicitly deferred.)
 
 ---
 
-## 7. Open questions — chat routing required before PR A
+## 7. Locked decisions (Frank routing 2026-05-27)
 
-- **Q1 — assumed game duration.** `end_at` is null on imports. Use a
-  fixed `ASSUMED_GAME_MINUTES`? Recommend **90**. Alternative: treat any
-  two same-coach games starting within N minutes as conflicting (cruder,
-  no duration assumption).
-- **Q2 — detection scope.** v1 = within import batch + same-tournament
-  existing events (recommended, YAGNI). Or widen to **all** events for
-  the involved teams in the date window (catches practice clashes; more
-  queries, more noise)?
-- **Q3 — delegate-to candidate set.** Any coach in the org
-  (`team_staff` distinct users)? Or restrict to coaches already on one of
-  the conflicting teams? Recommend **any org coach** (covers the "borrow
-  Darien" case).
-- **Q4 — block vs soft-warn on commit.** Match the existing soft,
-  non-blocking tournament-conflict precedent (recommended), or hard-block
-  commit until every conflict is resolved?
+- **Q1 — assumed game duration → 90 min.** Each event's busy window is
+  `[start_at, start_at + 90m)`. `ASSUMED_GAME_MINUTES = 90` constant.
+- **Q2 — detection scope → BROAD (all team events in window).** Not just
+  same-tournament. See §2.2 for the widened fetch. Catches practice +
+  other-tournament clashes.
+- **Q3 — delegate-to set → any org coach.** Dropdown lists all distinct
+  `team_staff` coaches in the org (⋈ `staff_profiles` for names).
+- **Q4 — enforcement → SOFT warn, allow commit.** Banner warns; Commit
+  stays enabled; unresolved clusters commit both events on the default
+  coach. Matches the tournament-conflict precedent.
 
 ---
 
@@ -310,5 +319,5 @@ Recommended: A→B→C in one routing window once Q1–Q4 are locked.
 
 This doc carries the five §16.15 elements: initial audit pass (§1),
 deep-read addendum (§2), anti-pattern cross-reference (§4), per-role
-wireframes (§5), explicit out-of-scope (§6). No code lands until Frank
-routes Q1–Q4 (§7). Ledger §4.A PR 6 entry points here.
+wireframes (§5), explicit out-of-scope (§6). Q1–Q4 routed 2026-05-27
+(§7); PR A (schema) unblocked. Ledger §4.A PR 6 entry points here.
