@@ -254,7 +254,7 @@ A# = admin review, P# = parent review). Cluster numbers preserve
 chat's L99 ordering.
 
 ### Cluster 1 — Tournament results not propagated to aggregates
-- Status: **SUBSTANTIALLY RESOLVED 2026-05-27** (production verified via MCP). Of the 13 tournament games, 11U Girls (5/5) + 10U Black (4/4) + 8U Boys (4/4) are entered + published; 10U Blue Game 6 (May 9) done → Cluster 1.2 closed. 8U Boys corrected this session: CT Wolves score flipped 35-15→15-35 L (swapped-entry error) + missing NY Wild 13-34 L added → 8U Boys now 0-4. **Remaining (Frank's call, left per "unambiguous-only" routing):** the two May 17 "6th Boro 4AB" events — 10U Blue (Cluster 1.3, no result + mis-tagged tournament per 1.1) and 9U Boys (stray: 4AB division but 9U plays 3AB; likely delete). See §9.
+- Status: **RESOLVED 2026-05-27** (production verified against Frank's TourneyMachine screenshots via MCP). All 4 tournament teams reconciled: 11U Girls (5/5), 10U Black (4/4), 8U Boys (4/4), 10U Blue league backfill complete. Session fixes: (a) 8U Boys CT Wolves flipped 35-15→15-35 L + missing NY Wild 13-34 L added → 0-4; (b) 10U Blue missing St Joseph-Bxville 5C result added (19-23 L, Apr 26) → 3-4 matching TM; (c) 9U Boys stray "6th Boro 4AB" May 17 event deleted (phantom — 9U plays 3AB; real 6th Boro 3AB game May 18 12-13 L already present); (d) 10U Blue May 17 6th Boro 4AB left without result (TM shows unplayed — Cluster 1.3 closed). 11U Girls left at 3-2 (Frank's call): TM shows 2-2 because the asterisked Connecticut Elite "chip game" doesn't count toward TM's pool record; our W-L counts all 5 published games. **Latent gap noted, deferred:** `is_bonus_game` exists but is NOT honored by `computeSummary`/`useTeamRecords`/`useOrgTeamRecords` — wiring it would let chip games show-but-not-count. Frank declined the code change 2026-05-27; 11U Girls 3-2 accepted as the honest record.
 - Severity: HIGH
 - Surfaces affected: 9 across all 3 roles
   - Coach: B4 (10U Black 0% post-championship), B5 (Teams tab records pre-tournament)
@@ -278,12 +278,8 @@ chat's L99 ordering.
 - Frank-action item: enter Game 6 result (Resurrection Blue 4AB, May 9, 25-27 L) into the system during the Quick Score backfill session.
 
 ### Cluster 1.3 — 10U Blue Game 7 status unknown
-- Status: **AWAITING FRANK VERIFICATION** (added to §6)
-- Severity: LOW
-- Evidence: 10U Blue scheduled to play 6th Boro 4AB on Sun May 17 (rescheduled to HOME @ IC-Tuckahoe). Frank's data dump does not include a result for this game. Either:
-  - (a) Game happened, result not yet entered (workflow gap)
-  - (b) Game rescheduled again, didn't happen May 17 (calendar update needed)
-- Frank-action item: confirm Game 7 status during Quick Score session.
+- Status: **RESOLVED 2026-05-27** — TourneyMachine screenshot shows the May 17 6th Boro 4AB game as scheduled (5/17 2:30 PM) with team records displayed instead of a final score → unplayed/unrecorded. Our event correctly carries no result; left as-is. The 10U Blue record (3-4) is complete without it (the real missing result was St Joseph-Bxville 5C, since added).
+- Note: the 10U Blue May 17 event is still mis-tagged as a tournament event (Cluster 1.1) — minor hygiene, not a results issue; deferred.
 
 ### Cluster 3.1 — Event title ad-hoc string appendages (scope expansion)
 - Status: **RESOLVED (render layer)** via PR #298 (2026-05-19); Migration 021 (data hygiene) still queued
@@ -1518,13 +1514,17 @@ fixed this session, two remain Frank's call:
   via MCP (event `a74e58e6…`). 8U Boys now reads 0-4.
 - ✅ **10U Blue Game 6 (May 9 Resurrection Blue 4AB 25-27 L)** — already
   entered + published → **Cluster 1.2 RESOLVED**.
-- ⏳ **10U Blue May 17 vs 6th Boro 4AB** — event exists, no result
-  (Cluster 1.3) + still mis-tagged tournament (Cluster 1.1). Frank:
-  did the game happen? Enter score or remove the event.
-- ⏳ **9U Boys May 17 vs 6th Boro 4AB** — `event_type='tournament'`, no
-  result, 4AB division (9U plays 3AB; real May 18 vs 6th Boro 3AB is
-  entered 12-13 L). Looks like a stray/duplicate — Frank to confirm
-  delete.
+- ✅ **10U Blue St Joseph-Bxville 5C (Apr 26)** — was missing a result;
+  TourneyMachine confirmed 19-23 L. Added + published → 10U Blue 3-4.
+- ✅ **10U Blue May 17 vs 6th Boro 4AB** — TM shows unplayed (records,
+  not a score). Left without result (Cluster 1.3 closed). Still
+  mis-tagged tournament (Cluster 1.1) — minor hygiene, deferred.
+- ✅ **9U Boys May 17 vs 6th Boro 4AB** — confirmed stray (9U plays 3AB;
+  no 4AB game in their real schedule). Deleted (0 dependents) per Frank.
+- ℹ️ **11U Girls 3-2 vs TM 2-2** — TM excludes the asterisked Connecticut
+  Elite "chip game"; our record counts all 5. Left at 3-2 (Frank's
+  call). `is_bonus_game` exists but isn't wired into record math —
+  deferred.
 
 Original Frank-action (now mostly done): open Quick Score, enter scores
 for the games below. The inventory is retained for reference.
