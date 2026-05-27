@@ -90,9 +90,9 @@ export async function resolveFamilyGuide({ parentUserId, dateRange }, { supabase
   let orgName = 'Legacy Hoopers';
   if (parent.org_id) {
     const { data: orgRow, error: orgErr } = await supabase.from('organizations')
-      .select('name').eq('id', parent.org_id).maybeSingle();
+      .select('name, display_name').eq('id', parent.org_id).maybeSingle();
     if (orgErr) throw orgErr;
-    if (orgRow?.name) orgName = orgRow.name;
+    if (orgRow) orgName = orgRow.display_name || orgRow.name || orgName;
   }
 
   return {

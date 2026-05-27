@@ -15,6 +15,12 @@
   --em-text-primary:   #1A1D23;
   --em-text-secondary: #4A5568;
   --em-text-tertiary:  #8896AB;
+  /* Closes the --em-text-tertiary (#8896AB, 3.8:1) WCAG AA gap: meta is the
+     AA-compliant (#6B7280, 4.6:1) text-rank floor for body/meta text.
+     Tertiary preserved for non-text use (icons, dividers). Per CLAUDE.md §0
+     rule #2 corollary. Adoption across tertiary text surfaces is a follow-on
+     a11y pass. */
+  --em-text-meta:      #6B7280;
   --em-text-inverse:   #FFFFFF;
   --em-border-default: #E2E8F0;
   --em-border-subtle:  #EDF2F7;
