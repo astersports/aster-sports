@@ -245,6 +245,31 @@ broke once mid-flight (PR #473 parent-checkout leakage detected
 post-merge). See §4.AB for the extended close synthesis (Phase 2 +
 Phase 3 closure status) and §5 for watch-list status on #52 + #54.
 
+### Session 2026-05-27 — briefing send/compose + home-alerts polish (5 PRs + data cleanup)
+
+Frank-reported arc that started from "briefings stuck at queued" and
+cascaded through the compose + alerts surfaces:
+
+| PR    | Scope                                                                          | Surfaces        |
+|-------|--------------------------------------------------------------------------------|-----------------|
+| #524  | Send pipeline: edge fn owns terminal `status='sent'`; surfaces dispatch failure instead of swallowing (was stranding rows at `queued`) | All briefing sends |
+| #525  | Device preview frames render via `srcDoc` not `contentDocument.write` (sandboxed iframe blanked on iOS Safari; jsdom masked it) | BriefingComposer preview |
+| #526  | Stop autosaving empty scratch drafts (gate INSERT on authored content via `hasAuthoredContent`) | Composer "Resume a draft?" |
+| #527  | Hide trigger-generated pre-drafts from "Resume a draft?" (`.is('created_by_trigger', null)`); they live in the briefing inbox | Composer Step 1 |
+| #528  | Every home alert actionable: tournament_prelim drill-down (parity w/ recap) + weekly/payments tap-through; AlertCard helpers extracted for 150-line cap | Admin/Coach/Parent home Alerts |
+
+Data cleanup (MCP, reversible — archived, not deleted): 26 pre-fix
+stranded rows archived (23 zombie `queued` briefings that never
+delivered + 3 abandoned empty drafts). Resume-draft list verified empty
+of cruft; 0 stuck `queued` remaining.
+
+Cluster 1 (tournament records) reconciled + verified correct against
+TourneyMachine. Cluster 1.1 closed as not-a-bug (see §2).
+
+CI note: the org hit its GitHub Actions spending limit mid-session
+(all jobs failing at startup in ~2s); Frank raised it and #528 merged
+clean. Not a code issue.
+
 ---
 
 ## 2. ACTIVE BUGS (L99 audit clusters)
@@ -264,12 +289,12 @@ chat's L99 ordering.
 - Resolution: **workflow item, not code PR**. Frank publishes 13 tournament results via Quick Score (see §9 for full inventory). If aggregates DON'T update after publish, reopen as code fix in a follow-up PR.
 - Drift-hedge test per #43 (deferred until aggregate path is touched): assert tournament events with `tournament_id IS NOT NULL` and entered scores propagate to all 4 aggregate surfaces
 
-### Cluster 1.1 — 10U Blue mis-tagged tournament event (D1 bonus finding)
-- Status: **OPEN**, awaiting Frank verification
-- Severity: LOW (data hygiene)
-- D1 surfaced one 10U Blue event on 2026-05-17 with `tournament_id = '254afad0-23af-4979-ac4a-88614b76e341'` (different from the Rumble for the Ring tournament 196e595d...). Per Frank's data dump, 10U Blue played 6th Boro 4AB on May 17 at IC-Tuckahoe — a league game, not a tournament.
-- Resolution: Migration 021 should null the `tournament_id` on that event.
-- Surface impact: if this event is counted as a tournament game, it would distort future tournament aggregates once Cluster 1 is published.
+### Cluster 1.1 — 10U Blue "mis-tagged tournament event" (NOT A BUG)
+- Status: **CLOSED — not a bug (2026-05-27, Frank-confirmed).** Original framing was a misread.
+- Severity: N/A
+- The D1 premise ("one stray 10U Blue event on 2026-05-17 tagged to `254afad0`, null it") was wrong. Verified via MCP 2026-05-27: `254afad0-23af-4979-ac4a-88614b76e341` is the tournament row **"WPCYO Spring League 2026"**, and **16 game events** carry it — ALL 10U Blue (8) + 9U Boys (8) regular-season league games, not one event. This is the league modeled as a tournament row for grouping, applied consistently across both league teams. (11U Girls' lone schedule game is null; AAU tournament games for 11U Girls / 8U Boys / 10U Black live in the results/scoring system, not as schedule `events`.)
+- Why NOT to null: Cluster 1 was reconciled + verified correct against TourneyMachine on 2026-05-27 **with this tagging in place**. Nulling the `tournament_id`s would risk regressing the now-correct records. The earlier "Migration 021 should null that event" resolution is **withdrawn** — do not null. Nulling just one of the 16 would also create inconsistency.
+- If the league-as-tournament model ever needs revisiting, that's a deliberate data-model change across all 16 league games (+ a Records/Standings re-verification), not a one-row hygiene fix.
 
 ### Cluster 1.2 — 10U Blue Game 6 missing from system
 - Status: **RESOLVED 2026-05-27** — verified in production: 10U Blue vs Resurrection Blue 4AB (May 9) entered + published as 25-27 L. 10U Blue league record reflects the 6th game.
@@ -279,7 +304,7 @@ chat's L99 ordering.
 
 ### Cluster 1.3 — 10U Blue Game 7 status unknown
 - Status: **RESOLVED 2026-05-27** — TourneyMachine screenshot shows the May 17 6th Boro 4AB game as scheduled (5/17 2:30 PM) with team records displayed instead of a final score → unplayed/unrecorded. Our event correctly carries no result; left as-is. The 10U Blue record (3-4) is complete without it (the real missing result was St Joseph-Bxville 5C, since added).
-- Note: the 10U Blue May 17 event is still mis-tagged as a tournament event (Cluster 1.1) — minor hygiene, not a results issue; deferred.
+- Note: the 10U Blue May 17 event's `tournament_id` is NOT a mis-tag — it points to the "WPCYO Spring League 2026" league-as-tournament row that all 16 league games share. See Cluster 1.1 (CLOSED — not a bug).
 
 ### Cluster 3.1 — Event title ad-hoc string appendages (scope expansion)
 - Status: **RESOLVED (render layer)** via PR #298 (2026-05-19); Migration 021 (data hygiene) still queued
