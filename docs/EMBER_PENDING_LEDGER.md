@@ -458,13 +458,11 @@ arc bodies.
 | §4.H density toggle | **BUILT** | `DensityToggle.jsx` |
 | §4.H rotation planner / note-edit cooldown | UNBUILT (no code) | grep empty |
 
-**Genuine unblocked next-build surfaced by this pass:** QR codes
-(3-B public-schedule QR + 6-A parent-invite QR). No in-app QR generation
-exists (`InviteButton` flow is built, but no qrcode lib / QR render).
-Parent-onboarding QR invites is real, valuable, and unblocked — needs a
-qrcode dependency + render surface. **This is the recommended next arc**
-if a feature build is wanted; everything else is shipped, blocked, or
-low-value.
+**QR codes — resolved 2026-05-27:**
+- **3-B public-schedule QR → SHIPPED (#531).** `qrcode.react` + `publicScheduleUrl` + `ShareScheduleButton` (QR + copy-link sheet) on TeamDetailHero (staff) and PublicSchedulePage. Encodes `/schedule/:teamId` (public route).
+- **6-A parent-invite QR → SHELVED (Frank, 2026-05-27).** Not a QR-render add: onboarding is email-only via Supabase `inviteUserByEmail` (no `team_invites`/token table, no `/join` page). A real scan-to-join needs a join-token system + public join page + account→guardian linking (email-match or admin-approval) + security hardening — a multi-PR auth-adjacent arc. The email invite already works; at ~60 families the open-join security surface isn't worth it now. Revisit only with a deliberate design pass if in-person mass onboarding becomes a need.
+
+**Queue status after this pass: no unblocked feature build remains.** Everything is shipped, blocked-on-Frank (family_guide actor-send PR 5; §4.K token grant), shelved (6-A), or policy-blocked (5-C §16.12).
 
 ---
 
