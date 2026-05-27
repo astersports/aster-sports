@@ -443,11 +443,13 @@ Prior status: **5 OF 7 PRs SHIPPED OR CODE-COMPLETE; PR 7a SHIPPED 2026-05-22; P
     (admin ALL + coach SELECT, `(SELECT auth.uid())` subselect, AP #20
     WITH CHECK on the ALL policy). Security advisor clean for the new
     table. No SECDEF.
-  - **PR B** (detection) — NEXT. `effectiveCoach()` resolver
-    (assignment-or-team-head-coach) + `useCoverageConflicts(rows,
-    teamCoachMap)`: broad fetch (all events for import teams in a
-    ±1-day window), 90-min busy windows, cluster by effective coach.
-    Pure + unit-tested. No UI.
+  - ~~**PR B** (detection)~~ ✅ **SHIPPED 2026-05-27** — pure
+    `src/lib/import/coverageConflicts.js` (`effectiveCoach`,
+    `busyWindow`, `detectCoverageConflicts`, `buildConflictItems`;
+    90-min windows, back-to-back ≠ conflict, transitive clustering) +
+    `useCoverageConflicts(rows)` hook (broad fetch: all events for
+    import teams in ±1-day window + head coaches + existing assignments;
+    re-runs on staged delegation). 14 pure unit tests. No UI yet.
   - **PR C** (UI) — `CoverageConflictBanner` in import preview + stage
     `delegated_coach_user_id` + write assignments in `commit()` after
     event insert. Soft (non-blocking). AP #43 invariant test.
