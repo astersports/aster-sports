@@ -8,6 +8,7 @@ import { useToast } from '../context/useToast';
 import { EMBER_DISPLAY_NAME } from '../lib/emberDefaults';
 import Label from '../components/shared/Label';
 import NotificationPrefs from '../components/account/NotificationPrefs';
+import PushEnableToggle from '../components/account/PushEnableToggle';
 import QuietHoursCard from '../components/account/QuietHoursCard';
 import StaffProfileCard from '../components/account/StaffProfileCard';
 
@@ -81,6 +82,7 @@ export default function AccountPage() {
 
       <section style={{ marginBottom: 16 }}>
         <Label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Bell size={12} strokeWidth={2} /> Notifications</Label>
+        <PushEnableToggle userId={user?.id} orgId={orgId} />
         <NotificationPrefs userId={user?.id} orgId={orgId} />
       </section>
 
