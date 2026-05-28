@@ -32,12 +32,13 @@ export function useRecentActivity(orgId, seasonId, { limit = DEFAULT_LIMIT } = {
     }
     setLoading(true);
     const cutoffIso = new Date(Date.now() - TWENTY_FOUR_HOURS_MS).toISOString();
-    // §4.AD BUG-D fix (2026-05-24): event_rsvps has no declared FK to
-    // players (player_id column exists; no FK constraint). PostgREST embed
-    // `players(...)` was failing with "Could not find a relationship".
-    // Restructured: drop the embed, select player_id from event_rsvps,
-    // fetch players separately by id, join in JS at merge time.
-    const [rsvpRes, msgRes, gameRes] = await Promise.all([
+    // L99 TIER 2 perf — players fetch was a sequential 4th await after the
+    // Promise.all of 3. event_rsvps has no declared FK to players (player_id
+    // column exists; no FK constraint), so the PostgREST embed isn't
+    // available (§4.AD BUG-D context). Instead: fold a small org-scoped
+    // players prefetch (~60 rows for our scale) into the parallel batch and
+    // join in JS at merge time. Saves one round trip on admin home first paint.
+    const [rsvpRes, msgRes, gameRes, playersRes] = await Promise.all([
       supabase
         .from('event_rsvps')
         .select('id, response, responded_at, player_id, events!inner(id, teams!inner(id, name, team_color, season_id))')
@@ -61,8 +62,10 @@ export function useRecentActivity(orgId, seasonId, { limit = DEFAULT_LIMIT } = {
         .gte('published_at', cutoffIso)
         .order('published_at', { ascending: false })
         .limit(limit),
+      supabase
+        .from('players').select('id, first_name, last_name').eq('org_id', orgId),
     ]);
-    const firstErr = rsvpRes.error || msgRes.error || gameRes.error;
+    const firstErr = rsvpRes.error || msgRes.error || gameRes.error || playersRes.error;
     if (firstErr) {
       console.error('useRecentActivity fetch:', firstErr.message);
       setError(firstErr.message);
@@ -70,20 +73,7 @@ export function useRecentActivity(orgId, seasonId, { limit = DEFAULT_LIMIT } = {
       setLoading(false);
       return;
     }
-    // §4.AD BUG-D fix: fetch players separately (FK embed not available)
-    // and build a Map keyed by id for the merge step below.
-    const playerIds = [...new Set((rsvpRes.data || []).map((r) => r.player_id).filter(Boolean))];
-    let playerMap = new Map();
-    if (playerIds.length) {
-      const { data: players, error: playersErr } = await supabase
-        .from('players').select('id, first_name, last_name').in('id', playerIds);
-      if (playersErr) {
-        console.error('useRecentActivity players fetch:', playersErr.message);
-        // Non-fatal: continue with empty playerMap; RSVP items show "Someone".
-      } else {
-        playerMap = new Map((players || []).map((p) => [p.id, p]));
-      }
-    }
+    const playerMap = new Map((playersRes.data ?? []).map((p) => [p.id, p]));
     const merged = [
       ...(rsvpRes.data || []).map((r) => {
         const player = playerMap.get(r.player_id);
