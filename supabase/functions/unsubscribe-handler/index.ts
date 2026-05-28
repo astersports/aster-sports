@@ -26,7 +26,14 @@ function htmlPage(title: string, body: string): Response {
   <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px;"/>
   <div style="font-size:12px;color:#94a3b8;line-height:1.5;">Legacy Hoopers · <a href="mailto:admin@legacyhoopers.org" style="color:#4a8fd4;text-decoration:none;">admin@legacyhoopers.org</a></div>
 </div></body></html>`;
-  return new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
+  return new Response(html, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "private, no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
 }
 
 Deno.serve(async (req) => {
