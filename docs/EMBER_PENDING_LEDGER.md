@@ -3717,7 +3717,176 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
-### §4.AL — Wave 1 P0 fix-PR arc + Frank's Q1-Q5 routing (2026-05-28)
+### §4.AM — Wave 1 P1 cleanup close + Wave 2 carryover (2026-05-28)
+
+**Trigger:** §4.AL Wave 1 P0 close left P1s in the §4.AK list pending.
+This session shipped the P1 cleanup batch (PRs #561 + #562) and
+surfaced specific findings from the AP #29 token-handler re-audit
+that need to be discoverable for Wave 2 routing.
+
+**Shipped this turn (2 parallel fix PRs):**
+
+- **PR #561 — DB hygiene migration** (migration version
+  `20260528142102_wave_1_p1_db_hygiene_indexes_and_pinning`):
+  - 7 FK indexes added (3 of the original spec set were already
+    indexed; agent pre-flight trimmed to the genuinely unindexed
+    7): `coaching_assignments.org_id`, `user_roles.organization_id`,
+    `game_plays.created_by`, `game_plays.voided_by`,
+    `event_change_audit.changed_by`, `rsvp_token_uses.guardian_id`,
+    `callup_token_uses.guardian_id`.
+  - `app_secrets` + `event_reminder_log` policy pinning via explicit
+    REVOKE + table COMMENT documenting AP #33 deny-by-default
+    rationale. Future audits won't re-flag as "missing policy".
+  - Duplicate `assert_org_owns_helpers` ledger row at
+    `20260521114129` removed (verified byte-identical to canonical
+    `20260521114252` before delete).
+- **PR #562 — Cross-org defense-in-depth**:
+  - `useMapsUrl.js:42` — `.eq('org_id', orgId)` added per AP #37;
+    cache key bumped to `${orgId}:${name}` to block cross-org cache
+    leaks when venues overlap (e.g., shared "WCC" between orgs).
+  - `invite-parent` edge function v8 deployed: accepts `org_id`
+    body param + asserts caller is admin in that org via
+    `user_has_role_in_org` RPC; stamps `org_id` + `invited_by`
+    into auth user metadata. Closes real vulnerability where prior
+    `.maybeSingle()` admin check could route a Legacy admin's
+    invitation into a different org.
+  - `InviteButton.jsx` — sole caller updated to pass `orgId` from
+    AuthContext.
+  - AP #29 token-handler verification (read-only) — see findings
+    below.
+
+**§4.AK P1 closure scoreboard:**
+
+- ✓ `useMapsUrl.js:38` org filter — PR #562
+- ✓ `invite-parent` edge function org-binding — PR #562
+- ✓ 33 unindexed FKs (highest-priority 7 of 8 user-cascade /
+  org-scoped subset) — PR #561; remaining 26 deferred to a
+  dedicated index-hygiene PR if perf metrics ever flag them
+- ✓ `app_secrets` + `event_reminder_log` policy pinning — PR #561
+- ✓ Duplicate `assert_org_owns_helpers` ledger row — PR #561
+- ✓ AP #29 token-handler re-audit — PR #562 (read-only; specific
+  gaps captured below)
+- ⇒ **DEFERRED to Wave 2 (rationale registered):**
+  - `user_roles_user_id_key` UNIQUE shape change from `(user_id)`
+    to `(user_id, organization_id)` — schema change is trivial,
+    but the application-layer impact is non-trivial:
+    `current_user_org_id()` SECDEF assumes single-org-per-user
+    semantics; relaxing the constraint without updating the helper
+    + every caller creates a schema permissive enough for multi-org
+    but with app behavior frozen at single-org. Bundle with the
+    multi-org app audit in Wave 2 prep.
+  - `roster_members` UNIQUE `(player_id, team_id)` extending to
+    include `season_id` — requires no-duplicate verification
+    pre-flight + app-side audit of every roster_members `upsert`
+    callsite to confirm `onConflict` shape compatibility (AP #25
+    discipline). Defer until rollover/season workflow is in scope.
+  - Financial-table cascade-action decisions (`coach_payouts`,
+    `financial_transactions`, `season_rollovers` `org_id ON DELETE
+    NO ACTION`) — paired with cutover org-archival, these will
+    silently block org deletion. Decision needs an explicit
+    org-archival playbook (preserve vs export-and-archive vs
+    cascade); docs-layer decision more than code.
+
+**AP #29 token-handler audit findings (Wave 2 work item):**
+
+PR #562 read the bodies of `verify_unsubscribe_token` and
+`get_invitation_by_token` via `pg_proc.prosrc`. Findings:
+
+- **`verify_unsubscribe_token(p_token text)`:**
+  - HMAC verification: PRESENT (reads `unsubscribe_secret` from
+    `app_secrets`, computes `extensions.hmac` SHA-256,
+    base64url-compares).
+  - Expiration check: **ABSENT** — payload format is
+    `<user_id>:<ts>` but `ts` is parsed and never compared to
+    current time. Token effectively non-expiring.
+  - Replay protection: **ABSENT** — no `token_uses` consultation,
+    no single-use deletion. Token can be replayed indefinitely.
+- **`get_invitation_by_token(p_token text)`:**
+  - HMAC: NOT APPLICABLE (plain DB row lookup keyed by
+    `invitations.token` column, not signed token).
+  - Expiration: **EXPOSED, NOT ENFORCED** — returns
+    `is_expired = (expires_at < NOW())` in JSON payload, but
+    function does NOT filter rows by it. Caller must honor.
+  - Replay protection: **EXPOSED, NOT ENFORCED** — returns
+    `is_accepted` + `is_cancelled` flags; caller must honor.
+
+**Recommended Wave 2 follow-up PR — token-handler hardening:**
+
+- Decide unsubscribe-token TTL (recommend 30d for unsubscribe
+  links; one-time tokens for other flows).
+- Decide single-use semantics: introduce `unsubscribe_token_uses`
+  table OR add `used_at`/`revoked_at` to a generic token-uses
+  table. Existing `rsvp_token_uses` / `callup_token_uses` pattern
+  is the precedent.
+- Grep all callers of `get_invitation_by_token` to confirm every
+  one honors `is_expired`/`is_accepted`/`is_cancelled`. If any
+  caller doesn't, push enforcement into the function body (return
+  NULL row + reason code instead of always-returning the row).
+- Backfill existing minted unsubscribe tokens (if format changes)
+  + run advisor sweep for any other SECDEF-token RPCs missing
+  expiration or replay protection.
+- Scope ~1-2h once design decisions locked.
+
+**Onboarding-pipeline data point (still pending):**
+
+§4.AL flagged that Aubtin's spot-check surfaced both parents
+(Anjella + Sarmad) with `guardians.user_id IS NULL`. Quick audit
+query at next session open to confirm broader pattern:
+
+```sql
+SELECT
+  COUNT(*) AS total_guardians,
+  COUNT(*) FILTER (WHERE user_id IS NULL) AS unlinked,
+  ROUND(100.0 * COUNT(*) FILTER (WHERE user_id IS NULL)
+        / NULLIF(COUNT(*),0), 1) AS pct_unlinked
+FROM guardians
+WHERE org_id = 'e3e95e21-3571-4e9a-985a-d5d01480d4a6';
+```
+
+If >50% unlinked → onboarding-pipeline promoted from §17.4 backlog
+to immediate routing. If <20% → KHOJASTEH was an outlier; backlog
+stays as-is.
+
+**Coach_payouts P1 build (Q5 reframe, still pending spec):**
+
+Frank's example shape (session-by-session $60 head / $30 assistant
+OR flat-fee per team + optional tournament-championship bonus;
+payment external from bank, system tracks ledger only). Spec
+session needed before build — flat vs session vs hybrid is the
+open routing question. Tracked in §4.AL.
+
+**Wave 1 final scoreboard:**
+
+- **P0:** 10/10 closed (4 via fix-PR ship, 2 via no-op resolution,
+  4 via doctrine reconciliation, 0 deferred)
+- **P1:** 6 shipped / 3 deferred to Wave 2 (with explicit rationale)
+  / 1 reframed to P1 build (coach_payouts pending spec) / 1 produced
+  read-only findings (AP #29) routing to Wave 2 hardening PR
+- **P2:** deferred to Wave 2/3 per §4.AK roadmap
+
+**Multi-tenant cutover unblocked at the DB layer.**
+Multi-program build phase (§17.7 step 5) opens after Wave 2 closes.
+
+**AP compliance:**
+
+- AP #21: 1 mirror file from PR #561; PR #562 deploys edge function
+  via Supabase MCP `deploy_edge_function` (not migration — function
+  versioning handled by Supabase).
+- AP #45: this §4.AM ledger entry surfaces the AP #29 specifics
+  + Wave 2 carryover rationale so next session reads it at the
+  §9.1 step 3 ledger-reconciliation pre-flight.
+- AP #50: parallel narrow-scope fix-PR dispatch (2 agents).
+- AP #52: both agents confirmed `pwd` + `git rev-parse --show-toplevel`
+  in their final summaries.
+- AP #54 + AP #55: both agents shipped same-MCP-burst create + ready
+  + auto-merge with actual PR# from response.
+- AP #56 + AP #59: session contract held. Closes here after the P1
+  cleanup batch + this §4.AM ledger close. No cascade into Wave 2
+  dispatch — that's the next session.
+
+---
+
+
 
 **Trigger:** Frank's locked routing decisions in same-day chat following §4.AK Wave 1 findings ship.
 
