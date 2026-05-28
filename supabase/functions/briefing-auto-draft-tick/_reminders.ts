@@ -16,12 +16,14 @@ export async function handleEventReminder(sb: SupabaseClient, trigger: Trigger, 
   const base = { trigger_id: trigger.id, org_id: trigger.org_id, kind: "event_reminder" };
   if (isQuietHoursET(now)) return [{ ...base, skipped: "quiet_hours" }];
 
-  const { data: secretRow } = await sb.from("app_secrets").select("value").eq("name", "cron_secret").maybeSingle();
-  const cronSecret = (secretRow?.value as string | undefined) ?? "";
+  const { data: secretRow, error: secErr } = await sb.from("app_secrets").select("value").eq("name", "cron_secret").maybeSingle();
+  const cronSecret = secErr ? "" : ((secretRow?.value as string | undefined) ?? "");
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const { data: os } = await sb.from("organization_settings")
+  // On an org-settings read error, default pilotMode TRUE (fail safe — that
+  // suppresses non-pilot sends rather than risking a broad accidental send).
+  const { data: os, error: osErr } = await sb.from("organization_settings")
     .select("pilot_mode_enabled").eq("organization_id", trigger.org_id).maybeSingle();
-  const pilotMode = (os?.pilot_mode_enabled as boolean | undefined) ?? true;
+  const pilotMode = osErr ? true : ((os?.pilot_mode_enabled as boolean | undefined) ?? true);
 
   const nowMs = now.getTime();
   const in72 = new Date(nowMs + 72 * 3600000).toISOString();
@@ -33,7 +35,9 @@ export async function handleEventReminder(sb: SupabaseClient, trigger: Trigger, 
 
   const out: HandlerResult[] = [];
   for (const e of orgEvents as any[]) {
-    const { data: logs } = await sb.from("event_reminder_log").select("offset_bucket").eq("event_id", e.id);
+    const { data: logs, error: logErr } = await sb.from("event_reminder_log").select("offset_bucket").eq("event_id", e.id);
+    // Can't read the dedup log -> skip this event rather than risk re-sending.
+    if (logErr) { out.push({ ...base, anchor_id: e.id, error: logErr.message }); continue; }
     const decision = decideReminder(Date.parse(e.start_at), nowMs, (logs ?? []).map((l: any) => l.offset_bucket));
     if (!decision) continue;
 

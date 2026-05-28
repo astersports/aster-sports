@@ -57,10 +57,11 @@ export async function sendReminderEmail(
   sb: SupabaseClient, orgId: string, emails: string[], subject: string, html: string, plain: string,
 ): Promise<number> {
   if (!emails.length) return 0;
-  const { data: os } = await sb.from("organization_settings")
+  const { data: os, error: osErr } = await sb.from("organization_settings")
     .select("reply_to_email, from_name").eq("organization_id", orgId).maybeSingle();
-  const fromHeader = `${os?.from_name ?? FROM_NAME_FALLBACK} <${FROM_EMAIL}>`;
-  const replyTo = os?.reply_to_email ?? REPLY_TO_FALLBACK;
+  const fromName = (!osErr && os?.from_name) ? os.from_name : FROM_NAME_FALLBACK;
+  const fromHeader = `${fromName} <${FROM_EMAIL}>`;
+  const replyTo = (!osErr && os?.reply_to_email) ? os.reply_to_email : REPLY_TO_FALLBACK;
   const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
   let sent = 0;
   for (let i = 0; i < emails.length; i += 100) {
