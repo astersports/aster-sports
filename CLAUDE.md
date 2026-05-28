@@ -840,6 +840,99 @@ conditions) — the two are different surfaces of the same restraint:
 outside); #59 is the close-out application when #56's pre-locked
 contracts get pressure-tested mid-session.
 
+60. **Fact-grounding discipline — no inference where verification is
+possible.** (CANDIDATE — promotes to permanent on third observed
+instance with stable findings rate.)
+
+Every claim about tool behavior, system state, schema, deployed code, or
+user experience must be grounded in a verifiable source. Plausible-
+sounding inference from docstrings, defaults, memory, or pattern-
+matching is NOT a substitute for verification and compounds confidently-
+stated wrong answers across sessions.
+
+The source hierarchy that operationalizes this discipline lives at §11.7
+as a permanent doctrine clause (generalized from AP #16.7.1's narrower
+SDK case). This AP is the discipline statement that motivates §11.7.
+
+**Tool-maximization sub-rule:** the MCP infrastructure IS the
+verification layer. Inference becomes acceptable only after the source
+hierarchy is exhausted. Using the tools IS the discipline, not a step
+we skip when busy.
+
+**Question-asking sub-rule:** when verification reveals genuine
+uncertainty (source doesn't exist, can't be queried, user's report is
+ambiguous), ask the user the specific question that would resolve it.
+Cost of one clarifying question is bounded; cost of a wrong inference
+compounds across sessions.
+
+**Trigger patterns that mean STOP-and-verify:**
+- About to write "the tool only does X" / "the system always Y" / "this
+  was designed to Z" — what's the verifiable source?
+- User pushes back with empirical contradiction ("this used to work,"
+  "the bug is real," "you're wrong about that") — that pushback is
+  data, not an obstacle. Reframe immediately. Default response: "you're
+  right, what changed?" not "the docstring says otherwise."
+- I genuinely don't know — say so + name the verification mechanism.
+
+Origin case (2026-05-28): unfounded claims about GitHub MCP webhook
+delivery during the L99 cleanup arc — claimed "I'll be notified when
+the PR merges" across 7 PRs without verifying; defended the claim with
+a docstring read when the user reported two months of working merge
+notifications. Correct response on first pushback: treat the empirical
+contradiction as authoritative, reframe as a regression, propose
+diagnostic instrumentation.
+
+Cross-reference: AP #16.7.1, AP #26, AP #39, AP #40, AP #44.
+
+61. **Pre-phase-cutover audit gate — line-by-line surface before
+transition.** (CANDIDATE — promotes to permanent on third observed
+instance with stable findings rate.)
+
+Before any phase cutover (cleanup arc → multi-program build,
+current-season → next-season rollover, beta → GA), perform a
+narrow-scope line-by-line bug + enhancement + redesign-potential
+surface review of every component touched in the current phase,
+dispatched as parallel narrow-scope agents per AP #50. The 40% cascade
+rate of broad-scope line-by-line is unacceptable; the discipline runs
+narrow-scope in parallel to defeat the cascade.
+
+**Required outputs before the phase is "done":**
+1. Bug surface (cross-role coverage per AP #43).
+2. Enhancement surface (file:line + estimated lift + risk class).
+3. Redesign-potential surface (added to the planning layer's backlog).
+4. Routing decision (ship-this-phase / next-phase / defer, with
+   rationale).
+
+**Methodology:** L99 per §16.15 + AP #50. Each audit covers ONE bounded
+surface. Cross-batch pattern check per AP #58 surfaces cross-cutting
+findings.
+
+Stop conditions per AP #56 + AP #59.
+
+Origin case (2026-05-28): the cleanup arc (PRs #543–#550) → multi-
+program build cutover is the active phase boundary where this
+discipline was first articulated.
+
+Cross-reference: AP #43, AP #50, AP #56, AP #58, AP #59.
+
+62. **Interim workflow cannot be claimed as permanent contract.**
+(CANDIDATE — promotes to permanent on third observed instance with
+stable findings rate.)
+
+When a regression forces an alternate workflow, that workflow is
+INTERIM. It carries an explicit fix-condition or expiration. It does
+not calcify into doctrine unless and until the regression is
+permanently accepted as not-fixable.
+
+**Trigger:** any time a workflow gets proposed in response to a tool
+limitation or regression — STOP. Is the limitation permanent or is it
+a regression? If regression, the workflow is interim; name the
+expiration.
+
+Origin case (2026-05-28): verify-before-stack proposed as workflow
+during the GitHub MCP merge-webhook regression. Must remain framed as
+interim until the webhook regression is closed.
+
 ---
 
 ## 11.5. GROUND-TRUTH TABLES (CANONICAL SOURCES)
@@ -894,6 +987,28 @@ The two tables are kept in alignment by the trigger added in migration `20260505
 The `e2e/` directory is the only place `*.spec.js` files exist; `src/` stays `*.test.js`-only. Both runners run as separate CI jobs in parallel — adding a test in the wrong place doesn't fail the right job, it just doesn't run there at all (silent miss).
 
 Shared fixtures for E2E live in `e2e/_fixtures/` or `e2e/_helpers/` (underscore prefix keeps them out of the Playwright glob). Shared Vitest fixtures follow the existing `src/lib/__tests__/_fixtures.js` pattern.
+
+---
+
+## 11.7. OPERATIONAL DISCIPLINES (PERMANENT — operationalize AP #60 across sessions)
+
+**Source hierarchy** — verify against the closest to ground truth available before claiming behavior. Generalizes the AP #16.7.1 pattern from SDK telemetry to all tool/system/user claims:
+
+1. **Live system state** — Supabase MCP `execute_sql`, GitHub MCP `pull_request_read`, file `Read`, deployed runtime. Highest authority for current behavior.
+2. **User's empirical report** — when the user reports observed behavior that contradicts a claim, the user's signal is authoritative. Reframe the model immediately; do not defend the inference.
+3. **Installed source / type defs / migration files** — actual code paths, not just docstrings.
+4. **Vendor / tool documentation** — only when (1)–(3) are unreachable.
+5. **Inference / memory** — only when no verification is possible AND explicitly labeled as such ("I'm inferring because I can't query X").
+
+**Operational rules** — apply to every session:
+
+1. **Auto-merge stays armed on every PR.** Per §15 the default is `enable_pr_auto_merge` in the same MCP burst as `create_pull_request`.
+2. **Verify-before-stack INTERIM workflow** during the GitHub MCP merge-webhook regression. Before opening a follow-up PR or stacking new work, `pull_request_read` the prior PR to verify its merge state. This rule expires when the webhook regression is closed (per AP #62).
+3. **Source hierarchy applied to every claim.** Source 5 (inference) explicitly labeled.
+4. **Pre-phase gate runs before every cutover** per AP #61.
+5. **L99 methodology for every code review** — narrow-scope parallel agents per AP #50, never broad-scope line-by-line.
+6. **Cross-role coverage mandatory** on every user-facing surface per AP #43.
+7. **Doctrine commits to CLAUDE.md require a fresh-context review pass before merge.** Mechanism: open a new chat session, paste the proposed doctrine artifact, ask for structural critique. The reviewer reads only the artifact, not the drafting conversation. This pattern was empirically validated by the Round 1 → Round 2 → Round 3 iteration on this doctrine (2026-05-28) — each round produced correction the previous round missed.
 
 ---
 
