@@ -31,7 +31,11 @@ export function useEventArrivals(eventId) {
 
   useEffect(() => {
     if (!eventId) return;
-    const ch = supabase.channel(`arrivals-${eventId}`)
+    // Unique per-subscription suffix so two hook instances on the same event
+    // (GameDayMode collapsed summary + the expanded ArrivalBoard) don't open
+    // two realtime channels with an identical topic name — that collision
+    // errors the second subscribe and churns the connection.
+    const ch = supabase.channel(`arrivals-${eventId}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'event_arrivals', filter: `event_id=eq.${eventId}` }, fetch)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
