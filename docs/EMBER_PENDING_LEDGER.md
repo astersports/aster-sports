@@ -3717,6 +3717,54 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AO — Wave 2.A audit close + 3 fix-PR routing (2026-05-28)
+
+**Trigger:** Wave 2.A dispatch per §4.AN routing — 5 parallel line-by-line audits (categories #11, #13, #14, #15, #23) per CLAUDE.md §17.8 standing rule with §16.15 2-pass deep-read addendum per agent. AP #50 retired (PR #564) — methodology was line-by-line per category, not surface-dependent.
+
+**Output:** `docs/AUDIT_WAVE_2A_2026-05-28.md` — findings doc + 3 cross-patterns + per-agent reports preserved. AP #45 satisfied by this same-commit ledger entry.
+
+**Wave 2.A headline:** 7 P0 / 15 P1 / 13 P2 / 3 new AP candidates / 0 §17.5 demotions (all 5 categories surfaced real findings).
+
+**3 cross-cutting patterns (AP #58 synthesis):**
+
+1. **Production state diverges from repo state silently** — #11 + #23 independent surface. `feedback-token-handler` deployed without repo source + missing RPC + 8 orphan migrations in DB without mirror files. New AP candidate #63 (deployed-function ledger reconciliation gate).
+2. **Token-handler hardening parity gap** — #11 + #13 + #15 triple-confirmed. `verify_unsubscribe_token` no TTL + no replay + anon EXECUTE; all 3 token-handler HTMLs missing Cache-Control / X-Robots-Tag headers; `team_feed_token` permanent bearer. **Highest-risk concentration in Wave 2.A.**
+3. **Cost / PII amplification via uncapped fan-out** — #13 + #15. `send-tournament-message` no per-admin cap + emails in 403 body; `send-push` unbounded user_ids array; Anthropic-call cost amplification on 2 admin features; `RESEND_API_KEY` in Deno.env (AP #33 suffix regex blind spot).
+
+**Routing — 3 fix PRs dispatched in same turn:**
+
+- **PR — Migration ledger hygiene** (closes #23 P0-1, P0-2 + 3 P1s): backfill 8 orphan mirror files, investigate 2 audit_relkind files, delete 13 stale legacy-numbered files, rename 6 AP #21 violations, update CLAUDE.md §5 counts (5+13 not 5+11).
+- **PR — Token-handler hardening** (closes #15 P0-1 + #11 P1-2 + #13 P1-4): `unsubscribe_token_uses` table + TTL + replay protection in `verify_unsubscribe_token`, REVOKE anon EXECUTE, Cache-Control + X-Robots-Tag headers on all 3 token-handler HTML responses.
+- **PR — Delete `feedback-token-handler`** (closes #11 P0-1): production has a 13th edge function from before PR #509's cutover-feedback revert (2026-05-24). Calls non-existent `verify_feedback_token` RPC — every tap returns "Link expired." Delete via Supabase MCP. No file changes.
+
+**Deferred to next session (need design decisions):**
+
+- **#15 P0-2 — `team_feed_token` rotation surface.** Per-team rotation button on team admin page? Per-org rotation RPC + rotation audit log? Needs admin UI design.
+- **#15 P0-3 — `send-tournament-message` per-admin rate cap.** Quota shape needs design (50/day? 500/day? bucket by user+org+kind?). Plus `pii_audit_log`-style row schema.
+- **AP #63 audit-test extension.** Add `list_edge_functions()` ≡ `readdirSync('supabase/functions')` enforcement to `verifyJwtConfigAudit.test.js`. Bundle with future hygiene PR.
+
+**3 new AP candidates registered (promote on third instance):**
+
+- **AP #63 — Deployed-function ledger reconciliation gate.** Repo and production must match: `list_edge_functions()` ≡ `readdirSync('supabase/functions')`. Same shape needed for migrations: `list_migrations()` ≡ repo migration files. Likely promotes quickly because every new edge function deploy or migration apply exposes the pattern.
+- **AP candidate — PII in 4xx/5xx error bodies.** Functions raise structured errors with PII embedded for debuggability; error bodies leak to Vercel/CDN logs. Pattern surfaced in #13 P1-2 (`send-tournament-message:142` guardian emails in 403 body); P0 for next instance.
+- **AP candidate — Token-handler HTML cache headers.** Any function rendering PII to publicly reachable HTML must declare `Cache-Control: private, no-store` + `X-Robots-Tag: noindex`. MUA preview-bot prefetch can log + index. 3 instances in Wave 2.A (rsvp, callup, unsubscribe).
+
+**Wave 2.A → Wave 2.B handoff:**
+
+Wave 2.B dispatch in next session: #1 perf cold load + #2 warm-cycle nav + #3 bundle/code split. **Anchor:** the 5s home page LCP regression flagged in §4.AN. First thread for the perf agent — likely a specific blocking import (Sentry/PostHog SDK at static-import path? Wave 2.B inspection) or synchronous data-fetch waterfall in `main.jsx` / `AuthContext` / `ProfileGateLayout`.
+
+**AP compliance:**
+
+- AP #21 — fix PRs ship migration mirror files in same commit as MCP apply
+- AP #45 — this §4.AO ledger entry in same commit as `docs/AUDIT_*.md`
+- AP #50 — RETIRED; line-by-line methodology held throughout the 5-agent dispatch
+- AP #54 — fix PRs will ship same-MCP-burst create + ready + auto-merge
+- AP #56 + AP #59 — session contract per Frank's noon directive: doc + 3 P0 fix PRs + close. No cascade into Wave 2.B dispatch this session.
+- AP #58 — cross-batch pattern check applied; 3 CROSS-PATTERNs identified
+- §17.8 — every agent reported §16.15 2-pass cascade-catch findings (Pass 2 yield 30-40% per category)
+
+---
+
 ### §4.AN — Audit-gate lock + AP #50 retirement (2026-05-28)
 
 **Trigger:** Frank's 2026-05-28 directive after Wave 1 close: "full level audit on all of code line by line for the [29] audit categories we just documented so we can move to the next phases with a comfort level of clean code in its current state." Plus: "retire all narrow scope as going forward we want detailed reviews and audits."
