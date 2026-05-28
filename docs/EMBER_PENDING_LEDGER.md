@@ -3717,6 +3717,68 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AL — Wave 1 P0 fix-PR arc + Frank's Q1-Q5 routing (2026-05-28)
+
+**Trigger:** Frank's locked routing decisions in same-day chat following §4.AK Wave 1 findings ship.
+
+**Shipped this turn (3 parallel fix PRs):**
+
+- **PR — DB security migration:** REVOKE PUBLIC+anon on `mint_unsubscribe_token(uuid)`, `sync_opponent_record(uuid)`, `sync_tournament_team_record(uuid,uuid)` (AP #57 active in production); `push_subscriptions.org_id` NOT NULL; `staff_profiles_select_authenticated` policy rewrite from `qual=true` to `(org_id = (SELECT current_user_org_id()))`. Closes Wave 1 P0s #1, #2, #3, #5. Closes Cross-Pattern 2 entirely + 1 of Cross-Pattern 1's 5 surfaces.
+- **PR — Public-schedule org-scoping (Option A):** new `organizations.public_listing_enabled boolean NOT NULL DEFAULT true` + 4 RLS policies rewritten (`events_select_public`, `teams_select_public`, `tournaments_select_public`, `tournament_teams_select_public`) to scope via the gating column. Closes Wave 1 P0 #4. Unblocks second-tenant cutover for the public schedule surface.
+- **PR — Doctrine reconciliation (this PR):** §8 prompt 7-A rewrite to current DB reality (164 accounts / 3 seasons / $166,910 billed / May-6 wave noted as retrospective Fall import); §5 ghost-migration count updated to 16 ghosts + 30 orphans with hygiene PR deferred; §11.5 exception table widened to include `PlayerRow.jsx:59-62`; `LEGACY_HOOPERS_ORG_ID` dead constant deleted from `src/lib/constants.js`. Closes Wave 1 P0s #7 + #10. AP #45 satisfied by this same-commit ledger entry.
+
+**Q1-Q5 routing closures:**
+
+- **Q1 (PR 4 gating shape):** ✓ Option A locked (per-org boolean column).
+- **Q2 (May-6 import wave):** ✓ Frank confirmed intentional retrospective Fall 2025 top-up for families who joined Spring 2026 first.
+- **Q3 (DeMasi):** ✓ Xanthi real co-guardian — drop orphan-merge claim. Wave 1 P0 #8 resolved no-op.
+- **Q4 (KHOJASTEH):** ✓ family correctly modeled. Spot-check (Aubtin Khojasteh, player_id `fa384908-7441-447d-b23a-eea152b37a59`): both parents (Anjella Teimoori mom, Sarmad KHOJASTEH dad) linked via `player_guardians` with `is_primary=true relationship='parent'`; financial_accounts all on mom (3 accounts: Fall 2025 $1,300, Winter 2025-26 $750, Spring 2026 $1,320 — all paid in full); both parents have `user_id=NULL` (onboarding-link pending). Wave 1 P0 #9 resolved no-op (was false-positive — agent's dedup query didn't traverse player_guardians).
+- **Q5 (coach_payouts):** ✓ reframed P0 → P1 build item. See "New P1 build item" below.
+
+**New P1 build item — coach_payouts pipeline:**
+
+Build a ledger system to track coach pay (payment itself remains external — Zelle/ACH from the Legacy Hoopers bank account; the system records the ledger only).
+
+- Data model: per-coach pay rate. Frank's example shapes (final shape is a spec-session decision):
+  - Session-by-session: $60 head coach / $30 assistant per session worked
+  - OR flat-fee per team per season
+  - Plus optional tournament-championship bonus
+- Admin UI: record session pay or flat fee + bonus per coach per season
+- Report surface: coach view (their own earnings) + admin view (all coach payouts) + financial dashboard integration
+- Spec session needed before build — flat vs session vs hybrid is the open routing question.
+
+**New P1 onboarding finding:**
+
+Aubtin Khojasteh's family Q4 spot-check surfaced both parents with `guardians.user_id IS NULL` — neither parent has linked a Supabase auth account to their guardian row. Likely a broader pattern across imported families (which would explain why parent-side UI traffic is minimal). Route to §17.4 backlog "Onboarding pipeline (bulk-invite + QR + status column + PWA install prompt + push opt-in promo)" as a confirming data point. Worth a one-query audit at next session open: `SELECT COUNT(*) FILTER (WHERE user_id IS NULL), COUNT(*) FROM guardians WHERE org_id = '<legacy_hoopers_id>';`
+
+**Still-open from Wave 1 (Wave 2 routing):**
+
+- P0 #6 (coach_payouts data gap) → resolved by reframe to P1 build item above
+- P1s from §4.AK: `useMapsUrl.js:38` org_id filter; `user_roles_user_id_key` shape; 33 unindexed FKs; `invite-parent` edge function org-blind admin check; `roster_members` UNIQUE missing season_id; financial-table cascade-action decisions; AP #29 token-handler re-audit; app_secrets + event_reminder_log policy pinning
+- P2s deferred to Wave 2/3 per §4.AK roadmap
+
+**AP compliance:**
+
+- AP #21: 2 migration mirror files written in same turn as MCP apply, both with canonical version strings matching DB-registered versions (DB security migration + public-listing migration)
+- AP #45: this §4.AL ledger entry shipped in same commit as the CLAUDE.md doctrine changes (which trigger the `docs/AUDIT_*.md` glob through the audit-doc cross-reference)
+- AP #49: full doc body in PR description + chat-side context in dispatching session
+- AP #54: all 3 fix PRs shipped same-MCP-burst ready + auto-merge per session-opener prompt discipline
+- AP #56 + #59: session contract held — 4-PR ship + ledger, no audit-cycle generation
+
+**Wave 1 P0 closure scoreboard (10 P0s identified in §4.AK):**
+
+- ✓ #1, #2, #3, #5: DB security migration PR
+- ✓ #4: Public-schedule org-scoping PR
+- ✓ #7: §8 financial state rewrite (this PR)
+- ✓ #8: resolved no-op (Q3)
+- ✓ #9: resolved no-op (Q4 false-positive)
+- ✓ #10: §11.5 exception widening (this PR)
+- ⇒ #6: reframed P1 (Q5 coach_payouts build spec) — closed for cutover purposes; build pending
+
+**10/10 P0s closed for cutover gate.** Multi-tenant cutover unblocked pending PR landing + post-merge verification.
+
+---
+
 ### §4.AK — Wave 1 pre-cutover audit dispatch + findings (2026-05-28)
 
 **Trigger:** PLATFORM_PRIORITIES.md §17.6 Wave 1 contract. Session opened
