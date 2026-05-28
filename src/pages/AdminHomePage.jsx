@@ -68,7 +68,11 @@ export default function AdminHomePage() {
   // too early, leaving stats/alerts/signals to populate in cascade
   // (Frank-reported 2026-05-20). Waits on the slowest signal: page
   // stays blank ~200-400ms longer but the layered flash stops.
-  const isLoading = activitiesLoading || alertsLoading || adminActionLoading || pendingLanesLoading;
+  // Wave 2.B Batch 1 (#1 P0-2): alertsLoading dropped from the gate —
+  // AlertZone (variant="always_visible") renders its own shape-matched
+  // skeleton when loading, so blocking the whole page on it costs LCP
+  // without preventing layout flash.
+  const isLoading = activitiesLoading || adminActionLoading || pendingLanesLoading;
   if (isLoading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   // overflow-x-hidden + max-w-full on the page wrapper is defense in

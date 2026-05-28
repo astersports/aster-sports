@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
 import RequireAuth from './components/layout/RequireAuth';
 import { useRouteMemory } from './hooks/useRouteMemory';
@@ -42,15 +42,17 @@ const Protected = ({ children, allowedRoles }) => (
 );
 
 function PageTransition({ children }) {
-  const location = useLocation();
   // Persist last route on hide + restore on PWA cold-launch (start_url is /).
   // See src/hooks/useRouteMemory.js for the design rationale.
   useRouteMemory();
-  return (
-    <div key={location.pathname}>
-      {children}
-    </div>
-  );
+  // Wave 2.B Batch 1 (#2 P0-1): removed `key={location.pathname}` wrapper.
+  // Originally added in 531e07a (Apr 12, 2026) as a "fade on route change"
+  // hook — but the fade CSS class (em-fade-in) was never wired to this
+  // div, so the key was forcing full subtree remount (AppShell + Header +
+  // BottomNav + every realtime channel) on every nav for zero visible
+  // effect. Single largest INP regression closure. Wrapper preserved so
+  // useRouteMemory() still runs; routes now reconcile in place.
+  return <>{children}</>;
 }
 
 export default function App() {
