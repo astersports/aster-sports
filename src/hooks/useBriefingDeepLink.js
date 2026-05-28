@@ -28,7 +28,12 @@
 import { useCallback } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 
-const PARAM_KEYS = ['anchor', 'id', 'kind', 'draft', 'anchor_kind', 'anchor_id', 'draft_id'];
+// Deep-link params consumed once on mount so a refresh/back after close
+// doesn't re-pop the composer. `draft` / `draft_id` are intentionally
+// EXCLUDED — they're the resume signal (BriefingComposer writes the
+// autosave id back to the URL as ?draft=<id> so a PWA cold-launch via
+// useRouteMemory can rehydrate the in-progress draft).
+const PARAM_KEYS = ['anchor', 'id', 'kind', 'anchor_kind', 'anchor_id'];
 
 // Pure parser — exported for unit-test coverage without React. Pass a
 // pathname string and a URLSearchParams instance.

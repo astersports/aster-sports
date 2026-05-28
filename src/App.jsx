@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
 import RequireAuth from './components/layout/RequireAuth';
+import { useRouteMemory } from './hooks/useRouteMemory';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
@@ -42,6 +43,9 @@ const Protected = ({ children, allowedRoles }) => (
 
 function PageTransition({ children }) {
   const location = useLocation();
+  // Persist last route on hide + restore on PWA cold-launch (start_url is /).
+  // See src/hooks/useRouteMemory.js for the design rationale.
+  useRouteMemory();
   return (
     <div key={location.pathname}>
       {children}
