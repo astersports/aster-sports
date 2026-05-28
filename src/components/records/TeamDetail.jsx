@@ -16,8 +16,8 @@ export default function TeamDetail({ team, summary }) {
     <div style={{ padding: '12px 20px 20px', background: 'rgba(14,30,51,0.5)', borderLeft: `4px solid ${team.team_color}`, borderRadius: '0 0 10px 10px', marginTop: -1 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, textAlign: 'center', marginBottom: 16, background: '#0e1e33', borderRadius: 10, padding: '12px 8px', border: '1px solid rgba(74,143,212,0.18)' }}>
         <Stat n={fmt1(s.ppg)} l="PPG" color={team.team_color} />
-        <Stat n={fmt1(s.allowed)} l="Allowed" color="var(--sf-bc-green)" />
-        <Stat n={s.diff > 0 ? `+${fmt1(s.diff)}` : fmt1(s.diff)} l="Diff" color={s.diff >= 0 ? 'var(--sf-bc-green)' : 'var(--sf-bc-red)'} />
+        <Stat n={fmt1(s.allowed)} l="Allowed" color="var(--em-bc-green)" />
+        <Stat n={s.diff > 0 ? `+${fmt1(s.diff)}` : fmt1(s.diff)} l="Diff" color={s.diff >= 0 ? 'var(--em-bc-green)' : 'var(--em-bc-red)'} />
         <Stat n={`${s.winPct}%`} l="Win %" color="#fff" />
         <Stat n={s.gamesPlayed} l="Games" color="#fff" />
       </div>

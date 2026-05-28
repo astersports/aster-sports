@@ -1,5 +1,5 @@
 // Geocode an address via Nominatim (OpenStreetMap). Free, no API key required.
-// Rate limit: 1 request/second per their ToS. Skyfire's usage stays well under.
+// Rate limit: 1 request/second per their ToS. Ember's usage stays well under.
 // Returns { lat, lon } or null if not found / on error.
 
 export async function geocodeAddress(address) {

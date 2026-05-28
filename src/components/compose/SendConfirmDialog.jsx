@@ -51,7 +51,7 @@ export default function SendConfirmDialog({
     <ModalBackground onClick={() => { if (!sending) onClose(); }} zIndex={9998}>
       <div
         ref={trapRef}
-        className="sf-fade-in"
+        className="em-fade-in"
         onClick={(e) => e.stopPropagation()}
         role="dialog" aria-modal="true" aria-labelledby="send-confirm-title"
         style={{

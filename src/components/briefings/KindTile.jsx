@@ -74,7 +74,7 @@ export default function KindTile({ kind, meta, usage, disabled = false, onClick 
       disabled={disabled}
       aria-disabled={disabled}
       aria-label={`${meta?.label || kind}: ${meta?.description || ''}`}
-      className={interactive ? 'sf-press kind-tile' : 'kind-tile'}
+      className={interactive ? 'em-press kind-tile' : 'kind-tile'}
       style={style}
     >
       <span style={iconWrap}>

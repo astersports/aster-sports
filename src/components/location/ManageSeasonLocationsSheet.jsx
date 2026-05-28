@@ -43,8 +43,8 @@ export default function ManageSeasonLocationsSheet({ seasonId, seasonName, onClo
   return (
     <FullScreenForm open={true} onClose={onClose} title={`Manage Locations · ${seasonName}`}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <button type="button" onClick={selectAll} className="sf-press" style={chipBtn}>Select all</button>
-        <button type="button" onClick={clearAll} className="sf-press" style={chipBtn}>Clear</button>
+        <button type="button" onClick={selectAll} className="em-press" style={chipBtn}>Select all</button>
+        <button type="button" onClick={clearAll} className="em-press" style={chipBtn}>Clear</button>
         <span style={{ marginLeft: 'auto', alignSelf: 'center', fontSize: 13, color: 'var(--em-text-tertiary)' }}>
           {selected.size} of {locations.length} selected
         </span>
@@ -61,7 +61,7 @@ export default function ManageSeasonLocationsSheet({ seasonId, seasonName, onClo
           {locations.map((l, i) => {
             const on = selected.has(l.id);
             return (
-              <button key={l.id} type="button" onClick={() => toggle(l.id)} className="sf-press"
+              <button key={l.id} type="button" onClick={() => toggle(l.id)} className="em-press"
                 aria-label={`${on ? 'Remove' : 'Add'} ${l.name}`}
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center', gap: 12,

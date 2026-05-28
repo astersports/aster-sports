@@ -35,7 +35,7 @@ export default function ActiveSeasonCard({ season }) {
         </div>
         <Link
           to="/admin/seasons"
-          className="inline-flex items-center sf-press font-semibold"
+          className="inline-flex items-center em-press font-semibold"
           style={{
             minHeight: 44, padding: '0 16px', borderRadius: 10,
             backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15,
@@ -51,7 +51,7 @@ export default function ActiveSeasonCard({ season }) {
   return (
     <Link
       to="/admin/seasons"
-      className="block p-4 sf-press"
+      className="block p-4 em-press"
       style={{
         backgroundColor: 'var(--em-bg-card)',
         borderRadius: 10,

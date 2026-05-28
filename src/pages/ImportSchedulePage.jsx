@@ -95,7 +95,7 @@ export default function ImportSchedulePage() {
           <div style={{ fontSize: 14, color: 'var(--em-text-secondary)', marginBottom: 16 }}>
             {im.lastCommit?.inserted || 0} new · {im.lastCommit?.updated || 0} updated
           </div>
-          <button type="button" onClick={im.reset} className="sf-press"
+          <button type="button" onClick={im.reset} className="em-press"
             style={{ minHeight: 44, padding: '0 24px', borderRadius: 10, border: '1px solid var(--em-accent)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
             Import another
           </button>

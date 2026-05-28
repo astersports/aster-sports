@@ -86,7 +86,7 @@ export default function AdminMembersPage() {
               <button
                 type="button"
                 onClick={() => openEdit(g)}
-                className="w-full text-left sf-press"
+                className="w-full text-left em-press"
                 style={{ padding: 16, background: 'none', border: 'none', cursor: 'pointer', display: 'block' }}
               >
               <div className="flex items-center justify-between mb-1">

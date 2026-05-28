@@ -35,7 +35,7 @@ export default function MessageThread({ channel, onBack }) {
         borderBottom: '1px solid var(--em-border-default)',
       }}>
         <button
-          type="button" onClick={onBack} className="sf-press" aria-label="Back to channels"
+          type="button" onClick={onBack} className="em-press" aria-label="Back to channels"
           style={{
             width: 36, height: 36, borderRadius: 10, border: 'none',
             backgroundColor: 'var(--em-bg-secondary)', display: 'flex',

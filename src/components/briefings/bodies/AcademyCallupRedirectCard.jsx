@@ -56,7 +56,7 @@ export default function AcademyCallupRedirectCard() {
         ))}
       </ol>
       <p style={trailing}>The compose flow opens automatically with the right context.</p>
-      <button type="button" onClick={() => navigate('/schedule')} className="sf-press" style={btn} aria-label="Open schedule">
+      <button type="button" onClick={() => navigate('/schedule')} className="em-press" style={btn} aria-label="Open schedule">
         <Calendar size={16} strokeWidth={1.75} aria-hidden="true" />
         Open Schedule
         <ArrowRight size={16} strokeWidth={1.75} aria-hidden="true" />

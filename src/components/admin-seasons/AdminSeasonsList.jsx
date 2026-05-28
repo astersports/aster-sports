@@ -43,7 +43,7 @@ export default function AdminSeasonsList({ seasons, loading, onEdit, onRequestSe
             <button
               type="button"
               onClick={() => onEdit(s)}
-              className="w-full text-left p-4 sf-press flex flex-col"
+              className="w-full text-left p-4 em-press flex flex-col"
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 17 }}>
@@ -59,7 +59,7 @@ export default function AdminSeasonsList({ seasons, loading, onEdit, onRequestSe
               <button
                 type="button"
                 onClick={() => onRequestSetActive(s)}
-                className="flex items-center gap-1 sf-press w-full"
+                className="flex items-center gap-1 em-press w-full"
                 style={{
                   minHeight: 44,
                   padding: '0 16px',

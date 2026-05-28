@@ -6,7 +6,7 @@
 -- This stub documents the migration. The full SQL (668 lines, 130KB) was executed
 -- directly in the Supabase SQL Editor in 4 chunks A/B/C/D with per-chunk verification.
 -- The canonical full migration is archived in chat history and in the audit trail
--- at SKYFIRE_BUILD_QUEUE_v2.md.
+-- at EMBER_BUILD_QUEUE_v2.md.
 --
 -- WHAT MIGRATION 024 DID:
 --   1. Schema additions:

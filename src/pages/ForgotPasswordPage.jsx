@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="sf-fullscreen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--em-header)' }}>
+    <div className="em-fullscreen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--em-header)' }}>
       <div className="w-full text-center" style={{ maxWidth: 400, backgroundColor: 'var(--em-bg-card)', borderRadius: 16, padding: 28, boxShadow: 'var(--em-shadow-lg)' }}>
         <div className="inline-flex items-center justify-center mb-4" style={{ width: 72, height: 72, borderRadius: '50%', backgroundColor: sent ? 'var(--em-success-soft)' : 'var(--em-accent-soft)', color: sent ? 'var(--em-success)' : 'var(--em-accent)' }} aria-hidden="true">
           {sent ? <CheckCircle2 size={32} strokeWidth={1.75} /> : <KeyRound size={32} strokeWidth={1.75} />}

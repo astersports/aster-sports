@@ -51,7 +51,7 @@ export default function RecognitionCard({ achievements, nowMs }) {
             key={a.id}
             to={`/teams/${a.team_id}`}
             aria-label={`Recognition: ${title}`}
-            className="sf-press"
+            className="em-press"
             style={{
               display: 'block',
               padding: 14,

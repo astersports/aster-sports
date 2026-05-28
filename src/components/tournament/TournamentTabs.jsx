@@ -26,7 +26,7 @@ export default function TournamentTabs({ active, onChange }) {
             aria-selected={isActive}
             aria-controls={`tab-panel-${t.value}`}
             onClick={() => onChange(t.value)}
-            className="sf-press"
+            className="em-press"
             style={{
               minHeight: 44, padding: '10px 16px', border: 'none',
               borderBottom: `2px solid ${isActive ? 'var(--em-accent)' : 'transparent'}`,

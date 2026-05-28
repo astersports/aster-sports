@@ -138,7 +138,7 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
         {state.step === 3 && <StepBodySignoff state={state} dispatch={dispatch} audience={audience} hasParentTournament={hasParentTournament} onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose} />}
         {state.step === STEPS.length && <StepSendConfirm state={state} audience={audience} onSend={onSend} sending={busy} pilotModeEnabled={pilotModeEnabled} />}
         {state.step < STEPS.length && (
-          <button type="button" disabled={!canGo} onClick={() => dispatch({ type: 'GO_FORWARD' })} className="sf-press" style={{ minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: canGo ? 'var(--em-accent)' : 'var(--em-bg-tertiary)', color: canGo ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)', fontSize: 15, fontWeight: 600, cursor: canGo ? 'pointer' : 'default' }}>
+          <button type="button" disabled={!canGo} onClick={() => dispatch({ type: 'GO_FORWARD' })} className="em-press" style={{ minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: canGo ? 'var(--em-accent)' : 'var(--em-bg-tertiary)', color: canGo ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)', fontSize: 15, fontWeight: 600, cursor: canGo ? 'pointer' : 'default' }}>
             Next
           </button>
         )}

@@ -29,7 +29,7 @@ export default function PastEventsSection({ activities, rsvpCounts, rideCounts, 
 
   return (
     <div style={{ marginTop: 12 }}>
-      <button type="button" onClick={() => setOpen((v) => !v)} className="sf-press"
+      <button type="button" onClick={() => setOpen((v) => !v)} className="em-press"
         aria-expanded={open}
         style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '4px 0', minHeight: 44, background: 'none', border: 'none', cursor: 'pointer' }}>
         <ChevronRight size={14} strokeWidth={1.75} color="var(--em-text-tertiary)"

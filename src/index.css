@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ─── Skyfire design tokens ─────────────────────────────────
+/* ─── Ember design tokens ─────────────────────────────────
  * All components reference these via var(--em-*). Brand tokens are
  * re-set at runtime from organizations.brand_colors inside AuthContext,
  * so the same markup theme-flips per org.
@@ -39,7 +39,7 @@
   --em-academy:        #7C3AED;
   --em-academy-soft:   rgba(124, 58, 237, 0.1);
 
-  /* ─── Brand (Skyfire defaults — overridden per org at runtime) ─── */
+  /* ─── Brand (Ember defaults — overridden per org at runtime) ─── */
   --em-header:         #151525;
   --em-accent:         #C9952E;
   --em-accent-hover:   #D4A843;
@@ -79,7 +79,7 @@ html, body         {
  * <main> is the sole scroll container. 100vh is the fallback for older
  * iOS Safari; the 100dvh rule below overrides it on supporting browsers
  * so the layout tracks the URL bar show/hide without content jumping. */
-.sf-app-shell {
+.em-app-shell {
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
@@ -87,9 +87,9 @@ html, body         {
 
 /* Standalone full-height page (Login, ForgotPassword, Unauthorized).
  * Uses min-height so content can grow when the iOS soft keyboard opens,
- * unlike sf-app-shell which is strictly bounded. Double declaration is
+ * unlike em-app-shell which is strictly bounded. Double declaration is
  * the CSS cascade fallback for pre-iOS 15.4 Safari. */
-.sf-fullscreen {
+.em-fullscreen {
   min-height: 100vh;
   min-height: 100dvh;
 }
@@ -104,27 +104,27 @@ body {
 }
 
 /* ─── Keyframes ─────────────────────────────────────────────
- * All 8 Skyfire animations. Applied only when the user hasn't
+ * All 8 Ember animations. Applied only when the user hasn't
  * requested reduced motion (see wrapping media query below).
  */
-@keyframes sf-pulse {
+@keyframes em-pulse {
   0%, 100% { opacity: 0.4; }
   50%      { opacity: 0.7; }
 }
-@keyframes sf-fade-in {
+@keyframes em-fade-in {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes sf-pulse-dot {
+@keyframes em-pulse-dot {
   0%, 100% { transform: scale(1);   opacity: 1;   }
   50%      { transform: scale(1.4); opacity: 0.6; }
 }
-@keyframes sf-bounce-tap {
+@keyframes em-bounce-tap {
   0%   { transform: scale(1);    }
   40%  { transform: scale(0.95); }
   100% { transform: scale(1);    }
 }
-@keyframes sf-fill-grow {
+@keyframes em-fill-grow {
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }
 }
@@ -140,7 +140,7 @@ body {
   from { opacity: 0; transform: translate(-50%, 12px); }
   to   { opacity: 1; transform: translate(-50%, 0);    }
 }
-@keyframes sf-bell-shake {
+@keyframes em-bell-shake {
   0%, 100% { transform: rotate(0deg); }
   20% { transform: rotate(12deg); }
   40% { transform: rotate(-10deg); }
@@ -149,25 +149,25 @@ body {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .sf-pulse      { animation: sf-pulse      1.5s ease-in-out infinite; }
-  .sf-fade-in    { animation: sf-fade-in    0.4s ease-out both; }
-  .sf-pulse-dot  { animation: sf-pulse-dot  2s   ease-in-out infinite; }
-  .sf-bounce-tap { animation: sf-bounce-tap 0.3s ease-out; }
-  .sf-fill-grow  { animation: sf-fill-grow  0.6s ease-out both; transform-origin: left; }
-  .sf-card-expand{ animation: card-expand   0.25s ease-out both; }
-  .sf-sheet-rise { animation: sheet-rise    0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-  .sf-toast-enter{ animation: toast-enter   0.25s ease-out both; }
-  .sf-stagger-1 { animation: sf-fade-in 0.3s ease-out 0.05s both; }
-  .sf-stagger-2 { animation: sf-fade-in 0.3s ease-out 0.1s both; }
-  .sf-stagger-3 { animation: sf-fade-in 0.3s ease-out 0.15s both; }
-  .sf-stagger-4 { animation: sf-fade-in 0.3s ease-out 0.2s both; }
-  .sf-stagger-5 { animation: sf-fade-in 0.3s ease-out 0.25s both; }
-  .sf-stagger-6 { animation: sf-fade-in 0.3s ease-out 0.3s both; }
-  .sf-stagger-7 { animation: sf-fade-in 0.3s ease-out 0.35s both; }
-  .sf-stagger-8 { animation: sf-fade-in 0.3s ease-out 0.4s both; }
-  .sf-bell-shake { animation: sf-bell-shake 0.6s ease-out; }
+  .em-pulse      { animation: em-pulse      1.5s ease-in-out infinite; }
+  .em-fade-in    { animation: em-fade-in    0.4s ease-out both; }
+  .em-pulse-dot  { animation: em-pulse-dot  2s   ease-in-out infinite; }
+  .em-bounce-tap { animation: em-bounce-tap 0.3s ease-out; }
+  .em-fill-grow  { animation: em-fill-grow  0.6s ease-out both; transform-origin: left; }
+  .em-card-expand{ animation: card-expand   0.25s ease-out both; }
+  .em-sheet-rise { animation: sheet-rise    0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+  .em-toast-enter{ animation: toast-enter   0.25s ease-out both; }
+  .em-stagger-1 { animation: em-fade-in 0.3s ease-out 0.05s both; }
+  .em-stagger-2 { animation: em-fade-in 0.3s ease-out 0.1s both; }
+  .em-stagger-3 { animation: em-fade-in 0.3s ease-out 0.15s both; }
+  .em-stagger-4 { animation: em-fade-in 0.3s ease-out 0.2s both; }
+  .em-stagger-5 { animation: em-fade-in 0.3s ease-out 0.25s both; }
+  .em-stagger-6 { animation: em-fade-in 0.3s ease-out 0.3s both; }
+  .em-stagger-7 { animation: em-fade-in 0.3s ease-out 0.35s both; }
+  .em-stagger-8 { animation: em-fade-in 0.3s ease-out 0.4s both; }
+  .em-bell-shake { animation: em-bell-shake 0.6s ease-out; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .sf-spin { animation: spin 0.6s linear infinite; }
+  .em-spin { animation: spin 0.6s linear infinite; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -177,16 +177,16 @@ body {
 }
 
 /* Smooth height-auto collapsible via grid-template-rows trick. */
-.sf-collapsible {
+.em-collapsible {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 300ms ease-out;
 }
-.sf-collapsible[data-open="true"] { grid-template-rows: 1fr; }
-.sf-collapsible > .sf-collapsible-inner { overflow: hidden; min-height: 0; }
+.em-collapsible[data-open="true"] { grid-template-rows: 1fr; }
+.em-collapsible > .em-collapsible-inner { overflow: hidden; min-height: 0; }
 
 /* Sticky filter bar with blur. */
-.sf-sticky-filters {
+.em-sticky-filters {
   position: sticky;
   top: 0;
   z-index: 30;
@@ -197,19 +197,19 @@ body {
 }
 
 /* Tap press feedback. */
-.sf-press { transition: transform 200ms ease-out; }
-.sf-press:active { transform: scale(0.97); }
+.em-press { transition: transform 200ms ease-out; }
+.em-press:active { transform: scale(0.97); }
 
 /* Countdown urgency colors per HOME_DESIGN_SPEC §1.1.4 lines 299-303.
  * Default (24h+) is the org accent; <24h muted; <6h success; <1h danger. */
-.sf-countdown    { color: var(--em-accent); }
-.sf-urgency-24h  { color: var(--em-text-tertiary); }
-.sf-urgency-6h   { color: var(--em-success); }
-.sf-urgency-1h   { color: var(--em-danger); }
+.em-countdown    { color: var(--em-accent); }
+.em-urgency-24h  { color: var(--em-text-tertiary); }
+.em-urgency-6h   { color: var(--em-success); }
+.em-urgency-1h   { color: var(--em-danger); }
 
 /* Hide native scrollbars on horizontal scrollers (day strip, pill rows). */
-.sf-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-.sf-no-scrollbar::-webkit-scrollbar { display: none; }
+.em-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.em-no-scrollbar::-webkit-scrollbar { display: none; }
 
 /* Focus visibility for keyboard navigation */
 *:focus-visible {

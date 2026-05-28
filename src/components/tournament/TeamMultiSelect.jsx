@@ -61,7 +61,7 @@ export default function TeamMultiSelect({ selectedIds = [], onChange }) {
               key={t.id}
               type="button"
               onClick={() => toggle(t.id)}
-              className="sf-press"
+              className="em-press"
               aria-pressed={selected}
               aria-label={`${selected ? 'Deselect' : 'Select'} ${t.name}`}
               style={{

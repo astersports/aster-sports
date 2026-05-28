@@ -57,7 +57,7 @@ export default function PreviewTable({ rows, validation, dedup, canCommit, onUpd
           (80px tall + safe-area-inset-bottom). zIndex 40 keeps it
           above content but below BottomNav (z-50). */}
       <div style={{ position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0, padding: '12px 16px', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)', boxShadow: '0 -2px 6px rgba(0,0,0,0.08)', zIndex: 40, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-        <button type="button" onClick={onCommit} disabled={!canCommit || committing} className="sf-press"
+        <button type="button" onClick={onCommit} disabled={!canCommit || committing} className="em-press"
           style={{ minHeight: 44, padding: '0 24px', borderRadius: 10, border: 'none', backgroundColor: canCommit ? 'var(--em-accent)' : 'var(--em-bg-tertiary)', color: canCommit ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)', fontSize: 15, fontWeight: 600, cursor: canCommit ? 'pointer' : 'not-allowed' }}>
           {committing ? 'Committing…' : `Commit ${dedup.new + dedup.updated} events`}
         </button>

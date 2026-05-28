@@ -98,7 +98,7 @@ export default function ActionZone({ items, loading, sectionKey = 'action-zone' 
           >
             <Link
               to={href}
-              className="sf-press"
+              className="em-press"
               style={{
                 display: 'block',
                 padding: '12px 14px',

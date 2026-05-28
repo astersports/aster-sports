@@ -16,7 +16,7 @@ export default function EmptyState({ kind, onCompose, onViewHistory, onClearFilt
         <FileText size={56} strokeWidth={1.25} style={iconStyle} />
         <div style={titleStyle}>No drafts in progress</div>
         <div style={bodyStyle}>Tap Compose to start one.</div>
-        {onCompose && <button type="button" onClick={onCompose} className="sf-press" style={btnGhost}>Compose →</button>}
+        {onCompose && <button type="button" onClick={onCompose} className="em-press" style={btnGhost}>Compose →</button>}
       </div>
     );
   }
@@ -27,8 +27,8 @@ export default function EmptyState({ kind, onCompose, onViewHistory, onClearFilt
         <div style={titleStyle}>All caught up</div>
         <div style={bodyStyle}>Nothing needs your attention right now.</div>
         <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-          {onCompose && <button type="button" onClick={onCompose} className="sf-press" style={btnGhost}>Schedule next week's digest →</button>}
-          {onViewHistory && <button type="button" onClick={onViewHistory} className="sf-press" style={btnGhost}>Review history →</button>}
+          {onCompose && <button type="button" onClick={onCompose} className="em-press" style={btnGhost}>Schedule next week's digest →</button>}
+          {onViewHistory && <button type="button" onClick={onViewHistory} className="em-press" style={btnGhost}>Review history →</button>}
         </div>
       </div>
     );
@@ -38,7 +38,7 @@ export default function EmptyState({ kind, onCompose, onViewHistory, onClearFilt
       <div style={wrap}>
         <Mail size={56} strokeWidth={1.25} style={iconStyle} />
         <div style={titleStyle}>No briefings sent yet</div>
-        {onCompose && <button type="button" onClick={onCompose} className="sf-press" style={btnGhost}>Compose your first briefing →</button>}
+        {onCompose && <button type="button" onClick={onCompose} className="em-press" style={btnGhost}>Compose your first briefing →</button>}
       </div>
     );
   }
@@ -46,7 +46,7 @@ export default function EmptyState({ kind, onCompose, onViewHistory, onClearFilt
     <div style={wrap}>
       <Filter size={56} strokeWidth={1.25} style={iconStyle} />
       <div style={titleStyle}>No briefings match these filters</div>
-      {onClearFilters && <button type="button" onClick={onClearFilters} className="sf-press" style={btnGhost}>Clear filters</button>}
+      {onClearFilters && <button type="button" onClick={onClearFilters} className="em-press" style={btnGhost}>Clear filters</button>}
     </div>
   );
 }

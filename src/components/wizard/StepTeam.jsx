@@ -30,7 +30,7 @@ export default function StepTeam({ orgId, value, onSelect }) {
               key={t.id}
               type="button"
               onClick={() => onSelect(t.id)}
-              className="sf-press"
+              className="em-press"
               style={{
                 minHeight: 56, borderRadius: 10,
                 border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',

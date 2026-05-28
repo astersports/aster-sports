@@ -53,11 +53,11 @@ export default function RecordsPage() {
     <div className="bc-root" style={{ minHeight: 'auto', paddingBottom: 80 }}>
       <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 16px 0' }}>
         <AdminBackHeader />
-        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 4 }}>
+        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--em-bc-cobalt)', marginBottom: 4 }}>
           Spring 2026 · {org?.display_name || org?.name || ''}
         </div>
         <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1, marginBottom: 4 }}>
-          THE <span style={{ color: 'var(--sf-bc-cobalt)' }}>RECORDS</span>
+          THE <span style={{ color: 'var(--em-bc-cobalt)' }}>RECORDS</span>
         </h1>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
           {[`${teams.length} Teams`, `${totalGames} Games`].map((t) => (
@@ -73,9 +73,9 @@ export default function RecordsPage() {
         ]} />
       </div>
       <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>All Teams</div>
+        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--em-bc-cobalt)', marginBottom: 8 }}>All Teams</div>
         <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1.05, marginBottom: 16 }}>
-          SEASON <span style={{ color: 'var(--sf-bc-cobalt)' }}>RECORDS</span>
+          SEASON <span style={{ color: 'var(--em-bc-cobalt)' }}>RECORDS</span>
         </h2>
         <div role="status" aria-live="polite" aria-atomic="true" style={{ position: 'absolute', left: -9999, width: 1, height: 1, overflow: 'hidden' }}>
           {teamsLoading ? 'Loading records...' : `Loaded ${teams.length} teams.`}
@@ -92,9 +92,9 @@ export default function RecordsPage() {
         ))}
         {tournaments.length > 0 && (
           <div style={{ marginTop: 32 }}>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sf-bc-cobalt)', marginBottom: 8 }}>Tournaments</div>
+            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--em-bc-cobalt)', marginBottom: 8 }}>Tournaments</div>
             <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1.05, marginBottom: 16 }}>
-              RUN OF <span style={{ color: 'var(--sf-bc-cobalt)' }}>PLAY</span>
+              RUN OF <span style={{ color: 'var(--em-bc-cobalt)' }}>PLAY</span>
             </h2>
             {tournaments.map((t) => <TournamentCard key={t.id} tournament={t} />)}
           </div>

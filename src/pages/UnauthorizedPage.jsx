@@ -6,7 +6,7 @@ import { ShieldAlert } from 'lucide-react';
 export default function UnauthorizedPage() {
   return (
     <div
-      className="sf-fullscreen flex items-center justify-center p-6"
+      className="em-fullscreen flex items-center justify-center p-6"
       style={{ backgroundColor: 'var(--em-bg-page)' }}
     >
       <div className="text-center" style={{ maxWidth: 360 }}>
@@ -34,7 +34,7 @@ export default function UnauthorizedPage() {
         </p>
         <Link
           to="/"
-          className="inline-flex items-center justify-center font-semibold sf-press"
+          className="inline-flex items-center justify-center font-semibold em-press"
           style={{
             minHeight: 44,
             padding: '0 20px',

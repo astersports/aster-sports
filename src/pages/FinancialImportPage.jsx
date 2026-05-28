@@ -40,7 +40,7 @@ export default function FinancialImportPage() {
 
   return (
     <div style={{ padding: '16px 16px 80px' }}>
-      <button type="button" onClick={() => navigate('/admin/financials')} className="sf-press" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
+      <button type="button" onClick={() => navigate('/admin/financials')} className="em-press" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back to Financials
       </button>
       <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', marginBottom: 16 }}>Import LeagueApps Data</h1>

@@ -83,7 +83,7 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
       {isStaff && ctaKind && <ComposeAnchorCta anchorKind="tournament" anchor={tournament} kind={ctaKind} />}
       {isStaff && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button onClick={() => setEditing(true)} className="sf-press" aria-label="Edit tournament" style={{
+          <button onClick={() => setEditing(true)} className="em-press" aria-label="Edit tournament" style={{
             minHeight: 40, padding: '0 14px', borderRadius: 10,
             border: '1.5px solid var(--em-border-default)',
             backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
@@ -93,7 +93,7 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
             <Edit2 size={14} strokeWidth={1.75} /> Edit
           </button>
           <Link to={`/admin/briefings/compose?anchor=tournament&id=${tournament.id}`}
-            aria-label="Send briefing about this tournament" className="sf-press"
+            aria-label="Send briefing about this tournament" className="em-press"
             style={{
               minHeight: 44, padding: '0 14px', borderRadius: 10,
               border: '1.5px solid var(--em-border-default)',

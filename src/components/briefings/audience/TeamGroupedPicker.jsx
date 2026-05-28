@@ -86,7 +86,7 @@ export default function TeamGroupedPicker({ teams = [], value = [], onChange, mo
       </div>
       <div role="tablist" aria-label="Group teams by" style={tabRow}>
         {AXES.map((a) => (
-          <button key={a.key} type="button" role="tab" aria-selected={axis === a.key} onClick={() => setAxis(a.key)} className="sf-press" style={tabBtn(axis === a.key)}>{a.label}</button>
+          <button key={a.key} type="button" role="tab" aria-selected={axis === a.key} onClick={() => setAxis(a.key)} className="em-press" style={tabBtn(axis === a.key)}>{a.label}</button>
         ))}
       </div>
       <div data-testid="bucket-list" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -107,7 +107,7 @@ export default function TeamGroupedPicker({ teams = [], value = [], onChange, mo
                 {items.map((t) => {
                   const isSel = selected.has(t.id);
                   return (
-                    <button key={t.id} type="button" role="checkbox" aria-checked={isSel} data-team-id={t.id} onClick={() => toggleChip(t.id)} className="sf-press" style={chipRow(isSel)}>
+                    <button key={t.id} type="button" role="checkbox" aria-checked={isSel} data-team-id={t.id} onClick={() => toggleChip(t.id)} className="em-press" style={chipRow(isSel)}>
                       <span style={dotStyle(t.team_color)} aria-hidden="true" />
                       <span>{t.name}</span>
                     </button>

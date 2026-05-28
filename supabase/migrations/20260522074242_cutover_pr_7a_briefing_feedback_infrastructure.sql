@@ -5,7 +5,7 @@
 --   - Anchor: comms_messages (briefing send rows) vs events
 --   - Recipient key: email TEXT (vs callup's player+guardian UUIDs).
 --     Briefing feedback is per-recipient-email, NOT per-guardian-account,
---     because briefings reach BCC addresses that may not have Skyfire
+--     because briefings reach BCC addresses that may not have Ember
 --     accounts (admin BCC pin, downstream forwards, etc.)
 --
 -- Audit: token submissions land in briefing_feedback as the audit trail.

@@ -40,7 +40,7 @@ export default function CoachMessageBlock({ messages, nowMs }) {
             key={m.id}
             to={`/messages?team=${m.team_id}`}
             aria-label={`Coach message: ${sender} ${when}`}
-            className="sf-press"
+            className="em-press"
             style={{
               display: 'block',
               padding: 14,

@@ -30,7 +30,7 @@ export default function PlayerOfGamePicker({ teamId, value, onChange, disabled }
                 type="button"
                 onClick={() => handleTap(p.id)}
                 disabled={disabled}
-                className="sf-press"
+                className="em-press"
                 style={{
                   minHeight: 44, padding: '8px 14px', borderRadius: 8,
                   background: selected ? 'var(--em-accent)' : 'var(--em-bg-card)',

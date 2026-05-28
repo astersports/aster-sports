@@ -33,7 +33,7 @@ export default function UpcomingPrepCard({ prep }) {
       <Label>PREP FOR {formatWhen(event.start_at).toUpperCase()}</Label>
       <Link
         to={`/events/${event.id}`}
-        className="sf-press"
+        className="em-press"
         style={{
           display: 'block',
           padding: '12px 14px',

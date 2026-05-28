@@ -1,6 +1,6 @@
 -- Wave 1 P0 Security Fixes
 -- Applied: 2026-05-05 19:40:20 UTC via Supabase MCP apply_migration
--- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Skyfire / Ember)
+-- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Ember / Ember)
 --
 -- Four P0 fixes from the L99 audit:
 --   1. event_ride_requests: cross-team leak closed (was org-only, now team-scoped)

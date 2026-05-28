@@ -44,7 +44,7 @@ export default function PlayerProfilePage() {
 
   return (
     <div style={{ padding: 16, minHeight: '100%' }}>
-      <button type="button" onClick={() => navigate(-1)} className="flex items-center sf-press mb-3" style={{ minHeight: 44, background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
+      <button type="button" onClick={() => navigate(-1)} className="flex items-center em-press mb-3" style={{ minHeight: 44, background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back
       </button>
 

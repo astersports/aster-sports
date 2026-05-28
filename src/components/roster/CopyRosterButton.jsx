@@ -33,7 +33,7 @@ export default function CopyRosterButton({ team, sortedPlayers }) {
     <button
       type="button"
       onClick={onCopy}
-      className="sf-press flex items-center gap-1"
+      className="em-press flex items-center gap-1"
       style={{
         minHeight: 44, padding: '0 14px', borderRadius: 8,
         border: '1px solid var(--em-border-default)',

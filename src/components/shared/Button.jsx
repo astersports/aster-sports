@@ -33,7 +33,7 @@ export default function Button({ children, variant = 'primary', size = 'md', ful
   return (
     <button
       type="button"
-      className="sf-press"
+      className="em-press"
       disabled={disabled}
       style={{
         ...s,

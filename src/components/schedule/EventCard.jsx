@@ -37,7 +37,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
       role="link"
       tabIndex={0}
       aria-label={`${teamName} ${titleAria}, ${formatTime(event.start_at)}`}
-      className={`sf-press ${dimmed ? '' : (stagger || '')}`}
+      className={`em-press ${dimmed ? '' : (stagger || '')}`}
       onClick={(e) => { if (e.target.closest('a, button')) return; navigator.vibrate?.(10); navigate(`/events/${event.id}`, { state: { event } }); }}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/events/${event.id}`, { state: { event } }); } }}
       style={{

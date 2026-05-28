@@ -50,7 +50,7 @@ export function ChipField({ label, options, value, onChange, required }) {
               key={key}
               type="button"
               onClick={() => onChange(key)}
-              className="sf-press"
+              className="em-press"
               style={{
                 minHeight: 44,
                 padding: '0 16px',

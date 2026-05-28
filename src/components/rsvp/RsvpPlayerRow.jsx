@@ -62,7 +62,7 @@ export default function RsvpPlayerRow({
             }}>Academy</span>
           )}
           {showActivate && (
-            <button type="button" onClick={() => onToggleActivation?.(player.id)} className="sf-press"
+            <button type="button" onClick={() => onToggleActivation?.(player.id)} className="em-press"
               aria-label={`${isActivated ? 'Deactivate' : 'Activate'} ${player.first_name} ${player.last_name}`}
               style={{
                 marginLeft: 6, minHeight: 28, padding: '0 10px', borderRadius: 14, fontSize: 12, fontWeight: 600,
@@ -88,7 +88,7 @@ export default function RsvpPlayerRow({
                   key={b.key}
                   type="button"
                   onClick={() => onSetRsvp(player.id, b.key)}
-                  className="sf-press"
+                  className="em-press"
                   aria-label={b.label}
                   style={{
                     width: 44, height: 44, borderRadius: 22,
@@ -127,7 +127,7 @@ export default function RsvpPlayerRow({
             />
           </div>
           <button type="button" onClick={() => { onSaveNote?.(player.id, noteText); setShowNote(false); }}
-            className="sf-press"
+            className="em-press"
             style={{
               fontSize: 13, fontWeight: 500, color: 'var(--em-accent)',
               padding: '6px 12px', borderRadius: 10,

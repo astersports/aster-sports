@@ -56,7 +56,7 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full sf-press flex items-center justify-between p-4"
+        className="w-full em-press flex items-center justify-between p-4"
         style={{ background: 'none', border: 'none', minHeight: 44 }}
       >
         <div className="flex items-center gap-2">
@@ -78,14 +78,14 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
           <path d="m6 9 6 6 6-6"/>
         </svg>
       </button>
-      <div className="sf-collapsible" data-open={open ? 'true' : 'false'}>
-        <div className="sf-collapsible-inner">
+      <div className="em-collapsible" data-open={open ? 'true' : 'false'}>
+        <div className="em-collapsible-inner">
           <ul className="flex flex-col px-4 pb-3">
             {steps.map((s) => (
               <li key={s.label}>
                 <Link
                   to={s.to}
-                  className="flex items-center gap-3 sf-press"
+                  className="flex items-center gap-3 em-press"
                   style={{ minHeight: 44, color: 'var(--em-text-primary)', fontSize: 15 }}
                 >
                   {s.done ? (

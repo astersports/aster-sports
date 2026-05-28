@@ -30,7 +30,7 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
     <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--em-border-subtle)', borderLeft: isMyChild ? '3px solid var(--em-accent)' : 'none', backgroundColor: isMyChild ? 'var(--em-accent-soft)' : undefined }}>
       <div
         role="button" tabIndex={0} aria-expanded={expanded}
-        className="flex items-center sf-press"
+        className="flex items-center em-press"
         onClick={() => { navigator.vibrate?.(10); setExpanded((v) => !v); }}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded((v) => !v); } }}
         onTouchStart={(e) => { e.currentTarget.style.backgroundColor = `${teamColor}08`; }}

@@ -29,7 +29,7 @@ export default function ConfirmDialog({
     <ModalBackground onClick={onCancel} zIndex={9998}>
       <div
         ref={trapRef}
-        className="sf-fade-in"
+        className="em-fade-in"
         style={{
           backgroundColor: 'var(--em-bg-card)',
           borderRadius: 16,
@@ -52,11 +52,11 @@ export default function ConfirmDialog({
           <p style={{ color: 'var(--em-text-secondary)', fontSize: 14, lineHeight: 1.5 }}>{message}</p>
         )}
         <div className="flex gap-2 mt-5">
-          <button type="button" onClick={onCancel} className="flex-1 font-medium sf-press"
+          <button type="button" onClick={onCancel} className="flex-1 font-medium em-press"
             style={{ minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-primary)', fontSize: 15, border: 'none' }}>
             {cancelLabel}
           </button>
-          <button type="button" onClick={onConfirm} autoFocus className="flex-1 font-semibold sf-press"
+          <button type="button" onClick={onConfirm} autoFocus className="flex-1 font-semibold em-press"
             style={{ minHeight: 44, borderRadius: 10, backgroundColor: confirmBg, color: 'var(--em-text-inverse)', fontSize: 15, border: 'none' }}>
             {confirmLabel}
           </button>

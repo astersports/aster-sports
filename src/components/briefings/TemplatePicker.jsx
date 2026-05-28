@@ -43,20 +43,20 @@ export default function TemplatePicker({ kind, currentTemplateId, onSelect }) {
   return (
     <div style={wrap}>
       <span style={labelStyle}>Template (optional)</span>
-      <button type="button" className="sf-press" style={triggerStyle(open)} onClick={() => setOpen((o) => !o)} aria-haspopup="listbox" aria-expanded={open}>
+      <button type="button" className="em-press" style={triggerStyle(open)} onClick={() => setOpen((o) => !o)} aria-haspopup="listbox" aria-expanded={open}>
         <span style={{ flex: 1 }}>{triggerLabel}</span>
         {open ? <ChevronDown size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" /> : <ChevronRight size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />}
       </button>
       {open && (
         <div role="listbox" style={menuStyle}>
-          <button type="button" className="sf-press" style={itemStyle(!currentTemplateId)} onClick={() => pick(null)}>
+          <button type="button" className="em-press" style={itemStyle(!currentTemplateId)} onClick={() => pick(null)}>
             <span style={{ width: 18, marginTop: 2 }}>{!currentTemplateId && <Check size={14} strokeWidth={1.75} color="var(--em-accent)" />}</span>
             <span style={nameStyle}>(no template)</span>
           </button>
           {templates.map((t) => {
             const active = t.id === currentTemplateId;
             return (
-              <button key={t.id} type="button" className="sf-press" style={itemStyle(active)} onClick={() => pick(t)}>
+              <button key={t.id} type="button" className="em-press" style={itemStyle(active)} onClick={() => pick(t)}>
                 <span style={{ width: 18, marginTop: 2 }}>{active && <Check size={14} strokeWidth={1.75} color="var(--em-accent)" />}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={nameStyle}>{t.name}</div>

@@ -1,4 +1,4 @@
-# SKYFIRE PLATFORM — CLAUDE.md
+# EMBER PLATFORM — CLAUDE.md
 > Single source of truth for all Claude Code sessions.
 > Place at project root: `~/legacy-hoopers-app/CLAUDE.md`
 > Branch: `main` (v2 retired May 11, 2026 — see `docs/archive/PRE_3_AUDIT_2026-05-11.md`)
@@ -35,7 +35,7 @@ These rules override any instinct to "improve" or "interpret" the spec:
 grep -r '#F7F5F0\|#EAE6DD\|#E5E0D6\|#4A4852\|#1C1B1F\|#B3261E\|#1E5FAE\|#2E7D4F\|#B86E00' src/ && echo "FAIL: warm palette found" || echo "PASS"
 
 # 2. No invented tokens
-grep -r 'sf-shadow-xl\|sf-border-strong\|sf-bg-muted\|sf-bg-subtle' src/ && echo "FAIL: invented tokens found" || echo "PASS"
+grep -r 'em-shadow-xl\|em-border-strong\|em-bg-muted\|em-bg-subtle' src/ && echo "FAIL: invented tokens found" || echo "PASS"
 
 # 3. No hardcoded #FFFFFF in components (only allowed in team_color swatches in TeamFormSheet)
 grep -rn '#FFFFFF' src/ --include='*.jsx' | grep -v 'TeamFormSheet' | grep -v 'COLOR_SWATCHES' && echo "FAIL: hardcoded #FFFFFF" || echo "PASS"
@@ -49,7 +49,7 @@ npm run lint && npm run build && echo "PASS: lint + build clean"
 
 ---
 
-## 1. WHAT IS SKYFIRE
+## 1. WHAT IS EMBER
 
 Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, Google Sheets, email/text, and spreadsheets with one mobile-first platform.
 
@@ -113,7 +113,7 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
   --em-academy:        #7C3AED;
   --em-academy-soft:   rgba(124, 58, 237, 0.1);
 
-  /* ─── Brand (Skyfire defaults — overridden per org at runtime) ─── */
+  /* ─── Brand (Ember defaults — overridden per org at runtime) ─── */
   --em-header:         #151525;
   --em-accent:         #C9952E;
   --em-accent-hover:   #D4A843;
@@ -157,7 +157,7 @@ Every table includes `org_id` FK → organizations. All RLS policies scope to us
 ### Branding Per Org
 `brand_colors` (jsonb) on organizations table. Applied by AuthContext on login.
 
-**LoginPage MUST reset brand tokens to Skyfire defaults on mount** so the login always shows dark navy regardless of cached org colors.
+**LoginPage MUST reset brand tokens to Ember defaults on mount** so the login always shows dark navy regardless of cached org colors.
 
 ### User Roles
 | Role | Access |
@@ -342,7 +342,7 @@ Inter (400/500/600/700). Scale: 24/20/17/15/13/11px.
 Only three: sm / md / lg (see section 3 for exact values). **No fourth shadow.**
 
 ### Animations (10 total, all behind prefers-reduced-motion)
-sf-pulse, sf-fade-in, sf-pulse-dot, sf-bounce-tap, sf-fill-grow, card-expand, sheet-rise, toast-enter, sf-bell-shake, spin
+em-pulse, em-fade-in, em-pulse-dot, em-bounce-tap, em-fill-grow, card-expand, sheet-rise, toast-enter, em-bell-shake, spin
 
 ---
 
@@ -524,7 +524,7 @@ to prevent drift.
 
 44. **Trace the full state pipeline before ruling out a regression at the gate.** When a behavior looks wrong at a render gate (modal backdrop, loading skeleton, alert filter, conditional render guard), verify the gate's logic AND verify the upstream state that flows into it. A downstream gate can be structurally correct while an upstream hook outputs state that momentarily satisfies the "wrong" branch — and the gate has no way to catch that because the condition is technically met. Diagnostic pattern: when reviewing a gate, do not stop at "the gate logic is correct." Trace every state setter that feeds the gate's condition and assert each setter only fires when its preconditions are met. Pause-points in async chains (useEffect microtask ordering, promise resolution ordering, setState batching, useCallback closure capture) are the common failure surface. Origin case: PR #241 (Cluster 6.A3) closed a latent regression in PR #235 where AlertZone's gate logic was structurally correct (`if (loading && !hasAlerts) → skeleton`), but `useAlertEvaluator` output `(loading=false, alerts=[])` momentarily on initial render before configs were fetched — its empty-configs early return fired with `configs=[]` (the initial useState value) before the configs fetch resolved, flipping `loading=false` prematurely. AlertZone briefly rendered the green AllClearPill before re-rendering with the real alerts (amber) once configs loaded and evaluate re-fired. The fix lived upstream in the evaluator's state semantics (null sentinel for unfetched configs). CC's L99 D5 diagnostic missed this by stopping at AlertZone gate-logic review; Frank's smoke caught it. Drift-hedge per #43: hook-level loading-state tests that pin the hook mid-flight via paused promise resolvers (`useAlertEvaluator.loadingGate.test.js` is the reference shape). The discipline forward: any "this looks like a regression but the gate is fine" reading triggers an upstream trace before being ruled out. Registered 2026-05-18 from PR #241 origin case.
 
-45. **When adding work to a planning/spec/handoff doc, reconcile EMBER_PENDING_LEDGER §4 in the same PR.** Locked decisions, spec items, audit findings, and queued PRs accumulate across multiple docs — `SKYFIRE_BUILD_QUEUE_v2`, `CUTOVER_WAVE_GAP_AUDIT`, `AUDIT_*`, `CC_SESSION_HANDOFF_*`, `*_DESIGN_SPEC.md`, `STATE_OF_AFFAIRS_L99_*`. Each doc captures its slice. `EMBER_PENDING_LEDGER.md` §4 is the canonical "pending build" view that every new session reads first to plan routing. Failure mode: a PR that adds (or removes, or re-scopes) work in a planning doc but doesn't update the ledger creates silent drift — next session reads the ledger, assumes it's complete, misses the new item. Multiplied across sessions, the ledger silently goes out of sync with the actual pending-work surface. Origin case: 2026-05-18 L99 close. PR #238 created `EMBER_PENDING_LEDGER.md` populated from "what I remember" rather than "what's in the doc set." Same-day follow-up audit (PR #243's commit 1) surfaced ~25+ additional items scattered across docs the ledger didn't reference. PR #242 + PR #243 ship the inventory expansion and this anti-pattern as the meta-fix. Rule: any PR that touches `docs/SKYFIRE_BUILD_QUEUE_v2.md` / `docs/CUTOVER_WAVE_GAP_AUDIT.md` / `docs/AUDIT_*.md` / `docs/CC_SESSION_HANDOFF_*.md` / `docs/*_DESIGN_SPEC.md` / `docs/STATE_OF_AFFAIRS_L99_*.md` MUST also update `docs/EMBER_PENDING_LEDGER.md` §4 in the same commit. Verification (initially manual via PR-review discipline; CI grep-check is a backlog item): if any of the above doc paths changed in the diff, the ledger should also have changed. Future automation: a GitHub Actions step that fails CI if planning-doc paths change without an accompanying ledger change. Treat the ledger as the canonical surface; planning docs as deep references. Registered 2026-05-18 from L99 missed-builds audit closure.
+45. **When adding work to a planning/spec/handoff doc, reconcile EMBER_PENDING_LEDGER §4 in the same PR.** Locked decisions, spec items, audit findings, and queued PRs accumulate across multiple docs — `EMBER_BUILD_QUEUE_v2`, `CUTOVER_WAVE_GAP_AUDIT`, `AUDIT_*`, `CC_SESSION_HANDOFF_*`, `*_DESIGN_SPEC.md`, `STATE_OF_AFFAIRS_L99_*`. Each doc captures its slice. `EMBER_PENDING_LEDGER.md` §4 is the canonical "pending build" view that every new session reads first to plan routing. Failure mode: a PR that adds (or removes, or re-scopes) work in a planning doc but doesn't update the ledger creates silent drift — next session reads the ledger, assumes it's complete, misses the new item. Multiplied across sessions, the ledger silently goes out of sync with the actual pending-work surface. Origin case: 2026-05-18 L99 close. PR #238 created `EMBER_PENDING_LEDGER.md` populated from "what I remember" rather than "what's in the doc set." Same-day follow-up audit (PR #243's commit 1) surfaced ~25+ additional items scattered across docs the ledger didn't reference. PR #242 + PR #243 ship the inventory expansion and this anti-pattern as the meta-fix. Rule: any PR that touches `docs/EMBER_BUILD_QUEUE_v2.md` / `docs/CUTOVER_WAVE_GAP_AUDIT.md` / `docs/AUDIT_*.md` / `docs/CC_SESSION_HANDOFF_*.md` / `docs/*_DESIGN_SPEC.md` / `docs/STATE_OF_AFFAIRS_L99_*.md` MUST also update `docs/EMBER_PENDING_LEDGER.md` §4 in the same commit. Verification (initially manual via PR-review discipline; CI grep-check is a backlog item): if any of the above doc paths changed in the diff, the ledger should also have changed. Future automation: a GitHub Actions step that fails CI if planning-doc paths change without an accompanying ledger change. Treat the ledger as the canonical surface; planning docs as deep references. Registered 2026-05-18 from L99 missed-builds audit closure.
 
 46. **Code-only audits miss visual / cross-component rhythm. PRs that touch `*Card.jsx` / `*Row.jsx` / `*Tile.jsx` ship with one of: (a) a cross-surface invariant test, (b) a before/after screenshot, or (c) a typography token reference.** Origin case 2026-05-20: Frank reported "different font size on the upcoming games vs results section" on the Schedule games view. The first audit round read code and saw matching `fontSize: 17` literals after PR #351 — and concluded no divergence. The real divergence was that the past-state `MatchupCard` rendered a 2-line opponent column (opponent on top, date stacked below) while the upcoming state rendered a single line — different ROW HEIGHTS that read as "different font sizes" to a human eye but identical to a code reader. PR #359 follow-up inlined the date and shipped a cross-surface invariant test (`MatchupCardRowRhythm.test.jsx`) that locks: same `fontSize` for the primary signal in both states, same `fontSize` for the team name, and a structural assertion that no nested `<div>` re-introduces a multi-line stack. Discipline forward: any PR touching `*Card`, `*Row`, `*Tile` components includes one of the three guards. The invariant-test path is highest ROI (anti-pattern #43 application — catches regressions automatically in CI). Screenshot path is lowest effort. Token-reference path becomes more valuable once `src/lib/typography.js` exists as a named scale (deferred until divergence keeps recurring). Registered 2026-05-20.
 

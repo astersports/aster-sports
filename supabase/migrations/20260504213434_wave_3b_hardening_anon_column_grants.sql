@@ -1,6 +1,6 @@
 -- Wave 3-B-hardening: column-level GRANT for anon on events, game_results, tournaments
 -- Applied: 2026-05-04 21:34:34 UTC via Supabase MCP apply_migration
--- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Skyfire / Ember)
+-- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Ember / Ember)
 --
 -- Closes the events.notes/coach_notes leak. Switches anon from wildcard table
 -- SELECT to explicit column-list GRANT. Authenticated role unaffected.

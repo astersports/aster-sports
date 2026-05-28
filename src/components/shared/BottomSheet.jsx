@@ -86,7 +86,7 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
           the inner scroll region engages. `overflow: hidden` keeps the
           rounded corners from being clipped by the scrollable child. */}
       <div
-        className="w-full sf-sheet-rise"
+        className="w-full em-sheet-rise"
         style={{
           maxHeight: `${maxHeightPx}px`,
           overflow: 'hidden',
@@ -101,7 +101,7 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="sf-press flex items-center justify-center"
+          className="em-press flex items-center justify-center"
           style={{ display: 'flex', width: '100%', height: HANDLE_PX }}
           aria-label={expanded ? 'Collapse sheet' : 'Expand sheet'}
         >

@@ -52,7 +52,7 @@ export default function LockedAnchorChip({ anchorKind, anchorId, onUnlock }) {
         <span style={nameStyle}>{name || '…'}</span>
       </div>
       {onUnlock && (
-        <button type="button" onClick={onUnlock} className="sf-press" style={unlockBtn} aria-label="Switch anchor">
+        <button type="button" onClick={onUnlock} className="em-press" style={unlockBtn} aria-label="Switch anchor">
           <Unlock size={12} strokeWidth={1.75} /> Switch
         </button>
       )}

@@ -17,7 +17,7 @@ function isValidColor(value) {
 // Per Ember tenancy architecture doc section 4 (auth flow) + section 5 (CSS var map).
 //
 // On unmount or when org changes to null, all overrides are removed and the
-// document falls back to defaults defined in index.css (currently Skyfire amber,
+// document falls back to defaults defined in index.css (currently Ember amber,
 // will become Ember gold once index.css is updated in step 9).
 export function useOrgBranding(org) {
   useEffect(() => {

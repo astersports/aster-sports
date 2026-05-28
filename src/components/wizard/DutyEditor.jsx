@@ -31,7 +31,7 @@ export default function DutyEditor({ value, onChange }) {
                 onClick={() => update(i, { slots_needed: Math.min(10, (d.slots_needed || 1) + 1) })}
                 style={stepBtn}>+</button>
             </div>
-            <button type="button" onClick={() => remove(i)} className="sf-press"
+            <button type="button" onClick={() => remove(i)} className="em-press"
               aria-label="Remove volunteer"
               style={{
                 width: 40, height: 40, borderRadius: 10,
@@ -44,7 +44,7 @@ export default function DutyEditor({ value, onChange }) {
           </div>
         ))}
       </div>
-      <button type="button" onClick={add} className="sf-press"
+      <button type="button" onClick={add} className="em-press"
         style={{
           marginTop: 8, minHeight: 40, padding: '0 14px', borderRadius: 10,
           border: '1px solid var(--em-border-default)',

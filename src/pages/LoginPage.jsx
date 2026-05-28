@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { resolveLoginRedirect } from '../lib/loginRedirectAllowlist';
 import LoginForm from '../components/auth/LoginForm';
 
-// Skyfire brand landing + sign-in. Email auto-trims on submit. Inline field
+// Ember brand landing + sign-in. Email auto-trims on submit. Inline field
 // errors (not toasts) so the user sees exactly which field failed.
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -33,7 +33,7 @@ export default function LoginPage() {
       });
   }, [teamParam]);
 
-  // Reset brand tokens to Skyfire defaults on mount so the login page
+  // Reset brand tokens to Ember defaults on mount so the login page
   // always shows dark navy regardless of cached org colors.
   useEffect(() => {
     const r = document.documentElement.style;
@@ -68,11 +68,11 @@ export default function LoginPage() {
 
   return (
     <div
-      className="sf-fullscreen flex items-center justify-center p-6"
+      className="em-fullscreen flex items-center justify-center p-6"
       style={{ backgroundColor: 'var(--em-header)' }}
     >
       <div
-        className="w-full sf-fade-in"
+        className="w-full em-fade-in"
         style={{
           maxWidth: 400, backgroundColor: 'var(--em-bg-card)',
           borderRadius: 16, padding: 28, boxShadow: 'var(--em-shadow-lg)',

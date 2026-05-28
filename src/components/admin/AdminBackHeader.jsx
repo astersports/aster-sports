@@ -14,7 +14,7 @@ export default function AdminBackHeader({ to }) {
       type="button"
       onClick={() => (to ? navigate(to) : navigate(-1))}
       aria-label="Back"
-      className="sf-press"
+      className="em-press"
       style={{
         minHeight: 44,
         display: 'inline-flex',

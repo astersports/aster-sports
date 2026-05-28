@@ -50,7 +50,7 @@ export default function ComposeAnchorCta({ anchorKind, anchor, kind }) {
     <div style={wrapStyle}>
       <button type="button" disabled={sentOnly} aria-disabled={sentOnly} aria-label={aria}
         onClick={() => navigate(`/admin/briefings/compose?kind=${kind}&anchor=${anchorKind}&id=${anchor.id}`)}
-        className={sentOnly ? '' : 'sf-press'} style={style}>
+        className={sentOnly ? '' : 'em-press'} style={style}>
         {label}
       </button>
     </div>

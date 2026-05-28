@@ -21,7 +21,7 @@ export default function TeamsPage() {
   const visiblePrograms = role === 'parent' ? programs.filter((t) => (myTeamIds || []).includes(t.id)) : programs;
 
   return (
-    <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
+    <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="px-4 py-4 em-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <div style={{ marginBottom: 4 }}>
         <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20, letterSpacing: '-0.025em' }}>
           Teams <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--em-text-tertiary)' }}>{activeSeason?.name || ''} · {visiblePrograms.length}</span>

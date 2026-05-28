@@ -79,12 +79,12 @@ export default function StepWhen({ data, onChange, orgId }) {
         <div style={{ display: 'flex', gap: 8 }}>
           {DURATIONS.map((d) => (
             <button key={d.minutes} type="button" onClick={() => setDuration(d.minutes)}
-              className="sf-press" style={chipStyle(!customMode && data.durationMinutes === d.minutes)}>
+              className="em-press" style={chipStyle(!customMode && data.durationMinutes === d.minutes)}>
               {d.label}
             </button>
           ))}
           <button type="button" onClick={enterCustomMode}
-            className="sf-press" style={chipStyle(customMode)}>
+            className="em-press" style={chipStyle(customMode)}>
             Custom
           </button>
         </div>
@@ -115,7 +115,7 @@ export default function StepWhen({ data, onChange, orgId }) {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {ARRIVAL.map((m) => (
             <button key={m} type="button" onClick={() => set('arrivalMinutes', m)}
-              className="sf-press" style={chipStyle(data.arrivalMinutes === m)}>
+              className="em-press" style={chipStyle(data.arrivalMinutes === m)}>
               {m === 0 ? 'On time' : `${m}m`}
             </button>
           ))}

@@ -61,7 +61,7 @@ export default function BriefingHistoryDetail() {
   return (
     <div style={wrap}>
       <div style={inner}>
-        <button type="button" onClick={() => navigate('/admin/briefings/history')} className="sf-press" style={backBtn}><ArrowLeft size={14} /> Back to sent</button>
+        <button type="button" onClick={() => navigate('/admin/briefings/history')} className="em-press" style={backBtn}><ArrowLeft size={14} /> Back to sent</button>
         <div style={card}>
           <div style={labelStyle}>{meta.label || msg.kind}</div>
           <div style={titleStyle}>{msg.subject || '(no subject)'}</div>

@@ -75,7 +75,7 @@ export default function StepDetails({ eventType, data, onChange, orgId }) {
           <div style={{ display: 'flex', gap: 8 }}>
             {HOME_AWAY.map((v) => (
               <button key={v} type="button" onClick={() => setHomeAway(v)}
-                className="sf-press" style={chipStyle(data.homeAway === v)}>
+                className="em-press" style={chipStyle(data.homeAway === v)}>
                 {v === 'tbd' ? 'TBD' : v.charAt(0).toUpperCase() + v.slice(1)}
               </button>
             ))}

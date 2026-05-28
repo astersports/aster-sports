@@ -32,7 +32,7 @@ export default function TournamentDetailPage() {
   if (error || !tournament) {
     return (
       <div style={{ padding: 16 }}>
-        <button type="button" onClick={() => navigate('/tournaments')} className="sf-press" aria-label="Back" style={{ minHeight: 44, padding: '8px 12px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12 }}>
+        <button type="button" onClick={() => navigate('/tournaments')} className="em-press" aria-label="Back" style={{ minHeight: 44, padding: '8px 12px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12 }}>
           <ArrowLeft size={16} strokeWidth={1.75} /> Tournaments
         </button>
         <div style={{ padding: 40, textAlign: 'center' }}>
@@ -46,7 +46,7 @@ export default function TournamentDetailPage() {
   return (
     <div style={{ paddingBottom: 80 }}>
       <div style={{ padding: '8px 16px 0' }}>
-        <button type="button" onClick={() => navigate('/tournaments')} className="sf-press" aria-label="Back" style={{ minHeight: 44, padding: '8px 0', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
+        <button type="button" onClick={() => navigate('/tournaments')} className="em-press" aria-label="Back" style={{ minHeight: 44, padding: '8px 0', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
           <ArrowLeft size={16} strokeWidth={1.75} /> Tournaments
         </button>
       </div>

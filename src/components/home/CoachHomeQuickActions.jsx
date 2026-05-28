@@ -51,7 +51,7 @@ export default function CoachHomeQuickActions() {
             key={a.label}
             to={a.to}
             onClick={() => navigator.vibrate?.(10)}
-            className="sf-press"
+            className="em-press"
             style={CHIP_STYLE}
           >
             <Icon size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" aria-hidden="true" />

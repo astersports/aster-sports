@@ -81,7 +81,7 @@ export default function TeamDetailPage() {
   useEffect(() => {
     if (!team?.name) return;
     const prev = document.title;
-    document.title = `${team.name} — Skyfire`;
+    document.title = `${team.name} — Ember`;
     return () => { document.title = prev; };
   }, [team?.name]);
   const myChild = role === 'parent' ? (myChildren || []).find((c) => c.teamIds?.includes(teamId) || c.teamId === teamId) : null;
@@ -98,7 +98,7 @@ export default function TeamDetailPage() {
           overflow menu (⋯) on the right. Page-level destructive / staff
           actions live there per §16.14 detail-page contract. */}
       <div className="flex items-center justify-between mb-2">
-        <button type="button" onClick={() => navigate('/teams')} className="flex items-center sf-press" style={{ minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
+        <button type="button" onClick={() => navigate('/teams')} className="flex items-center em-press" style={{ minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
           <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
         </button>
         <TeamDetailOverflowMenu team={team} role={role} />
@@ -130,7 +130,7 @@ export default function TeamDetailPage() {
       )}
 
       {/* PR C / Obs 1 / anti-pattern #51 — TeamPlayerStats mount REMOVED.
-          Live-scoring isn't a real Skyfire feature yet; mount was
+          Live-scoring isn't a real Ember feature yet; mount was
           permanent dead space. Second instance after Engine Preview
           retirement (PR #398). */}
       {!rosterLoading && players.length > 0 && (

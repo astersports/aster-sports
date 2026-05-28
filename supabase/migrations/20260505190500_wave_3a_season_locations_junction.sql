@@ -1,6 +1,6 @@
 -- Wave 3-A: season_locations junction table
 -- Applied: 2026-05-05 19:05:00 UTC via Supabase MCP apply_migration
--- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Skyfire / Ember)
+-- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Ember / Ember)
 --
 -- Per-season activation set for org locations. Filters the activity wizard's
 -- location dropdown to only locations active for the current season.

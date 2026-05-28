@@ -70,7 +70,7 @@ export default function PendingQueuesLanes({ lanes, loading, sectionKey = 'pendi
           >
             <Link
               to={lane.href}
-              className="sf-press"
+              className="em-press"
               style={{
                 display: 'flex',
                 alignItems: 'center',

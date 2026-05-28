@@ -50,7 +50,7 @@ export default function FamilyBalanceList({ accounts, balances, fmt, onRecordPay
           </div>
         )}
         {filtered.map((f, i) => (
-          <button key={f.id} type="button" onClick={() => f.balance > 0 && onRecordPayment(f)} className="sf-press" style={{
+          <button key={f.id} type="button" onClick={() => f.balance > 0 && onRecordPayment(f)} className="em-press" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '12px 14px', minHeight: 44, width: '100%', background: 'none',
             border: 'none', borderTopStyle: i ? 'solid' : 'none', borderTopWidth: i ? 1 : 0,
@@ -65,7 +65,7 @@ export default function FamilyBalanceList({ accounts, balances, fmt, onRecordPay
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {f.balance > 0 && onNudge && (
-                <button type="button" onClick={(e) => { e.stopPropagation(); onNudge(f); }} className="sf-press"
+                <button type="button" onClick={(e) => { e.stopPropagation(); onNudge(f); }} className="em-press"
                   style={{ minHeight: 32, padding: '0 10px', borderRadius: 8, border: '1px solid var(--em-accent)', backgroundColor: 'transparent', color: 'var(--em-accent)', fontSize: 11, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' }}>
                   Message
                 </button>

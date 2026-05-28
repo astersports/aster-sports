@@ -14,7 +14,7 @@ export default function ChannelList({ channels, activeKey, onSelect, previews, r
             key={ch.key}
             type="button"
             onClick={() => { navigator.vibrate?.(10); onSelect(ch); }}
-            className="sf-press"
+            className="em-press"
             aria-label={ch.label}
             aria-current={active ? 'page' : undefined}
             style={{

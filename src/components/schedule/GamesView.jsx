@@ -131,7 +131,7 @@ export default function GamesView({ activities, orgId }) {
 
       {past.length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <button type="button" onClick={() => setShowResults((v) => !v)} className="sf-press"
+          <button type="button" onClick={() => setShowResults((v) => !v)} className="em-press"
             aria-expanded={showResults}
             style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '4px 0', minHeight: 44, background: 'none', border: 'none', cursor: 'pointer' }}>
             <ChevronRight size={14} strokeWidth={1.75} color="var(--em-text-tertiary)"

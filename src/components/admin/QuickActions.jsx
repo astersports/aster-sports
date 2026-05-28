@@ -88,7 +88,7 @@ function Tile({ tile }) {
     <Link
       to={tile.to}
       onClick={() => navigator.vibrate?.(10)}
-      className="flex items-center gap-2 sf-press"
+      className="flex items-center gap-2 em-press"
       style={TILE_STYLE}
     >
       <Icon size={20} strokeWidth={1.75} style={{ color: 'var(--em-text-tertiary)' }} aria-hidden="true" />

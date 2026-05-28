@@ -50,7 +50,7 @@ export default function NewDmPicker({ onSelect, onClose }) {
         backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column',
       }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderBottom: '1px solid var(--em-border-default)' }}>
-        <button type="button" onClick={onClose} className="sf-press" aria-label="Close"
+        <button type="button" onClick={onClose} className="em-press" aria-label="Close"
           style={{ width: 36, height: 36, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
           <X size={18} strokeWidth={1.75} color="var(--em-text-primary)" />
         </button>
@@ -71,7 +71,7 @@ export default function NewDmPicker({ onSelect, onClose }) {
         {filtered.map((m) => (
           <button
             key={m.userId} type="button" onClick={() => onSelect(m.userId)}
-            className="sf-press"
+            className="em-press"
             style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0',
               border: 'none', width: '100%', textAlign: 'left', fontFamily: 'inherit',

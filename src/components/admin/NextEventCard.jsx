@@ -30,7 +30,7 @@ export default function NextEventCard({ event, weather }) {
   const title = formatEventTitleString(event);
   return (
     <div
-      className="sf-stagger-5"
+      className="em-stagger-5"
       style={{
         backgroundColor: 'var(--em-bg-card)',
         borderRadius: 10,
@@ -58,7 +58,7 @@ export default function NextEventCard({ event, weather }) {
           {countdown || '—'}
         </div>
         {countdown === 'Now' && (
-          <div className="sf-pulse-dot" style={{
+          <div className="em-pulse-dot" style={{
             width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--em-success)',
             margin: '4px 0 0 auto',
           }} />

@@ -7,11 +7,11 @@
 // colors synchronously pre-mount (main.jsx, before React mounts). When
 // a signed-out user navigates to /login, the previously-cached org
 // colors flash on the page until LoginPage's useEffect resets them to
-// Skyfire defaults on first paint. The reset is documented in
-// CLAUDE.md §4 ("LoginPage MUST reset brand tokens to Skyfire defaults
+// Ember defaults on first paint. The reset is documented in
+// CLAUDE.md §4 ("LoginPage MUST reset brand tokens to Ember defaults
 // on mount so the login always shows dark navy regardless of cached
 // org colors") and in orgBrandingCache.js itself ("LoginPage's
-// explicit reset to Skyfire defaults remains the source of truth for
+// explicit reset to Ember defaults remains the source of truth for
 // the /login surface").
 //
 // This test pins that behavior. The route-aware orgBrandingCache fix
@@ -21,8 +21,8 @@
 // anyone removes or breaks the reset, CI catches the brand-flash
 // regression before it ships.
 //
-// Skyfire default values asserted here are the canonical brand
-// tokens defined in CLAUDE.md §3 ("Brand (Skyfire defaults —
+// Ember default values asserted here are the canonical brand
+// tokens defined in CLAUDE.md §3 ("Brand (Ember defaults —
 // overridden per org at runtime)").
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -53,10 +53,10 @@ vi.mock('../../components/auth/LoginForm', () => ({
 
 import LoginPage from '../LoginPage';
 
-// Canonical Skyfire defaults from CLAUDE.md §3. If these ever change,
+// Canonical Ember defaults from CLAUDE.md §3. If these ever change,
 // CLAUDE.md and LoginPage.jsx must change together — this test pins
 // the linkage.
-const SKYFIRE_DEFAULTS = {
+const EMBER_DEFAULTS = {
   '--em-header': '#151525',
   '--em-accent': '#C9952E',
   '--em-accent-hover': '#D4A843',
@@ -95,45 +95,45 @@ describe('LoginPage brand-reset invariant', () => {
     cleanup();
   });
 
-  it('resets --em-header to Skyfire default on mount', () => {
+  it('resets --em-header to Ember default on mount', () => {
     withRouter(<LoginPage />);
     expect(
       document.documentElement.style.getPropertyValue('--em-header'),
-    ).toBe(SKYFIRE_DEFAULTS['--em-header']);
+    ).toBe(EMBER_DEFAULTS['--em-header']);
   });
 
-  it('resets --em-accent to Skyfire default on mount', () => {
+  it('resets --em-accent to Ember default on mount', () => {
     withRouter(<LoginPage />);
     expect(
       document.documentElement.style.getPropertyValue('--em-accent'),
-    ).toBe(SKYFIRE_DEFAULTS['--em-accent']);
+    ).toBe(EMBER_DEFAULTS['--em-accent']);
   });
 
-  it('resets --em-accent-hover to Skyfire default on mount', () => {
+  it('resets --em-accent-hover to Ember default on mount', () => {
     withRouter(<LoginPage />);
     expect(
       document.documentElement.style.getPropertyValue('--em-accent-hover'),
-    ).toBe(SKYFIRE_DEFAULTS['--em-accent-hover']);
+    ).toBe(EMBER_DEFAULTS['--em-accent-hover']);
   });
 
-  it('resets --em-accent-soft to Skyfire default on mount', () => {
+  it('resets --em-accent-soft to Ember default on mount', () => {
     withRouter(<LoginPage />);
     expect(
       document.documentElement.style.getPropertyValue('--em-accent-soft'),
-    ).toBe(SKYFIRE_DEFAULTS['--em-accent-soft']);
+    ).toBe(EMBER_DEFAULTS['--em-accent-soft']);
   });
 
-  it('resets --em-text-on-dark to Skyfire default on mount', () => {
+  it('resets --em-text-on-dark to Ember default on mount', () => {
     withRouter(<LoginPage />);
     expect(
       document.documentElement.style.getPropertyValue('--em-text-on-dark'),
-    ).toBe(SKYFIRE_DEFAULTS['--em-text-on-dark']);
+    ).toBe(EMBER_DEFAULTS['--em-text-on-dark']);
   });
 
   it('overwrites all 5 stale brand tokens in a single mount (no partial reset)', () => {
     withRouter(<LoginPage />);
     const root = document.documentElement;
-    Object.entries(SKYFIRE_DEFAULTS).forEach(([cssVar, expected]) => {
+    Object.entries(EMBER_DEFAULTS).forEach(([cssVar, expected]) => {
       expect(
         root.style.getPropertyValue(cssVar),
         `${cssVar} should reset to ${expected}`,

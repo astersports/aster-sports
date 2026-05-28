@@ -15,9 +15,9 @@ export default function TournamentFormFooter({ conflictMessage, onCancel, onSave
         </div>
       )}
       <div style={{ position: 'sticky', bottom: -16, margin: '8px -16px -16px', padding: '12px 16px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)', display: 'flex', gap: 10 }}>
-        <button type="button" onClick={onCancel} className="sf-press" aria-label="Cancel"
+        <button type="button" onClick={onCancel} className="em-press" aria-label="Cancel"
           style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1.5px solid var(--em-accent)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-        <button type="button" onClick={onSave} disabled={disabled} className="sf-press" aria-label={saving ? 'Saving' : 'Save'}
+        <button type="button" onClick={onSave} disabled={disabled} className="em-press" aria-label={saving ? 'Saving' : 'Save'}
           style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, opacity: disabled ? 0.5 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}>{saving ? 'Saving…' : 'Save'}</button>
       </div>
     </>

@@ -51,7 +51,7 @@ export default class ErrorBoundary extends Component {
     if (!this.state.hasError) return this.props.children;
     return (
       <div
-        className="sf-fullscreen flex items-center justify-center px-4"
+        className="em-fullscreen flex items-center justify-center px-4"
         style={{ backgroundColor: 'var(--em-bg-page)' }}
       >
         <div className="text-center">
@@ -67,7 +67,7 @@ export default class ErrorBoundary extends Component {
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="font-semibold sf-press"
+            className="font-semibold em-press"
             style={{
               minHeight: 44,
               padding: '0 20px',

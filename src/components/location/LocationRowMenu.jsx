@@ -11,7 +11,7 @@ export default function LocationRowMenu({ showArchived = false, onEdit, onArchiv
         type="button"
         onClick={(e) => { stop(e); setOpen((o) => !o); }}
         aria-label="Location actions" aria-expanded={open}
-        className="sf-press"
+        className="em-press"
         style={{
           width: 44, height: 44, borderRadius: 6,
           border: 'none', backgroundColor: 'transparent',
@@ -31,17 +31,17 @@ export default function LocationRowMenu({ showArchived = false, onEdit, onArchiv
             borderRadius: 10, boxShadow: 'var(--em-shadow-md)',
             minWidth: 140, overflow: 'hidden',
           }}>
-            <button type="button" onClick={(e) => { stop(e); setOpen(false); onEdit(); }} className="sf-press"
+            <button type="button" onClick={(e) => { stop(e); setOpen(false); onEdit(); }} className="em-press"
               style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--em-text-primary)', cursor: 'pointer' }}>
               <Edit2 size={14} strokeWidth={1.75} /> Edit
             </button>
             {showArchived ? (
-              <button type="button" onClick={(e) => { stop(e); setOpen(false); onUnarchive && onUnarchive(); }} className="sf-press"
+              <button type="button" onClick={(e) => { stop(e); setOpen(false); onUnarchive && onUnarchive(); }} className="em-press"
                 style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--em-accent)', cursor: 'pointer' }}>
                 <RotateCcw size={14} strokeWidth={1.75} /> Unarchive
               </button>
             ) : (
-              <button type="button" onClick={(e) => { stop(e); setOpen(false); onArchive(); }} className="sf-press"
+              <button type="button" onClick={(e) => { stop(e); setOpen(false); onArchive(); }} className="em-press"
                 style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--em-danger)', cursor: 'pointer' }}>
                 <Archive size={14} strokeWidth={1.75} /> Archive
               </button>

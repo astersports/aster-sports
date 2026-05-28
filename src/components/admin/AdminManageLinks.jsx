@@ -50,7 +50,7 @@ export default function AdminManageLinks() {
             key={link.to}
             to={link.to}
             onClick={() => navigator.vibrate?.(10)}
-            className="flex items-center gap-2 sf-press"
+            className="flex items-center gap-2 em-press"
             style={{
               minHeight: 44,
               padding: '0 16px',

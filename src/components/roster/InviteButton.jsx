@@ -42,14 +42,14 @@ export default function InviteButton({ guardianEmail }) {
   }
   if (status === 'error') {
     return (
-      <button type="button" onClick={invite} className="sf-press" title={error}
+      <button type="button" onClick={invite} className="em-press" title={error}
         style={{ ...pill, border: '1.5px solid var(--em-danger)', color: 'var(--em-danger)', maxWidth: '100%', whiteSpace: 'normal', textAlign: 'left', padding: '6px 10px', borderRadius: 8 }}>
         {error || 'Error — tap to retry'}
       </button>
     );
   }
   return (
-    <button type="button" onClick={invite} disabled={status === 'loading'} className="sf-press"
+    <button type="button" onClick={invite} disabled={status === 'loading'} className="em-press"
       style={{ ...pill, border: '1.5px solid var(--em-accent)', color: 'var(--em-accent)', opacity: status === 'loading' ? 0.6 : 1 }}>
       {status === 'loading' ? 'Sending…' : 'Invite'}
     </button>

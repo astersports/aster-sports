@@ -24,7 +24,7 @@ export default function StepType({ value, onSelect }) {
               key={t.key}
               type="button"
               onClick={() => onSelect(t.key)}
-              className="sf-press"
+              className="em-press"
               style={{
                 minHeight: t.large ? 88 : 64,
                 borderRadius: 10,

@@ -129,11 +129,11 @@ export default function TournamentPlaceholderEventsModal({ tournament, teamIds, 
         </div>
 
         <div style={{ display: 'flex', gap: 10, paddingTop: 8 }}>
-          <button type="button" onClick={onClose} className="sf-press"
+          <button type="button" onClick={onClose} className="em-press"
             style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
             Skip
           </button>
-          <button type="button" onClick={onConfirm} disabled={!canSave} className="sf-press"
+          <button type="button" onClick={onConfirm} disabled={!canSave} className="em-press"
             style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, opacity: canSave ? 1 : 0.5, cursor: canSave ? 'pointer' : 'not-allowed' }}>
             {saving ? 'Creating…' : `Create ${checkedCount}`}
           </button>

@@ -57,7 +57,7 @@ export default function EventHeroActions({
     if (isGameType) {
       // FinalizedGameView below renders the result if scored; tapping
       // Enter Score on a scored game opens the sheet in edit mode.
-      return <div style={ROW}><button type="button" onClick={onEnterScore} className="sf-press" style={BTN}>Enter Score</button></div>;
+      return <div style={ROW}><button type="button" onClick={onEnterScore} className="em-press" style={BTN}>Enter Score</button></div>;
     }
     return null;
   }
@@ -68,14 +68,14 @@ export default function EventHeroActions({
     return (
       <div style={ROW}>
         {isTournamentDraft && event.tournament_id ? (
-          <button type="button" onClick={() => navigate(`/admin/briefings/compose?anchor=tournament&id=${event.tournament_id}`)} className="sf-press" style={BTN}><Send size={14} strokeWidth={1.75} />Compose briefing</button>
+          <button type="button" onClick={() => navigate(`/admin/briefings/compose?anchor=tournament&id=${event.tournament_id}`)} className="em-press" style={BTN}><Send size={14} strokeWidth={1.75} />Compose briefing</button>
         ) : null}
-        <button type="button" onClick={onNotify} className="sf-press" style={BTN}><Send size={14} strokeWidth={1.75} />Notify families</button>
-        {!isTournamentDraft && <button type="button" onClick={onLockRoster} className="sf-press" style={BTN_SEC}>Lock roster{lockCount != null ? ` · ${lockCount}` : ''}</button>}
+        <button type="button" onClick={onNotify} className="em-press" style={BTN}><Send size={14} strokeWidth={1.75} />Notify families</button>
+        {!isTournamentDraft && <button type="button" onClick={onLockRoster} className="em-press" style={BTN_SEC}>Lock roster{lockCount != null ? ` · ${lockCount}` : ''}</button>}
       </div>
     );
   }
 
   // Practice — Notify only.
-  return <div style={ROW}><button type="button" onClick={onNotify} className="sf-press" style={BTN}><Send size={14} strokeWidth={1.75} />Notify families</button></div>;
+  return <div style={ROW}><button type="button" onClick={onNotify} className="em-press" style={BTN}><Send size={14} strokeWidth={1.75} />Notify families</button></div>;
 }

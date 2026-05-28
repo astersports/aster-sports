@@ -1,7 +1,7 @@
 export default function Toggle({ label, checked, onChange, description }) {
   return (
     <button type="button" role="switch" aria-checked={checked} aria-label={label}
-      onClick={() => onChange(!checked)} className="sf-press" style={{
+      onClick={() => onChange(!checked)} className="em-press" style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
       minHeight: 44, padding: '0 4px', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit',
       textAlign: 'left',

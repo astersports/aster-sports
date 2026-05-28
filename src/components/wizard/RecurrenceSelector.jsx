@@ -22,7 +22,7 @@ export default function RecurrenceSelector({ value, onChange }) {
       <div style={{ display: 'flex', gap: 8, marginBottom: pattern !== 'once' ? 12 : 0 }}>
         {PATTERNS.map((p) => (
           <button key={p.key} type="button" onClick={() => setPattern(p.key)}
-            className="sf-press" style={chipStyle(pattern === p.key)}>
+            className="em-press" style={chipStyle(pattern === p.key)}>
             {p.label}
           </button>
         ))}

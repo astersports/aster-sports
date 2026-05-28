@@ -6,7 +6,7 @@ const base = { minHeight: 52, borderRadius: 10, border: 'none', fontSize: 13, fo
 
 function Btn({ label, sub, style, onClick, ariaLabel }) {
   return (
-    <button type="button" onClick={onClick} className="sf-press" aria-label={ariaLabel || `${sub || ''} ${label}`} style={{ ...base, ...style }}>
+    <button type="button" onClick={onClick} className="em-press" aria-label={ariaLabel || `${sub || ''} ${label}`} style={{ ...base, ...style }}>
       {sub && <span style={{ fontSize: 17, fontWeight: 800 }}>{sub}</span>}
       <span>{label}</span>
     </button>

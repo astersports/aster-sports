@@ -23,7 +23,7 @@ export default function PastePane({ paste, setPaste, onParse, parsing }) {
         </div>
       </div>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-        <button type="button" onClick={onParse} disabled={!canParse} className="sf-press"
+        <button type="button" onClick={onParse} disabled={!canParse} className="em-press"
           style={{ ...btnStyle, opacity: canParse ? 1 : 0.5, cursor: canParse ? 'pointer' : 'not-allowed' }}>
           {parsing ? 'Parsing…' : 'Parse'}
         </button>

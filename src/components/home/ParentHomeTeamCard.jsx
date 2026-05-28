@@ -10,7 +10,7 @@ export default function ParentHomeTeamCard({ team, summary, loading, nextEvent, 
     ? '—'
     : (s.streak === '—' ? s.record : `${s.record} · ${s.streak}`);
   return (
-    <button type="button" onClick={onClick} className="sf-press"
+    <button type="button" onClick={onClick} className="em-press"
       style={{
         width: '100%', minHeight: 56, borderRadius: 10, overflow: 'hidden',
         border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',

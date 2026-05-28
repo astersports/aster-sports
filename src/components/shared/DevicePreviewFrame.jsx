@@ -61,7 +61,7 @@ export default function DevicePreviewFrame({ html, plainText }) {
       <div role="tablist" aria-label="Preview device" style={tabRow}>
         {TABS.map((t) => (
           <button key={t.key} type="button" role="tab" aria-selected={tab === t.key}
-            onClick={() => setTab(t.key)} className="sf-press" style={tabBtn(tab === t.key)}>
+            onClick={() => setTab(t.key)} className="em-press" style={tabBtn(tab === t.key)}>
             {t.label}
           </button>
         ))}

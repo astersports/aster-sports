@@ -5,7 +5,7 @@
 function Bar({ width = '100%', height = 12, radius = 6, className = '' }) {
   return (
     <div
-      className={`sf-pulse ${className}`}
+      className={`em-pulse ${className}`}
       style={{
         width,
         height,
@@ -37,7 +37,7 @@ function ListRow() {
   return (
     <div className="flex items-center gap-3 py-3">
       <div
-        className="sf-pulse"
+        className="em-pulse"
         style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: 'var(--em-bg-tertiary)' }}
       />
       <div className="flex-1">

@@ -48,12 +48,12 @@ export default function FinancialDashboardPage() {
 
   return (
     <div style={{ padding: '16px 16px 80px' }}>
-      <button type="button" onClick={() => navigate(-1)} className="sf-press" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
+      <button type="button" onClick={() => navigate(-1)} className="em-press" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back
       </button>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)' }}>Financials</h1>
-        <Link to="/admin/financials/import" className="sf-press" style={{ display: 'flex', alignItems: 'center', gap: 4, minHeight: 36, padding: '0 12px', borderRadius: 10, fontSize: 13, fontWeight: 500, color: 'var(--em-accent)', border: '1.5px solid var(--em-accent)', textDecoration: 'none' }}>
+        <Link to="/admin/financials/import" className="em-press" style={{ display: 'flex', alignItems: 'center', gap: 4, minHeight: 36, padding: '0 12px', borderRadius: 10, fontSize: 13, fontWeight: 500, color: 'var(--em-accent)', border: '1.5px solid var(--em-accent)', textDecoration: 'none' }}>
           <Upload size={14} strokeWidth={1.75} /> Import
         </Link>
       </div>
@@ -61,7 +61,7 @@ export default function FinancialDashboardPage() {
       {seasons.length > 1 && (
         <div style={{ display: 'flex', gap: 6, marginBottom: 16, overflowX: 'auto' }}>
           {seasons.map((s) => (
-            <button key={s.id} type="button" onClick={() => setSelectedSeasonId(s.id)} className="sf-press" style={{
+            <button key={s.id} type="button" onClick={() => setSelectedSeasonId(s.id)} className="em-press" style={{
               minHeight: 44, padding: '0 14px', borderRadius: 9999, fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap',
               border: s.id === seasonId ? 'none' : '1px solid var(--em-border-default)',
               backgroundColor: s.id === seasonId ? 'var(--em-accent)' : 'var(--em-bg-card)',

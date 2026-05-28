@@ -36,7 +36,7 @@ export default function LoginForm({
           />
           <button
             type="button" onClick={() => setShowPw((v) => !v)}
-            className="absolute flex items-center justify-center sf-press"
+            className="absolute flex items-center justify-center em-press"
             style={{ top: 22, right: 0, width: 44, height: 44, color: 'var(--em-text-tertiary)' }}
             aria-label={showPw ? 'Hide password' : 'Show password'}
           >
@@ -66,7 +66,7 @@ export default function LoginForm({
       <div className="flex justify-center mt-2">
         <Link
           to="/forgot-password"
-          className="sf-press inline-flex items-center justify-center"
+          className="em-press inline-flex items-center justify-center"
           style={{
             minHeight: 44, padding: '0 12px',
             color: 'var(--em-accent)', fontSize: 13, fontWeight: 500,

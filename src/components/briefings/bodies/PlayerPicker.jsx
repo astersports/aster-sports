@@ -72,7 +72,7 @@ export default function PlayerPicker({ selected, onSelect, onClose }) {
         <div style={subHeader}>{`Academy players · ${visible.length} ${visible.length === 1 ? 'match' : 'matches'}`}</div>
         <div style={listStyle}>
           {visible.map((p) => (
-            <button key={p.id} type="button" onClick={() => toggle(p.id)} className="sf-press" style={rowStyle(draft.includes(p.id))}>
+            <button key={p.id} type="button" onClick={() => toggle(p.id)} className="em-press" style={rowStyle(draft.includes(p.id))}>
               <span style={{ flex: 1 }}>{p.name}</span>
               {p.teamName && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{p.teamName}</span>}
             </button>

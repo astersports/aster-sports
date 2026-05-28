@@ -9,7 +9,7 @@ export default function ScheduleFab({ onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="sf-press sf-bounce-tap"
+      className="em-press em-bounce-tap"
       aria-label="Create event"
       style={{
         position: 'fixed',

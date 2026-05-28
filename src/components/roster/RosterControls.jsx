@@ -75,7 +75,7 @@ export default function RosterControls({ search, setSearch, sortBy, setSortBy, r
       {lastFetchedAt && onRefresh && (
         <button type="button" onClick={() => { navigator.vibrate?.(10); onRefresh(); }}
           aria-label="Refresh roster"
-          className="sf-press"
+          className="em-press"
           style={{ marginTop: 6, padding: '4px 4px', minHeight: 44, background: 'none', border: 'none',
             fontSize: 11, color: 'var(--em-text-tertiary)', textAlign: 'left', cursor: 'pointer' }}>
           Last updated {formatRelativeAgo(now - lastFetchedAt)} &middot; tap to refresh

@@ -79,11 +79,11 @@ export default function AcademyCallupCompose({ event, team, player, onClose }) {
         Sending to {familyCount} {familyCount === 1 ? 'family' : 'families'} ({player.first_name}&rsquo;s {familyCount === 1 ? 'guardian' : 'guardians'})
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-        <button type="button" onClick={() => onClose?.('skipped')} className="sf-press"
+        <button type="button" onClick={() => onClose?.('skipped')} className="em-press"
           style={{ flex: 1, minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-primary)', fontSize: 15, fontWeight: 600, border: 'none' }}>
           Skip email
         </button>
-        <button type="button" onClick={() => setConfirmOpen(true)} disabled={!canSend} className="sf-press"
+        <button type="button" onClick={() => setConfirmOpen(true)} disabled={!canSend} className="em-press"
           style={{ flex: 1, minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: canSend ? 1 : 0.5 }}>
           <Send size={16} strokeWidth={1.75} /> Send
         </button>

@@ -14,7 +14,7 @@ function ToggleButton({ label, active, onClick }) {
       role="tab"
       aria-selected={active}
       onClick={() => { navigator.vibrate?.(10); onClick(); }}
-      className="sf-press"
+      className="em-press"
       style={{
         padding: '0 16px', minHeight: 44, borderRadius: 999, fontSize: 13, fontWeight: active ? 600 : 400,
         border: 'none', backgroundColor: active ? 'var(--em-bg-card)' : 'transparent',

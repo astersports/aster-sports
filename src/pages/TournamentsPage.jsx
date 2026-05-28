@@ -90,7 +90,7 @@ export default function TournamentsPage() {
         <button
           type="button"
           onClick={loadMore}
-          className="sf-press"
+          className="em-press"
           style={{
             width: '100%', minHeight: 44, marginTop: 8,
             borderRadius: 10, border: '1px solid var(--em-border-default)',
