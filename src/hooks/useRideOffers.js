@@ -40,8 +40,9 @@ export function useRideOffers(eventId) {
   // Realtime: any change to offers for this event refetches.
   useEffect(() => {
     if (!eventId) return undefined;
+    // L99 TIER 3 PATTERN C: per-instance suffix prevents topic collisions.
     const channel = supabase
-      .channel(`event_ride_offers:${eventId}`)
+      .channel(`event_ride_offers:${eventId}:${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'event_ride_offers', filter: `event_id=eq.${eventId}` }, fetchOffers)
       .subscribe();
     return () => { supabase.removeChannel(channel); };

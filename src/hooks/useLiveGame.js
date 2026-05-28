@@ -27,7 +27,9 @@ export function useLiveGame(eventId, { teamId, orgId } = {}) {
 
   useEffect(() => {
     if (!eventId) return;
-    const ch = supabase.channel(`live-${eventId}`)
+    // L99 TIER 3 PATTERN C: per-instance suffix prevents topic collisions
+    // on the rare double-mount path (StrictMode dev, route re-entry).
+    const ch = supabase.channel(`live-${eventId}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'game_plays', filter: `event_id=eq.${eventId}` }, () => {
         supabase.from('game_plays').select('*').eq('event_id', eventId).eq('is_voided', false)
           .order('created_at', { ascending: true })

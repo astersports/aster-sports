@@ -1,20 +1,24 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
+// L99 TIER 3 PATTERN A: value-stable key driven by sorted ids so the
+// effect doesn't re-fire on upstream activities reference churn when the
+// id set hasn't actually changed.
 export function useEventRideCounts(activities) {
   const [counts, setCounts] = useState({});
   const [version, setVersion] = useState(0);
-  const lastKeyRef = useRef(null);
-  useEffect(() => {
+
+  const stableKey = useMemo(() => {
     const ids = (activities || []).map((a) => a.id).filter(Boolean);
-    if (ids.length === 0) {
+    return [...ids].sort().join(',');
+  }, [activities]);
+
+  useEffect(() => {
+    if (!stableKey) {
       Promise.resolve().then(() => setCounts({}));
-      lastKeyRef.current = '';
       return;
     }
-    const key = [...ids].sort().join(',');
-    if (lastKeyRef.current === key) return;
-    lastKeyRef.current = key;
+    const ids = stableKey.split(',');
     Promise.all([
       supabase.from('event_ride_offers').select('event_id, seats_offered, status').in('event_id', ids).eq('status', 'active'),
       supabase.from('event_ride_claims').select('event_id, seats_requested, status').in('event_id', ids).in('status', ['pending', 'confirmed']),
@@ -43,7 +47,8 @@ export function useEventRideCounts(activities) {
     }).catch((err) => {
       console.error('useEventRideCounts network error:', err);
     });
-  }, [activities, version]);
-  const refetch = useCallback(() => { lastKeyRef.current = null; setVersion((v) => v + 1); }, []);
+  }, [stableKey, version]);
+
+  const refetch = useCallback(() => setVersion((v) => v + 1), []);
   return { counts, refetch };
 }
