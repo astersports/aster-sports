@@ -1,0 +1,328 @@
+EMBER PLATFORM — CLEANUP DISCIPLINE + PRE-CUTOVER AUDIT PLAN
+Review request — please identify gaps, methodology weaknesses, and blind spots
+Date: 2026-05-28
+================================================================================
+
+REVIEWER PROMPT
+================================================================================
+
+You are being asked to review a proposed engineering-discipline doctrine + pre-cutover audit plan for a multi-tenant youth-sports SaaS platform (Ember; first tenant: Legacy Hoopers basketball). The doctrine and plan were drafted today in a working session between the product owner (Frank) and Claude Code, in response to several pain points that surfaced during a heavy 8-PR cleanup arc.
+
+We need an independent, fact-grounded opinion. Be direct. Specifically:
+
+  1. Are there audit categories missing from the 27-category taxonomy?
+  2. Are the two new anti-patterns (AP #60 Fact-grounding, AP #61 Pre-phase-cutover gate) sufficient to prevent the failure modes that triggered them, or do we need more / different APs?
+  3. Are the build targets in §17 (3-second-stay, multi-tenant, multi-sport) articulated concretely enough to be load-bearing, or are they aspirational decoration?
+  4. Is the Wave 1 / Wave 2 / Wave 3 sequencing correct? Are we putting the right items in the must-run-before-cutover bucket?
+  5. Is the chat-split recommendation (commit doctrine in current chat; run audits in fresh chat) the right operational call?
+  6. Are there session-pattern failures from the conversation that aren't yet captured as APs? (i.e. discipline gaps we missed registering)
+  7. Blind spots in the Known Redesign Backlog (§17.4)?
+  8. Are there ways the methodology could compound errors at the next phase that we haven't surfaced?
+
+Don't soften. We have a high-tolerance for hard truths and we're putting this in stone before the multi-program build starts.
+
+================================================================================
+
+SECTION 1 — CONTEXT
+================================================================================
+
+The build:
+
+Ember is a multi-tenant SaaS platform for youth sports organizations. First and only live tenant today: Legacy Hoopers (Westchester NY AAU basketball, ~63 active players across 5 teams, 175 guardians, ~$70K invoiced for Spring 2026 season). Stack: React 18 + Vite + Supabase (Postgres + Auth + Realtime + RLS + Storage + Edge Functions). Deployed via Vercel; PWA-installable on iOS/Android home screens.
+
+The platform replaces LeagueApps + Google Sheets + email/text + spreadsheets with one mobile-first product. Design benchmark explicitly named in the doctrine: Linear, Apple Calendar, Nike Run Club, iMessage, Stripe Dashboard — NOT TeamSnap.
+
+Where we are:
+
+Currently in the "cleanup arc" phase. Today's session shipped 8 PRs:
+  - #543 push fan-out into the email send pipeline
+  - #544 Stream A automatic event reminders (3d/1d/4h)
+  - #545 tournament-event briefing anchor + arrival board fix
+  - #546 TIER 1 DB cleanup (26 RLS init-plan wraps + duplicate index drop + 21 covering FK indexes)
+  - #547 TIER 2 N+1 fixes (useDmThreads, useChannelPreviews, useRecentActivity)
+  - #548 TIER 3 pattern hardening (PATTERN A stable-deps + PATTERN C realtime channel collision hardening across 7 hooks)
+  - #549 Skyfire → Ember rename (188 files, 451 insertions, 451 deletions, mechanical)
+  - #550 composer state persistence + PWA route memory hook
+
+The next phase is the multi-program build (Spring 2026 AAU → Fall 2026 → mini camps → group training → bookings — full LeagueApps-equivalent program taxonomy).
+
+Before the multi-program build starts, Frank wants:
+  a. A discipline doctrine put in stone (the cleanup arc surfaced doctrine gaps).
+  b. A pre-cutover audit gate that surfaces every bug / enhancement / redesign opportunity in the current code before the new phase begins.
+
+What surfaced during today's session that triggered the doctrine ask:
+
+1. Repeated unfounded claims by Claude Code about GitHub MCP webhook delivery contracts. Claimed "I'll be notified when the PR merges" across 7 PRs in a row without verifying the subscription actually delivers merge events. When Frank pushed back with empirical evidence (two months of working merge notifications), Claude Code defended the inference with a docstring read instead of treating the contradiction as authoritative signal of a regression. Frank correctly named this a discipline failure: substituting inference for verification.
+
+2. Multiple "surface" answers throughout the session that missed real findings — e.g. classifying the briefing-composer state-loss bug as "no autosave" when the autosave was fully built; the bug was actually 2 wiring gaps (URL didn't carry draft id; useBriefingDeepLink.consume() stripped it). Correct diagnosis required reading the actual code, not inference from the symptom.
+
+3. Webhook merge-event delivery itself appears to be a regression (Frank reports the subscription has delivered merge events for 2 months prior; this session zero merge events arrived). Diagnostic instrumentation on the next PR is needed.
+
+4. Performance audit findings revealed structural cost in the home-page render path: 6-RTT serial critical path on sign-in (~3 second cold paint in prod), 18-22 parallel queries on every tab-to-tab nav (~2 second warm-cycle delay). Root causes include a blocking all-or-nothing skeleton gate, no SWR/caching layer, and a keyed-div in App.jsx forcing full-subtree remount on every route change.
+
+5. A LeagueApps admin-dashboard walkthrough surfaced the multi-program taxonomy (Camps, Classes, Club Teams, Events, Leagues, Tournaments, Bookings, plus Tryouts and Waitlists and Practice Rosters and Group Training and Future Hoopers Camps) that the multi-program build must support polymorphically.
+
+================================================================================
+
+SECTION 2 — PROPOSED DOCTRINE (CLAUDE.md additions)
+================================================================================
+
+AP #60 — Fact-grounding discipline (no inference where verification is possible)
+--------------------------------------------------------------------------------
+
+Every claim about tool behavior, system state, schema, deployed code, or user experience must be grounded in a verifiable source. Plausible-sounding inference from docstrings, defaults, memory, or pattern-matching is NOT a substitute for verification and compounds confidently-stated wrong answers across sessions.
+
+Source hierarchy (verify against the closest to ground truth available):
+  1. Live system state — Supabase MCP execute_sql, GitHub MCP pull_request_read, file Read, deployed runtime. Highest authority for current behavior.
+  2. User's empirical report — when the user reports observed behavior that contradicts a claim, the user's signal is authoritative. Reframe the model immediately; do not defend the inference.
+  3. Installed source / type defs / migration files — actual code paths, not just docstrings.
+  4. Vendor / tool documentation — only when (1)-(3) are unreachable.
+  5. Inference / memory — only when no verification is possible AND explicitly labeled as such ("I'm inferring because I can't query X").
+
+Tool-maximization sub-rule: The MCP infrastructure IS the verification layer. Inference becomes acceptable only after the source hierarchy is exhausted. Using the tools IS the discipline, not a step we skip when busy.
+
+Question-asking sub-rule: When verification reveals genuine uncertainty, ask the user the specific question that would resolve it. Cost of one clarifying question is bounded; cost of a wrong inference compounds across sessions.
+
+Trigger patterns that mean STOP-and-verify:
+  - About to write "the tool only does X" / "the system always Y" / "this was designed to Z" — what's the verifiable source?
+  - User pushes back with empirical contradiction — that pushback is data, not an obstacle. Reframe immediately.
+  - I genuinely don't know — say so + name the verification mechanism.
+
+Origin case (2026-05-28): unfounded claims about GitHub MCP webhook delivery during the L99 cleanup arc.
+
+Cross-reference: AP #16.7.1, AP #26, AP #39, AP #40, AP #44.
+
+AP #61 — Pre-phase-cutover audit gate (line-by-line surface before transition)
+--------------------------------------------------------------------------------
+
+Before any phase cutover (cleanup arc → multi-program build, current-season → next-season rollover, beta → GA), perform a line-by-line bug + enhancement surface review of every component touched in the current phase. NO surface skim. NO "we'll catch it later." The 40% cascade rate of broad-scope line-by-line per AP #50 is unacceptable; the discipline runs narrow-scope line-by-line in parallel to defeat the cascade.
+
+Required outputs before the phase is "done":
+  1. Bug surface — every defect on a touched surface, across parent/coach/admin roles (AP #43 cross-role mandate).
+  2. Enhancement surface — every concrete improvement with measurable user-experience lift.
+  3. Redesign-potential surface — every architectural item that's defensible but would benefit from restructure; added to §17.4 Known Redesign Backlog.
+  4. Routing decision — every item classified ship-this-phase / next-phase / defer, with rationale.
+
+Methodology: L99 per §16.15 + AP #50 — narrow-scope line-by-line audits dispatched in parallel. Each audit covers ONE bounded surface. Cross-batch pattern check per AP #58 surfaces cross-cutting findings.
+
+Cross-role coverage requirement (per AP #43): every surface reviewed against parent + coach + admin variants. A finding "fixed" for one role but creating friction for another is not fixed.
+
+Stop conditions (per AP #56 + #59): the user sets a max-PR ceiling + hard-stop time before dispatch. Cycle does not self-extend.
+
+Discipline registration (2026-05-28): the cleanup arc (PRs #543-#550) → multi-program build cutover is the active phase boundary.
+
+Cross-reference: AP #43, AP #50, AP #56, AP #58, AP #59.
+
+================================================================================
+
+SECTION 3 — PROPOSED §17 BUILD TARGETS (new CLAUDE.md section)
+================================================================================
+
+§17.1 — User experience commitment ("first 3 seconds, never wants to leave")
+--------------------------------------------------------------------------------
+
+The North Star: any user (parent, coach, admin) opening the app or transitioning between tabs MUST see meaningful content within 3 seconds AND the content must give them a reason to stay. Both halves matter. A blazing-fast empty state still loses them. A rich page that takes 6 seconds loses them differently.
+
+Operational implications:
+  - Every page's first-paint critical path is treated as load-bearing. Audit category #1 + #2 is recurring, not one-time.
+  - Blocking skeleton gates are presumptively wrong; per-zone skeletons are the default.
+  - Every new feature shipped to a user-facing surface includes a render-time check: does this give them a reason to stay, or is it noise they'll scroll past?
+  - The 3-second target is measured against prod, not dev (StrictMode double-mount inflates dev numbers).
+
+Verification: browser Performance flame chart in prod; not inference.
+
+§17.2 — Multi-tenant + multi-sport architectural scope
+--------------------------------------------------------------------------------
+
+The platform target is multi-tenant (multiple youth-sports orgs) + multi-sport (basketball today; soccer, baseball, lacrosse, etc. as the platform matures). Every architectural decision is verified against the full target before it lands.
+
+Multi-tenant invariants:
+  - Every org-scoped table has org_id + RLS scoping by current_user_org_id() per §4 + §11.5 + AP #37.
+  - Every query touching an org-scoped table filters by org_id explicitly (AP #37 defense-in-depth).
+  - Every UI brand-token application resets to org defaults on login.
+  - No cross-org data leak path exists from any role on any surface.
+
+Multi-sport invariants:
+  - Sport-specific data lives in sport-specific tables/columns; sport-agnostic data lives in the foundation (events, teams, players, registrations, financials, comms).
+  - game_plays and the live-scoring schema are basketball-specific today and will need a sport discriminator when soccer/etc. lands. Don't refactor preemptively (per AP #45 ship-not-gate); flag the seam in §17.4.
+  - Terminology surface is parameterized per org (per LeagueApps walkthrough: "Players" vs "Athletes" etc.) — out of scope today.
+
+Multi-program invariants (per LeagueApps walkthrough 2026-05-28):
+  - Members are org-level + persistent across programs.
+  - Programs are polymorphic (Season / Camp / Class / Club Team / Event / League / Tournament / Booking) — needs a program_kind discriminator added when multi-program registration lands.
+  - Registrations are per-program-per-member, not the identity layer.
+
+§17.3 — Phase rigor & methodology
+--------------------------------------------------------------------------------
+
+L99 is the audit methodology framework (§16.15). The methodology by scope per AP #50:
+  - Broad codebase audit → breadth-via-parallel-agents (low cascade).
+  - Specific surface audit → line-by-line at narrow scope (high signal-to-noise).
+  - Broad surface line-by-line → ~40% cascade. Don't do this.
+
+Pre-phase-cutover audits run as parallel narrow-scope agents. Cross-batch pattern check per AP #58 — every batch's findings cross-reference prior batches' patterns by letter name (ALPHA, BETA, GAMMA) so cross-cutting findings surface as single concerns.
+
+§17.4 — Known redesign backlog (architectural items deferred but tracked)
+--------------------------------------------------------------------------------
+
+  - Realtime channel dedupe context (replaces Math.random() suffix workaround across 7 hooks).
+  - SWR/TanStack Query layer for the home-feeder hook fleet (16+ hooks fire fresh on every mount).
+  - Blocking-gate decomposition with per-zone skeletons + AP #43 invariant tests.
+  - program_kind discriminator on programs table (multi-program polymorphism).
+  - Sport discriminator on game_plays + sport-specific play tables.
+  - Onboarding pipeline (bulk-invite + QR + status column + PWA install prompt + push opt-in promo on Parent Home).
+  - Per-kid spotlight strip on Parent Home.
+  - Tokenized RSVP from weekly_digest + Stream A reminder emails.
+  - Payment-due card action surface (tel: / mailto: / external link).
+  - Reports Hub navigation surface (top-level, mirrors LeagueApps Reporting).
+  - Permissive policy consolidation on event_comments/rsvps/duties (60 advisor findings; defer to multi-program scoping).
+
+================================================================================
+
+SECTION 4 — 27-CATEGORY AUDIT TAXONOMY
+================================================================================
+
+Code & architecture audits:
+  1. Performance — initial paint / cold load
+  2. Performance — warm-cycle navigation
+  3. Bundle / code split
+  4. Realtime / channel hygiene
+  5. React hook hygiene
+  6. Anti-pattern compliance sweep
+
+Database & data audits:
+  7. RLS correctness + performance
+  8. Schema integrity (constraints, indexes, kind_check, migration ledger)
+  9. Query contract sweep (AP #36, #37, #48, #25)
+  10. Data integrity / canonical-source compliance (§11.5)
+
+Security audits:
+  11. Edge function auth + secrets (AP #31, #33)
+  12. Cross-org / multi-tenant exposure
+  13. PII surface
+
+UX & design audits:
+  14. Design-token compliance
+  15. Accessibility (axe + VoiceOver)
+  16. Microcopy / kindness mandate (§16.3)
+  17. Cross-role coverage matrix (per AP #43)
+  18. Empty-state + error-state inventory
+
+Engagement & onboarding audits:
+  19. Onboarding pipeline (175 → 2 → 1 gap)
+  20. Notification pipeline coverage
+  21. Briefing engine coverage (post-rename re-audit)
+
+Operational / observability audits:
+  22. Edge function deploy parity
+  23. Migration ledger consistency
+  24. pg_cron job health
+  25. Observability coverage
+
+Documentation / doctrine audits:
+  26. CLAUDE.md ↔ practice drift
+  27. EMBER_PENDING_LEDGER reconciliation (AP #45)
+
+================================================================================
+
+SECTION 5 — PRE-CUTOVER AUDIT DISPATCH PLAN (Wave 1 / 2 / 3)
+================================================================================
+
+Wave 1 — P0 (must complete before cutover; 5 parallel narrow-scope agents)
+--------------------------------------------------------------------------------
+
+  #7 — RLS correctness + performance (~25 min)
+  #8 — Schema integrity (~25 min)
+  #9 — Query contract sweep (AP #36, #37, #48, #25) — exhaustive (~30 min)
+  #12 — Cross-org / multi-tenant exposure (~25 min)
+  #17 — Cross-role coverage matrix (~30 min)
+
+Wave 2 — P1 (run after Wave 1 lands; 5 parallel agents)
+--------------------------------------------------------------------------------
+
+  #1 + #2 — Ship Phase 1 + Phase 2 perf fixes from today's load-time audits
+  #11 — Edge function auth + secrets
+  #22 — Edge function deploy parity
+  #23 — Migration ledger consistency
+  #21 — Briefing engine coverage (post-rename re-audit)
+
+Wave 3 — P2 (run during multi-program build, not blocking cutover)
+--------------------------------------------------------------------------------
+
+  #3 — Bundle analyzer (vite build --analyze)
+  #5 — React hook hygiene exhaustive
+  #14 — Design-token compliance (post-Ember)
+  #15 — Accessibility
+  #16 — Microcopy / kindness mandate sweep
+  #18 — Empty-state inventory
+  #19 — Onboarding pipeline action plan
+  #20 — Notification pipeline coverage
+  #24 — pg_cron job health
+  #25 — Observability coverage
+  #26 — CLAUDE.md ↔ practice drift
+  #27 — EMBER_PENDING_LEDGER reconciliation
+
+================================================================================
+
+SECTION 6 — OPERATIONAL RULES GOING FORWARD
+================================================================================
+
+  1. Auto-merge stays armed on every PR. Already in place.
+  2. Verify-before-stack until the merge-webhook regression is fixed by Anthropic. Every "before I start the next thing" beat begins with pull_request_read on the prior PR. Not polling — precondition checking.
+  3. Fact-grounding (#60) is non-negotiable. Every claim grounded in sources 1-4. Source 5 (inference) explicitly labeled.
+  4. Pre-phase gate (#61) runs before every cutover. Multi-program build doesn't start until the cutover gate is closed.
+  5. L99 methodology for every code review — narrow-scope parallel agents, never broad-scope line-by-line.
+  6. Cross-role coverage mandatory on every user-facing surface (per AP #43).
+  7. Build targets (§17) are load-bearing — every PR's review asks "does this advance the 3-second-stay target and respect the multi-tenant + multi-sport scope?"
+
+================================================================================
+
+SECTION 7 — CHAT-SPLIT RECOMMENDATION
+================================================================================
+
+Commit the doctrine in the CURRENT chat (where the full context lives). Single PR to CLAUDE.md with §17 + AP #60 + AP #61.
+
+Run the audits in a FRESH chat. Reasons:
+  1. Each Wave 1 dispatch needs full attention; the fresh-chat context loads the committed doctrine cold (per AP #45-style discipline — read the canonical source, not the chat thread).
+  2. Wave 1 will surface ~50-100 findings across 5 agents. Routing those without conversational drag from today's 8 PRs gives them the rigor they need.
+  3. AP #59 — audit cycles need external stop conditions. Starting fresh means tomorrow's energy budget, not the tail end of today's.
+  4. The fresh chat opens by reading the committed CLAUDE.md + EMBER_PENDING_LEDGER, then dispatches Wave 1 with the doctrine as the contract.
+
+Sequencing:
+  1. Doctrine PR commits to CLAUDE.md in current chat.
+  2. Fresh chat opens, reads committed doctrine, dispatches Wave 1.
+  3. Wave 1 findings → routing → Wave 1 fix PRs.
+  4. Wave 2 dispatch + fix PRs.
+  5. Phase boundary reached. Multi-program build phase opens in ANOTHER fresh chat.
+
+================================================================================
+
+SECTION 8 — SPECIFIC REVIEW QUESTIONS
+================================================================================
+
+For the reviewer:
+
+  1. Audit category coverage: Are there audit categories MISSING from the 27-category taxonomy that a multi-tenant SaaS at this scale should run before a major phase cutover? Particularly thinking about: financial reconciliation, error-budget tracking, dependency security (npm audit), legal/compliance for youth-sports (COPPA, FERPA-adjacent guardian consent), backup/recovery testing, rate-limit / abuse / DDoS surface.
+
+  2. Anti-pattern sufficiency: Do the two new APs (#60 Fact-grounding, #61 Pre-phase-cutover gate) cover the failure modes from this session adequately, or are there session-pattern failures we missed registering? Some candidates we considered but didn't register: "interim workflow shouldn't be claimed as permanent contract" (verify-before-stack as workaround vs. doctrine); "regression vs. limitation framing" (don't accept docstring as contract when user reports lived behavior).
+
+  3. Build-target articulation: Is "first 3 seconds, never wants to leave" concrete enough to be load-bearing as a doctrine clause, or does it need a measurement criterion (e.g., LCP < 1.5s in prod measured via real-user monitoring)?
+
+  4. Wave 1 sequencing: Is the P0 set (RLS, schema, query contract, cross-org, cross-role) the right "must-run-before-multi-program-cutover" set? Particularly: should perf (#1, #2) be in Wave 1 instead of Wave 2 given the 3-second target is part of §17.1?
+
+  5. Chat-split recommendation: Should the doctrine and the audits actually be in DIFFERENT chats, or is that an over-correction that loses continuity? The argument for splitting is fresh-context rigor per AP #45 + #59. The argument against is loss of session learning that's not yet codified.
+
+  6. Multi-sport articulation: §17.2 says "basketball today; soccer, baseball, lacrosse, etc. as the platform matures." Is this concrete enough to drive design decisions, or do we need a concrete second-sport target with a date to make it real?
+
+  7. Redesign backlog blind spots: §17.4 lists 11 deferred items. What's MISSING from that backlog that a 3-month-out viewer would say "you should have seen this coming"?
+
+  8. Discipline meta-question: Is the doctrine itself well-formed, or are there discipline-design anti-patterns (e.g., overly prescriptive, overly vague, conflicts between APs) that would weaken its load-bearing quality?
+
+================================================================================
+
+END OF REVIEW DOCUMENT
+================================================================================
+
+After your review returns, the product owner will paste the feedback back into the Claude Code session that drafted this. We will integrate the feedback into a final version, then commit to CLAUDE.md as a single PR. The committed doctrine becomes the contract for the multi-program build phase.
+
+Thank you for the review.
