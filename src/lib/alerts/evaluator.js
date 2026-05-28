@@ -120,18 +120,22 @@ export async function evaluateAlerts(alertConfigs, queryExecutor) {
   if (!Array.isArray(alertConfigs) || !queryExecutor) return [];
   const enabled = alertConfigs.filter((c) => c.enabled !== false);
   enabled.sort((a, b) => (a.evaluation_order ?? 0) - (b.evaluation_order ?? 0));
-  const results = [];
-  for (const config of enabled) {
+  // Wave 2.B Batch 1 (#1 P0-1): parallelize evaluators via Promise.all
+  // so all 9 evaluators fire concurrently instead of serially. Per-
+  // evaluator try/catch preserves the original error-isolation contract
+  // (one evaluator failing does not abort the rest). Promise.all
+  // preserves input order, so the result-shape contract is unchanged.
+  const settled = await Promise.all(enabled.map(async (config) => {
     const fn = EVALUATORS[evaluatorKey(config)];
-    if (!fn) continue;
+    if (!fn) return null;
     try {
-      const result = await fn(config, queryExecutor);
-      if (result) results.push(result);
+      return await fn(config, queryExecutor);
     } catch (err) {
       console.error(`[alerts/evaluator] ${evaluatorKey(config)} failed:`, err.message);
+      return null;
     }
-  }
-  return results;
+  }));
+  return settled.filter((r) => r);
 }
 
 export { EVALUATORS, evaluatorKey, computeWeekStartIso };

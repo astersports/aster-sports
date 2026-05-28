@@ -52,7 +52,11 @@ export default function CoachHomePage() {
 
   // Multi-signal loading gate — anti-pattern #43 invariant (cascade
   // flash fix, 2026-05-20). Audit test in homePageLoadingGateAudit.
-  const isLoading = loading || alertsLoading || actionQueueLoading;
+  // Wave 2.B Batch 1 (#1 P0-2): alertsLoading dropped from the gate —
+  // AlertZone renders its own skeleton (always_visible) or null
+  // (collapsible) when loading, so blocking the whole page on it
+  // costs LCP without preventing layout flash.
+  const isLoading = loading || actionQueueLoading;
   if (isLoading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
