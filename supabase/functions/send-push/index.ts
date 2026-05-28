@@ -42,13 +42,16 @@ Deno.serve(async (req) => {
   webpush.setVapidDetails("mailto:info@legacyhoopers.org", vapidPublic, vapidPrivate);
 
   const payloadIn = await req.json().catch(() => ({}));
-  const { user_id, org_id, title, body: msgBody, url } = payloadIn as Record<string, string>;
+  const { user_id, user_ids, org_id, title, body: msgBody, url } = payloadIn as {
+    user_id?: string; user_ids?: string[]; org_id?: string; title?: string; body?: string; url?: string;
+  };
   if (!title) return json({ error: "title required" }, 400);
 
   let query = sb.from("push_subscriptions").select("id, endpoint, p256dh, auth_key");
-  if (user_id) query = query.eq("user_id", user_id);
+  if (Array.isArray(user_ids) && user_ids.length) query = query.in("user_id", user_ids);
+  else if (user_id) query = query.eq("user_id", user_id);
   else if (org_id) query = query.eq("org_id", org_id);
-  else return json({ error: "user_id or org_id required" }, 400);
+  else return json({ error: "user_id, user_ids, or org_id required" }, 400);
 
   const { data: subs, error } = await query;
   if (error) return json({ error: error.message }, 500);
