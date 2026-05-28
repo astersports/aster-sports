@@ -32,23 +32,37 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { data: role } = await userClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
-    if (role?.role !== 'admin') {
-      return new Response(JSON.stringify({ error: 'Admin only' }), {
-        status: 403,
+    const { email, org_id } = await req.json()
+    if (!email) {
+      return new Response(JSON.stringify({ error: 'Email required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    if (!org_id) {
+      return new Response(JSON.stringify({ error: 'org_id required' }), {
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const { email } = await req.json()
-    if (!email) {
-      return new Response(JSON.stringify({ error: 'Email required' }), {
-        status: 400,
+    // Wave 1 P1 cross-org defense-in-depth: assert caller is admin in the
+    // SPECIFIC org named in the request body, not just "admin somewhere."
+    // Replaces the prior .from('user_roles').select('role').eq('user_id',...)
+    // .maybeSingle() check which silently picked an arbitrary org row.
+    const { data: isAdmin, error: roleError } = await userClient.rpc(
+      'user_has_role_in_org',
+      { check_org_id: org_id, check_roles: ['admin'] }
+    )
+    if (roleError) {
+      return new Response(JSON.stringify({ error: roleError.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: 'Admin only' }), {
+        status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -58,8 +72,12 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     )
 
+    // Bind the invitation to the validated org by stamping org_id into the
+    // Supabase auth user's metadata. AcceptInvite-side onboarding reads this
+    // to scope the new account to the inviter's org.
     const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
       redirectTo: 'https://skyfire-app.vercel.app/login',
+      data: { org_id, invited_by: user.id },
     })
 
     if (error) {
