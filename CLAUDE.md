@@ -205,7 +205,7 @@ Every table includes `org_id` FK → organizations. All RLS policies scope to us
 | 20260505161540 | user_roles_self_privilege_escalation_fix | Split user_roles_self into SELECT + INSERT(parent only) |
 
 #### Ghost migrations (applied via SQL editor, not registered — known divergence)
-5 migrations exist as repo files but are NOT registered in `supabase_migrations.schema_migrations`. Their schemas are live in production. If running `supabase db reset`, these files are needed to recreate the schema.
+**Audit-day reconciliation (Wave 1, 2026-05-28):** 16 ghost migrations exist as repo files but are NOT registered in `supabase_migrations.schema_migrations` (the 5 originally documented below + 11 stale legacy-numbered `029_*`–`033_*` files that were renumbered to timestamp versions but never deleted from the repo). Plus 30 orphan applied changes (DB-registered versions whose repo files were renamed to different timestamps, AP #21 mirror-discipline violations). Cleanup deferred to a dedicated migration-ledger hygiene PR. Schemas are live in production; if running `supabase db reset`, the 5 originally-documented ghosts are needed to recreate the schema.
 - `20260504_messaging.sql` — messages table + message_reads + RLS
 - `20260504_dm_threads.sql` — dm_threads (user_a/user_b) + messages.dm_thread_id + RLS
 - `20260504_ride_requests.sql` — event_ride_requests table + RLS
@@ -373,8 +373,8 @@ em-pulse, em-fade-in, em-pulse-dot, em-bounce-tap, em-fill-grow, card-expand, sh
 | 7-B | Multi-org + season rollover | ✅ DONE (7-B.2) — 5-step rollover wizard with atomic execution |
 | 7-C | PWA + auth upgrades | ✅ DONE — sw.js, manifest, install prompt, apple-touch-icon |
 
-#### Financial data loaded (May 5, 2026)
-LeagueApps import: 70 families, 100 accounts (40 Fall 2025 + 60 Spring 2026), 105 transactions. $102,765 billed, $97,374 net to bank. Email-first dedup, orphan-merge for 2 families (DeMasi, KHOJASTEH).
+#### Financial data loaded (May 5–6, 2026)
+LeagueApps import across two waves: May-5 initial import (100 accounts), May-6 retrospective Fall 2025 top-up for families who joined Spring 2026 first (64 additional accounts). Current state: 164 accounts across 3 seasons (Fall 2025 + Winter 2025-26 + Spring 2026), 244 transactions, $166,910 billed, $165,635 gross / $160,244 net to bank. Email-first dedup. DeMasi: 2 legitimate co-guardian rows (no merge needed). KHOJASTEH: family correctly modeled with both parents linked to Aubtin via player_guardians; financial_accounts attached to mom (Anjella Teimoori).
 
 ⬅ NEXT unbuilt (reconciled against code 2026-05-27 — see EMBER_PENDING_LEDGER §4.0 for the verified index): **3-B / 6-A QR codes** (public-schedule QR + parent-invite QR) are the only genuine unblocked feature arc — no in-app QR generation exists yet (needs a qrcode dep + render surface). Already DONE since this list was written: 2-B weather (Open-Meteo, wired), 3-A location mgr UI (`/admin/locations`), schedule-change notifications, coach_roundup briefing. Partial: 4-B auto-notifications (settings sheet exists). BLOCKED: 5-C player stats/box score — §16.12 forbids per-player game stats in 2026 (do not build).
 
@@ -968,6 +968,7 @@ source for the question you're asking.
 | `src/hooks/useRoster.js:25` | sizes (canonical home) | reads `jersey_size` + `shorts_size` — team_players has neither column. (Also reads legacy `payment_status`; future PR can migrate that single column to `financial_accounts`.) |
 | `src/pages/SeasonRolloverPage.jsx:36` | historical view (season scope) | rollover wizard inherently shows a season's PAST roster, not current team_players state. Nested PostgREST relation `teams(...roster_members(...))` — missed by the L99 audit grep until PR #124 |
 | `src/hooks/useSeasonRollover.js:49` | WRITE (not a read) | `.insert()` into roster_members. §11.5 read-restriction doesn't apply; membership writes legitimately go through roster_members |
+| `src/components/roster/PlayerRow.jsx:59-62` | sizes/legacy proxy via prop drilling | Receives `payment_status` as a prop from `useRoster.js:25` (documented exception above) and renders a 6px colored dot. Future cleanup: derive dot color from `family_balances` view to retire the legacy `roster_members.payment_status` column entirely. |
 
 If you add a new caller and it fits an existing exception kind, append it to this table. If it doesn't fit, the migration to team_players (or financial_accounts for payment fields) is the right move.
 
