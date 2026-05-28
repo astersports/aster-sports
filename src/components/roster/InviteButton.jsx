@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 // Small pill button that triggers the invite-parent Edge Function. Admin-only
 // placement is the caller's responsibility — this component just handles the
 // request lifecycle and in-place status swap.
 export default function InviteButton({ guardianEmail }) {
+  const { orgId } = useAuth();
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
 
@@ -13,6 +15,7 @@ export default function InviteButton({ guardianEmail }) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not signed in');
+      if (!orgId) throw new Error('No active org');
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-parent`;
       const res = await fetch(url, {
         method: 'POST',
@@ -21,7 +24,7 @@ export default function InviteButton({ guardianEmail }) {
           'Authorization': `Bearer ${session.access_token}`,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
-        body: JSON.stringify({ email: guardianEmail }),
+        body: JSON.stringify({ email: guardianEmail, org_id: orgId }),
       });
       const text = await res.text();
       console.error('Invite response:', res.status, text);
