@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { AuthProvider } from './context/AuthContext';
 import { PreferencesProvider } from './context/PreferencesProvider';
 import { SeasonProvider } from './context/SeasonContext';
@@ -26,6 +27,11 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
+        {/* Wave-0 prerequisite for §17.1 perf-target enforceability — RUM
+            via Vercel Speed Insights. Auto-tracks route changes; captures
+            LCP/INP/FMP/CLS p75 distributions in prod. Inside BrowserRouter
+            so it sees router context. */}
+        <SpeedInsights />
         <AuthProvider>
           <PreferencesProvider>
             <SeasonProvider>
