@@ -51,13 +51,16 @@ No second-sport pilot identified. Re-add when a non-basketball tenant is named w
 
 ## §17.3 — Phase rigor & methodology
 
-L99 per CLAUDE.md §16.15. By scope per AP #50:
+L99 per CLAUDE.md §16.15.
 
-- **Broad codebase audit** → breadth-via-parallel-agents (low cascade).
-- **Specific surface audit** → line-by-line at narrow scope (high signal-to-noise).
-- **Broad surface line-by-line** → ~40% cascade. **Don't do this.**
+**Standing methodology (locked 2026-05-28, supersedes prior surface-dependent rules — AP #50 RETIRED):**
 
-Pre-cutover audits run as parallel narrow-scope agents per AP #61. Cross-batch pattern check per AP #58 surfaces cross-cutting findings.
+- **Line-by-line per category, all categories.** No "narrow-scope" framing — every category gets exhaustive coverage of its surface area.
+- **§16.15 2-pass deep-read addendum per category** to close the cascade rate inherent to line-by-line at broad scope. First pass surfaces findings; second pass catches what first pass missed.
+- **Pre-phase audit gate per AP #61.** All §17.6 audit categories close before any next-phase build engages — see §17.8.
+- **Cross-batch pattern check per AP #58.** Each batch's findings include a pattern-continuation section referencing prior batches.
+
+**Comfort over velocity.** "Clean code in current state" is the operative criterion before phase boundaries open — not perf budgets or architectural invariants alone.
 
 ---
 
@@ -174,7 +177,7 @@ Genuinely "blocks multi-program build" or "blocks any next phase":
 - **#28** Data migration / org onboarding playbook (gating for St. Patrick's pilot)
 - **#25** Disaster recovery / backup testing
 
-### Wave 3 — P2 (during multi-program build, not blocking cutover)
+### Wave 3 — P2 (before multi-program build, gates the phase boundary per §17.8)
 
 - #3 Bundle analyzer
 - #4 Realtime channel hygiene
@@ -199,7 +202,29 @@ Genuinely "blocks multi-program build" or "blocks any next phase":
 2. **Fresh chat:** opens by verifying both PRs landed on `main` (per CLAUDE.md operational rule #3 / source hierarchy item #1). Dispatches Wave 1 with this doc's §17.6 as the contract.
 3. Wave 1 findings → routing → fix PRs.
 4. Wave 2 dispatch + fix PRs (potentially separate chat).
-5. Phase boundary reached. Multi-program build phase opens in another fresh chat.
+5. **Audit-gate per §17.8 closes** (all 29 §17.5 categories audited line-by-line with §16.15 2-pass deep-read addendum, all P0+P1 fix PRs landed). Multi-program build phase opens in another fresh chat.
+
+---
+
+## §17.8 — Audit-gate enforcement (locked 2026-05-28)
+
+**All 29 audit categories in §17.5 must complete line-by-line — with §16.15 2-pass deep-read addendum per category — before the multi-program build phase or any next-phase feature work engages.**
+
+This supersedes the original §17.6 framing where Wave 3 ran "during multi-program build, not blocking cutover." Rationale: surface methodology (AP #50 retired 2026-05-28) let regressions slip — empirical example, the home page LCP regressed to ~5s (vs §17.1 1.5s target, 3.3× over budget) without surface audits catching it because perf was deferred to Wave 2 RUM-data availability.
+
+The standing criterion is **"comfort level of clean code in current state"** — not perf budgets or architectural invariants, but the qualitative confidence that the codebase has been read end-to-end across every audit lens before next-phase build risks compounding new debt onto un-audited existing debt.
+
+**Methodology per §17.3:** line-by-line per category, all 29 categories, §16.15 2-pass deep-read addendum per category. Cross-batch pattern check per AP #58 between batches.
+
+**Gate state (as of 2026-05-28 close):**
+
+- **Wave 1 (5 categories):** ✓ COMPLETE per §4.AK / §4.AL / §4.AM. Methodology was breadth-parallel (predates the line-by-line lock). Worth a §16.15 addendum re-read at some point — flagged in §4.AN for routing.
+- **Wave 2 (9 categories):** 0/9. Anchor finding for Wave 2.B perf dispatch — home page LCP ~5s, 3.3× over §17.1 budget. First thread to pull when #1+#2 dispatch.
+- **Wave 3 (14 categories):** 0/14.
+
+**Calibration:** §17.5's "categories that surface emptily get demoted/removed" rule remains. Per-wave evaluation. Wave 1 outcome: 5/5 surfaced findings, 0 demotions.
+
+**Phase boundary signal:** when Wave 3 closes clean (all categories audited line-by-line with addendum, all P0+P1 fix PRs landed), §17.7 step 5 unblocks and multi-program build opens in a fresh chat.
 
 ---
 

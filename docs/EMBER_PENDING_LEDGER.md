@@ -3717,6 +3717,47 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AN — Audit-gate lock + AP #50 retirement (2026-05-28)
+
+**Trigger:** Frank's 2026-05-28 directive after Wave 1 close: "full level audit on all of code line by line for the [29] audit categories we just documented so we can move to the next phases with a comfort level of clean code in its current state." Plus: "retire all narrow scope as going forward we want detailed reviews and audits."
+
+**Doctrine changes shipped this PR:**
+
+1. **AP #50 RETIRED.** Original surface-dependent methodology (broad codebase → breadth-parallel / narrow surface → line-by-line / broad surface line-by-line → 40% cascade) is retired. Standing rule: line-by-line per category regardless of surface breadth, §16.15 2-pass deep-read addendum per category to close the cascade.
+2. **AP #61 reworded.** Dropped "parallel narrow-scope agents per AP #50" language; kept the pre-phase audit gate principle. Methodology line now reads "line-by-line per category with §16.15 2-pass deep-read addendum."
+3. **PLATFORM_PRIORITIES.md §17.3 rewritten.** Surface-dependent methodology removed; line-by-line standing rule articulated.
+4. **PLATFORM_PRIORITIES.md §17.6 Wave 3 amended.** "During multi-program build" → "before multi-program build, gates the phase boundary per §17.8."
+5. **PLATFORM_PRIORITIES.md §17.7 step 5 amended.** Multi-program build phase opens only after §17.8 audit-gate closes.
+6. **PLATFORM_PRIORITIES.md §17.8 new section.** Audit-gate enforcement — all 29 categories line-by-line + addendum before next-phase. Comfort-over-velocity criterion locked.
+
+**Anchor finding for Wave 2.B perf dispatch (empirical signal that drove the policy):**
+
+Home page LCP regressed to ~5s as of 2026-05-28 (vs §17.1 1.5s target — 3.3× over budget). Frank reported in-session. Almost certainly a specific blocking import or synchronous data-fetch waterfall, not generalized slowness. Investigation thread when Wave 2.B #1+#2 dispatch:
+
+- `src/main.jsx` static imports — check for SDK init outside the lazy-load + `requestIdleCallback` pattern per §16.10
+- `src/lib/sentry.js` — ErrorBoundary exemption per §16.10.1; verify still the only static-import SDK consumer
+- `src/contexts/AuthContext.jsx` — synchronous data fetches before first paint
+- `src/components/ProfileGateLayout.jsx` — waterfall risk between auth gate + downstream fetches
+- Newly-merged hooks from Wave 1 P1 PRs (#561, #562) — any new blocking calls introduced
+
+**Routing for next session — Wave 2.A first batch (per §17.8 + AP #58 cross-batch synthesis):**
+
+- **Wave 2.A — DB / security adjacent (5 categories):** #11 edge function auth + secrets, #13 PII surface, #14 dependency security, #15 rate-limit / abuse, #23 migration ledger consistency
+- **Wave 2.B — Perf + bundle (3, anchored on the 5s regression):** #1 cold load, #2 warm-cycle navigation, #3 bundle/code split
+- **Wave 2.C — UX surface (5):** #4 realtime channel hygiene, #5 React hook hygiene, #16 UX surface audit, #17 cross-role coverage matrix, #24 observability coverage
+- **Wave 3.A — Engagement + ops (5):** #18 onboarding pipeline, #19 notification pipeline coverage, #20 briefing engine coverage, #21 edge function deploy parity, #22 pg_cron job health
+- **Wave 3.B — Closeout (6):** #6 anti-pattern compliance sweep, #10 data integrity canonical-source compliance, #25 DR/backup testing, #27 youth-sports compliance, #28 data migration playbook, #29 doctrine drift
+
+5 batches × 5 categories ≈ 25 categories (24 of 29 remaining after Wave 1). Plus §16.15 2-pass deep-read addendum per category before fix PRs ship. Probably 4-6 sessions of work depending on findings density.
+
+**Wave 1 retroactive addendum question (deferred routing):**
+
+Wave 1 was dispatched under the (now-retired) breadth-parallel methodology. Per the new line-by-line standing rule, a §16.15 addendum re-read on the 5 Wave 1 categories would surface what the first-pass parallel agents missed. Not a P0 — Wave 1 P0s are closed and Wave 1 P1s shipped — but worth scheduling. Default: deferred to after Wave 3.B closes (full system audit complete, then go back and addendum-pass Wave 1 for completeness). Frank can override if he wants the addendum earlier.
+
+**AP #45 satisfied:** doctrine changes + ledger entry in same commit.
+
+---
+
 ### §4.AM — Wave 1 P1 cleanup close + Wave 2 carryover (2026-05-28)
 
 **Trigger:** §4.AL Wave 1 P0 close left P1s in the §4.AK list pending.

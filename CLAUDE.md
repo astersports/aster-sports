@@ -534,30 +534,29 @@ to prevent drift.
 
 49. **Full-paste discipline for planning/audit/spec/handoff docs.** When CC writes a planning, audit, spec, or handoff doc, the routine is: (a) create the doc, (b) commit + push + open PR per §12 + §15, (c) **paste FULL contents in chat in the same turn**. Plain text only. No triple-backtick wrap around the whole doc. Multi-message splits are allowed only when the doc exceeds single-message capacity. Splits ship in sequential messages within the same turn (not across turns). Header each split: "part N of M". If the doc exceeds reasonable multi-message capacity (>2000 lines), pause and ask claude.ai which sections need review. Never auto-summarize. Never defer the paste. The full doc IS the deliverable. The chat paste IS how claude.ai receives it. "I created the doc" without paste is not delivery. Origin cases: tools-inventory paste round-trip (2026-05-21, fenced and didn't render), Teams audit handoff (2026-05-21, summary-instead-of-full-paste). Widening rationale: original #49 covered "docs intended for claude.ai review" — the amendment widens to "any planning/audit/spec/handoff doc" because the operative question isn't intent but whether the doc will be reviewed at any point. Every audit/spec/handoff eventually needs review; pre-judging which ones need it now produces gaps.
 
-50. **Audit cascade dynamics are methodology-dependent — match methodology to scope.**
+50. **RETIRED 2026-05-28.** Superseded by Frank's line-by-line mandate
+post-Wave-1 close. The original AP #50 surface-dependent methodology
+(broad codebase → breadth-parallel; narrow surface → line-by-line;
+broad surface line-by-line → 40% cascade — don't do this) is retired.
 
-Pattern:
-- Broad codebase audit → breadth-via-parallel-agents methodology
-  (high first-pass yield, near-zero second-pass cascade)
-- Specific surface audit → line-by-line methodology at narrow scope
-  (high signal-to-noise, low miss rate)
-- Broad surface line-by-line → high yield with high cascade (~40% miss rate)
+**Standing rule (replaces AP #50):** line-by-line per category,
+regardless of surface breadth. §16.15 2-pass deep-read addendum per
+category to close the cascade rate inherent to line-by-line at broad
+scope. See PLATFORM_PRIORITIES.md §17.3 + §17.8.
 
-Discipline: methodology choice is scope-dependent, not preference.
-Match methodology to scope before dispatching audit agents.
+Rationale: comfort over velocity. Empirical signal that drove the
+retirement — home page LCP regressed to ~5s (vs §17.1 1.5s target)
+without the surface methodology catching it because perf was deferred
+to Wave 2 RUM-data availability. "Comfort level of clean code in
+current state" is the operative criterion before next-phase build
+engages, not perf budgets or architectural invariants alone.
 
-Origin cases:
-- 2026-05-21 Teams audit (line-by-line, broad scope, ~40% cascade —
-  initial pass missed material findings, deep-read addendum caught them)
-- 2026-05-21 platform audit v1 (breadth-via-parallel-agents, 21 findings
-  first pass, second pass found 1 false positive — near-zero cascade)
-- 2026-05-21 session-level line-by-line audit (line-by-line, narrow scope —
-  33 PRs / 1 day's diffs, 10 findings, 30% PR hit rate, 9% genuine
-  regression rate, high signal-to-noise)
-
-Applied operationally: the L99 platform-wide audit (planned 2026-05-21,
-~14 batches) draws batch boundaries where each is narrow enough to stay
-under the ~40% cascade threshold. The batching IS the methodology.
+Cross-references that previously cited AP #50:
+- AP #56, #58, #59 — principles stand (stop-conditions, cross-batch
+  synthesis, close-when-exhausted); "narrow-scope" framing was not
+  in their active rule language, so no edit needed.
+- AP #61 — reworded to drop the "parallel narrow-scope agents per
+  AP #50" methodology line; pre-phase audit gate principle remains.
 
 51. **Dead-feature mount retirement.** Surfaces that serve no current Frank workflow get retired, not gated by config. Engine Preview removal (PR #398, 2026-05-20) established the precedent. TeamPlayerStats removal (Teams PR C) is the next instance. The gate-by-config pattern produces confusing future-Frank ("why is this here?") and accumulates dead-code mass. Promoted 2026-05-22: 17+ NEW dead-feature surfaces accumulated post-candidate-registration across Engine Preview (PR #398), TeamPlayerStats mount (Teams PR C), Header bell button (PR #449), InstallPrompt + WelcomeOverlay (Batch 2a — still mounted at HomePage:29/30), 5 src/components/event/ orphans (Batch 5), TeamPlayerStats.jsx + PlayerStatsTable.jsx orphan files (Batches 6 + 7), 8 orphan SECTION_RENDERERS entries (Batch 8b), scheduleChange.js legacy composer (Batch 8b F-7), useSortedPlayers dead export (Batch 6 P2-2), useComposeBriefing.js (deleted via PR #462). Promotion criterion (third NEW surface) overwhelmingly met.
 
@@ -884,17 +883,15 @@ diagnostic instrumentation.
 
 Cross-reference: AP #16.7.1, AP #26, AP #39, AP #40, AP #44.
 
-61. **Pre-phase-cutover audit gate — line-by-line surface before
+61. **Pre-phase-cutover audit gate — line-by-line per category before
 transition.** (CANDIDATE — promotes to permanent on third observed
 instance with stable findings rate.)
 
 Before any phase cutover (cleanup arc → multi-program build,
 current-season → next-season rollover, beta → GA), perform a
-narrow-scope line-by-line bug + enhancement + redesign-potential
-surface review of every component touched in the current phase,
-dispatched as parallel narrow-scope agents per AP #50. The 40% cascade
-rate of broad-scope line-by-line is unacceptable; the discipline runs
-narrow-scope in parallel to defeat the cascade.
+line-by-line bug + enhancement + redesign-potential review of every
+audit category in scope per PLATFORM_PRIORITIES.md §17.5, with a
+§16.15 2-pass deep-read addendum per category to close the cascade.
 
 **Required outputs before the phase is "done":**
 1. Bug surface (cross-role coverage per AP #43).
@@ -903,17 +900,20 @@ narrow-scope in parallel to defeat the cascade.
 4. Routing decision (ship-this-phase / next-phase / defer, with
    rationale).
 
-**Methodology:** L99 per §16.15 + AP #50. Each audit covers ONE bounded
-surface. Cross-batch pattern check per AP #58 surfaces cross-cutting
-findings.
+**Methodology:** L99 per §16.15. Line-by-line per category (AP #50
+surface-dependent methodology RETIRED 2026-05-28). Cross-batch pattern
+check per AP #58 surfaces cross-cutting findings. Audit-gate
+enforcement per PLATFORM_PRIORITIES.md §17.8 — all §17.5 categories
+close before the phase boundary opens.
 
 Stop conditions per AP #56 + AP #59.
 
 Origin case (2026-05-28): the cleanup arc (PRs #543–#550) → multi-
 program build cutover is the active phase boundary where this
-discipline was first articulated.
+discipline was first articulated. Wave 1 close (PRs #557–#563) then
+surfaced the line-by-line mandate per §17.8.
 
-Cross-reference: AP #43, AP #50, AP #56, AP #58, AP #59.
+Cross-reference: AP #43, AP #56, AP #58, AP #59.
 
 62. **Interim workflow cannot be claimed as permanent contract.**
 (CANDIDATE — promotes to permanent on third observed instance with
