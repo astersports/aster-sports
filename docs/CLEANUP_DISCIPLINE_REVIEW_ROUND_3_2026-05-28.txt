@@ -1,0 +1,252 @@
+EMBER PLATFORM — CLEANUP DISCIPLINE + PRE-CUTOVER AUDIT PLAN
+Round 3 review request — final pass before commit (or surface a P0 blocker)
+Date: 2026-05-28
+================================================================================
+
+REVIEWER PROMPT
+================================================================================
+
+You are reviewing Round 3 of a doctrine iteration for a multi-tenant youth-sports SaaS platform (Ember). Round 2 returned with four new structural concerns:
+
+  - Concern 3: "fix by addition" — every Round 1 critique was answered by ADDING content, when the right correction is to REMOVE or DEMOTE.
+  - Concern 4: candidate-AP-flood (6 in one PR) breaks the catalog discipline that promotes at three observed instances.
+  - Concern 5: "candidate" label is doing too much work; future readers won't carry the epistemic weight.
+  - Concern 6: Wave 1 is now too large at 8; trim to 5 truly foundational audits.
+
+Plus the meta-meta-pattern: "each round adds less; the artifact is getting more sophisticated rather than tighter. AP #60 source hierarchy is one paragraph and will hold across years. The simplest doctrine that captures the essential disciplines is more load-bearing than the most comprehensive one."
+
+The Round 2 standing recommendation:
+
+  - Layer 1: source hierarchy permanent + operational rules permanent (with rule 2 framed as interim) + AP #60 candidate + AP #61 candidate + AP #63 candidate. DROP AP #62, AP #64, AP #65.
+  - Layer 2: §17.1 with RUM precondition, §17.2 multi-tenant grounded + multi-program reframed as hypothesis pending St. Patrick's validation, §17.4 backlog kept, §17.5 audit taxonomy reframed with weighting note, §17.6 Wave 1 trimmed to 5, §17.7 chat-split kept.
+  - Verify two preconditions before committing: RUM live in prod; St. Patrick's commitment firm enough to ground multi-tenant claim.
+
+This Round 3 doc captures the tightening. The goal is to confirm:
+
+  - The tightening actually removes (not just relabels) per the reviewer's recommendation.
+  - The two preconditions are addressed.
+  - The remaining open decisions are framed honestly (not smuggled).
+  - There are no NEW failure modes introduced by the tightening.
+
+Be direct. If there's a P0 blocker, surface it. Otherwise this is the final pass before commit.
+
+================================================================================
+
+SECTION 1 — WHAT GOT REMOVED (the key signal)
+================================================================================
+
+Versus Round 2's proposed scope, the following were REMOVED or DEMOTED:
+
+DROPPED (no longer in doctrine layer):
+  - AP #62 (comprehensiveness as inference signature) — single instance origin in "this very doctrine review." Sub-case of AP #60.
+  - AP #64 (regression-vs-limitation framing) — single instance origin. Sub-case of AP #60 source hierarchy item #2.
+  - AP #65 (doctrine-artifacts-without-grounding) — meta-AP that wouldn't reliably trigger (failure is unconscious at draft time). Replaced by an operational rule.
+
+REDUCED (in scope, not dropped):
+  - Wave 1: from 8 audits back to 5. Cross-role coverage matrix, edge-function auth, deploy parity moved to Wave 2. Youth-sports compliance moved to Wave 2 (foundational but not blocking multi-program build per se).
+  - §17.5 audit taxonomy: presented as "categories surfaced from observation + L1 audit hypothesis," with explicit note that Wave 1 findings will calibrate which categories produce real findings vs surface emptily. Not claimed as a complete or observed set.
+  - §17.2 multi-program invariants: reframed as "hypotheses pending validation conversation with St. Patrick's about their actual program structure" — not as architectural claims encoded into the doctrine.
+
+REPLACED:
+  - AP #65 (failed as meta-rule) → new operational rule: "Doctrine commits to CLAUDE.md require a fresh-context review pass before merge." Concrete, enforceable, doesn't require unconscious self-awareness.
+
+SOFTENED:
+  - §17.2 multi-tenant claim: from "St. Patrick's identified, basketball, ~24-25 winter teams" to "second tenant identified; target onboarding Spring 2027, contingent on Legacy Hoopers - LeagueApps platform readiness; date TBD." Grounded but honest about the soft commitment.
+
+KEPT (per Round 2 acceptance):
+  - Source hierarchy 1-5 as permanent doctrine
+  - Operational rules as permanent (with rule 2 framed as interim)
+  - AP #60 as candidate (origin: webhook session)
+  - AP #61 as candidate (origin: cleanup-arc → multi-program-build cutover)
+  - AP #63 as candidate (origin: verify-before-stack)
+  - §17.4 backlog additions (8 items from Round 1)
+  - §17.7 chat-split sequencing
+
+NET CHANGE: 3 APs removed, 3 audits removed from Wave 1, 1 operational rule added, multiple claims softened. The doctrine got smaller.
+
+================================================================================
+
+SECTION 2 — TIGHTENED DOCTRINE (FULL CONTENT)
+================================================================================
+
+LAYER 1 — CLAUDE.md ADDITIONS
+================================================================================
+
+PERMANENT (registered as doctrine):
+
+Source hierarchy (sub-rule of AP #60, generalizes existing AP #16.7.1):
+  1. Live system state (Supabase MCP, GitHub MCP, file Read, deployed runtime)
+  2. User's empirical report (authoritative on contradiction)
+  3. Installed source / type defs / migration files
+  4. Vendor / tool documentation
+  5. Inference / memory (only when no verification possible AND explicitly labeled)
+
+Operational rules:
+  1. Auto-merge stays armed on every PR.
+  2. Verify-before-stack INTERIM workflow during the merge-webhook regression. Expires when webhook regression is closed.
+  3. Source hierarchy applied to every claim. Source 5 (inference) explicitly labeled.
+  4. Pre-phase gate runs before every cutover.
+  5. L99 methodology for every code review (narrow-scope parallel agents, never broad-scope line-by-line).
+  6. Cross-role coverage mandatory on every user-facing surface (per AP #43).
+  7. Doctrine commits to CLAUDE.md require a fresh-context review pass before merge.
+
+CANDIDATES (apply as working discipline; promote to permanent on third observed instance with stable findings rate):
+
+AP #60 — Fact-grounding discipline. Every claim about tool behavior, system state, schema, deployed code, or user experience must be grounded in a verifiable source. Tool-maximization sub-rule + question-asking sub-rule. Origin case (2026-05-28): unfounded claims about GitHub MCP webhook delivery during the L99 cleanup arc.
+
+AP #61 — Pre-phase-cutover audit gate. Before any phase cutover, perform narrow-scope line-by-line bug + enhancement + redesign-potential surface review of every component touched in the current phase, dispatched as parallel narrow-scope agents per AP #50. Cross-role coverage mandatory per AP #43. Stop conditions per AP #56 + #59. Origin case (2026-05-28): cleanup arc → multi-program build cutover.
+
+AP #63 — Interim workflow cannot be claimed as permanent contract. When a regression forces an alternate workflow, that workflow is INTERIM. It carries an explicit fix-condition or expiration. It does not calcify into doctrine unless the regression is permanently accepted. Origin case (2026-05-28): verify-before-stack proposed as workflow during the merge-webhook regression.
+
+LAYER 2 — PLANNING DOC (docs/PLATFORM_PRIORITIES.md; not CLAUDE.md)
+================================================================================
+
+§17.1 — Performance targets
+--------------------------------------------------------------------------------
+
+PRECONDITION (UNRESOLVED): RUM measurement infrastructure must be live in prod before these targets are enforceable. Verified 2026-05-28 that no RUM is currently installed (@vercel/speed-insights, web-vitals, @vercel/analytics all absent from package.json; Sentry mounted but performance tracing not enabled).
+
+Three resolution options under discussion:
+  (i) Install @vercel/speed-insights as a small Wave-0 PR before doctrine commits.
+  (ii) Use web-vitals or pure Sentry performance monitoring.
+  (iii) Reframe §17.1 as "pending RUM" and defer enforceability.
+
+Targets (enforceable once RUM lands):
+  - LCP < 1.5s p75 in prod, measured on Parent Home + Schedule + Briefing pages
+  - INP < 200ms p75 across all tab-to-tab navigation
+  - Sign-in to first meaningful paint < 2s p75
+  - Targets reviewed monthly. PRs that regress p75 by >10% require explicit ack.
+
+The aspirational North Star — "user opens the app or transitions between tabs and sees content that gives them a reason to stay" — lives in §17.4 as a design principle, NOT as an engineering measurement.
+
+§17.2 — Multi-tenant architectural scope
+--------------------------------------------------------------------------------
+
+Multi-tenant (GROUNDED, soft commitment):
+  - Live tenant: Legacy Hoopers (basketball, ~63 active players, 175 guardians, ~$70K invoiced Spring 2026).
+  - Second tenant identified: St. Patrick's basketball (~24-25 winter teams, guardian overlap with Legacy Hoopers).
+  - Target onboarding: Spring 2027, contingent on Legacy Hoopers - LeagueApps platform readiness. Date TBD.
+
+Multi-tenant invariants (apply now, regardless of onboarding date):
+  - Every org-scoped table has org_id + RLS scoping by current_user_org_id().
+  - Every query touching an org-scoped table filters by org_id explicitly (AP #37 defense-in-depth).
+  - Every UI brand-token application resets to org defaults on login.
+  - No cross-org data leak path exists from any role on any surface.
+
+Multi-program (HYPOTHESIS, pending validation):
+  - The LeagueApps walkthrough on 2026-05-28 surfaced a polymorphic program taxonomy (Season / Camp / Class / Club Team / Event / League / Tournament / Booking, plus Tryouts, Waitlists, Practice Rosters, Group Training). This is observation about how LeagueApps structures programs, NOT validated observation about how St. Patrick's actually runs theirs.
+  - Validate via direct conversation with St. Patrick's about their actual season structure, camp structure, billing flow, registration patterns before encoding into schema.
+  - Multi-program polymorphism is not yet a doctrine claim. It is a planning hypothesis with an explicit validation step.
+
+Multi-sport: DROPPED from doctrine. No second-sport pilot identified.
+
+§17.3 — Phase rigor & methodology (kept from Round 2)
+--------------------------------------------------------------------------------
+
+L99 per §16.15. By scope per AP #50. Pre-cutover audits run as parallel narrow-scope agents.
+
+§17.4 — Redesign backlog (architectural + UX + operational items)
+--------------------------------------------------------------------------------
+
+(unchanged from Round 2; 19 items grouped by Architectural / UX / Operational. Includes design-research item "user opens app and sees reason to stay" — design principle, not engineering measurement.)
+
+§17.5 — Audit category set (HYPOTHESES pending Wave 1 calibration)
+--------------------------------------------------------------------------------
+
+The following 31 categories were drafted from a combination of observation (recent session findings), competitor analysis (LeagueApps walkthrough), and security/compliance pattern recognition for multi-tenant SaaS handling minor data + financial transactions.
+
+This list is NOT claimed as a complete or observed set. Wave 1 will dispatch against the highest-confidence subset (§17.6). Categories that surface real findings in Wave 1 get retained for subsequent waves. Categories that surface emptily get demoted or removed.
+
+(31 categories enumerated as in Round 2; explicitly marked as "candidate set pending Wave 1 calibration.")
+
+§17.6 — Wave 1 dispatch plan (TRIMMED to 5)
+--------------------------------------------------------------------------------
+
+Wave 1 — P0 (genuinely "blocks multi-program build" or "blocks any next phase"):
+  #7  RLS correctness + performance (blocks multi-tenant invariants)
+  #8  Schema integrity (blocks any phase change involving schema additions)
+  #9  Query contract sweep AP #36/#37/#48/#25 (blocks multi-tenant defense-in-depth)
+  #12 Cross-org / multi-tenant exposure (blocks multi-tenant by definition)
+  #26 Financial reconciliation (P0 by nature; financial data corruption at multi-org cutover is catastrophic)
+
+Moved to Wave 2 (important but fixable alongside build):
+  #1, #2 Performance — load-bearing per §17.1 but blocked on RUM precondition.
+  #17 Cross-role coverage matrix
+  #11 Edge function auth + secrets
+  #22 Edge function deploy parity
+  #27 Youth-sports compliance (important but separate workstream, not foundational to multi-program build)
+
+Wave 3 stays as drafted (P2, parallel to build).
+
+§17.7 — Chat-split sequencing (kept from Round 2)
+--------------------------------------------------------------------------------
+
+Current chat: commits Layer 1 + Layer 2 PRs after Round 3 review approval.
+Fresh chat: opens by verifying both PRs on main (per AP #60). Dispatches Wave 1.
+
+================================================================================
+
+SECTION 3 — OPEN DECISIONS (reviewer can pressure-test)
+================================================================================
+
+DECISION 1: St. Patrick's commitment firmness
+
+Reviewer's bar in Round 2 was "named with date" to ground the multi-tenant claim. Current state:
+  - Identified: St. Patrick's basketball
+  - Scope known: ~24-25 winter teams, guardian overlap with Legacy Hoopers
+  - Target date: Spring 2027 (Winter 2026-27 "very aggressive")
+  - Hard date: TBD, contingent on Legacy Hoopers - LeagueApps refinement
+
+The doctrine's response: ground the multi-tenant claim on "second tenant identified with target Spring 2027, date TBD." Apply multi-tenant invariants now regardless of onboarding date.
+
+Reviewer question: is "target Spring 2027, date TBD" sufficient grounding to keep multi-tenant as a load-bearing scope claim, or does it warrant softer language ("multi-tenant remains the architectural direction; specific onboarding plans pending")?
+
+DECISION 2: RUM measurement layer
+
+§17.1 perf targets specify LCP/INP/FMP against measurement infrastructure that doesn't exist. Three resolution paths:
+  (i) Install @vercel/speed-insights as small Wave-0 PR before doctrine commits.
+  (ii) Use web-vitals library reporting to Sentry or Supabase.
+  (iii) Reframe §17.1 as "pending RUM" — defer enforceability.
+
+Current lean: (i). Vercel-native, smallest decision surface, one small PR ships first.
+
+Reviewer question: any reason to prefer (ii) over (i) for a multi-tenant SaaS at this scale, or is the Vercel-native path the right default? Any reason to defer per (iii)?
+
+DECISION 3: Multi-program hypothesis status
+
+§17.2 multi-program polymorphism is currently framed as "hypothesis pending validation conversation with St. Patrick's." This means schema decisions about program_kind discriminator wait until validated. But it also means the schema design itself is on hold for multi-program until that conversation happens.
+
+Reviewer question: is the "wait until St. Patrick's conversation validates" gate the right hold, or should the schema move forward on the LeagueApps observation alone (treating LeagueApps as a competent-vendor-design proxy for the youth-sports domain)?
+
+================================================================================
+
+SECTION 4 — ROUND 3 REVIEW QUESTIONS (focused; 4 not 8)
+================================================================================
+
+R3.Q1: Does the tightening actually escape the "fix by addition" failure mode from Round 2? Concrete test: count APs removed vs added (3 removed, 1 operational rule added = net -2 doctrine items). Count Wave 1 audits removed vs added (3 removed = net -3). Does this satisfy the structural concern, or is it surface compliance?
+
+R3.Q2: The three remaining candidate APs (#60, #61, #63) each have one origin case. Per the catalog's three-instance threshold, none are yet at the promotion bar. Is registering them as candidates from one session the right discipline anyway (given the operational pain was real and the patterns are well-articulated), or should they wait for a second observed instance before even candidate registration?
+
+R3.Q3: Are the three open decisions (St. Patrick's firmness, RUM choice, multi-program hypothesis status) framed honestly, or is any of them smuggling under-grounded content into the doctrine via the "open decision" device?
+
+R3.Q4: If you were committing this doctrine today, what's the SINGLE THING you'd cut to make it tighter? Not what you'd add. What you'd remove.
+
+================================================================================
+
+STANDING RECOMMENDATION
+================================================================================
+
+This Round 3 doc IS the trimmed final artifact. If the reviewer surfaces no P0 blockers, the next step is:
+
+  1. Resolve Decision 2 (RUM) with Frank — likely (i) install Vercel Speed Insights as a small Wave-0 PR.
+  2. Resolve Decision 3 (multi-program hypothesis status) — likely "hold schema work until St. Patrick's conversation; doctrine ships with the hypothesis label."
+  3. Commit Layer 1 PR (CLAUDE.md doctrine additions).
+  4. Commit Layer 2 PR (docs/PLATFORM_PRIORITIES.md).
+  5. Fresh chat opens, verifies both PRs on main, dispatches Wave 1 (5 audits).
+
+If the reviewer surfaces a P0 blocker, address it. Otherwise this is the doctrine that ships.
+
+================================================================================
+
+END OF ROUND 3 REVIEW DOCUMENT
+================================================================================
