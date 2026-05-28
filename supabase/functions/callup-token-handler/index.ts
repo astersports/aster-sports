@@ -29,7 +29,14 @@ function htmlPage(title: string, body: string, alts = ""): Response {
   ${alts}
   <div style="margin-top:20px;font-size:12px;color:#94a3b8;">Or open the Legacy Hoopers app for the full schedule.</div>
 </div></body></html>`;
-  return new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
+  return new Response(html, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "private, no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
 }
 
 function altButtons(currentAction: string, _fnUrl: string, _ctx: { e: string; p: string; g: string }): string {
