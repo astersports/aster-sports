@@ -67,8 +67,8 @@ export default function EventHeroActions({
     const isTournamentDraft = event.event_type === 'tournament' && !event.opponent;
     return (
       <div style={ROW}>
-        {isTournamentDraft ? (
-          <button type="button" onClick={() => navigate(`/admin/briefings/compose?anchor=event&id=${event.id}`)} className="sf-press" style={BTN}><Send size={14} strokeWidth={1.75} />Compose briefing</button>
+        {isTournamentDraft && event.tournament_id ? (
+          <button type="button" onClick={() => navigate(`/admin/briefings/compose?anchor=tournament&id=${event.tournament_id}`)} className="sf-press" style={BTN}><Send size={14} strokeWidth={1.75} />Compose briefing</button>
         ) : null}
         <button type="button" onClick={onNotify} className="sf-press" style={BTN}><Send size={14} strokeWidth={1.75} />Notify families</button>
         {!isTournamentDraft && <button type="button" onClick={onLockRoster} className="sf-press" style={BTN_SEC}>Lock roster{lockCount != null ? ` · ${lockCount}` : ''}</button>}
