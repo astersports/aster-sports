@@ -1,0 +1,405 @@
+EMBER PLATFORM — CLEANUP DISCIPLINE + PRE-CUTOVER AUDIT PLAN
+Round 2 review request — does the proposed integration adequately address Round 1's structural concerns?
+Date: 2026-05-28
+================================================================================
+
+REVIEWER PROMPT
+================================================================================
+
+You are reviewing Round 2 of a doctrine + audit-plan iteration for a multi-tenant youth-sports SaaS platform (Ember). Round 1 returned a substantial structural critique with two top-level concerns and per-question feedback. This Round 2 doc captures (a) the Round 1 critique, (b) the proposed integration of that feedback, (c) the updated artifacts, and (d) new questions about whether the integration adequately addresses the structural concerns or smuggles them back in differently.
+
+Goals for this review pass:
+
+  1. Verify the hybrid Layer-1 (CLAUDE.md doctrine) / Layer-2 (planning doc) split actually addresses Round 1's structural concern that "the doctrine commits the failure mode it claims to prevent." Or does the candidate-AP-with-promotion-criteria pattern smuggle inferential content into the doctrine layer differently?
+  2. Verify the measurable perf targets (LCP, INP, sign-in to FMP) are concrete enough to be load-bearing and that they're operationally checkable.
+  3. Verify the updated 27→33 category taxonomy + revised Wave 1/2/3 sequencing actually follows from observed gaps rather than enumeration.
+  4. Check for new patterns of smuggling — where the response to "this isn't grounded" produced new-but-still-not-grounded content.
+  5. Identify any remaining discipline-design anti-patterns in the doctrine itself.
+
+Be direct. No softening. We have a high-tolerance for hard truths and we want this set in stone correctly, not quickly.
+
+================================================================================
+
+SECTION 1 — ROUND 1 CRITIQUE (FOR CONTEXT)
+================================================================================
+
+Round 1's two structural concerns:
+
+CONCERN 1: The doctrine codifies AP #60 (fact-grounding) and AP #61 (pre-phase-cutover gate) as the highest-priority new rules. Both prohibit inference-without-verification. The doctrine itself wasn't grounded against AP #60's source hierarchy:
+
+  - The 27-category audit taxonomy reads as comprehensive-by-construction, not derived from observed gaps.
+  - The 11-item redesign backlog reads as "items that surfaced in recent conversations," not "items the platform's actual posture demands."
+  - The 5+5+12 wave breakdown with 25-30 minute estimates had zero calibration against actual audit work.
+  - "First 3 seconds, never wants to leave" was aspirational language treated as a load-bearing rule.
+  - The multi-sport invariant claim about game_plays as the seam had not been schema-verified.
+
+Round 1's framing: "sitting down to write a doctrine and confidently producing comprehensive-sounding categories, time estimates, and invariant lists IS the inference-substitute-for-verification pattern. The same pattern that produced the webhook-delivery claims AP #60 is supposed to prevent."
+
+CONCERN 2: AP #60 and AP #61 were drafted from one session's pain (the webhook regression + several surface-answer instances). The existing AP catalog promotes at three observed instances. Round 1 said: "well-articulated candidate disciplines that deserve registration AFTER they've held across additional sessions. Registering them now risks the doctrine drifting toward whatever feels acutely painful today."
+
+Round 1's per-question feedback:
+
+Q1 (audit categories) — 6 missing categories (financial reconciliation, youth-sports compliance, DR/backup testing, rate-limit/abuse, dependency security, data-migration/onboarding); some overlap to consolidate (#16+#18 with #14/#15; #26+#27).
+
+Q2 (anti-patterns) — 4 missing candidates: comprehensiveness-as-inference-signature, interim-workflow-as-permanent-contract, regression-vs-limitation framing, doctrine-artifacts-without-grounding.
+
+Q3 (perf targets) — "3-second-stay" is decoration. Replace with measurable: LCP < 1.5s p75 prod, INP < 200ms p75, sign-in to first meaningful paint < 2s p75, monthly review, >10% p75 regression requires explicit ack.
+
+Q4 (Wave sequencing) — perf #1+#2 in Wave 2 contradicts §17.1 making perf load-bearing. Move to Wave 1. Move #17 cross-role + #11 + #22 to Wave 2.
+
+Q5 (chat split) — confirmed correct. Fresh-chat opens by verifying doctrine on main before dispatching.
+
+Q6 (multi-sport) — currently decoration; no second-sport pilot identified. Drop the multi-sport claim until real.
+
+Q7 (redesign backlog) — 8 missing items: aggregate cache strategy, test coverage uplift, push reliability when app-closed >24h, mobile gestures, offline-first UX, email deliverability monitoring, org-admin self-service tooling, audit log surface.
+
+Q8 (meta) — well-formed parts: source hierarchy, AP cross-refs, chat-split, operational rules. Weakly-formed: §17.1 perf decoration, §17.2 multi-sport decoration, §17.4 partial backlog, 27-category taxonomy enumerated-not-observed, Wave 1 contradicts §17.1, AP #61 specifics uncalibrated.
+
+Round 1's standing recommendation: don't ship as drafted. Three options offered. Reviewer leaned Option 1 (split into two PRs: doctrine layer with provisional candidates + planning layer separate) or Option 3 (hold doctrine commit by 1-2 sessions, run Wave 1 first).
+
+================================================================================
+
+SECTION 2 — INTEGRATION RESPONSE
+================================================================================
+
+Round 1's structural critique was accepted without defense. Both concerns are correct.
+
+Per-question integration:
+
+Q1: Adopting the 6 missing categories. Consolidating #16+#18 into UX surface audit; merging #26+#27 into doctrine-drift audit. Net result: 27 → 33 categories, then consolidated to 31 audits. Marked as candidate categories pending Wave 1's actual findings (the categories list iterates based on what Wave 1 observes, not what was enumerated up-front).
+
+Q2: Adopting all 4 candidate APs from Round 1's review. They join AP #60 and AP #61 as candidates with promotion criteria.
+
+Q3: Adopting the measurable perf targets verbatim. Separating the "never wants to leave" half — it's a design principle, not a perf measurement; placing it in the planning layer (§17.4) as an aspirational North Star rather than a doctrine-layer rule.
+
+Q4: Adopting the Wave 1 re-sort. Perf #1+#2 moves to Wave 1 (load-bearing per §17.1's measurable targets). Cross-role #17 + edge-function-auth #11 + deploy-parity #22 move to Wave 2.
+
+Q5: Adopting the refinement. Fresh-chat dispatch begins with verifying the doctrine landed on main.
+
+Q6: Multi-sport DROPPED from doctrine. Multi-tenant CONFIRMED real and stays load-bearing — the second tenant is named: St. Patrick's basketball (~24-25 winter teams, guardian overlap with Legacy Hoopers). Multi-tenant invariants stand. Multi-sport joins the doctrine when a non-basketball pilot is named with a date.
+
+Q7: Adopting all 8 missing redesign backlog items. Flagged the reviewer's "11 of 17 files lack tests" claim as not present in our session — adding "test coverage uplift" as a backlog item but the specific ratio gets verified during Wave 1's audit before claiming the number.
+
+Q8: Adopting the well-formed / weakly-formed split.
+
+Path forward — HYBRID approach:
+
+LAYER 1 — CLAUDE.md doctrine commit (small PR, takes only what's grounded):
+
+  - AP #60 SOURCE HIERARCHY (1-5) — registered as permanent. The hierarchy itself is well-formed and represents the existing AP #16.7.1 pattern generalized.
+  - Operational rules section — registered as permanent. Concrete: auto-merge armed, verify-before-stack interim, cross-role coverage per AP #43, L99 methodology per §16.15.
+  - AP #60 itself (the full discipline statement), AP #61 (pre-phase-cutover gate), and the 4 new candidate APs from Q2 — registered as CANDIDATE APs with explicit promotion criteria. Each carries the same boilerplate from existing candidate APs in the catalog: "Promotes to permanent on third observed instance with stable findings rate." Applied as working disciplines starting now; doctrine status follows the existing three-instance pattern.
+
+LAYER 2 — planning doc commit (separate PR, lives in docs/):
+
+  - §17 build targets — with measurable §17.1 (LCP/INP/FMP targets), multi-sport claim DROPPED from §17.2 (multi-tenant stays, grounded by St. Patrick's identification), §17.4 expanded with the 8 missing backlog items.
+  - Revised 31-category audit taxonomy (was 27; +6 -2 consolidations).
+  - Re-sorted Wave 1/2/3 dispatch plan per Q4.
+  - Marked explicitly as "current platform priorities, iterates as Wave findings come in."
+  - Not in CLAUDE.md; lives at lower authority so it can iterate.
+
+Rationale:
+
+  - The doctrine layer only takes what's actually grounded today. Everything else is candidate or planning.
+  - The candidate APs apply as working discipline immediately. Frank holds the session to them now. Formal doctrine status follows the existing pattern (three observed instances).
+  - The planning layer captures everything substantive but at iterable authority. Wave 1 dispatches against the planning layer; findings inform doctrine promotion in subsequent commits.
+  - Wave 1 audit findings retroactively validate or invalidate the planning-layer categories (the missing 6 will either show real findings or surface emptily — that's the calibration).
+
+================================================================================
+
+SECTION 3 — UPDATED ARTIFACTS (FULL CONTENT)
+================================================================================
+
+LAYER 1 — CLAUDE.md DOCTRINE ADDITIONS
+================================================================================
+
+AP #60 — Fact-grounding discipline (CANDIDATE — promotes to permanent on third observed instance with stable findings rate)
+--------------------------------------------------------------------------------
+
+Every claim about tool behavior, system state, schema, deployed code, or user experience must be grounded in a verifiable source. Plausible-sounding inference from docstrings, defaults, memory, or pattern-matching is NOT a substitute for verification.
+
+SOURCE HIERARCHY (REGISTERED AS PERMANENT — generalizes existing AP #16.7.1 pattern):
+
+  1. Live system state — Supabase MCP execute_sql, GitHub MCP pull_request_read, file Read, deployed runtime. Highest authority for current behavior.
+  2. User's empirical report — when the user reports observed behavior that contradicts a claim, the user's signal is authoritative. Reframe the model immediately; do not defend the inference.
+  3. Installed source / type defs / migration files — actual code paths, not just docstrings.
+  4. Vendor / tool documentation — only when (1)-(3) are unreachable.
+  5. Inference / memory — only when no verification is possible AND explicitly labeled as such.
+
+Tool-maximization sub-rule: The MCP infrastructure IS the verification layer.
+Question-asking sub-rule: When verification reveals genuine uncertainty, ask the user the specific question that would resolve it.
+
+Origin case (2026-05-28): unfounded claims about GitHub MCP webhook delivery during the L99 cleanup arc.
+
+AP #61 — Pre-phase-cutover audit gate (CANDIDATE)
+--------------------------------------------------------------------------------
+
+Before any phase cutover, perform narrow-scope line-by-line bug + enhancement + redesign-potential surface review of every component touched in the current phase, dispatched as parallel narrow-scope agents per AP #50.
+
+Required outputs: bug surface, enhancement surface, redesign-potential surface, routing decision.
+Cross-role coverage mandatory per AP #43.
+Stop conditions per AP #56 + #59.
+
+(Detailed dispatch specifics live in the planning layer because their calibration is unproven.)
+
+AP #62 — Comprehensiveness as inference signature (CANDIDATE)
+--------------------------------------------------------------------------------
+
+When producing a list (categories, redesign items, audit batches), uniform weight across items is itself a warning signal. Real lists derived from observation are uneven — some categories have many sub-items, others are single-point. Categories of equal weight = enumerated rather than observed.
+
+Trigger: if the list "feels comprehensive" (round counts, similar-sized items, no outliers), STOP and verify each entry against an observed source.
+
+Origin case (2026-05-28): the 27-category audit taxonomy in Round 1 of this very doctrine review.
+
+AP #63 — Interim workflow cannot be claimed as permanent contract (CANDIDATE)
+--------------------------------------------------------------------------------
+
+When a regression forces an alternate workflow (e.g., "verify-before-stack" while the merge-webhook regression is unresolved), that workflow is INTERIM. It carries an explicit fix-condition or expiration. It does not calcify into doctrine unless and until the regression is permanently accepted as not-fixable.
+
+Origin case (2026-05-28): verify-before-stack proposed as workflow during the merge-webhook regression. Must remain framed as interim until the webhook regression is closed.
+
+AP #64 — Regression-vs-limitation framing (CANDIDATE)
+--------------------------------------------------------------------------------
+
+When user reports X doesn't work, and a docstring says X should work, treat the contradiction as regression-evidence, NOT as docstring-overrides-user. Per AP #60's source hierarchy, the user's empirical signal outranks vendor documentation.
+
+Trigger: any time the response to "X doesn't work" begins with "the docs say…" — STOP. Reframe as regression investigation. Propose diagnostic instrumentation.
+
+Origin case (2026-05-28): GitHub MCP webhook merge events — defended a docstring read against the user's 2-month empirical history.
+
+AP #65 — Doctrine artifacts produced without grounding (CANDIDATE — meta-AP)
+--------------------------------------------------------------------------------
+
+The higher an artifact's authority, the more grounding it requires — not less because it's "obvious" or "comprehensive." Doctrine artifacts (CLAUDE.md edits, AP registrations, build-target rules) cannot be drafted primarily from inference. Each clause requires either:
+  a. A grounded source (live system, user empirical report, source code, prior session evidence)
+  b. An explicit "candidate" or "hypothesis" label
+
+The discipline applies recursively: a doctrine artifact that adds new rules cannot itself violate AP #60.
+
+Origin case (2026-05-28): this very doctrine review — drafted with comprehensive-feeling content that wasn't grounded against AP #60's source hierarchy. The Round 1 reviewer caught it.
+
+OPERATIONAL RULES (REGISTERED AS PERMANENT)
+--------------------------------------------------------------------------------
+
+  1. Auto-merge stays armed on every PR.
+  2. Verify-before-stack INTERIM workflow during the merge-webhook regression. Per AP #63, this expires when the webhook regression is closed.
+  3. Source hierarchy (per AP #60) applied to every claim. Source 5 (inference) explicitly labeled.
+  4. Pre-phase gate (per AP #61) runs before every cutover.
+  5. L99 methodology for every code review (per §16.15 + AP #50).
+  6. Cross-role coverage mandatory on every user-facing surface (per AP #43).
+  7. Build targets (per the planning layer's §17) are reviewed at PR time but iterate as findings come in.
+
+================================================================================
+
+LAYER 2 — PLANNING DOC (docs/PLATFORM_PRIORITIES.md or similar; not in CLAUDE.md)
+================================================================================
+
+§17.1 — Performance targets (measured, not aspirational)
+--------------------------------------------------------------------------------
+
+  - LCP < 1.5s p75 in prod via Vercel Speed Insights or equivalent RUM, measured on Parent Home + Schedule + Briefing pages.
+  - INP < 200ms p75 across all tab-to-tab navigation.
+  - Sign-in to first meaningful paint < 2s p75.
+  - Targets reviewed monthly. PRs that regress p75 by >10% require explicit ack.
+
+The aspirational North Star — "user opening the app or transitioning between tabs sees content that gives them a reason to stay" — lives as a design principle in §17.4 (a design-research backlog item), not as a doctrine-layer measurement.
+
+§17.2 — Multi-tenant architectural scope (multi-sport DROPPED until pilot named)
+--------------------------------------------------------------------------------
+
+Multi-tenant (CONFIRMED REAL):
+  - Live tenant: Legacy Hoopers (basketball, ~63 active players, 175 guardians, ~$70K invoiced Spring 2026).
+  - Target second tenant: St. Patrick's basketball (~24-25 winter teams, guardian overlap with Legacy Hoopers).
+  - Invariants:
+    - Every org-scoped table has org_id + RLS scoping by current_user_org_id() per §4 + §11.5 + AP #37.
+    - Every query touching an org-scoped table filters by org_id explicitly (AP #37 defense-in-depth).
+    - Every UI brand-token application resets to org defaults on login.
+    - No cross-org data leak path exists from any role on any surface.
+
+Multi-program invariants (per LeagueApps walkthrough):
+  - Members are org-level + persistent across programs.
+  - Programs are polymorphic (Season / Camp / Class / Club Team / Event / League / Tournament / Booking).
+  - Registrations are per-program-per-member, not the identity layer.
+
+Multi-sport: DROPPED FROM DOCTRINE. Will be re-added when a non-basketball pilot is identified with a target date.
+
+§17.3 — Phase rigor & methodology (unchanged)
+--------------------------------------------------------------------------------
+
+L99 per §16.15. By scope per AP #50:
+  - Broad codebase audit → breadth-via-parallel-agents (low cascade).
+  - Specific surface audit → line-by-line at narrow scope (high signal-to-noise).
+  - Broad surface line-by-line → ~40% cascade. Don't do this.
+
+§17.4 — Known redesign backlog (expanded; design + architectural items deferred but tracked)
+--------------------------------------------------------------------------------
+
+Architectural:
+  - Realtime channel dedupe context (replaces Math.random() suffix workaround across 7 hooks).
+  - SWR/TanStack Query layer for the home-feeder hook fleet.
+  - Blocking-gate decomposition with per-zone skeletons + AP #43 invariant tests.
+  - Aggregate cache strategy for read-heavy hooks.
+  - Program_kind discriminator on programs table.
+  - Sport discriminator on game_plays + sport-specific play tables (deferred until multi-sport is real).
+  - Test coverage uplift (ratio to be verified during Wave 1).
+
+UX / engagement:
+  - Onboarding pipeline (bulk-invite + QR + status column + PWA install prompt + push opt-in promo).
+  - Per-kid spotlight strip on Parent Home.
+  - Tokenized RSVP from weekly_digest + Stream A reminder emails.
+  - Payment-due card action surface (tel: / mailto: / external link).
+  - Reports Hub navigation surface (mirrors LeagueApps Reporting).
+  - Mobile-specific gestures (swipe-to-RSVP, long-press context menus, pull-to-refresh).
+  - Offline-first / connection-loss UX (PWA framing implies this; not engaged with today).
+  - The "never wants to leave" design research backlog item — design research, not engineering measurement.
+
+Operational:
+  - Permissive policy consolidation on event_comments/rsvps/duties (60 advisor findings; defer to multi-program scoping).
+  - Push reliability under app-closed scenarios > 24h.
+  - Email deliverability + DKIM/SPF/DMARC monitoring.
+  - Org-admin self-service tooling (for St. Patrick's onboarding).
+  - Audit log / "who changed this" surface.
+
+§17.5 — Audit taxonomy (31 categories, candidate set pending Wave 1 calibration)
+--------------------------------------------------------------------------------
+
+Code & architecture:
+  1. Performance — initial paint / cold load
+  2. Performance — warm-cycle navigation
+  3. Bundle / code split
+  4. Realtime / channel hygiene
+  5. React hook hygiene
+  6. Anti-pattern compliance sweep
+
+Database & data:
+  7. RLS correctness + performance
+  8. Schema integrity
+  9. Query contract sweep
+  10. Data integrity / canonical-source compliance
+
+Security:
+  11. Edge function auth + secrets
+  12. Cross-org / multi-tenant exposure
+  13. PII surface
+  14. Dependency security (NEW from Round 1)
+  15. Rate-limit / abuse surface (NEW from Round 1)
+
+UX (consolidated per Round 1):
+  16. UX surface audit (covering design-token compliance + accessibility + microcopy + empty-state inventory — was 4 separate, now 1 with sub-categories)
+  17. Cross-role coverage matrix
+
+Engagement & onboarding:
+  18. Onboarding pipeline
+  19. Notification pipeline coverage
+  20. Briefing engine coverage
+
+Operational / observability:
+  21. Edge function deploy parity
+  22. Migration ledger consistency
+  23. pg_cron job health
+  24. Observability coverage
+  25. Disaster recovery / backup testing (NEW from Round 1)
+
+Money & legal:
+  26. Financial reconciliation (NEW from Round 1)
+  27. Youth-sports compliance — guardian consent, data retention, photo/video consent, SafeSport, COPPA-adjacent (NEW from Round 1)
+
+Scale & migration:
+  28. Data migration / org onboarding playbook (NEW from Round 1) — gating for St. Patrick's pilot.
+
+Documentation / doctrine:
+  29. Doctrine-vs-practice drift (consolidates Round 1's CLAUDE.md drift + EMBER_PENDING_LEDGER reconciliation)
+
+Two categories from the original 27 were folded into Cat 16 above (microcopy and empty-state inventory). Net: 27 - 2 consolidated + 6 new = 31.
+
+§17.6 — Wave 1 / 2 / 3 dispatch plan (re-sorted per Round 1 Q4)
+--------------------------------------------------------------------------------
+
+Wave 1 — P0 (must complete before cutover; multi-program build depends on foundation):
+  - #7 RLS correctness + performance
+  - #8 Schema integrity
+  - #9 Query contract sweep (AP #36, #37, #48, #25)
+  - #12 Cross-org / multi-tenant exposure
+  - #1 Performance — initial paint
+  - #2 Performance — warm-cycle navigation
+  - #26 Financial reconciliation (P0 — financial data integrity is foundational)
+  - #27 Youth-sports compliance (P0 — legal exposure surface)
+
+Wave 1 expanded from 5 to 8 because perf moved up per Q4 + financial + compliance added per Q1.
+
+Wave 2 — P1 (run after Wave 1 lands; need right but fixable alongside multi-program build):
+  - #17 Cross-role coverage matrix
+  - #11 Edge function auth + secrets
+  - #22 Edge function deploy parity
+  - #23 Migration ledger consistency
+  - #20 Briefing engine coverage (post-rename re-audit)
+  - #28 Data migration / org onboarding playbook (gating for St. Patrick's pilot)
+  - #25 Disaster recovery / backup testing
+
+Wave 3 — P2 (during multi-program build, not blocking):
+  - #3 Bundle analyzer
+  - #4 Realtime channel hygiene
+  - #5 React hook hygiene exhaustive
+  - #6 Anti-pattern compliance sweep
+  - #10 Data integrity canonical-source compliance
+  - #13 PII surface
+  - #14 Dependency security
+  - #15 Rate-limit / abuse surface
+  - #16 UX surface audit (consolidated)
+  - #18 Onboarding pipeline
+  - #19 Notification pipeline coverage
+  - #23 pg_cron job health (wait — #23 is migration ledger; pg_cron is #23 in old, now #23 = pg_cron job health; let me verify)
+  - Actually re-checking: per new numbering #23 = pg_cron, #24 = observability. Listing the Wave 3 items by their NEW numbers.
+  - #29 Doctrine-vs-practice drift
+
+Total: 8 + 7 + 16 = 31 audits across the three waves.
+
+§17.7 — Chat-split sequencing
+--------------------------------------------------------------------------------
+
+  1. CURRENT CHAT: commit Layer 1 (CLAUDE.md doctrine PR) and Layer 2 (planning doc PR). Two PRs.
+  2. FRESH CHAT: opens by verifying both PRs landed on main (per AP #60). Dispatches Wave 1 with the planning layer's §17 as the contract.
+  3. Wave 1 findings → routing → Wave 1 fix PRs.
+  4. Wave 2 dispatch + fix PRs (potentially separate chat).
+  5. Phase boundary reached. Multi-program build phase opens in ANOTHER fresh chat.
+
+================================================================================
+
+SECTION 4 — ROUND 2 REVIEW QUESTIONS
+================================================================================
+
+For the reviewer:
+
+  R2.Q1: Does the Layer 1 / Layer 2 split actually address Round 1 Concern #1 (doctrine commits its own failure mode), or does the candidate-AP-with-promotion-criteria still smuggle inferential content into doctrine?
+
+  R2.Q2: Specifically: is "registered as CANDIDATE" sufficient as an authority-downgrade, or should AP #60-65 live entirely in the planning layer until the three-instance threshold is met? What's the right home for working disciplines that aren't yet permanent?
+
+  R2.Q3: Are the measurable perf targets (LCP < 1.5s p75, INP < 200ms p75, sign-in to FMP < 2s p75) actually operationally checkable today? Do we have RUM in prod (Vercel Speed Insights or equivalent) to measure against? Or is the doctrine specifying a measurement we can't yet make?
+
+  R2.Q4: Did adding 6 new audit categories (financial, compliance, DR, rate-limit, dep security, data-migration) and consolidating 4-into-1 (UX surface audit) actually escape the "enumerated rather than observed" trap, or does the new 31-category list have the same shape (uniform weight, no outliers)?
+
+  R2.Q5: The Wave 1 re-sort moved perf into P0. Did adding financial + compliance to Wave 1 also (per Round 1 Q1) make Wave 1 too large (8 parallel narrow-scope agents)? Is there a smaller P0-of-P0 set that's truly "blocks multi-program build" vs "important but P1"?
+
+  R2.Q6: Multi-tenant scope is now ground-truth (St. Patrick's named with 24-25 winter teams + guardian overlap). Multi-sport is correctly dropped. Are there OTHER scope claims in the doctrine that are similarly under-grounded? (e.g., the multi-program polymorphism — is the LeagueApps walkthrough enough grounding, or should it wait until we've talked with St. Patrick's about their actual program shape?)
+
+  R2.Q7: Does AP #65 (doctrine-artifacts-without-grounding) actually prevent future occurrences of the failure mode it captures, or is it a meta-rule that won't trigger reliably because the failure is by definition unconscious at draft time?
+
+  R2.Q8: Are there any new patterns from THIS round's integration response that should also be candidate APs? Particularly: the pattern of "fix a critique by adding more items rather than removing items" — is that itself an anti-pattern that risks compounding?
+
+================================================================================
+
+STANDING POSITION
+================================================================================
+
+If Round 2 review validates the hybrid approach, the path forward is:
+
+  1. Commit Layer 1 PR (CLAUDE.md doctrine additions — source hierarchy as permanent, AP #60-65 as candidates, operational rules as permanent).
+  2. Commit Layer 2 PR (docs/PLATFORM_PRIORITIES.md or similar — §17 build targets with measurable perf, multi-sport dropped, multi-tenant grounded by St. Patrick's, expanded backlog, 31-category audit taxonomy, re-sorted Wave 1/2/3, chat-split sequencing).
+  3. Open fresh chat. Verify both PRs landed. Dispatch Wave 1.
+
+If Round 2 surfaces additional structural concerns, hold further. Doctrine should be set in stone correctly, not quickly.
+
+================================================================================
+
+END OF ROUND 2 REVIEW DOCUMENT
+================================================================================
