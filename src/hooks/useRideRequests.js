@@ -23,7 +23,8 @@ export function useRideRequests(eventId) {
 
   useEffect(() => {
     if (!eventId) return;
-    const channel = supabase.channel(`ride_requests:${eventId}`)
+    // L99 TIER 3 PATTERN C: per-instance suffix prevents topic collisions.
+    const channel = supabase.channel(`ride_requests:${eventId}:${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'event_ride_requests', filter: `event_id=eq.${eventId}` }, fetch)
       .subscribe();
     return () => { supabase.removeChannel(channel); };

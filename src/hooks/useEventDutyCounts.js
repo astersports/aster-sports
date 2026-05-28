@@ -1,25 +1,29 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 // Per-event duty counts: { [event_id]: { total, claimed } }.
 // A duty is "claimed" when either claimed_by_name (anonymous signup)
 // or guardian_id (signed-in guardian pickup) is set.
+//
+// L99 TIER 3 PATTERN A: value-stable key driven by sorted ids so the
+// effect doesn't re-fire on upstream activities reference churn when the
+// id set hasn't actually changed. ids are recovered from the key inside
+// the effect so we don't need activities in the dep array.
 export function useEventDutyCounts(activities) {
   const [counts, setCounts] = useState({});
   const [version, setVersion] = useState(0);
-  const lastKeyRef = useRef(null);
-  // Microtask wrap on the early-return setCounts({}) pushes it out of
-  // the effect body, satisfying react-hooks/set-state-in-effect.
-  useEffect(() => {
+
+  const stableKey = useMemo(() => {
     const ids = (activities || []).map((a) => a.id).filter(Boolean);
-    if (ids.length === 0) {
+    return [...ids].sort().join(',');
+  }, [activities]);
+
+  useEffect(() => {
+    if (!stableKey) {
       Promise.resolve().then(() => setCounts({}));
-      lastKeyRef.current = '';
       return;
     }
-    const key = [...ids].sort().join(',');
-    if (lastKeyRef.current === key) return;
-    lastKeyRef.current = key;
+    const ids = stableKey.split(',');
     supabase.from('event_duties').select('event_id, claimed_by_name, guardian_id').in('event_id', ids)
       .then(({ data, error }) => {
         if (error) { console.warn('useEventDutyCounts:', error.message); return; }
@@ -32,7 +36,8 @@ export function useEventDutyCounts(activities) {
         });
         setCounts(map);
       });
-  }, [activities, version]);
-  const refetch = useCallback(() => { lastKeyRef.current = null; setVersion((v) => v + 1); }, []);
+  }, [stableKey, version]);
+
+  const refetch = useCallback(() => setVersion((v) => v + 1), []);
   return { counts, refetch };
 }

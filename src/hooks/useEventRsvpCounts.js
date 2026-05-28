@@ -1,26 +1,41 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 // Given a list of activities, fetches RSVP counts per event and team
 // sizes per team in two queries, then computes a summary object per
 // event: { going, not_going, maybe, noResponse, total }.
 // noResponse is inferred from (teamSize − sum of responses).
+//
+// L99 TIER 3 PATTERN A: stableKey encodes per-activity (id, team_id)
+// pairs in a sorted comma-joined string so the effect can recover
+// everything it needs (eventIds, teamIds, and the id→team_id mapping
+// for the merge) WITHOUT depending on the activities array reference.
+// This avoids re-firing the effect on upstream array-reference churn
+// when the underlying pairs haven't changed, and avoids the
+// "ref-during-render" lint pitfall by not needing activitiesRef at all.
 export function useEventRsvpCounts(activities) {
   const [summary, setSummary] = useState({});
   const [version, setVersion] = useState(0);
-  const lastKeyRef = useRef(null);
+
+  const stableKey = useMemo(() => {
+    return (activities || [])
+      .filter((a) => a.id)
+      .map((a) => `${a.id}:${a.team_id || ''}`)
+      .sort()
+      .join(',');
+  }, [activities]);
 
   useEffect(() => {
-    if (!activities || activities.length === 0) {
+    if (!stableKey) {
       Promise.resolve().then(() => setSummary({}));
-      lastKeyRef.current = '';
       return;
     }
-    const eventIds = activities.map((a) => a.id).filter(Boolean);
-    const teamIds = [...new Set(activities.map((a) => a.team_id).filter(Boolean))];
-    const key = [...eventIds].sort().join(',') + '|' + [...teamIds].sort().join(',');
-    if (lastKeyRef.current === key) return;
-    lastKeyRef.current = key;
+    const pairs = stableKey.split(',').map((p) => {
+      const idx = p.indexOf(':');
+      return { eventId: p.slice(0, idx), teamId: p.slice(idx + 1) || null };
+    });
+    const eventIds = [...new Set(pairs.map((p) => p.eventId))];
+    const teamIds = [...new Set(pairs.map((p) => p.teamId).filter(Boolean))];
 
     // CLAUDE.md §11.5 historical-window exception (Wave 4.8 hygiene
     // PR #124): RSVP-coverage counts compare "responded" against "team
@@ -47,17 +62,17 @@ export function useEventRsvpCounts(activities) {
       });
 
       const next = {};
-      activities.forEach((a) => {
-        const c = counts[a.id] || { going: 0, not_going: 0, maybe: 0 };
-        const size = sizes[a.team_id] || 0;
+      pairs.forEach((p) => {
+        const c = counts[p.eventId] || { going: 0, not_going: 0, maybe: 0 };
+        const size = (p.teamId && sizes[p.teamId]) || 0;
         const noResponse = Math.max(0, size - c.going - c.not_going - c.maybe);
-        next[a.id] = { ...c, noResponse, total: c.going + c.not_going + c.maybe + noResponse };
+        next[p.eventId] = { ...c, noResponse, total: c.going + c.not_going + c.maybe + noResponse };
       });
       setSummary(next);
     });
-  }, [activities, version]);
+  }, [stableKey, version]);
 
-  const refetch = useCallback(() => { lastKeyRef.current = null; setVersion((v) => v + 1); }, []);
+  const refetch = useCallback(() => setVersion((v) => v + 1), []);
 
   return { counts: summary, refetch };
 }

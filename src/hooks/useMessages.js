@@ -38,7 +38,10 @@ export function useMessages(channel, channelId, dmThreadId) {
     if (channel === 'dm' && dmThreadId) filter = `dm_thread_id=eq.${dmThreadId}`;
     else if (channel === 'team' && channelId) filter = `team_id=eq.${channelId}`;
     else filter = `channel=eq.${channel}`;
-    const ch = supabase.channel(`messages-${channel}-${channelId || dmThreadId || 'all'}`)
+    // L99 TIER 3 PATTERN C: per-instance suffix so two hook instances on
+    // the same channel/id don't open two realtime channels with an
+    // identical topic name — that collision errors the second subscribe.
+    const ch = supabase.channel(`messages-${channel}-${channelId || dmThreadId || 'all'}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter }, fetch)
       .subscribe();
     return () => { supabase.removeChannel(ch); };

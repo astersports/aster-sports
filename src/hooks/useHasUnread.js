@@ -40,7 +40,8 @@ export function useHasUnread() {
       try { check(); }
       catch (err) { console.error('[useHasUnread] realtime callback:', err); }
     };
-    const ch = supabase.channel(`unread-badge-${orgId}`)
+    // L99 TIER 3 PATTERN C: per-instance suffix prevents topic collisions.
+    const ch = supabase.channel(`unread-badge-${orgId}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
