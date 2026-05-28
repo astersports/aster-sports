@@ -3,6 +3,7 @@
 // Bug fixes locked in wave 4.1b + 4.2-A-8d (weekly_digest short-circuit).
 
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useResetOnOrgChange } from '../../hooks/useResetOnOrgChange';
 import FullScreenForm from '../shared/FullScreenForm';
 import { useToast } from '../../context/useToast';
@@ -35,6 +36,19 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   const { recipients: recipientsTotal } = useDigestRecipients({ orgId, pilotOnly: false });
   const { staff: coaches } = useOrgStaff(orgId);
   const draft = useBriefingDraft(initialDraftId);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Thread the autosave draft_id into the URL (?draft=<id>) as soon as
+  // the first save lands. Combined with useRouteMemory, this is what lets
+  // a PWA cold-launch resume an in-progress draft instead of dumping the
+  // user back to the home screen. Replace (don't push) so the browser
+  // back-button doesn't accumulate noise as the id appears.
+  useEffect(() => {
+    if (!draft.draftId) return;
+    if (searchParams.get('draft') === draft.draftId) return;
+    const next = new URLSearchParams(searchParams);
+    next.set('draft', draft.draftId);
+    setSearchParams(next, { replace: true });
+  }, [draft.draftId, searchParams, setSearchParams]);
   const [state, dispatch] = useReducer(composerReducer, buildInitial({ initialKind, initialAnchorKind, initialAnchorId, initialKindFilter }));
   const [busy, setBusy] = useState(false);
   const digest = useWizardDigestData({ orgId, enabled: state.kind === 'weekly_digest' });
