@@ -3717,6 +3717,85 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AK — Wave 1 pre-cutover audit dispatch + findings (2026-05-28)
+
+**Trigger:** PLATFORM_PRIORITIES.md §17.6 Wave 1 contract. Session opened
+per §9.1 three-item pre-flight (branch state clean, no parent-checkout
+leakage, ledger reconciled through §4.AJ). Dispatched 5 parallel
+narrow-scope agents per AP #61 + AP #50 against categories #7 RLS, #8
+schema integrity, #9 query contract, #12 cross-org, #26 financial
+reconciliation.
+
+**Output:** `docs/AUDIT_WAVE_1_PRE_CUTOVER_2026-05-28.md` — full
+findings + cross-pattern synthesis + routing recommendation. AP #45
+satisfied by this same-commit ledger entry.
+
+**Headline:**
+
+- **10 consolidated P0s** across 4 surfaces (RLS, schema, cross-org,
+  financial)
+- **§17.2 invariant 4 ("no cross-org leak path") FAILS today at the
+  DB layer** despite app-layer discipline holding. Multi-tenant cutover
+  is gated on the Cross-Pattern 1 fix-set.
+- **§17.5 calibration:** all 5 Wave 1 categories surfaced real
+  findings. Retain all 5 for Wave 2/3 if re-needed. No demotions.
+
+**5 cross-cutting patterns (AP #58 synthesis):**
+
+1. **Single-tenant DB-layer assumption** (cutover blocker) — 4 public
+   RLS policies hardcode Legacy UUID; `staff_profiles_select_authenticated`
+   qual=true; `push_subscriptions.org_id` NULLABLE; `useMapsUrl.js:38`
+   no org filter; `user_roles_user_id_key` single-org assumption.
+2. **AP #57 active in production** — 3 SECDEF functions
+   (`mint_unsubscribe_token`, `sync_opponent_record`,
+   `sync_tournament_team_record`) anon-EXECUTE-callable. Cross-confirmed
+   by #7 + #12.
+3. **Documentation/ledger drift** — §5 ghost-count understates by 11+;
+   §8 financial state off by +60%; §11.5 exception table misses
+   PlayerRow.jsx; `LEGACY_HOOPERS_ORG_ID` dead constant.
+4. **Defense-in-depth gap class** — ~14 AP #36 destructured-default
+   sites (load-bearing in rsvpNudge.js:56 + _handlers.ts:94,115); ~20
+   AP #37 id-only writes; 151 multiple_permissive_policies advisories.
+5. **Orphan-merge follow-through incomplete + coach_payouts empty** —
+   DeMasi guardian dangle; KHOJASTEH zero accounts; coach_payouts
+   table empty despite Darien paid per session.
+
+**Routing — next session (§17.7 step 3):**
+
+- **PR — DB security migration** (P0s #1, #2, #3, #5): REVOKE on 3
+  SECDEF leaks + NOT NULL push_subscriptions.org_id + staff_profiles
+  RLS rewrite. Single migration, low risk, ~30 min.
+- **PR — Public-schedule org-scoping** (P0 #4): gating column +
+  policy rewrite. **Blocked on Frank's call** about gating shape.
+- **PR — PlayerRow §11.5 compliance** (P0 #10): widen exception or
+  refactor. ~30 min.
+- **PR — CLAUDE.md doctrine reconciliation** (P0 #7 + Cross-Pattern 3):
+  §8 financial state + §5 migration ledger + §11.5 exception widening
+  + dead-constant removal. ~1h pure doc.
+- **Operational reconciliation workstream** (P0s #6, #8, #9):
+  coach_payouts external reconcile + DeMasi disambiguation + KHOJASTEH
+  enrollment confirmation. Frank-driven.
+
+**Suggested cutover gate:** PRs 1, 2, 3 + operational workstream close
+before second-tenant onboarding. PR 4 (doctrine) independent.
+
+**6 open questions for Frank** (gating PR 2 + the operational items):
+1. Public-schedule gating column shape on `organizations`?
+2. May-6 import wave — intentional or accidental dup?
+3. DeMasi — Xanthi a real co-guardian or import drift?
+4. KHOJASTEH — currently enrolled?
+5. coach_payouts — has Darien been paid through the system at all?
+6. AP #45 compliance: this entry satisfies the same-commit rule.
+
+**AP #59 hold:** session closes at synthesis. Did NOT cascade into fix-PR
+dispatch — that's a separate session's work per §17.7 step 3.
+
+**AP #56 hold:** pre-locked session contract was "three-item pre-flight
++ Wave 1 dispatch + synthesis doc + ledger entry." Held to that.
+No audit-cycle generation beyond contract.
+
+---
+
 ### §4.AJ — 5-day gap reconciliation (2026-05-27)
 
 **Trigger:** Frank's "what's next for the next few sessions" question
