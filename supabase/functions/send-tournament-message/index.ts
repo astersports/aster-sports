@@ -35,7 +35,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@4";
-import { buildEmailRow, mintUnsubscribeUrl } from "./_lib.ts";
+import { buildEmailRow, dispatchPushFanout, mintUnsubscribeUrl } from "./_lib.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
 
   const { data: message, error: msgErr } = await sb
     .from("comms_messages")
-    .select("id, org_id, subject, body_html, body_plain, sent_at")
+    .select("id, org_id, subject, headline, body_html, body_plain, sent_at")
     .eq("id", body.message_id).single();
   if (msgErr || !message) return json({ error: "Message not found" }, 404);
   if (message.sent_at) return json({ error: "Already sent" }, 409);
@@ -200,6 +200,14 @@ Deno.serve(async (req) => {
     })
     .eq("id", body.message_id);
   if (finalizeErr) errors.push(`Finalize failed: ${finalizeErr.message}`);
+
+  // Wave C: best-effort push fan-out alongside email (secondary channel —
+  // never fails the email send). See _lib.ts dispatchPushFanout.
+  try {
+    await dispatchPushFanout(sb, supabaseUrl, message, recipients, fromName);
+  } catch (e) {
+    errors.push(`push dispatch (non-fatal): ${(e as Error).message ?? String(e)}`);
+  }
 
   return json({ ok: failed === 0 && !finalizeErr, sent, failed, errors, pilot_mode_active: pilotMode, reply_to: replyTo });
 });
