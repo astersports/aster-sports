@@ -29,18 +29,43 @@ function seasonProgress(season, nowMs) {
   return { pct, currentWeek, totalWeeks };
 }
 
-function MetricRow({ label, value }) {
+// Wave 2.B post-#570 fix: inline shape-matched pulse for metric values
+// during the useProgramHealthMetrics load window. Without this the row
+// renders the hook's default-state placeholders (paymentPct=0,
+// rsvpPct=null→'—', activeTeamsCount=0→'0 teams', etc.) which read as
+// "the org has no data" rather than "data is loading." Matches the
+// LoadingSkeleton.Bar shape: --em-bg-tertiary + em-pulse + 6px radius.
+function MetricValueSkeleton({ width = 48 }) {
+  return (
+    <span
+      className="em-pulse"
+      aria-hidden="true"
+      style={{
+        display: 'inline-block',
+        width,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: 'var(--em-bg-tertiary)',
+        verticalAlign: 'middle',
+      }}
+    />
+  );
+}
+
+function MetricRow({ label, value, loading, skeletonWidth }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--em-text-primary)', marginTop: 4 }}>
       <span>{label}</span>
-      <span style={{ fontWeight: 600 }}>{value}</span>
+      <span style={{ fontWeight: 600 }}>
+        {loading ? <MetricValueSkeleton width={skeletonWidth} /> : value}
+      </span>
     </div>
   );
 }
 
 export default function ProgramHealthCard({ season, nowMs }) {
   const { orgId } = useAuth();
-  const { paymentPct, rsvpPct, activeTeamsCount, newRegistrationsCount } = useProgramHealthMetrics(orgId, season?.id);
+  const { paymentPct, rsvpPct, activeTeamsCount, newRegistrationsCount, loading } = useProgramHealthMetrics(orgId, season?.id);
   if (!season) return null;
   const progress = seasonProgress(season, nowMs);
   if (!progress) return null;
@@ -80,10 +105,10 @@ export default function ProgramHealthCard({ season, nowMs }) {
             }}
           />
         </div>
-        <MetricRow label="Payment collection" value={`${paymentPct}%`} />
-        <MetricRow label="RSVP rate" value={rsvpPct === null ? '—' : `${rsvpPct}%`} />
-        <MetricRow label="Active teams" value={activeTeamsCount === 1 ? '1 team' : `${activeTeamsCount} teams`} />
-        <MetricRow label="Registration pipeline" value={newRegistrationsCount === 1 ? '1 new this week' : `${newRegistrationsCount} new this week`} />
+        <MetricRow label="Payment collection" value={`${paymentPct}%`} loading={loading} skeletonWidth={40} />
+        <MetricRow label="RSVP rate" value={rsvpPct === null ? '—' : `${rsvpPct}%`} loading={loading} skeletonWidth={40} />
+        <MetricRow label="Active teams" value={activeTeamsCount === 1 ? '1 team' : `${activeTeamsCount} teams`} loading={loading} skeletonWidth={56} />
+        <MetricRow label="Registration pipeline" value={newRegistrationsCount === 1 ? '1 new this week' : `${newRegistrationsCount} new this week`} loading={loading} skeletonWidth={96} />
       </div>
     </section>
   );
