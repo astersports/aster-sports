@@ -3717,6 +3717,76 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AP — Wave 2.B audit close + Batch 1 quick-wins routing (2026-05-28)
+
+**Trigger:** Wave 2.B dispatch per §4.AN routing — 3 parallel line-by-line audits (categories #1, #2, #3) per CLAUDE.md §17.8 standing rule with §16.15 2-pass deep-read addendum. Anchored on the 5s home page LCP regression Frank reported earlier in this session.
+
+**Output:** `docs/AUDIT_WAVE_2B_2026-05-28.md` — findings + 5 cross-patterns + per-agent reports preserved. AP #45 satisfied by this same-commit ledger entry.
+
+**Wave 2.B headline:** 11 P0 / 19 P1 / 10 P2 / 4 new AP candidates / 0 §17.5 demotions.
+
+**The 5s LCP regression diagnosed with HIGH confidence:**
+
+Cascade of loading-gate waterfalls compounded by alert evaluator serial-await. Five compounding causes:
+1. `src/lib/alerts/evaluator.js:124-133` runs 9 configs sequentially (~720ms-1.35s pure DB latency)
+2. All 3 home pages gate render on `alertsLoading` (parent/coach/admin) — slowest signal blocks shell paint
+3. `useSeasonFinancials:78` fetches all 244 financial_transactions org-wide (no season filter)
+4. `qrcode.react` static-imported via 3 eager pages (~45KB raw in entry chunk)
+5. Auth → seasons → activities → alerts waterfall (4 sequential RTTs)
+
+**Plus structural compound from #2:** `<div key={location.pathname}>` in `App.jsx:50` forces full subtree remount on every tab tap — defeats even existing module-level caches.
+
+**5 cross-cutting patterns (AP #58 synthesis):**
+
+1. **Render-gate aggregation + remount key compound the warm-cycle perf** — render gate widens to slowest signal × full subtree remount on tab change
+2. **Sequential await + no shared cache amplify each other** — 9 sequential RTTs in evaluator + 42 of 46 hooks have no cache + same hook called 5-10× per page (no dedup)
+3. **§16.10 / §17.1 budget enforcement broken** — entry +35% over budget, total +11% over hard limit; CI gate silently passes both (PATTERN BUDGET-DRIFT: doc and CI gate drifted 30-40% apart since PR #150)
+4. **Static-import bloat in entry chunk** — qrcode.react via TeamDetailHero + @vercel/speed-insights/react in main.jsx + 1.77 MB orphan logo PNGs in public/
+5. **Long-list virtualization unfunded** — 0 lists virtualized; react-window not in package.json; MessageThread (200 msgs) + FamilyBalanceList (164 rows) explicit §16.10 violations
+
+**§17.4 backlog corrected:**
+
+- "16+ home-feeder hooks" → actual ~25-35 hooks per Parent home mount (2× worse than estimate)
+- "7 Math.random() realtime channel suffixes" → confirmed exactly 7
+
+**Routing — Batch 1 quick-wins fix PR shipping THIS session:**
+
+Single agent shipping 1 PR closing 4 P0s with estimated 1-2s LCP improvement:
+
+- **#1 P0-1** — `evaluator.js:124-133` `for…of await` → `Promise.all` (-600ms-1.2s)
+- **#1 P0-2** — Drop `alertsLoading` from render gate in ParentHomePage:56 + AdminHomePage:71 + CoachHomePage:55 (-400-600ms)
+- **#1 P0-3** — `useSeasonFinancials.js:78` add `.eq('season_id', seasonId)` filter (~85% payload reduction)
+- **#2 P0-1** — `App.jsx:50` move/remove `<div key={location.pathname}>` (single largest INP regression)
+
+**Deferred to subsequent sessions:**
+
+- **Batch 2 — Bundle reduction:** lazy qrcode.react + entry chunk budget + total bundle + Vite manualChunks + orphan PNG cleanup. Needs sequencing + design call on chunk topology.
+- **Batch 3 — Cache layer:** SWR/TanStack Query for 42 of 46 hooks. Needs library choice + migration scope design call.
+- **Batch 4 — Virtualization:** react-window install + MessageThread + FamilyBalanceList. Needs design call on virtualization library choice.
+- **P0 #11 — CI gate split** — cannot ship before Batch 2 lands or CI goes red. Bundle with Batch 2 close-out.
+
+**4 new AP candidates registered:**
+
+- **Render gate aggregation defaults to slowest signal** — every new signal added to a home page increases LCP by slowest-of-N. Suggest §17.5 "render-gate signal budget" sub-rule.
+- **Sequential await in evaluator/orchestrator loops** — 1 instance today (alert evaluator); promote on second.
+- **Route-level remount key** — `<div key={location.pathname}>` around `<Routes>` defeats component-instance state preservation + caches.
+- **CI budget gate must match documented budget** — guard threshold ≠ doc threshold creates false sense of security.
+
+**Wave 2.B → Wave 2.C handoff:**
+
+Wave 2.C dispatch in next session: #4 realtime channel hygiene + #5 React hook hygiene + #16 UX surface audit + #17 cross-role coverage matrix + #24 observability coverage.
+
+**AP compliance:**
+
+- AP #45 — §4.AP in same commit as `docs/AUDIT_*.md` ✓
+- AP #50 RETIRED — line-by-line methodology held ✓
+- AP #54 — Batch 1 quick-wins agent will ship same-MCP-burst ready + auto-merge ✓
+- AP #56 + #59 — session contract per Frank's noon "B and continue" directive: Wave 2.B doc + Batch 1 PR + close. No further dispatch this session.
+- AP #58 — cross-batch pattern check applied; 5 CROSS-PATTERNs identified
+- §17.8 — every agent reported §16.15 2-pass cascade-catch findings (30-40% addendum yield)
+
+---
+
 ### §4.AO — Wave 2.A audit close + 3 fix-PR routing (2026-05-28)
 
 **Trigger:** Wave 2.A dispatch per §4.AN routing — 5 parallel line-by-line audits (categories #11, #13, #14, #15, #23) per CLAUDE.md §17.8 standing rule with §16.15 2-pass deep-read addendum per agent. AP #50 retired (PR #564) — methodology was line-by-line per category, not surface-dependent.
