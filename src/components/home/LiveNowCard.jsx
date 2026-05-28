@@ -46,7 +46,7 @@ export default function LiveNowCard({ items, nowMs }) {
           <Link
             key={`live:${item.event_id}:${item.kid_first_name}`}
             to={`/events/${item.event_id}`}
-            className="sf-press"
+            className="em-press"
             style={{
               display: 'block',
               padding: 14,
@@ -63,7 +63,7 @@ export default function LiveNowCard({ items, nowMs }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <span
                 aria-hidden="true"
-                className="sf-pulse-dot"
+                className="em-pulse-dot"
                 style={{
                   display: 'inline-block',
                   width: 10,

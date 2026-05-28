@@ -61,7 +61,7 @@ export default function MessagesPage() {
     <div className="px-4 py-4">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
         <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20 }}>Messages</h1>
-        <button type="button" onClick={() => setShowNewDm(true)} className="sf-press" aria-label="New message"
+        <button type="button" onClick={() => setShowNewDm(true)} className="em-press" aria-label="New message"
           style={{ width: 44, height: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
           <Plus size={18} strokeWidth={2} color="var(--em-text-inverse)" />
         </button>

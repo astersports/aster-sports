@@ -28,7 +28,7 @@ export default function EventCheckinTab({ eventId, roster, teamColor }) {
         const on = !!map[player.id];
         return (
           <button key={player.id} type="button" onClick={() => toggle(player.id, on)}
-            className="sf-press"
+            className="em-press"
             aria-label={`${on ? 'Uncheck' : 'Check in'} ${player.first_name}`}
             style={{
               display: 'flex', alignItems: 'center', gap: 10,

@@ -1,5 +1,5 @@
 // Small status pill used for RSVP state, event status, role tags, etc.
-// Variants map to the Skyfire status tokens — "soft" bg + solid text —
+// Variants map to the Ember status tokens — "soft" bg + solid text —
 // which keeps contrast readable in both light and dark surfaces.
 //
 // Two shapes:

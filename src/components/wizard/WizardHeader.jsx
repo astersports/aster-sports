@@ -13,7 +13,7 @@ export default function WizardHeader({ step, backStop, isEdit, dots, dotIndex, o
       paddingTop: 'env(safe-area-inset-top, 0px)',
     }}>
       <button type="button" onClick={step > backStop ? onBack : onClose}
-        className="sf-press" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        className="em-press" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {step > backStop
           ? <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-primary)" />
           : <X size={20} strokeWidth={1.75} color="var(--em-text-primary)" />}

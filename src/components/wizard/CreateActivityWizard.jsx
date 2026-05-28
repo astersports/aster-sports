@@ -122,7 +122,7 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
           <button type="button"
             onClick={step === 3 ? handleSave : () => setStep(step + 1)}
             disabled={loading || !canNext}
-            className="sf-press sf-bounce-tap"
+            className="em-press em-bounce-tap"
             style={{
               width: '100%', minHeight: 48, borderRadius: 10, border: 'none',
               backgroundColor: canNext ? 'var(--em-accent)' : 'var(--em-bg-tertiary)',

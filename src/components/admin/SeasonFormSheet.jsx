@@ -74,7 +74,7 @@ function Body({ season, onSave }) {
           <span style={label}>Preset</span>
           <div className="flex flex-wrap gap-2 mb-2">
             {Object.keys(PRESETS).map((q) => (
-              <button key={q} type="button" className="sf-press" style={chip(false)} onClick={() => pickPreset(q)}>
+              <button key={q} type="button" className="em-press" style={chip(false)} onClick={() => pickPreset(q)}>
                 {q} {year}
               </button>
             ))}
@@ -84,7 +84,7 @@ function Body({ season, onSave }) {
               <button
                 key={y}
                 type="button"
-                className="sf-press"
+                className="em-press"
                 style={chip(y === year)}
                 onClick={() => setYear(y)}
               >
@@ -109,7 +109,7 @@ function Body({ season, onSave }) {
         <button
           type="button"
           onClick={submit}
-          className="w-full font-semibold sf-press sf-bounce-tap"
+          className="w-full font-semibold em-press em-bounce-tap"
           style={{
             minHeight: 44, borderRadius: 10,
             backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15,

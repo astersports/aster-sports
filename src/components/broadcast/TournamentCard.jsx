@@ -48,7 +48,7 @@ function ParticipantChip({ participant, isCompleted }) {
     <span className={participantChipClass(participant)}>
       <span
         className="bc-tourney-team-dot"
-        style={{ backgroundColor: team.team_color || 'var(--sf-bc-text-mute)' }}
+        style={{ backgroundColor: team.team_color || 'var(--em-bc-text-mute)' }}
         aria-hidden="true"
       />
       {team.name}

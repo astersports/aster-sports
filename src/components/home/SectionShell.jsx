@@ -70,7 +70,7 @@ export default function SectionShell({
         <EmptyState empty={empty} />
       ) : (
         <>
-          <div className="sf-fade-in">{children}</div>
+          <div className="em-fade-in">{children}</div>
           {footer && <div style={{ marginTop: 10 }}>{footer}</div>}
         </>
       )}
@@ -81,7 +81,7 @@ export default function SectionShell({
 function ErrorState({ error, onRetry }) {
   const msg = (typeof error === 'string' ? error : error?.message) || "Something went wrong. Try again in a moment.";
   return (
-    <div role="alert" className="sf-fade-in"
+    <div role="alert" className="em-fade-in"
       style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--em-danger)' }}>
         <AlertCircle size={16} strokeWidth={1.75} />
@@ -89,7 +89,7 @@ function ErrorState({ error, onRetry }) {
       </div>
       <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.4 }}>{msg}</div>
       {onRetry && (
-        <button type="button" onClick={onRetry} className="sf-press"
+        <button type="button" onClick={onRetry} className="em-press"
           style={{ alignSelf: 'flex-start', minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
           Try again
         </button>
@@ -105,11 +105,11 @@ function EmptyState({ empty }) {
   const actionLabel = obj.actionLabel;
   const onAction = obj.onAction;
   return (
-    <div className="sf-fade-in">
+    <div className="em-fade-in">
       <TextEmptyState heading={heading} message={message} />
       {actionLabel && onAction && (
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
-          <button type="button" onClick={onAction} className="sf-press"
+          <button type="button" onClick={onAction} className="em-press"
             style={{ minHeight: 44, padding: '0 16px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             {actionLabel}
           </button>

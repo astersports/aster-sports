@@ -44,7 +44,7 @@ export default function TournamentWeekendBanner({ tournament }) {
     <Link
       to={`/tournaments/${tournament.id}`}
       aria-label={`Upcoming tournament: ${tournament.name}`}
-      className="sf-press"
+      className="em-press"
       style={{
         display: 'block',
         padding: '14px 16px',

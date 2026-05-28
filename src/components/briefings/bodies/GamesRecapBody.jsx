@@ -56,7 +56,7 @@ export default function GamesRecapBody({ value, onChange, audienceFilter, onAudi
           {games.map((g) => {
             const on = sel.has(g.id);
             return (
-              <button key={g.id} type="button" onClick={() => toggle(g.id)} aria-pressed={on} className="sf-press" style={rowStyle(on)}>
+              <button key={g.id} type="button" onClick={() => toggle(g.id)} aria-pressed={on} className="em-press" style={rowStyle(on)}>
                 <input type="checkbox" checked={on} readOnly aria-hidden="true" tabIndex={-1} />
                 <span style={{ flex: 1, minWidth: 0 }}>{gameLabel(g)}</span>
               </button>

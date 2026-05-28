@@ -13,7 +13,7 @@ export default function TournamentRowMenu({ onEdit, onArchive }) {
         onClick={(e) => { stop(e); setOpen((o) => !o); }}
         aria-label="Tournament actions"
         aria-expanded={open}
-        className="sf-press"
+        className="em-press"
         style={{
           width: 32, height: 32, borderRadius: 6,
           border: 'none', backgroundColor: 'transparent',
@@ -39,7 +39,7 @@ export default function TournamentRowMenu({ onEdit, onArchive }) {
             <button
               type="button"
               onClick={(e) => { stop(e); setOpen(false); onEdit(); }}
-              className="sf-press"
+              className="em-press"
               style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--em-text-primary)', cursor: 'pointer' }}
             >
               <Edit2 size={14} strokeWidth={1.75} /> Edit
@@ -47,7 +47,7 @@ export default function TournamentRowMenu({ onEdit, onArchive }) {
             <button
               type="button"
               onClick={(e) => { stop(e); setOpen(false); onArchive(); }}
-              className="sf-press"
+              className="em-press"
               style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--em-danger)', cursor: 'pointer' }}
             >
               <Archive size={14} strokeWidth={1.75} /> Archive

@@ -91,7 +91,7 @@ export default function StepBodySignoff({ state, dispatch, audience, hasParentTo
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <span style={labelStyle}>Signoff message (optional)</span>
           {canSuggest && (
-            <button type="button" onClick={onSuggestCloser} disabled={suggesting} className="sf-press"
+            <button type="button" onClick={onSuggestCloser} disabled={suggesting} className="em-press"
               style={{ ...btnSuggest, opacity: suggesting ? 0.6 : 1, cursor: suggesting ? 'wait' : 'pointer' }}>
               {suggesting ? 'Suggesting…' : 'Suggest closer'}
             </button>
@@ -108,8 +108,8 @@ export default function StepBodySignoff({ state, dispatch, audience, hasParentTo
       <div style={{ fontSize: 12, color: a.mode === 'pilot_zero' ? 'var(--em-warning)' : 'var(--em-text-tertiary)', lineHeight: 1.4 }}>
         {audienceCopy(a)}
       </div>
-      <button type="button" onClick={onSaveDraft} className="sf-press" style={btnGhost}>Save draft</button>
-      <button type="button" onClick={onCancel} className="sf-press" style={btnGhost}>Cancel</button>
+      <button type="button" onClick={onSaveDraft} className="em-press" style={btnGhost}>Save draft</button>
+      <button type="button" onClick={onCancel} className="em-press" style={btnGhost}>Cancel</button>
     </div>
   );
 }

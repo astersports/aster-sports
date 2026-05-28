@@ -21,9 +21,9 @@ export default function SubstitutionSheet({ open, players, onCourt, playerStats,
     <div ref={trapRef} role="dialog" aria-modal="true" aria-label="Substitutions"
       style={{ position: 'fixed', inset: 0, zIndex: 9996, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', paddingTop: 'calc(env(safe-area-inset-top) + 12px)', borderBottom: '1px solid var(--em-border-default)' }}>
-        <button type="button" onClick={() => { court.forEach((p) => onSubOut(p.id)); }} className="sf-press" aria-label="Bench all players" style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44, padding: '0 8px' }}>Bench All</button>
+        <button type="button" onClick={() => { court.forEach((p) => onSubOut(p.id)); }} className="em-press" aria-label="Bench all players" style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44, padding: '0 8px' }}>Bench All</button>
         <span style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)' }}>Substitutions</span>
-        <button type="button" onClick={onClose} className="sf-press" aria-label="Done" style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Done</button>
+        <button type="button" onClick={onClose} className="em-press" aria-label="Done" style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Done</button>
       </div>
       <div style={{ display: 'flex', gap: 16, padding: '12px 16px', fontSize: 13, fontWeight: 600 }}>
         <span style={{ color: 'var(--em-text-primary)' }}>On Court {court.length}</span>
@@ -33,7 +33,7 @@ export default function SubstitutionSheet({ open, players, onCourt, playerStats,
         {court.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
             {court.map((p) => (
-              <button key={p.id} type="button" onClick={() => onSubOut(p.id)} className="sf-press" aria-label={`Sub out ${p.first_name}`}
+              <button key={p.id} type="button" onClick={() => onSubOut(p.id)} className="em-press" aria-label={`Sub out ${p.first_name}`}
                 style={{ padding: '10px 8px', borderRadius: 10, border: '2px solid var(--em-accent)', backgroundColor: 'var(--em-accent-soft)', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--em-text-primary)' }}>{p.jersey_number || '—'}</div>
                 <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--em-text-primary)', marginTop: 2 }}>{p.first_name}</div>
@@ -47,7 +47,7 @@ export default function SubstitutionSheet({ open, players, onCourt, playerStats,
             const pf = fouls(p.id);
             const fouledOut = pf >= 5;
             return (
-              <button key={p.id} type="button" onClick={() => { if (fouledOut) return; onSubIn(p.id); }} className="sf-press"
+              <button key={p.id} type="button" onClick={() => { if (fouledOut) return; onSubIn(p.id); }} className="em-press"
                 aria-label={fouledOut ? `${p.first_name} fouled out` : `Sub in ${p.first_name}`} aria-disabled={fouledOut}
                 style={{ padding: '10px 8px', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', textAlign: 'center', cursor: fouledOut ? 'not-allowed' : 'pointer', fontFamily: 'inherit', minHeight: 44, opacity: fouledOut ? 0.4 : 1 }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--em-text-primary)' }}>{p.jersey_number || '—'}</div>

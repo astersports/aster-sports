@@ -33,7 +33,7 @@ export default function ShareScheduleButton({ teamId, label = 'Share', style }) 
 
   return (
     <>
-      <button type="button" aria-label="Share public schedule" className="sf-press"
+      <button type="button" aria-label="Share public schedule" className="em-press"
         onClick={() => { navigator.vibrate?.(10); setOpen(true); }} style={style || defaultBtn}>
         <QrCode size={14} strokeWidth={1.75} /> {label}
       </button>
@@ -47,7 +47,7 @@ export default function ShareScheduleButton({ teamId, label = 'Share', style }) 
           <QRCodeSVG value={url} size={208} marginSize={2} />
         </div>
         <div style={{ fontSize: 12, color: 'var(--em-text-secondary)', wordBreak: 'break-all', textAlign: 'center', margin: '12px 0' }}>{url}</div>
-        <button type="button" onClick={copy} className="sf-press"
+        <button type="button" onClick={copy} className="em-press"
           style={{ width: '100%', minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600 }}>
           {copied ? 'Copied ✓' : 'Copy link'}
         </button>

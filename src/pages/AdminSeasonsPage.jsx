@@ -36,7 +36,7 @@ export default function AdminSeasonsPage() {
   };
 
   return (
-    <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
+    <div className="px-4 py-4 em-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <AdminSeasonsHeader title="Seasons" actions={<AdminSeasonsActions onNew={openNew} />} />
       <AdminSeasonsList
         seasons={seasons}

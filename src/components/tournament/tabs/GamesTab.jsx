@@ -109,7 +109,7 @@ function GameRow({ event: e, result: r, navigate, isBonus }) {
   const isChampionship = e.is_championship_final;
   const borderColor = isChampionship ? '#FFD700' : teamColor;
   return (
-    <button type="button" onClick={() => navigate(`/events/${e.id}`)} className="sf-press"
+    <button type="button" onClick={() => navigate(`/events/${e.id}`)} className="em-press"
       style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', marginBottom: 6, backgroundColor: isChampionship ? 'rgba(255,215,0,0.06)' : 'var(--em-bg-card)', borderRadius: 10, border: `1px solid ${isChampionship ? 'rgba(255,215,0,0.3)' : 'var(--em-border-default)'}`, borderLeft: `4px solid ${borderColor}`, textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', opacity: isBonus ? 0.7 : 1 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

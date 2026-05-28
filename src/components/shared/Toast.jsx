@@ -22,7 +22,7 @@ export default function Toast({ message, variant = 'info', onDismiss, duration =
 
   return (
     <div
-      className="fixed z-50 sf-toast-enter flex items-center gap-2"
+      className="fixed z-50 em-toast-enter flex items-center gap-2"
       role="status"
       aria-live="polite"
       style={{

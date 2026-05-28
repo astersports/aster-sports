@@ -24,7 +24,7 @@ export default function TeamRow({ team, idx, summary }) {
     <button
       type="button"
       onClick={() => { navigator.vibrate?.(10); navigate(`/teams/${team.id}`); }}
-      className={`w-full text-left sf-press sf-stagger-${idx + 1}`}
+      className={`w-full text-left em-press em-stagger-${idx + 1}`}
       style={{
         display: 'flex',
         alignItems: 'stretch',

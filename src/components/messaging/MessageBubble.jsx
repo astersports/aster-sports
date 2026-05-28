@@ -59,7 +59,7 @@ export default function MessageBubble({ message, isAnnouncement, onDelete }) {
           <button
             type="button"
             onClick={() => { onDelete(message.id); setShowActions(false); }}
-            className="sf-press" aria-label="Delete message"
+            className="em-press" aria-label="Delete message"
             style={{
               position: 'absolute', top: -12, right: -12,
               width: 28, height: 28, borderRadius: '50%',

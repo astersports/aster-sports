@@ -45,7 +45,7 @@ export default function OpponentInlineField({ eventId, onSaved }) {
       <datalist id="score-opponent-list">
         {opponents.map((o) => <option key={o.id} value={o.name} />)}
       </datalist>
-      <button type="button" onClick={save} disabled={!value.trim() || saving} className="sf-press" style={btnStyle(!!value.trim() && !saving)}>
+      <button type="button" onClick={save} disabled={!value.trim() || saving} className="em-press" style={btnStyle(!!value.trim() && !saving)}>
         {saving ? 'Saving…' : 'Set opponent'}
       </button>
       {error && <div role="alert" style={{ marginTop: 6, fontSize: 13, color: 'var(--em-danger)' }}>Couldn&apos;t save. Try again.</div>}

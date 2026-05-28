@@ -118,19 +118,19 @@ export default function OfferCard({
       )}
       <div style={{ padding: '8px 14px 12px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         {isDriver ? (
-          <button type="button" onClick={handleCancelOffer} className="sf-press" aria-label="Cancel this ride offer" style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-danger)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button type="button" onClick={handleCancelOffer} className="em-press" aria-label="Cancel this ride offer" style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-danger)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             Cancel offer
           </button>
         ) : canModerate ? (
-          <button type="button" onClick={handleCancelOffer} className="sf-press" aria-label="Cancel this ride offer (admin override)" style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-danger)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button type="button" onClick={handleCancelOffer} className="em-press" aria-label="Cancel this ride offer (admin override)" style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-danger)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             Override · Cancel
           </button>
         ) : myClaim && myClaim.status !== 'cancelled' && myClaim.status !== 'declined' ? (
-          <button type="button" onClick={handleCancelClaim} className="sf-press" aria-label="Cancel your claim on this ride" style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button type="button" onClick={handleCancelClaim} className="em-press" aria-label="Cancel your claim on this ride" style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             Cancel my seat
           </button>
         ) : (
-          <button type="button" onClick={handleClaim} disabled={isFull} className="sf-press" aria-label={isFull ? 'No seats available' : 'Claim a seat on this ride'} style={{ minHeight: 44, padding: '0 14px', borderRadius: 8, border: 'none', backgroundColor: isFull ? 'var(--em-bg-secondary)' : 'var(--em-accent)', color: isFull ? 'var(--em-text-tertiary)' : 'var(--em-text-inverse)', fontSize: 13, fontWeight: 600, cursor: isFull ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <button type="button" onClick={handleClaim} disabled={isFull} className="em-press" aria-label={isFull ? 'No seats available' : 'Claim a seat on this ride'} style={{ minHeight: 44, padding: '0 14px', borderRadius: 8, border: 'none', backgroundColor: isFull ? 'var(--em-bg-secondary)' : 'var(--em-accent)', color: isFull ? 'var(--em-text-tertiary)' : 'var(--em-text-inverse)', fontSize: 13, fontWeight: 600, cursor: isFull ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {isFull ? 'Full' : (<>Claim a seat <ArrowRight size={13} strokeWidth={1.75} aria-hidden="true" /></>)}
           </button>
         )}

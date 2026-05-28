@@ -58,7 +58,7 @@ export default function AudiencePicker({ kind, audienceType, audienceFilter, aud
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={segWrap}>
         {modes.map((m) => (
-          <button key={m.type} type="button" disabled={locked} className="sf-press"
+          <button key={m.type} type="button" disabled={locked} className="em-press"
             style={segBtn(m.type === audienceType)}
             onClick={() => !locked && onPick(m.type, audienceType === m.type ? audienceFilter : null)}>
             {m.label}

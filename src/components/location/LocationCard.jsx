@@ -13,7 +13,7 @@ export default function LocationCard({ location, isStaff, showArchived, onEdit, 
 
   if (density === 'minimal') {
     return (
-      <button type="button" onClick={() => window.open(url, '_blank')} className="sf-press"
+      <button type="button" onClick={() => window.open(url, '_blank')} className="em-press"
         style={{
           display: 'flex', alignItems: 'center', gap: 8, width: '100%',
           padding: '10px 16px', minHeight: 44, marginBottom: 8,
@@ -63,7 +63,7 @@ export default function LocationCard({ location, isStaff, showArchived, onEdit, 
         </div>
       )}
 
-      <button type="button" onClick={() => window.open(url, '_blank')} className="sf-press"
+      <button type="button" onClick={() => window.open(url, '_blank')} className="em-press"
         style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, padding: '0 12px', borderRadius: 10, fontSize: 13, fontWeight: 500, alignSelf: 'flex-start', backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
         <Navigation size={13} strokeWidth={1.75} /> Get Directions
       </button>

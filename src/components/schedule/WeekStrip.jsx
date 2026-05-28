@@ -23,7 +23,7 @@ export default function WeekStrip({ eventDates, selectedDate, onSelect }) {
         return (
           <button key={d.dateStr} type="button" role="tab" aria-selected={isActive} aria-label={`${d.dayAbbr} ${d.dayNum}`}
             onClick={() => { navigator.vibrate?.(10); onSelect(isActive ? null : d.dateStr); }}
-            className="sf-press"
+            className="em-press"
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 10px',
               borderRadius: 12, border: 'none', fontFamily: 'inherit', cursor: 'pointer', minWidth: 42,

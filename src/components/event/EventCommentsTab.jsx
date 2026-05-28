@@ -51,7 +51,7 @@ function EventCommentsTab({ eventId }) {
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
             placeholder="Write a comment..." />
         </div>
-        <button type="button" onClick={send} disabled={!draft.trim()} className="sf-press"
+        <button type="button" onClick={send} disabled={!draft.trim()} className="em-press"
           aria-label="Send comment"
           style={{
             width: 44, height: 44, borderRadius: 10, border: 'none',

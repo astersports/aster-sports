@@ -16,7 +16,7 @@ export default function FullScreenForm({ open, onClose, title, children, footer 
   return createPortal(
     <div
       ref={trapRef}
-      className="sf-fade-in"
+      className="em-fade-in"
       style={{
         position: 'fixed',
         top: 0, left: 0, right: 0, bottom: 0,
@@ -41,7 +41,7 @@ export default function FullScreenForm({ open, onClose, title, children, footer 
         borderBottom: '1px solid var(--em-border-default)',
         flexShrink: 0,
       }}>
-        <button type="button" onClick={onClose} className="sf-press" style={{
+        <button type="button" onClick={onClose} className="em-press" style={{
           minHeight: 44, padding: '0 8px', background: 'none', border: 'none',
           color: 'var(--em-accent)', fontSize: 15, fontWeight: 500,
         }}>Cancel</button>

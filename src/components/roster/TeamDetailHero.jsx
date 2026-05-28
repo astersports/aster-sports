@@ -41,7 +41,7 @@ export default function TeamDetailHero({ team, role, summary, myChild, myChildPl
   const showContactLine = coach && !isCoachViewingSelf;
 
   return (
-    <div className="sf-fade-in" style={{
+    <div className="em-fade-in" style={{
       backgroundColor: 'var(--em-bg-card)', borderRadius: 10,
       border: '1px solid var(--em-border-default)', boxShadow: 'var(--em-shadow-sm)',
       overflow: 'hidden', marginBottom: 16,
@@ -89,18 +89,18 @@ export default function TeamDetailHero({ team, role, summary, myChild, myChildPl
 
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
           {role === 'parent' && (
-            <button type="button" onClick={() => { navigator.vibrate?.(10); navigate(`/schedule?team=${team?.id}`); }} className="sf-press"
+            <button type="button" onClick={() => { navigator.vibrate?.(10); navigate(`/schedule?team=${team?.id}`); }} className="em-press"
               style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 13, fontWeight: 500 }}>
               View calendar
             </button>
           )}
           {isStaff(role) && (
             <>
-              <button type="button" onClick={() => { navigator.vibrate?.(10); navigate(`/messages?team=${team?.id}`); }} className="sf-press"
+              <button type="button" onClick={() => { navigator.vibrate?.(10); navigate(`/messages?team=${team?.id}`); }} className="em-press"
                 style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <MessageSquare size={14} strokeWidth={1.75} /> Message
               </button>
-              <Link to={`/admin/briefings/compose?anchor=team&id=${team?.id}`} aria-label="Send briefing about this team" className="sf-press"
+              <Link to={`/admin/briefings/compose?anchor=team&id=${team?.id}`} aria-label="Send briefing about this team" className="em-press"
                 style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}>
                 <Mail size={14} strokeWidth={1.75} /> Briefing
               </Link>

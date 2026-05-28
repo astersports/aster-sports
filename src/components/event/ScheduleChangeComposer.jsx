@@ -79,11 +79,11 @@ export default function ScheduleChangeComposer({ event, diff, onClose, onDone })
         <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>
           Audience: {audience.length} {pilotModeEnabled ? 'pilot recipients' : 'families'} on this team.
         </div>
-        <button type="button" onClick={onSend} disabled={busy} className="sf-press" style={{ ...btnPrimary, opacity: busy ? 0.5 : 1 }}>
+        <button type="button" onClick={onSend} disabled={busy} className="em-press" style={{ ...btnPrimary, opacity: busy ? 0.5 : 1 }}>
           <Send size={16} strokeWidth={1.75} />
           {busy ? 'Sending…' : (testOnly ? 'Send test to admin@' : `Notify ${audience.length} ${pilotModeEnabled ? 'pilot recipients' : 'families'}`)}
         </button>
-        <button type="button" onClick={onSkip} disabled={busy} className="sf-press" style={btnSecondary}>
+        <button type="button" onClick={onSkip} disabled={busy} className="em-press" style={btnSecondary}>
           <X size={16} strokeWidth={1.75} /> Skip notification
         </button>
       </div>

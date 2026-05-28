@@ -27,7 +27,7 @@ export default function PilotModeChip({ compact = false }) {
   return (
     <Link
       to="/admin/settings?panel=communications"
-      className="sf-press"
+      className="em-press"
       style={chipStyle}
       aria-label="Pilot mode is on. Tap to manage in Settings."
     >

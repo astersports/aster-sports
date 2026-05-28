@@ -56,7 +56,7 @@ export default function CoachHomePage() {
   if (isLoading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
-    <div className="px-4 py-5 flex flex-col gap-6 sf-fade-in">
+    <div className="px-4 py-5 flex flex-col gap-6 em-fade-in">
       <CoachHomeHeader user={user} />
       <CoachHomeAlertZone
         alerts={signals.coachAlerts} alertsLoading={alertsLoading}

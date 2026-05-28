@@ -73,7 +73,7 @@ export default function PreviewMobileCards({ rows, teamNames, onUpdateRow, onRem
             {r.messages?.length > 0 && (
               <div style={{ fontSize: 12, color: 'var(--em-text-secondary)' }}>{r.messages.join('; ')}</div>
             )}
-            <button type="button" onClick={() => onRemoveRow(i)} className="sf-press"
+            <button type="button" onClick={() => onRemoveRow(i)} className="em-press"
               style={{ alignSelf: 'flex-end', minHeight: 36, padding: '0 14px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: '#fff', color: 'var(--em-text-secondary)', fontSize: 13, cursor: 'pointer' }}>Remove row</button>
           </div>
         );

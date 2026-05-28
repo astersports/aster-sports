@@ -19,7 +19,7 @@ export default function PlayerPicker({ open, players, onCourt, playerStats, play
     <div ref={trapRef} role="dialog" aria-modal="true" aria-label={playLabel}
       style={{ position: 'fixed', inset: 0, zIndex: 9996, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', paddingTop: 'calc(env(safe-area-inset-top) + 12px)', borderBottom: '1px solid var(--em-border-default)' }}>
-        <button type="button" onClick={onClose} className="sf-press" aria-label="Cancel"
+        <button type="button" onClick={onClose} className="em-press" aria-label="Cancel"
           style={{ width: 44, height: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
           <X size={18} strokeWidth={1.75} color="var(--em-text-primary)" />
         </button>
@@ -29,7 +29,7 @@ export default function PlayerPicker({ open, players, onCourt, playerStats, play
         <div style={{ width: 44 }} />
       </div>
       <div style={{ padding: '8px 16px' }}>
-        <button type="button" onClick={onSkip} className="sf-press" style={{ minHeight: 44, width: '100%', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-secondary)', fontSize: 15, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' }}>Assign Later</button>
+        <button type="button" onClick={onSkip} className="em-press" style={{ minHeight: 44, width: '100%', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-secondary)', fontSize: 15, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' }}>Assign Later</button>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
         {courtPlayers.length > 0 && (
@@ -55,7 +55,7 @@ export default function PlayerPicker({ open, players, onCourt, playerStats, play
 function PlayerCard({ player, onTap, active, fouls = 0 }) {
   const fouledOut = fouls >= 5;
   return (
-    <button type="button" onClick={onTap} className="sf-press"
+    <button type="button" onClick={onTap} className="em-press"
       aria-label={`${player.first_name} number ${player.jersey_number || 'none'}, ${fouledOut ? 'fouled out' : fouls + ' fouls'}`}
       aria-disabled={fouledOut}
       style={{

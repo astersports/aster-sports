@@ -37,7 +37,7 @@ export default function ComposeBar({ onSend, placeholder, disabled }) {
         type="button"
         onClick={send}
         disabled={!canSend}
-        className="sf-press"
+        className="em-press"
         aria-label="Send message"
         style={{
           width: 44, height: 44, borderRadius: 10, border: 'none',

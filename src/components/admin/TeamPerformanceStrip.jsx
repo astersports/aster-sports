@@ -9,7 +9,7 @@ export default function TeamPerformanceStrip({ programs, recordsByTeam = {}, nav
           key={team.id}
           type="button"
           onClick={() => { navigator.vibrate?.(10); navigate(`/teams/${team.id}`); }}
-          className="sf-press sf-fade-in"
+          className="em-press em-fade-in"
           style={{
             padding: 12,
             borderRadius: 10,

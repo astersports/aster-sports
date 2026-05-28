@@ -1,6 +1,6 @@
 -- Wave 5-C.1: player_game_stats snapshot table
 -- Applied: 2026-05-05 18:00:59 UTC via Supabase MCP apply_migration
--- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Skyfire / Ember)
+-- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Ember / Ember)
 --
 -- Per-game per-player stat line, populated by either:
 --   (Path A) Aggregating game_plays via finalizePlayerStats on coach "End game" tap

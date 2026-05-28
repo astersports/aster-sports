@@ -62,7 +62,7 @@ export default function GameDayMode({ event, isStaff, isGameType }) {
   if (!open) {
     return (
       <div style={wrap}>
-        <button type="button" className="sf-press" style={toggleStyle} onClick={() => setOpen(true)} aria-expanded={false}>
+        <button type="button" className="em-press" style={toggleStyle} onClick={() => setOpen(true)} aria-expanded={false}>
           <ChevronRight size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>Arrival board</div>
@@ -75,7 +75,7 @@ export default function GameDayMode({ event, isStaff, isGameType }) {
 
   return (
     <div style={wrap}>
-      <button type="button" className="sf-press" style={{ ...toggleStyle, marginBottom: 8 }} onClick={() => setOpen(false)} aria-expanded>
+      <button type="button" className="em-press" style={{ ...toggleStyle, marginBottom: 8 }} onClick={() => setOpen(false)} aria-expanded>
         <ChevronDown size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
         <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>Hide arrival board</span>
       </button>

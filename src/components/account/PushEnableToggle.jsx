@@ -49,7 +49,7 @@ export default function PushEnableToggle({ userId, orgId }) {
       <span style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>
         Push on this device{denied ? ' (blocked in settings)' : ''}
       </span>
-      <button type="button" onClick={handle} disabled={busy} className="sf-press"
+      <button type="button" onClick={handle} disabled={busy} className="em-press"
         role="switch" aria-checked={on} aria-label="Push notifications on this device"
         style={{ width: 48, height: 28, borderRadius: 14, border: 'none', padding: 2, cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.6 : 1, backgroundColor: on ? 'var(--em-accent)' : 'var(--em-bg-tertiary)', transition: 'background-color 200ms' }}>
         <div style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: 'var(--em-text-inverse)', boxShadow: 'var(--em-shadow-sm)', transform: on ? 'translateX(20px)' : 'translateX(0)', transition: 'transform 200ms' }} />

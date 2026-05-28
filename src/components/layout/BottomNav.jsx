@@ -44,7 +44,7 @@ function NavItem(tab) {
       to={tab.to}
       end={tab.to === '/'}
       onClick={() => navigator.vibrate?.(10)}
-      className="flex-1 sf-press"
+      className="flex-1 em-press"
       style={({ isActive }) => ({
         minHeight: 44,
         color: isActive ? 'var(--em-accent)' : 'var(--em-text-tertiary)',

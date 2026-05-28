@@ -57,7 +57,7 @@ export default function AdminTeamsPage() {
   }
 
   return (
-    <div className="px-4 py-4 sf-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
+    <div className="px-4 py-4 em-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <AdminBackHeader />
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -88,7 +88,7 @@ export default function AdminTeamsPage() {
               <button
                 type="button"
                 onClick={() => openEdit(p)}
-                className="w-full text-left p-4 sf-press"
+                className="w-full text-left p-4 em-press"
                 style={{
                   backgroundColor: 'var(--em-bg-card)',
                   borderRadius: 10,

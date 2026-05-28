@@ -87,14 +87,14 @@ export default function PublicSchedulePage() {
       ))}
 
       {events.length > 0 && (
-        <button type="button" onClick={() => downloadTeamIcs(team.name, events)} className="sf-press" style={ctaBtnStyle}>
+        <button type="button" onClick={() => downloadTeamIcs(team.name, events)} className="em-press" style={ctaBtnStyle}>
           <Download size={16} strokeWidth={1.75} />
           Download Schedule (.ics)
         </button>
       )}
 
       {events.length > 0 && (
-        <button type="button" onClick={() => setShowSubscribe(true)} className="sf-press" style={{ ...ctaBtnStyle, marginTop: 8 }}>
+        <button type="button" onClick={() => setShowSubscribe(true)} className="em-press" style={{ ...ctaBtnStyle, marginTop: 8 }}>
           <Calendar size={16} strokeWidth={1.75} />
           Subscribe to Calendar
         </button>

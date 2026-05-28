@@ -31,7 +31,7 @@ export default function TeamDetailOverflowMenu({ team, role }) {
     <>
       <button type="button" onClick={() => { navigator.vibrate?.(10); setOpen(true); }}
         aria-label="Team actions"
-        className="sf-press"
+        className="em-press"
         style={{ minWidth: 44, minHeight: 44, padding: 0, background: 'none', border: 'none', color: 'var(--em-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <MoreVertical size={20} strokeWidth={1.75} aria-hidden="true" />
       </button>
@@ -42,7 +42,7 @@ export default function TeamDetailOverflowMenu({ team, role }) {
           </div>
           {items.map((it) => (
             <button key={it.key} type="button" onClick={it.onClick}
-              className="sf-press"
+              className="em-press"
               style={{ display: 'block', width: '100%', textAlign: 'left', minHeight: 44, padding: '0 8px', background: 'none', border: 'none', borderTop: '1px solid var(--em-border-subtle)', fontSize: 15, color: 'var(--em-text-primary)' }}>
               {it.label}
             </button>

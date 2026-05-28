@@ -96,7 +96,7 @@ export default function EventRosterLockCard({ event, isStaff, rsvps, roster, loc
           <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginBottom: 12 }}>
             Parents can no longer change RSVP. Use Unlock to reopen.
           </div>
-          <button type="button" onClick={() => setShowUnlockSheet(true)} className="sf-press" style={unlockBtn}>Unlock</button>
+          <button type="button" onClick={() => setShowUnlockSheet(true)} className="em-press" style={unlockBtn}>Unlock</button>
         </>
       ) : (
         <>
@@ -106,7 +106,7 @@ export default function EventRosterLockCard({ event, isStaff, rsvps, roster, loc
             <span><strong style={{ color: 'var(--em-text-primary)' }}>{counts.out}</strong> Out</span>
             <span><strong style={{ color: 'var(--em-text-primary)' }}>{counts.noReply}</strong> No reply</span>
           </div>
-          <button type="button" onClick={() => setShowLockSheet(true)} disabled={!lockableNow} className="sf-press"
+          <button type="button" onClick={() => setShowLockSheet(true)} disabled={!lockableNow} className="em-press"
             style={{ ...lockBtn, opacity: lockableNow ? 1 : 0.5, cursor: lockableNow ? 'pointer' : 'default' }}>
             Lock roster
           </button>
@@ -132,7 +132,7 @@ export default function EventRosterLockCard({ event, isStaff, rsvps, roster, loc
           <input type="text" value={unlockReason} onChange={(e) => setUnlockReason(e.target.value)}
             placeholder="e.g. Coach added late callup" autoFocus
             style={{ width: '100%', minHeight: 44, padding: '0 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit', marginBottom: 12 }} />
-          <button type="button" onClick={onUnlock} disabled={unlockReason.trim().length < 3} className="sf-press"
+          <button type="button" onClick={onUnlock} disabled={unlockReason.trim().length < 3} className="em-press"
             style={{ ...lockBtn, opacity: unlockReason.trim().length >= 3 ? 1 : 0.5 }}>
             Unlock
           </button>

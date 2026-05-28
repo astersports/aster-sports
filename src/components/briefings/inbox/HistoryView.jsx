@@ -52,11 +52,11 @@ export default function HistoryView({ filters, search, onCompose }) {
               <div style={titleStyle}>{label}{r.subject ? ` · ${r.subject}` : ''}</div>
               <div style={subStyle}>Sent {relTime(r.sent_at)} · {r.audience_type || '—'}</div>
             </div>
-            <button type="button" onClick={() => navigate(`/admin/briefings/history/${r.id}`)} className="sf-press" style={viewBtn}>View</button>
+            <button type="button" onClick={() => navigate(`/admin/briefings/history/${r.id}`)} className="em-press" style={viewBtn}>View</button>
           </div>
         );
       })}
-      {hasMore && <button type="button" onClick={loadMore} disabled={loading} className="sf-press" style={moreBtn}>{loading ? 'Loading…' : 'Load more'}</button>}
+      {hasMore && <button type="button" onClick={loadMore} disabled={loading} className="em-press" style={moreBtn}>{loading ? 'Loading…' : 'Load more'}</button>}
     </div>
   );
 }

@@ -29,7 +29,7 @@ export default function TournamentListItem({ tournament, rightSlot }) {
       tabIndex={0}
       onClick={open}
       onKeyDown={onKeyDown}
-      className="sf-press"
+      className="em-press"
       aria-label={`Open tournament ${tournament.name}`}
       style={{
         width: '100%', textAlign: 'left',

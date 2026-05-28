@@ -25,7 +25,7 @@ const ICONS = { AlertCircle, AlertTriangle, Info };
 
 function AlertItemRow({ title, subtitle, onTap, cta }) {
   return (
-    <button type="button" onClick={onTap} className="sf-press"
+    <button type="button" onClick={onTap} className="em-press"
       style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%', minHeight: 44, padding: '8px 0', background: 'none', border: 'none', borderTop: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer', textAlign: 'left' }}>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
@@ -58,7 +58,7 @@ export default function AlertCard({ alert }) {
         onClick={() => { if (canExpand) setExpanded((v) => !v); else if (navTarget) navigate(navTarget); }}
         aria-expanded={canExpand ? expanded : undefined}
         disabled={!interactive}
-        className="sf-press"
+        className="em-press"
         style={{ display: 'flex', alignItems: 'flex-start', gap: 12, width: '100%', padding: '12px 14px', background: 'none', border: 'none', cursor: interactive ? 'pointer' : 'default', textAlign: 'left' }}>
         <Icon size={18} strokeWidth={1.75} color={tokens.text} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }} />
         <div style={{ minWidth: 0, flex: 1 }}>

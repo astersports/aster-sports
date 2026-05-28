@@ -101,7 +101,7 @@ function Body({ guardian, onSave }) {
         type="button"
         onClick={submit}
         disabled={!canSubmit}
-        className="sf-press w-full"
+        className="em-press w-full"
         style={{
           minHeight: 44,
           borderRadius: 10,

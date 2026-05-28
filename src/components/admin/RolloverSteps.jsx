@@ -46,7 +46,7 @@ export function StepCoaches({ plan, setPlan }) {
           {tm.coaches.map((c, ci) => (
             <div key={c.user_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--em-border-subtle)' }}>
               <span style={{ fontSize: 14, color: 'var(--em-text-primary)', textTransform: 'capitalize' }}>{c.role.replace('_', ' ')}</span>
-              <button type="button" onClick={() => { const next = [...plan.teams]; next[ti].coaches[ci].keep = !c.keep; setPlan({ ...plan, teams: next }); }} className="sf-press"
+              <button type="button" onClick={() => { const next = [...plan.teams]; next[ti].coaches[ci].keep = !c.keep; setPlan({ ...plan, teams: next }); }} className="em-press"
                 style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 500, backgroundColor: c.keep ? 'var(--em-success-soft)' : 'var(--em-bg-secondary)', color: c.keep ? 'var(--em-success)' : 'var(--em-text-tertiary)', cursor: 'pointer', fontFamily: 'inherit' }}>{c.keep ? '✓ Keeping' : 'Dropped'}</button>
             </div>
           ))}
@@ -77,7 +77,7 @@ export function StepDetails({ plan, setPlan, locationCount = 0 }) {
             style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', fontSize: 15, color: 'var(--em-text-primary)', fontFamily: 'inherit' }} />
         </label>
       </div>
-      <button type="button" onClick={() => setPlan({ ...plan, carryLocations: !plan.carryLocations })} className="sf-press"
+      <button type="button" onClick={() => setPlan({ ...plan, carryLocations: !plan.carryLocations })} className="em-press"
         style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
         <div style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, backgroundColor: plan.carryLocations ? 'var(--em-accent)' : 'transparent', border: plan.carryLocations ? 'none' : '1.5px solid var(--em-border-default)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 700 }}>{plan.carryLocations ? '✓' : ''}</div>
         <div style={{ flex: 1 }}>

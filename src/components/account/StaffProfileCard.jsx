@@ -76,7 +76,7 @@ export default function StaffProfileCard({ defaultDisplayName }) {
             style={inputStyle}
           />
         </div>
-        <button type="submit" disabled={!canSave} className="sf-press"
+        <button type="submit" disabled={!canSave} className="em-press"
           style={{
             minHeight: 44, borderRadius: 10, border: 'none',
             backgroundColor: canSave ? 'var(--em-accent)' : 'var(--em-bg-secondary)',

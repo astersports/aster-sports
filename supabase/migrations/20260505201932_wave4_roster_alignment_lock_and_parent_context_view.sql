@@ -1,6 +1,6 @@
 -- Wave 4: Roster alignment lock + parent_context_v
 -- Applied: 2026-05-05 20:19:32 UTC via Supabase MCP apply_migration
--- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Skyfire / Ember)
+-- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Ember / Ember)
 --
 -- Documents canonical sources via comments + creates the parent_context_v
 -- helper view + locks team_players ↔ roster_members alignment via trigger.

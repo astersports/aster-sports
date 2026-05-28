@@ -1,6 +1,6 @@
 -- Wave: tighten user_roles_self policy to prevent privilege escalation
 -- Applied: 2026-05-05 16:15:40 UTC via Supabase MCP apply_migration
--- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Skyfire / Ember)
+-- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Ember / Ember)
 --
 -- Previously: single cmd=ALL policy with NULL with_check allowed any
 -- authenticated user to INSERT user_roles rows with any role (including 'admin').

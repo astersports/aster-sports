@@ -39,7 +39,7 @@ export default function DraftResumeRow({ onResume }) {
         const Icon = ICON_MAP[m.icon] || MessageSquare;
         const label = m.label || d.kind;
         return (
-          <button key={d.id} type="button" className="sf-press" style={rowStyle} onClick={() => onResume(d)} aria-label={`Resume ${label} draft`}>
+          <button key={d.id} type="button" className="em-press" style={rowStyle} onClick={() => onResume(d)} aria-label={`Resume ${label} draft`}>
             <span style={iconWrap}><Icon size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" aria-hidden="true" /></span>
             <span style={bodyWrap}>
               <span style={titleStyle}>{label}{d.subject ? ` · ${d.subject}` : ''}</span>

@@ -43,7 +43,7 @@ export default function AggregateRsvpBlock({ tournamentId }) {
   const teamCount = teams.length;
   return (
     <div style={wrap}>
-      <button type="button" style={headerRow} className="sf-press" onClick={() => setExpanded((e) => !e)} aria-expanded={expanded}>
+      <button type="button" style={headerRow} className="em-press" onClick={() => setExpanded((e) => !e)} aria-expanded={expanded}>
         <span style={countsLine}><CountSegment counts={totals} /></span>
         {expanded ? <ChevronDown size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" /> : <ChevronRight size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />}
       </button>

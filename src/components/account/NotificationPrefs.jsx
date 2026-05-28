@@ -51,7 +51,7 @@ export default function NotificationPrefs({ userId, orgId }) {
         return (
           <div key={cat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', minHeight: 44, borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)' }}>
             <span style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{cat.label}</span>
-            <button type="button" onClick={() => toggle(cat.key)} className="sf-press"
+            <button type="button" onClick={() => toggle(cat.key)} className="em-press"
               role="switch" aria-checked={enabled} aria-label={`${cat.label} notifications`}
               style={{
                 width: 48, height: 28, borderRadius: 14, border: 'none', padding: 2, cursor: 'pointer',

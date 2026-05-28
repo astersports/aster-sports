@@ -84,7 +84,7 @@ export default function AnchorPicker({ kind, anchorId, onPick }) {
       {!locked && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto' }}>
           {results.map((r) => (
-            <button key={`${r.type}-${r.id}`} type="button" className="sf-press" onClick={() => onPick(r.type, r.id)}
+            <button key={`${r.type}-${r.id}`} type="button" className="em-press" onClick={() => onPick(r.type, r.id)}
               style={{ ...resultRow, border: r.id === anchorId ? '1.5px solid var(--em-accent)' : resultRow.border, textAlign: 'left' }}>
               <span style={{ fontWeight: 600 }}>{r.label}</span>
               {r.secondary && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{r.secondary}</span>}

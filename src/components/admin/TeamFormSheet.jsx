@@ -82,7 +82,7 @@ function Body({ program, onSave, onDelete }) {
           <div className="flex flex-wrap gap-2">
             {COLOR_SWATCHES.map((hex) => (
               <button
-                key={hex} type="button" className="sf-press"
+                key={hex} type="button" className="em-press"
                 onClick={() => patch('team_color', hex)}
                 aria-label={`Color ${hex}`} aria-pressed={form.team_color === hex}
                 style={{
@@ -112,7 +112,7 @@ function Body({ program, onSave, onDelete }) {
           {editing && (
             <button
               type="button" onClick={() => setConfirmDel(true)}
-              className="flex-1 font-semibold sf-press"
+              className="flex-1 font-semibold em-press"
               style={{
                 minHeight: 44, borderRadius: 10, fontSize: 15,
                 backgroundColor: 'var(--em-danger-soft)', color: 'var(--em-danger)',
@@ -121,7 +121,7 @@ function Body({ program, onSave, onDelete }) {
           )}
           <button
             type="button" onClick={submit}
-            className="flex-1 font-semibold sf-press sf-bounce-tap"
+            className="flex-1 font-semibold em-press em-bounce-tap"
             style={{
               minHeight: 44, borderRadius: 10, fontSize: 15,
               backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',

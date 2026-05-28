@@ -16,7 +16,7 @@ export default function DmList({ threads, onSelect }) {
           key={t.id}
           type="button"
           onClick={() => { navigator.vibrate?.(10); onSelect(t); }}
-          className="sf-press"
+          className="em-press"
           aria-label={`Message ${t.otherName}`}
           style={{
             display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',

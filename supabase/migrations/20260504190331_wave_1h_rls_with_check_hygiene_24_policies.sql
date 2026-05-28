@@ -1,6 +1,6 @@
 -- Wave 1H: RLS hygiene — add WITH CHECK mirroring USING on 24 policies
 -- Applied: 2026-05-04 19:03:31 UTC via Supabase MCP apply_migration
--- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Skyfire / Ember)
+-- Project: vrwwpsbfbnveawqwbdmj (Legacy Hoopers / Ember / Ember)
 -- Excludes user_roles_self (1 policy deferred pending invite-flow verification)
 -- 13 cmd=ALL + 11 cmd=UPDATE policies
 

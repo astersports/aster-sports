@@ -47,13 +47,13 @@ function EventDutiesTab({ eventId }) {
                     {claimed ? (slot.claimed_by_name || 'Claimed') : 'Open'}
                   </div>
                   {!claimed && (
-                    <button type="button" onClick={() => claim(slot.id)} className="sf-press"
+                    <button type="button" onClick={() => claim(slot.id)} className="em-press"
                       style={btnStyle('var(--em-accent)', 'var(--em-text-inverse)')}>
                       Claim
                     </button>
                   )}
                   {isMine && (
-                    <button type="button" onClick={() => unclaim(slot.id)} className="sf-press"
+                    <button type="button" onClick={() => unclaim(slot.id)} className="em-press"
                       style={btnStyle('var(--em-bg-card)', 'var(--em-text-secondary)', true)}>
                       Release
                     </button>

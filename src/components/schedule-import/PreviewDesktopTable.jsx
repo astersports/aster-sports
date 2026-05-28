@@ -67,7 +67,7 @@ export default function PreviewDesktopTable({ rows, teamNames, onUpdateRow, onRe
               </div>
             </td>
             <td style={{ ...cellStyle, textAlign: 'right' }}>
-              <button type="button" onClick={() => onRemoveRow(i)} className="sf-press"
+              <button type="button" onClick={() => onRemoveRow(i)} className="em-press"
                 style={{ minHeight: 28, padding: '0 10px', borderRadius: 6, border: '1px solid var(--em-border-default)', backgroundColor: '#fff', color: 'var(--em-text-secondary)', fontSize: 12, cursor: 'pointer' }}>Remove</button>
             </td>
           </tr>

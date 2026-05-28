@@ -52,7 +52,7 @@ export default function SearchToolbar({ search, setSearch, showArchived, setShow
           <button
             type="button"
             onClick={() => setShowArchived(false)}
-            className="sf-press"
+            className="em-press"
             aria-pressed={!showArchived}
             style={chip(!showArchived)}
           >
@@ -61,7 +61,7 @@ export default function SearchToolbar({ search, setSearch, showArchived, setShow
           <button
             type="button"
             onClick={() => setShowArchived(true)}
-            className="sf-press"
+            className="em-press"
             aria-pressed={showArchived}
             style={chip(showArchived)}
           >

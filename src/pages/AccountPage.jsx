@@ -46,7 +46,7 @@ export default function AccountPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--em-bg-page)', padding: '16px 16px 32px' }}>
-      <button type="button" onClick={() => navigate(-1)} className="sf-press" aria-label="Go back"
+      <button type="button" onClick={() => navigate(-1)} className="em-press" aria-label="Go back"
         style={{ display: 'flex', alignItems: 'center', minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12 }}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back
       </button>
@@ -93,13 +93,13 @@ export default function AccountPage() {
 
       <section style={{ marginBottom: 16 }}>
         <Label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Lock size={12} strokeWidth={2} /> Security</Label>
-        <button type="button" onClick={sendPasswordReset} disabled={resetting} className="sf-press"
+        <button type="button" onClick={sendPasswordReset} disabled={resetting} className="em-press"
           style={{ width: '100%', minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 15, fontWeight: 500 }}>
           {resetting ? 'Sending…' : 'Send password reset email'}
         </button>
       </section>
 
-      <button type="button" onClick={signOut} className="sf-press"
+      <button type="button" onClick={signOut} className="em-press"
         style={{ width: '100%', minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'transparent', color: 'var(--em-danger)', fontSize: 15, fontWeight: 500, marginBottom: 24 }}>
         Sign out
       </button>

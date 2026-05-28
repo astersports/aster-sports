@@ -102,7 +102,7 @@ export default function ChildRsvp({ child, eventId, eventType, compact = false, 
       {PILLS.map((p) => {
         const active = response === p.value;
         return (
-          <button key={p.value} type="button" onClick={(e) => handleClick(e, p.value)} className="sf-press"
+          <button key={p.value} type="button" onClick={(e) => handleClick(e, p.value)} className="em-press"
             aria-pressed={active}
             style={{
               minWidth: 44, minHeight: minH, borderRadius: 8, padding: '0 8px',

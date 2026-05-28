@@ -48,7 +48,7 @@ export default function AcademyCallupBody({ value, onChange, audienceFilter, onA
     <div style={fieldGap}>
       <div>
         <span style={labelStyle}>Player(s) being called up</span>
-        <button type="button" onClick={() => setPickerOpen(true)} className="sf-press"
+        <button type="button" onClick={() => setPickerOpen(true)} className="em-press"
           style={{ ...inputStyle, textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
           {selectedIds.length ? `${selectedIds.length} player${selectedIds.length === 1 ? '' : 's'} selected` : 'Pick a player from Academy roster…'}
         </button>

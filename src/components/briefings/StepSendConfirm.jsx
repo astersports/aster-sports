@@ -76,9 +76,9 @@ export default function StepSendConfirm({ state, audience, onSend, sending = fal
           <span>Pilot mode is on. Only flagged pilot families (or the admin BCC) will receive this send.</span>
         </div>
       )}
-      <button type="button" onClick={onSend} disabled={disabled} className="sf-press" style={sendBtn(disabled)} data-testid="send-button">
+      <button type="button" onClick={onSend} disabled={disabled} className="em-press" style={sendBtn(disabled)} data-testid="send-button">
         {sending
-          ? <><Loader2 size={16} strokeWidth={1.75} className="sf-spin" /> Sending…</>
+          ? <><Loader2 size={16} strokeWidth={1.75} className="em-spin" /> Sending…</>
           : <><Send size={16} strokeWidth={1.75} /> Send</>}
       </button>
     </div>

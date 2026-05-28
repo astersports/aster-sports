@@ -12,7 +12,7 @@ import './index.css';
 import './styles/broadcast.css';
 
 // Apply cached brand colors BEFORE React mounts so first paint uses
-// the correct org brand instead of Ember/Skyfire defaults. Closes the
+// the correct org brand instead of Ember/Ember defaults. Closes the
 // brand-flash Frank captured 2026-05-20. Safe no-op when cache empty
 // (first-ever login on this browser) — defaults remain.
 applyCachedBrandColorsSync();

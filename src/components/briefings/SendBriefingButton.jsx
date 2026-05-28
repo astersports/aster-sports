@@ -28,7 +28,7 @@ export default function SendBriefingButton({ anchorKind, anchorId, kindFilter, v
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="sf-press" aria-label={ariaLabel} style={isIconOnly ? iconOnlyStyle : baseStyle}>
+      <button type="button" onClick={() => setOpen(true)} className="em-press" aria-label={ariaLabel} style={isIconOnly ? iconOnlyStyle : baseStyle}>
         <Mail size={isIconOnly ? 20 : 14} strokeWidth={1.75} color={isIconOnly ? iconColor : undefined} />
         {!isIconOnly && <span>Send briefing</span>}
       </button>

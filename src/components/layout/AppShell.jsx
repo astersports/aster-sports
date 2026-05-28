@@ -12,7 +12,7 @@ export default function AppShell({ children }) {
   const online = useOnlineStatus();
   return (
     <div
-      className="sf-app-shell flex flex-col"
+      className="em-app-shell flex flex-col"
       style={{ backgroundColor: 'var(--em-bg-page)' }}
     >
       <Header />

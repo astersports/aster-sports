@@ -45,7 +45,7 @@ export default function ArrivalBoard({ event }) {
           const time = a?.status_changed_at ? new Date(a.status_changed_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : null;
           const nextStatus = !a ? 'arrived' : a.status === 'arrived' ? null : 'arrived';
           return (
-            <button key={p.id} type="button" onClick={() => nextStatus && setArrival(p.id, nextStatus)} className="sf-press"
+            <button key={p.id} type="button" onClick={() => nextStatus && setArrival(p.id, nextStatus)} className="em-press"
               aria-label={`${p.first_name} ${p.last_name} — ${s ? s.label : 'tap to mark arrived'}`}
               style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10,

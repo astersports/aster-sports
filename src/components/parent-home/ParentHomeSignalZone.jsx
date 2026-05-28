@@ -63,7 +63,7 @@ export default function ParentHomeSignalZone({
       {myTeams.length > 0 && (
         <>
           <MyTeamsStrip teams={myTeams} byTeamId={recordsByTeam} loading={recordsLoading} nextEventByTeam={nextEventByTeam} onSelect={(teamId) => onNavigate(`/teams/${teamId}`)} />
-          <button type="button" onClick={() => onNavigate('/records')} className="sf-press"
+          <button type="button" onClick={() => onNavigate('/records')} className="em-press"
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 16px', minHeight: 44, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
             <span>View full season records</span>
             <span style={{ fontSize: 17, color: 'var(--em-text-tertiary)' }}>›</span>

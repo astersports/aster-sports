@@ -69,7 +69,7 @@ export default function EventBriefingHistory({ event }) {
           const meta = KIND_METADATA[b.kind] || {};
           const Icon = ICON_MAP[meta.icon] || MessageSquare;
           return (
-            <button key={b.id} type="button" className="sf-press" style={rowStyle} onClick={() => navigate(`/admin/briefings/history/${b.id}`)}>
+            <button key={b.id} type="button" className="em-press" style={rowStyle} onClick={() => navigate(`/admin/briefings/history/${b.id}`)}>
               <span style={iconWrap}><Icon size={16} strokeWidth={1.75} color="var(--em-text-secondary)" /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={titleStyle}>{meta.label || b.kind} · sent {relTime(b.sent_at)}</div>

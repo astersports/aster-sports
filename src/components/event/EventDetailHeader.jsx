@@ -49,15 +49,15 @@ export default function EventDetailHeader({ event, team, isStaff, onEdit, onDele
   return (
     <div style={{ backgroundColor: teamColor, padding: '0 8px 16px 4px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button type="button" onClick={() => navigate(-1)} className="sf-press" aria-label="Go back" style={iconBtn}>
+        <button type="button" onClick={() => navigate(-1)} className="em-press" aria-label="Go back" style={iconBtn}>
           <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-inverse)" />
         </button>
         <div style={{ display: 'flex', gap: 4 }}>
-          {isStaff && <button type="button" onClick={onCheckin} className="sf-press" aria-label="Take attendance" style={iconBtn}><UserCheck size={20} strokeWidth={1.75} color="var(--em-text-inverse)" /></button>}
+          {isStaff && <button type="button" onClick={onCheckin} className="em-press" aria-label="Take attendance" style={iconBtn}><UserCheck size={20} strokeWidth={1.75} color="var(--em-text-inverse)" /></button>}
           {isStaff && <>
-            <button type="button" onClick={onEdit} className="sf-press" aria-label="Edit event" style={iconBtn}><Pencil size={20} strokeWidth={1.75} color="var(--em-text-inverse)" /></button>
+            <button type="button" onClick={onEdit} className="em-press" aria-label="Edit event" style={iconBtn}><Pencil size={20} strokeWidth={1.75} color="var(--em-text-inverse)" /></button>
             <SendBriefingButton anchorKind="event" anchorId={event.id} kindFilter={briefingKinds} variant="icon-only" iconColor="var(--em-text-inverse)" />
-            <button type="button" onClick={() => setOverflowOpen(true)} className="sf-press" aria-label="More actions" style={iconBtn}><MoreHorizontal size={20} strokeWidth={1.75} color="var(--em-text-inverse)" /></button>
+            <button type="button" onClick={() => setOverflowOpen(true)} className="em-press" aria-label="More actions" style={iconBtn}><MoreHorizontal size={20} strokeWidth={1.75} color="var(--em-text-inverse)" /></button>
           </>}
         </div>
       </div>
@@ -66,9 +66,9 @@ export default function EventDetailHeader({ event, team, isStaff, onEdit, onDele
       </div>
       <BottomSheet open={overflowOpen} onClose={() => setOverflowOpen(false)} initialHeight="auto" expandedHeight="auto">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '8px 0 16px' }}>
-          {!isCancelled && onCancel && <button type="button" onClick={handleOverflowItem(onCancel)} className="sf-press" style={{ ...sheetItemBtn, color: 'var(--em-warning)' }}><Ban size={18} strokeWidth={1.75} />Cancel event</button>}
-          {isCancelled && onReinstate && <button type="button" onClick={handleOverflowItem(onReinstate)} className="sf-press" style={{ ...sheetItemBtn, color: 'var(--em-text-primary)' }}><Ban size={18} strokeWidth={1.75} />Reinstate event</button>}
-          {onDelete && <button type="button" onClick={handleOverflowItem(onDelete)} className="sf-press" style={{ ...sheetItemBtn, color: 'var(--em-danger)' }}><Trash2 size={18} strokeWidth={1.75} />Delete event</button>}
+          {!isCancelled && onCancel && <button type="button" onClick={handleOverflowItem(onCancel)} className="em-press" style={{ ...sheetItemBtn, color: 'var(--em-warning)' }}><Ban size={18} strokeWidth={1.75} />Cancel event</button>}
+          {isCancelled && onReinstate && <button type="button" onClick={handleOverflowItem(onReinstate)} className="em-press" style={{ ...sheetItemBtn, color: 'var(--em-text-primary)' }}><Ban size={18} strokeWidth={1.75} />Reinstate event</button>}
+          {onDelete && <button type="button" onClick={handleOverflowItem(onDelete)} className="em-press" style={{ ...sheetItemBtn, color: 'var(--em-danger)' }}><Trash2 size={18} strokeWidth={1.75} />Delete event</button>}
         </div>
       </BottomSheet>
     </div>

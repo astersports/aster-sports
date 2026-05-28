@@ -31,7 +31,7 @@ export default function WizardHeader({ step, totalSteps, onBack, draft, hasKind,
         <button
           type="button"
           onClick={onBack}
-          className="sf-press"
+          className="em-press"
           style={backBtn}
           aria-label="Back to previous step"
         >
@@ -41,7 +41,7 @@ export default function WizardHeader({ step, totalSteps, onBack, draft, hasKind,
       <span>{`Step ${step} of ${totalSteps}`}</span>
       <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
         {viewSentTo && (
-          <Link to={viewSentTo} style={viewSentStyle} className="sf-press" aria-label="View sent briefings">
+          <Link to={viewSentTo} style={viewSentStyle} className="em-press" aria-label="View sent briefings">
             View sent
           </Link>
         )}

@@ -61,10 +61,10 @@ export default function ScopeChoiceDialog({ event, onChoose, onCancel }) {
         <div id="scope-title" style={{ fontSize: 18, fontWeight: 700, color: 'var(--em-text-primary)', marginBottom: 4 }}>Edit recurring event</div>
         <div style={{ fontSize: 14, color: 'var(--em-text-secondary)' }}>Pick how the change applies.</div>
         <div style={btnRow}>
-          <button type="button" className="sf-press" style={btnBase} onClick={() => onChoose('instance')}>{subtitle('Move this single instance', 1)}</button>
-          <button type="button" className="sf-press" style={btnBase} onClick={() => onChoose('this_and_future')}>{subtitle('Move this and future', counts.future)}</button>
-          <button type="button" className="sf-press" style={btnBase} onClick={() => onChoose('series')}>{subtitle('Move entire series', counts.total)}</button>
-          <button type="button" className="sf-press" style={btnCancel} onClick={onCancel}>Cancel</button>
+          <button type="button" className="em-press" style={btnBase} onClick={() => onChoose('instance')}>{subtitle('Move this single instance', 1)}</button>
+          <button type="button" className="em-press" style={btnBase} onClick={() => onChoose('this_and_future')}>{subtitle('Move this and future', counts.future)}</button>
+          <button type="button" className="em-press" style={btnBase} onClick={() => onChoose('series')}>{subtitle('Move entire series', counts.total)}</button>
+          <button type="button" className="em-press" style={btnCancel} onClick={onCancel}>Cancel</button>
         </div>
       </div>
     </ModalBackground>,

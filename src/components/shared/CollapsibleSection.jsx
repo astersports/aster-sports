@@ -14,7 +14,7 @@ export default function CollapsibleSection({ title, sectionKey, defaultOpen = fa
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="sf-press"
+        className="em-press"
         data-section={sectionKey}
         aria-expanded={open}
         style={{
@@ -32,8 +32,8 @@ export default function CollapsibleSection({ title, sectionKey, defaultOpen = fa
         <ChevronDown size={17} strokeWidth={1.75} color="var(--em-text-tertiary)"
           style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms ease-out' }} />
       </button>
-      <div className="sf-collapsible" data-open={open ? 'true' : 'false'}>
-        <div className="sf-collapsible-inner">
+      <div className="em-collapsible" data-open={open ? 'true' : 'false'}>
+        <div className="em-collapsible-inner">
           {children}
         </div>
       </div>

@@ -6,7 +6,7 @@ export default memo(function Scoreboard({ teamName, opponentName, ourScore, oppS
     <div style={{ backgroundColor: 'var(--em-header)', padding: '12px 16px', paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         {onBack && (
-          <button type="button" onClick={onBack} className="sf-press" aria-label="Exit live scoring" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>
+          <button type="button" onClick={onBack} className="em-press" aria-label="Exit live scoring" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>
             <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-on-dark)" />
           </button>
         )}

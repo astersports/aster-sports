@@ -68,7 +68,7 @@ export default function FinalizedGameView({ event }) {
                 {stats.filter((s) => s.pts || s.fg_att || s.ft_att || s.reb || s.ast || s.stl || s.blk || s.pf)
                   .sort((a, b) => (b.pts || 0) - (a.pts || 0) || ((b.reb || 0) + (b.ast || 0) + (b.stl || 0) + (b.blk || 0)) - ((a.reb || 0) + (a.ast || 0) + (a.stl || 0) + (a.blk || 0)))
                   .map((s) => (
-                  <button key={s.player_id} type="button" onClick={() => update({ player_of_game_id: s.player_id })} className="sf-press"
+                  <button key={s.player_id} type="button" onClick={() => update({ player_of_game_id: s.player_id })} className="em-press"
                     style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 40, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', fontSize: 13, fontWeight: 500, color: 'var(--em-text-primary)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', width: '100%' }}>
                     <span style={{ fontWeight: 600 }}>#{s.jersey_at_time || '—'} {s.players?.first_name || '—'}</span>
                     <span style={{ color: 'var(--em-text-tertiary)', fontSize: 12 }}>{s.pts}p {s.reb}r {s.ast}a {s.fg_made}/{s.fg_att}FG{s.stl ? ` ${s.stl}s` : ''}{s.blk ? ` ${s.blk}b` : ''}</span>
@@ -82,7 +82,7 @@ export default function FinalizedGameView({ event }) {
               <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginBottom: 4 }}>Coach Highlight</div>
               <div style={{ display: 'flex', gap: 6 }}>
                 <input type="text" value={highlight} onChange={(e) => setHighlight(e.target.value)} maxLength={140} placeholder="One line for parents..." style={{ flex: 1, minHeight: 36, padding: '0 10px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', fontSize: 14, fontFamily: 'inherit', color: 'var(--em-text-primary)' }} />
-                <button type="button" onClick={() => { if (highlight.trim()) update({ coach_highlight: highlight.trim() }); }} className="sf-press" style={{ minHeight: 36, padding: '0 12px', borderRadius: 8, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
+                <button type="button" onClick={() => { if (highlight.trim()) update({ coach_highlight: highlight.trim() }); }} className="em-press" style={{ minHeight: 36, padding: '0 12px', borderRadius: 8, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
               </div>
             </div>
           )}
@@ -109,7 +109,7 @@ export default function FinalizedGameView({ event }) {
 
       {plays.length > 0 && (
         <>
-          <button type="button" onClick={() => setShowPlays((v) => !v)} className="sf-press"
+          <button type="button" onClick={() => setShowPlays((v) => !v)} className="em-press"
             style={{ width: '100%', minHeight: 44, marginTop: 16, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-secondary)', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             {showPlays ? 'Hide plays' : `View ${plays.length} plays`}
           </button>
@@ -118,7 +118,7 @@ export default function FinalizedGameView({ event }) {
       )}
 
       {staff && (
-        <button type="button" onClick={shareToChat} className="sf-press"
+        <button type="button" onClick={shareToChat} className="em-press"
           style={{ width: '100%', minHeight: 44, marginTop: 8, padding: '0 16px', borderRadius: 10, border: '1px solid var(--em-accent)', backgroundColor: 'transparent', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
           Share to Chat
         </button>

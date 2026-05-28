@@ -40,7 +40,7 @@ export default function AutoNotificationSettingsSheet({ open, onClose, orgId }) 
   }, [reminders, nudges, orgId, onClose, showToast]);
 
   const footer = (
-    <button type="button" onClick={handleSave} disabled={saving} className="sf-press"
+    <button type="button" onClick={handleSave} disabled={saving} className="em-press"
       style={{
         minHeight: 44, padding: '0 24px', borderRadius: 10, border: 'none',
         backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',

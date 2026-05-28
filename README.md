@@ -1,4 +1,4 @@
-# Skyfire
+# Ember
 
 Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, Google Sheets, email/text, and spreadsheets with one mobile-first platform.
 
@@ -58,7 +58,7 @@ git log --oneline HEAD..origin/main   # behind?
 | | |
 |---|---|
 | **Source of truth for everything** | [`CLAUDE.md`](./CLAUDE.md) — design tokens, schema, anti-patterns, workflow |
-| Live planning + status | [`docs/SKYFIRE_BUILD_QUEUE_v2.md`](./docs/SKYFIRE_BUILD_QUEUE_v2.md) |
+| Live planning + status | [`docs/EMBER_BUILD_QUEUE_v2.md`](./docs/EMBER_BUILD_QUEUE_v2.md) |
 | Current state-of-affairs | [`docs/STATE_OF_AFFAIRS_L99_v5.md`](./docs/STATE_OF_AFFAIRS_L99_v5.md) |
 | Components | `src/components/` (≤150 LOC each) |
 | Hooks | `src/hooks/` |

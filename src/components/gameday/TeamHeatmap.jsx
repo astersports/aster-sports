@@ -78,7 +78,7 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle, s
   return (
     <CollapsibleSection title={pulseTitle} sectionKey="heatmap" defaultOpen={false}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 16px 8px' }}>
-        <button type="button" onClick={onRangeToggle} className="sf-press" style={{
+        <button type="button" onClick={onRangeToggle} className="em-press" style={{
           fontSize: 12, fontWeight: 500, color: 'var(--em-accent)', background: 'var(--em-accent-soft)',
           border: 'none', borderRadius: 6, padding: '4px 10px', minHeight: 28,
         }}>
