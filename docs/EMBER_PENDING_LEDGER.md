@@ -3717,6 +3717,39 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AT — Audit-completeness challenge + home-screen bug capture (2026-05-29)
+
+**Trigger:** Frank challenged whether the 29/29 §17.5 campaign was "the most comprehensive
+audit possible," citing live home-screen loading issues + attached screenshots. Investigation
+in `docs/AUDIT_GAP_AND_FIX_SCOREBOARD_2026-05-29.md`.
+
+**Verdict:** the campaign is the most comprehensive *code* audit (line-by-line + §16.15
+2-pass of source) but has a **structural blind spot for runtime / live-data / visual** defects
+— things that live outside the source. Proven by **BUG-1**: admin home shows "Payment
+collection 100%" (Program Health, season-scoped Spring 2026 → DB-verified $0 outstanding) next
+to "Payments overdue $1,275 / 1 family" (payment_overdue alert, season-blind → DB-verified
+Fall 2025 balance). Each component is individually correct; the contradiction is emergent
+under real multi-season data, so a static read passes it.
+
+**6 bugs captured (home + compose screenshots):** BUG-1 payment scope contradiction [P1,
+DB-verified], BUG-2 "1 thing to handle" hidden in compact density [P2], BUG-3 RSVP-shortfall
+alert missing chevron [P2], BUG-4 home LCP ~5s [perf, = §4.AP anchor, fix queued unlanded],
+BUG-5 duplicate tournament-briefing drafts [P3 verify], BUG-6 "Game recap"/"Games recap"
+naming collision [P3].
+
+**New routing item — Category #30 (Runtime / Live-Data / Visual audit pass):** complementary
+lens run with production data per surface — (1) cross-surface metric/scope consistency (AP #43
+at data layer), (2) per-surface runtime/LCP, (3) visual/affordance consistency. Feeds the same
+fix-PR routing. Should run **before** the multi-program build gate (blind-spot classes multiply
+under a second tenant). Does NOT require re-running the 29 code categories.
+
+**Scoreboard:** §3 of the doc consolidates P0 arcs landed-vs-open. Gate status unchanged —
+Wave 1 cleared, Waves 2–3.A partial, all of Wave 3.B + Category #30 open; build gate shut.
+
+AP #45 satisfied: this entry ships in the same commit as the audit doc.
+
+---
+
 ### §4.AS — Wave 3.B audit close + §17.5 audit campaign COMPLETE (2026-05-29)
 
 **Trigger:** Wave 3.B dispatch per §4.AN routing — 6 parallel line-by-line audits (categories #6 anti-pattern compliance, #10 data integrity, #25 DR/backup, #27 youth-sports compliance, #28 onboarding playbook, #29 doctrine drift) per CLAUDE.md §17.8 with §16.15 2-pass deep-read addendum.
