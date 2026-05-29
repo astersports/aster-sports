@@ -3717,6 +3717,35 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AV — Category #30 runtime/live-data audit executed (2026-05-29)
+
+**Trigger:** Frank approved dispatching the Category #30 pass proposed in §4.AU. Four parallel
+agents cross-checked render-surface assumptions against the live DB. Full findings in
+`docs/AUDIT_CATEGORY_30_2026-05-29.md`.
+
+**Outcome:** 18 findings the 29-category code audit did not surface — **1 critical, 3 P1, 4 P2,
+10 latent/info** — decisively validating Category #30 as a permanent pre-build-gate lens.
+
+**Headlines:** HOME-1 (critical, 1-line) — game-day "Roster shortfall today" alert counts
+`response==='yes'` but the DB only stores `'going'` → permanent false 0-confirmed panic.
+ROSTER-1 (P1) — roster payment dot reads legacy `roster_members.payment_status` (63/63 stale
+`paid`), not `family_balances` → can't flag the owing family. ROSTER-2 (P1) — overdue alert
+deep-links to finance defaulted to active season; owing family is archived-season + no owing
+filter → unfindable (confirms PR #577 obs #1). ENGINE-1 (P1) — hotel_block resolver emits
+`{text}`, renderer reads `{hotel_info,…}` → dropped text + false "CLOSES TODAY".
+
+**Dominant pattern (AP #58):** PATTERN A — same concept, divergent source/scope across surfaces
+(7 instances: ROSTER-1/2, HOME-2/4/6, ROSTER-3, SCORE-1). **Promotion-ready anti-pattern
+candidate** (≥3 threshold met) — same family as BUG-1.
+
+**Routing:** Batch 1 ship-now (HOME-1, ENGINE-1, HOME-5, SCORE-5, ENGINE-3, SCORE-2, ROSTER-3);
+Batch 2 design-call (ROSTER-1/2 + HOME-2 financial-source cluster, HOME-3); Batch 3 fold into
+relevant arcs (incl. SCORE-1 with season-rollover). Awaiting Frank's batch routing.
+
+AP #45 satisfied: this entry ships in the same commit as the audit doc.
+
+---
+
 ### §4.AU — Audit-completeness challenge + home-screen bug capture (2026-05-29)
 
 **Trigger:** Frank challenged whether the 29/29 §17.5 campaign was "the most comprehensive
