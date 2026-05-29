@@ -66,6 +66,31 @@
 
 ---
 
+## CSV data drop — multisport schema implications (Frank-provided, not synthesis)
+
+Six CSVs + README dropped into `docs/external-data/` as schema reference (LeagueApps
+export shapes). **Only the redacted enrollment schema + README are committed; the rest
+are git-ignored local-only (PII / pending opt-in) — see `docs/external-data/.gitignore`.**
+
+File map:
+1. `spa_winter_schedule_25-26.csv` — 284 CYO games; import shape for League Play schedules
+2. `jersey_player_roster.csv` — 196 players w/ sizes + numbers; uniforms table shape ⚠️ minor names
+3. `enrollment_field_schema_redacted.csv` — 31 fields, types, PII flags (✅ committed)
+4. `enrollment_field_schema.csv` — same + real values (names/emails/addresses) ⛔ NEVER commit
+5. `jersey_size_summary.csv` / `shorts_size_summary.csv` — size-distribution pivots (enum sizing)
+
+**Three multisport-build constraints the data already proves:**
+- **Sizes are per-season-per-sport, not per-player.** Jersey/shorts size belongs in
+  `player_equipment(player_id, season_id, sport_id, ...)`. Multisport breaks the
+  one-size-per-player assumption. (Cross-ref §11.5: sizes currently live on
+  `roster_members` — this is the multisport evolution of that.)
+- **League schedule imports carry no `org_id` and no home/away flag.** Importer scopes
+  to the importing org; derives home/away from `Location` matching the program's home venue.
+- **`Jersey #` is unique per division, not per org.** Constraint must be
+  `UNIQUE(org_id, team_id, season_id, jersey_number)`.
+
+---
+
 ## Running themes (provisional — not synthesis)
 
 1. **Complexity to avoid:** very wide IA, dense multi-field forms, many status

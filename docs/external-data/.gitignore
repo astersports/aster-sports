@@ -1,0 +1,23 @@
+# docs/external-data/ — external reference data from the LeagueApps incumbent.
+#
+# ⚠️ CONTAINS MINOR PII (COPPA: Legacy Hoopers players are grades 2–5, all under 13).
+# Files here include real names, emails, phones, birth dates, addresses, and
+# 196 minors' names on the roster. Committing any of that to git is a privacy
+# breach that PERSISTS IN HISTORY even after deletion.
+#
+# POLICY: default-DENY. Nothing in this directory is committed unless it is
+# explicitly allow-listed below AND verified PII-free. Files still live on disk
+# locally so Claude Code can `cat`/parse them as schema reference — they just
+# never enter git.
+#
+# To allow-list a NEW file: confirm it has zero personal data, then add a
+# `!filename` line. NEVER allow-list the non-redacted enrollment CSV or the
+# player roster (minor names).
+
+# Deny everything...
+*
+
+# ...except the guard itself + Frank-confirmed PII-free files:
+!.gitignore
+!README.md
+!enrollment_field_schema_redacted.csv
