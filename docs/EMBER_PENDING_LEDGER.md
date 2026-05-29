@@ -3717,7 +3717,7 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
-### §4.AT — Audit-completeness challenge + home-screen bug capture (2026-05-29)
+### §4.AU — Audit-completeness challenge + home-screen bug capture (2026-05-29)
 
 **Trigger:** Frank challenged whether the 29/29 §17.5 campaign was "the most comprehensive
 audit possible," citing live home-screen loading issues + attached screenshots. Investigation
@@ -3746,7 +3746,28 @@ under a second tenant). Does NOT require re-running the 29 code categories.
 **Scoreboard:** §3 of the doc consolidates P0 arcs landed-vs-open. Gate status unchanged —
 Wave 1 cleared, Waves 2–3.A partial, all of Wave 3.B + Category #30 open; build gate shut.
 
+**Corroborates §4.AT** (next entry, PR #577): its side-observations #1 + #3 are the same
+issues as BUG-1 + BUG-3. PR #578 ships the fixes (#577 only logged them). Residual still
+open: §4.AT obs #1 (finance view has no unpaid filter to locate the owing family — the
+scope label clarifies the contradiction but doesn't help find the family) + obs #2
+(briefing-overdue alert deep-links to Compose generically, not the specific briefing).
+
 AP #45 satisfied: this entry ships in the same commit as the audit doc.
+
+---
+
+### §4.AT — LeagueApps parity & scope review (2026-05-29)
+
+**Trigger:** Frank's 54-screenshot walkthrough of the LeagueApps incumbent for "review the overall design," ahead of the (deferred) multi-program / multi-tenant build phase.
+
+**Output:** `docs/LEAGUEAPPS_PARITY_REVIEW.md` — incumbent model map (Site→Season→age-group sub-programs→rosters spine + 5 rings: registration, AR, comms, CMS/e-commerce, integrations/roles), Ember-vs-incumbent gap table, alignment points, and the governing **replace-vs-sit-on-top scope decision** (recommendation: Option A = Ember stays the engagement/comms/schedule layer; LeagueApps remains registration + AR system-of-record for the St. Patrick's timeframe). Per AP #45 this entry lands in the same PR.
+
+**Status:** reference artifact, does NOT gate §17.8. Open decision recorded for Frank (Option A vs B); belongs in PLATFORM_PRIORITIES.md §17.2 once settled. Multi-tenant build stays last per Frank's 2026-05-29 directive.
+
+**Side observations (Ember admin-home alerts, Frank 2026-05-29) — logged for routing, not yet fixed:**
+1. **Payments-overdue alert** ("$1,275 across 1 family") deep-links to finance, but every family shows Paid + there is no unpaid filter to locate the offending family — alert vs finance-view disagreement (AP #44 pipeline trace candidate; echoes #24 "instrumentation vs UI" pattern).
+2. **Weekly-briefing-overdue alert** deep-links to Compose·Kind generically, not to the specific briefing that clears the alert.
+3. **RSVP-shortfall alert** ("4 events affected") names a count but not WHICH events/players are missing RSVPs.
 
 ---
 
