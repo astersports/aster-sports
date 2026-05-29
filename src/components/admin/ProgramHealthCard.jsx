@@ -105,7 +105,7 @@ export default function ProgramHealthCard({ season, nowMs }) {
             }}
           />
         </div>
-        <MetricRow label="Payment collection" value={`${paymentPct}%`} loading={loading} skeletonWidth={40} />
+        <MetricRow label="Payment collection (this season)" value={`${paymentPct}%`} loading={loading} skeletonWidth={40} />
         <MetricRow label="RSVP rate" value={rsvpPct === null ? '—' : `${rsvpPct}%`} loading={loading} skeletonWidth={40} />
         <MetricRow label="Active teams" value={activeTeamsCount === 1 ? '1 team' : `${activeTeamsCount} teams`} loading={loading} skeletonWidth={56} />
         <MetricRow label="Registration pipeline" value={newRegistrationsCount === 1 ? '1 new this week' : `${newRegistrationsCount} new this week`} loading={loading} skeletonWidth={96} />

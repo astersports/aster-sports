@@ -60,4 +60,26 @@ describe('AlertCard interactions', () => {
     await user.click(screen.getByRole('button', { name: /payments overdue/i }));
     expect(screen.getByTestId('loc').textContent).toBe('/admin/financials');
   });
+
+  // BUG-1 invariant: the overdue alert declares its (all-seasons) scope so it
+  // can't read as a contradiction next to season-scoped "Payment collection".
+  it('payment overdue body declares all-seasons scope', () => {
+    renderCard({
+      config_id: 'c', alert_type_key: 'payment_overdue', severity: 'warning',
+      data: { total_outstanding_cents: 127500, family_count: 1 },
+    });
+    expect(screen.getByText(/\$1,275\.00 across 1 family · all seasons/)).toBeInTheDocument();
+  });
+
+  // BUG-3 invariant: rsvp_shortfall is actionable (not a dead card) and taps
+  // through to the schedule — keeps alert affordance consistent across cards.
+  it('rsvp shortfall taps through to the schedule (no dead card)', async () => {
+    const user = userEvent.setup();
+    renderCard({
+      config_id: 'c', alert_type_key: 'rsvp_shortfall', severity: 'warning',
+      data: { affected_count: 4 },
+    });
+    await user.click(screen.getByRole('button', { name: /rsvp shortfall/i }));
+    expect(screen.getByTestId('loc').textContent).toBe('/schedule');
+  });
 });

@@ -49,7 +49,12 @@ export function alertBody(alert) {
     case 'opponent_unassigned': return `${(d.events || []).length} event${(d.events || []).length === 1 ? '' : 's'}${d.critical_count ? ` · ${d.critical_count} <24h` : ''}`;
     case 'payment_overdue': {
       const dollars = ((d.total_outstanding_cents || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-      return `${dollars} across ${d.family_count || 0} famil${(d.family_count || 0) === 1 ? 'y' : 'ies'}`;
+      // Scope qualifier (BUG-1): this alert is org-wide / all-seasons
+      // (getOverdueFamilyBalances takes no season_id), whereas Program
+      // Health's "Payment collection" is season-scoped. Declaring the
+      // scope keeps "100% collected (this season)" from reading as a
+      // contradiction next to a prior-season balance on the same screen.
+      return `${dollars} across ${d.family_count || 0} famil${(d.family_count || 0) === 1 ? 'y' : 'ies'} · all seasons`;
     }
     case 'data_integrity_event_location_missing': return `${d.count || 0} event${(d.count || 0) === 1 ? '' : 's'} missing location data`;
     default: return '';
@@ -87,5 +92,10 @@ export function rowPropsForItem(alert, item) {
 export function navTargetForAlert(alert) {
   if (alert.alert_type_key === 'payment_overdue') return '/admin/financials';
   if (alert.alert_type_key === 'briefing_overdue') return `${COMPOSE_BASE}?kind=${alert.data?.briefing_kind || 'weekly_digest'}`;
+  // BUG-3: rsvp_shortfall was a dead card (no expand, no target) despite
+  // the "every alert is actionable" contract — so it rendered no chevron
+  // while sibling alerts did. Route to the schedule where the affected
+  // events live so the affordance is consistent and the card acts.
+  if (alert.alert_type_key === 'rsvp_shortfall') return '/schedule';
   return null;
 }
