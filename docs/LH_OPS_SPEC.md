@@ -420,7 +420,7 @@ also filters `.eq('org_id', orgId)` first on org-scoped tables (defense-in-depth
   [Event row]
     Left: Day-of-week (small) + Date number (large)
     Center: Team name (cobalt small) + vs. Opponent (bold)
-    Right: Time  OR  Result "W 42-38" (green) / "L 25-30" (red)
+    Right: Time  OR  Result "W 42-38" (success token) / "L 25-30" (danger token)
     Sub-row: RSVP pill (blue "RSVP") if unanswered
     Sub-row: Avatar chip with green checkmark if responded Going
 
@@ -438,7 +438,7 @@ also filters `.eq('org_id', orgId)` first on org-scoped tables (defense-in-depth
 - Games: event_type = 'Game' only
 - Events: event_type = 'Practice' | 'Other'
 
-#### Event row tap → Event Detail bottom sheet (see 3.3)
+#### Event row tap → navigates to Event Detail page `/events/:id` (see 3.3)
 
 ---
 
@@ -1232,67 +1232,87 @@ If OS notifications disabled: show inline red banner on any notification-depende
 
 ## 7. Phase Build Order
 
-### Phase 1 — Schedule (current sprint)
-- [ ] Schedule list with month bands + multi-team event rows
-- [ ] Event detail bottom sheet with RSVP 3-state flow
-- [ ] Add Event form (full field set)
-- [ ] Save → action sheet → Notification Compose
-- [ ] Opponent search with Previous Opponents list
-- [ ] Location select with map preview
+> **STATUS (CLAUDE.md §8, 2026-05-29):** Most of the platform below is already SHIPPED.
+> The app is live in production with Spring 2026 data. The checkboxes are kept as a
+> feature map; the boxes are marked to reflect actual build state. The genuinely
+> remaining unbuilt arc is in-app QR codes (public-schedule QR + parent-invite QR).
+> Per-player game stats / box score (Phase 3 player stats) are BLOCKED, not pending
+> (§16.12). Treat this section as a built-feature inventory, not a forward sprint plan.
 
-### Phase 2 — Team + Roster
-- [ ] Team profile header (logo, metadata row, tabs)
-- [ ] Players / Staff / Followers segmented control
-- [ ] Player profile (jersey # avatar, Stats table, Followers/Emergency Contact)
-- [ ] Staff list with Team Permissions section
-- [ ] Add Player / Add Staff flows
+### Phase 1 — Schedule (SHIPPED)
+- [x] Schedule list with month bands + multi-team event rows
+- [x] Event detail full page (`/events/:id`) with RSVP 3-state flow (going/not_going/maybe)
+- [x] Add Event FullScreenForm (full field set)
+- [x] Save → action sheet → Notification Compose
+- [x] Opponent search with Previous Opponents list
+- [x] Location select with map preview
 
-### Phase 3 — Score Entry
-- [ ] Quick score entry (post-game modal)
-- [ ] Score display on schedule rows (W/L + score)
-- [ ] Records update on game_results write
-- [ ] Live scoring interface (full scorekeeping)
-- [ ] Play-by-play + Undo
+### Phase 2 — Team + Roster (SHIPPED)
+- [x] Team profile header (logo, metadata row, tabs)
+- [x] Roster (Players) — backed by `team_players` (current) + `roster_members` (sizes)
+- [x] Player profile (engagement stats only — game stats BLOCKED per §16.12)
+- [x] Staff list — backed by `staff_profiles` / `team_staff`
+- [x] Add Player / player + guardian CRUD (admin)
 
-### Phase 4 — Messaging
-- [ ] Team chat thread
-- [ ] Attachment picker (Camera / Photo / File)
-- [ ] Reaction bar + long-press context menu
-- [ ] Conversation settings (mute, member list)
-- [ ] Channel picker (Team Chat vs. Email)
+### Phase 3 — Score Entry (SHIPPED)
+- [x] Quick score entry (writes `game_results`)
+- [x] Score display on schedule rows (W/L + score)
+- [x] Records derived from `game_results` (records page)
+- [x] Live scoring interface (`/events/:id/live`, full scorekeeping via `game_plays`)
+- [x] Play-by-play + Undo (`is_voided`)
 
-### Phase 5 — Settings + Admin
-- [ ] Team Settings menu
-- [ ] Team Info edit (name, logo, event reminders)
-- [ ] Stat Settings (privacy tiers)
-- [ ] Schedule Sync (Apple/Google/copy link)
-- [ ] Game Alerts (granular toggles + OS permission check)
-- [ ] QR code share screen
-- [ ] Start New Season (roster rollover)
+### Phase 4 — Messaging (SHIPPED)
+- [x] Team chat + channels + DM threads (`messages` / `dm_threads`)
+- [x] Message deletion, unread badges
+- [ ] Attachment picker (Camera / Photo / File) — not yet wired on `messages`
+- [x] Channel picker (Team Chat vs. Email) via the comms/briefing flow
+- [~] Save & Message Team auto-notifications (settings sheet exists; partial)
+
+### Phase 5 — Settings + Admin (largely SHIPPED)
+- [x] Admin team management (`/admin/teams`)
+- [x] Admin seasons / members / opponents / locations
+- [x] Schedule Sync — iCal subscription URL via `teams.team_feed_token` (calendar sync)
+- [~] Game Alerts granular toggles — partial (notification settings)
+- [ ] QR code share screen — NEXT unbuilt arc (needs `qrcode` dep)
+- [x] Start New Season — season rollover wizard (`/admin/rollover`)
+- [x] Financial dashboard + LeagueApps import (`/admin/financials`)
 
 ---
 
 ## 8. Files to Reference
 
-- **Schedule workbook:** `Legacy_Hoopers_Spring_2026.xlsx` (122 events Mar 23 – Jun 14)
-- **Financial tracker:** `LH_Spring2026_Final.xlsx`
-- **Records page:** `records-v12-dark.html` (live on Squarespace, `--lh-*` CSS token reference)
-- **Supabase project:** `vrwwpsbfbnveawqwbdmj`
-- **App URL:** `app.legacyhoopers.org`
-- **Vercel project:** linked to `~/legacy-hoopers-app`
+- **Live app:** https://skyfire-app.vercel.app
+- **Repo:** github.com/LegacyHoopers/skyfire-app (private), branch `main`
+- **Supabase project:** `vrwwpsbfbnveawqwbdmj` · org_id `e3e95e21-3571-4e9a-985a-d5d01480d4a6`
+- **Project doctrine (source of truth):** `CLAUDE.md` (§3 tokens, §5 schema, §10 LH
+  reference, §11.5 ground-truth tables, §16 elite design principles)
+- **Team colors:** `src/lib/constants.js` (`TEAM_COLORS`, v14 palette)
+- **Routes:** `src/App.jsx` · **Bottom nav:** `src/components/layout/BottomNav.jsx`
+- **Schedule + financial source data** was imported from LeagueApps (Fall 2025 +
+  Winter 2025-26 + Spring 2026) — historical xlsx workbooks are no longer the
+  live reference; production DB is canonical.
+- **Local path:** `~/legacy-hoopers-app` · **Vercel:** linked to that path
 
 ---
 
-## 9. Claude Code Session Notes
+## 9. Current Legacy Hoopers Facts (verified against production 2026-05-29)
+
+- **Teams (5, oldest→youngest by `sort_order`):** 11U Girls (AAU/ZG, female) ·
+  10U Black (AAU/ZG, male) · 10U Blue (League Play, male) · 9U Boys (League Play,
+  male) · 8U Boys (AAU/ZG, male). `circuit` stores lowercase `aau` / `league_play`.
+- **Seasons:** Fall 2025 (archived) · Winter 2025-26 (archived) · **Spring 2026
+  (active, Mar 23 – Jun 14)**.
+- **Spring 2026 families:** 60 `financial_accounts` / 60 distinct guardians.
+- **Org:** `e3e95e21-3571-4e9a-985a-d5d01480d4a6` · Admin: admin@legacyhoopers.org.
+
+## 9b. Claude Code Session Notes
 
 **Resume command:** `cd ~/legacy-hoopers-app && claude`
 
-**Environment:** HP Chromebook · ChromeOS Crostini (Linux) · Node.js · Claude Code v2.1.92
+**Environment:** HP Chromebook · ChromeOS Crostini (Linux) · Node.js · Claude Code
 
-**Auth user already created:** admin@legacyhoopers.org (Admin role)
+**Auth user:** admin@legacyhoopers.org (Admin role)
 
-**App ran locally at:** localhost:5173
-
-**Phase 2 next build step:** Schedule page with live Supabase data
+**App ran locally at:** localhost:5173 · **Production:** https://skyfire-app.vercel.app
 
 **Deliver:** Complete revised files, not partial patches. Flag clearly when something is wrong. No padding.
