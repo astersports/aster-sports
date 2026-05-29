@@ -3717,6 +3717,26 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AY — Doc-Corpus L99 audit campaign dispatched (2026-05-29)
+
+**Trigger:** Frank — "review all docs in the repo for accuracy and usefulness, L99." Formalized
+in `docs/AUDIT_DOC_CORPUS_L99_2026-05-29.md`.
+
+**Scope:** 78 docs (~41K lines). Two axes per doc: Accuracy (claims production-verified, not
+asserted) + Disposition (KEEP-CURRENT / FIX / ARCHIVE / DELETE — archive/delete recommended
+only, Frank approves). 8 categories: D1 doctrine (CLAUDE.md), D2 ledger integrity, D3
+design-chat inputs, D4 roadmap/build-queue, D5 engine/briefings refs, D6 historical-doc
+disposition, D7 archive/ hygiene, D8 cross-ref + SKYFIRE→EMBER naming.
+
+**This run:** D1–D3 dispatched (3 parallel read-only production-verified agents); D4–D8 queued
+(recommend after the design spec lands). Findings → `AUDIT_DOC_CORPUS_FINDINGS_2026-05-29.md`
++ a fix arc. Drift signals from inventory: SKYFIRE naming never renamed, `_v3`-titled-v2 doc,
+20+ un-archived point-in-time snapshots, 4,580-line ledger needing closed-wave compaction.
+
+AP #45: this entry ships with the campaign doc.
+
+---
+
 ### §4.AX — Design-chat reference docs reconciled (2026-05-29)
 
 **Trigger:** Frank — the multi-program design chat needs `EMBER_TENANCY_ARCHITECTURE_v3.md`
