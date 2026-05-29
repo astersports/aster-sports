@@ -24,6 +24,7 @@ import {
   handleTournamentApproaching, handleTournamentCompleted,
 } from "./_handlers.ts";
 import { handleEventReminder } from "./_reminders.ts";
+import { handleEventChangeDispatch } from "./_changeAlertDispatch.ts";
 
 interface TriggerRow {
   id: string;
@@ -103,13 +104,17 @@ Deno.serve(async (req) => {
   // Sweep expired drafts before dispatch — independent of trigger rows.
   const sweepResult = await handleExpireSweep(sb, now);
 
+  // Drain queued event_notifications (urgent change alerts -> push/email;
+  // in_app-only rows cleared). Independent of trigger rows. Wave 3.A #19 P0-1.
+  const changeDispatch = await handleEventChangeDispatch(sb, now, SUPABASE_URL, expected);
+
   let query = sb.from("briefing_triggers")
     .select("id, org_id, team_type_id, trigger_event, briefing_kind, lead_time_hours, active")
     .eq("active", true);
   if (forceEvent) query = query.eq("trigger_event", forceEvent);
   const { data: triggers, error: trigErr } = await query;
   if (trigErr) return json({ error: trigErr.message }, 500);
-  if (!triggers || triggers.length === 0) return json({ processed: 0, expire_sweep: sweepResult, results: [], force: { forceEvent, forceNow } });
+  if (!triggers || triggers.length === 0) return json({ processed: 0, expire_sweep: sweepResult, change_dispatch: changeDispatch, results: [], force: { forceEvent, forceNow } });
 
   // Per-org collapse: each (org_id, trigger_event) pair runs once.
   const seen = new Set<string>();
@@ -126,6 +131,7 @@ Deno.serve(async (req) => {
     processed: results.length,
     drafts_created: draftsCreated,
     expire_sweep: sweepResult,
+    change_dispatch: changeDispatch,
     results,
     force: forceEvent || forceNow ? { forceEvent, forceNow } : undefined,
   });
