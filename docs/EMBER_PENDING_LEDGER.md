@@ -3717,6 +3717,70 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AR — Wave 3.A audit close + reportError foundational PR (2026-05-29)
+
+**Trigger:** Wave 3.A dispatch per §4.AN routing — 5 parallel line-by-line audits (categories #18 onboarding, #19 notifications, #20 briefings, #21 edge deploy, #22 pg_cron) per CLAUDE.md §17.8 with §16.15 2-pass deep-read addendum. Plus the foundational `reportError` helper PR closing part of Wave 2.C #24 CROSS-PATTERN 2.
+
+**Outputs:**
+- `docs/AUDIT_WAVE_3A_2026-05-29.md` — findings + 4 cross-patterns + per-agent reports preserved. AP #45 satisfied by this same-commit ledger entry.
+- PR #573 — `reportError` helper + 7 critical-path migrations live on main (CROSS-PATTERN 2 foundation).
+
+**Wave 3.A headline:** 9 P0 / 23 P1 / 16 P2 / 5+ new AP candidates / 0 §17.5 demotions.
+
+**4 cross-cutting patterns (AP #58 synthesis):**
+
+1. **Data plumbing terminates in admin UI blindness** — 7 confirmed instances across #18 (usePendingInvitations false all-clear), #19 (event_notifications dispatcher missing + AutoNotificationSettings cosmetic + guardian_notification_prefs unread + NotificationPrefs unread), #22 PATTERN HOTEL (cron success masks HTTP failure). Cross-confirms Wave 2.C #24 PATTERN OMEGA. **Most pervasive architectural pattern across the platform.**
+
+2. **Spec drift across doc layers** — §13 + BRIEFINGS_COVERAGE_L99.md + AP #51 catalog all stale; §17.4 backlog 0/5 still missing; Stream B drifted from §16.5.
+
+3. **Audit-disciplined surfaces are CLEAN; unguarded surfaces are broken** — #21 13/13 byte-match + AP #33 + AP #30 + AP #31 all hold; #20 zero AP #27/#28/#29/#34/#36/#37/#38 violations; **but** #18 + #19 (no audit guards) have 8 P0s between them.
+
+4. **Cold infrastructure is observability debt** — 4 surfaces with 0 production exercise (academy_callup_notice, custom_message, games_recap, invitations table). Configuration/schema bugs lurk silently until first real send.
+
+**Wave 3.A P0 consolidated (9):**
+
+- #18 P0-1 to P0-5: invitations table disconnected + InviteButton unmounted + no AcceptInvitePage + token discipline gap + anon-SELECT enumeration risk
+- #19 P0-1 to P0-3: event_notifications trigger writes inert + schema-leak microcopy + AutoNotificationSettings toggles cosmetic
+- #22 P0-1: cron.job_run_details masks 1.1% real HTTP failures (canonical health source is net._http_response, not job_run_details)
+
+**Routing — 7 fix-PR arcs queued:**
+
+1. **Onboarding pipeline rebuild** (closes #18 5 P0s + 6 P1s) — multi-PR arc; decision call on invitations vs auth.users path
+2. **Notification pipeline wiring** (closes #19 3 P0s + 8 P1s) — event_notifications dispatcher + wire AutoNotificationSettings toggles + microcopy fix
+3. **Cron HTTP-health observability** (closes #22 P0-1) — canonical source switch + admin health card
+4. **Doctrine reconciliation** (closes #20 P1s + Cross-Pattern 2) — §13 + BRIEFINGS_COVERAGE_L99 + AP #51 catalog updates
+5. **Admin observability arc** (cross-confirms PATTERN OMEGA) — admin views for the 5 audit-log tables + Resend bounce surface
+6. **Pre-cutover cold-surface validation** — manually trigger one of each: academy_callup_notice + custom_message + games_recap
+7. **AP #63 audit-test extension** — landing deployed-vs-repo enforcement test
+
+**5 new AP candidates surfaced in Wave 3.A:**
+
+- **PATTERN ZETA** (candidate) — false-negative all-clear from broken data pipeline. 1 instance (usePendingInvitations).
+- **PATTERN DELTA** (candidate) — admin-toggle without enforcement. 3 instances (AutoNotificationSettings, NotificationPrefs, guardian_notification_prefs). Promote-ready.
+- **PATTERN HOTEL** (candidate) — SQL-layer enqueue-success masks downstream async failure. Generalizes to any queue-style metric.
+- **PATTERN COLD-SURFACE** (candidate) — production infrastructure with 0 real exercise. AP #51 dead-feature class.
+- **"pg_cron success ≠ HTTP success" audit lens** — always cross-check `net._http_response.status_code` when reasoning about cron health.
+
+**Audit progress per §17.5: 18 of 29 categories complete.**
+
+Remaining: Wave 3.B (#6 anti-pattern compliance sweep, #10 data integrity canonical-source compliance, #25 DR/backup testing, #27 youth-sports compliance, #28 data migration playbook, #29 doctrine drift).
+
+**Wave 3.A → next session handoff:**
+
+Next session opens with Frank's routing call on the 7 fix-PR arcs above + Wave 3.B dispatch.
+
+**AP compliance:**
+- AP #45 — §4.AR in same commit as `docs/AUDIT_*.md` ✓
+- AP #50 RETIRED — line-by-line methodology held ✓
+- AP #56 + #59 RETIRED ✓
+- AP #58 — cross-batch pattern check applied; 4 CROSS-PATTERNs ✓
+- AP #61 — pre-phase audit gate ✓
+- §17.8 — every agent reported §16.15 2-pass cascade-catch findings ✓
+
+**Concurrent ship: PR #573 reportError foundational migration.** Closes part of #24 P0-1 (Wave 2.C CROSS-PATTERN 2). 7 critical-path callsites migrated (AuthContext.loadMembership, AuthContext.coachTeamStaff, useRsvps.saveNote, useMessages.{fetch,send,delete}, useSeasonRollover.{carryLocations.read,carryLocations.insert,execute}). ~100 console.error sites remain in src/ for incremental sweep; helper exists and discipline is set.
+
+---
+
 ### §4.AQ — Wave 2.C close + AP #56/#59 retirement (2026-05-29)
 
 **Trigger:** Wave 2.C dispatch per §4.AN routing — 5 parallel line-by-line audits (categories #4, #5, #16, #17, #24) per CLAUDE.md §17.8 standing rule with §16.15 2-pass deep-read addendum. Plus Frank's "remove the capacity discipline" directive at session close, retiring AP #56 + AP #59.
