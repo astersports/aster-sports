@@ -3718,6 +3718,37 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BE — Build PR 1: migration #1 programs table + program_type ENUM SHIPPED (2026-05-29)
+
+**Frank's GO** → spec §4.5 step 1, the multi-program schema's top-level container.
+
+- **Migration applied** (MCP, version `20260529155321`, mirror `supabase/migrations/
+  20260529155321_programs_table_and_program_type_enum.sql` per AP #21):
+  - `program_type` ENUM with 6 values (`season/tryout/camp/clinic/interest_list/evaluation`);
+    v1 UI will expose 3 (season/tryout/camp) per spec §4.2.
+  - `programs` table — top-level container (parent of divisions/registrations). **Column set is
+    a deliberate superset of `seasons`** (id, org_id, name, start/end_date, status, created/
+    updated_at, parent_program_id↔parent_season_id, rolled_over_at) so PR 2 (backfill from
+    seasons) + PR 3 (`seasons` becomes a compat view `WHERE program_type='season'`) are clean.
+  - `sport_id uuid` is **forward-compat scaffolding — no FK**: the `sports` table is not built in
+    this wave (not in the §4.5 12-migration list); LH is single-sport. FK lands when sports/
+    multisport UI ships.
+  - RLS **mirrors `seasons` exactly** (4 policies: select TO authenticated `org_id =
+    current_user_org_id()`; insert/update/delete gated `user_has_role_in_org(org_id,{admin})`
+    with WITH CHECK per AP #20). Parent SELECT via `current_user_org_ids()` (plural) is deferred
+    to migration #12 (spec §4.3). `set_updated_at()` trigger mirrored.
+- **Pre-flight:** confirmed `sports`/`programs`/`program_type` did not exist; `seasons` shape
+  read for the superset contract. **Post-flight:** in-transaction DO-block (6 enum values, table
+  present, RLS on, 4 policies, trigger present) passed; `get_advisors security` clean — **no new
+  advisory on `programs`** (RLS-enabled-with-policies).
+- **Backward-compatible / additive:** no existing data touched; `seasons` table untouched (PR 3
+  converts it).
+
+Next: spec §4.5 PR 2 (backfill `programs` from existing `seasons` rows) on GO — a data migration,
+so pre-flight row inspection + idempotency guard before apply.
+
+---
+
 ### §4.BD — Build PR 0: migration #0 identity foundation SHIPPED (2026-05-29)
 
 **Frank's GO** → first build PR. The multi-org identity foundation (the spec's missing
