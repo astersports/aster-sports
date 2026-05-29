@@ -9,7 +9,7 @@
 //   bracket section → logistics_line → signoff (optional) →
 //   tagline_footer → brand_footer
 
-import { formatDayLabel, formatTime, trim } from './tournamentPrelimHelpers';
+import { formatDateRange, formatDayLabel, formatTime, trim } from './tournamentPrelimHelpers';
 
 function uniqueVenues(events, locations) {
   const seen = new Set();
@@ -31,7 +31,8 @@ function cityFromAddress(address) {
 
 export function buildHeaderSection(slice, tournament, overrides) {
   const headline = trim(overrides.headline) || 'TOURNAMENT WEEKEND';
-  const subContext = trim(overrides.sub_context_line) || (tournament.primary_venue ? `${tournament.start_date} – ${tournament.end_date} | ${tournament.primary_venue}` : `${tournament.start_date} – ${tournament.end_date}`);
+  const dateRange = formatDateRange(tournament.start_date, tournament.end_date);
+  const subContext = trim(overrides.sub_context_line) || (tournament.primary_venue ? `${dateRange} | ${tournament.primary_venue}` : dateRange);
   return { kind: 'header', variant: 'cobalt_band', eyebrow: `${slice.team_name.toUpperCase()} | ${tournament.name.toUpperCase()}`, headline, sub_context: subContext, team_color: slice.team_color };
 }
 

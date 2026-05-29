@@ -47,7 +47,9 @@ export async function getRsvpShortfallEvents(supabase, orgId, params) {
     const expected = new Set([...teamRoster, ...callups]);
     const responses = rsvpByEvent.get(e.id) || [];
     const respondedIds = new Set(responses.map((r) => r.player_id));
-    const yesIds = new Set(responses.filter((r) => r.response === 'yes').map((r) => r.player_id));
+    // event_rsvps.response stores 'going'/'not_going'/'maybe' — never 'yes'.
+    // (Was 'yes' → yes_count always 0 → false game-day shortfall alert.)
+    const yesIds = new Set(responses.filter((r) => r.response === 'going').map((r) => r.player_id));
     return {
       event_id: e.id, team_id: e.team_id, team: e.teams,
       start_at: e.start_at, end_at: e.end_at,

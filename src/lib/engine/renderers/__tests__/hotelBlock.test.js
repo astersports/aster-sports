@@ -33,4 +33,20 @@ describe('template T1 — hotelBlock', () => {
   it('matches snapshot', () => {
     expect(render(fixture)).toMatchSnapshot();
   });
+
+  // ENGINE-1: the prelim override path emits { text } with no days_remaining.
+  // Previously days defaulted to 0 → false "CLOSES TODAY" + dropped body.
+  it('renders a text-only override as body, no false "CLOSES TODAY"', () => {
+    const { html, plainText } = render({ text: 'Hampton Inn, block code LH26' });
+    expect(html).toContain('Hampton Inn, block code LH26');
+    expect(html).toContain('HOTEL BLOCK');
+    expect(html).not.toContain('CLOSES TODAY');
+    expect(plainText).toContain('Hampton Inn');
+    expect(plainText).not.toContain('CLOSES TODAY');
+  });
+
+  it('still shows the countdown when days_remaining is present', () => {
+    expect(render({ hotel_info: 'X', days_remaining: 0 }).html).toContain('CLOSES TODAY');
+    expect(render({ hotel_info: 'X', days_remaining: 2 }).html).toContain('CLOSES IN 2 DAYS');
+  });
 });
