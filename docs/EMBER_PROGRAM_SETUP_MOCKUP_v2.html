@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ember — Program Setup &amp; Registration v2 · Parent Surfaces</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* LOCKED Ember tokens (CLAUDE.md §3) */
+    --em-bg-page:#F7F8FA; --em-bg-card:#FFFFFF; --em-bg-secondary:#F1F3F5; --em-bg-tertiary:#E9ECEF;
+    --em-text-primary:#1A1D23; --em-text-secondary:#4A5568; --em-text-tertiary:#8896AB; --em-text-inverse:#FFFFFF;
+    --em-border-default:#E2E8F0; --em-border-subtle:#EDF2F7;
+    --em-success:#16A34A; --em-success-soft:#DCFCE7; --em-warning:#D97706; --em-warning-soft:#FEF3C7;
+    --em-danger:#DC2626; --em-danger-soft:#FEE2E2; --em-info:#3B82F6; --em-info-soft:#EFF6FF;
+    --em-academy:#7C3AED; --em-academy-soft:rgba(124,58,237,.1);
+    /* Ember (family/default) brand */
+    --ember-navy:#151525; --ember-gold:#C9952E; --ember-gold-hi:#D4A843; --ember-on-dark:#F5F0E8;
+    /* Org brands */
+    --lh:#4a8fd4; --lh-hi:#5BA0E0; --lh-soft:rgba(74,143,212,.1);
+    --sp:#2f7a4f; --sp-soft:rgba(47,122,79,.1);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.04); --shadow-md:0 2px 8px rgba(0,0,0,.08); --shadow-lg:0 8px 24px rgba(0,0,0,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+  body{font-family:'Inter',system-ui,sans-serif;background:#0e0e16;color:var(--ember-on-dark);padding:40px 24px 80px}
+  .board-head{max-width:1200px;margin:0 auto 32px}
+  .board-head h1{font-size:26px;font-weight:700;letter-spacing:-.02em;color:#fff}
+  .board-head .sub{font-size:14px;color:#9aa0b4;margin-top:6px;line-height:1.5}
+  .board-head .tag{display:inline-block;margin-top:12px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ember-gold);border:1px solid rgba(201,149,46,.4);border-radius:9999px;padding:4px 12px}
+  .grid{display:flex;flex-wrap:wrap;gap:40px 36px;justify-content:center;max-width:1340px;margin:0 auto}
+  .frame-wrap{width:320px}
+  .frame-cap{font-size:12px;font-weight:600;color:#c7cbdb;margin-bottom:10px;text-align:center}
+  .frame-cap span{display:block;font-weight:400;color:#7e8398;font-size:11px;margin-top:2px}
+  /* phone */
+  .phone{width:320px;height:660px;background:var(--em-bg-page);border-radius:38px;border:10px solid #1d1d2b;
+    box-shadow:0 18px 50px rgba(0,0,0,.5);overflow:hidden;position:relative;display:flex;flex-direction:column}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:24px;background:#1d1d2b;border-radius:0 0 16px 16px;z-index:30}
+  .screen{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+  .screen::-webkit-scrollbar{display:none}
+  /* headers */
+  .hdr{padding:30px 16px 12px;color:var(--em-text-inverse);flex-shrink:0}
+  .hdr-family{background:var(--ember-navy)}
+  .hdr-lh{background:var(--lh)}
+  .hdr-sp{background:var(--sp)}
+  .hdr-row{display:flex;align-items:center;justify-content:space-between}
+  .hdr .brand{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700}
+  .flame{width:20px;height:20px;flex-shrink:0}
+  .hdr .greet{font-size:13px;opacity:.85;margin-top:8px}
+  .hdr .greet b{display:block;font-size:20px;font-weight:700;opacity:1;margin-top:1px}
+  .gear{opacity:.85;font-size:16px}
+  /* content */
+  .body{padding:14px;display:flex;flex-direction:column;gap:16px}
+  .label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--em-text-tertiary)}
+  .card{background:var(--em-bg-card);border:1px solid var(--em-border-default);border-radius:10px;box-shadow:var(--shadow-sm);padding:14px}
+  .muted{color:var(--em-text-secondary);font-size:13px}
+  .tiny{color:var(--em-text-tertiary);font-size:11px}
+  .row{display:flex;align-items:center;gap:8px}
+  .between{display:flex;align-items:center;justify-content:space-between}
+  .badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;border-radius:6px;padding:2px 6px;color:#fff}
+  .b-lh{background:var(--lh)} .b-sp{background:var(--sp)}
+  .pill{font-size:11px;font-weight:600;border-radius:9999px;padding:3px 10px}
+  .p-open{background:var(--em-success-soft);color:var(--em-success)}
+  .p-wait{background:var(--em-warning-soft);color:var(--em-warning)}
+  .p-soon{background:var(--lh-soft);color:var(--lh)}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .pulse{animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .rsvp{display:flex;gap:6px;margin-top:10px}
+  .rsvp button{flex:1;border:1.5px solid var(--em-border-default);background:var(--em-bg-card);border-radius:8px;
+    min-height:34px;font-size:12px;font-weight:600;font-family:inherit;color:var(--em-text-secondary)}
+  .rsvp .go{background:var(--em-success);border-color:var(--em-success);color:#fff}
+  .kidstrip{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+  .kidstrip::-webkit-scrollbar{display:none}
+  .kid{flex:0 0 84px;background:var(--em-bg-card);border:1px solid var(--em-border-default);border-radius:10px;
+    padding:10px 8px;text-align:center;box-shadow:var(--shadow-sm)}
+  .kid .av{width:40px;height:40px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;
+    font-weight:700;color:#fff;font-size:15px}
+  .kid .nm{font-size:13px;font-weight:600;color:var(--em-text-primary)}
+  .kid .div{font-size:10px;color:var(--em-text-tertiary);margin-top:1px}
+  .kid .orgs{font-size:11px;margin-top:4px;letter-spacing:1px}
+  .evt{background:var(--em-bg-card);border:1px solid var(--em-border-default);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow-sm)}
+  .evt .t{font-size:13px;font-weight:600;color:var(--em-text-primary)}
+  .conflict{border:2px solid var(--em-danger);background:var(--em-danger-soft);border-radius:10px;padding:11px 12px}
+  .conflict.ring{animation:ring 2s ease-in-out 3}
+  @keyframes ring{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}50%{box-shadow:0 0 0 4px rgba(220,38,38,.18)}}
+  .nav{margin-top:auto;flex-shrink:0;display:flex;background:var(--em-bg-card);border-top:1px solid var(--em-border-default);padding:8px 4px 10px}
+  .nav div{flex:1;text-align:center;font-size:10px;color:var(--em-text-tertiary)}
+  .nav .on{color:var(--lh);font-weight:600}
+  .nav.fam .on{color:var(--ember-gold)}
+  .nav .ic{font-size:17px;display:block;margin-bottom:2px}
+  /* selectable rows (conflict resolve) */
+  .opt{border:1.5px solid var(--em-border-default);border-radius:10px;padding:12px;margin-bottom:10px;display:flex;gap:10px}
+  .opt.sel{border-color:var(--lh);background:var(--lh-soft)}
+  .radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--em-border-default);flex-shrink:0;margin-top:2px;position:relative}
+  .opt.sel .radio{border-color:var(--lh)}
+  .opt.sel .radio::after{content:'';position:absolute;inset:3px;border-radius:50%;background:var(--lh)}
+  .btn{display:block;width:100%;border:none;border-radius:10px;min-height:46px;font-family:inherit;font-size:15px;font-weight:600;color:#fff;background:var(--lh);margin-top:6px}
+  .btn-gold{background:var(--ember-gold)}
+  .topbar{display:flex;align-items:center;gap:10px;padding:14px 14px 4px;font-size:13px;color:var(--lh);font-weight:500;flex-shrink:0}
+  .topbar .ti{margin-left:auto;color:var(--em-text-primary);font-weight:600;font-size:15px}
+  .cartline{display:flex;justify-content:space-between;font-size:13px;color:var(--em-text-primary);padding:6px 0}
+  .cartline.disc{color:var(--em-success);font-weight:600;animation:goldpulse 2.4s ease-in-out infinite}
+  @keyframes goldpulse{0%,100%{background:transparent}50%{background:rgba(201,149,46,.14)}}
+  .hr{height:1px;background:var(--em-border-subtle);margin:6px 0}
+  .prog{height:6px;border-radius:3px;background:var(--em-bg-secondary);overflow:hidden;margin-top:6px}
+  .prog>i{display:block;height:100%;background:var(--em-success);border-radius:3px}
+  .timeline div{display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 0;color:var(--em-text-primary)}
+  .tl-done{color:var(--em-success)} .tl-next{font-weight:600}
+  .savings{background:linear-gradient(180deg,rgba(201,149,46,.12),rgba(201,149,46,.04));border:1px solid rgba(201,149,46,.35);
+    border-radius:10px;padding:14px;animation:goldpulse 3s ease-in-out infinite}
+  .savings .amt{font-size:18px;font-weight:700;color:#9a6f1e}
+  .briefing{background:var(--em-bg-card);border:1px solid var(--em-border-default);border-radius:10px;padding:12px;box-shadow:var(--shadow-sm)}
+  .briefing.glow{border-color:rgba(201,149,46,.5);box-shadow:0 0 0 1px rgba(201,149,46,.25)}
+  .briefing .zip{font-size:11px;color:var(--em-text-secondary);background:var(--em-bg-secondary);border-radius:6px;padding:5px 8px;margin:8px 0;display:flex;gap:5px}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="board-head">
+  <h1>Ember — Parent Surfaces (Program Setup &amp; Registration v2)</h1>
+  <p class="sub">Phone mockups rebuilt against <b>EMBER_PROGRAM_SETUP_SPEC_v2</b> — the four 10/10 parent surfaces + their signature moments. Real data: the Samaritano family (Milo 8U·LH, Charlie 11U·LH + 4G·St&nbsp;Pats, Rowan 7G·St&nbsp;Pats). Tokens are the locked Ember palette (cool-gray + cobalt LH + Phoenix-gold family). Static visual artifact — not production code.</p>
+  <span class="tag">Family-first IA · cross-org federation · the moat</span>
+</div>
+
+<div class="grid">
+
+  <!-- 1. FAMILY HOME -->
+  <div class="frame-wrap">
+    <div class="frame-cap">1 · Family Home <span>§6 — the signature surface</span></div>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr hdr-family">
+        <div class="hdr-row">
+          <div class="brand"><svg class="flame" viewBox="0 0 24 24" fill="none"><path d="M12 2c1 4-2 5-2 8a4 4 0 108 0c0-2-1-3-1-5 3 2 4 5 4 8a7 7 0 11-14 0c0-5 4-7 5-11z" fill="#C9952E"/></svg> Family</div>
+          <div class="gear">⚙</div>
+        </div>
+        <div class="greet">Good morning,<b>Frank</b></div>
+      </div>
+      <div class="body">
+        <div>
+          <div class="label" style="margin-bottom:8px">Next up</div>
+          <div class="card">
+            <div class="row"><div class="dot pulse" style="background:var(--em-warning)"></div><span class="tiny" style="font-weight:600;color:var(--em-warning)">in 3h 20m</span></div>
+            <div style="font-size:15px;font-weight:600;margin-top:6px">Milo · 8U Boys practice</div>
+            <div class="row" style="margin-top:4px"><span class="badge b-lh">🛡 LH</span><span class="muted">WCC Gym · 5:00 PM</span></div>
+            <div class="rsvp"><button class="go">✓ Going</button><button>? Maybe</button><button>✗</button></div>
+          </div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:8px">My kids</div>
+          <div class="kidstrip">
+            <div class="kid"><div class="av" style="background:var(--lh)">M</div><div class="nm">Milo</div><div class="div">8U</div><div class="orgs">🛡</div></div>
+            <div class="kid"><div class="av" style="background:#a78bfa">C</div><div class="nm">Charlie</div><div class="div">11U · 4G</div><div class="orgs">🛡 ⛪</div></div>
+            <div class="kid"><div class="av" style="background:var(--sp)">R</div><div class="nm">Rowan</div><div class="div">7G</div><div class="orgs">⛪</div></div>
+          </div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:8px">This week</div>
+          <div class="tiny" style="margin-bottom:6px">Tue Mar 17</div>
+          <div class="conflict ring" style="margin-bottom:8px">
+            <div class="row" style="color:var(--em-danger);font-weight:600;font-size:13px">⚠ 6:00 PM · Charlie</div>
+            <div class="muted" style="margin:3px 0 8px">has two events at this time</div>
+            <button class="btn" style="min-height:36px;font-size:13px;background:var(--em-danger)">Resolve →</button>
+          </div>
+          <div class="evt"><div class="t">7:00 PM · Milo</div><div class="tiny">🛡 8U Boys · WCC Gym</div></div>
+        </div>
+      </div>
+      <div class="nav fam"><div class="on"><span class="ic">⌂</span>Family</div><div><span class="ic">▦</span>Schedule</div><div><span class="ic">✉</span>Messages</div><div><span class="ic">◔</span>Account</div></div>
+    </div></div>
+  </div>
+
+  <!-- 2. CONFLICT RESOLUTION -->
+  <div class="frame-wrap">
+    <div class="frame-cap">2 · Cross-org conflict resolution <span>§6.3 — the wedge no siloed app can do</span></div>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="topbar">← Cancel</div>
+      <div class="body">
+        <div>
+          <div style="font-size:18px;font-weight:700">Charlie's 6:00 PM conflict</div>
+          <div class="muted">Tuesday, March 17</div>
+        </div>
+        <div class="muted" style="font-weight:600;color:var(--em-text-primary)">Pick one. We'll RSVP both:</div>
+        <div>
+          <div class="opt sel"><div class="radio"></div><div><div class="row"><span class="badge b-lh">🛡 LH</span></div><div style="font-weight:600;margin-top:5px">11U Girls practice</div><div class="tiny">WCC Gym · Coach Kenny</div></div></div>
+          <div class="opt"><div class="radio"></div><div><div class="row"><span class="badge b-sp">⛪ St Pats</span></div><div style="font-weight:600;margin-top:5px">4G Girls practice</div><div class="tiny">Wampus Brook Gym · Coach Lentz</div></div></div>
+          <div class="opt"><div class="radio"></div><div style="align-self:center"><div style="font-weight:500">Charlie can't make either</div></div></div>
+        </div>
+        <button class="btn">Save resolution</button>
+        <div class="tiny" style="text-align:center">We'll RSVP Going at LH and Not Going at St&nbsp;Pats, and DM both coaches.</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 3. MULTI-CHILD CART -->
+  <div class="frame-wrap">
+    <div class="frame-cap">3 · Multi-child registration cart <span>§5.4 — family-cap math animates in</span></div>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr hdr-sp"><div class="hdr-row"><div class="brand">⛪ St Pats · CYO</div></div><div class="greet">Spring 2026 · checkout</div></div>
+      <div class="body">
+        <div class="label">Your family</div>
+        <div class="card" style="padding:10px 14px">
+          <div class="cartline"><span>Charlie's 4G Girls</span><span>$475</span></div>
+          <div class="cartline"><span>Penelope's 3G Girls</span><span>$475</span></div>
+          <div class="cartline"><span>Eleanor's 3G Girls</span><span>$475</span></div>
+          <div class="cartline"><span>Thomas's 4B Boys</span><span>$475</span></div>
+          <div class="hr"></div>
+          <div class="cartline"><span class="muted">Subtotal</span><span>$1,900</span></div>
+          <div class="cartline disc"><span>Family discount (St Pats) ✨</span><span>−$972</span></div>
+          <div class="hr"></div>
+          <div class="cartline" style="font-weight:700;font-size:15px"><span>Total</span><span>$928</span></div>
+        </div>
+        <button class="btn-gold btn">Pay $928</button>
+        <div class="tiny" style="text-align:center">One charge · one confirmation · account auto-created from your email.</div>
+        <button class="btn" style="background:var(--em-bg-card);color:var(--lh);border:1.5px solid var(--lh)">+ Add another child</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 4. BILLING -->
+  <div class="frame-wrap">
+    <div class="frame-cap">4 · Billing <span>§8 — replaces the Stripe Dashboard for parents</span></div>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="topbar">← Account <span class="ti">Billing</span></div>
+      <div class="body">
+        <div>
+          <div class="label" style="margin-bottom:6px">Next charge</div>
+          <div class="card"><div style="font-weight:600">Apr 15 · $267 for Charlie</div><div class="tiny">Card ending 4242</div>
+            <div class="rsvp"><button class="go" style="background:var(--lh);border-color:var(--lh)">Pay now</button><button>Update card</button></div></div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:6px">Active plans · 1</div>
+          <div class="card"><div style="font-weight:600;font-size:13px">Charlie's 11U Girls</div><div class="tiny">$534 of $801 paid · 67%</div><div class="prog"><i style="width:67%"></i></div></div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:6px">Family savings</div>
+          <div class="savings"><div style="font-size:13px">✨ You've saved</div><div class="amt">$972</div><div class="tiny" style="color:#9a6f1e">with St Pats family pricing</div></div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:6px">Receipts</div>
+          <div class="card" style="padding:4px 14px">
+            <div class="cartline"><span>Mar 14 · $267 Charlie</span><span class="tiny" style="color:var(--lh)">PDF</span></div>
+            <div class="cartline"><span>Mar 1 · $475 Eleanor</span><span class="tiny" style="color:var(--lh)">PDF</span></div>
+            <div class="cartline"><span>Mar 1 · $475 Penelope</span><span class="tiny" style="color:var(--lh)">PDF</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 5. PER-KID CARD -->
+  <div class="frame-wrap">
+    <div class="frame-cap">5 · Per-kid detail <span>§6.8 — one kid, across orgs</span></div>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="topbar">← Family <span class="ti">Charlie</span></div>
+      <div class="body">
+        <div><div style="font-size:17px;font-weight:700">Charlie Samaritano</div><div class="muted">Grade 6</div></div>
+        <div class="card" style="border-left:3px solid var(--lh)">
+          <div class="row"><span class="badge b-lh">🛡 LH</span><span style="font-weight:600">11U Girls</span></div>
+          <div class="tiny" style="margin-top:5px">Spring 2026 · $475 paid</div>
+          <div class="tiny">Next: practice Mar 17, 6:00 PM</div>
+          <div class="tiny" style="color:var(--lh);font-weight:600;margin-top:6px">View team →</div>
+        </div>
+        <div class="card" style="border-left:3px solid var(--sp)">
+          <div class="row"><span class="badge b-sp">⛪ St Pats</span><span style="font-weight:600">4G Girls</span></div>
+          <div class="tiny" style="margin-top:5px">Winter 2025-26 · $225 paid</div>
+          <div class="tiny">Season ended Mar 1</div>
+          <div class="tiny" style="color:var(--sp);font-weight:600;margin-top:6px">View team →</div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:6px">Latest message</div>
+          <div class="card" style="padding:10px 12px"><div class="row"><span class="badge b-lh">🛡</span><span class="tiny" style="font-weight:600;color:var(--em-text-primary)">Coach Kenny · Yesterday</span></div><div class="muted" style="margin-top:4px">"Practice moved to 6:30…"</div></div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 6. BRIEFINGS ON FAMILY HOME -->
+  <div class="frame-wrap">
+    <div class="frame-cap">6 · Briefings surface <span>§7 — Frank's 4–8 hrs/wk, where parents already look</span></div>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr hdr-family"><div class="hdr-row"><div class="brand"><svg class="flame" viewBox="0 0 24 24"><path d="M12 2c1 4-2 5-2 8a4 4 0 108 0c0-2-1-3-1-5 3 2 4 5 4 8a7 7 0 11-14 0c0-5 4-7 5-11z" fill="#C9952E"/></svg> Family</div></div><div class="greet">This week · briefings</div></div>
+      <div class="body">
+        <div class="briefing glow">
+          <div class="row"><span class="badge b-lh">🛡 LH</span><span style="font-weight:600;font-size:13px">Spring Launch Sequence</span></div>
+          <div class="tiny" style="margin-top:3px">Published Sunday 7:00 PM</div>
+          <div class="zip">⚡ <span>10-second summary — first practice Mar 16, jerseys ordered, 3 tournaments locked.</span></div>
+          <div class="tiny" style="color:var(--lh);font-weight:600">Read full briefing →</div>
+        </div>
+        <div class="briefing">
+          <div class="row"><span class="badge b-sp">⛪ St Pats</span><span style="font-weight:600;font-size:13px">Final Stretch Update</span></div>
+          <div class="tiny" style="margin-top:3px">Published Sunday 8:30 PM</div>
+          <div class="zip">⚡ <span>Playoff seeding this week. Two games left. Carpool sign-up inside.</span></div>
+          <div class="tiny" style="color:var(--sp);font-weight:600">Read full briefing →</div>
+        </div>
+        <div class="tiny" style="text-align:center">Two orgs, two voices — stacked in one feed. Never opens Gmail.</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 7. PAYMENT PLAN TIMELINE -->
+  <div class="frame-wrap">
+    <div class="frame-cap">7 · Payment plan timeline <span>§8.4 — installments, no dead ends</span></div>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="topbar">← Billing <span class="ti">Charlie</span></div>
+      <div class="body">
+        <div><div style="font-size:16px;font-weight:700">Charlie's 11U Girls</div><div class="muted">Spring 2026 · 🛡 LH</div></div>
+        <div class="card timeline">
+          <div class="tl-done">✓ Mar 15 · $267 <span class="tiny" style="margin-left:auto">paid Mar 14</span></div>
+          <div class="tl-next"><span class="dot pulse" style="background:var(--lh)"></span> Apr 15 · $267 <span class="tiny" style="margin-left:auto;color:var(--lh)">next · card 4242</span></div>
+          <div style="color:var(--em-text-tertiary)">○ May 15 · $267 <span class="tiny" style="margin-left:auto">scheduled</span></div>
+          <div class="hr"></div>
+          <div class="between"><span class="muted">$534 of $801 paid</span><span style="font-weight:600">67%</span></div>
+          <div class="prog"><i style="width:67%"></i></div>
+        </div>
+        <button class="btn">Pay remaining $267 now</button>
+        <button class="btn" style="background:var(--em-bg-card);color:var(--lh);border:1.5px solid var(--lh)">Update card</button>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+</body>
+</html>
