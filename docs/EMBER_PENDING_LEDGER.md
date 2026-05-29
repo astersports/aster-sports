@@ -3718,6 +3718,31 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BB — Program-Setup Spec v2 landed + reconciled vs production (2026-05-29)
+
+**Trigger:** design-chat shipped `EMBER_PROGRAM_SETUP_SPEC_v2.md` (6.6K words, replaces v1.0/1.1/1.2;
+20/20 open questions resolved). Committed to `docs/` as the build source-of-truth. This is the
+design-review input that unparks the multi-program build (Tier 1A+).
+
+**Reconciliation vs production (Claude Code — the chat couldn't see the DB; per its own
+"investigate-then-fix" caution):**
+- ❌ **§2.1 WRONG (load-bearing):** "`user_roles` is one row per (user_id, org_id) — schema already
+  supports it." Reality: `user_roles_user_id_key = UNIQUE(user_id)` — multi-org is FORBIDDEN today.
+  The §4.5 migration sequence is **missing the constraint reshape + AuthContext `.maybeSingle()`
+  fix** (migration #12 `current_user_org_ids()` alone won't make multi-org work). This gap == the
+  already-scoped Tier 1A P0-1; it slots in as **migration #0**.
+- ❌ **§2.4 WRONG:** `useUnifiedParentActivities` hook does NOT exist in production — net-new, not "extend."
+- ✅ §4 new schema verified accurate: `programs`/`divisions`/`registrations`/`player_equipment`/
+  `family_cap_policy`/`acceptable_age_range` all confirmed net-new; `current_user_org_ids()` plural
+  doesn't exist (correctly migration #12); `seasons` exists (→ backwards-compat view per §4.2/#3).
+
+**Build kickoff:** spec is build-ready once migration #0 (P0-1 identity reshape) is prepended.
+Recommended next: PR queue starting with #0 (Tier 1A P0-1), then §4.5 sequence. HTML artifact
+(parent-surface mockups) is a parallel/after option for sharing, non-blocking. **Awaiting Frank's
+GO before any migration runs (spec sign-off gate).** Tracker updated.
+
+---
+
 ### §4.BA — Doc-Corpus campaign close: tracker + COMPACT/deletes settled (2026-05-29)
 
 **Trigger:** Frank — "build the execution tracker, prune stale branches, settle COMPACT/deletes."
