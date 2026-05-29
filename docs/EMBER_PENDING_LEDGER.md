@@ -3718,6 +3718,43 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BG — Build PR 3: seasons table → compat view over programs SHIPPED (2026-05-29)
+
+**Frank's GO** → spec §4.5 step 3, completing the programs/seasons cutover. `programs` is now
+the single source of truth; `seasons` survives as a backwards-compat view. Chosen over the
+defer/sync-trigger alternatives via AskUserQuestion ("full table→view swap now").
+
+- **Migration #3** (MCP, version `20260529185046`, mirror per AP #21). Atomic; one failed pre-flight
+  attempt rolled back cleanly (caught 2 `season_locations` RLS policies reading FROM seasons that
+  the FK/view sweep hadn't surfaced — added their drop/recreate, re-applied).
+- **What it did:** (a) repointed 8 external FKs `seasons(id)` → `programs(id)` (teams, events,
+  financial_accounts, coach_payouts, team_achievements, season_locations, season_rollovers×2),
+  on-delete behavior preserved, data-safe because PR 2 preserved the uuids; (b) dropped + recreated
+  the 2 dependent views (`player_attendance_season`, `player_rsvp_season`, security_invoker
+  preserved); (c) dropped + recreated the 2 `season_locations` policies (now read `FROM programs
+  WHERE program_type='season'`); (d) dropped the `seasons` table; (e) created `seasons` as a
+  `security_invoker`, auto-updatable view (`SELECT … FROM programs WHERE program_type='season'
+  WITH CHECK OPTION`, `parent_program_id AS parent_season_id`), GRANT ALL to the 3 PostgREST roles.
+- **Why security_invoker:** the view enforces `programs` RLS against the querying user (a plain view
+  would run as owner and bypass RLS). Advisors clean — no `security_definer_view` warning.
+- **Why auto-updatable + WITH CHECK OPTION:** `useSeasons` (UPDATE name/status) and
+  `useSeasonRollover` (INSERT new season) write through `seasons`; a simple single-table view with
+  column renames is auto-updatable, and `programs.program_type DEFAULT 'season'` supplies the type
+  on insert (CHECK OPTION guarantees the row stays a season).
+- **Post-flight (DO-block + independent read):** seasons is a view (3 rows: Fall 2025/Winter/Spring),
+  0 FKs reference seasons, 8 FKs on programs, all 5 LH teams join through programs, dependent views +
+  policies recreated.
+- **⚠ Follow-up smoke (manual, post-deploy):** `SeasonRolloverPage` reads `seasons→teams→
+  roster_members` via PostgREST embedding; `teams` now FK `programs`, so the embed relies on
+  PostgREST resolving the view→base-table relationship. Verify the rollover wizard loads + an
+  INSERT-through-view season-create works. If it breaks, repoint that one query to read `programs`
+  directly.
+
+**Programs/seasons cutover COMPLETE** (migrations #1, #1a, #2, #3). Next: spec §4.5 PR 4
+(divisions extensions) on GO.
+
+---
+
 ### §4.BF — Build: sports table (#1a) + programs backfill (#2) SHIPPED (2026-05-29)
 
 Two migrations applied on Frank's GO, immediately after PR 1, as the rest of the programs
