@@ -1,0 +1,32 @@
+column_name,inferred_type,non_null,pii
+Full Names,text,196,PII
+Division Name,text,196,PII
+Account First Name,text,196,PII
+Account Last Name,text,196,PII
+Player First Name,text,196,PII
+Player Last Name,text,196,PII
+Player Gender,enum,196,
+Player Birth Date,date,196,PII
+Street Address,text,196,PII
+City,text,196,PII
+User Email,email,196,PII
+Cellphone,phone-or-id,196,PII
+Team Name,enum (1 values),196,PII
+OrderItem Amount Paid,numeric,196,
+Order Payment Status,enum (2 values),196,
+Non-parishioner Fee,enum,124,
+Family Pass Opt in,enum,88,
+CYO Playoff Fee,enum,124,
+Jersey Order,enum,124,
+Shorts Order,enum,124,
+Did your child have a uniform during the Winter 2022-2023 season?:,empty,0,
+Will your child be attending a Catholic school in the Fall ?,empty,0,PII
+Please provide the name of school your child is attending this year:,empty,0,PII
+Is your player registered for St Patrick Religious Education Program (CCD) or has he/she received Confirmation?,empty,0,
+St Patrick Religious Education Program (CCD) Agreement,empty,0,
+"Does your child have any allergies, chronic illness, or medical conditions that would limit high level activity?",empty,0,PII
+ Please Provide the Name of Physician or Preferred Emergency Medical Care Facility for your child:,empty,0,PII
+Current Grade,empty,0,
+Shorts Size,enum (8 values),189,
+Jersey Size,enum (8 values),189,
+"If you answered yes, enter the uniform number here",empty,0,

@@ -24,3 +24,5 @@
 # Aggregate size-distribution pivots — counts only, zero personal data (verified):
 !jersey_size_summary.csv
 !shorts_size_summary.csv
+# League schedule — team names / dates / locations only, no personal data (verified):
+!spa_winter_schedule_25-26.csv
