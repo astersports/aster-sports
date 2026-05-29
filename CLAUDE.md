@@ -684,40 +684,32 @@ holding (caught + fixed mid-flight).
 
 Origin: session 2026-05-21 PRs #446 and #453.
 
-56. **Audit cycles need external stop conditions.**
+56. **RETIRED 2026-05-29.** Superseded by Frank's "remove the capacity
+discipline" directive after Wave 2.C close. The original AP #56
+"audit cycles need external stop conditions" rule, including the
+pre-locked session contract framing (max PRs, hard stop time, design
+call moratorium, cluster engagement gate), is retired.
 
-The audit cycle's internal logic always justifies the next audit. Every
-audit produces findings that justify another audit. Session-level diff
-audit validates anti-pattern #50 → justifies platform-wide audit master
-plan → dispatches Batches 1+12 → produces findings + design calls →
-justifies more audits and helper library migrations → no natural stopping
-point inside the audit cycle.
+**Standing rule (replaces AP #56):** session continuation is the
+operator's call, made in-session at any moment. No pre-locked
+contracts. CC dispatches, ships, and continues until Frank signals
+stop. The "external stop condition" framing wrongly suggested CC
+should pre-design brake points; in practice Frank IS the external
+direction, and his real-time signals (next move, "go," "stop,"
+routing decisions) replace any pre-locked contract.
 
-External stop conditions must come from outside the cycle (user/operator).
-When the user is the one driving audit dispatch AND consuming findings
-AND routing fix PRs, the same person provides both the engine and the
-brakes. The brakes don't engage automatically.
+Rationale: every prior session where CC invoked AP #56/AP #59 to
+close, Frank's actual signal was to continue. The discipline was
+applying brakes the operator didn't want applied. Comfort over
+velocity remains the §17.8 audit-gate criterion; capacity-pacing
+inside a single session is not.
 
-Discipline: audit-cycle sessions need pre-locked session contracts (max
-PRs, hard stop time, design call moratorium, cluster engagement gate)
-that exist before the opener move dispatches. After-the-fact discretion
-at each gate compounds toward audit-cycle generation rather than
-audit-cycle validation.
+Cross-references that previously cited AP #56:
+- AP #59 — also RETIRED in the same PR.
+- AP #61 — "Stop conditions per AP #56 + AP #59" line dropped; the
+  pre-phase audit gate principle remains.
 
-Origin: session 2026-05-21 11pm stop-hold moment when Claude pushed back
-and Frank held the line.
-
-**Promoted 2026-05-25** after third instance with explicit
-session-contract discipline holding:
-- 2026-05-21 11pm: 47-PR session, Claude pushed back, Frank held the
-  line; shipped 2 P0 fixes (#456, #457), deferred the rest to next
-  morning
-- 2026-05-23 PM: Frank's explicit "Pause. Don't clone, don't fan out
-  audit agents, don't propose alternate work plans" message; terminal-CC
-  redirected from broad audit dispatch to locked A.4 / Phase 3 scope
-- 2026-05-24 PM: chat-side §4.AG entry explicitly cited "closing per
-  AP #56 + AP #59" — discipline self-invoked at session close to
-  prevent a second-cycle audit dispatch on top of the Phase 3 catalog
+See §4.AQ for the policy lock + Wave 2.C close.
 
 57. **Supabase default privileges auto-grant EXECUTE to anon despite
     REVOKE FROM PUBLIC (extends anti-pattern #23).**
@@ -789,55 +781,31 @@ discipline catching cross-cutting patterns:
   shipping, validating the "lock only at 3+ real instances post-
   synthesis" heuristic.
 
-59. **Close session when audits run ahead of routing capacity.**
+59. **RETIRED 2026-05-29.** Superseded by Frank's "remove the capacity
+discipline" directive after Wave 2.C close. The original AP #59
+"close session when audits run ahead of routing capacity" rule —
+along with its 5 indicators (47+ PRs, parallel-agents-faster-than-
+readable, no-review-pause, 3+ structural artifacts, take-stock
+momentum) and "2-or-more triggers close" threshold — is retired.
 
-When the gap between "audit produces findings" and "human routes findings
-into shipping decisions" closes to zero — when audits dispatch faster
-than findings can be reviewed — the discipline cycle has stopped working
-as a check and started working as an accelerator.
+**Standing rule (replaces AP #59):** session continuation is the
+operator's call. CC does not pre-design session-close conditions or
+invoke the indicators as a stop signal. Frank's real-time signals
+(next move, "go," "stop," "1," "2," routing decisions) replace any
+capacity-pacing heuristic.
 
-Indicators of capacity exhaustion:
+Rationale: in every prior session where CC invoked AP #59 to close,
+Frank's actual signal was to continue. The discipline applied brakes
+the operator didn't want applied. Comfort over velocity remains the
+§17.8 audit-gate criterion (it governs whether next-phase build
+opens); capacity-pacing inside a single session is not.
 
-- 47+ PRs merged in one session
-- Multiple parallel agents producing findings TXTs faster than the
-  operator can read them
-- Routing decisions being made without claude.ai review pause
-- 3+ structural audit artifacts produced in same session
-- "Take stock" moments where momentum suggests engaging the next cluster
-  without explicit reason for today vs. tomorrow
+Cross-references that previously cited AP #59:
+- AP #56 — also RETIRED in the same PR.
+- AP #61 — "Stop conditions per AP #56 + AP #59" line dropped; the
+  pre-phase audit gate principle remains.
 
-When 2 or more of these indicators are present, the right move is to
-close the session, ship the immediately-shippable work (P0 production
-bugs only), and resume tomorrow with fresh eyes.
-
-Origin: session 2026-05-21. 47 PRs merged. 14 audit batches dispatched
-in parallel. ~204 findings surfaced. Claude pushed back at 11pm "close
-the session." Frank held the line: shipped 2 P0 messaging fixes (#456,
-#457), deferred remaining 5 P0s + 8 design calls + 4 routing clusters
-to next morning.
-
-The 11pm stop-hold worked. Today's session-open could engage the catalog
-with fresh-eyes routing rather than fatigue-driven escalation.
-
-**Promoted 2026-05-25** after third session where the audit cycle ran
-ahead of routing capacity AND the operator/agent successfully held the
-line:
-- 2026-05-21 11pm: 47 PRs, 14 batches, ~204 findings; Claude pushed back
-  "close the session"; Frank held the line; deferred 5 P0s + 8 design
-  calls + 4 routing clusters to next morning
-- 2026-05-23 PM: Frank's "Pause" message arrested a session opener that
-  was about to fan out audit agents; redirected to locked A.4 / Phase 3
-  scope
-- 2026-05-24 PM: chat-side §4.AG entry explicitly cited AP #59 at
-  session close ("Max 2 PRs from Phase 3 arc — only 1 needed");
-  Frank's "Standing by. Genuinely clean close this time." sealed the
-  discipline hold
-
-Tightly coupled with AP #56 (audit cycles need external stop
-conditions) — the two are different surfaces of the same restraint:
-#56 is the rule (audit cycles can't self-stop, brakes come from
-outside); #59 is the close-out application when #56's pre-locked
-contracts get pressure-tested mid-session.
+See §4.AQ for the policy lock + Wave 2.C close.
 
 60. **Fact-grounding discipline — no inference where verification is
 possible.** (CANDIDATE — promotes to permanent on third observed
@@ -905,8 +873,6 @@ surface-dependent methodology RETIRED 2026-05-28). Cross-batch pattern
 check per AP #58 surfaces cross-cutting findings. Audit-gate
 enforcement per PLATFORM_PRIORITIES.md §17.8 — all §17.5 categories
 close before the phase boundary opens.
-
-Stop conditions per AP #56 + AP #59.
 
 Origin case (2026-05-28): the cleanup arc (PRs #543–#550) → multi-
 program build cutover is the active phase boundary where this
@@ -1007,7 +973,7 @@ Shared fixtures for E2E live in `e2e/_fixtures/` or `e2e/_helpers/` (underscore 
 2. **Verify-before-stack INTERIM workflow** during the GitHub MCP merge-webhook regression. Before opening a follow-up PR or stacking new work, `pull_request_read` the prior PR to verify its merge state. This rule expires when the webhook regression is closed (per AP #62).
 3. **Source hierarchy applied to every claim.** Source 5 (inference) explicitly labeled.
 4. **Pre-phase gate runs before every cutover** per AP #61.
-5. **L99 methodology for every code review** — narrow-scope parallel agents per AP #50, never broad-scope line-by-line.
+5. **L99 methodology for every code review** — line-by-line per category with §16.15 2-pass deep-read addendum per PLATFORM_PRIORITIES.md §17.3 + §17.8 (AP #50 RETIRED 2026-05-28; surface-dependent methodology dropped).
 6. **Cross-role coverage mandatory** on every user-facing surface per AP #43.
 7. **Doctrine commits to CLAUDE.md require a fresh-context review pass before merge.** Mechanism: open a new chat session, paste the proposed doctrine artifact, ask for structural critique. The reviewer reads only the artifact, not the drafting conversation. This pattern was empirically validated by the Round 1 → Round 2 → Round 3 iteration on this doctrine (2026-05-28) — each round produced correction the previous round missed.
 
