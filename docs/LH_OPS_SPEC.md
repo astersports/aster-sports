@@ -132,7 +132,7 @@ ADMIN-ONLY (/admin/*):
 
 ## 2. Supabase Schema
 
-> **CANONICAL SOURCE: live DB + `CLAUDE.md` §5 (141 migrations) + §11.5 (ground-truth
+> **CANONICAL SOURCE: live DB + `CLAUDE.md` §5 (~171 migration files) + §11.5 (ground-truth
 > tables).** The columns below were verified against production on 2026-05-29. This
 > is a multi-tenant platform: nearly every table carries an `org_id` FK and is
 > RLS-scoped to the user's org. The April-era `gyms` / `rsvps` / `user_profiles` /
