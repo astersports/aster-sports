@@ -3,7 +3,7 @@ import { useNow } from './useNow';
 import { useUnscoredGames } from './useUnscoredGames';
 import { usePendingInvitations } from './usePendingInvitations';
 import { useCoachPayoutsPending } from './useCoachPayoutsPending';
-import { useSeasonFinancials } from './useSeasonFinancials';
+import { useFamiliesOwingCount } from './useFamiliesOwingCount';
 
 // §4.C Sprint D — Aggregates admin-home signal hooks into the two
 // shells admin home renders today:
@@ -25,8 +25,10 @@ export function useAdminHomeSignals(activities, orgId, activeSeasonId) {
   const { items: unscoredGames, loading: unscoredLoading } = useUnscoredGames(orgId, now);
   const { items: pendingInvitations, loading: invitationsLoading } = usePendingInvitations(orgId, now);
   const { count: coachPayoutsPendingCount, loading: payoutsLoading } = useCoachPayoutsPending(orgId);
-  const { stats: financialStats, loading: financialsLoading } = useSeasonFinancials(orgId, activeSeasonId);
-  const familiesOwingCount = financialStats?.familiesOwing || 0;
+  // HOME-2: all-seasons owing (matches the payment_overdue alert scope),
+  // not the active-season-only useSeasonFinancials.familiesOwing.
+  void activeSeasonId;
+  const { count: familiesOwingCount, loading: financialsLoading } = useFamiliesOwingCount(orgId);
 
   const actionItems = useMemo(
     () => [...(unscoredGames || []), ...(pendingInvitations || [])],

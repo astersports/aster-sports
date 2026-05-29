@@ -90,7 +90,10 @@ export function rowPropsForItem(alert, item) {
 // no alert is a dead card: weekly briefing → compose that kind; payments
 // → the financial dashboard. Returns null when no sensible target exists.
 export function navTargetForAlert(alert) {
-  if (alert.alert_type_key === 'payment_overdue') return '/admin/financials';
+  // ROSTER-2: ?owing=1 makes Financials land on the season that actually
+  // has the owing family + enable the "Owing only" filter, so the family
+  // that triggered this alert is findable (it's often a prior season).
+  if (alert.alert_type_key === 'payment_overdue') return '/admin/financials?owing=1';
   if (alert.alert_type_key === 'briefing_overdue') return `${COMPOSE_BASE}?kind=${alert.data?.briefing_kind || 'weekly_digest'}`;
   // BUG-3: rsvp_shortfall was a dead card (no expand, no target) despite
   // the "every alert is actionable" contract — so it rendered no chevron

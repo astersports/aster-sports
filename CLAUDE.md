@@ -899,6 +899,45 @@ Origin case (2026-05-28): verify-before-stack proposed as workflow
 during the GitHub MCP merge-webhook regression. Must remain framed as
 interim until the webhook regression is closed.
 
+63. **PATTERN A — same concept, divergent source/scope across surfaces.**
+(Promoted 2026-05-29 from the Category #30 runtime/live-data audit —
+7 instances, ≥3 threshold met.)
+
+A metric, label, or status indicator that represents ONE real-world
+concept ("is this family owed money?", "what's the final placement?",
+"is this player confirmed?") must be computed from ONE source at ONE
+scope wherever it renders. When two surfaces (or two cards on one
+surface) derive the same concept from different sources or scopes, they
+produce contradictory truths that a per-file code read cannot catch —
+each callsite is individually correct; the contradiction is emergent.
+
+**This is the dominant platform bug pattern.** Confirmed instances:
+- Payment "collection 100%" (season-scoped) vs "overdue $1,275"
+  (org-wide all-seasons) on one screen (BUG-1).
+- Roster payment dot (legacy `roster_members.payment_status`, stale
+  constant) vs financial truth (`family_balances`) (ROSTER-1).
+- "Families owing" lane (active-season) vs overdue alert (all-seasons)
+  (HOME-2).
+- Academy badge (`players.member_type`) vs profile
+  (`team_players.roster_type`) (ROSTER-3).
+- Records header (hardcoded season literal) vs season-unscoped query
+  (SCORE-1).
+- Balance math netting (`useSeasonFinancials` payment/refund only) vs
+  `family_balances` view (payment/refund/adjustment/fee) (HOME-4).
+- Currency format (parent rounds dollars, admin shows cents) (HOME-6).
+
+**Discipline:** before rendering any cross-surface metric, name its
+single source + scope. Prefer a shared hook/view as the one source
+(e.g. `family_balances` for all "owes money" surfaces; §11.5 ground-
+truth tables for the canonical source per question). When scope
+legitimately differs (a season % vs an all-time balance), LABEL the
+scope on each surface so the two don't read as a contradiction. Lock
+with an AP #43 cross-surface invariant test.
+
+**Detection:** Category #30 runtime/live-data audit (render each
+surface with production data; cross-check same-concept renders for
+source/scope agreement). Cross-reference §11.5 for canonical sources.
+
 ---
 
 ## 11.5. GROUND-TRUTH TABLES (CANONICAL SOURCES)
@@ -931,10 +970,10 @@ source for the question you're asking.
 |---|---|---|
 | `src/hooks/useAttendanceData.js:44` | sizes + historical view | jersey_number lookup for the per-player attendance grid; one of the 5 attendance views |
 | `src/hooks/useEventRsvpCounts.js:33` | historical window | `left_at IS NULL` is the canonical date-windowed eligibility check (per the table row above) |
-| `src/hooks/useRoster.js:25` | sizes (canonical home) | reads `jersey_size` + `shorts_size` — team_players has neither column. (Also reads legacy `payment_status`; future PR can migrate that single column to `financial_accounts`.) |
+| `src/hooks/useRoster.js:25` | sizes (canonical home) | reads `jersey_size` + `shorts_size` — team_players has neither column. (Payment status no longer read here — Cat#30 ROSTER-1 migrated it to the `family_balances` view, all-seasons.) |
 | `src/pages/SeasonRolloverPage.jsx:36` | historical view (season scope) | rollover wizard inherently shows a season's PAST roster, not current team_players state. Nested PostgREST relation `teams(...roster_members(...))` — missed by the L99 audit grep until PR #124 |
 | `src/hooks/useSeasonRollover.js:49` | WRITE (not a read) | `.insert()` into roster_members. §11.5 read-restriction doesn't apply; membership writes legitimately go through roster_members |
-| `src/components/roster/PlayerRow.jsx:59-62` | sizes/legacy proxy via prop drilling | Receives `payment_status` as a prop from `useRoster.js:25` (documented exception above) and renders a 6px colored dot. Future cleanup: derive dot color from `family_balances` view to retire the legacy `roster_members.payment_status` column entirely. |
+| `src/components/roster/PlayerRow.jsx:59-62` | (resolved — no longer an exception) | The 6px payment dot now reflects `payment_status` derived from the canonical `family_balances` view (all-seasons) via `useRoster`, not the legacy `roster_members.payment_status`. Kept in this table as a closed-exception note; the legacy column is no longer read by any UI. |
 
 If you add a new caller and it fits an existing exception kind, append it to this table. If it doesn't fit, the migration to team_players (or financial_accounts for payment fields) is the right move.
 

@@ -108,7 +108,12 @@ export default function ProgramHealthCard({ season, nowMs }) {
         <MetricRow label="Payment collection (this season)" value={`${paymentPct}%`} loading={loading} skeletonWidth={40} />
         <MetricRow label="RSVP rate" value={rsvpPct === null ? '—' : `${rsvpPct}%`} loading={loading} skeletonWidth={40} />
         <MetricRow label="Active teams" value={activeTeamsCount === 1 ? '1 team' : `${activeTeamsCount} teams`} loading={loading} skeletonWidth={56} />
-        <MetricRow label="Registration pipeline" value={newRegistrationsCount === 1 ? '1 new this week' : `${newRegistrationsCount} new this week`} loading={loading} skeletonWidth={96} />
+        {/* HOME-3: hide when loaded with 0 — for an import-driven org this
+            row was permanently "0 new this week" (all accounts share one
+            import-day created_at). Show the skeleton while loading. */}
+        {(loading || newRegistrationsCount > 0) && (
+          <MetricRow label="Registration pipeline" value={newRegistrationsCount === 1 ? '1 new this week' : `${newRegistrationsCount} new this week`} loading={loading} skeletonWidth={96} />
+        )}
       </div>
     </section>
   );

@@ -5,8 +5,11 @@ import Label from '../shared/Label';
 // Per anti-pattern #42: `balances` is the per-account balance map from
 // useSeasonFinancials — the canonical source. This component used to
 // recompute balance inline (anti-pattern #42 violation, PR #306 catch).
-export default function FamilyBalanceList({ accounts, balances, fmt, onRecordPayment, onNudge }) {
+export default function FamilyBalanceList({ accounts, balances, fmt, onRecordPayment, onNudge, initialOwing = false }) {
   const [search, setSearch] = useState('');
+  // ROSTER-2: an "Owing only" filter so an admin arriving from the
+  // payment_overdue alert can find the owing family without a name.
+  const [owingOnly, setOwingOnly] = useState(initialOwing);
 
   const families = useMemo(() => {
     return accounts.map((a) => {
@@ -17,10 +20,14 @@ export default function FamilyBalanceList({ accounts, balances, fmt, onRecordPay
   }, [accounts, balances]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return families;
-    const q = search.trim().toLowerCase();
-    return families.filter((f) => f.name.toLowerCase().includes(q));
-  }, [families, search]);
+    let list = owingOnly ? families.filter((f) => f.balance > 0) : families;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter((f) => f.name.toLowerCase().includes(q));
+    }
+    return list;
+  }, [families, search, owingOnly]);
+  const owingCount = useMemo(() => families.filter((f) => f.balance > 0).length, [families]);
 
   return (
     <>
@@ -43,6 +50,17 @@ export default function FamilyBalanceList({ accounts, balances, fmt, onRecordPay
           onBlur={(e) => { e.target.style.borderColor = 'var(--em-border-default)'; }}
         />
       </div>
+      {owingCount > 0 && (
+        <button type="button" onClick={() => setOwingOnly((v) => !v)} className="em-press" aria-pressed={owingOnly}
+          style={{
+            minHeight: 36, padding: '0 12px', marginBottom: 8, borderRadius: 9999, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+            border: owingOnly ? 'none' : '1px solid var(--em-border-default)',
+            backgroundColor: owingOnly ? 'var(--em-danger)' : 'var(--em-bg-card)',
+            color: owingOnly ? 'var(--em-text-inverse)' : 'var(--em-text-secondary)',
+          }}>
+          Owing only · {owingCount}
+        </button>
+      )}
       <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
         {filtered.length === 0 && (
           <div style={{ padding: 16, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13 }}>
