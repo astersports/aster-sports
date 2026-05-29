@@ -3717,6 +3717,34 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AZ — Doc-Corpus L99 D1–D3 findings (2026-05-29)
+
+Findings in `docs/AUDIT_DOC_CORPUS_FINDINGS_2026-05-29.md` (3 agents, production-verified).
+
+**Dominant pattern (AP #58 / AP #63 applied to docs):** a doc fossilizes an early/intended
+state; the canonical source (code/DB) moved on; the doc was never reconciled. Instances:
+`org_members` (→user_roles, D1-2), `roster_type on roster_members` (→team_players, D1-5),
+team-color "mismatch"+Migration 1 already aligned (D3-1), brand PART 9 "missing" tables that
+exist (D3-2), ledger PR-4 "0 sent" vs DB 3 sent (D2-4), OPS §3.8/3.9 routes never built (D3-10).
+Corollary: Ember/skyfire/legacy-hoopers naming split (D8); "shipped vs design-intent" label is
+the uniform fix.
+
+**Headlines:** D1-2 [P0] CLAUDE.md `org_members` is a phantom table (RLS recursion guard names
+the wrong table; it's `user_roles`). D2-1 [HIGH] ledger §4.AL header destroyed by in-place
+overwrite → 4 dangling refs. D3-1/D3-2 [P0] `LH_BRAND_CONTENT_MODEL` (the untouched sleeper)
+asserts an obsolete team-color mismatch + "missing" schema that all shipped.
+
+**Dispositions:** CLAUDE.md FIX (canonical); ledger FIX + COMPACT (4,600→~600-800 lines, archive
+needs Frank approval); LH_BRAND_CONTENT_MODEL FIX (substantial); LH_OPS_SPEC FIX (light); tenancy
+v3 / external-data / parity / design_review_notes KEEP-CURRENT.
+
+**Recommended fix arc "Doc Batch 1":** CLAUDE.md doctrine (§11.7#7 review), ledger D2-1/2/4,
+brand-doc reconciliation, OPS §3.8/3.9 labels. Deferred: ledger COMPACT (approval), D4–D8.
+
+AP #45: this entry ships with the findings doc.
+
+---
+
 ### §4.AY — Doc-Corpus L99 audit campaign dispatched (2026-05-29)
 
 **Trigger:** Frank — "review all docs in the repo for accuracy and usefulness, L99." Formalized
