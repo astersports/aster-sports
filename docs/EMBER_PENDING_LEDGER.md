@@ -3718,6 +3718,36 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BF — Build: sports table (#1a) + programs backfill (#2) SHIPPED (2026-05-29)
+
+Two migrations applied on Frank's GO, immediately after PR 1, as the rest of the programs
+foundation arc (bundled into PR #595 with migration #1).
+
+- **Migration #1a — `sports` table + `programs.sport_id` FK** (version `20260529155952`, mirror per
+  AP #21). Frank directed "build a minimum sports table" after PR 1 flagged `sport_id` as no-FK
+  scaffolding. The spec's relationship diagram has `sports(sport_id, org_id)` as parent of
+  `programs`, but the §4.5 12-migration list omitted it — this fills the gap. Minimal shape
+  (id/org_id/name + UNIQUE(org_id,name)); RLS mirrors seasons/programs (4 policies); seeds LH
+  **Basketball**; adds `programs_sport_id_fkey` (ON DELETE RESTRICT) — instant because `programs`
+  was empty. `sport_id` stays **nullable** for now; NOT NULL tightening belongs with the
+  registration build that always sets a sport. Post-flight DO-block verified table/RLS/seed/FK.
+- **Migration #2 (PR 2) — backfill `programs` from `seasons`** (version `20260529160011`, mirror per
+  AP #21). Spec §4.5 step 2. One program row per season, `program_type='season'`, `sport_id`=the
+  org's Basketball sport. **Preserves `seasons.id` as `programs.id`** (critical: existing FKs that
+  reference season ids stay valid after PR 3 swaps `seasons` → a compat view). Idempotent
+  (`ON CONFLICT (id) DO NOTHING`). Pre-flight: 3 seasons, all parent_season_id NULL (no self-FK
+  ordering concern), programs empty. Post-flight (DO-block + independent read): 3 programs
+  (Fall 2025/Winter 2025-26/Spring 2026), all season-type, all Basketball, all ids match seasons.
+- **`get_advisors security` clean** after both — no new advisory on `sports` or `programs`.
+
+**PR 3 design note (flagged for next GO):** PR 3 makes `seasons` a compat view
+(`SELECT … FROM programs WHERE program_type='season'`). But **you cannot keep a real FK pointing at
+a view** — any existing `*.season_id → seasons(id)` FKs must be re-pointed at `programs(id)` (same
+uuids, so data-safe) BEFORE/AS the table→view swap, or dropped. PR 3's pre-flight will enumerate
+every FK referencing `seasons` and repoint each to `programs` in the same migration.
+
+---
+
 ### §4.BE — Build PR 1: migration #1 programs table + program_type ENUM SHIPPED (2026-05-29)
 
 **Frank's GO** → spec §4.5 step 1, the multi-program schema's top-level container.
