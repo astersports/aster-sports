@@ -94,7 +94,13 @@ explicit GO per migration (spec sign-off gate — no migration runs without Fran
   St Pat's):** ☐ org-switcher UI + Family Home routing (spec §2.3, lands with the Family Home UI PR);
   ☐ ~5 edge-fn/autoLinkGuardian org-awareness sweep (before St Pat's onboards). Migration foundation
   is live + backward-compatible.
-- ☐ PR 1–12 — spec §4.5 sequence: programs+ENUM → backfill from seasons → seasons compat view →
+- ☑ **PR 1 — Migration #1: `programs` table + `program_type` ENUM** (spec §4.5 step 1). Applied
+  (version 20260529155321, mirror committed). 6-value enum (`season/tryout/camp/clinic/interest_list/
+  evaluation`; v1 UI exposes 3). `programs` column set is a **superset of `seasons`** (so PR 2 backfill +
+  PR 3 compat view are clean); `sport_id` is forward-compat (no FK — `sports` not built this wave,
+  LH single-sport); RLS mirrors `seasons` (4 policies; parent SELECT via `current_user_org_ids()`
+  deferred to migration #12). Advisors clean (no new finding on `programs`). Ledger §4.BE.
+- ☐ PR 2–12 — spec §4.5 sequence: backfill `programs` from seasons → seasons compat view →
   divisions ext → division_fees+auto_apply_rule → registrations → registration_fees →
   player_equipment → tryout_sessions+attendees → players ext → organizations.family_cap_policy+
   acceptable_age_range → RLS `current_user_org_ids()` + parent SELECT policies.
