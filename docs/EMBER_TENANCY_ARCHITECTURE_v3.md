@@ -1,228 +1,205 @@
-# EMBER TENANCY ARCHITECTURE v2
+# EMBER TENANCY ARCHITECTURE v3
 
-**Status:** L99 elite-status audit applied. Awaiting Frank's approval before implementation.
-**Date authored:** April 25, 2026
-**Author:** Claude (chat) + Frank Samaritano
-**Replaces:** v1 of this document (was 293 lines, graded C+ in audit)
-**Supersedes:** Phase 0C decisions D1, D2, D3 (refines them with full architecture)
+**Status:** Canonical multi-tenant + multi-sport architecture. Reconciled against
+production + the §17.5 audit campaign + the 2026-05-29 Category #30 fixes.
+**Date:** 2026-05-29 · **Replaces:** v2 (April 25, 2026 — brand/auth foundation, retained below).
+**Reconcile every multi-tenant / multi-program decision against this document.**
 
-This is the canonical document for how Ember handles multiple organizations, branding, authentication, signup, security, and operations. Every product, design, and engineering decision related to multi-tenancy must reconcile against this document.
-
-**v2 changelog from v1:**
-- Section 3 rebuilt against actual production schema (v1 proposed columns that already exist)
-- Section 4 expanded with token refresh, multi-tab, expired session handling
-- Section 8 replaced with executable verification SQL (no more "smoke test" hand-waves)
-- Section 11 in-flight rollback decision tree per step
-- New section 13: Threat model
-- New section 14: Operational runbook (St. Pat's onboarding playbook)
-- New section 15: Ground-truth Migration 029 SQL with pre/post verify
+This doc is the architecture reference for how Ember runs multiple organizations
+(tenants), multiple sports, and multiple seasons. It feeds the multi-program design
+work. Companion docs: `LH_OPS_SPEC.md` (how the first org operates), `LH_BRAND_CONTENT_MODEL.md`
+(brand tokens/content), `LEAGUEAPPS_PARITY_REVIEW.md` (incumbent model + scope decision),
+`AUDIT_WAVE_3B_2026-05-29.md` (#28 second-tenant blockers), `docs/external-data/README.md`
+(St. Pats CSV schema implications), `PLATFORM_PRIORITIES.md` §17.2 (second tenant = Spring 2027).
 
 ---
 
-## 1. Brand model
+## 0. What changed v2 → v3 (read first)
 
-Ember is the SaaS platform. Legacy Hoopers, St. Patrick's CYO, and any future organization are tenants ("orgs") that run on Ember.
+v2 described the brand/auth flip and assumed one org. v3 makes the platform genuinely
+multi-tenant + multi-sport. The substantive additions:
 
-The brand experience is a two-stage flip:
-
-**Stage 1, pre-auth (Ember surface):**
-- Phoenix logo
-- Gold accent #D4AF37
-- "Coach more. Coordinate less." tagline
-- Dark navy backdrop #151525
-- One unified login URL for all tenants
-
-**Stage 2, post-auth (org surface):**
-- Org's logo (knight for Legacy Hoopers, future logo for St. Pat's)
-- Org's primary brand color (cobalt #4a8fd4 for LH)
-- Org's display name in header
-- All app chrome, accents, and CTAs use the org's color
-
-The flip happens at the AuthContext layer. The moment a user authenticates and AuthContext loads their org row, it applies CSS variable overrides via document.documentElement. Before authentication, defaults from index.css apply (Ember's gold/navy).
-
-**This is the Slack/Notion model.** One front door, branded interior per workspace.
-
-### Failure modes for branding
-
-| Scenario | Behavior |
-|---|---|
-| `brand_colors` jsonb is NULL on an org | Fall back to Ember defaults (gold/navy) — DO NOT crash |
-| `brand_colors.accent` key is missing | Fall back to Ember gold for accent only, use other keys if present |
-| `brand_colors.accent` value is malformed (not valid hex) | Skip that override, log warning, continue with default |
-| `logo_url` is NULL or 404s | Show Ember Phoenix as fallback, log warning |
-| `logo_url` returns slow (>500ms) | Show text-only org name in header until image loads |
-| User's org_id in user_roles points to deleted org | Sign user out, show error toast, redirect to login |
-
-These failure modes are tested in section 8 via explicit SQL.
+1. **Multi-org membership is now a near-term requirement, not "Phase 6."** Frank is admin
+   of Legacy Hoopers AND on the St. Patrick's board → one `user_id` needs rows in two orgs.
+   The current schema + AuthContext forbid this (see §3 blockers).
+2. **Per-org email plumbing** — sender identity comes from `organization_settings`, not a
+   hardcoded `@legacyhoopers.org` constant.
+3. **All-seasons financial scoping doctrine** (§4.AW) + **AP #63** (same-concept-one-source).
+4. **Multi-sport / multi-program data model** (§5) — divisions, per-sport equipment,
+   line-item fees — derived from the real St. Pats CYO export.
+5. **Governing posture: Option A "sit-on-top"** (§7) — Ember is the engagement/comms/
+   schedule layer; LeagueApps stays registration + AR system-of-record for the
+   St. Patrick's timeframe.
 
 ---
 
-## 2. Domain strategy
+## 1. Tenancy model
 
-### Today (April 25, 2026)
-- **Ember login URL (temporary):** `app.skyfire-app.vercel.app` — Phoenix + gold + tagline
-- **Legacy Hoopers app URL (existing):** `app.legacyhoopers.org` — CNAMEs to Vercel deploy
-- **Legacy Hoopers marketing site (existing):** `legacyhoopers.org` — Squarespace, untouched
+Ember is the SaaS platform. Legacy Hoopers, St. Patrick's CYO, and future clubs are
+**tenants ("orgs")**. One front door, branded interior per workspace (the Slack/Notion
+model). This is the direct analogue of LeagueApps' **"site"** concept (org = site; see
+parity review) — except Ember's onboarding target is **minutes, not a 4-hour admin
+training**.
 
-### Domain transition plan
-
-`app.legacyhoopers.org` is currently the only login URL anyone knows about. We need to handle the transition without breaking existing parents/coaches.
-
-**Locked decision:** Both URLs serve the same Ember login page. AuthContext handles the post-auth flip per user's org.
-
-### Future (this week or next)
-
-- Buy permanent Ember domain (ember.app, emberhq.com, or useember.com)
-- Once owned, point CNAME to Vercel. Existing URLs continue to work.
+- Every domain table carries `org_id` (or is FK-scoped to a parent that does — see §11.5
+  ground-truth tables). RLS scopes every row to the user's org via
+  `current_user_org_id()` (SECURITY DEFINER, STABLE). **Never call it on `org_members` →
+  infinite recursion.**
+- Org-scoped query contract (AP #37): `.eq('org_id', orgId)` first on org-scoped tables;
+  FK-scoped tables inherit scope through their parent.
 
 ---
 
-## 3. Database model (REBUILT against production)
+## 2. Brand model (retained from v2 — still accurate)
 
-### What's already in production today
+Two-stage flip:
+- **Pre-auth (Ember surface):** Phoenix mark, gold/navy, "Coach more. Coordinate less.",
+  one unified login URL. LoginPage MUST reset brand tokens to Ember defaults on mount.
+- **Post-auth (org surface):** org `logo_url` + `brand_colors` jsonb (keys: accent,
+  accent_hover, accent_soft, header, text_on_dark) applied by AuthContext via CSS variable
+  overrides on `document.documentElement`. LH override: cobalt `#4a8fd4`.
 
-Audited via `Supabase:execute_sql` on April 25, 2026. The `organizations` table already has: id, name, slug, sport, logo_url, brand_colors, stripe_account_id, subscription_plan, subscription_status, created_at.
-
-Current LH `brand_colors` jsonb:
-
-```json
-{
-  "accent": "#4a8fd4",
-  "header": "#4a8fd4",
-  "accent_hover": "#5BA0E0",
-  "text_on_dark": "#FFFFFF"
-}
-```
-
-### What Migration 029 actually does (v2)
-
-```sql
-ALTER TABLE public.organizations
-  ADD COLUMN IF NOT EXISTS display_name text,
-  ADD COLUMN IF NOT EXISTS tagline text,
-  ADD COLUMN IF NOT EXISTS primary_domain text;
-
-UPDATE public.organizations
-SET display_name = COALESCE(display_name, name)
-WHERE display_name IS NULL;
-
-ALTER TABLE public.organizations
-  ALTER COLUMN display_name SET NOT NULL;
-```
-
-Migration is additive and idempotent. Does NOT touch RLS. Does NOT change any other table.
+Branding failure modes (NULL brand_colors → Ember defaults; malformed hex → skip+warn;
+logo 404 → letter-circle fallback; org_id points to deleted org → sign out) are unchanged
+from v2 and remain the contract. Token values are LOCKED per CLAUDE.md §3 (cool-gray, not
+warm). Full token/content detail lives in `LH_BRAND_CONTENT_MODEL.md`.
 
 ---
 
-## 4. Authentication flow
+## 3. Database model (current production) + the second-tenant BLOCKERS
 
-### Pre-auth state
-App boots with Ember defaults. AuthContext detects no session.
+### Current state (verified)
+- `organizations`: id, name, slug, sport, display_name, tagline, primary_domain,
+  logo_url, brand_colors (jsonb), public_listing_enabled, stripe_account_id,
+  subscription_plan/status, created_at.
+- `organization_settings`: from_email, from_name, reply_to_email, pilot_test_recipient_email,
+  pilot_mode_enabled, notification_channels (jsonb: defaults + per_category +
+  emergency_override_bypasses_quiet_hours).
+- `user_roles`: id, user_id, organization_id, role ∈ {admin, coach, parent}.
 
-### Sign-in
-1. Supabase auth returns session
-2. AuthContext fetches user_roles + org row
-3. AuthContext applies branding via CSS variable overrides
-4. Router navigates to home
+### Wave 3.B #28 — the 5 P0 blockers a second tenant needs (OPEN; multi-tenant arc, parked)
+1. **`user_roles_user_id_key` is `UNIQUE(user_id)`** → must become
+   `UNIQUE(user_id, organization_id)`. Verified safe (5 rows / 5 distinct users / 0 FKs).
+   **BUT the migration alone is a trap:** `AuthContext.loadMembership` resolves the role
+   with `.maybeSingle()`, which THROWS on >1 row. So the constraint reshape MUST ship with
+   org-aware role resolution (AuthContext + `autoLinkGuardian` + ~5 edge functions that do
+   `user_roles.select('role')` all assume one row). The multi-org switcher (v2 called it
+   "future Phase 6") is now part of this work.
+2. **Email FROM/reply-to** — read `organization_settings.from_email/from_name/reply_to_email`
+   everywhere (the `_reminderSend` + ~13 resolver/send files hardcode `@legacyhoopers.org`).
+   Columns already exist — do NOT add parallel `organizations.*` columns (AP #42).
+3. **`public_listing_enabled DEFAULT true`** → flip to `false`; orgs opt in after content review.
+4. **unsubscribe-handler** hardcodes "Legacy Hoopers" branding → per-org via org email context.
+5. **Admin onboarding path** — only `invite-parent` exists; need `invite-admin` (or generalize).
 
-### Sign-out
-1. AuthContext clears branding overrides
-2. CSS reverts to Ember defaults
-3. Redirect to /login
-
-### Edge cases handled
-- Token refresh: do NOT re-apply branding (compare prevUser.id)
-- Multi-tab: Supabase broadcasts sign-out across tabs
-- Expired session: modal "You've been signed out" + redirect to login
-- Multi-org user (future Phase 6+): org-switcher between auth and app
-
----
-
-## 5. CSS variable namespace
-
-Canonical `brand_colors` jsonb keys: accent, accent_hover, accent_soft, header, text_on_dark.
-
----
-
-## 13. Threat model
-
-1. **Org enumeration via login page** — mitigated (identical Ember login for all)
-2. **Org row enumeration via API** — RLS needs tightening before org #2
-3. **Cross-tenant data leak** — mitigated via current_user_org_id() SECURITY DEFINER
-4. **Logo URL pointing to malicious resource** — mitigated (admin-only via SQL today)
-5. **Branding spoofing via JSONB injection** — mitigated (regex validation)
-6. **Service worker hijacking** — mitigated (unregister-then-reregister)
+`brand_colors`, `logo_url`, `public_listing_enabled`, `organization_settings` exist in the
+DB but have **no admin UI** (Wave 3.B #28 PATTERN BETA) — provisioning is SQL-only today.
 
 ---
 
-## 14. Operational runbook
+## 4. Authentication flow (v2, amended for multi-org)
 
-### Onboarding a new org
-1. Pre-onboarding checklist (logo, brand color, display name, first admin email)
-2. Upload logo to `public/<orgslug>_logo.webp`
-3. INSERT organizations row
-4. Create first admin user via Supabase Auth
-5. INSERT user_roles row
-6. Verify sign-in shows correct branding
-7. Hand off to new admin
+Pre-auth: Ember defaults. Sign-in: Supabase session → AuthContext fetches user_roles + org
+→ applies branding → routes home. Sign-out: clear overrides → revert to Ember → /login.
+Edge cases (token refresh doesn't re-brand; multi-tab sign-out broadcast; expired-session
+modal) unchanged.
 
----
-
-# V3 EXPERIENCE LAYER (added April 25, 2026)
-
-V3 builds on V2's engineering foundation with the polish and microcopy that distinguish a working SaaS app from a world-class one. Sections 16-23 define loading states, strings, animations, error recovery, and first-time experiences.
-
-## 16. Loading states catalogue
-
-- 16.1: Cold app load — Phoenix + pulsing gold dots on navy
-- 16.2: Login font load — system fallback + font-display swap
-- 16.3: Sign-in submit — spinner replaces button text
-- 16.4: Auth success → org fetch — brand transition (gold→org color, ~700ms)
-- 16.5: Sign-out — reverse brand transition
-- 16.6: Logo still loading — letter-circle fallback in header
-- 16.7: Network failure — persistent toast with retry
-- 16.8: Session expired — modal with "Sign in" button
-
-## 17. Microcopy catalogue
-
-All auth-flow strings locked. Tone: direct, confident, no jargon.
-
-Key strings:
-- Tagline: "Coach more. Coordinate less."
-- Wrong password: "Email or password is incorrect"
-- Network failure: "Can't reach Ember. Check your connection."
-- Session expired: "Your session expired. Sign in again to continue."
-- Invite note: "New club? Email frank@legacyhoopers.org to onboard."
-
-## 18. First-time user experiences
-
-- Parent: straight to home, no welcome card
-- Coach: welcome card with team list, dismissible via localStorage
-- Admin: welcome + 4-item checklist (season, teams, locations, coaches)
-
-## 19. Error recovery flows
-
-Every error path has defined message + recovery action. No "Oops!" language.
-
-## 20. Polish & delight
-
-- Phoenix logo entrance animation (scale 0.85→1.0, 600ms)
-- Sign-in checkmark moment (150ms before brand transition)
-- Haptic feedback on sign-in success
-- Tagline character-by-character reveal on cold load
-
-## 21. Critical CSS inline strategy
-
-Boot splash + login-card minimum inline in index.html. Everything else in stylesheet.
-
-## 22. V3 implementation order
-
-14 steps (expanded from V2's 9). Minimum-viable tonight: steps 1-10. Steps 11-13 (BrandTransition, coach welcome, admin checklist) can defer.
-
-## 23. Verification protocol additions
-
-Verifies boot splash, brand transition smoothness, first-time flows, microcopy accuracy, and polish moments.
+**Amendment (multi-org):** once `user_roles` allows multiple rows per user, `loadMembership`
+must (a) fetch ALL memberships, (b) pick the active org (persisted preference, default
+most-recent), (c) expose an **org-switcher** between auth and app. This is the load-bearing
+change that turns the brand flip into a true multi-tenant session.
 
 ---
 
-End of EMBER_TENANCY_ARCHITECTURE v2+v3 combined document.
+## 5. Multi-sport / multi-program data model (NEW — grounded in the St. Pats CYO export)
+
+Source: `docs/external-data/` (St. Pats/SPA CYO CSVs) + `LEAGUEAPPS_PARITY_REVIEW.md`.
+
+- **Hierarchy:** Org (site) → Season ("grouped master") → Division → Team → Roster.
+  A season fans out into per-age-group/division sub-programs (e.g. 11U Girls, 10U Black/Blue,
+  9U/8U Boys), each with its own registration state, schedule, roster, staff, teams, invoices.
+- **Division key = `{grade} + {gender}`**, NOT `team_id`. Needs a division lookup per org.
+- **Sizes are per-season-per-sport** → `player_equipment(player_id, season_id, sport_id, …)`.
+  Multi-sport breaks the one-size-per-player assumption (today sizes live on `roster_members`;
+  this is their multi-sport evolution). 8-value size enum, **nullable** (St. Pats: 7 unset/file).
+- **Fees are line-item**, not a single price: resident/non-resident, family pass, playoff
+  add-on. Architecture must expect a line-item fee model.
+- **Team placement happens AFTER registration** (registration "Team Name" = Unallocated).
+  Do NOT bind team assignment to the registration record.
+- **Jersey #** unique per division per season: `UNIQUE(org_id, team_id, season_id, jersey_number)`
+  (team_id implies org_id via FK — org_id is defense-in-depth).
+- **Schedule import** has no `org_id` and no home/away flag → importer scopes to the importing
+  org and derives home/away from `Location` = home venue (store it explicitly on import).
+- **Dead enrollment fields** (allergies, school, CCD agreement — 0 fills) → drop or make
+  non-blocking optional. Ember's wedge is simplicity.
+
+---
+
+## 6. Financial scoping doctrine (§4.AW + AP #63)
+
+- **"Owes money" indicators** (roster payment dot, families-owing lane, overdue alert) read
+  the canonical **`family_balances`** view across **ALL seasons** — money owed doesn't expire
+  at a season boundary. Source-of-truth is `financial_accounts`/`financial_transactions`, never
+  the legacy `roster_members.payment_status` (retired from UI, PR #582).
+- **Collection-rate %** stays **season-scoped** and is **labeled** "this season" so it doesn't
+  read as a contradiction next to an all-seasons balance.
+- **AP #63 (PATTERN A):** any concept rendered on >1 surface uses one source at one scope (or
+  labels the scope). The dominant platform bug class — lock cross-surface invariants per AP #43.
+- `family_balances` grain = per (guardian, season): balance_cents, net_paid_cents, last_payment_at.
+
+---
+
+## 7. Governing posture — Option A "sit-on-top" (from the parity review)
+
+For the St. Patrick's timeframe (second tenant ~Spring 2027 per §17.2): **Ember is the
+engagement / comms / schedule / records layer; LeagueApps remains the registration + accounts-
+receivable system-of-record.** Ember imports from LeagueApps (schedule, roster, enrollment)
+rather than replacing registration. Option B (Ember replaces LeagueApps registration + AR) is
+a later, larger build. The multi-sport data model (§5) is designed so Option B remains open
+without a rewrite.
+
+---
+
+## 8. Onboarding runbook (target: ~1.5h, was 10–15h)
+
+Per Wave 3.B #28 (17 cataloged steps; 6 work today / 11 manual-or-missing). After the §3
+blockers close: (1) INSERT organizations + organization_settings (brand, email identity,
+pilot_mode_enabled=true), (2) public_listing_enabled stays false until content review,
+(3) invite first admin via `invite-admin`, (4) import LeagueApps data (Option A), (5) verify
+branded sign-in + per-org email FROM. Pilot mode gates all outbound until the org opts in.
+
+---
+
+## 9. Threat model (amended from v2)
+
+1. Org enumeration via login — mitigated (identical Ember login).
+2. Org row enumeration via API — Wave 1 RLS fixes applied; re-verify before org #2 onboards.
+3. Cross-tenant data leak — RLS via `current_user_org_id()`; app-layer org_id filter is
+   defense-in-depth (AP #37).
+4. SECURITY DEFINER exposure — REVOKE from PUBLIC **and** anon (AP #23/#57); audited via
+   `get_advisors`.
+5. Branding spoof via jsonb — regex-validated; logo admin-only (SQL today).
+6. Pilot blast radius — `pilot_mode_enabled` + `is_pilot_family` gate every outbound send
+   (verified: dispatcher sends to 0 while pilot on with 0 pilot families).
+
+---
+
+## 10. Open decisions for the design chat
+
+- Org-switcher UX (where it lives in the post-auth flow; default-org persistence).
+- Division model surfacing in the program-setup wizard (grouped-master season UX).
+- Registration: Option A import flow now vs Option B native registration later — what the
+  setup wizard promises in each.
+- Brand/settings admin UI (closes #28 PATTERN BETA — provisioning without SQL).
+- player_equipment surfacing (per-sport sizing) in roster/registration.
+
+---
+
+## Appendix — V2 EXPERIENCE LAYER (retained, still current)
+
+The v2 polish layer remains the spec for auth-flow UX: loading-states catalogue (cold load
+Phoenix + pulsing dots, brand-transition ~700ms, session-expired modal), microcopy catalogue
+(tagline, wrong-password, network-failure, session-expired, invite strings — no "Oops"),
+first-time experiences (parent → home; coach → dismissible welcome; admin → 4-item checklist),
+error-recovery flows, polish/delight (Phoenix entrance, sign-in checkmark, haptics), critical
+CSS inline strategy. These are unchanged by v3 and ship with the multi-tenant work.
