@@ -134,6 +134,43 @@ jobs:
           echo "Test files in the same diff:"
           echo "$TESTS"
 
+  # AP #45 — a PR that changes a live planning/audit/spec/handoff doc must
+  # also reconcile the pending-work view (EMBER_PENDING_LEDGER.md §4) in the
+  # same PR, or the ledger silently drifts from the doc set. Live docs only
+  # (docs/archive/* is exempt — historical, no reconcile needed). PR-only.
+  ledger-reconcile-guard:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guard planning-doc changes require an EMBER_PENDING_LEDGER touch
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          PLANNING=$(echo "$CHANGED" | grep -E '^docs/(AUDIT_.*\.md|.*_DESIGN_SPEC\.md|CC_SESSION_HANDOFF_.*\.md|STATE_OF_AFFAIRS_L99_.*\.md)$' || true)
+          if [ -z "$PLANNING" ]; then
+            echo "No live planning-doc changes — AP #45 guard not triggered."
+            exit 0
+          fi
+          if echo "$CHANGED" | grep -qx 'docs/EMBER_PENDING_LEDGER.md'; then
+            echo "AP #45 guard: PASS — planning-doc change ships with a ledger touch."
+            echo "$PLANNING"
+            exit 0
+          fi
+          echo "::error::AP #45: PR changes a live planning/audit/spec doc without touching docs/EMBER_PENDING_LEDGER.md."
+          echo "Planning docs changed:"
+          echo "$PLANNING"
+          echo ""
+          echo "Reconcile EMBER_PENDING_LEDGER.md §4 in the same PR, or document the exemption in the PR body."
+          exit 1
+
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15
