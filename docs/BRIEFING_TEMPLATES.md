@@ -15,11 +15,20 @@ Per-kind template files live in `src/lib/engine/templates/`:
 | game_recap | gameRecapTemplates.js |
 | tournament_prelim | tournamentPrelimTemplates.js |
 | tournament_recap | tournamentRecapTemplates.js |
+| rsvp_nudge | rsvpNudgeTemplates.js |
 | announcement | announcementTemplates.js |
 | custom_message | customMessageTemplates.js |
 
 `schedule_change` has no template file (auto-generated from the
-event diff). `rsvp_nudge` is stubbed until wave 4.0.
+event diff). `rsvp_nudge` shipped (`rsvpNudgeTemplates.js`) — no
+longer stubbed.
+
+**Kinds with a body editor but no template file yet:** `games_recap`
+(`GamesRecapBody`), `coach_roundup` (`CoachRoundupBody`), and
+`family_guide` (`FamilyGuideBody`) are live kinds (in
+`RESOLVER_REGISTRY` + `KIND_METADATA` + production `kind_check`) but
+have no starter-template file under `src/lib/engine/templates/`. Add
+one following the pattern below when starters are authored.
 
 Each file exports a default array of template objects:
 
@@ -49,7 +58,8 @@ ignored when the picker dispatches `UPDATE_BODY`.
 | weekly_digest | `body_notes`, `ops_notes` |
 | game_recap | `score: { ours, theirs }`, `our_highlights`, `opp_highlights`, `player_of_game_name`, `coach_note` |
 | tournament_prelim | `hotel_block`, `sat_notes`, `sun_notes`, `opponent_scouting`, `lineup_notes` |
-| tournament_recap | `final_standing`, `game_results`, `mvp_name`, `takeaways` |
+| tournament_recap | `standout_moments`, `coach_reflection`, `coach_note`, `parent_shoutout` (placement — record + point differential — and per-game results auto-render via the `placement_block` + `game_log` renderers from DB; they were removed from the editor) |
+| rsvp_nudge | `headline_override`, `custom_message`, `ask_comment_field` |
 | announcement | `headline`, `body_text` |
 | custom_message | `subject`, `body_text` |
 

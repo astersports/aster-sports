@@ -2095,7 +2095,8 @@ Per Frank's routing: validate the 8 Layer 2 findings (V-32 through V-39) to conf
 
 **Monday-actionable summary:**
 
-**§4.O — Admin Manager Pages (NEW sub-arc, P1 build):**
+### §4.O — Admin Manager Pages (NEW sub-arc, P1 build)
+
 - AdminMembersPage.jsx + `/admin/members` route (V-32 promoted)
 - AdminOpponentsPage.jsx + `/admin/opponents` route (V-33 promoted)
 - AdminLocationsPage.jsx + `/admin/locations` route (V-33 promoted, closes §3-A PARTIAL)

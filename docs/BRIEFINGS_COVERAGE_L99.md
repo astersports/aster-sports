@@ -3,8 +3,10 @@
 **Written:** May 10, 2026
 **Verified against production:** post-PR #59 + #60 merge (sha `bf80c13`)
 **Source-of-truth files:**
-- `src/lib/briefings/kindMetadata.js` — KIND_ORDER + KIND_METADATA
-- `src/lib/engine/composer.js` — KIND_COMPOSERS registry
+- `src/lib/engine/resolvers/registry.js` — `RESOLVER_REGISTRY` (the kind authority: resolver+composer mapping + `sendPath` per kind; 11 calendar-anchored kinds)
+- `src/lib/briefings/kindMetadata.js` — KIND_ORDER (12 kinds) + KIND_METADATA
+- `src/lib/engine/composer.js` — `KIND_COMPOSERS` (legacy `compose()` path, 4 composers only: announcement, custom_message + defensive weekly_digest, academy_callup_notice). No longer the kind authority.
+- `src/lib/engine/sectionRenderers.js` — `SECTION_RENDERERS` (32 section renderers; split out of composer.js 2026-05-24 to hold the 150-line cap)
 - `src/components/briefings/AudiencePicker.jsx` — MODES + modesAvailableFor
 - `src/lib/briefings/recipientFilter.js` — audience-type → team_ids resolver
 
@@ -39,6 +41,9 @@ Per-kind anchor + slice taxonomy:
 | schedule_change | `{ eventId, pilotOnly }` | family (event team) | guardian_id ASC | ✅ shipped 4.2-A-5 |
 | rsvp_nudge | `{ eventId, pilotOnly }` | family (unresponded) | guardian_id ASC | ✅ shipped 4.2-A-6 |
 | academy_callup_notice | `{ eventId, playerId, pilotOnly }` | family (player guardians) | guardian_id ASC | ✅ shipped 4.2-A-7 |
+| coach_roundup | `{ coachUserId, dateRange }` | coach (one briefing, multi-team, conflict-aware) | n/a (single recipient) | ✅ shipped Wave 5 PR 4 |
+| family_guide | `{ parentUserId, dateRange }` | parent (one briefing, multi-kid, conflict-aware) | n/a (single recipient) | ✅ shipped Wave 5 PR 5 |
+| games_recap | `{ eventIds, pilotOnly }` (anchor_kind=`multi_event`, anchor_id null) | family (union across selected games' teams) | guardian_id ASC | ✅ shipped Wave 5 PR B/C |
 | announcement | (free-form) | n/a | n/a | not calendar-driven |
 | custom_message | (free-form) | n/a | n/a | not calendar-driven |
 
@@ -46,20 +51,24 @@ Reference implementation: `src/lib/engine/resolvers/weeklyDigest.js`.
 
 ## 1. Briefing kind taxonomy
 
-10 composers registered in `composer.js`. **9 surfaced** in the kind picker. 1 deprecated.
+**12 kinds** — the full set in `KIND_ORDER` (kindMetadata.js) AND production `comms_messages_kind_check`. The kind authority is `RESOLVER_REGISTRY` (11 calendar-anchored kinds) + `KIND_METADATA`; `composer.js KIND_COMPOSERS` holds only 4 legacy `compose()` composers (announcement, custom_message + defensive weekly_digest, academy_callup_notice). All 12 are surfaced in the kind picker except `academy_callup_notice` (discoverable but `wizardSupported: false` — the canonical flow is EventDetail → AcademyCallupPicker, see §3). The 7 transitional/legacy `kind_check` values (`tournament_preliminary`, `tournament_final`, `tournament_rsvp_lock`, `tournament_recap_interim`, `tournament_recap_final`, `multi_team_notice`, `custom`) have been **dropped** — production `kind_check` now allows exactly these 12 and nothing else (verified via Supabase MCP, 2026-05-29).
 
 | # | Kind | Surfaced? | Anchor (default) | Audience (default) | Status |
 |---|------|-----------|------------------|---------------------|--------|
 | 1 | weekly_digest | ✅ | org / team / multi_team | org_all | shipped |
 | 2 | schedule_change | ✅ | event (locked) | event_attendees (locked) | shipped |
-| 3 | rsvp_nudge | ✅ | event | event_attendees (locked) | shipped wave 4.0 |
-| 4 | game_recap | ✅ | event | event_attendees | shipped wave 4.1d-1 |
+| 3 | game_recap | ✅ | event | event_attendees | shipped wave 4.1d-1 |
+| 4 | games_recap | ✅ | org / multi_event (anchor_id null) | multi_event_attendees (locked) | shipped Wave 5 (G1) |
 | 5 | tournament_prelim | ✅ | tournament | tournament_attendees | shipped wave 4.1d-1 |
 | 6 | tournament_recap | ✅ | tournament | tournament_attendees | shipped wave 4.1d-1 |
-| 7 | announcement | ✅ | team / org | org_all | shipped wave 4.1d-1 |
-| 8 | custom_message | ✅ | any | any | shipped wave 4.1d-1 |
-| 9 | academy_callup_notice | ✅ | event | player_specific (locked) | shipped wave 4.1d-2 (G2) |
-| 10 | ~~tournament_preliminary~~ | ❌ retired | — | — | code emit sites retired in wave 4.1d-5 (PR retires `useTournamentBriefing`, `inferMessageType`, `composer.js` registry, `constants.js`, `TournamentBriefing.jsx`, `MessagesTab.jsx`); CHECK constraint tighten + historical-row backfill ships in wave 4.1d-6 |
+| 7 | coach_roundup | ✅ | org (coach_user_id in audience_filter) | coach_self | shipped Wave 5 PR 4 |
+| 8 | family_guide | ✅ | org (parent_user_id in audience_filter) | family_specific | shipped Wave 5 PR 5 |
+| 9 | announcement | ✅ | team / org | org_all | shipped wave 4.1d-1 |
+| 10 | rsvp_nudge | ✅ | event | event_attendees (locked) | shipped wave 4.0 |
+| 11 | academy_callup_notice | ✅ discoverable (wizard not supported) | event | player_specific (locked) | shipped wave 4.1d-2 (G2) |
+| 12 | custom_message | ✅ | any | any | shipped wave 4.1d-1 |
+
+Picker order follows `KIND_ORDER`: weekly_digest, schedule_change, game_recap, games_recap, tournament_prelim, tournament_recap, coach_roundup, family_guide, announcement, rsvp_nudge, academy_callup_notice, custom_message.
 
 ## 2. Audience taxonomy
 
@@ -71,9 +80,11 @@ Reference implementation: `src/lib/engine/resolvers/weeklyDigest.js`.
 | event_attendees | Families on event's team | schedule_change (locked), rsvp_nudge (locked), game_recap |
 | tournament_attendees | Families across `tournament_teams.team_id` | tournament_prelim (locked), tournament_recap (locked) |
 | player_specific | Guardians of selected players (`audience_filter.player_ids`) via `player_guardians` | academy_callup_notice (locked) — shipped wave 4.1d-2 |
+| multi_event_attendees | Union of attendees across N selected events (`audience_filter.event_ids`), deduped by guardian_id | games_recap (locked) — shipped Wave 5 (G1) |
+| coach_self | The single coach (`audience_filter.coach_user_id`) the roundup is built for | coach_roundup (derived) — shipped Wave 5 PR 4 |
+| family_specific | The single parent (`audience_filter.parent_user_id`) the guide is built for | family_guide (derived) — shipped Wave 5 PR 5 |
 
-**Missing modes (gaps):**
-- `multi_event_attendees` — union of attendees across N selected events. Required for `games_recap` (G1, wave 4.2).
+**Missing modes (gaps):** none. `multi_event_attendees` (formerly the G1 gap) shipped with games_recap in Wave 5; `coach_self` / `family_specific` added with coach_roundup / family_guide.
 
 ## 3. Event × Briefing cross-product matrix
 
@@ -92,7 +103,9 @@ Event lifecycle states pulled from migrations 003-005 + CLAUDE.md §5 field deci
 | Game — bracket placeholder (`is_bracket_placeholder=true`, unseeded) | — | — | ⚠️ E3 (synth may surface as needs-recap) |
 | Game — no score logged yet | — | game_recap (renders without score) | ✅ graceful |
 | Tournament (multi-day, all your team's games) | tournament_prelim | tournament_recap | ✅ |
-| **Multi-game weekend (mixed teams or non-tournament)** | weekly_digest | **❌ GAP G1 — needs `games_recap`** | gap |
+| **Multi-game weekend (mixed teams or non-tournament)** | weekly_digest | **games_recap** (multi_event, union audience) | ✅ shipped Wave 5 (G1) |
+| Per-coach week-ahead (all of a coach's teams, conflict-aware) | **coach_roundup** | — | ✅ shipped Wave 5 PR 4 |
+| Per-parent week-ahead (all of a parent's kids, conflict-aware) | **family_guide** | — | ✅ shipped Wave 5 PR 5 |
 | Tournament with mid-tournament standings update | — | custom_message | ⚠️ no dedicated kind |
 | League standings change (post-game shift) | — | custom_message | ⚠️ no dedicated kind |
 | Roster change (player added/dropped) | — | announcement | ✅ |
@@ -119,15 +132,14 @@ Event lifecycle states pulled from migrations 003-005 + CLAUDE.md §5 field deci
 
 ## 5. Identified gaps — priority order
 
-### G1. games_recap kind (Frank's primary ask)
+### G1. games_recap kind (Frank's primary ask) — ✅ SHIPPED Wave 5 (PR B/C)
 
-Multi-game digest covering 1+ teams across N selected events. Use cases: tournament weekend, double-header, "this week we played 4 games" summary.
-
-- **New composer + renderer** — body sections: hero ("10U Blue · Week of May 3 · 2-1"), mini score card per game, optional team highlights, signoff, footer
-- **New `anchor_kind='multi_event'`** — store `event_ids: [uuid, ...]` in `audience_filter`; `anchor_id` left NULL
-- **New `audience_type='multi_event_attendees'`** — implementation in `recipientFilter.js`: union team_ids across event_ids
-- **briefing_template seed** — wave 4.2 templates work
-- **Scope: wave 4.2**
+Multi-game digest covering 1+ teams across N selected events. Use cases: tournament weekend, double-header, "this week we played 4 games" summary. Shipped:
+- `resolveGamesRecap` + `composeGamesRecap` (`src/lib/engine/resolvers/gamesRecap.js`), registered in `RESOLVER_REGISTRY` with `sendPath: 'composerSubmit'`.
+- `anchor_kind='multi_event'` — `event_ids: [uuid, ...]` stored in `audience_filter`; `anchor_id` left NULL. `anchorFromState` reads `state.audience_filter.event_ids`.
+- `audience_type='multi_event_attendees'` (locked) — union of team_ids across event_ids, deduped by guardian_id, in `recipientFilter.js`.
+- KIND_METADATA entry (`GamesRecapBody`, `wizardSupported: true`), KIND_ORDER between game_recap and tournament_prelim, production `kind_check` allows `games_recap`.
+- No template file yet (body editor `GamesRecapBody.jsx` only — see §field-shape note in BRIEFING_TEMPLATES.md).
 
 ### G2. academy_callup_notice surfacing — ✅ SHIPPED wave 4.1d-2 (PR #62)
 
@@ -240,6 +252,7 @@ When adding an edge case to §4:
 ---
 
 **Document trail:**
+- v2.0: May 29, 2026 — Wave 5 reconciliation against current engine code. Taxonomy moved from a 10-kind/9-surfaced/1-deprecated world to **12 kinds**, all in production `comms_messages_kind_check` (verified via Supabase MCP). Added `coach_roundup`, `family_guide`, `games_recap`; all 7 transitional/legacy `kind_check` values dropped. Source-of-truth header corrected: kind authority moved from `composer.js KIND_COMPOSERS` (now 4 legacy composers only) to `resolvers/registry.js RESOLVER_REGISTRY` + `kindMetadata.js`; `sectionRenderers.js` (32 renderers) split out of composer.js 2026-05-24. §0 / §1 / §2 / §3 / §5-G1 updated. `multi_event_attendees` gap closed; `coach_self` / `family_specific` audiences added. The §0 resolver contract, §4 edge-case table, and audience-filter mechanics were verified still accurate and left unchanged.
 - v1: May 10, 2026 — initial audit post-wave 4.1d-1 ship + Frank's May 10 production verification.
 - v1.1: May 10, 2026 — wave 4.1d-5: legacy `tournament_preliminary` and `custom` code emit sites retired (8 sites migrated). `comms_messages.kind_check` still allows transitional legacy values until wave 4.1d-6 backfills + tightens.
 - v1.2: May 10, 2026 — wave 4.2-A-1: §0 Resolver Layer added with two-stage contract. `resolveWeeklyDigest` + `composeWeeklyDigest` shipped as the reference implementation. Snapshot test locks parity against production row 3b431eb1.

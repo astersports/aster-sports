@@ -216,11 +216,12 @@ The standing criterion is **"comfort level of clean code in current state"** —
 
 **Methodology per §17.3:** line-by-line per category, all 29 categories, §16.15 2-pass deep-read addendum per category. Cross-batch pattern check per AP #58 between batches.
 
-**Gate state (as of 2026-05-28 close):**
+**Gate state (as of 2026-05-29):**
 
-- **Wave 1 (5 categories):** ✓ COMPLETE per §4.AK / §4.AL / §4.AM. Methodology was breadth-parallel (predates the line-by-line lock). Worth a §16.15 addendum re-read at some point — flagged in §4.AN for routing.
-- **Wave 2 (9 categories):** 0/9. Anchor finding for Wave 2.B perf dispatch — home page LCP ~5s, 3.3× over §17.1 budget. First thread to pull when #1+#2 dispatch.
-- **Wave 3 (14 categories):** 0/14.
+- **Wave 1 (5 categories):** ✓ COMPLETE per §4.AK / §4.AL / §4.AM (PRs #557–#563). Methodology was breadth-parallel (predates the line-by-line lock). Worth a §16.15 addendum re-read at some point — flagged in §4.AN for routing.
+- **Wave 2 (9 categories):** ✓ COMPLETE — 2A/2B/2C all dispatched + closed per §4.AO / §4.AP / §4.AQ (PRs #565–#573). Anchor finding (home page LCP ~5s, 3.3× over §17.1 budget) diagnosed in the 2.B perf audit (PR #569).
+- **Wave 3 (14 categories):** ✓ COMPLETE — 3A/3B dispatched + closed per §4.AR / §4.AS (PRs #574–#576).
+- **§17.5 audit campaign: 29/29 COMPLETE** (PR #575). All categories audited line-by-line with §16.15 2-pass deep-read addendum. **Active workstream: fix-PR routing** off the surfaced findings.
 
 **Calibration:** §17.5's "categories that surface emptily get demoted/removed" rule remains. Per-wave evaluation. Wave 1 outcome: 5/5 surfaced findings, 0 demotions.
 

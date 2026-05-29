@@ -1,9 +1,11 @@
 # REMAINING PHASES AUDIT
 
 Planning surface for deferred investigations + multi-phase audit items that
-don't fit cleanly in `EMBER_PENDING_LEDGER.md` §4 (per-arc) or
-`SKYFIRE_BUILD_QUEUE_v2.md` (per-product-phase). Each `A.N` section is a
-discrete investigation or structural-design slot.
+don't fit cleanly in `EMBER_PENDING_LEDGER.md` §4 (per-arc). (The former
+per-product-phase sibling `SKYFIRE_BUILD_QUEUE_v2.md` is superseded / being
+archived — `EMBER_PENDING_LEDGER.md` is the live canonical pending-work
+view.) Each `A.N` section is a discrete investigation or structural-design
+slot.
 
 Sections A.1–A.3 are reserved for future registrations. A.4 is the primary
 entry on 2026-05-23.
