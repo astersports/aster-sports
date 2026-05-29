@@ -3,7 +3,10 @@
 // Hero "Finished #1" banner with optional W-L record line.
 //
 // Shape: { team_color, final_place, record? }
-// final_place: 1, 2, 3... (integer rank)
+// final_place: integer rank (1, 2, 3…) OR a free-text label. The
+//   production tournament_teams.final_place column is TEXT and holds
+//   labels like "Champions" / "Finalists" — never assume numeric, or
+//   the ordinal suffix produces "Finaliststh PLACE" / "Championsth PLACE".
 // record: "5-2" string, omitted if no games played
 
 import { escapeHtml } from './_util';
@@ -15,21 +18,34 @@ function ordinalSuffix(n) {
   switch (n % 10) { case 1: return 'st'; case 2: return 'nd'; case 3: return 'rd'; default: return 'th'; }
 }
 
+// final_place may be an integer rank OR a free-text label from the DB.
+// Append an ordinal suffix ONLY to real positive integers; render text
+// labels verbatim (uppercased) so "Finalists"/"Champions" never become
+// "Finaliststh"/"Championsth". A "Champions" label maps to the same
+// CHAMPIONS banner as numeric rank 1.
+function placementLabel(place) {
+  const n = Number(place);
+  if (Number.isInteger(n) && n > 0) {
+    return n === 1 ? 'CHAMPIONS' : `${n}${ordinalSuffix(n)} PLACE`;
+  }
+  return String(place).toUpperCase();
+}
+
 export default function renderPlacementBlock(section) {
   const place = section?.final_place;
   if (!place) return { html: '', plainText: '' };
   const teamColor = section?.team_color || '#4a8fd4';
   const record = section?.record || '';
-  const isChamp = place === 1;
+  const placeLabel = placementLabel(place);
+  const isChamp = placeLabel === 'CHAMPIONS';
   const bgColor = isChamp ? GOLD : '#ffffff';
   const stripeColor = isChamp ? '#92400e' : teamColor;
-  const placeLabel = isChamp ? 'CHAMPIONS' : `${place}${ordinalSuffix(place)} PLACE`;
 
   const html = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
     + ' style="border-collapse:collapse;margin:16px 0;">'
     + `<tr><td align="center" style="padding:20px 16px;background-color:${bgColor};border-top:4px solid ${escapeHtml(stripeColor)};border-radius:6px;font-family:Inter,system-ui,sans-serif;">`
     + `<div style="font-size:13px;font-weight:700;letter-spacing:2px;color:${TEXT_SLATE_DARK};text-transform:uppercase;line-height:1.2;">FINAL STANDING</div>`
-    + `<div style="font-size:24px;font-weight:700;color:${TEXT_NAVY};line-height:1.2;margin-top:6px;">${placeLabel}</div>`
+    + `<div style="font-size:24px;font-weight:700;color:${TEXT_NAVY};line-height:1.2;margin-top:6px;">${escapeHtml(placeLabel)}</div>`
     + (record
         ? `<div style="font-size:14px;font-weight:600;color:${TEXT_SLATE_DARK};line-height:1.4;margin-top:6px;">${escapeHtml(record)} record</div>`
         : '')
