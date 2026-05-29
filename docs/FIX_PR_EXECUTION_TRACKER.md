@@ -87,10 +87,13 @@ Design review landed + mockup locked (`EMBER_PROGRAM_SETUP_MOCKUP_v2.html`). Bui
 explicit GO per migration (spec sign-off gate — no migration runs without Frank's GO).**
 
 ### Schema PRs
-- ☐ **PR 0 — Migration #0: IDENTITY FOUNDATION** (the spec's missing prerequisite; §2.1 wrongly
-  assumed it was done). `user_roles` `UNIQUE(user_id)`→`UNIQUE(user_id, org_id)` + AuthContext
-  org-aware resolution (kills the `.maybeSingle()` trap) + org-switcher + ~5 edge-fn/autoLinkGuardian
-  sweep. **Nothing in §2/§6 works without this — ship first.**
+- ◐ **PR 0 — Migration #0: IDENTITY FOUNDATION** (the spec's missing prerequisite; §2.1 wrongly
+  assumed it was done). ☑ `user_roles` `UNIQUE(user_id)`→`UNIQUE(user_id, organization_id)` (applied,
+  version 20260529153604, mirror committed) + ☑ AuthContext multi-row-safe resolution (killed the
+  `.maybeSingle()` trap) + ☑ invariant test. **Follow-on (deferred — no multi-org user exists until
+  St Pat's):** ☐ org-switcher UI + Family Home routing (spec §2.3, lands with the Family Home UI PR);
+  ☐ ~5 edge-fn/autoLinkGuardian org-awareness sweep (before St Pat's onboards). Migration foundation
+  is live + backward-compatible.
 - ☐ PR 1–12 — spec §4.5 sequence: programs+ENUM → backfill from seasons → seasons compat view →
   divisions ext → division_fees+auto_apply_rule → registrations → registration_fees →
   player_equipment → tryout_sessions+attendees → players ext → organizations.family_cap_policy+

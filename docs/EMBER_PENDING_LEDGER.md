@@ -3718,6 +3718,30 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BD — Build PR 0: migration #0 identity foundation SHIPPED (2026-05-29)
+
+**Frank's GO** → first build PR. The multi-org identity foundation (the spec's missing
+prerequisite, §2.1 was wrong).
+
+- **Migration applied** (MCP, version `20260529153604`, mirror `supabase/migrations/
+  20260529153604_user_roles_multi_org_unique.sql` per AP #21): `user_roles` drop
+  `UNIQUE(user_id)` → add `UNIQUE(user_id, organization_id)`. Provably backward-compatible
+  (pre-flight: 5 rows / 5 distinct users / 0 FKs / 0 composite dupes / 0 onConflict-user_id
+  upserts in code). In-transaction DO-block verify passed; independent post-verify: new
+  constraint present, old gone, row count 5 (no data loss).
+- **AuthContext anti-trap fix:** `loadMembership` no longer `.maybeSingle()` on user_roles
+  (which errors on >1 row) — fetches all memberships, picks the active org. Single-org behavior
+  unchanged today; a future 2nd org row no longer breaks login. `authMultiOrgAudit.test.js`
+  locks the invariant.
+- **Deferred (no multi-org user exists until St Pat's):** org-switcher UI + Family Home routing
+  (spec §2.3, with the Family Home UI PR); the ~5 edge-fn/autoLinkGuardian org-awareness sweep
+  (before St Pat's onboards). Tracker PR 0 → ◐.
+
+Next: spec §4.5 PR 1 (programs table + program_type ENUM) on GO. Lint + build + maybeSingle audit
++ new invariant test all green.
+
+---
+
 ### §4.BC — Mockup audit + spec v2.1 microcopy + build PR plan (2026-05-29)
 
 **Trigger:** claude.ai reviewer audited the HTML mockup (high spec fidelity, 7/7 frames verified)
