@@ -3717,6 +3717,77 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AQ — Wave 2.C close + AP #56/#59 retirement (2026-05-29)
+
+**Trigger:** Wave 2.C dispatch per §4.AN routing — 5 parallel line-by-line audits (categories #4, #5, #16, #17, #24) per CLAUDE.md §17.8 standing rule with §16.15 2-pass deep-read addendum. Plus Frank's "remove the capacity discipline" directive at session close, retiring AP #56 + AP #59.
+
+**Outputs:**
+- `docs/AUDIT_WAVE_2C_2026-05-28.md` — findings + 5 cross-patterns + per-agent reports preserved. AP #45 satisfied by this same-commit ledger entry.
+- CLAUDE.md AP #56 RETIRED. AP #59 RETIRED. AP #61 "Stop conditions per AP #56 + AP #59" line dropped. §11.7 operational rule #5 updated to drop the stale AP #50 reference (hygiene catch from prior PR #564 retirement).
+
+**Wave 2.C headline:** 5 P0 / 39 P1 / 21 P2 / 7+ new AP candidates / 0 §17.5 demotions.
+
+**5 cross-cutting patterns (AP #58 synthesis):**
+
+1. **Instrumentation without consumption (foundational gap)** — Speed Insights mounted → 5s LCP regressed for weeks because nobody queried; 5 audit-log tables (writers without readers); Resend bounce surface stored but no admin UI; cron health invisible.
+2. **Console.error ↔ Sentry silent gap** — 108 `console.error` sites + ZERO `Sentry.captureException` outside ErrorBoundary; production ships all 108 to mobile DevTools (no `esbuild.drop`); 4 raw `error.message` user-visible UI leaks compound.
+3. **`isStaff` vs `isAdmin` discipline drift** — 7 instances where coach sees `isStaff`-gated affordance routing to `/admin/*` → `/unauthorized`. Discipline drift unnoticed because no AP #43 invariant test pins EventDetailPage per-role action stack (the §16.14 reference instance).
+4. **Hook fleet stale-initial + fanout** — 23 hooks with `useState(true) + useState([])`; `useNow` 21-callsite fanout; PR #241 fixed `useAlertEvaluator` but never swept; PR #571 fixed Program Health at component level; #5 + #16 confirm the bug class at fleet scale.
+5. **Realtime channel dedup gap** — `useEventArrivals` game-day triple-mount = up to 39 concurrent subs per event per device; 7/7 hooks no status callback + no reconnect refetch; `useHasUnread` Realtime-fired N+1. Single `RealtimeContext` design closes 3 P1s across 7 callsites.
+
+**§17.5 calibration:** all 5 categories surfaced real findings. No demotions.
+
+**§17.4 backlog corrections (cumulative):**
+- "16+ home-feeder hooks" → confirmed ~30-35 per Parent home mount (#5 + Wave 2.B cross-confirmed)
+- "7 Math.random() realtime channels" → confirmed exactly 7 (#4)
+- "Realtime channel dedupe context" hypothesis → confirmed P1 with concrete design proposed
+- "SWR/TanStack Query layer" hypothesis → confirmed P1 (Batch 3 deferred for design call)
+
+**Routing — 5 fix-PR arcs queued for next session(s):**
+
+1. **CROSS-PATTERN 1 (instrumentation without consumption):** admin audit-log views + Sentry/PostHog/Speed Insights review cadence in CLAUDE.md §11.7 + cron health card. Single doc-and-build arc.
+2. **CROSS-PATTERN 2 (console.error ↔ Sentry):** `reportError(err, ctx)` helper in `src/lib/sentry.js` + migrate critical paths (auth → write paths → RPCs) + `esbuild.drop` in vite for prod. Sweep is incremental.
+3. **CROSS-PATTERN 3 (isStaff/admin drift):** decision call: tighten coach visibility OR open `/admin/briefings/*` to coach. Then sweep + AP #43 invariant test on EventDetailPage per-role action stack.
+4. **CROSS-PATTERN 4 (hook fleet stale-initial):** bundle with Batch 3 cache layer OR ship as standalone hook-fleet hygiene PR. `useNow` context lift is separable + small.
+5. **CROSS-PATTERN 5 (realtime dedup):** build `RealtimeContext` per #4's proposed design — single implementation closes 3 P1s across 7 callsites.
+
+**AP retirement — #56 + #59 (capacity discipline):**
+
+Frank's 2026-05-29 directive: "remove the capacity discipline." Every prior session where CC invoked AP #56 (pre-locked session contracts) or AP #59 (close when capacity exhausted) to close, Frank's actual signal was to continue. The discipline applied brakes the operator didn't want applied.
+
+**Standing rule (replaces AP #56 + AP #59):** session continuation is the operator's call, made in-session at any moment. No pre-locked contracts. No capacity-pacing heuristic. CC dispatches, ships, and continues until Frank signals stop. Comfort over velocity remains the §17.8 audit-gate criterion (governs whether next-phase build opens); capacity-pacing inside a single session is not.
+
+This is the second AP retirement in the audit-discipline arc (AP #50 retired in PR #564). Pattern: process disciplines that pre-design operator behavior get retired when they apply brakes the operator doesn't want. Doctrine-layer load-bearing rules (AP #21 mirror discipline, AP #54 same-MCP-burst, AP #61 pre-phase gate, AP #43 cross-role invariant, §17.8 audit-gate) remain.
+
+**7+ new AP candidates surfaced in Wave 2.C (numbering not yet locked):**
+
+- PATTERN HOOK-FANOUT (candidate) — hooks that look "isolated" create systemic load at scale
+- PATTERN STALE-INITIAL (candidate, likely-lock) — `useState(true) + useState([])` at 23-hook scale
+- PATTERN EPSILON — Realtime channel hygiene gap (no status callback + no reconnect refetch)
+- PATTERN ZETA — silent server-side fanout on Realtime INSERT
+- AP candidate #63 — CSS variable fallback hex literals forbidden
+- AP candidate #64 — `if (loading) return null` on home widgets (staggered pop-in)
+- AP candidate #65 — raw `error.message` may never appear in user-facing UI
+- PATTERN OMEGA — instrumentation without consumption (AP candidate B)
+- PATTERN PSI — console.error boilerplate at 123 sites (AP candidate A)
+- `isStaff` → admin-path routing (#17 PATTERN ALPHA)
+
+Promotion deferred per the catalog discipline (3+ instances or chat-side pressure-test).
+
+**Wave 2.C → next session handoff:**
+
+Next session opens with Frank's routing call on the 5 cross-pattern arcs above. After Wave 2.C routing closes → Wave 3.A dispatch per §4.AN (#18 onboarding + #19 notifications + #20 briefing engine + #21 edge function deploy parity + #22 pg_cron job health).
+
+**AP compliance:**
+- AP #45 — §4.AQ in same commit as `docs/AUDIT_*.md` + CLAUDE.md doctrine changes ✓
+- AP #50 — RETIRED in PR #564; line-by-line methodology held throughout dispatch ✓
+- AP #56 + #59 — RETIRED in this PR (this entry IS the policy lock) ✓
+- AP #58 — cross-batch pattern check applied; 5 CROSS-PATTERNs ✓
+- AP #61 — pre-phase audit gate; required outputs delivered ✓
+- §17.8 — every agent reported §16.15 2-pass cascade-catch findings ✓
+
+---
+
 ### §4.AP — Wave 2.B audit close + Batch 1 quick-wins routing (2026-05-28)
 
 **Trigger:** Wave 2.B dispatch per §4.AN routing — 3 parallel line-by-line audits (categories #1, #2, #3) per CLAUDE.md §17.8 standing rule with §16.15 2-pass deep-read addendum. Anchored on the 5s home page LCP regression Frank reported earlier in this session.
