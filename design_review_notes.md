@@ -89,6 +89,28 @@ File map:
 - **`Jersey #` is unique per division, not per org.** Constraint must be
   `UNIQUE(org_id, team_id, season_id, jersey_number)`.
 
+**Size enum (from St. Patrick's actuals — both files committed, n=196 each):**
+
+| Size | Jersey | Shorts |
+|---|---|---|
+| Youth-XS | 1 | 3 |
+| Youth-Small | 22 | 32 |
+| Youth-Medium | 65 | 60 |
+| Youth-Large | 52 | 56 |
+| Adult-Small | 32 | 23 |
+| Adult-Medium | 14 | 10 |
+| Adult-Large | 2 | 4 |
+| Adult-Extra Large | 1 | 1 |
+| (unset/blank) | 7 | 7 |
+
+- Enum needs **8 values**: `Youth-XS, Youth-Small, Youth-Medium, Youth-Large,
+  Adult-Small, Adult-Medium, Adult-Large, Adult-Extra Large`. No Youth-XL / Adult-XS
+  in real data — include only if a future org needs them.
+- **7 unset per file → size column must be nullable** (don't force a size at registration).
+- **Naming inconsistency to normalize:** "Youth-**XS**" abbreviates but "Adult-Extra
+  Large" spells out. Pick one convention for the enum (suggest `Youth-XS` / `Adult-XL`).
+- Distribution centers on Youth-M/L (~60% of both) — useful for default/stock planning.
+
 ---
 
 ## Running themes (provisional — not synthesis)

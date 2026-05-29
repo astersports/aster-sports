@@ -21,3 +21,6 @@
 !.gitignore
 !README.md
 !enrollment_field_schema_redacted.csv
+# Aggregate size-distribution pivots — counts only, zero personal data (verified):
+!jersey_size_summary.csv
+!shorts_size_summary.csv
