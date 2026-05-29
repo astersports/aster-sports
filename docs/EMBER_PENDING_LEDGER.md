@@ -3718,6 +3718,36 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BA — Doc-Corpus campaign close: tracker + COMPACT/deletes settled (2026-05-29)
+
+**Trigger:** Frank — "build the execution tracker, prune stale branches, settle COMPACT/deletes."
+
+**Fix-PR execution tracker:** `docs/FIX_PR_EXECUTION_TRACKER.md` created — the single routable
+burndown of all open audit-surfaced P0/P1, grouped Tier 1–4, gating the multi-program build
+(§17.8). Complements §4.0 (canonical pending index). Recommended sequence: Tier 1A (multi-tenant
+identity) + 1B (compliance) first.
+
+**COMPACT — SETTLED: leave the ledger as-is (do NOT bulk-extract).** On inspection the §4
+historical entries are interleaved with live top-level sections (§5 UX watch-lists, §13 AP tally,
+§14 helper backlog, the V-queue) — there is no clean ~4,000-line contiguous block, so a bulk
+extraction would be scattered, error-prone surgery on the canonical routing doc. The COMPACT's
+actual value (a navigable live view) is already met by §4.0. Decision: closed, not deferred.
+If physical shrink is ever wanted, it's a dedicated careful re-org, never a scripted bulk cut.
+
+**DELETES — SETTLED:** removed 4 genuinely zero-reference `archive/` files (L99_BRIEFINGS_AUDIT_CHAT,
+L99_BRIEFINGS_FULL_AUDIT, L99_CHAT_AUDIT_VERIFICATION, SESSION_RECAP_2026-05-11). KEPT the
+`SKYFIRE_BUILD_QUEUE.md` stub — precise re-check found it IS cited (STATE_OF_AFFAIRS_L99_v3
+"Supersedes:" provenance), so it's not a true delete-candidate.
+
+**BRANCHES:** the 2 merged session branches were auto-deleted on squash-merge. The other 6 stale
+branches show UNMERGED (854–1,199 unique commits each = divergent pre-consolidation v2-era history)
+— FLAGGED for Frank, NOT auto-deleted (deleting unmerged refs is destructive; surprising state).
+
+**Doc-Corpus L99 campaign CLOSED** — D1–D8 audited; accuracy fixes + 27-doc archive shipped;
+tracker live; COMPACT/deletes settled.
+
+---
+
 ### §4.AZ — Doc-Corpus L99 D1–D3 findings (2026-05-29)
 
 Findings in `docs/AUDIT_DOC_CORPUS_FINDINGS_2026-05-29.md` (3 agents, production-verified).
