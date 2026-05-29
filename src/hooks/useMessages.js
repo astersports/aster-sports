@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/useToast';
+import { reportError } from '../lib/reportError';
 
 export function useMessages(channel, channelId, dmThreadId) {
   const { user, guardianFirstName, orgId } = useAuth();
@@ -20,7 +21,7 @@ export function useMessages(channel, channelId, dmThreadId) {
     q = q.order('created_at', { ascending: true }).limit(200);
     const { data, error: fetchErr } = await q;
     if (fetchErr) {
-      console.error('useMessages:', fetchErr.message);
+      reportError(fetchErr, { surface: 'useMessages.fetch', channel, channelId, dmThreadId });
       setError(fetchErr);
       setLoading(false);
       return;
@@ -65,7 +66,7 @@ export function useMessages(channel, channelId, dmThreadId) {
     if (channel === 'dm' && dmThreadId) row.dm_thread_id = dmThreadId;
     const { error } = await supabase.from('messages').insert(row);
     if (error) {
-      console.error('send message:', error.message);
+      reportError(error, { surface: 'useMessages.send', channel, channelId, dmThreadId });
       showToast("Couldn't send message. Try again?", 'error');
       return false;
     }
@@ -76,7 +77,7 @@ export function useMessages(channel, channelId, dmThreadId) {
     setMessages((prev) => prev.filter((m) => m.id !== messageId));
     const { error } = await supabase.from('messages').delete().eq('id', messageId);
     if (error) {
-      console.error('delete message:', error.message);
+      reportError(error, { surface: 'useMessages.delete', messageId });
       showToast("Couldn't delete message. Try again?", 'error');
       await fetch();
       return false;

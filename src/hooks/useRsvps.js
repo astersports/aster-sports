@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../context/useToast';
+import { reportError } from '../lib/reportError';
 
 export function useRsvps(eventId, teamId) {
   const { showToast } = useToast();
@@ -82,7 +83,7 @@ export function useRsvps(eventId, teamId) {
       .eq('event_id', eventId)
       .eq('player_id', playerId);
     if (error) {
-      console.error('saveNote:', error.message);
+      reportError(error, { surface: 'useRsvps.saveNote', eventId, playerId });
       showToast('Could not save note. Try again.', 'error');
       return false;
     }

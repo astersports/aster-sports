@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { autoLinkGuardian } from '../lib/autoLinkGuardian';
 import { fetchParentContext } from '../lib/parentContext';
 import { bustAllCaches } from '../lib/cacheBuster';
+import { reportError } from '../lib/reportError';
 // Sentry + PostHog helpers are loaded dynamically (lazy import) so the
 // SDK code chunks separately from the main bundle. Pulling them in via
 // `import { ... } from '../lib/sentry'` is what defeated the
@@ -57,7 +58,7 @@ export function AuthProvider({ children }) {
     let resolvedRole = null;
     let resolvedOrg = null;
     if (error) {
-      console.error('Failed to load membership:', error.message);
+      reportError(error, { surface: 'AuthContext.loadMembership', userId: authUser.id });
     } else if (data) {
       resolvedRole = data.role ?? null;
       resolvedOrg = data.organizations ?? null;
@@ -87,7 +88,7 @@ export function AuthProvider({ children }) {
       setGuardianFirstName(ctx.guardianFirstName ?? null);
     } else if (resolvedRole === 'coach') {
       const { data: staffRows, error: staffErr } = await supabase.from('team_staff').select('team_id').eq('user_id', authUser.id);
-      if (staffErr) { console.error('[AuthContext] coach team_staff:', staffErr.message); }
+      if (staffErr) { reportError(staffErr, { surface: 'AuthContext.coachTeamStaff', userId: authUser.id }); }
       if (id !== fetchIdRef.current) return;
       setMyTeamIds((staffRows || []).map((r) => r.team_id));
       setMyChildren([]); setGuardianId(null); setGuardianFirstName(null);
