@@ -47,3 +47,11 @@ export function clearSentryUser() {
   if (!DSN) return;
   Sentry.setUser(null);
 }
+
+// Wave 2.C #24 + AP candidate A — Sentry-side reportError target.
+// Callers should NOT import this directly; use src/lib/reportError.js so the
+// console.error fires synchronously and the SDK chunk stays lazy-loaded.
+export function captureErrorToSentry(err, surface, extra) {
+  if (!DSN) return;
+  Sentry.captureException(err, { tags: { surface }, extra });
+}

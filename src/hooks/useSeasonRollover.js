@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/useToast';
+import { reportError } from '../lib/reportError';
 
 export function useSeasonRollover(fromSeason, orgId) {
   const { user } = useAuth();
@@ -29,11 +30,11 @@ export function useSeasonRollover(fromSeason, orgId) {
       if (plan.carryLocations !== false) {
         const { data: fromLocs, error: lErr } = await supabase
           .from('season_locations').select('location_id').eq('season_id', fromSeason.id);
-        if (lErr) console.error('rollover carryLocations read:', lErr.message);
+        if (lErr) reportError(lErr, { surface: 'useSeasonRollover.carryLocations.read', fromSeasonId: fromSeason.id });
         else if (fromLocs?.length) {
           const rows = fromLocs.map((r) => ({ season_id: newSeason.id, location_id: r.location_id }));
           const { error: insErr } = await supabase.from('season_locations').insert(rows);
-          if (insErr) console.error('rollover carryLocations insert:', insErr.message);
+          if (insErr) reportError(insErr, { surface: 'useSeasonRollover.carryLocations.insert', newSeasonId: newSeason.id });
         }
       }
 
@@ -73,7 +74,7 @@ export function useSeasonRollover(fromSeason, orgId) {
       setLoading(false);
       return rollover;
     } catch (err) {
-      console.error('useSeasonRollover:', err.message);
+      reportError(err, { surface: 'useSeasonRollover.execute', fromSeasonId: fromSeason.id, orgId });
       showToast("Rollover hit a snag. Check what got created and try again.", 'error');
       setLoading(false);
       return null;
