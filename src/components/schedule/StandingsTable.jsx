@@ -10,7 +10,9 @@ export default function StandingsTable({ teams, recordsByTeamId, totalGames }) {
     .sort((a, b) => {
       const pctDiff = b.summary.winPct - a.summary.winPct;
       if (pctDiff !== 0) return pctDiff;
-      return parseInt(b.summary.record) - parseInt(a.summary.record);
+      // Tiebreak on point differential (a real standings key), not
+      // parseInt(record) which read only raw wins and ignored losses.
+      return b.summary.diff - a.summary.diff;
     });
 
   if (rows.length === 0) return null;

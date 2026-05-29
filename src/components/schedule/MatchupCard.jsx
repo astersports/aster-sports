@@ -81,6 +81,12 @@ export default function MatchupCard({ event, gameResult }) {
                 {formatTime(event.start_at)}
               </span>
             )}
+            {/* Past game with no result row yet: show a pending marker
+                (17px to hold the result row rhythm) instead of a blank
+                center column that reads as a half-rendered card. */}
+            {isPast && !isTournamentAnchor && (
+              <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-tertiary)' }}>—</span>
+            )}
           </div>
         )}
         {/* Right column inlines opponent + date on a single line in
