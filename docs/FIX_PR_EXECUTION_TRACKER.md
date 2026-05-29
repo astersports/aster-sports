@@ -97,10 +97,28 @@ explicit GO per migration (spec sign-off gate — no migration runs without Fran
 - ☑ **PR 1 — Migration #1: `programs` table + `program_type` ENUM** (spec §4.5 step 1). Applied
   (version 20260529155321, mirror committed). 6-value enum (`season/tryout/camp/clinic/interest_list/
   evaluation`; v1 UI exposes 3). `programs` column set is a **superset of `seasons`** (so PR 2 backfill +
-  PR 3 compat view are clean); `sport_id` is forward-compat (no FK — `sports` not built this wave,
-  LH single-sport); RLS mirrors `seasons` (4 policies; parent SELECT via `current_user_org_ids()`
-  deferred to migration #12). Advisors clean (no new finding on `programs`). Ledger §4.BE.
-- ☐ PR 2–12 — spec §4.5 sequence: backfill `programs` from seasons → seasons compat view →
+  PR 3 compat view are clean); RLS mirrors `seasons` (4 policies; parent SELECT via `current_user_org_ids()`
+  deferred to migration #12). Advisors clean. Ledger §4.BE.
+- ☑ **Migration #1a — `sports` table + `programs.sport_id` FK** (Frank-directed; fills the §4.5 gap
+  where the spec diagram has `sports` as parent of `programs` but the 12-migration list omitted it).
+  Applied (version 20260529155952). Minimal shape (id/org_id/name); seeds LH **Basketball**; FK added
+  (`programs` empty → instant); RLS mirrors seasons. `sport_id` stays nullable (NOT NULL tightening
+  with the registration build). Ledger §4.BF.
+- ☑ **PR 2 — Migration #2: backfill `programs` from `seasons`** (spec §4.5 step 2). Applied
+  (version 20260529160011). 3 season rows mirrored (Fall 2025 / Winter 2025-26 / Spring 2026),
+  `program_type='season'`, `sport_id`=LH Basketball; **`seasons.id` preserved as `programs.id`** so
+  existing FKs survive PR 3's view swap. Idempotent (ON CONFLICT id DO NOTHING). Ledger §4.BF.
+- ☑ **PR 3 — Migration #3: `seasons` table → compat view over `programs`** (spec §4.5 step 3).
+  Applied (version 20260529185046). `programs` is now the single source of truth; `seasons` is a
+  `security_invoker`, auto-updatable view (`WITH CHECK OPTION`) so existing reads + the rollover
+  writes keep working. Repointed 8 external FKs → `programs(id)` (data-safe, same uuids),
+  recreated the 2 dependent views (`player_attendance_season`, `player_rsvp_season`) + the 2
+  `season_locations` RLS policies (now read `FROM programs`). Atomic. Advisors clean (security_invoker
+  → no security_definer_view warning). Ledger §4.BG.
+  - ⚠ **Manual smoke (post-deploy):** `SeasonRolloverPage` reads `seasons→teams→roster_members` via
+    PostgREST embedding; teams now FK `programs`, so the embed relies on PostgREST view-embedding.
+    Verify the rollover wizard still loads + can create a new season (INSERT-through-view).
+- ☐ PR 4–12 — spec §4.5 sequence:
   divisions ext → division_fees+auto_apply_rule → registrations → registration_fees →
   player_equipment → tryout_sessions+attendees → players ext → organizations.family_cap_policy+
   acceptable_age_range → RLS `current_user_org_ids()` + parent SELECT policies.

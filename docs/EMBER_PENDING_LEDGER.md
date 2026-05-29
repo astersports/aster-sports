@@ -3718,6 +3718,73 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BG — Build PR 3: seasons table → compat view over programs SHIPPED (2026-05-29)
+
+**Frank's GO** → spec §4.5 step 3, completing the programs/seasons cutover. `programs` is now
+the single source of truth; `seasons` survives as a backwards-compat view. Chosen over the
+defer/sync-trigger alternatives via AskUserQuestion ("full table→view swap now").
+
+- **Migration #3** (MCP, version `20260529185046`, mirror per AP #21). Atomic; one failed pre-flight
+  attempt rolled back cleanly (caught 2 `season_locations` RLS policies reading FROM seasons that
+  the FK/view sweep hadn't surfaced — added their drop/recreate, re-applied).
+- **What it did:** (a) repointed 8 external FKs `seasons(id)` → `programs(id)` (teams, events,
+  financial_accounts, coach_payouts, team_achievements, season_locations, season_rollovers×2),
+  on-delete behavior preserved, data-safe because PR 2 preserved the uuids; (b) dropped + recreated
+  the 2 dependent views (`player_attendance_season`, `player_rsvp_season`, security_invoker
+  preserved); (c) dropped + recreated the 2 `season_locations` policies (now read `FROM programs
+  WHERE program_type='season'`); (d) dropped the `seasons` table; (e) created `seasons` as a
+  `security_invoker`, auto-updatable view (`SELECT … FROM programs WHERE program_type='season'
+  WITH CHECK OPTION`, `parent_program_id AS parent_season_id`), GRANT ALL to the 3 PostgREST roles.
+- **Why security_invoker:** the view enforces `programs` RLS against the querying user (a plain view
+  would run as owner and bypass RLS). Advisors clean — no `security_definer_view` warning.
+- **Why auto-updatable + WITH CHECK OPTION:** `useSeasons` (UPDATE name/status) and
+  `useSeasonRollover` (INSERT new season) write through `seasons`; a simple single-table view with
+  column renames is auto-updatable, and `programs.program_type DEFAULT 'season'` supplies the type
+  on insert (CHECK OPTION guarantees the row stays a season).
+- **Post-flight (DO-block + independent read):** seasons is a view (3 rows: Fall 2025/Winter/Spring),
+  0 FKs reference seasons, 8 FKs on programs, all 5 LH teams join through programs, dependent views +
+  policies recreated.
+- **⚠ Follow-up smoke (manual, post-deploy):** `SeasonRolloverPage` reads `seasons→teams→
+  roster_members` via PostgREST embedding; `teams` now FK `programs`, so the embed relies on
+  PostgREST resolving the view→base-table relationship. Verify the rollover wizard loads + an
+  INSERT-through-view season-create works. If it breaks, repoint that one query to read `programs`
+  directly.
+
+**Programs/seasons cutover COMPLETE** (migrations #1, #1a, #2, #3). Next: spec §4.5 PR 4
+(divisions extensions) on GO.
+
+---
+
+### §4.BF — Build: sports table (#1a) + programs backfill (#2) SHIPPED (2026-05-29)
+
+Two migrations applied on Frank's GO, immediately after PR 1, as the rest of the programs
+foundation arc (bundled into PR #595 with migration #1).
+
+- **Migration #1a — `sports` table + `programs.sport_id` FK** (version `20260529155952`, mirror per
+  AP #21). Frank directed "build a minimum sports table" after PR 1 flagged `sport_id` as no-FK
+  scaffolding. The spec's relationship diagram has `sports(sport_id, org_id)` as parent of
+  `programs`, but the §4.5 12-migration list omitted it — this fills the gap. Minimal shape
+  (id/org_id/name + UNIQUE(org_id,name)); RLS mirrors seasons/programs (4 policies); seeds LH
+  **Basketball**; adds `programs_sport_id_fkey` (ON DELETE RESTRICT) — instant because `programs`
+  was empty. `sport_id` stays **nullable** for now; NOT NULL tightening belongs with the
+  registration build that always sets a sport. Post-flight DO-block verified table/RLS/seed/FK.
+- **Migration #2 (PR 2) — backfill `programs` from `seasons`** (version `20260529160011`, mirror per
+  AP #21). Spec §4.5 step 2. One program row per season, `program_type='season'`, `sport_id`=the
+  org's Basketball sport. **Preserves `seasons.id` as `programs.id`** (critical: existing FKs that
+  reference season ids stay valid after PR 3 swaps `seasons` → a compat view). Idempotent
+  (`ON CONFLICT (id) DO NOTHING`). Pre-flight: 3 seasons, all parent_season_id NULL (no self-FK
+  ordering concern), programs empty. Post-flight (DO-block + independent read): 3 programs
+  (Fall 2025/Winter 2025-26/Spring 2026), all season-type, all Basketball, all ids match seasons.
+- **`get_advisors security` clean** after both — no new advisory on `sports` or `programs`.
+
+**PR 3 design note (flagged for next GO):** PR 3 makes `seasons` a compat view
+(`SELECT … FROM programs WHERE program_type='season'`). But **you cannot keep a real FK pointing at
+a view** — any existing `*.season_id → seasons(id)` FKs must be re-pointed at `programs(id)` (same
+uuids, so data-safe) BEFORE/AS the table→view swap, or dropped. PR 3's pre-flight will enumerate
+every FK referencing `seasons` and repoint each to `programs` in the same migration.
+
+---
+
 ### §4.BE — Build PR 1: migration #1 programs table + program_type ENUM SHIPPED (2026-05-29)
 
 **Frank's GO** → spec §4.5 step 1, the multi-program schema's top-level container.
