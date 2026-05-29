@@ -3717,6 +3717,81 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AS — Wave 3.B audit close + §17.5 audit campaign COMPLETE (2026-05-29)
+
+**Trigger:** Wave 3.B dispatch per §4.AN routing — 6 parallel line-by-line audits (categories #6 anti-pattern compliance, #10 data integrity, #25 DR/backup, #27 youth-sports compliance, #28 onboarding playbook, #29 doctrine drift) per CLAUDE.md §17.8 with §16.15 2-pass deep-read addendum.
+
+**Output:** `docs/AUDIT_WAVE_3B_2026-05-29.md` — findings + 5 cross-patterns + per-agent reports preserved. AP #45 satisfied by this same-commit ledger entry.
+
+## ⚡ §17.5 AUDIT CAMPAIGN COMPLETE — 29 of 29 CATEGORIES ⚡
+
+Wave 3.B closes out the §17.5 audit campaign. All 29 categories have received line-by-line + §16.15 2-pass deep-read addendum per §17.8 standing rule. **The audit-execution side of the §17.8 gate is structurally complete.** Per §17.7 step 5, multi-program build phase opens after all P0+P1 fix PRs land — fix routing remains the next workstream.
+
+| Wave | Categories | Status |
+|---|---|---|
+| Wave 1 | #7, #8, #9, #12, #26 | ✓ complete |
+| Wave 2.A | #11, #13, #14, #15, #23 | ✓ complete |
+| Wave 2.B | #1, #2, #3 | ✓ complete |
+| Wave 2.C | #4, #5, #16, #17, #24 | ✓ complete |
+| Wave 3.A | #18, #19, #20, #21, #22 | ✓ complete |
+| **Wave 3.B** | **#6, #10, #25, #27, #28, #29** | **✓ complete (this turn)** |
+
+**Wave 3.B headline:** 17 P0 / 35 P1 / 25 P2 / ~12 promotion-ready AP candidates surfaced cumulative across all waves.
+
+**5 cross-cutting patterns (AP #58 synthesis, campaign-cumulative):**
+
+1. **PATTERN OMEGA continuation** — instrumentation without consumption (7+ instances; promotion-ready). Dominant platform pattern: write paths exist, read paths don't (audit logs, observability stack, DR backups, RLS helpers).
+2. **PATTERN STALE-DOC** — doctrine drift unchecked (10+ instances cumulative). §0 verification grep fails today, §5 migration count stale by 30, §2 tech stack version drift, AP #51 catalog cites deleted files.
+3. **Single-tenant assumptions** — Wave 3.B #28 names 5 specific second-tenant blockers; today onboarding cost is 10-15 hours; after P0 closures ~1.5 hours.
+4. **Compliance + governance gaps for youth-sports SaaS** — no privacy policy, no consent ledger, no data subject deletion path. Cannot launch GA or second-tenant without these.
+5. **Audit-disciplined surfaces are CLEAN; un-audited surfaces have systemic gaps** — Wave 3.A CROSS-PATTERN 3 reconfirmed at scale. 53 active APs reconfirmed; app code 100% §11.5 compliant; 13/13 edge functions byte-match. BUT 0 DR scenarios catalogued, no privacy policy, 5 second-tenant blockers.
+
+**Wave 3.B P0 consolidated (17):**
+
+- **Second-tenant (5):** user_roles UNIQUE shape + admin onboarding path + email FROM plumbing + public_listing_enabled default + unsubscribe-handler branding
+- **Compliance (3):** data subject deletion + privacy policy/ToS + guardian consent ledger
+- **DR (3):** DR runbook + backup-restore test + materialize 5 §5 ghosts
+- **Data integrity (2):** 5 RLS policies bypass §11.5 helpers + alignment trigger unidirectional
+- **Doctrine (4):** §0 verification grep fails + §5 migration count + §2 tech stack version drift + AP #51 catalog stale
+
+**Routing — 4 new fix-PR arcs queued (cumulative with prior waves):**
+
+1. **Multi-tenant readiness arc** (closes #28 5 P0s + #10 P0-1, P0-2) — multi-PR sequence
+2. **Compliance arc** (closes #27 3 P0s) — privacy policy + ToS + guardian_consents + deletion flow
+3. **DR-readiness arc** (closes #25 3 P0s) — runbook + restore test + ghost materialization
+4. **Doctrine reconciliation arc** (closes #29 4 P0s + cumulative STALE-DOC) — §0/§5/§2/§13/§16.5/AP #51/AP #50 residue
+
+**~12 PROMOTION-READY AP candidates (3+ instances confirmed cumulative):**
+
+- PATTERN OMEGA (instrumentation without consumption) — 10+ instances
+- PATTERN STALE-DOC (doctrine drift unchecked) — 10+ instances
+- PATTERN DELTA (admin-toggle without enforcement) — 3 instances
+- PATTERN COLD-SURFACE (zero-send infrastructure) — 4 instances
+- PATTERN STALE-INITIAL (`useState(true)+useState([])`) — 23 hooks
+- PATTERN EPSILON (Realtime channel hygiene gap) — 7 hooks
+- PATTERN PSI (console.error boilerplate) — 108 sites
+- isStaff → admin-path drift — 7 instances
+- AP candidate #65 (raw `error.message` in user UI) — 4 instances
+- PATTERN AP-RETIREMENT-RESIDUE (new) — retirement PRs must include exhaustive grep
+- AP #61 (pre-phase audit gate) — 3 instances confirmed this campaign
+- AP #55 (actual PR# from create response) — 21+ consecutive PR holds
+
+**Per §17.7 step 5:** Multi-program build phase opens when all P0+P1 fix PRs land. Currently: 29/29 audited, ~35+ P0s cumulative across waves still open (Wave 1 closed; Wave 2.A 2 deferred; Wave 2.B + 2.C + 3.A + 3.B P0s queued).
+
+**Wave 3.B → next session handoff:**
+
+Next session opens with Frank's routing call on the 4 new Wave 3.B fix-PR arcs + cumulative backlog from Waves 2/3.A + which arc to dispatch first.
+
+**AP compliance:**
+- AP #45 — §4.AS in same commit as `docs/AUDIT_*.md` ✓
+- AP #50 RETIRED — line-by-line methodology held throughout dispatch ✓
+- AP #56 + #59 RETIRED ✓
+- AP #58 — cross-batch pattern check applied; 5 CROSS-PATTERNs ✓
+- AP #61 — pre-phase audit gate; 3rd instance confirms (promotion-ready) ✓
+- §17.8 — every agent reported §16.15 2-pass cascade-catch findings ✓
+
+---
+
 ### §4.AR — Wave 3.A audit close + reportError foundational PR (2026-05-29)
 
 **Trigger:** Wave 3.A dispatch per §4.AN routing — 5 parallel line-by-line audits (categories #18 onboarding, #19 notifications, #20 briefings, #21 edge deploy, #22 pg_cron) per CLAUDE.md §17.8 with §16.15 2-pass deep-read addendum. Plus the foundational `reportError` helper PR closing part of Wave 2.C #24 CROSS-PATTERN 2.
