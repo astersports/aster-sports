@@ -3717,6 +3717,21 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AT — LeagueApps parity & scope review (2026-05-29)
+
+**Trigger:** Frank's 54-screenshot walkthrough of the LeagueApps incumbent for "review the overall design," ahead of the (deferred) multi-program / multi-tenant build phase.
+
+**Output:** `docs/LEAGUEAPPS_PARITY_REVIEW.md` — incumbent model map (Site→Season→age-group sub-programs→rosters spine + 5 rings: registration, AR, comms, CMS/e-commerce, integrations/roles), Ember-vs-incumbent gap table, alignment points, and the governing **replace-vs-sit-on-top scope decision** (recommendation: Option A = Ember stays the engagement/comms/schedule layer; LeagueApps remains registration + AR system-of-record for the St. Patrick's timeframe). Per AP #45 this entry lands in the same PR.
+
+**Status:** reference artifact, does NOT gate §17.8. Open decision recorded for Frank (Option A vs B); belongs in PLATFORM_PRIORITIES.md §17.2 once settled. Multi-tenant build stays last per Frank's 2026-05-29 directive.
+
+**Side observations (Ember admin-home alerts, Frank 2026-05-29) — logged for routing, not yet fixed:**
+1. **Payments-overdue alert** ("$1,275 across 1 family") deep-links to finance, but every family shows Paid + there is no unpaid filter to locate the offending family — alert vs finance-view disagreement (AP #44 pipeline trace candidate; echoes #24 "instrumentation vs UI" pattern).
+2. **Weekly-briefing-overdue alert** deep-links to Compose·Kind generically, not to the specific briefing that clears the alert.
+3. **RSVP-shortfall alert** ("4 events affected") names a count but not WHICH events/players are missing RSVPs.
+
+---
+
 ### §4.AS — Wave 3.B audit close + §17.5 audit campaign COMPLETE (2026-05-29)
 
 **Trigger:** Wave 3.B dispatch per §4.AN routing — 6 parallel line-by-line audits (categories #6 anti-pattern compliance, #10 data integrity, #25 DR/backup, #27 youth-sports compliance, #28 onboarding playbook, #29 doctrine drift) per CLAUDE.md §17.8 with §16.15 2-pass deep-read addendum.
