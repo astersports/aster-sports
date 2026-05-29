@@ -1,6 +1,8 @@
 # LEGACY HOOPERS — Brand & Content Reference Model
 
-*Source of truth synthesized from legacyhoopers.org crawl (Apr 21, 2026), records-v14_2.html visual system, and Spring 2026 schedule CSV. Intended as the authoritative reference for Skyfire's visual, copy, and data-model alignment with the Legacy Hoopers brand.*
+*Source of truth synthesized from legacyhoopers.org crawl (Apr 21, 2026), records-v14_2.html visual system, and Spring 2026 schedule CSV. Intended as the authoritative reference for Ember's visual, copy, and data-model alignment with the Legacy Hoopers brand.*
+
+*Reconciled against production 2026-05-29 (D3 audit). The original document was a pre-build design-chat input; many "gaps" and "migration plans" below have since shipped. Stale sections have been relabeled as completed/historical; only genuine remaining gaps are flagged.*
 
 ---
 
@@ -27,7 +29,7 @@ Direct. Witty. Emotionally intelligent. Never corporate. Key tonal patterns:
 - **Hall of Fame standards:** Collegiate-level expectation repeated throughout
 - **Teaching over coaching:** "Hall of Fame educator", "teaches like a great educator", "differentiated instruction"
 
-### Brand voice rules for Skyfire copy
+### Brand voice rules for Ember copy
 
 - ✅ Write like a sharp operator, not a corporate platform
 - ✅ Name the parent's actual problem before offering the solution
@@ -44,21 +46,23 @@ Direct. Witty. Emotionally intelligent. Never corporate. Key tonal patterns:
 ### Brand marks
 
 Legacy Hoopers uses two logo marks that should be treated as a
-matched pair — per-org Skyfire branding must recognize both:
+matched pair — per-org Ember branding must recognize both:
 
-- **Knight crest** — shield/helmet mascot mark. In-repo asset:
-  `knight logo 2048.png` (to be renamed `knight-logo-2048.png` and
-  moved under a structured per-org branding path when multi-tenant
-  asset organization lands).
+- **Knight crest** — shield/helmet mascot mark. In-repo assets under
+  `public/`: `knight-logo-240.png` (240px), `knight logo 2048.png`
+  (2048px source), and `Knight_logo.webp` (web-optimized). Additional
+  brand assets present: `legacy hoopers logo 2048.png` (wordmark
+  source), `phoenix.webp`, `apple-touch-icon.png`, `favicon.png`.
 - **Legacy Hoopers wordmark** — the text-based logo used on the
-  marketing site header, records page, and official documents.
+  marketing site header, records page, and official documents
+  (`legacy hoopers logo 2048.png` in `public/`).
 
 **Correction note:** the `knight logo 2048.png` commit (`44e4741`)
 flagged the asset as "assumed St. Patrick's — VERIFY." That assumption
-was wrong. The knight crest is a Legacy Hoopers mark. St. Patrick's
-CYO is a future program (onboarded after Legacy Hoopers) with its own
-brand marks to be documented separately when that program enters
-scope.
+was wrong. The knight crest is a Legacy Hoopers mark. St. Patrick's is
+no longer a hypothetical "future program" — it is now an active second
+tenant track (see `EMBER_TENANCY_ARCHITECTURE_v3`); its own brand marks
+are managed under that tenancy model, not as future scope.
 
 ### Color palette (AUTHORITATIVE from records-v14_2.html)
 
@@ -74,40 +78,28 @@ Card border:     rgba(74,143,212,0.18)
 Glow accent:     rgba(74,143,212,0.25)
 ```
 
-### Team color palette (CRITICAL — SKYFIRE MISMATCH FOUND)
+### Team color palette (ALIGNED — verified 2026-05-29)
 
-**Website records page team colors:**
+**Team colors are already aligned to the authoritative records-page values.** `src/lib/constants.js` `TEAM_COLORS` and the production `teams.team_color` column match each other and the website records page exactly (verified via Supabase MCP). No migration needed; the earlier mismatch finding is obsolete.
 
-| Team | CSS Variable | Hex | Notes |
-|---|---|---|---|
-| 11U Girls | --team violet | #a78bfa | Light violet |
-| 10U Black | --team cobalt | #4a8fd4 | Brand cobalt (same as default) |
-| 10U Blue | --team slate | #94a3b8 | Slate grey |
-| 9U Boys | --team cyan | #06b6d4 | Cyan |
-| 8U Boys | --team amber | #f59e0b | Amber |
-
-**Skyfire current team colors (from memory):**
-
-| Team | Skyfire hex | Website hex | Match? |
-|---|---|---|---|
-| 11U Girls | #7C3AED | #a78bfa | ❌ Skyfire is darker purple |
-| 10U Black | #18181B | #4a8fd4 | ❌ Skyfire is near-black, website is cobalt |
-| 10U Blue | #2563EB | #94a3b8 | ❌ Skyfire is blue, website is slate |
-| 9U Boys | #DC2626 | #06b6d4 | ❌ Skyfire is red, website is cyan |
-| 8U Boys | #EA580C | #f59e0b | ❌ Skyfire is orange, website is amber |
-
-**Recommendation:** Align Skyfire team colors to the website values. The records page is the authoritative visual reference; parents and players have already associated those colors with each team. Requires a single SQL UPDATE on the teams table.
+| Team | Hex (constants.js == DB) |
+|---|---|
+| 11U Girls | #a78bfa (light violet) |
+| 10U Black | #4a8fd4 (brand cobalt) |
+| 10U Blue | #94a3b8 (slate grey) |
+| 9U Boys | #06b6d4 (cyan) |
+| 8U Boys | #f59e0b (amber) |
 
 ### Typography
 
 **Primary font family (website):** Barlow + Barlow Condensed  
-**Primary font family (Skyfire app):** Inter  
+**Primary font family (Ember app):** Inter  
 
-**Recommendation:** Either align app to Barlow to match, OR keep Inter (which is a valid modern choice) and document the intentional difference.
+**Resolved:** Inter is the locked app typeface (a valid modern choice); the Barlow/Inter split between marketing site and app is intentional, not drift.
 
 ### Visual patterns worth stealing
 
-From the records page (high-impact for Skyfire EventCard redesign):
+From the records page (high-impact for Ember EventCard redesign):
 
 1. **Team color left stripe** on every card (you already do this)
 2. **Color-matched stat numerals** (e.g., "5-2" in team color)
@@ -132,7 +124,7 @@ From the records page (high-impact for Skyfire EventCard redesign):
 | 4 | 9U Boys | 3rd Grade Boys | League Play | Tue 6:00-7:30 PM @ Rippowam | ✗ (foundational) |
 | 5 | 8U Boys | 2nd Grade Boys | AAU Circuit | Tue 5:30-7:00 PM @ Rippowam | ✗ (foundational) |
 
-### Naming conventions (ENFORCED throughout Skyfire)
+### Naming conventions (ENFORCED throughout Ember)
 
 - **Correct:** "11U Girls", "10U Black", "8U Boys"
 - **Wrong:** "Girls 11U", "Boys 8U" (LeagueApps format)
@@ -180,13 +172,13 @@ From the records page (high-impact for Skyfire EventCard redesign):
 - Westchester CC: Viking Gym (PEB Building), parking Lots 8, 9, 10
 - St. Patrick's: St. Francis Hall
 
-**Game venues:** Vary by tournament. Skyfire should surface venue detail including sub-location (court number, gym name) from LeagueApps data.
+**Game venues:** Vary by tournament. Ember should surface venue detail including sub-location (court number, gym name) from LeagueApps data.
 
 ---
 
 ## PART 6: BUSINESS RULES
 
-### RSVP deadlines (CRITICAL for Skyfire RSVP logic)
+### RSVP deadlines (CRITICAL for Ember RSVP logic)
 
 **AAU Tournaments:**
 - Preliminary schedule: released Wednesday night
@@ -235,7 +227,7 @@ Parents must wait 24 hours after a game before messaging coaches about playing t
 3. **Basketball IQ (15 min)** — Film room on feet: spacing, cutting, rotations
 4. **Live Comp (30 min)** — Full-court 5v5 at game speed
 
-**Skyfire implication:** Practice event detail could include these 4 phases as a sub-structure for coaches to plan against. Future feature.
+**Ember implication:** Practice event detail could include these 4 phases as a sub-structure for coaches to plan against. Future feature.
 
 ### Code of Conduct excerpts (for potential in-app display)
 
@@ -255,7 +247,7 @@ Parents must wait 24 hours after a game before messaging coaches about playing t
 
 A documented guideline that the drive home is often the most stressful moment of youth sports. The recommendation: **"I loved watching you play today."** Nothing else. Let coaches handle film review at next practice.
 
-**Skyfire opportunity:** This could become a post-game toast/reminder shown to parents when a game ends. Delight feature at the 95% bar.
+**Ember opportunity:** This could become a post-game toast/reminder shown to parents when a game ends. Delight feature at the 95% bar.
 
 ---
 
@@ -311,40 +303,36 @@ The records page highlights season narratives:
 - "5-Game Win Streak"
 - "Combined Point Differential"
 
-**Skyfire opportunity:** Auto-generate these narrative bullets from game data. Biggest delight feature in the records space.
+**Ember opportunity:** Auto-generate these narrative bullets from game data. Biggest delight feature in the records space.
 
 ---
 
-## PART 9: CONTENT MODEL — SCHEMA GAPS IN SKYFIRE
+## PART 9: CONTENT MODEL — SCHEMA STATUS IN EMBER
 
-### What Skyfire has (good)
+### What Ember has (good)
 
 - teams, events, players, guardians, roster_members, event_rsvps, event_rides, event_duties, event_comments, locations, seasons
 
-### What Skyfire is missing to align with legacyhoopers.org
+### Shipped since this doc was written (verified in production 2026-05-29)
 
-**Tier 0 missing schema:**
+The schema items flagged below as "Tier 0 / Tier 1 missing" have all shipped:
 
-1. **game_results table** — Attempted tonight per your screenshot (IMG_9634) and failed. Needs:
-   - `id`, `event_id` (FK), `team_id` (FK), `opponent_name`, `home_away`, `team_score`, `opponent_score`, `result` (W/L/T), `played_at`, `notes`, `entered_by`, `entered_at`, `game_type` (regular/playoff/final)
+1. **game_results table** — ✅ SHIPPED. Live columns: `id`, `event_id` (FK), `our_score`, `opponent_score`, `result`, `quarter_scores`, `point_differential`, `player_of_game_id`, `coach_highlight`, `entered_by`, `entered_at`, `published_at`, `published_by`, `private_notes`, `has_player_stats`. (Score is keyed via `event_id` → `events.team_id`, not a direct `team_id` FK.) 51 game_results live for Spring 2026.
 
-2. **tournaments table** — Partially exists (tournament_id, tournament_name columns on events) but no first-class tournament model. Needs:
-   - `id`, `org_id`, `name`, `start_date`, `end_date`, `location`, `tournament_type`, `circuit`, `status`
+2. **tournaments table** — ✅ SHIPPED. First-class table, org-scoped. 8 tournaments live for the org.
 
-3. **team_achievements table** — For badges like "Nationals Qualified", "Champions":
-   - `id`, `team_id`, `season_id`, `achievement_type`, `tournament_id`, `awarded_at`, `display_label`, `display_icon`
+3. **team_achievements table** — ✅ SHIPPED. Badge model for "Nationals Qualified", "Champions", etc.
 
-**Tier 1 missing:**
+4. **opponents table** — ✅ SHIPPED. Canonical opponent list for head-to-head tracking.
 
-4. **team_season_stats** (computed view or materialized) — Per-team per-season aggregates: record, PPG, allowed, diff, defense rank
+### Genuine remaining schema gaps
 
-5. **opponents** — Canonical opponent list for head-to-head tracking
+The following are the only items from the original list NOT yet in production:
 
-**Tier 2 missing:**
+- **team_season_stats** (computed view or materialized) — Per-team per-season aggregates: record, PPG, allowed, diff, defense rank. (Records page currently computes these client-side; no DB-level rollup.)
+- **divisions / standings** — For league context (Bronze division, Gold division).
 
-6. **divisions / standings** — For league context (Bronze division, Gold division)
-
-### What Skyfire has that the website doesn't use
+### What Ember has that the website doesn't use
 
 - Real-time RSVP per player
 - Ride/carpool coordination
@@ -353,13 +341,13 @@ The records page highlights season narratives:
 - Parent messaging (when shipped)
 - Academy standards check-in / policy acknowledgment
 
-**Insight:** Skyfire IS the operational layer that the website points parents toward ("App Action Required" repeated throughout website copy). The website is marketing + records; Skyfire is the daily operational tool. They should feel like the same brand.
+**Insight:** Ember IS the operational layer that the website points parents toward ("App Action Required" repeated throughout website copy). The website is marketing + records; Ember is the daily operational tool. They should feel like the same brand.
 
 ---
 
 ## PART 10: COPY LIBRARY — LEGACY VOICE READY FOR REUSE
 
-Phrases directly liftable into Skyfire empty states, CTAs, and confirmations:
+Phrases directly liftable into Ember empty states, CTAs, and confirmations:
 
 **On dedication:**
 - "Minutes are earned, not given."
@@ -394,7 +382,7 @@ Phrases directly liftable into Skyfire empty states, CTAs, and confirmations:
 
 ## PART 11: THE 95% APP OPPORTUNITY
 
-Based on this crawl, here are 10 ways Skyfire can integrate Legacy Hoopers brand into the app to reach the 95% bar:
+Based on this crawl, here are 10 ways Ember can integrate Legacy Hoopers brand into the app to reach the 95% bar:
 
 1. **Auto-badge teams on home + team page:** "✓ Nationals Qualified" with gold accent, matching the website's treatment
 2. **Tournament archive view:** Completed tournaments show final record + championship badge, mirroring records page structure
@@ -409,74 +397,53 @@ Based on this crawl, here are 10 ways Skyfire can integrate Legacy Hoopers brand
 
 ---
 
-## PART 12: DATA MIGRATION PLAN (OPERATIONAL)
+## PART 12: DATA MIGRATION PLAN (HISTORICAL — COMPLETED)
 
-### Current state (per your earlier SQL queries)
+> This section was a pre-build sprint plan. The migrations below have all
+> executed; production now carries live Spring 2026 data (158 events, 51
+> game_results, 8 tournaments — verified 2026-05-29). Retained as a
+> historical record of how the schema/data reached its current state.
 
-- Skyfire events table: 146 test events (currently)
-- Real Spring 2026 events per CSV: 228 events
-- Games with recorded scores on website: 16 (Winter) + ~13 (Spring so far) = ~29 results
+### Current state (verified in production 2026-05-29)
 
-### Recommended migration sequence
+- Ember events table: 158 events live for the org (test data replaced with real Spring 2026 schedule)
+- game_results: 51 live for Spring 2026
+- tournaments: 8 live for the org
 
-**Migration 1: Team color alignment (SQL, 5 min)**
+### Migration sequence — outcome
 
-```sql
--- Align team colors to legacyhoopers.org authoritative values
-UPDATE teams SET team_color = '#a78bfa' WHERE name = '11U Girls';
-UPDATE teams SET team_color = '#4a8fd4' WHERE name = '10U Black';
-UPDATE teams SET team_color = '#94a3b8' WHERE name = '10U Blue';
-UPDATE teams SET team_color = '#06b6d4' WHERE name = '9U Boys';
-UPDATE teams SET team_color = '#f59e0b' WHERE name = '8U Boys';
-```
+**Migration 1: Team color alignment — ✅ DONE (no longer needed).** Team colors are already aligned across `constants.js` and `teams.team_color`; see PART 2. No SQL UPDATE outstanding.
 
-**Migration 2: Import Spring 2026 events from CSV (SQL + CSV transform, 45-60 min)**
+**Migration 2: Import Spring 2026 events from CSV — ✅ DONE.** Test events replaced with the real Spring 2026 schedule (158 events live), reconciled to Ember team names + venues.
 
-Strategy:
-1. Transform CSV (LeagueApps names → Skyfire names, venue matching, time zones)
-2. UPSERT into events based on (team_id, start_at, event_type) unique constraint
-3. Preserve existing RSVPs / rides / duties if any test event matches real event
-4. Delete orphaned test events that don't match real schedule
+**Migration 3: Create game_results table + backfill — ✅ DONE.** `game_results` table live with FK to events, RLS consistent with events, and 51 results backfilled/entered for Spring 2026.
 
-Requires careful team name + venue reconciliation. 45-60 min of SQL work with verification.
+**Migration 4: Tournaments first-class model — ✅ DONE.** `tournaments` table live and org-scoped (8 tournaments).
 
-**Migration 3: Create game_results table + backfill (SQL, 30 min)**
-
-Your earlier screenshot showed this attempt failing. Fix by:
-1. Create `game_results` table with proper FK to events
-2. Seed from records page data (manually enter 16 Winter + ~13 Spring games)
-3. Add RLS policies consistent with events table
-4. NOTIFY pgrst, 'reload schema'
-
-**Migration 4: Tournaments first-class model (SQL, 30 min)**
-
-1. Create `tournaments` table
-2. Migrate existing `tournament_id` + `tournament_name` references into FK to new table
-3. Seed 5 Spring 2026 tournaments with proper dates + locations
-
-**Migration 5: Team achievements (SQL, 20 min)**
-
-1. Create `team_achievements` table
-2. Seed from records page (Champions, Nationals Qualified, etc.)
-3. Build admin UI to award achievements (queued for later session)
+**Migration 5: Team achievements — ✅ DONE.** `team_achievements` table live for badges (Champions, Nationals Qualified, etc.).
 
 ---
 
-## PART 13: PRIORITY FOR SKYFIRE BUILD
+## PART 13: BUILD PRIORITY (HISTORICAL — EXECUTED)
 
-Based on this reference, revised Phase 1 priorities for parent experience to 95%:
+> The pre-build priority plan below executed. All Session C/D/E candidates
+> shipped (team color alignment, game_results, schedule migration,
+> EventCard/records redesign, achievement badges, Run-of-Play narratives).
+> Retained as historical context, not an active sprint plan. The only
+> remaining open items are the schema gaps in PART 9 (team_season_stats,
+> divisions/standings).
 
-**Session C candidates (high-impact, unlocks records feature):**
-- Team color alignment (Migration 1) — 5 min, huge visual coherence win
-- game_results table creation (Migration 3) — unlocks Quick Score + records view
+**Session C candidates (high-impact, unlocks records feature):** ✅ DONE
+- Team color alignment — already aligned (see PART 2)
+- game_results table creation — shipped (unlocked Quick Score + records view)
 
-**Session D candidates:**
-- Spring 2026 schedule migration (Migration 2) — replaces test data with reality
-- Tournament visual weight (EventCard redesign using website's card pattern)
+**Session D candidates:** ✅ DONE
+- Spring 2026 schedule migration — shipped (real data replaces test data)
+- Tournament visual weight (EventCard / records redesign) — shipped
 
-**Session E candidates:**
-- Achievement badges on team cards
-- "Run of Play" narrative bullets
+**Session E candidates:** ✅ DONE
+- Achievement badges on team cards — shipped
+- "Run of Play" narrative bullets — shipped
 
 ---
 

@@ -166,20 +166,20 @@ Every table includes `org_id` FK → organizations. All RLS policies scope to us
 | Coach | Team-scoped |
 | Parent | Player-scoped |
 
-**Futures Academy** = `roster_type` on `roster_members`, NOT a role. Headline selling point — never a footnote.
+**Futures Academy** = `roster_type` on `team_players`, NOT a role. Headline selling point — never a footnote.
 
 ---
 
-## 5. DATABASE SCHEMA (141 migrations applied as of May 12, 2026)
+## 5. DATABASE SCHEMA (~171 migration files / 179 registered as of 2026-05-29 — consult the directory for the canonical count)
 
 > The illustrative tables below capture the foundation (001–012) and select Wave migrations.
-> They are NOT exhaustive — actual migration count is 141 files in `supabase/migrations/`.
+> They are NOT exhaustive, and the per-file 001–012 names below are partly stale (consult the directory for actual filenames). Actual count ~171 files in `supabase/migrations/`.
 > Source of truth for the full list is the migrations directory; consult it directly when
 > reasoning about current schema.
 
 | # | File | What It Does |
 |---|---|---|
-| 001 | foundation.sql | organizations, org_members, seasons, LH seed |
+| 001 | foundation.sql | organizations, user_roles (membership; there is no `org_members` table), seasons, LH seed |
 | 002 | programs_teams.sql | programs, team_staff, LH 5 teams seed |
 | 003 | players_guardians.sql | players, guardians, player_guardians, roster_members, pricing_tiers, payment_plans, discount_codes, registrations, payments, form_fields, form_responses, waivers, waiver_signatures |
 | 004 | activities.sql | activities, activity_changes |
@@ -205,7 +205,7 @@ Every table includes `org_id` FK → organizations. All RLS policies scope to us
 | 20260505161540 | user_roles_self_privilege_escalation_fix | Split user_roles_self into SELECT + INSERT(parent only) |
 
 #### Ghost migrations (applied via SQL editor, not registered — known divergence)
-**Audit-day reconciliation (Wave 1+2.A, 2026-05-28):** 16 ghost migrations exist as repo files but are NOT registered in `supabase_migrations.schema_migrations` (the 5 originally documented below + 13 stale legacy-numbered `023_*`–`033_*` files that were renumbered to timestamp versions but never deleted from the repo — pre-PR-#566 state). Plus 29 orphan applied changes (DB-registered versions whose repo files were renamed to different timestamps, AP #21 mirror-discipline violations) — including 8 with NO repo mirror at all (backfilled in PR #566). Wave 2.A #23 reconciliation (PR #566): the 13 stale files deleted, 6 AP #21 drift files renamed, 8 backfill mirrors written. Schemas are live in production; if running `supabase db reset`, the 5 originally-documented ghosts are needed to recreate the schema.
+**Audit-day reconciliation (Wave 1+2.A, 2026-05-28):** 16 ghost migrations exist as repo files but are NOT registered in `supabase_migrations.schema_migrations` (the 5 originally documented below + 13 stale legacy-numbered `023_*`–`033_*` files that were renumbered to timestamp versions but never deleted from the repo — pre-PR-#566 state). Plus 29 orphan applied changes (DB-registered versions whose repo files were renamed to different timestamps, AP #21 mirror-discipline violations) — including 8 with NO repo mirror at all (backfilled in PR #566). Wave 2.A #23 reconciliation (PR #566): 6 AP #21 drift files renamed, 8 backfill mirrors written; the 13 stale files were slated for deletion but 6 (023_*–028_*) REMAIN present as of 2026-05-29 (deletion incomplete — D1-4). Schemas are live in production; if running `supabase db reset`, the 5 originally-documented ghosts are needed to recreate the schema.
 - `20260504_messaging.sql` — messages table + message_reads + RLS
 - `20260504_dm_threads.sql` — dm_threads (user_a/user_b) + messages.dm_thread_id + RLS
 - `20260504_ride_requests.sql` — event_ride_requests table + RLS
@@ -216,10 +216,11 @@ Every table includes `org_id` FK → organizations. All RLS policies scope to us
 ```sql
 CREATE OR REPLACE FUNCTION current_user_org_id()
 RETURNS UUID AS $$
-  SELECT org_id FROM org_members
-  WHERE user_id = auth.uid() AND is_active = true LIMIT 1;
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
--- NEVER call this on org_members — infinite recursion
+  SELECT organization_id FROM public.user_roles
+  WHERE user_id = auth.uid() LIMIT 1;
+$$ LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public;
+-- Membership lives in user_roles (there is NO org_members table).
+-- NEVER reference this function inside a user_roles RLS policy — infinite recursion.
 ```
 
 ### RLS Pattern: `auth.uid()` subselect wrapper
@@ -256,7 +257,7 @@ PR #451; fixed in parallel advisor hygiene migration 2026-05-22.
 
 ### Key Field Decisions (locked)
 - `is_scrimmage` boolean on activities — NOT a separate activity_type
-- `roster_type` on roster_members — NOT a separate role
+- `roster_type` on team_players — NOT a separate role (roster_members has no roster_type)
 - `member_type` on players: 'roster' | 'futures_academy'
 - `channel` on messages: 'announcement' | 'chat' | 'dm'
 - `home_away` on activities: 'home' | 'away' | 'neutral' | 'tbd'
@@ -361,7 +362,7 @@ em-pulse, em-fade-in, em-pulse-dot, em-bounce-tap, em-fill-grow, card-expand, sh
 | 2-D3 | Game day checklist + running late | ✅ DONE — arrival board, parent status buttons, coach checklist |
 | 2-E | Availability heatmap | ✅ DONE — per-player attendance grid with streak fire icon |
 | 3-A | Location + opponent mgr | ⚠ PARTIAL — locations seeded (9 venues), no mgmt UI |
-| 3-B | Calendar sync + public schedule + QR | ⚠ PARTIAL — public schedule page done; calendar sync SHIPPED (PR #342 V-23 iCal subscription URL); QR not yet |
+| 3-B | Calendar sync + public schedule + QR | ✅ DONE — public schedule page; calendar sync (PR #342 V-23 iCal); QR SHIPPED (`qrcode.react` + `ShareScheduleButton.jsx`) |
 | 3-C | Home dashboard + inline RSVP | ✅ DONE |
 | 4-A | Team chat + announcements | ✅ DONE — channels, DM threads, unread badges, message deletion |
 | 4-B | Save & Message Team + auto-notifications | |
@@ -376,7 +377,7 @@ em-pulse, em-fade-in, em-pulse-dot, em-bounce-tap, em-fill-grow, card-expand, sh
 #### Financial data loaded (May 5–6, 2026)
 LeagueApps import across two waves: May-5 initial import (100 accounts), May-6 retrospective Fall 2025 top-up for families who joined Spring 2026 first (64 additional accounts). Current state: 164 accounts across 3 seasons (Fall 2025 + Winter 2025-26 + Spring 2026), 244 transactions, $166,910 billed, $165,635 gross / $160,244 net to bank. Email-first dedup. DeMasi: 2 legitimate co-guardian rows (no merge needed). KHOJASTEH: family correctly modeled with both parents linked to Aubtin via player_guardians; financial_accounts attached to mom (Anjella Teimoori).
 
-⬅ NEXT unbuilt (reconciled against code 2026-05-27 — see EMBER_PENDING_LEDGER §4.0 for the verified index): **3-B / 6-A QR codes** (public-schedule QR + parent-invite QR) are the only genuine unblocked feature arc — no in-app QR generation exists yet (needs a qrcode dep + render surface). Already DONE since this list was written: 2-B weather (Open-Meteo, wired), 3-A location mgr UI (`/admin/locations`), schedule-change notifications, coach_roundup briefing. Partial: 4-B auto-notifications (settings sheet exists). BLOCKED: 5-C player stats/box score — §16.12 forbids per-player game stats in 2026 (do not build).
+⬅ Status (reconciled 2026-05-29 — see EMBER_PENDING_LEDGER §4.0 for the verified index): in-app QR **SHIPPED** (`qrcode.react` dep + `ShareScheduleButton.jsx`) — the 3-B/6-A QR arc is no longer unbuilt. Already DONE since this list was written: 2-B weather (Open-Meteo, wired), 3-A location mgr UI (`/admin/locations`), schedule-change notifications, coach_roundup briefing, QR. Partial: 4-B auto-notifications (settings sheet exists). BLOCKED: 5-C player stats/box score — §16.12 forbids per-player game stats in 2026 (do not build).
 
 ---
 
@@ -461,7 +462,7 @@ to prevent drift.
 
 ## 11. ANTI-PATTERNS (NEVER DO)
 
-1. `current_user_org_id()` on org_members → infinite RLS recursion
+1. `current_user_org_id()` referenced inside a `user_roles` RLS policy → infinite RLS recursion (membership is `user_roles`; there is no `org_members` table)
 2. `bg-black/50` → `rgba(0,0,0,0.3)` inline
 3. `max-height` expand/collapse → ref-based height
 4. Sequential `await` in loops → `.in('id', [...ids])`
@@ -1083,12 +1084,12 @@ When generating tournament briefing HTML for LeagueApps + email delivery:
 3. **`<span>` + `<br>` for inline content.** Not `<p>` tags inside list rows.
 4. **Standard bullets.** Use `&#8226;` not unicode bullets.
 5. **Brand colors:**
-   - Header: dark navy #091c36
-   - Accent: cobalt #1e3a5f (Migration 029, NOT old sky blue #29b6f6)
+   - Header: dark navy #1e3a5f
+   - Accent: cobalt #4a8fd4 (NOT old sky blue #29b6f6) — matches org brand_colors + §3/§16.11
    - Game-day arrival callout: orange #e05c2a
-6. **Audience scoping for tournament messages:** scope to `tournament_rosters` table, NOT team roster. Use `getTournamentRecipients(tournament_id)` helper.
+6. **Audience scoping for tournament messages:** scope to `tournament_rosters` table, NOT team roster. Read via `src/lib/tournamentRosters.js` / inline `.from('tournament_rosters')` (there is no `getTournamentRecipients` helper).
 7. **Recipient preview before send:** show "Active: X · Futures: Y · Recipients: Z guardians" chip.
-8. **Canonical 9 kinds for `comms_messages.kind`** (matches `BRIEFINGS_COVERAGE_L99.md` §1 + production `briefing_templates.kind_check` + `briefing_triggers.kind_check`)**:** weekly_digest, schedule_change, game_recap, tournament_prelim, tournament_recap, announcement, custom_message, rsvp_nudge, academy_callup_notice. Verified against production via Supabase MCP. The table rename (tournament_messages → comms_messages) and enum rename (message_type → kind) ship together in foundation migration `20260508234920_comms_foundation_polymorphic_rename`. Note: `comms_messages.kind_check` currently allows 7 transitional legacy values (tournament_preliminary, tournament_final, tournament_rsvp_lock, tournament_recap_interim, tournament_recap_final, multi_team_notice, custom) for compatibility with historical data; these will be backfilled and dropped in wave 4.1d-6 once code emit paths are fully migrated (wave 4.1d-5 retires the `tournament_preliminary` and `custom` emit sites).
+8. **Canonical 12 kinds for `comms_messages.kind`** (production `comms_messages_kind_check`, verified 2026-05-29): weekly_digest, schedule_change, game_recap, games_recap, tournament_prelim, tournament_recap, announcement, custom_message, rsvp_nudge, academy_callup_notice, coach_roundup, family_guide. The 7 transitional legacy values have been backfilled and dropped. The table rename (tournament_messages → comms_messages) and enum rename (message_type → kind) shipped in foundation migration `20260508234920_comms_foundation_polymorphic_rename`. (Note: `games_recap` is the plural multi-game digest, distinct from singular `game_recap`.)
 
 ---
 
