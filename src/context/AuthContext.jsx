@@ -48,20 +48,26 @@ export function AuthProvider({ children }) {
   const loadMembership = useCallback(async (authUser) => {
     const id = ++fetchIdRef.current;
     setLoading(true);
-    const { data, error } = await supabase
+    // Multi-org safe (migration #0, 2026-05-29): user_roles now allows multiple
+    // rows per user (UNIQUE(user_id, organization_id)). Fetch ALL memberships —
+    // never .maybeSingle(), which errors on >1 row and would break a multi-org login.
+    const { data: roleRows, error } = await supabase
       .from('user_roles')
       .select('role, organization_id, organizations(id, name, display_name, slug, logo_url, brand_colors, tagline, primary_domain)')
-      .eq('user_id', authUser.id)
-      .maybeSingle();
+      .eq('user_id', authUser.id);
     if (id !== fetchIdRef.current) return;
 
     let resolvedRole = null;
     let resolvedOrg = null;
     if (error) {
       reportError(error, { surface: 'AuthContext.loadMembership', userId: authUser.id });
-    } else if (data) {
-      resolvedRole = data.role ?? null;
-      resolvedOrg = data.organizations ?? null;
+    } else if (roleRows && roleRows.length > 0) {
+      // Single-org today → the one row (unchanged behavior). TODO(multi-org-routing,
+      // spec §2.3): when length > 1, route to Family Home (Ember-default brand) +
+      // honor a stored active-org preference instead of picking [0].
+      const active = roleRows[0];
+      resolvedRole = active.role ?? null;
+      resolvedOrg = active.organizations ?? null;
     } else {
       const linked = await autoLinkGuardian(authUser);
       if (id !== fetchIdRef.current) return;
