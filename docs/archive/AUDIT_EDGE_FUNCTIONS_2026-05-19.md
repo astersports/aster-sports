@@ -80,7 +80,7 @@ Mechanical CI gating could land as a vitest assertion that:
 - Asserts each has a grep referencer per the patterns above
 
 Cost-benefit similar to the DB-table audit (see
-`docs/AUDIT_DB_TABLES_2026-05-19.md`): currently not worth the
+`docs/archive/AUDIT_DB_TABLES_2026-05-19.md`): currently not worth the
 drift discipline for the value at our cadence. Re-run this audit
 when a new edge function is added.
 

@@ -1,7 +1,7 @@
 // Wave 4.2-A-3 — tournament_prelim resolver pair.
 // Wave 5 (cutover wave PR 1, 2026-05-16) — compose() rewritten to
 // align with Frank's hand-composed pattern per
-// docs/CUTOVER_WAVE_GAP_AUDIT.md. Previously emitted an orphaned
+// docs/archive/CUTOVER_WAVE_GAP_AUDIT.md. Previously emitted an orphaned
 // `team_schedule_table` section (no registered renderer → silent
 // empty render). Now emits cobalt-band header + RSVP callout +
 // venue list + day-grouped game_card rows + bracket section +

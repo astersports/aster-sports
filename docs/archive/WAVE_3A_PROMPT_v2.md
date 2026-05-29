@@ -828,7 +828,7 @@ git add -A \
 
 # Anti-drift: update build queue immediately after deploy. CLAUDE.md flags
 # stale build queue as the #1 documented session failure mode.
-cat >> docs/SKYFIRE_BUILD_QUEUE_v2.md <<EOF
+cat >> docs/archive/SKYFIRE_BUILD_QUEUE_v2.md <<EOF
 
 ## Wave 3a — SHIPPED $(date -u '+%Y-%m-%d %H:%M UTC')
 - Files: 9 created (broadcast/* + RecordsPreview), 3 edited (main.jsx, App.jsx, constants.js)
@@ -838,7 +838,7 @@ cat >> docs/SKYFIRE_BUILD_QUEUE_v2.md <<EOF
 - Next: Wave 3b — wire useTeamRecords into RecordsPreview, replace fixtures
 EOF
 
-git add docs/SKYFIRE_BUILD_QUEUE_v2.md \
+git add docs/archive/SKYFIRE_BUILD_QUEUE_v2.md \
 && git commit -m "docs: anti-drift — Wave 3a logged in build queue" \
 && git push origin main
 ```
