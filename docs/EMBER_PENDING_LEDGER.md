@@ -3717,6 +3717,29 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AX — Design-chat reference docs reconciled (2026-05-29)
+
+**Trigger:** Frank — the multi-program design chat needs `EMBER_TENANCY_ARCHITECTURE_v3.md`
+and `LH_OPS_SPEC.md` current before hand-off. Both existed but were stale.
+
+- **EMBER_TENANCY_ARCHITECTURE_v3.md** — rewritten from the April "v2" to a genuine v3:
+  multi-org membership + the `user_roles` UNIQUE reshape / `AuthContext.maybeSingle()` trap
+  (Wave 3.B #28 blockers), per-org email plumbing, all-seasons financial doctrine (§4.AW) +
+  AP #63, the multi-sport/multi-program data model (divisions / `player_equipment` /
+  line-item fees) from the St. Pats CSVs, and the Option A sit-on-top posture. v2 brand/auth/
+  experience layer retained.
+- **LH_OPS_SPEC.md** — full reconciliation against current production/code/doctrine (agent
+  pass, diff reviewed per AP #22): `events` (not `activities`), `event_rsvps.response` ∈
+  {going,not_going,maybe} (never 'yes'), `comms_messages`/`kind` rename, payment status from
+  `family_balances` not legacy `roster_members.payment_status`, cool-gray `--em-*` tokens +
+  cobalt `#4a8fd4`, §11.5 ground-truth sources, current LH facts. 1135 → 1269 lines, 0
+  conflict markers, structure preserved.
+
+Both shipped in PR #583. Delivered for the design chat alongside the existing
+`LEAGUEAPPS_PARITY_REVIEW.md`, `LH_BRAND_CONTENT_MODEL.md`, and `docs/external-data/`.
+
+---
+
 ### §4.AW — Category #30 fix batches 1+2 shipped + PATTERN A promoted (2026-05-29)
 
 **Trigger:** Frank's routing on the §4.AV findings — ship Batch 1 + Batch 2 (financial
