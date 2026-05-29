@@ -857,7 +857,8 @@ OT
 
 ### 3.8 Team Settings
 
-**Route:** `/teams/:teamId/settings`  
+**Status: DESIGN-INTENT — not a live route** (per §1, never built this way; no `/teams/:teamId/settings` in App.jsx). Treat the below as proposed UX, not shipped.
+**Proposed route:** `/teams/:teamId/settings`  
 **Roles:** Admin only
 
 #### Layout
@@ -966,7 +967,8 @@ Player Activity          [toggle]
 
 ### 3.9 Team Chat
 
-**Route:** `/messages/:teamId`  
+**Status: DESIGN-INTENT — not a live route** (per §1, never built this way; no `/messages/:teamId` in App.jsx — chat lives under `/messages` with channel/dm routing). Treat the below as proposed UX, not shipped.
+**Proposed route:** `/messages/:teamId`  
 **Roles:** All
 
 #### Layout
