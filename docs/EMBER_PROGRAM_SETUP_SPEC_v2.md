@@ -2,7 +2,7 @@
 
 **Status:** Replaces v1.0, the v1.1 comparison report, and the v1.2 St Pats review. Authored from 54-screenshot LeagueApps teardown + 523 LH registration rows + 195 St Pats rows + L99 audit + 11 design decisions locked across F1-F4 + Path C quality framework.
 
-**Date:** 2026-05-29
+**Date:** 2026-05-29 · **rev 2.1** (2026-05-29): three microcopy wins folded from the locked HTML mockup + reviewer audit incorporated (ledger §4.BC).
 **Author:** Claude (chat) + Frank Samaritano
 **Pilot org:** Legacy Hoopers (permanent free through 2027)
 **Second tenant:** St Patrick's CYO Armonk, planned 2027-28
@@ -374,6 +374,7 @@ One Stripe charge for the whole family. One confirmation email. Account auto-cre
 - Confirmation email subject: "Welcome to Spring 2026, Charlie's all set" (not "Registration confirmation #12847")
 - Empty program list: "Spring 2026 isn't open yet. Drop your email — we'll send the link the moment it opens" (not "No programs available")
 - Payment success: "Charlie's in. Coach Kenny will be in touch the week of March 9." (specific human commitment, not "Thank you for your purchase")
+- **Cart reassurance (v2.1, mockup-derived — three benefits in 11 words):** "One charge · one confirmation · account auto-created from your email."
 
 ### 5.7 Micro-interactions
 
@@ -492,6 +493,7 @@ Picking option 1 → server writes `event_rsvps` row with `status='going'` for L
 - Greeting: "Good morning, Frank" (with time-of-day variant — Good afternoon, Good evening). Not "Welcome back."
 - Conflict copy: "Charlie has two events at this time" not "Scheduling conflict detected"
 - Resolution save toast: "Locked in. Coach Kenny knows." Not "RSVP updated successfully"
+- **Conflict pre-commitment (v2.1, mockup-derived — states exactly what's about to happen, lowering parent anxiety):** "We'll RSVP Going at [org A] and Not Going at [org B], and DM both coaches."
 - Empty-week copy: "Your week is wide open. Enjoy it." Not "No events scheduled"
 - Push notifications: "Charlie's game starts in 1 hour 🏀" not "Game reminder"
 
@@ -640,6 +642,7 @@ Principle: push is primary, email/SMS reserved for legal/financial consequence. 
 - Empty: "All caught up." (not "No new messages")
 - Push notification format: `Coach Kenny: Practice moved to 6:30. Tap to read.` (sender name first, content preview, action verb)
 - Briefing email subject template: `Spring Launch Sequence — 11U Girls · LH` (briefing name, audience, org — readable in 1 glance from notification tray)
+- **Positioning line (v2.1, mockup-derived — use it three times: briefings empty-state, marketing site, App Store listing):** "Two orgs, two voices — stacked in one feed. Never opens Gmail."
 - Failed send retry: "Couldn't send. Tap to try again." (not "Message failed: error code 502")
 
 ### 7.8 Micro-interactions

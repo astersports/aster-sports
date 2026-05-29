@@ -3718,6 +3718,30 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BC — Mockup audit + spec v2.1 microcopy + build PR plan (2026-05-29)
+
+**Trigger:** claude.ai reviewer audited the HTML mockup (high spec fidelity, 7/7 frames verified)
+and recommended A + C.
+
+**A (done):** mockup locked in `docs/` (PR #592). Three microcopy wins folded into the spec
+(now rev 2.1): cart "One charge · one confirmation · account auto-created from your email" (§5.6);
+conflict pre-commitment "We'll RSVP Going at [A] and Not Going at [B], and DM both coaches" (§6.5);
+positioning line "Two orgs, two voices — stacked in one feed. Never opens Gmail" (§7.7 — also for
+marketing + App Store). Mockup nits fixed: St Pats `#2f7a4f` flagged TBD-placeholder; cart frame
+captioned "Pierce family — 4-kid cap demo" (was authorially mixed with Samaritano).
+
+**Reviewer observations recorded as production-handoff notes** (in the tracker): Lucide nav icons
+(not unicode), kid-avatar = primary-team-color letter (locked v1), state-matrix frames = polish-
+pass AFTER v1 (design from real data). All non-blocking.
+
+**C (planned):** build PR sequence appended to `FIX_PR_EXECUTION_TRACKER.md` — **PR 0 = migration #0
+(identity foundation, the spec's missing prerequisite)** → spec §4.5's 12 migrations → 7 UI surfaces.
+Each migration: pre/post verify + MCP apply + GO per migration. **Awaiting Frank's GO to start PR 0.**
+
+AP #45: ledger touched in same commit as spec/tracker changes.
+
+---
+
 ### §4.BB — Program-Setup Spec v2 landed + reconciled vs production (2026-05-29)
 
 **Trigger:** design-chat shipped `EMBER_PROGRAM_SETUP_SPEC_v2.md` (6.6K words, replaces v1.0/1.1/1.2;

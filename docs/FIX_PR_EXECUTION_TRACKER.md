@@ -77,3 +77,32 @@ against the gate until specced).
 - **Recommended:** **Tier 1A (identity) + 1B (compliance) first** — the two true second-tenant gates; 1B starts the moment Frank gives the legal/content stance. Then 2A (home LCP — the user-visible perf anchor). Then 1C/1D + the Tier-2 remainder. Tier-4 stays parked until the design spec lands.
 - **The design spec (in-flight, claude.ai) is the upstream input** for the registration/multi-tenant build; it reshapes 1A's parent-side scope. Fix backlog clears in parallel.
 - **When Tier 1–2 P0+P1 land → §17.8 gate opens → multi-program build.**
+
+---
+
+## Multi-program build — PR sequence (from EMBER_PROGRAM_SETUP_SPEC_v2 + reviewer audit, 2026-05-29)
+
+Design review landed + mockup locked (`EMBER_PROGRAM_SETUP_MOCKUP_v2.html`). Build order below.
+**Every migration: pre-flight `SELECT` + post-flight `DO $$` verify, applied via Supabase MCP with an
+explicit GO per migration (spec sign-off gate — no migration runs without Frank's GO).**
+
+### Schema PRs
+- ☐ **PR 0 — Migration #0: IDENTITY FOUNDATION** (the spec's missing prerequisite; §2.1 wrongly
+  assumed it was done). `user_roles` `UNIQUE(user_id)`→`UNIQUE(user_id, org_id)` + AuthContext
+  org-aware resolution (kills the `.maybeSingle()` trap) + org-switcher + ~5 edge-fn/autoLinkGuardian
+  sweep. **Nothing in §2/§6 works without this — ship first.**
+- ☐ PR 1–12 — spec §4.5 sequence: programs+ENUM → backfill from seasons → seasons compat view →
+  divisions ext → division_fees+auto_apply_rule → registrations → registration_fees →
+  player_equipment → tryout_sessions+attendees → players ext → organizations.family_cap_policy+
+  acceptable_age_range → RLS `current_user_org_ids()` + parent SELECT policies.
+
+### UI surface PRs (reviewer's order, on the schema foundation)
+- ☐ Family Home → ☐ Conflict resolution → ☐ Multi-child cart → ☐ Billing → ☐ Per-kid detail →
+  ☐ Briefings surface → ☐ Plan timeline. (All 10/10 parent surfaces per spec §5–§8.)
+
+### Production-handoff notes (from the mockup audit)
+- Bottom-nav: Lucide React icons (`home`/`calendar`/`mail`/`circle-user`), not the mockup's unicode.
+- St Pats brand color `#2f7a4f` is a PLACEHOLDER — brand-lock during St Pats Q4 2026 discovery.
+- Kid-avatar = letter-on-primary-team-color (locked v1 default; photo upload later).
+- State-matrix surfaces (empty/error/loading/edge — 20+ across the 4 parent surfaces) are a
+  polish-pass artifact AFTER v1 ships to LH parents (design from real data signals, not pre-built).
