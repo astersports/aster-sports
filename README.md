@@ -58,12 +58,12 @@ git log --oneline HEAD..origin/main   # behind?
 | | |
 |---|---|
 | **Source of truth for everything** | [`CLAUDE.md`](./CLAUDE.md) — design tokens, schema, anti-patterns, workflow |
-| Live planning + status | [`docs/EMBER_BUILD_QUEUE_v2.md`](./docs/EMBER_BUILD_QUEUE_v2.md) |
-| Current state-of-affairs | [`docs/STATE_OF_AFFAIRS_L99_v5.md`](./docs/STATE_OF_AFFAIRS_L99_v5.md) |
+| Live planning + status | [`docs/EMBER_PENDING_LEDGER.md`](./docs/EMBER_PENDING_LEDGER.md) |
+| Current state-of-affairs | [`docs/STATE_OF_AFFAIRS_L99_v6.md`](./docs/STATE_OF_AFFAIRS_L99_v6.md) |
 | Components | `src/components/` (≤150 LOC each) |
 | Hooks | `src/hooks/` |
 | Pages | `src/pages/` |
-| Migrations | `supabase/migrations/` (141 applied as of May 12, 2026) |
+| Migrations | `supabase/migrations/` (~171 migration files / 179 registered — consult the directory) |
 | Edge functions | `supabase/functions/` |
 | Historical / superseded docs | `docs/archive/` |
 

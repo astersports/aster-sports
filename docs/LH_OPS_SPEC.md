@@ -3,7 +3,7 @@
 
 **Stack:** React 18 + Tailwind CSS + Vite · Supabase (vrwwpsbfbnveawqwbdmj) · Vercel  
 **Auth:** Supabase role-based auth — Admin / Coach / Parent tiers (RLS-scoped per org)  
-**Resume:** `cd ~/legacy-hoopers-app && claude`  
+**Resume:** `cd ~/skyfire-app && claude`  
 **Brand:** LH cobalt accent `#4a8fd4` (header + accent, applied at runtime via AuthContext org overrides). The platform ("Ember") ships a cool-gray surface palette with `--em-*` CSS tokens — there is NO `--lh-*` namespace and no warm/navy default. See §0.
 
 ---
@@ -1293,7 +1293,7 @@ If OS notifications disabled: show inline red banner on any notification-depende
 - **Schedule + financial source data** was imported from LeagueApps (Fall 2025 +
   Winter 2025-26 + Spring 2026) — historical xlsx workbooks are no longer the
   live reference; production DB is canonical.
-- **Local path:** `~/legacy-hoopers-app` · **Vercel:** linked to that path
+- **Local path:** `~/skyfire-app` · **Vercel:** linked to that path
 
 ---
 
@@ -1309,7 +1309,7 @@ If OS notifications disabled: show inline red banner on any notification-depende
 
 ## 9b. Claude Code Session Notes
 
-**Resume command:** `cd ~/legacy-hoopers-app && claude`
+**Resume command:** `cd ~/skyfire-app && claude`
 
 **Environment:** HP Chromebook · ChromeOS Crostini (Linux) · Node.js · Claude Code
 

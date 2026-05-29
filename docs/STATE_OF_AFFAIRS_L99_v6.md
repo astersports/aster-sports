@@ -1,5 +1,5 @@
 # STATE OF AFFAIRS L99: v6
-## Legacy Hoopers / Skyfire Platform Build
+## Legacy Hoopers / Ember Platform Build
 
 **Written:** May 20, 2026 (afternoon, after the Frank-reported feedback marathon)
 **Verified against production:** May 20, 2026 ~13:15 UTC via Supabase MCP + GitHub MCP
