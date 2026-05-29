@@ -5,7 +5,7 @@
 > sequence implements the locked decisions. **Q1-Q4 routed by Frank
 > 2026-05-27 (see §7); PR A (schema) is unblocked.**
 >
-> Source decision: `docs/CUTOVER_WAVE_GAP_AUDIT.md` Q3 — **Option B
+> Source decision: `docs/archive/CUTOVER_WAVE_GAP_AUDIT.md` Q3 — **Option B
 > locked** (separate `event_coach_assignments` table; many-to-many
 > event→coach with assigned/attended/absent status). Option A (a single
 > coach column on `events`) was rejected because multi-coach tournament

@@ -156,7 +156,7 @@ All v4 P0 bugs remain closed. New closures this session:
 
 Pre-existing v4 P1 bugs unchanged (UpcomingEvents stub data, Comments display name, Games filter, MY TEAMS records, NextUpCard urgency, Login CTA color). Phase 1 work remains the path to closing them.
 
-`schedule_change` UX is documented in `docs/SCHEDULE_CHANGE_DIAGNOSIS.md` (PR #33). Root cause confirmed: `useUpdateActivity.updateSeries()` strips `start_at`/`end_at` deliberately + `schedule_change` kind has zero producers in the codebase. Wave 3.8 §5.2 candidate (3-option dialog + dispatch + audit table) — pending Claude.ai spec lock before CC starts.
+`schedule_change` UX is documented in `docs/archive/SCHEDULE_CHANGE_DIAGNOSIS.md` (PR #33). Root cause confirmed: `useUpdateActivity.updateSeries()` strips `start_at`/`end_at` deliberately + `schedule_change` kind has zero producers in the codebase. Wave 3.8 §5.2 candidate (3-option dialog + dispatch + audit table) — pending Claude.ai spec lock before CC starts.
 
 ---
 
@@ -181,7 +181,7 @@ Phase 0C (Ember rebrand), Phase 1 (Parent 95%), Phase 2 (Coach 95%), Phase 3 (Ad
 
 ## New documentation in repo
 
-- `docs/SCHEDULE_CHANGE_DIAGNOSIS.md` — Wave 3.6 candidate readout for the `schedule_change` rebuild (PR #33)
+- `docs/archive/SCHEDULE_CHANGE_DIAGNOSIS.md` — Wave 3.6 candidate readout for the `schedule_change` rebuild (PR #33)
 - `docs/STATE_OF_AFFAIRS_L99_v5.md` — **this file**
 
 ## New source code
@@ -221,7 +221,7 @@ v4 listed principles 1-16. Three new lessons from this session:
 
 # PART 9: WAVE 3.8 §5.2 — SCHEDULE_CHANGE UX REBUILD (May 9, 2026)
 
-Closes the "Wed→Fri move silently no-op" diagnosis from PR #33 (`docs/SCHEDULE_CHANGE_DIAGNOSIS.md`). Two compounding bugs:
+Closes the "Wed→Fri move silently no-op" diagnosis from PR #33 (`docs/archive/SCHEDULE_CHANGE_DIAGNOSIS.md`). Two compounding bugs:
 
 1. `useUpdateActivity.updateSeries()` deleted `start_at`/`end_at` from the payload unconditionally — every date/time change in series mode silently failed to persist.
 2. `schedule_change` enum existed in `comms_messages.kind` CHECK + label maps but had **zero producers** in the codebase. Even when single-mode persisted, families were never notified.

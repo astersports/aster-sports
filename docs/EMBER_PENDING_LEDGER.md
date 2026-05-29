@@ -8,8 +8,8 @@
 > Last updated: 2026-05-27 (§4.AJ reconciliation — 5-day gap close against PRs #486-#513; records the cutover-gate feedback REVERT #509, Option C arc ship #503-#508, and current-surface PRs #512/#513)
 
 This doc complements (not replaces):
-- `docs/SKYFIRE_BUILD_QUEUE_v2.md` — shipped-log roadmap, forward-only
-- `docs/STATE_OF_AFFAIRS_L99_v5.md` — canonical high-level state
+- `docs/archive/SKYFIRE_BUILD_QUEUE_v2.md` — shipped-log roadmap, forward-only
+- `docs/archive/STATE_OF_AFFAIRS_L99_v5.md` — canonical high-level state
 - `CLAUDE.md` — durable anti-patterns + architectural rules
 - Various audit synthesis docs (`docs/AUDIT_*.md`) — point-in-time deep dives
 
@@ -421,12 +421,12 @@ Organized by **arc**, not by chronology — each arc is a coherent
 multi-PR unit with its own scope and sequencing.
 
 Sources cross-referenced 2026-05-18:
-- `docs/SKYFIRE_BUILD_QUEUE_v2.md` (canonical build queue)
-- `docs/CUTOVER_WAVE_GAP_AUDIT.md` (briefing renderer + parser arc)
-- `docs/STATE_OF_AFFAIRS_L99_v5.md` (canonical state)
-- `docs/CC_SESSION_HANDOFF_2026-05-13.md` (PostHog + Dependabot)
-- `docs/AUDIT_DAY_2026-05-16_FINAL_CLOSE.md` (audit close)
-- `docs/CC_WAVE_4_4_COUNTER_PLAN_REVISION_2026-05-11.md` (briefing IA)
+- `docs/archive/SKYFIRE_BUILD_QUEUE_v2.md` (canonical build queue)
+- `docs/archive/CUTOVER_WAVE_GAP_AUDIT.md` (briefing renderer + parser arc)
+- `docs/archive/STATE_OF_AFFAIRS_L99_v5.md` (canonical state)
+- `docs/archive/CC_SESSION_HANDOFF_2026-05-13.md` (PostHog + Dependabot)
+- `docs/archive/AUDIT_DAY_2026-05-16_FINAL_CLOSE.md` (audit close)
+- `docs/archive/CC_WAVE_4_4_COUNTER_PLAN_REVISION_2026-05-11.md` (briefing IA)
 
 Items flagged "VERIFY MONDAY" live in §15 — they may already be
 shipped (status uncertain at audit time).
@@ -466,7 +466,7 @@ arc bodies.
 below was WRONG — it had a narrow feature-arc lens and never tracked the
 `LH_OPS_SPEC` / `LH_BRAND_CONTENT_MODEL` / ELITE-stack / push-notification
 surface. A full canonical-doc review (4-agent pass, verified vs code+DB)
-found a substantial real backlog. **See `docs/L99_DELIVERED_VS_REMAINING_2026-05-27.md`
+found a substantial real backlog. **See `docs/archive/L99_DELIVERED_VS_REMAINING_2026-05-27.md`
 for the authoritative delivered-vs-remaining assessment + sequenced plan.**
 Highlights: push-notification infra entirely absent (biggest gap);
 `games_recap` kind unbuilt (Frank's primary briefing ask);
@@ -545,7 +545,7 @@ Prior status: **5 OF 7 PRs SHIPPED OR CODE-COMPLETE; PR 7a SHIPPED 2026-05-22; P
 Status: ✅ **CLOSED 2026-05-22** — Session 1 partially shipped May 13; remainder shipped this session (TournamentHeader relocation + IA_FRAMING.md doc). §4.B fully closed.
 
 - ~~**TournamentHeader Send Briefing relocation**~~ ✅ **SHIPPED (this commit)** — `src/components/tournament/TournamentHeader.jsx` now uses a `<Link>` deep-link to `/admin/briefings/compose?anchor=tournament&id=<tournament.id>` (no kind preset; admin lands at Kind step). Removed legacy `SendBriefingButton` import + the now-unused `tournamentBriefingKinds` helper. `ComposeAnchorCta` (kind-specific CTA gated on ctaKind) preserved as the moment-specific primary CTA when applicable. Cross-surface invariant test at `src/components/tournament/__tests__/TournamentHeaderSendBriefingDeepLink.test.jsx` (5/5 pass) locks: anchor-only URL shape, ctaKind-independence (in-flight tournaments still get the link), staff gating, no kind preset, and that the legacy `SendBriefingButton` import never returns. EventDetailHeader.jsx:59 still uses `SendBriefingButton` (icon-only overflow variant) — explicitly out of §4.B scope per IA_FRAMING.md follow-up note.
-- ~~**docs/IA_FRAMING.md**~~ ✅ **SHIPPED (this commit)** — Light reference doc capturing the locked briefing IA strategy: one canonical portal (`/admin/briefings/compose`) + three classes of entry surfaces (cold start Quick Action, anchor-only deep-link, anchor+kind deep-link). Includes per-surface shipped table, URL param hydration decision tree, anti-pattern compliance notes (#34, #42, #43). Closes Decision D from Wave 4.4-B Session 1 (2026-05-13).
+- ~~**docs/archive/IA_FRAMING.md**~~ ✅ **SHIPPED (this commit)** — Light reference doc capturing the locked briefing IA strategy: one canonical portal (`/admin/briefings/compose`) + three classes of entry surfaces (cold start Quick Action, anchor-only deep-link, anchor+kind deep-link). Includes per-surface shipped table, URL param hydration decision tree, anti-pattern compliance notes (#34, #42, #43). Closes Decision D from Wave 4.4-B Session 1 (2026-05-13).
 
 ---
 
@@ -1991,7 +1991,7 @@ Registered here under anti-pattern #45 acid-test: a new audit surfaced new pendi
 
 ### Layer 5 findings (2026-05-18 evening — §4.N audit, 22-bug catalog walk)
 
-Layer 5 of the §4.N Two-Week L99 Audit executed in continuation of Layer 1's soft start. Mechanical bug-by-bug status check against the catalog in `docs/SKYFIRE_BUILD_QUEUE_v2.md §🐛 Open Bugs & 95% UX Audit` (logged Apr 23, 2026). Catalog count is **25 items**, not exactly 22 — the "22-bug catalog" framing in §4.N was approximate. Distribution: 5 P0 BUGs + 14 P1 UX gaps + 1 validation + 5 P0 RLS holes.
+Layer 5 of the §4.N Two-Week L99 Audit executed in continuation of Layer 1's soft start. Mechanical bug-by-bug status check against the catalog in `docs/archive/SKYFIRE_BUILD_QUEUE_v2.md §🐛 Open Bugs & 95% UX Audit` (logged Apr 23, 2026). Catalog count is **25 items**, not exactly 22 — the "22-bug catalog" framing in §4.N was approximate. Distribution: 5 P0 BUGs + 14 P1 UX gaps + 1 validation + 5 P0 RLS holes.
 
 **Per-bug closure status:**
 
@@ -3472,7 +3472,7 @@ that only surface in production browsers.
 
 ### §4.AE — L99 Compose-Briefing Audit (2026-05-24)
 
-**Status:** Phase 1 audit complete (PARTIAL — 28 files audited, ~64 deferred). PR #493 shipped the root-cause `.from`-on-undefined fix during the audit. Audit doc lives at `docs/L99_COMPOSE_BRIEFING_AUDIT_2026-05-24.txt`.
+**Status:** Phase 1 audit complete (PARTIAL — 28 files audited, ~64 deferred). PR #493 shipped the root-cause `.from`-on-undefined fix during the audit. Audit doc lives at `docs/archive/L99_COMPOSE_BRIEFING_AUDIT_2026-05-24.txt`.
 
 **Surface:** ~28 files across send pipeline + Wave 5 resolvers + tournament/game resolvers (partial) + engine dispatch + hooks. Deferred: ~30 renderers, ~34 wizard UI body editors, edge function detail.
 
@@ -3509,7 +3509,7 @@ that only surface in production browsers.
 
 **Companion to §4.AE.** Independent parallel audit dispatched from chat-side claude.ai (terminal-CC ran §4.AE). Complementary coverage: §4.AE focused 28 files on send pipeline + resolvers; §4.AF covered the broader 89-file surface (composer wizard + hooks + RLS migrations + schema + advisors). Conflict on §4.AE position resolved by promoting this entry to §4.AF.
 
-Six-batch parallel line-by-line audit (~89 source files, ~51 test files, 17 schema migrations). Methodology per AP #50 narrow-scope rule. Canonical artifact: `docs/L99_COMPOSE_BRIEFING_AUDIT_2026_05_24.md`. Ships with PR #495 alongside 4 P1 fixes + 1 P2 fix.
+Six-batch parallel line-by-line audit (~89 source files, ~51 test files, 17 schema migrations). Methodology per AP #50 narrow-scope rule. Canonical artifact: `docs/archive/L99_COMPOSE_BRIEFING_AUDIT_2026_05_24.md`. Ships with PR #495 alongside 4 P1 fixes + 1 P2 fix.
 
 **Shipped in PR #495 (4 P1 + 1 P2):**
 1. AP #37 — `useBriefingFilters.js:57` org_id ordering
@@ -3557,7 +3557,7 @@ Six-batch parallel line-by-line audit (~89 source files, ~51 test files, 17 sche
 
 ### §4.AG — L99 Compose-Briefing Audit Phase 3 (2026-05-24 PM)
 
-**Companion to §4.AE + §4.AF.** Afternoon resumption after nap+lunch break. 4-batch parallel audit of the unaudited Phase 2 surface (32 files / ~1658L). Methodology per §4.AE's 5-8 files per agent calibration. Canonical artifact: `docs/L99_COMPOSE_BRIEFING_AUDIT_2026-05-24_phase3.txt`.
+**Companion to §4.AE + §4.AF.** Afternoon resumption after nap+lunch break. 4-batch parallel audit of the unaudited Phase 2 surface (32 files / ~1658L). Methodology per §4.AE's 5-8 files per agent calibration. Canonical artifact: `docs/archive/L99_COMPOSE_BRIEFING_AUDIT_2026-05-24_phase3.txt`.
 
 **Surface covered:**
 - Batch G — 7 unaudited renderers from morning Batch C self-truncation (brandFooter, bracketCallout, coachReflection, colorStripedRow, venueList, venueNotes, vipHeader)
@@ -3690,7 +3690,7 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 - `/admin/briefings` URL → redirect to `/admin/briefings/compose`
 - `CutoverGateChip` → stays on AdminHomePage only
 
-**Audit doc:** `docs/AUDIT_BRIEFINGS_OPTION_C_REDESIGN_2026-05-23.md` (this commit). Full §16.15 template: initial pass + deep-read addendum + AP cross-reference + admin wireframes + out-of-scope + 3 open questions + PR sequence.
+**Audit doc:** `docs/archive/AUDIT_BRIEFINGS_OPTION_C_REDESIGN_2026-05-23.md` (this commit). Full §16.15 template: initial pass + deep-read addendum + AP cross-reference + admin wireframes + out-of-scope + 3 open questions + PR sequence.
 
 **PR sequence (4 PRs) — ✅ ALL SHIPPED 2026-05-23/24:**
 - ~~**PR A**~~ ✅ **SHIPPED #505** — Freestanding `BriefingsComposePage` + `BriefingsHistoryPage`; route updates; `QuickActions` tile retarget; `useAvailableDrafts` hook; `DraftResumeRow` component; "View sent" link in WizardHeader. Deleted `BriefingsInboxPage` + inbox sub-components. (Tile retire shipped separately as #503; audit doc #504.)
