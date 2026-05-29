@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Upload } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +11,12 @@ import CoachPayoutsSection from '../components/admin/CoachPayoutsSection';
 export default function FinancialDashboardPage() {
   const { orgId } = useAuth();
   const navigate = useNavigate();
+  // ROSTER-2: arriving from the payment_overdue alert (?owing=1) lands on
+  // the season that actually has owing families + pre-enables the filter.
+  const [searchParams] = useSearchParams();
+  const owingParam = searchParams.get('owing') === '1';
   const [seasons, setSeasons] = useState([]);
+  const [owingSeasonIds, setOwingSeasonIds] = useState(() => new Set());
   const [selectedSeasonId, setSelectedSeasonId] = useState(null);
   const [payingAccount, setPayingAccount] = useState(null);
 
@@ -25,13 +30,16 @@ export default function FinancialDashboardPage() {
     Promise.all([
       supabase.from('seasons').select('id, name, status').eq('org_id', orgId).order('start_date', { ascending: false }),
       supabase.from('financial_accounts').select('season_id').eq('org_id', orgId),
-    ]).then(([seasonsRes, accountsRes]) => {
+      supabase.from('family_balances').select('season_id, balance_cents').eq('org_id', orgId),
+    ]).then(([seasonsRes, accountsRes, balancesRes]) => {
       const withAccounts = new Set((accountsRes.data || []).map((a) => a.season_id).filter(Boolean));
       setSeasons((seasonsRes.data || []).filter((s) => withAccounts.has(s.id)));
+      setOwingSeasonIds(new Set((balancesRes.data || []).filter((r) => (Number(r.balance_cents) || 0) > 0).map((r) => r.season_id)));
     });
   }, [orgId]);
 
   const seasonId = selectedSeasonId
+    || (owingParam ? seasons.find((s) => owingSeasonIds.has(s.id))?.id : null)
     || seasons.find((s) => s.status === 'active')?.id
     || seasons[0]?.id
     || null;
@@ -90,7 +98,7 @@ export default function FinancialDashboardPage() {
             <StatCard label="Families" value={accounts.length} sub={currentSeason?.name || ''} color="var(--em-text-primary)" />
           </div>
 
-          <FamilyBalanceList accounts={accounts} balances={balances} fmt={fmt} onRecordPayment={setPayingAccount}
+          <FamilyBalanceList accounts={accounts} balances={balances} fmt={fmt} initialOwing={owingParam} onRecordPayment={setPayingAccount}
             onNudge={(family) => {
               const uid = family.guardians?.user_id;
               navigate(uid ? `/messages?dm=${uid}` : '/messages');

@@ -3717,6 +3717,41 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.AW — Category #30 fix batches 1+2 shipped + PATTERN A promoted (2026-05-29)
+
+**Trigger:** Frank's routing on the §4.AV findings — ship Batch 1 + Batch 2 (financial
+cluster) + promote PATTERN A. Two scope decisions locked: (1) "owes money" indicators read
+all-seasons `family_balances` (money owed doesn't expire at a season boundary; collection-%
+stays season-scoped + labeled); (2) never-paid families flagged only after the account ages
+past the alert threshold.
+
+**Batch 1 (PR #581, merged):** HOME-1 (critical — rsvp shortfall `'yes'`→`'going'`),
+ENGINE-1 (hotel_block field contract), SCORE-5 (blank-score placeholder), ENGINE-3
+(formatDateRange), SCORE-2 (point-diff tiebreak).
+
+**Batch 2 (this PR):**
+- ROSTER-1 — `useRoster` payment dot now derives from `family_balances` (all-seasons), not
+  the legacy `roster_members.payment_status` constant. §11.5 exception table updated (legacy
+  column no longer read by any UI).
+- HOME-2 — new `useFamiliesOwingCount` (all-seasons) feeds the admin-home "families owing"
+  lane, matching the alert scope (was active-season → 0 vs alert 1).
+- HOME-3 — ProgramHealth hides the always-0 "Registration pipeline" row when loaded-empty.
+- ROSTER-2 — payment_overdue alert deep-links `?owing=1`; Financials auto-selects the season
+  with owing families + `FamilyBalanceList` gets an "Owing only" filter.
+- **AP #63 (PATTERN A)** registered in CLAUDE.md — same-concept-divergent-source/scope, the
+  dominant platform bug pattern (7 instances).
+
+**Deferred to Batch 3 (tracked, both latent/0-impact today):**
+- ROSTER-3 (Academy badge canonical column) — needs a `team_players` join in `useRoster`
+  (`roster_members` has no `roster_type`; CLAUDE.md §4 text is drifted — §11.5 table is right).
+- HOME-5 (never-paid family in overdue alert) — needs a `family_balances` view migration to
+  expose account age (decided semantics: flag after account ages past threshold).
+- Plus the §4.AV Batch 3 latents: HOME-4, HOME-6, SCORE-1/3/4/6, ENGINE-2, shorts_size.
+
+AP #45 N/A (no AUDIT_* doc touched); ledger updated proactively to back the §4.AW code refs.
+
+---
+
 ### §4.AV — Category #30 runtime/live-data audit executed (2026-05-29)
 
 **Trigger:** Frank approved dispatching the Category #30 pass proposed in §4.AU. Four parallel

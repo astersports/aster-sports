@@ -58,7 +58,7 @@ describe('AlertCard interactions', () => {
       data: { total_outstanding_cents: 127500, family_count: 1 },
     });
     await user.click(screen.getByRole('button', { name: /payments overdue/i }));
-    expect(screen.getByTestId('loc').textContent).toBe('/admin/financials');
+    expect(screen.getByTestId('loc').textContent).toBe('/admin/financials?owing=1');
   });
 
   // BUG-1 invariant: the overdue alert declares its (all-seasons) scope so it
