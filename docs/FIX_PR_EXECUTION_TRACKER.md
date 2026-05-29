@@ -23,6 +23,10 @@ against the gate until specced).
 ## TIER 1 — second-tenant / cutover blockers (gate the multi-program build)
 
 ### Arc 1A · Multi-tenant readiness (Wave 3.B #28 — 5 P0) ☐
+> **UNPARKED 2026-05-29** — the design review landed (`EMBER_PROGRAM_SETUP_SPEC_v2.md`, the build
+> source-of-truth). P0-1 IS the spec's **missing migration #0** (the spec §2.1 wrongly assumed
+> `user_roles` already supported multi-org — production has `UNIQUE(user_id)`; see ledger §4.BB).
+> Build order = P0-1 first, then the spec's §4.5 migration sequence (programs/divisions/registrations/…).
 - ☐ **P0-1 IDENTITY (longest pole):** `user_roles` `UNIQUE(user_id)`→`UNIQUE(user_id, org_id)` + AuthContext org-aware resolution (`.maybeSingle()` trap) + org-switcher + ~5 edge fns + autoLinkGuardian. *Gates the second tenant AND the design chat's #1 P0 (one login → all kids).* Scoped plan ready.
 - ☐ **P0-3 email plumbing** — `loadOrgEmailContext(orgId)` from existing `organization_settings`; sweep ~13 hardcoded `@legacyhoopers.org` files. *Low-risk, no design call.*
 - ☐ **P0-5 unsubscribe-handler** per-org branding.
