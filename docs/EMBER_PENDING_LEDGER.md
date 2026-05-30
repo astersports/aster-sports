@@ -3718,6 +3718,35 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BI — Build PR 5: division_fees + auto_apply_rule SHIPPED (2026-05-30)
+
+**Frank's GO** → spec §4.5 step 5. Line-item fee structure under `divisions`.
+
+- **Migration #5** (MCP, version `20260530014430`, mirror per AP #21). CREATE TYPE + CREATE TABLE +
+  indexes + trigger + RLS; atomic, `DO $$` verify.
+- **Shape:** `division_fees(id, org_id→organizations RESTRICT, division_id→divisions CASCADE, name,
+  fee_type, amount_cents, auto_apply_rule, sort_order, timestamps)`.
+  - `fee_type` = **native enum `division_fee_type`** (base/add_on/discount/early_bird/prorated/
+    family_discount), mirroring the `program_type` enum style (verified native before building).
+  - `amount_cents` integer signed — discount-type fees may carry negative amounts; sign semantics
+    applied at checkout (deferred), so no CHECK on sign.
+  - `auto_apply_rule` JSONB — F1.v1.2 address-based geo rules (e.g.
+    `{"type":"address_not_in_zips","zips":["10504"]}`, St Pats parishioner pricing, spec Q17). Null =
+    fee always applies.
+- **RLS** mirrors divisions/programs exactly (4 policies; UPDATE carries USING + WITH CHECK per AP #20).
+  `set_updated_at` trigger + division/org indexes.
+- **Verify-before-stack note (AP #62 / op-rule 2):** #597 (PR 4) was still open when GO landed, so the
+  migration was applied to prod via MCP (independent of git) but the **PR push was held** until #597
+  merged (01:44) — avoided the #596-class strand race. Branch synced to the post-#597 main before
+  committing #5.
+- **Post-flight:** base table, RLS on, 4 policies, 6-value enum, FK CASCADE to divisions,
+  `auto_apply_rule` jsonb. Advisors clean.
+
+Next: spec §4.5 PR 6 — `registrations` + all new columns (the big one: waitlist_state,
+registration_tier, emergency/medical/contact fields, custom_responses JSONB) on GO.
+
+---
+
 ### §4.BH — Build PR 4: divisions table SHIPPED (2026-05-30)
 
 **Frank's GO** → spec §4.5 step 4. First child entity under `programs`.

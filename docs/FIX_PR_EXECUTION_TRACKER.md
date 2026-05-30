@@ -125,8 +125,14 @@ explicit GO per migration (spec sign-off gate — no migration runs without Fran
   policies: authenticated SELECT scoped to org, admin-only writes). `set_updated_at` trigger + program/org
   indexes. No `teams.division_id` yet (not in §4.5 — teams keep their text `division` column). Advisors
   clean. Ledger §4.BH.
-- ☐ PR 5–12 — spec §4.5 sequence:
-  division_fees+auto_apply_rule → registrations → registration_fees →
+- ☑ **PR 5 — Migration #5: `division_fees` + `auto_apply_rule`** (spec §4.5 step 5). Applied
+  (version 20260530014430). Line-item fees per division: `division_fee_type` native enum
+  (base/add_on/discount/early_bird/prorated/family_discount), `amount_cents` (signed),
+  `auto_apply_rule` JSONB (F1.v1.2 address-based geo rules — St Pats parishioner pricing). FK
+  `divisions→division_fees` CASCADE per §4.4. RLS mirrors divisions/programs (4 policies). Advisors
+  clean. Ledger §4.BI.
+- ☐ PR 6–12 — spec §4.5 sequence:
+  registrations → registration_fees →
   player_equipment → tryout_sessions+attendees → players ext → organizations.family_cap_policy+
   acceptable_age_range → RLS `current_user_org_ids()` + parent SELECT policies.
 
