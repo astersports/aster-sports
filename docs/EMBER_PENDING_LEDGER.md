@@ -3718,6 +3718,36 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BH — Build PR 4: divisions table SHIPPED (2026-05-30)
+
+**Frank's GO** → spec §4.5 step 4. First child entity under `programs`.
+
+- **Migration #4** (MCP, version `20260530013933`, mirror per AP #21). Single CREATE TABLE +
+  indexes + trigger + RLS; atomic, `DO $$` verify.
+- **Shape:** `divisions(id, org_id→organizations RESTRICT, program_id→programs CASCADE, name,
+  grade_min, grade_max, gender CHECK M/F, state, team_color, sort_order, timestamps)`.
+  - `gender` CHECK `IN ('M','F')` but **nullable during build-out** (no rows/UI yet; tightens to
+    NOT NULL when the divisions wizard ships) — consistent with #1a's nullable `sport_id`. §4.2 F5 Q1:
+    divisions enforce M/F; Co-Ed lives on camp `programs` rows, never divisions.
+  - **`state` = US state (geographic).** The spec uses `status` everywhere it means lifecycle
+    (`registrations.status`, `seasons.status`), and deliberately wrote `state` in the §4.5 step-4
+    column list — so this is the geographic dimension, not a workflow column. Flagged in the PR for
+    Frank to correct if that read is wrong.
+  - `team_color` mirrors `teams.team_color` (hex text).
+- **RLS** mirrors `programs` exactly: `divisions_select` (TO authenticated, `org_id =
+  current_user_org_id()`), `divisions_insert/update/delete` (admin-only via `user_has_role_in_org`).
+  UPDATE carries both USING + WITH CHECK (AP #20). `set_updated_at` trigger + `idx_divisions_program_id`
+  / `idx_divisions_org_id`.
+- **No `teams.division_id` link yet** — not in the §4.5 sequence. Teams keep their existing free-text
+  `division` column; the normalizing FK link is a later step (after the divisions wizard exists to
+  populate rows).
+- **Post-flight:** base table, RLS on, 4 policies, FK CASCADE to programs, all expected columns.
+  Advisors clean (no `rls_enabled_no_policy`, no new finding).
+
+Next: spec §4.5 PR 5 — `division_fees` + `auto_apply_rule` on GO.
+
+---
+
 ### §4.BG — Build PR 3: seasons table → compat view over programs SHIPPED (2026-05-29)
 
 **Frank's GO** → spec §4.5 step 3, completing the programs/seasons cutover. `programs` is now
