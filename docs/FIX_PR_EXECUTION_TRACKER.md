@@ -118,8 +118,15 @@ explicit GO per migration (spec sign-off gate — no migration runs without Fran
   - ⚠ **Manual smoke (post-deploy):** `SeasonRolloverPage` reads `seasons→teams→roster_members` via
     PostgREST embedding; teams now FK `programs`, so the embed relies on PostgREST view-embedding.
     Verify the rollover wizard still loads + can create a new season (INSERT-through-view).
-- ☐ PR 4–12 — spec §4.5 sequence:
-  divisions ext → division_fees+auto_apply_rule → registrations → registration_fees →
+- ☑ **PR 4 — Migration #4: `divisions` table** (spec §4.5 step 4). Applied (version 20260530013933).
+  Child of `programs` (FK CASCADE per §4.4); columns `grade_min/max`, `gender` (CHECK M/F — §4.2 F5 Q1,
+  nullable during build-out), `state` (US state — geographic; spec reserves `status` for lifecycle),
+  `team_color` (hex, mirrors `teams.team_color`), `sort_order`. RLS mirrors `programs` exactly (4
+  policies: authenticated SELECT scoped to org, admin-only writes). `set_updated_at` trigger + program/org
+  indexes. No `teams.division_id` yet (not in §4.5 — teams keep their text `division` column). Advisors
+  clean. Ledger §4.BH.
+- ☐ PR 5–12 — spec §4.5 sequence:
+  division_fees+auto_apply_rule → registrations → registration_fees →
   player_equipment → tryout_sessions+attendees → players ext → organizations.family_cap_policy+
   acceptable_age_range → RLS `current_user_org_ids()` + parent SELECT policies.
 
