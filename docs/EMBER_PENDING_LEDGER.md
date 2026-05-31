@@ -3718,6 +3718,31 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BP — Build PR 11: organizations extensions SHIPPED (2026-05-31)
+
+**Frank's GO** ("1" = ship the last mechanical one) → spec §4.5 step 11. Last additive migration. 12/12
+applied (only #12, the RLS migration, remains — and it's design-gated, not mechanical).
+
+- **Migration #11** (MCP, version `20260531213314`, mirror per AP #21). Additive ALTER + 1-row seed +
+  `DO $$` verify.
+- **Added:** `family_cap_policy` jsonb (F4 D6 — per-org family pricing cap, applied server-side at
+  checkout; NULL = no cap, checkout reads NULL as "no discount"), `acceptable_age_range` int4range
+  (Q20 — player age band cap; LH `[4,14]`, St Pats `[8,18]`).
+- **Seeded LH** `acceptable_age_range = [4,15)` (canonical int4range = inclusive ages 4-14, matching
+  Q20's LH grades-2-5 band). Inline because there's 1 known org with a documented default — avoids a
+  follow-up data PR. `family_cap_policy` left NULL (no policy configured yet).
+- **Post-flight:** 2 columns present (family_cap_policy jsonb confirmed), LH range `[4,15)` verified.
+  No new RLS/advisor impact (additive on a table with existing RLS).
+
+**§4.5 schema chain: 11 PRs / all 12 migrations applied (1,1a,2-11). ONLY #12 REMAINS** —
+`current_user_org_ids()` + parent SELECT policies = **audit Finding A (P0 multi-org context)**.
+NOT a mechanical table-add: introduces the plural org helper, rewrites parent-facing SELECT policies
+across the new tables, and pairs with AuthContext app-layer work (the `roleRows[0]` hard-pick at
+AuthContext.jsx:68 + singular `current_user_org_id()` app-wide). **Design discussion before GO** —
+Frank-flagged this one warrants scoping, not a quick GO.
+
+---
+
 ### §4.BO — Build PR 10: players extensions SHIPPED (2026-05-31)
 
 **Frank's GO** → spec §4.5 step 10. First migration to ALTER the live `players` table (115 rows) —
