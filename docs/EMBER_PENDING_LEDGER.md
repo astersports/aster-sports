@@ -3718,6 +3718,42 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BK — Build PR 6: registrations table SHIPPED (2026-05-31)
+
+**Frank's GO** ("proceed as planned") → spec §4.5 step 6. The conversion-surface table —
+biggest in the §4.5 chain.
+
+- **Migration #6** (MCP, version `20260531120820`, mirror per AP #21). 3 CREATE TYPE + CREATE
+  TABLE + 4 indexes + trigger + RLS; atomic, `DO $$` verify.
+- **No legacy table existed** — the CLAUDE.md §5 migration-003 `registrations` reference was
+  illustrative/stale (same as seasons/divisions were). Clean create, no data migration.
+- **3 native enums** (mirror program_type/division_fee_type style):
+  - `registration_tier` = full_roster / practice_roster / practice_player (3 per §4.2 F1.v1.1;
+    `call_up` deliberately removed — it's a roster action, not a reg tier).
+  - `waitlist_state` = none / on_list / promoted_credit / promoted_pay / refund_released.
+  - `registration_status` = pending / confirmed / waitlist / cancelled / payment_overdue
+    (distinct lifecycle from waitlist_state).
+- **17 spec columns**: program_id, player_id, team_id, the 3 enum cols, promoted_from_registration_id,
+  sms_opt_in_p1/p2, emergency_contact_name/phone/relationship, secondary_contact_name/phone,
+  medical_notes, conduct_acknowledged_at, custom_responses JSONB (St Pats CCD / AAU membership #).
+- **FK cascades per §4.4**: `program_id`→programs RESTRICT (must cancel registrations before
+  deleting a program), `player_id`→players RESTRICT, `team_id`→teams SET NULL (nullable —
+  unallocated until placed), `promoted_from_registration_id`→registrations self SET NULL
+  (tryout→season link). org_id→organizations RESTRICT.
+- **RLS** mirrors programs/divisions (4 policies: authenticated org-scoped SELECT, admin-only
+  writes; UPDATE USING+WITH CHECK per AP #20). **Parent-facing SELECT (own child's registrations)
+  + INSERT (public registration flow) deferred to migration #12** with `current_user_org_ids()`
+  per spec §4.3 — the flow that writes these rows is a later UI PR, and #12 is also where the
+  audit Finding A multi-org context work lands. 4 indexes (program/player/team/org).
+- **Post-flight:** base table, RLS on, 4 policies, 3 enums (3/5/5 values), 17 cols, all 4 FK
+  cascade types correct. Advisors clean.
+
+Next: spec §4.5 PR 7 — `registration_fees` (registration_id × fee_id × amount_cents line items)
+on GO. Halfway through the 12-migration chain (1,1a,2,3,4,5,6 done; 7-12 remain). After the
+schema chain: audit Finding A (multi-org context + migration #12) → Finding E broad date sweep.
+
+---
+
 ### §4.BJ — Senior-engineer full-codebase audit (2026-05-30)
 
 **Frank's "audit like a senior engineer" prompt** → 3-pass parallel review (arch/data-flow,

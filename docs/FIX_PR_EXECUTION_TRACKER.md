@@ -131,8 +131,19 @@ explicit GO per migration (spec sign-off gate — no migration runs without Fran
   `auto_apply_rule` JSONB (F1.v1.2 address-based geo rules — St Pats parishioner pricing). FK
   `divisions→division_fees` CASCADE per §4.4. RLS mirrors divisions/programs (4 policies). Advisors
   clean. Ledger §4.BI.
-- ☐ PR 6–12 — spec §4.5 sequence:
-  registrations → registration_fees →
+- ☑ **PR 6 — Migration #6: `registrations` + all new columns** (spec §4.5 step 6). Applied
+  (version 20260531120820). The conversion-surface table: one row per (program, player). 3 native
+  enums — `registration_tier` (full_roster/practice_roster/practice_player; 3 per §4.2 F1.v1.1,
+  call_up removed), `waitlist_state` (none/on_list/promoted_credit/promoted_pay/refund_released),
+  `registration_status` (pending/confirmed/waitlist/cancelled/payment_overdue). 17 spec columns
+  incl. emergency/secondary contacts, medical_notes, sms_opt_in_p1/p2, conduct_acknowledged_at,
+  custom_responses JSONB, promoted_from_registration_id (tryout→season self-FK). FK cascades per
+  §4.4: program_id/player_id RESTRICT, team_id SET NULL (unallocated-until-placed), promoted_from
+  self SET NULL. RLS mirrors programs/divisions (admin write, org-scoped select); **parent-facing
+  SELECT/INSERT via `current_user_org_ids()` deferred to migration #12 per spec §4.3**. Advisors
+  clean. Ledger §4.BK.
+- ☐ PR 7–12 — spec §4.5 sequence:
+  registration_fees →
   player_equipment → tryout_sessions+attendees → players ext → organizations.family_cap_policy+
   acceptable_age_range → RLS `current_user_org_ids()` + parent SELECT policies.
 
