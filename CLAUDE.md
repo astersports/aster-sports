@@ -952,7 +952,7 @@ source for the question you're asking.
 |---|---|---|
 | Which kids are on a team right now? | `team_players` | `roster_type` in rostered/futures, `status` in active/inactive |
 | What jersey does a kid wear on a team? | `team_players.jersey_number` (text) | Keep aligned with `roster_members` via alignment trigger |
-| What size jersey/shorts is the kid wearing? | `roster_members` | Sizes live here and only here |
+| What size jersey/shorts is the kid wearing? | `player_equipment` (per player×season×sport) | Canonical home since PR 8 (§4.5 step 8). `roster_members.{jersey_size,shorts_size}` are kept in sync by the `align_player_equipment_from_roster_member` trigger (legacy mirror), but UI reads `player_equipment` |
 | What is the kid's payment status for the season? | `financial_accounts` + `financial_transactions` | Not `roster_members.payment_status` (legacy column) |
 | What teams is the current parent's child on? | `current_user_child_team_ids()` | SECURITY DEFINER; do not query underlying tables |
 | What players can the current parent see in roster lists? | `current_user_teammate_player_ids()` | SECURITY DEFINER |
@@ -960,7 +960,7 @@ source for the question you're asking.
 | What's the parent's app context (kids + teams)? | `parent_context_v` view | Single helper used by AuthContext.parentContext |
 
 **Rules:**
-- Application code never reads from `roster_members` directly except for sizes and historical date windows in the 5 attendance views.
+- Application code never reads from `roster_members` directly except for historical date windows in the attendance views. (Sizes moved to `player_equipment` in PR 8; the trigger keeps roster_members in sync as a legacy mirror, but new code reads `player_equipment`.)
 - RLS policies never reference `roster_members` directly. They go through `current_user_*` helpers.
 - New code that needs "is this kid on this team" reads from `team_players`.
 - New code that needs "is this kid's parent allowed to see this row" reads from `current_user_teammate_player_ids()` or `current_user_child_team_ids()`.
@@ -971,7 +971,7 @@ source for the question you're asking.
 |---|---|---|
 | `src/hooks/useAttendanceData.js:44` | sizes + historical view | jersey_number lookup for the per-player attendance grid; one of the 5 attendance views |
 | `src/hooks/useEventRsvpCounts.js:33` | historical window | `left_at IS NULL` is the canonical date-windowed eligibility check (per the table row above) |
-| `src/hooks/useRoster.js:25` | sizes (canonical home) | reads `jersey_size` + `shorts_size` — team_players has neither column. (Payment status no longer read here — Cat#30 ROSTER-1 migrated it to the `family_balances` view, all-seasons.) |
+| `src/hooks/useRoster.js` | (resolved — sizes migrated) | Sizes now read from `player_equipment` (PR 8, §4.5 step 8), scoped to the team's season. roster_members is still queried here for membership + `jersey_number` + the `teams(season_id)` embed, but NOT for sizes. (Payment status reads `family_balances`, all-seasons, per Cat#30 ROSTER-1.) |
 | `src/pages/SeasonRolloverPage.jsx:36` | historical view (season scope) | rollover wizard inherently shows a season's PAST roster, not current team_players state. Nested PostgREST relation `teams(...roster_members(...))` — missed by the L99 audit grep until PR #124 |
 | `src/hooks/useSeasonRollover.js:49` | WRITE (not a read) | `.insert()` into roster_members. §11.5 read-restriction doesn't apply; membership writes legitimately go through roster_members |
 | `src/components/roster/PlayerRow.jsx:59-62` | (resolved — no longer an exception) | The 6px payment dot now reflects `payment_status` derived from the canonical `family_balances` view (all-seasons) via `useRoster`, not the legacy `roster_members.payment_status`. Kept in this table as a closed-exception note; the legacy column is no longer read by any UI. |

@@ -148,8 +148,18 @@ explicit GO per migration (spec sign-off gate — no migration runs without Fran
   and deleting a fee template must never erase realized billing history), `fee_type` snapshot (reuses
   `division_fee_type` enum), `amount_cents` (signed). RLS mirrors registrations/programs (4 policies).
   Advisors clean. Ledger §4.BL.
-- ☐ PR 8–12 — spec §4.5 sequence:
-  player_equipment →
+- ☑ **PR 8 — Migration #8: `player_equipment` + backfill + §11.5 reconciliation** (spec §4.5 step 8).
+  Applied (version 20260531211150). Per-player kit scoped (player_id, season_id, sport_id):
+  jersey_size, shorts_size, jersey_number (text), status (`player_equipment_status` enum
+  needed/ordered/distributed). player_id→players CASCADE, season_id→programs CASCADE, UNIQUE
+  (player,season,sport). **Frank GO "build + migrate + repoint now":** backfilled 63 LH rows from
+  roster_members→teams→programs; added `align_player_equipment_from_roster_member` trigger (legacy
+  mirror sync, SECDEF, EXECUTE revoked from PUBLIC/anon/authenticated per AP #23/#57); **repointed
+  useRoster size read** to player_equipment + rewrote §11.5 doctrine (sizes canonical home is now
+  player_equipment; roster_members kept in sync but no longer UI-read). Full suite 1135 green; no
+  other UI reads roster_members sizes. Advisors clean. Ledger §4.BM.
+- ☐ PR 9–12 — spec §4.5 sequence:
+  tryout_sessions+attendees →
   player_equipment → tryout_sessions+attendees → players ext → organizations.family_cap_policy+
   acceptable_age_range → RLS `current_user_org_ids()` + parent SELECT policies.
 

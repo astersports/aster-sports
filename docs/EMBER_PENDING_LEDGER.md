@@ -3718,6 +3718,44 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BM — Build PR 8: player_equipment + §11.5 reconciliation SHIPPED (2026-05-31)
+
+**Frank's GO** → spec §4.5 step 8, with the **"build + migrate + repoint now"** decision on the
+roster_members overlap (AskUserQuestion). Largest PR in the chain — only one touching live UI. 9/12.
+
+- **Migration #8** (MCP, version `20260531211150`, mirror per AP #21). CREATE TYPE + TABLE + backfill
+  + alignment trigger; `DO $$` verify.
+- **The overlap & the decision:** `player_equipment(player_id, season_id, sport_id)` with
+  jersey/shorts/number/status (spec line 226) overlapped `roster_members` — which §11.5 named the
+  canonical sizes home. Per AP #42 this was a parallel-system risk, so it went to Frank: chose
+  **migrate now** (vs. build-empty-defer or skip). Investigation de-risked it: the "5 §11.5 exception
+  callers" mostly read jersey_*number* or historical windows, not sizes — **useRoster was the ONLY
+  true sizes reader.**
+- **What shipped (3 parts, one PR):**
+  1. **Table** — `player_equipment_status` enum (needed/ordered/distributed); player_id→players
+     CASCADE, season_id→programs CASCADE, sport_id→sports SET NULL; UNIQUE(player,season,sport);
+     RLS mirrors programs (4 policies). jersey_number text (matches roster_members/team_players).
+  2. **Backfill** — 63 LH rows from roster_members→teams→programs(season).sport_id. Data was clean:
+     all 63 map to valid team→season→sport (one sport=Basketball), **0 players on >1 team same
+     season** so the unique key never collided. status='distributed' where kit data present.
+  3. **Alignment trigger** `align_player_equipment_from_roster_member` — AFTER INSERT/UPDATE OF
+     jersey_size/shorts_size/jersey_number on roster_members, upserts player_equipment. Mirrors the
+     established roster_members↔team_players alignment-lock (migration 20260505201932). SECDEF,
+     pinned search_path; EXECUTE revoked from PUBLIC+anon+authenticated (AP #23/#57 — closes the
+     get_advisors authenticated_security_definer warning my first apply surfaced; service_role keeps
+     EXECUTE; trigger fires as owner regardless).
+- **Code repoint:** `useRoster.js` now reads sizes from player_equipment (scoped to the team's
+  season via a `teams(season_id)` embed + `.in('player_id',...)` lookup); still queries
+  roster_members for membership + jersey_number. §11.5 doctrine rewritten (canonical sizes table +
+  rules + exception-callers table all updated). CLAUDE.md §11.5 edited.
+- **Verification:** DO-block (table/RLS/CASCADE/unique/backfill-count=distinct-combos/trigger), full
+  vitest suite **1135 passed / 0 failed**, grep confirms no other UI reads roster_members sizes,
+  advisors clean.
+
+Next: spec §4.5 PR 9 — `tryout_sessions` + `tryout_attendees` on GO. 9/12 done (1,1a,2-8); 9-12 remain.
+
+---
+
 ### §4.BL — Build PR 7: registration_fees table SHIPPED (2026-05-31)
 
 **Frank's GO** → spec §4.5 step 7. Realized fee line items per registration (8/12 in the chain).
