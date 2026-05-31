@@ -3718,6 +3718,33 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BO — Build PR 10: players extensions SHIPPED (2026-05-31)
+
+**Frank's GO** → spec §4.5 step 10. First migration to ALTER the live `players` table (115 rows) —
+given PR-8-level care (pre-inspect shape, collision check, no-break verify). 11/12.
+
+- **Migration #10** (MCP, version `20260531212653`, mirror per AP #21). Single additive ALTER +
+  `DO $$` verify; no backfill, no code change (nothing reads these yet).
+- **Added (3 nullable columns):** `grade_school_year` int (distinct from existing `grade`), `school`
+  text, `aau_member_id` text. All nullable → existing reads unaffected, no collisions (pre-checked).
+- **DEVIATION — `can_have_own_account` NOT added:** spec lists it as "BOOL (computed, age ≥ 13)".
+  PG17 can't express this as a stored generated column — `age(dob) >= 13` depends on `current_date`
+  (non-immutable), and PG17 has no VIRTUAL generated columns (PG18+). A stored boolean would go stale
+  daily without a cron. It has **zero consumers today** (kid login is Phase 3+ per spec §4.1; AP #51 =
+  don't build dead infra), so it's deferred to **app-side computation** when kid-login eligibility is
+  actually needed: `dob IS NOT NULL AND dob <= current_date - interval '13 years'`. Source column
+  (dob) already exists. Faithful to spec intent, avoids a stale-prone column. Revisit when kid login
+  ships.
+- **Post-flight:** 3 nullable columns present, 115 rows intact. No new RLS/advisor impact (additive
+  on a table that already has RLS).
+
+Next: spec §4.5 PR 11 — `organizations.family_cap_policy` (JSONB) + `acceptable_age_range`
+(INT4RANGE) on GO. 11/12 done; **only #12 remains — the RLS `current_user_org_ids()` + parent SELECT
+policies migration = where audit Finding A (multi-org context) lands.** Per Frank's earlier note,
+#12 likely warrants its own design discussion, not a quick GO.
+
+---
+
 ### §4.BN — Build PR 9: tryout_sessions + tryout_attendees SHIPPED (2026-05-31)
 
 **Frank's GO** → spec §4.5 step 9. Two clean additive tables (tryout scheduling + evaluation). 10/12.
