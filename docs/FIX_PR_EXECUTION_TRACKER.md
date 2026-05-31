@@ -163,10 +163,16 @@ explicit GO per migration (spec sign-off gate — no migration runs without Fran
   location_id→locations SET NULL, notes)` + `tryout_attendees(registration_id→registrations CASCADE,
   session_id→tryout_sessions CASCADE, evaluation_note, UNIQUE(registration,session))`. Both RLS
   mirror registrations/programs (4 policies each). Advisors clean. Ledger §4.BN.
-- ☐ PR 10–12 — spec §4.5 sequence:
-  players ext →
-  player_equipment → tryout_sessions+attendees → players ext → organizations.family_cap_policy+
-  acceptable_age_range → RLS `current_user_org_ids()` + parent SELECT policies.
+- ☑ **PR 10 — Migration #10: `players` extensions** (spec §4.5 step 10). Applied (version
+  20260531212653). 3 additive nullable columns on the live players table (115 rows, no backfill,
+  existing reads unaffected): `grade_school_year` int, `school` text, `aau_member_id` text.
+  **DEVIATION:** `can_have_own_account` (spec'd "computed, age≥13") NOT added — PG17 can't express
+  age as a stored generated column (current_date non-immutable; no virtual cols until PG18), zero
+  consumers today (kid login Phase 3+), so app-computed when needed (`dob <= current_date - 13y`).
+  No new RLS/advisor impact (additive on a table with existing RLS). Ledger §4.BO.
+- ☐ PR 11–12 — spec §4.5 sequence:
+  organizations.family_cap_policy + acceptable_age_range → RLS `current_user_org_ids()` + parent
+  SELECT policies (#12 = audit Finding A multi-org).
 
 ### UI surface PRs (reviewer's order, on the schema foundation)
 - ☐ Family Home → ☐ Conflict resolution → ☐ Multi-child cart → ☐ Billing → ☐ Per-kid detail →
