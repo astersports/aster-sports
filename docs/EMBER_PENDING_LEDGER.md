@@ -3718,6 +3718,41 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BJ — Senior-engineer full-codebase audit (2026-05-30)
+
+**Frank's "audit like a senior engineer" prompt** → 3-pass parallel review (arch/data-flow,
+duplicate-logic, perf/scalability) + first-hand inspection. Read-only; no code changed.
+Full artifact: `docs/AUDIT_SENIOR_ENGINEER_FULL_CODEBASE_2026-05-30.md`.
+
+**Verdict:** well-architected, disciplined codebase — not a refactor candidate. Hard
+anti-patterns verified clean (AP #36/#37/#48/#51 = zero prod violations; enforcement
+tests work). Debt clusters into 4 themes, dominant root cause = single-org assumptions
+the §4.5 schema is now outgrowing.
+
+**Punch-list (candidate gated PRs, NOT yet built except E):**
+- **A (P0)** — multi-org context lag: `AuthContext.jsx:68` hard-picks `roleRows[0]`; app on
+  singular `current_user_org_id()`. The app-layer multi-org refactor is the real critical
+  path — pairs with spec migration #12 (`current_user_org_ids()`). Build after §4.5 schema chain.
+- **B (P1)** — no list virtualization anywhere (MessageThread 200-cap, FamilyBalanceList
+  unbounded, PlayByPlayFeed). Before org #2.
+- **C (P1)** — bundle 398KB gz > 350KB §16.10 budget; PostHog 61KB gz (lazy, FCP safe).
+- **D (P1)** — `useSeasonFinancials.js:77` pulls ALL org transactions, filters in JS.
+- **E (P2)** — formatter duplication: ~40 inline date/time callsites + tournament-range ×3
+  (one `T00:00:00` latent DST bug at `broadcast/TournamentCard.jsx:11`) + currency ×4 (AP #63).
+  **NOTE:** PR #233/#234 already did a formatters NY-pin pass — this is *residual* drift since
+  2026-05-18 (new surfaces re-introduced inline formatting). **Scheduled next, ahead of PR 6
+  (Frank 2026-05-30).**
+- **F (P2)** — inverted test pyramid: 160 unit vs 1 e2e on a payments+RLS+multi-tenant app.
+- **G (P2)** — query-shape debt (useRoster balances round-trip on game-day; useRecentActivity
+  whole-players prefetch; NewDmPicker 1+N; useSeasonRollover non-atomic per-row inserts).
+- **H (P2)** — 5 prod files over the 150-line cap (AuthContext 172, kindMetadata 169,
+  BriefingComposer 164, registry 159, familyGuideHelpers 155).
+- **I (P3)** — UTC-vs-NY weekday anchor in engine helpers; `useWeather` hardcoded Westchester coords.
+
+**Sequence:** §4.5 schema chain (PR 6 next) → A → E (pulled ahead per GO) → B/C/D/F before org #2 → G/H/I opportunistic.
+
+---
+
 ### §4.BI — Build PR 5: division_fees + auto_apply_rule SHIPPED (2026-05-30)
 
 **Frank's GO** → spec §4.5 step 5. Line-item fee structure under `divisions`.
