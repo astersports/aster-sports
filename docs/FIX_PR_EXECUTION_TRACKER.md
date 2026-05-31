@@ -142,8 +142,14 @@ explicit GO per migration (spec sign-off gate — no migration runs without Fran
   self SET NULL. RLS mirrors programs/divisions (admin write, org-scoped select); **parent-facing
   SELECT/INSERT via `current_user_org_ids()` deferred to migration #12 per spec §4.3**. Advisors
   clean. Ledger §4.BK.
-- ☐ PR 7–12 — spec §4.5 sequence:
-  registration_fees →
+- ☑ **PR 7 — Migration #7: `registration_fees`** (spec §4.5 step 7). Applied (version 20260531210133).
+  Realized fee line items per registration: `registration_id`→registrations CASCADE, `fee_id`→
+  division_fees **SET NULL + nullable** (family_discount rows have no source template per §4.2 F1.v1.2,
+  and deleting a fee template must never erase realized billing history), `fee_type` snapshot (reuses
+  `division_fee_type` enum), `amount_cents` (signed). RLS mirrors registrations/programs (4 policies).
+  Advisors clean. Ledger §4.BL.
+- ☐ PR 8–12 — spec §4.5 sequence:
+  player_equipment →
   player_equipment → tryout_sessions+attendees → players ext → organizations.family_cap_policy+
   acceptable_age_range → RLS `current_user_org_ids()` + parent SELECT policies.
 

@@ -3718,6 +3718,35 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BL — Build PR 7: registration_fees table SHIPPED (2026-05-31)
+
+**Frank's GO** → spec §4.5 step 7. Realized fee line items per registration (8/12 in the chain).
+
+- **Migration #7** (MCP, version `20260531210133`, mirror per AP #21). CREATE TABLE + 3 indexes +
+  trigger + RLS; atomic, `DO $$` verify.
+- **Shape:** `registration_fees(id, org_id→organizations RESTRICT, registration_id→registrations
+  CASCADE, fee_id→division_fees SET NULL [nullable], fee_type, amount_cents, timestamps)`.
+- **Design decision (beyond the spec's 3-col base list):** spec §4.2 line 217 lists
+  `(registration_id, fee_id, amount_cents)`, but §4.2 F1.v1.2 (line 239) requires the family-cap
+  discount to be recorded as a `registration_fees` row with `fee_type='family_discount'` — computed
+  server-side at checkout with NO source `division_fee`. That forces two choices:
+  - **`fee_id` nullable + SET NULL** — family discounts have no template row; and deleting a fee
+    template must never erase realized billing history (financial-record preservation). SET NULL
+    keeps the realized line item, drops only the template link.
+  - **`fee_type` column** (snapshot, reuses `division_fee_type` enum) — lets a templateless
+    `family_discount` row carry its type without a `fee_id`.
+- `amount_cents` signed (realized billed amount; discounts negative — same convention as division_fees).
+- **RLS** mirrors registrations/programs (4 policies, admin write, org-scoped select; UPDATE
+  USING+WITH CHECK per AP #20). 3 indexes (registration/fee/org). Parent-facing read deferred to
+  migration #12 per §4.3.
+- **Post-flight:** base table, RLS on, 4 policies, registration_id CASCADE, fee_id SET NULL+nullable,
+  fee_type/amount_cents present. Advisors clean.
+
+Next: spec §4.5 PR 8 — `player_equipment` (jersey/shorts sizes + number + status, per player×season×
+sport) on GO. 8/12 done (1,1a,2,3,4,5,6,7); 8-12 remain.
+
+---
+
 ### §4.BK — Build PR 6: registrations table SHIPPED (2026-05-31)
 
 **Frank's GO** ("proceed as planned") → spec §4.5 step 6. The conversion-surface table —
