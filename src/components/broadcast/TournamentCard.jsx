@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatTournamentRange } from '../../lib/formatters';
 
 // Compact tournament card. Frank-reported 2026-05-20 ("Redesign as the
 // tiles take up too much space for tournaments"). The prior layout
@@ -6,19 +7,10 @@ import React from 'react';
 // dedicated row per participating team. This version collapses the
 // per-team rows into inline chips and tightens the header to a single
 // title-row plus a meta-row, cutting total height by ~50%.
-
-function formatDateRange(startDate, endDate) {
-  if (!startDate) return '';
-  const s = new Date(startDate + 'T00:00:00');
-  const sMonth = s.toLocaleDateString('en-US', { month: 'short', timeZone: 'America/New_York' });
-  const sDay = s.getDate();
-  if (!endDate) return `${sMonth} ${sDay}`;
-  const e = new Date(endDate + 'T00:00:00');
-  const eMonth = e.toLocaleDateString('en-US', { month: 'short', timeZone: 'America/New_York' });
-  const eDay = e.getDate();
-  if (sMonth === eMonth) return `${sMonth} ${sDay}–${eDay}`;
-  return `${sMonth} ${sDay}–${eMonth} ${eDay}`;
-}
+//
+// Date range now routes through the shared formatTournamentRange helper
+// (was a local copy with a buggy `T00:00:00` midnight anchor that rendered
+// date-only values one day early during EDT — fixed by the helper's noon anchor).
 
 function statusPillClass(status) {
   if (status === 'Complete') return 'bc-tourney-pill complete';
@@ -64,7 +56,7 @@ function ParticipantChip({ participant, isCompleted }) {
 export default function TournamentCard({ tournament }) {
   if (!tournament) return null;
 
-  const dateRange = formatDateRange(tournament.start_date, tournament.end_date);
+  const dateRange = formatTournamentRange(tournament.start_date, tournament.end_date);
   const status = tournament.display_status || 'Upcoming';
   const isCompleted = status === 'Complete';
   const participants = tournament.participants || [];

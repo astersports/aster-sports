@@ -1,23 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { Calendar, MapPin } from 'lucide-react';
 import StatusBadge from './StatusBadge';
+import { formatTournamentRange } from '../../lib/formatters';
 
 // Single row in the tournaments list. Shows name, date range, attending teams
 // as colored pills, status badge, venue. Tap navigates to detail (built in 2B).
 
-function formatRange(start, end) {
-  if (!start || !end) return '';
-  const s = new Date(start + 'T12:00:00');
-  const e = new Date(end + 'T12:00:00');
-  if (start === end) return s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' });
-  const sameMonth = s.getMonth() === e.getMonth();
-  if (sameMonth) return `${s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}–${e.getDate()}`;
-  return `${s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })} – ${e.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}`;
-}
-
 export default function TournamentListItem({ tournament, rightSlot }) {
   const navigate = useNavigate();
-  const dateRange = formatRange(tournament.start_date, tournament.end_date);
+  const dateRange = formatTournamentRange(tournament.start_date, tournament.end_date);
   const open = () => navigate(`/tournaments/${tournament.id}`);
   const onKeyDown = (e) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }

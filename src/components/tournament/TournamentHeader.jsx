@@ -4,22 +4,11 @@ import { Calendar, Edit2, ExternalLink, Mail, MapPin, Trophy } from 'lucide-reac
 import StatusBadge from './StatusBadge';
 import TournamentFormSheet from './TournamentFormSheet';
 import ComposeAnchorCta from '../briefings/ComposeAnchorCta';
-
-function formatRange(start, end) {
-  if (!start || !end) return '';
-  const s = new Date(start + 'T12:00:00');
-  const e = new Date(end + 'T12:00:00');
-  if (start === end) return s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' });
-  const sameMonth = s.getMonth() === e.getMonth();
-  if (sameMonth) {
-    return `${s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}–${e.getDate()}, ${s.getFullYear()}`;
-  }
-  return `${s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })} – ${e.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })}`;
-}
+import { formatTournamentRange } from '../../lib/formatters';
 
 export default function TournamentHeader({ tournament, isStaff, onChange }) {
   const [editing, setEditing] = useState(false);
-  const dateRange = formatRange(tournament.start_date, tournament.end_date);
+  const dateRange = formatTournamentRange(tournament.start_date, tournament.end_date, { withYear: true });
   // Wave 4.8 6b Session 2: gate Compose CTA on upcoming/completed.
   // In-flight tournaments (mid-event) render no CTA — neither prelim nor
   // recap fits the moment.

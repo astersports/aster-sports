@@ -4,6 +4,7 @@ import { ChevronLeft, Upload } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useSeasonFinancials } from '../hooks/useSeasonFinancials';
+import { formatCurrency } from '../lib/formatters';
 import FamilyBalanceList from '../components/admin/FamilyBalanceList';
 import RecordPaymentForm from '../components/admin/RecordPaymentForm';
 import CoachPayoutsSection from '../components/admin/CoachPayoutsSection';
@@ -49,7 +50,7 @@ export default function FinancialDashboardPage() {
   // Previously inline at :57-69 here; extracted PR #303.
   const { accounts, balances, stats, loading, refetch } = useSeasonFinancials(orgId, seasonId);
 
-  const fmt = (cents) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  const fmt = formatCurrency;  // shared helper (style:currency) — identical $X,XXX.00 output
   const currentSeason = seasons.find((s) => s.id === seasonId);
 
   if (loading && !seasonId) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading…</div>;

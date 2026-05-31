@@ -1,4 +1,5 @@
 import { AlertCircle } from 'lucide-react';
+import { formatCurrency } from '../../lib/formatters';
 
 // HOME_DESIGN_SPEC §1.1.9 — parent home registration / payment
 // reminder. Trigger: guardian has outstanding balance on active
@@ -15,10 +16,11 @@ import { AlertCircle } from 'lucide-react';
 // card is informational. Future iteration ships an admin-contact
 // or external-pay link.
 
-function formatCurrency(cents) {
-  const dollars = Math.round(cents / 100);
-  return `$${dollars.toLocaleString('en-US', { useGrouping: true })}`;
-}
+// Currency now routes through the shared formatCurrency (style:currency, shows
+// cents — "$1,275.00") so the parent-facing balance matches admin/financials
+// exactly. Was a local round-to-whole-dollars copy ("$1,275"); that parent/admin
+// split was the registered AP #63 / HOME-6 divergence — resolved here by
+// unifying on cents (Frank call, 2026-05-30).
 
 export default function RegistrationReminderCard({ stats, seasonName, loading }) {
   if (loading || !stats || stats.outstanding <= 0) return null;
