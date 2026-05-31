@@ -3,6 +3,8 @@
 // tournament_prelim drill-down + non-expandable tap-through targets
 // were added.
 
+import { formatCurrency } from '../../lib/formatters';
+
 export const EXPANDABLE_TYPES = new Set([
   'location_unassigned',
   'opponent_unassigned',
@@ -48,7 +50,7 @@ export function alertBody(alert) {
     case 'location_unassigned': return `${(d.events || []).length} event${(d.events || []).length === 1 ? '' : 's'}${d.critical_count ? ` · ${d.critical_count} <24h` : ''}`;
     case 'opponent_unassigned': return `${(d.events || []).length} event${(d.events || []).length === 1 ? '' : 's'}${d.critical_count ? ` · ${d.critical_count} <24h` : ''}`;
     case 'payment_overdue': {
-      const dollars = ((d.total_outstanding_cents || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+      const dollars = formatCurrency(d.total_outstanding_cents || 0);
       // Scope qualifier (BUG-1): this alert is org-wide / all-seasons
       // (getOverdueFamilyBalances takes no season_id), whereas Program
       // Health's "Payment collection" is season-scoped. Declaring the

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, ChevronLeft, Upload } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { importToFinancials, parseLeagueAppsData } from '../lib/leagueAppsImport';
+import { formatCurrency } from '../lib/formatters';
 import Button from '../components/shared/Button';
 import Label from '../components/shared/Label';
 
@@ -36,7 +37,7 @@ export default function FinancialImportPage() {
     setImporting(false);
   };
 
-  const fmt = (c) => `$${(c / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  const fmt = formatCurrency;  // shared helper (style:currency) — identical $X,XXX.00 output
 
   return (
     <div style={{ padding: '16px 16px 80px' }}>

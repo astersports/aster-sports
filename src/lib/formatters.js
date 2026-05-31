@@ -68,6 +68,31 @@ export function formatCurrency(cents) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
 
+// "Apr 13" / "Apr 13–15" / "Apr 30–May 2" / "Apr 13–15, 2026" — tournament
+// date span. Collapses same-day / same-month / cross-month. Date-only inputs
+// (YYYY-MM-DD) are anchored at NOON NY (`T12:00:00`), NOT midnight: a midnight
+// anchor (`T00:00:00`) lands a date-only value on the prior calendar day once
+// NY shifts to EDT (UTC-4), so "May 1" renders "Apr 30". The noon anchor is
+// DST-safe for every US offset. Consolidates the three prior per-component
+// formatRange copies (TournamentHeader / TournamentListItem / broadcast
+// TournamentCard) — the broadcast copy used the buggy midnight anchor. Locked
+// by formatTournamentRange.test.js.
+export function formatTournamentRange(start, end, { withYear = false } = {}) {
+  if (!start) return '';
+  const opts = { month: 'short', day: 'numeric', timeZone: NY_TZ };
+  const yearOpts = withYear ? { ...opts, year: 'numeric' } : opts;
+  const s = new Date(start + 'T12:00:00');
+  if (!end) return s.toLocaleDateString('en-US', yearOpts);
+  const e = new Date(end + 'T12:00:00');
+  if (start === end) return s.toLocaleDateString('en-US', yearOpts);
+  const sameMonth = s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear();
+  const yearSuffix = withYear ? `, ${e.getFullYear()}` : '';
+  if (sameMonth) {
+    return `${s.toLocaleDateString('en-US', opts)}–${e.getDate()}${yearSuffix}`;
+  }
+  return `${s.toLocaleDateString('en-US', opts)}–${e.toLocaleDateString('en-US', opts)}${yearSuffix}`;
+}
+
 // "in 35m", "in 2h 15m", "Tomorrow 6:30 PM", "Wed 5:00 PM"
 // NY-anchored "Tomorrow" boundary + time render: a parent on Pacific or
 // European time sees "Tomorrow" relative to the NY day boundary, not
