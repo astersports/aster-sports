@@ -1,9 +1,11 @@
-// CLAUDE.md §11.5 exception (Wave 4.8 hygiene PR #124): roster_members
-// is the canonical home for jersey_size + shorts_size — team_players does
-// not carry those columns. Migration to team_players would require either
-// schema additions or a parallel JOIN, neither justified for this hook's
-// 4 consumers (ArrivalBoard, PlayerOfGamePicker, LiveScorePage,
-// TeamDetailPage). Stay on roster_members.
+// CLAUDE.md §11.5 (reconciled PR 8, 2026-05-31): jersey_size + shorts_size
+// are now canonical on `player_equipment` (per (player, season, sport));
+// roster_members.{jersey_size,shorts_size} are kept in sync by the
+// align_player_equipment_from_roster_member trigger but are no longer read
+// by UI. This hook reads SIZES from player_equipment (scoped to the team's
+// season) and keeps jersey_NUMBER from roster_members (numbers stay canonical
+// on team_players/roster_members per §11.5). Consumers: ArrivalBoard,
+// PlayerOfGamePicker, LiveScorePage, TeamDetailPage.
 // Payment status (Cat#30 ROSTER-1 / §4.AW all-seasons decision): derived
 // from the canonical `family_balances` view across ALL seasons, NOT the
 // legacy roster_members.payment_status column (which was a stale constant —
@@ -24,9 +26,22 @@ export function useRoster(teamId) {
     try {
       const { data, error } = await supabase
         .from('roster_members')
-        .select('jersey_number, jersey_size, shorts_size, players(id, first_name, last_name, grade, dob, member_type, player_guardians(guardian_id, guardians(id, first_name, last_name, email, phone, user_id)))')
+        .select('jersey_number, teams(season_id), players(id, first_name, last_name, grade, dob, member_type, player_guardians(guardian_id, guardians(id, first_name, last_name, email, phone, user_id)))')
         .eq('team_id', teamId);
       if (error) throw error;
+      const seasonId = (data || []).find((rm) => rm.teams?.season_id)?.teams?.season_id || null;
+      // Sizes (canonical on player_equipment, scoped to this team's season).
+      const sizeByPlayer = {};
+      const playerIds = (data || []).filter((rm) => rm.players).map((rm) => rm.players.id);
+      if (seasonId && playerIds.length) {
+        const { data: eq, error: eqErr } = await supabase
+          .from('player_equipment')
+          .select('player_id, jersey_size, shorts_size')
+          .eq('season_id', seasonId)
+          .in('player_id', playerIds);
+        if (eqErr) throw eqErr;
+        for (const r of eq || []) sizeByPlayer[r.player_id] = r;
+      }
       const mapped = (data || []).filter((rm) => rm.players).map((rm) => ({
         id: rm.players.id,
         first_name: rm.players.first_name,
@@ -35,8 +50,8 @@ export function useRoster(teamId) {
         dob: rm.players.dob || null,
         member_type: rm.players.member_type,
         jersey_number: rm.jersey_number,
-        jersey_size: rm.jersey_size,
-        shorts_size: rm.shorts_size,
+        jersey_size: sizeByPlayer[rm.players.id]?.jersey_size ?? null,
+        shorts_size: sizeByPlayer[rm.players.id]?.shorts_size ?? null,
         guardians: (rm.players.player_guardians || [])
           .map((pg) => pg.guardians)
           .filter(Boolean)
