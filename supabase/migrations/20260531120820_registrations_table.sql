@@ -6,7 +6,7 @@
 -- link). RLS mirrors divisions/programs (admin write, org-scoped authenticated select); parent-facing
 -- SELECT/INSERT policies via current_user_org_ids() are deferred to migration #12 per spec §4.3
 -- (the public registration flow that writes these rows is a later UI PR). Applied via Supabase MCP
--- 2026-05-31 (version 20260531120544).
+-- 2026-05-31 (version 20260531120820).
 
 -- registration_tier: 3 ship in v1 per §4.2 F1.v1.1 (call_up removed — it's a roster action, not a reg tier).
 CREATE TYPE public.registration_tier AS ENUM ('full_roster','practice_roster','practice_player');

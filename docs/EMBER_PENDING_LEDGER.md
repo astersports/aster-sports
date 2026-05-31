@@ -3723,7 +3723,7 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 **Frank's GO** ("proceed as planned") → spec §4.5 step 6. The conversion-surface table —
 biggest in the §4.5 chain.
 
-- **Migration #6** (MCP, version `20260531120544`, mirror per AP #21). 3 CREATE TYPE + CREATE
+- **Migration #6** (MCP, version `20260531120820`, mirror per AP #21). 3 CREATE TYPE + CREATE
   TABLE + 4 indexes + trigger + RLS; atomic, `DO $$` verify.
 - **No legacy table existed** — the CLAUDE.md §5 migration-003 `registrations` reference was
   illustrative/stale (same as seasons/divisions were). Clean create, no data migration.

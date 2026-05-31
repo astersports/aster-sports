@@ -132,7 +132,7 @@ explicit GO per migration (spec sign-off gate — no migration runs without Fran
   `divisions→division_fees` CASCADE per §4.4. RLS mirrors divisions/programs (4 policies). Advisors
   clean. Ledger §4.BI.
 - ☑ **PR 6 — Migration #6: `registrations` + all new columns** (spec §4.5 step 6). Applied
-  (version 20260531120544). The conversion-surface table: one row per (program, player). 3 native
+  (version 20260531120820). The conversion-surface table: one row per (program, player). 3 native
   enums — `registration_tier` (full_roster/practice_roster/practice_player; 3 per §4.2 F1.v1.1,
   call_up removed), `waitlist_state` (none/on_list/promoted_credit/promoted_pay/refund_released),
   `registration_status` (pending/confirmed/waitlist/cancelled/payment_overdue). 17 spec columns
