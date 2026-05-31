@@ -170,9 +170,14 @@ explicit GO per migration (spec sign-off gate — no migration runs without Fran
   age as a stored generated column (current_date non-immutable; no virtual cols until PG18), zero
   consumers today (kid login Phase 3+), so app-computed when needed (`dob <= current_date - 13y`).
   No new RLS/advisor impact (additive on a table with existing RLS). Ledger §4.BO.
-- ☐ PR 11–12 — spec §4.5 sequence:
-  organizations.family_cap_policy + acceptable_age_range → RLS `current_user_org_ids()` + parent
-  SELECT policies (#12 = audit Finding A multi-org).
+- ☑ **PR 11 — Migration #11: `organizations` extensions** (spec §4.5 step 11). Applied (version
+  20260531213314). 2 additive columns: `family_cap_policy` jsonb (F4 D6 per-org family pricing cap;
+  NULL = no cap), `acceptable_age_range` int4range (Q20 player age band). LH seeded `[4,15)` = ages
+  4-14. Additive on a 1-row table, existing reads unaffected. Ledger §4.BP.
+- ☐ **PR 12 — RLS `current_user_org_ids()` + parent SELECT policies** (spec §4.5 step 12 / §4.3).
+  **THE LAST MIGRATION + audit Finding A (P0 multi-org context).** NOT mechanical — introduces the
+  plural org helper + rewrites parent-facing SELECT policies across the new tables, pairs with
+  AuthContext app-layer work. **Design discussion before GO** (Frank-flagged).
 
 ### UI surface PRs (reviewer's order, on the schema foundation)
 - ☐ Family Home → ☐ Conflict resolution → ☐ Multi-child cart → ☐ Billing → ☐ Per-kid detail →
