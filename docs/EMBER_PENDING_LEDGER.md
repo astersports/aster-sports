@@ -3718,6 +3718,50 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BQ — Build PR 12: current_user_org_ids() + parent SELECT policies SHIPPED (2026-05-31)
+
+**Frank's GO** (after the design pass + PII-scope decision) → spec §4.5 step 12 / §4.3.
+**THE LAST §4.5 MIGRATION — schema chain COMPLETE (12/12).** Closes audit Finding A at the RLS layer.
+
+- **Migration #12** (MCP, version `20260531222056`, mirror per AP #21). Function + 8 policy swaps;
+  `DO $$` verify.
+- **Part 1 — `current_user_org_ids()` (plural):** returns ALL org_ids the user has a role in
+  (`ARRAY_AGG(DISTINCT organization_id) FROM user_roles WHERE user_id = auth.uid()`). Mirrors the
+  sibling `current_user_*` helper shape (SQL/STABLE/SECDEF/search_path=public). Single-org user (every
+  user today) → array of 1, so the swap is behavior-identical now + correct for multi-org. EXECUTE
+  revoked from PUBLIC/anon, granted to authenticated/service_role (verified posture).
+- **Part 2 — 8 SELECT policy swaps:** all new-table SELECTs go `org_id = current_user_org_id()`
+  (singular, LIMIT-1 = the Finding A bug) → `org_id = ANY(current_user_org_ids())`. One policy covers
+  admin (array of 1) + multi-org parent (array of N).
+- **DESIGN PASS (this is why #12 was gated, not auto-shipped):** the 8 tables split into catalog
+  (programs/divisions/division_fees/tryout_sessions — parents *should* browse) vs PII
+  (registrations/registration_fees/tryout_attendees/player_equipment — carry medical_notes,
+  emergency/secondary contacts, custom_responses). Spec §4.3's literal "org_id = ANY(...)" line was
+  written about events (catalog-ish); applying it to the PII tables lets any org parent read every
+  family's registration PII.
+  - **CC recommended** child-scoped PII reads (admin org-wide OR `player_id = ANY(current_user_player_ids())`),
+    per §16.7 privacy locks + §11.5.
+  - **Frank chose** the literal spec §4.3 org-wide read (AskUserQuestion, 2026-05-31).
+  - **AUTHORIZED DEVIATION** recorded in the migration comment + PR + here. Safe to proceed on the
+    call because: (1) contract-only — NO live exposure today (no parent-facing UI queries these
+    tables; the leak begins only when the registration UI ships), and (2) trivially reversible — the
+    revert path (child-scoped OR) is documented per-PII-table in the migration. **Reconsider before
+    the parent registration surface goes live.**
+- **Advisors clean** — `current_user_org_ids()` shows the expected `authenticated_security_definer`
+  informational warning (identical accepted posture to every sibling `current_user_*` helper; RLS
+  helpers must be authenticated-callable).
+
+**🏁 §4.5 SCHEMA FOUNDATION COMPLETE.** 12 migrations (1,1a,2-12) all applied + verified + mirrored.
+The full programs/registration/multi-tenant data model exists end-to-end. **What remains is NOT
+migrations:**
+1. **App-layer multi-org (Finding A, other half):** AuthContext `roleRows[0]` hard-pick + singular
+   `current_user_org_id()` app-wide → org-switcher + Family Home routing (spec §2.3). Separate PR;
+   no multi-org user until St Pat's.
+2. **PII RLS reconsideration** before parent registration UI (revert path in #12).
+3. **Registration UI build** — Family Home → cart → billing (spec §5-§8, 10/10 parent surfaces).
+
+---
+
 ### §4.BP — Build PR 11: organizations extensions SHIPPED (2026-05-31)
 
 **Frank's GO** ("1" = ship the last mechanical one) → spec §4.5 step 11. Last additive migration. 12/12
