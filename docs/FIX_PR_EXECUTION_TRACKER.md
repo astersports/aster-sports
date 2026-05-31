@@ -174,10 +174,24 @@ explicit GO per migration (spec sign-off gate — no migration runs without Fran
   20260531213314). 2 additive columns: `family_cap_policy` jsonb (F4 D6 per-org family pricing cap;
   NULL = no cap), `acceptable_age_range` int4range (Q20 player age band). LH seeded `[4,15)` = ages
   4-14. Additive on a 1-row table, existing reads unaffected. Ledger §4.BP.
-- ☐ **PR 12 — RLS `current_user_org_ids()` + parent SELECT policies** (spec §4.5 step 12 / §4.3).
-  **THE LAST MIGRATION + audit Finding A (P0 multi-org context).** NOT mechanical — introduces the
-  plural org helper + rewrites parent-facing SELECT policies across the new tables, pairs with
-  AuthContext app-layer work. **Design discussion before GO** (Frank-flagged).
+- ☑ **PR 12 — Migration #12: `current_user_org_ids()` + parent SELECT policies** (spec §4.5 step 12 /
+  §4.3). **THE LAST §4.5 MIGRATION.** Applied (version 20260531222056). Created `current_user_org_ids()`
+  (plural, SECDEF, locked to authenticated/service_role) + swapped all 8 new-table SELECT policies
+  from singular `current_user_org_id()` → `org_id = ANY(current_user_org_ids())`. Closes audit
+  Finding A at the RLS layer. **AUTHORIZED §16.7 DEVIATION (Frank GO):** org-wide read applied to the
+  4 PII tables too (registrations/registration_fees/tryout_attendees/player_equipment) per literal
+  spec §4.3 — contract-only, NO live exposure (no parent UI queries these yet); revert path to
+  child-scoped reads documented in the migration. Advisors clean. **§4.5 schema chain COMPLETE
+  (12/12).** Ledger §4.BQ.
+
+### 🏁 §4.5 schema foundation COMPLETE — what remains is NOT migrations
+- **App-layer multi-org (audit Finding A, the other half):** `AuthContext.jsx:68` still hard-picks
+  `roleRows[0]` + app reads singular `current_user_org_id()`. The DB now supports multi-org SELECT;
+  the AuthContext org-switcher + Family Home routing (spec §2.3) is a separate follow-on PR (no
+  multi-org user exists until St Pat's onboards).
+- **PII RLS reconsideration:** before the parent registration UI ships, decide whether to tighten the
+  4 PII tables to child-scoped reads (revert path in migration #12).
+- **Registration UI PRs:** Family Home → cart → billing → etc. (spec §5-§8, the 10/10 parent surfaces).
 
 ### UI surface PRs (reviewer's order, on the schema foundation)
 - ☐ Family Home → ☐ Conflict resolution → ☐ Multi-child cart → ☐ Billing → ☐ Per-kid detail →
