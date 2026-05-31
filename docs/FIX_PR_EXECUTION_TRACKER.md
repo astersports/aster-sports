@@ -158,8 +158,13 @@ explicit GO per migration (spec sign-off gate — no migration runs without Fran
   useRoster size read** to player_equipment + rewrote §11.5 doctrine (sizes canonical home is now
   player_equipment; roster_members kept in sync but no longer UI-read). Full suite 1135 green; no
   other UI reads roster_members sizes. Advisors clean. Ledger §4.BM.
-- ☐ PR 9–12 — spec §4.5 sequence:
-  tryout_sessions+attendees →
+- ☑ **PR 9 — Migration #9: `tryout_sessions` + `tryout_attendees`** (spec §4.5 step 9). Applied
+  (version 20260531212150). `tryout_sessions(program_id→programs CASCADE, starts_at, capacity,
+  location_id→locations SET NULL, notes)` + `tryout_attendees(registration_id→registrations CASCADE,
+  session_id→tryout_sessions CASCADE, evaluation_note, UNIQUE(registration,session))`. Both RLS
+  mirror registrations/programs (4 policies each). Advisors clean. Ledger §4.BN.
+- ☐ PR 10–12 — spec §4.5 sequence:
+  players ext →
   player_equipment → tryout_sessions+attendees → players ext → organizations.family_cap_policy+
   acceptable_age_range → RLS `current_user_org_ids()` + parent SELECT policies.
 

@@ -3718,6 +3718,33 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BN — Build PR 9: tryout_sessions + tryout_attendees SHIPPED (2026-05-31)
+
+**Frank's GO** → spec §4.5 step 9. Two clean additive tables (tryout scheduling + evaluation). 10/12.
+
+- **Migration #9** (MCP, version `20260531212150`, mirror per AP #21). Both tables + indexes +
+  triggers + RLS in one atomic migration; `DO $$` verify.
+- **`tryout_sessions`** — `(id, org_id→organizations RESTRICT, program_id→programs CASCADE, starts_at
+  [spec 'datetime'], capacity [nullable=uncapped], location_id→locations SET NULL, notes, timestamps)`.
+- **`tryout_attendees`** — `(id, org_id→organizations RESTRICT, registration_id→registrations CASCADE,
+  session_id→tryout_sessions CASCADE, evaluation_note, timestamps)` + `UNIQUE(registration_id,
+  session_id)` (a registration is listed once per session).
+- **FK rules** (not in the §4.4 table; chose sensible defaults): sessions CASCADE from their program;
+  attendees CASCADE from both their session and their registration (an attendee row is meaningless
+  without either). location_id SET NULL (optional venue link; deleting a location shouldn't drop the
+  session).
+- **RLS** mirrors registrations/programs (4 policies each, admin write, org-scoped select). Both
+  scoped under tryout-type programs (not DB-enforced; the tryout wizard scopes creation).
+- **Post-flight:** 2 base tables, RLS on both, 4 policies each, all FK cascades + the unique correct.
+  Advisors clean.
+
+Next: spec §4.5 PR 10 — `players` extensions (grade_school_year, school, aau_member_id,
+can_have_own_account computed) on GO. **This one ALTERs the live players table** — additive columns
+only, but touches an existing hot table, so it gets the same care as PR 8. 10/12 done; 10-12 remain
+(11 = orgs columns, 12 = RLS current_user_org_ids() + parent policies = audit Finding A).
+
+---
+
 ### §4.BM — Build PR 8: player_equipment + §11.5 reconciliation SHIPPED (2026-05-31)
 
 **Frank's GO** → spec §4.5 step 8, with the **"build + migrate + repoint now"** decision on the
