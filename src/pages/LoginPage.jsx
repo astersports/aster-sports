@@ -79,7 +79,7 @@ export default function LoginPage() {
         }}
       >
         <div className="flex flex-col items-center mb-6">
-          <img src="/phoenix.webp" alt="AsterSports"
+          <img src="/aster-mark.svg" alt="Aster Sports"
             style={{ width: 120, height: 120, objectFit: 'contain', borderRadius: 16 }} />
         </div>
 

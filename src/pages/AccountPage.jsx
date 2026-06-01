@@ -13,7 +13,7 @@ import QuietHoursCard from '../components/account/QuietHoursCard';
 import StaffProfileCard from '../components/account/StaffProfileCard';
 
 const ROLE_LABELS = { admin: 'Admin', coach: 'Coach', parent: 'Parent' };
-const VERSION = 'AsterSports v2.0';
+const VERSION = 'Aster Sports v2.0';
 
 export default function AccountPage() {
   const navigate = useNavigate();

@@ -1,6 +1,6 @@
 {
-  "name": "AsterSports",
-  "short_name": "AsterSports",
+  "name": "Aster Sports",
+  "short_name": "Aster Sports",
   "description": "Youth sports team management",
   "start_url": "/",
   "display": "standalone",
@@ -14,10 +14,10 @@
       "type": "image/png"
     },
     {
-      "src": "/phoenix.webp",
-      "sizes": "200x200",
-      "type": "image/webp",
-      "purpose": "any maskable"
+      "src": "/aster-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }
