@@ -3718,6 +3718,25 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BS — Vela rebrand audit landed; platform name Ember → Vela (2026-06-01)
+
+Platform renamed **Ember → Vela** (Frank decided after a long domain/App-Store/trademark
+gauntlet — Aureon rejected for trademark exposure; Roar/Hearth failed; Vela is category-clean,
+pending `vela.co` price reconcile). Visual identity KEPT (warm gold/navy + phoenix→sail-flame
+mark, Frank's SVG). `--em-*` tokens NOT renamed (AP #3).
+
+**Audit doc:** `docs/AUDIT_VELA_REBRAND.md` — 5 layers: (1) user-facing "Ember" strings →
+Vela (~13 spots, manifest/title/Powered-by/emberDefaults), (2) internal cosmetic rename
+(optional), (3) owner email `admin@legacyhoopers.org`→new (34 refs; auth record = dashboard
+step; pilot-override migrations must repoint), (4) tenant↔platform de-hardcode = the multi-org
+track, OUT OF SCOPE, (5) logo/favicon asset swap, palette unchanged.
+
+**Gating:** all execution waits on the account migration (Claude/GitHub/Supabase/Vercel → new
+email, Track 1). Recommended PR sequence R1–R4 in the audit. Nothing changed yet (audit only).
+"Legacy Hoopers" STAYS as a tenant (123 refs mostly unchanged).
+
+---
+
 ### §4.BR — Registration Capture Flow: L99 audit doc landed, scope locked (2026-06-01)
 
 Post §4.5-schema-completion, the next build phase. Frank scope-lock (AskUserQuestion,
