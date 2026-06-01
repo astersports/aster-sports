@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { usePublicProgram } from '../hooks/usePublicProgram';
 import DivisionCard from '../components/register/DivisionCard';
 
@@ -24,6 +24,7 @@ const centered = { padding: 32, textAlign: 'center', color: 'var(--em-text-terti
 
 export default function RegisterEntryPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { data, loading, error } = usePublicProgram(slug);
   const program = data?.program;
 
@@ -65,7 +66,10 @@ export default function RegisterEntryPage() {
       )}
 
       {divisions.map((d) => (
-        <DivisionCard key={d.id} division={d} regState={regState} opensLabel={opensLabel} />
+        <DivisionCard
+          key={d.id} division={d} regState={regState} opensLabel={opensLabel}
+          onSelect={() => navigate(`/r/${slug}/apply?division=${d.id}`)}
+        />
       ))}
 
       {regState === 'closed' && divisions.length > 0 && (
