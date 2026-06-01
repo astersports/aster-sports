@@ -75,8 +75,14 @@ Deno.serve(async (req) => {
     // Bind the invitation to the validated org by stamping org_id into the
     // Supabase auth user's metadata. AcceptInvite-side onboarding reads this
     // to scope the new account to the inviter's org.
+    // Base URL is env-driven so the parent-invite magic-link host can be
+    // repointed at go-live without a code change. This is the second surface
+    // the Vercel VITE_APP_BASE_URL toggle CANNOT reach (Deno runtime) — set
+    // APP_BASE_URL in the Supabase function env + redeploy this function.
+    // Extract-not-repoint: fallback is the current working deploy host.
+    const appBaseUrl = (Deno.env.get('APP_BASE_URL') ?? 'https://skyfire-app.vercel.app').replace(/\/+$/, '')
     const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
-      redirectTo: 'https://skyfire-app.vercel.app/login',
+      redirectTo: `${appBaseUrl}/login`,
       data: { org_id, invited_by: user.id },
     })
 
