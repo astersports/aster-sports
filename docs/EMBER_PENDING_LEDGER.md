@@ -3753,7 +3753,33 @@ anon SECDEF RPCs `get_public_program` + `submit_registration`, version 202606010
 Both applied via MCP w/ DO-block verify + mirrors (AP #21). End-to-end transactional smoke
 (rollback) PASSED: get_public_program base=$800, 2-child submit total=$1,700, 2 regs + 4 fee
 rows + 2 equipment, dedupe=0-dupes, grade-band guard fires. Grants anon+authenticated, no
-PUBLIC (#23/#57); anon-SECDEF WARNs intentional (get_invitation_by_token precedent). NEXT: PR B.
+PUBLIC (#23/#57); anon-SECDEF WARNs intentional (get_invitation_by_token precedent).
+
+**✅ FLOW SHIPPED A–G (2026-06-01) — registration capture COMPLETE (minus deferred E):**
+- **PR A #609** — schema 13a/13b + 2 anon RPCs (above).
+- **PR B #610** — `/r/:slug` public entry (program hero + division grid, `usePublicProgram`,
+  `DivisionCard` + invariant test #46/#43).
+- **PR C #611** — lean wizard `/r/:slug/apply` (player→guardian→details→review→Reserve→confirm);
+  `estimateCart` pure (#27, 8 tests) + `useSubmitRegistration`; useReducer no-remount (§5.7).
+- **PR D #612** — multi-child loop (`StepDivision`, guardian once, one confirm per child;
+  single-charge accumulation is the Stripe track).
+- **PR F #613** — admin program-setup `/admin/programs/new` (`useProgramSetup` writes
+  programs+divisions+division_fees via existing admin RLS; `DivisionRows`; "+ Program" on Seasons).
+- **PR G #614** — admin program detail `/admin/programs/:id` (`useProgramRegistrations`;
+  read-only registrations list + status + fee total + link to Financials).
+- **PR E DEFERRED** (Frank call 2026-06-01): magic-link account claim is outward-facing (real
+  emails) AND lands parents on a sparse home (no §6/§8 status surface yet). Revisit when a
+  parent-facing registration-status surface exists.
+
+**Pilot loop closed:** admin creates published program → parent registers (public, multi-child)
+→ pending registrations land → admin sees them + records payment in the existing financial flow.
+**Live test program:** slug `test-2026` (program `ed725214`, `ZZ TEST … safe to delete`) — Frank
+walking `/r/test-2026`; **CC to delete program + any test registrations on Frank's go.**
+
+**Known gaps / fast-follows:** (1) registration↔`financial_account` reconciliation is manual
+(no auto-link); (2) "mark confirmed" admin action read-only for now; (3) reg-window datetime
+inputs are server-tz naive; (4) app-layer multi-org (AuthContext `roleRows[0]`) still pending
+(Finding A other half); (5) PII RLS tighten decision before any real parent-facing PII read.
 
 **Deferred tracks (out-of-scope, where-they-go in audit §7):** Stripe + payment_plans #13 +
 §8 lifecycle → "Stripe first" track; §6 Family Home + §7 re-IA → multi-org track (St Pat's
