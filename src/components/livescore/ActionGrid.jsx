@@ -1,12 +1,12 @@
-const made = { backgroundColor: 'var(--em-success)', color: 'var(--em-text-inverse)', fontWeight: 700 };
-const miss = { backgroundColor: 'var(--em-danger)', color: 'var(--em-text-inverse)', fontWeight: 700 };
-const stat = { backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', border: '1px solid var(--em-border-default)' };
-const ft = { backgroundColor: 'var(--em-warning)', color: 'var(--em-text-inverse)', fontWeight: 700 };
+const made = { backgroundColor: 'var(--as-success)', color: 'var(--as-text-inverse)', fontWeight: 700 };
+const miss = { backgroundColor: 'var(--as-danger)', color: 'var(--as-text-inverse)', fontWeight: 700 };
+const stat = { backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', border: '1px solid var(--as-border-default)' };
+const ft = { backgroundColor: 'var(--as-warning)', color: 'var(--as-text-inverse)', fontWeight: 700 };
 const base = { minHeight: 52, borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 };
 
 function Btn({ label, sub, style, onClick, ariaLabel }) {
   return (
-    <button type="button" onClick={onClick} className="em-press" aria-label={ariaLabel || `${sub || ''} ${label}`} style={{ ...base, ...style }}>
+    <button type="button" onClick={onClick} className="as-press" aria-label={ariaLabel || `${sub || ''} ${label}`} style={{ ...base, ...style }}>
       {sub && <span style={{ fontSize: 17, fontWeight: 800 }}>{sub}</span>}
       <span>{label}</span>
     </button>
@@ -17,7 +17,7 @@ export default function ActionGrid({ isOpponent, onPlay, teamLabel }) {
   const fire = (type) => onPlay(type, { isOpponent });
   return (
     <div style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-secondary)', marginBottom: 8, paddingLeft: 4 }}>{teamLabel}</div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--as-text-secondary)', marginBottom: 8, paddingLeft: 4 }}>{teamLabel}</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
         <Btn sub="+2" label="PT FG" style={made} onClick={() => fire('fg2_made')} ariaLabel="2-point field goal made" />
         <Btn label="Free Throw" style={ft} onClick={() => fire('ft_made')} ariaLabel="Free throw made" />

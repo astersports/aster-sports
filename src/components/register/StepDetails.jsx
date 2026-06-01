@@ -15,11 +15,11 @@ export default function StepDetails({ details, onField, onBack, onNext }) {
       <Field label="Medical notes" htmlFor="d-mn"><TextInput id="d-mn" value={details.medical_notes} onChange={(v) => onField('medical_notes', v)} placeholder="Allergies, conditions…" /></Field>
       <div style={btnRow}>
         <button type="button" style={ghostBtn} onClick={onBack}>Back</button>
-        <button type="button" className="em-press" style={{ ...primaryBtn, flex: 1 }} onClick={onNext}>Review</button>
+        <button type="button" className="as-press" style={{ ...primaryBtn, flex: 1 }} onClick={onNext}>Review</button>
       </div>
     </div>
   );
 }
 
-const hint = { fontSize: 13, color: 'var(--em-text-tertiary)', margin: '0 0 12px' };
+const hint = { fontSize: 13, color: 'var(--as-text-tertiary)', margin: '0 0 12px' };
 const btnRow = { display: 'flex', gap: 8, marginTop: 8 };

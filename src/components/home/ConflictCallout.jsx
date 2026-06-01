@@ -20,24 +20,24 @@ export default function ConflictCallout({ conflicts }) {
       style={{
         display: 'flex', flexDirection: 'column', gap: 8,
         padding: '12px 14px', borderRadius: 10,
-        backgroundColor: 'var(--em-warning-soft)', border: '1px solid var(--em-warning)',
+        backgroundColor: 'var(--as-warning-soft)', border: '1px solid var(--as-warning)',
       }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <AlertTriangle size={18} strokeWidth={1.75} color="var(--em-warning)" aria-hidden="true" />
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-warning)' }}>
+        <AlertTriangle size={18} strokeWidth={1.75} color="var(--as-warning)" aria-hidden="true" />
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--as-warning)' }}>
           Schedule conflict{plural} detected
         </div>
       </div>
       <ul style={{ display: 'flex', flexDirection: 'column', gap: 6, listStyle: 'none', padding: 0, margin: 0 }}>
         {conflicts.map((c, i) => (
-          <li key={i} style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.4 }}>
-            <span style={{ fontWeight: 500, color: 'var(--em-text-primary)' }}>{c.date_label}</span>
+          <li key={i} style={{ fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.4 }}>
+            <span style={{ fontWeight: 500, color: 'var(--as-text-primary)' }}>{c.date_label}</span>
             {': '}
             <span style={{ color: c.color_a }} aria-hidden="true">●</span> {c.kid_a} {c.time_a} ({c.team_a})
             {' · '}
             <span style={{ color: c.color_b }} aria-hidden="true">●</span> {c.kid_b} {c.time_b} ({c.team_b})
             {c.reason === 'tight_travel' && (
-              <span style={{ color: 'var(--em-text-tertiary)', fontStyle: 'italic' }}> — tight travel</span>
+              <span style={{ color: 'var(--as-text-tertiary)', fontStyle: 'italic' }}> — tight travel</span>
             )}
           </li>
         ))}

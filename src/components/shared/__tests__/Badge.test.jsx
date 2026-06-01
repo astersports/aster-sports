@@ -12,11 +12,11 @@ const __filename = fileURLToPath(import.meta.url);
 const REPO_ROOT = join(dirname(__filename), '..', '..', '..', '..');
 
 const VARIANT_CASES = [
-  ['success', 'em-success-soft', 'em-success'], ['warning', 'em-warning-soft', 'em-warning'],
-  ['danger',  'em-danger-soft',  'em-danger'],  ['info',    'em-info-soft',    'em-info'],
-  ['neutral', 'em-neutral-soft', 'em-neutral'], ['academy', 'em-academy-soft', 'em-academy'],
-  ['accent',  'em-accent-soft',  'em-accent'],  ['urgent',  'em-accent',       'em-text-inverse'],
-  ['subtle',  'em-bg-tertiary',  'em-text-tertiary'],
+  ['success', 'as-success-soft', 'as-success'], ['warning', 'as-warning-soft', 'as-warning'],
+  ['danger',  'as-danger-soft',  'as-danger'],  ['info',    'as-info-soft',    'as-info'],
+  ['neutral', 'as-neutral-soft', 'as-neutral'], ['academy', 'as-academy-soft', 'as-academy'],
+  ['accent',  'as-accent-soft',  'as-accent'],  ['urgent',  'as-accent',       'as-text-inverse'],
+  ['subtle',  'as-bg-tertiary',  'as-text-tertiary'],
 ];
 
 describe('Badge', () => {

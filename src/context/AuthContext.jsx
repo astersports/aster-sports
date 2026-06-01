@@ -63,7 +63,7 @@ export function AuthProvider({ children }) {
       reportError(error, { surface: 'AuthContext.loadMembership', userId: authUser.id });
     } else if (roleRows && roleRows.length > 0) {
       // Single-org today → the one row (unchanged behavior). TODO(multi-org-routing,
-      // spec §2.3): when length > 1, route to Family Home (Ember-default brand) +
+      // spec §2.3): when length > 1, route to Family Home (Aster Sports-default brand) +
       // honor a stored active-org preference instead of picking [0].
       const active = roleRows[0];
       resolvedRole = active.role ?? null;

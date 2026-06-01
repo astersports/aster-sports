@@ -53,20 +53,20 @@ export default function ParentHomeSignalZone({
       <CoachMessageBlock messages={recentAnnouncements} nowMs={nowMs} />
 
       {!loading && myTeams.length === 0 && (
-        <div style={{ padding: 20, backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', textAlign: 'center' }}>
+        <div style={{ padding: 20, backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)', textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>🏀</div>
-          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 4 }}>Welcome to {orgName || 'the team'}</div>
-          <div style={{ fontSize: 14, color: 'var(--em-text-secondary)', lineHeight: 1.5 }}>Your coach is getting things set up. Once your child is added to a team, their schedule and events will appear here.</div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 4 }}>Welcome to {orgName || 'the team'}</div>
+          <div style={{ fontSize: 14, color: 'var(--as-text-secondary)', lineHeight: 1.5 }}>Your coach is getting things set up. Once your child is added to a team, their schedule and events will appear here.</div>
         </div>
       )}
 
       {myTeams.length > 0 && (
         <>
           <MyTeamsStrip teams={myTeams} byTeamId={recordsByTeam} loading={recordsLoading} nextEventByTeam={nextEventByTeam} onSelect={(teamId) => onNavigate(`/teams/${teamId}`)} />
-          <button type="button" onClick={() => onNavigate('/records')} className="em-press"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 16px', minHeight: 44, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
+          <button type="button" onClick={() => onNavigate('/records')} className="as-press"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 16px', minHeight: 44, backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 15, fontWeight: 500, color: 'var(--as-text-primary)' }}>
             <span>View full season records</span>
-            <span style={{ fontSize: 17, color: 'var(--em-text-tertiary)' }}>›</span>
+            <span style={{ fontSize: 17, color: 'var(--as-text-tertiary)' }}>›</span>
           </button>
         </>
       )}

@@ -14,10 +14,10 @@ const TYPE_LABELS = {
 };
 
 const TYPE_COLORS = {
-  tournament_champion: 'var(--em-accent)',
-  pool_play_winner: 'var(--em-success)',
-  runner_up: 'var(--em-info)',
-  most_improved: 'var(--em-warning)',
+  tournament_champion: 'var(--as-accent)',
+  pool_play_winner: 'var(--as-success)',
+  runner_up: 'var(--as-info)',
+  most_improved: 'var(--as-warning)',
 };
 
 export default function TeamAchievements({ teamId }) {
@@ -54,13 +54,13 @@ export default function TeamAchievements({ teamId }) {
       <div style={{ padding: '4px 16px 12px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {achievements.map((a) => {
-            const color = TYPE_COLORS[a.achievement_type] || 'var(--em-accent)';
+            const color = TYPE_COLORS[a.achievement_type] || 'var(--as-accent)';
             return (
-              <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 10, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', boxShadow: 'var(--em-shadow-sm)' }}>
+              <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 10, backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)', boxShadow: 'var(--as-shadow-sm)' }}>
                 <Trophy size={14} strokeWidth={1.75} color={color} />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 600, color }}>{TYPE_LABELS[a.achievement_type] || a.achievement_type}</div>
-                  <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{a.tournament_name || a.opponent_team_name || ''}</div>
+                  <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>{a.tournament_name || a.opponent_team_name || ''}</div>
                 </div>
               </div>
             );

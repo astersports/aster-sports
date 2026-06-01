@@ -14,10 +14,10 @@ import InboxSearch from '../components/briefings/inbox/InboxSearch';
 import InboxFilters from '../components/briefings/inbox/InboxFilters';
 import HistoryView from '../components/briefings/inbox/HistoryView';
 
-const wrap = { backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' };
+const wrap = { backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' };
 const inner = { maxWidth: 760, margin: '0 auto', padding: '0 16px 80px', display: 'flex', flexDirection: 'column', gap: 12 };
-const titleStyle = { fontSize: 24, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0, letterSpacing: '-0.01em' };
-const subStyle = { fontSize: 14, color: 'var(--em-text-secondary)', marginTop: 2 };
+const titleStyle = { fontSize: 24, fontWeight: 700, color: 'var(--as-text-primary)', margin: 0, letterSpacing: '-0.01em' };
+const subStyle = { fontSize: 14, color: 'var(--as-text-secondary)', marginTop: 2 };
 
 export default function BriefingsHistoryPage() {
   const { orgId } = useAuth(); // referenced for downstream hooks via context

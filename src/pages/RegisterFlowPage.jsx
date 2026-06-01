@@ -105,8 +105,8 @@ export default function RegisterFlowPage() {
   );
 }
 
-const centered = { padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' };
-const wrap = { maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' };
-const linkBtn = { background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, cursor: 'pointer', padding: 0 };
-const metaStyle = { fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--em-text-tertiary)', margin: '8px 0 2px' };
-const h1Style = { fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', margin: '0 0 16px' };
+const centered = { padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' };
+const wrap = { maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' };
+const linkBtn = { background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, cursor: 'pointer', padding: 0 };
+const metaStyle = { fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--as-text-tertiary)', margin: '8px 0 2px' };
+const h1Style = { fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', margin: '0 0 16px' };

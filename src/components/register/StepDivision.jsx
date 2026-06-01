@@ -11,7 +11,7 @@ export default function StepDivision({ divisions, value, onChange, onNext }) {
       <Field label="Division" htmlFor="div-sel">
         <SelectInput id="div-sel" value={value} onChange={onChange} options={options} />
       </Field>
-      <button type="button" className="em-press" style={{ ...primaryBtn, marginTop: 8, opacity: value ? 1 : 0.5 }} disabled={!value} onClick={onNext}>Next</button>
+      <button type="button" className="as-press" style={{ ...primaryBtn, marginTop: 8, opacity: value ? 1 : 0.5 }} disabled={!value} onClick={onNext}>Next</button>
     </div>
   );
 }

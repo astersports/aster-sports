@@ -31,11 +31,11 @@ export default function AdminSeasonsList({ seasons, loading, onEdit, onRequestSe
         // all four sides, then `borderLeft` overrides just the left
         // edge with a thicker accent.
         const cardStyle = {
-          backgroundColor: 'var(--em-bg-card)',
+          backgroundColor: 'var(--as-bg-card)',
           borderRadius: 10,
-          border: '1px solid var(--em-border-subtle)',
-          borderLeft: `4px solid ${active ? 'var(--em-success)' : 'var(--em-border-default)'}`,
-          boxShadow: 'var(--em-shadow-sm)',
+          border: '1px solid var(--as-border-subtle)',
+          borderLeft: `4px solid ${active ? 'var(--as-success)' : 'var(--as-border-default)'}`,
+          boxShadow: 'var(--as-shadow-sm)',
           overflow: 'hidden',
         };
         return (
@@ -43,15 +43,15 @@ export default function AdminSeasonsList({ seasons, loading, onEdit, onRequestSe
             <button
               type="button"
               onClick={() => onEdit(s)}
-              className="w-full text-left p-4 em-press flex flex-col"
+              className="w-full text-left p-4 as-press flex flex-col"
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 17 }}>
+                <span className="font-semibold" style={{ color: 'var(--as-text-primary)', fontSize: 17 }}>
                   {s.name}
                 </span>
                 {active ? <Badge variant="success">Active</Badge> : <Badge>Archived</Badge>}
               </div>
-              <span style={{ color: 'var(--em-text-secondary)', fontSize: 13 }}>
+              <span style={{ color: 'var(--as-text-secondary)', fontSize: 13 }}>
                 {formatDateFull(s.start_date)} – {formatDateFull(s.end_date)}
               </span>
             </button>
@@ -59,12 +59,12 @@ export default function AdminSeasonsList({ seasons, loading, onEdit, onRequestSe
               <button
                 type="button"
                 onClick={() => onRequestSetActive(s)}
-                className="flex items-center gap-1 em-press w-full"
+                className="flex items-center gap-1 as-press w-full"
                 style={{
                   minHeight: 44,
                   padding: '0 16px',
-                  borderTop: '1px solid var(--em-border-subtle)',
-                  color: 'var(--em-accent)',
+                  borderTop: '1px solid var(--as-border-subtle)',
+                  color: 'var(--as-accent)',
                   fontSize: 13,
                   fontWeight: 500,
                 }}

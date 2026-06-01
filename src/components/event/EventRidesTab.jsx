@@ -13,8 +13,8 @@ import ClaimSeatForm from '../ride/ClaimSeatForm';
 import RequestRideForm from '../ride/RequestRideForm';
 import RideRequestCard from '../ride/RideRequestCard';
 import Button from '../shared/Button';
-const lblStyle = { fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 };
-const emptyStyle = { padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13, border: '1px dashed var(--em-border-subtle)', borderRadius: 10 };
+const lblStyle = { fontSize: 11, fontWeight: 600, color: 'var(--as-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 };
+const emptyStyle = { padding: 24, textAlign: 'center', color: 'var(--as-text-tertiary)', fontSize: 13, border: '1px dashed var(--as-border-subtle)', borderRadius: 10 };
 
 export default function EventRidesTab({ event }) {
   const { user, orgId, role } = useAuth();
@@ -59,7 +59,7 @@ export default function EventRidesTab({ event }) {
   const [requestFormOpen, setRequestFormOpen] = useState(false);
   const [claimTargetOffer, setClaimTargetOffer] = useState(null);
 
-  if (!rideEnabled) return <div style={{ padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 15 }}>Ride coordination is off for this event.</div>;
+  if (!rideEnabled) return <div style={{ padding: 24, textAlign: 'center', color: 'var(--as-text-tertiary)', fontSize: 15 }}>Ride coordination is off for this event.</div>;
 
   return (
     <div style={{ padding: '12px 16px 80px' }}>

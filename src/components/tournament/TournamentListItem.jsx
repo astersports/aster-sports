@@ -20,20 +20,20 @@ export default function TournamentListItem({ tournament, rightSlot }) {
       tabIndex={0}
       onClick={open}
       onKeyDown={onKeyDown}
-      className="em-press"
+      className="as-press"
       aria-label={`Open tournament ${tournament.name}`}
       style={{
         width: '100%', textAlign: 'left',
-        backgroundColor: 'var(--em-bg-card)',
-        border: '1px solid var(--em-border-default)',
+        backgroundColor: 'var(--as-bg-card)',
+        border: '1px solid var(--as-border-default)',
         borderRadius: 10, padding: 14, marginBottom: 10,
-        boxShadow: 'var(--em-shadow-sm)',
+        boxShadow: 'var(--as-shadow-sm)',
         display: 'flex', flexDirection: 'column', gap: 8,
         cursor: 'pointer', minHeight: 44,
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', lineHeight: 1.3 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)', lineHeight: 1.3 }}>
           {tournament.name}
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
@@ -42,7 +42,7 @@ export default function TournamentListItem({ tournament, rightSlot }) {
         </div>
       </div>
 
-      <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <Calendar size={12} strokeWidth={1.75} />
           {dateRange}
@@ -61,9 +61,9 @@ export default function TournamentListItem({ tournament, rightSlot }) {
             <span key={t.id} style={{
               fontSize: 11, fontWeight: 500,
               padding: '2px 8px', borderRadius: 999,
-              backgroundColor: 'var(--em-bg-tertiary)',
-              color: 'var(--em-text-primary)',
-              borderLeft: `3px solid ${t.team_color || 'var(--em-text-tertiary)'}`,
+              backgroundColor: 'var(--as-bg-tertiary)',
+              color: 'var(--as-text-primary)',
+              borderLeft: `3px solid ${t.team_color || 'var(--as-text-tertiary)'}`,
             }}>
               {t.name}
             </span>

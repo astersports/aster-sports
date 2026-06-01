@@ -26,30 +26,30 @@ export default function ScenariosTab({ tournament, teamFilter }) {
 
   if (scenarios.length === 0) {
     return (
-      <div style={{ padding: 32, textAlign: 'center', backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)' }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 6 }}>No scenarios posted yet</div>
-        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
+      <div style={{ padding: 32, textAlign: 'center', backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)' }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 6 }}>No scenarios posted yet</div>
+        <div style={{ fontSize: 13, color: 'var(--as-text-secondary)' }}>
           Championship scenarios and tiebreaker paths will appear here once the bracket advances.
         </div>
       </div>
     );
   }
 
-  const COLOR_MAP = { green: 'var(--em-success)', red: 'var(--em-danger)', yellow: 'var(--em-warning)', blue: 'var(--em-info)', gray: 'var(--em-neutral)' };
+  const COLOR_MAP = { green: 'var(--as-success)', red: 'var(--as-danger)', yellow: 'var(--as-warning)', blue: 'var(--as-info)', gray: 'var(--as-neutral)' };
 
   const display = teamFilter ? scenarios.filter((s) => s.team_id === teamFilter) : scenarios;
 
   return (
     <div>
       {display.map((s) => {
-        const color = COLOR_MAP[s.outcome_color] || 'var(--em-text-primary)';
+        const color = COLOR_MAP[s.outcome_color] || 'var(--as-text-primary)';
         return (
-          <div key={s.id} style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', padding: 14, marginBottom: 10, borderLeft: `4px solid ${color}` }}>
+          <div key={s.id} style={{ backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)', padding: 14, marginBottom: 10, borderLeft: `4px solid ${color}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              {s.teams && <span style={{ fontSize: 13, fontWeight: 600, color: s.teams.team_color || 'var(--em-text-primary)' }}>{s.teams.name}</span>}
+              {s.teams && <span style={{ fontSize: 13, fontWeight: 600, color: s.teams.team_color || 'var(--as-text-primary)' }}>{s.teams.name}</span>}
               <span style={{ fontSize: 13, fontWeight: 600, color }}>{s.condition_label}</span>
             </div>
-            {s.narrative && <div style={{ fontSize: 14, color: 'var(--em-text-secondary)', lineHeight: 1.5 }}>{s.narrative}</div>}
+            {s.narrative && <div style={{ fontSize: 14, color: 'var(--as-text-secondary)', lineHeight: 1.5 }}>{s.narrative}</div>}
           </div>
         );
       })}

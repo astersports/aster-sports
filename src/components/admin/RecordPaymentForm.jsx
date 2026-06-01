@@ -16,8 +16,8 @@ const METHODS = [
 
 const INPUT_STYLE = {
   width: '100%', minHeight: 44, padding: '0 12px', fontSize: 15,
-  borderRadius: 10, border: '1.5px solid var(--em-border-default)',
-  backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)',
+  borderRadius: 10, border: '1.5px solid var(--as-border-default)',
+  backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)',
   fontFamily: 'inherit',
 };
 

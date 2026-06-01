@@ -29,9 +29,9 @@ export default function RegistrationReminderCard({ stats, seasonName, loading })
     <section aria-label="Payment due">
       <div
         style={{
-          backgroundColor: 'var(--em-warning-soft)',
+          backgroundColor: 'var(--as-warning-soft)',
           borderRadius: 10,
-          border: '1px solid var(--em-warning)',
+          border: '1px solid var(--as-warning)',
           padding: '12px 14px',
           display: 'flex',
           alignItems: 'flex-start',
@@ -41,7 +41,7 @@ export default function RegistrationReminderCard({ stats, seasonName, loading })
         <AlertCircle
           size={20}
           strokeWidth={1.75}
-          color="var(--em-warning)"
+          color="var(--as-warning)"
           style={{ flexShrink: 0, marginTop: 2 }}
           aria-hidden="true"
         />
@@ -52,17 +52,17 @@ export default function RegistrationReminderCard({ stats, seasonName, loading })
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
-              color: 'var(--em-warning)',
+              color: 'var(--as-warning)',
               marginBottom: 2,
             }}
           >
             Payment Due
           </div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)' }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)' }}>
             {formatCurrency(stats.outstanding)} owed
             {seasonName ? ` · ${seasonName}` : ''}
           </div>
-          <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2 }}>
+          <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 2 }}>
             Contact your program admin to settle your balance.
           </div>
         </div>

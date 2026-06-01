@@ -5,10 +5,10 @@
 import { Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-const wrap = { position: 'sticky', top: 0, zIndex: 5, backgroundColor: 'var(--em-bg-page)', padding: '8px 0' };
+const wrap = { position: 'sticky', top: 0, zIndex: 5, backgroundColor: 'var(--as-bg-page)', padding: '8px 0' };
 const inputWrap = { position: 'relative' };
-const iconStyle = { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--em-text-tertiary)' };
-const inputStyle = { width: '100%', minHeight: 40, padding: '0 12px 0 38px', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', color: 'var(--em-text-primary)' };
+const iconStyle = { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--as-text-tertiary)' };
+const inputStyle = { width: '100%', minHeight: 40, padding: '0 12px 0 38px', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)', color: 'var(--as-text-primary)' };
 
 export default function InboxSearch({ value, onChange, placeholder }) {
   const [local, setLocal] = useState(value || '');

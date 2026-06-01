@@ -37,11 +37,11 @@ export function ToastProvider({ children }) {
               gap: 12,
               padding: '12px 16px',
               borderRadius: 10,
-              backgroundColor: toast.variant === 'error' ? 'var(--em-danger)' : toast.variant === 'success' ? 'var(--em-success)' : 'var(--em-info)',
-              color: 'var(--em-text-inverse)',
+              backgroundColor: toast.variant === 'error' ? 'var(--as-danger)' : toast.variant === 'success' ? 'var(--as-success)' : 'var(--as-info)',
+              color: 'var(--as-text-inverse)',
               fontSize: 15,
               fontWeight: 500,
-              boxShadow: 'var(--em-shadow-lg)',
+              boxShadow: 'var(--as-shadow-lg)',
               maxWidth: 400,
               width: '100%',
             }}
@@ -53,7 +53,7 @@ export function ToastProvider({ children }) {
                 onClick={() => { toast.onUndo(); dismiss(); }}
                 style={{
                   background: 'none', border: 'none',
-                  color: 'var(--em-text-inverse)',
+                  color: 'var(--as-text-inverse)',
                   fontSize: 15, fontWeight: 700,
                   textDecoration: 'underline',
                   padding: '4px 8px',

@@ -74,13 +74,13 @@ export default function SchedulePage() {
     <>
       <div className="px-4 py-4">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-          <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20 }}>Schedule</h1>
+          <h1 className="font-bold" style={{ color: 'var(--as-text-primary)', fontSize: 20 }}>Schedule</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ViewToggle value={viewMode} onChange={setViewMode} />
             {isStaff(role) && selectedTeam && <ShareScheduleButton teamId={selectedTeam} teamName="" />}
           </div>
         </div>
-        <div style={{ width: 32, height: 3, backgroundColor: 'var(--em-accent)', borderRadius: 2, marginBottom: 8 }} />
+        <div style={{ width: 32, height: 3, backgroundColor: 'var(--as-accent)', borderRadius: 2, marginBottom: 8 }} />
 
         <WeekStrip eventDates={eventDates} selectedDate={selectedDate} onSelect={handleDaySelect} />
 

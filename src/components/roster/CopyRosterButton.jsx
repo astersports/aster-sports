@@ -33,12 +33,12 @@ export default function CopyRosterButton({ team, sortedPlayers }) {
     <button
       type="button"
       onClick={onCopy}
-      className="em-press flex items-center gap-1"
+      className="as-press flex items-center gap-1"
       style={{
         minHeight: 44, padding: '0 14px', borderRadius: 8,
-        border: '1px solid var(--em-border-default)',
-        backgroundColor: 'var(--em-bg-card)',
-        color: 'var(--em-text-secondary)',
+        border: '1px solid var(--as-border-default)',
+        backgroundColor: 'var(--as-bg-card)',
+        color: 'var(--as-text-secondary)',
         fontSize: 13, fontWeight: 500,
       }}
     >

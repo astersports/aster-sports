@@ -34,12 +34,12 @@ function audienceValue(state) {
 }
 
 const wrap = { display: 'flex', flexDirection: 'column', gap: 14, padding: 14 };
-const heading = { fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' };
-const card = { display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 14px', padding: 14, borderRadius: 10, border: '1px solid var(--em-border-subtle)', backgroundColor: 'var(--em-bg-card)' };
-const rowLabel = { fontSize: 11, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', paddingTop: 2 };
-const rowValue = { fontSize: 14, color: 'var(--em-text-primary)', lineHeight: 1.4 };
-const banner = { display: 'flex', alignItems: 'flex-start', gap: 10, padding: 12, borderRadius: 10, backgroundColor: 'var(--em-warning-soft)', borderLeft: '3px solid var(--em-warning)', fontSize: 13, color: 'var(--em-text-primary)', lineHeight: 1.4 };
-const sendBtn = (disabled) => ({ width: '100%', minHeight: 48, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 });
+const heading = { fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' };
+const card = { display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 14px', padding: 14, borderRadius: 10, border: '1px solid var(--as-border-subtle)', backgroundColor: 'var(--as-bg-card)' };
+const rowLabel = { fontSize: 11, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', paddingTop: 2 };
+const rowValue = { fontSize: 14, color: 'var(--as-text-primary)', lineHeight: 1.4 };
+const banner = { display: 'flex', alignItems: 'flex-start', gap: 10, padding: 12, borderRadius: 10, backgroundColor: 'var(--as-warning-soft)', borderLeft: '3px solid var(--as-warning)', fontSize: 13, color: 'var(--as-text-primary)', lineHeight: 1.4 };
+const sendBtn = (disabled) => ({ width: '100%', minHeight: 48, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 });
 
 export default function StepSendConfirm({ state, audience, onSend, sending = false, pilotModeEnabled = false }) {
   const scheduleValue = state.scheduled_for ? `Scheduled for ${fmtSchedule(state.scheduled_for)}` : 'Send now';
@@ -72,13 +72,13 @@ export default function StepSendConfirm({ state, audience, onSend, sending = fal
       </div>
       {pilotModeEnabled && (
         <div style={banner} role="status" data-testid="pilot-banner">
-          <ShieldAlert size={16} strokeWidth={1.75} color="var(--em-warning)" style={{ flexShrink: 0, marginTop: 1 }} />
+          <ShieldAlert size={16} strokeWidth={1.75} color="var(--as-warning)" style={{ flexShrink: 0, marginTop: 1 }} />
           <span>Pilot mode is on. Only flagged pilot families (or the admin BCC) will receive this send.</span>
         </div>
       )}
-      <button type="button" onClick={onSend} disabled={disabled} className="em-press" style={sendBtn(disabled)} data-testid="send-button">
+      <button type="button" onClick={onSend} disabled={disabled} className="as-press" style={sendBtn(disabled)} data-testid="send-button">
         {sending
-          ? <><Loader2 size={16} strokeWidth={1.75} className="em-spin" /> Sending…</>
+          ? <><Loader2 size={16} strokeWidth={1.75} className="as-spin" /> Sending…</>
           : <><Send size={16} strokeWidth={1.75} /> Send</>}
       </button>
     </div>

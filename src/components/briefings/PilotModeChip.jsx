@@ -14,9 +14,9 @@ const chipStyle = {
   borderRadius: 9999,
   fontSize: 12,
   fontWeight: 600,
-  backgroundColor: 'var(--em-warning-soft)',
-  color: 'var(--em-warning)',
-  border: '1px solid var(--em-warning)',
+  backgroundColor: 'var(--as-warning-soft)',
+  color: 'var(--as-warning)',
+  border: '1px solid var(--as-warning)',
   textDecoration: 'none',
   fontFamily: 'inherit',
   cursor: 'pointer',
@@ -27,7 +27,7 @@ export default function PilotModeChip({ compact = false }) {
   return (
     <Link
       to="/admin/settings?panel=communications"
-      className="em-press"
+      className="as-press"
       style={chipStyle}
       aria-label="Pilot mode is on. Tap to manage in Settings."
     >

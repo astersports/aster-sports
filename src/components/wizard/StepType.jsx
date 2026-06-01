@@ -12,7 +12,7 @@ const TYPES = [
 export default function StepType({ value, onSelect }) {
   return (
     <div style={{ padding: '24px 16px' }}>
-      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 16 }}>
+      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 16 }}>
         What type of event?
       </h2>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -24,13 +24,13 @@ export default function StepType({ value, onSelect }) {
               key={t.key}
               type="button"
               onClick={() => onSelect(t.key)}
-              className="em-press"
+              className="as-press"
               style={{
                 minHeight: t.large ? 88 : 64,
                 borderRadius: 10,
-                border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
-                backgroundColor: sel ? 'var(--em-accent)' : 'var(--em-bg-card)',
-                color: sel ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
+                border: sel ? '2px solid var(--as-accent)' : '1px solid var(--as-border-default)',
+                backgroundColor: sel ? 'var(--as-accent)' : 'var(--as-bg-card)',
+                color: sel ? 'var(--as-text-inverse)' : 'var(--as-text-primary)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 justifyContent: 'center', gap: 6, fontSize: 15, fontWeight: 500,
               }}

@@ -30,30 +30,30 @@ function relTime(ms) {
 const tileBase = {
   display: 'flex', flexDirection: 'column', gap: 8, padding: 14,
   minHeight: 140, width: '100%', borderRadius: 10,
-  border: '1px solid var(--em-border-subtle)',
-  backgroundColor: 'var(--em-bg-card)', fontFamily: 'inherit', textAlign: 'left',
+  border: '1px solid var(--as-border-subtle)',
+  backgroundColor: 'var(--as-bg-card)', fontFamily: 'inherit', textAlign: 'left',
   transition: 'background-color 120ms ease-out, transform 120ms ease-out',
 };
 const iconWrap = {
   width: 40, height: 40, borderRadius: 20,
-  backgroundColor: 'var(--em-accent-soft)',
+  backgroundColor: 'var(--as-accent-soft)',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   alignSelf: 'flex-start',
 };
 const labelStyle = {
-  fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)',
+  fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)',
   lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
 };
 const descStyle = {
-  fontSize: 12, fontWeight: 400, color: 'var(--em-text-secondary)',
+  fontSize: 12, fontWeight: 400, color: 'var(--as-text-secondary)',
   lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2,
   WebkitBoxOrient: 'vertical', overflow: 'hidden',
 };
 const usageWrap = {
   marginTop: 'auto', paddingTop: 8,
-  borderTop: '1px solid var(--em-border-subtle)',
+  borderTop: '1px solid var(--as-border-subtle)',
   fontSize: 11, fontWeight: 500, letterSpacing: '0.02em',
-  color: 'var(--em-text-tertiary)',
+  color: 'var(--as-text-tertiary)',
 };
 
 export default function KindTile({ kind, meta, usage, disabled = false, onClick }) {
@@ -74,11 +74,11 @@ export default function KindTile({ kind, meta, usage, disabled = false, onClick 
       disabled={disabled}
       aria-disabled={disabled}
       aria-label={`${meta?.label || kind}: ${meta?.description || ''}`}
-      className={interactive ? 'em-press kind-tile' : 'kind-tile'}
+      className={interactive ? 'as-press kind-tile' : 'kind-tile'}
       style={style}
     >
       <span style={iconWrap}>
-        <Icon size={20} strokeWidth={1.75} color="var(--em-accent)" />
+        <Icon size={20} strokeWidth={1.75} color="var(--as-accent)" />
       </span>
       <span style={labelStyle}>{meta?.label || kind}</span>
       <span style={descStyle}>{meta?.description || ''}</span>

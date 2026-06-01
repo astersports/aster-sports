@@ -13,7 +13,7 @@ export default function TournamentRowMenu({ onEdit, onArchive }) {
         onClick={(e) => { stop(e); setOpen((o) => !o); }}
         aria-label="Tournament actions"
         aria-expanded={open}
-        className="em-press"
+        className="as-press"
         style={{
           width: 32, height: 32, borderRadius: 6,
           border: 'none', backgroundColor: 'transparent',
@@ -21,7 +21,7 @@ export default function TournamentRowMenu({ onEdit, onArchive }) {
           cursor: 'pointer',
         }}
       >
-        <MoreVertical size={18} strokeWidth={1.75} color="var(--em-text-secondary)" />
+        <MoreVertical size={18} strokeWidth={1.75} color="var(--as-text-secondary)" />
       </button>
       {open && (
         <>
@@ -31,24 +31,24 @@ export default function TournamentRowMenu({ onEdit, onArchive }) {
           />
           <div style={{
             position: 'absolute', top: 36, right: 0, zIndex: 2,
-            backgroundColor: 'var(--em-bg-card)',
-            border: '1px solid var(--em-border-default)',
-            borderRadius: 10, boxShadow: 'var(--em-shadow-md)',
+            backgroundColor: 'var(--as-bg-card)',
+            border: '1px solid var(--as-border-default)',
+            borderRadius: 10, boxShadow: 'var(--as-shadow-md)',
             minWidth: 140, overflow: 'hidden',
           }}>
             <button
               type="button"
               onClick={(e) => { stop(e); setOpen(false); onEdit(); }}
-              className="em-press"
-              style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--em-text-primary)', cursor: 'pointer' }}
+              className="as-press"
+              style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--as-text-primary)', cursor: 'pointer' }}
             >
               <Edit2 size={14} strokeWidth={1.75} /> Edit
             </button>
             <button
               type="button"
               onClick={(e) => { stop(e); setOpen(false); onArchive(); }}
-              className="em-press"
-              style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--em-danger)', cursor: 'pointer' }}
+              className="as-press"
+              style={{ width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: 'var(--as-danger)', cursor: 'pointer' }}
             >
               <Archive size={14} strokeWidth={1.75} /> Archive
             </button>

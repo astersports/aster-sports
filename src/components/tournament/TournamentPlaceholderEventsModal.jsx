@@ -11,9 +11,9 @@ import { weekendDaysInRange } from '../../lib/tournamentWeekend';
 // the top. Default: every checkbox checked. Operator can uncheck cells
 // or skip entirely.
 
-const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)', marginBottom: 6, display: 'block' };
-const selectStyle = { width: '100%', minHeight: 44, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' };
-const cellStyle = { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', fontSize: 14, color: 'var(--em-text-primary)' };
+const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-secondary)', marginBottom: 6, display: 'block' };
+const selectStyle = { width: '100%', minHeight: 44, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, fontFamily: 'inherit' };
+const cellStyle = { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', fontSize: 14, color: 'var(--as-text-primary)' };
 
 function isoDateTimeUtc(dateStr, hhmm) {
   // Interpret as NY-tz local time → ISO. The wizard already encodes
@@ -99,7 +99,7 @@ export default function TournamentPlaceholderEventsModal({ tournament, teamIds, 
   return (
     <FullScreenForm open onClose={onClose} title="Tournament placeholder events">
       <div style={{ maxWidth: 600, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ fontSize: 14, color: 'var(--em-text-primary)', lineHeight: 1.5 }}>
+        <div style={{ fontSize: 14, color: 'var(--as-text-primary)', lineHeight: 1.5 }}>
           <strong>{tournament?.name}</strong> spans a weekend. Create 8am–8pm placeholder events
           for each team and day? Detail can be filled in later as the schedule firms up.
         </div>
@@ -110,14 +110,14 @@ export default function TournamentPlaceholderEventsModal({ tournament, teamIds, 
             <option value="">Select a venue…</option>
             {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
           </select>
-          {!locationId && <div style={{ fontSize: 12, color: 'var(--em-warning)', marginTop: 6 }}>Pick a venue to enable placeholder creation.</div>}
+          {!locationId && <div style={{ fontSize: 12, color: 'var(--as-warning)', marginTop: 6 }}>Pick a venue to enable placeholder creation.</div>}
         </div>
 
         <div>
           <span style={labelStyle}>Cells to create ({checkedCount})</span>
           {teams.map((team) => (
             <div key={team.id} style={{ marginTop: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 4 }}>{team.name}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 4 }}>{team.name}</div>
               {days.map((d) => (
                 <label key={d.iso} style={cellStyle}>
                   <input type="checkbox" checked={!!cells[`${team.id}:${d.iso}`]} onChange={() => toggle(team.id, d.iso)} style={{ width: 16, height: 16 }} />
@@ -129,12 +129,12 @@ export default function TournamentPlaceholderEventsModal({ tournament, teamIds, 
         </div>
 
         <div style={{ display: 'flex', gap: 10, paddingTop: 8 }}>
-          <button type="button" onClick={onClose} className="em-press"
-            style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
+          <button type="button" onClick={onClose} className="as-press"
+            style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
             Skip
           </button>
-          <button type="button" onClick={onConfirm} disabled={!canSave} className="em-press"
-            style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, opacity: canSave ? 1 : 0.5, cursor: canSave ? 'pointer' : 'not-allowed' }}>
+          <button type="button" onClick={onConfirm} disabled={!canSave} className="as-press"
+            style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 15, fontWeight: 600, opacity: canSave ? 1 : 0.5, cursor: canSave ? 'pointer' : 'not-allowed' }}>
             {saving ? 'Creating…' : `Create ${checkedCount}`}
           </button>
         </div>

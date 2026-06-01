@@ -49,15 +49,15 @@ export default function AdminManagerLayout({
   };
 
   return (
-    <div className="px-4 py-4 em-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
+    <div className="px-4 py-4 as-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <AdminBackHeader />
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20 }}>
+          <h1 className="font-bold" style={{ color: 'var(--as-text-primary)', fontSize: 20 }}>
             {title}
           </h1>
           {subtitle && (
-            <div style={{ color: 'var(--em-text-secondary)', fontSize: 13 }}>{subtitle}</div>
+            <div style={{ color: 'var(--as-text-secondary)', fontSize: 13 }}>{subtitle}</div>
           )}
         </div>
         {onAdd && (
@@ -72,7 +72,7 @@ export default function AdminManagerLayout({
           <Search
             size={18}
             strokeWidth={1.75}
-            style={{ position: 'absolute', left: 12, top: 13, color: 'var(--em-text-tertiary)', pointerEvents: 'none' }}
+            style={{ position: 'absolute', left: 12, top: 13, color: 'var(--as-text-tertiary)', pointerEvents: 'none' }}
           />
           <input
             type="search"
@@ -84,11 +84,11 @@ export default function AdminManagerLayout({
             style={{
               height: 44,
               padding: '0 12px 0 40px',
-              backgroundColor: 'var(--em-bg-tertiary)',
-              border: '1.5px solid var(--em-border-default)',
+              backgroundColor: 'var(--as-bg-tertiary)',
+              border: '1.5px solid var(--as-border-default)',
               borderRadius: 10,
               fontSize: 15,
-              color: 'var(--em-text-primary)',
+              color: 'var(--as-text-primary)',
             }}
           />
         </div>

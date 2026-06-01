@@ -13,7 +13,7 @@ export function MainView({ isViewingAs, activeRole, onReset, onCoach, onParent, 
         <button
           onClick={onReset}
           className="w-full flex items-center gap-3 p-4 mb-3 rounded-xl border-2 font-medium"
-          style={{ borderColor: 'var(--em-warning)', background: 'var(--em-warning-soft)' }}
+          style={{ borderColor: 'var(--as-warning)', background: 'var(--as-warning-soft)' }}
         >
           <RotateCcw className="w-5 h-5" />
           Back to admin view
@@ -42,7 +42,7 @@ export function PickerView({ guardians, loading, search, onSearch, activeRole, v
           onChange={(e) => onSearch(e.target.value)}
           placeholder="Search by name or child"
           className="w-full pl-10 pr-3 py-3 rounded-xl border"
-          style={{ borderColor: 'var(--em-border-default)' }}
+          style={{ borderColor: 'var(--as-border-default)' }}
         />
       </div>
       {loading && <p className="text-sm opacity-60 p-2">Loading...</p>}
@@ -55,8 +55,8 @@ export function PickerView({ guardians, loading, search, onSearch, activeRole, v
             onClick={() => onPick(g)}
             className="w-full flex items-center p-3 rounded-lg text-left"
             style={{
-              background: isCurrent ? 'var(--em-accent-soft, #EBF1F8)' : 'transparent',
-              borderLeft: `3px solid ${isCurrent ? 'var(--em-accent)' : 'transparent'}`,
+              background: isCurrent ? 'var(--as-accent-soft, #EBF1F8)' : 'transparent',
+              borderLeft: `3px solid ${isCurrent ? 'var(--as-accent)' : 'transparent'}`,
             }}
           >
             <div className="flex-1 min-w-0">
@@ -77,8 +77,8 @@ function Tile({ icon: Icon, label, active, chevron, onClick }) {
       onClick={onClick}
       className="w-full flex items-center gap-3 p-4 mb-2 rounded-xl text-left"
       style={{
-        background: active ? 'var(--em-accent-soft, #EBF1F8)' : 'transparent',
-        border: '1px solid var(--em-border-default)',
+        background: active ? 'var(--as-accent-soft, #EBF1F8)' : 'transparent',
+        border: '1px solid var(--as-border-default)',
       }}
     >
       <Icon className="w-5 h-5" />

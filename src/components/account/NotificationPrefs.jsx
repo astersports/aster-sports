@@ -45,22 +45,22 @@ export default function NotificationPrefs({ userId, orgId }) {
   if (loading) return <LoadingSkeleton variant="card" count={1} />;
 
   return (
-    <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
+    <div style={{ backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)', overflow: 'hidden' }}>
       {CATEGORIES.map((cat, i) => {
         const enabled = prefs[cat.key]?.push !== false;
         return (
-          <div key={cat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', minHeight: 44, borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)' }}>
-            <span style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{cat.label}</span>
-            <button type="button" onClick={() => toggle(cat.key)} className="em-press"
+          <div key={cat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', minHeight: 44, borderTop: i === 0 ? 'none' : '1px solid var(--as-border-subtle)' }}>
+            <span style={{ fontSize: 15, color: 'var(--as-text-primary)' }}>{cat.label}</span>
+            <button type="button" onClick={() => toggle(cat.key)} className="as-press"
               role="switch" aria-checked={enabled} aria-label={`${cat.label} notifications`}
               style={{
                 width: 48, height: 28, borderRadius: 14, border: 'none', padding: 2, cursor: 'pointer',
-                backgroundColor: enabled ? 'var(--em-accent)' : 'var(--em-bg-tertiary)',
+                backgroundColor: enabled ? 'var(--as-accent)' : 'var(--as-bg-tertiary)',
                 transition: 'background-color 200ms',
               }}>
               <div style={{
                 width: 24, height: 24, borderRadius: 12,
-                backgroundColor: 'var(--em-text-inverse)', boxShadow: 'var(--em-shadow-sm)',
+                backgroundColor: 'var(--as-text-inverse)', boxShadow: 'var(--as-shadow-sm)',
                 transform: enabled ? 'translateX(20px)' : 'translateX(0)',
                 transition: 'transform 200ms',
               }} />

@@ -22,9 +22,9 @@ export default function StepPlayer({ player, division, onField, onNext }) {
       <Field label="Date of birth" htmlFor="p-dob"><TextInput id="p-dob" type="date" value={player.dob} onChange={(v) => onField('dob', v)} /></Field>
       <Field label="Grade" htmlFor="p-grade"><SelectInput id="p-grade" value={player.grade} onChange={(v) => onField('grade', v)} options={[{ value: '', label: 'Select grade' }, ...GRADES]} /></Field>
       {warn && <div style={warnStyle}>{warn}</div>}
-      <button type="button" className="em-press" style={{ ...primaryBtn, marginTop: 8, opacity: valid ? 1 : 0.5 }} disabled={!valid} onClick={onNext}>Next</button>
+      <button type="button" className="as-press" style={{ ...primaryBtn, marginTop: 8, opacity: valid ? 1 : 0.5 }} disabled={!valid} onClick={onNext}>Next</button>
     </div>
   );
 }
 
-const warnStyle = { padding: '8px 12px', borderRadius: 10, backgroundColor: 'var(--em-info-soft)', color: 'var(--em-info)', fontSize: 13, marginBottom: 8 };
+const warnStyle = { padding: '8px 12px', borderRadius: 10, backgroundColor: 'var(--as-info-soft)', color: 'var(--as-info)', fontSize: 13, marginBottom: 8 };

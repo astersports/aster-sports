@@ -16,12 +16,12 @@ import { useFavoriteAudiences } from '../../../hooks/useFavoriteAudiences';
 import { useOrgTeams } from '../../../hooks/useOrgTeams';
 
 const wrap = { display: 'flex', flexDirection: 'column', gap: 12 };
-const header = { fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' };
+const header = { fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' };
 const strip = { display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' };
-const chip = { display: 'flex', alignItems: 'center', gap: 8, minHeight: 56, padding: '8px 12px', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', flexShrink: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' };
+const chip = { display: 'flex', alignItems: 'center', gap: 8, minHeight: 56, padding: '8px 12px', borderRadius: 10, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', flexShrink: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' };
 const chipBody = { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' };
-const chipLabel = { fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200 };
-const chipMeta = { fontSize: 11, color: 'var(--em-text-tertiary)' };
+const chipLabel = { fontSize: 13, fontWeight: 600, color: 'var(--as-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200 };
+const chipMeta = { fontSize: 11, color: 'var(--as-text-tertiary)' };
 const iconBtn = { background: 'none', border: 'none', padding: 4, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 28, minWidth: 28 };
 const skeleton = { ...chip, opacity: 0.5, width: 140, height: 56 };
 
@@ -71,7 +71,7 @@ export default function RecentAndFavorites({ onApply }) {
                   <span style={chipMeta}>{r.audience_type}</span>
                 </button>
                 <button type="button" style={iconBtn} onClick={() => toggleFavorite(r.audience_type, r.audience_filter, label)} aria-label={isFav ? 'Remove favorite' : 'Save favorite'} data-testid="recent-star">
-                  <Star size={16} strokeWidth={1.75} fill={isFav ? 'var(--em-accent)' : 'none'} color={isFav ? 'var(--em-accent)' : 'var(--em-text-tertiary)'} />
+                  <Star size={16} strokeWidth={1.75} fill={isFav ? 'var(--as-accent)' : 'none'} color={isFav ? 'var(--as-accent)' : 'var(--as-text-tertiary)'} />
                 </button>
               </div>
             );
@@ -91,7 +91,7 @@ export default function RecentAndFavorites({ onApply }) {
                     <span style={chipMeta}>{f.audience_type}</span>
                   </button>
                   <button type="button" style={iconBtn} onClick={() => remove(f.id)} aria-label="Remove favorite" data-testid="favorite-x">
-                    <X size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+                    <X size={16} strokeWidth={1.75} color="var(--as-text-tertiary)" />
                   </button>
                 </div>
               );

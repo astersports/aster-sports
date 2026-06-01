@@ -4,7 +4,7 @@ import { formatTime } from '../../lib/formatters';
 export default function MatchupCard({ event, gameResult }) {
   const navigate = useNavigate();
   const team = event.teams;
-  const teamColor = team?.team_color || 'var(--em-neutral)';
+  const teamColor = team?.team_color || 'var(--as-neutral)';
   const teamName = team?.name || '';
   // 2026-05-20 — tournament-anchor events (no bracket released yet) have
   // no opponent. Rendering "vs TBD" looked like a regular game admins
@@ -25,16 +25,16 @@ export default function MatchupCard({ event, gameResult }) {
       role="link"
       tabIndex={0}
       aria-label={`${teamName} vs ${opponent}`}
-      className="em-press"
+      className="as-press"
       onClick={() => { navigator.vibrate?.(10); navigate(`/events/${event.id}`, { state: { event } }); }}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/events/${event.id}`, { state: { event } }); } }}
       style={{
         display: 'flex',
         alignItems: 'stretch',
-        backgroundColor: 'var(--em-bg-card)',
+        backgroundColor: 'var(--as-bg-card)',
         borderRadius: 10,
-        border: '1px solid var(--em-border-default)',
-        boxShadow: 'var(--em-shadow-sm)',
+        border: '1px solid var(--as-border-default)',
+        boxShadow: 'var(--as-shadow-sm)',
         overflow: 'hidden',
         opacity: isCancelled ? 0.5 : 1,
         marginBottom: 8,
@@ -51,7 +51,7 @@ export default function MatchupCard({ event, gameResult }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: 100, flexShrink: 0 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: teamColor, flexShrink: 0 }} />
-          <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--as-text-primary)', whiteSpace: 'nowrap' }}>
             {teamName}
           </span>
         </div>
@@ -62,10 +62,10 @@ export default function MatchupCard({ event, gameResult }) {
           // "Games page on the schedule has different font size on
           // the upcoming games vs results section."
           <div style={{ width: 80, flexShrink: 0, textAlign: 'center' }}>
-            <span style={{ fontSize: 17, fontWeight: 700, color: gr.result === 'W' ? 'var(--em-success)' : gr.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
+            <span style={{ fontSize: 17, fontWeight: 700, color: gr.result === 'W' ? 'var(--as-success)' : gr.result === 'L' ? 'var(--as-danger)' : 'var(--as-text-secondary)' }}>
               {gr.result}
             </span>
-            <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginLeft: 4 }}>
+            <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)', marginLeft: 4 }}>
               {gr.our_score}-{gr.opponent_score}
             </span>
           </div>
@@ -77,7 +77,7 @@ export default function MatchupCard({ event, gameResult }) {
           // Tournament anchors suppress the placeholder time entirely.
           <div style={{ width: 80, flexShrink: 0, textAlign: 'center' }}>
             {!isPast && !isTournamentAnchor && (
-              <span className="font-bold" style={{ fontSize: 17, color: 'var(--em-text-primary)', whiteSpace: 'nowrap' }}>
+              <span className="font-bold" style={{ fontSize: 17, color: 'var(--as-text-primary)', whiteSpace: 'nowrap' }}>
                 {formatTime(event.start_at)}
               </span>
             )}
@@ -85,7 +85,7 @@ export default function MatchupCard({ event, gameResult }) {
                 (17px to hold the result row rhythm) instead of a blank
                 center column that reads as a half-rendered card. */}
             {isPast && !isTournamentAnchor && (
-              <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-tertiary)' }}>—</span>
+              <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-tertiary)' }}>—</span>
             )}
           </div>
         )}
@@ -95,16 +95,16 @@ export default function MatchupCard({ event, gameResult }) {
             opponent column made result cards visibly taller than
             upcoming cards despite PR #351 matching the score size. */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>
+          <span style={{ fontSize: 15, color: 'var(--as-text-primary)' }}>
             {isTournamentAnchor ? tournamentLabel : (isPast ? opponent : `${isAway ? '@ ' : 'vs '}${opponent}`)}
           </span>
           {isTournamentAnchor && (
-            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>
+            <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>
               Schedule pending
             </span>
           )}
           {!isTournamentAnchor && isPast && (
-            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>
+            <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>
               {new Date(event.start_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}
             </span>
           )}

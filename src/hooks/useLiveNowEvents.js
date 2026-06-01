@@ -38,7 +38,7 @@ export function useLiveNowEvents(myChildren, activities, nowMs) {
           event_title: formatEventTitleString(ev),
           start_at: ev.start_at,
           end_at: ev.end_at,
-          team_color: ev.teams?.team_color || 'var(--em-success)',
+          team_color: ev.teams?.team_color || 'var(--as-success)',
           team_name: ev.teams?.name || '—',
         });
       }

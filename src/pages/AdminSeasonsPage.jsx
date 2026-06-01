@@ -37,10 +37,10 @@ export default function AdminSeasonsPage() {
   };
 
   return (
-    <div className="px-4 py-4 em-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
+    <div className="px-4 py-4 as-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <AdminSeasonsHeader title="Seasons" actions={
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link to="/admin/programs/new" style={{ color: 'var(--em-accent)', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>+ Program</Link>
+          <Link to="/admin/programs/new" style={{ color: 'var(--as-accent)', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>+ Program</Link>
           <AdminSeasonsActions onNew={openNew} />
         </div>
       } />

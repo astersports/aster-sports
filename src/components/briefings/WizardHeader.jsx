@@ -12,14 +12,14 @@ import SaveStatusPill from './SaveStatusPill';
 
 const headerWrap = {
   display: 'flex', alignItems: 'center', gap: 8,
-  fontSize: 12, color: 'var(--em-text-tertiary)',
+  fontSize: 12, color: 'var(--as-text-tertiary)',
 };
 const backBtn = {
   minWidth: 44, minHeight: 44, padding: 12, border: 'none',
   background: 'transparent', cursor: 'pointer',
 };
 const viewSentStyle = {
-  fontSize: 12, fontWeight: 500, color: 'var(--em-accent)',
+  fontSize: 12, fontWeight: 500, color: 'var(--as-accent)',
   textDecoration: 'none', padding: '0 8px', minHeight: 32,
   display: 'inline-flex', alignItems: 'center',
 };
@@ -31,7 +31,7 @@ export default function WizardHeader({ step, totalSteps, onBack, draft, hasKind,
         <button
           type="button"
           onClick={onBack}
-          className="em-press"
+          className="as-press"
           style={backBtn}
           aria-label="Back to previous step"
         >
@@ -41,7 +41,7 @@ export default function WizardHeader({ step, totalSteps, onBack, draft, hasKind,
       <span>{`Step ${step} of ${totalSteps}`}</span>
       <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
         {viewSentTo && (
-          <Link to={viewSentTo} style={viewSentStyle} className="em-press" aria-label="View sent briefings">
+          <Link to={viewSentTo} style={viewSentStyle} className="as-press" aria-label="View sent briefings">
             View sent
           </Link>
         )}

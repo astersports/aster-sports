@@ -30,7 +30,7 @@ describe('PlayerRow — academy avatar treatment (anti-pattern #46)', () => {
     const dashed = container.querySelector('[style*="dashed"]');
     expect(dashed).not.toBeNull();
     // The purple academy color (var name) appears in the style attribute
-    expect(dashed.getAttribute('style')).toMatch(/em-academy/);
+    expect(dashed.getAttribute('style')).toMatch(/as-academy/);
   });
 
   it('non-academy row: avatar has NO dashed border (noise floor stays clean)', () => {

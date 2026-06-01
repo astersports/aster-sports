@@ -64,10 +64,10 @@ const TILE_STYLE = {
   minHeight: 44,
   padding: '0 16px',
   borderRadius: 10,
-  backgroundColor: 'var(--em-bg-card)',
-  border: '1px solid var(--em-border-default)',
-  boxShadow: 'var(--em-shadow-sm)',
-  color: 'var(--em-text-primary)',
+  backgroundColor: 'var(--as-bg-card)',
+  border: '1px solid var(--as-border-default)',
+  boxShadow: 'var(--as-shadow-sm)',
+  color: 'var(--as-text-primary)',
   fontSize: 14,
   fontWeight: 500,
   transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
@@ -76,7 +76,7 @@ const TILE_STYLE = {
 const SUBLABEL_STYLE = {
   fontSize: 11,
   fontWeight: 500,
-  color: 'var(--em-text-tertiary)',
+  color: 'var(--as-text-tertiary)',
   textTransform: 'uppercase',
   letterSpacing: '0.05em',
   marginBottom: 6,
@@ -88,10 +88,10 @@ function Tile({ tile }) {
     <Link
       to={tile.to}
       onClick={() => navigator.vibrate?.(10)}
-      className="flex items-center gap-2 em-press"
+      className="flex items-center gap-2 as-press"
       style={TILE_STYLE}
     >
-      <Icon size={20} strokeWidth={1.75} style={{ color: 'var(--em-text-tertiary)' }} aria-hidden="true" />
+      <Icon size={20} strokeWidth={1.75} style={{ color: 'var(--as-text-tertiary)' }} aria-hidden="true" />
       {tile.label}
     </Link>
   );

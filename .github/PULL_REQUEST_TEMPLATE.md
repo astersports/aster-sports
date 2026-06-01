@@ -1,5 +1,5 @@
 <!--
-Skyfire PR template — discipline checklist per CLAUDE.md anti-patterns
+Aster Sports PR template — discipline checklist per CLAUDE.md anti-patterns
 #21, #36, #46. Lightweight, no infra needed. Adopted 2026-05-20 (L99 v6
 chat-side pressure-test recommendation E2). Auto-merge per §15 still
 fires when CI is green; this checklist is for the PR author's own

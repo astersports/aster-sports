@@ -11,7 +11,7 @@ export default function AdminSeasonsHeader({ title = 'Seasons', actions = null }
     <>
       <AdminBackHeader />
       <div className="flex items-center justify-between mb-4">
-        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20 }}>
+        <h1 className="font-bold" style={{ color: 'var(--as-text-primary)', fontSize: 20 }}>
           {title}
         </h1>
         {actions}

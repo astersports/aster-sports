@@ -16,9 +16,9 @@ export default function DivisionRows({ divisions, onChange }) {
       {divisions.map((d, i) => (
         <div key={i} style={rowBox}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--em-text-tertiary)' }}>Division {i + 1}</span>
+            <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--as-text-tertiary)' }}>Division {i + 1}</span>
             {divisions.length > 1 && (
-              <button type="button" onClick={() => remove(i)} style={{ background: 'none', border: 'none', color: 'var(--em-danger)', fontSize: 13, cursor: 'pointer' }}>Remove</button>
+              <button type="button" onClick={() => remove(i)} style={{ background: 'none', border: 'none', color: 'var(--as-danger)', fontSize: 13, cursor: 'pointer' }}>Remove</button>
             )}
           </div>
           <Field label="Name" htmlFor={`dn-${i}`}><TextInput id={`dn-${i}`} value={d.name} onChange={(v) => update(i, 'name', v)} placeholder="11U Girls" /></Field>
@@ -35,4 +35,4 @@ export default function DivisionRows({ divisions, onChange }) {
   );
 }
 
-const rowBox = { padding: 12, borderRadius: 10, border: '1px solid var(--em-border-subtle)', backgroundColor: 'var(--em-bg-secondary)', marginBottom: 12 };
+const rowBox = { padding: 12, borderRadius: 10, border: '1px solid var(--as-border-subtle)', backgroundColor: 'var(--as-bg-secondary)', marginBottom: 12 };

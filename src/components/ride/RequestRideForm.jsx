@@ -35,17 +35,17 @@ export default function RequestRideForm({ open, onClose, onSubmit, eventTeamId }
 
   return createPortal(
     <div ref={trapRef} role="dialog" aria-modal="true" aria-label="Request a ride"
-      style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--em-border-default)' }}>
-        <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, cursor: 'pointer' }}>Cancel</button>
-        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>Request a ride</span>
+      style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'var(--as-bg-page)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--as-border-default)' }}>
+        <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, cursor: 'pointer' }}>Cancel</button>
+        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>Request a ride</span>
         <div style={{ width: 44 }} />
       </div>
       <form id="request-ride-form" onSubmit={handleSubmit} style={{ flex: 1, overflow: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
         {kids.length > 1 && (
           <div>
-            <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)', marginBottom: 4, display: 'block' }}>Which child?</label>
-            <select value={forChildId} onChange={(e) => setForChildId(e.target.value)} style={{ width: '100%', minHeight: 44, padding: '0 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' }}>
+            <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--as-text-secondary)', marginBottom: 4, display: 'block' }}>Which child?</label>
+            <select value={forChildId} onChange={(e) => setForChildId(e.target.value)} style={{ width: '100%', minHeight: 44, padding: '0 12px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, fontFamily: 'inherit' }}>
               <option value="">Select child</option>
               {kids.map((k) => <option key={k.playerId} value={k.playerId}>{k.firstName}</option>)}
             </select>
@@ -55,7 +55,7 @@ export default function RequestRideForm({ open, onClose, onSubmit, eventTeamId }
         <Input label="Pickup address (optional)" placeholder="123 Main St or 'meet at gym'" value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} />
         <Input label="Notes for driver (optional)" placeholder="Car seat needed, allergies, etc." value={notes} onChange={(e) => setNotes(e.target.value)} />
       </form>
-      <div style={{ padding: 16, borderTop: '1px solid var(--em-border-default)' }}>
+      <div style={{ padding: 16, borderTop: '1px solid var(--as-border-default)' }}>
         <Button fullWidth type="submit" form="request-ride-form" disabled={submitting}>
           {submitting ? 'Posting...' : 'Post request'}
         </Button>

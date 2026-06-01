@@ -30,12 +30,12 @@ export default function NextEventCard({ event, weather }) {
   const title = formatEventTitleString(event);
   return (
     <div
-      className="em-stagger-5"
+      className="as-stagger-5"
       style={{
-        backgroundColor: 'var(--em-bg-card)',
+        backgroundColor: 'var(--as-bg-card)',
         borderRadius: 10,
-        border: '1px solid var(--em-border-default)',
-        boxShadow: 'var(--em-shadow-sm)',
+        border: '1px solid var(--as-border-default)',
+        boxShadow: 'var(--as-shadow-sm)',
         padding: '12px 16px',
         marginTop: 8,
         display: 'flex',
@@ -45,21 +45,21 @@ export default function NextEventCard({ event, weather }) {
     >
       <div>
         <Label style={{ marginBottom: 0 }}>NEXT EVENT</Label>
-        <div className="font-semibold" style={{ fontSize: 15, color: 'var(--em-text-primary)', marginTop: 2 }}>
+        <div className="font-semibold" style={{ fontSize: 15, color: 'var(--as-text-primary)', marginTop: 2 }}>
           {title}{teamName ? ` · ${teamName}` : ''}
         </div>
-        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2 }}>
+        <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 2 }}>
           {dateStr} · {timeStr}{event.location ? ` · ${event.location}` : ''}
         </div>
       </div>
       <div style={{ textAlign: 'right' }}>
-        {weather && <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginBottom: 2 }}>{weather.icon} {weather.temp}°</div>}
-        <div className="font-bold" style={{ fontSize: 17, color: 'var(--em-accent)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+        {weather && <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginBottom: 2 }}>{weather.icon} {weather.temp}°</div>}
+        <div className="font-bold" style={{ fontSize: 17, color: 'var(--as-accent)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
           {countdown || '—'}
         </div>
         {countdown === 'Now' && (
-          <div className="em-pulse-dot" style={{
-            width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--em-success)',
+          <div className="as-pulse-dot" style={{
+            width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--as-success)',
             margin: '4px 0 0 auto',
           }} />
         )}

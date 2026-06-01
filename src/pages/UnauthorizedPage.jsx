@@ -6,8 +6,8 @@ import { ShieldAlert } from 'lucide-react';
 export default function UnauthorizedPage() {
   return (
     <div
-      className="em-fullscreen flex items-center justify-center p-6"
-      style={{ backgroundColor: 'var(--em-bg-page)' }}
+      className="as-fullscreen flex items-center justify-center p-6"
+      style={{ backgroundColor: 'var(--as-bg-page)' }}
     >
       <div className="text-center" style={{ maxWidth: 360 }}>
         <div
@@ -16,8 +16,8 @@ export default function UnauthorizedPage() {
             width: 72,
             height: 72,
             borderRadius: '50%',
-            backgroundColor: 'var(--em-warning-soft)',
-            color: 'var(--em-warning)',
+            backgroundColor: 'var(--as-warning-soft)',
+            color: 'var(--as-warning)',
           }}
           aria-hidden="true"
         >
@@ -25,22 +25,22 @@ export default function UnauthorizedPage() {
         </div>
         <h1
           className="font-semibold"
-          style={{ color: 'var(--em-text-primary)', fontSize: 20, marginBottom: 8 }}
+          style={{ color: 'var(--as-text-primary)', fontSize: 20, marginBottom: 8 }}
         >
           You don't have access to this page
         </h1>
-        <p style={{ color: 'var(--em-text-secondary)', fontSize: 15, marginBottom: 20 }}>
+        <p style={{ color: 'var(--as-text-secondary)', fontSize: 15, marginBottom: 20 }}>
           Ask an admin if you think this is a mistake.
         </p>
         <Link
           to="/"
-          className="inline-flex items-center justify-center font-semibold em-press"
+          className="inline-flex items-center justify-center font-semibold as-press"
           style={{
             minHeight: 44,
             padding: '0 20px',
             borderRadius: 10,
-            backgroundColor: 'var(--em-accent)',
-            color: 'var(--em-text-inverse)',
+            backgroundColor: 'var(--as-accent)',
+            color: 'var(--as-text-inverse)',
             fontSize: 15,
           }}
         >

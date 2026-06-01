@@ -44,30 +44,30 @@ export default function TournamentWeekendBanner({ tournament }) {
     <Link
       to={`/tournaments/${tournament.id}`}
       aria-label={`Upcoming tournament: ${tournament.name}`}
-      className="em-press"
+      className="as-press"
       style={{
         display: 'block',
         padding: '14px 16px',
-        backgroundColor: 'var(--em-accent-soft)',
-        border: '1px solid var(--em-accent)',
-        borderLeft: '4px solid var(--em-accent)',
+        backgroundColor: 'var(--as-accent-soft)',
+        border: '1px solid var(--as-accent)',
+        borderLeft: '4px solid var(--as-accent)',
         borderRadius: 10,
-        color: 'var(--em-text-primary)',
+        color: 'var(--as-text-primary)',
         textDecoration: 'none',
-        boxShadow: 'var(--em-shadow-sm)',
+        boxShadow: 'var(--as-shadow-sm)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
         <span aria-hidden="true" style={{ fontSize: 14 }}>🏆</span>
-        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--em-accent)', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--as-accent)', letterSpacing: 1.5, textTransform: 'uppercase' }}>
           Tournament weekend
         </span>
       </div>
-      <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--em-text-primary)', lineHeight: 1.3 }}>
+      <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--as-text-primary)', lineHeight: 1.3 }}>
         {tournament.name}
       </div>
       {meta && (
-        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 4 }}>
+        <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 4 }}>
           {meta}
         </div>
       )}

@@ -1,16 +1,20 @@
 # ASTERSPORTS PLATFORM — CLAUDE.md
 > **Platform renamed → AsterSports (2026-06-01).** Lineage: Skyfire → Ember → ~~Vela~~ → AsterSports (Vela dropped —
-> domain unavailable.) "Ember" persists in prose, code comments, const names (`EMBER_BRAND`,
-> `EMBER_DISPLAY_NAME`), and the `--em-*` design-token prefix — all the *legacy internal*
-> prefix, intentionally NOT renamed (anti-pattern #3; 1,971 token uses). User-facing strings
-> now say "AsterSports." Domain: `astersports.app`/`.io`/`.co` (the `.com` is a separate
+> domain unavailable.) **Full internal namespace rename shipped 2026-06-01** (Frank's directive):
+> the design-token prefix is now `--as-*` (was `--em-*`), animation/utility classes are `as-*`
+> (was `em-*`), and brand consts are `ASTER_BRAND` / `ASTER_DISPLAY_NAME` in `src/lib/asterDefaults.js`
+> (was `EMBER_*` / `emberDefaults.js`). No "Ember" remains in live `src/` naming. User-facing
+> strings say "Aster Sports." Domain: `astersports.app`/`.io`/`.co` (the `.com` is a separate
 > sports-equipment co — TM check pending). Mark: constellation-arrow (gold-on-navy, palette
 > unchanged). Rebrand plan: `docs/AUDIT_VELA_REBRAND.md`. The *tenant* "Legacy Hoopers" is
-> unchanged (a customer org; AsterSports is the platform above it). The repo/deploy id
-> `skyfire-app` (+ `skyfire-app.vercel.app`, the `002_skyfire_foundation` migration filename,
-> and the dead `--sf-*` tokens that survive only in `docs/archive`) is the *earliest* legacy
-> identifier — it stays until the repo is renamed/transferred (account migration). Live tokens
-> are `--em-*`. No user-facing string says Skyfire, Ember, or Vela.
+> unchanged (a customer org; AsterSports is the platform above it). **Surviving legacy identifiers
+> (deliberately NOT renamed):** the repo/deploy id `skyfire-app` (+ `skyfire-app.vercel.app`) →
+> changes only at repo rename/transfer (account migration); the immutable `002_skyfire_foundation`
+> migration filename + the `ember_live` CHECK-constraint data value in migrations; the `@ember`
+> ICS `UID` suffix (`icalHelpers.js` + `team-feed`) → a calendar-dedup stable key, changing it
+> duplicates events in subscribers' calendars; the dead `--sf-*` tokens that survive only in
+> `docs/archive`; and historical `docs/` (incl. `EMBER_PENDING_LEDGER.md`) kept as-is to preserve
+> the record. No user-facing string says Skyfire, Ember, or Vela.
 > Single source of truth for all Claude Code sessions.
 > Place at project root: `~/skyfire-app/CLAUDE.md`
 > Branch: `main` (v2 retired May 11, 2026 — see `docs/archive/PRE_3_AUDIT_2026-05-11.md`)
@@ -23,18 +27,18 @@
 These rules override any instinct to "improve" or "interpret" the spec:
 
 1. **NEVER change a CSS token value** from what's defined in this file. The hex values are final. Do not warm them, cool them, soften them, darken them, or substitute "better" alternatives.
-2. **NEVER invent new tokens.** If a token isn't listed in section 3 below, it doesn't exist. Do not create `--em-shadow-xl`, `--em-border-strong`, `--em-bg-muted`, `--em-bg-subtle`, or any other token not explicitly listed.
+2. **NEVER invent new tokens.** If a token isn't listed in section 3 below, it doesn't exist. Do not create `--as-shadow-xl`, `--as-border-strong`, `--as-bg-muted`, `--as-bg-subtle`, or any other token not explicitly listed.
 
    **Corollary:** new tokens are allowed when they close accessibility gaps,
    with explicit rationale in the token's CSS comment. The breach is a
    structural improvement, not arbitrary fragmentation. Locked instance:
-   `--em-text-meta: #6B7280` (4.6:1) — the future addition that closes the
-   `--em-text-tertiary` (#8896AB, 3.8:1) WCAG AA gap across ~40-60 surfaces.
+   `--as-text-meta: #6B7280` (4.6:1) — the future addition that closes the
+   `--as-text-tertiary` (#8896AB, 3.8:1) WCAG AA gap across ~40-60 surfaces.
    Tertiary preserved for non-text use (icons, dividers); meta is the new
    text-rank floor for AA compliance. Adoption of this corollary requires
    the token to carry an explicit comment naming the closed gap.
-3. **NEVER rename tokens.** `--em-bg-card-hover` stays `--em-bg-card-hover`. Do not rename it to `--em-bg-subtle` or anything else.
-4. **NEVER use hardcoded hex in components** except `team_color` inline from the database. Use `var(--em-*)` for everything. `#FFFFFF` in JSX → `var(--em-text-inverse)`.
+3. **NEVER rename tokens.** `--as-bg-card-hover` stays `--as-bg-card-hover`. Do not rename it to `--as-bg-subtle` or anything else. (Historical note: the entire prefix was renamed once, `--em-*` → `--as-*`, on 2026-06-01 as an explicit operator-directed platform rebrand — a single deliberate sweep, not piecemeal drift. The `--as-*` prefix is now the locked namespace; this rule governs going forward.)
+4. **NEVER use hardcoded hex in components** except `team_color` inline from the database. Use `var(--as-*)` for everything. `#FFFFFF` in JSX → `var(--as-text-inverse)`.
 5. **NEVER use percentages or dvh for overlay heights on iOS.** Use `window.visualViewport.height` (JS) for any viewport-relative sizing. Or use full-screen fixed overlays (position: fixed; inset: 0).
 6. **NEVER use BottomSheet for forms with 3+ fields.** Use FullScreenForm. BottomSheet is only for RSVP confirmations, filter pickers, and 1-2 button dialogs.
 7. **If a design decision isn't in this file, ASK — don't improvise.**
@@ -47,7 +51,7 @@ These rules override any instinct to "improve" or "interpret" the spec:
 grep -r '#F7F5F0\|#EAE6DD\|#E5E0D6\|#4A4852\|#1C1B1F\|#B3261E\|#1E5FAE\|#2E7D4F\|#B86E00' src/ && echo "FAIL: warm palette found" || echo "PASS"
 
 # 2. No invented tokens
-grep -r 'em-shadow-xl\|em-border-strong\|em-bg-muted\|em-bg-subtle' src/ && echo "FAIL: invented tokens found" || echo "PASS"
+grep -r 'as-shadow-xl\|as-border-strong\|as-bg-muted\|as-bg-subtle' src/ && echo "FAIL: invented tokens found" || echo "PASS"
 
 # 3. No hardcoded #FFFFFF in components (only allowed in team_color swatches in TeamFormSheet)
 grep -rn '#FFFFFF' src/ --include='*.jsx' | grep -v 'TeamFormSheet' | grep -v 'COLOR_SWATCHES' && echo "FAIL: hardcoded #FFFFFF" || echo "PASS"
@@ -99,58 +103,58 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
 ```css
 :root {
   /* ─── Platform surfaces + text (COOL GRAY — NOT warm/beige) ─── */
-  --em-bg-page:        #F7F8FA;
-  --em-bg-card:        #FFFFFF;
-  --em-bg-card-hover:  #F9FAFB;
-  --em-bg-secondary:   #F1F3F5;
-  --em-bg-tertiary:    #E9ECEF;
-  --em-text-primary:   #1A1D23;
-  --em-text-secondary: #4A5568;
-  --em-text-tertiary:  #8896AB;
-  --em-text-inverse:   #FFFFFF;
-  --em-border-default: #E2E8F0;
-  --em-border-subtle:  #EDF2F7;
+  --as-bg-page:        #F7F8FA;
+  --as-bg-card:        #FFFFFF;
+  --as-bg-card-hover:  #F9FAFB;
+  --as-bg-secondary:   #F1F3F5;
+  --as-bg-tertiary:    #E9ECEF;
+  --as-text-primary:   #1A1D23;
+  --as-text-secondary: #4A5568;
+  --as-text-tertiary:  #8896AB;
+  --as-text-inverse:   #FFFFFF;
+  --as-border-default: #E2E8F0;
+  --as-border-subtle:  #EDF2F7;
 
   /* ─── Status (semantic) ─── */
-  --em-success:        #16A34A;
-  --em-success-soft:   #DCFCE7;
-  --em-warning:        #D97706;
-  --em-warning-soft:   #FEF3C7;
-  --em-danger:         #DC2626;
-  --em-danger-soft:    #FEE2E2;
-  --em-info:           #3B82F6;
-  --em-info-soft:      #EFF6FF;
-  --em-neutral:        #9CA3AF;
-  --em-neutral-soft:   #F3F4F6;
-  --em-academy:        #7C3AED;
-  --em-academy-soft:   rgba(124, 58, 237, 0.1);
+  --as-success:        #16A34A;
+  --as-success-soft:   #DCFCE7;
+  --as-warning:        #D97706;
+  --as-warning-soft:   #FEF3C7;
+  --as-danger:         #DC2626;
+  --as-danger-soft:    #FEE2E2;
+  --as-info:           #3B82F6;
+  --as-info-soft:      #EFF6FF;
+  --as-neutral:        #9CA3AF;
+  --as-neutral-soft:   #F3F4F6;
+  --as-academy:        #7C3AED;
+  --as-academy-soft:   rgba(124, 58, 237, 0.1);
 
   /* ─── Brand (Ember defaults — overridden per org at runtime) ─── */
-  --em-header:         #151525;
-  --em-accent:         #C9952E;
-  --em-accent-hover:   #D4A843;
-  --em-accent-soft:    rgba(201, 149, 46, 0.1);
-  --em-text-on-dark:   #F5F0E8;
+  --as-header:         #151525;
+  --as-accent:         #C9952E;
+  --as-accent-hover:   #D4A843;
+  --as-accent-soft:    rgba(201, 149, 46, 0.1);
+  --as-text-on-dark:   #F5F0E8;
 
   /* ─── Decorative ─── */
-  --em-flame-mid:      #E87520;
-  --em-crimson:        #8B1A1A;
-  --em-electric:       #4A9FFF;
+  --as-flame-mid:      #E87520;
+  --as-crimson:        #8B1A1A;
+  --as-electric:       #4A9FFF;
 
   /* ─── Shadows (exactly three — no fourth) ─── */
-  --em-shadow-sm:  0 1px 2px rgba(0,0,0,0.04);
-  --em-shadow-md:  0 2px 8px rgba(0,0,0,0.08);
-  --em-shadow-lg:  0 8px 24px rgba(0,0,0,0.12);
+  --as-shadow-sm:  0 1px 2px rgba(0,0,0,0.04);
+  --as-shadow-md:  0 2px 8px rgba(0,0,0,0.08);
+  --as-shadow-lg:  0 8px 24px rgba(0,0,0,0.12);
 }
 ```
 
 ### Legacy Hoopers Org Overrides (applied at runtime via AuthContext)
 ```css
---em-header:       #4a8fd4;
---em-accent:       #4a8fd4;
---em-accent-hover: #5BA0E0;
---em-accent-soft:  rgba(74, 143, 212, 0.1);
---em-text-on-dark: #FFFFFF;
+--as-header:       #4a8fd4;
+--as-accent:       #4a8fd4;
+--as-accent-hover: #5BA0E0;
+--as-accent-soft:  rgba(74, 143, 212, 0.1);
+--as-text-on-dark: #FFFFFF;
 ```
 
 ### Team Colors (inline style from DB — the ONLY acceptable inline hex)
@@ -327,8 +331,8 @@ locked after Q8 irony test fired on initial Option C single-line comment).
 
 ### Component Standards
 - Tap targets: **44px minimum** (non-negotiable)
-- Inputs: 44px height, `var(--em-bg-tertiary)` bg, 1.5px border, 10px radius, accent focus ring
-- Cards: `var(--em-bg-card)`, `var(--em-border-default)`, 10px radius, `var(--em-shadow-sm)`
+- Inputs: 44px height, `var(--as-bg-tertiary)` bg, 1.5px border, 10px radius, accent focus ring
+- Cards: `var(--as-bg-card)`, `var(--as-border-default)`, 10px radius, `var(--as-shadow-sm)`
 - Buttons: primary (accent bg, inverse text) / secondary (accent border) / destructive (danger bg, inverse text) / ghost
 - Button press: `scale(0.97)` + `vibrate(50)`
 - Modals: `rgba(0,0,0,0.3)` backdrop — **never bg-black/50**
@@ -355,7 +359,7 @@ Inter (400/500/600/700). Scale: 24/20/17/15/13/11px.
 Only three: sm / md / lg (see section 3 for exact values). **No fourth shadow.**
 
 ### Animations (10 total, all behind prefers-reduced-motion)
-em-pulse, em-fade-in, em-pulse-dot, em-bounce-tap, em-fill-grow, card-expand, sheet-rise, toast-enter, em-bell-shake, spin
+as-pulse, as-fade-in, as-pulse-dot, as-bounce-tap, as-fill-grow, card-expand, sheet-rise, toast-enter, as-bell-shake, spin
 
 ---
 

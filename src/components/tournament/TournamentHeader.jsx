@@ -18,18 +18,18 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
     : (tournament.end_date && new Date(tournament.end_date) < now ? 'tournament_recap' : null);
 
   return (
-    <div style={{ padding: '6px 16px 12px', borderBottom: '1px solid var(--em-border-default)' }}>
+    <div style={{ padding: '6px 16px 12px', borderBottom: '1px solid var(--as-border-default)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <Trophy size={14} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+            <Trophy size={14} strokeWidth={1.75} color="var(--as-text-tertiary)" />
             {tournament.circuit && (
-              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--em-text-secondary)' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--as-text-secondary)' }}>
                 {tournament.circuit}
               </span>
             )}
           </div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0, lineHeight: 1.2, wordBreak: 'break-word' }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', margin: 0, lineHeight: 1.2, wordBreak: 'break-word' }}>
             {tournament.name}
           </h1>
         </div>
@@ -37,18 +37,18 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--em-text-secondary)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--as-text-secondary)' }}>
           <Calendar size={13} strokeWidth={1.75} />
           <span>{dateRange}</span>
         </div>
         {tournament.tourney_url && (
-          <a href={tournament.tourney_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--em-accent)', textDecoration: 'none' }}>
+          <a href={tournament.tourney_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--as-accent)', textDecoration: 'none' }}>
             <ExternalLink size={13} strokeWidth={1.75} />
             <span>View on SE Tourney</span>
           </a>
         )}
         {tournament.primary_venue && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--em-text-secondary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--as-text-secondary)' }}>
             <MapPin size={13} strokeWidth={1.75} />
             <span>{tournament.primary_venue}</span>
           </div>
@@ -60,8 +60,8 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
           {tournament.teams.map((t) => (
             <span key={t.id} style={{
               fontSize: 13, fontWeight: 500, padding: '3px 10px', borderRadius: 999,
-              backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)',
-              borderLeft: `3px solid ${t.team_color || 'var(--em-text-tertiary)'}`,
+              backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)',
+              borderLeft: `3px solid ${t.team_color || 'var(--as-text-tertiary)'}`,
             }}>
               {t.name}
             </span>
@@ -72,21 +72,21 @@ export default function TournamentHeader({ tournament, isStaff, onChange }) {
       {isStaff && ctaKind && <ComposeAnchorCta anchorKind="tournament" anchor={tournament} kind={ctaKind} />}
       {isStaff && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button onClick={() => setEditing(true)} className="em-press" aria-label="Edit tournament" style={{
+          <button onClick={() => setEditing(true)} className="as-press" aria-label="Edit tournament" style={{
             minHeight: 40, padding: '0 14px', borderRadius: 10,
-            border: '1.5px solid var(--em-border-default)',
-            backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
+            border: '1.5px solid var(--as-border-default)',
+            backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)',
             fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6,
             cursor: 'pointer',
           }}>
             <Edit2 size={14} strokeWidth={1.75} /> Edit
           </button>
           <Link to={`/admin/briefings/compose?anchor=tournament&id=${tournament.id}`}
-            aria-label="Send briefing about this tournament" className="em-press"
+            aria-label="Send briefing about this tournament" className="as-press"
             style={{
               minHeight: 44, padding: '0 14px', borderRadius: 10,
-              border: '1.5px solid var(--em-border-default)',
-              backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
+              border: '1.5px solid var(--as-border-default)',
+              backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)',
               fontSize: 13, fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 6,
               textDecoration: 'none', cursor: 'pointer',
             }}>

@@ -70,7 +70,7 @@ export default function GamesTab({ tournament, teamFilter }) {
   };
 
   if (loading) return <LoadingSkeleton variant="card" count={3} />;
-  if (filtered.length === 0) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 14 }}>No games for this tournament{teamFilter ? ' on the selected team' : ''}.</div>;
+  if (filtered.length === 0) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)', fontSize: 14 }}>No games for this tournament{teamFilter ? ' on the selected team' : ''}.</div>;
 
   return (
     <div>
@@ -90,13 +90,13 @@ export default function GamesTab({ tournament, teamFilter }) {
 function Section({ label, events, results, grouped, navigate, isPlayoff, isBonus }) {
   return (
     <div style={{ marginBottom: 20 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: isPlayoff ? 'var(--em-accent)' : isBonus ? 'var(--em-text-tertiary)' : 'var(--em-text-tertiary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: isPlayoff ? 'var(--as-accent)' : isBonus ? 'var(--as-text-tertiary)' : 'var(--as-text-tertiary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
         {isPlayoff && <Trophy size={12} strokeWidth={2} />}
         {label} ({events.length})
       </div>
       {grouped(events).map(([date, evts]) => (
         <div key={date} style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--em-text-tertiary)', marginBottom: 4 }}>{date}</div>
+          <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--as-text-tertiary)', marginBottom: 4 }}>{date}</div>
           {evts.map((e) => <GameRow key={e.id} event={e} result={results[e.id]} navigate={navigate} isBonus={isBonus} />)}
         </div>
       ))}
@@ -105,32 +105,32 @@ function Section({ label, events, results, grouped, navigate, isPlayoff, isBonus
 }
 
 function GameRow({ event: e, result: r, navigate, isBonus }) {
-  const teamColor = e.teams?.team_color || 'var(--em-neutral)';
+  const teamColor = e.teams?.team_color || 'var(--as-neutral)';
   const isChampionship = e.is_championship_final;
   const borderColor = isChampionship ? '#FFD700' : teamColor;
   return (
-    <button type="button" onClick={() => navigate(`/events/${e.id}`)} className="em-press"
-      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', marginBottom: 6, backgroundColor: isChampionship ? 'rgba(255,215,0,0.06)' : 'var(--em-bg-card)', borderRadius: 10, border: `1px solid ${isChampionship ? 'rgba(255,215,0,0.3)' : 'var(--em-border-default)'}`, borderLeft: `4px solid ${borderColor}`, textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', opacity: isBonus ? 0.7 : 1 }}>
+    <button type="button" onClick={() => navigate(`/events/${e.id}`)} className="as-press"
+      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', marginBottom: 6, backgroundColor: isChampionship ? 'rgba(255,215,0,0.06)' : 'var(--as-bg-card)', borderRadius: 10, border: `1px solid ${isChampionship ? 'rgba(255,215,0,0.3)' : 'var(--as-border-default)'}`, borderLeft: `4px solid ${borderColor}`, textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', opacity: isBonus ? 0.7 : 1 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {isChampionship && <Trophy size={14} strokeWidth={2} color="#FFD700" />}
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)' }}>{formatTime(e.start_at)} · {e.teams?.name || ''}</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)' }}>{formatTime(e.start_at)} · {e.teams?.name || ''}</span>
         </div>
-        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2 }}>
+        <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 2 }}>
           {e.home_away === 'away' ? '@ ' : 'vs. '}{e.opponent || e.title || 'TBD'}
         </div>
         <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-          {e.bracket_label && <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: isChampionship ? 'rgba(255,215,0,0.15)' : 'var(--em-bg-secondary)', color: isChampionship ? '#B8860B' : 'var(--em-text-secondary)' }}>{e.bracket_label}</span>}
-          {isBonus && <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-neutral-soft)', color: 'var(--em-neutral)' }}>Bonus</span>}
-          {e.is_scrimmage && <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--em-neutral-soft)', color: 'var(--em-neutral)' }}>Scrimmage</span>}
+          {e.bracket_label && <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: isChampionship ? 'rgba(255,215,0,0.15)' : 'var(--as-bg-secondary)', color: isChampionship ? '#B8860B' : 'var(--as-text-secondary)' }}>{e.bracket_label}</span>}
+          {isBonus && <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--as-neutral-soft)', color: 'var(--as-neutral)' }}>Bonus</span>}
+          {e.is_scrimmage && <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--as-neutral-soft)', color: 'var(--as-neutral)' }}>Scrimmage</span>}
         </div>
       </div>
       {r && (
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: r.result === 'W' ? 'var(--em-success)' : r.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-secondary)' }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: r.result === 'W' ? 'var(--as-success)' : r.result === 'L' ? 'var(--as-danger)' : 'var(--as-text-secondary)' }}>
             {r.result} {r.our_score}-{r.opponent_score}
           </div>
-          {r.coach_highlight && <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 2, maxWidth: 140 }}>{r.coach_highlight}</div>}
+          {r.coach_highlight && <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)', marginTop: 2, maxWidth: 140 }}>{r.coach_highlight}</div>}
         </div>
       )}
     </button>

@@ -23,10 +23,10 @@ import { ANCHOR_KINDS_REQUIRING_ID } from './composerReducer';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 import { useOrgTeams } from '../../hooks/useOrgTeams';
 
-const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', display: 'block', marginBottom: 8 };
-const helperStyle = { fontSize: 13, color: 'var(--em-warning)', marginTop: 8, lineHeight: 1.4 };
-const lockedCaption = { fontSize: 13, color: 'var(--em-text-secondary)', padding: '10px 12px', borderRadius: 10, backgroundColor: 'var(--em-bg-tertiary)', border: '1px solid var(--em-border-default)' };
-const inlineHint = { fontSize: 12, color: 'var(--em-text-tertiary)', padding: '8px 4px' };
+const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', display: 'block', marginBottom: 8 };
+const helperStyle = { fontSize: 13, color: 'var(--as-warning)', marginTop: 8, lineHeight: 1.4 };
+const lockedCaption = { fontSize: 13, color: 'var(--as-text-secondary)', padding: '10px 12px', borderRadius: 10, backgroundColor: 'var(--as-bg-tertiary)', border: '1px solid var(--as-border-default)' };
+const inlineHint = { fontSize: 12, color: 'var(--as-text-tertiary)', padding: '8px 4px' };
 
 const ANCHOR_NOUN = { event: 'event', tournament: 'tournament', team: 'team' };
 const AUDIENCE_LABEL = {

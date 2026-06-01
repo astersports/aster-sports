@@ -22,9 +22,9 @@ import { useNow } from '../../hooks/useNow';
 import { LIVE_GAME_WINDOW_AFTER_MS } from '../../lib/eventWindows';
 
 const wrap = { margin: '12px 16px' };
-const toggleStyle = { display: 'flex', alignItems: 'center', gap: 8, minHeight: 56, width: '100%', padding: '14px 16px', borderRadius: 10, border: '1px dashed var(--em-border-default)', backgroundColor: 'var(--em-bg-card-hover)', color: 'var(--em-text-secondary)', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' };
-const labelStyle = { fontSize: 14, fontWeight: 600, color: 'var(--em-text-primary)' };
-const subStyle = { fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2 };
+const toggleStyle = { display: 'flex', alignItems: 'center', gap: 8, minHeight: 56, width: '100%', padding: '14px 16px', borderRadius: 10, border: '1px dashed var(--as-border-default)', backgroundColor: 'var(--as-bg-card-hover)', color: 'var(--as-text-secondary)', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' };
+const labelStyle = { fontSize: 14, fontWeight: 600, color: 'var(--as-text-primary)' };
+const subStyle = { fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 2 };
 
 function tipSubtitle(event, now) {
   const startMs = new Date(event.start_at).getTime();
@@ -62,8 +62,8 @@ export default function GameDayMode({ event, isStaff, isGameType }) {
   if (!open) {
     return (
       <div style={wrap}>
-        <button type="button" className="em-press" style={toggleStyle} onClick={() => setOpen(true)} aria-expanded={false}>
-          <ChevronRight size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+        <button type="button" className="as-press" style={toggleStyle} onClick={() => setOpen(true)} aria-expanded={false}>
+          <ChevronRight size={16} strokeWidth={1.75} color="var(--as-text-tertiary)" />
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>Arrival board</div>
             <div style={subStyle}>{subtitle || 'Tap to view player arrivals'}</div>
@@ -75,9 +75,9 @@ export default function GameDayMode({ event, isStaff, isGameType }) {
 
   return (
     <div style={wrap}>
-      <button type="button" className="em-press" style={{ ...toggleStyle, marginBottom: 8 }} onClick={() => setOpen(false)} aria-expanded>
-        <ChevronDown size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
-        <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>Hide arrival board</span>
+      <button type="button" className="as-press" style={{ ...toggleStyle, marginBottom: 8 }} onClick={() => setOpen(false)} aria-expanded>
+        <ChevronDown size={16} strokeWidth={1.75} color="var(--as-text-tertiary)" />
+        <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>Hide arrival board</span>
       </button>
       <ArrivalBoard event={event} />
       {showLiveScore && (

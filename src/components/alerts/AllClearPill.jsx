@@ -16,17 +16,17 @@ import { CheckCircle2 } from 'lucide-react';
 const INLINE = {
   display: 'flex', alignItems: 'center', gap: 10,
   padding: '16px 18px', borderRadius: 10,
-  backgroundColor: 'var(--em-success-soft)',
-  border: '1px solid var(--em-success)',
-  color: 'var(--em-success)',
+  backgroundColor: 'var(--as-success-soft)',
+  border: '1px solid var(--as-success)',
+  color: 'var(--as-success)',
   fontSize: 14, fontWeight: 500,
 };
 
 const PILL = {
   display: 'inline-flex', alignItems: 'center', gap: 6,
   padding: '4px 10px', borderRadius: 999,
-  backgroundColor: 'var(--em-success-soft)',
-  color: 'var(--em-success)',
+  backgroundColor: 'var(--as-success-soft)',
+  color: 'var(--as-success)',
   fontSize: 12, fontWeight: 500,
 };
 

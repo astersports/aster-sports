@@ -107,7 +107,7 @@ export default function GamesView({ activities, orgId }) {
       )}
 
       {weekGroups.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--em-text-tertiary)' }}>
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--as-text-tertiary)' }}>
           <div style={{ fontSize: 15, fontWeight: 500 }}>No upcoming games</div>
           <div style={{ fontSize: 13, marginTop: 4 }}>Check back when the schedule is posted.</div>
         </div>
@@ -117,11 +117,11 @@ export default function GamesView({ activities, orgId }) {
         <div key={i} style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             {group.weekNum && (
-              <Badge variant="neutral" pill style={{ backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-secondary)' }}>
+              <Badge variant="neutral" pill style={{ backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-secondary)' }}>
                 WEEK {group.weekNum}
               </Badge>
             )}
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--as-text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
               {group.dateLabel}
             </span>
           </div>
@@ -131,13 +131,13 @@ export default function GamesView({ activities, orgId }) {
 
       {past.length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <button type="button" onClick={() => setShowResults((v) => !v)} className="em-press"
+          <button type="button" onClick={() => setShowResults((v) => !v)} className="as-press"
             aria-expanded={showResults}
             style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '4px 0', minHeight: 44, background: 'none', border: 'none', cursor: 'pointer' }}>
-            <ChevronRight size={14} strokeWidth={1.75} color="var(--em-text-tertiary)"
+            <ChevronRight size={14} strokeWidth={1.75} color="var(--as-text-tertiary)"
               style={{ transform: showResults ? 'rotate(90deg)' : 'none', transition: 'transform 200ms ease-out' }} />
-            <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Results</span>
-            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>({past.length})</span>
+            <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--as-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Results</span>
+            <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>({past.length})</span>
           </button>
           {showResults && past.slice(-10).reverse().map((e) => <MatchupCard key={e.id} event={e} gameResult={gameResultsMap[e.id]} />)}
         </div>

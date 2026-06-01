@@ -30,9 +30,9 @@ const CHIP_STYLE = {
   minHeight: 44,
   padding: '0 8px',
   borderRadius: 999,
-  border: '1px solid var(--em-border-default)',
-  backgroundColor: 'var(--em-bg-card)',
-  color: 'var(--em-text-primary)',
+  border: '1px solid var(--as-border-default)',
+  backgroundColor: 'var(--as-bg-card)',
+  color: 'var(--as-text-primary)',
   textDecoration: 'none',
   fontSize: 13,
   fontWeight: 500,
@@ -51,10 +51,10 @@ export default function CoachHomeQuickActions() {
             key={a.label}
             to={a.to}
             onClick={() => navigator.vibrate?.(10)}
-            className="em-press"
+            className="as-press"
             style={CHIP_STYLE}
           >
-            <Icon size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" aria-hidden="true" />
+            <Icon size={16} strokeWidth={1.75} color="var(--as-text-tertiary)" aria-hidden="true" />
             <span>{a.label}</span>
           </Link>
         );

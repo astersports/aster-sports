@@ -57,15 +57,15 @@ export default function AdminTeamsPage() {
   }
 
   return (
-    <div className="px-4 py-4 em-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
+    <div className="px-4 py-4 as-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <AdminBackHeader />
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20 }}>
+          <h1 className="font-bold" style={{ color: 'var(--as-text-primary)', fontSize: 20 }}>
             Teams
           </h1>
           {activeSeason && (
-            <div style={{ color: 'var(--em-text-secondary)', fontSize: 13 }}>{activeSeason.name}</div>
+            <div style={{ color: 'var(--as-text-secondary)', fontSize: 13 }}>{activeSeason.name}</div>
           )}
         </div>
         <Button onClick={openNew}>
@@ -88,17 +88,17 @@ export default function AdminTeamsPage() {
               <button
                 type="button"
                 onClick={() => openEdit(p)}
-                className="w-full text-left p-4 em-press"
+                className="w-full text-left p-4 as-press"
                 style={{
-                  backgroundColor: 'var(--em-bg-card)',
+                  backgroundColor: 'var(--as-bg-card)',
                   borderRadius: 10,
-                  border: '1px solid var(--em-border-subtle)',
-                  borderLeft: `4px solid ${p.team_color || 'var(--em-border-default)'}`,
-                  boxShadow: 'var(--em-shadow-sm)',
+                  border: '1px solid var(--as-border-subtle)',
+                  borderLeft: `4px solid ${p.team_color || 'var(--as-border-default)'}`,
+                  boxShadow: 'var(--as-shadow-sm)',
                 }}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 17 }}>
+                  <span className="font-semibold" style={{ color: 'var(--as-text-primary)', fontSize: 17 }}>
                     {p.name}
                   </span>
                   <div className="flex gap-1">
@@ -106,7 +106,7 @@ export default function AdminTeamsPage() {
                     <Badge variant="info">{CIRCUIT_LABELS[p.circuit] || p.circuit}</Badge>
                   </div>
                 </div>
-                <div style={{ color: 'var(--em-text-secondary)', fontSize: 13 }}>
+                <div style={{ color: 'var(--as-text-secondary)', fontSize: 13 }}>
                   {p.practice_day ? `${DAY_LABELS[p.practice_day]}` : 'No practice day set'}
                   {p.practice_location ? ` · ${p.practice_location}` : ''}
                   {p.circuit === 'aau' && p.circuit_name ? ` · ${p.circuit_name}` : ''}

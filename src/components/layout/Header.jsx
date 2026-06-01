@@ -3,7 +3,7 @@ import { Eye, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useHomeRole } from '../../hooks/useHomeRole';
-import { EMBER_DISPLAY_NAME } from '../../lib/emberDefaults';
+import { ASTER_DISPLAY_NAME } from '../../lib/asterDefaults';
 import RoleSwitcherSheet from '../RoleSwitcherSheet';
 
 // Bell removed pending Phase 2 inbox surface — see ledger §2 Cluster 4.
@@ -31,7 +31,7 @@ export default function Header() {
           style={{
             top: 'env(safe-area-inset-top, 0px)',
             height: 6,
-            background: 'var(--em-warning)',
+            background: 'var(--as-warning)',
           }}
         />
       )}
@@ -40,8 +40,8 @@ export default function Header() {
         style={{
           top: `calc(env(safe-area-inset-top, 0px) + ${stripeHeight}px)`,
           height: 56,
-          background: 'var(--em-header)',
-          color: 'var(--em-text-on-dark)',
+          background: 'var(--as-header)',
+          color: 'var(--as-text-on-dark)',
         }}
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -56,7 +56,7 @@ export default function Header() {
           />
           <div className="min-w-0 flex-1">
             <div className="truncate font-semibold text-sm" title={orgName || ''}>
-              {org ? orgName : EMBER_DISPLAY_NAME}
+              {org ? orgName : ASTER_DISPLAY_NAME}
             </div>
             {activeRole && (
               <div className="text-[10px] uppercase tracking-wider opacity-70 truncate">
@@ -71,7 +71,7 @@ export default function Header() {
             onClick={() => setSheetOpen(true)}
             aria-label="Switch role view"
             className="relative w-11 h-11 flex items-center justify-center"
-            style={{ color: isViewingAs ? 'var(--em-warning)' : 'inherit' }}
+            style={{ color: isViewingAs ? 'var(--as-warning)' : 'inherit' }}
           >
             <Eye className="w-5 h-5" />
           </button>

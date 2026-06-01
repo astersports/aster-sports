@@ -23,12 +23,12 @@ export default function RosterSection({ team, sortedPlayers, search, setSearch, 
         {isStaff(role) && <CopyRosterButton team={team} sortedPlayers={sortedPlayers} />}
       </div>
       <div style={{
-        backgroundColor: 'var(--em-bg-card)', borderRadius: 10,
-        border: '1px solid var(--em-border-default)',
-        boxShadow: 'var(--em-shadow-sm)', overflow: 'hidden',
+        backgroundColor: 'var(--as-bg-card)', borderRadius: 10,
+        border: '1px solid var(--as-border-default)',
+        boxShadow: 'var(--as-shadow-sm)', overflow: 'hidden',
       }}>
         {sortedPlayers.map((player, i) => (
-          <div key={player.id} className={`em-stagger-${Math.min(i + 1, 8)}`}>
+          <div key={player.id} className={`as-stagger-${Math.min(i + 1, 8)}`}>
             <PlayerRow player={player} teamColor={team.team_color} isLast={i === sortedPlayers.length - 1} isMyChild={myPlayerIds.includes(player.id)} teamId={team.id} />
           </div>
         ))}

@@ -45,7 +45,7 @@ export function usePendingRsvps(myChildren, upcomingActivities) {
           start_at: ev.start_at,
           event_title: formatEventTitleString(ev),
           team_name: ev.teams?.name || '—',
-          team_color: ev.teams?.team_color || 'var(--em-neutral)',
+          team_color: ev.teams?.team_color || 'var(--as-neutral)',
         });
       }
     }

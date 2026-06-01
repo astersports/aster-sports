@@ -47,14 +47,14 @@ export default function NewDmPicker({ onSelect, onClose }) {
     <div ref={trapRef} role="dialog" aria-modal="true" aria-label="New message"
       style={{
         position: 'fixed', inset: 0, zIndex: 60,
-        backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column',
+        backgroundColor: 'var(--as-bg-page)', display: 'flex', flexDirection: 'column',
       }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderBottom: '1px solid var(--em-border-default)' }}>
-        <button type="button" onClick={onClose} className="em-press" aria-label="Close"
-          style={{ width: 36, height: 36, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-          <X size={18} strokeWidth={1.75} color="var(--em-text-primary)" />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderBottom: '1px solid var(--as-border-default)' }}>
+        <button type="button" onClick={onClose} className="as-press" aria-label="Close"
+          style={{ width: 36, height: 36, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <X size={18} strokeWidth={1.75} color="var(--as-text-primary)" />
         </button>
-        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>New Message</span>
+        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>New Message</span>
       </div>
       <div style={{ padding: '8px 16px' }}>
         <input
@@ -62,8 +62,8 @@ export default function NewDmPicker({ onSelect, onClose }) {
           placeholder="Search people…" autoFocus
           style={{
             width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10,
-            border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
-            fontSize: 15, color: 'var(--em-text-primary)', fontFamily: 'inherit',
+            border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)',
+            fontSize: 15, color: 'var(--as-text-primary)', fontFamily: 'inherit',
           }}
         />
       </div>
@@ -71,28 +71,28 @@ export default function NewDmPicker({ onSelect, onClose }) {
         {filtered.map((m) => (
           <button
             key={m.userId} type="button" onClick={() => onSelect(m.userId)}
-            className="em-press"
+            className="as-press"
             style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0',
               border: 'none', width: '100%', textAlign: 'left', fontFamily: 'inherit',
               cursor: 'pointer', backgroundColor: 'transparent',
-              borderBottom: '1px solid var(--em-border-subtle)',
+              borderBottom: '1px solid var(--as-border-subtle)',
             }}
           >
             <div style={{
-              width: 36, height: 36, borderRadius: '50%', backgroundColor: 'var(--em-bg-tertiary)',
+              width: 36, height: 36, borderRadius: '50%', backgroundColor: 'var(--as-bg-tertiary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>
-              <User size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+              <User size={16} strokeWidth={1.75} color="var(--as-text-tertiary)" />
             </div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>{m.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', textTransform: 'capitalize' }}>{m.role}</div>
+              <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--as-text-primary)' }}>{m.name}</div>
+              <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', textTransform: 'capitalize' }}>{m.role}</div>
             </div>
           </button>
         ))}
         {filtered.length === 0 && members.length > 0 && (
-          <div style={{ padding: 16, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 14 }}>No results</div>
+          <div style={{ padding: 16, textAlign: 'center', color: 'var(--as-text-tertiary)', fontSize: 14 }}>No results</div>
         )}
       </div>
     </div>

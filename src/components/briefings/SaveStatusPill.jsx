@@ -13,9 +13,9 @@ const baseStyle = {
 };
 
 const TONE = {
-  draft: { dot: '🟡', bg: 'var(--em-bg-tertiary)', fg: 'var(--em-text-secondary)' },
-  saving: { dot: '🔵', bg: 'var(--em-info-soft)', fg: 'var(--em-info)' },
-  saved: { dot: '🟢', bg: 'var(--em-success-soft)', fg: 'var(--em-success)' },
+  draft: { dot: '🟡', bg: 'var(--as-bg-tertiary)', fg: 'var(--as-text-secondary)' },
+  saving: { dot: '🔵', bg: 'var(--as-info-soft)', fg: 'var(--as-info)' },
+  saved: { dot: '🟢', bg: 'var(--as-success-soft)', fg: 'var(--as-success)' },
 };
 
 function fmtTime(d) {

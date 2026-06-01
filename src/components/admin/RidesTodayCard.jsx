@@ -12,13 +12,13 @@ import Label from '../shared/Label';
 
 function CoverageBar({ pct }) {
   const safe = Math.max(0, Math.min(100, pct || 0));
-  const color = safe >= 80 ? 'var(--em-success)' : safe >= 50 ? 'var(--em-warning)' : 'var(--em-danger)';
+  const color = safe >= 80 ? 'var(--as-success)' : safe >= 50 ? 'var(--as-warning)' : 'var(--as-danger)';
   return (
     <div
       style={{
         height: 4,
         borderRadius: 2,
-        backgroundColor: 'var(--em-bg-secondary)',
+        backgroundColor: 'var(--as-bg-secondary)',
         overflow: 'hidden',
       }}
       aria-label={`Coverage ${safe} percent`}
@@ -56,19 +56,19 @@ export default function RidesTodayCard({ summary, loading }) {
       <Label>RIDES TODAY</Label>
       <div
         style={{
-          backgroundColor: 'var(--em-bg-card)',
+          backgroundColor: 'var(--as-bg-card)',
           borderRadius: 10,
-          border: '1px solid var(--em-border-default)',
-          boxShadow: 'var(--em-shadow-sm)',
+          border: '1px solid var(--as-border-default)',
+          boxShadow: 'var(--as-shadow-sm)',
           padding: '12px 14px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <Car size={18} strokeWidth={1.75} color="var(--em-text-tertiary)" aria-hidden="true" />
-          <div style={{ fontSize: 13, color: 'var(--em-text-primary)', fontWeight: 600 }}>
+          <Car size={18} strokeWidth={1.75} color="var(--as-text-tertiary)" aria-hidden="true" />
+          <div style={{ fontSize: 13, color: 'var(--as-text-primary)', fontWeight: 600 }}>
             {eventLabel}{headlinePct ? ` · ${headlinePct} avg coverage` : ''}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginLeft: 'auto' }}>
+          <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', marginLeft: 'auto' }}>
             {seatsLabel}
           </div>
         </div>
@@ -76,19 +76,19 @@ export default function RidesTodayCard({ summary, loading }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {byTeam.map((t) => (
               <div key={t.teamId}>
-                <div style={{ fontSize: 12, color: t.teamColor || 'var(--em-text-primary)', fontWeight: 500, marginBottom: 4 }}>
+                <div style={{ fontSize: 12, color: t.teamColor || 'var(--as-text-primary)', fontWeight: 500, marginBottom: 4 }}>
                   {t.teamName}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--em-text-tertiary)', marginBottom: 2 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--as-text-tertiary)', marginBottom: 2 }}>
                       <span>Arrival</span>
                       <span>{t.arrival.coveragePct === null ? '—' : `${t.arrival.coveragePct}%`}</span>
                     </div>
                     <CoverageBar pct={t.arrival.coveragePct} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--em-text-tertiary)', marginBottom: 2 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--as-text-tertiary)', marginBottom: 2 }}>
                       <span>Return</span>
                       <span>{t.return.coveragePct === null ? '—' : `${t.return.coveragePct}%`}</span>
                     </div>

@@ -9,7 +9,7 @@ export default function ScheduleFab({ onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="em-press em-bounce-tap"
+      className="as-press as-bounce-tap"
       aria-label="Create event"
       style={{
         position: 'fixed',
@@ -18,10 +18,10 @@ export default function ScheduleFab({ onClick }) {
         width: 56,
         height: 56,
         borderRadius: 9999,
-        backgroundColor: 'var(--em-accent)',
-        color: 'var(--em-text-inverse)',
+        backgroundColor: 'var(--as-accent)',
+        color: 'var(--as-text-inverse)',
         border: 'none',
-        boxShadow: 'var(--em-shadow-lg)',
+        boxShadow: 'var(--as-shadow-lg)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

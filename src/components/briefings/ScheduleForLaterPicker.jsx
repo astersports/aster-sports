@@ -13,11 +13,11 @@ import { useMemo } from 'react';
 const MIN_LEAD_MS = 5 * 60 * 1000;
 const MAX_LEAD_MS = 30 * 86400 * 1000;
 
-const wrap = { display: 'flex', flexDirection: 'column', gap: 10, padding: 12, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)' };
-const radioRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--em-text-primary)', cursor: 'pointer' };
+const wrap = { display: 'flex', flexDirection: 'column', gap: 10, padding: 12, borderRadius: 10, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)' };
+const radioRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--as-text-primary)', cursor: 'pointer' };
 const fieldRow = { display: 'flex', gap: 10, flexWrap: 'wrap' };
-const inputStyle = { minHeight: 44, padding: '0 12px', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', backgroundColor: 'var(--em-bg-tertiary)', border: '1.5px solid var(--em-border-default)', color: 'var(--em-text-primary)', flex: '1 1 140px' };
-const summaryStyle = (err) => ({ fontSize: 12, color: err ? 'var(--em-danger)' : 'var(--em-text-tertiary)', marginTop: 4 });
+const inputStyle = { minHeight: 44, padding: '0 12px', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', backgroundColor: 'var(--as-bg-tertiary)', border: '1.5px solid var(--as-border-default)', color: 'var(--as-text-primary)', flex: '1 1 140px' };
+const summaryStyle = (err) => ({ fontSize: 12, color: err ? 'var(--as-danger)' : 'var(--as-text-tertiary)', marginTop: 4 });
 
 function toLocalParts(iso) {
   if (!iso) return { date: '', time: '' };

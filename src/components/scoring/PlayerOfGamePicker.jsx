@@ -10,14 +10,14 @@ export default function PlayerOfGamePicker({ teamId, value, onChange, disabled }
 
   return (
     <div style={{ marginTop: 24 }}>
-      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--em-text-primary)', marginBottom: 12 }}>
+      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--as-text-primary)', marginBottom: 12 }}>
         Player of the Game (optional)
       </div>
 
-      {loading && <div style={{ fontSize: 15, color: 'var(--em-text-secondary)' }}>Loading roster…</div>}
+      {loading && <div style={{ fontSize: 15, color: 'var(--as-text-secondary)' }}>Loading roster…</div>}
 
       {!loading && players.length === 0 && (
-        <div style={{ fontSize: 15, color: 'var(--em-text-secondary)' }}>No active roster yet</div>
+        <div style={{ fontSize: 15, color: 'var(--as-text-secondary)' }}>No active roster yet</div>
       )}
 
       {!loading && players.length > 0 && (
@@ -30,12 +30,12 @@ export default function PlayerOfGamePicker({ teamId, value, onChange, disabled }
                 type="button"
                 onClick={() => handleTap(p.id)}
                 disabled={disabled}
-                className="em-press"
+                className="as-press"
                 style={{
                   minHeight: 44, padding: '8px 14px', borderRadius: 8,
-                  background: selected ? 'var(--em-accent)' : 'var(--em-bg-card)',
-                  color: selected ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
-                  border: selected ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
+                  background: selected ? 'var(--as-accent)' : 'var(--as-bg-card)',
+                  color: selected ? 'var(--as-text-inverse)' : 'var(--as-text-primary)',
+                  border: selected ? '2px solid var(--as-accent)' : '1px solid var(--as-border-default)',
                   fontSize: 15, fontWeight: selected ? 600 : 500,
                   cursor: disabled ? 'not-allowed' : 'pointer',
                   fontFamily: 'inherit',

@@ -38,13 +38,13 @@ export default function PendingQueuesLanes({ lanes, loading, sectionKey = 'pendi
       {isMinimal && (
         <div
           style={{
-            backgroundColor: 'var(--em-bg-card)',
+            backgroundColor: 'var(--as-bg-card)',
             borderRadius: 10,
-            border: '1px solid var(--em-border-default)',
-            boxShadow: 'var(--em-shadow-sm)',
+            border: '1px solid var(--as-border-default)',
+            boxShadow: 'var(--as-shadow-sm)',
             padding: '12px 14px',
             fontSize: 14,
-            color: 'var(--em-text-secondary)',
+            color: 'var(--as-text-secondary)',
           }}
         >
           {visible.length === 1 ? '1 queue' : `${visible.length} queues`} · {totalCount} item{totalCount === 1 ? '' : 's'} pending — tap the density toggle to expand.
@@ -53,10 +53,10 @@ export default function PendingQueuesLanes({ lanes, loading, sectionKey = 'pendi
       {!isMinimal && (
       <ul
         style={{
-          backgroundColor: 'var(--em-bg-card)',
+          backgroundColor: 'var(--as-bg-card)',
           borderRadius: 10,
-          border: '1px solid var(--em-border-default)',
-          boxShadow: 'var(--em-shadow-sm)',
+          border: '1px solid var(--as-border-default)',
+          boxShadow: 'var(--as-shadow-sm)',
           overflow: 'hidden',
           padding: 0,
           margin: 0,
@@ -66,17 +66,17 @@ export default function PendingQueuesLanes({ lanes, loading, sectionKey = 'pendi
         {visible.map((lane, idx) => (
           <li
             key={lane.kind}
-            style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--em-border-subtle)' }}
+            style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--as-border-subtle)' }}
           >
             <Link
               to={lane.href}
-              className="em-press"
+              className="as-press"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
                 padding: '12px 14px',
-                color: 'var(--em-text-primary)',
+                color: 'var(--as-text-primary)',
                 textDecoration: 'none',
                 fontSize: 14,
               }}
@@ -86,7 +86,7 @@ export default function PendingQueuesLanes({ lanes, loading, sectionKey = 'pendi
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600 }}>{lane.label}</div>
-                <div style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginTop: 2 }}>
+                <div style={{ color: 'var(--as-text-secondary)', fontSize: 13, marginTop: 2 }}>
                   {lane.count === 1 ? '1 pending' : `${lane.count} pending`}
                 </div>
               </div>
@@ -95,7 +95,7 @@ export default function PendingQueuesLanes({ lanes, loading, sectionKey = 'pendi
                 style={{
                   fontSize: 12,
                   fontWeight: 600,
-                  color: 'var(--em-accent)',
+                  color: 'var(--as-accent)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
                 }}

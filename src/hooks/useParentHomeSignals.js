@@ -27,7 +27,7 @@ export function useParentHomeSignals({
     const map = new Map();
     for (const a of activities || []) {
       if (!a.team_id || map.has(a.team_id)) continue;
-      map.set(a.team_id, { id: a.team_id, name: a.teams?.name || '—', team_color: a.teams?.team_color || 'var(--em-neutral)', sort_order: a.teams?.sort_order ?? 999 });
+      map.set(a.team_id, { id: a.team_id, name: a.teams?.name || '—', team_color: a.teams?.team_color || 'var(--as-neutral)', sort_order: a.teams?.sort_order ?? 999 });
     }
     return [...map.values()].sort((x, y) => x.sort_order - y.sort_order);
   }, [activities]);

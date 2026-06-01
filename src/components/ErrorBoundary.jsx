@@ -51,29 +51,29 @@ export default class ErrorBoundary extends Component {
     if (!this.state.hasError) return this.props.children;
     return (
       <div
-        className="em-fullscreen flex items-center justify-center px-4"
-        style={{ backgroundColor: 'var(--em-bg-page)' }}
+        className="as-fullscreen flex items-center justify-center px-4"
+        style={{ backgroundColor: 'var(--as-bg-page)' }}
       >
         <div className="text-center">
           <h1
             className="font-semibold"
-            style={{ color: 'var(--em-text-primary)', fontSize: 20, marginBottom: 8 }}
+            style={{ color: 'var(--as-text-primary)', fontSize: 20, marginBottom: 8 }}
           >
             Something went wrong
           </h1>
-          <p style={{ color: 'var(--em-text-secondary)', fontSize: 15, marginBottom: 16 }}>
+          <p style={{ color: 'var(--as-text-secondary)', fontSize: 15, marginBottom: 16 }}>
             Please try refreshing the page.
           </p>
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="font-semibold em-press"
+            className="font-semibold as-press"
             style={{
               minHeight: 44,
               padding: '0 20px',
               borderRadius: 10,
-              backgroundColor: 'var(--em-accent)',
-              color: 'var(--em-text-inverse)',
+              backgroundColor: 'var(--as-accent)',
+              color: 'var(--as-text-inverse)',
               fontSize: 15,
             }}
           >

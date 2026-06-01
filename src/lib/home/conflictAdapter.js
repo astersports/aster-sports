@@ -28,7 +28,7 @@ export function toKidsWithEvents(myChildren, activities, teamsById) {
         first_name: k.firstName,
         team_id: teamId,
         team_name: team?.name || '—',
-        team_color: team?.team_color || 'var(--em-neutral)',
+        team_color: team?.team_color || 'var(--as-neutral)',
         sort_order: team?.sort_order ?? 999,
         events: events.filter((a) => a.team_id === teamId && a.status !== 'cancelled' && a.start_at),
       });

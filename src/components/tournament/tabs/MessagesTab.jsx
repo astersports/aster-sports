@@ -32,9 +32,9 @@ export default function MessagesTab({ tournament, isStaff }) {
 
   if (messages.length === 0) {
     return (
-      <div style={{ padding: 32, textAlign: 'center', backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)' }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 6 }}>No messages sent yet</div>
-        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
+      <div style={{ padding: 32, textAlign: 'center', backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)' }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 6 }}>No messages sent yet</div>
+        <div style={{ fontSize: 13, color: 'var(--as-text-secondary)' }}>
           {isStaff ? 'Tournament briefings and updates will appear here once sent.' : 'Tournament updates from your coach will appear here.'}
         </div>
       </div>
@@ -57,17 +57,17 @@ export default function MessagesTab({ tournament, isStaff }) {
   return (
     <div>
       {messages.map((m) => (
-        <div key={m.id} style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', padding: 14, marginBottom: 10 }}>
+        <div key={m.id} style={{ backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)', padding: 14, marginBottom: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-accent)', padding: '2px 8px', borderRadius: 4, backgroundColor: 'var(--em-accent-soft)' }}>
+            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--as-accent)', padding: '2px 8px', borderRadius: 4, backgroundColor: 'var(--as-accent-soft)' }}>
               {TYPE_LABELS[m.kind] || m.kind}
             </span>
-            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>
+            <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>
               {m.sent_at ? new Date(m.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' }) : 'Draft'}
             </span>
           </div>
-          {m.subject && <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 4 }}>{m.subject}</div>}
-          {m.body_plain && <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.5, WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', display: '-webkit-box', overflow: 'hidden' }}>{m.body_plain}</div>}
+          {m.subject && <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 4 }}>{m.subject}</div>}
+          {m.body_plain && <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.5, WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', display: '-webkit-box', overflow: 'hidden' }}>{m.body_plain}</div>}
         </div>
       ))}
     </div>

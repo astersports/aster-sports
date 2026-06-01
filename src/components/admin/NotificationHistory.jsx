@@ -21,7 +21,7 @@ const TYPE_LABELS = {
 
 // pending/failed/read map to severity tokens (warning/critical/info).
 // sent + delivered are success outcomes, not severity states — they
-// keep direct --em-success refs (success is its own axis, not part
+// keep direct --as-success refs (success is its own axis, not part
 // of the severity domain per severityTokens.js).
 const WARNING = tokensForSeverity('warning');
 const CRITICAL = tokensForSeverity('critical');
@@ -37,11 +37,11 @@ const CHANGE_LABELS = {
 const STATUS_STYLE = {
   queued:    { bg: WARNING.bg,  color: WARNING.text },
   pending:   { bg: WARNING.bg,  color: WARNING.text },
-  sent:      { bg: 'var(--em-success-soft)', color: 'var(--em-success)' },
-  delivered: { bg: 'var(--em-success-soft)', color: 'var(--em-success)' },
+  sent:      { bg: 'var(--as-success-soft)', color: 'var(--as-success)' },
+  delivered: { bg: 'var(--as-success-soft)', color: 'var(--as-success)' },
   failed:    { bg: CRITICAL.bg, color: CRITICAL.text },
   read:      { bg: INFO.bg,     color: INFO.text },
-  cancelled: { bg: 'var(--em-neutral-soft)', color: 'var(--em-text-tertiary)' },
+  cancelled: { bg: 'var(--as-neutral-soft)', color: 'var(--as-text-tertiary)' },
 };
 
 export default function NotificationHistory({ orgId }) {
@@ -75,9 +75,9 @@ export default function NotificationHistory({ orgId }) {
 
   if (notifications.length === 0) {
     return (
-      <div style={{ padding: 16, textAlign: 'center', backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)' }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 4 }}>No notifications yet</div>
-        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.5 }}>
+      <div style={{ padding: 16, textAlign: 'center', backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)' }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 4 }}>No notifications yet</div>
+        <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.5 }}>
           Schedule changes, cancellations, and reminders will show up here as they go out to families.
         </div>
       </div>
@@ -85,23 +85,23 @@ export default function NotificationHistory({ orgId }) {
   }
 
   return (
-    <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
+    <div style={{ backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)', overflow: 'hidden' }}>
       {notifications.map((n, i) => {
         const s = STATUS_STYLE[n.status] || STATUS_STYLE.pending;
         const cs = n.change_summary || {};
         const title = cs.title || null;
         const sub = CHANGE_LABELS[cs.change] || null;
         return (
-          <div key={n.id} style={{ padding: '10px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          <div key={n.id} style={{ padding: '10px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--as-border-subtle)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                 <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: s.bg, color: s.color }}>{n.status}</span>
-                <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{TYPE_LABELS[n.notification_type] || n.notification_type}</span>
+                <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>{TYPE_LABELS[n.notification_type] || n.notification_type}</span>
               </div>
-              {title && <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>{title}</div>}
-              {sub && <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2 }}>{sub}</div>}
+              {title && <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--as-text-primary)' }}>{title}</div>}
+              {sub && <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 2 }}>{sub}</div>}
             </div>
-            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', flexShrink: 0 }}>
+            <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)', flexShrink: 0 }}>
               {new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}
             </span>
           </div>

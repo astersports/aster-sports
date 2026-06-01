@@ -7,8 +7,8 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 
-const inputStyle = { width: '100%', minHeight: 44, padding: '0 12px', borderRadius: 10, fontSize: 15, fontFamily: 'inherit', backgroundColor: 'var(--em-bg-tertiary)', border: '1.5px solid var(--em-border-default)', color: 'var(--em-text-primary)' };
-const resultRow = { padding: '10px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 14, color: 'var(--em-text-primary)', backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-subtle)', display: 'flex', flexDirection: 'column', gap: 2 };
+const inputStyle = { width: '100%', minHeight: 44, padding: '0 12px', borderRadius: 10, fontSize: 15, fontFamily: 'inherit', backgroundColor: 'var(--as-bg-tertiary)', border: '1.5px solid var(--as-border-default)', color: 'var(--as-text-primary)' };
+const resultRow = { padding: '10px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 14, color: 'var(--as-text-primary)', backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-subtle)', display: 'flex', flexDirection: 'column', gap: 2 };
 
 async function search(orgId, kind, query) {
   const meta = KIND_METADATA[kind] || {};
@@ -84,13 +84,13 @@ export default function AnchorPicker({ kind, anchorId, onPick }) {
       {!locked && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto' }}>
           {results.map((r) => (
-            <button key={`${r.type}-${r.id}`} type="button" className="em-press" onClick={() => onPick(r.type, r.id)}
-              style={{ ...resultRow, border: r.id === anchorId ? '1.5px solid var(--em-accent)' : resultRow.border, textAlign: 'left' }}>
+            <button key={`${r.type}-${r.id}`} type="button" className="as-press" onClick={() => onPick(r.type, r.id)}
+              style={{ ...resultRow, border: r.id === anchorId ? '1.5px solid var(--as-accent)' : resultRow.border, textAlign: 'left' }}>
               <span style={{ fontWeight: 600 }}>{r.label}</span>
-              {r.secondary && <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{r.secondary}</span>}
+              {r.secondary && <span style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>{r.secondary}</span>}
             </button>
           ))}
-          {!results.length && query && <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>No matches.</span>}
+          {!results.length && query && <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>No matches.</span>}
         </div>
       )}
     </div>

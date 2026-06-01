@@ -14,7 +14,7 @@ const TITLE_STYLE = {
   fontWeight: 600,
   letterSpacing: '0.05em',
   textTransform: 'uppercase',
-  color: 'var(--em-text-tertiary)',
+  color: 'var(--as-text-tertiary)',
 };
 
 const DENSITY_TITLE_MB = { minimal: 4, medium: 8, maximum: 12 };
@@ -51,7 +51,7 @@ export default function SectionShell({
             )}
             {isRefreshing && (
               <span aria-hidden="true" className="animate-pulse"
-                style={{ width: 6, height: 6, borderRadius: 9999, backgroundColor: 'var(--em-accent)', marginLeft: 2, flexShrink: 0 }} />
+                style={{ width: 6, height: 6, borderRadius: 9999, backgroundColor: 'var(--as-accent)', marginLeft: 2, flexShrink: 0 }} />
             )}
           </div>
           {titleAction && <div style={{ flexShrink: 0 }}>{titleAction}</div>}
@@ -70,7 +70,7 @@ export default function SectionShell({
         <EmptyState empty={empty} />
       ) : (
         <>
-          <div className="em-fade-in">{children}</div>
+          <div className="as-fade-in">{children}</div>
           {footer && <div style={{ marginTop: 10 }}>{footer}</div>}
         </>
       )}
@@ -81,16 +81,16 @@ export default function SectionShell({
 function ErrorState({ error, onRetry }) {
   const msg = (typeof error === 'string' ? error : error?.message) || "Something went wrong. Try again in a moment.";
   return (
-    <div role="alert" className="em-fade-in"
-      style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--em-danger)' }}>
+    <div role="alert" className="as-fade-in"
+      style={{ backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)', padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--as-danger)' }}>
         <AlertCircle size={16} strokeWidth={1.75} />
         <span style={{ fontSize: 13, fontWeight: 600 }}>Couldn&apos;t load</span>
       </div>
-      <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.4 }}>{msg}</div>
+      <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.4 }}>{msg}</div>
       {onRetry && (
-        <button type="button" onClick={onRetry} className="em-press"
-          style={{ alignSelf: 'flex-start', minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <button type="button" onClick={onRetry} className="as-press"
+          style={{ alignSelf: 'flex-start', minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
           Try again
         </button>
       )}
@@ -105,12 +105,12 @@ function EmptyState({ empty }) {
   const actionLabel = obj.actionLabel;
   const onAction = obj.onAction;
   return (
-    <div className="em-fade-in">
+    <div className="as-fade-in">
       <TextEmptyState heading={heading} message={message} />
       {actionLabel && onAction && (
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
-          <button type="button" onClick={onAction} className="em-press"
-            style={{ minHeight: 44, padding: '0 16px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button type="button" onClick={onAction} className="as-press"
+            style={{ minHeight: 44, padding: '0 16px', borderRadius: 8, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             {actionLabel}
           </button>
         </div>

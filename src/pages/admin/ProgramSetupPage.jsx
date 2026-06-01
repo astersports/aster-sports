@@ -29,7 +29,7 @@ export default function ProgramSetupPage() {
     <div style={wrap}>
       <button type="button" onClick={() => navigate('/admin/seasons')} style={linkBtn}>← Admin</button>
       <h1 style={h1Style}>New Program</h1>
-      <p style={{ fontSize: 13, color: 'var(--em-text-tertiary)', margin: '0 0 16px' }}>Season setup. Tryouts &amp; camps coming soon.</p>
+      <p style={{ fontSize: 13, color: 'var(--as-text-tertiary)', margin: '0 0 16px' }}>Season setup. Tryouts &amp; camps coming soon.</p>
 
       <Field label="Program name" htmlFor="pname"><TextInput id="pname" value={form.name} onChange={(v) => set('name', v)} placeholder="Spring 2026" /></Field>
       <div style={{ display: 'flex', gap: 8 }}>
@@ -50,7 +50,7 @@ export default function ProgramSetupPage() {
       <DivisionRows divisions={form.divisions} onChange={(d) => set('divisions', d)} />
 
       {error && <div style={errStyle}>{error}</div>}
-      <button type="button" className="em-press" style={{ ...primaryBtn, opacity: valid && !saving ? 1 : 0.5 }} disabled={!valid || saving} onClick={handleCreate}>
+      <button type="button" className="as-press" style={{ ...primaryBtn, opacity: valid && !saving ? 1 : 0.5 }} disabled={!valid || saving} onClick={handleCreate}>
         {saving ? 'Creating…' : 'Create program'}
       </button>
     </div>
@@ -58,8 +58,8 @@ export default function ProgramSetupPage() {
 }
 
 const wrap = { maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px' };
-const linkBtn = { background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, cursor: 'pointer', padding: 0 };
-const h1Style = { fontSize: 24, fontWeight: 700, color: 'var(--em-text-primary)', margin: '8px 0 0' };
-const h2Style = { fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--em-text-tertiary)', margin: '20px 0 8px' };
-const checkRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--em-text-secondary)', margin: '0 0 8px' };
-const errStyle = { padding: '8px 12px', borderRadius: 10, backgroundColor: 'var(--em-danger-soft)', color: 'var(--em-danger)', fontSize: 13, marginBottom: 8 };
+const linkBtn = { background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, cursor: 'pointer', padding: 0 };
+const h1Style = { fontSize: 24, fontWeight: 700, color: 'var(--as-text-primary)', margin: '8px 0 0' };
+const h2Style = { fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--as-text-tertiary)', margin: '20px 0 8px' };
+const checkRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--as-text-secondary)', margin: '0 0 8px' };
+const errStyle = { padding: '8px 12px', borderRadius: 10, backgroundColor: 'var(--as-danger-soft)', color: 'var(--as-danger)', fontSize: 13, marginBottom: 8 };

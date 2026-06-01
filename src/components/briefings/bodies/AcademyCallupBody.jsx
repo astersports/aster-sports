@@ -48,7 +48,7 @@ export default function AcademyCallupBody({ value, onChange, audienceFilter, onA
     <div style={fieldGap}>
       <div>
         <span style={labelStyle}>Player(s) being called up</span>
-        <button type="button" onClick={() => setPickerOpen(true)} className="em-press"
+        <button type="button" onClick={() => setPickerOpen(true)} className="as-press"
           style={{ ...inputStyle, textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
           {selectedIds.length ? `${selectedIds.length} player${selectedIds.length === 1 ? '' : 's'} selected` : 'Pick a player from Academy roster…'}
         </button>
@@ -62,7 +62,7 @@ export default function AcademyCallupBody({ value, onChange, audienceFilter, onA
         <textarea value={v.coach_note} onChange={(e) => set({ coach_note: e.target.value })} style={textareaStyle}
           placeholder="Why we're inviting this player up — what to expect on game day." />
       </label>
-      <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', lineHeight: 1.4 }}>
+      <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', lineHeight: 1.4 }}>
         Anchored to a specific game (Step 2). Email is delivered only to the chosen player(s) guardians, not the whole roster. Coach signoff is auto-populated from org staff.
       </div>
     </div>

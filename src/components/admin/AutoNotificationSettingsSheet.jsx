@@ -40,10 +40,10 @@ export default function AutoNotificationSettingsSheet({ open, onClose, orgId }) 
   }, [reminders, nudges, orgId, onClose, showToast]);
 
   const footer = (
-    <button type="button" onClick={handleSave} disabled={saving} className="em-press"
+    <button type="button" onClick={handleSave} disabled={saving} className="as-press"
       style={{
         minHeight: 44, padding: '0 24px', borderRadius: 10, border: 'none',
-        backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
+        backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)',
         fontSize: 15, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
         opacity: saving ? 0.6 : 1,
       }}>
@@ -54,7 +54,7 @@ export default function AutoNotificationSettingsSheet({ open, onClose, orgId }) 
   return (
     <FullScreenForm open={open} onClose={onClose} title="Notification Settings" footer={footer}>
       {!loaded ? (
-        <div style={{ padding: 24, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13 }}>
+        <div style={{ padding: 24, textAlign: 'center', color: 'var(--as-text-tertiary)', fontSize: 13 }}>
           Loading settings...
         </div>
       ) : (
@@ -76,12 +76,12 @@ export default function AutoNotificationSettingsSheet({ open, onClose, orgId }) 
 function Section({ title, children }) {
   return (
     <div style={{
-      backgroundColor: 'var(--em-bg-card)', borderRadius: 10,
-      border: '1px solid var(--em-border-default)', padding: 16,
+      backgroundColor: 'var(--as-bg-card)', borderRadius: 10,
+      border: '1px solid var(--as-border-default)', padding: 16,
     }}>
       <div style={{
         fontSize: 11, fontWeight: 500, letterSpacing: '0.05em',
-        textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 12,
+        textTransform: 'uppercase', color: 'var(--as-text-tertiary)', marginBottom: 12,
       }}>{title}</div>
       {children}
     </div>

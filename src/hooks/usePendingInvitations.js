@@ -52,7 +52,7 @@ export function usePendingInvitations(orgId, nowMs) {
         secondary: `Sent ${ageBit}${resentBit}`,
         href: '/admin/members',
         id: inv.id,
-        team_color: 'var(--em-warning)',
+        team_color: 'var(--as-warning)',
       };
     });
     setError(null);

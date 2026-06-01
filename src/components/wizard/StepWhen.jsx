@@ -62,7 +62,7 @@ export default function StepWhen({ data, onChange, orgId }) {
 
   return (
     <div style={{ padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>When and where?</h2>
+      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>When and where?</h2>
 
       <div style={fieldStyle}>
         <Input type="date" label="Date" value={data.date || ''} onChange={(e) => set('date', e.target.value)} />
@@ -79,12 +79,12 @@ export default function StepWhen({ data, onChange, orgId }) {
         <div style={{ display: 'flex', gap: 8 }}>
           {DURATIONS.map((d) => (
             <button key={d.minutes} type="button" onClick={() => setDuration(d.minutes)}
-              className="em-press" style={chipStyle(!customMode && data.durationMinutes === d.minutes)}>
+              className="as-press" style={chipStyle(!customMode && data.durationMinutes === d.minutes)}>
               {d.label}
             </button>
           ))}
           <button type="button" onClick={enterCustomMode}
-            className="em-press" style={chipStyle(customMode)}>
+            className="as-press" style={chipStyle(customMode)}>
             Custom
           </button>
         </div>
@@ -93,7 +93,7 @@ export default function StepWhen({ data, onChange, orgId }) {
             onChange={(e) => setCustomEndTime(e.target.value)} step="300"
             style={{ marginTop: 8 }} />
         ) : (
-          data.endTime && <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>Ends at {data.endTime}</span>
+          data.endTime && <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 4, display: 'block' }}>Ends at {data.endTime}</span>
         )}
       </div>
 
@@ -115,7 +115,7 @@ export default function StepWhen({ data, onChange, orgId }) {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {ARRIVAL.map((m) => (
             <button key={m} type="button" onClick={() => set('arrivalMinutes', m)}
-              className="em-press" style={chipStyle(data.arrivalMinutes === m)}>
+              className="as-press" style={chipStyle(data.arrivalMinutes === m)}>
               {m === 0 ? 'On time' : `${m}m`}
             </button>
           ))}
@@ -126,16 +126,16 @@ export default function StepWhen({ data, onChange, orgId }) {
 }
 
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 6 };
-const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)' };
+const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--as-text-secondary)' };
 const selectStyle = {
-  minHeight: 44, borderRadius: 10, border: '1.5px solid var(--em-border-default)',
-  backgroundColor: 'var(--em-bg-tertiary)', padding: '0 12px', fontSize: 15,
-  color: 'var(--em-text-primary)', width: '100%',
+  minHeight: 44, borderRadius: 10, border: '1.5px solid var(--as-border-default)',
+  backgroundColor: 'var(--as-bg-tertiary)', padding: '0 12px', fontSize: 15,
+  color: 'var(--as-text-primary)', width: '100%',
 };
 const chipStyle = (sel) => ({
   minHeight: 40, minWidth: 56, borderRadius: 10,
-  border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
-  backgroundColor: sel ? 'var(--em-accent)' : 'var(--em-bg-card)',
-  color: sel ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
+  border: sel ? '2px solid var(--as-accent)' : '1px solid var(--as-border-default)',
+  backgroundColor: sel ? 'var(--as-accent)' : 'var(--as-bg-card)',
+  color: sel ? 'var(--as-text-inverse)' : 'var(--as-text-primary)',
   fontSize: 15, fontWeight: 500, padding: '0 12px',
 });

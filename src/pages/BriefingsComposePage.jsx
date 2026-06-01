@@ -20,7 +20,7 @@ import PilotModeChip from '../components/briefings/PilotModeChip';
 
 const BriefingComposer = lazy(() => import('../components/briefings/BriefingComposer'));
 
-const wrap = { backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' };
+const wrap = { backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' };
 
 export default function BriefingsComposePage() {
   const navigate = useNavigate();

@@ -34,13 +34,13 @@ function sortedAlerts(alerts) {
 
 const SECTION_LABEL_STYLE = {
   fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
-  textTransform: 'uppercase', color: 'var(--em-text-tertiary)',
+  textTransform: 'uppercase', color: 'var(--as-text-tertiary)',
   marginBottom: 8,
 };
 
 const SKELETON_STYLE = {
   height: 52, borderRadius: 10,
-  backgroundColor: 'var(--em-bg-tertiary)',
+  backgroundColor: 'var(--as-bg-tertiary)',
 };
 
 // Wave 2.B post-#570 fix: a single 52px pulse reads as empty white
@@ -48,9 +48,9 @@ const SKELETON_STYLE = {
 // smoke). Stack three shape-matched blocks so layout occupies the
 // space the real list will fill once useAlertEvaluator resolves.
 // Wave 2.B post-#570 follow-up: skeleton was rendering but invisible
-// on iPhone — --em-bg-secondary (#F1F3F5) against --em-bg-page
-// (#F7F8FA) is a single shade apart, and em-pulse drops opacity to
-// 0.4-0.7, reading as empty white space. Switched to --em-bg-tertiary
+// on iPhone — --as-bg-secondary (#F1F3F5) against --as-bg-page
+// (#F7F8FA) is a single shade apart, and as-pulse drops opacity to
+// 0.4-0.7, reading as empty white space. Switched to --as-bg-tertiary
 // (#E9ECEF) to match LoadingSkeleton.jsx and the rest of the codebase's
 // shape-matched skeletons. Border dropped (it stacked with the lighter
 // fill to vanish entirely).
@@ -68,7 +68,7 @@ export default function AlertZone({ alerts = [], variant = 'always_visible', sec
         <div style={SECTION_LABEL_STYLE}>{sectionLabel}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-            <div key={i} className="em-pulse" aria-hidden="true" style={SKELETON_STYLE} />
+            <div key={i} className="as-pulse" aria-hidden="true" style={SKELETON_STYLE} />
           ))}
         </div>
       </section>

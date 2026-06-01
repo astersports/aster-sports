@@ -1,22 +1,22 @@
 const VARIANTS = {
   primary: {
-    backgroundColor: 'var(--em-accent)',
-    color: 'var(--em-text-inverse)',
+    backgroundColor: 'var(--as-accent)',
+    color: 'var(--as-text-inverse)',
     border: 'none',
   },
   secondary: {
     backgroundColor: 'transparent',
-    color: 'var(--em-accent)',
-    border: '1.5px solid var(--em-accent)',
+    color: 'var(--as-accent)',
+    border: '1.5px solid var(--as-accent)',
   },
   danger: {
-    backgroundColor: 'var(--em-danger)',
-    color: 'var(--em-text-inverse)',
+    backgroundColor: 'var(--as-danger)',
+    color: 'var(--as-text-inverse)',
     border: 'none',
   },
   ghost: {
     backgroundColor: 'transparent',
-    color: 'var(--em-text-secondary)',
+    color: 'var(--as-text-secondary)',
     border: 'none',
   },
 };
@@ -33,7 +33,7 @@ export default function Button({ children, variant = 'primary', size = 'md', ful
   return (
     <button
       type="button"
-      className="em-press"
+      className="as-press"
       disabled={disabled}
       style={{
         ...s,

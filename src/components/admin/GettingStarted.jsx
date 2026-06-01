@@ -46,52 +46,52 @@ export default function GettingStarted({ hasSeasons, hasPrograms }) {
       <Label>GETTING STARTED</Label>
       <div
         style={{
-        backgroundColor: 'var(--em-bg-card)',
+        backgroundColor: 'var(--as-bg-card)',
         borderRadius: 10,
-        border: '1px solid var(--em-border-default)',
-        boxShadow: 'var(--em-shadow-sm)',
+        border: '1px solid var(--as-border-default)',
+        boxShadow: 'var(--as-shadow-sm)',
         overflow: 'hidden',
       }}
     >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full em-press flex items-center justify-between p-4"
+        className="w-full as-press flex items-center justify-between p-4"
         style={{ background: 'none', border: 'none', minHeight: 44 }}
       >
         <div className="flex items-center gap-2">
-          <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 15 }}>
+          <span className="font-semibold" style={{ color: 'var(--as-text-primary)', fontSize: 15 }}>
             Getting started
           </span>
           {remaining > 0 && (
-            <Badge variant="neutral" pill style={{ color: 'var(--em-text-secondary)' }}>
+            <Badge variant="neutral" pill style={{ color: 'var(--as-text-secondary)' }}>
               {remaining} left
             </Badge>
           )}
         </div>
         <svg
           width="16" height="16" viewBox="0 0 24 24" fill="none"
-          stroke="var(--em-text-tertiary)" strokeWidth="1.75"
+          stroke="var(--as-text-tertiary)" strokeWidth="1.75"
           strokeLinecap="round" strokeLinejoin="round"
           style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms ease-out' }}
         >
           <path d="m6 9 6 6 6-6"/>
         </svg>
       </button>
-      <div className="em-collapsible" data-open={open ? 'true' : 'false'}>
-        <div className="em-collapsible-inner">
+      <div className="as-collapsible" data-open={open ? 'true' : 'false'}>
+        <div className="as-collapsible-inner">
           <ul className="flex flex-col px-4 pb-3">
             {steps.map((s) => (
               <li key={s.label}>
                 <Link
                   to={s.to}
-                  className="flex items-center gap-3 em-press"
-                  style={{ minHeight: 44, color: 'var(--em-text-primary)', fontSize: 15 }}
+                  className="flex items-center gap-3 as-press"
+                  style={{ minHeight: 44, color: 'var(--as-text-primary)', fontSize: 15 }}
                 >
                   {s.done ? (
-                    <CheckCircle2 size={20} strokeWidth={1.75} color="var(--em-success)" />
+                    <CheckCircle2 size={20} strokeWidth={1.75} color="var(--as-success)" />
                   ) : (
-                    <Circle size={20} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+                    <Circle size={20} strokeWidth={1.75} color="var(--as-text-tertiary)" />
                   )}
                   <span style={{ textDecoration: s.done ? 'line-through' : 'none', opacity: s.done ? 0.6 : 1 }}>
                     {s.label}

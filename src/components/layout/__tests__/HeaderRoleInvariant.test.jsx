@@ -100,9 +100,9 @@ describe('Header — per-role invariant (anti-pattern #43)', () => {
       canSwitchRoles: true,
     };
     const { container } = renderHeader();
-    // Warning stripe: top fixed bar at z-50 with em-warning background
+    // Warning stripe: top fixed bar at z-50 with as-warning background
     const stripe = Array.from(container.querySelectorAll('div')).find((el) =>
-      el.style.background === 'var(--em-warning)',
+      el.style.background === 'var(--as-warning)',
     );
     expect(stripe).toBeTruthy();
     expect(container.textContent).toMatch(/Viewing as parent/);

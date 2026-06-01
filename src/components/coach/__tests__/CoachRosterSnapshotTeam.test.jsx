@@ -64,7 +64,7 @@ describe('CoachRosterSnapshotTeam — overdue gate', () => {
     attendanceRef.current = makeFixture({ eventOffsetMs: 24 * HOUR_MS, rsvpState: 'no_response' });
     render(<CoachRosterSnapshotTeam team={TEAM} />);
     const row = screen.getByRole('listitem');
-    expect(row.style.backgroundColor).toContain('em-warning-soft');
+    expect(row.style.backgroundColor).toContain('as-warning-soft');
   });
 
   it('c. event <72h out + has RSVP → NO yellow highlight', () => {
@@ -78,7 +78,7 @@ describe('CoachRosterSnapshotTeam — overdue gate', () => {
     attendanceRef.current = makeFixture({ eventOffsetMs: 72 * HOUR_MS, rsvpState: 'no_response' });
     render(<CoachRosterSnapshotTeam team={TEAM} />);
     const row = screen.getByRole('listitem');
-    expect(row.style.backgroundColor).toContain('em-warning-soft');
+    expect(row.style.backgroundColor).toContain('as-warning-soft');
   });
 
   it('e. no next event (all past) → NO yellow highlight', () => {

@@ -34,18 +34,18 @@ function seasonProgress(season, nowMs) {
 // renders the hook's default-state placeholders (paymentPct=0,
 // rsvpPct=null→'—', activeTeamsCount=0→'0 teams', etc.) which read as
 // "the org has no data" rather than "data is loading." Matches the
-// LoadingSkeleton.Bar shape: --em-bg-tertiary + em-pulse + 6px radius.
+// LoadingSkeleton.Bar shape: --as-bg-tertiary + as-pulse + 6px radius.
 function MetricValueSkeleton({ width = 48 }) {
   return (
     <span
-      className="em-pulse"
+      className="as-pulse"
       aria-hidden="true"
       style={{
         display: 'inline-block',
         width,
         height: 12,
         borderRadius: 6,
-        backgroundColor: 'var(--em-bg-tertiary)',
+        backgroundColor: 'var(--as-bg-tertiary)',
         verticalAlign: 'middle',
       }}
     />
@@ -54,7 +54,7 @@ function MetricValueSkeleton({ width = 48 }) {
 
 function MetricRow({ label, value, loading, skeletonWidth }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--em-text-primary)', marginTop: 4 }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--as-text-primary)', marginTop: 4 }}>
       <span>{label}</span>
       <span style={{ fontWeight: 600 }}>
         {loading ? <MetricValueSkeleton width={skeletonWidth} /> : value}
@@ -75,21 +75,21 @@ export default function ProgramHealthCard({ season, nowMs }) {
       <Label>PROGRAM HEALTH</Label>
       <div
         style={{
-          backgroundColor: 'var(--em-bg-card)',
+          backgroundColor: 'var(--as-bg-card)',
           borderRadius: 10,
-          border: '1px solid var(--em-border-default)',
-          boxShadow: 'var(--em-shadow-sm)',
+          border: '1px solid var(--as-border-default)',
+          boxShadow: 'var(--as-shadow-sm)',
           padding: '12px 14px',
         }}
       >
-        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginBottom: 4 }}>
+        <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginBottom: 4 }}>
           {season.name} · Week {progress.currentWeek} of {progress.totalWeeks}
         </div>
         <div
           style={{
             height: 6,
             borderRadius: 3,
-            backgroundColor: 'var(--em-bg-secondary)',
+            backgroundColor: 'var(--as-bg-secondary)',
             overflow: 'hidden',
             marginBottom: 10,
           }}
@@ -99,7 +99,7 @@ export default function ProgramHealthCard({ season, nowMs }) {
             style={{
               height: '100%',
               width: `${progress.pct}%`,
-              backgroundColor: 'var(--em-accent)',
+              backgroundColor: 'var(--as-accent)',
               borderRadius: 3,
               transition: 'width 200ms ease-out',
             }}

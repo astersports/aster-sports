@@ -40,7 +40,7 @@ export default function TournamentsPage() {
     <div style={{ padding: 16, paddingBottom: 80 }}>
       <AdminBackHeader />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', margin: 0 }}>
           Tournaments
         </h1>
         {isStaff && (
@@ -53,24 +53,24 @@ export default function TournamentsPage() {
       <TournamentStatusChips statusFilter={statusFilter} setStatusFilter={setStatusFilter} />
 
       {loading && tournaments.length === 0 && (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-secondary)', fontSize: 15 }}>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--as-text-secondary)', fontSize: 15 }}>
           Loading...
         </div>
       )}
 
       {error && (
-        <div style={{ padding: 16, color: 'var(--em-danger)', fontSize: 13 }}>
+        <div style={{ padding: 16, color: 'var(--as-danger)', fontSize: 13 }}>
           {error.message || 'Failed to load tournaments'}
         </div>
       )}
 
       {!loading && !error && tournaments.length === 0 && (
         <div style={{ padding: '48px 16px', textAlign: 'center' }}>
-          <Trophy size={32} strokeWidth={1.5} color="var(--em-text-tertiary)" style={{ marginBottom: 12 }} />
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 4 }}>
+          <Trophy size={32} strokeWidth={1.5} color="var(--as-text-tertiary)" style={{ marginBottom: 12 }} />
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 4 }}>
             No tournaments yet
           </div>
-          <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
+          <div style={{ fontSize: 13, color: 'var(--as-text-secondary)' }}>
             {role === 'admin' || role === 'coach' ? 'Tap + New to create one.' : 'Check back when your team signs up.'}
           </div>
         </div>
@@ -90,11 +90,11 @@ export default function TournamentsPage() {
         <button
           type="button"
           onClick={loadMore}
-          className="em-press"
+          className="as-press"
           style={{
             width: '100%', minHeight: 44, marginTop: 8,
-            borderRadius: 10, border: '1px solid var(--em-border-default)',
-            backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)',
+            borderRadius: 10, border: '1px solid var(--as-border-default)',
+            backgroundColor: 'var(--as-bg-card)', color: 'var(--as-accent)',
             fontSize: 15, fontWeight: 500,
           }}
         >

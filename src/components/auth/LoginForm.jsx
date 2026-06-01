@@ -36,8 +36,8 @@ export default function LoginForm({
           />
           <button
             type="button" onClick={() => setShowPw((v) => !v)}
-            className="absolute flex items-center justify-center em-press"
-            style={{ top: 22, right: 0, width: 44, height: 44, color: 'var(--em-text-tertiary)' }}
+            className="absolute flex items-center justify-center as-press"
+            style={{ top: 22, right: 0, width: 44, height: 44, color: 'var(--as-text-tertiary)' }}
             aria-label={showPw ? 'Hide password' : 'Show password'}
           >
             {showPw
@@ -51,7 +51,7 @@ export default function LoginForm({
         <div
           className="mb-3"
           style={{
-            color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)',
+            color: 'var(--as-danger)', backgroundColor: 'var(--as-danger-soft)',
             padding: '8px 12px', borderRadius: 8, fontSize: 13,
           }}
         >
@@ -66,10 +66,10 @@ export default function LoginForm({
       <div className="flex justify-center mt-2">
         <Link
           to="/forgot-password"
-          className="em-press inline-flex items-center justify-center"
+          className="as-press inline-flex items-center justify-center"
           style={{
             minHeight: 44, padding: '0 12px',
-            color: 'var(--em-accent)', fontSize: 13, fontWeight: 500,
+            color: 'var(--as-accent)', fontSize: 13, fontWeight: 500,
           }}
         >
           Forgot password?

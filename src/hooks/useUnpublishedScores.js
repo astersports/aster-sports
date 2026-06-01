@@ -54,7 +54,7 @@ export function useUnpublishedScores(coachedTeamIds) {
         secondary: `${scoreBit} · awaiting publish`,
         href: `/events/${r.event_id}`,
         id: r.id,
-        team_color: r.events?.teams?.team_color || 'var(--em-warning)',
+        team_color: r.events?.teams?.team_color || 'var(--as-warning)',
         team_name: teamName,
         event_id: r.event_id,
         start_at: r.events?.start_at,

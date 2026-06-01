@@ -21,15 +21,15 @@ export default function ScheduleChangeBody({ value }) {
   const before = value?.before || {};
   const after = value?.after || {};
   return (
-    <div style={{ padding: 14, border: '1px solid var(--em-border-default)', borderRadius: 10, backgroundColor: 'var(--em-bg-card)' }}>
+    <div style={{ padding: 14, border: '1px solid var(--as-border-default)', borderRadius: 10, backgroundColor: 'var(--as-bg-card)' }}>
       <span style={labelStyle}>Locked diff</span>
-      <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 4 }}>
+      <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 4 }}>
         Generated from the event edit flow. To change the diff, edit the event and resave.
       </div>
-      <div style={{ marginTop: 10, fontSize: 14, color: 'var(--em-text-secondary)', textDecoration: 'line-through' }}>
+      <div style={{ marginTop: 10, fontSize: 14, color: 'var(--as-text-secondary)', textDecoration: 'line-through' }}>
         Previous: {fmt(before.start_at)}{before.location ? ` · ${before.location}` : ''}
       </div>
-      <div style={{ marginTop: 4, fontSize: 15, fontWeight: 700, color: 'var(--em-text-primary)' }}>
+      <div style={{ marginTop: 4, fontSize: 15, fontWeight: 700, color: 'var(--as-text-primary)' }}>
         Updated: {fmt(after.start_at)}{after.location ? ` · ${after.location}` : ''}
       </div>
     </div>

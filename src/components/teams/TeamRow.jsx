@@ -24,25 +24,25 @@ export default function TeamRow({ team, idx, summary }) {
     <button
       type="button"
       onClick={() => { navigator.vibrate?.(10); navigate(`/teams/${team.id}`); }}
-      className={`w-full text-left em-press em-stagger-${idx + 1}`}
+      className={`w-full text-left as-press as-stagger-${idx + 1}`}
       style={{
         display: 'flex',
         alignItems: 'stretch',
-        backgroundColor: 'var(--em-bg-card)',
+        backgroundColor: 'var(--as-bg-card)',
         borderRadius: 10,
-        border: '1px solid var(--em-border-default)',
-        boxShadow: 'var(--em-shadow-sm)',
+        border: '1px solid var(--as-border-default)',
+        boxShadow: 'var(--as-shadow-sm)',
         overflow: 'hidden',
         minHeight: 56,
         transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
       }}
     >
-      <div style={{ width: 5, flexShrink: 0, backgroundColor: team.team_color || 'var(--em-neutral)' }} />
+      <div style={{ width: 5, flexShrink: 0, backgroundColor: team.team_color || 'var(--as-neutral)' }} />
       <div style={{ flex: 1, padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-        <div className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 17, lineHeight: 1.3 }}>
+        <div className="font-semibold" style={{ color: 'var(--as-text-primary)', fontSize: 17, lineHeight: 1.3 }}>
           {team.name}
         </div>
-        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', lineHeight: 1.4 }}>
+        <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', lineHeight: 1.4 }}>
           {buildMetaLine(team, s)}
         </div>
       </div>

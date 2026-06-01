@@ -10,11 +10,11 @@ import EmptyState from './EmptyState';
 
 const ICON_MAP = { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy };
 
-const rowStyle = { display: 'flex', gap: 12, padding: 14, borderRadius: 10, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-subtle)', borderLeft: '4px solid var(--em-border-default)' };
-const iconWrap = { width: 36, height: 36, borderRadius: 8, backgroundColor: 'var(--em-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 };
-const titleStyle = { fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)' };
-const subStyle = { fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 };
-const viewBtn = { minHeight: 36, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' };
+const rowStyle = { display: 'flex', gap: 12, padding: 14, borderRadius: 10, backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-subtle)', borderLeft: '4px solid var(--as-border-default)' };
+const iconWrap = { width: 36, height: 36, borderRadius: 8, backgroundColor: 'var(--as-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 };
+const titleStyle = { fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)' };
+const subStyle = { fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 2 };
+const viewBtn = { minHeight: 36, padding: '0 12px', borderRadius: 8, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' };
 const moreBtn = { ...viewBtn, width: '100%', minHeight: 44, marginTop: 8 };
 
 function relTime(iso) {
@@ -47,16 +47,16 @@ export default function HistoryView({ filters, search, onCompose }) {
         const label = m.label || r.kind;
         return (
           <div key={r.id} style={rowStyle}>
-            <span style={iconWrap}><Icon size={20} strokeWidth={1.75} color="var(--em-text-tertiary)" /></span>
+            <span style={iconWrap}><Icon size={20} strokeWidth={1.75} color="var(--as-text-tertiary)" /></span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={titleStyle}>{label}{r.subject ? ` · ${r.subject}` : ''}</div>
               <div style={subStyle}>Sent {relTime(r.sent_at)} · {r.audience_type || '—'}</div>
             </div>
-            <button type="button" onClick={() => navigate(`/admin/briefings/history/${r.id}`)} className="em-press" style={viewBtn}>View</button>
+            <button type="button" onClick={() => navigate(`/admin/briefings/history/${r.id}`)} className="as-press" style={viewBtn}>View</button>
           </div>
         );
       })}
-      {hasMore && <button type="button" onClick={loadMore} disabled={loading} className="em-press" style={moreBtn}>{loading ? 'Loading…' : 'Load more'}</button>}
+      {hasMore && <button type="button" onClick={loadMore} disabled={loading} className="as-press" style={moreBtn}>{loading ? 'Loading…' : 'Load more'}</button>}
     </div>
   );
 }

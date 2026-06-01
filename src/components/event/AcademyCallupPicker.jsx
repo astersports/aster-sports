@@ -17,10 +17,10 @@ const TIER_HEADERS = {
 
 const cardStyle = {
   margin: '12px 16px', padding: 14, borderRadius: 10,
-  backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)',
-  boxShadow: 'var(--em-shadow-sm)',
+  backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)',
+  boxShadow: 'var(--as-shadow-sm)',
 };
-const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)' };
+const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-secondary)' };
 
 // 2026-05-21 EventDetail perf pass (PR #428 pattern): memo-wrapped so
 // parent re-renders skip this subtree when props are referentially equal.
@@ -66,22 +66,22 @@ function AcademyCallupPicker({ event, team, isStaff, isLocked, academyCallupPlay
   const renderRow = (c) => {
     const isCalledUp = callupSet.has(c.id);
     return (
-      <li key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: '1px solid var(--em-border-subtle)' }}>
+      <li key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: '1px solid var(--as-border-subtle)' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>{c.first_name} {c.last_name}</div>
-          <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--as-text-primary)' }}>{c.first_name} {c.last_name}</div>
+          <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
             {c.team_name}
             {isCalledUp && <StatusBadge status={emailStatus[c.id]} onSendNow={() => setComposingFor(c.id)} />}
           </div>
         </div>
         {isCalledUp ? (
           <button type="button" onClick={() => onRemove(c.id)} disabled={busyId === c.id} aria-label={`Remove ${c.first_name}`}
-            style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', color: 'var(--em-danger)', cursor: 'pointer', opacity: busyId === c.id ? 0.5 : 1 }}>
+            style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', color: 'var(--as-danger)', cursor: 'pointer', opacity: busyId === c.id ? 0.5 : 1 }}>
             <X size={18} strokeWidth={1.75} />
           </button>
         ) : (
           <button type="button" onClick={() => onAdd(c.id)} disabled={busyId === c.id}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 12px', minHeight: 36, borderRadius: 8, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: busyId === c.id ? 0.5 : 1 }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 12px', minHeight: 36, borderRadius: 8, backgroundColor: 'var(--as-accent-soft)', color: 'var(--as-accent)', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: busyId === c.id ? 0.5 : 1 }}>
             <Plus size={14} strokeWidth={2} /> Add
           </button>
         )}
@@ -96,11 +96,11 @@ function AcademyCallupPicker({ event, team, isStaff, isLocked, academyCallupPlay
       <div style={{ ...labelStyle, marginBottom: 8 }}>Academy Call-Ups</div>
       {isShortNotice && <ShortNoticeBanner />}
       {totalCount === 0 ? (
-        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>No Academy players available.</div>
+        <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>No Academy players available.</div>
       ) : (
         ['same', 'adjacent', 'other'].map((tier) => grouped[tier].length === 0 ? null : (
           <div key={tier} style={{ marginBottom: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: 1, marginTop: 8, marginBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--as-text-tertiary)', textTransform: 'uppercase', letterSpacing: 1, marginTop: 8, marginBottom: 4 }}>
               {TIER_HEADERS[tier]}
             </div>
             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>

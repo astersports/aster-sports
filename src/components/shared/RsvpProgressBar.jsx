@@ -16,11 +16,11 @@ export default function RsvpProgressBar({ going = 0, maybe = 0, out = 0, total =
     <div aria-label={`RSVP progress: ${going} going, ${maybe} maybe, ${out} out`}
       style={{
         display: 'flex', width: '100%', height, borderRadius: 999, overflow: 'hidden',
-        backgroundColor: 'var(--em-bg-tertiary)',
+        backgroundColor: 'var(--as-bg-tertiary)',
       }}>
-      <div style={{ width: `${pct(going)}%`, backgroundColor: 'var(--em-success)' }} />
-      <div style={{ width: `${pct(maybe)}%`, backgroundColor: 'var(--em-text-tertiary)' }} />
-      <div style={{ width: `${pct(out)}%`, backgroundColor: 'var(--em-text-secondary)' }} />
+      <div style={{ width: `${pct(going)}%`, backgroundColor: 'var(--as-success)' }} />
+      <div style={{ width: `${pct(maybe)}%`, backgroundColor: 'var(--as-text-tertiary)' }} />
+      <div style={{ width: `${pct(out)}%`, backgroundColor: 'var(--as-text-secondary)' }} />
     </div>
   );
 }

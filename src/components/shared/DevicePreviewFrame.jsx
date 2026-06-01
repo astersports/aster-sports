@@ -25,24 +25,24 @@ const TABS = [
   { key: 'plain',   label: 'Plain text',    viewport: null },
 ];
 
-const tabRow = { display: 'flex', gap: 4, padding: 4, backgroundColor: 'var(--em-bg-tertiary)', borderRadius: 8 };
+const tabRow = { display: 'flex', gap: 4, padding: 4, backgroundColor: 'var(--as-bg-tertiary)', borderRadius: 8 };
 const tabBtn = (active) => ({
   flex: 1, minHeight: 32, padding: '0 10px', borderRadius: 6,
   fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', border: 'none',
-  backgroundColor: active ? 'var(--em-bg-card)' : 'transparent',
-  color: active ? 'var(--em-text-primary)' : 'var(--em-text-secondary)',
+  backgroundColor: active ? 'var(--as-bg-card)' : 'transparent',
+  color: active ? 'var(--as-text-primary)' : 'var(--as-text-secondary)',
   boxShadow: active ? '0 1px 2px rgba(0,0,0,0.04)' : 'none',
 });
 const frameWrap = (viewport) => ({
   width: viewport, margin: '0 auto', minHeight: 480,
-  border: '1px solid var(--em-border-default)', borderRadius: 10,
+  border: '1px solid var(--as-border-default)', borderRadius: 10,
   backgroundColor: '#ffffff', overflow: 'hidden',
 });
 const iframeStyle = { width: '100%', minHeight: 480, border: 'none', display: 'block' };
 const plainStyle = {
   margin: 0, padding: 16, minHeight: 480,
-  border: '1px solid var(--em-border-default)', borderRadius: 10,
-  backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)',
+  border: '1px solid var(--as-border-default)', borderRadius: 10,
+  backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)',
   fontFamily: 'ui-monospace, SFMono-Regular, monospace',
   fontSize: 12, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordWrap: 'break-word',
 };
@@ -61,7 +61,7 @@ export default function DevicePreviewFrame({ html, plainText }) {
       <div role="tablist" aria-label="Preview device" style={tabRow}>
         {TABS.map((t) => (
           <button key={t.key} type="button" role="tab" aria-selected={tab === t.key}
-            onClick={() => setTab(t.key)} className="em-press" style={tabBtn(tab === t.key)}>
+            onClick={() => setTab(t.key)} className="as-press" style={tabBtn(tab === t.key)}>
             {t.label}
           </button>
         ))}

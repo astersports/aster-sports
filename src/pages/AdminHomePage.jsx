@@ -81,7 +81,7 @@ export default function AdminHomePage() {
   // actually shrink below their content width (the default is auto,
   // which refuses to shrink and widens the parent).
   return (
-    <div className="px-4 py-5 flex flex-col gap-6 em-fade-in">
+    <div className="px-4 py-5 flex flex-col gap-6 as-fade-in">
       <AdminGreeting user={user} />
 
       <AlertZone alerts={alerts} loading={alertsLoading} variant="always_visible" sectionLabel="ALERTS" />
@@ -129,8 +129,8 @@ export default function AdminHomePage() {
         <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
           <Label style={{ marginBottom: 0 }}>RECENT NOTIFICATIONS</Label>
           <button type="button" aria-label="Notification settings" onClick={() => setNotifSettingsOpen(true)}
-            className="em-press" style={{ minHeight: 44, minWidth: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>
-            <Settings size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+            className="as-press" style={{ minHeight: 44, minWidth: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <Settings size={16} strokeWidth={1.75} color="var(--as-text-tertiary)" />
           </button>
         </div>
         <NotificationHistory orgId={orgId} />

@@ -4,9 +4,9 @@ import { useNow } from '../../hooks/useNow';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
 
 const STATUS_DISPLAY = {
-  on_the_way: { icon: '🏃', label: 'On the way', bg: 'var(--em-warning-soft)', color: 'var(--em-warning)' },
-  arrived: { icon: '✅', label: 'Here', bg: 'var(--em-success-soft)', color: 'var(--em-success)' },
-  running_late: { icon: '⏰', label: 'Running late', bg: 'var(--em-danger-soft)', color: 'var(--em-danger)' },
+  on_the_way: { icon: '🏃', label: 'On the way', bg: 'var(--as-warning-soft)', color: 'var(--as-warning)' },
+  arrived: { icon: '✅', label: 'Here', bg: 'var(--as-success-soft)', color: 'var(--as-success)' },
+  running_late: { icon: '⏰', label: 'Running late', bg: 'var(--as-danger-soft)', color: 'var(--as-danger)' },
 };
 
 export default function ArrivalBoard({ event }) {
@@ -35,8 +35,8 @@ export default function ArrivalBoard({ event }) {
   return (
     <div style={{ padding: '0 16px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--em-accent)' }}>{ribbon}</span>
-        <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{arrived}/{players.length} arrived</span>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--as-accent)' }}>{ribbon}</span>
+        <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>{arrived}/{players.length} arrived</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {sortedPlayers.map((p) => {
@@ -45,30 +45,30 @@ export default function ArrivalBoard({ event }) {
           const time = a?.status_changed_at ? new Date(a.status_changed_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : null;
           const nextStatus = !a ? 'arrived' : a.status === 'arrived' ? null : 'arrived';
           return (
-            <button key={p.id} type="button" onClick={() => nextStatus && setArrival(p.id, nextStatus)} className="em-press"
+            <button key={p.id} type="button" onClick={() => nextStatus && setArrival(p.id, nextStatus)} className="as-press"
               aria-label={`${p.first_name} ${p.last_name} — ${s ? s.label : 'tap to mark arrived'}`}
               style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10,
-              backgroundColor: s?.bg || 'var(--em-bg-card)', border: '1px solid var(--em-border-subtle)',
+              backgroundColor: s?.bg || 'var(--as-bg-card)', border: '1px solid var(--as-border-subtle)',
               transition: 'background-color 300ms', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer',
             }}>
               <div style={{
-                width: 32, height: 32, borderRadius: 9999, backgroundColor: event.teams?.team_color || 'var(--em-accent)',
+                width: 32, height: 32, borderRadius: 9999, backgroundColor: event.teams?.team_color || 'var(--as-accent)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                fontSize: 12, fontWeight: 700, color: 'var(--em-text-inverse)',
+                fontSize: 12, fontWeight: 700, color: 'var(--as-text-inverse)',
               }}>{(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)' }}>{p.first_name} {p.last_name}</div>
-                <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>#{p.jersey_number || '—'}</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)' }}>{p.first_name} {p.last_name}</div>
+                <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>#{p.jersey_number || '—'}</div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 {s ? (
                   <>
                     <div style={{ fontSize: 13, fontWeight: 600, color: s.color }}>{s.icon} {a.status === 'running_late' ? `ETA ${a.eta_minutes}m` : s.label}</div>
-                    {time && <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{time}</div>}
+                    {time && <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>{time}</div>}
                   </>
                 ) : (
-                  <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>—</div>
+                  <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>—</div>
                 )}
               </div>
             </button>

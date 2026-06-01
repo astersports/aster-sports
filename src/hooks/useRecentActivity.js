@@ -17,7 +17,7 @@ import { supabase } from '../lib/supabase';
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_LIMIT = 8;
 
-const NEUTRAL = 'var(--em-neutral)';
+const NEUTRAL = 'var(--as-neutral)';
 
 export function useRecentActivity(orgId, seasonId, { limit = DEFAULT_LIMIT } = {}) {
   const [items, setItems] = useState([]);

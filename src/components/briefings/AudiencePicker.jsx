@@ -14,9 +14,9 @@ const segWrap = { display: 'flex', flexWrap: 'wrap', gap: 6 };
 const segBtn = (active) => ({
   flex: '1 1 auto', minHeight: 40, padding: '0 12px', borderRadius: 8,
   fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
-  border: active ? '1.5px solid var(--em-accent)' : '1.5px solid var(--em-border-default)',
-  backgroundColor: active ? 'var(--em-accent-soft)' : 'var(--em-bg-card)',
-  color: active ? 'var(--em-text-primary)' : 'var(--em-text-secondary)',
+  border: active ? '1.5px solid var(--as-accent)' : '1.5px solid var(--as-border-default)',
+  backgroundColor: active ? 'var(--as-accent-soft)' : 'var(--as-bg-card)',
+  color: active ? 'var(--as-text-primary)' : 'var(--as-text-secondary)',
 });
 
 const MODES = [
@@ -53,12 +53,12 @@ export default function AudiencePicker({ kind, audienceType, audienceFilter, aud
   const showLoading = recipientsLoading && a.filtered === 0;
   const copy = showLoading ? 'Computing audience…' : audienceCopy(a);
   const showChip = a.pilotModeOn && (a.mode === 'pilot_zero' || a.mode === 'pilot_partial');
-  const lineColor = a.mode === 'pilot_zero' ? 'var(--em-warning)' : 'var(--em-text-tertiary)';
+  const lineColor = a.mode === 'pilot_zero' ? 'var(--as-warning)' : 'var(--as-text-tertiary)';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={segWrap}>
         {modes.map((m) => (
-          <button key={m.type} type="button" disabled={locked} className="em-press"
+          <button key={m.type} type="button" disabled={locked} className="as-press"
             style={segBtn(m.type === audienceType)}
             onClick={() => !locked && onPick(m.type, audienceType === m.type ? audienceFilter : null)}>
             {m.label}

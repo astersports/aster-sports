@@ -19,8 +19,8 @@ export default function RideIndicator({ count, kind = 'requests', urgent = false
     : `${count} seat${count !== 1 ? 's' : ''}`;
 
   const color = isRequests
-    ? (urgent ? 'var(--em-danger)' : 'var(--em-warning)')
-    : 'var(--em-text-secondary)';
+    ? (urgent ? 'var(--as-danger)' : 'var(--as-warning)')
+    : 'var(--as-text-secondary)';
 
   const iconSize = compact ? 11 : 12;
   const fontSize = compact ? 12 : 13;

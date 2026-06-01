@@ -14,41 +14,41 @@ export default function ChannelList({ channels, activeKey, onSelect, previews, r
             key={ch.key}
             type="button"
             onClick={() => { navigator.vibrate?.(10); onSelect(ch); }}
-            className="em-press"
+            className="as-press"
             aria-label={ch.label}
             aria-current={active ? 'page' : undefined}
             style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
               borderRadius: 10, border: 'none', width: '100%', textAlign: 'left',
               fontFamily: 'inherit', cursor: 'pointer',
-              backgroundColor: active ? 'var(--em-accent-soft)' : 'transparent',
+              backgroundColor: active ? 'var(--as-accent-soft)' : 'transparent',
             }}
           >
             <div style={{
               width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-              backgroundColor: ch.color || 'var(--em-accent)',
+              backgroundColor: ch.color || 'var(--as-accent)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Icon size={18} strokeWidth={1.75} color="var(--em-text-inverse)" />
+              <Icon size={18} strokeWidth={1.75} color="var(--as-text-inverse)" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{
                     fontSize: 15, fontWeight: active ? 600 : (hasUnread ? 600 : 500),
-                    color: active ? 'var(--em-accent)' : 'var(--em-text-primary)',
+                    color: active ? 'var(--as-accent)' : 'var(--as-text-primary)',
                   }}>{ch.label}</span>
-                  {hasUnread && !active && <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--em-accent)', flexShrink: 0 }} />}
+                  {hasUnread && !active && <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--as-accent)', flexShrink: 0 }} />}
                 </div>
                 {preview && (
-                  <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', flexShrink: 0 }}>
+                  <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)', flexShrink: 0 }}>
                     {formatRelativeTime(preview.time)}
                   </span>
                 )}
               </div>
               {preview && (
                 <div style={{
-                  fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2,
+                  fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 2,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   <span style={{ fontWeight: 500 }}>{preview.sender}:</span> {preview.body}

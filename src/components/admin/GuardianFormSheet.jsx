@@ -47,7 +47,7 @@ function Body({ guardian, onSave }) {
   };
 
   const label = {
-    color: 'var(--em-text-secondary)',
+    color: 'var(--as-text-secondary)',
     fontSize: 13,
     marginBottom: 6,
     display: 'block',
@@ -57,7 +57,7 @@ function Body({ guardian, onSave }) {
   return (
     <div>
       <div className="mb-4">
-        <label htmlFor="guardian-first-name" style={label}>First name<span style={{ color: 'var(--em-danger)', marginLeft: 4 }} aria-hidden="true">*</span></label>
+        <label htmlFor="guardian-first-name" style={label}>First name<span style={{ color: 'var(--as-danger)', marginLeft: 4 }} aria-hidden="true">*</span></label>
         <Input
           id="guardian-first-name"
           value={firstName}
@@ -67,7 +67,7 @@ function Body({ guardian, onSave }) {
         />
       </div>
       <div className="mb-4">
-        <label htmlFor="guardian-last-name" style={label}>Last name<span style={{ color: 'var(--em-danger)', marginLeft: 4 }} aria-hidden="true">*</span></label>
+        <label htmlFor="guardian-last-name" style={label}>Last name<span style={{ color: 'var(--as-danger)', marginLeft: 4 }} aria-hidden="true">*</span></label>
         <Input
           id="guardian-last-name"
           value={lastName}
@@ -101,12 +101,12 @@ function Body({ guardian, onSave }) {
         type="button"
         onClick={submit}
         disabled={!canSubmit}
-        className="em-press w-full"
+        className="as-press w-full"
         style={{
           minHeight: 44,
           borderRadius: 10,
-          backgroundColor: canSubmit ? 'var(--em-accent)' : 'var(--em-bg-tertiary)',
-          color: canSubmit ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)',
+          backgroundColor: canSubmit ? 'var(--as-accent)' : 'var(--as-bg-tertiary)',
+          color: canSubmit ? 'var(--as-text-inverse)' : 'var(--as-text-tertiary)',
           fontSize: 15,
           fontWeight: 600,
           border: 'none',

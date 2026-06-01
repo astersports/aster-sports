@@ -16,8 +16,8 @@ export default function ComposeBar({ onSend, placeholder, disabled }) {
   return (
     <div style={{
       display: 'flex', gap: 8, padding: '8px 16px',
-      borderTop: '1px solid var(--em-border-default)',
-      backgroundColor: 'var(--em-bg-card)',
+      borderTop: '1px solid var(--as-border-default)',
+      backgroundColor: 'var(--as-bg-card)',
     }}>
       <input
         type="text"
@@ -28,21 +28,21 @@ export default function ComposeBar({ onSend, placeholder, disabled }) {
         disabled={disabled}
         style={{
           flex: 1, minHeight: 44, padding: '0 14px', borderRadius: 10,
-          border: '1px solid var(--em-border-default)',
-          backgroundColor: 'var(--em-bg-card)', fontSize: 15,
-          color: 'var(--em-text-primary)', fontFamily: 'inherit',
+          border: '1px solid var(--as-border-default)',
+          backgroundColor: 'var(--as-bg-card)', fontSize: 15,
+          color: 'var(--as-text-primary)', fontFamily: 'inherit',
         }}
       />
       <button
         type="button"
         onClick={send}
         disabled={!canSend}
-        className="em-press"
+        className="as-press"
         aria-label="Send message"
         style={{
           width: 44, height: 44, borderRadius: 10, border: 'none',
-          backgroundColor: canSend ? 'var(--em-accent)' : 'var(--em-bg-tertiary)',
-          color: canSend ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)',
+          backgroundColor: canSend ? 'var(--as-accent)' : 'var(--as-bg-tertiary)',
+          color: canSend ? 'var(--as-text-inverse)' : 'var(--as-text-tertiary)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: canSend ? 'pointer' : 'default',
         }}

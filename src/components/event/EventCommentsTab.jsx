@@ -23,25 +23,25 @@ function EventCommentsTab({ eventId }) {
     <div style={{ padding: '16px 16px 32px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       {loading && <LoadingSkeleton variant="text" count={3} />}
       {!loading && comments.length === 0 && (
-        <div style={{ color: 'var(--em-text-tertiary)', fontSize: 15 }}>No comments yet. Start the conversation.</div>
+        <div style={{ color: 'var(--as-text-tertiary)', fontSize: 15 }}>No comments yet. Start the conversation.</div>
       )}
       {comments.map((c) => (
         <div key={c.id} style={{
-          backgroundColor: c.pinned ? 'var(--em-warning-soft)' : 'var(--em-bg-card)',
+          backgroundColor: c.pinned ? 'var(--as-warning-soft)' : 'var(--as-bg-card)',
           borderRadius: 10,
-          border: '1px solid ' + (c.pinned ? 'var(--em-warning)' : 'var(--em-border-default)'),
+          border: '1px solid ' + (c.pinned ? 'var(--as-warning)' : 'var(--as-border-default)'),
           padding: 12,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            {c.pinned && <Pin size={12} strokeWidth={2} color="var(--em-warning)" />}
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)' }}>
+            {c.pinned && <Pin size={12} strokeWidth={2} color="var(--as-warning)" />}
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--as-text-primary)' }}>
               {c.author_name || 'User'}
             </span>
-            <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>
+            <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>
               {new Date(c.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })}
             </span>
           </div>
-          <div style={{ fontSize: 15, color: 'var(--em-text-primary)', whiteSpace: 'pre-wrap' }}>{c.body}</div>
+          <div style={{ fontSize: 15, color: 'var(--as-text-primary)', whiteSpace: 'pre-wrap' }}>{c.body}</div>
         </div>
       ))}
 
@@ -51,12 +51,12 @@ function EventCommentsTab({ eventId }) {
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
             placeholder="Write a comment..." />
         </div>
-        <button type="button" onClick={send} disabled={!draft.trim()} className="em-press"
+        <button type="button" onClick={send} disabled={!draft.trim()} className="as-press"
           aria-label="Send comment"
           style={{
             width: 44, height: 44, borderRadius: 10, border: 'none',
-            backgroundColor: draft.trim() ? 'var(--em-accent)' : 'var(--em-bg-tertiary)',
-            color: draft.trim() ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)',
+            backgroundColor: draft.trim() ? 'var(--as-accent)' : 'var(--as-bg-tertiary)',
+            color: draft.trim() ? 'var(--as-text-inverse)' : 'var(--as-text-tertiary)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
           <Send size={18} strokeWidth={1.75} />

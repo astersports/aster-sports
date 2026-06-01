@@ -36,7 +36,7 @@ describe('RideIndicator', () => {
   it('escalates color to danger when urgent', () => {
     const { container } = render(<RideIndicator count={2} kind="requests" urgent />);
     const label = container.querySelector('span > span');
-    expect(label.style.color).toContain('em-danger');
+    expect(label.style.color).toContain('as-danger');
   });
 
   it('compact mode shrinks fontSize from 13 to 12', () => {
@@ -51,6 +51,6 @@ describe('RideIndicator', () => {
     // urgent only affects requests — offers stay secondary.
     const { container } = render(<RideIndicator count={2} kind="offers" urgent />);
     const label = container.querySelector('span > span');
-    expect(label.style.color).toContain('em-text-secondary');
+    expect(label.style.color).toContain('as-text-secondary');
   });
 });

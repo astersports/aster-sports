@@ -14,24 +14,24 @@ import { useNavigate } from 'react-router-dom';
 const wrap = {
   display: 'flex', flexDirection: 'column', gap: 14,
   padding: 16, borderRadius: 10,
-  backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)',
+  backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)',
 };
-const heading = { fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', margin: 0, lineHeight: 1.3 };
+const heading = { fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)', margin: 0, lineHeight: 1.3 };
 const stepList = { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 };
 const stepRow = { display: 'flex', alignItems: 'flex-start', gap: 12 };
 const stepNumber = {
   flexShrink: 0, width: 24, height: 24, borderRadius: '50%',
-  backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)',
+  backgroundColor: 'var(--as-accent-soft)', color: 'var(--as-accent)',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   fontSize: 12, fontWeight: 700,
 };
-const stepText = { fontSize: 14, color: 'var(--em-text-primary)', lineHeight: 1.4 };
-const trailing = { fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.5 };
-const footnote = { fontSize: 12, color: 'var(--em-text-secondary)', lineHeight: 1.4, marginTop: 2 };
+const stepText = { fontSize: 14, color: 'var(--as-text-primary)', lineHeight: 1.4 };
+const trailing = { fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.5 };
+const footnote = { fontSize: 12, color: 'var(--as-text-secondary)', lineHeight: 1.4, marginTop: 2 };
 const btn = {
   minHeight: 44, padding: '0 16px', borderRadius: 10,
   fontSize: 14, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
-  border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
+  border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)',
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
   alignSelf: 'flex-start',
 };
@@ -56,7 +56,7 @@ export default function AcademyCallupRedirectCard() {
         ))}
       </ol>
       <p style={trailing}>The compose flow opens automatically with the right context.</p>
-      <button type="button" onClick={() => navigate('/schedule')} className="em-press" style={btn} aria-label="Open schedule">
+      <button type="button" onClick={() => navigate('/schedule')} className="as-press" style={btn} aria-label="Open schedule">
         <Calendar size={16} strokeWidth={1.75} aria-hidden="true" />
         Open Schedule
         <ArrowRight size={16} strokeWidth={1.75} aria-hidden="true" />

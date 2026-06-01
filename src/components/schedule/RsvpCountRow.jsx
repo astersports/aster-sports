@@ -16,19 +16,19 @@ function RsvpCountRow({ rsvpCount, compact = false }) {
     : { going: 'going', maybe: 'maybe', not_going: 'not going', noResponse: 'no response' };
 
   const states = [
-    { value: rsvpCount.going, label: labels.going, color: 'var(--em-success)' },
-    { value: rsvpCount.maybe, label: labels.maybe, color: 'var(--em-warning)' },
-    { value: rsvpCount.not_going, label: labels.not_going, color: 'var(--em-danger)' },
-    { value: rsvpCount.noResponse, label: labels.noResponse, color: 'var(--em-neutral)' },
+    { value: rsvpCount.going, label: labels.going, color: 'var(--as-success)' },
+    { value: rsvpCount.maybe, label: labels.maybe, color: 'var(--as-warning)' },
+    { value: rsvpCount.not_going, label: labels.not_going, color: 'var(--as-danger)' },
+    { value: rsvpCount.noResponse, label: labels.noResponse, color: 'var(--as-neutral)' },
   ].filter((s) => s.value > 0);
 
   if (states.length === 0) return null;
 
   return (
-    <div style={{ fontSize, color: 'var(--em-text-secondary)', whiteSpace: 'nowrap' }}>
+    <div style={{ fontSize, color: 'var(--as-text-secondary)', whiteSpace: 'nowrap' }}>
       {states.map((s, i) => (
         <span key={s.label}>
-          {i > 0 ? <span style={{ margin: '0 4px', color: 'var(--em-text-tertiary)' }}>·</span> : null}
+          {i > 0 ? <span style={{ margin: '0 4px', color: 'var(--as-text-tertiary)' }}>·</span> : null}
           <strong style={{ color: s.color }}>{s.value}</strong>{compact ? '' : ' '}{s.label}
         </span>
       ))}

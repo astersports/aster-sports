@@ -18,7 +18,7 @@ export default function EventRsvpTab({
     return <div style={{ padding: 16 }}><LoadingSkeleton variant="list" count={5} /></div>;
   }
   if (roster.length === 0) {
-    return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 15 }}>No players on this team yet.</div>;
+    return <div style={{ padding: 16, color: 'var(--as-text-tertiary)', fontSize: 15 }}>No players on this team yet.</div>;
   }
 
   const statusOrder = { going: 0, maybe: 1, not_going: 2 };
@@ -43,7 +43,7 @@ export default function EventRsvpTab({
         return (
           <div key={player.id}>
             {showHeader && (
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: i > 0 ? 12 : 0, marginBottom: 4 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--as-text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: i > 0 ? 12 : 0, marginBottom: 4 }}>
                 {headerLabels[status]}
               </div>
             )}

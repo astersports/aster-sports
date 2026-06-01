@@ -8,7 +8,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const CACHE_KEY = 'ember:cached-brand-colors';
+const CACHE_KEY = 'aster:cached-brand-colors';
 
 describe('orgBrandingCache', () => {
   beforeEach(() => {
@@ -67,15 +67,15 @@ describe('orgBrandingCache', () => {
     });
     applyCachedBrandColorsSync();
     const root = document.documentElement;
-    expect(root.style.getPropertyValue('--em-accent')).toBe('#4a8fd4');
-    expect(root.style.getPropertyValue('--em-header')).toBe('#151525');
-    expect(root.style.getPropertyValue('--em-text-on-dark')).toBe('#FFFFFF');
+    expect(root.style.getPropertyValue('--as-accent')).toBe('#4a8fd4');
+    expect(root.style.getPropertyValue('--as-header')).toBe('#151525');
+    expect(root.style.getPropertyValue('--as-text-on-dark')).toBe('#FFFFFF');
   });
 
   it('applyCachedBrandColorsSync is a safe no-op when cache empty', async () => {
     const { applyCachedBrandColorsSync } = await import('../orgBrandingCache');
     applyCachedBrandColorsSync();
-    expect(document.documentElement.style.getPropertyValue('--em-accent')).toBe('');
+    expect(document.documentElement.style.getPropertyValue('--as-accent')).toBe('');
   });
 
   it('applyCachedBrandColorsSync skips invalid color values', async () => {
@@ -85,8 +85,8 @@ describe('orgBrandingCache', () => {
     }));
     const { applyCachedBrandColorsSync } = await import('../orgBrandingCache');
     applyCachedBrandColorsSync();
-    expect(document.documentElement.style.getPropertyValue('--em-accent')).toBe('');
-    expect(document.documentElement.style.getPropertyValue('--em-header')).toBe('#151525');
+    expect(document.documentElement.style.getPropertyValue('--as-accent')).toBe('');
+    expect(document.documentElement.style.getPropertyValue('--as-header')).toBe('#151525');
   });
 
   it('signOut bustAllCaches chain clears the brand cache', async () => {
