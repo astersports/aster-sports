@@ -3718,6 +3718,41 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BR — Registration Capture Flow: L99 audit doc landed, scope locked (2026-06-01)
+
+Post §4.5-schema-completion, the next build phase. Frank scope-lock (AskUserQuestion,
+2026-06-01): **"Capture flow"** — §3 admin program-setup (MVP) + §5 Steps 1–3 parent
+registration; payment via the existing manual record-payment model. NOT Stripe, NOT
+`payment_plans`, NOT Family Home.
+
+**Why the scope fork (verified against live DB, not memory):** the spec's parent surfaces
+(§5–§8) assume infrastructure that doesn't exist — `payment_plans_exists=false`,
+`stripe_tables=0`, `org_count=1`. So §5 Step-4 Pay + all §8 are Stripe-blocked, §6 Family
+Home is multi-org-premature. The buildable/valuable slice is the registration *capture*
+loop (admin creates program → parent registers → `pending` registration → admin records
+payment via existing flow).
+
+**Audit doc:** `docs/AUDIT_REGISTRATION_CAPTURE_L99.md` — all five §16.15 elements (initial
+pass, deep-read addendum w/ 9 gaps G1–G9, anti-pattern cross-ref, per-role wireframes
+admin+parent, out-of-scope). Key architecture decisions locked: anon writes go through TWO
+SECURITY DEFINER RPCs (`get_public_program`, `submit_registration`) — no anon table grants;
+family-cap total is server-authoritative (PATTERN A #63); one schema add required
+(migration #13-cap: `programs.public_slug/reg_opens_at/reg_closes_at/is_published`).
+
+**PR sequence:** A (RPCs + #13-cap migration) → B (parent entry) → C (wizard Steps 1–3) →
+D (Step 4 submit + multi-child) → E (account claim) → F (admin Season wizard) → G (admin
+program detail + record-payment link).
+
+**BLOCKING — 3 open questions before PR A** (audit §9): Q-1 account-claim (magic-link vs
+admin-invite-later), Q-2 waitlist/capacity (OPEN/CLOSED-only v1?), Q-3 admin wizard breadth
+(Season-first?). CC recommends magic-link / OPEN-CLOSED-only / Season-first respectively.
+
+**Deferred tracks (out-of-scope, where-they-go in audit §7):** Stripe + payment_plans #13 +
+§8 lifecycle → "Stripe first" track; §6 Family Home + §7 re-IA → multi-org track (St Pat's
+2027); waitlist, Tryout/Camp wizards, returning-parent re-reg → follow-ups.
+
+---
+
 ### §4.BQ — Build PR 12: current_user_org_ids() + parent SELECT policies SHIPPED (2026-05-31)
 
 **Frank's GO** (after the design pass + PII-scope decision) → spec §4.5 step 12 / §4.3.
