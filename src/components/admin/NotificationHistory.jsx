@@ -26,12 +26,22 @@ const TYPE_LABELS = {
 const WARNING = tokensForSeverity('warning');
 const CRITICAL = tokensForSeverity('critical');
 const INFO = tokensForSeverity('info');
+
+// Event-change notifications carry their detail in change_summary.change, not a title.
+const CHANGE_LABELS = {
+  event_added: 'Event added',
+  rescheduled: 'Time changed',
+  relocated: 'Location changed',
+  cancelled: 'Event cancelled',
+};
 const STATUS_STYLE = {
+  queued:    { bg: WARNING.bg,  color: WARNING.text },
   pending:   { bg: WARNING.bg,  color: WARNING.text },
   sent:      { bg: 'var(--em-success-soft)', color: 'var(--em-success)' },
   delivered: { bg: 'var(--em-success-soft)', color: 'var(--em-success)' },
   failed:    { bg: CRITICAL.bg, color: CRITICAL.text },
   read:      { bg: INFO.bg,     color: INFO.text },
+  cancelled: { bg: 'var(--em-neutral-soft)', color: 'var(--em-text-tertiary)' },
 };
 
 export default function NotificationHistory({ orgId }) {
@@ -42,12 +52,14 @@ export default function NotificationHistory({ orgId }) {
     if (!orgId) return;
     let cancelled = false;
     supabase.from('event_notifications')
-      // §4.AD BUG-C fix (2026-05-24): event_notifications has no title/body
-      // columns — both live inside the payload JSONB. PostgREST `col->>key`
-      // extracts text values; aliased to title/body so the JSX below
-      // (n.title / n.body access) keeps working unchanged.
-      .select('id, notification_type, title:payload->>title, body:payload->>body, status, created_at, delivered_at, recipient_type')
+      // Content for event-change notifications lives in change_summary (notify_team_of_
+      // event_change writes payload = {event_id, team_id} only — title/detail are in
+      // change_summary). Exclude status='cancelled': those are the intentional never-sends
+      // (e.g. the event_added stub every bulk-imported event spawns) — they only clutter
+      // the admin feed and never reached families. Real problems surface as status='failed'.
+      .select('id, notification_type, status, created_at, delivered_at, recipient_type, change_summary')
       .eq('org_id', orgId)
+      .neq('status', 'cancelled')
       .order('created_at', { ascending: false })
       .limit(30)
       .then(({ data, error }) => {
@@ -76,6 +88,9 @@ export default function NotificationHistory({ orgId }) {
     <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
       {notifications.map((n, i) => {
         const s = STATUS_STYLE[n.status] || STATUS_STYLE.pending;
+        const cs = n.change_summary || {};
+        const title = cs.title || null;
+        const sub = CHANGE_LABELS[cs.change] || null;
         return (
           <div key={n.id} style={{ padding: '10px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -83,8 +98,8 @@ export default function NotificationHistory({ orgId }) {
                 <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 4, backgroundColor: s.bg, color: s.color }}>{n.status}</span>
                 <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{TYPE_LABELS[n.notification_type] || n.notification_type}</span>
               </div>
-              {n.title && <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>{n.title}</div>}
-              {n.body && <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2, WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', display: '-webkit-box', overflow: 'hidden' }}>{n.body}</div>}
+              {title && <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' }}>{title}</div>}
+              {sub && <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2 }}>{sub}</div>}
             </div>
             <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', flexShrink: 0 }}>
               {new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}
