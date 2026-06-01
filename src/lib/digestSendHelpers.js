@@ -9,11 +9,8 @@ import { renderSections, renderSectionsPlainText } from './engine/composer';
 import { formatPeriodLabel } from './engine/digestPeriod';
 import { composeWeeklyDigest } from './engine/resolvers/weeklyDigest';
 import { EMAIL_WRAPPER_CLOSE, EMAIL_WRAPPER_OPEN } from './emailWrapper';
+import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from './constants';
 
-const ORG_NAME_DEFAULT = 'Legacy Hoopers';
-const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
-const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
-const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 
 export function buildContext({ orgId, period, events, teams, tournaments, coaches, rsvpCountsByEvent }) {
   const counts = rsvpCountsByEvent instanceof Map ? rsvpCountsByEvent : new Map(Object.entries(rsvpCountsByEvent || {}));

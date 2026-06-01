@@ -26,11 +26,8 @@ import {
   PlayerNotAcademyError, PlayerNotCalledUpError, PlayerNotFoundError, trim,
 } from './academyCallupNoticeHelpers';
 import { deriveEventLabel } from './rsvpNudgeHelpers';
+import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 
-const ORG_NAME_DEFAULT = 'Legacy Hoopers';
-const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
-const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
-const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 
 const EVENT_SELECT = 'id, title, team_id, event_type, start_at, end_at, location_id, opponent, status, publish_status, academy_callup_player_ids, teams ( id, name, team_color, sort_order, org_id )';
 

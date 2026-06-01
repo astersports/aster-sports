@@ -15,6 +15,7 @@
 // a separate wave; today these are file-level defaults.
 
 import { formatPeriodLabel, periodIsoBounds } from '../digestPeriod';
+import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 
 // Wave 4.3-K: composeWeeklyDigest lives in a sibling file to keep this
 // module under the 150-line cap. Re-export preserves the public surface.
@@ -22,10 +23,6 @@ export { composeWeeklyDigest } from './composeWeeklyDigest';
 
 const RSVP_KEY = { going: 'going', maybe: 'maybe', not_going: 'out' };
 
-const ORG_NAME_DEFAULT = 'Legacy Hoopers';
-const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
-const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
-const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 
 const EVENT_SELECT = 'id, team_id, event_type, start_at, end_at, location, sub_location, location_id, opponent, tournament_id, tournament_name, is_bracket_placeholder, bracket_placeholder_label, status, teams!inner ( id, name, team_color, sort_order, org_id ), locations ( id, name, google_maps_url )';
 

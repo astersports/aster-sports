@@ -23,6 +23,7 @@
 //   - Override sections render iff override present.
 //   - Override beats data (consistent with 4.2-A-3).
 
+import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 import {
   buildSubContext, buildTeamSlices, fetchRecipientGuardians, trim,
 } from './tournamentPrelimHelpers';
@@ -30,10 +31,6 @@ import {
   buildGameLogSection, buildPlacementBlock, buildSubject,
 } from './tournamentRecapHelpers';
 
-const ORG_NAME_DEFAULT = 'Legacy Hoopers';
-const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
-const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
-const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 
 export async function resolveTournamentRecap({ tournamentId, pilotOnly }, { supabase, now = new Date() } = {}) {
   if (!tournamentId) throw new Error('Missing tournamentId');

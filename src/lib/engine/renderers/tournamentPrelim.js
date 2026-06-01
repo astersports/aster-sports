@@ -11,11 +11,8 @@
 // blocks via stats_narrative so the kind is end-to-end usable now.
 
 import { renderSections, renderSectionsPlainText } from '../composer';
+import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 
-const ORG_NAME_DEFAULT = 'Legacy Hoopers';
-const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
-const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
-const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 
 function appendIf(sections, body) {
   if (body && body.trim()) sections.push({ kind: 'stats_narrative', body: body.trim() });
