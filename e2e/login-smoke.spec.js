@@ -21,11 +21,10 @@ test.describe('Login page — anonymous smoke', () => {
   test('loads at /login and renders the sign-in form', async ({ page }) => {
     await page.goto('/login');
 
-    // The HTML <title> is set in index.html. Currently "Ember" — the brand
-    // name in the page title hasn't migrated to "Skyfire" or "Legacy Hoopers"
-    // yet (separate doctrine call). Match all three so this test survives
-    // a rebrand without rewriting.
-    await expect(page).toHaveTitle(/Skyfire|Legacy Hoopers|Ember/i);
+    // The HTML <title> is set in index.html. Platform name = "AsterSports"
+    // (rebrand 2026-06-01). Historical names kept in the alternation so this
+    // survives any future wrapper without rewriting.
+    await expect(page).toHaveTitle(/Skyfire|Legacy Hoopers|AsterSports|Aster|Vela|Ember/i);
 
     // The login form exposes an email input + a submit button. We assert on
     // role-based queries (not on visible text) so the test survives copy

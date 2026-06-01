@@ -40,7 +40,7 @@ export function generateTeamIcs(teamName, events) {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Vela//EN',
+    'PRODID:-//AsterSports//EN',
     'METHOD:PUBLISH',
     'X-WR-TIMEZONE:America/New_York',
     foldLine(`X-WR-CALNAME:${escapeText(teamName)}`),
