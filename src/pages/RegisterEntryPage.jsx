@@ -30,7 +30,7 @@ export default function RegisterEntryPage() {
 
   useEffect(() => {
     if (program) document.title = `Register · ${program.name}`;
-    return () => { document.title = 'Vela'; };
+    return () => { document.title = 'AsterSports'; };
   }, [program]);
 
   if (loading) return <div style={centered}>Loading…</div>;
@@ -76,7 +76,7 @@ export default function RegisterEntryPage() {
         <div style={{ ...centered, fontSize: 13, marginTop: 4 }}>Registration for {program.name} has closed.</div>
       )}
 
-      <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--em-text-tertiary)' }}>Powered by Vela</div>
+      <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--em-text-tertiary)' }}>Powered by AsterSports</div>
     </div>
   );
 }

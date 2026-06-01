@@ -10,7 +10,7 @@ export const EMBER_BRAND = Object.freeze({
   text_on_dark: '#F5F0E8',
 });
 
-export const EMBER_DISPLAY_NAME = 'Vela';
+export const EMBER_DISPLAY_NAME = 'AsterSports';
 
 // Maps brand_colors jsonb keys to CSS variable names.
 // Used by useOrgBranding to apply or clear org overrides.

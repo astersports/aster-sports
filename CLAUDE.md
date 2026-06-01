@@ -1,9 +1,12 @@
-# VELA PLATFORM — CLAUDE.md
-> **Platform renamed Ember → Vela (2026-06-01).** "Ember" persists in prose, code comments,
-> const names (`EMBER_BRAND`, `EMBER_DISPLAY_NAME`), and the `--em-*` design-token prefix — all
-> the *legacy internal* prefix, intentionally NOT renamed (anti-pattern #3; 1,971 token uses).
-> User-facing strings now say "Vela." Full rebrand plan: `docs/AUDIT_VELA_REBRAND.md`. The
-> *tenant* "Legacy Hoopers" is unchanged (a customer org; Vela is the platform above it).
+# ASTERSPORTS PLATFORM — CLAUDE.md
+> **Platform renamed Ember → AsterSports (2026-06-01).** (Interim name "Vela" was dropped —
+> domain unavailable.) "Ember" persists in prose, code comments, const names (`EMBER_BRAND`,
+> `EMBER_DISPLAY_NAME`), and the `--em-*` design-token prefix — all the *legacy internal*
+> prefix, intentionally NOT renamed (anti-pattern #3; 1,971 token uses). User-facing strings
+> now say "AsterSports." Domain: `astersports.app`/`.io`/`.co` (the `.com` is a separate
+> sports-equipment co — TM check pending). Mark: constellation-arrow (gold-on-navy, palette
+> unchanged). Rebrand plan: `docs/AUDIT_VELA_REBRAND.md`. The *tenant* "Legacy Hoopers" is
+> unchanged (a customer org; AsterSports is the platform above it).
 > Single source of truth for all Claude Code sessions.
 > Place at project root: `~/skyfire-app/CLAUDE.md`
 > Branch: `main` (v2 retired May 11, 2026 — see `docs/archive/PRE_3_AUDIT_2026-05-11.md`)
