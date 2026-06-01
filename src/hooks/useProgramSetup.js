@@ -21,6 +21,10 @@ export function useProgramSetup() {
 
     const { data: prog, error: e1 } = await supabase.from('programs').insert({
       org_id: orgId, name: form.name.trim(), program_type: 'season',
+      // status='archived' (NOT the table default 'active'): a newly-created program must not
+      // silently become a second active season and hijack the admin-home season/health cards.
+      // Admin promotes it via the Seasons "set active" flow when the season actually starts.
+      status: 'archived',
       public_slug: slug || null, is_published: !!form.is_published,
       reg_opens_at: form.reg_opens_at || null, reg_closes_at: form.reg_closes_at || null,
       start_date: form.start_date || null, end_date: form.end_date || null,
