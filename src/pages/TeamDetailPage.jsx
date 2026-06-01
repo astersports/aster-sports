@@ -81,7 +81,7 @@ export default function TeamDetailPage() {
   useEffect(() => {
     if (!team?.name) return;
     const prev = document.title;
-    document.title = `${team.name} — Ember`;
+    document.title = `${team.name} — Vela`;
     return () => { document.title = prev; };
   }, [team?.name]);
   const myChild = role === 'parent' ? (myChildren || []).find((c) => c.teamIds?.includes(teamId) || c.teamId === teamId) : null;

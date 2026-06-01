@@ -41,7 +41,7 @@ export default function PublicSchedulePage() {
 
   useEffect(() => {
     if (team) document.title = `${team.name} Schedule`;
-    return () => { document.title = 'Ember'; };
+    return () => { document.title = 'Vela'; };
   }, [team]);
 
   if (loading) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading schedule…</div>;
@@ -105,7 +105,7 @@ export default function PublicSchedulePage() {
       <SubscribeSheet open={showSubscribe} onClose={() => setShowSubscribe(false)} team={team} />
 
       <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--em-text-tertiary)' }}>
-        Powered by Ember
+        Powered by Vela
       </div>
     </div>
   );
