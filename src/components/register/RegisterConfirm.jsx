@@ -1,8 +1,8 @@
-import { ghostBtn } from './registerStyles';
+import { ghostBtn, primaryBtn } from './registerStyles';
 
-// Post-submit confirmation (spec §5.4/§5.6 voice). Lean: single-child path. The "+ add
-// another child" multi-child loop is PR D.
-export default function RegisterConfirm({ result, program, onDone }) {
+// Post-submit confirmation (spec §5.4/§5.6 voice). "+ Register another child" loops back
+// keeping the guardian (PR D multi-child); each child is its own pending registration.
+export default function RegisterConfirm({ result, program, onAddAnother, onDone }) {
   const already = result?.already_registered || [];
   const count = (result?.registration_ids || []).length;
   const reserved = count > 0;
@@ -20,7 +20,8 @@ export default function RegisterConfirm({ result, program, onDone }) {
       {already.length > 0 && (
         <p style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 8 }}>Already on file: {already.join(', ')}</p>
       )}
-      <button type="button" style={{ ...ghostBtn, width: '100%', marginTop: 24 }} onClick={onDone}>Done</button>
+      <button type="button" className="em-press" style={{ ...primaryBtn, marginTop: 24 }} onClick={onAddAnother}>+ Register another child</button>
+      <button type="button" style={{ ...ghostBtn, width: '100%', marginTop: 8 }} onClick={onDone}>Done</button>
     </div>
   );
 }
