@@ -3,7 +3,7 @@
 // Single source of truth for how alert severity renders across the
 // app. Components import SEVERITY_TOKENS and use the var() refs
 // inline. No hardcoded hex per CLAUDE.md anti-pattern #2/#10. No new
-// CSS variables invented — existing --em-* tokens from index.css
+// CSS variables invented — existing --as-* tokens from index.css
 // are the underlying source.
 //
 // Three severity levels per Gap 3 + Tier 3 spec:
@@ -25,25 +25,25 @@
 
 export const SEVERITY_TOKENS = {
   critical: {
-    bg:        'var(--em-danger-soft)',
-    border:    'var(--em-danger)',
-    text:      'var(--em-danger)',
+    bg:        'var(--as-danger-soft)',
+    border:    'var(--as-danger)',
+    text:      'var(--as-danger)',
     icon:      'AlertCircle',
     label:     'Critical',
     ariaLabel: 'Critical severity',
   },
   warning: {
-    bg:        'var(--em-warning-soft)',
-    border:    'var(--em-warning)',
-    text:      'var(--em-warning)',
+    bg:        'var(--as-warning-soft)',
+    border:    'var(--as-warning)',
+    text:      'var(--as-warning)',
     icon:      'AlertTriangle',
     label:     'Warning',
     ariaLabel: 'Warning severity',
   },
   info: {
-    bg:        'var(--em-info-soft)',
-    border:    'var(--em-info)',
-    text:      'var(--em-info)',
+    bg:        'var(--as-info-soft)',
+    border:    'var(--as-info)',
+    text:      'var(--as-info)',
     icon:      'Info',
     label:     'Info',
     ariaLabel: 'Information',
@@ -55,9 +55,9 @@ export const SEVERITY_TOKENS = {
 // kind before the renderer ships an update; we'd rather render
 // neutrally than crash.
 export const NEUTRAL_TOKEN = {
-  bg:        'var(--em-bg-secondary)',
-  border:    'var(--em-border-default)',
-  text:      'var(--em-text-secondary)',
+  bg:        'var(--as-bg-secondary)',
+  border:    'var(--as-border-default)',
+  text:      'var(--as-text-secondary)',
   icon:      'Info',
   label:     'Status',
   ariaLabel: 'Status',

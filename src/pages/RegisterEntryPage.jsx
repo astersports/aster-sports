@@ -20,7 +20,7 @@ function resolveRegState(program) {
   return 'open';
 }
 
-const centered = { padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' };
+const centered = { padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' };
 
 export default function RegisterEntryPage() {
   const { slug } = useParams();
@@ -38,7 +38,7 @@ export default function RegisterEntryPage() {
   if (!data || !program) {
     return (
       <div style={{ ...centered, maxWidth: 600, margin: '0 auto', minHeight: '100vh' }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', marginTop: 48 }}>This registration link isn’t open yet</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', marginTop: 48 }}>This registration link isn’t open yet</h1>
         <p style={{ fontSize: 15, marginTop: 8 }}>Check back soon — your program admin will share the link the moment it’s live.</p>
       </div>
     );
@@ -49,17 +49,17 @@ export default function RegisterEntryPage() {
   const divisions = data.divisions || [];
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
+    <div style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
         {program.org_logo_url && (
           <img src={program.org_logo_url} alt="" style={{ height: 48, margin: '8px auto', display: 'block' }} />
         )}
-        <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--em-text-tertiary)' }}>{program.org_name}</div>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--em-text-primary)', margin: '4px 0' }}>{program.name}</h1>
-        <div style={{ width: 32, height: 3, backgroundColor: 'var(--em-accent)', borderRadius: 2, margin: '8px auto' }} />
+        <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--as-text-tertiary)' }}>{program.org_name}</div>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--as-text-primary)', margin: '4px 0' }}>{program.name}</h1>
+        <div style={{ width: 32, height: 3, backgroundColor: 'var(--as-accent)', borderRadius: 2, margin: '8px auto' }} />
       </div>
 
-      <h2 style={{ fontSize: 13, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--em-text-tertiary)', margin: '0 0 12px' }}>Pick a division</h2>
+      <h2 style={{ fontSize: 13, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--as-text-tertiary)', margin: '0 0 12px' }}>Pick a division</h2>
 
       {divisions.length === 0 && (
         <div style={{ ...centered, fontSize: 15 }}>Divisions are being finalized. Check back soon.</div>
@@ -76,7 +76,7 @@ export default function RegisterEntryPage() {
         <div style={{ ...centered, fontSize: 13, marginTop: 4 }}>Registration for {program.name} has closed.</div>
       )}
 
-      <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--em-text-tertiary)' }}>Powered by Aster Sports</div>
+      <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--as-text-tertiary)' }}>Powered by Aster Sports</div>
     </div>
   );
 }

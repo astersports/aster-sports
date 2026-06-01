@@ -14,15 +14,15 @@ function formatDate(iso) {
 
 function SaveBadge({ state }) {
   const s = { fontSize: 13, fontStyle: 'italic' };
-  if (state === 'saving') return <span style={{ ...s, color: 'var(--em-text-secondary)' }}>Saving…</span>;
-  if (state === 'saved') return <span style={{ ...s, color: 'var(--em-success)' }}>Saved</span>;
-  if (state === 'error') return <span style={{ ...s, color: 'var(--em-danger)' }}>Error</span>;
-  if (state === 'dirty') return <span style={{ ...s, color: 'var(--em-warning)' }}>Unsaved</span>;
+  if (state === 'saving') return <span style={{ ...s, color: 'var(--as-text-secondary)' }}>Saving…</span>;
+  if (state === 'saved') return <span style={{ ...s, color: 'var(--as-success)' }}>Saved</span>;
+  if (state === 'error') return <span style={{ ...s, color: 'var(--as-danger)' }}>Error</span>;
+  if (state === 'dirty') return <span style={{ ...s, color: 'var(--as-warning)' }}>Unsaved</span>;
   return null;
 }
 
-const numInput = { width: '100%', minHeight: 52, padding: '0 14px', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 28, fontWeight: 700, fontFamily: 'inherit', textAlign: 'center' };
-const lbl = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-primary)', marginBottom: 6 };
+const numInput = { width: '100%', minHeight: 52, padding: '0 14px', borderRadius: 10, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', fontSize: 28, fontWeight: 700, fontFamily: 'inherit', textAlign: 'center' };
+const lbl = { fontSize: 13, fontWeight: 500, color: 'var(--as-text-primary)', marginBottom: 6 };
 const btn44 = { minHeight: 44, borderRadius: 10, fontSize: 15, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' };
 
 export default function ScoreEntrySheet({ event, team, onClose }) {
@@ -62,15 +62,15 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
 
   return createPortal(
     <div ref={trapRef} role="dialog" aria-modal="true" aria-label={`Score entry vs ${opponentName || 'opponent'}`}
-      style={{ position: 'fixed', inset: 0, background: 'var(--em-bg-page)', zIndex: 50, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ height: 4, background: team?.team_color || 'var(--em-accent)' }} />
+      style={{ position: 'fixed', inset: 0, background: 'var(--as-bg-page)', zIndex: 50, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ height: 4, background: team?.team_color || 'var(--as-accent)' }} />
       <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)', gap: 12 }}>
-        <button type="button" onClick={handleDismiss} aria-label="Close" className="em-press" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none' }}>
-          <X size={20} strokeWidth={1.75} color="var(--em-text-primary)" />
+        <button type="button" onClick={handleDismiss} aria-label="Close" className="as-press" style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none' }}>
+          <X size={20} strokeWidth={1.75} color="var(--as-text-primary)" />
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>vs {opponentName || 'Opponent'}</div>
-          <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>{formatDate(event.start_at)}</div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>vs {opponentName || 'Opponent'}</div>
+          <div style={{ fontSize: 13, color: 'var(--as-text-secondary)' }}>{formatDate(event.start_at)}</div>
         </div>
         <SaveBadge state={draft.state} />
       </div>
@@ -91,7 +91,7 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
         </div>
 
         {draft.result.result && (
-          <div style={{ padding: 12, background: 'var(--em-bg-card)', borderRadius: 8, marginBottom: 24, fontSize: 15, fontWeight: 600, color: draft.result.result === 'W' ? 'var(--em-success)' : draft.result.result === 'L' ? 'var(--em-danger)' : 'var(--em-text-primary)', textAlign: 'center' }}>
+          <div style={{ padding: 12, background: 'var(--as-bg-card)', borderRadius: 8, marginBottom: 24, fontSize: 15, fontWeight: 600, color: draft.result.result === 'W' ? 'var(--as-success)' : draft.result.result === 'L' ? 'var(--as-danger)' : 'var(--as-text-primary)', textAlign: 'center' }}>
             {draft.result.result === 'W' ? 'Win' : draft.result.result === 'L' ? 'Loss' : 'Tie'} ({draft.result.point_differential > 0 ? '+' : ''}{draft.result.point_differential})
           </div>
         )}
@@ -102,22 +102,22 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
         <label style={{ display: 'block', marginTop: 24 }}>
           <div style={lbl}>Coach Highlight (optional)</div>
           <textarea maxLength={140} value={draft.result.coach_highlight ?? ''} onChange={e => draft.updateField('coach_highlight', e.target.value || null)} disabled={draft.isPublished} placeholder="One line for parents — what stood out?"
-            style={{ width: '100%', minHeight: 60, padding: 12, border: '1px solid var(--em-border-default)', borderRadius: 8, fontFamily: 'inherit', fontSize: 15, color: 'var(--em-text-primary)', background: 'var(--em-bg-card)', resize: 'vertical' }} />
-          <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 4, textAlign: 'right' }}>{(draft.result.coach_highlight ?? '').length}/140</div>
+            style={{ width: '100%', minHeight: 60, padding: 12, border: '1px solid var(--as-border-default)', borderRadius: 8, fontFamily: 'inherit', fontSize: 15, color: 'var(--as-text-primary)', background: 'var(--as-bg-card)', resize: 'vertical' }} />
+          <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)', marginTop: 4, textAlign: 'right' }}>{(draft.result.coach_highlight ?? '').length}/140</div>
         </label>
 
         {draft.state === 'error' && (
-          <div style={{ marginTop: 16, padding: 12, background: 'var(--em-bg-card)', borderLeft: '4px solid var(--em-danger)', borderRadius: 6, fontSize: 15, color: 'var(--em-text-primary)' }}>
-            Save failed. <button type="button" onClick={draft.retry} style={{ marginLeft: 12, color: 'var(--em-accent)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Retry</button>
+          <div style={{ marginTop: 16, padding: 12, background: 'var(--as-bg-card)', borderLeft: '4px solid var(--as-danger)', borderRadius: 6, fontSize: 15, color: 'var(--as-text-primary)' }}>
+            Save failed. <button type="button" onClick={draft.retry} style={{ marginLeft: 12, color: 'var(--as-accent)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Retry</button>
           </div>
         )}
       </main>
 
-      <footer style={{ display: 'flex', gap: 12, padding: '16px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', borderTop: '1px solid var(--em-border-subtle)' }}>
-        <button type="button" onClick={handleDismiss} className="em-press" style={{ ...btn44, flex: 1, background: 'none', border: '1px solid var(--em-border-default)', color: 'var(--em-text-secondary)' }}>Close</button>
-        {!draft.isPublished && <button type="button" onClick={handlePublish} disabled={!canPublish} className="em-press" style={{ ...btn44, flex: 1, border: 'none', backgroundColor: canPublish ? 'var(--em-accent)' : 'var(--em-bg-secondary)', color: canPublish ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)' }}>Publish</button>}
+      <footer style={{ display: 'flex', gap: 12, padding: '16px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', borderTop: '1px solid var(--as-border-subtle)' }}>
+        <button type="button" onClick={handleDismiss} className="as-press" style={{ ...btn44, flex: 1, background: 'none', border: '1px solid var(--as-border-default)', color: 'var(--as-text-secondary)' }}>Close</button>
+        {!draft.isPublished && <button type="button" onClick={handlePublish} disabled={!canPublish} className="as-press" style={{ ...btn44, flex: 1, border: 'none', backgroundColor: canPublish ? 'var(--as-accent)' : 'var(--as-bg-secondary)', color: canPublish ? 'var(--as-text-inverse)' : 'var(--as-text-tertiary)' }}>Publish</button>}
         {draft.isPublished && (
-          <button type="button" onClick={() => setConfirmAction({ type: 'unpublish' })} className="em-press" style={{ ...btn44, flex: 1, border: '1px solid var(--em-border-default)', background: 'none', color: 'var(--em-warning)' }}>Unpublish</button>
+          <button type="button" onClick={() => setConfirmAction({ type: 'unpublish' })} className="as-press" style={{ ...btn44, flex: 1, border: '1px solid var(--as-border-default)', background: 'none', color: 'var(--as-warning)' }}>Unpublish</button>
         )}
       </footer>
       {confirmAction?.type === 'discard' && (

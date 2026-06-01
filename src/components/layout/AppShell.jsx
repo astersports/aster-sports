@@ -12,8 +12,8 @@ export default function AppShell({ children }) {
   const online = useOnlineStatus();
   return (
     <div
-      className="em-app-shell flex flex-col"
-      style={{ backgroundColor: 'var(--em-bg-page)' }}
+      className="as-app-shell flex flex-col"
+      style={{ backgroundColor: 'var(--as-bg-page)' }}
     >
       <Header />
       {!online && (
@@ -21,8 +21,8 @@ export default function AppShell({ children }) {
           role="status"
           aria-live="polite"
           style={{
-            backgroundColor: 'var(--em-danger)',
-            color: 'var(--em-text-inverse)',
+            backgroundColor: 'var(--as-danger)',
+            color: 'var(--as-text-inverse)',
             textAlign: 'center',
             padding: '6px 16px',
             fontSize: 13,

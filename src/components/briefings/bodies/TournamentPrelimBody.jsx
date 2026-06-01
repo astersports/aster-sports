@@ -44,7 +44,7 @@ export default function TournamentPrelimBody({ value, onChange }) {
       <label>
         <span style={labelStyle}>Bracket/schedule CTA label (optional)</span>
         <input type="text" value={v.tourney_link_label} onChange={(e) => set({ tourney_link_label: e.target.value })} style={inputStyle} placeholder="VIEW SCHEDULE ON SE TOURNEY" />
-        <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>
+        <span style={{ fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 4, display: 'block' }}>
           URL is pulled from this tournament's SE Tourney link in tournament settings.
         </span>
       </label>

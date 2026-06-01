@@ -39,8 +39,8 @@ export default function CoachHomeSignalZone({
       {nextEvent && (
         <div style={{
           borderRadius: 12, padding: 2,
-          border: '1.5px solid var(--em-accent)',
-          boxShadow: 'var(--em-shadow-md)',
+          border: '1.5px solid var(--as-accent)',
+          boxShadow: 'var(--as-shadow-md)',
         }}>
           <NextEventCard event={nextEvent} weather={getWeatherForTime(weather, nextEvent.start_at)} />
         </div>

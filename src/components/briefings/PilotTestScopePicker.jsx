@@ -13,9 +13,9 @@
 //
 // State: dispatches SET_PILOT_TEST_SCOPE { value: team_id | null }.
 
-const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', display: 'block', marginBottom: 8 };
-const selectStyle = { width: '100%', minHeight: 44, padding: '0 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', fontSize: 15, color: 'var(--em-text-primary)' };
-const helperStyle = { fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 8, lineHeight: 1.4 };
+const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', display: 'block', marginBottom: 8 };
+const selectStyle = { width: '100%', minHeight: 44, padding: '0 12px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', fontSize: 15, color: 'var(--as-text-primary)' };
+const helperStyle = { fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 8, lineHeight: 1.4 };
 
 export default function PilotTestScopePicker({ teams, value, onChange, pilotTestRecipientEmail }) {
   if (!pilotTestRecipientEmail) return null;

@@ -31,19 +31,19 @@ export default function TeamDetailOverflowMenu({ team, role }) {
     <>
       <button type="button" onClick={() => { navigator.vibrate?.(10); setOpen(true); }}
         aria-label="Team actions"
-        className="em-press"
-        style={{ minWidth: 44, minHeight: 44, padding: 0, background: 'none', border: 'none', color: 'var(--em-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        className="as-press"
+        style={{ minWidth: 44, minHeight: 44, padding: 0, background: 'none', border: 'none', color: 'var(--as-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <MoreVertical size={20} strokeWidth={1.75} aria-hidden="true" />
       </button>
       <BottomSheet open={open} onClose={close} initialHeight="40%" expandedHeight="60%">
         <div style={{ padding: '4px 0 16px' }}>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', padding: '8px 4px' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', padding: '8px 4px' }}>
             {team?.name}
           </div>
           {items.map((it) => (
             <button key={it.key} type="button" onClick={it.onClick}
-              className="em-press"
-              style={{ display: 'block', width: '100%', textAlign: 'left', minHeight: 44, padding: '0 8px', background: 'none', border: 'none', borderTop: '1px solid var(--em-border-subtle)', fontSize: 15, color: 'var(--em-text-primary)' }}>
+              className="as-press"
+              style={{ display: 'block', width: '100%', textAlign: 'left', minHeight: 44, padding: '0 8px', background: 'none', border: 'none', borderTop: '1px solid var(--as-border-subtle)', fontSize: 15, color: 'var(--as-text-primary)' }}>
               {it.label}
             </button>
           ))}

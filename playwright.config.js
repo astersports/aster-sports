@@ -1,4 +1,4 @@
-// Playwright config for Skyfire E2E tests.
+// Playwright config for Aster Sports E2E tests.
 //
 // Scope per the staged Playwright rollout:
 //   PR #1 (this scaffold) — one read-only smoke test (login page renders).

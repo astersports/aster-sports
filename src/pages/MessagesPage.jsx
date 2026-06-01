@@ -60,13 +60,13 @@ export default function MessagesPage() {
   return (
     <div className="px-4 py-4">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20 }}>Messages</h1>
-        <button type="button" onClick={() => setShowNewDm(true)} className="em-press" aria-label="New message"
-          style={{ width: 44, height: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-          <Plus size={18} strokeWidth={2} color="var(--em-text-inverse)" />
+        <h1 className="font-bold" style={{ color: 'var(--as-text-primary)', fontSize: 20 }}>Messages</h1>
+        <button type="button" onClick={() => setShowNewDm(true)} className="as-press" aria-label="New message"
+          style={{ width: 44, height: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <Plus size={18} strokeWidth={2} color="var(--as-text-inverse)" />
         </button>
       </div>
-      <div style={{ width: 32, height: 3, backgroundColor: 'var(--em-accent)', borderRadius: 2, marginBottom: 8 }} />
+      <div style={{ width: 32, height: 3, backgroundColor: 'var(--as-accent)', borderRadius: 2, marginBottom: 8 }} />
       <Label>Channels</Label>
       <ChannelList channels={channels} activeKey={active?.key} onSelect={setActive} previews={previews} reads={reads} />
       {dmThreads.length > 0 && (

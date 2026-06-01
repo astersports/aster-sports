@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BRAND_CSS_VAR_MAP, EMBER_BRAND } from '../lib/emberDefaults';
+import { ASTER_BRAND, BRAND_CSS_VAR_MAP } from '../lib/asterDefaults';
 import { setCachedBrandColors } from '../lib/orgBrandingCache';
 
 // Validates a hex color string. Accepts #RGB, #RRGGBB, or rgba(...) format.
@@ -14,11 +14,11 @@ function isValidColor(value) {
 // Applies an org's brand_colors jsonb to the documentElement as CSS variables.
 // Safe against missing keys, malformed colors, and null org.
 //
-// Per Ember tenancy architecture doc section 4 (auth flow) + section 5 (CSS var map).
+// Per Aster Sports tenancy architecture doc section 4 (auth flow) + section 5 (CSS var map).
 //
 // On unmount or when org changes to null, all overrides are removed and the
-// document falls back to defaults defined in index.css (currently Ember amber,
-// will become Ember gold once index.css is updated in step 9).
+// document falls back to defaults defined in index.css (currently Aster Sports amber,
+// will become Aster Sports gold once index.css is updated in step 9).
 export function useOrgBranding(org) {
   useEffect(() => {
     if (!org || !org.brand_colors) {
@@ -52,5 +52,5 @@ export function useOrgBranding(org) {
   }, [org?.id]);
 }
 
-// Convenience export for components that need the Ember defaults synchronously.
-export { EMBER_BRAND };
+// Convenience export for components that need the Aster Sports defaults synchronously.
+export { ASTER_BRAND };

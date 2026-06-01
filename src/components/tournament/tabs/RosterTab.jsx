@@ -31,23 +31,23 @@ export default function RosterTab({ tournament, teamFilter }) {
 
   if (loading) return <LoadingSkeleton variant="list" count={5} />;
   const display = teamFilter ? teams.filter((t) => t.team.id === teamFilter) : teams;
-  if (display.length === 0) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 14 }}>No rosters submitted yet.</div>;
+  if (display.length === 0) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)', fontSize: 14 }}>No rosters submitted yet.</div>;
 
   return (
     <div>
       {display.map(({ team, players }) => (
         <div key={team.id} style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <div style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: team.team_color || 'var(--em-neutral)' }} />
-            <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)' }}>{team.name}</span>
-            <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{players.length} players</span>
+            <div style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: team.team_color || 'var(--as-neutral)' }} />
+            <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)' }}>{team.name}</span>
+            <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>{players.length} players</span>
           </div>
-          <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden' }}>
+          <div style={{ backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)', overflow: 'hidden' }}>
             {players.map((p, i) => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)' }}>
-                <span style={{ width: 28, fontSize: 13, fontWeight: 700, color: team.team_color || 'var(--em-text-primary)', textAlign: 'right' }}>#{p.jersey_number || '—'}</span>
-                <span style={{ fontSize: 14, color: 'var(--em-text-primary)' }}>{p.first_name} {p.last_name}</span>
-                {p.roster_status !== 'active' && <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', fontStyle: 'italic' }}>{p.roster_status}</span>}
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--as-border-subtle)' }}>
+                <span style={{ width: 28, fontSize: 13, fontWeight: 700, color: team.team_color || 'var(--as-text-primary)', textAlign: 'right' }}>#{p.jersey_number || '—'}</span>
+                <span style={{ fontSize: 14, color: 'var(--as-text-primary)' }}>{p.first_name} {p.last_name}</span>
+                {p.roster_status !== 'active' && <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)', fontStyle: 'italic' }}>{p.roster_status}</span>}
               </div>
             ))}
           </div>

@@ -7,10 +7,10 @@ import { Lock, Unlock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 
-const wrap = { display: 'flex', alignItems: 'center', gap: 10, padding: 12, borderRadius: 10, border: '1.5px solid var(--em-accent)', backgroundColor: 'var(--em-accent-soft)' };
-const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' };
-const nameStyle = { fontSize: 14, fontWeight: 600, color: 'var(--em-text-primary)' };
-const unlockBtn = { marginLeft: 'auto', minHeight: 36, padding: '0 10px', borderRadius: 8, border: 'none', backgroundColor: 'transparent', color: 'var(--em-text-secondary)', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 };
+const wrap = { display: 'flex', alignItems: 'center', gap: 10, padding: 12, borderRadius: 10, border: '1.5px solid var(--as-accent)', backgroundColor: 'var(--as-accent-soft)' };
+const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' };
+const nameStyle = { fontSize: 14, fontWeight: 600, color: 'var(--as-text-primary)' };
+const unlockBtn = { marginLeft: 'auto', minHeight: 36, padding: '0 10px', borderRadius: 8, border: 'none', backgroundColor: 'transparent', color: 'var(--as-text-secondary)', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 };
 
 async function resolveAnchorName(kind, id) {
   if (!id) return '';
@@ -46,13 +46,13 @@ export default function LockedAnchorChip({ anchorKind, anchorId, onUnlock }) {
   }, [anchorKind, anchorId]);
   return (
     <div style={wrap} role="status">
-      <Lock size={14} strokeWidth={1.75} color="var(--em-accent)" />
+      <Lock size={14} strokeWidth={1.75} color="var(--as-accent)" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
         <span style={labelStyle}>{anchorKind || 'anchor'}</span>
         <span style={nameStyle}>{name || '…'}</span>
       </div>
       {onUnlock && (
-        <button type="button" onClick={onUnlock} className="em-press" style={unlockBtn} aria-label="Switch anchor">
+        <button type="button" onClick={onUnlock} className="as-press" style={unlockBtn} aria-label="Switch anchor">
           <Unlock size={12} strokeWidth={1.75} /> Switch
         </button>
       )}

@@ -13,8 +13,8 @@ import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useOpponents } from '../../hooks/useOpponents';
 
-const inputStyle = { width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' };
-const btnStyle = (active) => ({ marginTop: 8, minHeight: 44, width: '100%', borderRadius: 10, border: 'none', fontFamily: 'inherit', fontSize: 15, fontWeight: 600, cursor: active ? 'pointer' : 'default', backgroundColor: active ? 'var(--em-accent)' : 'var(--em-bg-secondary)', color: active ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)' });
+const inputStyle = { width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', fontSize: 15, fontFamily: 'inherit' };
+const btnStyle = (active) => ({ marginTop: 8, minHeight: 44, width: '100%', borderRadius: 10, border: 'none', fontFamily: 'inherit', fontSize: 15, fontWeight: 600, cursor: active ? 'pointer' : 'default', backgroundColor: active ? 'var(--as-accent)' : 'var(--as-bg-secondary)', color: active ? 'var(--as-text-inverse)' : 'var(--as-text-tertiary)' });
 
 export default function OpponentInlineField({ eventId, onSaved }) {
   const { opponents } = useOpponents();
@@ -36,8 +36,8 @@ export default function OpponentInlineField({ eventId, onSaved }) {
   };
 
   return (
-    <div role="group" aria-label="Set opponent" style={{ marginBottom: 16, padding: 12, backgroundColor: 'var(--em-warning-soft)', borderLeft: '4px solid var(--em-warning)', borderRadius: 6 }}>
-      <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)', marginBottom: 8 }}>
+    <div role="group" aria-label="Set opponent" style={{ marginBottom: 16, padding: 12, backgroundColor: 'var(--as-warning-soft)', borderLeft: '4px solid var(--as-warning)', borderRadius: 6 }}>
+      <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--as-text-primary)', marginBottom: 8 }}>
         Who did you play? Set the opponent to publish.
       </div>
       <input list="score-opponent-list" value={value} onChange={(e) => setValue(e.target.value)}
@@ -45,10 +45,10 @@ export default function OpponentInlineField({ eventId, onSaved }) {
       <datalist id="score-opponent-list">
         {opponents.map((o) => <option key={o.id} value={o.name} />)}
       </datalist>
-      <button type="button" onClick={save} disabled={!value.trim() || saving} className="em-press" style={btnStyle(!!value.trim() && !saving)}>
+      <button type="button" onClick={save} disabled={!value.trim() || saving} className="as-press" style={btnStyle(!!value.trim() && !saving)}>
         {saving ? 'Saving…' : 'Set opponent'}
       </button>
-      {error && <div role="alert" style={{ marginTop: 6, fontSize: 13, color: 'var(--em-danger)' }}>Couldn&apos;t save. Try again.</div>}
+      {error && <div role="alert" style={{ marginTop: 6, fontSize: 13, color: 'var(--as-danger)' }}>Couldn&apos;t save. Try again.</div>}
     </div>
   );
 }

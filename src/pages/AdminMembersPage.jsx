@@ -76,33 +76,33 @@ export default function AdminMembersPage() {
             <li
               key={g.id}
               style={{
-                backgroundColor: 'var(--em-bg-card)',
+                backgroundColor: 'var(--as-bg-card)',
                 borderRadius: 10,
-                border: '1px solid var(--em-border-subtle)',
-                boxShadow: 'var(--em-shadow-sm)',
+                border: '1px solid var(--as-border-subtle)',
+                boxShadow: 'var(--as-shadow-sm)',
                 overflow: 'hidden',
               }}
             >
               <button
                 type="button"
                 onClick={() => openEdit(g)}
-                className="w-full text-left em-press"
+                className="w-full text-left as-press"
                 style={{ padding: 16, background: 'none', border: 'none', cursor: 'pointer', display: 'block' }}
               >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 17 }}>
+                <span className="font-semibold" style={{ color: 'var(--as-text-primary)', fontSize: 17 }}>
                   {fullName}
                 </span>
-                <span style={{ color: 'var(--em-text-tertiary)', fontSize: 11, fontWeight: 500, letterSpacing: 0.5 }}>
+                <span style={{ color: 'var(--as-text-tertiary)', fontSize: 11, fontWeight: 500, letterSpacing: 0.5 }}>
                   {g.kids.length} KID{g.kids.length === 1 ? '' : 'S'}
                 </span>
               </div>
               {contactLine && (
-                <div style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginBottom: 4 }}>
+                <div style={{ color: 'var(--as-text-secondary)', fontSize: 13, marginBottom: 4 }}>
                   {contactLine}
                 </div>
               )}
-              <div style={{ color: g.kids.length ? 'var(--em-text-secondary)' : 'var(--em-text-tertiary)', fontSize: 13, fontStyle: g.kids.length ? 'normal' : 'italic' }}>
+              <div style={{ color: g.kids.length ? 'var(--as-text-secondary)' : 'var(--as-text-tertiary)', fontSize: 13, fontStyle: g.kids.length ? 'normal' : 'italic' }}>
                 {kidLine}
               </div>
               </button>

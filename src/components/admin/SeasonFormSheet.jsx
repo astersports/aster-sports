@@ -61,12 +61,12 @@ function Body({ season, onSave }) {
 
   const chip = (active) => ({
     minHeight: 44, padding: '0 16px', borderRadius: 999, fontSize: 13,
-    border: `1px solid ${active ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
-    backgroundColor: active ? 'var(--em-accent-soft)' : 'var(--em-bg-card)',
-    color: active ? 'var(--em-accent)' : 'var(--em-text-primary)',
+    border: `1px solid ${active ? 'var(--as-accent)' : 'var(--as-border-default)'}`,
+    backgroundColor: active ? 'var(--as-accent-soft)' : 'var(--as-bg-card)',
+    color: active ? 'var(--as-accent)' : 'var(--as-text-primary)',
     fontWeight: 500,
   });
-  const label = { color: 'var(--em-text-secondary)', fontSize: 13, marginBottom: 6, display: 'block' };
+  const label = { color: 'var(--as-text-secondary)', fontSize: 13, marginBottom: 6, display: 'block' };
 
   return (
     <div>
@@ -74,7 +74,7 @@ function Body({ season, onSave }) {
           <span style={label}>Preset</span>
           <div className="flex flex-wrap gap-2 mb-2">
             {Object.keys(PRESETS).map((q) => (
-              <button key={q} type="button" className="em-press" style={chip(false)} onClick={() => pickPreset(q)}>
+              <button key={q} type="button" className="as-press" style={chip(false)} onClick={() => pickPreset(q)}>
                 {q} {year}
               </button>
             ))}
@@ -84,7 +84,7 @@ function Body({ season, onSave }) {
               <button
                 key={y}
                 type="button"
-                className="em-press"
+                className="as-press"
                 style={chip(y === year)}
                 onClick={() => setYear(y)}
               >
@@ -109,10 +109,10 @@ function Body({ season, onSave }) {
         <button
           type="button"
           onClick={submit}
-          className="w-full font-semibold em-press em-bounce-tap"
+          className="w-full font-semibold as-press as-bounce-tap"
           style={{
             minHeight: 44, borderRadius: 10,
-            backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15,
+            backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 15,
           }}
         >
         {editing ? 'Save changes' : 'Create season'}

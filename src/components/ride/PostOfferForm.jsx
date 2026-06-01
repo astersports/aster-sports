@@ -10,8 +10,8 @@ import FullScreenForm from '../shared/FullScreenForm';
 import Input from '../shared/Input';
 import Button from '../shared/Button';
 
-const labelStyle = { fontSize: 13, fontWeight: 600, color: 'var(--em-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'block' };
-const selectStyle = { width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' };
+const labelStyle = { fontSize: 13, fontWeight: 600, color: 'var(--as-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'block' };
+const selectStyle = { width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, fontFamily: 'inherit' };
 
 const pad = (n) => String(n).padStart(2, '0');
 const isoToLocal = (iso) => {
@@ -119,7 +119,7 @@ export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = 
       }
     >
       <form id="post-offer-form" onSubmit={handleSubmit} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {error && <div role="alert" style={{ padding: 10, borderRadius: 8, backgroundColor: 'var(--em-danger-soft)', color: 'var(--em-danger)', fontSize: 13 }}>{error}</div>}
+        {error && <div role="alert" style={{ padding: 10, borderRadius: 8, backgroundColor: 'var(--as-danger-soft)', color: 'var(--as-danger)', fontSize: 13 }}>{error}</div>}
         <Input label="Seats available" id="seats" type="number" inputMode="numeric" min="1" max="12" value={seats} onChange={(e) => setSeats(e.target.value)} required />
         <div><label style={labelStyle} htmlFor="rideType">Trip type</label>
           <select id="rideType" value={rideType} onChange={(e) => setRideType(e.target.value)} style={selectStyle}>
@@ -136,7 +136,7 @@ export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = 
         </>)}
         <Input label="Vehicle (optional)" id="vehicle" type="text" value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="e.g., Black Tesla Model Y" />
         <Input label="Phone (optional, shown to confirmed riders only)" id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(914) 555-1234" />
-        <div><label style={labelStyle} htmlFor="notes">Notes (optional)</label><textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows="3" placeholder="e.g., Will swing by Bedford on the way" style={{ width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' }} /></div>
+        <div><label style={labelStyle} htmlFor="notes">Notes (optional)</label><textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows="3" placeholder="e.g., Will swing by Bedford on the way" style={{ width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, fontFamily: 'inherit' }} /></div>
       </form>
     </FullScreenForm>
   );

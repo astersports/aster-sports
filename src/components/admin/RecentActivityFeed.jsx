@@ -27,10 +27,10 @@ export default function RecentActivityFeed({ items, loading, nowMs }) {
       <Label>RECENT ACTIVITY</Label>
       <ul
         style={{
-          backgroundColor: 'var(--em-bg-card)',
+          backgroundColor: 'var(--as-bg-card)',
           borderRadius: 10,
-          border: '1px solid var(--em-border-default)',
-          boxShadow: 'var(--em-shadow-sm)',
+          border: '1px solid var(--as-border-default)',
+          boxShadow: 'var(--as-shadow-sm)',
           overflow: 'hidden',
           padding: 0,
           margin: 0,
@@ -45,7 +45,7 @@ export default function RecentActivityFeed({ items, loading, nowMs }) {
               alignItems: 'flex-start',
               gap: 10,
               padding: '10px 14px',
-              borderTop: idx === 0 ? 'none' : '1px solid var(--em-border-subtle)',
+              borderTop: idx === 0 ? 'none' : '1px solid var(--as-border-subtle)',
               fontSize: 13,
             }}
           >
@@ -54,14 +54,14 @@ export default function RecentActivityFeed({ items, loading, nowMs }) {
               style={{
                 flex: '0 0 4px',
                 alignSelf: 'stretch',
-                backgroundColor: item.team_color || 'var(--em-neutral)',
+                backgroundColor: item.team_color || 'var(--as-neutral)',
                 borderRadius: 2,
                 minHeight: 18,
               }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: 'var(--em-text-primary)' }}>{item.text}</div>
-              <div style={{ color: 'var(--em-text-tertiary)', fontSize: 11, marginTop: 1 }}>
+              <div style={{ color: 'var(--as-text-primary)' }}>{item.text}</div>
+              <div style={{ color: 'var(--as-text-tertiary)', fontSize: 11, marginTop: 1 }}>
                 {relativeTime(item.ts, nowMs)}
               </div>
             </div>

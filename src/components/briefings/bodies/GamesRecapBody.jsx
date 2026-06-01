@@ -26,9 +26,9 @@ function gameLabel(g) {
 
 const rowStyle = (on) => ({
   display: 'flex', alignItems: 'center', gap: 10, width: '100%', minHeight: 44, padding: '8px 10px',
-  borderRadius: 10, border: `1px solid ${on ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
-  backgroundColor: on ? 'var(--em-accent-soft)' : 'var(--em-bg-card)', cursor: 'pointer', textAlign: 'left',
-  fontSize: 13, color: 'var(--em-text-primary)',
+  borderRadius: 10, border: `1px solid ${on ? 'var(--as-accent)' : 'var(--as-border-default)'}`,
+  backgroundColor: on ? 'var(--as-accent-soft)' : 'var(--as-bg-card)', cursor: 'pointer', textAlign: 'left',
+  fontSize: 13, color: 'var(--as-text-primary)',
 });
 
 export default function GamesRecapBody({ value, onChange, audienceFilter, onAudienceChange }) {
@@ -48,15 +48,15 @@ export default function GamesRecapBody({ value, onChange, audienceFilter, onAudi
     <div style={fieldGap}>
       <div>
         <span style={labelStyle}>Games to include</span>
-        {loading && <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>Loading recent games…</div>}
+        {loading && <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>Loading recent games…</div>}
         {!loading && !games.length && (
-          <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>No recently-played games with published scores in the last 60 days.</div>
+          <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>No recently-played games with published scores in the last 60 days.</div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {games.map((g) => {
             const on = sel.has(g.id);
             return (
-              <button key={g.id} type="button" onClick={() => toggle(g.id)} aria-pressed={on} className="em-press" style={rowStyle(on)}>
+              <button key={g.id} type="button" onClick={() => toggle(g.id)} aria-pressed={on} className="as-press" style={rowStyle(on)}>
                 <input type="checkbox" checked={on} readOnly aria-hidden="true" tabIndex={-1} />
                 <span style={{ flex: 1, minWidth: 0 }}>{gameLabel(g)}</span>
               </button>
@@ -64,7 +64,7 @@ export default function GamesRecapBody({ value, onChange, audienceFilter, onAudi
           })}
         </div>
         {selected.length > 0 && (
-          <div style={{ fontSize: 12, color: 'var(--em-text-secondary)', marginTop: 6 }}>
+          <div style={{ fontSize: 12, color: 'var(--as-text-secondary)', marginTop: 6 }}>
             {selected.length} game{selected.length === 1 ? '' : 's'} selected · families across those teams receive this recap.
           </div>
         )}

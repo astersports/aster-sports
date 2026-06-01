@@ -25,13 +25,13 @@ const ICONS = { AlertCircle, AlertTriangle, Info };
 
 function AlertItemRow({ title, subtitle, onTap, cta }) {
   return (
-    <button type="button" onClick={onTap} className="em-press"
+    <button type="button" onClick={onTap} className="as-press"
       style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%', minHeight: 44, padding: '8px 0', background: 'none', border: 'none', borderTop: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer', textAlign: 'left' }}>
       <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
-        <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>{subtitle}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--as-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
+        <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>{subtitle}</div>
       </div>
-      <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--em-accent)', flexShrink: 0 }}>{cta}</span>
+      <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--as-accent)', flexShrink: 0 }}>{cta}</span>
     </button>
   );
 }
@@ -58,12 +58,12 @@ export default function AlertCard({ alert }) {
         onClick={() => { if (canExpand) setExpanded((v) => !v); else if (navTarget) navigate(navTarget); }}
         aria-expanded={canExpand ? expanded : undefined}
         disabled={!interactive}
-        className="em-press"
+        className="as-press"
         style={{ display: 'flex', alignItems: 'flex-start', gap: 12, width: '100%', padding: '12px 14px', background: 'none', border: 'none', cursor: interactive ? 'pointer' : 'default', textAlign: 'left' }}>
         <Icon size={18} strokeWidth={1.75} color={tokens.text} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: tokens.text, marginBottom: 2 }}>{alertTitle(alert)}</div>
-          <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.4 }}>{alertBody(alert)}</div>
+          <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.4 }}>{alertBody(alert)}</div>
         </div>
         {canExpand && <ChevronDown size={16} strokeWidth={1.75} color={tokens.text} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1, transform: expanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 150ms' }} />}
         {navTarget && <ChevronRight size={16} strokeWidth={1.75} color={tokens.text} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }} />}
@@ -75,7 +75,7 @@ export default function AlertCard({ alert }) {
               onTap={() => navigate(isBriefingRecap ? composeTargetFor(alert, item) : fixTarget(item))} />
           ))}
           {items.length > 10 && (
-            <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', padding: '8px 0 4px' }}>
+            <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)', padding: '8px 0 4px' }}>
               … and {items.length - 10} more
             </div>
           )}

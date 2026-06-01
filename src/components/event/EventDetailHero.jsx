@@ -18,17 +18,17 @@ import EventHeroActions from './EventHeroActions';
 import { formatEventTitle } from '../../lib/eventTitle';
 
 const CARD = (cancelled) => ({
-  margin: '12px 16px', padding: 16, borderRadius: 12, backgroundColor: 'var(--em-bg-card)',
-  border: `1px solid ${cancelled ? 'var(--em-danger)' : 'var(--em-border-default)'}`,
-  boxShadow: 'var(--em-shadow-sm)',
+  margin: '12px 16px', padding: 16, borderRadius: 12, backgroundColor: 'var(--as-bg-card)',
+  border: `1px solid ${cancelled ? 'var(--as-danger)' : 'var(--as-border-default)'}`,
+  boxShadow: 'var(--as-shadow-sm)',
 });
-const TITLE = { fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', lineHeight: 1.3 };
-const META = { fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 6, lineHeight: 1.5 };
-const LOC = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 4 };
-const PROG_WRAP = { marginTop: 12, height: 6, borderRadius: 3, backgroundColor: 'var(--em-bg-tertiary)', overflow: 'hidden', display: 'flex' };
-const PROG_LABEL = { fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap' };
-const CANCEL_BADGE = { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--em-danger)', backgroundColor: 'var(--em-danger-soft)', padding: '2px 8px', borderRadius: 4, marginBottom: 6 };
-const SKELETON_BAR = { backgroundColor: 'var(--em-bg-secondary)', borderRadius: 4 };
+const TITLE = { fontSize: 17, fontWeight: 700, color: 'var(--as-text-primary)', lineHeight: 1.3 };
+const META = { fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 6, lineHeight: 1.5 };
+const LOC = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 4 };
+const PROG_WRAP = { marginTop: 12, height: 6, borderRadius: 3, backgroundColor: 'var(--as-bg-tertiary)', overflow: 'hidden', display: 'flex' };
+const PROG_LABEL = { fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap' };
+const CANCEL_BADGE = { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--as-danger)', backgroundColor: 'var(--as-danger-soft)', padding: '2px 8px', borderRadius: 4, marginBottom: 6 };
+const SKELETON_BAR = { backgroundColor: 'var(--as-bg-secondary)', borderRadius: 4 };
 
 function fmtDate(iso) { return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' }); }
 function fmtTime(iso) { return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }); }
@@ -60,18 +60,18 @@ export default function EventDetailHero({
       <div style={{ ...TITLE, textDecoration: isCancelled ? 'line-through' : 'none' }}>{prefix}{body}</div>
       <div style={META}>{fmtDate(event.start_at)} · {fmtTime(event.start_at)}{event.arrival_minutes_before > 0 ? ` · Arrive ${event.arrival_minutes_before} min early` : ''}</div>
       {event.location && (
-        <div style={LOC}><MapPin size={13} strokeWidth={1.75} color="var(--em-text-tertiary)" />{event.location}{event.jersey ? ` · Jersey: ${event.jersey}` : ''}</div>
+        <div style={LOC}><MapPin size={13} strokeWidth={1.75} color="var(--as-text-tertiary)" />{event.location}{event.jersey ? ` · Jersey: ${event.jersey}` : ''}</div>
       )}
       {isStaff && isGameType && !isPast && total > 0 && (
         <>
           <div style={PROG_WRAP} aria-label={`RSVP progress: ${counts.going} going of ${total}`}>
-            <div style={{ width: `${goingPct}%`, backgroundColor: 'var(--em-success)' }} />
-            <div style={{ width: `${maybePct}%`, backgroundColor: 'var(--em-warning)' }} />
+            <div style={{ width: `${goingPct}%`, backgroundColor: 'var(--as-success)' }} />
+            <div style={{ width: `${maybePct}%`, backgroundColor: 'var(--as-warning)' }} />
           </div>
           <div style={PROG_LABEL}>
-            <span style={{ color: 'var(--em-success)', fontWeight: 600 }}>{counts.going} going</span>
-            {counts.maybe > 0 && <span style={{ color: 'var(--em-warning)', fontWeight: 600 }}>{counts.maybe} maybe</span>}
-            {counts.out > 0 && <span style={{ color: 'var(--em-danger)', fontWeight: 600 }}>{counts.out} out</span>}
+            <span style={{ color: 'var(--as-success)', fontWeight: 600 }}>{counts.going} going</span>
+            {counts.maybe > 0 && <span style={{ color: 'var(--as-warning)', fontWeight: 600 }}>{counts.maybe} maybe</span>}
+            {counts.out > 0 && <span style={{ color: 'var(--as-danger)', fontWeight: 600 }}>{counts.out} out</span>}
             <span>{counts.noReply} no reply</span>
           </div>
         </>

@@ -19,8 +19,8 @@ const wrapStyle = { display: 'flex', justifyContent: 'flex-end', marginBottom: 8
 const baseStyle = {
   minHeight: 44, padding: '0 14px', borderRadius: 10,
   fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
-  border: '1.5px solid var(--em-border-default)',
-  backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
+  border: '1.5px solid var(--as-border-default)',
+  backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)',
   display: 'inline-flex', alignItems: 'center', gap: 6,
 };
 
@@ -41,16 +41,16 @@ export default function ComposeAnchorCta({ anchorKind, anchor, kind }) {
   const sentOnly = status.hasSent && !status.hasDraft;
   const label = status.hasDraft ? 'Resume draft' : (sentOnly ? copy.sent : copy.dflt);
   const style = sentOnly
-    ? { ...baseStyle, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-tertiary)', cursor: 'default' }
+    ? { ...baseStyle, backgroundColor: 'var(--as-bg-secondary)', color: 'var(--as-text-tertiary)', cursor: 'default' }
     : status.hasDraft
-      ? { ...baseStyle, backgroundColor: 'var(--em-accent-soft)', borderColor: 'var(--em-accent)' }
+      ? { ...baseStyle, backgroundColor: 'var(--as-accent-soft)', borderColor: 'var(--as-accent)' }
       : baseStyle;
   const aria = sentOnly ? `${copy.sent} for this ${noun}` : `${label} for this ${noun}`;
   return (
     <div style={wrapStyle}>
       <button type="button" disabled={sentOnly} aria-disabled={sentOnly} aria-label={aria}
         onClick={() => navigate(`/admin/briefings/compose?kind=${kind}&anchor=${anchorKind}&id=${anchor.id}`)}
-        className={sentOnly ? '' : 'em-press'} style={style}>
+        className={sentOnly ? '' : 'as-press'} style={style}>
         {label}
       </button>
     </div>

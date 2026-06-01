@@ -98,7 +98,7 @@ export default function TeamDetailPage() {
           overflow menu (⋯) on the right. Page-level destructive / staff
           actions live there per §16.14 detail-page contract. */}
       <div className="flex items-center justify-between mb-2">
-        <button type="button" onClick={() => navigate('/teams')} className="flex items-center em-press" style={{ minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500 }}>
+        <button type="button" onClick={() => navigate('/teams')} className="flex items-center as-press" style={{ minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, fontWeight: 500 }}>
           <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Teams
         </button>
         <TeamDetailOverflowMenu team={team} role={role} />
@@ -108,7 +108,7 @@ export default function TeamDetailPage() {
           per §16.14. PR C / V8: "Spring 2026" scope tag below the hero
           surfaces season scope (data IS season-scoped). */}
       <TeamDetailHeroSlot team={team} role={role} summary={recordsLoading ? null : summary} myChild={myChild} myChildPlayer={myChildPlayer} activities={activities} teamId={teamId} />
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', padding: '0 4px 8px' }}>
+      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', padding: '0 4px 8px' }}>
         Spring 2026
       </div>
       <CollapsibleSection title="Upcoming" subtitle="next 7 days">
@@ -130,7 +130,7 @@ export default function TeamDetailPage() {
       )}
 
       {/* PR C / Obs 1 / anti-pattern #51 — TeamPlayerStats mount REMOVED.
-          Live-scoring isn't a real Ember feature yet; mount was
+          Live-scoring isn't a real Aster Sports feature yet; mount was
           permanent dead space. Second instance after Engine Preview
           retirement (PR #398). */}
       {!rosterLoading && players.length > 0 && (

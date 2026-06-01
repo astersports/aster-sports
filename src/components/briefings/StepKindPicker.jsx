@@ -24,7 +24,7 @@ const gridWrap = (cols) => ({
 const emptyState = {
   gridColumn: '1 / -1',
   textAlign: 'center', padding: '40px 16px',
-  fontSize: 14, color: 'var(--em-text-tertiary)',
+  fontSize: 14, color: 'var(--as-text-tertiary)',
 };
 
 // matchMedia is jsdom-safe (returns matches:false by default) so this

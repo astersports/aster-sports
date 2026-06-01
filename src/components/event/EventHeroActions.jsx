@@ -22,8 +22,8 @@ import { useNow } from '../../hooks/useNow';
 import { PARENT_ARRIVAL_WINDOW_AFTER_MS, PARENT_ARRIVAL_WINDOW_BEFORE_MS } from '../../lib/eventWindows';
 
 const ROW = { display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' };
-const BTN = { flex: '1 1 140px', minHeight: 44, padding: '0 14px', borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 };
-const BTN_SEC = { ...BTN, backgroundColor: 'transparent', color: 'var(--em-accent)', border: '1px solid var(--em-accent)' };
+const BTN = { flex: '1 1 140px', minHeight: 44, padding: '0 14px', borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 };
+const BTN_SEC = { ...BTN, backgroundColor: 'transparent', color: 'var(--as-accent)', border: '1px solid var(--as-accent)' };
 
 export default function EventHeroActions({
   event, isStaff, isGameType, isPast,
@@ -57,7 +57,7 @@ export default function EventHeroActions({
     if (isGameType) {
       // FinalizedGameView below renders the result if scored; tapping
       // Enter Score on a scored game opens the sheet in edit mode.
-      return <div style={ROW}><button type="button" onClick={onEnterScore} className="em-press" style={BTN}>Enter Score</button></div>;
+      return <div style={ROW}><button type="button" onClick={onEnterScore} className="as-press" style={BTN}>Enter Score</button></div>;
     }
     return null;
   }
@@ -68,14 +68,14 @@ export default function EventHeroActions({
     return (
       <div style={ROW}>
         {isTournamentDraft && event.tournament_id ? (
-          <button type="button" onClick={() => navigate(`/admin/briefings/compose?anchor=tournament&id=${event.tournament_id}`)} className="em-press" style={BTN}><Send size={14} strokeWidth={1.75} />Compose briefing</button>
+          <button type="button" onClick={() => navigate(`/admin/briefings/compose?anchor=tournament&id=${event.tournament_id}`)} className="as-press" style={BTN}><Send size={14} strokeWidth={1.75} />Compose briefing</button>
         ) : null}
-        <button type="button" onClick={onNotify} className="em-press" style={BTN}><Send size={14} strokeWidth={1.75} />Notify families</button>
-        {!isTournamentDraft && <button type="button" onClick={onLockRoster} className="em-press" style={BTN_SEC}>Lock roster{lockCount != null ? ` · ${lockCount}` : ''}</button>}
+        <button type="button" onClick={onNotify} className="as-press" style={BTN}><Send size={14} strokeWidth={1.75} />Notify families</button>
+        {!isTournamentDraft && <button type="button" onClick={onLockRoster} className="as-press" style={BTN_SEC}>Lock roster{lockCount != null ? ` · ${lockCount}` : ''}</button>}
       </div>
     );
   }
 
   // Practice — Notify only.
-  return <div style={ROW}><button type="button" onClick={onNotify} className="em-press" style={BTN}><Send size={14} strokeWidth={1.75} />Notify families</button></div>;
+  return <div style={ROW}><button type="button" onClick={onNotify} className="as-press" style={BTN}><Send size={14} strokeWidth={1.75} />Notify families</button></div>;
 }

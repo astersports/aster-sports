@@ -11,19 +11,19 @@ export default function OverviewTab({ tournament, isStaff }) {
   const hasNotes = Boolean(tournament.survival_notes);
 
   const card = {
-    backgroundColor: 'var(--em-bg-card)', borderRadius: 10,
-    border: '1px solid var(--em-border-default)', padding: 14, marginBottom: 12,
+    backgroundColor: 'var(--as-bg-card)', borderRadius: 10,
+    border: '1px solid var(--as-border-default)', padding: 14, marginBottom: 12,
   };
   const sectionLabel = {
     fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase',
-    color: 'var(--em-text-secondary)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6,
+    color: 'var(--as-text-secondary)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6,
   };
-  const value = { fontSize: 15, color: 'var(--em-text-primary)', lineHeight: 1.4 };
+  const value = { fontSize: 15, color: 'var(--as-text-primary)', lineHeight: 1.4 };
   const linkButton = {
     display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 40,
     padding: '0 12px', borderRadius: 8, fontSize: 13, fontWeight: 500,
     textDecoration: 'none', marginTop: 8,
-    backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)',
+    backgroundColor: 'var(--as-accent-soft)', color: 'var(--as-accent)',
   };
 
   return (
@@ -32,7 +32,7 @@ export default function OverviewTab({ tournament, isStaff }) {
         <div style={card}>
           <div style={sectionLabel}><MapPin size={11} strokeWidth={2} /> Venue</div>
           <div style={value}>{tournament.primary_venue || 'Unnamed venue'}</div>
-          {hasAddress && <div style={{ ...value, fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 2 }}>{tournament.primary_venue_address}</div>}
+          {hasAddress && <div style={{ ...value, fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 2 }}>{tournament.primary_venue_address}</div>}
           {hasAddress && (
             <a href={mapsUrl(tournament.primary_venue_address)} target="_blank" rel="noopener noreferrer" style={linkButton} aria-label="Open venue in Google Maps">
               Open in Maps <ExternalLink size={12} strokeWidth={2} />
@@ -43,7 +43,7 @@ export default function OverviewTab({ tournament, isStaff }) {
       {(tournament.schedule_status === 'draft' || tournament.schedule_status == null) && (
         <div style={card}>
           <div style={sectionLabel}><MapPin size={11} strokeWidth={2} /> Venue</div>
-          <div style={{ ...value, fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.5 }}>
+          <div style={{ ...value, fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.5 }}>
             Schedule releases Wednesday. Venue, court assignments, and game times will appear once the tournament organizer publishes the bracket.
           </div>
         </div>
@@ -65,7 +65,7 @@ export default function OverviewTab({ tournament, isStaff }) {
             Book hotel <ExternalLink size={12} strokeWidth={2} />
           </a>
           {tournament.hotel_deadline_at && (
-            <div style={{ fontSize: 13, color: 'var(--em-warning)', marginTop: 8 }}>
+            <div style={{ fontSize: 13, color: 'var(--as-warning)', marginTop: 8 }}>
               Deadline: {new Date(tournament.hotel_deadline_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })}
             </div>
           )}
@@ -81,13 +81,13 @@ export default function OverviewTab({ tournament, isStaff }) {
 
       <div style={card}>
         <div style={sectionLabel}><BookOpen size={11} strokeWidth={2} /> Game day guide</div>
-        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
+        <div style={{ fontSize: 13, color: 'var(--as-text-secondary)' }}>
           Structured field guide for parents: arrival, parking, concessions, rules, contacts.
         </div>
       </div>
 
       {!tournament.primary_venue && !hasAddress && !hasTourneyUrl && !hasHotel && !hasNotes && (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13 }}>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--as-text-tertiary)', fontSize: 13 }}>
           No details yet. {isStaff && 'Tap Edit above to add venue, links, and survival notes.'}
         </div>
       )}

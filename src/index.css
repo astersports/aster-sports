@@ -1,60 +1,60 @@
 @import "tailwindcss";
 
-/* ─── Ember design tokens ─────────────────────────────────
- * All components reference these via var(--em-*). Brand tokens are
+/* ─── Aster Sports design tokens ─────────────────────────────────
+ * All components reference these via var(--as-*). Brand tokens are
  * re-set at runtime from organizations.brand_colors inside AuthContext,
  * so the same markup theme-flips per org.
  */
 :root {
   /* ─── Platform surfaces + text (COOL GRAY — NOT warm/beige) ─── */
-  --em-bg-page:        #F7F8FA;
-  --em-bg-card:        #FFFFFF;
-  --em-bg-card-hover:  #F9FAFB;
-  --em-bg-secondary:   #F1F3F5;
-  --em-bg-tertiary:    #E9ECEF;
-  --em-text-primary:   #1A1D23;
-  --em-text-secondary: #4A5568;
-  --em-text-tertiary:  #8896AB;
-  /* Closes the --em-text-tertiary (#8896AB, 3.8:1) WCAG AA gap: meta is the
+  --as-bg-page:        #F7F8FA;
+  --as-bg-card:        #FFFFFF;
+  --as-bg-card-hover:  #F9FAFB;
+  --as-bg-secondary:   #F1F3F5;
+  --as-bg-tertiary:    #E9ECEF;
+  --as-text-primary:   #1A1D23;
+  --as-text-secondary: #4A5568;
+  --as-text-tertiary:  #8896AB;
+  /* Closes the --as-text-tertiary (#8896AB, 3.8:1) WCAG AA gap: meta is the
      AA-compliant (#6B7280, 4.6:1) text-rank floor for body/meta text.
      Tertiary preserved for non-text use (icons, dividers). Per CLAUDE.md §0
      rule #2 corollary. Adoption across tertiary text surfaces is a follow-on
      a11y pass. */
-  --em-text-meta:      #6B7280;
-  --em-text-inverse:   #FFFFFF;
-  --em-border-default: #E2E8F0;
-  --em-border-subtle:  #EDF2F7;
+  --as-text-meta:      #6B7280;
+  --as-text-inverse:   #FFFFFF;
+  --as-border-default: #E2E8F0;
+  --as-border-subtle:  #EDF2F7;
 
   /* ─── Status (semantic) ─── */
-  --em-success:        #16A34A;
-  --em-success-soft:   #DCFCE7;
-  --em-warning:        #D97706;
-  --em-warning-soft:   #FEF3C7;
-  --em-danger:         #DC2626;
-  --em-danger-soft:    #FEE2E2;
-  --em-info:           #3B82F6;
-  --em-info-soft:      #EFF6FF;
-  --em-neutral:        #9CA3AF;
-  --em-neutral-soft:   #F3F4F6;
-  --em-academy:        #7C3AED;
-  --em-academy-soft:   rgba(124, 58, 237, 0.1);
+  --as-success:        #16A34A;
+  --as-success-soft:   #DCFCE7;
+  --as-warning:        #D97706;
+  --as-warning-soft:   #FEF3C7;
+  --as-danger:         #DC2626;
+  --as-danger-soft:    #FEE2E2;
+  --as-info:           #3B82F6;
+  --as-info-soft:      #EFF6FF;
+  --as-neutral:        #9CA3AF;
+  --as-neutral-soft:   #F3F4F6;
+  --as-academy:        #7C3AED;
+  --as-academy-soft:   rgba(124, 58, 237, 0.1);
 
-  /* ─── Brand (Ember defaults — overridden per org at runtime) ─── */
-  --em-header:         #151525;
-  --em-accent:         #C9952E;
-  --em-accent-hover:   #D4A843;
-  --em-accent-soft:    rgba(201, 149, 46, 0.1);
-  --em-text-on-dark:   #F5F0E8;
+  /* ─── Brand (Aster Sports defaults — overridden per org at runtime) ─── */
+  --as-header:         #151525;
+  --as-accent:         #C9952E;
+  --as-accent-hover:   #D4A843;
+  --as-accent-soft:    rgba(201, 149, 46, 0.1);
+  --as-text-on-dark:   #F5F0E8;
 
   /* ─── Decorative ─── */
-  --em-flame-mid:      #E87520;
-  --em-crimson:        #8B1A1A;
-  --em-electric:       #4A9FFF;
+  --as-flame-mid:      #E87520;
+  --as-crimson:        #8B1A1A;
+  --as-electric:       #4A9FFF;
 
   /* ─── Shadows (exactly three — no fourth) ─── */
-  --em-shadow-sm:  0 1px 2px rgba(0,0,0,0.04);
-  --em-shadow-md:  0 2px 8px rgba(0,0,0,0.08);
-  --em-shadow-lg:  0 8px 24px rgba(0,0,0,0.12);
+  --as-shadow-sm:  0 1px 2px rgba(0,0,0,0.04);
+  --as-shadow-md:  0 2px 8px rgba(0,0,0,0.08);
+  --as-shadow-lg:  0 8px 24px rgba(0,0,0,0.12);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -79,7 +79,7 @@ html, body         {
  * <main> is the sole scroll container. 100vh is the fallback for older
  * iOS Safari; the 100dvh rule below overrides it on supporting browsers
  * so the layout tracks the URL bar show/hide without content jumping. */
-.em-app-shell {
+.as-app-shell {
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
@@ -87,9 +87,9 @@ html, body         {
 
 /* Standalone full-height page (Login, ForgotPassword, Unauthorized).
  * Uses min-height so content can grow when the iOS soft keyboard opens,
- * unlike em-app-shell which is strictly bounded. Double declaration is
+ * unlike as-app-shell which is strictly bounded. Double declaration is
  * the CSS cascade fallback for pre-iOS 15.4 Safari. */
-.em-fullscreen {
+.as-fullscreen {
   min-height: 100vh;
   min-height: 100dvh;
 }
@@ -97,34 +97,34 @@ html, body         {
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  background-color: var(--em-bg-page);
-  color: var(--em-text-primary);
+  background-color: var(--as-bg-page);
+  color: var(--as-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 /* ─── Keyframes ─────────────────────────────────────────────
- * All 8 Ember animations. Applied only when the user hasn't
+ * All 8 Aster Sports animations. Applied only when the user hasn't
  * requested reduced motion (see wrapping media query below).
  */
-@keyframes em-pulse {
+@keyframes as-pulse {
   0%, 100% { opacity: 0.4; }
   50%      { opacity: 0.7; }
 }
-@keyframes em-fade-in {
+@keyframes as-fade-in {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes em-pulse-dot {
+@keyframes as-pulse-dot {
   0%, 100% { transform: scale(1);   opacity: 1;   }
   50%      { transform: scale(1.4); opacity: 0.6; }
 }
-@keyframes em-bounce-tap {
+@keyframes as-bounce-tap {
   0%   { transform: scale(1);    }
   40%  { transform: scale(0.95); }
   100% { transform: scale(1);    }
 }
-@keyframes em-fill-grow {
+@keyframes as-fill-grow {
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }
 }
@@ -140,7 +140,7 @@ body {
   from { opacity: 0; transform: translate(-50%, 12px); }
   to   { opacity: 1; transform: translate(-50%, 0);    }
 }
-@keyframes em-bell-shake {
+@keyframes as-bell-shake {
   0%, 100% { transform: rotate(0deg); }
   20% { transform: rotate(12deg); }
   40% { transform: rotate(-10deg); }
@@ -149,25 +149,25 @@ body {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .em-pulse      { animation: em-pulse      1.5s ease-in-out infinite; }
-  .em-fade-in    { animation: em-fade-in    0.4s ease-out both; }
-  .em-pulse-dot  { animation: em-pulse-dot  2s   ease-in-out infinite; }
-  .em-bounce-tap { animation: em-bounce-tap 0.3s ease-out; }
-  .em-fill-grow  { animation: em-fill-grow  0.6s ease-out both; transform-origin: left; }
-  .em-card-expand{ animation: card-expand   0.25s ease-out both; }
-  .em-sheet-rise { animation: sheet-rise    0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-  .em-toast-enter{ animation: toast-enter   0.25s ease-out both; }
-  .em-stagger-1 { animation: em-fade-in 0.3s ease-out 0.05s both; }
-  .em-stagger-2 { animation: em-fade-in 0.3s ease-out 0.1s both; }
-  .em-stagger-3 { animation: em-fade-in 0.3s ease-out 0.15s both; }
-  .em-stagger-4 { animation: em-fade-in 0.3s ease-out 0.2s both; }
-  .em-stagger-5 { animation: em-fade-in 0.3s ease-out 0.25s both; }
-  .em-stagger-6 { animation: em-fade-in 0.3s ease-out 0.3s both; }
-  .em-stagger-7 { animation: em-fade-in 0.3s ease-out 0.35s both; }
-  .em-stagger-8 { animation: em-fade-in 0.3s ease-out 0.4s both; }
-  .em-bell-shake { animation: em-bell-shake 0.6s ease-out; }
+  .as-pulse      { animation: as-pulse      1.5s ease-in-out infinite; }
+  .as-fade-in    { animation: as-fade-in    0.4s ease-out both; }
+  .as-pulse-dot  { animation: as-pulse-dot  2s   ease-in-out infinite; }
+  .as-bounce-tap { animation: as-bounce-tap 0.3s ease-out; }
+  .as-fill-grow  { animation: as-fill-grow  0.6s ease-out both; transform-origin: left; }
+  .as-card-expand{ animation: card-expand   0.25s ease-out both; }
+  .as-sheet-rise { animation: sheet-rise    0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+  .as-toast-enter{ animation: toast-enter   0.25s ease-out both; }
+  .as-stagger-1 { animation: as-fade-in 0.3s ease-out 0.05s both; }
+  .as-stagger-2 { animation: as-fade-in 0.3s ease-out 0.1s both; }
+  .as-stagger-3 { animation: as-fade-in 0.3s ease-out 0.15s both; }
+  .as-stagger-4 { animation: as-fade-in 0.3s ease-out 0.2s both; }
+  .as-stagger-5 { animation: as-fade-in 0.3s ease-out 0.25s both; }
+  .as-stagger-6 { animation: as-fade-in 0.3s ease-out 0.3s both; }
+  .as-stagger-7 { animation: as-fade-in 0.3s ease-out 0.35s both; }
+  .as-stagger-8 { animation: as-fade-in 0.3s ease-out 0.4s both; }
+  .as-bell-shake { animation: as-bell-shake 0.6s ease-out; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .em-spin { animation: spin 0.6s linear infinite; }
+  .as-spin { animation: spin 0.6s linear infinite; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -177,46 +177,46 @@ body {
 }
 
 /* Smooth height-auto collapsible via grid-template-rows trick. */
-.em-collapsible {
+.as-collapsible {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 300ms ease-out;
 }
-.em-collapsible[data-open="true"] { grid-template-rows: 1fr; }
-.em-collapsible > .em-collapsible-inner { overflow: hidden; min-height: 0; }
+.as-collapsible[data-open="true"] { grid-template-rows: 1fr; }
+.as-collapsible > .as-collapsible-inner { overflow: hidden; min-height: 0; }
 
 /* Sticky filter bar with blur. */
-.em-sticky-filters {
+.as-sticky-filters {
   position: sticky;
   top: 0;
   z-index: 30;
-  background-color: color-mix(in srgb, var(--em-bg-page) 85%, transparent);
+  background-color: color-mix(in srgb, var(--as-bg-page) 85%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--em-shadow-sm);
+  box-shadow: var(--as-shadow-sm);
 }
 
 /* Tap press feedback. */
-.em-press { transition: transform 200ms ease-out; }
-.em-press:active { transform: scale(0.97); }
+.as-press { transition: transform 200ms ease-out; }
+.as-press:active { transform: scale(0.97); }
 
 /* Countdown urgency colors per HOME_DESIGN_SPEC §1.1.4 lines 299-303.
  * Default (24h+) is the org accent; <24h muted; <6h success; <1h danger. */
-.em-countdown    { color: var(--em-accent); }
-.em-urgency-24h  { color: var(--em-text-tertiary); }
-.em-urgency-6h   { color: var(--em-success); }
-.em-urgency-1h   { color: var(--em-danger); }
+.as-countdown    { color: var(--as-accent); }
+.as-urgency-24h  { color: var(--as-text-tertiary); }
+.as-urgency-6h   { color: var(--as-success); }
+.as-urgency-1h   { color: var(--as-danger); }
 
 /* Hide native scrollbars on horizontal scrollers (day strip, pill rows). */
-.em-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-.em-no-scrollbar::-webkit-scrollbar { display: none; }
+.as-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.as-no-scrollbar::-webkit-scrollbar { display: none; }
 
 /* Focus visibility for keyboard navigation */
 *:focus-visible {
-  outline: 2px solid var(--em-accent);
+  outline: 2px solid var(--as-accent);
   outline-offset: 2px;
 }
 button:focus-visible, [role="link"]:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid var(--em-accent);
+  outline: 2px solid var(--as-accent);
   outline-offset: 2px;
 }

@@ -64,7 +64,7 @@ export default function AdminScheduleSection({ activities }) {
         />
       </div>
       {filtered.length === 0 ? (
-        <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 13 }}>
+        <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--as-text-tertiary)', fontSize: 13 }}>
           No events this week{selectedTeam ? ' for this team' : ''}.
         </div>
       ) : (

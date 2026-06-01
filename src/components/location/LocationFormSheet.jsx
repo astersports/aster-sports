@@ -39,18 +39,18 @@ export default function LocationFormSheet({ location, onClose }) {
     onClose();
   };
 
-  const label = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)', marginBottom: 6, display: 'block' };
+  const label = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-secondary)', marginBottom: 6, display: 'block' };
   const textareaStyle = {
     width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 10,
-    border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)',
-    color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit', resize: 'vertical',
+    border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)',
+    color: 'var(--as-text-primary)', fontSize: 15, fontFamily: 'inherit', resize: 'vertical',
   };
   const section = { marginBottom: 18 };
   const footerBtn = (primary) => ({
     minHeight: 44, padding: '0 18px', borderRadius: 10,
-    border: primary ? 'none' : '1.5px solid var(--em-border-default)',
-    backgroundColor: primary ? 'var(--em-accent)' : 'var(--em-bg-card)',
-    color: primary ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
+    border: primary ? 'none' : '1.5px solid var(--as-border-default)',
+    backgroundColor: primary ? 'var(--as-accent)' : 'var(--as-bg-card)',
+    color: primary ? 'var(--as-text-inverse)' : 'var(--as-text-primary)',
     fontSize: 15, fontWeight: 600, cursor: 'pointer',
   });
 
@@ -61,7 +61,7 @@ export default function LocationFormSheet({ location, onClose }) {
       </div>
       <div style={section}>
         <Input id="l-addr" label="Address" type="text" value={form.address} onChange={(e) => patch({ address: e.target.value })} placeholder="75 Grasslands Rd, Valhalla, NY 10595" required />
-        <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 4 }}>
+        <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)', marginTop: 4 }}>
           Coordinates auto-fetched on save.
         </div>
       </div>
@@ -77,8 +77,8 @@ export default function LocationFormSheet({ location, onClose }) {
       <div style={{
         position: 'sticky', bottom: 0, marginTop: 'auto',
         padding: '12px 0 calc(12px + env(safe-area-inset-bottom))',
-        borderTop: '1px solid var(--em-border-default)',
-        backgroundColor: 'var(--em-bg-card)',
+        borderTop: '1px solid var(--as-border-default)',
+        backgroundColor: 'var(--as-bg-card)',
         display: 'flex', justifyContent: 'space-between', gap: 8,
       }}>
         <button type="button" onClick={onClose} style={footerBtn(false)} aria-label="Cancel">Cancel</button>

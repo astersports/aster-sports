@@ -13,17 +13,17 @@ export default function RsvpSummary({ roster, rsvps }) {
     <div style={{ marginBottom: 16 }}>
       {/* Colored bar */}
       <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', marginBottom: 8 }}>
-        {going > 0 && <div style={{ width: `${pct(going)}%`, backgroundColor: 'var(--em-success)' }} />}
-        {maybe > 0 && <div style={{ width: `${pct(maybe)}%`, backgroundColor: 'var(--em-warning)' }} />}
-        {notGoing > 0 && <div style={{ width: `${pct(notGoing)}%`, backgroundColor: 'var(--em-danger)' }} />}
-        {noResponse > 0 && <div style={{ width: `${pct(noResponse)}%`, backgroundColor: 'var(--em-neutral)' }} />}
+        {going > 0 && <div style={{ width: `${pct(going)}%`, backgroundColor: 'var(--as-success)' }} />}
+        {maybe > 0 && <div style={{ width: `${pct(maybe)}%`, backgroundColor: 'var(--as-warning)' }} />}
+        {notGoing > 0 && <div style={{ width: `${pct(notGoing)}%`, backgroundColor: 'var(--as-danger)' }} />}
+        {noResponse > 0 && <div style={{ width: `${pct(noResponse)}%`, backgroundColor: 'var(--as-neutral)' }} />}
       </div>
       {/* Counts */}
-      <div style={{ display: 'flex', gap: 12, fontSize: 13, color: 'var(--em-text-secondary)', flexWrap: 'wrap' }}>
-        <span><strong style={{ color: 'var(--em-success)' }}>{going}</strong> Going</span>
-        {maybe > 0 && <span><strong style={{ color: 'var(--em-warning)' }}>{maybe}</strong> Maybe</span>}
-        <span><strong style={{ color: 'var(--em-danger)' }}>{notGoing}</strong> Not Going</span>
-        <span><strong style={{ color: 'var(--em-neutral)' }}>{noResponse}</strong> No Response</span>
+      <div style={{ display: 'flex', gap: 12, fontSize: 13, color: 'var(--as-text-secondary)', flexWrap: 'wrap' }}>
+        <span><strong style={{ color: 'var(--as-success)' }}>{going}</strong> Going</span>
+        {maybe > 0 && <span><strong style={{ color: 'var(--as-warning)' }}>{maybe}</strong> Maybe</span>}
+        <span><strong style={{ color: 'var(--as-danger)' }}>{notGoing}</strong> Not Going</span>
+        <span><strong style={{ color: 'var(--as-neutral)' }}>{noResponse}</strong> No Response</span>
       </div>
     </div>
   );

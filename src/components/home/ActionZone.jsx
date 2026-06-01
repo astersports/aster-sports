@@ -59,13 +59,13 @@ export default function ActionZone({ items, loading, sectionKey = 'action-zone' 
       {isMinimal && (
         <div
           style={{
-            backgroundColor: 'var(--em-bg-card)',
+            backgroundColor: 'var(--as-bg-card)',
             borderRadius: 10,
-            border: '1px solid var(--em-border-default)',
-            boxShadow: 'var(--em-shadow-sm)',
+            border: '1px solid var(--as-border-default)',
+            boxShadow: 'var(--as-shadow-sm)',
             padding: '12px 14px',
             fontSize: 14,
-            color: 'var(--em-text-secondary)',
+            color: 'var(--as-text-secondary)',
           }}
         >
           {count === 1 ? '1 item needs your attention' : `${count} items need your attention`} — tap the density toggle to expand.
@@ -74,10 +74,10 @@ export default function ActionZone({ items, loading, sectionKey = 'action-zone' 
       {!isMinimal && (
       <ul
         style={{
-          backgroundColor: 'var(--em-bg-card)',
+          backgroundColor: 'var(--as-bg-card)',
           borderRadius: 10,
-          border: '1px solid var(--em-border-default)',
-          boxShadow: 'var(--em-shadow-sm)',
+          border: '1px solid var(--as-border-default)',
+          boxShadow: 'var(--as-shadow-sm)',
           overflow: 'hidden',
           padding: 0,
           margin: 0,
@@ -93,16 +93,16 @@ export default function ActionZone({ items, loading, sectionKey = 'action-zone' 
           <li
             key={`${item.kind || 'item'}:${item.event_id || item.id}:${item.player_id || ''}`}
             style={{
-              borderTop: idx === 0 ? 'none' : '1px solid var(--em-border-subtle)',
+              borderTop: idx === 0 ? 'none' : '1px solid var(--as-border-subtle)',
             }}
           >
             <Link
               to={href}
-              className="em-press"
+              className="as-press"
               style={{
                 display: 'block',
                 padding: '12px 14px',
-                color: 'var(--em-text-primary)',
+                color: 'var(--as-text-primary)',
                 textDecoration: 'none',
                 fontSize: 14,
               }}
@@ -113,25 +113,25 @@ export default function ActionZone({ items, loading, sectionKey = 'action-zone' 
                   style={{
                     flex: '0 0 6px',
                     alignSelf: 'stretch',
-                    backgroundColor: item.team_color || 'var(--em-warning)',
+                    backgroundColor: item.team_color || 'var(--as-warning)',
                     borderRadius: 2,
                     minHeight: 24,
                     marginTop: 2,
                   }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, color: 'var(--em-text-primary)' }}>
+                  <div style={{ fontWeight: 600, color: 'var(--as-text-primary)' }}>
                     {item.primary || `${item.kid_first_name}: action needed`}
                   </div>
                   {(item.start_at || item.event_title || item.secondary) && (
-                    <div style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginTop: 2 }}>
+                    <div style={{ color: 'var(--as-text-secondary)', fontSize: 13, marginTop: 2 }}>
                       {item.secondary || [formatWhen(item.start_at), item.event_title].filter(Boolean).join(' · ')}
                     </div>
                   )}
                 </div>
                 <span
                   aria-hidden="true"
-                  style={{ color: 'var(--em-text-tertiary)', fontSize: 18, marginLeft: 4 }}
+                  style={{ color: 'var(--as-text-tertiary)', fontSize: 18, marginLeft: 4 }}
                 >
                   ›
                 </span>

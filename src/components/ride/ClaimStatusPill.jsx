@@ -6,11 +6,11 @@
 import { AlertCircle, Ban, Check, Clock, X } from 'lucide-react';
 
 const STATUS_VARIANTS = {
-  confirmed: { label: 'Confirmed', icon: Check, fg: 'var(--em-success)', bg: 'var(--em-success-soft)' },
-  pending: { label: 'Pending', icon: Clock, fg: 'var(--em-warning)', bg: 'var(--em-warning-soft)' },
-  waitlisted: { label: 'Waitlist', icon: AlertCircle, fg: 'var(--em-accent)', bg: 'var(--em-accent-soft)' },
-  declined: { label: 'Declined', icon: X, fg: 'var(--em-danger)', bg: 'var(--em-danger-soft)' },
-  cancelled: { label: 'Cancelled', icon: Ban, fg: 'var(--em-text-tertiary)', bg: 'var(--em-bg-secondary)' },
+  confirmed: { label: 'Confirmed', icon: Check, fg: 'var(--as-success)', bg: 'var(--as-success-soft)' },
+  pending: { label: 'Pending', icon: Clock, fg: 'var(--as-warning)', bg: 'var(--as-warning-soft)' },
+  waitlisted: { label: 'Waitlist', icon: AlertCircle, fg: 'var(--as-accent)', bg: 'var(--as-accent-soft)' },
+  declined: { label: 'Declined', icon: X, fg: 'var(--as-danger)', bg: 'var(--as-danger-soft)' },
+  cancelled: { label: 'Cancelled', icon: Ban, fg: 'var(--as-text-tertiary)', bg: 'var(--as-bg-secondary)' },
 };
 
 export default function ClaimStatusPill({ claim }) {

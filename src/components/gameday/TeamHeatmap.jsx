@@ -8,15 +8,15 @@ import LoadingSkeleton from '../shared/LoadingSkeleton';
 import TeamPulseScrollFade from './TeamPulseScrollFade';
 
 const CELL_COLORS = {
-  attended: { bg: 'var(--em-success)', border: 'none' },
-  no_show: { bg: 'transparent', border: '2px solid var(--em-danger)', icon: '✕' },
-  declined: { bg: 'var(--em-bg-tertiary)', border: 'none' },
-  rsvp_yes: { bg: 'transparent', border: '2px solid var(--em-success)' },
-  rsvp_maybe: { bg: 'transparent', border: '2px solid var(--em-warning)' },
-  rsvp_no: { bg: 'var(--em-bg-tertiary)', border: 'none' },
-  no_response: { bg: 'transparent', border: '1px solid var(--em-border-default)' },
-  no_response_past: { bg: 'transparent', border: '1px dashed var(--em-border-default)' },
-  not_applicable: { bg: 'var(--em-bg-secondary)', border: 'none', icon: '—' },
+  attended: { bg: 'var(--as-success)', border: 'none' },
+  no_show: { bg: 'transparent', border: '2px solid var(--as-danger)', icon: '✕' },
+  declined: { bg: 'var(--as-bg-tertiary)', border: 'none' },
+  rsvp_yes: { bg: 'transparent', border: '2px solid var(--as-success)' },
+  rsvp_maybe: { bg: 'transparent', border: '2px solid var(--as-warning)' },
+  rsvp_no: { bg: 'var(--as-bg-tertiary)', border: 'none' },
+  no_response: { bg: 'transparent', border: '1px solid var(--as-border-default)' },
+  no_response_past: { bg: 'transparent', border: '1px dashed var(--as-border-default)' },
+  not_applicable: { bg: 'var(--as-bg-secondary)', border: 'none', icon: '—' },
 };
 
 // 2026-05-21 (Teams audit A3) — readable status strings for SR aria-labels
@@ -78,8 +78,8 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle, s
   return (
     <CollapsibleSection title={pulseTitle} sectionKey="heatmap" defaultOpen={false}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 16px 8px' }}>
-        <button type="button" onClick={onRangeToggle} className="em-press" style={{
-          fontSize: 12, fontWeight: 500, color: 'var(--em-accent)', background: 'var(--em-accent-soft)',
+        <button type="button" onClick={onRangeToggle} className="as-press" style={{
+          fontSize: 12, fontWeight: 500, color: 'var(--as-accent)', background: 'var(--as-accent-soft)',
           border: 'none', borderRadius: 6, padding: '4px 10px', minHeight: 28,
         }}>
           {rangeLabel}
@@ -96,18 +96,18 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle, s
 
       <TeamPulseScrollFade>
         <div role="grid" aria-label={`${pulseLabel} attendance grid — ${rangeLabel}, ${visibleGrid.length} ${visibleGrid.length === 1 ? 'player' : 'players'} across ${events.length} ${events.length === 1 ? 'event' : 'events'}`} style={{ display: 'grid', gridTemplateColumns: `140px repeat(${events.length}, 32px) 80px`, gap: 3, alignItems: 'center' }}>
-          <div role="columnheader" style={{ fontSize: 10, fontWeight: 600, color: 'var(--em-text-tertiary)' }}>Player</div>
+          <div role="columnheader" style={{ fontSize: 10, fontWeight: 600, color: 'var(--as-text-tertiary)' }}>Player</div>
           {events.map((e) => (
-            <div key={e.id} role="columnheader" style={{ fontSize: 9, color: 'var(--em-text-tertiary)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+            <div key={e.id} role="columnheader" style={{ fontSize: 9, color: 'var(--as-text-tertiary)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden' }}>
               {new Date(e.start_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', timeZone: 'America/New_York' })}
             </div>
           ))}
-          <div role="columnheader" style={{ fontSize: 10, fontWeight: 600, color: 'var(--em-text-tertiary)', textAlign: 'right' }}>ATT%</div>
+          <div role="columnheader" style={{ fontSize: 10, fontWeight: 600, color: 'var(--as-text-tertiary)', textAlign: 'right' }}>ATT%</div>
 
           {visibleGrid.map((row) => (
             <div key={row.player.id} role="row" style={{ display: 'contents' }}>
-              <div role="rowheader" style={{ fontSize: 13, fontWeight: 500, color: 'var(--em-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginRight: 4 }}>#{row.player.jersey_number || '—'}</span>
+              <div role="rowheader" style={{ fontSize: 13, fontWeight: 500, color: 'var(--as-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)', marginRight: 4 }}>#{row.player.jersey_number || '—'}</span>
                 {row.player.first_name}
               </div>
               {row.cells.map((c, i) => {
@@ -115,14 +115,14 @@ export default function TeamHeatmap({ teamId, range = 'season', onRangeToggle, s
                 const evt = events[i];
                 const evtLabel = evt ? `${evt.title || 'Event'} — ${new Date(evt.start_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}` : 'Event';
                 return (
-                  <div key={evt?.id || i} role="gridcell" aria-label={`${row.player.first_name} — ${evtLabel} — ${CELL_STATUS_LABELS[c.state] || 'no response'}`} style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: s.bg, border: s.border, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: 'var(--em-danger)' }}>
+                  <div key={evt?.id || i} role="gridcell" aria-label={`${row.player.first_name} — ${evtLabel} — ${CELL_STATUS_LABELS[c.state] || 'no response'}`} style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: s.bg, border: s.border, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: 'var(--as-danger)' }}>
                     {s.icon || ''}
                   </div>
                 );
               })}
               <div role="gridcell" aria-label={`${row.player.first_name} attendance ${row.pct != null ? `${row.pct} percent` : 'no data'}${row.streak >= 3 ? `, ${row.streak} event streak` : ''}`} style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: 17, fontWeight: 800, color: row.pct !== null && row.pct < 60 ? 'var(--em-danger)' : row.pct !== null && row.pct >= 80 ? 'var(--em-success)' : 'var(--em-text-primary)' }}>{row.pct != null ? `${row.pct}%` : '—'}</span>
-                {row.streak >= 3 && <div style={{ fontSize: 11, color: 'var(--em-warning)' }}>🔥 {row.streak}</div>}
+                <span style={{ fontSize: 17, fontWeight: 800, color: row.pct !== null && row.pct < 60 ? 'var(--as-danger)' : row.pct !== null && row.pct >= 80 ? 'var(--as-success)' : 'var(--as-text-primary)' }}>{row.pct != null ? `${row.pct}%` : '—'}</span>
+                {row.streak >= 3 && <div style={{ fontSize: 11, color: 'var(--as-warning)' }}>🔥 {row.streak}</div>}
               </div>
             </div>
           ))}

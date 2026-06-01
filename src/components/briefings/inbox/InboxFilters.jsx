@@ -15,11 +15,11 @@ import { useAuth } from '../../../context/AuthContext';
 import { KIND_METADATA, KIND_ORDER } from '../../../lib/briefings/kindMetadata';
 
 const dropdownWrap = { display: 'flex', gap: 8, flexWrap: 'wrap' };
-const dropdownBtn = (active) => ({ minHeight: 36, padding: '0 12px', borderRadius: 9999, fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid var(--em-border-default)', backgroundColor: active ? 'var(--em-accent-soft)' : 'var(--em-bg-card)', color: 'var(--em-text-primary)' });
-const menuStyle = { position: 'absolute', top: '100%', left: 0, marginTop: 4, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)', borderRadius: 10, padding: 6, minWidth: 180, zIndex: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' };
-const menuItem = (active) => ({ width: '100%', minHeight: 36, padding: '0 10px', borderRadius: 6, fontSize: 13, textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', border: 'none', backgroundColor: active ? 'var(--em-accent-soft)' : 'transparent', color: 'var(--em-text-primary)', display: 'flex', alignItems: 'center', gap: 6 });
-const chipStyle = { display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: 9999, fontSize: 12, backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)' };
-const chipX = { background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', color: 'var(--em-text-tertiary)' };
+const dropdownBtn = (active) => ({ minHeight: 36, padding: '0 12px', borderRadius: 9999, fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid var(--as-border-default)', backgroundColor: active ? 'var(--as-accent-soft)' : 'var(--as-bg-card)', color: 'var(--as-text-primary)' });
+const menuStyle = { position: 'absolute', top: '100%', left: 0, marginTop: 4, backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)', borderRadius: 10, padding: 6, minWidth: 180, zIndex: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' };
+const menuItem = (active) => ({ width: '100%', minHeight: 36, padding: '0 10px', borderRadius: 6, fontSize: 13, textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', border: 'none', backgroundColor: active ? 'var(--as-accent-soft)' : 'transparent', color: 'var(--as-text-primary)', display: 'flex', alignItems: 'center', gap: 6 });
+const chipStyle = { display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: 9999, fontSize: 12, backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)' };
+const chipX = { background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', color: 'var(--as-text-tertiary)' };
 
 // Wave 4.1d-2 §1.3 — added 'Last 14 days' as the new default.
 // Wave 4.8 UX (PR #123) — 'today' and 'next_7_days' removed; chip set
@@ -104,7 +104,7 @@ export default function InboxFilters({ filters, onChange, onClear }) {
           {filters.kind && <span style={chipStyle}>Kind: {kindLabel} <button type="button" style={chipX} onClick={() => onChange({ kind: null })}><X size={12} /></button></span>}
           {filters.teams?.map((id) => { const t = teams.find((x) => x.id === id); return t && <span key={id} style={chipStyle}>{t.name} <button type="button" style={chipX} onClick={() => toggleTeam(id)}><X size={12} /></button></span>; })}
           {filters.dateRange !== 'all' && <span style={chipStyle}>{dateLabel} <button type="button" style={chipX} onClick={() => onChange({ dateRange: 'all' })}><X size={12} /></button></span>}
-          <button type="button" onClick={onClear} style={{ ...chipStyle, backgroundColor: 'transparent', border: '1px dashed var(--em-border-default)', cursor: 'pointer' }}>Clear all</button>
+          <button type="button" onClick={onClear} style={{ ...chipStyle, backgroundColor: 'transparent', border: '1px dashed var(--as-border-default)', cursor: 'pointer' }}>Clear all</button>
         </div>
       )}
     </div>

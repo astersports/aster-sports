@@ -56,14 +56,14 @@ export default function SeasonRolloverPage() {
     locations: plan.carryLocations ? locationCount : 0,
   };
 
-  if (!season) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>No active season found.</div>;
+  if (!season) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>No active season found.</div>;
 
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--em-border-default)' }}>
-        <button type="button" onClick={() => navigate(-1)} style={{ fontSize: 15, color: 'var(--em-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Cancel</button>
-        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>Season Rollover</span>
-        <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>Step {step}/5</span>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, backgroundColor: 'var(--as-bg-page)', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--as-border-default)' }}>
+        <button type="button" onClick={() => navigate(-1)} style={{ fontSize: 15, color: 'var(--as-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Cancel</button>
+        <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>Season Rollover</span>
+        <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>Step {step}/5</span>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
         {step === 1 && <StepArchive season={season} teams={teams} />}
@@ -72,7 +72,7 @@ export default function SeasonRolloverPage() {
         {step === 4 && <StepDetails plan={plan} setPlan={setPlan} locationCount={locationCount} />}
         {step === 5 && <StepPreview plan={plan} stats={stats} />}
       </div>
-      <div style={{ display: 'flex', gap: 8, padding: '12px 16px', paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)', borderTop: '1px solid var(--em-border-default)' }}>
+      <div style={{ display: 'flex', gap: 8, padding: '12px 16px', paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)', borderTop: '1px solid var(--as-border-default)' }}>
         {step > 1 && <Button variant="secondary" onClick={() => setStep(step - 1)} style={{ flex: 1 }}>Back</Button>}
         {step < 5 && <Button onClick={() => setStep(step + 1)} style={{ flex: 1 }}>Next</Button>}
         {step === 5 && <Button onClick={() => setConfirmCommit(true)} disabled={loading || !plan.newSeasonName} style={{ flex: 1 }}>{loading ? 'Rolling over…' : 'Roll Over'}</Button>}

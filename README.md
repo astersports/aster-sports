@@ -1,4 +1,4 @@
-# Ember
+# Aster Sports
 
 Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, Google Sheets, email/text, and spreadsheets with one mobile-first platform.
 
@@ -71,7 +71,7 @@ git log --oneline HEAD..origin/main   # behind?
 
 These are full-detail in [`CLAUDE.md`](./CLAUDE.md) §0 and §11 — short list here:
 
-- **No hardcoded hex** in components. Use `var(--em-*)` tokens. Only exception: `team_color` inline from the database.
+- **No hardcoded hex** in components. Use `var(--as-*)` tokens. Only exception: `team_color` inline from the database.
 - **No invented CSS tokens.** The token list in CLAUDE.md §3 is exhaustive.
 - **Files >150 lines are a P0 blocker.** Split in the same commit.
 - **Forms with 3+ fields → `FullScreenForm`**, not `BottomSheet`.

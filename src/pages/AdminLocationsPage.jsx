@@ -40,7 +40,7 @@ export default function LocationsPage() {
       <AdminBackHeader />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', margin: 0 }}>Locations</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', margin: 0 }}>Locations</h1>
           <DensityToggle sectionKey="locations-list" />
         </div>
         {isStaff && (
@@ -66,24 +66,24 @@ export default function LocationsPage() {
       />
 
       {loading && locations.length === 0 && (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--em-text-secondary)', fontSize: 15 }}>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--as-text-secondary)', fontSize: 15 }}>
           Loading…
         </div>
       )}
 
       {error && (
-        <div style={{ padding: 16, color: 'var(--em-danger)', fontSize: 13 }}>
+        <div style={{ padding: 16, color: 'var(--as-danger)', fontSize: 13 }}>
           {error.message || 'Failed to load locations'}
         </div>
       )}
 
       {!loading && !error && locations.length === 0 && (
         <div style={{ padding: '48px 16px', textAlign: 'center' }}>
-          <MapPin size={32} strokeWidth={1.5} color="var(--em-text-tertiary)" style={{ marginBottom: 12 }} />
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 4 }}>
+          <MapPin size={32} strokeWidth={1.5} color="var(--as-text-tertiary)" style={{ marginBottom: 12 }} />
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 4 }}>
             {search ? `No matches for "${search}"` : 'No locations yet'}
           </div>
-          <div style={{ fontSize: 13, color: 'var(--em-text-secondary)' }}>
+          <div style={{ fontSize: 13, color: 'var(--as-text-secondary)' }}>
             {isStaff && !search ? 'Tap "+ New" to add your first venue.' : ''}
           </div>
         </div>

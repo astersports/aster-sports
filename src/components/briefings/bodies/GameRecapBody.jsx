@@ -22,10 +22,10 @@ export function validate(v) {
   return errs;
 }
 
-const cardStyle = { padding: 12, borderRadius: 10, backgroundColor: 'var(--em-bg-secondary)', border: '1px solid var(--em-border-default)' };
-const valueStyle = { fontSize: 15, color: 'var(--em-text-primary)', fontWeight: 500 };
-const mutedStyle = { fontSize: 13, color: 'var(--em-text-tertiary)' };
-const editLink = { fontSize: 12, color: 'var(--em-accent)', textDecoration: 'none', marginLeft: 8 };
+const cardStyle = { padding: 12, borderRadius: 10, backgroundColor: 'var(--as-bg-secondary)', border: '1px solid var(--as-border-default)' };
+const valueStyle = { fontSize: 15, color: 'var(--as-text-primary)', fontWeight: 500 };
+const mutedStyle = { fontSize: 13, color: 'var(--as-text-tertiary)' };
+const editLink = { fontSize: 12, color: 'var(--as-accent)', textDecoration: 'none', marginLeft: 8 };
 
 function ReadOnlyRow({ label, present, value, missing, eventId, linkLabel = 'Update in Quick Score' }) {
   return (
@@ -47,8 +47,8 @@ export default function GameRecapBody({ value, onChange, hasParentTournament, an
 
   if (error && error.name === 'GameRecapNotPublishedError') {
     return (
-      <div style={{ ...cardStyle, borderColor: 'var(--em-warning)', backgroundColor: 'var(--em-warning-soft)' }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--em-text-primary)' }}>Score not published yet</div>
+      <div style={{ ...cardStyle, borderColor: 'var(--as-warning)', backgroundColor: 'var(--as-warning-soft)' }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--as-text-primary)' }}>Score not published yet</div>
         <div style={{ ...mutedStyle, marginTop: 4 }}>Publish via Quick Score first, then return here.</div>
         {anchorId && <Link to={`/events/${anchorId}/live`} style={{ ...editLink, marginLeft: 0, marginTop: 8, display: 'inline-block' }}>Open Quick Score →</Link>}
       </div>
@@ -88,7 +88,7 @@ export default function GameRecapBody({ value, onChange, hasParentTournament, an
         <label>
           <span style={labelStyle}>League/bracket CTA label (optional)</span>
           <input type="text" value={v.tourney_link_label} onChange={(e) => set({ tourney_link_label: e.target.value })} style={inputStyle} placeholder="VIEW LEAGUE STANDINGS" />
-          <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 4, display: 'block' }}>
+          <span style={{ fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 4, display: 'block' }}>
             URL is pulled from this game's parent tournament/league SE Tourney link.
           </span>
         </label>

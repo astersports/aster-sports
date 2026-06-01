@@ -75,10 +75,10 @@ export default function EventDetailPage() {
   const { activatedSet, toggle: toggleActivation } = useEventActivations(event?.id, canActivateAcademy);
   const lock = useEventRosterLock(event?.id);
 
-  if (eventLoading) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}><EventDetailHero.Skeleton /></div>;
-  if (!event) return <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh', padding: 24, color: 'var(--em-text-tertiary)' }}>Event not found.</div>;
+  if (eventLoading) return <div style={{ backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}><EventDetailHero.Skeleton /></div>;
+  if (!event) return <div style={{ backgroundColor: 'var(--as-bg-page)', minHeight: '100vh', padding: 24, color: 'var(--as-text-tertiary)' }}>Event not found.</div>;
   const team = event.teams;
-  const teamColor = team?.team_color || 'var(--em-text-tertiary)';
+  const teamColor = team?.team_color || 'var(--as-text-tertiary)';
   const rsvpMap = {};
   rsvps.forEach((r) => { rsvpMap[r.player_id] = r.response; });
 
@@ -98,16 +98,16 @@ export default function EventDetailPage() {
   };
 
   return (
-    <div style={{ backgroundColor: 'var(--em-bg-page)', minHeight: '100vh' }}>
+    <div style={{ backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} onCancel={() => setEventStatus('cancelled')} onReinstate={() => setEventStatus('scheduled')} />
       <EventDetailHero event={event} isStaff={isStaff} isPast={isPast} rsvps={rsvps} roster={roster} onEnterScore={() => setShowScoreSheet(true)} onLockRoster={() => document.querySelector('[data-section="lock-roster"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} onNotify={() => window.location.assign(`/admin/briefings/compose?anchor=event&id=${event.id}`)} onRsvpChange={refetchRsvps} />
       {isStaff && <GameDayMode event={event} isStaff={isStaff} isGameType={isGameType} />}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
       {isStaff && !isPast && <div data-section="lock-roster"><EventRosterLockSection event={event} isStaff={isStaff} rsvps={rsvps} roster={roster} onChange={refetchAll} /></div>}
       {event.parent_event_id && (
-        <div style={{ padding: '6px 16px', fontSize: 13, color: 'var(--em-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ padding: '6px 16px', fontSize: 13, color: 'var(--as-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Repeat size={12} strokeWidth={1.75} /> Part of a recurring series
-          {isStaff && <button type="button" onClick={() => setConfirmAction({ type: 'removeSeries' })} style={{ fontSize: 13, color: 'var(--em-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>Remove from series</button>}
+          {isStaff && <button type="button" onClick={() => setConfirmAction({ type: 'removeSeries' })} style={{ fontSize: 13, color: 'var(--as-accent)', background: 'none', border: 'none', padding: 0, marginLeft: 'auto' }}>Remove from series</button>}
         </div>
       )}
 

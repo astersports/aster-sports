@@ -53,52 +53,52 @@ export default function OfferCard({
   return (
     <div
       style={{
-        backgroundColor: 'var(--em-bg-card)',
-        border: '1px solid var(--em-border-default)',
+        backgroundColor: 'var(--as-bg-card)',
+        border: '1px solid var(--as-border-default)',
         borderRadius: 10,
         marginBottom: 10,
         overflow: 'hidden',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', borderBottom: density === 'minimal' ? 'none' : '1px solid var(--em-border-subtle)' }}>
-        <Car size={16} strokeWidth={1.75} color="var(--em-text-secondary)" aria-hidden="true" />
-        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', borderBottom: density === 'minimal' ? 'none' : '1px solid var(--as-border-subtle)' }}>
+        <Car size={16} strokeWidth={1.75} color="var(--as-text-secondary)" aria-hidden="true" />
+        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {driverName}
         </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', letterSpacing: '0.02em' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, color: 'var(--as-text-tertiary)', letterSpacing: '0.02em' }}>
           <Users size={11} strokeWidth={1.75} aria-hidden="true" />
           {seatsAvailable}/{offer.seats_offered}
         </span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--em-bg-secondary)' }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--as-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--as-bg-secondary)' }}>
           {rideTypeLabel}
         </span>
         <ClaimStatusPill claim={myClaim} />
       </div>
 
       {density !== 'minimal' && (
-        <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, color: 'var(--em-text-secondary)' }}>
+        <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, color: 'var(--as-text-secondary)' }}>
           {offer.pickup_location && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <MapPin size={13} strokeWidth={1.75} color="var(--em-text-tertiary)" aria-hidden="true" />
+              <MapPin size={13} strokeWidth={1.75} color="var(--as-text-tertiary)" aria-hidden="true" />
               <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{offer.pickup_location}</span>
-              {formatDayTime(offer.pickup_time) && <span style={{ color: 'var(--em-text-tertiary)', fontSize: 12 }}>{formatDayTime(offer.pickup_time)}</span>}
+              {formatDayTime(offer.pickup_time) && <span style={{ color: 'var(--as-text-tertiary)', fontSize: 12 }}>{formatDayTime(offer.pickup_time)}</span>}
             </div>
           )}
           {density !== 'minimal' && offer.ride_type === 'round_trip' && offer.return_location && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Repeat size={13} strokeWidth={1.75} color="var(--em-text-tertiary)" aria-hidden="true" />
+              <Repeat size={13} strokeWidth={1.75} color="var(--as-text-tertiary)" aria-hidden="true" />
               <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{offer.return_location}</span>
-              {formatDayTime(offer.return_time) && <span style={{ color: 'var(--em-text-tertiary)', fontSize: 12 }}>{formatDayTime(offer.return_time)}</span>}
+              {formatDayTime(offer.return_time) && <span style={{ color: 'var(--as-text-tertiary)', fontSize: 12 }}>{formatDayTime(offer.return_time)}</span>}
             </div>
           )}
           {density !== 'minimal' && offer.vehicle_description && (
-            <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{offer.vehicle_description}</div>
+            <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>{offer.vehicle_description}</div>
           )}
           {density !== 'minimal' && offer.notes && (
-            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', fontStyle: 'italic' }}>{offer.notes}</div>
+            <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', fontStyle: 'italic' }}>{offer.notes}</div>
           )}
           {showDriverPhone && (
-            <a href={`tel:${offer.driver_phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--em-accent)', textDecoration: 'none', fontWeight: 500 }} aria-label={`Call driver at ${offer.driver_phone}`}>
+            <a href={`tel:${offer.driver_phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--as-accent)', textDecoration: 'none', fontWeight: 500 }} aria-label={`Call driver at ${offer.driver_phone}`}>
               <Phone size={13} strokeWidth={1.75} aria-hidden="true" />
               {offer.driver_phone}
             </a>
@@ -107,8 +107,8 @@ export default function OfferCard({
       )}
 
       {isDriver && density !== 'minimal' && offerClaimers.length > 0 && (
-        <div style={{ borderTop: '1px solid var(--em-border-subtle)', padding: '8px 14px 6px' }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+        <div style={{ borderTop: '1px solid var(--as-border-subtle)', padding: '8px 14px 6px' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--as-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
             {offerClaimers.length} {offerClaimers.length === 1 ? 'rider' : 'riders'}
           </div>
           {offerClaimers.map(({ claim, riderName, childName }) => (
@@ -118,19 +118,19 @@ export default function OfferCard({
       )}
       <div style={{ padding: '8px 14px 12px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         {isDriver ? (
-          <button type="button" onClick={handleCancelOffer} className="em-press" aria-label="Cancel this ride offer" style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-danger)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button type="button" onClick={handleCancelOffer} className="as-press" aria-label="Cancel this ride offer" style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-danger)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             Cancel offer
           </button>
         ) : canModerate ? (
-          <button type="button" onClick={handleCancelOffer} className="em-press" aria-label="Cancel this ride offer (admin override)" style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-danger)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button type="button" onClick={handleCancelOffer} className="as-press" aria-label="Cancel this ride offer (admin override)" style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-danger)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             Override · Cancel
           </button>
         ) : myClaim && myClaim.status !== 'cancelled' && myClaim.status !== 'declined' ? (
-          <button type="button" onClick={handleCancelClaim} className="em-press" aria-label="Cancel your claim on this ride" style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button type="button" onClick={handleCancelClaim} className="as-press" aria-label="Cancel your claim on this ride" style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             Cancel my seat
           </button>
         ) : (
-          <button type="button" onClick={handleClaim} disabled={isFull} className="em-press" aria-label={isFull ? 'No seats available' : 'Claim a seat on this ride'} style={{ minHeight: 44, padding: '0 14px', borderRadius: 8, border: 'none', backgroundColor: isFull ? 'var(--em-bg-secondary)' : 'var(--em-accent)', color: isFull ? 'var(--em-text-tertiary)' : 'var(--em-text-inverse)', fontSize: 13, fontWeight: 600, cursor: isFull ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <button type="button" onClick={handleClaim} disabled={isFull} className="as-press" aria-label={isFull ? 'No seats available' : 'Claim a seat on this ride'} style={{ minHeight: 44, padding: '0 14px', borderRadius: 8, border: 'none', backgroundColor: isFull ? 'var(--as-bg-secondary)' : 'var(--as-accent)', color: isFull ? 'var(--as-text-tertiary)' : 'var(--as-text-inverse)', fontSize: 13, fontWeight: 600, cursor: isFull ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {isFull ? 'Full' : (<>Claim a seat <ArrowRight size={13} strokeWidth={1.75} aria-hidden="true" /></>)}
           </button>
         )}

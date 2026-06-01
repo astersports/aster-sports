@@ -3,22 +3,22 @@
 // <720px where the 9-column table is unreadable on portrait phones.
 
 const STATUS_STYLES = {
-  valid:   { background: '#fff', borderColor: 'var(--em-border-default)' },
-  warning: { background: 'var(--em-warning-soft)', borderColor: 'var(--em-warning)' },
-  error:   { background: 'var(--em-danger-soft)', borderColor: 'var(--em-danger)' },
+  valid:   { background: '#fff', borderColor: 'var(--as-border-default)' },
+  warning: { background: 'var(--as-warning-soft)', borderColor: 'var(--as-warning)' },
+  error:   { background: 'var(--as-danger-soft)', borderColor: 'var(--as-danger)' },
 };
 const DEDUP_BADGES = {
-  new:       { text: 'NEW', color: 'var(--em-success)', bg: 'var(--em-success-soft)' },
-  updated:   { text: 'UPDATED', color: 'var(--em-warning)', bg: 'var(--em-warning-soft)' },
-  duplicate: { text: 'DUP', color: 'var(--em-text-tertiary)', bg: 'var(--em-bg-tertiary)' },
+  new:       { text: 'NEW', color: 'var(--as-success)', bg: 'var(--as-success-soft)' },
+  updated:   { text: 'UPDATED', color: 'var(--as-warning)', bg: 'var(--as-warning-soft)' },
+  duplicate: { text: 'DUP', color: 'var(--as-text-tertiary)', bg: 'var(--as-bg-tertiary)' },
 };
-const inputStyle = { width: '100%', minHeight: 40, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: '#fff', fontSize: 15, fontFamily: 'inherit' };
-const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 4, display: 'block' };
+const inputStyle = { width: '100%', minHeight: 40, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--as-border-default)', backgroundColor: '#fff', fontSize: 15, fontFamily: 'inherit' };
+const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', marginBottom: 4, display: 'block' };
 
 function StatusGlyph({ status }) {
-  if (status === 'valid') return <span style={{ fontSize: 13, color: 'var(--em-success)' }}>✓ valid</span>;
-  if (status === 'warning') return <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-warning)' }}>⚠ warning</span>;
-  return <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--em-danger)' }}>✗ error</span>;
+  if (status === 'valid') return <span style={{ fontSize: 13, color: 'var(--as-success)' }}>✓ valid</span>;
+  if (status === 'warning') return <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--as-warning)' }}>⚠ warning</span>;
+  return <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--as-danger)' }}>✗ error</span>;
 }
 
 function DedupBadge({ dedup }) {
@@ -71,10 +71,10 @@ export default function PreviewMobileCards({ rows, teamNames, onUpdateRow, onRem
               </div>
             </div>
             {r.messages?.length > 0 && (
-              <div style={{ fontSize: 12, color: 'var(--em-text-secondary)' }}>{r.messages.join('; ')}</div>
+              <div style={{ fontSize: 12, color: 'var(--as-text-secondary)' }}>{r.messages.join('; ')}</div>
             )}
-            <button type="button" onClick={() => onRemoveRow(i)} className="em-press"
-              style={{ alignSelf: 'flex-end', minHeight: 36, padding: '0 14px', borderRadius: 8, border: '1px solid var(--em-border-default)', backgroundColor: '#fff', color: 'var(--em-text-secondary)', fontSize: 13, cursor: 'pointer' }}>Remove row</button>
+            <button type="button" onClick={() => onRemoveRow(i)} className="as-press"
+              style={{ alignSelf: 'flex-end', minHeight: 36, padding: '0 14px', borderRadius: 8, border: '1px solid var(--as-border-default)', backgroundColor: '#fff', color: 'var(--as-text-secondary)', fontSize: 13, cursor: 'pointer' }}>Remove row</button>
           </div>
         );
       })}

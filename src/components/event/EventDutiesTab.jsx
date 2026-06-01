@@ -26,12 +26,12 @@ function EventDutiesTab({ eventId }) {
     <div style={{ padding: '16px 16px 32px' }}>
       {Object.entries(groups).map(([name, slots]) => (
         <div key={name} style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-secondary)', marginBottom: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--as-text-secondary)', marginBottom: 8 }}>
             {name}
           </div>
           <div style={{
-            backgroundColor: 'var(--em-bg-card)', borderRadius: 10,
-            border: '1px solid var(--em-border-default)', overflow: 'hidden',
+            backgroundColor: 'var(--as-bg-card)', borderRadius: 10,
+            border: '1px solid var(--as-border-default)', overflow: 'hidden',
           }}>
             {slots.map((slot, i) => {
               const claimed = !!slot.guardian_id || !!slot.claimed_by_name;
@@ -41,20 +41,20 @@ function EventDutiesTab({ eventId }) {
                 <div key={slot.id} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: '12px 14px',
-                  borderTop: i === 0 ? 'none' : '1px solid var(--em-border-subtle)',
+                  borderTop: i === 0 ? 'none' : '1px solid var(--as-border-subtle)',
                 }}>
-                  <div style={{ fontSize: 15, color: claimed ? 'var(--em-text-primary)' : 'var(--em-text-tertiary)' }}>
+                  <div style={{ fontSize: 15, color: claimed ? 'var(--as-text-primary)' : 'var(--as-text-tertiary)' }}>
                     {claimed ? (slot.claimed_by_name || 'Claimed') : 'Open'}
                   </div>
                   {!claimed && (
-                    <button type="button" onClick={() => claim(slot.id)} className="em-press"
-                      style={btnStyle('var(--em-accent)', 'var(--em-text-inverse)')}>
+                    <button type="button" onClick={() => claim(slot.id)} className="as-press"
+                      style={btnStyle('var(--as-accent)', 'var(--as-text-inverse)')}>
                       Claim
                     </button>
                   )}
                   {isMine && (
-                    <button type="button" onClick={() => unclaim(slot.id)} className="em-press"
-                      style={btnStyle('var(--em-bg-card)', 'var(--em-text-secondary)', true)}>
+                    <button type="button" onClick={() => unclaim(slot.id)} className="as-press"
+                      style={btnStyle('var(--as-bg-card)', 'var(--as-text-secondary)', true)}>
                       Release
                     </button>
                   )}
@@ -69,13 +69,13 @@ function EventDutiesTab({ eventId }) {
 }
 
 function Empty({ text }) {
-  return <div style={{ padding: 16, color: 'var(--em-text-tertiary)', fontSize: 15 }}>{text}</div>;
+  return <div style={{ padding: 16, color: 'var(--as-text-tertiary)', fontSize: 15 }}>{text}</div>;
 }
 
 const btnStyle = (bg, color, bordered) => ({
   minHeight: 44, padding: '0 14px', borderRadius: 8,
   backgroundColor: bg, color,
-  border: bordered ? '1px solid var(--em-border-default)' : 'none',
+  border: bordered ? '1px solid var(--as-border-default)' : 'none',
   fontSize: 13, fontWeight: 600,
 });
 

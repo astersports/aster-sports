@@ -12,12 +12,12 @@ import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 const ICON_MAP = { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy };
 
 const wrap = { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 };
-const headerStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 2 };
-const rowStyle = { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-subtle)', backgroundColor: 'var(--em-bg-card)', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' };
-const iconWrap = { width: 28, height: 28, borderRadius: 6, backgroundColor: 'var(--em-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 };
+const headerStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', marginBottom: 2 };
+const rowStyle = { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', minHeight: 44, borderRadius: 10, border: '1px solid var(--as-border-subtle)', backgroundColor: 'var(--as-bg-card)', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' };
+const iconWrap = { width: 28, height: 28, borderRadius: 6, backgroundColor: 'var(--as-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 };
 const bodyWrap = { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' };
-const titleStyle = { fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' };
-const subStyle = { fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 1 };
+const titleStyle = { fontSize: 14, fontWeight: 500, color: 'var(--as-text-primary)' };
+const subStyle = { fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 1 };
 
 function relTime(iso) {
   if (!iso) return '';
@@ -39,8 +39,8 @@ export default function DraftResumeRow({ onResume }) {
         const Icon = ICON_MAP[m.icon] || MessageSquare;
         const label = m.label || d.kind;
         return (
-          <button key={d.id} type="button" className="em-press" style={rowStyle} onClick={() => onResume(d)} aria-label={`Resume ${label} draft`}>
-            <span style={iconWrap}><Icon size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" aria-hidden="true" /></span>
+          <button key={d.id} type="button" className="as-press" style={rowStyle} onClick={() => onResume(d)} aria-label={`Resume ${label} draft`}>
+            <span style={iconWrap}><Icon size={16} strokeWidth={1.75} color="var(--as-text-tertiary)" aria-hidden="true" /></span>
             <span style={bodyWrap}>
               <span style={titleStyle}>{label}{d.subject ? ` · ${d.subject}` : ''}</span>
               <span style={subStyle}>Last edited {relTime(d.last_edited_at)}</span>

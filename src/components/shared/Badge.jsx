@@ -1,5 +1,5 @@
 // Small status pill used for RSVP state, event status, role tags, etc.
-// Variants map to the Ember status tokens — "soft" bg + solid text —
+// Variants map to the Aster Sports status tokens — "soft" bg + solid text —
 // which keeps contrast readable in both light and dark surfaces.
 //
 // Two shapes:
@@ -16,16 +16,16 @@
 //   subtle — muted neutral pair (lower-emphasis counts)
 
 const VARIANTS = {
-  success: { bg: 'var(--em-success-soft)', fg: 'var(--em-success)' },
-  warning: { bg: 'var(--em-warning-soft)', fg: 'var(--em-warning)' },
-  danger:  { bg: 'var(--em-danger-soft)',  fg: 'var(--em-danger)'  },
-  info:    { bg: 'var(--em-info-soft)',    fg: 'var(--em-info)'    },
-  neutral: { bg: 'var(--em-neutral-soft)', fg: 'var(--em-neutral)' },
-  academy: { bg: 'var(--em-academy-soft)', fg: 'var(--em-academy)' },
+  success: { bg: 'var(--as-success-soft)', fg: 'var(--as-success)' },
+  warning: { bg: 'var(--as-warning-soft)', fg: 'var(--as-warning)' },
+  danger:  { bg: 'var(--as-danger-soft)',  fg: 'var(--as-danger)'  },
+  info:    { bg: 'var(--as-info-soft)',    fg: 'var(--as-info)'    },
+  neutral: { bg: 'var(--as-neutral-soft)', fg: 'var(--as-neutral)' },
+  academy: { bg: 'var(--as-academy-soft)', fg: 'var(--as-academy)' },
   // Pill-mode-only variants below. Safe to use in rectangular mode too.
-  accent:  { bg: 'var(--em-accent-soft)',  fg: 'var(--em-accent)'  },
-  urgent:  { bg: 'var(--em-accent)',       fg: 'var(--em-text-inverse)' },
-  subtle:  { bg: 'var(--em-bg-tertiary)',  fg: 'var(--em-text-tertiary)' },
+  accent:  { bg: 'var(--as-accent-soft)',  fg: 'var(--as-accent)'  },
+  urgent:  { bg: 'var(--as-accent)',       fg: 'var(--as-text-inverse)' },
+  subtle:  { bg: 'var(--as-bg-tertiary)',  fg: 'var(--as-text-tertiary)' },
 };
 
 export default function Badge({ children, variant = 'neutral', className = '', pill = false, compact = false, style }) {

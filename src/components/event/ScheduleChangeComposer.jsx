@@ -12,9 +12,9 @@ import { useDigestRecipients } from '../../hooks/useDigestRecipients';
 import { useOrgSettings } from '../../hooks/useOrgSettings';
 import { useScheduleChangeAudit } from '../../hooks/useScheduleChangeAudit';
 
-const inputStyle = { width: '100%', minHeight: 88, padding: 10, borderRadius: 10, fontSize: 14, fontFamily: 'inherit', backgroundColor: 'var(--em-bg-tertiary)', border: '1.5px solid var(--em-border-default)', color: 'var(--em-text-primary)' };
-const btnPrimary = { width: '100%', minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' };
-const btnSecondary = { ...btnPrimary, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-secondary)' };
+const inputStyle = { width: '100%', minHeight: 88, padding: 10, borderRadius: 10, fontSize: 14, fontFamily: 'inherit', backgroundColor: 'var(--as-bg-tertiary)', border: '1.5px solid var(--as-border-default)', color: 'var(--as-text-primary)' };
+const btnPrimary = { width: '100%', minHeight: 44, borderRadius: 10, backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 15, fontWeight: 600, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' };
+const btnSecondary = { ...btnPrimary, backgroundColor: 'var(--as-bg-secondary)', color: 'var(--as-text-secondary)' };
 
 function fmt(ts) {
   if (!ts) return '';
@@ -62,28 +62,28 @@ export default function ScheduleChangeComposer({ event, diff, onClose, onDone })
   return (
     <FullScreenForm open onClose={onClose} title="Notify families">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 600, margin: '0 auto', padding: 16 }}>
-        <div style={{ padding: 14, border: '1px solid var(--em-border-default)', borderRadius: 10, backgroundColor: 'var(--em-bg-card)' }}>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--em-text-tertiary)', marginBottom: 6 }}>Previous</div>
-          <div style={{ fontSize: 14, color: 'var(--em-text-secondary)', textDecoration: 'line-through' }}>{fmt(diff?.before?.start_at)}{diff?.before?.location ? ` · ${diff.before.location}` : ''}{diff?.before?.opponent ? ` · vs ${diff.before.opponent}` : ''}</div>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--em-text-primary)', marginTop: 10, marginBottom: 6 }}>Updated</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--em-text-primary)' }}>{fmt(diff?.after?.start_at)}{diff?.after?.location ? ` · ${diff.after.location}` : ''}{diff?.after?.opponent ? ` · vs ${diff.after.opponent}` : ''}</div>
+        <div style={{ padding: 14, border: '1px solid var(--as-border-default)', borderRadius: 10, backgroundColor: 'var(--as-bg-card)' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--as-text-tertiary)', marginBottom: 6 }}>Previous</div>
+          <div style={{ fontSize: 14, color: 'var(--as-text-secondary)', textDecoration: 'line-through' }}>{fmt(diff?.before?.start_at)}{diff?.before?.location ? ` · ${diff.before.location}` : ''}{diff?.before?.opponent ? ` · vs ${diff.before.opponent}` : ''}</div>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--as-text-primary)', marginTop: 10, marginBottom: 6 }}>Updated</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-text-primary)' }}>{fmt(diff?.after?.start_at)}{diff?.after?.location ? ` · ${diff.after.location}` : ''}{diff?.after?.opponent ? ` · vs ${diff.after.opponent}` : ''}</div>
         </div>
         <label style={{ display: 'block' }}>
-          <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--em-text-tertiary)', display: 'block', marginBottom: 6 }}>Signoff message (optional)</span>
+          <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--as-text-tertiary)', display: 'block', marginBottom: 6 }}>Signoff message (optional)</span>
           <textarea value={signoff} onChange={(e) => setSignoff(e.target.value)} placeholder="Sorry for the late switch — see you Friday." style={inputStyle} />
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--em-text-secondary)' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--as-text-secondary)' }}>
           <input type="checkbox" checked={testOnly} onChange={(e) => setTestOnly(e.target.checked)} />
           Send test to admin@ only (recommended first)
         </label>
-        <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>
+        <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>
           Audience: {audience.length} {pilotModeEnabled ? 'pilot recipients' : 'families'} on this team.
         </div>
-        <button type="button" onClick={onSend} disabled={busy} className="em-press" style={{ ...btnPrimary, opacity: busy ? 0.5 : 1 }}>
+        <button type="button" onClick={onSend} disabled={busy} className="as-press" style={{ ...btnPrimary, opacity: busy ? 0.5 : 1 }}>
           <Send size={16} strokeWidth={1.75} />
           {busy ? 'Sending…' : (testOnly ? 'Send test to admin@' : `Notify ${audience.length} ${pilotModeEnabled ? 'pilot recipients' : 'families'}`)}
         </button>
-        <button type="button" onClick={onSkip} disabled={busy} className="em-press" style={btnSecondary}>
+        <button type="button" onClick={onSkip} disabled={busy} className="as-press" style={btnSecondary}>
           <X size={16} strokeWidth={1.75} /> Skip notification
         </button>
       </div>

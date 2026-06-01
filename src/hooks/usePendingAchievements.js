@@ -52,7 +52,7 @@ export function usePendingAchievements(coachedTeamIds) {
         secondary: 'Pending your confirmation',
         href: `/teams/${a.team_id}`,
         id: a.id,
-        team_color: a.teams?.team_color || 'var(--em-warning)',
+        team_color: a.teams?.team_color || 'var(--as-warning)',
         team_name: teamName,
       };
     });

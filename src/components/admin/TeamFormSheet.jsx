@@ -82,12 +82,12 @@ function Body({ program, onSave, onDelete }) {
           <div className="flex flex-wrap gap-2">
             {COLOR_SWATCHES.map((hex) => (
               <button
-                key={hex} type="button" className="em-press"
+                key={hex} type="button" className="as-press"
                 onClick={() => patch('team_color', hex)}
                 aria-label={`Color ${hex}`} aria-pressed={form.team_color === hex}
                 style={{
                   width: 44, height: 44, borderRadius: '50%', backgroundColor: hex,
-                  border: `3px solid ${form.team_color === hex ? 'var(--em-text-primary)' : 'transparent'}`,
+                  border: `3px solid ${form.team_color === hex ? 'var(--as-text-primary)' : 'transparent'}`,
                 }}
               />
             ))}
@@ -112,19 +112,19 @@ function Body({ program, onSave, onDelete }) {
           {editing && (
             <button
               type="button" onClick={() => setConfirmDel(true)}
-              className="flex-1 font-semibold em-press"
+              className="flex-1 font-semibold as-press"
               style={{
                 minHeight: 44, borderRadius: 10, fontSize: 15,
-                backgroundColor: 'var(--em-danger-soft)', color: 'var(--em-danger)',
+                backgroundColor: 'var(--as-danger-soft)', color: 'var(--as-danger)',
               }}
             >Delete</button>
           )}
           <button
             type="button" onClick={submit}
-            className="flex-1 font-semibold em-press em-bounce-tap"
+            className="flex-1 font-semibold as-press as-bounce-tap"
             style={{
               minHeight: 44, borderRadius: 10, fontSize: 15,
-              backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)',
+              backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)',
             }}
           >{editing ? 'Save changes' : 'Create team'}</button>
         </div>

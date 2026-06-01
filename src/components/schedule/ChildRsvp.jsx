@@ -6,9 +6,9 @@ import { useToast } from '../../context/useToast';
 import { cacheKey, responseCache } from '../../lib/rsvpCache';
 
 const PILLS = [
-  { value: 'going',     label: 'Going',     color: 'var(--em-success)' },
-  { value: 'maybe',     label: 'Maybe',     color: 'var(--em-warning)' },
-  { value: 'not_going', label: "Can't",      color: 'var(--em-danger)' },
+  { value: 'going',     label: 'Going',     color: 'var(--as-success)' },
+  { value: 'maybe',     label: 'Maybe',     color: 'var(--as-warning)' },
+  { value: 'not_going', label: "Can't",      color: 'var(--as-danger)' },
 ];
 
 export default function ChildRsvp({ child, eventId, eventType, compact = false, disabled = false, onSave }) {
@@ -90,26 +90,26 @@ export default function ChildRsvp({ child, eventId, eventType, compact = false, 
   if (!isActivated) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: compact ? 4 : 8 }}>
-        <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--em-text-primary)', marginRight: 'auto' }}>{child.firstName}</span>
-        <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 4, backgroundColor: 'var(--em-academy-soft)', color: 'var(--em-academy)' }}>Academy · Not activated</span>
+        <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--as-text-primary)', marginRight: 'auto' }}>{child.firstName}</span>
+        <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 4, backgroundColor: 'var(--as-academy-soft)', color: 'var(--as-academy)' }}>Academy · Not activated</span>
       </div>
     );
   }
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: compact ? 4 : 8 }}>
-      <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--em-text-primary)', marginRight: 'auto' }}>{child.firstName}</span>
+      <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--as-text-primary)', marginRight: 'auto' }}>{child.firstName}</span>
       {PILLS.map((p) => {
         const active = response === p.value;
         return (
-          <button key={p.value} type="button" onClick={(e) => handleClick(e, p.value)} className="em-press"
+          <button key={p.value} type="button" onClick={(e) => handleClick(e, p.value)} className="as-press"
             aria-pressed={active}
             style={{
               minWidth: 44, minHeight: minH, borderRadius: 8, padding: '0 8px',
               fontSize: pillSize, fontWeight: 600,
               border: `1px solid ${p.color}`,
               backgroundColor: active ? p.color : 'transparent',
-              color: active ? 'var(--em-text-inverse)' : p.color,
+              color: active ? 'var(--as-text-inverse)' : p.color,
               fontFamily: 'inherit',
               ...(disabled ? { opacity: 0.5, pointerEvents: 'none' } : {}),
             }}>

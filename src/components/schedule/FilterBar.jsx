@@ -40,7 +40,7 @@ export default function FilterBar({ teams, selectedTeam, onSelectTeam, selectedT
         <FilterSelect value={selectedType} onChange={onSelectType} options={typeOptions} ariaLabel="Filter by type" />
         {onToggleCancelled && (
           <button type="button" onClick={onToggleCancelled}
-            style={{ fontSize: 13, color: 'var(--em-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', minHeight: 44, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+            style={{ fontSize: 13, color: 'var(--as-text-tertiary)', background: 'none', border: 'none', padding: '4px 0', minHeight: 44, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
             {showCancelled ? 'Hide cancelled' : 'Show cancelled'}
           </button>
         )}

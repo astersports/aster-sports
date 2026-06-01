@@ -21,8 +21,8 @@ export default function BottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 flex items-stretch"
       style={{
-        backgroundColor: 'var(--em-bg-card)',
-        borderTop: '1px solid var(--em-border-default)',
+        backgroundColor: 'var(--as-bg-card)',
+        borderTop: '1px solid var(--as-border-default)',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
       aria-label="Primary"
@@ -44,10 +44,10 @@ function NavItem(tab) {
       to={tab.to}
       end={tab.to === '/'}
       onClick={() => navigator.vibrate?.(10)}
-      className="flex-1 em-press"
+      className="flex-1 as-press"
       style={({ isActive }) => ({
         minHeight: 44,
-        color: isActive ? 'var(--em-accent)' : 'var(--em-text-tertiary)',
+        color: isActive ? 'var(--as-accent)' : 'var(--as-text-tertiary)',
       })}
       aria-label={ariaLabel}
     >
@@ -58,22 +58,22 @@ function NavItem(tab) {
             <div style={{
               position: 'absolute', top: 4, right: '50%', marginRight: -14,
               width: 8, height: 8, borderRadius: '50%',
-              backgroundColor: 'var(--em-danger)',
-              border: '2px solid var(--em-bg-card)',
+              backgroundColor: 'var(--as-danger)',
+              border: '2px solid var(--as-bg-card)',
             }} />
           )}
           <span style={{
             fontSize: 11,
             fontWeight: isActive ? 600 : 400,
             letterSpacing: '0.02em',
-            color: isActive ? 'var(--em-accent)' : 'var(--em-text-tertiary)',
+            color: isActive ? 'var(--as-accent)' : 'var(--as-text-tertiary)',
           }}>{tab.label}</span>
           {isActive && (
             <div style={{
               width: 4,
               height: 4,
               borderRadius: '50%',
-              backgroundColor: 'var(--em-accent)',
+              backgroundColor: 'var(--as-accent)',
               marginTop: -1,
             }} />
           )}

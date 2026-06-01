@@ -49,9 +49,9 @@ export default function UpcomingEvents({ teamId }) {
             </div>
           ))}
           <button type="button" onClick={() => { navigator.vibrate?.(10); navigate(`/schedule?team=${teamId}`); }}
-            className="em-press" aria-label="View full schedule for this team"
+            className="as-press" aria-label="View full schedule for this team"
             style={{ marginTop: 6, minHeight: 44, padding: '0 4px',
-              border: 'none', background: 'none', color: 'var(--em-accent)',
+              border: 'none', background: 'none', color: 'var(--as-accent)',
               fontSize: 13, fontWeight: 500 }}>
             View full schedule →
           </button>

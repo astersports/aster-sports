@@ -9,24 +9,24 @@ export default function TeamPerformanceStrip({ programs, recordsByTeam = {}, nav
           key={team.id}
           type="button"
           onClick={() => { navigator.vibrate?.(10); navigate(`/teams/${team.id}`); }}
-          className="em-press em-fade-in"
+          className="as-press as-fade-in"
           style={{
             padding: 12,
             borderRadius: 10,
-            backgroundColor: 'var(--em-bg-card)',
-            border: '1px solid var(--em-border-default)',
-            boxShadow: 'var(--em-shadow-sm)',
+            backgroundColor: 'var(--as-bg-card)',
+            border: '1px solid var(--as-border-default)',
+            boxShadow: 'var(--as-shadow-sm)',
             textAlign: 'left',
-            borderTop: `3px solid ${team.team_color || 'var(--em-neutral)'}`,
+            borderTop: `3px solid ${team.team_color || 'var(--as-neutral)'}`,
           }}
         >
-          <div className="font-semibold truncate" style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>
+          <div className="font-semibold truncate" style={{ fontSize: 15, color: 'var(--as-text-primary)' }}>
             {team.name}
           </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', marginTop: 4 }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', marginTop: 4 }}>
             {recordsByTeam[team.id]?.record || '0-0'}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)', marginTop: 2 }}>
             {team.age_group} · {team.circuit === 'aau' ? 'AAU' : 'League Play'}
           </div>
         </button>

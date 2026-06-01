@@ -14,7 +14,7 @@ export default function AdminBackHeader({ to }) {
       type="button"
       onClick={() => (to ? navigate(to) : navigate(-1))}
       aria-label="Back"
-      className="em-press"
+      className="as-press"
       style={{
         minHeight: 44,
         display: 'inline-flex',
@@ -25,7 +25,7 @@ export default function AdminBackHeader({ to }) {
         background: 'none',
         border: 'none',
         cursor: 'pointer',
-        color: 'var(--em-accent)',
+        color: 'var(--as-accent)',
         fontSize: 15,
         fontFamily: 'inherit',
       }}

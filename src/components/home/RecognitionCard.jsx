@@ -42,7 +42,7 @@ export default function RecognitionCard({ achievements, nowMs }) {
   return (
     <div aria-label="Recent achievements">
       {achievements.map((a) => {
-        const teamColor = a.teams?.team_color || a.badge_color || 'var(--em-accent)';
+        const teamColor = a.teams?.team_color || a.badge_color || 'var(--as-accent)';
         const emoji = a.badge_emoji || '🏆';
         const title = titleFor(a);
         const when = relativeTime(a.confirmed_at, nowMs);
@@ -51,33 +51,33 @@ export default function RecognitionCard({ achievements, nowMs }) {
             key={a.id}
             to={`/teams/${a.team_id}`}
             aria-label={`Recognition: ${title}`}
-            className="em-press"
+            className="as-press"
             style={{
               display: 'block',
               padding: 14,
               marginBottom: 12,
-              backgroundColor: 'var(--em-bg-card)',
-              border: '1px solid var(--em-border-default)',
+              backgroundColor: 'var(--as-bg-card)',
+              border: '1px solid var(--as-border-default)',
               borderLeft: `4px solid ${teamColor}`,
               borderRadius: 10,
-              color: 'var(--em-text-primary)',
+              color: 'var(--as-text-primary)',
               textDecoration: 'none',
-              boxShadow: 'var(--em-shadow-sm)',
+              boxShadow: 'var(--as-shadow-sm)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
               <span aria-hidden="true" style={{ fontSize: 14 }}>{emoji}</span>
               {when && (
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--em-text-tertiary)', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--as-text-tertiary)', letterSpacing: 1.5, textTransform: 'uppercase' }}>
                   {when}
                 </span>
               )}
             </div>
-            <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--em-text-primary)', lineHeight: 1.3 }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--as-text-primary)', lineHeight: 1.3 }}>
               {title}
             </div>
             {a.event_location && (
-              <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 4 }}>
+              <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 4 }}>
                 {a.event_location}
               </div>
             )}

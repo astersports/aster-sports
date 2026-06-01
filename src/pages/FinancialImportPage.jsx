@@ -41,10 +41,10 @@ export default function FinancialImportPage() {
 
   return (
     <div style={{ padding: '16px 16px 80px' }}>
-      <button type="button" onClick={() => navigate('/admin/financials')} className="em-press" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
+      <button type="button" onClick={() => navigate('/admin/financials')} className="as-press" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back to Financials
       </button>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--em-text-primary)', marginBottom: 16 }}>Import LeagueApps Data</h1>
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', marginBottom: 16 }}>Import LeagueApps Data</h1>
 
       {result ? (
         <ResultView result={result} onDone={() => navigate('/admin/financials')} />
@@ -65,9 +65,9 @@ function PasteView({ raw, setRaw, parseError, onParse }) {
         value={raw}
         onChange={(e) => setRaw(e.target.value)}
         placeholder='[{"parentFirstName":"John","parentLastName":"Doe","registrationFee":"$350",...}]'
-        style={{ width: '100%', minHeight: 160, padding: 12, fontSize: 13, fontFamily: 'monospace', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', resize: 'vertical' }}
+        style={{ width: '100%', minHeight: 160, padding: 12, fontSize: 13, fontFamily: 'monospace', borderRadius: 10, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', resize: 'vertical' }}
       />
-      {parseError && <div style={{ color: 'var(--em-danger)', fontSize: 13, marginTop: 8 }}>{parseError}</div>}
+      {parseError && <div style={{ color: 'var(--as-danger)', fontSize: 13, marginTop: 8 }}>{parseError}</div>}
       <Button onClick={onParse} disabled={!raw.trim()} fullWidth style={{ marginTop: 16 }}>
         <Upload size={16} strokeWidth={1.75} /> Parse Data
       </Button>
@@ -87,14 +87,14 @@ function PreviewView({ families, fmt, importing, onImport, onBack }) {
         <StatMini label="Total Paid" value={fmt(totalPaid)} />
       </div>
       <Label>Preview ({families.length} families)</Label>
-      <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', overflow: 'hidden', maxHeight: 300, overflowY: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)', overflow: 'hidden', maxHeight: 300, overflowY: 'auto' }}>
         {families.slice(0, 20).map((f, i) => (
-          <div key={i} style={{ padding: '10px 14px', borderTop: i ? '1px solid var(--em-border-subtle)' : 'none', fontSize: 13 }}>
-            <div style={{ fontWeight: 600, color: 'var(--em-text-primary)' }}>{f.firstName} {f.lastName}</div>
-            <div style={{ color: 'var(--em-text-tertiary)' }}>Fee: {fmt(f.totalFeeCents)} · Paid: {fmt(f.totalPaidCents)} · {f.players.length} player{f.players.length !== 1 ? 's' : ''}</div>
+          <div key={i} style={{ padding: '10px 14px', borderTop: i ? '1px solid var(--as-border-subtle)' : 'none', fontSize: 13 }}>
+            <div style={{ fontWeight: 600, color: 'var(--as-text-primary)' }}>{f.firstName} {f.lastName}</div>
+            <div style={{ color: 'var(--as-text-tertiary)' }}>Fee: {fmt(f.totalFeeCents)} · Paid: {fmt(f.totalPaidCents)} · {f.players.length} player{f.players.length !== 1 ? 's' : ''}</div>
           </div>
         ))}
-        {families.length > 20 && <div style={{ padding: 10, textAlign: 'center', color: 'var(--em-text-tertiary)', fontSize: 12 }}>+{families.length - 20} more…</div>}
+        {families.length > 20 && <div style={{ padding: 10, textAlign: 'center', color: 'var(--as-text-tertiary)', fontSize: 12 }}>+{families.length - 20} more…</div>}
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
         <Button variant="secondary" onClick={onBack} style={{ flex: 1 }}>Back</Button>
@@ -108,15 +108,15 @@ function ResultView({ result, onDone }) {
   return (
     <div style={{ textAlign: 'center', padding: 32 }}>
       {result.errors?.length > 0 ? (
-        <AlertTriangle size={40} style={{ color: 'var(--em-warning)', marginBottom: 12 }} />
+        <AlertTriangle size={40} style={{ color: 'var(--as-warning)', marginBottom: 12 }} />
       ) : (
-        <CheckCircle2 size={40} style={{ color: 'var(--em-success)', marginBottom: 12 }} />
+        <CheckCircle2 size={40} style={{ color: 'var(--as-success)', marginBottom: 12 }} />
       )}
-      <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 8 }}>
+      <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 8 }}>
         {result.created} families imported{result.skipped > 0 ? `, ${result.skipped} skipped` : ''}
       </div>
       {result.errors?.length > 0 && (
-        <div style={{ textAlign: 'left', fontSize: 12, color: 'var(--em-danger)', marginBottom: 16, maxHeight: 120, overflow: 'auto' }}>
+        <div style={{ textAlign: 'left', fontSize: 12, color: 'var(--as-danger)', marginBottom: 16, maxHeight: 120, overflow: 'auto' }}>
           {result.errors.map((e, i) => <div key={i}>• {e}</div>)}
         </div>
       )}
@@ -127,9 +127,9 @@ function ResultView({ result, onDone }) {
 
 function StatMini({ label, value }) {
   return (
-    <div style={{ padding: 12, backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)' }}>
-      <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--em-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-      <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)', marginTop: 2 }}>{value}</div>
+    <div style={{ padding: 12, backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)' }}>
+      <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--as-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+      <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--as-text-primary)', marginTop: 2 }}>{value}</div>
     </div>
   );
 }

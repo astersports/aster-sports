@@ -40,8 +40,8 @@ const HIGHLIGHT_WINDOW_MS = 72 * 60 * 60 * 1000;
 
 function trendArrow(pct) {
   if (pct == null) return null;
-  if (pct >= 80) return { Icon: TrendingUp, color: 'var(--em-success)' };
-  if (pct < 60) return { Icon: TrendingDown, color: 'var(--em-warning)' };
+  if (pct >= 80) return { Icon: TrendingUp, color: 'var(--as-success)' };
+  if (pct < 60) return { Icon: TrendingDown, color: 'var(--as-warning)' };
   return null;
 }
 
@@ -64,11 +64,11 @@ export default function CoachRosterSnapshotTeam({ team }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'stretch', borderRadius: 10, overflow: 'hidden',
-      border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
+      border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)',
     }}>
-      <div style={{ width: 3, flexShrink: 0, backgroundColor: team.team_color || 'var(--em-neutral)' }} aria-hidden="true" />
+      <div style={{ width: 3, flexShrink: 0, backgroundColor: team.team_color || 'var(--as-neutral)' }} aria-hidden="true" />
       <div style={{ flex: 1, padding: 12, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--em-text-primary)', marginBottom: 8 }}>{team.name}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 8 }}>{team.name}</div>
         <ul style={{ display: 'flex', flexDirection: 'column', gap: 4, listStyle: 'none', padding: 0, margin: 0 }}>
           {grid.slice(0, 6).map((row) => {
             const nextCell = nextEventId ? row.cells.find((c) => c.eventId === nextEventId) : null;
@@ -78,16 +78,16 @@ export default function CoachRosterSnapshotTeam({ team }) {
               <li key={row.player.id} style={{
                 display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px',
                 borderRadius: 6,
-                backgroundColor: isMissingRsvp ? 'var(--em-warning-soft)' : 'transparent',
+                backgroundColor: isMissingRsvp ? 'var(--as-warning-soft)' : 'transparent',
               }}>
-                <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', minWidth: 22, fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)', minWidth: 22, fontVariantNumeric: 'tabular-nums' }}>
                   {row.player.jersey_number || '—'}
                 </span>
-                <span style={{ flex: 1, fontSize: 13, color: 'var(--em-text-primary)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ flex: 1, fontSize: 13, color: 'var(--as-text-primary)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {row.player.first_name} {row.player.last_name?.[0] || ''}
                 </span>
                 {arrow && <arrow.Icon size={12} strokeWidth={1.75} color={arrow.color} aria-hidden="true" />}
-                <span style={{ fontSize: 12, color: 'var(--em-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontSize: 12, color: 'var(--as-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
                   {row.pct != null ? `${row.pct}% Going` : '—'}
                 </span>
               </li>

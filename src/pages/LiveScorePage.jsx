@@ -61,16 +61,16 @@ export default function LiveScorePage() {
 
   const endGame = async () => { setConfirmEnd(false); await game.saveToGameResults(); navigate(`/events/${eventId}`, { replace: true }); };
 
-  if (!event) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading…</div>;
+  if (!event) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Loading…</div>;
 
   const tabs = ['scoring', 'stats', 'plays'];
 
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9995, backgroundColor: 'var(--em-bg-page)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9995, backgroundColor: 'var(--as-bg-page)', display: 'flex', flexDirection: 'column' }}>
       <Scoreboard teamName={event.teams?.name} opponentName={event.opponent} ourScore={game.ourScore} oppScore={game.oppScore} period={game.period} onPeriodChange={game.setPeriod} teamColor={event.teams?.team_color} onBack={() => navigate(`/events/${eventId}`, { replace: true })} />
-      <div style={{ display: 'flex', borderBottom: '2px solid var(--em-border-default)' }}>
+      <div style={{ display: 'flex', borderBottom: '2px solid var(--as-border-default)' }}>
         {tabs.map((t) => (
-          <button key={t} type="button" onClick={() => setTab(t)} role="tab" aria-selected={tab === t} style={{ flex: 1, minHeight: 44, border: 'none', backgroundColor: 'transparent', fontSize: 13, fontWeight: tab === t ? 700 : 400, color: tab === t ? 'var(--em-accent)' : 'var(--em-text-tertiary)', borderBottom: tab === t ? '2px solid var(--em-accent)' : 'none', cursor: 'pointer', fontFamily: 'inherit', textTransform: 'capitalize' }}>{t === 'plays' ? 'Plays' : t === 'stats' ? 'Stats' : 'Scoring'}</button>
+          <button key={t} type="button" onClick={() => setTab(t)} role="tab" aria-selected={tab === t} style={{ flex: 1, minHeight: 44, border: 'none', backgroundColor: 'transparent', fontSize: 13, fontWeight: tab === t ? 700 : 400, color: tab === t ? 'var(--as-accent)' : 'var(--as-text-tertiary)', borderBottom: tab === t ? '2px solid var(--as-accent)' : 'none', cursor: 'pointer', fontFamily: 'inherit', textTransform: 'capitalize' }}>{t === 'plays' ? 'Plays' : t === 'stats' ? 'Stats' : 'Scoring'}</button>
         ))}
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -78,8 +78,8 @@ export default function LiveScorePage() {
           <div style={{ padding: 16 }}>
             <ActionGrid isOpponent={false} onPlay={handlePlay} teamLabel={event.teams?.name || 'Home'} />
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-              <span style={{ fontSize: 12, color: 'var(--em-text-tertiary)' }}>On Court: {game.onCourt.length}</span>
-              <button type="button" onClick={() => setShowSubs(true)} className="em-press" style={{ marginLeft: 8, fontSize: 13, fontWeight: 600, color: 'var(--em-accent)', background: 'none', border: '1px solid var(--em-accent)', borderRadius: 8, padding: '4px 12px', minHeight: 32, cursor: 'pointer', fontFamily: 'inherit' }}>Substitutions</button>
+              <span style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>On Court: {game.onCourt.length}</span>
+              <button type="button" onClick={() => setShowSubs(true)} className="as-press" style={{ marginLeft: 8, fontSize: 13, fontWeight: 600, color: 'var(--as-accent)', background: 'none', border: '1px solid var(--as-accent)', borderRadius: 8, padding: '4px 12px', minHeight: 32, cursor: 'pointer', fontFamily: 'inherit' }}>Substitutions</button>
             </div>
             <ActionGrid isOpponent onPlay={handlePlay} teamLabel={event.opponent || 'Opponent'} />
           </div>
@@ -87,9 +87,9 @@ export default function LiveScorePage() {
         {tab === 'stats' && <BoxScore playerStats={game.playerStats} players={players} />}
         {tab === 'plays' && <PlayByPlayFeed plays={game.plays} players={players} />}
       </div>
-      <div style={{ display: 'flex', gap: 8, padding: '8px 16px', paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)', borderTop: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)' }}>
-        <button type="button" onClick={handleUndo} className="em-press" disabled={game.plays.length === 0} style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'transparent', color: game.plays.length === 0 ? 'var(--em-text-tertiary)' : 'var(--em-accent)', fontSize: 15, fontWeight: 500, fontFamily: 'inherit', cursor: game.plays.length === 0 ? 'not-allowed' : 'pointer', opacity: game.plays.length === 0 ? 0.5 : 1 }}>Undo</button>
-        <button type="button" onClick={() => setConfirmEnd(true)} className="em-press" style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>End Game</button>
+      <div style={{ display: 'flex', gap: 8, padding: '8px 16px', paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)', borderTop: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)' }}>
+        <button type="button" onClick={handleUndo} className="as-press" disabled={game.plays.length === 0} style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--as-border-default)', backgroundColor: 'transparent', color: game.plays.length === 0 ? 'var(--as-text-tertiary)' : 'var(--as-accent)', fontSize: 15, fontWeight: 500, fontFamily: 'inherit', cursor: game.plays.length === 0 ? 'not-allowed' : 'pointer', opacity: game.plays.length === 0 ? 0.5 : 1 }}>Undo</button>
+        <button type="button" onClick={() => setConfirmEnd(true)} className="as-press" style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 15, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>End Game</button>
       </div>
       <PlayerPicker open={!!pendingPlay} players={players} onCourt={game.onCourt} playerStats={game.playerStats} playLabel={pendingPlay ? (LABELS[pendingPlay.type] || pendingPlay.type) + ' by' : ''} onSelect={assignPlayer} onSkip={() => { if (pendingPlay) game.addPlay(pendingPlay.type, { ...pendingPlay.opts, teamId: event?.team_id }); setPendingPlay(null); }} onClose={() => setPendingPlay(null)} />
       <SubstitutionSheet open={showSubs} players={players} onCourt={game.onCourt} playerStats={game.playerStats} onSubIn={game.subIn} onSubOut={game.subOut} onClose={() => setShowSubs(false)} />

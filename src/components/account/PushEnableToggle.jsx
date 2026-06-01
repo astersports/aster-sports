@@ -9,8 +9,8 @@ import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/useToast';
 import { getPushState, subscribeToPush, unsubscribeFromPush } from '../../lib/push';
 
-const card = { backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', padding: '12px 14px', marginBottom: 8 };
-const caption = { fontSize: 13, color: 'var(--em-text-secondary)', lineHeight: 1.4 };
+const card = { backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)', padding: '12px 14px', marginBottom: 8 };
+const caption = { fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.4 };
 
 export default function PushEnableToggle({ userId, orgId }) {
   const { showToast } = useToast();
@@ -46,13 +46,13 @@ export default function PushEnableToggle({ userId, orgId }) {
 
   return (
     <div style={{ ...card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
-      <span style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>
+      <span style={{ fontSize: 15, color: 'var(--as-text-primary)' }}>
         Push on this device{denied ? ' (blocked in settings)' : ''}
       </span>
-      <button type="button" onClick={handle} disabled={busy} className="em-press"
+      <button type="button" onClick={handle} disabled={busy} className="as-press"
         role="switch" aria-checked={on} aria-label="Push notifications on this device"
-        style={{ width: 48, height: 28, borderRadius: 14, border: 'none', padding: 2, cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.6 : 1, backgroundColor: on ? 'var(--em-accent)' : 'var(--em-bg-tertiary)', transition: 'background-color 200ms' }}>
-        <div style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: 'var(--em-text-inverse)', boxShadow: 'var(--em-shadow-sm)', transform: on ? 'translateX(20px)' : 'translateX(0)', transition: 'transform 200ms' }} />
+        style={{ width: 48, height: 28, borderRadius: 14, border: 'none', padding: 2, cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.6 : 1, backgroundColor: on ? 'var(--as-accent)' : 'var(--as-bg-tertiary)', transition: 'background-color 200ms' }}>
+        <div style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: 'var(--as-text-inverse)', boxShadow: 'var(--as-shadow-sm)', transform: on ? 'translateX(20px)' : 'translateX(0)', transition: 'transform 200ms' }} />
       </button>
     </div>
   );

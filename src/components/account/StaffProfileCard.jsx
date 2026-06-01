@@ -7,9 +7,9 @@ import Label from '../shared/Label';
 const inputStyle = {
   width: '100%', minHeight: 44, padding: '0 12px', borderRadius: 10,
   fontSize: 15, fontFamily: 'inherit',
-  backgroundColor: 'var(--em-bg-tertiary)',
-  border: '1.5px solid var(--em-border-default)',
-  color: 'var(--em-text-primary)',
+  backgroundColor: 'var(--as-bg-tertiary)',
+  border: '1.5px solid var(--as-border-default)',
+  color: 'var(--as-text-primary)',
 };
 
 // Self-edit card for an admin/coach user's display_name + phone. These
@@ -50,11 +50,11 @@ export default function StaffProfileCard({ defaultDisplayName }) {
     <section style={{ marginBottom: 16 }}>
       <Label>Contact info shown on briefings</Label>
       <form onSubmit={onSubmit} style={{
-        backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-default)',
+        backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)',
         borderRadius: 10, padding: 14, display: 'flex', flexDirection: 'column', gap: 10,
       }}>
         <div>
-          <label htmlFor="sp-name" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', display: 'block', marginBottom: 6 }}>
+          <label htmlFor="sp-name" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', display: 'block', marginBottom: 6 }}>
             Display name
           </label>
           <input
@@ -65,7 +65,7 @@ export default function StaffProfileCard({ defaultDisplayName }) {
           />
         </div>
         <div>
-          <label htmlFor="sp-phone" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)', display: 'block', marginBottom: 6 }}>
+          <label htmlFor="sp-phone" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', display: 'block', marginBottom: 6 }}>
             Phone
           </label>
           <input
@@ -76,11 +76,11 @@ export default function StaffProfileCard({ defaultDisplayName }) {
             style={inputStyle}
           />
         </div>
-        <button type="submit" disabled={!canSave} className="em-press"
+        <button type="submit" disabled={!canSave} className="as-press"
           style={{
             minHeight: 44, borderRadius: 10, border: 'none',
-            backgroundColor: canSave ? 'var(--em-accent)' : 'var(--em-bg-secondary)',
-            color: canSave ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)',
+            backgroundColor: canSave ? 'var(--as-accent)' : 'var(--as-bg-secondary)',
+            color: canSave ? 'var(--as-text-inverse)' : 'var(--as-text-tertiary)',
             fontSize: 15, fontWeight: 600, fontFamily: 'inherit',
             cursor: canSave ? 'pointer' : 'default',
           }}>

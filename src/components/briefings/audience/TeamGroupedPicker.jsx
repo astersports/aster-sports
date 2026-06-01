@@ -28,15 +28,15 @@ const UNSPECIFIED = '__unspecified__';
 
 const wrap = { display: 'flex', flexDirection: 'column', gap: 12 };
 const searchWrap = { position: 'relative' };
-const searchInput = { width: '100%', minHeight: 44, padding: '0 12px 0 38px', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', backgroundColor: 'var(--em-bg-tertiary)', border: '1.5px solid var(--em-border-default)', color: 'var(--em-text-primary)' };
-const searchIcon = { position: 'absolute', left: 12, top: 14, color: 'var(--em-text-tertiary)', pointerEvents: 'none' };
-const tabRow = { display: 'flex', gap: 6, padding: 4, backgroundColor: 'var(--em-bg-tertiary)', borderRadius: 8 };
-const tabBtn = (active) => ({ flex: 1, minHeight: 32, padding: '0 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', border: 'none', backgroundColor: active ? 'var(--em-bg-card)' : 'transparent', color: active ? 'var(--em-text-primary)' : 'var(--em-text-secondary)' });
-const bucketHead = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 4px', fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' };
-const selectAllBtn = { background: 'none', border: 'none', color: 'var(--em-accent)', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: '4px 6px', minHeight: 24 };
-const chipRow = (selected) => ({ display: 'flex', alignItems: 'center', gap: 10, minHeight: 44, padding: '8px 12px', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer', border: '1px solid', borderColor: selected ? 'var(--em-accent)' : 'var(--em-border-default)', backgroundColor: selected ? 'var(--em-accent)' : 'var(--em-bg-card)', color: selected ? 'var(--em-text-inverse)' : 'var(--em-text-primary)', textAlign: 'left', width: '100%' });
+const searchInput = { width: '100%', minHeight: 44, padding: '0 12px 0 38px', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', backgroundColor: 'var(--as-bg-tertiary)', border: '1.5px solid var(--as-border-default)', color: 'var(--as-text-primary)' };
+const searchIcon = { position: 'absolute', left: 12, top: 14, color: 'var(--as-text-tertiary)', pointerEvents: 'none' };
+const tabRow = { display: 'flex', gap: 6, padding: 4, backgroundColor: 'var(--as-bg-tertiary)', borderRadius: 8 };
+const tabBtn = (active) => ({ flex: 1, minHeight: 32, padding: '0 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', border: 'none', backgroundColor: active ? 'var(--as-bg-card)' : 'transparent', color: active ? 'var(--as-text-primary)' : 'var(--as-text-secondary)' });
+const bucketHead = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 4px', fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' };
+const selectAllBtn = { background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: '4px 6px', minHeight: 24 };
+const chipRow = (selected) => ({ display: 'flex', alignItems: 'center', gap: 10, minHeight: 44, padding: '8px 12px', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer', border: '1px solid', borderColor: selected ? 'var(--as-accent)' : 'var(--as-border-default)', backgroundColor: selected ? 'var(--as-accent)' : 'var(--as-bg-card)', color: selected ? 'var(--as-text-inverse)' : 'var(--as-text-primary)', textAlign: 'left', width: '100%' });
 const dotStyle = (color) => ({ width: 8, height: 8, borderRadius: 4, backgroundColor: color || FALLBACK_DOT, flexShrink: 0 });
-const footer = { fontSize: 12, color: 'var(--em-text-tertiary)', paddingTop: 4 };
+const footer = { fontSize: 12, color: 'var(--as-text-tertiary)', paddingTop: 4 };
 
 function bucketize(teams, axis) {
   const buckets = new Map();
@@ -86,7 +86,7 @@ export default function TeamGroupedPicker({ teams = [], value = [], onChange, mo
       </div>
       <div role="tablist" aria-label="Group teams by" style={tabRow}>
         {AXES.map((a) => (
-          <button key={a.key} type="button" role="tab" aria-selected={axis === a.key} onClick={() => setAxis(a.key)} className="em-press" style={tabBtn(axis === a.key)}>{a.label}</button>
+          <button key={a.key} type="button" role="tab" aria-selected={axis === a.key} onClick={() => setAxis(a.key)} className="as-press" style={tabBtn(axis === a.key)}>{a.label}</button>
         ))}
       </div>
       <div data-testid="bucket-list" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -107,7 +107,7 @@ export default function TeamGroupedPicker({ teams = [], value = [], onChange, mo
                 {items.map((t) => {
                   const isSel = selected.has(t.id);
                   return (
-                    <button key={t.id} type="button" role="checkbox" aria-checked={isSel} data-team-id={t.id} onClick={() => toggleChip(t.id)} className="em-press" style={chipRow(isSel)}>
+                    <button key={t.id} type="button" role="checkbox" aria-checked={isSel} data-team-id={t.id} onClick={() => toggleChip(t.id)} className="as-press" style={chipRow(isSel)}>
                       <span style={dotStyle(t.team_color)} aria-hidden="true" />
                       <span>{t.name}</span>
                     </button>

@@ -89,7 +89,7 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
   return createPortal(
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999,
-      backgroundColor: 'var(--em-bg-page)',
+      backgroundColor: 'var(--as-bg-page)',
       display: 'flex', flexDirection: 'column', overflow: 'hidden',
     }}>
       <WizardHeader step={step} backStop={backStop} isEdit={isEdit} dots={dots} dotIndex={dotIndex}
@@ -104,9 +104,9 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
 
       {step === 2 && conflicts.length > 0 && (
         <div style={{
-          padding: '10px 16px', backgroundColor: 'var(--em-warning-soft)',
-          borderTop: '1px solid var(--em-warning)', flexShrink: 0,
-          fontSize: 13, color: 'var(--em-warning)', fontWeight: 500,
+          padding: '10px 16px', backgroundColor: 'var(--as-warning-soft)',
+          borderTop: '1px solid var(--as-warning)', flexShrink: 0,
+          fontSize: 13, color: 'var(--as-warning)', fontWeight: 500,
         }}>
           Conflicts with: {conflicts.map((c) => c.title).join(', ')}. You can save anyway.
         </div>
@@ -116,17 +116,17 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
         <div style={{
           padding: '12px 16px',
           paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-          borderTop: '1px solid var(--em-border-default)',
-          backgroundColor: 'var(--em-bg-card)', flexShrink: 0,
+          borderTop: '1px solid var(--as-border-default)',
+          backgroundColor: 'var(--as-bg-card)', flexShrink: 0,
         }}>
           <button type="button"
             onClick={step === 3 ? handleSave : () => setStep(step + 1)}
             disabled={loading || !canNext}
-            className="em-press em-bounce-tap"
+            className="as-press as-bounce-tap"
             style={{
               width: '100%', minHeight: 48, borderRadius: 10, border: 'none',
-              backgroundColor: canNext ? 'var(--em-accent)' : 'var(--em-bg-tertiary)',
-              color: canNext ? 'var(--em-text-inverse)' : 'var(--em-text-tertiary)',
+              backgroundColor: canNext ? 'var(--as-accent)' : 'var(--as-bg-tertiary)',
+              color: canNext ? 'var(--as-text-inverse)' : 'var(--as-text-tertiary)',
               fontSize: 17, fontWeight: 600, opacity: loading ? 0.6 : 1,
             }}>
             {loading ? 'Saving...' : step === 3 ? (isEdit ? 'Save Changes' : 'Save Event') : 'Next'}

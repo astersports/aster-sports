@@ -36,8 +36,8 @@ const BODY_LAZY = {
   custom_message: lazy(() => import('./bodies/CustomMessageBody.jsx')),
 };
 
-const btnGhost = { width: '100%', minHeight: 40, borderRadius: 10, backgroundColor: 'transparent', color: 'var(--em-text-secondary)', fontSize: 14, fontWeight: 500, border: '1px solid var(--em-border-default)', cursor: 'pointer' };
-const btnSuggest = { minHeight: 32, padding: '0 12px', borderRadius: 8, backgroundColor: 'var(--em-accent-soft)', color: 'var(--em-accent)', fontSize: 13, fontWeight: 600, border: '1px solid var(--em-accent)', cursor: 'pointer' };
+const btnGhost = { width: '100%', minHeight: 40, borderRadius: 10, backgroundColor: 'transparent', color: 'var(--as-text-secondary)', fontSize: 14, fontWeight: 500, border: '1px solid var(--as-border-default)', cursor: 'pointer' };
+const btnSuggest = { minHeight: 32, padding: '0 12px', borderRadius: 8, backgroundColor: 'var(--as-accent-soft)', color: 'var(--as-accent)', fontSize: 13, fontWeight: 600, border: '1px solid var(--as-accent)', cursor: 'pointer' };
 
 // Wave 5 PR 3b — Only tournament_prelim has the structured anchor +
 // schedule shape the suggest-briefing-closer edge function needs.
@@ -81,7 +81,7 @@ export default function StepBodySignoff({ state, dispatch, audience, hasParentTo
           if (template) dispatch({ type: 'UPDATE_BODY', patch: template.body });
         }}
       />
-      <Suspense fallback={<div style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>Loading editor…</div>}>
+      <Suspense fallback={<div style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>Loading editor…</div>}>
         <Body value={state.body} onChange={(patch) => dispatch({ type: 'UPDATE_BODY', patch })}
           anchorId={state.anchor_id} audienceFilter={state.audience_filter}
           hasParentTournament={hasParentTournament}
@@ -91,25 +91,25 @@ export default function StepBodySignoff({ state, dispatch, audience, hasParentTo
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <span style={labelStyle}>Signoff message (optional)</span>
           {canSuggest && (
-            <button type="button" onClick={onSuggestCloser} disabled={suggesting} className="em-press"
+            <button type="button" onClick={onSuggestCloser} disabled={suggesting} className="as-press"
               style={{ ...btnSuggest, opacity: suggesting ? 0.6 : 1, cursor: suggesting ? 'wait' : 'pointer' }}>
               {suggesting ? 'Suggesting…' : 'Suggest closer'}
             </button>
           )}
         </div>
         <textarea value={state.signoff_message} onChange={(e) => dispatch({ type: 'UPDATE_SIGNOFF', value: e.target.value })} style={{ ...textareaStyle, minHeight: 80 }} placeholder="Add a closing note…" />
-        {suggestErr && <div role="alert" aria-live="assertive" style={{ fontSize: 12, color: 'var(--em-danger)', marginTop: 4 }}>{suggestErr}</div>}
+        {suggestErr && <div role="alert" aria-live="assertive" style={{ fontSize: 12, color: 'var(--as-danger)', marginTop: 4 }}>{suggestErr}</div>}
       </label>
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--em-text-secondary)' }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--as-text-secondary)' }}>
         <input type="checkbox" checked={state.test_only} onChange={(e) => dispatch({ type: 'TOGGLE_TEST', value: e.target.checked })} />
         Send test to admin@ only (recommended first)
       </label>
       {showChip && <div><PilotModeChip /></div>}
-      <div style={{ fontSize: 12, color: a.mode === 'pilot_zero' ? 'var(--em-warning)' : 'var(--em-text-tertiary)', lineHeight: 1.4 }}>
+      <div style={{ fontSize: 12, color: a.mode === 'pilot_zero' ? 'var(--as-warning)' : 'var(--as-text-tertiary)', lineHeight: 1.4 }}>
         {audienceCopy(a)}
       </div>
-      <button type="button" onClick={onSaveDraft} className="em-press" style={btnGhost}>Save draft</button>
-      <button type="button" onClick={onCancel} className="em-press" style={btnGhost}>Cancel</button>
+      <button type="button" onClick={onSaveDraft} className="as-press" style={btnGhost}>Save draft</button>
+      <button type="button" onClick={onCancel} className="as-press" style={btnGhost}>Cancel</button>
     </div>
   );
 }

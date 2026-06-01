@@ -37,7 +37,7 @@ const RegisterFlowPage = lazy(() => import('./pages/RegisterFlowPage'));
 const ProgramSetupPage = lazy(() => import('./pages/admin/ProgramSetupPage'));
 const ProgramDetailPage = lazy(() => import('./pages/admin/ProgramDetailPage'));
 
-const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading...</div>;
+const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Loading...</div>;
 
 const Protected = ({ children, allowedRoles }) => (
   <RequireAuth allowedRoles={allowedRoles}>
@@ -51,7 +51,7 @@ function PageTransition({ children }) {
   useRouteMemory();
   // Wave 2.B Batch 1 (#2 P0-1): removed `key={location.pathname}` wrapper.
   // Originally added in 531e07a (Apr 12, 2026) as a "fade on route change"
-  // hook — but the fade CSS class (em-fade-in) was never wired to this
+  // hook — but the fade CSS class (as-fade-in) was never wired to this
   // div, so the key was forcing full subtree remount (AppShell + Header +
   // BottomNav + every realtime channel) on every nav for zero visible
   // effect. Single largest INP regression closure. Wrapper preserved so

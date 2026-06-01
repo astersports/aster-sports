@@ -22,7 +22,7 @@ import { useResolverPreview } from '../../lib/engine/useResolverPreview';
 import DevicePreviewFrame from '../shared/DevicePreviewFrame';
 
 const wrap = { display: 'flex', flexDirection: 'column', gap: 8, height: '100%' };
-const topBar = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' };
+const topBar = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' };
 
 // Placeholder substituted for preview only — real per-recipient URLs are inserted at send time by digestSend
 const PREVIEW_UNSUBSCRIBE_URL = 'https://app.legacyhoopers.org/unsubscribe?preview=1';

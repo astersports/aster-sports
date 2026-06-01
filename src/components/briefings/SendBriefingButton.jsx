@@ -11,8 +11,8 @@ const BriefingComposer = lazy(() => import('./BriefingComposer'));
 const baseStyle = {
   minHeight: 44, padding: '0 14px', borderRadius: 10,
   fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
-  border: '1.5px solid var(--em-border-default)',
-  backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
+  border: '1.5px solid var(--as-border-default)',
+  backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)',
   display: 'inline-flex', alignItems: 'center', gap: 6,
 };
 const iconOnlyStyle = {
@@ -21,14 +21,14 @@ const iconOnlyStyle = {
   display: 'flex', alignItems: 'center', justifyContent: 'center',
 };
 
-export default function SendBriefingButton({ anchorKind, anchorId, kindFilter, variant = 'icon-label', iconColor = 'var(--em-text-primary)' }) {
+export default function SendBriefingButton({ anchorKind, anchorId, kindFilter, variant = 'icon-label', iconColor = 'var(--as-text-primary)' }) {
   const [open, setOpen] = useState(false);
   const ariaLabel = `Send briefing about this ${anchorKind || 'anchor'}`;
   const isIconOnly = variant === 'icon-only';
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="em-press" aria-label={ariaLabel} style={isIconOnly ? iconOnlyStyle : baseStyle}>
+      <button type="button" onClick={() => setOpen(true)} className="as-press" aria-label={ariaLabel} style={isIconOnly ? iconOnlyStyle : baseStyle}>
         <Mail size={isIconOnly ? 20 : 14} strokeWidth={1.75} color={isIconOnly ? iconColor : undefined} />
         {!isIconOnly && <span>Send briefing</span>}
       </button>

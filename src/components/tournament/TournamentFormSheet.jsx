@@ -23,8 +23,8 @@ const emptyForm = {
   survival_notes: '', status: 'scheduled', teamIds: [],
 };
 
-const LABEL = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)', marginBottom: 6, display: 'block' };
-const SELECT_STYLE = { width: '100%', minHeight: 44, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' };
+const LABEL = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-secondary)', marginBottom: 6, display: 'block' };
+const SELECT_STYLE = { width: '100%', minHeight: 44, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, fontFamily: 'inherit' };
 const TEXTAREA_STYLE = { ...SELECT_STYLE, minHeight: 90, resize: 'vertical' };
 const SECTION = { marginBottom: 18 };
 
@@ -109,7 +109,7 @@ export default function TournamentFormSheet({ tournament, onClose }) {
         </div>
       </div>
       <div style={SECTION}>
-        <label style={LABEL}>Teams attending<span style={{ color: 'var(--em-danger)', marginLeft: 4 }} aria-hidden="true">*</span></label>
+        <label style={LABEL}>Teams attending<span style={{ color: 'var(--as-danger)', marginLeft: 4 }} aria-hidden="true">*</span></label>
         <TeamMultiSelect selectedIds={form.teamIds} onChange={(ids) => patch({ teamIds: ids })} />
       </div>
       <div style={SECTION}>

@@ -50,21 +50,21 @@ export default function AdminManageLinks() {
             key={link.to}
             to={link.to}
             onClick={() => navigator.vibrate?.(10)}
-            className="flex items-center gap-2 em-press"
+            className="flex items-center gap-2 as-press"
             style={{
               minHeight: 44,
               padding: '0 16px',
               borderRadius: 10,
-              backgroundColor: 'var(--em-bg-card)',
-              border: '1px solid var(--em-border-default)',
-              boxShadow: 'var(--em-shadow-sm)',
-              color: 'var(--em-text-primary)',
+              backgroundColor: 'var(--as-bg-card)',
+              border: '1px solid var(--as-border-default)',
+              boxShadow: 'var(--as-shadow-sm)',
+              color: 'var(--as-text-primary)',
               fontSize: 14,
               fontWeight: 500,
               transition: 'box-shadow 150ms ease-out, transform 150ms ease-out',
             }}
           >
-            <Icon size={20} strokeWidth={1.75} style={{ color: 'var(--em-text-tertiary)' }} aria-hidden="true" />
+            <Icon size={20} strokeWidth={1.75} style={{ color: 'var(--as-text-tertiary)' }} aria-hidden="true" />
             {link.label}
           </Link>
         );

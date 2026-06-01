@@ -37,7 +37,7 @@ export default function TeamMultiSelect({ selectedIds = [], onChange }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {useTypeahead && (
         <div style={{ position: 'relative' }}>
-          <Search size={16} strokeWidth={1.75} style={{ position: 'absolute', left: 12, top: 14, color: 'var(--em-text-tertiary)' }} />
+          <Search size={16} strokeWidth={1.75} style={{ position: 'absolute', left: 12, top: 14, color: 'var(--as-text-tertiary)' }} />
           <input
             type="text"
             value={search}
@@ -46,9 +46,9 @@ export default function TeamMultiSelect({ selectedIds = [], onChange }) {
             aria-label="Search teams"
             style={{
               width: '100%', minHeight: 44, padding: '10px 12px 10px 36px', borderRadius: 10,
-              border: '1.5px solid var(--em-border-default)',
-              backgroundColor: 'var(--em-bg-tertiary)',
-              color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'Inter, sans-serif',
+              border: '1.5px solid var(--as-border-default)',
+              backgroundColor: 'var(--as-bg-tertiary)',
+              color: 'var(--as-text-primary)', fontSize: 15, fontFamily: 'Inter, sans-serif',
             }}
           />
         </div>
@@ -61,20 +61,20 @@ export default function TeamMultiSelect({ selectedIds = [], onChange }) {
               key={t.id}
               type="button"
               onClick={() => toggle(t.id)}
-              className="em-press"
+              className="as-press"
               aria-pressed={selected}
               aria-label={`${selected ? 'Deselect' : 'Select'} ${t.name}`}
               style={{
                 minHeight: 44, padding: '10px 14px', borderRadius: 10,
-                border: `1.5px solid ${selected ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
-                backgroundColor: selected ? 'var(--em-accent-soft)' : 'var(--em-bg-card)',
+                border: `1.5px solid ${selected ? 'var(--as-accent)' : 'var(--as-border-default)'}`,
+                backgroundColor: selected ? 'var(--as-accent-soft)' : 'var(--as-bg-card)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-                fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)',
+                fontSize: 15, fontWeight: 500, color: 'var(--as-text-primary)',
                 cursor: 'pointer', width: '100%',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: t.team_color || 'var(--em-text-tertiary)', flexShrink: 0 }} />
+                <span style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: t.team_color || 'var(--as-text-tertiary)', flexShrink: 0 }} />
                 <span>{t.name}</span>
               </div>
               {/* Visible checkbox affordance for both states. Frank-
@@ -87,20 +87,20 @@ export default function TeamMultiSelect({ selectedIds = [], onChange }) {
                 aria-hidden="true"
                 style={{
                   width: 22, height: 22, borderRadius: '50%',
-                  border: `2px solid ${selected ? 'var(--em-accent)' : 'var(--em-border-default)'}`,
-                  backgroundColor: selected ? 'var(--em-accent)' : 'transparent',
+                  border: `2px solid ${selected ? 'var(--as-accent)' : 'var(--as-border-default)'}`,
+                  backgroundColor: selected ? 'var(--as-accent)' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
                   transition: 'background-color 120ms ease-out, border-color 120ms ease-out',
                 }}
               >
-                {selected && <Check size={14} strokeWidth={3} color="var(--em-text-inverse)" />}
+                {selected && <Check size={14} strokeWidth={3} color="var(--as-text-inverse)" />}
               </span>
             </button>
           );
         })}
         {useTypeahead && filtered.length === 0 && (
-          <div style={{ padding: 16, textAlign: 'center', fontSize: 13, color: 'var(--em-text-tertiary)' }}>
+          <div style={{ padding: 16, textAlign: 'center', fontSize: 13, color: 'var(--as-text-tertiary)' }}>
             No teams match "{search}"
           </div>
         )}

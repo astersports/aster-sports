@@ -41,7 +41,7 @@ describe('toKidsWithEvents', () => {
   it('falls back to defaults when team is missing from teamsById', () => {
     const out = toKidsWithEvents([{ playerId: 'p1', firstName: 'Aria', teamId: 'team-unknown' }], [], teamsById);
     expect(out[0].team_name).toBe('—');
-    expect(out[0].team_color).toBe('var(--em-neutral)');
+    expect(out[0].team_color).toBe('var(--as-neutral)');
     expect(out[0].sort_order).toBe(999);
   });
 

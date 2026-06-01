@@ -1,6 +1,6 @@
 // Brand-flash mitigation — caches the most-recent org's brand_colors
 // in localStorage so the next app boot can apply them synchronously
-// before React mounts. Without this, every boot renders Ember/Ember
+// before React mounts. Without this, every boot renders Aster Sports/Aster Sports
 // defaults until AuthContext's async fetch resolves, producing the
 // brand flash Frank captured 2026-05-20 (11:49 frame).
 //
@@ -12,14 +12,14 @@
 //      via the registerCacheBuster registry, preventing cross-account
 //      brand bleed
 //
-// LoginPage's explicit reset to Ember defaults (LoginPage:37-43)
+// LoginPage's explicit reset to Aster Sports defaults (LoginPage:37-43)
 // remains the source of truth for the /login surface — that runs in
 // useEffect after first paint and overrides anything the cache set.
 
-import { BRAND_CSS_VAR_MAP } from './emberDefaults';
+import { BRAND_CSS_VAR_MAP } from './asterDefaults';
 import { registerCacheBuster } from './cacheBuster';
 
-const CACHE_KEY = 'ember:cached-brand-colors';
+const CACHE_KEY = 'aster:cached-brand-colors';
 
 function isValidColor(value) {
   if (typeof value !== 'string') return false;

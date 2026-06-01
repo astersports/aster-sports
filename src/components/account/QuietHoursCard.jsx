@@ -14,7 +14,7 @@ function fmt(t) {
   return `${hr % 12 || 12}:${m} ${hr >= 12 ? 'PM' : 'AM'}`;
 }
 
-const timeInput = { minHeight: 36, padding: '0 8px', borderRadius: 8, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 14, fontFamily: 'inherit' };
+const timeInput = { minHeight: 36, padding: '0 8px', borderRadius: 8, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 14, fontFamily: 'inherit' };
 
 export default function QuietHoursCard({ userId, orgId }) {
   const { showToast } = useToast();
@@ -48,33 +48,33 @@ export default function QuietHoursCard({ userId, orgId }) {
   };
 
   return (
-    <div style={{ backgroundColor: 'var(--em-bg-card)', borderRadius: 10, border: '1px solid var(--em-border-default)', padding: 16 }}>
+    <div style={{ backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)', padding: 16 }}>
       {['weekday', 'weekend'].map((period) => (
         <div key={period} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{period === 'weekday' ? 'Weekdays' : 'Weekends'}</span>
+          <span style={{ fontSize: 15, color: 'var(--as-text-primary)' }}>{period === 'weekday' ? 'Weekdays' : 'Weekends'}</span>
           {editing ? (
             <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
               <input type="time" value={quiet[period]?.start || ''} onChange={(e) => update(period, 'start', e.target.value)} style={timeInput} />
-              <span style={{ color: 'var(--em-text-tertiary)', fontSize: 13 }}>–</span>
+              <span style={{ color: 'var(--as-text-tertiary)', fontSize: 13 }}>–</span>
               <input type="time" value={quiet[period]?.end || ''} onChange={(e) => update(period, 'end', e.target.value)} style={timeInput} />
             </div>
           ) : (
-            <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>
+            <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>
               {fmt(quiet[period]?.start)} – {fmt(quiet[period]?.end)}
             </span>
           )}
         </div>
       ))}
-      <div style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 4, marginBottom: 8 }}>
+      <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)', marginTop: 4, marginBottom: 8 }}>
         Notifications are silenced during these hours.
       </div>
       {editing ? (
         <div style={{ display: 'flex', gap: 8 }}>
-          <button type="button" onClick={() => setEditing(false)} style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-          <button type="button" onClick={save} disabled={saving} className="em-press" style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: saving ? 0.5 : 1 }}>{saving ? 'Saving…' : 'Save'}</button>
+          <button type="button" onClick={() => setEditing(false)} style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+          <button type="button" onClick={save} disabled={saving} className="as-press" style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: saving ? 0.5 : 1 }}>{saving ? 'Saving…' : 'Save'}</button>
         </div>
       ) : (
-        <button type="button" onClick={() => setEditing(true)} className="em-press" style={{ minHeight: 36, padding: '0 14px', borderRadius: 10, border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>Edit quiet hours</button>
+        <button type="button" onClick={() => setEditing(true)} className="as-press" style={{ minHeight: 36, padding: '0 14px', borderRadius: 10, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-accent)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>Edit quiet hours</button>
       )}
     </div>
   );

@@ -75,28 +75,28 @@ export default function AdminOpponentsPage() {
             <li
               key={o.id}
               style={{
-                backgroundColor: 'var(--em-bg-card)',
+                backgroundColor: 'var(--as-bg-card)',
                 borderRadius: 10,
-                border: '1px solid var(--em-border-subtle)',
-                boxShadow: 'var(--em-shadow-sm)',
+                border: '1px solid var(--as-border-subtle)',
+                boxShadow: 'var(--as-shadow-sm)',
                 padding: 16,
               }}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold" style={{ color: 'var(--em-text-primary)', fontSize: 17 }}>
+                <span className="font-semibold" style={{ color: 'var(--as-text-primary)', fontSize: 17 }}>
                   {o.name}
                 </span>
-                <span style={{ color: 'var(--em-text-secondary)', fontSize: 13, fontWeight: 600 }}>
+                <span style={{ color: 'var(--as-text-secondary)', fontSize: 13, fontWeight: 600 }}>
                   {formatRecord(o)}
                 </span>
               </div>
               {metaLine && (
-                <div style={{ color: 'var(--em-text-secondary)', fontSize: 13, marginBottom: o.scouting_notes ? 4 : 0 }}>
+                <div style={{ color: 'var(--as-text-secondary)', fontSize: 13, marginBottom: o.scouting_notes ? 4 : 0 }}>
                   {metaLine}
                 </div>
               )}
               {o.scouting_notes && (
-                <div style={{ color: 'var(--em-text-tertiary)', fontSize: 12, lineHeight: 1.5, fontStyle: 'italic' }}>
+                <div style={{ color: 'var(--as-text-tertiary)', fontSize: 12, lineHeight: 1.5, fontStyle: 'italic' }}>
                   {o.scouting_notes}
                 </div>
               )}

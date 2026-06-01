@@ -29,7 +29,7 @@ export default function StepDetails({ eventType, data, onChange, orgId }) {
 
   return (
     <div style={{ padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>Details</h2>
+      <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>Details</h2>
 
       <Input label="Title (optional)" type="text" value={data.title || ''} onChange={(e) => set('title', e.target.value)}
         placeholder={isGame ? 'vs. Storm AAU' : 'Practice'} />
@@ -37,16 +37,16 @@ export default function StepDetails({ eventType, data, onChange, orgId }) {
       {isGame && (
         <div>
           <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>
-            Opponent <span style={{ color: 'var(--em-danger)' }} aria-hidden="true">*</span>
+            Opponent <span style={{ color: 'var(--as-danger)' }} aria-hidden="true">*</span>
           </span>
           <input list="opponent-list" value={data.opponent || ''} onChange={(e) => set('opponent', e.target.value)}
             placeholder="Search or type opponent name" aria-label="Opponent" aria-required="true" required
-            style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' }} />
+            style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, fontFamily: 'inherit' }} />
           <datalist id="opponent-list">
             {opponents.map((o) => <option key={o.id} value={o.name} />)}
           </datalist>
           {!(data.opponent || '').trim() && (
-            <div style={{ marginTop: 6, fontSize: 12, color: 'var(--em-text-tertiary)' }}>
+            <div style={{ marginTop: 6, fontSize: 12, color: 'var(--as-text-tertiary)' }}>
               Required — pick a saved opponent or type a new one.
             </div>
           )}
@@ -62,7 +62,7 @@ export default function StepDetails({ eventType, data, onChange, orgId }) {
             set('tournamentId', tid);
             if (t) onChange({ ...data, tournamentId: tid, tournamentName: t.name, eventType: 'tournament' });
             else onChange({ ...data, tournamentId: null, tournamentName: '', eventType: 'game' });
-          }} style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, fontFamily: 'inherit' }}>
+          }} style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, fontFamily: 'inherit' }}>
             <option value="">No tournament</option>
             {tournaments.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
@@ -75,7 +75,7 @@ export default function StepDetails({ eventType, data, onChange, orgId }) {
           <div style={{ display: 'flex', gap: 8 }}>
             {HOME_AWAY.map((v) => (
               <button key={v} type="button" onClick={() => setHomeAway(v)}
-                className="em-press" style={chipStyle(data.homeAway === v)}>
+                className="as-press" style={chipStyle(data.homeAway === v)}>
                 {v === 'tbd' ? 'TBD' : v.charAt(0).toUpperCase() + v.slice(1)}
               </button>
             ))}
@@ -92,15 +92,15 @@ export default function StepDetails({ eventType, data, onChange, orgId }) {
         <span style={labelStyle}>Parent instructions</span>
         <textarea value={data.notes || ''} onChange={(e) => set('notes', e.target.value)}
           placeholder="Visible to parents" rows={3}
-          style={{ width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, resize: 'vertical' }} />
+          style={{ width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, resize: 'vertical' }} />
       </label>
 
       <label style={fieldStyle}>
         <span style={labelStyle}>Coach notes</span>
-        <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: -4 }}>Not visible to parents</span>
+        <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: -4 }}>Not visible to parents</span>
         <textarea value={data.coachNotes || ''} onChange={(e) => set('coachNotes', e.target.value)}
           placeholder="Internal notes" rows={2}
-          style={{ width: '100%', minHeight: 60, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-tertiary)', color: 'var(--em-text-primary)', fontSize: 15, resize: 'vertical' }} />
+          style={{ width: '100%', minHeight: 60, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, resize: 'vertical' }} />
       </label>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -118,11 +118,11 @@ export default function StepDetails({ eventType, data, onChange, orgId }) {
 }
 
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 6 };
-const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)' };
+const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--as-text-secondary)' };
 const chipStyle = (sel) => ({
   flex: 1, minHeight: 40, borderRadius: 10,
-  border: sel ? '2px solid var(--em-accent)' : '1px solid var(--em-border-default)',
-  backgroundColor: sel ? 'var(--em-accent)' : 'var(--em-bg-card)',
-  color: sel ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
+  border: sel ? '2px solid var(--as-accent)' : '1px solid var(--as-border-default)',
+  backgroundColor: sel ? 'var(--as-accent)' : 'var(--as-bg-card)',
+  color: sel ? 'var(--as-text-inverse)' : 'var(--as-text-primary)',
   fontSize: 13, fontWeight: 500,
 });

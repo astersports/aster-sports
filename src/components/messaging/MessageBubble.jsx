@@ -23,14 +23,14 @@ export default function MessageBubble({ message, isAnnouncement, onDelete }) {
     return (
       <div style={{
         padding: '12px 16px', borderRadius: 10,
-        backgroundColor: 'var(--em-accent-soft)',
-        border: '1px solid var(--em-accent)',
+        backgroundColor: 'var(--as-accent-soft)',
+        border: '1px solid var(--as-accent)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-accent)' }}>{message.sender_name}</span>
-          <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)' }}>{time}</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--as-accent)' }}>{message.sender_name}</span>
+          <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>{time}</span>
         </div>
-        <div style={{ fontSize: 15, lineHeight: 1.5, whiteSpace: 'pre-wrap', color: 'var(--em-text-primary)' }}>{message.body}</div>
+        <div style={{ fontSize: 15, lineHeight: 1.5, whiteSpace: 'pre-wrap', color: 'var(--as-text-primary)' }}>{message.body}</div>
       </div>
     );
   }
@@ -38,7 +38,7 @@ export default function MessageBubble({ message, isAnnouncement, onDelete }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
       {!isMine && (
-        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-text-secondary)', marginBottom: 2, paddingLeft: 4 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--as-text-secondary)', marginBottom: 2, paddingLeft: 4 }}>
           {message.sender_name}
         </span>
       )}
@@ -46,33 +46,33 @@ export default function MessageBubble({ message, isAnnouncement, onDelete }) {
         onPointerDown={startPress} onPointerUp={endPress} onPointerLeave={endPress}
         style={{
           maxWidth: '80%', padding: '10px 14px', borderRadius: 14, position: 'relative',
-          backgroundColor: isMine ? 'var(--em-accent)' : 'var(--em-bg-card)',
-          border: isMine ? 'none' : '1px solid var(--em-border-default)',
-          boxShadow: 'var(--em-shadow-sm)', userSelect: 'none',
+          backgroundColor: isMine ? 'var(--as-accent)' : 'var(--as-bg-card)',
+          border: isMine ? 'none' : '1px solid var(--as-border-default)',
+          boxShadow: 'var(--as-shadow-sm)', userSelect: 'none',
         }}
       >
         <div style={{
           fontSize: 15, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-          color: isMine ? 'var(--em-text-inverse)' : 'var(--em-text-primary)',
+          color: isMine ? 'var(--as-text-inverse)' : 'var(--as-text-primary)',
         }}>{message.body}</div>
         {showActions && isMine && (
           <button
             type="button"
             onClick={() => { onDelete(message.id); setShowActions(false); }}
-            className="em-press" aria-label="Delete message"
+            className="as-press" aria-label="Delete message"
             style={{
               position: 'absolute', top: -12, right: -12,
               width: 28, height: 28, borderRadius: '50%',
-              backgroundColor: 'var(--em-danger)', border: 'none',
+              backgroundColor: 'var(--as-danger)', border: 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', boxShadow: 'var(--em-shadow-md)',
+              cursor: 'pointer', boxShadow: 'var(--as-shadow-md)',
             }}
           >
-            <Trash2 size={14} strokeWidth={2} color="var(--em-text-inverse)" />
+            <Trash2 size={14} strokeWidth={2} color="var(--as-text-inverse)" />
           </button>
         )}
       </div>
-      <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginTop: 2, paddingLeft: 4, paddingRight: 4 }}>{time}</span>
+      <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)', marginTop: 2, paddingLeft: 4, paddingRight: 4 }}>{time}</span>
     </div>
   );
 }

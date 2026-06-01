@@ -17,11 +17,11 @@ import ComposeAnchorCta from '../briefings/ComposeAnchorCta';
 const ICON_MAP = { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy };
 
 const wrap = { margin: '16px' };
-const headerStyle = { fontSize: 16, fontWeight: 600, color: 'var(--em-text-primary)', margin: '0 0 8px 0' };
-const rowStyle = { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, backgroundColor: 'var(--em-bg-card)', border: '1px solid var(--em-border-subtle)', minHeight: 56, width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer', color: 'var(--em-text-primary)' };
-const iconWrap = { width: 32, height: 32, borderRadius: 8, backgroundColor: 'var(--em-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 };
-const titleStyle = { fontSize: 14, fontWeight: 500, color: 'var(--em-text-primary)' };
-const subStyle = { fontSize: 12, color: 'var(--em-text-tertiary)', marginTop: 2 };
+const headerStyle = { fontSize: 16, fontWeight: 600, color: 'var(--as-text-primary)', margin: '0 0 8px 0' };
+const rowStyle = { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-subtle)', minHeight: 56, width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer', color: 'var(--as-text-primary)' };
+const iconWrap = { width: 32, height: 32, borderRadius: 8, backgroundColor: 'var(--as-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 };
+const titleStyle = { fontSize: 14, fontWeight: 500, color: 'var(--as-text-primary)' };
+const subStyle = { fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 2 };
 
 function relTime(iso) {
   if (!iso) return '';
@@ -67,13 +67,13 @@ export default function TournamentBriefingHistory({ tournament }) {
           const meta = KIND_METADATA[b.kind] || {};
           const Icon = ICON_MAP[meta.icon] || MessageSquare;
           return (
-            <button key={b.id} type="button" className="em-press" style={rowStyle} onClick={() => navigate(`/admin/briefings/history/${b.id}`)}>
-              <span style={iconWrap}><Icon size={16} strokeWidth={1.75} color="var(--em-text-secondary)" /></span>
+            <button key={b.id} type="button" className="as-press" style={rowStyle} onClick={() => navigate(`/admin/briefings/history/${b.id}`)}>
+              <span style={iconWrap}><Icon size={16} strokeWidth={1.75} color="var(--as-text-secondary)" /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={titleStyle}>{meta.label || b.kind} · sent {relTime(b.sent_at)}</div>
                 <div style={subStyle}>{deliverySubtitle(b.recipientCount, b.deliveredCount)}</div>
               </div>
-              <span style={{ fontSize: 12, color: 'var(--em-accent)' }}>View →</span>
+              <span style={{ fontSize: 12, color: 'var(--as-accent)' }}>View →</span>
             </button>
           );
         })}

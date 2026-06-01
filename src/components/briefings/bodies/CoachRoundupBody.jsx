@@ -80,7 +80,7 @@ export default function CoachRoundupBody({ value, onChange, audienceFilter, onAu
           <input type="date" value={v.date_range.end} onChange={(e) => setRange({ end: e.target.value })} style={inputStyle} />
         </label>
       </div>
-      <div style={{ fontSize: 12, color: 'var(--em-text-tertiary)', lineHeight: 1.4 }}>
+      <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', lineHeight: 1.4 }}>
         Aggregates every game the coach's teams play in the selected window. Cross-team time conflicts surface in an amber callout at the top.
       </div>
     </div>

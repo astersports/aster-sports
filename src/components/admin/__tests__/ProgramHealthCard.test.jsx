@@ -8,8 +8,8 @@
 // rendering literal zeros/dashes (`0%`, `—`, `0 teams`, `0 new this week`)
 // as placeholders while useProgramHealthMetrics resolved — reading as
 // "the org has no data" rather than "data is loading." Fix threaded
-// `loading` through MetricRow + added MetricValueSkeleton (em-pulse
-// shape-matched bar per --em-bg-tertiary + 6px radius).
+// `loading` through MetricRow + added MetricValueSkeleton (as-pulse
+// shape-matched bar per --as-bg-tertiary + 6px radius).
 //
 // Invariant: during the load window, none of the 4 metric rows render
 // their default-state placeholder strings; instead each renders a
@@ -59,9 +59,9 @@ describe('ProgramHealthCard — skeleton/loaded invariant (AP #46)', () => {
     expect(container.textContent).not.toMatch(/0 teams/);
     expect(container.textContent).not.toMatch(/0 new this week/);
 
-    // Skeleton span: shape-matched per LoadingSkeleton.Bar (em-pulse class,
-    // --em-bg-tertiary fill, 6px radius, aria-hidden). One per metric row.
-    const skeletons = container.querySelectorAll('span.em-pulse[aria-hidden="true"]');
+    // Skeleton span: shape-matched per LoadingSkeleton.Bar (as-pulse class,
+    // --as-bg-tertiary fill, 6px radius, aria-hidden). One per metric row.
+    const skeletons = container.querySelectorAll('span.as-pulse[aria-hidden="true"]');
     expect(skeletons.length).toBe(4);
 
     // Section + season header still render (season name + week header is not
@@ -85,7 +85,7 @@ describe('ProgramHealthCard — skeleton/loaded invariant (AP #46)', () => {
     expect(container.textContent).toMatch(/5 teams/);
     expect(container.textContent).toMatch(/3 new this week/);
 
-    const skeletons = container.querySelectorAll('span.em-pulse[aria-hidden="true"]');
+    const skeletons = container.querySelectorAll('span.as-pulse[aria-hidden="true"]');
     expect(skeletons.length).toBe(0);
   });
 

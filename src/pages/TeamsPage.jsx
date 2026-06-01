@@ -21,19 +21,19 @@ export default function TeamsPage() {
   const visiblePrograms = role === 'parent' ? programs.filter((t) => (myTeamIds || []).includes(t.id)) : programs;
 
   return (
-    <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="px-4 py-4 em-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
+    <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="px-4 py-4 as-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <div style={{ marginBottom: 4 }}>
-        <h1 className="font-bold" style={{ color: 'var(--em-text-primary)', fontSize: 20, letterSpacing: '-0.025em' }}>
-          Teams <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--em-text-tertiary)' }}>{activeSeason?.name || ''} · {visiblePrograms.length}</span>
+        <h1 className="font-bold" style={{ color: 'var(--as-text-primary)', fontSize: 20, letterSpacing: '-0.025em' }}>
+          Teams <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--as-text-tertiary)' }}>{activeSeason?.name || ''} · {visiblePrograms.length}</span>
         </h1>
-        <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: 'var(--em-accent)', marginTop: 6 }} />
+        <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: 'var(--as-accent)', marginTop: 6 }} />
       </div>
 
       {refreshing && (
         <div className="flex justify-center py-3">
           <div style={{
             width: 24, height: 24, borderRadius: '50%',
-            border: '2px solid var(--em-accent)',
+            border: '2px solid var(--as-accent)',
             borderTopColor: 'transparent',
             animation: 'spin 0.6s linear infinite',
           }} />

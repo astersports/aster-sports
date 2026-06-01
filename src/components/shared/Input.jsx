@@ -10,9 +10,9 @@ const Input = forwardRef(function Input({ label, error, style, required, ...prop
   return (
     <div>
       {label && (
-        <label htmlFor={id} style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)', marginBottom: 4 }}>
+        <label htmlFor={id} style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--as-text-secondary)', marginBottom: 4 }}>
           {label}
-          {required && <span style={{ color: 'var(--em-danger)', marginLeft: 4 }} aria-hidden="true">*</span>}
+          {required && <span style={{ color: 'var(--as-danger)', marginLeft: 4 }} aria-hidden="true">*</span>}
         </label>
       )}
       <input
@@ -25,9 +25,9 @@ const Input = forwardRef(function Input({ label, error, style, required, ...prop
           minHeight: 44,
           padding: '0 12px',
           borderRadius: 10,
-          border: `1.5px solid ${error ? 'var(--em-danger)' : 'var(--em-border-default)'}`,
-          backgroundColor: 'var(--em-bg-tertiary)',
-          color: 'var(--em-text-primary)',
+          border: `1.5px solid ${error ? 'var(--as-danger)' : 'var(--as-border-default)'}`,
+          backgroundColor: 'var(--as-bg-tertiary)',
+          color: 'var(--as-text-primary)',
           fontSize: 15,
           fontFamily: 'inherit',
           ...style,
@@ -35,7 +35,7 @@ const Input = forwardRef(function Input({ label, error, style, required, ...prop
         {...props}
       />
       {error && (
-        <div style={{ fontSize: 11, color: 'var(--em-danger)', marginTop: 4 }}>{error}</div>
+        <div style={{ fontSize: 11, color: 'var(--as-danger)', marginTop: 4 }}>{error}</div>
       )}
     </div>
   );

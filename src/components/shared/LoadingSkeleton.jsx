@@ -5,12 +5,12 @@
 function Bar({ width = '100%', height = 12, radius = 6, className = '' }) {
   return (
     <div
-      className={`em-pulse ${className}`}
+      className={`as-pulse ${className}`}
       style={{
         width,
         height,
         borderRadius: radius,
-        backgroundColor: 'var(--em-bg-tertiary)',
+        backgroundColor: 'var(--as-bg-tertiary)',
       }}
     />
   );
@@ -21,9 +21,9 @@ function Card() {
     <div
       className="p-4 mb-3"
       style={{
-        backgroundColor: 'var(--em-bg-card)',
+        backgroundColor: 'var(--as-bg-card)',
         borderRadius: 10,
-        border: '1px solid var(--em-border-subtle)',
+        border: '1px solid var(--as-border-subtle)',
       }}
     >
       <Bar width="40%" height={10} className="mb-3" />
@@ -37,8 +37,8 @@ function ListRow() {
   return (
     <div className="flex items-center gap-3 py-3">
       <div
-        className="em-pulse"
-        style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: 'var(--em-bg-tertiary)' }}
+        className="as-pulse"
+        style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: 'var(--as-bg-tertiary)' }}
       />
       <div className="flex-1">
         <Bar width="60%" height={12} className="mb-2" />

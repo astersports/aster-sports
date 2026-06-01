@@ -61,7 +61,7 @@ export default function DensityToggle({ sectionKey = 'default' }) {
       onClick={handleClick}
       disabled={loading}
       aria-label={`Density ${label}. Tap to switch to ${nextLabel}.`}
-      className="em-press"
+      className="as-press"
       style={{
         // 44px tap target with smaller visible chip
         minHeight: 44,
@@ -86,9 +86,9 @@ export default function DensityToggle({ sectionKey = 'default' }) {
           padding: '4px 8px',
           minHeight: 24,
           borderRadius: 6,
-          backgroundColor: 'var(--em-bg-secondary)',
-          border: '1px solid var(--em-border-subtle)',
-          color: 'var(--em-text-tertiary)',
+          backgroundColor: 'var(--as-bg-secondary)',
+          border: '1px solid var(--as-border-subtle)',
+          color: 'var(--as-text-tertiary)',
           fontSize: 11,
           fontWeight: 600,
           letterSpacing: '0.05em',

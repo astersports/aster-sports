@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { resolveLoginRedirect } from '../lib/loginRedirectAllowlist';
 import LoginForm from '../components/auth/LoginForm';
 
-// Ember brand landing + sign-in. Email auto-trims on submit. Inline field
+// Aster Sports brand landing + sign-in. Email auto-trims on submit. Inline field
 // errors (not toasts) so the user sees exactly which field failed.
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -33,15 +33,15 @@ export default function LoginPage() {
       });
   }, [teamParam]);
 
-  // Reset brand tokens to Ember defaults on mount so the login page
+  // Reset brand tokens to Aster Sports defaults on mount so the login page
   // always shows dark navy regardless of cached org colors.
   useEffect(() => {
     const r = document.documentElement.style;
-    r.setProperty('--em-header', '#151525');
-    r.setProperty('--em-accent', '#C9952E');
-    r.setProperty('--em-accent-hover', '#D4A843');
-    r.setProperty('--em-accent-soft', 'rgba(201,149,46,0.1)');
-    r.setProperty('--em-text-on-dark', '#F5F0E8');
+    r.setProperty('--as-header', '#151525');
+    r.setProperty('--as-accent', '#C9952E');
+    r.setProperty('--as-accent-hover', '#D4A843');
+    r.setProperty('--as-accent-soft', 'rgba(201,149,46,0.1)');
+    r.setProperty('--as-text-on-dark', '#F5F0E8');
   }, []);
 
   const onSubmit = async (e) => {
@@ -68,14 +68,14 @@ export default function LoginPage() {
 
   return (
     <div
-      className="em-fullscreen flex items-center justify-center p-6"
-      style={{ backgroundColor: 'var(--em-header)' }}
+      className="as-fullscreen flex items-center justify-center p-6"
+      style={{ backgroundColor: 'var(--as-header)' }}
     >
       <div
-        className="w-full em-fade-in"
+        className="w-full as-fade-in"
         style={{
-          maxWidth: 400, backgroundColor: 'var(--em-bg-card)',
-          borderRadius: 16, padding: 28, boxShadow: 'var(--em-shadow-lg)',
+          maxWidth: 400, backgroundColor: 'var(--as-bg-card)',
+          borderRadius: 16, padding: 28, boxShadow: 'var(--as-shadow-lg)',
         }}
       >
         <div className="flex flex-col items-center mb-6">
@@ -85,10 +85,10 @@ export default function LoginPage() {
 
         {teamContext && (
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--em-text-primary)' }}>
+            <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>
               Welcome to {teamContext.teamName}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 4 }}>
+            <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 4 }}>
               Sign in to access your child&#39;s schedule
             </div>
           </div>

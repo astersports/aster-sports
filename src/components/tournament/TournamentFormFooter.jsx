@@ -9,16 +9,16 @@ export default function TournamentFormFooter({ conflictMessage, onCancel, onSave
   return (
     <>
       {conflictMessage && (
-        <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 10, marginBottom: 12, backgroundColor: 'var(--em-warning-soft)', border: '1px solid var(--em-warning)', color: 'var(--em-warning)', fontSize: 13 }}>
+        <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 10, marginBottom: 12, backgroundColor: 'var(--as-warning-soft)', border: '1px solid var(--as-warning)', color: 'var(--as-warning)', fontSize: 13 }}>
           <AlertTriangle size={16} strokeWidth={1.75} style={{ flexShrink: 0, marginTop: 1 }} aria-hidden="true" />
           <span>Schedule conflict: {conflictMessage}. You can save anyway.</span>
         </div>
       )}
-      <div style={{ position: 'sticky', bottom: -16, margin: '8px -16px -16px', padding: '12px 16px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', backgroundColor: 'var(--em-bg-card)', borderTop: '1px solid var(--em-border-default)', display: 'flex', gap: 10 }}>
-        <button type="button" onClick={onCancel} className="em-press" aria-label="Cancel"
-          style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1.5px solid var(--em-accent)', backgroundColor: 'var(--em-bg-card)', color: 'var(--em-accent)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-        <button type="button" onClick={onSave} disabled={disabled} className="em-press" aria-label={saving ? 'Saving' : 'Save'}
-          style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, opacity: disabled ? 0.5 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}>{saving ? 'Saving…' : 'Save'}</button>
+      <div style={{ position: 'sticky', bottom: -16, margin: '8px -16px -16px', padding: '12px 16px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', backgroundColor: 'var(--as-bg-card)', borderTop: '1px solid var(--as-border-default)', display: 'flex', gap: 10 }}>
+        <button type="button" onClick={onCancel} className="as-press" aria-label="Cancel"
+          style={{ flex: 1, minHeight: 44, borderRadius: 10, border: '1.5px solid var(--as-accent)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-accent)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+        <button type="button" onClick={onSave} disabled={disabled} className="as-press" aria-label={saving ? 'Saving' : 'Save'}
+          style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 15, fontWeight: 600, opacity: disabled ? 0.5 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}>{saving ? 'Saving…' : 'Save'}</button>
       </div>
     </>
   );

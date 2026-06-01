@@ -72,19 +72,19 @@ export default function AcademyCallupCompose({ event, team, player, onClose }) {
   return (
     <FullScreenForm open onClose={() => onClose?.('skipped')} title={`Call-Up: ${player.first_name}`}>
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--em-text-secondary)', marginBottom: 4 }}>Subject</div>
-        <div style={{ fontSize: 15, color: 'var(--em-text-primary)' }}>{subjectPreview || 'Loading…'}</div>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-secondary)', marginBottom: 4 }}>Subject</div>
+        <div style={{ fontSize: 15, color: 'var(--as-text-primary)' }}>{subjectPreview || 'Loading…'}</div>
       </div>
-      <div style={{ marginBottom: 14, fontSize: 13, color: 'var(--em-text-secondary)' }}>
+      <div style={{ marginBottom: 14, fontSize: 13, color: 'var(--as-text-secondary)' }}>
         Sending to {familyCount} {familyCount === 1 ? 'family' : 'families'} ({player.first_name}&rsquo;s {familyCount === 1 ? 'guardian' : 'guardians'})
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-        <button type="button" onClick={() => onClose?.('skipped')} className="em-press"
-          style={{ flex: 1, minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-bg-secondary)', color: 'var(--em-text-primary)', fontSize: 15, fontWeight: 600, border: 'none' }}>
+        <button type="button" onClick={() => onClose?.('skipped')} className="as-press"
+          style={{ flex: 1, minHeight: 44, borderRadius: 10, backgroundColor: 'var(--as-bg-secondary)', color: 'var(--as-text-primary)', fontSize: 15, fontWeight: 600, border: 'none' }}>
           Skip email
         </button>
-        <button type="button" onClick={() => setConfirmOpen(true)} disabled={!canSend} className="em-press"
-          style={{ flex: 1, minHeight: 44, borderRadius: 10, backgroundColor: 'var(--em-accent)', color: 'var(--em-text-inverse)', fontSize: 15, fontWeight: 600, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: canSend ? 1 : 0.5 }}>
+        <button type="button" onClick={() => setConfirmOpen(true)} disabled={!canSend} className="as-press"
+          style={{ flex: 1, minHeight: 44, borderRadius: 10, backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 15, fontWeight: 600, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: canSend ? 1 : 0.5 }}>
           <Send size={16} strokeWidth={1.75} /> Send
         </button>
       </div>

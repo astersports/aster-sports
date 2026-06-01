@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { registerCacheBuster } from '../lib/cacheBuster';
 
-const CACHE_PREFIX = 'ember-weather-cache:';
-const FALLBACK_PREFIX = 'ember-weather-fallback:';
+const CACHE_PREFIX = 'aster-weather-cache:';
+const FALLBACK_PREFIX = 'aster-weather-fallback:';
 const CACHE_TTL = 30 * 60 * 1000;
 
 // May 16 audit P2 #8 — register a signOut cache buster so the
-// localStorage `ember-weather-fallback:<lat>,<lon>` entries (used as
+// localStorage `aster-weather-fallback:<lat>,<lon>` entries (used as
 // last-known-good fallback when the network call fails) clear on
 // user signout. Weather data isn't user-PII, but consistent hygiene:
 // signOut clears every per-user caching surface across the app.

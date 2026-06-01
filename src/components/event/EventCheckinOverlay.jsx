@@ -15,12 +15,12 @@ export default function EventCheckinOverlay({ eventId, roster, teamColor, onClos
   }, [onClose]);
   return createPortal(
     <div ref={trapRef} role="dialog" aria-modal="true" aria-label="Take Attendance"
-      style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--em-bg-page)', zIndex: 9999, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 4px', borderBottom: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)' }}>
-        <button type="button" onClick={onClose} className="em-press" aria-label="Close attendance" style={iconBtn}>
-          <ArrowLeft size={20} strokeWidth={1.75} color="var(--em-text-primary)" />
+      style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--as-bg-page)', zIndex: 9999, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 4px', borderBottom: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)' }}>
+        <button type="button" onClick={onClose} className="as-press" aria-label="Close attendance" style={iconBtn}>
+          <ArrowLeft size={20} strokeWidth={1.75} color="var(--as-text-primary)" />
         </button>
-        <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--em-text-primary)' }}>Take Attendance</h2>
+        <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--as-text-primary)' }}>Take Attendance</h2>
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
         <EventCheckinTab eventId={eventId} roster={roster} teamColor={teamColor} />

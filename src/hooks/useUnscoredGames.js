@@ -88,7 +88,7 @@ export function useUnscoredGames(orgId, nowMs) {
           event_id: ev.id,
           start_at: ev.start_at,
           team_name: teamName,
-          team_color: ev.teams?.team_color || 'var(--em-warning)',
+          team_color: ev.teams?.team_color || 'var(--as-warning)',
         };
       });
     out.sort((a, b) => new Date(b.start_at) - new Date(a.start_at)); // most-recent past game first

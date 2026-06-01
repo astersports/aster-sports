@@ -32,7 +32,7 @@ export default function RsvpNudgeBody({ value, onChange }) {
         <span style={labelStyle}>Custom message (optional)</span>
         <textarea value={v.custom_message} onChange={(e) => set({ custom_message: e.target.value })} style={textareaStyle} placeholder="A short note above the buttons. Leave empty for a clean nudge." />
       </label>
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--em-text-secondary)' }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--as-text-secondary)' }}>
         <input type="checkbox" checked={v.ask_comment_field} onChange={(e) => set({ ask_comment_field: e.target.checked })} />
         Ask for an optional comment in the reply
       </label>

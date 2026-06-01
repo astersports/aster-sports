@@ -86,14 +86,14 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
           the inner scroll region engages. `overflow: hidden` keeps the
           rounded corners from being clipped by the scrollable child. */}
       <div
-        className="w-full em-sheet-rise"
+        className="w-full as-sheet-rise"
         style={{
           maxHeight: `${maxHeightPx}px`,
           overflow: 'hidden',
-          backgroundColor: 'var(--em-bg-card)',
+          backgroundColor: 'var(--as-bg-card)',
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
-          boxShadow: 'var(--em-shadow-lg)',
+          boxShadow: 'var(--as-shadow-lg)',
           transition: 'max-height 250ms ease-out',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -101,14 +101,14 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="em-press flex items-center justify-center"
+          className="as-press flex items-center justify-center"
           style={{ display: 'flex', width: '100%', height: HANDLE_PX }}
           aria-label={expanded ? 'Collapse sheet' : 'Expand sheet'}
         >
           <span
             style={{
               width: 36, height: 4, borderRadius: 999,
-              backgroundColor: 'var(--em-border-default)',
+              backgroundColor: 'var(--as-border-default)',
             }}
           />
         </button>

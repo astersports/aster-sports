@@ -5,9 +5,9 @@ import { formatCurrency } from '../../lib/formatters';
 // Interactive only when the program is open AND an onSelect is provided (PR C wires
 // the wizard navigation; PR B renders read-only).
 const PILL = {
-  open:     { label: 'OPEN',   bg: 'var(--em-success-soft)', fg: 'var(--em-success)' },
-  upcoming: { label: null,     bg: 'var(--em-info-soft)',    fg: 'var(--em-info)' },
-  closed:   { label: 'CLOSED', bg: 'var(--em-neutral-soft)', fg: 'var(--em-text-tertiary)' },
+  open:     { label: 'OPEN',   bg: 'var(--as-success-soft)', fg: 'var(--as-success)' },
+  upcoming: { label: null,     bg: 'var(--as-info-soft)',    fg: 'var(--as-info)' },
+  closed:   { label: 'CLOSED', bg: 'var(--as-neutral-soft)', fg: 'var(--as-text-tertiary)' },
 };
 
 function gradeLabel(min, max) {
@@ -27,20 +27,20 @@ export default function DivisionCard({ division, regState, opensLabel, onSelect 
       type="button"
       onClick={interactive ? () => onSelect(division) : undefined}
       disabled={!interactive}
-      className={interactive ? 'em-press' : undefined}
+      className={interactive ? 'as-press' : undefined}
       aria-label={`${division.name}${pillLabel ? ` — ${pillLabel}` : ''}`}
       style={{
         display: 'flex', alignItems: 'stretch', width: '100%', textAlign: 'left',
-        backgroundColor: 'var(--em-bg-card)', borderRadius: 10,
-        border: '1px solid var(--em-border-default)', boxShadow: 'var(--em-shadow-sm)',
+        backgroundColor: 'var(--as-bg-card)', borderRadius: 10,
+        border: '1px solid var(--as-border-default)', boxShadow: 'var(--as-shadow-sm)',
         overflow: 'hidden', marginBottom: 8, padding: 0,
         cursor: interactive ? 'pointer' : 'default', opacity: 1,
       }}
     >
-      <div style={{ width: 4, flexShrink: 0, backgroundColor: division.team_color || 'var(--em-accent)' }} />
+      <div style={{ width: 4, flexShrink: 0, backgroundColor: division.team_color || 'var(--as-accent)' }} />
       <div style={{ flex: 1, padding: '12px 14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)' }}>{division.name}</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)' }}>{division.name}</span>
           {pillLabel && (
             <span style={{
               fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 6,
@@ -48,7 +48,7 @@ export default function DivisionCard({ division, regState, opensLabel, onSelect 
             }}>{pillLabel}</span>
           )}
         </div>
-        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
+        <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 2 }}>
           {[grades, formatCurrency(division.base_fee_cents)].filter(Boolean).join(' · ')}
         </div>
       </div>

@@ -20,12 +20,12 @@ export default function RosterControls({ search, setSearch, sortBy, setSortBy, r
           minWidth: 0,
           display: 'flex',
           alignItems: 'center',
-          backgroundColor: 'var(--em-bg-secondary)',
+          backgroundColor: 'var(--as-bg-secondary)',
           borderRadius: 10,
           padding: '0 12px',
           minHeight: 44,
         }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--em-text-tertiary)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--as-text-tertiary)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
           </svg>
           <input
@@ -39,7 +39,7 @@ export default function RosterControls({ search, setSearch, sortBy, setSortBy, r
               border: 'none',
               outline: 'none',
               fontSize: 15,
-              color: 'var(--em-text-primary)',
+              color: 'var(--as-text-primary)',
               marginLeft: 8,
               minHeight: 44,
             }}
@@ -51,7 +51,7 @@ export default function RosterControls({ search, setSearch, sortBy, setSortBy, r
             so the 4-chip staff row [# A-Z Age Att] no longer bleeds off
             the right edge on iPhone width. Without minWidth:0 the input's
             intrinsic content width acted as a floor and forced overflow. */}
-        <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--em-border-default)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--as-border-default)', flexShrink: 0 }}>
           {((role === 'admin' || role === 'coach')
             ? [{ key: 'jersey', label: '#' }, { key: 'name', label: 'A-Z' }, { key: 'age', label: 'Age' }, { key: 'attendance', label: 'Att' }]
             : [{ key: 'jersey', label: '#' }, { key: 'name', label: 'A-Z' }]
@@ -62,8 +62,8 @@ export default function RosterControls({ search, setSearch, sortBy, setSortBy, r
               onClick={() => { setSortBy(opt.key); navigator.vibrate?.(10); }}
               style={{
                 minWidth: 36, minHeight: 44, padding: '0 8px', border: 'none',
-                backgroundColor: sortBy === opt.key ? 'var(--em-accent)' : 'var(--em-bg-card)',
-                color: sortBy === opt.key ? 'var(--em-text-inverse)' : 'var(--em-text-secondary)',
+                backgroundColor: sortBy === opt.key ? 'var(--as-accent)' : 'var(--as-bg-card)',
+                color: sortBy === opt.key ? 'var(--as-text-inverse)' : 'var(--as-text-secondary)',
                 fontSize: 13, fontWeight: 600,
               }}
             >
@@ -75,9 +75,9 @@ export default function RosterControls({ search, setSearch, sortBy, setSortBy, r
       {lastFetchedAt && onRefresh && (
         <button type="button" onClick={() => { navigator.vibrate?.(10); onRefresh(); }}
           aria-label="Refresh roster"
-          className="em-press"
+          className="as-press"
           style={{ marginTop: 6, padding: '4px 4px', minHeight: 44, background: 'none', border: 'none',
-            fontSize: 11, color: 'var(--em-text-tertiary)', textAlign: 'left', cursor: 'pointer' }}>
+            fontSize: 11, color: 'var(--as-text-tertiary)', textAlign: 'left', cursor: 'pointer' }}>
           Last updated {formatRelativeAgo(now - lastFetchedAt)} &middot; tap to refresh
         </button>
       )}

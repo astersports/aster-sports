@@ -31,25 +31,25 @@ export default function DutyEditor({ value, onChange }) {
                 onClick={() => update(i, { slots_needed: Math.min(10, (d.slots_needed || 1) + 1) })}
                 style={stepBtn}>+</button>
             </div>
-            <button type="button" onClick={() => remove(i)} className="em-press"
+            <button type="button" onClick={() => remove(i)} className="as-press"
               aria-label="Remove volunteer"
               style={{
                 width: 40, height: 40, borderRadius: 10,
-                border: '1px solid var(--em-border-default)',
-                backgroundColor: 'var(--em-bg-card)', display: 'flex',
+                border: '1px solid var(--as-border-default)',
+                backgroundColor: 'var(--as-bg-card)', display: 'flex',
                 alignItems: 'center', justifyContent: 'center',
               }}>
-              <X size={16} strokeWidth={1.75} color="var(--em-text-tertiary)" />
+              <X size={16} strokeWidth={1.75} color="var(--as-text-tertiary)" />
             </button>
           </div>
         ))}
       </div>
-      <button type="button" onClick={add} className="em-press"
+      <button type="button" onClick={add} className="as-press"
         style={{
           marginTop: 8, minHeight: 40, padding: '0 14px', borderRadius: 10,
-          border: '1px solid var(--em-border-default)',
-          backgroundColor: 'var(--em-bg-card)',
-          color: 'var(--em-accent)', fontSize: 13, fontWeight: 500,
+          border: '1px solid var(--as-border-default)',
+          backgroundColor: 'var(--as-bg-card)',
+          color: 'var(--as-accent)', fontSize: 13, fontWeight: 500,
           display: 'inline-flex', alignItems: 'center', gap: 6,
         }}>
         <Plus size={16} strokeWidth={1.75} /> Add volunteer
@@ -58,11 +58,11 @@ export default function DutyEditor({ value, onChange }) {
   );
 }
 
-const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--em-text-secondary)', display: 'block' };
+const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--as-text-secondary)', display: 'block' };
 
 const stepBtn = {
   width: 32, height: 32, borderRadius: 8,
-  border: '1px solid var(--em-border-default)',
-  backgroundColor: 'var(--em-bg-card)', color: 'var(--em-text-primary)',
+  border: '1px solid var(--as-border-default)',
+  backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)',
   fontSize: 17, fontWeight: 500, cursor: 'pointer',
 };

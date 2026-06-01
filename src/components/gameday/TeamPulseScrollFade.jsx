@@ -46,7 +46,7 @@ export default function TeamPulseScrollFade({ children }) {
         style={{
           position: 'absolute', top: 0, right: 0, bottom: 16, width: 32,
           pointerEvents: 'none',
-          background: 'linear-gradient(to right, transparent, var(--em-bg-page))',
+          background: 'linear-gradient(to right, transparent, var(--as-bg-page))',
           opacity: showFade ? 1 : 0,
           transition: 'opacity 150ms ease-out',
         }}

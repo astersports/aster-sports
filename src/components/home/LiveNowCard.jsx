@@ -46,41 +46,41 @@ export default function LiveNowCard({ items, nowMs }) {
           <Link
             key={`live:${item.event_id}:${item.kid_first_name}`}
             to={`/events/${item.event_id}`}
-            className="em-press"
+            className="as-press"
             style={{
               display: 'block',
               padding: 14,
               marginBottom: 12,
-              backgroundColor: 'var(--em-success-soft)',
-              border: '1px solid var(--em-success)',
-              borderLeft: `4px solid ${item.team_color || 'var(--em-success)'}`,
+              backgroundColor: 'var(--as-success-soft)',
+              border: '1px solid var(--as-success)',
+              borderLeft: `4px solid ${item.team_color || 'var(--as-success)'}`,
               borderRadius: 10,
-              color: 'var(--em-text-primary)',
+              color: 'var(--as-text-primary)',
               textDecoration: 'none',
-              boxShadow: 'var(--em-shadow-sm)',
+              boxShadow: 'var(--as-shadow-sm)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <span
                 aria-hidden="true"
-                className="em-pulse-dot"
+                className="as-pulse-dot"
                 style={{
                   display: 'inline-block',
                   width: 10,
                   height: 10,
                   borderRadius: '50%',
-                  backgroundColor: 'var(--em-success)',
+                  backgroundColor: 'var(--as-success)',
                 }}
               />
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--em-success)', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--as-success)', letterSpacing: 1.5, textTransform: 'uppercase' }}>
                 Happening now
               </span>
             </div>
-            <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--em-text-primary)', lineHeight: 1.3 }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--as-text-primary)', lineHeight: 1.3 }}>
               {item.kid_first_name} at {item.event_title}
             </div>
             {subline && (
-              <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 4 }}>
+              <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 4 }}>
                 {subline}
               </div>
             )}

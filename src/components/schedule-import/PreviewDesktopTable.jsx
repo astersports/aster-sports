@@ -3,22 +3,22 @@
 // table is unreadable on portrait phones.
 
 const STATUS_STYLES = {
-  valid:   { bg: '#fff', border: '1px solid var(--em-border-default)' },
-  warning: { bg: 'var(--em-warning-soft)', border: '1px solid var(--em-warning)' },
-  error:   { bg: 'var(--em-danger-soft)', border: '1px solid var(--em-danger)' },
+  valid:   { bg: '#fff', border: '1px solid var(--as-border-default)' },
+  warning: { bg: 'var(--as-warning-soft)', border: '1px solid var(--as-warning)' },
+  error:   { bg: 'var(--as-danger-soft)', border: '1px solid var(--as-danger)' },
 };
 const DEDUP_BADGES = {
-  new:       { text: 'NEW', color: 'var(--em-success)', bg: 'var(--em-success-soft)' },
-  updated:   { text: 'UPDATED', color: 'var(--em-warning)', bg: 'var(--em-warning-soft)' },
-  duplicate: { text: 'DUP (will skip)', color: 'var(--em-text-tertiary)', bg: 'var(--em-bg-tertiary)' },
+  new:       { text: 'NEW', color: 'var(--as-success)', bg: 'var(--as-success-soft)' },
+  updated:   { text: 'UPDATED', color: 'var(--as-warning)', bg: 'var(--as-warning-soft)' },
+  duplicate: { text: 'DUP (will skip)', color: 'var(--as-text-tertiary)', bg: 'var(--as-bg-tertiary)' },
 };
-const inputStyle = { width: '100%', minHeight: 32, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--em-border-default)', backgroundColor: '#fff', fontSize: 13, fontFamily: 'inherit' };
+const inputStyle = { width: '100%', minHeight: 32, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--as-border-default)', backgroundColor: '#fff', fontSize: 13, fontFamily: 'inherit' };
 const cellStyle = { padding: 6, verticalAlign: 'top', fontSize: 13 };
 
 function StatusBadge({ status }) {
-  if (status === 'valid') return <span style={{ fontSize: 11, color: 'var(--em-success)' }}>✓</span>;
-  if (status === 'warning') return <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--em-warning)' }}>⚠</span>;
-  return <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--em-danger)' }}>✗</span>;
+  if (status === 'valid') return <span style={{ fontSize: 11, color: 'var(--as-success)' }}>✓</span>;
+  if (status === 'warning') return <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--as-warning)' }}>⚠</span>;
+  return <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--as-danger)' }}>✗</span>;
 }
 
 function DedupBadge({ dedup }) {
@@ -32,7 +32,7 @@ export default function PreviewDesktopTable({ rows, teamNames, onUpdateRow, onRe
     <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
     <table style={{ minWidth: 920, width: '100%', borderCollapse: 'separate', borderSpacing: '0 6px' }}>
       <thead>
-        <tr style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--em-text-tertiary)' }}>
+        <tr style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' }}>
           <th style={{ padding: 6, textAlign: 'left', width: 32 }}>•</th>
           <th style={{ padding: 6, textAlign: 'left' }}>Team</th>
           <th style={{ padding: 6, textAlign: 'left' }}>Date</th>
@@ -63,12 +63,12 @@ export default function PreviewDesktopTable({ rows, teamNames, onUpdateRow, onRe
             <td style={cellStyle}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <DedupBadge dedup={r.dedup} />
-                {r.messages?.length > 0 && (<div style={{ fontSize: 11, color: 'var(--em-text-secondary)' }}>{r.messages.join('; ')}</div>)}
+                {r.messages?.length > 0 && (<div style={{ fontSize: 11, color: 'var(--as-text-secondary)' }}>{r.messages.join('; ')}</div>)}
               </div>
             </td>
             <td style={{ ...cellStyle, textAlign: 'right' }}>
-              <button type="button" onClick={() => onRemoveRow(i)} className="em-press"
-                style={{ minHeight: 28, padding: '0 10px', borderRadius: 6, border: '1px solid var(--em-border-default)', backgroundColor: '#fff', color: 'var(--em-text-secondary)', fontSize: 12, cursor: 'pointer' }}>Remove</button>
+              <button type="button" onClick={() => onRemoveRow(i)} className="as-press"
+                style={{ minHeight: 28, padding: '0 10px', borderRadius: 6, border: '1px solid var(--as-border-default)', backgroundColor: '#fff', color: 'var(--as-text-secondary)', fontSize: 12, cursor: 'pointer' }}>Remove</button>
             </td>
           </tr>
         ))}

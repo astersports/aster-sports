@@ -33,12 +33,12 @@ export default function StepGuardian({ guardian, coGuardian, onField, onCogField
 
       <div style={btnRow}>
         <button type="button" style={ghostBtn} onClick={onBack}>Back</button>
-        <button type="button" className="em-press" style={{ ...primaryBtn, flex: 1, opacity: valid ? 1 : 0.5 }} disabled={!valid} onClick={onNext}>Next</button>
+        <button type="button" className="as-press" style={{ ...primaryBtn, flex: 1, opacity: valid ? 1 : 0.5 }} disabled={!valid} onClick={onNext}>Next</button>
       </div>
     </div>
   );
 }
 
-const checkRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--em-text-secondary)', margin: '0 0 12px' };
-const cogBox = { padding: 12, borderRadius: 10, border: '1px solid var(--em-border-subtle)', backgroundColor: 'var(--em-bg-secondary)', marginBottom: 12 };
+const checkRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--as-text-secondary)', margin: '0 0 12px' };
+const cogBox = { padding: 12, borderRadius: 10, border: '1px solid var(--as-border-subtle)', backgroundColor: 'var(--as-bg-secondary)', marginBottom: 12 };
 const btnRow = { display: 'flex', gap: 8, marginTop: 8 };

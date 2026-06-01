@@ -55,18 +55,18 @@ export default function EventLocationTab({ event }) {
       <div style={{
         margin: '0 16px',
         padding: 16,
-        backgroundColor: 'var(--em-bg-card)',
-        border: '1px solid var(--em-border-default)',
+        backgroundColor: 'var(--as-bg-card)',
+        border: '1px solid var(--as-border-default)',
         borderRadius: 10,
-        boxShadow: 'var(--em-shadow-sm)',
+        boxShadow: 'var(--as-shadow-sm)',
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <Calendar size={20} strokeWidth={1.75} style={{ color: 'var(--em-text-primary)', flexShrink: 0, marginTop: 2 }} />
+          <Calendar size={20} strokeWidth={1.75} style={{ color: 'var(--as-text-primary)', flexShrink: 0, marginTop: 2 }} />
           <div>
-            <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
+            <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--as-text-primary)' }}>
               Schedule releases Wednesday
             </div>
-            <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 4, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 4, lineHeight: 1.5 }}>
               Venue, court assignments, and game times will appear once the tournament organizer publishes the bracket.
             </div>
           </div>
@@ -82,35 +82,35 @@ export default function EventLocationTab({ event }) {
     <div style={{
       margin: '0 16px',
       padding: 16,
-      backgroundColor: 'var(--em-bg-card)',
-      border: '1px solid var(--em-border-default)',
+      backgroundColor: 'var(--as-bg-card)',
+      border: '1px solid var(--as-border-default)',
       borderRadius: 10,
-      boxShadow: 'var(--em-shadow-sm)',
+      boxShadow: 'var(--as-shadow-sm)',
     }}>
       {event.location ? (
-        <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--em-text-primary)' }}>
+        <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--as-text-primary)' }}>
           {event.location}
         </div>
       ) : (
-        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', fontStyle: 'italic' }}>
+        <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', fontStyle: 'italic' }}>
           Location TBD
         </div>
       )}
       {(event.location_address || locationData?.address) && (
-        <div style={{ fontSize: 13, color: 'var(--em-text-secondary)', marginTop: 4 }}>
+        <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 4 }}>
           {event.location_address || locationData.address}
         </div>
       )}
       {event.sub_location && (
-        <div style={{ fontSize: 13, color: 'var(--em-text-tertiary)', marginTop: 2 }}>
+        <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 2 }}>
           {event.sub_location}
         </div>
       )}
       {locationData?.entry_instructions && (
         <div style={{
           marginTop: 10, padding: 10, borderRadius: 8,
-          backgroundColor: 'var(--em-warning-soft)',
-          color: 'var(--em-warning)',
+          backgroundColor: 'var(--as-warning-soft)',
+          color: 'var(--as-warning)',
           fontSize: 13, fontWeight: 500, lineHeight: 1.4,
         }}>
           {locationData.entry_instructions}

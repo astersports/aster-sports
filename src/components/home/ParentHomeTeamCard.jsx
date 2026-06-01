@@ -10,19 +10,19 @@ export default function ParentHomeTeamCard({ team, summary, loading, nextEvent, 
     ? '—'
     : (s.streak === '—' ? s.record : `${s.record} · ${s.streak}`);
   return (
-    <button type="button" onClick={onClick} className="em-press"
+    <button type="button" onClick={onClick} className="as-press"
       style={{
         width: '100%', minHeight: 56, borderRadius: 10, overflow: 'hidden',
-        border: '1px solid var(--em-border-default)', backgroundColor: 'var(--em-bg-card)',
-        boxShadow: 'var(--em-shadow-sm)', display: 'flex', alignItems: 'stretch', textAlign: 'left',
+        border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)',
+        boxShadow: 'var(--as-shadow-sm)', display: 'flex', alignItems: 'stretch', textAlign: 'left',
       }}
     >
-      <div style={{ width: 3, flexShrink: 0, backgroundColor: team.team_color || 'var(--em-neutral)' }} />
+      <div style={{ width: 3, flexShrink: 0, backgroundColor: team.team_color || 'var(--as-neutral)' }} />
       <div style={{ flex: 1, padding: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--em-text-primary)' }}>{team.name}</span>
-        <span style={{ fontSize: 13, color: 'var(--em-text-tertiary)' }}>{recordLine}</span>
+        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)' }}>{team.name}</span>
+        <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>{recordLine}</span>
         {nextEvent && (
-          <span style={{ fontSize: 11, color: 'var(--em-text-tertiary)', marginLeft: 'auto' }}>
+          <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)', marginLeft: 'auto' }}>
             Next: {new Date(nextEvent.start_at).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' })} {new Date(nextEvent.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })}
           </span>
         )}
