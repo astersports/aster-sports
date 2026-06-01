@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useSeasons } from '../hooks/useSeasons';
 import SeasonFormSheet from '../components/admin/SeasonFormSheet';
 import Toast from '../components/shared/Toast';
@@ -37,7 +38,12 @@ export default function AdminSeasonsPage() {
 
   return (
     <div className="px-4 py-4 em-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
-      <AdminSeasonsHeader title="Seasons" actions={<AdminSeasonsActions onNew={openNew} />} />
+      <AdminSeasonsHeader title="Seasons" actions={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Link to="/admin/programs/new" style={{ color: 'var(--em-accent)', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>+ Program</Link>
+          <AdminSeasonsActions onNew={openNew} />
+        </div>
+      } />
       <AdminSeasonsList
         seasons={seasons}
         loading={loading}
