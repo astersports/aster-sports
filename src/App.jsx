@@ -35,6 +35,7 @@ const BriefingHistoryDetail = lazy(() => import('./pages/admin/BriefingHistoryDe
 const RegisterEntryPage = lazy(() => import('./pages/RegisterEntryPage'));
 const RegisterFlowPage = lazy(() => import('./pages/RegisterFlowPage'));
 const ProgramSetupPage = lazy(() => import('./pages/admin/ProgramSetupPage'));
+const ProgramDetailPage = lazy(() => import('./pages/admin/ProgramDetailPage'));
 
 const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading...</div>;
 
@@ -92,6 +93,7 @@ export default function App() {
       {/* Admin-only management routes */}
       <Route path="/admin/seasons" element={<Protected allowedRoles={['admin']}><AdminSeasonsPage /></Protected>} />
       <Route path="/admin/programs/new" element={<Protected allowedRoles={['admin']}><ProgramSetupPage /></Protected>} />
+      <Route path="/admin/programs/:id" element={<Protected allowedRoles={['admin']}><ProgramDetailPage /></Protected>} />
       <Route path="/admin/teams" element={<Protected allowedRoles={['admin']}><AdminTeamsPage /></Protected>} />
       <Route path="/admin/members" element={<Protected allowedRoles={['admin']}><AdminMembersPage /></Protected>} />
       <Route path="/admin/opponents" element={<Protected allowedRoles={['admin']}><AdminOpponentsPage /></Protected>} />
