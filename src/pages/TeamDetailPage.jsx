@@ -81,7 +81,7 @@ export default function TeamDetailPage() {
   useEffect(() => {
     if (!team?.name) return;
     const prev = document.title;
-    document.title = `${team.name} — AsterSports`;
+    document.title = `${team.name} — Aster Sports`;
     return () => { document.title = prev; };
   }, [team?.name]);
   const myChild = role === 'parent' ? (myChildren || []).find((c) => c.teamIds?.includes(teamId) || c.teamId === teamId) : null;
