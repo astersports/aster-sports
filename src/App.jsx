@@ -32,6 +32,7 @@ const ImportSchedulePage = lazy(() => import('./pages/ImportSchedulePage'));
 const BriefingsComposePage = lazy(() => import('./pages/BriefingsComposePage'));
 const BriefingsHistoryPage = lazy(() => import('./pages/BriefingsHistoryPage'));
 const BriefingHistoryDetail = lazy(() => import('./pages/admin/BriefingHistoryDetail'));
+const RegisterEntryPage = lazy(() => import('./pages/RegisterEntryPage'));
 
 const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--em-text-tertiary)' }}>Loading...</div>;
 
@@ -65,6 +66,7 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
       <Route path="/schedule/:teamId" element={<PublicSchedulePage />} />
+      <Route path="/r/:slug" element={<RegisterEntryPage />} />
 
       {/* Authenticated routes */}
       <Route path="/"         element={<Protected><HomePage /></Protected>} />
