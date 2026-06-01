@@ -9,17 +9,14 @@
 import { renderSections, renderSectionsPlainText } from '../composer';
 import { buildScheduleSection } from '../resolvers/weeklyDigestSchedule';
 import { formatPeriodLabel, formatSubject } from '../digestPeriod';
+import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 
-const ORG_NAME_DEFAULT = 'Legacy Hoopers';
 const HEADLINE_DEFAULT = 'WEEK AHEAD';
-const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
-const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
 // Vercel-hosted Knight logo (240x240 PNG, ~12 KB) — Legacy Hoopers org
 // brand mark. Wave 3.7 swap: previously pointed at apple-touch-icon.png
 // (Phoenix / Aster Sports PWA shell), which is wrong for post-auth org-specific
 // digest. Multi-tenant follow-up: add organization_settings.brand_logo_url
 // column when 2nd org onboards.
-const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 
 function buildHeader(period, orgName, eyebrowLink) {
   return {

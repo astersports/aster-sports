@@ -19,6 +19,7 @@
 // the domain of tournament_recap (4.2-A-4) and tournament_prelim
 // (4.2-A-3).
 
+import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 import {
   buildSubject, fetchSlices, formatSubContext,
   GameRecapNotPublishedError, trim,
@@ -26,10 +27,6 @@ import {
 
 export { GameRecapNotPublishedError } from './gameRecapHelpers';
 
-const ORG_NAME_DEFAULT = 'Legacy Hoopers';
-const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
-const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
-const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 
 const EVENT_SELECT = 'id, team_id, event_type, start_at, end_at, location, sub_location, location_id, opponent, tournament_id, tournament_name, status, teams ( id, name, team_color, sort_order, org_id ), locations ( id, name, google_maps_url )';
 

@@ -14,9 +14,9 @@
 // wires the quick_link_nav URLs to the team detail page.
 
 import { formatDateRange, formatDayLabel, formatTime, summarizeEventKinds } from './familyGuideHelpers';
+import { APP_BASE_URL } from '../../constants';
 
 const FALLBACK_TEAM_COLOR = '#4a8fd4';
-const APP_BASE_URL = 'https://skyfire-app.vercel.app';
 
 function trim(s) { return typeof s === 'string' ? s.trim() : ''; }
 

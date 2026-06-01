@@ -22,11 +22,8 @@ import {
   buildVenueListSection, buildVenueNotesSection,
 } from './tournamentPrelimSections';
 import { buildSubject, buildTeamSlices, fetchRecipientGuardians, trim } from './tournamentPrelimHelpers';
+import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 
-const ORG_NAME_DEFAULT = 'Legacy Hoopers';
-const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
-const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
-const ORG_LOGO_DEFAULT = 'https://skyfire-app.vercel.app/knight-logo-240.png';
 
 export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { supabase, now = new Date() } = {}) {
   if (!tournamentId) throw new Error('Missing tournamentId');

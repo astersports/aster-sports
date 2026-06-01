@@ -70,3 +70,27 @@ export const TOURNAMENT_MESSAGE_TYPES = [
   { value: 'academy_callup_notice',    label: 'Academy call-up' },
   { value: 'custom_message',           label: 'Custom' },
 ];
+
+// ─── Outbound-email base URL + default org branding (single source of truth) ───
+// Used by the briefing engine resolvers + renderers to build absolute links and
+// the default org logo in OUTBOUND EMAIL. Email HTML is rendered CLIENT-SIDE at
+// send time (queueComposedMessages → body_html_rendered), so this Vite env var
+// reaches production email.
+//
+// EXTRACT-NOT-REPOINT: the fallback is the CURRENT working deploy host, so this
+// changes WHERE the value lives, not the value — outbound email is byte-identical
+// until the env flips. GO-LIVE = set VITE_APP_BASE_URL in Vercel (no code edit,
+// no redeploy scramble). Trailing slash is stripped so callers can append paths.
+//
+// SCOPE NOTE: in-app share links use window.location.origin (src/lib/publicUrls.js)
+// and are already domain-agnostic. The invite-parent EDGE FUNCTION has its own
+// hardcoded auth redirect (Deno — NOT reachable by this Vercel env var) and must
+// be repointed separately at go-live (intentionally out of scope here per the
+// "no Supabase Auth changes" gate).
+export const APP_BASE_URL =
+  (import.meta.env?.VITE_APP_BASE_URL || 'https://skyfire-app.vercel.app').replace(/\/+$/, '');
+
+export const ORG_NAME_DEFAULT = 'Legacy Hoopers';
+export const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
+export const ORG_CONTACT_DEFAULT = 'info@legacyhoopers.org';
+export const ORG_LOGO_DEFAULT = `${APP_BASE_URL}/knight-logo-240.png`;
