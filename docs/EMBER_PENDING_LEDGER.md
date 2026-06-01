@@ -3743,9 +3743,17 @@ family-cap total is server-authoritative (PATTERN A #63); one schema add require
 D (Step 4 submit + multi-child) → E (account claim) → F (admin Season wizard) → G (admin
 program detail + record-payment link).
 
-**BLOCKING — 3 open questions before PR A** (audit §9): Q-1 account-claim (magic-link vs
-admin-invite-later), Q-2 waitlist/capacity (OPEN/CLOSED-only v1?), Q-3 admin wizard breadth
-(Season-first?). CC recommends magic-link / OPEN-CLOSED-only / Season-first respectively.
+**3 open questions RESOLVED** (Frank GO 2026-06-01): Q-1 → **magic-link** on submit,
+Q-2 → **OPEN/CLOSED-only** (no capacity/waitlist v1), Q-3 → **Season wizard first**
+(Tryout/Camp follow-up). "Auto-execute until a decision is needed."
+
+**✅ PR A SHIPPED (2026-06-01)** — migrations 13a (`programs.public_slug/reg_opens_at/
+reg_closes_at/is_published` + slug unique index, version 20260601044658) + 13b (the two
+anon SECDEF RPCs `get_public_program` + `submit_registration`, version 20260601044918).
+Both applied via MCP w/ DO-block verify + mirrors (AP #21). End-to-end transactional smoke
+(rollback) PASSED: get_public_program base=$800, 2-child submit total=$1,700, 2 regs + 4 fee
+rows + 2 equipment, dedupe=0-dupes, grade-band guard fires. Grants anon+authenticated, no
+PUBLIC (#23/#57); anon-SECDEF WARNs intentional (get_invitation_by_token precedent). NEXT: PR B.
 
 **Deferred tracks (out-of-scope, where-they-go in audit §7):** Stripe + payment_plans #13 +
 §8 lifecycle → "Stripe first" track; §6 Family Home + §7 re-IA → multi-org track (St Pat's
