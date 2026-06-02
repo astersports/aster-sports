@@ -3748,6 +3748,72 @@ Closes two cheap-to-fix P0s from the Wave 3.A/3.B audit backlog. Single PR.
 
 ---
 
+### §4.BV — §17.5 audit P0 closure arc complete (2026-06-02 PM)
+
+Closing entry for the §17.5 fix-PR routing campaign opened by §4.AR / §4.AS. 26 P0s across Wave 3.A + 3.B; one terminal-CC session shipped 16 PRs against them. As of this entry: **25 of 26 P0s closed, 1 standing owner action (3B.25.P0-2 backup-to-staging drill — unverifiable from repo)**. The §17.8 audit-execution gate is now followed by a (nearly) complete fix-PR closure layer.
+
+**Wave 3.A (9 P0s — all closed):**
+
+| ID | Status | Closure PR | Notes |
+|---|---|---|---|
+| 3A.18.P0-1 | ✓ closed | #640 | Reroute usePendingInvitations to auth.users via get_pending_invitations SECDEF RPC. Empty `invitations` table no longer the read source. |
+| 3A.18.P0-2 | ✓ false positive | n/a | InviteButton mounted at PlayerRow.jsx:130 since before audit; audit's grep missed it. |
+| 3A.18.P0-3 + P0-4 | ✓ closed | #648 | claim_invite() SECDEF RPC + AuthContext wire (resolveNewUserContext). Replaces the "AcceptInvitePage" requirement under path-(b) reframing. |
+| 3A.18.P0-5 | ✓ by-design | n/a | invitations table RLS already admin-only; anon access only through get_invitation_by_token SECDEF (intentional pattern per §4.BR). |
+| 3A.19.P0-1 | ✓ pre-session | #573 (Wave 3.A close) | _changeAlertDispatch.ts wired the event_notifications dispatcher. |
+| 3A.19.P0-2 | ✓ closed | #639 | Schema-leak microcopy replaced. |
+| 3A.19.P0-3 | ✓ closed | #643 | auto_notifications column added + _reminders.ts gates on reminders_enabled. |
+| 3A.22.P0-1 | ✓ closed | #649 | cron_http_health_v view exposes net._http_response (canonical HTTP success); replaces cron.job_run_details for health reads. |
+
+**Wave 3.B (17 P0s — 16 closed, 1 standing):**
+
+| ID | Status | Closure PR | Notes |
+|---|---|---|---|
+| 3B.10.P0-1 | ✓ closed | #650 | current_user_coached_player_ids() helper + players_update_coach refactor. §11.5 doctrine compliance. |
+| 3B.10.P0-2 | ✓ closed | #642 | Reciprocal alignment trigger on roster_members. Bidirectional team_players ↔ roster_members lock. |
+| 3B.25.P0-1 | ✓ closed | #638 | docs/DISASTER_RECOVERY.md — 10 scenarios + RTO/RPO + secret rotation cadence + standing items. |
+| 3B.25.P0-2 | ⚠ standing | n/a | Backup-to-staging drill. **OWNER ACTION** — unverifiable from repo. Tracked in DISASTER_RECOVERY.md §10. |
+| 3B.25.P0-3 | ✓ pre-session | §4.AS | 5 ghost migrations already materialized in repo. |
+| 3B.27.P0-1 | ✓ closed | #653 | account_deletion_requests table + request_account_deletion RPC + DeleteAccountSection UI on /account. iOS App Store §5.1.1(v) compliance. |
+| 3B.27.P0-2 | ✓ closed (Part 1) | #652 | /privacy + /terms scaffold pages with OPERATOR-FILLS placeholders; footer links wired. **Part 2 deferred:** signup-gate enforcement reading guardian_consents. |
+| 3B.27.P0-3 | ✓ closed | #651 | guardian_consents table + RLS + UNIQUE active-consent index. Append-only audit log. |
+| 3B.28.P0-1 | ✓ pre-session | mig 20260529153604 | UNIQUE(user_id, organization_id) shipped same-day as the audit. |
+| 3B.28.P0-2 | ✓ closed | #647 | invite-parent now accepts optional role param ∈ {parent, coach, admin}, stamps into raw_user_meta_data. claim_invite (#648) reads it. |
+| 3B.28.P0-3 | ✓ partial | #630 + #634 | Platform-level FROM_EMAIL + REPLY_TO_FALLBACK + ADMIN_BCC_EMAIL all cut over. **Deeper architectural ask** (organizations.{sender_email, contact_email, reply_to_email, website_url, public_logo_url} columns + loadOrgEmailContext helper) not built — flagged for the multi-tenant arc when St. Patrick's pilot opens. |
+| 3B.28.P0-4 | ✓ closed | #639 | organizations.public_listing_enabled default → false. |
+| 3B.28.P0-5 | ✓ closed | #645 | unsubscribe-handler reads org name + reply-to from the guardian's org context. Fallbacks generic (platform sender). |
+| 3B.29.P0-1 | ✓ closed | #637 | §0 verification grep #4 documents 5 exceptions + cap-pressure-trigger pattern in §6. Pre-commit hook script mirrors the same exception list (#648). |
+| 3B.29.P0-2 | ✓ closed | #637 | §5 migration count refreshed; directory-canonical caveat preserved. |
+| 3B.29.P0-3 | ✓ closed | #637 | §2 tech stack reconciled: React 19 + Tailwind 4 + Vite 8. |
+| 3B.29.P0-4 | ✓ closed | #637 | AP #51 catalog narrative refactored; stale-specifics dropped; "Historical cleanup arc" table preserves precedent. |
+
+**Standing items (NOT closed by terminal-CC, flagged for owner):**
+
+- **3B.25.P0-2** — Backup-to-staging drill. The DR runbook's §10 names this as the standing P0-2; runbook RTO numbers in §2 are estimates until the drill validates them.
+- **3B.27.P0-2 Part 2** — Signup-gate enforcement. Scaffold pages exist (/privacy, /terms); the gate that reads `guardian_consents` and forces accept-before-first-action is deferred. Recommend wiring into autoLinkGuardian + claim_invite to write the privacy_policy + terms_of_service consent rows at first sign-in, then a layout-level gate that checks for missing consents before rendering Home.
+- **Migration apply queue** — every migration shipped this session needs to be applied via Supabase MCP `apply_migration` before its mirror takes effect. Listed in PR descriptions; the AP #21 mirror-discipline check will fire on the next ledger audit if any are missing.
+
+**P1 surface** (~58 across Wave 3.A + 3.B) is NOT touched by this arc; remains the active backlog for follow-up.
+
+**Multi-PR arc closures the audit projected but bundled differently here:**
+
+- "Onboarding pipeline rebuild" (5 P0s + 6 P1s, projected as multi-PR): closed as 4 small PRs (#640, #647, #648 + the 3A.18.P0-2 false-positive recognition). Path-(b) reframing (auth.users as canonical, not invitations table) avoided the bigger refactor.
+- "Multi-tenant readiness" (5 #28 P0s): closed across #634/#639/#645/#647 + pre-session #20260529153604. The architectural per-org email plumbing remains deferred.
+- "DR-readiness arc" (3 P0s): #638 + pre-session §4.AS. Backup-to-staging drill standing.
+- "Compliance arc" (3 #27 P0s): #651/#652/#653. Scaffold-quality on the policy text; signup-gate Part 2 deferred.
+- "Doctrine reconciliation arc" (#29 4 P0s + STALE-DOC P1s): #637. P1 STALE-DOCs (BRIEFINGS_COVERAGE_L99.md refresh; §16.5 Stream B drift) not bundled.
+
+**AP compliance for this arc:**
+- AP #21 — every migration ships with an "owner action: apply via MCP" caveat in commit body + PR description.
+- AP #23 / #57 — every new SECDEF function REVOKEs from PUBLIC + anon explicitly.
+- AP #45 — this entry reconciles the ledger for the whole arc in one commit (per-PR ledger entries would have created merge contention).
+- AP #49 — DR runbook + this entry pasted in chat per discipline.
+- AP #54 — every PR ready + auto-merge SQUASH armed in same MCP/REST burst.
+
+**Per §17.7 step 5:** multi-program build phase unblocking gate is "all P0+P1 fix PRs land." P0 layer is now (nearly) closed; P1 layer is the next workstream. Multi-program build can begin in parallel with P1 cleanup once 3B.25.P0-2 drill is run.
+
+---
+
 ### §4.BU — DR runbook closes Wave 3.B #25 P0-1 (2026-06-02)
 
 Closes the P0 "no DR runbook" finding from `AUDIT_WAVE_3B_2026-05-29.md` (category #25). Doc-only PR — no code touched.
