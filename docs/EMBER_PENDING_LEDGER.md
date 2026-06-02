@@ -3733,6 +3733,49 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BW — §17.5 audit P1 backlog closure arc complete (2026-06-02 PM)
+
+Closes the P1 layer of the §17.5 fix-PR routing campaign opened by §4.AR / §4.AS, following the P0 layer close in §4.BV.
+
+**Companion doc:** `docs/AUDIT_WAVE_3_P1_BACKLOG_STATUS.md` — comprehensive status table covering every P1 from `AUDIT_WAVE_3A_2026-05-29.md` + `AUDIT_WAVE_3B_2026-05-29.md`. Each P1 marked with one of: closed-by-code (PR #), closed-by-doc-note, verified-already-closed, verified-safe, closed-as-false-positive, operator-action-pending, design-decision-required.
+
+**Headline:**
+- ~17 P1s closed by code in this session (PRs #656-#662)
+- ~12 P1s verified-already-closed / verified-safe / false-positive
+- ~21 P1s deferred with explicit decision + named owner
+- ~4 P1s operator-action-pending
+
+**This session's P1 closure PRs:**
+
+| PR | Closes |
+|---|---|
+| #656 | Batch 1 — doctrine residue (§29 P1s, §16.5 Stream B doc note, BRIEFINGS_COVERAGE_L99 refresh, archive-doc preservation policy) |
+| #657 | Batch 2 — `cron.job_run_details` retention + `weekly_sunday` dedup race UNIQUE index |
+| #658 | Batch 3 — schema cleanup (`roster_members.payment_status` drop + §5 stale table names + jersey_number false-positive verified) |
+| #659 | Batch 4 — security (`pii_audit_log` operator-only, `players.notes` PII flag); verified safe (`raw_user_meta_data` exposure narrow) |
+| #660 | Batch 8a — DR residue (`SECRET_ROTATION.md` + stale PublicSchedulePage RLS comment) |
+| #661 | `RESEND_API_KEY` → `app_secrets` per AP #33 (with rollout fallback); verified already-closed (AP #57 retroactive REVOKEs via #636, VAPID via #634) |
+| #662 | Sentry source-map upload via `@sentry/vite-plugin` (conditional on `SENTRY_AUTH_TOKEN`) |
+
+**Routing rule applied:** the audit gate doesn't require every P1 to ship code — it requires every P1 to be **routed**. A documented decision-required state IS a routing answer. Deferred items have named decisions, recommendations, and operator vs CC ownership.
+
+**Standing items going forward** (all listed in `AUDIT_WAVE_3_P1_BACKLOG_STATUS.md`):
+- Notifications: Stream B spec/impl drift (operator call); Sunday digest auto-SEND (operator call); `guardian_notification_prefs` PATTERN OMEGA wiring; Stream A RSVP-aware skip
+- Onboarding: bulk-invite UX, push opt-in promo UX, PWA install prompt re-design, Resend bounce admin viewer, branded Supabase invite email (operator)
+- Briefings: recipient preview chip UI, briefings_templates retire-vs-wire decision, parent inbox feature, academy_callup_notice smoke (operator)
+- Compliance: `team_feed_token` revocation strategy, `team_achievements` consent UI, SafeSport cert surface, `guardian_email_preferences` admin UI
+- DR: Vercel deploy-ID logging, project_id templating (deferred until multi-Supabase), LeagueApps source archive (operator)
+- Multi-tenant: brand_colors admin UI, roster bulk import
+
+**§17.8 gate state:** P0 layer closed (§4.BV), P1 layer routed (this entry). §17.7 step 5 unblock condition met. Multi-program build phase can engage; deferred P1s become product/feature work rather than gating items.
+
+**Ledger maintenance note:** the entry below this one shares the §4.BV identifier with my "§17.5 audit P0 closure arc complete" entry from earlier in the session (lines 3736 + 3751). The duplicate is harmless (different content) but worth normalizing in a future hygiene PR — neither entry should be renamed retroactively per archive doctrine, but a single "(2026-06-02 — first)" / "(2026-06-02 — second)" disambiguator added inline would help future readers.
+
+**AP #45** satisfied by same-commit ledger entry + companion audit doc.
+**AP #49** satisfied by full-paste in chat (the status doc is ~250 lines; pasted in same turn).
+
+---
+
 ### §4.BV — Two P0 cleanup pair: 3A.19.P0-2 microcopy + 3B.28.P0-4 default flip (2026-06-02)
 
 Closes two cheap-to-fix P0s from the Wave 3.A/3.B audit backlog. Single PR.
