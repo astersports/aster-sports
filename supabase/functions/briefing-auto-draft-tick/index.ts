@@ -69,7 +69,15 @@ async function handleWeeklySunday(sb: ReturnType<typeof createClient>, triggerId
   if (existing && existing.length > 0) return { skipped: "exists", existing_id: existing[0].id };
   const row = buildWeeklyDigestDraftRow({ orgId, period, now, triggerId });
   const { data: inserted, error: insErr } = await sb.from("comms_messages").insert(row).select("id").single();
-  if (insErr) return { error: insErr.message };
+  if (insErr) {
+    // Wave 3.A #22 P1 closure: race-handle the dedup unique-violation
+    // enforced by comms_messages_weekly_digest_unique. Two concurrent
+    // ticks can both SELECT no existing row and both INSERT; the
+    // partial unique index lets the DB reject the second one. Treat
+    // the rejection as a clean skip rather than a hard error.
+    if ((insErr as { code?: string }).code === "23505") return { skipped: "race_resolved_other_tick_won" };
+    return { error: insErr.message };
+  }
   return { draft_created: true, id: inserted.id, period_start: period.period_start };
 }
 
