@@ -19,7 +19,7 @@ import './styles/broadcast.css';
 console.info(`[Aster Sports] email APP_BASE_URL = ${APP_BASE_URL}`);
 
 // Apply cached brand colors BEFORE React mounts so first paint uses
-// the correct org brand instead of Aster Sports/Aster Sports defaults. Closes the
+// the correct org brand instead of the platform defaults. Closes the
 // brand-flash Frank captured 2026-05-20. Safe no-op when cache empty
 // (first-ever login on this browser) — defaults remain.
 applyCachedBrandColorsSync();

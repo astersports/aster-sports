@@ -46,10 +46,10 @@ export default function Header() {
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <img
-            src={org?.logo_url || '/phoenix.webp'}
+            src={org?.logo_url || '/aster-mark.svg'}
             onError={(e) => {
-              if (e.currentTarget.src.endsWith('/phoenix.webp')) return;
-              e.currentTarget.src = '/phoenix.webp';
+              if (e.currentTarget.src.endsWith('/aster-mark.svg')) return;
+              e.currentTarget.src = '/aster-mark.svg';
             }}
             alt=""
             style={{ width: 32, height: 32, borderRadius: 8 }}

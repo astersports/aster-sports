@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
     // read errors — invites never break on a config miss.
     const { data: cfg } = await adminClient
       .from('app_config').select('value').eq('key', 'app_base_url').maybeSingle()
-    const appBaseUrl = (cfg?.value ?? 'https://skyfire-app.vercel.app').replace(/\/+$/, '')
+    const appBaseUrl = (cfg?.value ?? 'https://astersports.app').replace(/\/+$/, '')
 
     // Bind the invitation to the validated org by stamping org_id into the
     // Supabase auth user's metadata. AcceptInvite-side onboarding reads this
