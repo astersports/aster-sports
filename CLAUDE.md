@@ -56,8 +56,8 @@ grep -r 'as-shadow-xl\|as-border-strong\|as-bg-muted\|as-bg-subtle' src/ && echo
 # 3. No hardcoded #FFFFFF in components (only allowed in team_color swatches in TeamFormSheet)
 grep -rn '#FFFFFF' src/ --include='*.jsx' | grep -v 'TeamFormSheet' | grep -v 'COLOR_SWATCHES' && echo "FAIL: hardcoded #FFFFFF" || echo "PASS"
 
-# 4. All files ≤150 lines
-find src/ -name '*.jsx' -o -name '*.js' | xargs wc -l | awk '$1 > 150 && !/total/ {print "FAIL: "$2" is "$1" lines"}' || echo "PASS: all files ≤150"
+# 4. All files ≤150 lines (with 5 documented exceptions — see §6 "Known >150 exceptions")
+find src/ -name '*.jsx' -o -name '*.js' | grep -v __tests__ | xargs wc -l | awk '$1 > 150 && !/total/ && $2 !~ /(AuthContext\.jsx|BriefingComposer\.jsx|kindMetadata\.js|familyGuideHelpers\.js|registry\.js)$/ {print "FAIL: "$2" is "$1" lines"}' || echo "PASS: all files ≤150 (excl. 5 documented exceptions)"
 
 # 5. Lint + build
 npm run lint && npm run build && echo "PASS: lint + build clean"
@@ -65,7 +65,7 @@ npm run lint && npm run build && echo "PASS: lint + build clean"
 
 ---
 
-## 1. WHAT IS EMBER
+## 1. WHAT IS ASTER SPORTS
 
 Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, Google Sheets, email/text, and spreadsheets with one mobile-first platform.
 
@@ -89,7 +89,7 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18 + Tailwind CSS + Vite |
+| Frontend | React 19 + Tailwind CSS 4 + Vite 8 |
 | Auth + DB | Supabase (PostgreSQL + Auth + Realtime + RLS + Storage) |
 | Hosting | Vercel (auto-deploys from `main` branch) |
 | Dev environment | HP Chromebook, ChromeOS Crostini, Node.js, Claude Code |
@@ -186,10 +186,10 @@ Every table includes `org_id` FK → organizations. All RLS policies scope to us
 
 ---
 
-## 5. DATABASE SCHEMA (~171 migration files / 179 registered as of 2026-05-29 — consult the directory for the canonical count)
+## 5. DATABASE SCHEMA (190 migration files in repo as of 2026-06-02 — consult the directory for the canonical count; registered-vs-mirror parity tracked separately per AP #21)
 
 > The illustrative tables below capture the foundation (001–012) and select Wave migrations.
-> They are NOT exhaustive, and the per-file 001–012 names below are partly stale (consult the directory for actual filenames). Actual count ~171 files in `supabase/migrations/`.
+> They are NOT exhaustive, and the per-file 001–012 names below are partly stale (consult the directory for actual filenames). Actual count 190 files in `supabase/migrations/` (as of 2026-06-02).
 > Source of truth for the full list is the migrations directory; consult it directly when
 > reasoning about current schema.
 
@@ -324,6 +324,23 @@ When the cap pressure triggers:
 
 Decision routing: 2026-05-22 (Phase 3 Q8, claude.ai routing — Option B
 locked after Q8 irony test fired on initial Option C single-line comment).
+
+### Known >150 LOC exceptions (documented per Wave 3.B #29 P0-1, 2026-06-02)
+
+The §0 verification grep #4 excludes these 5 non-test files. Each carries
+the same cap-pressure-trigger discipline as the AdminHomePage zone
+decomposition above — wait for the next material change, then split. Do
+not preemptively decompose.
+
+| File | LOC | Split shape when triggered |
+|---|---|---|
+| `src/context/AuthContext.jsx` | 172 | Auth state + org branding apply + cache wiring can split into `useAuthBranding` hook (extracts the useOrgBranding side effect) + `AuthOrgProvider` (separates org-load from session-load). Initial step: extract the `parentContext` derivation. |
+| `src/components/briefings/BriefingComposer.jsx` | 164 | Composer header + body + footer already separated. Next: extract the `useResolverPreview` bridge state into a dedicated hook file (currently inline) and the kind-specific body switcher into its own component. |
+| `src/lib/briefings/kindMetadata.js` | 169 | Per-kind metadata blocks (one per of 12 canonical `comms_messages.kind` values) — split per kind into `kindMetadata/<kind>.js` files + an `index.js` registry. Same shape as `RESOLVER_REGISTRY` per AP #28. |
+| `src/lib/engine/resolvers/familyGuideHelpers.js` | 155 | New since 2026-05-29 (post-original-audit). Helpers cluster by section type — split into `familyGuideHelpers/{schedule,coaches,quick_links}.js` when next material edit lands. |
+| `src/lib/engine/resolvers/registry.js` | 159 | New since 2026-05-29. Registry entries already structured per kind — the file's growth is from per-entry metadata, not logic. Split when adding 13th kind would push it past 175. |
+
+**Adding to this list requires a chat-side review pass** (per §11.7 operational rule #7). Removing — i.e., split lands and file drops back under 150 — is mechanical: delete the row + update the §0 grep regex.
 
 ---
 
@@ -575,7 +592,21 @@ Cross-references that previously cited AP #50:
 - AP #61 — reworded to drop the "parallel narrow-scope agents per
   AP #50" methodology line; pre-phase audit gate principle remains.
 
-51. **Dead-feature mount retirement.** Surfaces that serve no current Frank workflow get retired, not gated by config. Engine Preview removal (PR #398, 2026-05-20) established the precedent. TeamPlayerStats removal (Teams PR C) is the next instance. The gate-by-config pattern produces confusing future-Frank ("why is this here?") and accumulates dead-code mass. Promoted 2026-05-22: 17+ NEW dead-feature surfaces accumulated post-candidate-registration across Engine Preview (PR #398), TeamPlayerStats mount (Teams PR C), Header bell button (PR #449), InstallPrompt + WelcomeOverlay (Batch 2a — still mounted at HomePage:29/30), 5 src/components/event/ orphans (Batch 5), TeamPlayerStats.jsx + PlayerStatsTable.jsx orphan files (Batches 6 + 7), 8 orphan SECTION_RENDERERS entries (Batch 8b), scheduleChange.js legacy composer (Batch 8b F-7), useSortedPlayers dead export (Batch 6 P2-2), useComposeBriefing.js (deleted via PR #462). Promotion criterion (third NEW surface) overwhelmingly met.
+51. **Dead-feature mount retirement.** Surfaces that serve no current Frank workflow get retired, not gated by config. Engine Preview removal (PR #398, 2026-05-20) established the precedent. The gate-by-config pattern produces confusing future-Frank ("why is this here?") and accumulates dead-code mass. Promoted 2026-05-22 after 17+ dead-feature surfaces accumulated; promotion criterion (third NEW surface) overwhelmingly met.
+
+    **Historical cleanup arc** (PRs that applied this AP — retained as a precedent ledger; current state verified per surface):
+    - Engine Preview removal — PR #398 (2026-05-20)
+    - TeamPlayerStats mount + TeamPlayerStats.jsx + PlayerStatsTable.jsx orphan files — Teams PR C (file-deletion confirmed 2026-06-02)
+    - Header bell button — PR #449
+    - InstallPrompt + WelcomeOverlay — file-deletion confirmed 2026-06-02 (no longer mounted at HomePage)
+    - 8 orphan `SECTION_RENDERERS` entries — Batch 8b
+    - `scheduleChange.js` legacy composer — Batch 8b F-7
+    - `useSortedPlayers` dead export — Batch 6 P2-2
+    - `useComposeBriefing.js` — deleted via PR #462
+    - 5 `src/components/event/` orphans — Batch 5 (verify on next touch)
+    - `phoenix.webp` — deleted via #631 post-rebrand
+
+    Catalog refresh discipline: when a dead-feature item lands a removal PR, update this list in the same commit (current vs. retired). The 2026-06-02 audit (3B.29.P0-4) caught the "still mounted" specifics had gone stale; the list above was reconciled against actual file existence at that pass.
 
 52. **Worktree-path discipline — agents working in isolated worktrees must
 `pwd` confirm before any file write.**
@@ -645,7 +676,7 @@ regression.
 
 First instance: 2026-05-21 session-level audit (10 findings / 33 PRs /
 9% genuine regression). Methodology validated: line-by-line at narrow
-scope (per anti-pattern #50 refined criteria) catches subtle cross-PR
+scope (per anti-pattern #50 refined criteria — AP #50 retired 2026-05-28, methodology cited historically) catches subtle cross-PR
 + diff-shape findings that breadth audits would miss.
 
 54. **Agent prompts mandate same-MCP-burst PR ready-flip + auto-merge
@@ -1099,9 +1130,10 @@ When generating tournament briefing HTML for LeagueApps + email delivery:
 2. **Table-based layout.** No `<div>` wrappers in rules sections.
 3. **`<span>` + `<br>` for inline content.** Not `<p>` tags inside list rows.
 4. **Standard bullets.** Use `&#8226;` not unicode bullets.
-5. **Brand colors:**
-   - Header: dark navy #1e3a5f
-   - Accent: cobalt #4a8fd4 (NOT old sky blue #29b6f6) — matches org brand_colors + §3/§16.11
+5. **Brand colors** (canonical source: `src/lib/engine/colors.js` — per AP #39, live engine is the truer position):
+   - Header: dark navy #0f172a (`TEXT_NAVY`) — was #1e3a5f in older docs; reconciled to engine value 2026-06-02
+   - Accent: cobalt #4a8fd4 (`COBALT`; NOT old sky blue #29b6f6) — matches org brand_colors + §3/§16.11
+   - Accent (eyebrow contrast variant): #2563eb (`COBALT_DEEP`, passes WCAG AA at 4.6:1)
    - Game-day arrival callout: orange #e05c2a
 6. **Audience scoping for tournament messages:** scope to `tournament_rosters` table, NOT team roster. Read via `src/lib/tournamentRosters.js` / inline `.from('tournament_rosters')` (there is no `getTournamentRecipients` helper).
 7. **Recipient preview before send:** show "Active: X · Futures: Y · Recipients: Z guardians" chip.
@@ -1259,7 +1291,7 @@ Migration 039 (Phase 1 Step 5G) adds Realtime publication to event_rsvps.
 
 ### 16.10 Performance budgets (hard limits)
 
-- Initial bundle: ≤ 350 KB compressed (entry chunk ~85 KB gz; first-load including lazy chunks ~144 KB gz as of PR #150 / 2026-05-13. Re-measure when bundle conversation comes up next.)
+- Initial bundle: ≤ 350 KB compressed (entry chunk ~115 KB gz as of 2026-06-02 — was ~85 KB gz at PR #150 / 2026-05-13; growth absorbed by registration arc, rebrand consts, and Sentry/PostHog wiring. Re-measure when bundle conversation comes up next.)
 - FCP: ≤ 1.5s on 4G
 - TTI: ≤ 2.5s on 4G
 - 60fps scrolling on iPhone 11
@@ -1375,8 +1407,9 @@ PR A code lands:
     severity (P0/P1/P2/P3) with file:line references.
 
 (b) Deep-read addendum — second pass across the full mount tree
-    catching what the initial pass missed. Cascade pattern from
-    anti-pattern #50 candidate: ~40% miss rate without the addendum.
+    catching what the initial pass missed. Cascade pattern originally
+    observed under the AP #50 candidate (retired 2026-05-28): ~40%
+    miss rate without the addendum.
 
 (c) Anti-pattern catalog cross-reference — every finding tagged
     against the registered anti-patterns in §11. Surfaces "patterns
