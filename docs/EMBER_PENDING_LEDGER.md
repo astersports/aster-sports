@@ -3718,6 +3718,21 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BV — Two P0 cleanup pair: 3A.19.P0-2 microcopy + 3B.28.P0-4 default flip (2026-06-02)
+
+Closes two cheap-to-fix P0s from the Wave 3.A/3.B audit backlog. Single PR.
+
+- **3A.19.P0-2** (`AutoNotificationSettingsSheet:35` schema-leak microcopy) — Replaced "Couldn't save settings. The auto_notifications column may need to be added to the organizations table." with operator-friendly copy: "Couldn't save notification settings. Try again, or get in touch if it keeps happening." Closes the literal P0 (admin no longer sees schema names in error toasts).
+- **3B.28.P0-4** (`public_listing_enabled DEFAULT true` wrong for pilot orgs) — New migration `20260602154853_organizations_public_listing_default_false.sql`: `ALTER COLUMN public_listing_enabled SET DEFAULT false`. Existing rows untouched (LH stays public per its explicit `true`); future tenant orgs opt INTO public listing.
+
+**Migration apply caveat:** terminal-CC can't apply via Supabase MCP. Owner action after merge: apply `20260602154853` via Supabase MCP `apply_migration` so the registered-vs-mirror parity holds (AP #21).
+
+**Open follow-up surfaced en route** (not closed here): the `organizations.auto_notifications` JSONB column appears to be MISSING from the schema (no add-column migration found in repo). If absent in production, every admin toggle save fails — the AutoNotificationSettings feature is effectively broken regardless of the microcopy. Needs verification via MCP + a follow-up migration that adds `auto_notifications jsonb NOT NULL DEFAULT '{}'::jsonb` to organizations. Filed implicitly under 3A.19.P0-3 (toggles don't gate handler) since the two issues converge in the same surface; should be bundled in the notification-pipeline-wiring arc.
+
+**AP #45** satisfied by this same-commit ledger entry.
+
+---
+
 ### §4.BU — DR runbook closes Wave 3.B #25 P0-1 (2026-06-02)
 
 Closes the P0 "no DR runbook" finding from `AUDIT_WAVE_3B_2026-05-29.md` (category #25). Doc-only PR — no code touched.
