@@ -1,6 +1,6 @@
 // Brand-flash mitigation — caches the most-recent org's brand_colors
 // in localStorage so the next app boot can apply them synchronously
-// before React mounts. Without this, every boot renders Aster Sports/Aster Sports
+// before React mounts. Without this, every boot renders the platform
 // defaults until AuthContext's async fetch resolves, producing the
 // brand flash Frank captured 2026-05-20 (11:49 frame).
 //
