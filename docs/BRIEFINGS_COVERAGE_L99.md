@@ -1,7 +1,8 @@
 # BRIEFINGS COVERAGE — L99 AUDIT
 
 **Written:** May 10, 2026
-**Verified against production:** post-PR #59 + #60 merge (sha `bf80c13`)
+**Last refresh:** 2026-06-02 (Wave 3.A #20 PATTERN STALE-DOC P1 closure — §4.AR / §4.BV-batch-1). Wave 5 closures (`games_recap`, `academy_callup_notice` surface, cancellation gate) are already documented in the body sections below; production `comms_messages_kind_check` has 12 canonical kinds (CLAUDE.md §13 rule 8 lists them). The original "9 canonical" framing is superseded.
+**Verified against production:** post-PR #59 + #60 merge (sha `bf80c13`); subsequent rebrand + audit-arc PRs (#619-#655) did not alter the kind taxonomy or renderer contract.
 **Source-of-truth files:**
 - `src/lib/engine/resolvers/registry.js` — `RESOLVER_REGISTRY` (the kind authority: resolver+composer mapping + `sendPath` per kind; 11 calendar-anchored kinds)
 - `src/lib/briefings/kindMetadata.js` — KIND_ORDER (12 kinds) + KIND_METADATA
