@@ -27,7 +27,7 @@ function htmlPage(title: string, body: string, alts = ""): Response {
   <h1 style="margin:0 0 8px;font-size:22px;color:#4a8fd4;line-height:1.2;">${escape(title)}</h1>
   ${body ? `<div style="font-size:14px;color:#475569;line-height:1.5;margin-bottom:18px;">${body}</div>` : ""}
   ${alts}
-  <div style="margin-top:20px;font-size:12px;color:#94a3b8;">Or open the Legacy Hoopers app for the full schedule.</div>
+  <div style="margin-top:20px;font-size:12px;color:#94a3b8;">Or open the app for the full schedule.</div>
 </div></body></html>`;
   return new Response(html, {
     status: 200,

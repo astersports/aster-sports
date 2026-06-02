@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useAuth } from '../../context/AuthContext';
 import ModalBackground from '../shared/ModalBackground';
+import { ADMIN_BCC_EMAIL } from '../../lib/briefings/queueComposedMessagesBuilders';
 
 const baseBtnStyle = {
   flex: 1, minHeight: 44, borderRadius: 10, fontSize: 15, fontWeight: 600,
@@ -85,7 +86,7 @@ export default function SendConfirmDialog({
             </label>
             {!testSendOnly && effective.some((r) => r.is_admin_copy) && (
               <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 8, textAlign: 'center' }}>
-                admin@legacyhoopers.org also receives a BCC audit copy.
+                {ADMIN_BCC_EMAIL} also receives a BCC audit copy.
               </div>
             )}
           </>
