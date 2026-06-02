@@ -3,12 +3,12 @@ import { supabase } from '../lib/supabase';
 
 // Player-scoped guardian recipients. Mirrors useTeamRecipients shape so
 // the same SendConfirmDialog primitive works without modification.
-// Always appends admin@legacyhoopers.org as a BCC audit copy unless it's
-// already a real recipient.
+// Always appends the platform operator address as a BCC audit copy unless
+// it's already a real recipient.
 //
 // Returns: [{ guardian_id, email, name, children: [{first_name,last_name}], is_admin_copy? }]
 
-const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
+const ADMIN_BCC_EMAIL = 'olivejuiceinc1@gmail.com';
 
 export function usePlayerRecipients(playerId) {
   const [recipients, setRecipients] = useState([]);

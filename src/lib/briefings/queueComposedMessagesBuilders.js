@@ -7,7 +7,7 @@
 
 import { renderSections, renderSectionsPlainText } from '../engine/composer';
 
-export const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
+export const ADMIN_BCC_EMAIL = 'olivejuiceinc1@gmail.com';
 const HTML_OPEN = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">';
 const HTML_CLOSE = '</div>';
 

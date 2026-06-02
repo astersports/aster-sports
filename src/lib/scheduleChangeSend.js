@@ -40,7 +40,7 @@ import { renderSections, renderSectionsPlainText } from './engine/composer';
 import { applyUnsubscribeUrls } from './unsubscribeUrl';
 import { EMAIL_WRAPPER_CLOSE, EMAIL_WRAPPER_OPEN } from './emailWrapper';
 
-const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
+const ADMIN_BCC_EMAIL = 'olivejuiceinc1@gmail.com';
 
 export async function sendScheduleChange({ state, supabase: sb, now = new Date() }) {
   if (!state) throw new Error('sendScheduleChange: missing state.');

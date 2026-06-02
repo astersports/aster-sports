@@ -16,7 +16,7 @@
 // queueRecipients so the pure builders below stay importable in
 // environments without VITE_SUPABASE_URL set (e.g. unit tests).
 
-const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
+const ADMIN_BCC_EMAIL = 'olivejuiceinc1@gmail.com';
 
 function buildFamilyRows({ messageId, audience, composed, teamIds, testOnly }) {
   if (testOnly) return [];
