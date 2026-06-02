@@ -198,8 +198,8 @@ Every table includes `org_id` FK → organizations. All RLS policies scope to us
 | 001 | foundation.sql | organizations, user_roles (membership; there is no `org_members` table), seasons, LH seed |
 | 002 | programs_teams.sql | programs, team_staff, LH 5 teams seed |
 | 003 | players_guardians.sql | players, guardians, player_guardians, roster_members, pricing_tiers, payment_plans, discount_codes, registrations, payments, form_fields, form_responses, waivers, waiver_signatures |
-| 004 | activities.sql | activities, activity_changes |
-| 005 | rsvp_checkin_interactions.sql | rsvps, check_ins, activity_duties, activity_rides, activity_comments, activity_views, player_activations |
+| 004 | activities.sql | events (was "activities" — table renamed mid-flight; migration filename retained per archive doctrine), event_change_audit |
+| 005 | rsvp_checkin_interactions.sql | event_rsvps (was rsvps), check_ins, event_duties (was activity_duties), event_rides (was activity_rides), event_comments (was activity_comments), event_views (was activity_views), player_activations |
 | 006 | messaging.sql | messages, message_reactions, message_reads |
 | 007 | notifications.sql | notifications |
 | 008 | locations_opponents.sql | locations, opponents, FK additions, LH venue seeds |
@@ -1001,7 +1001,7 @@ source for the question you're asking.
 | Which kids are on a team right now? | `team_players` | `roster_type` in rostered/futures, `status` in active/inactive |
 | What jersey does a kid wear on a team? | `team_players.jersey_number` (text) | Keep aligned with `roster_members` via alignment trigger |
 | What size jersey/shorts is the kid wearing? | `player_equipment` (per player×season×sport) | Canonical home since PR 8 (§4.5 step 8). `roster_members.{jersey_size,shorts_size}` are kept in sync by the `align_player_equipment_from_roster_member` trigger (legacy mirror), but UI reads `player_equipment` |
-| What is the kid's payment status for the season? | `financial_accounts` + `financial_transactions` | Not `roster_members.payment_status` (legacy column) |
+| What is the kid's payment status for the season? | `financial_accounts` + `financial_transactions` | The legacy `roster_members.payment_status` column was **dropped 2026-06-02** (migration `20260602195535`); the derived value now lives on `player.payment_status` set by `useRoster` from `family_balances` |
 | What teams is the current parent's child on? | `current_user_child_team_ids()` | SECURITY DEFINER; do not query underlying tables |
 | What players can the current parent see in roster lists? | `current_user_teammate_player_ids()` | SECURITY DEFINER |
 | Was the kid eligible for an event on `event_date`? | `roster_members.registered_at` / `left_at` | Date-windowed eligibility for attendance views |
