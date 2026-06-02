@@ -76,7 +76,7 @@ export default function RegisterEntryPage() {
         <div style={{ ...centered, fontSize: 13, marginTop: 4 }}>Registration for {program.name} has closed.</div>
       )}
 
-      <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--as-text-tertiary)' }}>Powered by Aster Sports</div>
+      <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--as-text-tertiary)' }}>Powered by Aster Sports · <a href="/privacy" style={{ color: 'inherit', textDecoration: 'underline' }}>Privacy</a> · <a href="/terms" style={{ color: 'inherit', textDecoration: 'underline' }}>Terms</a></div>
     </div>
   );
 }
