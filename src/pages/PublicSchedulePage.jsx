@@ -105,7 +105,7 @@ export default function PublicSchedulePage() {
       <SubscribeSheet open={showSubscribe} onClose={() => setShowSubscribe(false)} team={team} />
 
       <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--as-text-tertiary)' }}>
-        Powered by Aster Sports
+        Powered by Aster Sports · <a href="/privacy" style={{ color: 'inherit', textDecoration: 'underline' }}>Privacy</a> · <a href="/terms" style={{ color: 'inherit', textDecoration: 'underline' }}>Terms</a>
       </div>
     </div>
   );

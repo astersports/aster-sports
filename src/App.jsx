@@ -36,6 +36,8 @@ const RegisterEntryPage = lazy(() => import('./pages/RegisterEntryPage'));
 const RegisterFlowPage = lazy(() => import('./pages/RegisterFlowPage'));
 const ProgramSetupPage = lazy(() => import('./pages/admin/ProgramSetupPage'));
 const ProgramDetailPage = lazy(() => import('./pages/admin/ProgramDetailPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
 
 const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Loading...</div>;
 
@@ -71,6 +73,8 @@ export default function App() {
       <Route path="/schedule/:teamId" element={<PublicSchedulePage />} />
       <Route path="/r/:slug" element={<RegisterEntryPage />} />
       <Route path="/r/:slug/apply" element={<RegisterFlowPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsOfServicePage />} />
 
       {/* Authenticated routes */}
       <Route path="/"         element={<Protected><HomePage /></Protected>} />
