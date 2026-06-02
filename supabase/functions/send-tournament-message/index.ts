@@ -117,6 +117,42 @@ Deno.serve(async (req) => {
   if (recErr) return json({ error: recErr.message }, 500);
   if (!recipients || recipients.length === 0) return json({ error: "No queued recipients" }, 400);
 
+  // Wave 3.A #19 P1 closure: filter out guardians who unsubscribed via a
+  // prior briefing's One-Click List-Unsubscribe header or footer link.
+  // guardian_email_preferences.unsubscribed_at is the canonical opt-out
+  // signal — written by unsubscribe-handler + resend-webhook-receiver,
+  // never previously read on the send path. Honors CAN-SPAM. Admin BCC
+  // rows (guardian_id NULL) bypass — they're the operator's audit copy.
+  let suppressed = 0;
+  {
+    const recipientGuardianIds = recipients.map((r) => r.guardian_id).filter(Boolean) as string[];
+    if (recipientGuardianIds.length) {
+      const { data: prefs, error: prefsErr } = await sb
+        .from("guardian_email_preferences")
+        .select("guardian_id, unsubscribed_at")
+        .in("guardian_id", recipientGuardianIds);
+      if (prefsErr) return json({ error: `guardian_email_preferences lookup: ${prefsErr.message}` }, 500);
+      const unsub = new Set((prefs ?? []).filter((p) => p.unsubscribed_at).map((p) => p.guardian_id as string));
+      if (unsub.size) {
+        // Flip suppressed rows' delivery_status to 'unsubscribed' so the
+        // audit trail records the skip (uses an existing allowed value
+        // from the delivery_status CHECK constraint — no schema change).
+        const suppressedRows = recipients.filter((r) => r.guardian_id && unsub.has(r.guardian_id));
+        if (suppressedRows.length) {
+          await sb.from("comms_message_recipients")
+            .update({ delivery_status: "unsubscribed" })
+            .in("id", suppressedRows.map((r) => r.id));
+          suppressed = suppressedRows.length;
+        }
+        // Drop suppressed rows from the in-memory list so the send loop skips them.
+        const stillQueued = recipients.filter((r) => !r.guardian_id || !unsub.has(r.guardian_id));
+        if (stillQueued.length === 0) return json({ ok: true, sent: 0, failed: 0, suppressed, errors: [] });
+        recipients.length = 0;
+        recipients.push(...stillQueued);
+      }
+    }
+  }
+
   // Pilot-mode defense in depth + reply-to lookup (Wave 3.5 §B5.1 + 3.6 §D6).
   const { data: orgSettings, error: orgErr } = await sb
     .from("organization_settings")
@@ -219,5 +255,5 @@ Deno.serve(async (req) => {
     errors.push(`push dispatch (non-fatal): ${(e as Error).message ?? String(e)}`);
   }
 
-  return json({ ok: failed === 0 && !finalizeErr, sent, failed, errors, pilot_mode_active: pilotMode, reply_to: replyTo });
+  return json({ ok: failed === 0 && !finalizeErr, sent, failed, suppressed, errors, pilot_mode_active: pilotMode, reply_to: replyTo });
 });

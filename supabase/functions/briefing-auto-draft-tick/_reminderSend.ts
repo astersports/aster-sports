@@ -32,10 +32,27 @@ export async function resolveRecipients(
   if (!guardianIds.length) return { emails: [], userIds: [], count: 0 };
 
   const { data: gs, error: gErr } = await sb
-    .from("guardians").select("email, user_id, is_pilot_family")
+    .from("guardians").select("id, email, user_id, is_pilot_family")
     .eq("org_id", orgId).in("id", guardianIds);
   if (gErr) throw new Error(`guardians: ${gErr.message}`);
-  const eligible = (gs ?? []).filter((g: any) => !pilotMode || g.is_pilot_family);
+  const eligibleByPilot = (gs ?? []).filter((g: any) => !pilotMode || g.is_pilot_family);
+  if (!eligibleByPilot.length) return { emails: [], userIds: [], count: 0 };
+
+  // Wave 3.A #19 P1 closure: filter out guardians who unsubscribed via
+  // a prior briefing's One-Click List-Unsubscribe header or footer link.
+  // guardian_email_preferences.unsubscribed_at is the canonical opt-out
+  // signal — written by unsubscribe-handler + resend-webhook-receiver,
+  // never previously read on the send path. Honors CAN-SPAM + iOS push
+  // best-practice ("user said stop, app must stop").
+  const eligibleIds = eligibleByPilot.map((g: any) => g.id);
+  const { data: prefs, error: prefsErr } = await sb
+    .from("guardian_email_preferences")
+    .select("guardian_id, unsubscribed_at")
+    .in("guardian_id", eligibleIds);
+  if (prefsErr) throw new Error(`guardian_email_preferences: ${prefsErr.message}`);
+  const unsubscribed = new Set((prefs ?? []).filter((p: any) => p.unsubscribed_at).map((p: any) => p.guardian_id as string));
+  const eligible = eligibleByPilot.filter((g: any) => !unsubscribed.has(g.id));
+
   const emails = [...new Set(eligible.map((g: any) => g.email).filter(Boolean))];
   const userIds = [...new Set(eligible.map((g: any) => g.user_id).filter(Boolean))];
   return { emails, userIds, count: eligible.length };
