@@ -3718,6 +3718,30 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BT — Doctrine reconciliation closes Wave 3.B #29 P0-1/2/3/4 (2026-06-02)
+
+Closes the 4 P0 doctrine-drift findings from `AUDIT_WAVE_3B_2026-05-29.md` (category #29). Doc-only PR — no code touched.
+
+- **3B.29.P0-1** (§0 verification grep #4 fails) — CLAUDE.md §0 grep updated to exclude 5 documented exceptions; §6 gains a "Known >150 LOC exceptions" subsection enumerating each file + LOC + split shape + cap-pressure-trigger. Pattern follows the existing AdminHomePage cap-pressure note in §6. 5 exceptions: `AuthContext.jsx` (172), `BriefingComposer.jsx` (164), `kindMetadata.js` (169), `familyGuideHelpers.js` (155), `registry.js` (159). Two were new since audit (familyGuideHelpers + registry).
+- **3B.29.P0-2** (§5 migration count stale) — `~171 files / 179 registered` → `190 files in repo as of 2026-06-02`. Caveat preserved: directory remains canonical source; registered-vs-mirror parity tracked per AP #21.
+- **3B.29.P0-3** (§2 tech stack drift) — `React 18 + Tailwind CSS + Vite` → `React 19 + Tailwind CSS 4 + Vite 8`. Reconciles three major-version drifts (React 18→19.2.6, Tailwind 3→4.2.2, Vite 5→8.0.14).
+- **3B.29.P0-4** (AP #51 catalog stale) — narrative refactored: dropped "InstallPrompt + WelcomeOverlay still mounted at HomePage:29/30" and "TeamPlayerStats.jsx + PlayerStatsTable.jsx orphan files" lines (all 4 files confirmed deleted 2026-06-02); added explicit "Historical cleanup arc" table preserving the precedent ledger; added catalog-refresh discipline.
+
+**Additional opportunistic closures in same PR:**
+- §1 title `WHAT IS EMBER` → `WHAT IS ASTER SPORTS` (rebrand drift caught en route, paired with the rebrand arc)
+- §13 brand-color rule 5 reconciled to engine: header `#1e3a5f` → `#0f172a` (per `engine/colors.js` `TEXT_NAVY`); added `COBALT_DEEP #2563eb` for the eyebrow contrast variant. Per AP #39 ("when hedging X with Y, Y is usually truer") — engine code is the truer position.
+- §16.10 bundle budget note refreshed: entry chunk `~85 KB gz` (PR #150, 2026-05-13) → `~115 KB gz as of 2026-06-02`. Still under the 350 KB ceiling; growth attributed to registration arc + rebrand consts + Sentry/PostHog wiring.
+- AP #50 textual residue: 2 lines (in AP #53 candidate body + §16.15 framing) marked with explicit `(retired 2026-05-28)` parenthetical so future readers don't follow the historical methodology citation as live guidance.
+
+**Out of scope** (deferred to follow-up PRs):
+- §16.5 Stream B drift (24h coverage vs T-4h+T-1h spec) — needs Frank's call on which is the truer position
+- BRIEFINGS_COVERAGE_L99.md refresh — separate doc, separate PR
+- `docs/archive/SKYFIRE_BUILD_QUEUE_v2.md` rename — file is archived (not active); falls under the "historical docs kept as-is" doctrine clause; not renamed
+
+**AP #45 satisfied** by this same-commit ledger entry.
+
+---
+
 ### §4.BS — Vela rebrand audit landed; platform name Ember → Vela (2026-06-01)
 
 Platform renamed **Ember → Vela** (Frank decided after a long domain/App-Store/trademark
