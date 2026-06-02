@@ -22,8 +22,12 @@ export default function PublicSchedulePage() {
   const [loading, setLoading] = useState(true);
   const [showSubscribe, setShowSubscribe] = useState(false);
 
-  // RLS (anon): teams_select_public (mig 025) gates teams by hardcoded LH org_id; events_select_public
-  // (mig 20260505194020_wave1_p0_security_fixes) gates events by team org_id + publish_status='published'.
+  // RLS (anon): teams_select_public + events_select_public gate by
+  // organizations.public_listing_enabled (Wave 1 P0 #4 closure, mig
+  // 20260528140000_wave_1_public_listing_gating — replaced the prior
+  // hardcoded LH org_id with a per-org flag). Default for new tenants
+  // flipped to false by mig 20260602154853 (Wave 3.B #28 P0-4) so a
+  // pilot org opts INTO public listing after content review.
   useEffect(() => {
     (async () => {
       const [teamRes, eventsRes] = await Promise.all([
