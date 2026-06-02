@@ -13,8 +13,8 @@
 > migration filename + the `ember_live` CHECK-constraint data value in migrations; the `@ember`
 > ICS `UID` suffix (`icalHelpers.js` + `team-feed`) → a calendar-dedup stable key, changing it
 > duplicates events in subscribers' calendars; the dead `--sf-*` tokens that survive only in
-> `docs/archive`; and historical `docs/` (incl. `EMBER_PENDING_LEDGER.md`) kept as-is to preserve
-> the record. No user-facing string says Skyfire, Ember, or Vela.
+> `docs/archive`; and historical `docs/` (incl. `EMBER_PENDING_LEDGER.md` + every `docs/archive/SKYFIRE_*.md` + `docs/EMBER_TENANCY_ARCHITECTURE_v3.md` + `docs/EMBER_PROGRAM_SETUP_SPEC_v2.md`) kept as-is to preserve
+> the record. **Doctrine clause:** archive docs and brand-named planning docs are NEVER retroactively renamed; the names ARE the record. Wave 3.B #29 P0-4 catalog-refresh discipline applies only to live-state claims (file paths still mounted, line counts still accurate), not to filenames or historical references. No user-facing string says Skyfire, Ember, or Vela.
 > Single source of truth for all Claude Code sessions.
 > Place at project root: `~/skyfire-app/CLAUDE.md`
 > Branch: `main` (v2 retired May 11, 2026 — see `docs/archive/PRE_3_AUDIT_2026-05-11.md`)
@@ -309,11 +309,12 @@ Reference instances: `src/components/parent-home/` (3 zone components,
 established 2026-05-21) + `src/components/coach-home/` (3 zone components,
 established 2026-05-21).
 
-**Pending application:** `src/pages/AdminHomePage.jsx` is at 142/150
-lines as of 2026-05-22. The next material change likely requires
-decomposition into `src/components/admin-home/`. Don't decompose
-preemptively (§16.13: ship not gate by config) — wait for the cap
-pressure trigger.
+**Pending application:** `src/pages/AdminHomePage.jsx` is at 146/150
+lines as of 2026-06-02 (was 142/150 at the 2026-05-22 baseline; grew
+through registration-arc + rebrand work). The next material change
+likely requires decomposition into `src/components/admin-home/`. Don't
+decompose preemptively (§16.13: ship not gate by config) — wait for
+the cap pressure trigger.
 
 When the cap pressure triggers:
 1. Create the 3 zone files in `src/components/admin-home/`
@@ -410,7 +411,7 @@ as-pulse, as-fade-in, as-pulse-dot, as-bounce-tap, as-fill-grow, card-expand, sh
 #### Financial data loaded (May 5–6, 2026)
 LeagueApps import across two waves: May-5 initial import (100 accounts), May-6 retrospective Fall 2025 top-up for families who joined Spring 2026 first (64 additional accounts). Current state: 164 accounts across 3 seasons (Fall 2025 + Winter 2025-26 + Spring 2026), 244 transactions, $166,910 billed, $165,635 gross / $160,244 net to bank. Email-first dedup. DeMasi: 2 legitimate co-guardian rows (no merge needed). KHOJASTEH: family correctly modeled with both parents linked to Aubtin via player_guardians; financial_accounts attached to mom (Anjella Teimoori).
 
-⬅ Status (reconciled 2026-05-29 — see EMBER_PENDING_LEDGER §4.0 for the verified index): in-app QR **SHIPPED** (`qrcode.react` dep + `ShareScheduleButton.jsx`) — the 3-B/6-A QR arc is no longer unbuilt. Already DONE since this list was written: 2-B weather (Open-Meteo, wired), 3-A location mgr UI (`/admin/locations`), schedule-change notifications, coach_roundup briefing, QR. Partial: 4-B auto-notifications (settings sheet exists). BLOCKED: 5-C player stats/box score — §16.12 forbids per-player game stats in 2026 (do not build).
+⬅ Status (reconciled 2026-06-02 — see EMBER_PENDING_LEDGER §4.0 + §4.BV for the verified index): in-app QR **SHIPPED** (`qrcode.react` dep + `ShareScheduleButton.jsx`) — the 3-B/6-A QR arc is no longer unbuilt. Already DONE since this list was written: 2-B weather (Open-Meteo, wired), 3-A location mgr UI (`/admin/locations`), schedule-change notifications, coach_roundup briefing, QR, **4-B auto-notifications** (settings sheet + Stream A handler now gates on `organizations.auto_notifications.reminders_enabled` per Wave 3.A #19 P0-3 closure, PR #643). BLOCKED: 5-C player stats/box score — §16.12 forbids per-player game stats in 2026 (do not build).
 
 ---
 
@@ -1220,6 +1221,15 @@ ELITE-28 ships CONTINUOUSLY — not a Phase 1.5 step.
 - SMS reserved for cancellations + admin 'critical' only
 
 Both streams run independently. Both are admin-configurable.
+
+**SPEC vs IMPL drift flagged 2026-05-29 (Wave 3.A #19 P1-1, restated 2026-06-02):**
+Stream B production today uses a 24-hour coverage-threshold model anchored on
+event start, not the T-4h + T-1h anchored-on-RSVP-lock-deadline spec above.
+The Sunday digest is auto-DRAFT-only (not auto-SEND). Pending Frank's call on
+truer position: either (a) align the impl to this spec, or (b) update this
+spec to match the impl. Logged as P1; not blocking the §17.8 gate. See
+§4.AR (Wave 3.A audit) for the original write-up + the 2026-06-02 §4.BV
+note flagging it as a deferred follow-up.
 
 ### 16.6 Translation scope (Phase 3 lock)
 
