@@ -11,6 +11,7 @@ import NotificationPrefs from '../components/account/NotificationPrefs';
 import PushEnableToggle from '../components/account/PushEnableToggle';
 import QuietHoursCard from '../components/account/QuietHoursCard';
 import StaffProfileCard from '../components/account/StaffProfileCard';
+import DeleteAccountSection from '../components/account/DeleteAccountSection';
 
 const ROLE_LABELS = { admin: 'Admin', coach: 'Coach', parent: 'Parent' };
 const VERSION = 'Aster Sports v2.0';
@@ -104,7 +105,9 @@ export default function AccountPage() {
         Sign out
       </button>
 
-      <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--as-text-tertiary)' }}>{VERSION}</div>
+      <DeleteAccountSection />
+
+      <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 24 }}>{VERSION}</div>
     </div>
   );
 }
