@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { email, org_id } = await req.json()
+    const { email, org_id, role } = await req.json()
     if (!email) {
       return new Response(JSON.stringify({ error: 'Email required' }), {
         status: 400,
@@ -41,6 +41,18 @@ Deno.serve(async (req) => {
     }
     if (!org_id) {
       return new Response(JSON.stringify({ error: 'org_id required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    // Wave 3.B #28 P0-2 closure: accept an optional role param so admins can
+    // invite staff (coach / admin) through the same path. Default 'parent'
+    // preserves the prior single-purpose contract for existing callers.
+    // AcceptInvitePage (3A.18.P0-3) reads raw_user_meta_data.role to create
+    // the matching user_roles row at signup.
+    const inviteRole = role ?? 'parent'
+    if (!['parent', 'coach', 'admin'].includes(inviteRole)) {
+      return new Response(JSON.stringify({ error: 'role must be parent, coach, or admin' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -86,7 +98,7 @@ Deno.serve(async (req) => {
     // to scope the new account to the inviter's org.
     const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
       redirectTo: `${appBaseUrl}/login`,
-      data: { org_id, invited_by: user.id },
+      data: { org_id, invited_by: user.id, role: inviteRole },
     })
 
     if (error) {
