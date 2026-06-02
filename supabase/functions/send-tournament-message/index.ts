@@ -154,7 +154,13 @@ Deno.serve(async (req) => {
 
   if (body.dry_run) return json({ ok: true, dry_run: true, would_send: recipients.length, pilot_mode_active: pilotMode, reply_to: replyTo });
 
-  const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
+  // Wave 3.A #19 P1 closure: prefer app_secrets.resend_api_key per AP #33.
+  // Env fallback kept for the rollout window — remove in a follow-up PR
+  // once operator confirms the app_secrets row is populated.
+  const { data: keyRow } = await sb.from("app_secrets").select("value").eq("name", "resend_api_key").maybeSingle();
+  const resendKey = (keyRow?.value as string | null) ?? Deno.env.get("RESEND_API_KEY");
+  if (!resendKey) throw new Error("RESEND_API_KEY missing: not in app_secrets, not in Deno.env");
+  const resend = new Resend(resendKey);
   const fromHeader = `${fromName} <${FROM_EMAIL}>`;
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const errors: string[] = [];

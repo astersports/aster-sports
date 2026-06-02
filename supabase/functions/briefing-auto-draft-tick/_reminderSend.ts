@@ -64,7 +64,13 @@ export async function sendReminderEmail(
   const fromName = (!osErr && os?.from_name) ? os.from_name : FROM_NAME_FALLBACK;
   const fromHeader = `${fromName} <${FROM_EMAIL}>`;
   const replyTo = (!osErr && os?.reply_to_email) ? os.reply_to_email : REPLY_TO_FALLBACK;
-  const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
+  // Wave 3.A #19 P1 closure: prefer app_secrets.resend_api_key per AP #33.
+  // Env fallback kept for the rollout window — remove in a follow-up PR
+  // once operator confirms the app_secrets row is populated.
+  const { data: keyRow } = await sb.from("app_secrets").select("value").eq("name", "resend_api_key").maybeSingle();
+  const resendKey = (keyRow?.value as string | null) ?? Deno.env.get("RESEND_API_KEY");
+  if (!resendKey) throw new Error("RESEND_API_KEY missing: not in app_secrets, not in Deno.env");
+  const resend = new Resend(resendKey);
   let sent = 0;
   for (let i = 0; i < emails.length; i += 100) {
     const group = emails.slice(i, i + 100);
