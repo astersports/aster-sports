@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     vapidPublic = await getAppSecret(sb, "vapid_public_key");
     vapidPrivate = await getAppSecret(sb, "vapid_private_key");
   } catch (e) { return json({ error: (e as Error).message }, 500); }
-  webpush.setVapidDetails("mailto:olivejuiceinc1@gmail.com", vapidPublic, vapidPrivate);
+  webpush.setVapidDetails("mailto:support@astersports.app", vapidPublic, vapidPrivate);
 
   const payloadIn = await req.json().catch(() => ({}));
   const { user_id, user_ids, org_id, title, body: msgBody, url } = payloadIn as {
