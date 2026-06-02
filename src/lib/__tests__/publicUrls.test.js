@@ -4,8 +4,8 @@ import { publicScheduleUrl } from '../publicUrls';
 
 describe('publicScheduleUrl', () => {
   it('builds the public schedule URL from an explicit origin', () => {
-    expect(publicScheduleUrl('t1', 'https://skyfire-app.vercel.app'))
-      .toBe('https://skyfire-app.vercel.app/schedule/t1');
+    expect(publicScheduleUrl('t1', 'https://astersports.app'))
+      .toBe('https://astersports.app/schedule/t1');
   });
 
   it('falls back to window.location.origin when origin is omitted', () => {
