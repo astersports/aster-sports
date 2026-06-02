@@ -32,7 +32,7 @@ export default function AutoNotificationSettingsSheet({ open, onClose, orgId }) 
     }).eq('id', orgId);
     setSaving(false);
     if (error) {
-      showToast("Couldn't save settings. The auto_notifications column may need to be added to the organizations table.", 'error');
+      showToast("Couldn't save notification settings. Try again, or get in touch if it keeps happening.", 'error');
       return;
     }
     showToast('Notification settings saved', 'success');
