@@ -90,5 +90,5 @@ export const APP_BASE_URL =
 
 export const ORG_NAME_DEFAULT = 'Legacy Hoopers';
 export const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
-export const ORG_CONTACT_DEFAULT = 'olivejuiceinc1@gmail.com';
+export const ORG_CONTACT_DEFAULT = 'support@astersports.app';
 export const ORG_LOGO_DEFAULT = `${APP_BASE_URL}/knight-logo-240.png`;

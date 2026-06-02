@@ -9,7 +9,7 @@ import { Resend } from "https://esm.sh/resend@4";
 // astersports.app verified in Resend; from_name/reply-to stay the org.
 const FROM_EMAIL = "noreply@astersports.app";
 const FROM_NAME_FALLBACK = "Legacy Hoopers";
-const REPLY_TO_FALLBACK = "olivejuiceinc1@gmail.com";
+const REPLY_TO_FALLBACK = "support@astersports.app";
 
 export interface Recipients { emails: string[]; userIds: string[]; count: number; }
 
