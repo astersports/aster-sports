@@ -211,7 +211,7 @@ describe('composeFamilyGuide', () => {
     };
     const out = composeFamilyGuide(ctx, { parent_name: 'Frank' });
     const nav = out.content_sections.find((s) => s.kind === 'quick_link_nav');
-    expect(nav.items[0].url).toBe('https://skyfire-app.vercel.app/teams/team-abc');
+    expect(nav.items[0].url).toBe('https://astersports.app/teams/team-abc');
     expect(nav.items[1].url).toBeNull();
   });
 });

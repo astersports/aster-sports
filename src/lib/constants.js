@@ -74,21 +74,19 @@ export const TOURNAMENT_MESSAGE_TYPES = [
 // ─── Outbound-email base URL + default org branding (single source of truth) ───
 // Used by the briefing engine resolvers + renderers to build absolute links and
 // the default org logo in OUTBOUND EMAIL. Email HTML is rendered CLIENT-SIDE at
-// send time (queueComposedMessages → body_html_rendered), so this Vite env var
-// reaches production email.
+// send time (queueComposedMessages → body_html_rendered), so this default (or a
+// VITE_APP_BASE_URL override) reaches production email.
 //
-// EXTRACT-NOT-REPOINT: the fallback is the CURRENT working deploy host, so this
-// changes WHERE the value lives, not the value — outbound email is byte-identical
-// until the env flips. GO-LIVE = set VITE_APP_BASE_URL in Vercel (no code edit,
-// no redeploy scramble). Trailing slash is stripped so callers can append paths.
+// CUTOVER (2026-06-02): default is now https://astersports.app (was the
+// skyfire-app.vercel.app deploy host). VITE_APP_BASE_URL still overrides if set.
+// Trailing slash is stripped so callers can append paths.
 //
 // SCOPE NOTE: in-app share links use window.location.origin (src/lib/publicUrls.js)
-// and are already domain-agnostic. The invite-parent EDGE FUNCTION has its own
-// hardcoded auth redirect (Deno — NOT reachable by this Vercel env var) and must
-// be repointed separately at go-live (intentionally out of scope here per the
-// "no Supabase Auth changes" gate).
+// and are already domain-agnostic. The invite-parent EDGE FUNCTION resolves its
+// magic-link host separately from public.app_config (Deno, SQL-settable) — also
+// already repointed to astersports.app.
 export const APP_BASE_URL =
-  (import.meta.env?.VITE_APP_BASE_URL || 'https://skyfire-app.vercel.app').replace(/\/+$/, '');
+  (import.meta.env?.VITE_APP_BASE_URL || 'https://astersports.app').replace(/\/+$/, '');
 
 export const ORG_NAME_DEFAULT = 'Legacy Hoopers';
 export const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
