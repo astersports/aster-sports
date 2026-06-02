@@ -72,15 +72,18 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     )
 
+    // Magic-link host is read from public.app_config (SQL-settable, no dashboard
+    // or CLI): `UPDATE public.app_config SET value='https://astersports.app'
+    // WHERE key='app_base_url'` repoints parent invites at go-live. Graceful
+    // fallback to the current working deploy host if the row is missing or the
+    // read errors — invites never break on a config miss.
+    const { data: cfg } = await adminClient
+      .from('app_config').select('value').eq('key', 'app_base_url').maybeSingle()
+    const appBaseUrl = (cfg?.value ?? 'https://skyfire-app.vercel.app').replace(/\/+$/, '')
+
     // Bind the invitation to the validated org by stamping org_id into the
     // Supabase auth user's metadata. AcceptInvite-side onboarding reads this
     // to scope the new account to the inviter's org.
-    // Base URL is env-driven so the parent-invite magic-link host can be
-    // repointed at go-live without a code change. This is the second surface
-    // the Vercel VITE_APP_BASE_URL toggle CANNOT reach (Deno runtime) — set
-    // APP_BASE_URL in the Supabase function env + redeploy this function.
-    // Extract-not-repoint: fallback is the current working deploy host.
-    const appBaseUrl = (Deno.env.get('APP_BASE_URL') ?? 'https://skyfire-app.vercel.app').replace(/\/+$/, '')
     const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
       redirectTo: `${appBaseUrl}/login`,
       data: { org_id, invited_by: user.id },
