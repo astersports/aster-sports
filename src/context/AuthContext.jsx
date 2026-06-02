@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { autoLinkGuardian } from '../lib/autoLinkGuardian';
+import { resolveNewUserContext } from '../lib/claimInvite';
 import { fetchParentContext } from '../lib/parentContext';
 import { bustAllCaches } from '../lib/cacheBuster';
 import { reportError } from '../lib/reportError';
@@ -69,10 +69,12 @@ export function AuthProvider({ children }) {
       resolvedRole = active.role ?? null;
       resolvedOrg = active.organizations ?? null;
     } else {
-      const linked = await autoLinkGuardian(authUser);
+      // claim_invite (staff + new parents) with autoLinkGuardian fallback.
+      // See src/lib/claimInvite.js for the resolution order.
+      const ctx = await resolveNewUserContext(authUser);
       if (id !== fetchIdRef.current) return;
-      resolvedRole = linked?.role ?? null;
-      resolvedOrg = linked?.organization ?? null;
+      resolvedRole = ctx?.role ?? null;
+      resolvedOrg = ctx?.organization ?? null;
     }
     setRole(resolvedRole); setOrg(resolvedOrg);
     import('../lib/sentry')
