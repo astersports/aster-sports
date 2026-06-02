@@ -3718,6 +3718,29 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BU — DR runbook closes Wave 3.B #25 P0-1 (2026-06-02)
+
+Closes the P0 "no DR runbook" finding from `AUDIT_WAVE_3B_2026-05-29.md` (category #25). Doc-only PR — no code touched.
+
+Created `docs/DISASTER_RECOVERY.md` — 250-line runbook structured for use-at-3am. Sections:
+
+1. **Platform identity** — project IDs (Supabase `vrwwpsbfbnveawqwbdmj`, Vercel `aster-sports`), domains, tier (Supabase Pro = daily backups + PITR), Resend domain status
+2. **RTO/RPO table** — per-surface guarantees (Vercel rollback ~1 min, edge function ~5 min, PITR 1-4 hr / ~5 min RPO, daily snapshot 1-6 hr / ~24 hr RPO, secret rotation ~30 sec)
+3. **10 scenarios** — app rollback, edge function rollback, bad migration, data corruption, auth disaster, compromised secret, DNS failure, outbound email broken, account takeover, total environment loss. Each scenario has steps + verification.
+4. **Migration drift recovery** — AP #21 mirror-discipline failure modes
+5. **pg_cron job recovery** — including PATTERN HOTEL guard (SQL "success" ≠ HTTP success per Wave 3.A #22 P0-1)
+6. **Public status sources** — supabase, vercel, resend, anthropic, github
+7. **On-call contacts** — Frank (admin@legacyhoopers.org + olivejuiceinc1@gmail.com), Kenny
+8. **Secret rotation cadence** — recommended baseline per secret class (HMAC tokens 12mo, cron_secret 6mo, vapid avoid-rotation, service_role rotate-on-exposure)
+9. **Drill history** — empty (3B.25.P0-2 is the standing P0-2 below)
+10. **Standing owner action items** — 3B.25.P0-2 (backup-to-staging drill), 3B.25.P1 (off-platform pg_dump, Sentry source-map upload, LeagueApps source archive), 3B.27.P0-2 (breach-notification policy cross-link)
+
+**Closes 3B.25.P0-1.** Does NOT close 3B.25.P0-2 (backup-to-staging drill — needs an owner-driven session against a fresh Supabase project; runbook flags it as the standing action item in §10) or 3B.25.P0-3 (5 ghost migrations were already materialized; closed by §4.AS).
+
+**AP #45 satisfied** by this same-commit ledger entry. **AP #49 satisfied** by full-paste in chat (the runbook is 250 lines — pasted in the same turn).
+
+---
+
 ### §4.BT — Doctrine reconciliation closes Wave 3.B #29 P0-1/2/3/4 (2026-06-02)
 
 Closes the 4 P0 doctrine-drift findings from `AUDIT_WAVE_3B_2026-05-29.md` (category #29). Doc-only PR — no code touched.
