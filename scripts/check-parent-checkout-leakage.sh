@@ -22,8 +22,12 @@
 # Resolve the git toplevel (the checkout this commit is happening in)
 GIT_TOPLEVEL="$(git rev-parse --show-toplevel)"
 
-# Only fire when committing IN THE PARENT CHECKOUT (not in a worktree)
-if [ "$GIT_TOPLEVEL" != "/home/user/skyfire-app" ]; then
+# Only fire when committing IN THE PARENT CHECKOUT (not in a worktree).
+# Detect by basename so the script works regardless of where the repo is
+# cloned (was hardcoded /home/user/skyfire-app; broke silently on machines
+# with a different prefix). Worktrees live under .claude/worktrees/agent-*
+# so their basename starts with "agent-".
+if [ "$(basename "$GIT_TOPLEVEL")" != "skyfire-app" ]; then
   # Worktree commit — normal agent activity, exit silently
   exit 0
 fi
