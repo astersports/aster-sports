@@ -25,6 +25,19 @@ export async function handleEventReminder(sb: SupabaseClient, trigger: Trigger, 
     .select("pilot_mode_enabled").eq("organization_id", trigger.org_id).maybeSingle();
   const pilotMode = osErr ? true : ((os?.pilot_mode_enabled as boolean | undefined) ?? true);
 
+  // Wave 3.A #19 P0-3 closure: respect admin "Event Reminders" toggle from
+  // AutoNotificationSettingsSheet → organizations.auto_notifications JSONB.
+  // Undefined = enabled (matches UI's `cfg.reminders_enabled !== false`).
+  // Read error → enabled (fail-OPEN here is correct: don't silence reminders
+  // because of a transient DB hiccup; the per-event idempotency log still
+  // prevents double-fire).
+  const { data: org, error: orgErr } = await sb.from("organizations")
+    .select("auto_notifications").eq("id", trigger.org_id).maybeSingle();
+  const autoCfg = (orgErr ? {} : (org?.auto_notifications as Record<string, unknown> | null) ?? {}) as { reminders_enabled?: boolean };
+  if (autoCfg.reminders_enabled === false) {
+    return [{ ...base, skipped: "reminders_disabled_by_admin" }];
+  }
+
   const nowMs = now.getTime();
   const in72 = new Date(nowMs + 72 * 3600000).toISOString();
   const { data: evs, error } = await sb.from("events").select(EVENT_FIELDS)
