@@ -43,7 +43,11 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const FROM_EMAIL = "briefings@legacyhoopers.org";
+// Platform send-from address (rebrand 2026-06-02; was briefings@legacyhoopers.org).
+// astersports.app is verified in Resend. from_name still shows the org (below) and
+// replies route to the org's reply-to, so families see "Legacy Hoopers" + reply
+// to the org — only the envelope sender is the platform domain.
+const FROM_EMAIL = "noreply@astersports.app";
 // Wave 4.3-H: from_name reads from organization_settings.from_name per kind
 // (no per-kind branching needed; Frank locked "Legacy Hoopers" for all sends).
 // Fallback used only if org_settings row is missing or column is NULL.
