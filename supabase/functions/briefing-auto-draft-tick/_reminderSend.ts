@@ -5,7 +5,9 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@4";
 
-const FROM_EMAIL = "briefings@legacyhoopers.org";
+// Platform send-from (rebrand 2026-06-02; was briefings@legacyhoopers.org).
+// astersports.app verified in Resend; from_name/reply-to stay the org.
+const FROM_EMAIL = "noreply@astersports.app";
 const FROM_NAME_FALLBACK = "Legacy Hoopers";
 const REPLY_TO_FALLBACK = "info@legacyhoopers.org";
 
