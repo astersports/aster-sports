@@ -85,7 +85,7 @@ describe('sendWeeklyDigest — orchestration', () => {
     expect(inserted.messages[0].org_id).toBe('org-1');
     expect(inserted.messages[0].status).toBe('draft');
     expect(inserted.recipients).toHaveLength(3); // 2 families + admin BCC
-    expect(inserted.recipients.find((r) => r.email_at_send === 'admin@legacyhoopers.org')).toBeTruthy();
+    expect(inserted.recipients.find((r) => r.email_at_send === 'olivejuiceinc1@gmail.com')).toBeTruthy();
     expect(dispatchCalls[0].name).toBe('send-tournament-message');
     expect(dispatchCalls[0].opts.body.message_id).toBe('msg-1');
     expect(updates).toContainEqual({ status: 'sent' });
@@ -99,7 +99,7 @@ describe('sendWeeklyDigest — orchestration', () => {
     const g1 = inserted.recipients.find((r) => r.guardian_id === 'g-1');
     expect(g1.body_html_rendered).toContain('https://test/unsub/g-1');
     expect(g1.body_html_rendered).not.toContain('{{UNSUBSCRIBE_URL}}');
-    const admin = inserted.recipients.find((r) => r.email_at_send === 'admin@legacyhoopers.org');
+    const admin = inserted.recipients.find((r) => r.email_at_send === 'olivejuiceinc1@gmail.com');
     expect(admin.body_html_rendered).toContain('https://test/unsub/admin');
   });
 
@@ -125,7 +125,7 @@ describe('sendWeeklyDigest — orchestration', () => {
   it('f. testOnly=true drops family rows, keeps admin BCC only', async () => {
     await call({ testOnly: true });
     expect(inserted.recipients).toHaveLength(1);
-    expect(inserted.recipients[0].email_at_send).toBe('admin@legacyhoopers.org');
+    expect(inserted.recipients[0].email_at_send).toBe('olivejuiceinc1@gmail.com');
     expect(inserted.recipients[0].guardian_id).toBeNull();
   });
 
@@ -133,6 +133,6 @@ describe('sendWeeklyDigest — orchestration', () => {
     await call({ recipients: [{ guardian_id: 'g-orphan', email: 'g@x', kid_first_names: ['Z'], team_ids: ['t-99'] }] });
     expect(inserted.recipients.find((r) => r.guardian_id === 'g-orphan')).toBeUndefined();
     // Admin BCC still inserted; composedFamilies = 0.
-    expect(inserted.recipients.find((r) => r.email_at_send === 'admin@legacyhoopers.org')).toBeTruthy();
+    expect(inserted.recipients.find((r) => r.email_at_send === 'olivejuiceinc1@gmail.com')).toBeTruthy();
   });
 });

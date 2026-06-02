@@ -20,7 +20,7 @@ import { formatPeriodLabel } from './engine/digestPeriod';
 import { applyUnsubscribeUrls } from './unsubscribeUrl';
 import { buildContext, buildSlicesFromRecipients, renderSlice } from './digestSendHelpers';
 
-const ADMIN_BCC_EMAIL = 'admin@legacyhoopers.org';
+const ADMIN_BCC_EMAIL = 'olivejuiceinc1@gmail.com';
 
 export async function sendWeeklyDigest({
   orgId, period,

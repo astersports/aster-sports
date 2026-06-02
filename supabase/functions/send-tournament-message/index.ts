@@ -52,7 +52,7 @@ const FROM_EMAIL = "noreply@astersports.app";
 // (no per-kind branching needed; Frank locked "Legacy Hoopers" for all sends).
 // Fallback used only if org_settings row is missing or column is NULL.
 const FROM_NAME_FALLBACK = "Legacy Hoopers";
-const REPLY_TO_FALLBACK = "info@legacyhoopers.org";
+const REPLY_TO_FALLBACK = "olivejuiceinc1@gmail.com";
 const RESEND_BATCH_LIMIT = 100;
 
 function json(body: unknown, status = 200) {
