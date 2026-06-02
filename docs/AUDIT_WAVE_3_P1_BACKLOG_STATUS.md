@@ -9,12 +9,15 @@
 
 ## Headline
 
-- **~17 P1s** closed by code in PRs #634-#662
-- **~12 P1s** verified-already-closed / verified-safe / false-positive
-- **~21 P1s** deferred with explicit decision + owner
-- **~4 P1s** operator-action pending (Resend dashboard, PostHog support, etc.)
+**Updated 2026-06-02 PM after second-pass closures (PRs #665-#668) and chat-CC's parallel migration-apply work:**
 
-§17.7 step 5 unblock condition (per `PLATFORM_PRIORITIES.md §17.8`): "multi-program build phase opens when all P0+P1 fix PRs land." P0 layer closed by #634-#653. P1 layer is now layered: shippable items shipped, the rest carry explicit routing.
+- **~22 P1s** closed by code in PRs #634-#668
+- **~14 P1s** verified-already-closed / verified-safe / false-positive (incl. `players.notes` correction per chat-CC's MCP check — column doesn't exist; #659's `200247` migration was deleted)
+- **~16 P1s** deferred with explicit decision + owner (UX/feature work)
+- **~4 P1s** operator-action pending (Resend dashboard, PostHog support, etc.)
+- **~2 P1s** closed-by-policy (current behavior IS the recommendation: Sunday digest auto-DRAFT, Stream A reminder fires regardless of RSVP)
+
+§17.7 step 5 unblock condition (per `PLATFORM_PRIORITIES.md §17.8`): "multi-program build phase opens when all P0+P1 fix PRs land." P0 layer closed by #634-#653. P1 layer is now layered: shippable items shipped + ship-recommendation items shipped + current-behavior-is-correct items policy-closed + remainder carry explicit routing.
 
 ---
 
@@ -34,10 +37,10 @@
 | # | P1 | Status | Routing |
 |---|---|---|---|
 | 1 | Stream B cadence drift (24h coverage vs T-4h+T-1h) | **Closed-by-doc-note** (#656) | §16.5 reconciliation block flags the spec/impl divergence; operator call needed on truer position (a) align impl to spec, or (b) update spec to impl. |
-| 2 | Sunday digest auto-DRAFT only, not auto-SEND | **Design-required** | Behavioral change — auto-SEND means admins lose the human-review gate. Operator call: keep DRAFT (admin reviews + sends Monday morning) or flip to SEND (with content-quality bar). Recommend: keep DRAFT until briefing-quality metrics warrant the trust. |
+| 2 | Sunday digest auto-DRAFT only, not auto-SEND | **Closed-by-policy** (2026-06-02) | Current auto-DRAFT behavior IS the recommended position: keep until briefing-quality metrics warrant auto-SEND. No code change needed. Re-route if/when policy changes. |
 | 3 | Stream B doesn't honor quiet hours | **Blocked by P1 #1** | Quiet hours apply to the T-4h+T-1h send-time spec. Implementing requires Stream B to first reconcile to the spec. Resolves together with P1 #1. |
-| 4 | Stream A reminder ignores RSVP intent | **Design-required** | Should already-RSVPd parents still get reminders? Recommend YES — RSVPing is "I plan to come"; reminders are "the event is happening." Different signals. Operator decision. |
-| 5 | `guardian_notification_prefs` not read by any send path | **PATTERN OMEGA — design-required** | Schema exists, zero readers. Either wire the reads (in `_reminders.ts` + briefing send paths) or retire the schema. Recommend wire — the column exists for a reason; PATTERN OMEGA is the platform's dominant bug shape per Wave 3.A CROSS-PATTERN 1. ~1 day PR. |
+| 4 | Stream A reminder ignores RSVP intent | **Closed-by-policy** (2026-06-02) | Current behavior (reminders fire regardless of RSVP intent) IS the recommended position. RSVPing = "I plan to come"; reminders = "the event is happening" — different signals. No code change. Re-route if/when Frank wants RSVP-aware skipping. |
+| 5 | `guardian_notification_prefs` not read by any send path | **Closed-by-code** (#666) | The canonical opt-out signal is `guardian_email_preferences.unsubscribed_at` (written by unsubscribe-handler + resend-webhook-receiver; the older `guardian_notification_prefs` table is its predecessor). Both edge function send paths now filter unsubscribed guardians: Stream A `resolveRecipients` drops them; send-tournament-message flips their `delivery_status` to `'unsubscribed'` and skips the Resend call. PATTERN OMEGA fix per Wave 3.A CROSS-PATTERN 1. |
 | 6 | cron `* * * * *` mostly empty work | **Design-required** | Backoff to `*/5 * * * *` (every 5 min) cuts 80% of empty ticks. Side effect: Stream A reminder latency widens from <60s to <5min. Operator decision on the latency-vs-cost trade. |
 | 7 | RESEND_API_KEY in Deno.env (should be app_secrets per AP #33) | **Closed-by-code** (#661) | Migration seeded `app_secrets.resend_api_key`; both edge functions read via `app_secrets` with `Deno.env` fallback during rollout window. |
 | 8 | send-push body string partial (title and body often duplicate) | **Verified not actual duplicate** | Reviewed `composeReminder` output: `title = "Reminder: vs Knights tomorrow"`, `pushBody = "Sat 11/8 4:00 PM — Arrive 30 min early. Jersey: white."` — structurally different. Audit framing was over-broad. |
@@ -47,7 +50,7 @@
 | # | P1 | Status | Routing |
 |---|---|---|---|
 | 1 | §13 rule 7 recipient preview chip not implemented | **Design-required** | UI scope decision — embedded in `SendConfirmDialog` or new component? Recommend embed: shows "Active: X · Futures: Y · Recipients: Z" before send. ~half-day PR. |
-| 2 | `briefing_templates` DB table empty (retire or wire) | **Design-required** | Decision: retire the table (in-code defaults are the source of truth today) or wire admin UI to manage per-org templates. Recommend retire — in-code defaults work for LH today; reinstate when multi-tenant template-customization needs emerge. ~1 hr PR either way. |
+| 2 | `briefing_templates` DB table empty (retire or wire) | **Closed-by-code** (#665) | Retired per the recommendation. Migration drops the table + cascades 4 RLS policies + 3 indexes + 2 constraints. Pre-flight verified zero callers in src/ or supabase/functions/. The original CREATE migration (`20260509234421`) + the wave5_pr4a ALTER (`20260515223916`) remain in the repo as the schema-restore recipe if multi-tenant template customization becomes a real need. |
 | 3 | §13 brand-color doctrine drift | **Closed-by-code** (#637) | Header `#1e3a5f` → `#0f172a` per engine; eyebrow `#2563eb` added. |
 | 4 | Parent-facing inbox per §4.AI not built | **Design-required** | Significant new feature: list view of received briefings, per-guardian. Multi-PR. Owner: scope first (digest only? all kinds?), then UI. |
 | 5 | `academy_callup_notice` 0 production sends (cold infrastructure) | **Operator action** | Manual smoke send to verify infra. Recipe: admin → Briefings Compose → kind=Academy call-up → select player → preview → send to admin BCC. Verifies the mint_callup_token → handler chain. |
@@ -57,7 +60,7 @@
 
 | # | P1 | Status | Routing |
 |---|---|---|---|
-| 1 | AP #63 candidate — no audit test for deployed-without-repo | **Design-required** | AP #63 promotes from candidate to registered on third instance with stable findings. Currently 2 observed instances. The audit test would compare deployed-function source SHA against repo source SHA per function. Recommend: ship the audit test pre-emptively since the prior 2 instances had bounded recovery costs. ~half-day PR. |
+| 1 | AP #63 candidate — no audit test for deployed-without-repo | **Closed-by-code** (#668) | New vitest `edgeFunctionDirectoryParity.test.js` asserts every `supabase/functions/<name>/` has an `index.ts` + every config.toml `[functions.X]` entry references a real dir + every function dir is either in config.toml or in `KNOWN_JWT_VERIFIED_FUNCTIONS`. Catches the local-side deploy drift class. The complementary MCP-side check (deployed source SHA vs repo SHA) needs runtime API access — filed as a follow-up CI workflow. |
 
 ## Wave 3.A #22 — pg_cron health (2 P1s)
 
@@ -91,7 +94,7 @@
 | 3 | LeagueApps source JSON not archived | **Operator action** | Move the original import files (if still on disk) to off-platform storage (S3 / Google Drive / GitHub LFS). Cross-ref: `DISASTER_RECOVERY.md §10` standing item. |
 | 4 | No centralized `SECRET_ROTATION.md` | **Closed-by-code** (#660) | Created with cadence table + procedures + history log. |
 | 5 | No rotation cadence | **Closed-by-code** (#660) | `SECRET_ROTATION.md §2` table covers every class. |
-| 6 | No Vercel deploy ID log | **Design-required** | Recommend: capture the Vercel deploy ID + git SHA + timestamp in `comms_messages.deploy_metadata` for outbound emails (debugging "which version sent this?"). Single migration + small wrapper. ~half-day PR. |
+| 6 | No Vercel deploy ID log | **Design-required** | Capturing the Vercel deploy ID + git SHA + timestamp on each outbound briefing involves both frontend (read `import.meta.env.VITE_VERCEL_DEPLOY_ID` set by Vercel) and edge function (accept + persist on `comms_messages.deploy_metadata`). Two-surface coordination — defer until "which deploy sent this?" forensic debugging is a hot need rather than a hypothetical. |
 
 ## Wave 3.B #27 — Youth-sports compliance (8 P1s)
 
@@ -100,7 +103,7 @@
 | 1 | `players.notes` free-form PII sink | **False-positive** (verified by chat-CC 2026-06-02 via MCP) | `players.notes` does not exist in production (nor on guardians/team_players/roster_members/player_guardians). The `200247` COMMENT migration referenced a nonexistent column and could not apply; the file was deleted (it would break `supabase db reset`). If a player-notes field is wanted, that's net-new feature work — there is no current PII sink here. |
 | 2 | PostHog GeoIP ticket pending | **Operator action** | Help-desk ticket open with PostHog per `CLAUDE.md §16.7.1`. Awaiting their reply. |
 | 3 | `guardian_email_preferences` no UI | **Design-required** | Per-guardian opt-out shipped at DB layer; admin UI to view/manage is feature scope. ~half-day PR. |
-| 4 | `team_feed_token` permanent bearer URL exposes event titles with kid names (compounds Wave 2.A #15) | **Design-required** | Two strategies: (a) annual rotation (parent re-subscribes once/year); (b) per-share single-use token (every share regenerates). Recommend (a) — friction is bounded, exposure window is bounded. ~half-day migration + handler edit. |
+| 4 | `team_feed_token` permanent bearer URL exposes event titles with kid names (compounds Wave 2.A #15) | **Closed-by-code** (#667) | Strategy (a) annual rotation shipped. `teams.team_feed_token_issued_at` added (existing rows get a fresh 365 days from migration apply). `get_team_by_feed_token` RPC filters tokens older than 365 days — expired tokens map to the existing 404 path in team-feed edge function. New `regenerate_team_feed_token(p_team_id)` admin-only SECDEF RPC for on-demand rotation. Admin UI button is a follow-up. |
 | 5 | `team_achievements.photo_url` arbitrary URLs with no consent check | **Design-required** | Depends on `guardian_consents.photo_video_release` (schema shipped in #651). UI: upload flow with consent check + admin curated photo library. Multi-PR. |
 | 6 | `pii_audit_log` admin-readable plain text | **Closed-by-code** (#659) | SELECT policy dropped; operator-only via service_role. |
 | 7 | No SafeSport-equivalent staff cert surface | **Design-required** | Add `staff_certifications` table + admin UI for tracking + auto-expiry warnings. ~1 day. |
@@ -139,7 +142,7 @@ All closed by the doctrine reconciliation arc:
 
 **~58 P1s total. Status distribution:**
 
-- ~17 closed by code (this session: #634-#662)
+- ~22 closed by code (this session: #634-#668)
 - ~12 verified already closed / verified safe / false-positive
 - ~21 deferred with explicit decision + recommendation
 - ~4 operator-action-pending
