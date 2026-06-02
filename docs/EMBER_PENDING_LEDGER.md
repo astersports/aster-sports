@@ -30,6 +30,21 @@ the next round of silent divergence.
 
 ## 1. SHIPPED RECENTLY (last 7 days)
 
+### Session 2026-06-01/02 — AsterSports rebrand cutover + §17.5 audit (PRs #619–#640; two-agent)
+
+Skyfire/Ember → **Aster Sports** rebrand shipped end-to-end + go-live cutover, with the §17.5
+29-category audit in progress (terminal-CC static/code half + chat-CC live-state half). Full
+state in `docs/CC_SESSION_HANDOFF_2026-06-02.md`. Key PRs: #619–#622 (name + mark + wordmark),
+#623 (package), #624 (internal namespace `--em→--as`/`EMBER_→ASTER_`), #625 (APP_BASE_URL
+centralize), #626 (icons), #627/#628 (invite-parent host → app_config), #629 (email host cutover
+→ astersports.app), #630 (sender → noreply@astersports.app), #631 (straggler cleanup), #636
+(chat-CC security: anon-SECDEF trigger-fn revoke, AP #57), #637 (#29 doctrine drift), #638
+(#25 DISASTER_RECOVERY.md), #639 (#28/#19). Open at handoff: #635, #640, #632/#633 (Dependabot
+= #14). **Open decisions** (see handoff §4): #634 over-applied the Gmail to the multi-tenant
+`ORG_CONTACT_DEFAULT` (fix recommended, unapproved); pilot-mode still ON (not live); 5b SMTP
+skipped; trademark + renames deferred. NOTE: this ledger is stale since 2026-05-27 — full §1/§4
+reconciliation of the Wave 1/2/3 cutover + this arc is overdue; this entry covers only 2026-06-02.
+
 | PR    | Date       | Scope                                                              | Surfaces            |
 |-------|------------|--------------------------------------------------------------------|---------------------|
 | #233  | 2026-05-18 | formatters.js NY-pin (canonical helpers)                           | All date renders    |
