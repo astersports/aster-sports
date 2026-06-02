@@ -97,7 +97,7 @@
 
 | # | P1 | Status | Routing |
 |---|---|---|---|
-| 1 | `players.notes` free-form PII sink | **Closed-by-code** (#659) | Column comment + included in account-deletion processing (per #653). |
+| 1 | `players.notes` free-form PII sink | **False-positive** (verified by chat-CC 2026-06-02 via MCP) | `players.notes` does not exist in production (nor on guardians/team_players/roster_members/player_guardians). The `200247` COMMENT migration referenced a nonexistent column and could not apply; the file was deleted (it would break `supabase db reset`). If a player-notes field is wanted, that's net-new feature work — there is no current PII sink here. |
 | 2 | PostHog GeoIP ticket pending | **Operator action** | Help-desk ticket open with PostHog per `CLAUDE.md §16.7.1`. Awaiting their reply. |
 | 3 | `guardian_email_preferences` no UI | **Design-required** | Per-guardian opt-out shipped at DB layer; admin UI to view/manage is feature scope. ~half-day PR. |
 | 4 | `team_feed_token` permanent bearer URL exposes event titles with kid names (compounds Wave 2.A #15) | **Design-required** | Two strategies: (a) annual rotation (parent re-subscribes once/year); (b) per-share single-use token (every share regenerates). Recommend (a) — friction is bounded, exposure window is bounded. ~half-day migration + handler edit. |
