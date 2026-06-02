@@ -22,15 +22,15 @@
     ]
   },
   "dependencies": {
-    "@sentry/react": "^10.53.1",
+    "@sentry/react": "^10.55.0",
     "@supabase/supabase-js": "^2.106.2",
     "@vercel/speed-insights": "^2.0.0",
     "lucide-react": "^1.16.0",
     "posthog-js": "^1.376.0",
     "qrcode.react": "^4.2.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "react-router-dom": "^7.15.1"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.16.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
@@ -39,7 +39,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/react": "^19.2.15",
+    "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^9.39.4",
