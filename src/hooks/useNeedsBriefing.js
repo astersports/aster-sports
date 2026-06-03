@@ -1,7 +1,8 @@
 // Wave 4.8 6c — 3 of 5 synth sub-streams (game_recap, tournament_prelim,
 // tournament_recap) moved to briefing_active_queue RPC; schedule_change
 // surfacing now happens via auto-draft tick (handleScheduleChanged drafts
-// from event_change_audit + dispatch_email_id filter). This hook now ONLY
+// from event_change_audit, gated by the comms_messages idempotency check —
+// STEP-3 retired the dispatch_email_id filter). This hook now ONLY
 // surfaces weekly_digest_due as a client-side safety net for the surface
 // not yet in the RPC. Will move to the RPC after 30+ days of cron
 // telemetry confirms reliable auto-draft firing; this file is then deleted

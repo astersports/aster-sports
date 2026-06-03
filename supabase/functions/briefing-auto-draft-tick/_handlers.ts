@@ -91,9 +91,16 @@ export async function handleTournamentCompleted(sb: SupabaseClient, trigger: Tri
 
 export async function handleScheduleChanged(sb: SupabaseClient, trigger: Trigger, now: Date): Promise<HandlerResult[]> {
   const cutoff = new Date(now.getTime() - 24 * 3600000).toISOString();
+  // STEP-3 (2026-06-03): comms_messages is the canonical "already notified?"
+  // source. The per-anchor idempotency check below (kind=schedule_change,
+  // status in draft/scheduled/queued/sent, last_edited_at >= changed_at) is the
+  // sole guard. We do NOT pre-filter on event_change_audit.dispatch_email_id:
+  // that column conflates "admin chose to skip" with "not yet sent" (migration
+  // 20260523224521), is never written by the composer send path, and is now
+  // optional forensic denormalization — not the health signal.
   const { data, error } = await sb.from("event_change_audit")
     .select("id, event_id, changed_at, events!inner(team_id)")
-    .eq("org_id", trigger.org_id).gt("changed_at", cutoff).is("dispatch_email_id", null);
+    .eq("org_id", trigger.org_id).gt("changed_at", cutoff);
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "schedule_change", error: error.message }];
   const rows = data || [];
   const out: HandlerResult[] = [];
