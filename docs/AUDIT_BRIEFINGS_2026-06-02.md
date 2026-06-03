@@ -381,6 +381,22 @@ Defense-in-depth design is correct, but the two layers (DB trigger + code filter
 
 **Phase 2 redesign center-of-gravity is conditional** on which mechanism the deep-read confirms. Wave B2 must test which (per the standing instruction in §3.f + the symptom-vs-mechanism rule in §3.g). DO NOT promote per-kind-wiring to settled root cause based on initial framing alone.
 
+**Production tilt (chat-CC, PR #673 post-consolidation) — ranks the four candidates without settling.** The production signals tilt the priors without picking; naming the tilt + its falsifiable tests is the opposite of read-to-confirm.
+
+- The digest REDIRECT is the **more-designed, newer-looking** path: override + synthetic-CTE, per-team inbox labels, structured for kind-extension.
+- The `is_pilot_family` filter is the **cruder** path: a boolean on `guardians` checked at the recipient query.
+- `guardians.is_pilot_family` count = **0 in production**. Nobody maintains those flags. Corroborates that the filter was **abandoned**, not actively used.
+
+Together those signals lean toward a **(iv)→(i) blend**: the REDIRECT was the intended universal mechanism; the digest path adopted it; the event/team/nudge paths are **un-migrated stragglers still on the deprecated filter**. If that's the actual mechanism, the redesign is "migrate the stragglers to the existing redirect + delete the filter" — *smaller* than a from-scratch unification, because the target mechanism already exists and works.
+
+**Falsifiable tests Wave B2 runs to confirm or reject the tilt:**
+
+1. **Migration / git history chronology** — was `get_digest_recipients` (or the synthetic-redirect CTE) introduced *after* the `is_pilot_family` filter paths were already in place? (Yes → supersession story corroborated. No / parallel introduction → likely (i) parallel-built from the start, not supersession.)
+2. **Migration notes / PR descriptions / code comments** — does any artifact declare the redirect as the intended universal pilot mechanism, or note that the filter is deprecated? (Present → (iv)/(i) blend strongly supported. Absent → could still be (iv)/(i), but supersession-by-design is not yet evidenced; (i) parallel-built or (iii) drift remain live.)
+3. **Writers for `guardians.is_pilot_family`** — is there any admin UI, seed script, migration, or trigger that writes to this column? (No writer + 0 rows in prod → strongly supports abandonment, consistent with supersession. A live writer → the filter is an *intended* parallel path; the supersession story is wrong and the mechanism is genuinely (i) parallel-built.)
+
+If B2 finds a writer for `is_pilot_family` and no supersession evidence, the tilt is wrong and it's (i) parallel-built — which is why the tilt stays a prior + tests, not a Phase 1 settled call. This stays the hypothesis B2 tests.
+
 ---
 
 # WAVE B1 — GAPS (what I missed; surfaced via consolidation pass)

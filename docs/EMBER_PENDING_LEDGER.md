@@ -3798,6 +3798,15 @@ Audit doc updates (same commit):
 
 This refinement keeps both true: BUG D is a confirmed AP #63 PATTERN A instance AND the mechanism behind it remains the hypothesis the audit tests. Not in tension.
 
+**Production tilt + falsifiable tests append (chat-CC, post-§3.g refinement; same-commit append):** chat-CC named the production tilt without settling. The digest REDIRECT is the more-designed/newer path (override + synthetic-CTE, per-team inbox labels); the `is_pilot_family` filter is the cruder path; `guardians.is_pilot_family` count = 0 in production. Together those signals lean toward a **(iv)→(i) blend** — REDIRECT was intended universal; digest path adopted it; event/team/nudge paths are un-migrated stragglers on the deprecated filter. If true, the redesign is "migrate stragglers + delete the filter" — smaller than from-scratch unification because the target mechanism exists.
+
+Three falsifiable tests now embedded in PATTERN B1-δ + Wave B2's task body so the deep-read runs them in order:
+1. Migration / git chronology — was `get_digest_recipients` introduced after `is_pilot_family` filter paths?
+2. Migration notes / PR / comments — does any artifact declare REDIRECT as the intended universal mechanism or filter as deprecated?
+3. Writers for `guardians.is_pilot_family` — any UI/seed/migration/trigger?
+
+Finding a writer in (3) falsifies the supersession tilt and means (i) parallel-built. The tilt stays a prior + tests, not a settled call.
+
 ---
 
 ### §4.BW — §17.5 audit P1 backlog closure arc complete (2026-06-02 PM)
