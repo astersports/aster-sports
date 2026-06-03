@@ -25,6 +25,7 @@ import PreviewPanel from './PreviewPanel';
 import ScheduleForLaterPicker from './ScheduleForLaterPicker';
 import WizardHeader from './WizardHeader';
 import { submitBriefing } from './composerSubmit';
+import { friendlySendError } from '../../lib/briefings/sendErrorMessage';
 import { sendWeeklyDigestFromWizard } from '../../lib/briefings/sendWeeklyDigestFromWizard';
 import { buildInitial, fmtSchedule, hasAuthoredContent, STEPS } from './briefingComposerHelpers';
 
@@ -133,7 +134,7 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
       else if (r?.scheduledFor) showToast(`Scheduled for ${fmtSchedule(r.scheduledFor)}.`, 'success');
       else showToast(state.test_only ? 'Test sent to admin@.' : `Sent to ${audience.filtered ?? 'recipients'}.`, 'success');
       onClose?.();
-    } catch (e) { showToast(e.message || "Looks like that didn't go through. Try again?", 'error'); }
+    } catch (e) { showToast(friendlySendError(e) || e.message || "Looks like that didn't go through. Try again?", 'error'); }
     finally { setBusy(false); }
   };
 
