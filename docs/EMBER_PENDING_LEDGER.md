@@ -3733,6 +3733,42 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BX — Briefings full audit + redesign arc dispatched (2026-06-02 PM)
+
+Frank routed: full briefing system audit + redesign + ship. Surface scope = engine + composer + 32 SECTION_RENDERERS + audience picker + send path + auto-draft cron + token handlers + admin UI + parent-facing inbox (which doesn't yet exist; named in §4.AI as a redesign target). Stream A reminders, team-feed ICS, send-push fanout, financial briefings, Slack/SMS channels, and `suggest-briefing-closer` prompt-engineering are explicit out-of-scope (§2 of the audit doc).
+
+**Companion doc:** `docs/AUDIT_BRIEFINGS_2026-06-02.md` — methodology lock + 3-phase plan + Wave B1 initial findings. Per §16.15 L99 template: scope, methodology (line-by-line + 2-pass addendum), AP catalog cross-ref, per-role wireframes (for parent inbox), explicit out-of-scope list.
+
+**Three-phase structure with hard pause gates** (per saved memory `autopilot-overreach-on-decisions-and-irreversible-ops`):
+- **Phase 1 — Audit** (doc-only, multi-batch Wave B1–B5). Stops when all 12 categories have findings + cross-pattern synthesis.
+- **Phase 2 — Redesign proposal** (doc-only). Per-surface options + tradeoffs + per-role wireframes + migration plan with reversible-first + irreversible-needs-confirm gates. Stops when Frank routes each call.
+- **Phase 3 — Ship** (multi-PR arc). Each PR scoped tight; irreversible ops get explicit confirm prompts.
+
+**Three folded-in bugs from §17.5 P1 close session:**
+- **BUG A** (my regression, owned): `comms_messages_weekly_digest_unique` index (mig 20260602195100, PR #657) blocks composer re-INSERT of this-week's draft. Pilot mode masks tonight; would block first real weekly digest. Anchored at §1.3 of the audit doc.
+- **BUG B** (pre-existing): `comms_messages_audience_type_check` CHECK constraint missing 4 of 9 documented audience types (`player_specific`, `multi_event_attendees`, `coach_self`, `family_specific`). Anchored at §1.2 of the audit doc.
+- **Meta** (UX category): composer surfaces raw Postgres errors instead of §16.3 kindness microcopy. Folded into Wave B4.
+
+**Wave B1 initial findings (this commit):**
+- 1.1 kind taxonomy CLEAN
+- 1.2 audience CHECK incomplete (P0; BUG B anchor)
+- 1.3 weekly_digest unique index regression (P0; BUG A anchor)
+- 1.5 comms_message_recipients schema CLEAN
+- 2.1 three sources of truth identified for kind taxonomy; suggested redesign-phase parity test
+- 2.2 dual dispatch path (RESOLVER_REGISTRY + legacy KIND_COMPOSERS) flagged for B2 consolidation review
+- 3.1 resolver two-stage contract initial-CLEAN; deep-read addendum queued
+- 3.2 substitute helpers (AP #29) sound on initial pass; deep-read in B2/B3
+- 2 cross-cutting patterns: B1-α (schema CHECK lags taxonomy doc) and B1-β (composer + auto-draft cron don't share a draft lifecycle)
+
+**Standing items going forward:**
+- Wave B1 deep-read addendum (audience CHECK INSERT call-site grep + resolver purity verify + substitute helper field-name discipline + suppress_unsubscribed_recipients trigger ↔ code filter parity)
+- Waves B2–B5 dispatch
+- Phase 2 + Phase 3 hard-pause gates
+
+**AP #45** satisfied by this same-commit ledger entry — guard self-test (ledger-reconcile-guard CI check from PR #671 / AP #45 update).
+
+---
+
 ### §4.BW — §17.5 audit P1 backlog closure arc complete (2026-06-02 PM)
 
 > **MCP-apply reconciliation (chat-CC, 2026-06-02 evening).** The P1-batch migrations terminal-CC committed were applied to prod via Supabase MCP, with the same pre-flight + version-parity discipline as §4.BV. **5 applied + registered** under their file timestamps: `20260602195018` (cron retention + daily cleanup job), `20260602195535` (drop `roster_members.payment_status`), `20260602200223` (drop `pii_audit_log` admin SELECT policy), `20260602201521` (seed `app_secrets.resend_api_key` NULL slot), `20260602195100` (`weekly_digest` partial-UNIQUE). The weekly_digest index required reconciling **11 historical pilot test-sends** for `(LH org, period_start 2026-05-11)` — all `team_id=null`, 10×1-recipient + 1×5-recipient; chat-CC deleted the 10 single-recipient test rows (+ their `comms_message_recipients`) keeping the 5-recipient canonical row, with Frank's approval, then built the index. **1 deleted as false-positive:** `20260602200247_players_notes_pii_comment.sql` — `players.notes` does not exist in production; the COMMENT migration could not apply and would break `supabase db reset`, so the file was removed and the P1 recharacterized as false-positive in `AUDIT_WAVE_3_P1_BACKLOG_STATUS.md`. **Operator action still pending:** populate `app_secrets.resend_api_key` (edge functions fall back to `Deno.env.RESEND_API_KEY` until then).
