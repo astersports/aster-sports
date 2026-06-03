@@ -3807,6 +3807,21 @@ Three falsifiable tests now embedded in PATTERN B1-δ + Wave B2's task body so t
 
 Finding a writer in (3) falsifies the supersession tilt and means (i) parallel-built. The tilt stays a prior + tests, not a settled call.
 
+**Wave B2 dispatch (2026-06-03 AM) — BUG D mechanism resolved via §3.f cross-kind code-read:** terminal-CC ran the three falsifiable tests:
+- **Test 1 (chronology):** FILTER shipped 2026-05-09, REDIRECT shipped 2026-05-11 — REDIRECT IS newer, corroborating part of chat-CC's tilt.
+- **Test 2 (declared intent):** Migration `20260511115858` line 12-13 says verbatim: "Production cutover path: set pilot_test_recipient_email = NULL and flip is_pilot_family = true on real families to start sending to humans." **REDIRECT was explicitly intended as a temporary verification override; FILTER is the documented production target.** Inverts the supersession tilt.
+- **Test 3 (writers):** ZERO writers for `is_pilot_family` in code/migrations/triggers/seed. The "flip is_pilot_family=true" cutover step was never built.
+
+**Refined mechanism:** "partial supersession that stalled in the verification stage" — a sub-shape of (iv) where the OTHER path is "the unmigrated remainder of a half-done supersession that was *intended* to be partial." Wave 4.3-I migrated `tournamentPrelimHelpers.js` to use the RPC (code comment is explicit); three stragglers never got migrated: `academyCallupNotice.js`, `rsvpNudge.js`, `briefing-auto-draft-tick/_reminderSend.ts`.
+
+**Two operator decisions surfaced for Phase 2 (Frank's calls):**
+- **D-1 strategic:** (a) cut over (finish migration + build flag-flipper UI), (b) REDIRECT-only permanent (DROP `is_pilot_family` — irreversible), (c) exit pilot entirely (send to all).
+- **D-2 tactical:** regardless of D-1, the three stragglers should be migrated to use the RPC pattern for symmetry. Smaller, reversible, can ship independently.
+
+PATTERN B1-δ refined: "supersession migration that stalls" is a specific AP #63 sub-shape that produces the same symptom signature (divergent computations) as (i) parallel-built. Tests 1+2+3 together distinguished them.
+
+**AP #45** satisfied by this same-commit ledger append — guard self-test holds for the B2 first-batch commit.
+
 ---
 
 ### §4.BW — §17.5 audit P1 backlog closure arc complete (2026-06-02 PM)

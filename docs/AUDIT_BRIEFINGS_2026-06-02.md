@@ -420,3 +420,87 @@ Production query: `game_recap` (singular, distinct from `games_recap` per §13) 
 ---
 
 **B1 status:** **CLOSED** for Phase 1 purposes (consolidation-pass version). 5 P0/P1 findings (BUG A/B/C/D + Meta) + 5 sub-findings via deep-read + 1 surfaced gap (GAP-1, owned) + 4 cross-cutting patterns (B1-α/β/γ/δ) + 1 out-of-scope flag (§S-1). Ready to dispatch Wave B2 (composer + SECTION_RENDERERS + audience picker + substitute helpers cross-check) — pilot mode resolution folded into B2 audience-picker category per GAP-1 discipline.
+
+---
+
+# WAVE B2 — Composer + SECTION_RENDERERS + audience picker + substitute helpers (in progress 2026-06-03 AM)
+
+## B2.1 — BUG D mechanism resolution (three falsifiable tests from B1-δ run + reported)
+
+Per the standing instruction §3.f + §3.g symptom-vs-mechanism rule + the production tilt + 3 falsifiable tests from PATTERN B1-δ. **Tests run by terminal-CC code-read 2026-06-03 AM:**
+
+### Test 1 — Migration / git chronology
+**Result: REDIRECT is newer than FILTER, but BOTH mechanisms coexist in `get_digest_recipients`.**
+
+| Migration | Date | Effect |
+|---|---|---|
+| `20260509021709_digest_recipients_function.sql` | 2026-05-09 | Original `get_digest_recipients(uuid)` — no pilot mechanism |
+| `20260509101739_pilot_mode_infrastructure.sql` | 2026-05-09 | Adds `guardians.is_pilot_family` column + partial index + replaces RPC with `(uuid, boolean)` overload using FILTER (`AND (p_pilot_only = FALSE OR g.is_pilot_family = TRUE)`) |
+| `20260511115858_wave_4_3_i_pilot_test_recipient_email.sql` | 2026-05-11 | Adds `organization_settings.pilot_test_recipient_email` column (REDIRECT target) |
+| `20260511122118_wave_4_3_i_get_digest_recipients_pilot_override.sql` | 2026-05-11 | RPC gains synthetic-row OVERRIDE branch — but **FILTER branch retained inside `real_guardians` CTE** (line 67) when override is NULL |
+| `20260511123331_wave_4_3_j_per_team_synthetic_recipients.sql` | 2026-05-11 | Per-team synthetic (5 rows for LH) |
+
+**Tilt corroborated:** REDIRECT shipped 2 days after FILTER; per-team variant another day after. **But not clean supersession** — FILTER is preserved inside the RPC as the post-override fallback.
+
+### Test 2 — Migration notes / PR comments declaring REDIRECT universal or FILTER deprecated
+**Result: REDIRECT was NEVER declared universal. The migration comment is explicit about the opposite intent.**
+
+Migration `20260511115858` line 12–13 says verbatim:
+> "Production cutover path: set pilot_test_recipient_email = NULL and flip is_pilot_family = true on real families to start sending to humans."
+
+**This inverts chat-CC's tilt:** the intended production mechanism is the FILTER (with `is_pilot_family=true` on real pilot families); the REDIRECT was added as a **temporary end-to-end verification override** to test render + delivery without sending to real pilot inboxes. The cutover sequence is "flip override OFF + flip filter flags ON."
+
+Production today: `pilot_test_recipient_email` IS NOT NULL (override active) + `is_pilot_family` count = 0 (cutover never happened). The system is in the **verification state**, indefinitely.
+
+### Test 3 — Writers for `guardians.is_pilot_family`
+**Result: ZERO writers found anywhere in the codebase.**
+
+- No admin UI writer
+- No seed script writer
+- No migration writer (besides the schema definition with `DEFAULT FALSE`)
+- No trigger writer
+- No edge function writer
+
+Real-code readers: `useDigestRecipients.js`, `tournamentPrelimHelpers.js`, `academyCallupNotice.js`, `rsvpNudge.js`, `briefing-auto-draft-tick/_reminderSend.ts`, `send-tournament-message/index.ts`.
+
+**Implication:** the operator-flip-flags step of the documented cutover path was never built. To cut over from REDIRECT-verification to FILTER-production, an operator would need to manually `UPDATE guardians SET is_pilot_family = true WHERE ...` via SQL — there's no UI surface and no documented automation.
+
+## B2.2 — Refined mechanism story (replaces the (iv)→(i) blend tilt with a sharper picture)
+
+**Actual mechanism = "partial supersession that stalled in the verification stage" — closest to (iv) but with a specific structural twist.**
+
+The true picture (synthesized from all three tests):
+
+1. **2026-05-09:** FILTER (`is_pilot_family` flag on guardians) shipped as the intended production mechanism. Stragglers across resolvers: `academyCallupNotice.js`, `rsvpNudge.js`, `briefing-auto-draft-tick/_reminderSend.ts` ALL query `guardians`/`player_guardians` directly with `is_pilot_family` filter.
+
+2. **2026-05-11:** REDIRECT (`pilot_test_recipient_email` synthetic-row override) added INSIDE `get_digest_recipients` RPC as an end-to-end verification mechanism. The intent (per Wave 4.3-I migration comment) was: keep FILTER as the production mechanism, layer REDIRECT on top for the verification window, cut over by flipping the override OFF and the flags ON.
+
+3. **2026-05-11 same wave:** `tournamentPrelimHelpers.js` was migrated to use the RPC instead of bypass-querying. The code comment (`tournamentPrelimHelpers.js:56-62`) is explicit: it was a known straggler, and Wave 4.3-I fixed it because its client-side `r.is_pilot_family` filter was wiping to 0 in pilot mode.
+
+4. **Migration incomplete:** Three other stragglers — `academyCallupNotice.js`, `rsvpNudge.js`, `briefing-auto-draft-tick/_reminderSend.ts` — were NOT migrated in Wave 4.3-I. They still bypass the RPC and apply the bare FILTER. Since `is_pilot_family` is 0 in production (cutover never happened), these paths return 0 → "No recipients available."
+
+5. **Operator cutover step never built:** No UI or automation writes `is_pilot_family = true`. The documented cutover-via-SQL was assumed-manual-by-operator but the operator never ran it. Verification is the de-facto permanent state.
+
+**This is not (i) parallel-built; not (iii) drift; closest to (iv) with the wrinkle that "the other path is the bug" is actually "the other path is the *unmigrated remainder* of a half-done supersession that was intended to be partial."**
+
+## B2.3 — Two operator decisions surfaced by B2.2 (Phase 2 routing, not Phase 1 picks)
+
+The redesign center-of-gravity is conditional on Frank's answer to one strategic decision + one tactical decision:
+
+**Strategic decision (Phase 2.D-1):** Is the cutover from REDIRECT-verification to FILTER-production ever going to happen? Three named options:
+
+- **(a) Yes, cut over** — finish the half-done migration: (a-i) migrate the three stragglers (`academyCallupNotice`, `rsvpNudge`, `_reminderSend`) to use the RPC so they get the override-during-verification + filter-post-cutover; (a-ii) build a UI or one-shot SQL playbook to flip `is_pilot_family=true` on real pilot families; (a-iii) flip the override OFF after step (a-ii) lands.
+- **(b) No, REDIRECT-only is permanent** — the verification mechanism becomes the production mechanism: (b-i) remove the FILTER branch from `get_digest_recipients`'s `real_guardians` CTE (it never fires); (b-ii) migrate the three stragglers to use the RPC (so they get the synthetic override); (b-iii) DROP COLUMN `guardians.is_pilot_family` once stragglers are off it (irreversible — needs explicit confirm per AP #54).
+- **(c) Pilot mode is itself a transient construct** — once the platform exits the pilot phase, both mechanisms are irrelevant. The system should send to all real families directly. This is the "no pilot at all" exit.
+
+**Tactical decision (Phase 2.D-2):** Regardless of (a)/(b)/(c), the three stragglers (`academyCallupNotice`, `rsvpNudge`, `_reminderSend`) are inconsistent with the rest of the briefing engine right now. They should be migrated to use the RPC pattern for symmetry, even if (a)/(b)/(c) is unsettled. **Smaller, reversible, doc-only-Phase-2-of-the-tactical** — this could ship even without picking the strategic decision.
+
+## B2.4 — Cross-pattern observation: PATTERN B1-δ refined
+
+The "behavioral-layer PATTERN A" framing still holds, but the mechanism is more specific than "per-kind wiring." It's **half-migrated supersession with three unmigrated callsites**. Each redesign option (a/b/c) restores PATTERN A uniformity differently, but the IMMEDIATE fix is the same regardless: migrate the three callsites.
+
+**Pattern lesson recorded:** "supersession migration that stalls" is a specific AP #63 sub-shape that produces the same symptom signature (divergent computations of one concept) as parallel-built. The deep-read distinguished them by chronology + writer-check + intent declarations. **Cross-kind query discipline §3.f delivered the distinction.**
+
+---
+
+**Wave B2 status:** B2.1–B2.4 complete (BUG D mechanism resolved). Remaining B2 surfaces queued: composer dispatch (BUG C anchor), SECTION_RENDERERS catalog walk, audience picker UI, substitute helpers cross-check.
