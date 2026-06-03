@@ -131,8 +131,15 @@ Deno.serve(async (req) => {
     const key = `${t.org_id}:${t.trigger_event}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    const r = await dispatchTrigger(sb, t, now, forceEvent);
-    results.push(...r);
+    // PR-A cron-loop isolation (G-32): one org/kind failure must not abort the
+    // whole tick and starve every other tenant's briefings. Catch + record per
+    // trigger instead of letting a throw bubble to the 500 handler.
+    try {
+      const r = await dispatchTrigger(sb, t, now, forceEvent);
+      results.push(...r);
+    } catch (e) {
+      results.push({ trigger_id: t.id, org_id: t.org_id, kind: t.briefing_kind, error: `dispatch_threw: ${(e as Error).message}` });
+    }
   }
   const draftsCreated = results.filter((r) => r.created || r.draft_created).length;
   return json({

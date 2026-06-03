@@ -31,9 +31,17 @@ export type HandlerResult = {
 export async function draftExists(
   sb: SupabaseClient, orgId: string, kind: string, anchorId: string,
 ): Promise<boolean> {
+  // PR-A (G-23): 'archived' MUST be in this list. The idempotency key is
+  // "has a proposal EVER been created for this anchor", not "is a live one
+  // open". Without 'archived', the loop ran away: a game whose start_at is
+  // >14d before its score is published gets a game_recap whose expires_at
+  // (start_at + 14d, _helpers.ts) is already in the past -> the expire sweep
+  // archives it on the next tick -> draftExists no longer saw it -> the
+  // handler re-created it -> archived again, every minute for ~7d (the
+  // published_at re-query window). Counting 'archived' makes it one-and-done.
   const { data, error } = await sb.from("comms_messages").select("id")
     .eq("org_id", orgId).eq("kind", kind).eq("anchor_id", anchorId)
-    .in("status", ["draft", "scheduled", "queued", "sent"]).limit(1);
+    .in("status", ["draft", "scheduled", "queued", "sent", "archived"]).limit(1);
   if (error) throw new Error(`draftExists check failed: ${error.message}`);
   return !!data && data.length > 0;
 }
