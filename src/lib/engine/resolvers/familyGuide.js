@@ -21,15 +21,32 @@ import {
 } from './familyGuideSections';
 import { detectConflicts, groupEventsByKid } from './familyGuideHelpers';
 
-export async function resolveFamilyGuide({ parentUserId, dateRange }, { supabase } = {}) {
+export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly }, { supabase } = {}) {
   if (!parentUserId) throw new Error('Missing parentUserId');
   if (!supabase) throw new Error('Missing supabase client (pass via options.supabase)');
 
   const { data: parent, error: pErr } = await supabase.from('guardians')
-    .select('id, first_name, last_name, email, user_id, org_id')
+    .select('id, first_name, last_name, email, user_id, org_id, is_pilot_family')
     .eq('user_id', parentUserId).maybeSingle();
   if (pErr) throw pErr;
   if (!parent) throw new Error(`Parent ${parentUserId} not found in guardians`);
+
+  // Defense-in-depth pilot gate (mirrors academyCallupNotice / rsvpNudge): in
+  // pilot mode, only a pilot family receives a guide. The audience layer
+  // (get_digest_recipients) is the first filter; this resolver-level
+  // is_pilot_family check is the second, so a non-pilot family can't receive a
+  // guide even when a caller reaches the resolver directly. Blocked → empty
+  // slices (0 recipients → graceful skip, same shape as the token kinds).
+  let effectivePilotOnly = pilotOnly;
+  if (effectivePilotOnly === undefined && parent.org_id) {
+    const { data: settings, error: sErr } = await supabase.from('organization_settings')
+      .select('pilot_mode_enabled').eq('organization_id', parent.org_id).maybeSingle();
+    if (sErr) throw sErr;
+    effectivePilotOnly = settings?.pilot_mode_enabled ?? false;
+  }
+  if (effectivePilotOnly && !parent.is_pilot_family) {
+    return { context: { parent, kidsWithEvents: [], conflicts: [], dateRange, coaches: [], orgName: 'Legacy Hoopers' }, slices: [] };
+  }
 
   const { data: pgRows, error: pgErr } = await supabase.from('player_guardians')
     .select('player_id, players ( id, first_name, last_name )')

@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { composeFamilyGuide, resolveFamilyGuide } from '../familyGuide';
 import { detectConflicts, formatDateRange, groupEventsByKid, summarizeEventKinds } from '../familyGuideHelpers';
 
-function mockSb({ parent = null, pgRows = [], tpRows = [], events = [], coaches = [], org = null }) {
+function mockSb({ parent = null, pgRows = [], tpRows = [], events = [], coaches = [], org = null, orgSettings = null }) {
   return {
     from(table) {
       const b = {
@@ -15,6 +15,7 @@ function mockSb({ parent = null, pgRows = [], tpRows = [], events = [], coaches 
         async maybeSingle() {
           if (this._t === 'guardians') return { data: parent, error: null };
           if (this._t === 'organizations') return { data: org, error: null };
+          if (this._t === 'organization_settings') return { data: orgSettings, error: null };
           return { data: null, error: null };
         },
         then(resolve) {
@@ -55,6 +56,28 @@ describe('resolveFamilyGuide', () => {
       email: 'frank@ex.com',
       parent_name: 'Frank',
     });
+  });
+
+  it('pilot gate: blocks (empty slices) when pilot mode on and parent is NOT a pilot family', async () => {
+    const r = await resolveFamilyGuide(
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { supabase: mockSb({ parent: { ...PARENT, is_pilot_family: false }, orgSettings: { pilot_mode_enabled: true } }) },
+    );
+    expect(r.slices).toEqual([]);
+  });
+  it('pilot gate: allows when pilot mode on and parent IS a pilot family', async () => {
+    const r = await resolveFamilyGuide(
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { supabase: mockSb({ parent: { ...PARENT, is_pilot_family: true }, orgSettings: { pilot_mode_enabled: true } }) },
+    );
+    expect(r.slices).toHaveLength(1);
+  });
+  it('pilot gate: explicit pilotOnly=false bypasses the settings read and allows', async () => {
+    const r = await resolveFamilyGuide(
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' }, pilotOnly: false },
+      { supabase: mockSb({ parent: { ...PARENT, is_pilot_family: false }, orgSettings: { pilot_mode_enabled: true } }) },
+    );
+    expect(r.slices).toHaveLength(1);
   });
 
   it('aggregates events per kid×team', async () => {

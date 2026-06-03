@@ -135,7 +135,7 @@ export const RESOLVER_REGISTRY = {
   family_guide: {
     resolve: resolveFamilyGuide,
     compose: composeFamilyGuide,
-    anchorFromState: (state) => ({ parentUserId: state.audience_filter?.parent_user_id, dateRange: state.body?.date_range }),
+    anchorFromState: (state) => ({ parentUserId: state.audience_filter?.parent_user_id, dateRange: state.body?.date_range, pilotOnly: state.pilot_only }),
     overridesFromState: bodyOverrides,
     sendPath: 'composerSubmit',
   },
