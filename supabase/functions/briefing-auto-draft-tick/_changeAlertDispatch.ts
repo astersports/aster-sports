@@ -82,10 +82,21 @@ export async function handleEventChangeDispatch(
         const cat = cfg.perCategory[r.notification_type] || cfg.defaults;
         const rec = await resolveRecipients(sb, r.recipient_id, orgId, cfg.pilotMode);
         const c = composeChangeAlert(r);
+        // B2 (briefings own schedule notifications, 2026-06-03): reschedule /
+        // relocate changes are notified by the admin-curated schedule_change
+        // briefing, so the automatic EMAIL here is a duplicate — and it also
+        // overrides an admin "Skip notification" choice. Suppress the auto-email
+        // for those two. event_cancelled keeps emailing until Track R adds a
+        // cancellation proposal path. Push (deferred) and the event_notifications
+        // row are unaffected — this stops emailing reschedule/relocate, not
+        // recording them. Dispatcher-boundary skip; no _changeAlertLogic.ts
+        // mirror touched. Reversible: drop briefingOwned to restore.
+        const change = (r.change_summary as { change?: string } | null)?.change;
+        const briefingOwned = change === "rescheduled" || change === "relocated";
         const pushSent = (cat.push && cronSecret) ? await sendReminderPush(supabaseUrl, cronSecret, rec.userIds, c.title, c.pushBody) : 0;
-        const emailSent = cat.email ? await sendReminderEmail(sb, orgId, rec.emails, c.subject, c.html, c.plain) : 0;
+        const emailSent = (cat.email && !briefingOwned) ? await sendReminderEmail(sb, orgId, rec.emails, c.subject, c.html, c.plain) : 0;
         await sb.from("event_notifications").update({ status: "sent", sent_at: now.toISOString(), delivered_at: now.toISOString() }).eq("id", r.id);
-        out.push({ ...base, anchor_id: r.id, type: r.notification_type, push_sent: pushSent, email_sent: emailSent, recipients: rec.count, sent: true });
+        out.push({ ...base, anchor_id: r.id, type: r.notification_type, briefing_owned: briefingOwned, push_sent: pushSent, email_sent: emailSent, recipients: rec.count, sent: true });
       } catch (e) {
         const reason = String((e as Error)?.message ?? e).slice(0, 300);
         await sb.from("event_notifications").update({ status: "failed", failed_at: now.toISOString(), failure_reason: reason }).eq("id", r.id);
