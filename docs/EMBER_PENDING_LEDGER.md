@@ -3865,6 +3865,22 @@ Wave B4 status: CLOSED for Phase 1. 1 P0 mechanism (B4.1 — 3 redesign options)
 
 **Phase 2 does NOT auto-dispatch** — hard pause gate per saved memory `autopilot-overreach-on-decisions-and-irreversible-ops`. Frank routes when ready.
 
+**Phase 2 redesign proposal (2026-06-03 AM) — Frank routed "auto execute through phase 2":** Doc `docs/REDESIGN_BRIEFINGS_2026-06-03.md` landed. Per §16.15 element structure: per-surface named options + tradeoffs (§2), per-role wireframes for parent inbox (§3), migration plan with reversible-first sequencing (§4), Phase 3 PR sequence (§5), out-of-scope (§6).
+
+Each of the 8 routing decisions presents 2–3 named options with recommendation + rationale. Recommendations are NOT decisions; terminal-CC doesn't pick architectural options or pull irreversible triggers per the memory. Highlights:
+- **D-1 (BUG A):** recommend (a) narrow predicate + (c) cron-pattern in flush(). Reversible, no confirm gate.
+- **D-2 (BUG B):** recommend (α) CHECK widen + parity test + (γ) AudiencePicker prepend default. **Backfill of 21 wrong-coerced rows is a confirm-gated PR.**
+- **D-3 (BUG C):** recommend (a) widen PreviewPanel registry-path criterion — closes DUAL-COMPOSE drift simultaneously.
+- **D-4 (pilot strategic):** **HARD HOLD — Frank's strategic call.** (b) and (c) both require **DROP COLUMN guardians.is_pilot_family — explicit confirm + pre-flight 0-callsite proof.**
+- **D-5 (pilot tactical):** recommend (a) migrate 3 stragglers NOW (forward-compatible with all D-4 outcomes).
+- **D-6 (parent inbox):** recommend (a) minimal viable for Phase 3. **New RLS policy on comms_message_recipients is confirm-gated.**
+- **D-7 (parity tests):** recommend (a) in scope. Reversible, no gate.
+- **D-8 (a11y):** recommend (b) defer existing surface audit + (a) axe-core scan on new parent inbox PRs.
+
+Phase 3 PR sequence: 8 reversible PRs (§4.1) + 4 confirm-gated PRs (§4.2). 3 PRs (H-1/2/3 for D-4 outcomes) held until Frank routes D-4.
+
+Phase 2 status: DOC ONLY. **Phase 3 does NOT auto-dispatch** — hard pause for Frank to route each decision per the audit's 3-phase structure + saved memory. AP #45 satisfied by this same-commit ledger append.
+
 ---
 
 ### §4.BW — §17.5 audit P1 backlog closure arc complete (2026-06-02 PM)
