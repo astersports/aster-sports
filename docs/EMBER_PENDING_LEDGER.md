@@ -3767,6 +3767,14 @@ Frank routed: full briefing system audit + redesign + ship. Surface scope = engi
 
 **AP #45** satisfied by this same-commit ledger entry — guard self-test (ledger-reconcile-guard CI check from PR #671 / AP #45 update).
 
+**Wave B1 deep-read addendum (this commit append):** Per §16.15 ~30-40% cascade rate, deep-read surfaced 3 new sub-findings + confirmed clean state on 2 categories left as "verify in addendum" from initial pass. New findings:
+- 1.2-DEEP-1: production has been silently coercing audience_type to wrong-but-allowed values for coach_roundup + family_guide (21 rows total across 2 kinds use `team`/`multi_team` instead of documented `coach_self`/`family_specific`). BUG B fix shape sharpened — Phase 2 must decide between widen-CHECK + backfill, widen-CHECK + accept legacy, or refactor wizard to derive audience_type mechanically.
+- 1.3-DEEP-1: BUG A failure mode refined — flush() in useBriefingDraft.js DOES distinguish new-vs-existing via local draftId state; failure fires when admin picks "Start fresh" in StepKindPicker for a kind with a pre-existing auto-draft. Phase 2 fix scoped to that specific UI surface + flush-time pre-check.
+- 1.5-DEEP-1: trigger ↔ code suppression layers operate on different lifecycle stages (no race) but emit different forensic trails (trigger silently drops; code preserves audit row). PATTERN B1-γ surfaced.
+- 2.1 / 3.2 deep-CLEAN: AP #27 resolver purity holds across all 9 resolver files; AP #29 substitute helper discipline holds end-to-end + implementation is stronger than AP body requires (throws on missing tokens; renderer fail-loud fallback).
+
+**B1 status:** CLOSED for Phase 1 purposes. Ready to dispatch Wave B2.
+
 ---
 
 ### §4.BW — §17.5 audit P1 backlog closure arc complete (2026-06-02 PM)

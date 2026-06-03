@@ -240,3 +240,101 @@ The weekly_digest "one row per week" invariant my index encoded was the right st
 ---
 
 **B1 status:** initial pass partial — Category 1 (schema) initial complete; Categories 2 + 3 initial partial. Deep-read addendum needed across all three before B1 closes. Waves B2–B5 pending dispatch.
+
+---
+
+# WAVE B1 — Deep-read addendum (2026-06-02 PM, same day as initial)
+
+Per §16.15: second-pass per category catches ~30-40% cascade rate vs single-pass. This addendum surfaced 3 new sub-findings + confirmed clean state on 2 categories that initial pass left as "verify in addendum."
+
+## 1.2 — Audience CHECK incomplete — **production state check**
+
+**Finding 1.2-DEEP-1 (BUG B reshape — bigger than initial):** Queried production for actual `audience_type` values in `comms_messages`. **Zero rows exist for any of the 4 "missing" audience types** (`player_specific`, `multi_event_attendees`, `coach_self`, `family_specific`). The CHECK is consistent with production data — production has been coerced to allowed-but-semantically-wrong values upstream of INSERT.
+
+Actual production data per kind (2026-06-02):
+
+| Kind | audience_type values present | Total rows |
+|---|---|---|
+| coach_roundup | `team` (15), `multi_team` (5) | 20 (**NONE with `coach_self`** despite kindMetadata default) |
+| family_guide | `multi_team` (1) | 1 (**NONE with `family_specific`**) |
+| games_recap | — | 0 (cold surface confirmed) |
+| academy_callup_notice | — | 0 (cold surface confirmed) |
+| weekly_digest | `org_all` (11), `team` (11), `multi_team` (6), **NULL (1)** | 29 |
+| game_recap | `event_attendees` (15825), `team` (1) | 15826 |
+| rsvp_nudge | `event_attendees` (58) | 58 |
+| schedule_change | `event_attendees` (3) | 3 |
+| tournament_prelim | `tournament_attendees` (12) | 12 |
+| tournament_recap | `tournament_attendees` (8) | 8 |
+| announcement | `team` (4) | 4 |
+
+**Reshape of BUG B:** the routing decision in Phase 2 isn't just "widen CHECK to allow 4 missing values." It's a deeper governance question — for coach_roundup + family_guide, **production has been writing semantically-wrong audience_type values for 21 rows**, because the schema rejected the right ones. The audience taxonomy doc (BRIEFINGS_COVERAGE_L99 §2) says these kinds use `coach_self` / `family_specific` and the wizard's kindMetadata defaults to them, but the actual saved rows say `team` / `multi_team`. Either:
+- (a) The wizard has been silently coercing values somewhere downstream (needs B4 grep — likely in StepAnchorAudience or composerReducer's SET_AUDIENCE action when admin picks teams)
+- (b) The admin has been manually overriding the default in every save (20+ explicit overrides)
+
+Either way, Phase 2 fix needs to decide: backfill existing rows to semantic values OR document the legacy values stay + widen CHECK so future rows can use semantic values OR refactor the wizard so audience_type is mechanically derived from the kind (not admin-pickable for these kinds).
+
+**Finding 1.2-DEEP-2 (orphan weekly_digest):** 1 weekly_digest row has `audience_type=NULL`. Column isn't NOT NULL. Likely a pre-audience-taxonomy row or a test send. Low priority but worth a row-level investigation if Phase 2 narrows the CHECK to NOT NULL.
+
+## 1.3 — Weekly digest unique index regression — **failure mode refined**
+
+**Finding 1.3-DEEP-1 (BUG A reshape):** Read `useBriefingDraft.js`'s `flush()` function. The flush DOES distinguish "new draft vs existing draft" via local `draftId` React state:
+- `draftId` null → INSERT
+- `draftId` set → UPDATE
+
+So the failure mode isn't "composer NEVER reuses drafts" — it's:
+- Auto-draft cron writes a `draft` row at Sunday roll
+- Admin lands at /admin/briefings/compose. **StepKindPicker offers two paths** (per `BriefingComposer.jsx:150` + `StepKindPicker`): (a) Resume an existing draft (loads via `loadDraft(d.id)` → composer hydrates with that `draft_id` → flush UPDATEs), or (b) Pick a kind to start fresh (no `draftId` → flush INSERTs → hits the unique index).
+- If admin picks (b) for weekly_digest when an auto-draft exists, 23505 fires.
+
+**Reshape:** the Phase 2 fix shape is sharper than the initial pass framed. Options refined:
+- (a-refined) **Composer's "Start fresh" path should detect existing-anchor draft and offer "Resume" or "Archive existing + start fresh"** rather than blind INSERT. Generalizes beyond weekly_digest — any kind with anchor-based semantics (game_recap, schedule_change, rsvp_nudge — basically every event-anchored kind) has the same collision potential.
+- (b-refined) **Narrow my index to `status='sent'` only** — drafts coexist; only sent rows are deduped. Cheaper but loses the "one draft per anchor" invariant.
+
+Chat-CC recommends (a-refined). I lean (a-refined) too — it's the structural model. But the implementation cost is real (need to add an "existing draft for this anchor?" check before INSERT in flush, plus UI for the choice).
+
+## 1.5 — `comms_message_recipients` trigger + code suppression — **race check**
+
+**Finding 1.5-DEEP-1 (CLEAN on race, P3 on forensic visibility):** Verified no race between chat-CC's `suppress_unsubscribed_recipients()` BEFORE INSERT trigger and my code-side `delivery_status='unsubscribed'` filter in send-tournament-message. They operate on different lifecycle stages:
+- Trigger fires at recipient-row INSERT time (during queue compose). Returns NULL → no row persists.
+- My code runs at SEND time (could be days later if scheduled). Updates already-INSERTed rows.
+
+Edge cases:
+- Parent unsubscribes between INSERT and SEND → my code catches at SEND ✓
+- Parent unsubscribes BEFORE the queue compose → trigger blocks the INSERT ✓
+- Parent re-subscribes after their row was flipped to `'unsubscribed'` → row stays flipped; future sends would need a fresh INSERT (covered by trigger ✓)
+
+**Forensic visibility gap (P3):** trigger silently drops (RETURN NULL emits a NOTICE but no audit row); my code preserves `delivery_status='unsubscribed'` row for forensic trail. Inconsistent observability — operator querying "who got suppressed?" would miss the trigger-blocked guardians. Worth a B3 deep-look at whether the NOTICE log captures enough or whether we want a parallel `suppressed_recipients_log` table for the trigger's drops.
+
+## 2.1 — Resolver purity — **AP #27 holds end-to-end**
+
+**Finding 2.1-DEEP-CLEAN:** grepped every `src/lib/engine/resolvers/*.js` for top-level `import { supabase }`. Zero violations. Per AP #27 doctrine: resolvers accept supabase via `options.supabase`, never import directly. Discipline holds across all 9 resolver files.
+
+## 3.2 — Substitute helpers — **AP #29 implementation is sound + stronger than AP body requires**
+
+**Finding 3.2-DEEP-CLEAN:** Read `substituteRsvpTokens` and `substituteCallupTokens`. Both correctly destructure `*_token_placeholders` and assign `*_token_urls` (different field name per AP #29). Implementation is **stronger** than the AP body specifies:
+- The substitute helper THROWS on missing tokens (`new Error('no token entry for player_id...')`) rather than emitting literal placeholders for unsubscribed/missing recipients. Tighter signal during smoke testing.
+- The renderer falls back to literal `{{token_*_url}}` strings if `_urls` field is missing — fail-loud at the email-delivery layer as well. Belt + suspenders.
+
+Verified per-file:
+- `src/lib/engine/substitution/rsvpTokens.js:35-37` — destructures + renames cleanly
+- `src/lib/engine/renderers/rsvpRequest.js:42-43` — reads `_urls` with literal fallback
+- Same pattern for callupTokens / callupResponse.
+
+**Phase 2 implication:** when a new token-bearing kind is added (e.g., a future feedback workflow), the AP #29 4-piece contract (placeholder field, urls field, substitute helper, renderer fallback) is well-established. Document the recipe as part of the redesign so future contributors mechanically replicate it.
+
+---
+
+# Cross-cutting patterns (updated post-deep-read)
+
+### PATTERN B1-α (re-confirmed) — Schema CHECK lags taxonomy doc
+Initial-pass finding holds + deep-read sharpened it: production has been silently working around the CHECK gap for 2 kinds (coach_roundup, family_guide) by writing wrong-but-allowed values. Same class as Wave 3.A #20 PATTERN STALE-DOC, but here the drift has 21+ row impact in production data, not just a doc-string mismatch.
+
+### PATTERN B1-β (re-confirmed) — Composer + auto-draft cron don't share a draft lifecycle
+Initial-pass framing holds + deep-read identified the specific UI surface (StepKindPicker offers both paths without collision detection). Phase 2 fix is now scoped to that specific component + a flush-time pre-check.
+
+### PATTERN B1-γ (NEW — surfaced in deep-read) — Suppression has 2 layers with different forensic visibility
+Defense-in-depth design is correct, but the two layers (DB trigger + code filter) emit different audit trails. Whoever queries "who got suppressed?" needs to know which layer they're asking about. Document the layered model + the inconsistent visibility in Phase 2 redesign.
+
+---
+
+**B1 status:** **CLOSED** for Phase 1 purposes. 4 P0/P1 findings + 5 sub-findings via deep-read + 3 cross-cutting patterns. Ready to dispatch Wave B2 (composer + SECTION_RENDERERS + audience picker + substitute helpers cross-check).
