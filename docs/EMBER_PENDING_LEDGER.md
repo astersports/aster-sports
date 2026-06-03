@@ -3853,6 +3853,18 @@ Wave B3 status: CLOSED for Phase 1 purposes. 1 new P0 + 1 P1 + 1 mechanism refin
 
 Wave B4 status: CLOSED for Phase 1. 1 P0 mechanism (B4.1 — 3 redesign options) + 1 P1 sharpening (B4.2 — 2-layer fix shape) + 2 CLEAN + 1 deferred. Ready to dispatch Wave B5 (parent inbox + cross-cutting).
 
+**Wave B5 (2026-06-03 AM) — parent inbox + cross-cutting (closed):**
+- **B5.1 — Microcopy Meta bug CONFIRMED at code boundary:** `useBriefingDraft.flush()` propagates raw Postgres `e.message` upward; composer renders verbatim. Phase 2 fix is small + reversible (error-class translation map), but gate AFTER A/B/C land so microcopy matches final behavior.
+- **B5.2 — a11y baseline CLEAN-ish:** wizard steps have ARIA roles in expected places (`role="grid"`, `role="status"`, `role="alert"`). Not a full audit; flagged as Phase 2 routing decision D-8 (dedicated a11y in scope or separate).
+- **B5.3 — NEW P2 multi-tenant breach:** `PreviewPanel.jsx:28` hardcodes `https://app.legacyhoopers.org/unsubscribe?preview=1`. Only LH-specific leak in production code; small + reversible fix.
+- **B5.4 — PII surface CLEAN at engine layer:** briefings necessarily carry guardian + kid + team data; RLS controls visibility. Parent SELECT policy on `comms_message_recipients` not yet built — part of parent inbox redesign target.
+- **B5.5 — Parent inbox redesign target scoped:** doesn't exist today (per §4.AI deferred). Three named scopes: (a) minimal viable (list + detail + RSVP/callup), (b) full-featured (filter + mark-as-read + unsubscribe), (c) punt (email-only). Phase 2.D-6 routing.
+- **B5.6 — PATTERN B5-ε (final cross-cutting): catalog drift is structural in the briefings engine.** Five independent catalogs (kind, audience, send-path, pilot mechanism, section renderers) with partial parity tests. Extend AP #28 discipline systemically. Phase 2.D-7 routing.
+
+**Phase 1 CLOSED (2026-06-03 AM).** 5 confirmed bugs (BUG A/B/C/D + Meta) + 1 owned gap (GAP-1) + 6 cross-cutting patterns (B1-α/β/γ/δ + B5-ε + dual-dispatch B2.10) + 8 Phase 2 routing decisions queued for Frank. Naturally clusters into 3 Phase 2 batches: schema (D-1+D-2+D-7), pilot (D-4+D-5), UI (D-3+D-6+D-8).
+
+**Phase 2 does NOT auto-dispatch** — hard pause gate per saved memory `autopilot-overreach-on-decisions-and-irreversible-ops`. Frank routes when ready.
+
 ---
 
 ### §4.BW — §17.5 audit P1 backlog closure arc complete (2026-06-02 PM)

@@ -771,3 +771,163 @@ Not deeply audited in this pass — the surface is read-only display (list view 
 ---
 
 **Wave B4 status:** CLOSED for Phase 1 purposes. 1 NEW P0 mechanism (B4.1 — 4-way audience-type drift fully mechanically explains B2.7 silent coercion; 3 named redesign options α/β/γ) + 1 P1 sharpening (B4.2 — StepKindPicker is the BUG A UI surface; 2-layer Phase 2 fix shape) + 2 CLEAN confirmations (B4.3 flush() discipline sound; B4.5 kindMetadata + KindTile aligned) + 1 deferred (B4.6 — history page out of P1 scope unless redesign touches). Ready to dispatch Wave B5 (parent inbox + cross-cutting: microcopy, a11y, multi-tenant, PII).
+
+---
+
+# WAVE B5 — Parent inbox + cross-cutting (in progress 2026-06-03 AM)
+
+## B5.1 — Microcopy (§16.3 compliance — confirms Meta bug at the code boundary)
+
+`useBriefingDraft.js:85,98,107` shows the error surface:
+```js
+catch (e) { setError(e); return null; }
+// ...
+if (!id) return { error: error || new Error('Save failed.') };
+```
+
+When `flush()` catches a Postgres error (23505 unique violation, 23514 CHECK violation), `e.message` carries the raw Postgres text. The submitSend/submitSchedule path propagates `error` upward to the composer which displays it verbatim. **Meta bug confirmed at the code boundary.**
+
+**Phase 2 fix shape — small, reversible:** add an error-class translation step at the boundary. Map specific Postgres error codes to kindness microcopy per §16.3:
+- `23505 + constraint=comms_messages_weekly_digest_unique` → "There's already a digest for this week — open it instead?"
+- `23514 + constraint=comms_messages_audience_type_check` → "That audience isn't allowed for this briefing kind."
+- Other Postgres errors → "Save failed." (current fallback, kept for unknown)
+- Other Error types → message as-is (network errors etc.)
+
+**Gate this AFTER A/B/C land** so microcopy matches final behavior (e.g., if BUG B is fixed by widening the CHECK, the 23514 message wouldn't fire on `multi_event_attendees` anymore).
+
+## B5.2 — a11y on wizard flow (baseline check — no glaring gaps)
+
+Quick grep for ARIA roles in wizard steps:
+- `StepKindPicker.jsx:56,67` — `role="grid" aria-label="Briefing kinds"`
+- `StepAnchorAudience.jsx:83` — `role="status"` on the "Pick a specific event" helper
+- `StepBodySignoff.jsx:101` — `role="alert" aria-live="assertive"` on errors
+- `StepSendConfirm.jsx:74` — `role="status"` on pilot banner
+
+**Finding B5.2-CLEAN-ish:** baseline a11y is present. Not a full audit (no axe-core scan, no keyboard-only walkthrough); would need explicit a11y pass in Phase 2 if a redesign touches form structure. Flagged for Phase 2 routing decision: "is dedicated a11y audit in scope?"
+
+## B5.3 — Multi-tenant readiness (1 finding — hardcoded LH preview URL)
+
+**Finding B5.3-P2 (NEW):** `PreviewPanel.jsx:28` hardcodes the unsubscribe preview URL:
+```js
+const PREVIEW_UNSUBSCRIBE_URL = 'https://app.legacyhoopers.org/unsubscribe?preview=1';
+```
+
+For a multi-tenant deployment, the preview URL's host would need to derive from the current org's domain (or use a relative path / placeholder that works for any tenant). The org-scoped `pilot_test_recipient_email` is already correctly per-org (not hardcoded); this is the only LH-specific leak found in the briefings engine code. Tests reference `admin@legacyhoopers.org` but tests are not multi-tenant carriers.
+
+Phase 2 multi-tenant readiness: change the hardcoded URL to a relative path or template that resolves per-tenant. Small, reversible.
+
+No hardcoded LH UUIDs found in production code (only in migration verification DO blocks, which are LH-specific by design — that's fine for now).
+
+## B5.4 — PII surface (briefings carry guardian email + kid names + team data)
+
+**Finding B5.4-CLEAN at engine layer:** briefing emails necessarily carry recipient + kid + team data — that's the product. The surfaces that handle this:
+- `comms_messages.body_html` / `body_plain` — composed body (no per-recipient PII; recipient placeholders or generic content)
+- `comms_message_recipients.body_html_rendered` / `body_plain_rendered` — per-recipient rendered body (includes recipient-specific kid names, RSVP tokens)
+- `comms_message_recipients.email_at_send` — snapshot of recipient email at send time
+- `comms_message_recipients.guardian_id` — FK to guardians
+
+RLS on `comms_message_recipients`:
+- Admin SELECT: per org_id chain
+- Parent SELECT: NOT YET BUILT — this is part of the parent inbox redesign target. Today parents have no in-app way to see briefings they received (they only get the email).
+
+`guardian_email_preferences` (unsubscribe state) — RLS allows guardian self-update via the public unsubscribe-handler token flow.
+
+**No new findings — PII surface is product-necessary + RLS-controlled.** Phase 2 redesign of parent inbox needs to add the parent SELECT policy on `comms_message_recipients` scoped to `guardian_id`.
+
+## B5.5 — Parent inbox redesign target (named in §4.AI, surface DOES NOT EXIST)
+
+The parent inbox is the REDESIGN TARGET — not a bug, a feature surface to define. Per §4.AI (P1 deferred 2026-05-23) and §1 scope of this audit:
+
+**Required Phase 2 deliverables (per §16.15 element (d) per-role wireframes):**
+- Parent home → "Inbox" affordance (entry)
+- List view: per-recipient briefings received, sorted by recency, grouped by kid (or by team for multi-kid families)
+- Detail view: render the same composed body the email carried
+- Mark-as-read state (new field on `comms_message_recipients`? or inferred from `opened_at`?)
+- Affordances: RSVP buttons (rsvp_nudge briefings), callup accept/decline (academy_callup_notice briefings), reply-to (general)
+- Filter by kid / team / kind
+- Unsubscribe affordance (links to existing handler)
+
+**Cross-cutting dependencies:**
+- New parent SELECT policy on `comms_message_recipients` (B5.4 above)
+- Likely new `comms_message_recipients.read_at` column (or repurpose `opened_at` — needs decision)
+- Routing: `/inbox` or `/briefings` on parent shell (consistent with existing parent IA)
+- a11y: full keyboard navigation + screen-reader pass (not yet done; per B5.2)
+
+**Routing: Phase 2.D-4 — Frank's call on inbox scope.** Three reasonable scopes:
+- **(a) Minimal viable:** list view + detail view + RSVP/callup affordances. No filter, no mark-as-read. Smaller PR sequence.
+- **(b) Full-featured:** all of the above + filter + mark-as-read + unsubscribe in-app. Larger PR sequence, more redesign load.
+- **(c) Punt:** keep parents on email-only; close the audit without building the inbox. Out-of-scope by decision.
+
+Not picking. Phase 2 routing target.
+
+## B5.6 — Cross-cutting pattern (final synthesis) — PATTERN B5-ε
+
+Synthesizing across all 5 waves: the briefings engine has **multiple parallel catalogs** of the same concept that drift over time:
+- **Kind catalog** (12-entry CHECK, KIND_METADATA, RESOLVER_REGISTRY, KIND_COMPOSERS) — partially aligned via vitest disciplines + AP #28
+- **Audience catalog** (CHECK, KIND_METADATA.defaultAudienceType, AudiencePicker.MODES, AUDIENCE_LABEL) — 4-way drift, no parity test
+- **Send-path catalog** (RESOLVER_REGISTRY.sendPath, composerSubmit short-circuits) — converged but has historical mappings
+- **Pilot mechanism catalog** (Resolver REDIRECT/FILTER, send-tournament safety guard, REDIRECT bypass) — 3 layers, no doc explaining the design
+- **SECTION_RENDERERS catalog** (sectionRenderers.js + coverage doc) — 33 vs 32, off by 1
+
+**PATTERN B5-ε (NEW — final synthesis): catalog drift is structural in the briefings engine.** Phase 2 redesign should include a "parity guard" pattern — for each catalog with N independent sources of truth, ship a vitest that asserts the canonical source matches all derivatives. AP #28 already does this for the kind catalog; extend the same discipline to audience, pilot mechanism, and section renderers. Same shape as `edgeFunctionDirectoryParity.test.js` and `verifyJwtConfigAudit.test.js` shipped in earlier waves.
+
+---
+
+**Wave B5 status:** CLOSED for Phase 1 purposes. 1 NEW P2 (B5.3 hardcoded LH preview URL) + 1 P3 (B5.1 microcopy translation queued post-A/B/C) + 1 redesign-target scoping (B5.5 parent inbox 3 named scopes) + 1 cross-cutting pattern (B5-ε catalog drift is structural) + 2 CLEAN (B5.2 a11y baseline OK, B5.4 PII surface product-necessary). Ready for Phase 1 close + Phase 2 transition.
+
+---
+
+# PHASE 1 — CLOSED (2026-06-03 AM)
+
+## Phase 1 deliverables summary
+
+All 12 audit categories across 5 waves complete:
+
+| Wave | Categories | Findings |
+|---|---|---|
+| B1 | Schema + kind taxonomy + resolvers | 4 P0/P1 + 5 sub-findings + 1 surfaced gap (GAP-1) + 4 cross-cutting patterns |
+| B2 | Composer + SECTION_RENDERERS + audience picker + substitutes | 6 findings + 2 confirms + 1 cross-pattern + 1 P3 carryover |
+| B3 | Send path + auto-draft + token handlers | 1 NEW P0 + 1 P1 + 1 mechanism refinement + 4 CLEAN |
+| B4 | Admin UI: composer wizard + history | 1 P0 mechanism + 1 P1 sharpening + 2 CLEAN + 1 deferred |
+| B5 | Parent inbox + cross-cutting | 1 P2 + 1 P3 + 1 redesign-target scoping + 1 cross-cutting pattern + 2 CLEAN |
+
+## Bug inventory (5 confirmed + 1 Meta)
+
+- **BUG A** (P0, my regression) — weekly_digest unique index blocks composer re-INSERT. Phase 2 routing: narrow-predicate (immediate) + composer-reuse / cron-pattern adoption (structural). Frank's call.
+- **BUG B** (P0, pre-existing) — `audience_type_check` rejects 4 documented audience types. Production impact: 0 academy_callup_notice sends (locked + blocked), 21 wrong-but-allowed coach_roundup/family_guide rows, 0 games_recap sends. Phase 2 routing: 3 named options (α single source of truth / β no-picker / γ default-active).
+- **BUG C** (P0, narrow surface) — PreviewPanel dispatch gate excludes non-`composerSubmit` sendPaths. Affects rsvp_nudge specifically. Phase 2 routing: (a) widen criterion / (b) defensive KIND_COMPOSERS entry.
+- **BUG D** (P0, behavioral PATTERN A) — pilot mode has 3 layers (REDIRECT verification, FILTER unmigrated stragglers in 3 callsites, send-time safety guard). Phase 2 routing: 3 named strategic options (cut over / REDIRECT permanent / exit pilot).
+- **GAP-1** (owned) — I missed pilot mode in B1 deep-read. Discipline added to §3.f (cross-kind query) and §3.g (symptom-vs-mechanism).
+- **Meta** (P3, UX) — composer surfaces raw Postgres errors. Microcopy translation post-A/B/C.
+
+## Phase 2 routing decisions queued for Frank
+
+1. **D-1 BUG A fix shape:** narrow-predicate now + composer-reuse Phase 2 vs adopt cron pattern in flush() (B3.4 + B4.2 layered).
+2. **D-2 BUG B fix shape α/β/γ:** single source of truth vs no-picker vs default-active.
+3. **D-3 BUG C fix shape (a)/(b):** widen criterion vs defensive KIND_COMPOSERS.
+4. **D-4 BUG D strategic:** (a) cut over to FILTER + migrate stragglers / (b) REDIRECT-only permanent / (c) exit pilot.
+5. **D-5 BUG D tactical (independent of D-4):** migrate the 3 stragglers (`academyCallupNotice`, `rsvpNudge`, `_reminderSend`) to use the RPC for symmetry. Smaller, reversible.
+6. **D-6 Parent inbox scope:** (a) minimal viable / (b) full-featured / (c) punt.
+7. **D-7 Catalog parity tests (PATTERN B5-ε):** extend AP #28 discipline to audience + pilot mechanism + section renderers? In scope for Phase 2 or separate cleanup?
+8. **D-8 a11y dedicated audit:** in scope or separate? B5.2 baseline OK but not exhaustive.
+
+## Out-of-scope items confirmed
+
+(Per §2 + §S-1 + §B4.6.) Stream A reminders, team-feed ICS, send-push fanout, financial briefings, Slack/SMS, AI prompt-engineering for suggest-briefing-closer, `game_recap` singular 15,770-row data hygiene, history page detail audit, full a11y axe-core scan.
+
+## Phase 2 transition
+
+Phase 1 closed. **Phase 2 (redesign proposal doc) does NOT auto-dispatch** — explicit operator routing required (per saved memory `autopilot-overreach-on-decisions-and-irreversible-ops`). Hard pause gate per the audit's 3-phase structure.
+
+Phase 2 deliverable when routed:
+- Doc-only proposal per surface with named options + tradeoffs
+- Migration plan (reversible-first, irreversible-needs-confirm)
+- Per-role wireframes for parent inbox
+- Concrete PR sequence for Phase 3 ship
+
+**Recommended Phase 2 batching:** decisions naturally cluster.
+- **Cluster 1 (schema):** D-1 + D-2 + (related D-7 catalog parity).
+- **Cluster 2 (pilot):** D-4 + D-5.
+- **Cluster 3 (UI):** D-3 + D-6 + D-8.
+
+Frank routes when ready.
