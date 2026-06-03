@@ -3822,6 +3822,16 @@ PATTERN B1-δ refined: "supersession migration that stalls" is a specific AP #63
 
 **AP #45** satisfied by this same-commit ledger append — guard self-test holds for the B2 first-batch commit.
 
+**Wave B2 second batch — composer dispatch + BUG C mechanism + audience picker + substitute helpers + SECTION_RENDERERS catalog (2026-06-03 AM):**
+- **BUG C mechanism resolved:** `PreviewPanel.jsx:64` gates registry-path on `sendPath === 'composerSubmit'`. rsvp_nudge's sendPath is `'rsvpNudgeSend'` → falls through to legacy KIND_COMPOSERS → no entry → throws. weekly_digest + academy_callup_notice avoid this via defensive KIND_COMPOSERS entries. Two named fix shapes: (a) extend criterion to `entry !== null` (structural — eliminates DUAL-COMPOSE drift simultaneously); (b) add `composeRsvpNudge` to KIND_COMPOSERS (minimal patch).
+- **DUAL-COMPOSE drift (B2.6) already self-documented in code** since 2026-05-22 (Phase 3 Q5 routing). PATTERN A: same concept (weekly_digest compose output) in two places, observationally identical only because data shape is currently invariant. Fix shape (a) above closes this too.
+- **Audience picker / kindMetadata cross-check confirms BUG B at application boundary:** 4 of 12 `defaultAudienceType` values in kindMetadata are rejected by the production CHECK — `multi_event_attendees` (games_recap, LOCKED), `coach_self` (coach_roundup), `family_specific` (family_guide), `player_specific` (academy_callup_notice, LOCKED). Confirms 1.2-DEEP-1.
+- **Substitute helpers (B2.8):** callsites verified — `rsvpNudgeSend.js:67` + `academyCallupSend.js:64` both call their substitute helpers correctly per AP #29. **NEW finding B2.8-P3:** rsvp_nudge + academy_callup_notice use bespoke send paths that bypass `send-tournament-message`; need Wave B3 verification that unsubscribe-suppression discipline applies symmetrically.
+- **SECTION_RENDERERS catalog:** 33 entries in `sectionRenderers.js`; coverage doc says 32. Minor PATTERN B1-α re-fire (schema/doc drift); orphan-kind guard discipline (AP #38) is clean.
+- **B2.10 cross-pattern observation:** the briefing engine has two dispatch tables (RESOLVER_REGISTRY + KIND_COMPOSERS) overlapping on 2 kinds + diverging on 8. Every B2 drift surface traces back to which table the call lands in. The right Phase 2 question isn't "fix BUG C" but "is the dual-dispatch a structural liability worth retiring?" — routes BUG C + B2.6 drift + registry hygiene together (per AP #34: registry/dispatch-table removals need caller migration in same PR).
+
+Wave B2 status: CLOSED for Phase 1 purposes. 6 findings + 2 confirms + 1 cross-pattern observation + 1 new P3 (B2.8 asymmetric suppression queued for B3). Ready to dispatch Wave B3.
+
 ---
 
 ### §4.BW — §17.5 audit P1 backlog closure arc complete (2026-06-02 PM)

@@ -504,3 +504,89 @@ The "behavioral-layer PATTERN A" framing still holds, but the mechanism is more 
 ---
 
 **Wave B2 status:** B2.1–B2.4 complete (BUG D mechanism resolved). Remaining B2 surfaces queued: composer dispatch (BUG C anchor), SECTION_RENDERERS catalog walk, audience picker UI, substitute helpers cross-check.
+
+## B2.5 — Composer dispatch architecture + BUG C mechanism resolved
+
+**Three-tier dispatch hierarchy** (read end-to-end, mapped):
+
+| Tier | File | Coverage | Contract |
+|---|---|---|---|
+| Primary (registry path) | `src/lib/engine/resolvers/registry.js:68` | 10 kinds (calendar-anchored) | `{ resolve, compose, anchorFromState, overridesFromState, sendPath }` |
+| Secondary (legacy KIND_COMPOSERS) | `src/lib/engine/composer.js:20` | 4 entries — 2 defensive (weekly_digest, academy_callup_notice) + 2 actual legacy (announcement, custom_message) | `compose({ kind, data })` single-shape function |
+| Tertiary (composerSubmit short-circuits) | `src/components/briefings/composerSubmit.js:83-92` | rsvp_nudge + academy_callup_notice (per-recipient token paths) | Bypasses RESOLVER_REGISTRY at the dispatch boundary, hands off to `sendRsvpNudge` / `sendAcademyCallupNotice` |
+
+**BUG C mechanism (§5 → resolved here):** `PreviewPanel.jsx:64` gates the registry path on `sendPath === 'composerSubmit'`:
+```js
+const entry = sendPath === 'composerSubmit' ? RESOLVER_REGISTRY[state.kind] : null;
+```
+
+For kinds whose registry sendPath is NOT `composerSubmit` (weekly_digest = `digestSend`, rsvp_nudge = `rsvpNudgeSend`, academy_callup_notice = `academyCallupSend`), `entry` is null → falls through to `safeLegacyCompose(state.kind, data)` → `compose({ kind: 'rsvp_nudge', ... })` → KIND_COMPOSERS lookup → "No engine composer for kind 'rsvp_nudge'. Supported kinds: academy_callup_notice, weekly_digest, announcement, custom_message."
+
+Why weekly_digest + academy_callup_notice DON'T hit this error: both are present in KIND_COMPOSERS (lines 21-22 of composer.js) as defensive entries. rsvp_nudge is NOT, because at the time wave 4.2-A-8b-b migrated rsvp_nudge to the registry path, the defensive KIND_COMPOSERS entry wasn't added.
+
+**Two named fix shapes (Phase 2 routing — Frank's call, not Phase 1 pick):**
+- **(a) Extend PreviewPanel registry-path criterion to `entry !== null`** — registry preview covers all 10 kinds. Eliminates the dual-dispatch drift risk (see B2.6). Touches 1 line in PreviewPanel.jsx.
+- **(b) Add `composeRsvpNudge` to KIND_COMPOSERS** — extends the defensive-fallback pattern. Smaller diff but preserves dual-dispatch + worsens the drift surface.
+
+(a) is structurally cleaner. (b) is the minimal patch.
+
+## B2.6 — Known DUAL-COMPOSE drift surface (already self-documented in PreviewPanel)
+
+**Finding B2.6-P2 (already in code):** `PreviewPanel.jsx:9-16` carries an inline comment from 2026-05-22 (Phase 3 Q5) explicitly acknowledging the drift risk:
+> "DUAL-COMPOSE: PreviewPanel uses renderers/weeklyDigest.js (1-arg legacy shape) for admin preview; digestSend.js uses resolvers/weeklyDigest.js (3-arg registry shape) for actual send. Today the bodies are observationally identical because section data is invariant between paths. If a future change adds per-recipient data to the registry resolver, preview will silently drift from send."
+
+The comment itself is the closure of an audit finding (claude.ai routing 2026-05-22). It's PATTERN A again — same concept (weekly_digest compose output) implemented in two places that are observationally identical only because the data shape is currently invariant. Phase 2 fix shape (a) from B2.5 also closes this drift: registry path becomes the single source for both preview + send.
+
+## B2.7 — Audience picker / kindMetadata cross-check (confirms BUG B at the application boundary)
+
+`src/lib/briefings/kindMetadata.js` is the canonical map of `kind → { defaultAudienceType, audienceLocked, ... }`. The 12 kinds + their defaults map cleanly onto the documented audience taxonomy:
+
+| Kind | defaultAudienceType | audienceLocked | In production CHECK? |
+|---|---|---|---|
+| announcement | `org_all` | — | ✓ |
+| schedule_change | `event_attendees` | LOCKED | ✓ |
+| game_recap | `event_attendees` | — | ✓ |
+| games_recap | `multi_event_attendees` | **LOCKED** | ❌ (BUG B-1) |
+| tournament_prelim | `tournament_attendees` | — | ✓ |
+| tournament_recap | `tournament_attendees` | — | ✓ |
+| coach_roundup | `coach_self` | — | ❌ (BUG B-2) |
+| family_guide | `family_specific` | — | ❌ (BUG B-3) |
+| weekly_digest | `org_all` | — | ✓ |
+| rsvp_nudge | `event_attendees` | — | ✓ |
+| academy_callup_notice | `player_specific` | **LOCKED** | ❌ (BUG B-4) |
+| custom_message | `null` | — | n/a |
+
+**Confirms 1.2-DEEP-1 exactly:** 4 of 12 kinds have defaultAudienceType values that the production CHECK rejects. 2 of those 4 are LOCKED (games_recap → `multi_event_attendees`, academy_callup_notice → `player_specific`) — meaning the wizard hard-codes a value the schema doesn't accept. For LOCKED kinds, every send attempt has been failing at INSERT time (matches chat-CC's "games_recap has never sent" finding). For the unlocked kinds (coach_roundup, family_guide), the silent coercion to `team`/`multi_team` happens somewhere downstream — wizard SET_AUDIENCE action or composerReducer (Wave B4 target).
+
+## B2.8 — Substitute helpers cross-check (AP #29 callsite verification — closes B1 deep-read carryover)
+
+B1 deep-read confirmed substitute helper implementations (`rsvpTokens.js`, `callupTokens.js`) match AP #29 contract. B2 closes the callsite half:
+
+- `src/lib/rsvpNudgeSend.js:67` — calls `substituteRsvpTokens(content_sections, tokenMap)` on each per-recipient compose output. ✓
+- `src/lib/academyCallupSend.js:64` — calls `substituteCallupTokens(content_sections, tokenMap)` on each per-recipient compose output. ✓
+
+Both bespoke send paths (NOT routed through `send-tournament-message` edge function) — meaning they don't share the unsubscribe-suppression filter chain from B1.5-DEEP-1. **Finding B2.8-P3:** unsubscribe suppression discipline for rsvp_nudge + academy_callup_notice sends needs verification in Wave B3 (do these bespoke paths also check `delivery_status='unsubscribed'`? If not, suppression is asymmetric across kinds).
+
+## B2.9 — SECTION_RENDERERS catalog (33 entries; coverage doc says 32 — 1-off drift)
+
+`src/lib/engine/sectionRenderers.js:51-85` registers **33 section kinds**:
+
+`header, game_card, footer, weekly_schedule, hotel_block, ops_notes, cta_buttons, stats_narrative, signoff, schedule_change_diff, rsvp_request, callup_response, day_header, rsvp_callout, venue_list, venue_notes, logistics_line, tagline_footer, brand_footer, bracket_callout, coach_header, team_color_pill, conflict_callout, color_striped_row, event_card, callup_card, placement_block, game_log, standout_moments, coach_reflection, vip_header, kid_color_pill, quick_link_nav`
+
+Coverage doc (`BRIEFINGS_COVERAGE_L99.md`) references "32 SECTION_RENDERERS." **PATTERN B1-α (re-fired) — schema/doc drift.** Minor. Phase 2 doc-update routine should reconcile the count.
+
+**Orphan guard discipline (clean):** `renderSections` emits empty string for unknown kinds + DEV-mode console.warn (AP #38). No throw — composes degrade-safely if a renderer is missing.
+
+## B2.10 — Wave B2 cross-pattern observation: dual-dispatch is the recurring structural lens
+
+Across B2.5, B2.6, B2.7, three independent findings all reduce to the same structural lens: **the briefing engine has two dispatch tables (RESOLVER_REGISTRY + KIND_COMPOSERS) that overlap on 2 kinds (weekly_digest, academy_callup_notice) + diverge on 8 kinds.** Every drift surface in Wave B2 traces back to which table the call lands in:
+
+- BUG C: PreviewPanel uses KIND_COMPOSERS when it could use RESOLVER_REGISTRY.
+- DUAL-COMPOSE drift: preview uses KIND_COMPOSERS path; send uses RESOLVER_REGISTRY path. Two source-of-truth surfaces for the same compose output.
+- Defensive entries in KIND_COMPOSERS (weekly_digest, academy_callup_notice): meant as belt-and-suspenders but enabling the drift.
+
+**Per AP #34** (registry / dispatch-table removals must include caller migration): consolidating to a single dispatch is non-trivial. The right Phase 2 question isn't "fix BUG C" but "is the dual-dispatch a structural liability worth retiring?" — which routes BUG C, B2.6 drift, and the broader registry hygiene together.
+
+---
+
+**Wave B2 status (updated):** B2.1–B2.10 complete (BUG D mechanism + BUG C mechanism + DUAL-COMPOSE drift + audience picker confirms BUG B + substitute helper callsites + SECTION_RENDERERS catalog + dual-dispatch pattern observation). Remaining: B3 surfaces (send path, auto-draft cron, token handlers).
