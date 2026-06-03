@@ -5,6 +5,17 @@
 **Driver:** terminal-CC (with mechanical pause gates per memory `autopilot-overreach-on-decisions-and-irreversible-ops`)
 **Cross-reference:** `BRIEFINGS_COVERAGE_L99.md` (the existing coverage doc, refreshed 2026-06-02 in #656), `CLAUDE.md §13` (HTML rules), `CLAUDE.md §16.5` (notification cadence), `CLAUDE.md §16.15` (L99 redesign template — methodology source)
 
+## LANE SPLIT — code-read (terminal-CC) + live-state (chat-CC)
+
+Per §16.15, a full L99 audit needs both halves. This doc consolidates them.
+
+| Lane | Owner | Approach | Deliverable |
+|---|---|---|---|
+| Code-read | terminal-CC | File-by-file mount-tree read; AP cross-reference; resolver/composer/renderer flow tracing | This doc, Wave B1–B5 |
+| Live-state | chat-CC | Supabase / Vercel / GitHub MCP queries; production row counts; live send-attempt mapping; advisor checks | Seed doc via PR #673 (this doc references its findings under "Wave B1 — Live-state seed") |
+
+Both halves shipped as separate PRs (#672 mine; #673 chat-CC's seed) to preserve authorship + lane-attribution per AP #49. The PRs merge separately; this consolidated doc is the canonical reference and references chat-CC's seed by section.
+
 ---
 
 ## ⚡ THE ARC IN 3 PHASES — HARD PAUSE BETWEEN EACH
@@ -80,17 +91,36 @@ Explicit out-of-scope list per §16.15 (e):
 | **B4** | (10) Admin UI — composer wizard, (11) Admin UI — history + drafts | pending |
 | **B5** | (12) Parent inbox redesign target + cross-cutting (microcopy, a11y, multi-tenant, PII) | pending |
 
-## 5. THE 3 BUGS CHAT-CC SURFACED (FOLDING IN)
+## 5. BUGS SURFACED VIA LIVE-STATE SMOKE-TESTS (FOLDING IN)
 
-These three bugs surfaced during the §17.5 P1 close session smoke-tests are folded into this audit, not handled separately:
+Bugs surfaced via the §17.5 P1 close session smoke-tests + chat-CC's live-state seed (PR #673) are folded into this audit, not handled separately. **Bug list grew in the consolidation pass** as chat-CC's six send-attempt sweep added BUG C and reframed BUG A's fix-shape:
 
 | ID | Category | Description |
 |---|---|---|
-| BUG A | Schema + composer | `comms_messages_weekly_digest_unique` partial UNIQUE index (mig 20260602195100, my PR #657) blocks composer's re-INSERT of this-week's draft because the auto-draft cron already wrote a `draft` row. Composer doesn't reuse existing drafts. **Regression I introduced.** Pilot mode masks it tonight; would block first real weekly digest. |
-| BUG B | Schema + audience taxonomy | Composer offers `multi_event_attendees` audience for `games_recap`, but `comms_messages_audience_type_check` only allows `team, multi_team, tournament_attendees, event_attendees, org_all, custom`. Per `BRIEFINGS_COVERAGE_L99.md §2` `multi_event_attendees` IS documented as a shipped audience type. **Schema CHECK lags the audience-taxonomy doc.** Pre-existing. |
+| BUG A | Schema + composer | `comms_messages_weekly_digest_unique` partial UNIQUE index (mig 20260602195100, my PR #657) blocks composer's re-INSERT of this-week's draft because the auto-draft cron already wrote a `draft` row. Composer doesn't reuse existing drafts. **Regression I introduced.** Pilot mode masks it tonight; would block first real weekly digest. **Phase 2 fix-shape:** chat-CC leans narrow-predicate (drop `'draft'` from the index; only sent dedup) — minimal, reversible, touches only weekly_digest; my B1-DEEP-1 framed composer-reuse — structurally correct, generalizes beyond weekly_digest, but bigger blast radius. Both valid; Frank routes. |
+| BUG B | Schema + audience taxonomy | `comms_messages_audience_type_check` only allows `team, multi_team, tournament_attendees, event_attendees, org_all, custom`. Per `BRIEFINGS_COVERAGE_L99.md §2`, 4 additional audience types are shipped: `player_specific`, `multi_event_attendees`, `coach_self`, `family_specific`. Live-state impact (chat-CC §2 + my §1.2-DEEP-1): `games_recap` has **never sent** (multi_event_attendees-locked, fails CHECK); coach_roundup + family_guide have **21 rows with semantically wrong values** silently coerced. |
+| BUG C | Composer ↔ preview gap | Composing `rsvp_nudge` returns "No engine composer for kind 'rsvp_nudge'. Supported kinds: academy_callup_notice, weekly_digest, announcement, custom_message." The wizard offers `rsvp_nudge` (and likely other registry-dispatched kinds), but the preview panel only knows 4. Ties to AP #28 (RESOLVER_REGISTRY vs legacy KIND_COMPOSERS dual-path). **Surfaced by chat-CC PR #673 §4; folded as Wave B2 deep-read target on the preview surface + composer dispatch.** |
+| BUG D | Pilot mode (**AP #63 instance — PATTERN A extended to send-path recipient resolution**) | Two pilot-mode implementations exist. **Digest path (correct):** `get_digest_recipients(org, p_pilot_only=true)` REDIRECTs to 5 synthetic rows addressed to `pilot_test_recipient_email`. Tournament + weekly_digest paths use this. **Per-event/team/nudge paths (broken):** filter on `guardians.is_pilot_family`, which has **0 rows in production** → returns 0 → "No recipients available." Exactly the PATTERN A shape ("the recipient set for a pilot send" = ONE concept computed two divergent ways producing contradictory truths) — extended from AP #63's render-layer examples to the behavioral / recipient-resolution layer. **Surfaced by chat-CC PR #673 §3; I missed this in B1 deep-read — owned in §GAP-1.** |
 | Meta | Composer UX | Composer surfaces raw Postgres errors ("duplicate key value violates", "Save failed") instead of §16.3 kindness microcopy. Not a bug per se; a category violation. |
 
 Each is anchored to a specific audit category below. The findings will reference them with the ID.
+
+## 6. LIVE-STATE SEED — chat-CC half (PR #673)
+
+Per the lane split above, chat-CC's seed doc captures the production-truth half: live row counts, live send-attempt mapping, advisor checks. **This audit doc references its findings rather than duplicating them; the seed doc IS canonical for live-state.** Cross-reference index for B1 scope:
+
+| chat-CC seed § | Topic | This doc folds at |
+|---|---|---|
+| §0 Headline (mature vs newer kinds split) | Tournament kinds work end-to-end; newer kinds half-wired | Cross-cutting PATTERN B1-δ (NEW) |
+| §1 BUG A live state | Live rows: draft `d83347c7` + sent `2f3a3dba` collide on current week | §1.3-DEEP-1 (validates the failure mode I derived from code) + BUG A fix-shape routing (chat-CC narrow-predicate vs my composer-reuse) |
+| §2 BUG B live state | `multi_event_attendees` missing — games_recap never sent | §1.2-DEEP-1 (matches my deep-read; chat-CC adds the never-sent confirmation) |
+| §3 Pilot mode (REDIRECT vs FILTER) | Two implementations, count proof: 5 vs 0 | **§GAP-1 (NEW — missed in my B1)** |
+| §4 BUG C preview composer gap | rsvp_nudge offered but preview unsupported | Wave B2 dispatch (preview surface deep-read) |
+| §5 Meta — raw DB errors | 23505 + 23514 reach admin verbatim | Wave B4 (composer error microcopy) |
+| §6 Side flag — game_recap 15,770 rows | 15,759 trigger-created, mostly archived/empty | §Out-of-Scope §S-1 (NEW — flagged but explicitly out of redesign scope) |
+| §7 Code-read half pending | What chat-CC's seed does NOT cover | This doc (lane split delivers) |
+
+**Verification stance:** I have not independently re-run chat-CC's MCP queries (no need; the seed doc is the production-state source of truth per the lane split). For B1's specific live-state claims I rely on the seed; for any divergence I'd MCP-verify before Phase 2 routing.
 
 ---
 
@@ -335,6 +365,29 @@ Initial-pass framing holds + deep-read identified the specific UI surface (StepK
 ### PATTERN B1-γ (NEW — surfaced in deep-read) — Suppression has 2 layers with different forensic visibility
 Defense-in-depth design is correct, but the two layers (DB trigger + code filter) emit different audit trails. Whoever queries "who got suppressed?" needs to know which layer they're asking about. Document the layered model + the inconsistent visibility in Phase 2 redesign.
 
+### PATTERN B1-δ (NEW — surfaced in consolidation pass via chat-CC seed §0) — Mature vs newer kind wiring inconsistency
+Tournament kinds got the mature path (digest-style synthetic-redirect pilot, full preview support, end-to-end working send). Newer kinds (rsvp_nudge, games_recap, family_guide, coach_roundup) each diverged on one or more axes: pilot resolution, preview support, audience-type coercion. **Per-kind wiring instead of once-and-for-all.** This is a behavioral-layer manifestation of the same root that AP #63 (PATTERN A) names at the render layer — same concept implemented differently per surface, contradictory truths emerging. Phase 2 redesign center-of-gravity: unify the per-kind axes (pilot resolution, preview dispatch, audience derivation) into single mechanisms that every kind uses.
+
 ---
 
-**B1 status:** **CLOSED** for Phase 1 purposes. 4 P0/P1 findings + 5 sub-findings via deep-read + 3 cross-cutting patterns. Ready to dispatch Wave B2 (composer + SECTION_RENDERERS + audience picker + substitute helpers cross-check).
+# WAVE B1 — GAPS (what I missed; surfaced via consolidation pass)
+
+## GAP-1 — Pilot mode resolution was not audited in B1
+
+**Finding GAP-1 (owned):** B1 covered schema + kind taxonomy + resolver layer. Pilot mode resolution touches multiple files (`get_digest_recipients` SQL function in DB, `useDigestRecipients.js` hook, `briefings/recipientFilter.js`, event/team/nudge resolvers' recipient queries). I treated it as a Wave B2 audience-picker surface and didn't query production for its current implementation. Chat-CC found it because the live send-attempt sweep surfaced "No recipients available" on rsvp_nudge with `pilotOnly:true`, then MCP-queried both code paths against production counts (digest = 5, filter = 0, `guardians.is_pilot_family` count = 0).
+
+**The discipline that would've caught it earlier** (folding into B2–B5 method): **for any cross-kind concept** (pilot resolution, audience derivation, error microcopy, preview dispatch, send-path retries), **query the live implementation per kind and check for divergence** before assuming the concept is uniformly wired. This is the operational form of AP #63 (PATTERN A) applied to audit method — same concept across surfaces is suspect until proven uniform.
+
+**Folded into Wave B2 dispatch:** the audience picker + recipient resolution category (originally Wave B2 item 5) absorbs pilot mode as a first-class audit target with explicit production MCP queries.
+
+---
+
+# Out-of-scope but flagged via consolidation pass
+
+## §S-1 — `game_recap` (singular) data bloat (chat-CC seed §6)
+
+Production query: `game_recap` (singular, distinct from `games_recap` per §13) has **15,770 rows, 15,759 trigger-created**, nearly all archived/empty. Per chat-CC's seed §6: possible runaway trigger / data hygiene issue. **Explicitly out of scope for the briefings audit + redesign arc** but flagged for a separate data-hygiene investigation. Do not bundle into Phase 2/3 PR sequence.
+
+---
+
+**B1 status:** **CLOSED** for Phase 1 purposes (consolidation-pass version). 5 P0/P1 findings (BUG A/B/C/D + Meta) + 5 sub-findings via deep-read + 1 surfaced gap (GAP-1, owned) + 4 cross-cutting patterns (B1-α/β/γ/δ) + 1 out-of-scope flag (§S-1). Ready to dispatch Wave B2 (composer + SECTION_RENDERERS + audience picker + substitute helpers cross-check) — pilot mode resolution folded into B2 audience-picker category per GAP-1 discipline.

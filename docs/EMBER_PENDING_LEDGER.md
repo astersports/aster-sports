@@ -3775,6 +3775,18 @@ Frank routed: full briefing system audit + redesign + ship. Surface scope = engi
 
 **B1 status:** CLOSED for Phase 1 purposes. Ready to dispatch Wave B2.
 
+**Consolidation pass — chat-CC live-state seed folded in (PR #673, same-day commit append):** Per §16.15 the L99 audit needs both code-read + live-state halves. Chat-CC's seed doc captures the production-truth half (live row counts, six send-attempt mapping, advisor checks); this audit doc references the seed by section rather than duplicating. Bug list grew from 3 → 5 in consolidation:
+- **BUG A fix-shape sharpened:** chat-CC leans narrow-predicate (drop `'draft'` from index); I leaned composer-reuse (B1-DEEP-1). Converged on: narrow-predicate = immediate fix; composer-reuse = Phase 2 structural target. Frank routes.
+- **BUG C (NEW):** preview composer gap — wizard offers `rsvp_nudge` (and likely other registry-dispatched kinds) but preview only knows 4 kinds. Ties to AP #28 dual-dispatch (RESOLVER_REGISTRY + legacy KIND_COMPOSERS).
+- **BUG D (NEW; I missed this in B1):** pilot mode has two implementations — digest path REDIRECTs (5 synthetic rows, correct); per-event/team/nudge paths FILTER on `guardians.is_pilot_family` which has 0 rows in production (broken). **AP #63 instance — PATTERN A extended to send-path recipient resolution** (not a new candidate; my initial framing of "AP #63-class candidate" was wrong — chat-CC corrected the AP #61 ↔ #63 inversion and the registration framing in a same-day exchange; doc fixed to reflect).
+- **GAP-1 (owned):** I treated pilot mode as a B2 audience surface and didn't query production for its implementation. Discipline going forward (folded into B2–B5 method): **for any cross-kind concept** (pilot, audience derivation, error microcopy, preview, send retries), MCP-query the live implementation per kind to check for divergence before assuming uniformity. Operational form of AP #63 applied to audit method.
+- **PATTERN B1-δ (NEW):** mature vs newer kind wiring inconsistency. Tournament kinds got the mature path; newer kinds each diverged on pilot resolution / preview / audience-type coercion. Behavioral-layer manifestation of AP #63's render-layer pattern.
+- **§S-1 (NEW out-of-scope flag from chat-CC seed §6):** `game_recap` (singular) has 15,770 rows (15,759 trigger-created). Possible runaway trigger / data hygiene issue. Explicitly out of the briefings redesign scope; flagged for a separate data-hygiene investigation.
+
+PRs: #672 (code-read half, mine) + #673 (live-state seed, chat-CC). Both merge separately; audit doc references the seed by section. No PR-A code lands until both PRs are in main and the full §16.15 doc set is consolidated.
+
+**AP #45** satisfied by this same-commit ledger append — guard self-test holds for the consolidation pass (ledger-reconcile-guard CI check fires on any `docs/AUDIT_*.md` diff requiring the ledger in the same commit).
+
 ---
 
 ### §4.BW — §17.5 audit P1 backlog closure arc complete (2026-06-02 PM)
