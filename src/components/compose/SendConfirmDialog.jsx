@@ -4,6 +4,7 @@ import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useAuth } from '../../context/AuthContext';
 import ModalBackground from '../shared/ModalBackground';
 import { ADMIN_BCC_EMAIL } from '../../lib/briefings/queueComposedMessagesBuilders';
+import { friendlySendError } from '../../lib/briefings/sendErrorMessage';
 
 const baseBtnStyle = {
   flex: 1, minHeight: 44, borderRadius: 10, fontSize: 15, fontWeight: 600,
@@ -99,7 +100,7 @@ export default function SendConfirmDialog({
         )}
         {error && (
           <div style={{ padding: 12, borderRadius: 10, fontSize: 14, backgroundColor: 'var(--as-danger-soft)', color: 'var(--as-text-primary)' }}>
-            Looks like that didn&rsquo;t go through. {error.message || 'Try again in a moment.'}
+            {friendlySendError(error) || `Looks like that didn't go through. ${error.message || 'Try again in a moment.'}`}
           </div>
         )}
 
