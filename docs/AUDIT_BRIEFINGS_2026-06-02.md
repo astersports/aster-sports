@@ -685,3 +685,89 @@ Phase 2 fix shape for BUG A is now sharper: the composer's flush() needs the sam
 ---
 
 **Wave B3 status:** CLOSED for Phase 1 purposes. 1 NEW P0 (B3.3 — academyCallup INSERT blocked by BUG B at the write boundary; BUG B has wider blast than B1 framing) + 1 P1 (B3.4 composer needs cron's defensive SELECT pattern for BUG A) + 1 mechanism refinement (B3.1 third pilot layer found) + 4 CLEAN confirmations (B3.2 unsubscribe symmetry, B3.5 token handlers, B3.6 cron separation, B3.7 webhook state machine). Ready to dispatch Wave B4 (admin UI — composer wizard + history + drafts).
+
+---
+
+# WAVE B4 — Admin UI: composer wizard + history + drafts (in progress 2026-06-03 AM)
+
+## B4.1 — Audience picker 4-way drift (resolves B2.7 silent-coercion mechanism)
+
+The "silent coercion" of `audience_type` for coach_roundup + family_guide (21 rows in production with wrong-but-allowed values per §1.2-DEEP-1) is now mechanically explained. There are **FOUR independent audience-type catalogs**, no single source of truth:
+
+| Source | Surface | Values |
+|---|---|---|
+| Production CHECK constraint | DB | `team, multi_team, tournament_attendees, event_attendees, org_all, custom` (6) |
+| `KIND_METADATA.defaultAudienceType` | `src/lib/briefings/kindMetadata.js` | 11 distinct values across 12 kinds (includes the 4 missing from CHECK + custom-defaults) |
+| `MODES` list in `AudiencePicker.jsx:22-29` | Wizard segmented picker | `team, multi_team, tournament_attendees, event_attendees, player_specific, org_all` (6 — same as CHECK plus `player_specific`, minus `custom`) |
+| `AUDIENCE_LABEL` in `StepAnchorAudience.jsx:32-39` | Display-name catalog | 7 values: includes `multi_event_attendees` (for locked-caption render) — missing `coach_self` and `family_specific` |
+
+**Mechanism of the silent coercion:**
+1. Admin picks `coach_roundup` (or `family_guide`) on StepKindPicker.
+2. `SET_KIND` action initializes `state.audience_type = kindMetadata.defaultAudienceType` = `coach_self` (or `family_specific`).
+3. StepAnchorAudience renders `AudiencePicker` (kind is not audienceLocked).
+4. `AudiencePicker.modesAvailableFor(kind)` falls through to `return MODES` for these kinds (line 43 — no kind-specific clause). MODES is the 6-value list that does NOT include `coach_self` or `family_specific`.
+5. The segmented picker shows 6 buttons. None is "active" (the current `coach_self` value doesn't match any rendered button).
+6. Admin clicks one of the offered buttons (typically "Single team" or "Multi-team"). `SET_AUDIENCE` fires; state's `audience_type` becomes the picked value.
+7. `flush()` INSERTs the picked value. CHECK accepts it (it's in MODES ⊂ CHECK).
+8. Production row persists with `audience_type='team'` or `'multi_team'` instead of `coach_self`/`family_specific`.
+
+**This is NOT silent coercion downstream of the wizard — it's the wizard offering admin a different set of choices than kindMetadata defaults to, forcing admin to pick from MODES rather than honoring the per-kind default.**
+
+PATTERN B1-α at full strength: the 4-way drift is the structural shape. Phase 2 redesign options for BUG B:
+- **(α) Single source of truth + parity test.** Pick ONE catalog (KIND_METADATA + a derived MODES) and assert via vitest that CHECK + MODES + AUDIENCE_LABEL all agree. Widen CHECK to match.
+- **(β) Refactor wizard to NOT show a picker for kinds with audience derivable from kind.** If kindMetadata default exists and isn't `null`, the wizard shows a locked-caption (like `audienceLocked: true` does today) but allows override only via an explicit "Change audience" affordance. Eliminates the coercion path.
+- **(γ) Keep the picker but offer the kindMetadata default as the active option.** If MODES doesn't contain the default, prepend it. Then admin sees `coach_self` highlighted and can keep or override — but the default is preserved unless explicitly changed.
+
+**Routing: Frank's call (Phase 2.D-3). Not picking.**
+
+## B4.2 — StepKindPicker is the BUG A entry point (sharpens B1.3-DEEP-1)
+
+`StepKindPicker.jsx:64-83` renders:
+- `DraftResumeRow` at the top (if `onResume` provided) — the "Resume an existing draft" affordance
+- Grid of `KindTile` components below — picking dispatches `SET_KIND` → goes to Step 2 with `draftId=null`
+
+**BUG A failure trigger:** auto-draft cron writes a `draft` row for this week's weekly_digest → admin lands at compose → DraftResumeRow + kind grid both visible → admin clicks the weekly_digest tile (not Resume) → composer state has no `draftId` → flush() INSERTs → 23505 unique violation.
+
+**Phase 2 fix-shape refinement (combines B1.3-DEEP-1 + B3.4):**
+- Adopt the cron's defensive SELECT-existing-then-INSERT pattern in `useBriefingDraft.flush()` (B3.4)
+- AND/OR detect "existing-anchor draft for this kind" in StepKindPicker → if present, suppress the kind tile in favor of forced-Resume route (BUG A's UI surface fix)
+
+Two non-mutually-exclusive layers. The simplest Phase 2 first PR is the flush() side (B3.4) — catches 23505 race-style; the StepKindPicker side prevents the user from even reaching the conflicting INSERT.
+
+## B4.3 — `useBriefingDraft.flush()` discipline confirmed clean (closes B1.3-DEEP-1 carryover)
+
+Re-read `useBriefingDraft.js:67-87`: `flush()` correctly distinguishes new vs existing via local `draftId` state:
+- `draftId === null` → INSERT (lines 72-78)
+- `draftId !== null` → UPDATE (lines 80-84)
+
+Clean discipline. The bug surface is exactly what B1.3-DEEP-1 + B4.2 frame: the INSERT path doesn't pre-check for existing-anchor drafts.
+
+**`useBriefingDraft.flush()` is NOT the bug — it does the right thing given the inputs.** The fix is upstream (StepKindPicker route + pre-check) or at the boundary (flush() pre-flight SELECT or catch 23505 specifically).
+
+## B4.4 — Composer wizard structure overview (orientation for B5 + Phase 2)
+
+`BriefingComposer.jsx` orchestrates a 4-step wizard:
+1. **StepKindPicker** — pick kind (or resume draft)
+2. **StepAnchorAudience** — anchor (event / tournament / team) + audience picker
+3. **StepBodySignoff** — body editor + signoff
+4. **StepSendConfirm** — review + send/schedule
+
+Composer state is managed by `composerReducer.js` (121 lines, 12 actions including SET_KIND, SET_ANCHOR, SET_AUDIENCE, SET_PILOT_TEST_SCOPE, GO_FORWARD, GO_BACK, CLEAR_ANCHOR, SET_BODY, SET_SIGNOFF, RESET). The state shape mirrors the comms_messages row shape for fields that persist (org_id, kind, anchor_kind, anchor_id, audience_type, audience_filter, body, signoff_message, pilot_test_scope_team_id).
+
+**No new findings from the orchestration layer; structure is sound.** AnchorPicker, AudiencePicker, KindTile, DraftResumeRow are all reasonable composables.
+
+## B4.5 — Wizard ↔ kindMetadata 12-kind alignment + KindTile usage
+
+`KIND_METADATA` in `src/lib/briefings/kindMetadata.js` has entries for all 12 production kinds + carries: `label`, `description`, `iconKey`, `defaultBody`, `defaultAudienceType`, `audienceLocked`, `category`, `disabled`. The wizard's `sortKinds` orders by `lastSentAt` (recent first). KindTile renders the description + last-sent timestamp.
+
+**Finding B4.5-CLEAN:** taxonomy + KindTile rendering aligned. No new findings.
+
+## B4.6 — History + drafts page (BriefingsHistoryPage + BriefingHistoryDetail)
+
+Not deeply audited in this pass — the surface is read-only display (list view + detail view + resend/forward action). The display fields rely on the same `comms_messages` schema. No bugs surfaced through the live-state seed for history; deferred to Wave B5 cross-cutting if needed.
+
+**Finding B4.6-DEFERRED:** history page audit deferred. If Phase 2 redesign touches the history surface (e.g., adds a "drafts" tab or filter by kind that surfaces the cold-surface kinds), bring it back in scope.
+
+---
+
+**Wave B4 status:** CLOSED for Phase 1 purposes. 1 NEW P0 mechanism (B4.1 — 4-way audience-type drift fully mechanically explains B2.7 silent coercion; 3 named redesign options α/β/γ) + 1 P1 sharpening (B4.2 — StepKindPicker is the BUG A UI surface; 2-layer Phase 2 fix shape) + 2 CLEAN confirmations (B4.3 flush() discipline sound; B4.5 kindMetadata + KindTile aligned) + 1 deferred (B4.6 — history page out of P1 scope unless redesign touches). Ready to dispatch Wave B5 (parent inbox + cross-cutting: microcopy, a11y, multi-tenant, PII).

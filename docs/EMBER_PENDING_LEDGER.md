@@ -3843,6 +3843,16 @@ Wave B2 status: CLOSED for Phase 1 purposes. 6 findings + 2 confirms + 1 cross-p
 
 Wave B3 status: CLOSED for Phase 1 purposes. 1 new P0 + 1 P1 + 1 mechanism refinement + 4 CLEAN confirmations. Ready to dispatch Wave B4 (admin UI).
 
+**Wave B4 (2026-06-03 AM) — admin UI: composer wizard + history + drafts (closed):**
+- **B4.1 — Audience-type 4-way drift fully resolves B2.7 silent coercion mechanism:** four independent catalogs with no single source of truth — production CHECK (6 values), KIND_METADATA defaultAudienceType (11 distinct), AudiencePicker MODES (6, ≠ CHECK), AUDIENCE_LABEL display catalog (7, partial overlap). Mechanism: admin picks `coach_roundup`/`family_guide` → state.audience_type initializes to kindMetadata default (`coach_self`/`family_specific`) → AudiencePicker MODES doesn't include those values → admin clicks one of the 6 offered modes (typically Single/Multi team) → SET_AUDIENCE flips state → flush() INSERTs the chosen value → CHECK accepts it → production has 21 rows with wrong-but-allowed values. Three named Phase 2 redesign options: (α) single source of truth + parity test, (β) refactor wizard to NOT show picker when kind has derivable audience, (γ) keep picker but make kindMetadata default the active option.
+- **B4.2 — StepKindPicker is the BUG A entry point:** auto-draft writes a draft → admin sees DraftResumeRow + kind grid → clicks weekly_digest tile (instead of Resume) → composer state has no draftId → flush() INSERTs → 23505. Phase 2 has two non-mutually-exclusive layers: (i) adopt cron's defensive SELECT + 23505-catch in flush() (B3.4); (ii) detect existing-anchor draft in StepKindPicker → force Resume route. Simplest first PR is (i).
+- **B4.3 — useBriefingDraft.flush() discipline CLEAN:** correctly distinguishes INSERT vs UPDATE via local draftId state. The bug isn't in flush(); the fix is upstream pre-check or at the boundary catch.
+- **B4.4 — Composer wizard structure sound:** 4-step flow (kind → anchor+audience → body+signoff → confirm) orchestrated via composerReducer (121L, 12 actions). State mirrors comms_messages persisted fields. No findings.
+- **B4.5 — Wizard ↔ kindMetadata 12-kind alignment CLEAN:** KIND_METADATA covers all 12 production kinds; KindTile renders consistently. Taxonomy aligned.
+- **B4.6 — History page deferred:** read-only display surface; no bugs surfaced through live-state seed. If Phase 2 redesign touches it, bring back in scope.
+
+Wave B4 status: CLOSED for Phase 1. 1 P0 mechanism (B4.1 — 3 redesign options) + 1 P1 sharpening (B4.2 — 2-layer fix shape) + 2 CLEAN + 1 deferred. Ready to dispatch Wave B5 (parent inbox + cross-cutting).
+
 ---
 
 ### §4.BW — §17.5 audit P1 backlog closure arc complete (2026-06-02 PM)
