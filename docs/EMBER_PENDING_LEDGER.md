@@ -3733,6 +3733,54 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
+### §4.BX — Briefings L99 audit + redesign locked (2026-06-03 PM)
+
+> **Decision (Frank, 2026-06-03):** "briefings gets the full L99 audit +
+> redesign." Surfaced when smoke-testing the rebrand Resend key — the key is
+> fine (proven via direct `pg_net` → Resend, `200` + email id, landed in the
+> pilot inbox), but six in-app send attempts mapped a broadly broken briefings
+> send surface.
+
+**Live-state findings (chat-CC half) captured in
+`docs/AUDIT_BRIEFINGS_L99_LIVESTATE_SEED.md`** — verified against prod
+`vrwwpsbfbnveawqwbdmj` 2026-06-03 PM. Five breakages, all on the "newer kind"
+side (tournament kinds work end-to-end):
+
+1. **BUG A** — `comms_messages_weekly_digest_unique` (PR #657 design, applied
+   `20260602195100`) collides with the compose flow: the auto-draft cron
+   pre-writes the week's draft; the composer INSERTs a new row → `23505`.
+   chat-CC leans **narrow predicate (drop `'draft'`)** over the composer-reuse
+   option; **Frank to route a-vs-b.**
+2. **BUG B** — `comms_messages_audience_type_check` is missing
+   `multi_event_attendees`, which is locked/shipped everywhere in code
+   (`kindMetadata.js:57`, `recipientFilter.js:49`, UI, tests, doc). Consequence:
+   `games_recap` has **never** sent in prod. Fix = widen constraint to match
+   code.
+3. **Pilot mode AP #63 split** — digest path REDIRECTS (synthetic per-team rows
+   → `pilot_test_recipient_email`, returns 5); `rsvp_nudge`/event/team paths
+   FILTER on `guardians.is_pilot_family` (=0) and return 0. One mechanism
+   needed across all kinds. Highest-value redesign fix.
+4. **BUG C** — preview panel supports only 4 kinds; wizard offers `rsvp_nudge`
+   → "No engine composer." Ties AP #28.
+5. **Meta** — composer leaks raw Postgres errors (`23505`/`23514`/"Save
+   failed") to admins; needs §16.3 translation, gated **after** A/B/pilot.
+
+**Side flag (out of redesign scope):** `game_recap` (singular) has 15,770 rows
+/ 15,759 trigger-created, mostly archived — possible runaway trigger; separate
+data-hygiene look.
+
+**Methodology:** §16.15 L99 template — all five elements (initial audit,
+deep-read addendum, AP cross-ref, per-role + **per-kind** wireframes,
+out-of-scope list) ship in the consolidated audit doc **before any PR-A code.**
+Lane split: chat-CC live-state (this seed) + terminal-CC code-read + doc
+assembly. Routed fixes (A schema, B schema, pilot unification, C preview, Meta
+microcopy) await the locked audit; none shipped tonight.
+
+**AP #45** satisfied by this same-PR ledger entry alongside the seed doc.
+**AP #49** satisfied by full-paste of the seed in chat in this turn.
+
+---
+
 ### §4.BW — §17.5 audit P1 backlog closure arc complete (2026-06-02 PM)
 
 > **MCP-apply reconciliation (chat-CC, 2026-06-02 evening).** The P1-batch migrations terminal-CC committed were applied to prod via Supabase MCP, with the same pre-flight + version-parity discipline as §4.BV. **5 applied + registered** under their file timestamps: `20260602195018` (cron retention + daily cleanup job), `20260602195535` (drop `roster_members.payment_status`), `20260602200223` (drop `pii_audit_log` admin SELECT policy), `20260602201521` (seed `app_secrets.resend_api_key` NULL slot), `20260602195100` (`weekly_digest` partial-UNIQUE). The weekly_digest index required reconciling **11 historical pilot test-sends** for `(LH org, period_start 2026-05-11)` — all `team_id=null`, 10×1-recipient + 1×5-recipient; chat-CC deleted the 10 single-recipient test rows (+ their `comms_message_recipients`) keeping the 5-recipient canonical row, with Frank's approval, then built the index. **1 deleted as false-positive:** `20260602200247_players_notes_pii_comment.sql` — `players.notes` does not exist in production; the COMMENT migration could not apply and would break `supabase db reset`, so the file was removed and the P1 recharacterized as false-positive in `AUDIT_WAVE_3_P1_BACKLOG_STATUS.md`. **Operator action still pending:** populate `app_secrets.resend_api_key` (edge functions fall back to `Deno.env.RESEND_API_KEY` until then).
