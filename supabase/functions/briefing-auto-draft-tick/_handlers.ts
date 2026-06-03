@@ -23,14 +23,24 @@ export async function handleGameCompleted(sb: SupabaseClient, trigger: Trigger, 
   const nowIso = now.toISOString();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
   const { data, error } = await sb.from("game_results")
-    .select("event_id, events!inner(id, team_id, start_at, teams!inner(org_id))")
+    .select("event_id, published_at, events!inner(id, team_id, start_at, teams!inner(org_id))")
     .not("published_at", "is", null).gt("published_at", sevenDaysAgo).lte("published_at", nowIso);
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "game_recap", error: error.message }];
   const rows = data || [];
   const orgRows = rows.filter((r: any) => r.events?.teams?.org_id === trigger.org_id);
   const out: HandlerResult[] = [];
   for (const r of orgRows as any[]) {
-    const anchorTime = r.events?.start_at ? new Date(r.events.start_at) : null;
+    // PR-A follow-up (proposal lifecycle): anchor the 14d window to the LATER
+    // of game date and score-publish. A score entered >14d after the game
+    // would otherwise yield expires_at = start_at + 14d already in the past ->
+    // born archived -> invisible in the Radar. published_at is within the last
+    // 7d (query filter), so GREATEST(start_at, published_at) + 14d is always
+    // >=7d in the future -> the proposal is born LIVE and actionable.
+    const startAt = r.events?.start_at ? new Date(r.events.start_at) : null;
+    const publishedAt = r.published_at ? new Date(r.published_at) : null;
+    const anchorTime = (startAt && publishedAt)
+      ? (publishedAt > startAt ? publishedAt : startAt)
+      : (publishedAt ?? startAt);
     const expiresAt = computeExpiryForKind("game_recap", anchorTime, now);
     const row = placeholderDraft(trigger, "game_recap", "event", r.event_id, r.events.team_id, "event_attendees", expiresAt, now);
     out.push(await tryInsert(sb, trigger, "game_recap", r.event_id, row));
