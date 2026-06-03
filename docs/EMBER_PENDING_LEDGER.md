@@ -3832,6 +3832,17 @@ PATTERN B1-δ refined: "supersession migration that stalls" is a specific AP #63
 
 Wave B2 status: CLOSED for Phase 1 purposes. 6 findings + 2 confirms + 1 cross-pattern observation + 1 new P3 (B2.8 asymmetric suppression queued for B3). Ready to dispatch Wave B3.
 
+**Wave B3 (2026-06-03 AM) — send path + auto-draft cron + token handlers (closed):**
+- **B3.1 — THIRD pilot mechanism found (refines B2.2):** `send-tournament-message:156-189` is a fail-loud safety guard at send time. Reads `is_pilot_family` from guardians for every recipient with non-null guardian_id; 403s if any non-pilot reaches dispatch. REDIRECT's synthetic rows (`guardian_id=NULL`) BYPASS this check (line 167 `.filter(Boolean)`), which is what makes the verification state work today. Cutover decision Phase 2.D-1 needs to reason about Layer 2 simultaneously — flipping `is_pilot_family=true` simultaneously stops resolvers filtering AND stops Layer 2 blocking. Not PATTERN A (different concept: safety vs recipient resolution); separate purpose.
+- **B3.2 — Unsubscribe suppression confirmed symmetric (closes B2.8-P3 CLEAN):** both bespoke send paths (`rsvpNudgeSend.js:91`, `academyCallupSend.js:89`) route final dispatch through `send-tournament-message`. Code-side suppression filter applies to all. Admin BCC bypass (guardian_id NULL) intentional.
+- **B3.3 — NEW P0 (BUG B extension at the write boundary):** `academyCallupSend.js:81` hard-codes `audience_type: 'player_specific'` on INSERT. Production CHECK rejects → every callup_notice send fails at INSERT (23514). Matches production data: 0 academy_callup_notice rows ever sent. BUG B has wider blast than B1 framing — confirmed at the application-write boundary, not just the schema-doc-drift one. rsvpNudgeSend hard-codes `event_attendees` which is in the CHECK; what blocks rsvp_nudge sends is the BUG D pilot-mode straggler, not BUG B.
+- **B3.4 — BUG A composer fix shape sharpened:** `briefing-auto-draft-tick` already handles BUG A race with a defensive SELECT-existing-then-INSERT-with-23505-handling pattern (lines 62-82). Composer's `flush()` lacks the equivalent pre-check. Phase 2 fix is now "adopt the cron's existing model" not "invent new pattern." Smaller redesign surface.
+- **B3.5 — Token handlers CLEAN:** rsvp + callup use SECURITY DEFINER RPCs (anonymous, `verify_jwt:false`); unsubscribe is idempotent + UPSERTs `guardian_email_preferences`; feedback is intentional 410 Gone tombstone per §4.AJ. All sound.
+- **B3.6 — Cron separation CLEAN:** `briefing-auto-draft-tick` handles 3 independent responsibilities (expire sweep + change-alert dispatch + trigger loop); `briefing-cron-dispatch` is separately for scheduled → queued → sent transitions. Clean separation.
+- **B3.7 — Resend webhook state machine CLEAN:** rank-based delivery_status transitions prevent out-of-order downgrades. Terminal states all rank 100. Sound.
+
+Wave B3 status: CLOSED for Phase 1 purposes. 1 new P0 + 1 P1 + 1 mechanism refinement + 4 CLEAN confirmations. Ready to dispatch Wave B4 (admin UI).
+
 ---
 
 ### §4.BW — §17.5 audit P1 backlog closure arc complete (2026-06-02 PM)

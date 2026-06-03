@@ -590,3 +590,98 @@ Across B2.5, B2.6, B2.7, three independent findings all reduce to the same struc
 ---
 
 **Wave B2 status (updated):** B2.1–B2.10 complete (BUG D mechanism + BUG C mechanism + DUAL-COMPOSE drift + audience picker confirms BUG B + substitute helper callsites + SECTION_RENDERERS catalog + dual-dispatch pattern observation). Remaining: B3 surfaces (send path, auto-draft cron, token handlers).
+
+---
+
+# WAVE B3 — Send path + auto-draft cron + token handlers (in progress 2026-06-03 AM)
+
+## B3.1 — Send-time pilot safety layer (THIRD pilot mechanism — refines B2.2)
+
+`send-tournament-message/index.ts:156-189` implements a fail-loud safety guard at send time. After unsubscribe suppression but before Resend dispatch:
+
+```ts
+if (pilotMode) {
+  const guardianIds = recipients.map((r) => r.guardian_id).filter(Boolean);
+  if (guardianIds.length) {
+    const { data: guardians } = await sb.from("guardians")
+      .select("id, is_pilot_family, email")
+      .eq("org_id", message.org_id).in("id", guardianIds);
+    const nonPilot = (guardians || []).filter((g) => !g.is_pilot_family);
+    if (nonPilot.length) {
+      return json({ error: `PILOT MODE: ${nonPilot.length} non-pilot guardians in queue ...`, ... }, 403);
+    }
+  }
+}
+```
+
+**Refines B2.2's mechanism story:** there are not 2 but **3 pilot layers** in production:
+- **Layer 1 — Resolver (per-kind):** Some resolvers route through `get_digest_recipients` RPC (digest path with REDIRECT + FILTER); others bypass and apply bare FILTER (academy_callup_notice, rsvp_nudge resolvers, _reminderSend).
+- **Layer 2 — send-time safety guard (this finding):** Reads `is_pilot_family` from `guardians` for every recipient. Fails LOUD with 403 if any non-pilot guardian reaches the dispatch boundary.
+- **Layer 3 — REDIRECT synthetic rows:** `guardian_id=NULL` rows from `get_digest_recipients` BYPASS the Layer 2 check (line 167: `.filter(Boolean)` strips nulls), which is what allows tournament + weekly_digest pilot sends to actually fire.
+
+**Implication for the cutover decision (Phase 2.D-1):** Layer 2 is the catch-all that prevents non-pilot leak today. Even if Phase 2 fix shape (a) "migrate the stragglers to use the RPC" lands, the cutover step ALSO needs Layer 2 to be reasoned about — because flipping `is_pilot_family=true` on real families simultaneously (1) lets resolvers stop filtering them and (2) lets Layer 2 stop blocking them. Today the system is "safe by Layer 2 fail-loud + REDIRECT bypass," not "safe by FILTER discipline."
+
+**This is not PATTERN A (not a divergent computation of one concept).** Layer 2 is a separate concept (send-time safety) with a different purpose (defense in depth). Documenting the layering doesn't change B2.2's mechanism analysis; it just maps the full pilot architecture for Phase 2.
+
+## B3.2 — Unsubscribe suppression symmetric (closes B2.8-P3 carryover)
+
+`send-tournament-message/index.ts:120-154` implements the code-side suppression filter:
+1. Read `guardian_email_preferences.unsubscribed_at` for all recipients in the queue
+2. Flip suppressed rows' `delivery_status` to `'unsubscribed'` (preserves audit trail)
+3. Drop them from the in-memory recipient list before Resend dispatch
+
+**Both bespoke send paths route through send-tournament-message:**
+- `rsvpNudgeSend.js:91` — `supabase.functions.invoke('send-tournament-message', ...)`
+- `academyCallupSend.js:89` — same.
+
+**B2.8-P3 closed CLEAN:** unsubscribe suppression IS symmetric across all briefing kinds. The chat-CC PR #673 §5 "raw DB errors reach admins" finding (Meta category) does NOT extend to suppression — that path is sound. Admin BCC rows (guardian_id NULL) intentionally bypass (line 124-128) — they're operator audit copies.
+
+## B3.3 — `academyCallupSend.js:81` hard-codes `audience_type='player_specific'` (BUG B extension — every callup send blocks)
+
+**Finding B3.3-P0 (BUG B extension — owned to surface in this audit):** The bespoke `sendAcademyCallupNotice` function (line 73-83) does `INSERT INTO comms_messages ... audience_type: 'player_specific'`. Since `player_specific` is NOT in the production CHECK constraint (per §1.2 + B2.7), the INSERT fails with 23514. **Every academy_callup_notice send attempt has failed at INSERT time, matching production data (0 callup_notice rows ever sent).**
+
+Confirms BUG B at the application-write layer. The wizard offers academy_callup_notice (locked default = `player_specific`), the resolver builds slices, the substitute helpers correctly substitute callup tokens — and then the INSERT dies. The production "0 rows" confirms this isn't intermittent; it's structural.
+
+`rsvpNudgeSend.js:84` is NOT affected — it hard-codes `audience_type: 'event_attendees'` which IS in the CHECK. So rsvp_nudge can INSERT; what blocks rsvp_nudge in production is the BUG D pilot mode straggler (resolver returns 0 recipients).
+
+## B3.4 — Auto-draft cron handles BUG A race with `race_resolved_other_tick_won`, composer doesn't have equivalent pre-check
+
+`briefing-auto-draft-tick/index.ts:62-82` implements a defensive auto-draft for weekly_digest:
+1. SELECT existing rows in active statuses for the period (line 65-67)
+2. If exists, return `{ skipped: "exists" }` — don't INSERT
+3. If not exists, INSERT
+4. If INSERT fails with 23505 (race), return `{ skipped: "race_resolved_other_tick_won" }` (line 78)
+
+**Finding B3.4-P1:** The cron handles BUG A race defensively. But `useBriefingDraft.js` `flush()` (admin composer path) does NOT do an equivalent SELECT-existing-for-anchor pre-check, and doesn't classify 23505 from `comms_messages_weekly_digest_unique` as "another path got there first" — it surfaces the raw error to the admin. **The auto-draft cron's defensive pattern is the model for the composer's missing pre-check.**
+
+Phase 2 fix shape for BUG A is now sharper: the composer's flush() needs the same SELECT-existing pattern the cron already has — adopt the model, don't invent a new one.
+
+## B3.5 — Token handlers (4) — all sound or intentionally tombstoned
+
+- **`rsvp-token-handler`** (123L, `verify_jwt:false`): anonymous handler; verifies via `verify_rsvp_token` SECURITY DEFINER RPC; standard pattern from `invite-parent`. Sound.
+- **`callup-token-handler`** (137L, `verify_jwt:false`): same pattern via `verify_callup_token`. Sound.
+- **`unsubscribe-handler`** (122L): UPSERTs `guardian_email_preferences.unsubscribed_at`; idempotent ("Already unsubscribed" message if existing). Sound.
+- **`feedback-token-handler`** (50L): explicit 410 Gone HTML tombstone per ledger §4.AJ (feedback shelved 2026-05-27). Intentional. Sound.
+
+**Finding B3.5-CLEAN:** all 4 token handlers are sound or intentionally tombstoned. No new findings.
+
+## B3.6 — Auto-draft + cron-dispatch separation clean (3 responsibilities in briefing-auto-draft-tick)
+
+`briefing-auto-draft-tick` does three things per tick:
+1. **Expire sweep** (line 52-60): mark `status='draft' AND expires_at < now` as `archived`. Independent of triggers.
+2. **Change-alert dispatch** (line 117): drain queued `event_notifications` to push/email. Independent of triggers.
+3. **Trigger loop** (line 119-136): iterate active `briefing_triggers`, dispatch per trigger_event, per-org collapse.
+
+`briefing-cron-dispatch` is a SEPARATE function for sending scheduled briefings (`status='scheduled' AND scheduled_for ≤ now`). Clean separation — auto-draft writes drafts; cron-dispatch transitions scheduled→queued→sent.
+
+**Finding B3.6-CLEAN:** separation of concerns honored. No findings.
+
+## B3.7 — Resend webhook receiver — rank-based state machine
+
+`resend-webhook-receiver/index.ts:52-58`: out-of-order webhook deliveries ranked so terminal states (`bounced`, `complained`, `unsubscribed`, `failed` — all rank 100) can't be downgraded by a later `delivered` (rank 20) or `opened` (rank 30). Sound state machine per the Wave 4.4-A2b refactor.
+
+**Finding B3.7-CLEAN.**
+
+---
+
+**Wave B3 status:** CLOSED for Phase 1 purposes. 1 NEW P0 (B3.3 — academyCallup INSERT blocked by BUG B at the write boundary; BUG B has wider blast than B1 framing) + 1 P1 (B3.4 composer needs cron's defensive SELECT pattern for BUG A) + 1 mechanism refinement (B3.1 third pilot layer found) + 4 CLEAN confirmations (B3.2 unsubscribe symmetry, B3.5 token handlers, B3.6 cron separation, B3.7 webhook state machine). Ready to dispatch Wave B4 (admin UI — composer wizard + history + drafts).
