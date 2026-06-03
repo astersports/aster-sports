@@ -3787,6 +3787,17 @@ PRs: #672 (code-read half, mine) + #673 (live-state seed, chat-CC). Both merge s
 
 **AP #45** satisfied by this same-commit ledger append — guard self-test holds for the consolidation pass (ledger-reconcile-guard CI check fires on any `docs/AUDIT_*.md` diff requiring the ledger in the same commit).
 
+**Methodology refinement — symptom signature vs mechanism + standing cross-kind query instruction (same-commit append):** Frank's substantive hold after the AP-inversion concession was that the AP tag being correct doesn't make the *mechanism* settled. PATTERN A is a symptom signature (a concept implemented divergently with contradictory truths); per-kind wiring is one of several candidate mechanisms behind any given instance. The §16.15 deep-read addendum's job is to TEST which mechanism produced the divergence, not to CONFIRM the leading hypothesis. If the audit promotes per-kind-wiring to settled, the deep-read becomes confirmation rather than testing — exactly the failure mode the addendum prevents.
+
+Audit doc updates (same commit):
+- New §3.f **standing instruction — cross-kind query discipline.** For any cross-kind concept (pilot resolution, audience derivation, error microcopy, preview dispatch, send-path retries, substitute helpers, anchor resolution), MUST query the live per-kind callsite (MCP or grep) and check for divergence — don't infer from the abstraction's name. Lessons collapsed: `players.notes` phantom-column miss + pilot-mode miss share the same root (assuming uniformity from naming).
+- New §3.g **symptom signature vs mechanism rule.** PATTERN A instances tag the symptom; mechanisms remain hypothesis until tested. Four candidate mechanisms named: per-kind wiring / shared-helper-bad-param / drifted-siblings / one-intended-other-bug. Each redesigns differently.
+- BUG D row updated: tag stays at "AP #63 instance — PATTERN A extended to send-path recipient resolution" (settled); mechanism flagged as hypothesis with four candidates explicitly listed for Wave B2 to test.
+- PATTERN B1-δ rewritten to separate "symptom signature (verified)" from "mechanism (hypothesis — what the deep-read tests)" sections.
+- Task descriptions B2–B5 updated to carry §3.f + §3.g discipline as method, not afterthoughts.
+
+This refinement keeps both true: BUG D is a confirmed AP #63 PATTERN A instance AND the mechanism behind it remains the hypothesis the audit tests. Not in tension.
+
 ---
 
 ### §4.BW — §17.5 audit P1 backlog closure arc complete (2026-06-02 PM)
