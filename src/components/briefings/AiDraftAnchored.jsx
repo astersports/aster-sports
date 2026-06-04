@@ -27,13 +27,17 @@ export default function AiDraftAnchored({ state, dispatch }) {
   const [resolveErr, setResolveErr] = useState(null);
   const entry = RESOLVER_REGISTRY[state.kind];
   const field = AI_DRAFT_FIELD[state.kind];
-  if (!entry || !field || !state.anchor_id) return null;
+  const anchor = entry ? entry.anchorFromState(state) : null;
+  // Anchor readiness is kind-shaped: game_recap -> eventId, tournament_* ->
+  // tournamentId, games_recap -> eventIds. Hide until the anchor is selected.
+  const anchorReady = !!(anchor && (anchor.eventId || anchor.tournamentId || anchor.eventIds?.length));
+  if (!entry || !field || !anchorReady) return null;
 
   const onDraft = async (mode) => {
     setResolveErr(null);
     let context;
     try {
-      ({ context } = await entry.resolve(entry.anchorFromState(state), { supabase, now: new Date() }));
+      ({ context } = await entry.resolve(anchor, { supabase, now: new Date() }));
     } catch (e) {
       setResolveErr(e?.message || 'Could not load the facts for this briefing.');
       return;
