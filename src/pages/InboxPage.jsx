@@ -12,8 +12,11 @@ import { useInboxList } from '../hooks/useInboxList';
 //   - no filter, no mark-as-read affordance, no in-app unsubscribe
 // All deferred to a follow-up wave once parent usage data exists.
 
+const errBox = { padding: 16, borderRadius: 10, backgroundColor: 'var(--as-danger-soft)', color: 'var(--as-danger)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 };
+const retryBtn = { minHeight: 36, padding: '0 14px', borderRadius: 8, border: 'none', backgroundColor: 'var(--as-danger)', color: 'var(--as-text-inverse)', fontSize: 13, fontWeight: 600, cursor: 'pointer' };
+
 export default function InboxPage() {
-  const { items, loading, error } = useInboxList();
+  const { items, loading, error, refetch } = useInboxList();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeId, setActiveId] = useState(() => searchParams.get('r') || null);
 
@@ -43,7 +46,10 @@ export default function InboxPage() {
       <h1 className="font-bold" style={{ color: 'var(--as-text-primary)', fontSize: 20, marginBottom: 4 }}>Inbox</h1>
       <div style={{ width: 32, height: 3, backgroundColor: 'var(--as-accent)', borderRadius: 2, marginBottom: 12 }} />
       {error ? (
-        <div role="alert" style={{ padding: 16, color: 'var(--as-danger)' }}>Could not load inbox. Try again.</div>
+        <div role="alert" style={errBox}>
+          <span>Couldn’t load your inbox. Try again in a moment.</span>
+          <button type="button" className="as-press" style={retryBtn} onClick={refetch}>Retry</button>
+        </div>
       ) : (
         <InboxList items={items} onSelect={openDetail} />
       )}

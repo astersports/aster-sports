@@ -66,6 +66,6 @@ describe('InboxList a11y (Phase 3 D-8 a-new)', () => {
 
   it('empty state announces via role=status', () => {
     render(<InboxList items={[]} onSelect={() => {}} />);
-    expect(screen.getByRole('status')).toHaveTextContent(/no briefings yet/i);
+    expect(screen.getByRole('status')).toHaveTextContent(/nothing here yet/i);
   });
 });

@@ -66,8 +66,8 @@ export default function InboxList({ items, onSelect }) {
 
   if (groups.length === 0) {
     return (
-      <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--as-text-tertiary)' }} role="status">
-        No briefings yet.
+      <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--as-text-tertiary)', fontSize: 14, lineHeight: 1.5 }} role="status">
+        Nothing here yet. Game recaps and weekly updates from your coaches will land here.
       </div>
     );
   }

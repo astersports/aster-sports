@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
@@ -27,37 +27,37 @@ export function useInboxList() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.resolve().then(async () => {
-      if (cancelled) return;
-      if (!guardianId) { setItems([]); setLoading(false); setError(null); return; }
-      setLoading(true); setError(null);
-      const { data, error: err } = await supabase
-        .from('comms_message_recipients')
-        .select(`id, message_id, opened_at, subject_rendered, teams_included,
-          comms_messages ( kind, subject, sent_at, anchor_kind, anchor_id )`)
-        .eq('guardian_id', guardianId)
-        .order('id', { ascending: false })
-        .limit(PAGE_SIZE);
-      if (cancelled) return;
-      if (err) { setError(err); setItems([]); setLoading(false); return; }
-      const flat = (data || []).map((r) => ({
-        id: r.id,
-        message_id: r.message_id,
-        kind: r.comms_messages?.kind || null,
-        subject: r.subject_rendered || r.comms_messages?.subject || '(no subject)',
-        sent_at: r.comms_messages?.sent_at || null,
-        opened_at: r.opened_at || null,
-        teams_included: r.teams_included || [],
-        anchor_kind: r.comms_messages?.anchor_kind || null,
-        anchor_id: r.comms_messages?.anchor_id || null,
-      }));
-      setItems(flat);
-      setLoading(false);
-    });
-    return () => { cancelled = true; };
+  const load = useCallback(async () => {
+    if (!guardianId) { setItems([]); setLoading(false); setError(null); return; }
+    setLoading(true); setError(null);
+    const { data, error: err } = await supabase
+      .from('comms_message_recipients')
+      .select(`id, message_id, opened_at, subject_rendered, teams_included,
+        comms_messages ( kind, subject, sent_at, anchor_kind, anchor_id )`)
+      .eq('guardian_id', guardianId)
+      .order('id', { ascending: false })
+      .limit(PAGE_SIZE);
+    if (err) { setError(err); setItems([]); setLoading(false); return; }
+    const flat = (data || []).map((r) => ({
+      id: r.id,
+      message_id: r.message_id,
+      kind: r.comms_messages?.kind || null,
+      subject: r.subject_rendered || r.comms_messages?.subject || '(no subject)',
+      sent_at: r.comms_messages?.sent_at || null,
+      opened_at: r.opened_at || null,
+      teams_included: r.teams_included || [],
+      anchor_kind: r.comms_messages?.anchor_kind || null,
+      anchor_id: r.comms_messages?.anchor_id || null,
+    }));
+    setItems(flat);
+    setLoading(false);
   }, [guardianId]);
 
-  return { items, loading, error };
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve().then(() => { if (!cancelled) load(); });
+    return () => { cancelled = true; };
+  }, [load]);
+
+  return { items, loading, error, refetch: load };
 }
