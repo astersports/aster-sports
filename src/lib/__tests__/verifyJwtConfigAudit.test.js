@@ -55,7 +55,9 @@ const FORBIDDEN_DENO_ENV_SECRET = /Deno\.env\.get\(["'][A-Z_]+_SECRET["']\)/;
 // suggest-briefing-closer (wave 5 PR 3b) — same pattern as
 // parse-tournament-schedule: reads anthropic_api_key from app_secrets
 // for the downstream LLM call, JWT-verified inbound.
-const EXCLUDE_FUNCTIONS = new Set(['send-tournament-message', 'parse-tournament-schedule', 'suggest-briefing-closer']);
+// briefing-ai-draft (AI-draft) — same pattern: reads anthropic_api_key from
+// app_secrets for the downstream Claude call, JWT-verified inbound (admin).
+const EXCLUDE_FUNCTIONS = new Set(['send-tournament-message', 'parse-tournament-schedule', 'suggest-briefing-closer', 'briefing-ai-draft']);
 
 function detectsSharedSecretAuth(source) {
   return SHARED_SECRET_PATTERNS.some((p) => p.test(source));

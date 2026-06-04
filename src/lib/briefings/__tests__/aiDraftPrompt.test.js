@@ -1,0 +1,73 @@
+// Pure-helper coverage for the briefing-ai-draft edge fn (AP #30 source-of-truth
+// mirror). Locks prompt assembly, fence-strip, em-dash guard, and the response
+// parse into the locked { body, card_summary, facts_used, warnings } shape.
+
+import { describe, expect, it } from 'vitest';
+import {
+  audienceFraming, buildAiDraftUserPrompt, factsToLines, FREE_FORM_KINDS,
+  parseAiDraftOutput, stripEmDashes, stripFences,
+} from '../aiDraftPrompt';
+
+describe('aiDraftPrompt helpers', () => {
+  it('FREE_FORM_KINDS is the v1 free-form set', () => {
+    expect(FREE_FORM_KINDS).toEqual(['announcement', 'custom_message']);
+  });
+
+  it('audienceFraming: team name vs all-families', () => {
+    expect(audienceFraming('11U Girls')).toBe('11U Girls families');
+    expect(audienceFraming(null)).toBe('all families');
+    expect(audienceFraming('   ')).toBe('all families');
+  });
+
+  it('factsToLines: flattens, drops empties, trims', () => {
+    expect(factsToLines({ a: 'x', b: '', c: null, d: ' y ' })).toEqual(['a: x', 'd: y']);
+    expect(factsToLines(null)).toEqual([]);
+  });
+
+  it('buildAiDraftUserPrompt: includes gist + facts + JSON instruction', () => {
+    const p = buildAiDraftUserPrompt({ kind: 'custom_message', framing: 'all families', factLines: ['Coach: Kenny'], gist: 'practice moved' });
+    expect(p).toContain('Draft a custom message briefing for all families.');
+    expect(p).toContain('What it needs to say: practice moved');
+    expect(p).toContain('- Coach: Kenny');
+    expect(p).toContain('minified JSON');
+    expect(p).toContain('NO em dashes');
+  });
+
+  it('buildAiDraftUserPrompt: no-facts path forbids invention', () => {
+    const p = buildAiDraftUserPrompt({ kind: 'announcement', framing: 'all families', factLines: [], gist: 'hi' });
+    expect(p).toContain('do not invent specifics');
+  });
+
+  it('stripFences: removes ```json fences', () => {
+    expect(stripFences('```json\n{"a":1}\n```')).toBe('{"a":1}');
+    expect(stripFences('{"a":1}')).toBe('{"a":1}');
+  });
+
+  it('stripEmDashes: maps em dash to colon (voice HARD DON\'T guard)', () => {
+    expect(stripEmDashes('Schedule update — 11U Girls')).toBe('Schedule update: 11U Girls');
+    expect(stripEmDashes('a—b')).toBe('a: b');
+  });
+
+  it('parseAiDraftOutput: parses the locked shape + applies em-dash guard', () => {
+    const out = parseAiDraftOutput('```json\n{"body":"Game 3 — go get it.","card_summary":"W vs Eagles","facts_used":[{"k":"Record","v":"5-2"}],"warnings":["venue missing"]}\n```');
+    expect(out).toEqual({
+      body: 'Game 3: go get it.',
+      card_summary: 'W vs Eagles',
+      facts_used: [{ k: 'Record', v: '5-2' }],
+      warnings: ['venue missing'],
+    });
+  });
+
+  it('parseAiDraftOutput: defaults missing optional keys', () => {
+    const out = parseAiDraftOutput('{"body":"hello"}');
+    expect(out).toEqual({ body: 'hello', card_summary: '', facts_used: [], warnings: [] });
+  });
+
+  it('parseAiDraftOutput: throws on non-JSON', () => {
+    expect(() => parseAiDraftOutput('not json at all')).toThrow('non-JSON');
+  });
+
+  it('parseAiDraftOutput: throws on missing body', () => {
+    expect(() => parseAiDraftOutput('{"card_summary":"x"}')).toThrow('missing body');
+  });
+});
