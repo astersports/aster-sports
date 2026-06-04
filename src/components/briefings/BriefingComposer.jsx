@@ -3,7 +3,8 @@
 // Bug fixes locked in wave 4.1b + 4.2-A-8d (weekly_digest short-circuit).
 
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useDraftUrlSync } from '../../hooks/useDraftUrlSync';
+import { useGameRecapTournament } from '../../hooks/useGameRecapTournament';
 import { useResetOnOrgChange } from '../../hooks/useResetOnOrgChange';
 import FullScreenForm from '../shared/FullScreenForm';
 import { useToast } from '../../context/useToast';
@@ -38,19 +39,8 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   const { recipients: recipientsTotal } = useDigestRecipients({ orgId, pilotOnly: false });
   const { staff: coaches } = useOrgStaff(orgId);
   const draft = useBriefingDraft(initialDraftId);
-  const [searchParams, setSearchParams] = useSearchParams();
-  // Thread the autosave draft_id into the URL (?draft=<id>) as soon as
-  // the first save lands. Combined with useRouteMemory, this is what lets
-  // a PWA cold-launch resume an in-progress draft instead of dumping the
-  // user back to the home screen. Replace (don't push) so the browser
-  // back-button doesn't accumulate noise as the id appears.
-  useEffect(() => {
-    if (!draft.draftId) return;
-    if (searchParams.get('draft') === draft.draftId) return;
-    const next = new URLSearchParams(searchParams);
-    next.set('draft', draft.draftId);
-    setSearchParams(next, { replace: true });
-  }, [draft.draftId, searchParams, setSearchParams]);
+  // ?draft=<id> URL sync so a PWA cold-launch resumes an in-progress draft.
+  useDraftUrlSync(draft.draftId);
   const [state, dispatch] = useReducer(composerReducer, buildInitial({ initialKind, initialAnchorKind, initialAnchorId, initialKindFilter }));
   const [busy, setBusy] = useState(false);
   const digest = useWizardDigestData({ orgId, enabled: state.kind === 'weekly_digest' });
@@ -108,21 +98,9 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
     anchorId: state.anchor_id, pilotModeOn: pilotModeEnabled,
   }), [recipients, recipientsTotal, state.audience_type, state.audience_filter, state.anchor_id, pilotModeEnabled]);
 
-  // GameRecapBody renders the league/bracket CTA field only when the
-  // anchor event has a parent tournament. Raw lookup tagged with anchorId
-  // so render-time derivation rejects stale results from a prior anchor.
-  const [tournamentLookup, setTournamentLookup] = useState(null);
-  useEffect(() => {
-    let cancelled = false;
-    if (state.kind !== 'game_recap' || state.anchor_kind !== 'event' || !state.anchor_id) return undefined;
-    Promise.resolve().then(async () => {
-      const { data } = await supabase.from('events').select('tournament_id').eq('id', state.anchor_id).maybeSingle();
-      if (cancelled) return;
-      setTournamentLookup({ anchorId: state.anchor_id, tournamentId: data?.tournament_id ?? null });
-    });
-    return () => { cancelled = true; };
-  }, [state.kind, state.anchor_kind, state.anchor_id]);
-  const hasParentTournament = state.kind === 'game_recap' && state.anchor_kind === 'event' && state.anchor_id && tournamentLookup?.anchorId === state.anchor_id && !!tournamentLookup?.tournamentId;
+  // game_recap's league/bracket CTA shows only when the anchor event has a
+  // parent tournament (stale-anchor-guarded lookup).
+  const hasParentTournament = useGameRecapTournament(state);
 
   const onSend = async () => {
     setBusy(true);
