@@ -12,15 +12,8 @@
 import { Loader2, Send, ShieldAlert } from 'lucide-react';
 import { useMemo } from 'react';
 import { fmtSchedule } from './briefingComposerHelpers';
-
-const AUDIENCE_LABEL = {
-  team: 'Team',
-  multi_team: 'Multiple teams',
-  tournament_attendees: 'Tournament attendees',
-  event_attendees: 'Event attendees',
-  player_specific: 'Specific player(s)',
-  org_all: 'All families',
-};
+import { AUDIENCE_LABEL } from '../../lib/briefings/audienceLabels';
+import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 
 function audienceValue(state) {
   const t = state.audience_type;
@@ -60,7 +53,7 @@ export default function StepSendConfirm({ state, audience, onSend, sending = fal
       <h3 style={heading}>Ready to send</h3>
       <div style={card} data-testid="send-summary">
         <span style={rowLabel}>Kind</span>
-        <span style={rowValue} data-testid="row-kind">{state.kind || '—'}</span>
+        <span style={rowValue} data-testid="row-kind">{KIND_METADATA[state.kind]?.label || state.kind || '—'}</span>
         <span style={rowLabel}>Audience</span>
         <span style={rowValue} data-testid="row-audience">{audienceValue(state)}</span>
         <span style={rowLabel}>Schedule</span>

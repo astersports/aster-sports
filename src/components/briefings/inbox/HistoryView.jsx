@@ -6,6 +6,7 @@ import { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquar
 import { useAuth } from '../../../context/AuthContext';
 import { useInboxHistory } from '../../../hooks/useInboxHistory';
 import { KIND_METADATA } from '../../../lib/briefings/kindMetadata';
+import { audienceLabel } from '../../../lib/briefings/audienceLabels';
 import EmptyState from './EmptyState';
 
 const ICON_MAP = { Bell, CalendarClock, CalendarDays, Flag, Medal, Megaphone, MessageSquare, Trophy };
@@ -50,7 +51,7 @@ export default function HistoryView({ filters, search, onCompose }) {
             <span style={iconWrap}><Icon size={20} strokeWidth={1.75} color="var(--as-text-tertiary)" /></span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={titleStyle}>{label}{r.subject ? ` · ${r.subject}` : ''}</div>
-              <div style={subStyle}>Sent {relTime(r.sent_at)} · {r.audience_type || '—'}</div>
+              <div style={subStyle}>Sent {relTime(r.sent_at)}{r.audience_type ? ` · ${audienceLabel(r.audience_type)}` : ''}</div>
             </div>
             <button type="button" onClick={() => navigate(`/admin/briefings/history/${r.id}`)} className="as-press" style={viewBtn}>View</button>
           </div>

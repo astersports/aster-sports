@@ -14,6 +14,7 @@ import { Star, X } from 'lucide-react';
 import { useRecentAudiences } from '../../../hooks/useRecentAudiences';
 import { useFavoriteAudiences } from '../../../hooks/useFavoriteAudiences';
 import { useOrgTeams } from '../../../hooks/useOrgTeams';
+import { audienceLabel } from '../../../lib/briefings/audienceLabels';
 
 const wrap = { display: 'flex', flexDirection: 'column', gap: 12 };
 const header = { fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' };
@@ -68,7 +69,7 @@ export default function RecentAndFavorites({ onApply }) {
               <div key={`${r.audience_type}-${r.last_sent}`} style={chip}>
                 <button type="button" style={chipBody} onClick={() => onApply(r.audience_type, r.audience_filter)} data-testid="recent-chip-body">
                   <span style={chipLabel}>{label}</span>
-                  <span style={chipMeta}>{r.audience_type}</span>
+                  {audienceLabel(r.audience_type) !== label && <span style={chipMeta}>{audienceLabel(r.audience_type)}</span>}
                 </button>
                 <button type="button" style={iconBtn} onClick={() => toggleFavorite(r.audience_type, r.audience_filter, label)} aria-label={isFav ? 'Remove favorite' : 'Save favorite'} data-testid="recent-star">
                   <Star size={16} strokeWidth={1.75} fill={isFav ? 'var(--as-accent)' : 'none'} color={isFav ? 'var(--as-accent)' : 'var(--as-text-tertiary)'} />
@@ -88,7 +89,7 @@ export default function RecentAndFavorites({ onApply }) {
                 <div key={f.id} style={chip}>
                   <button type="button" style={chipBody} onClick={() => onApply(f.audience_type, f.audience_filter)} data-testid="favorite-chip-body">
                     <span style={chipLabel}>{label}</span>
-                    <span style={chipMeta}>{f.audience_type}</span>
+                    {audienceLabel(f.audience_type) !== label && <span style={chipMeta}>{audienceLabel(f.audience_type)}</span>}
                   </button>
                   <button type="button" style={iconBtn} onClick={() => remove(f.id)} aria-label="Remove favorite" data-testid="favorite-x">
                     <X size={16} strokeWidth={1.75} color="var(--as-text-tertiary)" />
