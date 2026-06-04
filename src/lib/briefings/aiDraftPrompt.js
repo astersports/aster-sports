@@ -5,9 +5,13 @@
 // AP #30: this is the vitest-covered SOURCE OF TRUTH. The Deno mirror lives at
 // supabase/functions/briefing-ai-draft/_helpers.ts. Change BOTH in one commit.
 
-// v1 free-form kinds (AI-1). Anchored kinds (AI-2) resolve facts server-side
-// and are gated separately; see the edge fn handler.
+// v1 free-form kinds (AI-1). Anchored kinds (AI-2) resolve facts CLIENT-side
+// (reusing the useResolverPreview / RESOLVER_REGISTRY path the preview already
+// runs) and pass them to the fn as the free-form shape — so no resolver runs in
+// Deno (AI-2 reconciliation of design seam 4b against deploy reality).
 export const FREE_FORM_KINDS = ['announcement', 'custom_message'];
+export const ANCHORED_KINDS = ['game_recap', 'games_recap', 'weekly_digest', 'tournament_recap', 'tournament_prelim'];
+export const AI_DRAFT_KINDS = [...FREE_FORM_KINDS, ...ANCHORED_KINDS];
 
 // Salutation/framing string from the audience. team_id is FRAMING only (per the
 // engine seam decision 4d), never a facts-scoping key.
