@@ -1,8 +1,9 @@
 // Track-R R-2 - free-form one-screen compose. Type an announcement, pick the
 // audience, preview, send. No 4-step wizard. Reuses the tested submitBriefing +
 // useBriefingDraft + PreviewPanel, so the send path is identical to the wizard's
-// legacy path (compose -> queueRecipients -> send-tournament-message). The AI
-// "Draft" button lands in the next slice.
+// legacy path (compose -> queueRecipients -> send-tournament-message). AI-1: the
+// "Draft with AI" control fills the Message body from the briefing-ai-draft edge
+// fn (free-form lane); Send stays the unchanged submitBriefing path.
 
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -15,6 +16,8 @@ import { useDigestRecipients } from '../hooks/useDigestRecipients';
 import { useBriefingDraft } from '../hooks/useBriefingDraft';
 import { submitBriefing } from '../components/briefings/composerSubmit';
 import { friendlySendError } from '../lib/briefings/sendErrorMessage';
+import { useAiDraft } from '../hooks/useAiDraft';
+import AiDraftControls from '../components/briefings/AiDraftControls';
 import PreviewPanel from '../components/briefings/PreviewPanel';
 
 const page = { display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 600, margin: '0 auto', padding: 16 };
@@ -36,10 +39,13 @@ export default function BriefingNewPage() {
   const { teams } = useOrgTeams();
   const { recipients } = useDigestRecipients({ orgId, pilotOnly: pilotModeEnabled });
   const draft = useBriefingDraft(null);
+  const ai = useAiDraft();
 
   const [audience, setAudience] = useState('org_all'); // 'org_all' | team_id
   const [headline, setHeadline] = useState('');
   const [bodyText, setBodyText] = useState('');
+  const [gist, setGist] = useState('');
+  const [hasDrafted, setHasDrafted] = useState(false);
   const [testOnly, setTestOnly] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -56,6 +62,12 @@ export default function BriefingNewPage() {
   }, [audience, headline, bodyText, testOnly, pilotModeEnabled]);
 
   const canSend = bodyText.trim().length > 0 && !busy;
+
+  const onDraft = async (mode) => {
+    const aud = audience !== 'org_all' ? { team_id: audience } : {};
+    const r = await ai.draft({ kind: 'announcement', mode, gist, facts: headline ? { headline } : undefined, audience: aud });
+    if (r) { setBodyText(r.body); setHasDrafted(true); }
+  };
 
   const onSend = async () => {
     setBusy(true);
@@ -87,6 +99,11 @@ export default function BriefingNewPage() {
         <label htmlFor="r2-head" style={label}>Headline (optional)</label>
         <input id="r2-head" type="text" value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="Spring season wrap-up" style={input} />
       </div>
+
+      <AiDraftControls
+        gist={gist} onGistChange={setGist} onDraft={onDraft}
+        loading={ai.loading} warnings={ai.warnings} error={ai.error} hasDrafted={hasDrafted}
+      />
 
       <div>
         <label htmlFor="r2-body" style={label}>Message</label>
