@@ -16,9 +16,15 @@ const inputStyle = { width: '100%', minHeight: 88, padding: 10, borderRadius: 10
 const btnPrimary = { width: '100%', minHeight: 44, borderRadius: 10, backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 15, fontWeight: 600, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' };
 const btnSecondary = { ...btnPrimary, backgroundColor: 'var(--as-bg-secondary)', color: 'var(--as-text-secondary)' };
 
-function fmt(ts) {
-  if (!ts) return '';
-  return new Date(ts).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
+// End-aware: render the full start–end range so an end-time-only change is
+// visible (the old start-only fmt showed "6:30 → 6:30" for a 6:30→8:30 end
+// change). diff.before/after carry end_at (buildSaveDiff).
+function fmtRange(start, end) {
+  if (!start) return '';
+  const startStr = new Date(start).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
+  if (!end) return startStr;
+  const endStr = new Date(end).toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
+  return `${startStr} – ${endStr}`;
 }
 
 export default function ScheduleChangeComposer({ event, diff, onClose, onDone }) {
@@ -64,9 +70,9 @@ export default function ScheduleChangeComposer({ event, diff, onClose, onDone })
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 600, margin: '0 auto', padding: 16 }}>
         <div style={{ padding: 14, border: '1px solid var(--as-border-default)', borderRadius: 10, backgroundColor: 'var(--as-bg-card)' }}>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--as-text-tertiary)', marginBottom: 6 }}>Previous</div>
-          <div style={{ fontSize: 14, color: 'var(--as-text-secondary)', textDecoration: 'line-through' }}>{fmt(diff?.before?.start_at)}{diff?.before?.location ? ` · ${diff.before.location}` : ''}{diff?.before?.opponent ? ` · vs ${diff.before.opponent}` : ''}</div>
+          <div style={{ fontSize: 14, color: 'var(--as-text-secondary)', textDecoration: 'line-through' }}>{fmtRange(diff?.before?.start_at, diff?.before?.end_at)}{diff?.before?.location ? ` · ${diff.before.location}` : ''}{diff?.before?.opponent ? ` · vs ${diff.before.opponent}` : ''}</div>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--as-text-primary)', marginTop: 10, marginBottom: 6 }}>Updated</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-text-primary)' }}>{fmt(diff?.after?.start_at)}{diff?.after?.location ? ` · ${diff.after.location}` : ''}{diff?.after?.opponent ? ` · vs ${diff.after.opponent}` : ''}</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-text-primary)' }}>{fmtRange(diff?.after?.start_at, diff?.after?.end_at)}{diff?.after?.location ? ` · ${diff.after.location}` : ''}{diff?.after?.opponent ? ` · vs ${diff.after.opponent}` : ''}</div>
         </div>
         <label style={{ display: 'block' }}>
           <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--as-text-tertiary)', display: 'block', marginBottom: 6 }}>Signoff message (optional)</span>
