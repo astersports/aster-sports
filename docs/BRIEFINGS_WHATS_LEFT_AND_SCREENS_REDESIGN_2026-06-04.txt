@@ -1,0 +1,208 @@
+==============================================================================
+BRIEFINGS — WHAT'S LEFT + SCREENS/OPTIONS REDESIGN
+==============================================================================
+Author:   terminal-CC (repo/UI lane)
+Date:     2026-06-04
+For:      Claude AI architect (design/routing lane)
+Status:   Action doc. Frank's concern: the L99/Track-R redesign cleaned up some
+          surfaces but MISSED its main purpose — simplifying the compose SCREENS
+          and OPTIONS. This doc proves the gap, inventories what's left, and lays
+          out the screens redesign for routing.
+Grounding: App.jsx routes + the compose components, verified 2026-06-04. Frank's
+          screenshots IMG_2194–96 (the "Compose · Kind" wizard). Reconciled
+          against the current chat.ai FULL REDESIGN doc (supersedes older TXTs).
+Rule:     Live state beats any doc on conflict (query MCP).
+
+==============================================================================
+PART A — THE SCREENS/OPTIONS REDESIGN (Frank's main concern)
+==============================================================================
+
+A0. THE CONCERN, STATED PLAINLY
+The L99/Track-R redesign ADDED clean surfaces (Radar, a one-screen composer,
+the coach view, the parent inbox) but never RETIRED or SIMPLIFIED the old
+compose flow. The result is MORE fragmentation, not less: there are now TWO
+composers living side by side, and the original messy one is untouched. The
+stated purpose — "clean up the screens and the options" — did not ship.
+
+A1. CURRENT SCREEN MAP (grounded in src/App.jsx)
+  /admin/briefings            -> redirects to /radar
+  /admin/briefings/radar      -> BriefingsRadarPage   (proposal cards + "+ New")
+  /admin/briefings/new        -> BriefingNewPage       (R-2 ONE-SCREEN composer,
+                                                        free-form; AI-1 lives here)
+  /admin/briefings/compose    -> BriefingsComposePage  (the 4-STEP WIZARD,
+                                                        BriefingComposer; AI-2 here)
+  /admin/briefings/history    -> sent list + detail
+  /inbox                      -> parent-facing inbox (#690)
+  /team-briefings             -> coach read-only view (#707)
+
+  => TWO composers: /new (one-screen) AND /compose (4-step wizard). Plus Radar.
+     Three different "start a briefing" mental models.
+
+A2. THE WIZARD STEP 1 IS OVERLOADED (IMG_2194–96 = /compose)
+  "Compose · Kind", Step 1 of 4, stacks THREE jobs on one screen:
+    (1) Send-now / Schedule-for-later radio (ScheduleForLaterPicker, shown on
+        EVERY step via BriefingComposer).
+    (2) "Resume a draft?" list (DraftResumeRow) — 5 in-progress drafts.
+    (3) The kind grid (StepKindPicker) — ALL 12 kinds, 2-col tiles, each with
+        icon + title + description + "Last sent Xd ago · N sent".
+  Then a disabled "Next". You must scroll past send-mode + 5 drafts + 12 tiles
+  before you've decided what you're doing.
+
+A3. WHAT L99/TRACK-R DID vs MISSED
+  DID (real wins, keep them):
+    - Radar replaced the old briefings list (#704).
+    - One-screen free-form compose (#706) — the RIGHT direction.
+    - Coach read-only view (#707); parent inbox minimal (#690); RLS role-scoping
+      (#710); audience labels (#703); a pile of engine bug fixes.
+  MISSED (the core purpose):
+    - Never unified the two composers. /new and /compose both exist.
+    - Never simplified the kind picker (still all 12 kinds, flat, dense).
+    - Never de-overloaded Step 1 (send-mode + resume + tiles all co-located).
+    - "Resume a draft" duplicates Radar (the #690-vs-/inbox overlap pattern,
+      now repeated inside the wizard).
+    - 4 steps for what is often a 1-screen task.
+  Net: the redesign added a clean surface NEXT TO the messy one instead of
+  replacing it. That is the gap.
+
+A4. THE SCREEN/OPTIONS PROBLEMS (the redesign target list)
+  P1. Two composers -> one (cognitive split + double maintenance + drift risk).
+  P2. Kind picker shows all 12 flat; no grouping, no progressive disclosure.
+  P3. Step-1 overload (3 jobs on the kind screen).
+  P4. Resume-draft surface duplicates Radar.
+  P5. 4 steps; steps 1–2 (kind, anchor+audience) are often trivially derivable.
+  P6. Options drift (audience picker per D-2; send-mode placement; test-only
+      toggle placement) — scattered, inconsistent between /new and /compose.
+
+A5. REDESIGN GOALS
+  G1. ONE compose surface and one mental model.
+  G2. Kind selection that is FAST: grouped + usage-ranked + progressive (don't
+      show 12 equal tiles; surface the 3–4 the admin actually uses).
+  G3. Each screen/step does ONE job. Send-mode and resume do NOT live on the
+      kind picker.
+  G4. No duplicate draft surfaces — drafts live in Radar (one place).
+  G5. Options consolidated + identical wherever compose happens.
+
+A6. PROPOSED DIRECTIONS (architect routes one)
+  OPTION A (RECOMMENDED) — Collapse to one composer.
+    Retire the 4-step wizard (/compose). Extend the one-screen composer (/new)
+    to ALL kinds: the screen renders the kind's fields + the AI Draft control +
+    inline preview + send. Kind selection becomes a lean entry ("What do you
+    want to send?") — grouped + usage-ranked, no send-mode/resume clutter.
+    Send-mode moves to the send action; resume moves to Radar.
+    + Truest to "clean up the screens." One model. Kills P1–P5 at once.
+    + The one-screen model + AI draft already work for free-form (AI-1) and the
+      anchored body editors already exist (StepBodySignoff bodies) — this is a
+      re-host, not a rebuild.
+    - Biggest single change; needs a careful per-kind field audit + the
+      schedule/test/audience options re-homed. §16.15 audit before PR A.
+
+  OPTION B — Keep a wizard, radically simplify.
+    Merge steps 1+2 (kind + anchor/audience derive together), group the kinds,
+    move resume to Radar, move send-mode to the send step. Two composers remain.
+    + Lower blast radius.
+    - Leaves P1 (two composers) unsolved; half-measure again.
+
+  OPTION C — Radar-first.
+    Compose always starts from a Radar card (a proposal or a "+ New" intent);
+    no standalone kind grid. The kind is chosen inside a single compose sheet.
+    + Boldest simplification; one entry point (Radar).
+    - Largest IA change; needs Radar to cover the free-form/manual case well.
+
+  terminal-CC lean: OPTION A. It is the only one that actually delivers the
+  stated purpose (one clean compose surface), and the pieces to build it already
+  exist. B is another half-measure; C is a bigger IA bet than the problem needs.
+
+A7. KIND GROUPING (for G2, any option)
+  Recaps:      game_recap, games_recap, tournament_recap
+  Schedule:    schedule_change, tournament_prelim, weekly_digest
+  Outreach:    announcement, custom_message, rsvp_nudge, academy_callup_notice
+  Team-facing: coach_roundup, family_guide
+  Rank within group by recent usage (useKindUsage already provides this).
+
+A8. METHODOLOGY (§16.15 — before any PR A code)
+  (a) Initial audit pass of the full compose mount tree (both composers).
+  (b) Deep-read addendum (catch what (a) missed).
+  (c) Anti-pattern cross-reference (esp. #42 parallel-system, #51 dead-mount on
+      whichever composer is retired, #6 file-cap on the unified screen).
+  (d) Per-role wireframes (admin compose; the coach/parent surfaces are
+      out-of-scope but note the seams).
+  (e) Explicit out-of-scope list.
+  The audit doc is the artifact; the PR sequence implements the locked decisions.
+
+==============================================================================
+PART B — WHAT'S LEFT (full inventory, reconciled 2026-06-04)
+==============================================================================
+Reconciled against the chat.ai FULL REDESIGN doc + this session's AI-draft work.
+Much of the old D-1…D-8 Phase-2 set ALREADY SHIPPED (engine lane): audience
+CHECK widen (#677), D-5(a) RPC pilot (#685), D-7 pilot parity (#687), D-6(a)
+parent inbox (#690), D-8 inbox a11y (#691), RLS role-scoping (#710). Do NOT
+re-plan those. The live remainder:
+
+B1. BUILD — UI/engine lane (terminal-CC)
+  - AI-2 kind adds: games_recap, tournament_recap (PAUSED mid-build, nothing
+    committed; same coach_note slot — quick). weekly_digest / tournament_prelim
+    deferred (logistics-structured, no single narrative slot).
+  - SCREENS/OPTIONS redesign (PART A) — the big one; awaiting routing.
+  - Recap default audience -> TEAM (resolver default change).
+  - Token kinds (rsvp_nudge, academy_callup_notice): Class-2 chip preview fix +
+    stand up the per-recipient pilot-test path.
+  - B2 cancellation proposal: cron handler + end-aware cancellation card, then
+    retire the cancellation auto-email (the last auto-email exception). Frank GO.
+  - R-4 parent inbox: reconcile #690 + /inbox is the canonical surface; extend
+    it (ungated polish now; mark-as-read / in-app unsubscribe deferred). The
+    RLS gate it waited on (#710) has landed.
+  - coach_roundup compose/SEND path is underspecified (only the coach READ view
+    is specced) — needs a path before it ships to families.
+  - Body em-dash sweep: #712 fixed SUBJECTS; some deterministic BODY lines still
+    use em dashes (e.g. gamesRecap per-game line). Small cleanup.
+
+B2. AI-DRAFT (the moat — shipped this session, tuning is Frank's)
+  - briefing-ai-draft edge fn (free-form + anchored-via-facts) DEPLOYED.
+  - AI-1 (free-form Draft) LIVE; AI-2 (game_recap) LIVE.
+  - LEFT: Frank smokes both + tunes voice_config.ai_draft_profile against his
+    hand-written briefings until the drafts read like him. This is where the
+    quality (the moat) is won; no further plumbing.
+
+B3. FRANK GATES (do not cross without explicit GO)
+  - B2 cancellation auto-email retirement (mirror #680).
+  - DEF-3 pilot REDIRECT -> FILTER cutover (per-tenant, strategic).
+  - AUTO-SEND graduation (post-pilot; auto-COMPOSE is on, auto-SEND is not).
+  - 3b purge (~17k archived game_recap rows).
+  - Coach WRITE-scope tighten to admin-only (pre-cutover; RLS split kept the
+    admin+coach predicate on writes).
+
+B4. INFRA / PREREQ (outside the feature build)
+  - Deliverability: the 3-email/hour free-SMTP cap is a CUTOVER prerequisite
+    (DEF-11). Must be tracked + resolved before real-family send.
+
+B5. CONFIRMS (cheap verifications, not builds)
+  - DEF-10 3a hygiene reversibility/status.
+  - DEF-13 full parity-test set + the add-a-kind recipe exist (only D-7 confirmed).
+  - DEF-4 composer-side idempotency (one flow resumes the existing proposal, no
+    duplicate).
+
+B6. DEFERRED (explicit non-goals now)
+  - Audience dropdown (cut; recap default -> TEAM instead).
+  - DEF-15 per-org enabled_features (tenant #2).
+  - weekly_digest / tournament_prelim AI-2.
+  - 6-A parent-invite QR (SHELVED — email invite stands).
+
+==============================================================================
+PART C — ROUTING ASK
+==============================================================================
+1. SCREENS REDESIGN (Part A): pick Option A / B / C. terminal-CC leans A. On
+   your pick, terminal-CC runs the §16.15 audit + per-role wireframes, posts the
+   audit doc, THEN sequences PRs. This is the "clean up the screens and options"
+   work that L99 missed.
+2. PRIORITY: does the screens redesign jump ahead of the B1 build remainder
+   (AI-2 kinds, token kinds, B2 cancellation, R-4), or interleave?
+3. GATES (B3) stay yours — name any you want to open now (esp. B2 cancellation
+   auto-email retire, which is otherwise build-ready).
+
+Tracked: the kind-picker simplification is logged in EMBER_PENDING_LEDGER §4.0
+(PR #720) so it does not slip again.
+
+==============================================================================
+END. Part A is the gap Frank caught (screens/options not simplified); Option A
+is the fix. Part B is the honest remainder. Route Part C and terminal-CC moves.
+==============================================================================
