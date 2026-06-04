@@ -55,6 +55,7 @@ const EXEMPT = new Set([
   '/forgot-password',    // Linked from LoginPage form (text content varies)
   '/',                   // Root / home default; always reachable
   '/records-preview',    // <Navigate to="/records"> destination; intentional alias
+  '/admin/briefings/radar', // <Navigate to> destination from the /admin/briefings redirect (Track-R R-1 entry); reached via the redirect, not a direct Link
 ]);
 
 function extractRoutePaths(appSource) {
