@@ -38,6 +38,7 @@ const KNOWN_JWT_VERIFIED_FUNCTIONS = new Set([
   'parse-tournament-schedule',
   'send-tournament-message',
   'suggest-briefing-closer',
+  'briefing-ai-draft',
 ]);
 
 function listFunctionDirs() {
