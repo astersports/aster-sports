@@ -42,7 +42,10 @@ const iconWrap = {
 };
 const labelStyle = {
   fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)',
-  lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+  // 2-line clamp instead of single-line truncate: a kind's NAME must never
+  // clip (the old nowrap+ellipsis showed "Tournament bri..." in a 2-col tile).
+  lineHeight: 1.2, display: '-webkit-box', WebkitLineClamp: 2,
+  WebkitBoxOrient: 'vertical', overflow: 'hidden',
 };
 const descStyle = {
   fontSize: 12, fontWeight: 400, color: 'var(--as-text-secondary)',
