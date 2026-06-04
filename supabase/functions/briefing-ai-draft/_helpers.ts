@@ -19,21 +19,26 @@ export function factsToLines(facts: Record<string, unknown> | null): string[] {
 }
 
 export function buildAiDraftUserPrompt(
-  { kind, framing, factLines, gist }:
-    { kind: string; framing: string; factLines: string[]; gist?: string },
+  { kind, framing, factLines, gist, narrativeOnly }:
+    { kind: string; framing: string; factLines: string[]; gist?: string; narrativeOnly?: boolean },
 ): string {
   const parts = [`Draft a ${String(kind).replace(/_/g, " ")} briefing for ${framing}.`];
+  if (narrativeOnly) {
+    parts.push("Write ONLY the coach's voice narrative: a short opening hook, a reflective line or two on what it meant and the effort, and a warm or rally close, then sign off by name. The scores, stats, and schedule already render in a structured block above your text, so do NOT restate raw scores, standings, or stat lines.");
+  }
   if (gist && gist.trim()) parts.push(`What it needs to say: ${gist.trim()}`);
   if (factLines && factLines.length) {
-    parts.push("Facts (use VERBATIM; never invent or alter a number, name, time, or venue; if a needed fact is missing, leave a clear blank and add a warnings entry):");
+    parts.push(narrativeOnly
+      ? "Facts for context (already shown structurally above; write the narrative around them, do not list them):"
+      : "Facts (use VERBATIM; never invent or alter a number, name, time, or venue; if a needed fact is missing, leave a clear blank and add a warnings entry):");
     parts.push(factLines.map((l) => `  - ${l}`).join("\n"));
   } else {
     parts.push("No structured facts were provided. Write from the gist only and do not invent specifics (scores, times, venues, names).");
   }
   parts.push(
-    "Follow the structure template for this kind from the voice profile, and sign off by name. "
+    (narrativeOnly ? "" : "Follow the structure template for this kind from the voice profile, and sign off by name. ")
     + "Return ONLY minified JSON (no markdown, no code fence) with exactly these keys: "
-    + "body (the full briefing prose), card_summary (one ~10-second summary line), "
+    + `body (the ${narrativeOnly ? "narrative prose" : "full briefing prose"}), card_summary (one ~10-second summary line), `
     + 'facts_used (array of {"k","v"} label/value pairs you relied on), '
     + "warnings (array of short strings for any missing fact or caveat). "
     + "Hard rules: NO em dashes (use periods, commas, colons, or the middot/pipe), no corporate jargon.",

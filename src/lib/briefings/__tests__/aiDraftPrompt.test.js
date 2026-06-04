@@ -35,6 +35,14 @@ describe('aiDraftPrompt helpers', () => {
     expect(p).toContain('NO em dashes');
   });
 
+  it('buildAiDraftUserPrompt: narrativeOnly writes voice prose, drops the full-template instruction', () => {
+    const p = buildAiDraftUserPrompt({ kind: 'game_recap', framing: '11U Girls families', factLines: ['Final: 42-38 (W)'], narrativeOnly: true });
+    expect(p).toContain("Write ONLY the coach's voice narrative");
+    expect(p).toContain('do NOT restate raw scores');
+    expect(p).toContain('narrative prose');
+    expect(p).not.toContain('Follow the structure template');
+  });
+
   it('buildAiDraftUserPrompt: no-facts path forbids invention', () => {
     const p = buildAiDraftUserPrompt({ kind: 'announcement', framing: 'all families', factLines: [], gist: 'hi' });
     expect(p).toContain('do not invent specifics');
