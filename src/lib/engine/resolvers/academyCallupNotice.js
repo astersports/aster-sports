@@ -50,7 +50,11 @@ async function fetchSlices(supabase, orgId, playerId, kidFirstName, receivingTea
   // D-5 scope and tracked separately.
   let allowedGuardianIds = null;
   if (pilotOnly) {
-    const { data: rpcRows = [] } = await supabase.rpc('get_digest_recipients', { p_org_id: orgId, p_pilot_only: true });
+    // AP #36 — destructure error alongside data so a failed RPC doesn't
+    // silently produce a false-empty allowlist (which would drop every
+    // recipient and look like a normal 0-recipient result).
+    const { data: rpcRows = [], error: rpcErr } = await supabase.rpc('get_digest_recipients', { p_org_id: orgId, p_pilot_only: true });
+    if (rpcErr) throw rpcErr;
     allowedGuardianIds = new Set((rpcRows || []).filter((r) => r.guardian_id).map((r) => r.guardian_id));
   }
 

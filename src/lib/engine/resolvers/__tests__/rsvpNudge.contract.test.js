@@ -47,7 +47,11 @@ describe('rsvp_nudge resolver — contract', () => {
 
   it('4. pilot mode filter: only pilot guardians when pilotOnly=true', async () => {
     const withPilot = player_guardians.map((r) => r.guardian_id === '07ec4308-e3ab-4d13-be5e-a5796f506ce3' ? { ...r, guardians: { ...r.guardians, is_pilot_family: true } } : r);
-    const { slices } = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: true }, { supabase: mockClient({ ...FIXTURES, player_guardians: withPilot }), now: NOW });
+    // D-5(a) — pilot gate now goes through get_digest_recipients RPC; mock
+    // fixtures.recipients must include the pilot guardian for the test to
+    // simulate the post-cutover allowlist behavior.
+    const recipients = [{ guardian_id: '07ec4308-e3ab-4d13-be5e-a5796f506ce3', email: 'medelman83@me.com', is_pilot_family: true, team_ids: [] }];
+    const { slices } = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: true }, { supabase: mockClient({ ...FIXTURES, player_guardians: withPilot, recipients }), now: NOW });
     expect(slices.length).toBe(1);
     expect(slices[0].guardian_id).toBe('07ec4308-e3ab-4d13-be5e-a5796f506ce3');
   });
