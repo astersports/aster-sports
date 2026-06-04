@@ -160,7 +160,7 @@ export function composeRsvpNudge(context, slice, overrides = {}) {
   const signoffProse = trim(overrides.signoff_message);
   if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
   sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
-  const subject = `RSVP needed for ${namesJoined} — ${subjectLabel}`;
+  const subject = `RSVP needed for ${namesJoined}: ${subjectLabel}`;
   return { subject, content_sections: sections };
 }
 

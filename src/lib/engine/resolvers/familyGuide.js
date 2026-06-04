@@ -137,7 +137,7 @@ export function composeFamilyGuide(context, slice, overrides = {}) {
   if (signoff) sections.push(signoff);
   sections.push(buildBrandFooter(orgName));
   return {
-    subject: `Your family guide — ${slice.parent_name || parent?.first_name || 'Family'}`,
+    subject: `Your family guide: ${slice.parent_name || parent?.first_name || 'Family'}`,
     content_sections: sections,
   };
 }

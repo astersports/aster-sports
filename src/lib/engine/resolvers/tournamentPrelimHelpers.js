@@ -30,7 +30,7 @@ export function formatDateRange(start, end) {
   return `${monthDayFmt.format(startDate)}–${dayOnlyFmt.format(endDate)}`;
 }
 
-export function buildSubject(team, tournament) { return `${team.team_name} — ${tournament.name} Weekend`; }
+export function buildSubject(team, tournament) { return `${team.team_name}: ${tournament.name} Weekend`; }
 
 export function buildSubContext(tournament) {
   const range = formatDateRange(tournament.start_date, tournament.end_date);

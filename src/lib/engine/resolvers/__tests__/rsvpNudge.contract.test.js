@@ -85,7 +85,7 @@ describe('rsvp_nudge resolver — contract', () => {
     const target = slices.find((s) => s.guardian_id === '07ec4308-e3ab-4d13-be5e-a5796f506ce3');
     expect(target.unresponded_kids.map((k) => k.first_name)).toEqual(['Aubtin', 'Frankie', 'Hudson']);
     const { subject, content_sections } = composeRsvpNudge(context, target, {});
-    expect(subject).toBe('RSVP needed for Aubtin, Frankie, and Hudson — 10U Black Skills Lab');
+    expect(subject).toBe('RSVP needed for Aubtin, Frankie, and Hudson: 10U Black Skills Lab');
     const requestSections = content_sections.filter((s) => s.kind === 'rsvp_request');
     expect(requestSections).toHaveLength(3);
     expect(requestSections.map((s) => s.kid_first_name)).toEqual(['Aubtin', 'Frankie', 'Hudson']);

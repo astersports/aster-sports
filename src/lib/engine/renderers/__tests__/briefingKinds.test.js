@@ -21,7 +21,7 @@ describe('composeGameRecap', () => {
       player_of_game_name: 'Sara K.', coach_note: 'Proud of the team.',
       signoff_message: 'Onward.', coaches: COACHES,
     });
-    expect(out.subject).toBe('Recap — 11U Girls 42-38 vs Storm Blue');
+    expect(out.subject).toBe('Recap: 11U Girls 42-38 vs Storm Blue');
     expect(out.html).toContain('GAME RECAP');
     expect(out.html).toContain('Final: 11U Girls 42 – Storm Blue 38 (W)');
     expect(out.html).toContain('Strong third quarter.');
@@ -35,7 +35,7 @@ describe('composeGameRecap', () => {
   it('omits score line when score is missing (loss tag still works)', () => {
     const out = composeGameRecap({ teamName: '10U', opponent: 'Mavs' });
     expect(out.html).not.toContain('Final:');
-    expect(out.subject).toBe('Recap — 10U vs Mavs');
+    expect(out.subject).toBe('Recap: 10U vs Mavs');
   });
 
   it('marks losses with L tag', () => {
@@ -57,7 +57,7 @@ describe('composeTournamentPrelim', () => {
       lineup_notes: 'Start with Sara, Sienna, Stella.',
       signoff_message: 'See you Saturday.', coaches: COACHES,
     });
-    expect(out.subject).toBe('Game day briefing — Zero Gravity NY Hoop Festival');
+    expect(out.subject).toBe('Game day briefing: Zero Gravity NY Hoop Festival');
     expect(out.html).toContain('TOURNAMENT BRIEFING');
     expect(out.html).toContain('ZERO GRAVITY NY HOOP FESTIVAL');
     expect(out.html).toContain('May 16-17 · Stamford Sportsplex');

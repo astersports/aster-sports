@@ -43,7 +43,7 @@ describe('weekly_digest resolver — snapshot vs production row 3b431eb1', () =>
       { supabase: mockClient(FIXTURES), now: NOW },
     );
     const { subject, content_sections } = composeWeeklyDigest(context, slices[0]);
-    expect(subject).toBe('Week ahead — May 11–17');
+    expect(subject).toBe('Week ahead: May 11–17');
     // Normalize: tests serialize through JSON so Map -> object equivalence works
     const normalize = (v) => JSON.parse(JSON.stringify(v));
     expect(normalize(content_sections)).toEqual(expectedContentSections);

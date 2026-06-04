@@ -32,7 +32,7 @@ export function summarizeGames(games) {
 }
 
 export function buildGamesSubject(games, record) {
-  return `Games recap — ${games.length} game${games.length === 1 ? '' : 's'} (${record})`;
+  return `Games recap: ${games.length} game${games.length === 1 ? '' : 's'} (${record})`;
 }
 
 // Recipients across the UNION of the selected events' teams, deduped by

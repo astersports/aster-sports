@@ -35,7 +35,7 @@ describe('rsvp_nudge resolver — snapshot vs hand-authored expected', () => {
     expect(context.urgency.time_label).toBe('7:35 PM');
     expect(context.rsvp_summary).toEqual({ total_roster: 11, responded_count: 0, unresponded_count: 11 });
     const { subject, content_sections } = composeRsvpNudge(context, slices[0], {});
-    expect(subject).toBe('RSVP needed for Hudson — 10U Black Skills Lab');
+    expect(subject).toBe('RSVP needed for Hudson: 10U Black Skills Lab');
     expect(norm(content_sections)).toEqual(expectedContentSections);
   });
 });

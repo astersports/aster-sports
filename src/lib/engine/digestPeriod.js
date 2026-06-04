@@ -42,7 +42,7 @@ export function formatPeriodLabel(period) {
 }
 
 export function formatSubject(period) {
-  return `Week ahead — ${formatPeriodLabel(period)}`;
+  return `Week ahead: ${formatPeriodLabel(period)}`;
 }
 
 // Used by useDigestEvents: ISO date strings for the SQL filter window.

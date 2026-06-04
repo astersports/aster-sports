@@ -95,7 +95,7 @@ export function composeCoachRoundup(context, slice, overrides = {}) {
   if (signoff) sections.push(signoff);
   sections.push(buildBrandFooter(orgName));
   return {
-    subject: `Coach roundup — ${slice.coach_name || coach?.display_name || 'Coach'}`,
+    subject: `Coach roundup: ${slice.coach_name || coach?.display_name || 'Coach'}`,
     content_sections: sections,
   };
 }

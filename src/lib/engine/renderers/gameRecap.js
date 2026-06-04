@@ -28,9 +28,9 @@ function scoreLine(score, teamName, opponent) {
 function buildSubject({ teamName, opponent, score }) {
   const opp = opponent || 'opponent';
   if (score?.ours != null && score?.theirs != null) {
-    return `Recap — ${teamName || 'Legacy Hoopers'} ${score.ours}-${score.theirs} vs ${opp}`;
+    return `Recap: ${teamName || 'Legacy Hoopers'} ${score.ours}-${score.theirs} vs ${opp}`;
   }
-  return `Recap — ${teamName || 'game'} vs ${opp}`;
+  return `Recap: ${teamName || 'game'} vs ${opp}`;
 }
 
 export function composeGameRecap(data = {}) {
