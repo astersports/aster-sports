@@ -96,6 +96,12 @@ export default function ScoreEntrySheet({ event, team, onClose }) {
           </div>
         )}
 
+        {draft.isPublished && (
+          <div style={{ padding: 12, marginBottom: 24, background: 'var(--as-info-soft)', borderLeft: '3px solid var(--as-info)', borderRadius: 8, fontSize: 13, color: 'var(--as-text-primary)', lineHeight: 1.4 }} role="status">
+            Published. A recap will be drafted in Briefings for an admin to review and send.
+          </div>
+        )}
+
         <QuarterScoreInput value={draft.result.quarter_scores} onChange={qs => draft.updateField('quarter_scores', qs)} disabled={draft.isPublished} />
         <PlayerOfGamePicker teamId={event.team_id} value={draft.result.player_of_game_id} onChange={pid => draft.updateField('player_of_game_id', pid)} disabled={draft.isPublished} />
 
