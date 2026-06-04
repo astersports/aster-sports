@@ -73,12 +73,53 @@ export async function fetchRecipientGuardians(supabase, orgId, teamIds, pilotOnl
   }));
 }
 
-export function buildTeamSlices(tournamentTeams, allRecipients) {
+// Q3 (2026-06-04): participant scoping source for tournament_prelim. Returns
+// Map<team_id, Set<guardian_id>> of guardians whose kids are on each team's
+// active tournament_roster — or null when the tournament has NO roster rows,
+// in which case the caller keeps the whole-team audience (league play, or a
+// roster not yet entered). This is prelim-only; tournament_recap stays
+// whole-team per Frank's call.
+export async function fetchParticipantGuardiansByTeam(supabase, tournamentId) {
+  const { data: rosterRows, error } = await supabase
+    .from('tournament_rosters').select('team_id, player_id')
+    .eq('tournament_id', tournamentId).eq('roster_status', 'active');
+  if (error) throw error;
+  if (!rosterRows || rosterRows.length === 0) return null;
+  const playerIds = [...new Set(rosterRows.map((r) => r.player_id).filter(Boolean))];
+  const { data: pgRows = [], error: pgErr } = await supabase
+    .from('player_guardians').select('player_id, guardian_id').in('player_id', playerIds);
+  if (pgErr) throw pgErr;
+  const guardiansByPlayer = new Map();
+  for (const r of pgRows || []) {
+    if (!r.player_id || !r.guardian_id) continue;
+    const arr = guardiansByPlayer.get(r.player_id) || [];
+    arr.push(r.guardian_id);
+    guardiansByPlayer.set(r.player_id, arr);
+  }
+  const byTeam = new Map();
+  for (const r of rosterRows) {
+    if (!r.team_id || !r.player_id) continue;
+    const set = byTeam.get(r.team_id) || new Set();
+    for (const gid of guardiansByPlayer.get(r.player_id) || []) set.add(gid);
+    byTeam.set(r.team_id, set);
+  }
+  return byTeam;
+}
+
+export function buildTeamSlices(tournamentTeams, allRecipients, participantsByTeam = null) {
   return (tournamentTeams || [])
     .slice()
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || (a.team_id < b.team_id ? -1 : a.team_id > b.team_id ? 1 : 0))
     .map((t) => {
-      const recip = allRecipients.filter((r) => (r.team_ids || []).includes(t.team_id));
+      // Q3 (2026-06-04): when a tournament roster exists, prelim scopes to
+      // PARTICIPANTS — guardians of players on this team's active
+      // tournament_roster (Frank: prelim = traveler logistics; recap stays
+      // whole-team). Synthetic pilot-redirect rows (no guardian_id) always
+      // pass so the pilot test still sends. No roster -> participantsByTeam
+      // null -> whole-team audience (unchanged).
+      const participants = participantsByTeam ? (participantsByTeam.get(t.team_id) || new Set()) : null;
+      const recip = allRecipients.filter((r) => (r.team_ids || []).includes(t.team_id)
+        && (!participants || !r.guardian_id || participants.has(r.guardian_id)));
       const dedupe = new Map();
       for (const r of recip) {
         const key = r.guardian_id || r.email;
