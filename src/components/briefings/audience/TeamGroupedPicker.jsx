@@ -23,7 +23,7 @@ const AXES = [
   { key: 'circuit',   label: 'Circuit' },
   { key: 'division',  label: 'Division' },
 ];
-const FALLBACK_DOT = '#94a3b8';
+const FALLBACK_DOT = 'var(--as-neutral)'; // token, not a hardcoded gray (§0 rule 4)
 const UNSPECIFIED = '__unspecified__';
 
 const wrap = { display: 'flex', flexDirection: 'column', gap: 12 };
