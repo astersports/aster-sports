@@ -90,7 +90,11 @@ describe('academy_callup_notice resolver — contract', () => {
 
   it('11. pilot mode filter: only pilot guardians when pilotOnly=true', async () => {
     const withPilot = player_guardians.map((r) => r.guardian_id === '0896bcd1-4b11-4ccc-a9ce-f03c29eb1d03' ? { ...r, guardians: { ...r.guardians, is_pilot_family: true } } : r);
-    const { slices } = await resolveAcademyCallupNotice({ eventId: EVENT_ID, playerId: PLAYER_ID, pilotOnly: true }, { supabase: mockClient({ ...FIXTURES, player_guardians: withPilot }), now: NOW });
+    // D-5(a) — pilot gate now goes through get_digest_recipients RPC; mock
+    // fixtures.recipients must include the pilot guardian for the test to
+    // simulate the post-cutover allowlist behavior.
+    const recipients = [{ guardian_id: '0896bcd1-4b11-4ccc-a9ce-f03c29eb1d03', email: 'test@example.org', is_pilot_family: true, team_ids: [] }];
+    const { slices } = await resolveAcademyCallupNotice({ eventId: EVENT_ID, playerId: PLAYER_ID, pilotOnly: true }, { supabase: mockClient({ ...FIXTURES, player_guardians: withPilot, recipients }), now: NOW });
     expect(slices.length).toBe(1);
     expect(slices[0].guardian_id).toBe('0896bcd1-4b11-4ccc-a9ce-f03c29eb1d03');
   });
