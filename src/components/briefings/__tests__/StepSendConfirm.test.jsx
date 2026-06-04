@@ -30,7 +30,7 @@ describe('StepSendConfirm', () => {
   it('a. renders "Ready to send" header + kind + audience values', () => {
     setup();
     expect(screen.getByText(/Ready to send/)).toBeInTheDocument();
-    expect(screen.getByTestId('row-kind').textContent).toBe('game_recap');
+    expect(screen.getByTestId('row-kind').textContent).toBe('Game recap');
     expect(screen.getByTestId('row-audience').textContent).toBe('Event attendees');
   });
 

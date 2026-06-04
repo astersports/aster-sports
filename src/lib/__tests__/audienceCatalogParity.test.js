@@ -11,7 +11,9 @@ import { join } from 'node:path';
 //   1. Production CHECK constraint  — encoded as CANONICAL below
 //   2. KIND_METADATA.defaultAudienceType in src/lib/briefings/kindMetadata.js
 //   3. AudiencePicker MODES + NON_MODE_LABELS in src/components/briefings/AudiencePicker.jsx
-//   4. StepAnchorAudience AUDIENCE_LABEL in src/components/briefings/StepAnchorAudience.jsx
+//   4. The shared AUDIENCE_LABEL map in src/lib/briefings/audienceLabels.js
+//      (consolidated out of StepAnchorAudience in PR #703; StepAnchorAudience
+//      + StepSendConfirm now import it)
 //
 // Origin: docs/AUDIT_BRIEFINGS_2026-06-02.md §B4.1 (4-way drift produced
 // 21 production rows in coach_roundup + family_guide with wrong-but-
@@ -20,7 +22,11 @@ import { join } from 'node:path';
 
 const KIND_METADATA_FILE = join(process.cwd(), 'src', 'lib', 'briefings', 'kindMetadata.js');
 const AUDIENCE_PICKER_FILE = join(process.cwd(), 'src', 'components', 'briefings', 'AudiencePicker.jsx');
-const STEP_ANCHOR_AUDIENCE_FILE = join(process.cwd(), 'src', 'components', 'briefings', 'StepAnchorAudience.jsx');
+// The AUDIENCE_LABEL map was consolidated out of StepAnchorAudience into the
+// shared src/lib/briefings/audienceLabels.js (PR #703, AP #63 — it was also
+// duplicated in StepSendConfirm + leaking raw enums in HistoryView/chips).
+// StepAnchorAudience now imports it; the parity check verifies the canonical map.
+const AUDIENCE_LABELS_FILE = join(process.cwd(), 'src', 'lib', 'briefings', 'audienceLabels.js');
 
 // Canonical = production CHECK constraint values, verified live
 // 2026-06-03 via mig 20260603194947.
@@ -81,15 +87,15 @@ describe('Audience catalog parity (Phase 3 D-7 / PATTERN B1-α guard)', () => {
     ).toEqual([]);
   });
 
-  it('StepAnchorAudience AUDIENCE_LABEL knows every audience type that appears in a locked caption', () => {
+  it('the shared AUDIENCE_LABEL map knows every audience type that appears in a locked caption', () => {
     const kmSrc = readFileSync(KIND_METADATA_FILE, 'utf8');
-    const saSrc = readFileSync(STEP_ANCHOR_AUDIENCE_FILE, 'utf8');
+    const alSrc = readFileSync(AUDIENCE_LABELS_FILE, 'utf8');
     const defaults = extractDefaultAudienceTypes(kmSrc);
-    const labels = extractAudienceLabelKeys(saSrc);
+    const labels = extractAudienceLabelKeys(alSrc);
     const orphans = Array.from(defaults).filter((v) => !labels.has(v));
     expect(
       orphans,
-      `KIND_METADATA defaults missing from StepAnchorAudience.AUDIENCE_LABEL: ${orphans.join(', ')}. Add a display label so audienceLocked captions don't render raw enum text.`,
+      `KIND_METADATA defaults missing from audienceLabels.AUDIENCE_LABEL: ${orphans.join(', ')}. Add a display label so audienceLocked captions don't render raw enum text.`,
     ).toEqual([]);
   });
 

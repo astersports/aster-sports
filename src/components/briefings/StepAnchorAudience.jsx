@@ -21,6 +21,7 @@ import TeamGroupedPicker from './audience/TeamGroupedPicker';
 import RecentAndFavorites from './audience/RecentAndFavorites';
 import { ANCHOR_KINDS_REQUIRING_ID } from './composerReducer';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
+import { AUDIENCE_LABEL } from '../../lib/briefings/audienceLabels';
 import { useOrgTeams } from '../../hooks/useOrgTeams';
 
 const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', display: 'block', marginBottom: 8 };
@@ -29,18 +30,6 @@ const lockedCaption = { fontSize: 13, color: 'var(--as-text-secondary)', padding
 const inlineHint = { fontSize: 12, color: 'var(--as-text-tertiary)', padding: '8px 4px' };
 
 const ANCHOR_NOUN = { event: 'event', tournament: 'tournament', team: 'team' };
-const AUDIENCE_LABEL = {
-  team: 'Team', multi_team: 'Multiple teams',
-  tournament_attendees: 'Tournament attendees',
-  event_attendees: 'Event attendees',
-  player_specific: 'Specific player(s)',
-  multi_event_attendees: 'Selected games’ families',
-  org_all: 'All families',
-  // D-2(γ-UI) — labels for kindMetadata defaults that previously fell
-  // through to raw enum text in the locked-caption render path.
-  coach_self: 'Coach only',
-  family_specific: 'This family',
-};
 
 // 5d-b-1 backward-compat: prefer .team_ids[] (new), fall back to .team_id
 // (legacy singular) so drafts saved pre-5d-b-1 still hydrate cleanly.
