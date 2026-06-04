@@ -36,6 +36,10 @@ const AUDIENCE_LABEL = {
   player_specific: 'Specific player(s)',
   multi_event_attendees: 'Selected games’ families',
   org_all: 'All families',
+  // D-2(γ-UI) — labels for kindMetadata defaults that previously fell
+  // through to raw enum text in the locked-caption render path.
+  coach_self: 'Coach only',
+  family_specific: 'This family',
 };
 
 // 5d-b-1 backward-compat: prefer .team_ids[] (new), fall back to .team_id

@@ -28,19 +28,48 @@ const MODES = [
   { type: 'org_all', label: 'All families' },
 ];
 
+// D-2(γ-UI) — labels for audience types that aren't first-class modes
+// but can be prepended as the kind's semantic default (coach_self for
+// coach_roundup, family_specific for family_guide; multi_event_attendees
+// surfaces here only via audienceLocked which goes through this map too).
+const NON_MODE_LABELS = {
+  coach_self: 'Coach only',
+  family_specific: 'This family',
+  multi_event_attendees: "Selected games' families",
+};
+
+function labelFor(type) {
+  return MODES.find((m) => m.type === type)?.label || NON_MODE_LABELS[type] || type;
+}
+
 function modesAvailableFor(kind) {
   const meta = KIND_METADATA[kind] || {};
-  if (meta.audienceLocked) return [{ type: meta.defaultAudienceType, label: MODES.find((m) => m.type === meta.defaultAudienceType)?.label || meta.defaultAudienceType }];
-  if (kind === 'weekly_digest') return MODES.filter((m) => ['org_all', 'team', 'multi_team'].includes(m.type));
-  if (kind === 'announcement') return MODES.filter((m) => ['team', 'org_all'].includes(m.type));
-  if (kind === 'game_recap' || kind === 'rsvp_nudge') return MODES.filter((m) => ['event_attendees', 'team'].includes(m.type));
-  if (kind === 'tournament_prelim' || kind === 'tournament_recap') return MODES.filter((m) => ['tournament_attendees'].includes(m.type));
-  if (kind === 'academy_callup_notice') return MODES.filter((m) => ['player_specific'].includes(m.type));
+  if (meta.audienceLocked) return [{ type: meta.defaultAudienceType, label: labelFor(meta.defaultAudienceType) }];
+  let modes;
+  if (kind === 'weekly_digest') modes = MODES.filter((m) => ['org_all', 'team', 'multi_team'].includes(m.type));
+  else if (kind === 'announcement') modes = MODES.filter((m) => ['team', 'org_all'].includes(m.type));
+  else if (kind === 'game_recap' || kind === 'rsvp_nudge') modes = MODES.filter((m) => ['event_attendees', 'team'].includes(m.type));
+  else if (kind === 'tournament_prelim' || kind === 'tournament_recap') modes = MODES.filter((m) => ['tournament_attendees'].includes(m.type));
+  else if (kind === 'academy_callup_notice') modes = MODES.filter((m) => ['player_specific'].includes(m.type));
   // 5d-b-1: player_specific deferred (no wizard picker built yet);
   // academy_callup_notice still uses player_specific via the dedicated
   // EventDetailPage AcademyCallupCompose UI (audienceLocked path).
-  if (kind === 'custom_message') return MODES.filter((m) => m.type !== 'player_specific');
-  return MODES;
+  else if (kind === 'custom_message') modes = MODES.filter((m) => m.type !== 'player_specific');
+  else modes = MODES;
+
+  // D-2(γ-UI) — if kindMetadata.defaultAudienceType isn't in the filtered
+  // mode list (e.g. coach_self for coach_roundup, family_specific for
+  // family_guide), prepend it so the admin sees the semantic default as
+  // an active option. Without this, the picker silently coerces those
+  // kinds to team/multi_team — the BUG B B4.1 mechanism that produced 21
+  // wrong-but-CHECK-allowed rows in production for coach_roundup /
+  // family_guide before the D-2(α) widening.
+  const def = meta.defaultAudienceType;
+  if (def && !modes.some((m) => m.type === def)) {
+    modes = [{ type: def, label: labelFor(def) }, ...modes];
+  }
+
+  return modes;
 }
 
 export default function AudiencePicker({ kind, audienceType, audienceFilter, audience, recipientsLoading, onPick }) {
