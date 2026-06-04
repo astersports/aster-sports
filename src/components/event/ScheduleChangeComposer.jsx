@@ -11,6 +11,7 @@ import { useToast } from '../../context/useToast';
 import { useDigestRecipients } from '../../hooks/useDigestRecipients';
 import { useOrgSettings } from '../../hooks/useOrgSettings';
 import { useScheduleChangeAudit } from '../../hooks/useScheduleChangeAudit';
+import { friendlySendError } from '../../lib/briefings/sendErrorMessage';
 
 const inputStyle = { width: '100%', minHeight: 88, padding: 10, borderRadius: 10, fontSize: 14, fontFamily: 'inherit', backgroundColor: 'var(--as-bg-tertiary)', border: '1.5px solid var(--as-border-default)', color: 'var(--as-text-primary)' };
 const btnPrimary = { width: '100%', minHeight: 44, borderRadius: 10, backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 15, fontWeight: 600, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' };
@@ -60,7 +61,7 @@ export default function ScheduleChangeComposer({ event, diff, onClose, onDone })
       body: {}, signoff_message: signoff,
       test_only: testOnly, pilot_only: pilotModeEnabled,
     });
-    if (r?.error) { showToast(r.error.message || "Send failed.", 'error'); return; }
+    if (r?.error) { showToast(friendlySendError(r.error) || "Couldn’t notify families — try again in a moment.", 'error'); return; }
     showToast(testOnly ? 'Test sent to admin@.' : `Sent to ${audience.length} ${pilotModeEnabled ? 'pilot recipients' : 'families'}.`, 'success');
     onDone?.(); onClose?.();
   };
