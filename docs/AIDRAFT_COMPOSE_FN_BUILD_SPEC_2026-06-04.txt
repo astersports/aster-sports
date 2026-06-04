@@ -1,0 +1,307 @@
+==============================================================================
+AI-DRAFT COMPOSE EDGE FUNCTION — BUILD SPECIFICATION
+==============================================================================
+Author:   terminal-CC (UI/repo lane)
+Date:     2026-06-04
+For:      Claude AI architect (engine / edge-fn lane)
+Purpose:  Build-ready spec for `briefing-ai-draft`. Implement directly from this.
+Companion: docs/AIDRAFT_COMPOSE_FN_HANDOFF_2026-06-04.txt (status memo).
+Legend:
+  [CONTRACT]  = locked by merged code (src/hooks/useAiDraft.js + test). DO NOT drift.
+  [PROPOSED]  = terminal-CC's recommended design. Architect may override; if you
+                change a [PROPOSED] item that the UI consumes (slug, proposal_id
+                shape, enums, facts_used shape), report it so the UI lane tracks it.
+  [GROUNDED]  = lifted from an existing repo file; safe to copy the pattern.
+
+==============================================================================
+0. HOW TO USE THIS SPEC
+==============================================================================
+Model the function on supabase/functions/suggest-briefing-closer (the closest
+existing LLM fn — same secret pattern, same Claude call, same JWT posture). This
+spec specializes that pattern for AI-draft. Everything in §2 is a hard contract
+the merged UI client already depends on; everything else is a recommended design
+you can refine. The UI lane (AI-1, AI-2) ships the moment this fn is live + the
+four [PROPOSED] interface items in §13/§5 are confirmed.
+
+==============================================================================
+1. GROUND STATE (what already exists in main)
+==============================================================================
+  - CLIENT: src/hooks/useAiDraft.js — the SINGLE caller. Slug constant
+    AI_DRAFT_FN_SLUG = 'briefing-ai-draft'. Conformance test locks the I/O shape.
+  - VOICE: organizations.voice_config.ai_draft_profile (seeded for LH org
+    e3e95e21-... by migration 20260604145429). This IS the system prompt.
+  - REFERENCE FN: supabase/functions/suggest-briefing-closer/index.ts —
+    getAppSecret('anthropic_api_key'), callClaude(), CORS, json(), verify_jwt:true,
+    AP #30 mirrored helpers (_helpers.ts + src/lib/briefings/*.js for vitest).
+  - FACTS SOURCES: src/lib/engine/resolvers/resolveX(anchor, {supabase}) — pure,
+    per-kind DB walkers that already assemble the GIVEN facts for every anchored
+    kind (game_recap, games_recap, tournament_recap, tournament_prelim,
+    schedule_change, rsvp_nudge, academy_callup_notice, weekly_digest, etc.).
+
+==============================================================================
+2. IMMUTABLE I/O CONTRACT  [CONTRACT]
+==============================================================================
+Invoked as: supabase.functions.invoke('briefing-ai-draft', { body })
+
+REQUEST (JSON body):
+  org_id      : uuid     (always)
+  kind        : string   (always)
+  mode        : string   (always; 'draft' | 'redraft' — semantics §13)
+  audience    : object    (always; {} or { team_id } — semantics §13)
+  Exactly ONE of:
+    proposal_id : string  (AUTO-PROPOSED lane; no gist)
+    facts+gist  : facts:object AND gist:string  (FREE-FORM lane; no proposal_id)
+
+RESPONSE (JSON body) — success (HTTP 200):
+  body         : string          (the drafted PROSE)
+  card_summary : string          (one-line ~10-second summary)
+  facts_used   : array           (facts the draft used — shape §10)
+  warnings     : array<string>   (missing-fact / caveat messages)
+  -> All four keys ALWAYS present. UI defaults missing keys to '' / [], but emit
+     all four.
+
+RESPONSE — failure:
+  { error: "<human-readable message>" }   returned IN THE JSON BODY.
+  Rationale: supabase.functions.invoke collapses non-2xx into an opaque
+  FunctionsHttpError; the hook reads data.error FIRST. You MAY return HTTP 200
+  with {error} or a 4xx/5xx WITH the {error} body — the hook handles both, but
+  the {error} key in the body is what surfaces the message to the admin. Match
+  useImportSchedule's convention.
+
+DELEGATED TO SERVER (the hook does none of this): JSON parse, markdown-fence
+stripping, retry-on-bad-output. The client consumes clean JSON only.
+
+==============================================================================
+3. FUNCTION SKELETON + FILE LAYOUT  [GROUNDED on suggest-briefing-closer]
+==============================================================================
+  supabase/functions/briefing-ai-draft/
+    index.ts        — handler: CORS preflight, parse req, validate, dispatch by
+                      mode, assemble facts, build prompt, callClaude, parse,
+                      return {body, card_summary, facts_used, warnings} | {error}
+    _helpers.ts     — Deno mirror of the pure logic (prompt assembly, output
+                      parse/fence-strip, warnings derivation)
+  src/lib/briefings/aiDraftPrompt.js   — vitest-covered SOURCE OF TRUTH mirror of
+                      _helpers.ts (AP #30: two near-identical files, change both
+                      in one commit, header-comment each pointing at the other)
+  src/lib/briefings/__tests__/aiDraftPrompt.test.js — unit coverage for the pure
+                      helpers (prompt shape, fence-strip, warnings derivation)
+
+Reuse verbatim from suggest-briefing-closer: corsHeaders, json(), getAppSecret(),
+callClaude() (bump model per §8). createClient with SERVICE_ROLE for the app_secrets
+read + resolver IO; the caller's JWT still gates entry (verify_jwt:true).
+
+==============================================================================
+4. REQUEST VALIDATION
+==============================================================================
+  - OPTIONS -> 204 with CORS (preflight).
+  - Require org_id, kind, mode, audience. Missing -> { error: "..." }.
+  - Require exactly one of {proposal_id} XOR {facts & gist}. Both/neither ->
+    { error: "Provide either proposal_id or facts+gist, not both." }.
+  - kind not in the v1 supported set (§13) -> { error: "kind not supported" }
+    (the test exercises this exact error path — test case e).
+  - Validate org_id matches the caller (defense-in-depth; the JWT already scopes,
+    but assert org membership before reading voice_config / facts).
+
+==============================================================================
+5. MODE / LANE HANDLING
+==============================================================================
+5.1 FREE-FORM (AI-1 lane: announcement, custom_message)
+  - Input: facts (admin-supplied object, may be sparse) + gist (admin's intent).
+  - No DB fact walk required; the admin gave you the facts. Optionally enrich
+    from audience (e.g., team name from team_id) but never INVENT.
+  - Compose prose from gist + facts in the org voice (§7).
+
+5.2 AUTO-PROPOSED (AI-2 lane: calendar-anchored kinds)
+  - Input: proposal_id.
+  - [PROPOSED] proposal_id = a comms_messages row id in 'draft' status (the same
+    rows briefing-auto-draft-tick already writes per anchor). Load it, read its
+    kind + anchor_kind + anchor_id, then call the matching resolveX(anchor,
+    {supabase}) to assemble the GIVEN facts. Compose prose for that kind.
+    - If you instead store proposals in a dedicated table, report the table +
+      columns so AI-2 can render the facts panel from the same source.
+  - The proposal supplies the anchor; the resolver supplies the facts; the LLM
+    supplies the prose. Three distinct layers, one source of facts (§6).
+
+==============================================================================
+6. FACTS ASSEMBLY  [PROPOSED — reuse resolvers; architect may override]
+==============================================================================
+Recommendation (de-risks PATTERN A "same concept, two sources"): assemble facts
+by calling the existing pure resolvers, NOT a new walker.
+  - resolveGameRecap({eventId}, {supabase})        -> score, opponent, POG, venue
+  - resolveGamesRecap({eventIds}, {supabase})      -> per-game lines + W-L record
+  - resolveTournamentRecap({tournamentId}, ...)    -> placement, game log
+  - resolveTournamentPrelim({tournamentId}, ...)   -> schedule, venues, logistics
+  - resolveScheduleChange({eventId}, ...)          -> before/after diff
+  - resolveWeeklyDigest / composeWeeklyDigest      -> week's events
+  - (rsvp_nudge / academy_callup_notice have resolvers too if those kinds are v1)
+Each returns a `context` object already shaped as the GIVEN facts. Flatten that
+context into:
+  (a) the structured fact list passed to the prompt, and
+  (b) the facts_used array returned to the UI (§10).
+Resolvers are pure with injected IO (AP #27): pass options.supabase = the
+service-role client. Do NOT add a static supabase import to a resolver.
+
+Missing-fact rule (voice profile §7): when a required fact for the kind's
+template is absent (null location.name, no score, etc.), DO NOT fabricate. Add a
+`warnings` entry ("venue missing") and instruct the model to leave a clear blank.
+
+==============================================================================
+7. PROMPT ASSEMBLY  [PROPOSED]
+==============================================================================
+SYSTEM message = the voice profile verbatim:
+  SELECT voice_config->>'ai_draft_profile' FROM organizations WHERE id = org_id.
+  If null/short -> { error: "Org voice profile not configured." } (fail loud).
+  [PROPOSED] Mark the system block with cache_control: {type:"ephemeral"} —
+  it is large + stable per org, so prompt caching cuts cost/latency materially
+  across the admin's draft/redraft iterations.
+
+USER message = a STRICT, structured brief:
+  - The kind + its structure template (the voice profile §5 has per-kind
+    templates; pass the relevant one explicitly so the model follows it).
+  - The FACTS as a labeled list (from §6), each "label: value". State plainly
+    that these are verbatim and must not be altered or invented.
+  - FREE-FORM only: the admin's gist, framed as "the point to make."
+  - The OUTPUT INSTRUCTION: "Return ONLY minified JSON with keys body,
+    card_summary, facts_used, warnings. No markdown, no code fence, no prose
+    outside the JSON." (Belt: still fence-strip server-side per §9.)
+  - Re-state the HARD DON'TS inline (no em dashes; no corporate jargon; signoff
+    by name) so they bind even if the system prompt is cached/truncated.
+
+redraft mode (§13): include the prior body + (optionally) the admin's tweak note
+so the model revises rather than regenerates from scratch. [PROPOSED]
+
+==============================================================================
+8. LLM CALL  [GROUNDED + PROPOSED model]
+==============================================================================
+  - Endpoint/pattern: copy callClaude() from suggest-briefing-closer
+    (api.anthropic.com/v1/messages, anthropic-version 2023-06-01, x-api-key from
+    app_secrets 'anthropic_api_key').
+  - [PROPOSED] model: latest Claude per CLAUDE.md (Sonnet 4.6 =
+    'claude-sonnet-4-6' for cost/quality; bump to Opus for max voice fidelity
+    during Frank's tuning phase). The existing fn pins 'claude-sonnet-4-5' —
+    match-or-bump is your call.
+  - max_tokens sized for a full briefing body (~1500-2500). System+facts via the
+    messages API; put the voice profile in a cached system block (§7).
+  - Temperature: moderate (voice has personality but facts are fixed). [PROPOSED]
+
+==============================================================================
+9. OUTPUT PARSING / RETRY  [PROPOSED]
+==============================================================================
+  - Strip ```json / ``` fences and leading/trailing prose before JSON.parse.
+  - Validate the 4 keys exist + types (body:string, card_summary:string,
+    facts_used:array, warnings:array).
+  - On parse/validation failure: ONE retry with a terse "return valid JSON only"
+    correction appended. Second failure -> { error: "Draft generation failed,
+    try again." } (kindness microcopy, CLAUDE.md §16.3).
+  - Defensive: scan the produced body for an em dash (U+2014); if present, either
+    auto-replace with a colon or add a warning — the voice rule is hard and the
+    deterministic engine already enforces it (PR #712). [PROPOSED]
+
+==============================================================================
+10. facts_used + warnings SHAPE  [PROPOSED — confirm for the AI-2 panel]
+==============================================================================
+  facts_used: array of { k: string, v: string } pairs (the test uses {k,v}).
+    Example: [{k:"record", v:"5-2"}, {k:"opponent", v:"NY Gauchos"},
+              {k:"final", v:"42-38 W"}, {k:"venue", v:"WCC"}].
+    AI-2 renders these in a facts panel so the admin can verify the model used
+    the real data. Keep keys human-labelable.
+  warnings: array of short strings ("venue missing", "no score on file yet").
+    AI-1/AI-2 render these inline near the draft.
+  Confirm the {k,v} shape (or propose a richer one) so the panel renders right.
+
+==============================================================================
+11. ERROR CONTRACT  (see §2)
+==============================================================================
+  Always surface a human message in { error }. Categories: bad request
+  (validation), kind unsupported, voice profile missing, proposal not found,
+  resolver/DB error, LLM/transport error, parse failure. Keep messages
+  admin-readable (CLAUDE.md §16.3 kindness microcopy), not raw codes.
+
+==============================================================================
+12. SECRETS / AUTH / CONFIG  [GROUNDED]
+==============================================================================
+  - anthropic_api_key from public.app_secrets via getAppSecret (AP #33). NULL
+    fails loud. (Same row suggest-briefing-closer + parse-tournament-schedule
+    read.)
+  - verify_jwt:true (default). This is an authenticated admin action. NO
+    config.toml entry needed and NO verify_jwt=false (that path is for
+    shared-secret fns and would trip verifyJwtConfigAudit.test.js, AP #31).
+  - The fn reads app_secrets + resolver IO via a SERVICE_ROLE client created
+    inside the fn (the caller JWT gates entry; the downstream reads use service
+    role) — identical exemption to suggest-briefing-closer, already whitelisted
+    in verifyJwtConfigAudit.test.js. Add briefing-ai-draft to that same
+    exemption list in the SAME PR.
+
+==============================================================================
+13. ENUMERATIONS  [PROPOSED — these block the UI wiring; confirm]
+==============================================================================
+  kind (v1 supported set): start with the lanes that have a clear UX:
+    FREE-FORM: announcement, custom_message.
+    AUTO-PROPOSED: game_recap, games_recap, weekly_digest, tournament_recap,
+                   tournament_prelim, schedule_change.
+    (rsvp_nudge / academy_callup_notice / coach_roundup / family_guide: include
+     only if a draft-prose step adds value over their deterministic templates —
+     your call.)
+  mode:
+    'draft'   = generate fresh from facts(+gist).
+    'redraft' = revise; carries prior body (+ optional tweak note) in the
+                request — CONFIRM whether redraft re-sends facts/gist or just a
+                regenerate signal, so the UI sends the right payload.
+  audience:
+    {} = org/default scope; { team_id } = scope facts to that team. CONFIRM
+    whether the fn USES audience to scope the resolver fact walk, or treats it
+    as passthrough metadata.
+
+==============================================================================
+14. DEPLOY + SMOKE  [per AP #32]
+==============================================================================
+  1. Deploy the fn.
+  2. Add the config exemption (§12) + ensure verifyJwtConfigAudit.test.js green.
+  3. GATEWAY SMOKE (not just a DO-block / SQL check): curl the deployed fn with a
+     real admin user JWT, once free-form and once auto-proposed, assert the JSON
+     shape comes back. AP #32: SQL-level checks do not prove the HTTP path.
+  4. Report: deployed slug + the §13 enums + the §10 facts_used shape + the §5.2
+     proposal_id storage decision. terminal-CC updates AI_DRAFT_FN_SLUG (one
+     constant) + builds AI-1, then AI-2.
+
+==============================================================================
+15. TEST PLAN
+==============================================================================
+  - AP #30 mirror: pure helpers (prompt assembly, fence-strip, warnings
+    derivation) covered by src/lib/briefings/__tests__/aiDraftPrompt.test.js
+    (Node/vitest), mirrored byte-near in _helpers.ts (Deno).
+  - The merged src/hooks/__tests__/useAiDraft.test.js already locks the CLIENT
+    contract; your response shape must satisfy what it asserts (it does not call
+    the real fn, but it is the binding shape reference).
+  - verifyJwtConfigAudit.test.js stays green (§12).
+  - Manual gateway smoke (§14.3) before declaring live.
+
+==============================================================================
+16. ACCEPTANCE GATES (fn PR is "done" when)
+==============================================================================
+  [ ] Request validation + both lanes (free-form, auto-proposed) implemented.
+  [ ] Voice profile read as cached system prompt; fails loud if unconfigured.
+  [ ] Facts via resolvers (or reported alternative); no invented facts.
+  [ ] Strict JSON out {body, card_summary, facts_used, warnings}; fence-strip +
+      one retry; em-dash guard.
+  [ ] {error}-in-body failure contract.
+  [ ] app_secrets key, verify_jwt:true, audit exemption added + test green.
+  [ ] Gateway curl smoke passes (both lanes).
+  [ ] AP #30 helper mirror + vitest.
+  [ ] Reported back: slug, §13 enums, §10 facts_used shape, §5.2 proposal_id.
+
+==============================================================================
+17. DECISIONS THAT ARE STRICTLY THE ARCHITECT'S (not terminal-CC's to set)
+==============================================================================
+  - proposal_id storage model (§5.2) — owns the auto-proposed data shape.
+  - Which kinds are AI-draftable in v1 (§13) — product/quality judgment.
+  - redraft semantics (§13) — engine behavior.
+  - Whether facts assembly reuses resolvers or a new walker (§6) — engine arch.
+  - Model + temperature + caching specifics (§8) — engine tuning.
+terminal-CC's [PROPOSED] values above are defaults to accept-or-amend; the UI
+lane only needs the four interface items (slug, proposal_id shape, enums,
+facts_used shape) pinned to start building.
+
+==============================================================================
+END BUILD SPEC. Reply with the §14.4 report and the UI lanes ship.
+==============================================================================
