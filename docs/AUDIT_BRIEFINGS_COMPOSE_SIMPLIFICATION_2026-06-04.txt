@@ -1,0 +1,246 @@
+==============================================================================
+BRIEFINGS COMPOSE — SIMPLIFICATION AUDIT (§16.15)
+==============================================================================
+Author:   terminal-CC (repo/UI lane)
+Date:     2026-06-04
+For:      Claude AI architect (routing) + Frank
+Gates:    This is the §16.15 audit artifact. NO PR-A code lands before it is
+          reviewed. Decisions below implement the architect's routing
+          (SCREENS_REDESIGN_DECISIONS): Option A + Radar-as-single-entry.
+Method:   Full compose mount-tree read (60+ components, 7 routes, both composers,
+          the auto-draft cron) via a thorough exploration pass, verified against
+          code 2026-06-04. Live state beats any doc on conflict.
+
+------------------------------------------------------------------------------
+0. DECISIONS LOCKED (from the architect, restated)
+------------------------------------------------------------------------------
+  D-A. ONE composer. Retire the 4-step wizard. The unified composer uses the
+       ONE-SCREEN model (the /new model extended to all kinds), kind-adaptive.
+  D-B. RADAR is the SINGLE ENTRY. No standalone kind-grid page. The composer is
+       reached ONLY from Radar: proposal cards (review/send) + "+ New" (lean
+       kind step -> composer). One home, one composer.
+  D-C. Lens for the whole audit: "what does this RETIRE or UNIFY?" Additive-only
+       is the smell.
+
+------------------------------------------------------------------------------
+1. THE KIND-PICKER CUT — GROUNDED MANUAL vs AUTO-PROPOSED SPLIT
+------------------------------------------------------------------------------
+The architect asked the audit to CONFIRM the exact split. Determined from the
+ACTUAL cron handlers (supabase/functions/briefing-auto-draft-tick/_handlers.ts)
+— this CORRECTS the assumed split:
+
+  AUTO-PROPOSED (has a trigger handler -> arrives as a RADAR card; NOT in the
+  manual picker):
+    weekly_digest      handleWeeklySunday        (Sun 08:00 ET)
+    schedule_change    handleScheduleChanged     (event_change_audit < 24h)
+    game_recap         handleGameCompleted       (game_results published < 7d)
+    tournament_prelim  handleTournamentApproaching (start in lead_time_hours)
+    tournament_recap   handleTournamentCompleted (end_date < 14d)
+    rsvp_nudge         handleRsvpLow24h          (coverage < threshold, <24h)
+
+  MANUAL (no trigger -> admin starts by hand -> the "+ New" picker):
+    announcement, custom_message, games_recap, coach_roundup, family_guide
+
+  SPECIAL (not in the general picker):
+    academy_callup_notice — EventDetail-initiated (wizardSupported:false,
+      kindMetadata.js:145); opens the composer with the anchor pre-set.
+
+  DELTAS vs the architect's assumption (worth noting):
+    - coach_roundup: assumed auto -> actually MANUAL (no handler).
+    - games_recap: assumed auto -> actually MANUAL (no handler).
+    - rsvp_nudge: assumed token-only -> actually AUTO-PROPOSED (has a handler);
+      it is also a token kind, but it reaches the admin as a Radar card.
+
+  => THE CUT: the manual "+ New" picker shrinks from 12 flat tiles to FIVE
+     (announcement, custom_message, games_recap, coach_roundup, family_guide).
+     The 6 auto-proposed kinds leave the picker entirely (they live in Radar).
+     academy_callup stays its own EventDetail flow. This is the single biggest
+     simplification and it was the missed cut.
+
+  Grouping for the 5 (useKindUsage ranks within):
+    Messages:  announcement, custom_message
+    Recaps:    games_recap
+    Team-facing: coach_roundup, family_guide
+  (At 5 kinds, a flat usage-ranked list may be enough; group only if it helps.)
+
+------------------------------------------------------------------------------
+2. CURRENT STATE — THE TWO COMPOSERS (the M1 problem)
+------------------------------------------------------------------------------
+  WIZARD: /admin/briefings/compose -> BriefingsComposePage -> BriefingComposer
+    (147 LOC, §6 documented cap exception). 4 steps (composerSteps.js):
+      1 Kind   StepKindPicker (12 tiles) + DraftResumeRow (5 drafts)
+      2 Anchor+Audience  AnchorPicker + AudiencePicker(6 modes) + TeamGroupedPicker
+                         + RecentAndFavorites + PilotTestScopePicker
+      3 Body   TemplatePicker + AiDraftAnchored + lazy body(12) + signoff +
+               test-only + Save/Cancel
+      4 Send   StepSendConfirm (summary + SEND)
+    + ScheduleForLaterPicker pinned top-level (all steps). PreviewPanel on Step 3.
+    State: composerReducer (15 actions). Draft auto-save via useBriefingDraft.
+    Deep-link hydration via useBriefingDeepLink (?draft / anchor params).
+
+  ONE-SCREEN: /admin/briefings/new -> BriefingNewPage (132 LOC). announcement
+    ONLY. Inline: audience <select> (2 opts) + headline + AiDraftControls(gist) +
+    message textarea + test-only + preview toggle + send. No schedule, no draft
+    save, no signoff. Same submitBriefing send path.
+
+  OVERLAP (duplicated): submitBriefing (shared), PreviewPanel (shared),
+    ScheduleForLaterPicker (wizard only), test-only toggle (two impls, two
+    labels), audience (rich 6-mode vs 2-option dropdown), AI draft (two widgets:
+    AiDraftAnchored vs AiDraftControls). Two mental models for "compose."
+
+------------------------------------------------------------------------------
+3. TARGET END-STATE IA
+------------------------------------------------------------------------------
+  ENTRY:  Radar is the only admin briefings home.
+          - Auto-proposed cards (6 kinds) -> tap "Review & send" -> unified
+            composer hydrated from the proposal (?draft=id).
+          - "+ New" -> lean kind step (5 manual kinds) -> unified composer.
+  COMPOSER: ONE one-screen, kind-adaptive surface (FullScreenForm per §6):
+          [audience] [kind-specific body (lazy, reused from bodies/*)]
+          [AI draft (one unified control)] [signoff] [options: schedule +
+          test-only] [inline preview] [send]. Reducer reused; deep-link reused.
+  RETIRE: the 4-step wizard chrome (StepKindPicker as a full step, the
+          step-gated WizardHeader/Next, the multi-step reducer flow) AND the
+          announcement-only BriefingNewPage. Both collapse into the one screen.
+
+------------------------------------------------------------------------------
+4. PER-ROLE WIREFRAMES (admin; coach/parent are read-only, out of scope)
+------------------------------------------------------------------------------
+4a. Radar (entry) — unchanged structurally; "+ New" re-pointed.
+  ┌─────────────────────────────────────┐
+  │ Briefings                  [Sent] [+ New] │
+  │ READY TO SEND                       │
+  │  ┌ game recap · 11U Girls ───────┐  │  ← auto-proposed card
+  │  │ "We beat Storm 42-38…"        │  │
+  │  │              [Review & send]  │  │  → unified composer (hydrated)
+  │  └───────────────────────────────┘  │
+  │ SCHEDULED · SENT THIS WEEK …        │
+  └─────────────────────────────────────┘
+
+4b. "+ New" lean kind step (5 manual kinds, usage-ranked)
+  ┌─────────────────────────────────────┐
+  │ ← New briefing                      │
+  │  What do you want to send?          │
+  │  ┌ Announcement ┐ ┌ Custom message ┐│
+  │  ┌ Games recap  ┐ ┌ Coach roundup  ┐│
+  │  ┌ Family guide ┐                   │
+  └─────────────────────────────────────┘
+  (No send-mode here. No resume list — drafts live in Radar.)
+
+4c. Unified composer — ONE screen (e.g. announcement, or a hydrated game_recap)
+  ┌─────────────────────────────────────┐
+  │ ← Compose · Game recap              │
+  │  To: [11U Girls families ▾]         │  ← audience (one picker, all modes)
+  │  ┌ Draft with AI ──────────────┐    │  ← one AI control; facts panel for
+  │  │ [Draft] · facts: 42-38 (W)… │    │     anchored, gist box for free-form
+  │  └─────────────────────────────┘    │
+  │  [ kind-specific body fields ]      │  ← lazy bodies/* reused as-is
+  │  Signoff: [ … ]                     │
+  │  Options: ( ) Send now (•) Schedule │  ← consolidated options block
+  │           [x] Test to admin@ first  │
+  │  ▸ Preview                          │
+  │  [ Send test ]                      │
+  └─────────────────────────────────────┘
+
+------------------------------------------------------------------------------
+5. RETIRE/UNIFY MAP (M1–M6, evidence + retirement target)
+------------------------------------------------------------------------------
+  M1 TWO COMPOSERS -> ONE. Build the unified one-screen; retire the 4-step
+     wizard chrome + BriefingNewPage. NOTE: the exploration leaned "keep wizard,
+     delete /new" — that is REJECTED; it keeps the 4-step model the architect
+     chose to retire. Direction: one-screen wins; re-host the wizard's bodies +
+     reducer + audience picker into it. Retire: BriefingNewPage.jsx (132),
+     /admin/briefings/new route, and the step-gated wizard shell (StepKindPicker
+     as a step, WizardHeader Next-gating). Reducer + bodies + PreviewPanel +
+     ScheduleForLaterPicker + AudiencePicker are REUSED, not deleted.
+  M2 12-KIND FLAT PICKER -> 5 manual kinds, usage-ranked (§1). The 6 auto kinds
+     leave the picker (Radar only). Retire: the 12-tile grid as the entry; the
+     KindTile component is reused for the 5.
+  M3 SCATTERED OPTIONS -> one consolidated options block on the one screen
+     (schedule + test-only + pilot scope together). Today: schedule top-level,
+     test-only on Step 3, pilot scope on Step 2. No files deleted; one home.
+  M4 RESUME vs RADAR — NOT a true duplicate. DraftResumeRow = user-saved WIP;
+     Radar = trigger proposals. BUT per D-B, drafts live in Radar (one place):
+     RETIRE the in-composer DraftResumeRow; surface user-saved drafts in Radar
+     alongside proposals (a "Drafts" bucket). Removes the M4 overlap for real.
+  M5 /inbox vs /history — NOT overlapping (parent inbox vs admin sent-archive,
+     different audiences). No change. (Confirmed; the earlier flag was wrong.)
+  M6 ROUTE BLOAT — 7 routes. Folds: delete /admin/briefings/new (M1). /history
+     can become a Radar tab/section (Radar already renders "Sent this week");
+     LOW priority, keep separate now for clean pages. /team-briefings stays
+     (coach read-only, team-scoped RLS — distinct access model). Net: 7 -> 6
+     now; 6 -> 5 if /history folds later.
+
+------------------------------------------------------------------------------
+6. ANTI-PATTERN CROSS-REFERENCE
+------------------------------------------------------------------------------
+  #42 parallel-system: the two composers ARE the instance. M1 resolves it. After
+      retirement, grep for orphan consumers (AiDraftControls is /new-only; fold
+      its gist flow into the unified AI control). Verify no dead component left.
+  #51 dead-mount: deleting /admin/briefings/new — repoint Radar "+ New"
+      (RadarPage.jsx:51) + grep all '/admin/briefings/new' refs before delete.
+  #6 / #11 file-cap: BriefingComposer is already at the 147 documented cap. The
+      unified one-screen MUST NOT breach 150 — extract per-section subcomponents
+      (audience block, options block, AI control, body host) from the start.
+  #34 registry/dispatch: NONE removed (RESOLVER_REGISTRY / bodies untouched).
+  #43 cross-surface: the unified composer is one surface; lock the
+      kind-adaptive render with a test (each manual kind renders its body; each
+      hydrated auto kind renders facts).
+
+------------------------------------------------------------------------------
+7. PR SEQUENCE (build-once; composer-touching B1 folds in)
+------------------------------------------------------------------------------
+  PR-A  Unified one-screen composer scaffold: host + section subcomponents
+        (audience / AI control / body host / options / preview / send), reusing
+        the reducer + bodies + pickers. Behind the existing /compose route,
+        kind-adaptive. NOT yet wired to Radar. (Several small files, all < 150.)
+  PR-B  Lean kind step (5 manual kinds) + repoint Radar "+ New" + proposal-card
+        review into the unified composer. Retire BriefingNewPage + /new route.
+  PR-C  Retire the 4-step wizard chrome (StepKindPicker-as-step, Next-gating);
+        move user-saved drafts into Radar (M4); remove DraftResumeRow.
+  PR-D  Fold the composer-touching B1 items INTO the unified composer, built
+        once: token-kind chip preview, B2 cancellation card, the AI-2 facts
+        panel polish. (Per the architect's build-once rule.)
+  Each PR: §16.15 cross-surface test + manual smoke checklist.
+
+  PARALLEL (independent, anytime — no composer conflict): recap-default->TEAM
+  (one-line resolver), R-4 inbox polish, body em-dash sweep, per-recipient
+  pilot-test path. AI-draft voice tuning (Frank) continues.
+
+------------------------------------------------------------------------------
+8. OUT OF SCOPE (this redesign does NOT touch)
+------------------------------------------------------------------------------
+  - The Radar feed logic / proposal lifecycle (read-only; unchanged).
+  - The send pipeline (submitBriefing / queueRecipients / send-tournament-message).
+  - The 13 body editors' internal fields (reused as-is).
+  - The auto-draft cron + triggers (unchanged; they define the auto kinds).
+  - /inbox, /team-briefings, /history page internals (M5/M6: no fold now).
+  - RLS / pilot mechanics / the B3 gates.
+  - academy_callup's EventDetail-initiated flow (stays; just reaches the
+    unified composer with the anchor pre-set).
+
+------------------------------------------------------------------------------
+9. OPEN QUESTIONS (architect / Frank)
+------------------------------------------------------------------------------
+  Q1. Confirm the manual-picker 5 (§1). Should games_recap stay manual-only, or
+      get a trigger later (it has none today)? Should coach_roundup/family_guide
+      stay manual (they have pickers, no triggers)?
+  Q2. "+ New" lean step: a dedicated step/sheet, or inline kind chips at the top
+      of the one-screen composer (pick kind -> fields appear below)? The latter
+      is even flatter (no separate kind screen at all).
+  Q3. Drafts-in-Radar (M4): a third Radar bucket ("Drafts") for user-saved WIP,
+      or fold into "Ready to send"? Affects PR-C.
+  Q4. /history fold to a Radar tab now (M6) or keep the separate route?
+
+------------------------------------------------------------------------------
+10. EXPLICIT NON-FINDINGS (validated, no action)
+------------------------------------------------------------------------------
+  - M5 (/inbox vs /history): not a duplicate. No change.
+  - submitBriefing: already shared, no dupe.
+  - The 13 bodies + reducer + PreviewPanel: reusable as-is into the one screen.
+
+==============================================================================
+END. The missed cut is §1 (manual picker 12 -> 5; auto kinds live in Radar) +
+M1 (one composer, one-screen, retire the wizard). PR sequence §7 builds it once.
+Route Q1–Q4 and PR-A starts.
+==============================================================================
