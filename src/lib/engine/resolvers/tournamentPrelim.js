@@ -21,7 +21,7 @@ import {
   buildRsvpCalloutSection, buildScheduleSections, buildTaglineFooter,
   buildVenueListSection, buildVenueNotesSection,
 } from './tournamentPrelimSections';
-import { buildSubject, buildTeamSlices, fetchRecipientGuardians, trim } from './tournamentPrelimHelpers';
+import { buildSubject, buildTeamSlices, fetchParticipantGuardiansByTeam, fetchRecipientGuardians, trim } from './tournamentPrelimHelpers';
 import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 
 
@@ -76,7 +76,9 @@ export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { sup
   const { data: org, error: orgErr } = orgId ? await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config').eq('id', orgId).maybeSingle() : { data: null, error: null };
   if (orgErr) throw orgErr;
   const allRecipients = orgId ? await fetchRecipientGuardians(supabase, orgId, teamIds, effectivePilotOnly) : [];
-  const slices = buildTeamSlices(tournament_teams, allRecipients);
+  // Q3: scope prelim to tournament-roster participants (null = no roster -> whole team).
+  const participantsByTeam = await fetchParticipantGuardiansByTeam(supabase, tournamentId);
+  const slices = buildTeamSlices(tournament_teams, allRecipients, participantsByTeam);
 
   return {
     context: {
