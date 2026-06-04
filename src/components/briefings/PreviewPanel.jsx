@@ -1,23 +1,21 @@
-// Wave 4.2-A-8a — PreviewPanel routes 4 calendar-anchored kinds
-// through RESOLVER_REGISTRY via useResolverPreview. Free-form kinds
-// keep legacy compose. academy_callup_notice shows the blocker
-// banner (token mint pending in 4.3).
+// Wave 4.2-A-8a — PreviewPanel routes calendar-anchored kinds through
+// RESOLVER_REGISTRY via useResolverPreview. Free-form kinds (announcement,
+// custom_message) keep legacy compose.
 //
 // Wave 4.4-T0c — preview surface delegates to DevicePreviewFrame
 // (375 / 600 / plain) per CLAUDE.md §12 rule #12.
-
-// DUAL-COMPOSE: PreviewPanel uses renderers/weeklyDigest.js (1-arg legacy
-// shape) for admin preview; digestSend.js uses resolvers/weeklyDigest.js
-// (3-arg registry shape) for actual send. Today the bodies are
-// observationally identical because section data is invariant between
-// paths. If a future change adds per-recipient data to the registry
-// resolver, preview will silently drift from send. Either align both
-// paths or remove this comment when the drift is closed.
-// Decision: 2026-05-22 (Phase 3 Q5, claude.ai routing).
+//
+// D-3(a) 2026-06-03 — registry-path criterion widened to `entry !== null`
+// (was `sendPath === 'composerSubmit'`). Closes BUG C: rsvp_nudge,
+// weekly_digest, academy_callup_notice (sendPath != composerSubmit) now
+// preview via registry instead of falling through to legacy KIND_COMPOSERS.
+// Also closes the prior DUAL-COMPOSE drift surface (weeklyDigest had
+// preview via renderers/weeklyDigest legacy vs send via resolvers/
+// weeklyDigest registry — both render paths now go through resolvers/).
 
 import { useMemo, useState } from 'react';
 import { compose, renderSections, renderSectionsPlainText } from '../../lib/engine/composer';
-import { getDispatchSendPath, RESOLVER_REGISTRY } from '../../lib/engine/resolvers/registry';
+import { RESOLVER_REGISTRY } from '../../lib/engine/resolvers/registry';
 import { useResolverPreview } from '../../lib/engine/useResolverPreview';
 import DevicePreviewFrame from '../shared/DevicePreviewFrame';
 
@@ -59,9 +57,10 @@ function buildLegacyData(state, coaches, families, eventTitle, before, after, pe
 
 export default function PreviewPanel({ state, families, coaches, eventTitle, before, after, recipientCount }) {
   const [period] = useState(() => ({ start: new Date(), end: new Date(Date.now() + 7 * 86400000) }));
-  const sendPath = getDispatchSendPath(state.kind);
 
-  const entry = sendPath === 'composerSubmit' ? RESOLVER_REGISTRY[state.kind] : null;
+  // D-3(a) — registry path covers every kind that has a RESOLVER_REGISTRY
+  // entry, regardless of sendPath (was sendPath === 'composerSubmit'-only).
+  const entry = RESOLVER_REGISTRY[state.kind] || null;
   const anchor = useMemo(() => entry ? entry.anchorFromState(state) : null, [entry, state]);
   const overrides = useMemo(() => entry ? entry.overridesFromState(state) : null, [entry, state]);
   const preview = useResolverPreview({ resolve: entry?.resolve || null, anchor });
