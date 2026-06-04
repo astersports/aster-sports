@@ -79,7 +79,7 @@ export default function InboxDetail({ recipientId, onBack }) {
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--as-text-primary)' }}>{subject}</div>
           <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 2 }}>
-            {record.comms_messages?.sent_at ? new Date(record.comms_messages.sent_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : 'Pending send'}
+            {record.comms_messages?.sent_at ? new Date(record.comms_messages.sent_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/New_York' }) : 'Pending send'}
           </div>
         </div>
       </div>

@@ -50,7 +50,7 @@ function relTime(now, sent) {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(sent).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return new Date(sent).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' });
 }
 
 export default function InboxList({ items, onSelect }) {
