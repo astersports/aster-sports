@@ -26,17 +26,18 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
   if (!supabase) throw new Error('Missing supabase client (pass via options.supabase)');
 
   const { data: parent, error: pErr } = await supabase.from('guardians')
-    .select('id, first_name, last_name, email, user_id, org_id, is_pilot_family')
+    .select('id, first_name, last_name, email, user_id, org_id')
     .eq('user_id', parentUserId).maybeSingle();
   if (pErr) throw pErr;
   if (!parent) throw new Error(`Parent ${parentUserId} not found in guardians`);
 
-  // Defense-in-depth pilot gate (mirrors academyCallupNotice / rsvpNudge): in
-  // pilot mode, only a pilot family receives a guide. The audience layer
-  // (get_digest_recipients) is the first filter; this resolver-level
-  // is_pilot_family check is the second, so a non-pilot family can't receive a
-  // guide even when a caller reaches the resolver directly. Blocked → empty
-  // slices (0 recipients → graceful skip, same shape as the token kinds).
+  // Defense-in-depth pilot gate — D-5(a) RPC-canonical, matching
+  // academyCallupNotice / rsvpNudge. In pilot mode the redirect-aware
+  // get_digest_recipients RPC owns who is allowed: post-cutover it returns the
+  // real pilot families; under REDIRECT mode it returns synthetic NULL-guardian
+  // rows so the allowlist is empty and per-recipient kinds skip (verification
+  // tracked separately). NEVER the bare is_pilot_family field (BUG-D /
+  // pilotMechanismParity). Blocked → empty slices (graceful 0-recipient skip).
   let effectivePilotOnly = pilotOnly;
   if (effectivePilotOnly === undefined && parent.org_id) {
     const { data: settings, error: sErr } = await supabase.from('organization_settings')
@@ -44,8 +45,13 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
     if (sErr) throw sErr;
     effectivePilotOnly = settings?.pilot_mode_enabled ?? false;
   }
-  if (effectivePilotOnly && !parent.is_pilot_family) {
-    return { context: { parent, kidsWithEvents: [], conflicts: [], dateRange, coaches: [], orgName: 'Legacy Hoopers' }, slices: [] };
+  if (effectivePilotOnly && parent.org_id) {
+    const { data: rpcRows = [], error: rpcErr } = await supabase.rpc('get_digest_recipients', { p_org_id: parent.org_id, p_pilot_only: true });
+    if (rpcErr) throw rpcErr;
+    const allowed = new Set((rpcRows || []).filter((r) => r.guardian_id).map((r) => r.guardian_id));
+    if (!allowed.has(parent.id)) {
+      return { context: { parent, kidsWithEvents: [], conflicts: [], dateRange, coaches: [], orgName: 'Legacy Hoopers' }, slices: [] };
+    }
   }
 
   const { data: pgRows, error: pgErr } = await supabase.from('player_guardians')
