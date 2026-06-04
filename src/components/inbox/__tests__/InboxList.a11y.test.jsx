@@ -1,8 +1,17 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import InboxList from '../InboxList';
+
+// vitest runs without `globals: true`, so @testing-library/react's
+// auto-cleanup never registers — each multi-render test file must call
+// cleanup itself (matches the codebase convention, e.g.
+// ShareScheduleButton.test.jsx). Without this, renders accumulate across
+// it-blocks: getAllByRole('listitem') saw 4 (two renders) instead of 2,
+// and items[0] was the prior render's button (its no-op onSelect, not the
+// vi.fn()), so the Enter test counted 0 calls.
+afterEach(cleanup);
 
 // Phase 3 D-8(a-new) — structural a11y for parent inbox.
 // Asserts ARIA roles, labels, keyboard interaction. Full axe-core
