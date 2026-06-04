@@ -62,6 +62,7 @@ export async function sendWeeklyDigest({
   const sample = renderedFamilies[0];
   const subject = sample?.subject || `Week ahead — ${formatPeriodLabel(period)}`;
 
+  const periodStart = period.start.toISOString().slice(0, 10);
   const { data: msg, error: msgErr } = await supabase
     .from('comms_messages')
     .insert({
@@ -73,10 +74,23 @@ export async function sendWeeklyDigest({
       headline: 'WEEK AHEAD', sub_context: formatPeriodLabel(period),
       content_sections: sample?.sections || [],
       body_notes: bodyNotes || null, signoff_message: signoffMessage || null,
-      period_start: period.start.toISOString().slice(0, 10),
+      period_start: periodStart,
       period_end: period.end.toISOString().slice(0, 10),
     })
     .select('id').single();
+  // D-1(c) BUG A second half: race-resolved-other-tick-won. Mirrors the
+  // pattern in briefing-auto-draft-tick/index.ts:73-78. After D-1(a)
+  // narrowed comms_messages_weekly_digest_unique to status IN
+  // (scheduled, queued, sent), the only remaining 23505 path on this
+  // INSERT is "a digest for this period was already sent / scheduled."
+  // Surface that as a structured DigestAlreadySentError so callers can
+  // render kindness microcopy instead of the raw Postgres text.
+  if (msgErr && msgErr.code === '23505') {
+    const err = new Error(`A weekly digest for the period starting ${periodStart} is already scheduled or sent. Open it from the inbox to view or resend.`);
+    err.code = 'DIGEST_ALREADY_SENT';
+    err.period_start = periodStart;
+    throw err;
+  }
   if (msgErr) throw msgErr;
 
   // Build per-recipient queue rows. In test mode, only admin@ row is queued.
