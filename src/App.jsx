@@ -14,6 +14,7 @@ import AccountPage from './pages/AccountPage';
 import PublicSchedulePage from './pages/PublicSchedulePage';
 
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const InboxPage = lazy(() => import('./pages/InboxPage'));
 const EventDetailPage = lazy(() => import('./pages/EventDetailPage'));
 const TournamentsPage = lazy(() => import('./pages/TournamentsPage'));
 const TournamentDetailPage = lazy(() => import('./pages/TournamentDetailPage'));
@@ -87,6 +88,7 @@ export default function App() {
       <Route path="/tournaments"     element={<Protected><TournamentsPage /></Protected>} />
       <Route path="/tournaments/:id" element={<Protected><TournamentDetailPage /></Protected>} />
       <Route path="/messages"        element={<Protected><MessagesPage /></Protected>} />
+      <Route path="/inbox"           element={<Protected><InboxPage /></Protected>} />
       <Route path="/account"         element={<Protected><AccountPage /></Protected>} />
       <Route path="/records-preview" element={<Navigate to="/records" replace />} />
 
