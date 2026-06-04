@@ -33,6 +33,7 @@ const ImportSchedulePage = lazy(() => import('./pages/ImportSchedulePage'));
 const BriefingsComposePage = lazy(() => import('./pages/BriefingsComposePage'));
 const BriefingsRadarPage = lazy(() => import('./components/radar/RadarPage'));
 const BriefingNewPage = lazy(() => import('./pages/BriefingNewPage'));
+const CoachTeamBriefingsPage = lazy(() => import('./pages/CoachTeamBriefingsPage'));
 const BriefingsHistoryPage = lazy(() => import('./pages/BriefingsHistoryPage'));
 const BriefingHistoryDetail = lazy(() => import('./pages/admin/BriefingHistoryDetail'));
 const RegisterEntryPage = lazy(() => import('./pages/RegisterEntryPage'));
@@ -89,6 +90,7 @@ export default function App() {
       <Route path="/teams/:teamId/tournaments" element={<Protected><TournamentsPage /></Protected>} />
       <Route path="/tournaments"     element={<Protected><TournamentsPage /></Protected>} />
       <Route path="/tournaments/:id" element={<Protected><TournamentDetailPage /></Protected>} />
+      <Route path="/team-briefings"  element={<Protected allowedRoles={['admin', 'coach']}><CoachTeamBriefingsPage /></Protected>} />
       <Route path="/messages"        element={<Protected><MessagesPage /></Protected>} />
       <Route path="/inbox"           element={<Protected><InboxPage /></Protected>} />
       <Route path="/account"         element={<Protected><AccountPage /></Protected>} />
