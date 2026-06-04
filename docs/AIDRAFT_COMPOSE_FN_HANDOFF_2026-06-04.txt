@@ -1,0 +1,261 @@
+==============================================================================
+AI-DRAFT COMPOSE — ENGINE-LANE HANDOFF / NEXT STAGES
+==============================================================================
+Author:   terminal-CC (UI lane)
+Date:     2026-06-04
+For:      Claude AI architect (engine / edge-fn lane)
+Status:   UI lane staged + paused at the fn seam. Engine lane = the critical path.
+Cross-ref:
+  - Binding contract (CODE, already merged): src/hooks/useAiDraft.js + its test
+  - Voice profile (CODE, already merged): supabase/migrations/
+      20260604145429_voice_config_ai_draft_profile_seed.sql
+  - AIDRAFT_BUILD_SPEC: chat-side only (NOT in repo) — §1/§2b/§4a referenced by
+      the hook comments; this doc consolidates what the repo now pins.
+  - Phase-2 redesign (separate arc): docs/REDESIGN_BRIEFINGS_2026-06-03.md
+  - Voice/HTML rules: CLAUDE.md §13, §16.5; brand colors src/lib/engine/colors.js
+
+------------------------------------------------------------------------------
+0. TL;DR
+------------------------------------------------------------------------------
+Build the `briefing-ai-draft` Supabase edge function. The UI client, its
+conformance test, and the org voice profile are already merged to main. The
+function does NOT exist yet (confirmed: supabase/functions/ has 13 fns, none
+ai-draft; no config.toml entry). Once the fn is deployed and the slug is
+confirmed, the UI lanes (AI-1 free-form, AI-2 auto-proposed) unblock and
+terminal-CC ships them. Everything below §3 is the engine lane's to build;
+§2 is the interface you MUST match (the hook + its test lock it).
+
+------------------------------------------------------------------------------
+1. WHAT IS ALREADY SHIPPED (merged to main)
+------------------------------------------------------------------------------
+PR #711  AI-draft P1 + P2:
+  - P1 (commit bd1920f): seed the LH voice profile into
+    organizations.voice_config.ai_draft_profile for org
+    e3e95e21-3571-4e9a-985a-d5d01480d4a6, and fix signoff_default to
+    "Frank & Coach Kenny". Idempotent jsonb merge. Config data only.
+  - P2 (commit c049726): src/hooks/useAiDraft.js — the SINGLE client of the
+    edge fn — plus a conformance test. Pre-written as tested infra with NO UI
+    mount yet (no AP #51 dead-mount breach; the mount lands in AI-1).
+
+PR #712  Deterministic subject voice fix (NOT AI; mentioned for context):
+  - Replaced the em-dash separator with a colon across all briefing SUBJECT
+    builders (schedule_change, game_recap, games_recap, tournament_recap,
+    tournament_prelim, weekly_digest, coach_roundup, rsvp_nudge, family_guide).
+  - Relevance to engine lane: the AI-draft fn's PROSE must also obey "NO em
+    dashes" (voice profile §4). The deterministic engine now matches that rule;
+    the AI output must too.
+
+PR #713  P4 — BriefingComposer extraction (prep for AI-1):
+  - BriefingComposer.jsx 169 -> 147 lines (cleared the 150-line cap) by
+    extracting useDraftUrlSync + useGameRecapTournament hooks. Behavior-
+    identical. This was the "extract before add" step so the AI-1 mount has
+    headroom under the cap.
+
+------------------------------------------------------------------------------
+2. THE BINDING CONTRACT (verbatim from src/hooks/useAiDraft.js — DO NOT DRIFT)
+------------------------------------------------------------------------------
+The hook and its test (src/hooks/__tests__/useAiDraft.test.js) lock this shape.
+The edge fn MUST conform; if the engine lane needs a different shape, that is a
+contract change and the hook + test change with it (flag it, don't silently
+diverge).
+
+CALL SITE:  supabase.functions.invoke(AI_DRAFT_FN_SLUG, { body })
+SLUG:       AI_DRAFT_FN_SLUG = 'briefing-ai-draft'  (PENDING confirm — see §4a)
+
+REQUEST body (JSON):
+  Always present:
+    org_id    : uuid   (the caller's org, from AuthContext)
+    kind      : string (briefing kind — see §4d for the v1 supported set)
+    mode      : string (seen in tests: 'draft', 'redraft' — see §4d)
+    audience  : object (seen in tests: { team_id } or {} — see §4d)
+  Exactly one of these two shapes, depending on lane:
+    AUTO-PROPOSED:  proposal_id : string         (no gist)
+    FREE-FORM:      facts : object  +  gist : string
+  (The hook only adds proposal_id / facts / gist when non-null. So a free-form
+   call sends facts+gist and NO proposal_id; an auto-proposed call sends
+   proposal_id and NO facts/gist.)
+
+RESPONSE body (JSON) on success:
+    body         : string            -> the drafted PROSE (rendered into editor)
+    card_summary : string            -> short "10-second summary" line
+    facts_used   : array             -> the facts the draft actually used
+                                        (hook passes through as-is; shape is
+                                        the engine lane's call — see §4d)
+    warnings     : array of string   -> e.g. missing-fact blanks ("venue missing")
+  Any missing field defaults to '' / [] client-side (test case d). Keep the
+  four keys exactly: body, card_summary, facts_used, warnings.
+
+RESPONSE on failure:
+    { error: "<human message>" }     -> hook throws Error(error), surfaces to UI.
+  This MUST be returned in the JSON BODY (the hook reads data.error first, then
+  the transport error), because supabase.functions.invoke collapses non-2xx to
+  a generic FunctionsHttpError with no detail. Mirror the pattern already used
+  by useImportSchedule.
+
+SERVER-SIDE responsibilities the hook explicitly delegates (per its header):
+  - JSON parse, markdown-fence stripping, and RETRY all happen server-side.
+    The hook consumes the clean JSON shape as-is. Do not push parse/retry to
+    the client.
+
+------------------------------------------------------------------------------
+3. WHAT THE EDGE FN MUST DO (engine lane build)
+------------------------------------------------------------------------------
+(Reference implementation to model on: supabase/functions/suggest-briefing-closer
+ is the closest existing LLM-calling fn; briefing-cron-dispatch /
+ briefing-auto-draft-tick show the secret + service-role patterns.)
+
+3.1 Auth
+  - Called via supabase.functions.invoke with the caller's user JWT, so the fn
+    runs verify_jwt:true (the default). It is an authenticated admin action, NOT
+    a shared-secret/cron fn. => No CRON_SECRET / token-param auth here.
+  - If you add config.toml at all, do NOT set verify_jwt=false (that would
+    require shared-secret auth and trip the AP #31 audit test). Leaving it
+    default (true) is correct and needs no config entry.
+
+3.2 System prompt source (the moat)
+  - Read organizations.voice_config.ai_draft_profile for org_id and drop it in
+    verbatim as the system prompt. It is per-org (tenant #2 gets its own). It is
+    already seeded for LH. The fn must NOT hardcode the voice; it reads it.
+
+3.3 Facts discipline (non-negotiable, voice profile §7)
+  - Facts (score, record, opponent, date, time, venue, parking, arrival) are
+    GIVEN to the model from the DB and used VERBATIM. The model writes prose
+    AROUND facts; it never invents a fact. Missing fact => emit a `warnings`
+    entry + leave a clear blank; do not guess.
+  - This maps directly to the `facts_used` + `warnings` response keys.
+
+3.4 The two modes
+  - FREE-FORM (announcement / custom_message lane = AI-1): the request carries
+    `facts` (whatever the admin supplied) + `gist` (the admin's intent in a
+    sentence). The fn composes prose from gist + facts in the org voice.
+  - AUTO-PROPOSED (calendar-anchored kinds = AI-2): the request carries
+    `proposal_id`. The fn loads that proposal's assembled facts (see §4b) and
+    composes prose for the anchored kind (game_recap, weekly_digest, etc.).
+
+3.5 LLM
+  - Use the latest Claude model (per CLAUDE.md env guidance). Key lives in
+    app_secrets, read at request time via the getAppSecret helper pattern — NOT
+    Deno.env (AP #33). (suggest-briefing-closer already establishes how an LLM
+    key is handled here — match it.)
+
+3.6 Output hygiene
+  - Return STRICT JSON { body, card_summary, facts_used, warnings }. Strip any
+    markdown code fences the model adds before returning. Retry on parse failure
+    server-side. Body prose must obey the voice profile HARD DON'TS (no em
+    dashes, no corporate jargon, signoff by name).
+
+------------------------------------------------------------------------------
+4. OPEN SEAMS — NEED THE ARCHITECT'S DECISION / CONFIRMATION
+------------------------------------------------------------------------------
+These are the things the repo does NOT yet pin. The UI lane is blocked on
+answers to 4a/4b/4d; 4c/4e are engine-internal but listed for completeness.
+
+4a. SLUG (blocks nothing structurally; one-line UI update).
+    Hook constant is 'briefing-ai-draft'. If you deploy under a different slug,
+    report it and terminal-CC updates the single AI_DRAFT_FN_SLUG constant.
+    Nothing else in the UI changes.
+
+4b. proposal_id STORAGE SHAPE (blocks AI-2).
+    The auto-proposed lane sends proposal_id. WHERE do proposals live and what
+    do they carry? Open questions for the engine lane to define:
+      - Is there a proposals table, or is proposal_id a comms_messages.id whose
+        content_sections already hold assembled facts?
+      - What facts payload does a proposal carry (so AI-2 can render the facts
+        panel, and so facts_used is meaningful)?
+    AI-2 cannot render the facts panel or call draft() with a real proposal_id
+    until this is defined.
+
+4c. FACTS ASSEMBLY (engine-internal; recommendation, not a decision).
+    RECOMMENDATION (label: inference, not a settled call): reuse the existing
+    deterministic resolvers (src/lib/engine/resolvers/resolveX) to gather facts
+    per kind rather than building a parallel facts assembler. They already walk
+    the calendar + DB per kind and are pure with injected IO (AP #27: they take
+    options.supabase). Reusing them keeps ONE source of truth for facts and
+    avoids PATTERN A (same concept, two sources). If you assemble facts a new
+    way, that's a second facts source — flag the divergence.
+
+4d. ENUMERATIONS (blocks AI-1/AI-2 wiring details).
+    Confirm for v1:
+      - `kind`: which kinds does the fn support in v1? (Tests exercise
+        announcement, game_recap, game_day. Repo's canonical 12 kinds are in
+        CLAUDE.md §13; not all may be AI-draftable in v1.)
+      - `mode`: enumerate the legal values + meaning. (Tests show 'draft' and
+        'redraft'. Is 'redraft' a regenerate-with-same-inputs, or does it carry
+        prior body for revision?)
+      - `audience`: enumerate the shape(s). (Tests show { team_id } and {}.
+        Does the fn use audience to scope facts, or is it passthrough metadata?)
+      - `facts_used` element shape. (Test uses { k, v } pairs; confirm so the
+        AI-2 facts panel renders the right fields.)
+
+4e. SECRET + DEPLOY GATES (engine-internal).
+    - LLM key in app_secrets (AP #33), not Deno.env.
+    - If (and only if) any shared-secret path is added, add the config.toml
+      verify_jwt entry + it must pass src/lib/__tests__/verifyJwtConfigAudit.
+      test.js (AP #31). For the JWT-authenticated design above, no entry needed.
+    - Per AP #32: a DO-block SQL check is not enough; smoke the deployed fn
+      through the gateway (curl with a real user JWT) before declaring it live.
+
+------------------------------------------------------------------------------
+5. DOWNSTREAM UI LANES (terminal-CC ships these once the fn is live)
+------------------------------------------------------------------------------
+Both are BLOCKED on the fn + §4a/§4b/§4d answers. Both call useAiDraft only
+(no send, no DB write — Send stays the unchanged submitBriefing path).
+
+AI-1  FREE-FORM DRAFT (announcement / custom_message):
+  - Mount a "Draft with AI" affordance in the composer Body step for free-form
+    kinds. Admin types a gist (+ any facts) -> draft({ kind, mode:'draft',
+    gist, facts, audience }) -> render `body` into the existing editor, show
+    `warnings` inline, allow edit-before-send. P4 already cleared the cap for
+    this mount.
+  - Unblocks on: fn live + slug confirmed (§4a) + kind/mode set (§4d).
+
+AI-2  AUTO-PROPOSED DRAFT + FACTS PANEL (calendar-anchored kinds):
+  - For an anchored kind, show the auto-proposed body + a facts panel
+    (facts_used) + warnings. draft({ kind, mode, proposalId, audience }).
+  - Unblocks on: everything in AI-1 PLUS the proposal_id storage shape (§4b)
+    and facts_used element shape (§4d).
+
+Stop-at-fn seam: terminal-CC is paused here by Frank's explicit call. On your
+"fn deployed, slug = X" report, terminal-CC: (1) updates AI_DRAFT_FN_SLUG,
+(2) smokes it, (3) builds AI-1, then (4) AI-2 once §4b lands.
+
+------------------------------------------------------------------------------
+6. VOICE PROFILE (the moat) — already in the DB
+------------------------------------------------------------------------------
+Seeded at organizations.voice_config.ai_draft_profile (migration
+20260604145429). Full text is in that migration. Key rules the fn enforces:
+  - Voice: sharp, warm coach-operator. Short punchy sentences, fragments OK.
+    Lead with hook/headline, then facts. Honest about losses, framed on effort.
+    Precise on logistics. Warm/rally close. Signoff by name ("Frank & Coach
+    Kenny"; add "& Coach Darien" for 9U/8U).
+  - HARD DON'TS: no corporate jargon; NO em dashes (periods/commas/colons or
+    ·/| only); no fluffy marketing; NEVER invent a fact.
+  - Per-kind structure templates + signature phrases + few-shot examples are in
+    the profile text. Frank tunes the profile against hand-written briefings
+    (profile §10) — that tuning is where quality is won; the plumbing is done.
+
+------------------------------------------------------------------------------
+7. RELATED OPEN ITEMS (not blocking the fn; flagged for routing)
+------------------------------------------------------------------------------
+  - Body-content em dashes: PR #712 fixed SUBJECTS only. Some BODY lines still
+    use em dashes (e.g. games_recap per-game line "Sat, May 3 — 10U Blue ..."
+    in gamesRecap.js). Awaiting Frank's call on a body sweep.
+  - En dashes (scores "42 - 38", date ranges "May 11-17"): left intact as
+    correct typography (not the banned em dash). Awaiting confirm.
+  - Stream B reminder spec-drift (CLAUDE.md §16.5): impl uses a 24h coverage-
+    threshold model, not the spec's T-4h/T-1h. Logged P1, not blocking.
+
+------------------------------------------------------------------------------
+8. ACCEPTANCE GATES FOR THE FN PR
+------------------------------------------------------------------------------
+  - useAiDraft.test.js (already merged) is the client-side conformance lock;
+    the fn's request parsing + response shape must satisfy what it asserts.
+  - verifyJwtConfigAudit.test.js stays green (AP #31).
+  - edgeFunctionDirectoryParity (if present) accounts for the new fn.
+  - Gateway curl smoke with a real user JWT returns the JSON shape (AP #32).
+  - Prose output obeys voice profile HARD DON'TS (spot-check: no em dashes).
+
+==============================================================================
+END — terminal-CC paused at the fn seam. Reply with: fn deployed + slug +
+answers to §4a/§4b/§4d, and the UI lanes ship.
+==============================================================================
