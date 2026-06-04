@@ -1,6 +1,8 @@
-// Unified BriefingComposer 3-step wizard (kind → anchor+audience →
-// body+signoff) with live preview. Auto-saves via useBriefingDraft.
-// Bug fixes locked in wave 4.1b + 4.2-A-8d (weekly_digest short-circuit).
+// BriefingComposer — one-screen composer (PR-A compose simplification). Pick a
+// kind, then audience + body + options + preview + send render on a single
+// scroll (no step gating), via ComposerSections. Auto-saves via useBriefingDraft.
+// Reached from Radar (review a proposal, or + New). Bug fixes locked in wave
+// 4.1b + 4.2-A-8d (weekly_digest short-circuit).
 
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { useDraftUrlSync } from '../../hooks/useDraftUrlSync';
@@ -15,21 +17,16 @@ import { useOrgStaff } from '../../hooks/useOrgStaff';
 import { useBriefingDraft } from '../../hooks/useBriefingDraft';
 import { useWizardDigestData } from '../../hooks/useWizardDigestData';
 import { supabase } from '../../lib/supabase';
-import { canAdvance, composerReducer } from './composerReducer';
+import { composerReducer } from './composerReducer';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 import { computeAudience } from '../../lib/briefings/audience';
 import { translateBriefingError } from '../../lib/briefings/translateBriefingError';
 import StepKindPicker from './StepKindPicker';
-import StepAnchorAudience from './StepAnchorAudience';
-import StepBodySignoff from './StepBodySignoff';
-import StepSendConfirm from './StepSendConfirm';
-import PreviewPanel from './PreviewPanel';
-import ScheduleForLaterPicker from './ScheduleForLaterPicker';
-import WizardHeader from './WizardHeader';
+import ComposerSections from './ComposerSections';
 import { submitBriefing } from './composerSubmit';
 import { friendlySendError } from '../../lib/briefings/sendErrorMessage';
 import { sendWeeklyDigestFromWizard } from '../../lib/briefings/sendWeeklyDigestFromWizard';
-import { buildInitial, fmtSchedule, hasAuthoredContent, STEPS } from './briefingComposerHelpers';
+import { buildInitial, fmtSchedule, hasAuthoredContent } from './briefingComposerHelpers';
 
 export default function BriefingComposer({ onClose, initialKind, initialAnchorKind, initialAnchorId, initialDraftId, initialKindFilter }) {
   const { orgId } = useAuth();
@@ -47,15 +44,13 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   useResetOnOrgChange(orgId, dispatch); // May 16 audit P2 #9 — prevent cross-org reducer-state bleed
 
   useEffect(() => {
-    if (state.kind || !state.kindFilter || state.kindFilter.length !== 1 || state.step !== 1) return undefined;
+    if (state.kind || !state.kindFilter || state.kindFilter.length !== 1) return;
     const [only] = state.kindFilter;
     const meta = KIND_METADATA[only] || {};
     Promise.resolve().then(() => {
       dispatch({ type: 'SET_KIND', kind: only, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType });
-      dispatch({ type: 'GO_FORWARD' });
     });
-    return undefined;
-  }, [state.kindFilter, state.kind, state.step, state.anchor_kind, state.audience_type]);
+  }, [state.kindFilter, state.kind, state.anchor_kind, state.audience_type]);
 
   const loadDraft = useCallback(async (id) => {
     if (!id) return;
@@ -73,24 +68,13 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
     dispatch({ type: 'SET_PILOT_ONLY', value: !!pilotModeEnabled });
   }, [pilotModeEnabled]);
 
-  // Bug C — kind-null guard. If state lands on Step 3 without a kind,
-  // bounce back to Step 1 with a toast so admins can pick first.
   useEffect(() => {
-    if (state.step === STEPS.length && !state.kind) {
-      dispatch({ type: 'JUMP_TO', step: 1 });
-      showToast('Pick a kind to continue.', 'info');
-    }
-  }, [state.step, state.kind, showToast]);
-
-  useEffect(() => {
-    if (!state.kind || state.step < 2) return;
-    // Don't create an empty scratch draft from clicking through the wizard
-    // and backing out. Only persist once content has been authored (or a
-    // draft row already exists, so later edits — including clearing a
-    // field — keep saving).
+    if (!state.kind) return;
+    // Only persist once content has been authored (or a draft row already
+    // exists, so later edits — including clearing a field — keep saving).
     if (!draft.draftId && !hasAuthoredContent({ body: state.body, signoff_message: state.signoff_message })) return;
     draft.save({ kind: state.kind, anchor_kind: state.anchor_kind, anchor_id: state.anchor_id, audience_type: state.audience_type, audience_filter: state.audience_filter, content_sections: { body: state.body }, signoff_message: state.signoff_message });
-  }, [state.kind, state.anchor_kind, state.anchor_id, state.audience_type, state.audience_filter, state.body, state.signoff_message, state.step, draft]);
+  }, [state.kind, state.anchor_kind, state.anchor_id, state.audience_type, state.audience_filter, state.body, state.signoff_message, draft]);
 
   const audience = useMemo(() => computeAudience({
     recipientsFiltered: recipients, recipientsTotal,
@@ -120,27 +104,34 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
     finally { setBusy(false); }
   };
 
-  const stepIndex = state.step - 1;
-  // Wave 4.8 BUG (5/13 incident) — Next is a dead end when the kind's
-  // wizardSupported flag is false (the Body step renders a redirect card).
+  // wizardSupported:false (academy_callup) renders a redirect card in the body
+  // (no audience/options/send) — ComposerSections gates on `blocked`.
   const wizardBlocked = !!state.kind && KIND_METADATA[state.kind]?.wizardSupported === false;
-  const canGo = canAdvance(state) && !wizardBlocked;
   return (
-    <FullScreenForm open onClose={onClose} title={`Compose · ${STEPS[stepIndex]}`}>
+    <FullScreenForm open onClose={onClose} title={state.kind ? `Compose · ${KIND_METADATA[state.kind]?.label || ''}` : 'New briefing'}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <WizardHeader step={state.step} totalSteps={STEPS.length} onBack={() => dispatch({ type: 'GO_BACK' })} draft={draft} hasKind={!!state.kind} viewSentTo="/admin/briefings/history" />
-        <ScheduleForLaterPicker mode={state.send_mode === 'scheduled' ? 'schedule_for_later' : 'send_now'} scheduledFor={state.scheduled_for} onChange={(payload) => dispatch({ type: 'SET_SCHEDULE', payload })} />
-        {state.step === 1 && <StepKindPicker visibleKinds={state.kindFilter} onResume={(d) => loadDraft(d.id)} onPick={(kind, meta) => dispatch({ type: 'SET_KIND', kind, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType, defaultBody: {} }) || dispatch({ type: 'GO_FORWARD' })} />}
-        {state.step === 2 && <StepAnchorAudience state={state} dispatch={dispatch} audience={audience} recipientsLoading={recipientsLoading} pilotTestRecipientEmail={pilotTestRecipientEmail} />}
-        {state.step === 3 && <StepBodySignoff state={state} dispatch={dispatch} audience={audience} hasParentTournament={hasParentTournament} onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose} />}
-        {state.step === STEPS.length && <StepSendConfirm state={state} audience={audience} onSend={onSend} sending={busy} pilotModeEnabled={pilotModeEnabled} />}
-        {state.step < STEPS.length && (
-          <button type="button" disabled={!canGo} onClick={() => dispatch({ type: 'GO_FORWARD' })} className="as-press" style={{ minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: canGo ? 'var(--as-accent)' : 'var(--as-bg-tertiary)', color: canGo ? 'var(--as-text-inverse)' : 'var(--as-text-tertiary)', fontSize: 15, fontWeight: 600, cursor: canGo ? 'pointer' : 'default' }}>
-            Next
-          </button>
+        {!state.kind && (
+          <StepKindPicker
+            visibleKinds={state.kindFilter}
+            onResume={(d) => loadDraft(d.id)}
+            onPick={(kind, meta) => dispatch({ type: 'SET_KIND', kind, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType, defaultBody: {} })}
+          />
         )}
-        {/* PreviewPanel intentionally stays bound to Step 3 (Body) only — Frank-locked decision. Step 4 (Send) is text-only confirmation. */}
-        {state.step === 3 && <PreviewPanel state={state} families={recipients} coaches={coaches} recipientCount={audience.filtered} />}
+        {state.kind && (
+          <>
+            <button type="button" onClick={() => dispatch({ type: 'RESET' })} className="as-press" style={{ alignSelf: 'flex-start', background: 'none', border: 'none', padding: 4, color: 'var(--as-text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              ← Change kind
+            </button>
+            <ComposerSections
+              state={state} dispatch={dispatch} audience={audience}
+              recipients={recipients} recipientsLoading={recipientsLoading} coaches={coaches}
+              pilotTestRecipientEmail={pilotTestRecipientEmail} pilotModeEnabled={pilotModeEnabled}
+              hasParentTournament={hasParentTournament} blocked={wizardBlocked}
+              onSend={onSend} sending={busy}
+              onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose}
+            />
+          </>
+        )}
       </div>
     </FullScreenForm>
   );
