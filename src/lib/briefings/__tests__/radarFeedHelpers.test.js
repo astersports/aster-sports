@@ -47,9 +47,10 @@ describe('summaryLine — schedule_change is END-AWARE', () => {
 });
 
 describe('audiencePill', () => {
-  it('formats "<n> families · <scope>" with singular/plural', () => {
-    expect(audiencePill({ recipient_count: 12, audience_type: 'org_all' })).toBe('12 families · All families');
-    expect(audiencePill({ recipient_count: 1, audience_type: 'team' })).toBe('1 family · Team');
+  it('formats "<n> families · <anchor>" with singular/plural', () => {
+    expect(audiencePill({ recipient_count: 12, anchor_kind: 'org' })).toBe('12 families · All program');
+    const ctx = { eventsById: { e: { title: '10U Black Practice' } } };
+    expect(audiencePill({ recipient_count: 1, anchor_kind: 'event', anchor_id: 'e' }, ctx)).toBe('1 family · 10U Black Practice');
     expect(audiencePill({ recipient_count: null, anchor_kind: 'org' })).toMatch(/^—/);
   });
 });

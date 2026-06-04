@@ -5,7 +5,6 @@
 // + enrichment lookups into ProposalCard view-models. No engine/resolver edits.
 
 import { KIND_METADATA } from './kindMetadata';
-import { audienceLabel } from './audienceLabels';
 
 // Friendly time helpers (Eastern, matching the rest of the briefings UI).
 function fmtDateTime(ts) {
@@ -50,11 +49,12 @@ export function summaryLine(row, ctx = {}) {
 }
 
 // "<n> families · <anchor>" — read-only audience pill (editable dropdown is R-3).
+// Scope is the anchor title (event/tournament/program) — concrete + self-
+// contained, no dependency on the audience-label module.
 export function audiencePill(row, ctx = {}) {
   const n = row.recipient_count;
   const who = n == null ? '—' : `${n} ${n === 1 ? 'family' : 'families'}`;
-  const scope = row.audience_type ? audienceLabel(row.audience_type) : anchorTitle(row, ctx);
-  return `${who} · ${scope}`;
+  return `${who} · ${anchorTitle(row, ctx)}`;
 }
 
 // Bucket a flat comms_messages list into the 3 Radar sections. `now` injected
