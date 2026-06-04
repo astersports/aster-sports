@@ -17,6 +17,7 @@ import { supabase } from '../../lib/supabase';
 import { canAdvance, composerReducer } from './composerReducer';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 import { computeAudience } from '../../lib/briefings/audience';
+import { translateBriefingError } from '../../lib/briefings/translateBriefingError';
 import StepKindPicker from './StepKindPicker';
 import StepAnchorAudience from './StepAnchorAudience';
 import StepBodySignoff from './StepBodySignoff';
@@ -134,7 +135,10 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
       else if (r?.scheduledFor) showToast(`Scheduled for ${fmtSchedule(r.scheduledFor)}.`, 'success');
       else showToast(state.test_only ? 'Test sent to admin@.' : `Sent to ${audience.filtered ?? 'recipients'}.`, 'success');
       onClose?.();
-    } catch (e) { showToast(friendlySendError(e) || e.message || "Looks like that didn't go through. Try again?", 'error'); }
+    // DEF-8b friendlySendError handles NoRecipientsError; Meta/B5.1
+    // translateBriefingError handles DB-class errors (23505/23514/etc.)
+    // and falls back to the message or the generic friendly default.
+    } catch (e) { showToast(friendlySendError(e) || translateBriefingError(e), 'error'); }
     finally { setBusy(false); }
   };
 
