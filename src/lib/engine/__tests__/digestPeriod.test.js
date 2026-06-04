@@ -41,17 +41,17 @@ describe('formatPeriodLabel + formatSubject', () => {
   it('same-month range collapses second month name', () => {
     const period = { start: new Date('2026-05-11T12:00:00Z'), end: new Date('2026-05-17T12:00:00Z') };
     expect(formatPeriodLabel(period)).toBe('May 11–17');
-    expect(formatSubject(period)).toBe('Week ahead — May 11–17');
+    expect(formatSubject(period)).toBe('Week ahead: May 11–17');
   });
   it('cross-month range keeps both month names', () => {
     const period = { start: new Date('2026-05-28T12:00:00Z'), end: new Date('2026-06-03T12:00:00Z') };
     expect(formatPeriodLabel(period)).toBe('May 28–Jun 3');
-    expect(formatSubject(period)).toBe('Week ahead — May 28–Jun 3');
+    expect(formatSubject(period)).toBe('Week ahead: May 28–Jun 3');
   });
   it('cross-year range includes year on both sides', () => {
     const period = { start: new Date('2026-12-30T12:00:00Z'), end: new Date('2027-01-05T12:00:00Z') };
     expect(formatPeriodLabel(period)).toBe('Dec 30, 2026–Jan 5, 2027');
-    expect(formatSubject(period)).toBe('Week ahead — Dec 30, 2026–Jan 5, 2027');
+    expect(formatSubject(period)).toBe('Week ahead: Dec 30, 2026–Jan 5, 2027');
   });
   it('empty period yields empty label', () => {
     expect(formatPeriodLabel({})).toBe('');

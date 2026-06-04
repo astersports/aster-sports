@@ -85,7 +85,7 @@ describe('schedule_change resolver — contract', () => {
     const audit = [{ ...event_change_audit[0], change_kind: 'cancelled', before_jsonb: { status: 'scheduled' }, after_jsonb: { status: 'cancelled', cancellation_reason: 'Gym closed' } }];
     const { context, slices } = await resolveScheduleChange({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient({ ...FIXTURES, event_change_audit: audit }), now: NOW });
     const { subject, content_sections } = composeScheduleChange(context, slices[0], {});
-    expect(subject).toBe('Cancelled — 11U Girls Skills Lab');
+    expect(subject).toBe('Cancelled: 11U Girls Skills Lab');
     const header = content_sections.find((s) => s.kind === 'header');
     expect(header.headline).toBe('CANCELLED');
     expect(content_sections.find((s) => s.kind === 'schedule_change_diff')).toBeUndefined();

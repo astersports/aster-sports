@@ -41,7 +41,7 @@ describe('game_recap resolver — snapshot vs hand-authored expected output', ()
       { supabase: mockClient(FIXTURES), now: NOW },
     );
     const { subject, content_sections } = composeGameRecap(context, slices[0], {});
-    expect(subject).toBe('Recap — 10U Blue beat Resurrection White 4AB, 2-0');
+    expect(subject).toBe('Recap: 10U Blue beat Resurrection White 4AB, 2-0');
     expect(norm(content_sections)).toEqual(expectedContentSections);
   });
 });

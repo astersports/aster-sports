@@ -27,17 +27,17 @@ describe('summarizeGames', () => {
 
 describe('buildGamesSubject', () => {
   it('pluralizes + includes record', () => {
-    expect(buildGamesSubject(GAMES, '1-1')).toBe('Games recap — 2 games (1-1)');
-    expect(buildGamesSubject([GAMES[0]], '0-1')).toBe('Games recap — 1 game (0-1)');
+    expect(buildGamesSubject(GAMES, '1-1')).toBe('Games recap: 2 games (1-1)');
+    expect(buildGamesSubject([GAMES[0]], '0-1')).toBe('Games recap: 1 game (0-1)');
   });
 });
 
 describe('composeGamesRecap', () => {
-  const context = { org: ORG, games: GAMES, summary: summarizeGames(GAMES), subject: 'Games recap — 2 games (1-1)' };
+  const context = { org: ORG, games: GAMES, summary: summarizeGames(GAMES), subject: 'Games recap: 2 games (1-1)' };
 
   it('emits header + one stats_narrative per game + signoff + footer (existing renderers only)', () => {
     const { subject, content_sections } = composeGamesRecap(context, { kind: 'family' }, {});
-    expect(subject).toBe('Games recap — 2 games (1-1)');
+    expect(subject).toBe('Games recap: 2 games (1-1)');
     const kinds = content_sections.map((s) => s.kind);
     expect(kinds).toEqual(['header', 'stats_narrative', 'stats_narrative', 'signoff', 'footer']);
     expect(content_sections[0].sub_context).toBe('1-1 · May 3–May 9');

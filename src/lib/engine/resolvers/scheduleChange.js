@@ -137,7 +137,7 @@ export function composeScheduleChange(context, slice, overrides = {}) {
   if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
   sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
 
-  const subject = `${isCancellation ? 'Cancelled' : 'Schedule update'} — ${eventLabel}`;
+  const subject = `${isCancellation ? 'Cancelled' : 'Schedule update'}: ${eventLabel}`;
   return { subject, content_sections: sections };
 }
 

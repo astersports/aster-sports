@@ -46,7 +46,7 @@ describe('schedule_change resolver — snapshot vs hand-authored expected', () =
     expect(slices[0].team_id).toBe('507d7a4e-553e-4ba7-a61c-38d6cdf2f364');
     expect(context.diff.changed_fields).toEqual(['end_at']);
     const { subject, content_sections } = composeScheduleChange(context, slices[0], {});
-    expect(subject).toBe('Schedule update — 11U Girls Skills Lab');
+    expect(subject).toBe('Schedule update: 11U Girls Skills Lab');
     expect(norm(content_sections)).toEqual(expectedContentSections);
   });
 });

@@ -49,6 +49,6 @@ export function composeTournamentPrelim(data = {}) {
   const html = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">'
     + renderSections(sections) + '</div>';
   const plainText = renderSectionsPlainText(sections);
-  const subject = `Game day briefing — ${tournamentName || 'tournament'}`;
+  const subject = `Game day briefing: ${tournamentName || 'tournament'}`;
   return { subject, html, plainText, sections };
 }

@@ -60,7 +60,7 @@ export async function sendWeeklyDigest({
 
   // Sample any composed family for message-level placeholders.
   const sample = renderedFamilies[0];
-  const subject = sample?.subject || `Week ahead — ${formatPeriodLabel(period)}`;
+  const subject = sample?.subject || `Week ahead: ${formatPeriodLabel(period)}`;
 
   const periodStart = period.start.toISOString().slice(0, 10);
   const { data: msg, error: msgErr } = await supabase

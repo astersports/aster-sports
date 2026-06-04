@@ -4,7 +4,7 @@
 import { formatDayLabel, formatTime } from './tournamentPrelimHelpers';
 
 export function buildSubject(team, tournament) {
-  return `${team.team_name} — ${tournament.name} Recap`;
+  return `${team.team_name}: ${tournament.name} Recap`;
 }
 
 export function buildPlacementBlock(tt, teamColor) {

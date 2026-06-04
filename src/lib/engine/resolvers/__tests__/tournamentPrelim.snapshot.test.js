@@ -75,7 +75,7 @@ describe('tournament_prelim resolver — snapshot vs hand-authored expected', ()
       const __dirname = dirname(fileURLToPath(import.meta.url));
       writeFileSync(join(__dirname, 'fixtures/tournament_prelim_rumble_for_the_ring/expected_content_sections_bare.json'), JSON.stringify(norm(content_sections), null, 2) + '\n');
     }
-    expect(subject).toBe('11U Girls — ZG Rumble for the Ring CT Weekend');
+    expect(subject).toBe('11U Girls: ZG Rumble for the Ring CT Weekend');
     expect(norm(content_sections)).toEqual(expectedBare);
   });
 

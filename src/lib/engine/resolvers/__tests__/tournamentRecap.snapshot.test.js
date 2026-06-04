@@ -54,7 +54,7 @@ describe('tournament_recap resolver — snapshot', () => {
     expect(slices[0].recipient_guardians.length).toBe(22);
     expect(slices[0].recipient_guardians[0].guardian_id).toBe('077e7660-3aba-4699-bcb6-ef9682fc9b67');
     const { subject, content_sections } = composeTournamentRecap(context, slices[0], {});
-    expect(subject).toBe('11U Girls — ZG Chase for the Chain NY Recap');
+    expect(subject).toBe('11U Girls: ZG Chase for the Chain NY Recap');
     expect(norm(content_sections)).toEqual(expected11uGirlsBare);
   });
 
