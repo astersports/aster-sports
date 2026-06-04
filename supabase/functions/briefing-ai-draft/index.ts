@@ -7,13 +7,15 @@
 // anthropic_api_key from app_secrets for the DOWNSTREAM Claude call (AP #33) —
 // same pattern + audit exemption as suggest-briefing-closer.
 //
-// SLICE 1 = FREE-FORM lane (announcement / custom_message): facts + gist passed
-// inline by the admin. The AUTO-PROPOSED lane (proposal_id -> resolver-resolved
-// facts) needs the resolvers to run in Deno; that facts-source approach is a
-// separate slice, so proposal_id returns a clear not-yet error here.
+// FACTS-IN lane: the caller supplies facts. Free-form (AI-1) passes gist+facts;
+// AI-2 anchored kinds resolve facts CLIENT-side (reusing the preview's
+// RESOLVER_REGISTRY path) and pass them in. So no resolver runs in Deno. The
+// proposal_id -> server-resolve path (design seam 4b) would need Deno resolvers
+// and is not used in v1 (the cron creates empty shells; content is client-
+// resolved at preview/send).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { audienceFraming, buildAiDraftUserPrompt, factsToLines, FREE_FORM_KINDS, parseAiDraftOutput } from "./_helpers.ts";
+import { audienceFraming, AI_DRAFT_KINDS, buildAiDraftUserPrompt, factsToLines, parseAiDraftOutput } from "./_helpers.ts";
 
 // Mirrors suggest-briefing-closer's proven model string for this deployment;
 // bump to the latest per CLAUDE.md once a gateway smoke confirms it.
@@ -71,10 +73,13 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
   const { org_id, kind, mode = "draft", audience = {}, proposal_id, facts, gist } = body;
   if (!org_id || !kind) return json({ error: "org_id and kind are required" }, 400);
+  // Facts are supplied by the caller (free-form gist+facts, OR AI-2 anchored
+  // kinds whose facts are resolved CLIENT-side and passed in). proposal_id ->
+  // server-side resolution would need resolvers in Deno; not used in v1.
   if (proposal_id) {
-    return json({ error: "Auto-proposed AI drafts aren't available yet. Use a free-form draft, or compose this kind manually." }, 400);
+    return json({ error: "Pass resolved facts instead of proposal_id (server-side proposal resolution isn't wired)." }, 400);
   }
-  if (!FREE_FORM_KINDS.includes(kind)) {
+  if (!AI_DRAFT_KINDS.includes(kind)) {
     return json({ error: `AI draft isn't available for "${kind}" yet.` }, 400);
   }
 

@@ -4,6 +4,8 @@
 // only (no Deno/Node APIs) so the two files stay byte-near-identical.
 
 export const FREE_FORM_KINDS = ["announcement", "custom_message"];
+export const ANCHORED_KINDS = ["game_recap", "games_recap", "weekly_digest", "tournament_recap", "tournament_prelim"];
+export const AI_DRAFT_KINDS = [...FREE_FORM_KINDS, ...ANCHORED_KINDS];
 
 export function audienceFraming(teamName: string | null): string {
   return teamName && teamName.trim() ? `${teamName.trim()} families` : "all families";

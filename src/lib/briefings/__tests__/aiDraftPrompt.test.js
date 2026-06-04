@@ -4,13 +4,15 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-  audienceFraming, buildAiDraftUserPrompt, factsToLines, FREE_FORM_KINDS,
-  parseAiDraftOutput, stripEmDashes, stripFences,
+  AI_DRAFT_KINDS, ANCHORED_KINDS, audienceFraming, buildAiDraftUserPrompt, factsToLines,
+  FREE_FORM_KINDS, parseAiDraftOutput, stripEmDashes, stripFences,
 } from '../aiDraftPrompt';
 
 describe('aiDraftPrompt helpers', () => {
-  it('FREE_FORM_KINDS is the v1 free-form set', () => {
+  it('kind sets: free-form + anchored compose the v1 supported set', () => {
     expect(FREE_FORM_KINDS).toEqual(['announcement', 'custom_message']);
+    expect(ANCHORED_KINDS).toEqual(['game_recap', 'games_recap', 'weekly_digest', 'tournament_recap', 'tournament_prelim']);
+    expect(AI_DRAFT_KINDS).toEqual([...FREE_FORM_KINDS, ...ANCHORED_KINDS]);
   });
 
   it('audienceFraming: team name vs all-families', () => {
