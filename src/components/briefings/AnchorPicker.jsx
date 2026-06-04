@@ -10,6 +10,15 @@ import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 const inputStyle = { width: '100%', minHeight: 44, padding: '0 12px', borderRadius: 10, fontSize: 15, fontFamily: 'inherit', backgroundColor: 'var(--as-bg-tertiary)', border: '1.5px solid var(--as-border-default)', color: 'var(--as-text-primary)' };
 const resultRow = { padding: '10px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 14, color: 'var(--as-text-primary)', backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-subtle)', display: 'flex', flexDirection: 'column', gap: 2 };
 
+// Friendly tournament date range (was raw ISO "2026-05-30 – 2026-05-31").
+// start_date/end_date are date-only strings; noon-UTC keeps the calendar day
+// stable when formatted in Eastern.
+function fmtTournamentDates(start, end) {
+  if (!start) return '';
+  const fmt = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' });
+  return !end || end === start ? fmt(start) : `${fmt(start)} – ${fmt(end)}`;
+}
+
 async function search(orgId, kind, query) {
   const meta = KIND_METADATA[kind] || {};
   const q = (query || '').trim().toLowerCase();
@@ -33,7 +42,7 @@ async function search(orgId, kind, query) {
       .ilike('name', `%${q}%`)
       .order('start_date', { ascending: false })
       .limit(20);
-    return (r.data || []).map((t) => ({ id: t.id, label: t.name, secondary: `${t.start_date} – ${t.end_date}`, type: 'tournament' }));
+    return (r.data || []).map((t) => ({ id: t.id, label: t.name, secondary: fmtTournamentDates(t.start_date, t.end_date), type: 'tournament' }));
   }
   if (meta.anchorKinds?.includes('event')) {
     const r = await supabase.from('events')
