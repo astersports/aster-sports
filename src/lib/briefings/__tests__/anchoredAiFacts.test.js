@@ -27,6 +27,36 @@ describe('anchoredAiFacts', () => {
     expect(anchoredFacts('game_recap', { team: { name: '10U' }, game_result: {} })).toEqual({ Team: '10U' });
   });
 
+  it('games_recap narrative fills coach_note; extracts record + per-game lines', () => {
+    expect(AI_DRAFT_FIELD.games_recap).toBe('coach_note');
+    const ctx = {
+      summary: { record: '1-1' },
+      games: [
+        { day_label: 'Sat', team_name: '10U Blue', our_score: 24, opponent_score: 30, opponent: '6th Boro', result: 'L' },
+        { day_label: 'Sun', team_name: '10U Blue', our_score: 40, opponent_score: 20, opponent: 'Storm', result: 'W' },
+      ],
+    };
+    expect(anchoredFacts('games_recap', ctx)).toEqual({
+      Record: '1-1',
+      Games: 'Sat 10U Blue 24-30 vs 6th Boro (L); Sun 10U Blue 40-20 vs Storm (W)',
+    });
+  });
+
+  it('tournament_recap narrative fills coach_reflection; extracts placement + records', () => {
+    expect(AI_DRAFT_FIELD.tournament_recap).toBe('coach_reflection');
+    const ctx = {
+      tournament: { name: 'ZG Chase for the Chain NY' },
+      tournament_teams: [
+        { team_name: '11U Girls', wins: 3, losses: 1, final_place: 2 },
+        { team_name: '10U Black', wins: 2, losses: 2, final_place: null },
+      ],
+    };
+    expect(anchoredFacts('tournament_recap', ctx)).toEqual({
+      Tournament: 'ZG Chase for the Chain NY',
+      Results: '11U Girls 3-1 (2nd); 10U Black 2-2',
+    });
+  });
+
   it('unknown kind or null context -> empty', () => {
     expect(anchoredFacts('weekly_digest', { x: 1 })).toEqual({});
     expect(anchoredFacts('game_recap', null)).toEqual({});
