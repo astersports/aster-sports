@@ -40,8 +40,22 @@ async function fetchHomeTeam(supabase, playerId) {
 }
 
 async function fetchSlices(supabase, orgId, playerId, kidFirstName, receivingTeamId, pilotOnly) {
+  // D-5(a) — pilot mode: use get_digest_recipients RPC for the pilot
+  // gate instead of the bare is_pilot_family field. Aligns this resolver
+  // with tournamentPrelimHelpers.js Wave 4.3-I pattern. Post-cutover
+  // (D-4 a) this picks up real pilot families (RPC FILTER branch). In
+  // pre-cutover REDIRECT verification mode, synthetic rows (guardian_id
+  // null) are dropped by the player_guardians intersection by design —
+  // verification-mode sample renders for per-player kinds are out of
+  // D-5 scope and tracked separately.
+  let allowedGuardianIds = null;
+  if (pilotOnly) {
+    const { data: rpcRows = [] } = await supabase.rpc('get_digest_recipients', { p_org_id: orgId, p_pilot_only: true });
+    allowedGuardianIds = new Set((rpcRows || []).filter((r) => r.guardian_id).map((r) => r.guardian_id));
+  }
+
   // Beta B6 audit — anti-pattern #36.
-  const { data: rows, error } = await supabase.from('player_guardians').select('guardian_id, player_id, guardians ( id, email, is_pilot_family, org_id )').eq('player_id', playerId);
+  const { data: rows, error } = await supabase.from('player_guardians').select('guardian_id, player_id, guardians ( id, email, org_id )').eq('player_id', playerId);
   if (error) throw error;
   const seen = new Set();
   const out = [];
@@ -49,7 +63,7 @@ async function fetchSlices(supabase, orgId, playerId, kidFirstName, receivingTea
     const g = row.guardians;
     if (!g?.id || !g.email) continue;
     if (g.org_id && g.org_id !== orgId) continue;
-    if (pilotOnly && !g.is_pilot_family) continue;
+    if (pilotOnly && !allowedGuardianIds.has(g.id)) continue;
     if (seen.has(g.id)) continue;
     seen.add(g.id);
     out.push({ kind: 'family', guardian_id: g.id, email: g.email, player_id: playerId, kid_first_name: kidFirstName, team_id: receivingTeamId });

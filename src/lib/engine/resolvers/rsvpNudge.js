@@ -48,9 +48,28 @@ async function fetchUnrespondedSlices(supabase, event, now, pilotOnly) {
   const unresponded = active.filter((r) => !respondedSet.has(r.player_id));
   const playerNameById = new Map(unresponded.map((r) => [r.player_id, r.players?.first_name || '']));
 
+  // D-5(a) — pilot mode: use get_digest_recipients RPC for the pilot
+  // gate instead of the bare is_pilot_family field. Aligns this resolver
+  // with tournamentPrelimHelpers.js Wave 4.3-I pattern. Post-cutover
+  // (D-4 a) this picks up real pilot families (RPC FILTER branch). In
+  // pre-cutover REDIRECT verification mode, synthetic rows (guardian_id
+  // null) are dropped by the player_guardians intersection by design —
+  // verification-mode sample renders for per-player kinds are out of
+  // D-5 scope and tracked separately.
+  let allowedGuardianIds = null;
+  if (pilotOnly) {
+    const orgId = event.teams?.org_id || null;
+    if (orgId) {
+      const { data: rpcRows = [] } = await supabase.rpc('get_digest_recipients', { p_org_id: orgId, p_pilot_only: true });
+      allowedGuardianIds = new Set((rpcRows || []).filter((r) => r.guardian_id).map((r) => r.guardian_id));
+    } else {
+      allowedGuardianIds = new Set();
+    }
+  }
+
   let pgRows = [];
   if (unresponded.length) {
-    const { data } = await supabase.from('player_guardians').select('guardian_id, player_id, players ( first_name ), guardians ( id, email, is_pilot_family )').in('player_id', unresponded.map((r) => r.player_id));
+    const { data } = await supabase.from('player_guardians').select('guardian_id, player_id, players ( first_name ), guardians ( id, email )').in('player_id', unresponded.map((r) => r.player_id));
     pgRows = data || [];
   }
 
@@ -58,7 +77,7 @@ async function fetchUnrespondedSlices(supabase, event, now, pilotOnly) {
   for (const row of pgRows) {
     const g = row.guardians;
     if (!g?.id || !g.email) continue;
-    if (pilotOnly && !g.is_pilot_family) continue;
+    if (pilotOnly && !allowedGuardianIds.has(g.id)) continue;
     if (!playerNameById.has(row.player_id)) continue;
     if (!slicesMap.has(g.id)) slicesMap.set(g.id, { kind: 'family', guardian_id: g.id, email: g.email, team_id: event.team_id, _kids: new Map() });
     const s = slicesMap.get(g.id);
