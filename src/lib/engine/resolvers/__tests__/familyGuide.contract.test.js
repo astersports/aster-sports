@@ -6,8 +6,9 @@ import { describe, expect, it } from 'vitest';
 import { composeFamilyGuide, resolveFamilyGuide } from '../familyGuide';
 import { detectConflicts, formatDateRange, groupEventsByKid, summarizeEventKinds } from '../familyGuideHelpers';
 
-function mockSb({ parent = null, pgRows = [], tpRows = [], events = [], coaches = [], org = null, orgSettings = null }) {
+function mockSb({ parent = null, pgRows = [], tpRows = [], events = [], coaches = [], org = null, orgSettings = null, rpcRows = [] }) {
   return {
+    rpc() { return Promise.resolve({ data: rpcRows, error: null }); },
     from(table) {
       const b = {
         _t: table, select() { return this; }, eq() { return this; }, in() { return this; },
@@ -58,24 +59,28 @@ describe('resolveFamilyGuide', () => {
     });
   });
 
-  it('pilot gate: blocks (empty slices) when pilot mode on and parent is NOT a pilot family', async () => {
+  // D-5(a): pilot gate routes through get_digest_recipients (the RPC owns the
+  // allowlist), not the bare is_pilot_family field. Allowed iff the parent's
+  // guardian_id is in the RPC rows. Under redirect mode the RPC returns
+  // synthetic NULL-guardian rows -> empty allowlist -> skip.
+  it('pilot gate: blocks (empty slices) when pilot mode on and parent not in the RPC allowlist', async () => {
     const r = await resolveFamilyGuide(
       { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
-      { supabase: mockSb({ parent: { ...PARENT, is_pilot_family: false }, orgSettings: { pilot_mode_enabled: true } }) },
+      { supabase: mockSb({ parent: PARENT, orgSettings: { pilot_mode_enabled: true }, rpcRows: [{ guardian_id: null }] }) },
     );
     expect(r.slices).toEqual([]);
   });
-  it('pilot gate: allows when pilot mode on and parent IS a pilot family', async () => {
+  it('pilot gate: allows when pilot mode on and the parent guardian_id is in the RPC allowlist', async () => {
     const r = await resolveFamilyGuide(
       { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
-      { supabase: mockSb({ parent: { ...PARENT, is_pilot_family: true }, orgSettings: { pilot_mode_enabled: true } }) },
+      { supabase: mockSb({ parent: PARENT, orgSettings: { pilot_mode_enabled: true }, rpcRows: [{ guardian_id: 'g1' }] }) },
     );
     expect(r.slices).toHaveLength(1);
   });
-  it('pilot gate: explicit pilotOnly=false bypasses the settings read and allows', async () => {
+  it('pilot gate: explicit pilotOnly=false bypasses the RPC and allows', async () => {
     const r = await resolveFamilyGuide(
       { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' }, pilotOnly: false },
-      { supabase: mockSb({ parent: { ...PARENT, is_pilot_family: false }, orgSettings: { pilot_mode_enabled: true } }) },
+      { supabase: mockSb({ parent: PARENT, orgSettings: { pilot_mode_enabled: true }, rpcRows: [] }) },
     );
     expect(r.slices).toHaveLength(1);
   });
