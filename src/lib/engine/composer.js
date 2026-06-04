@@ -5,21 +5,22 @@
 // renderSectionsPlainText) lives in ./sectionRenderers and is
 // re-exported here so existing consumers' imports stay stable.
 // Split 2026-05-24 to keep this file under AP #6's 150-line cap.
+//
+// D-3(a) 2026-06-03 — defensive KIND_COMPOSERS entries for
+// weekly_digest + academy_callup_notice removed. PreviewPanel widened
+// its registry-path criterion to cover all RESOLVER_REGISTRY entries,
+// so the defensive duplicates are no longer needed. AP #34 grep
+// precondition: zero non-test callers of compose({kind:'weekly_digest'})
+// or compose({kind:'academy_callup_notice'}) at removal time.
 
-import { composeAcademyCallupNotice } from './renderers/academyCallupNotice';
-import { composeWeeklyDigest } from './renderers/weeklyDigest';
 import { composeAnnouncement } from './renderers/announcement';
 import { composeCustomMessage } from './renderers/customMessage';
 
 export { SECTION_RENDERERS, renderSections, renderSectionsPlainText } from './sectionRenderers';
 
-// KIND_COMPOSERS — legacy compose() path for kinds NOT in
-// RESOLVER_REGISTRY (announcement, custom_message). weekly_digest +
-// academy_callup_notice retained defensively; their production sends
-// go through dedicated paths (digestSend, academyCallupSend).
+// KIND_COMPOSERS — legacy compose() path for free-form kinds NOT in
+// RESOLVER_REGISTRY (announcement, custom_message).
 const KIND_COMPOSERS = {
-  academy_callup_notice: composeAcademyCallupNotice,
-  weekly_digest: composeWeeklyDigest,
   announcement: composeAnnouncement,
   custom_message: composeCustomMessage,
 };
