@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ClipboardCheck, MessageSquare, Trophy } from 'lucide-react';
+import { ClipboardCheck, Megaphone, MessageSquare, Trophy } from 'lucide-react';
 
 // HOME_DESIGN_SPEC §2.1.6 — coach home QUICK ACTIONS ROW. Horizontal
 // chip row of 44px tall outbound-action shortcuts.
@@ -19,6 +19,7 @@ const ACTIONS = [
   { label: 'Start Check-In', icon: ClipboardCheck, to: '/schedule' },
   { label: 'Message Team',   icon: MessageSquare,  to: '/messages' },
   { label: 'Quick Score',    icon: Trophy,         to: '/records'  },
+  { label: 'Briefings',      icon: Megaphone,      to: '/team-briefings' },
 ];
 
 const CHIP_STYLE = {

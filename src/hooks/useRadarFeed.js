@@ -48,16 +48,22 @@ function toViewModel(row, maps) {
   };
 }
 
-export function useRadarFeed({ orgId } = {}) {
+// teamIds: null = unscoped (admin Radar). An array scopes the feed to those
+// teams' proposals (the coach read-only view, D5 app-layer filter); an empty
+// array yields an empty feed by design.
+export function useRadarFeed({ orgId, teamIds = null } = {}) {
   const [state, setState] = useState({ ready: [], scheduled: [], sent: [], loading: false, error: null });
+  const teamKey = teamIds === null ? null : teamIds.join(',');
 
   const refetch = useCallback(async () => {
     if (!orgId) return;
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
-      const { data, error } = await supabase.from('comms_messages').select(FIELDS)
-        .eq('org_id', orgId).in('status', ['draft', 'scheduled', 'sent'])
-        .order('last_edited_at', { ascending: false }).limit(200);
+      let query = supabase.from('comms_messages').select(FIELDS)
+        .eq('org_id', orgId).in('status', ['draft', 'scheduled', 'sent']);
+      if (teamKey !== null) query = query.in('team_id', teamKey ? teamKey.split(',') : []);
+      query = query.order('last_edited_at', { ascending: false }).limit(200);
+      const { data, error } = await query;
       if (error) throw error;
       const maps = await fetchContext(data || []);
       const { ready, scheduled, sent } = bucketFeed(data || []);
@@ -66,7 +72,7 @@ export function useRadarFeed({ orgId } = {}) {
     } catch (e) {
       setState((s) => ({ ...s, loading: false, error: e }));
     }
-  }, [orgId]);
+  }, [orgId, teamKey]);
 
   useEffect(() => { refetch(); }, [refetch]);
 
