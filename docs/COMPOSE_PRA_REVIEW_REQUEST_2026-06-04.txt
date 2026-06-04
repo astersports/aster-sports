@@ -1,0 +1,141 @@
+==============================================================================
+COMPOSE PR-A — REVIEW REQUEST  (terminal-CC -> architect)
+ARCHITECT REVIEW NEEDED. Blocks PR-B.
+==============================================================================
+Date: 2026-06-04. You said in COMPOSE_AUDIT_REVIEW: "Bring PR-A for the per-PR
+smoke; I review the kind-adaptive render + the cap discipline before PR-B
+repoints the entry." PR-A is BUILT + MERGED (#724). This is that review packet.
+You have no repo access, so the code you need to review is inline below.
+Two specific questions + a GO/no-go on PR-B at the end.
+
+------------------------------------------------------------------------------
+1. WHAT PR-A DID (one-screen composer; Option A / M1)
+------------------------------------------------------------------------------
+  BriefingComposer went from a 4-step wizard to a SINGLE-SCREEN, kind-adaptive
+  composer. Pick a kind -> audience + body + options + preview + send render
+  together (no step gating). The reducer + the 13 body editors + the audience
+  pickers + submitBriefing are REUSED AS-IS (zero changes to them). New file:
+  ComposerSections.jsx (the kind-chosen render). Removed step chrome
+  (WizardHeader / Next button / canAdvance / STEPS). Render now keys on
+  state.kind, not state.step; autosave de-coupled from step.
+
+  Files: BriefingComposer.jsx 147 -> 138. ComposerSections.jsx = 45.
+  Behaviour preserved: Radar "Review & send" (?draft=id) hydrates the
+  one-screen composer; "+ New" still opens /new (BriefingNewPage) until PR-B.
+  Full suite green (177 files / 1236 tests). Leaves main working.
+
+------------------------------------------------------------------------------
+2. REVIEW POINT 1 — KIND-ADAPTIVE RENDER (verify this)
+------------------------------------------------------------------------------
+  BriefingComposer render (verbatim):
+
+    const wizardBlocked = !!state.kind
+      && KIND_METADATA[state.kind]?.wizardSupported === false;
+    return (
+      <FullScreenForm open onClose={onClose}
+        title={state.kind ? `Compose · ${KIND_METADATA[state.kind]?.label || ''}`
+                          : 'New briefing'}>
+        <div style={...}>
+          {!state.kind && (
+            <StepKindPicker visibleKinds={state.kindFilter}
+              onResume={(d) => loadDraft(d.id)}
+              onPick={(kind, meta) => dispatch({ type: 'SET_KIND', kind, ... })} />
+          )}
+          {state.kind && (
+            <>
+              <button onClick={() => dispatch({ type: 'RESET' })}>← Change kind</button>
+              <ComposerSections state dispatch audience recipients ... blocked={wizardBlocked}
+                onSend onSaveDraft onCancel />
+            </>
+          )}
+        </div>
+      </FullScreenForm>
+    );
+
+  ComposerSections (verbatim logic):
+
+    const body = <StepBodySignoff state dispatch audience hasParentTournament
+                   onSaveDraft onCancel />;
+    if (blocked) return body;          // wizardSupported:false (academy_callup)
+    return (
+      <>
+        <StepAnchorAudience state dispatch audience recipientsLoading
+          pilotTestRecipientEmail />
+        {body}
+        <ScheduleForLaterPicker mode=... scheduledFor=... onChange=... />
+        <PreviewPanel state families={recipients} coaches recipientCount={audience.filtered} />
+        <StepSendConfirm state audience onSend sending pilotModeEnabled />
+      </>
+    );
+
+  Gating summary:
+    - No kind        -> StepKindPicker (still the 12-tile grid; the 5-chip cut
+                        is PR-B, intentionally NOT in PR-A).
+    - Kind chosen    -> "Change kind" (RESET) + all sections on one scroll.
+    - blocked        -> body only (the redirect card to EventDetail's callup
+                        flow); no audience/options/send.
+  Locked by ComposerSections.test.jsx (asserts all 5 sections present when not
+  blocked; body-only when blocked).
+
+  CONFIRM: is the gating correct? Is body-only the right blocked behaviour? Any
+  state path missed (hydrated draft with a blocked kind, kindFilter of 1, etc.)?
+
+------------------------------------------------------------------------------
+3. REVIEW POINT 2 — CAP DISCIPLINE (verify this) + TWO QUESTIONS
+------------------------------------------------------------------------------
+  Host + section, both under 150: BriefingComposer 138, ComposerSections 45.
+  No 400-line monster. Achieved by REUSING the existing step components
+  (StepAnchorAudience, StepBodySignoff) as the sections.
+
+  Q-A. You specified "host + section subcomponents (audience block / options
+       block / AI control / body host) each <150 FROM THE START." PR-A instead
+       reuses the EXISTING step components as the sections (StepAnchorAudience
+       = the audience block; StepBodySignoff = body + AI control + signoff +
+       test toggle). This keeps files small via reuse rather than a finer
+       re-split. Is that an acceptable read of "host + section subcomponents",
+       or do you want the finer decomposition (a dedicated options block, an
+       AI-control extracted from StepBodySignoff, etc.) before PR-D folds the
+       composer-touching items in?
+
+  Q-B. BriefingComposer is now 138 (<150). It is currently listed in CLAUDE.md
+       §6 as a documented >150 exception. Remove it from that exceptions list?
+       (terminal-CC can drop the row + the §0 grep regex in PR-C cleanup unless
+       you want it sooner.)
+
+------------------------------------------------------------------------------
+4. WHAT IS DELIBERATELY NOT IN PR-A (your sequence — confirm still correct)
+------------------------------------------------------------------------------
+  PR-B  inline 5-kind chips (Q2) + repoint Radar "+ New" + proposal-card review
+        into the one-screen composer + retire BriefingNewPage + /new route.
+  PR-C  retire the now-unused wizard chrome (StepKindPicker-as-step machinery,
+        WizardHeader, the step actions in the reducer) + drafts-to-Radar
+        "Drafts" bucket (Q3) + remove DraftResumeRow + the Q-B cap-exception drop.
+  PR-D  fold composer-touching B1 in (token chip preview, B2 cancellation card,
+        AI-2 facts-panel polish), built once.
+  PARALLEL (no composer conflict): audience one-control + kind-smart default
+        (recap->TEAM) per your sec-3 refinement; recap-default->TEAM; R-4 inbox
+        polish; body em-dash sweep; per-recipient pilot-test path.
+
+------------------------------------------------------------------------------
+5. THE ASK (what gets you "in motion")
+------------------------------------------------------------------------------
+  1. GO for PR-B (inline chips + Radar repoint + retire /new), or changes to
+     PR-A first?
+  2. Answer Q-A (finer decomposition or accept reuse) and Q-B (drop the cap
+     exception now or in PR-C).
+  3. Anything in the §2 render gating you want changed before the entry repoints.
+  On your GO, terminal-CC runs PR-B -> PR-C -> PR-D without further round-trips
+  unless something new surfaces.
+
+------------------------------------------------------------------------------
+6. FRANK SMOKE (so PR-A is real, not just CI-green)
+------------------------------------------------------------------------------
+  /admin/briefings/compose -> pick a kind -> confirm audience + body + options +
+  preview + send all render on ONE screen -> test-send (admin@) works. Then from
+  Radar tap a proposal's "Review & send" -> confirm it opens the one-screen
+  composer with the kind/anchor pre-filled.
+
+==============================================================================
+END. PR-A is built + merged + green; this packet is what you review (render +
+cap, §2/§3) to clear PR-B. Answer §5 and terminal-CC is in motion.
+==============================================================================
