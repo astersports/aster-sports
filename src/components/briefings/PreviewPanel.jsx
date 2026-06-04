@@ -17,13 +17,18 @@ import { useMemo, useState } from 'react';
 import { compose, renderSections, renderSectionsPlainText } from '../../lib/engine/composer';
 import { RESOLVER_REGISTRY } from '../../lib/engine/resolvers/registry';
 import { useResolverPreview } from '../../lib/engine/useResolverPreview';
+import { APP_BASE_URL } from '../../lib/constants';
 import DevicePreviewFrame from '../shared/DevicePreviewFrame';
 
 const wrap = { display: 'flex', flexDirection: 'column', gap: 8, height: '100%' };
 const topBar = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' };
 
-// Placeholder substituted for preview only — real per-recipient URLs are inserted at send time by digestSend
-const PREVIEW_UNSUBSCRIBE_URL = 'https://app.legacyhoopers.org/unsubscribe?preview=1';
+// Placeholder substituted for preview only — real per-recipient URLs are
+// inserted at send time by digestSend. Per audit doc §B5.3, this used to
+// hardcode the LH tenant deploy host (app.legacyhoopers.org); now derives
+// from the platform-level APP_BASE_URL so the preview URL matches whatever
+// host is currently serving the app (astersports.app by default).
+const PREVIEW_UNSUBSCRIBE_URL = `${APP_BASE_URL}/unsubscribe?preview=1`;
 
 function withPreviewUnsubscribe({ html, plainText }) {
   return {
