@@ -93,7 +93,8 @@ Deno.serve(async (req) => {
 
     let teamName: string | null = null;
     if (audience?.team_id) {
-      const { data: team } = await sb.from("teams").select("name").eq("id", audience.team_id).maybeSingle();
+      const { data: team, error: teamErr } = await sb.from("teams").select("name").eq("id", audience.team_id).maybeSingle();
+      if (teamErr) throw teamErr;
       teamName = (team as { name?: string } | null)?.name ?? null;
     }
 
