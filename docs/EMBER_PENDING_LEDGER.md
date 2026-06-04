@@ -472,6 +472,7 @@ arc bodies.
 | CLAUDE.md §8 5-C player box score | **BLOCKED by policy** | §16.12 forbids per-player game stats in 2026 |
 | §4.H density toggle | **BUILT** | `DensityToggle.jsx` |
 | §4.H rotation planner / note-edit cooldown | UNBUILT (no code) | grep empty |
+| Compose kind-picker simplification | **UNBUILT** — Frank-flagged 2026-06-04 (IMG_2194–96) | The 4-step wizard "Compose · Kind" screen (`StepKindPicker` / `BriefingComposer`): Step 1 is overloaded (send-now/schedule + "Resume a draft" list + 12 kind tiles), and it runs **parallel** to the R-2 one-screen composer (`BriefingNewPage`, `/admin/briefings/new`). The Track-R simplification shipped the one-screen flow + Radar but never retired or restyled this wizard, so "simplify compose" is only half-done. The "Resume a draft" list also overlaps Radar (#690-vs-`/inbox` pattern). Frank can wait, but it belongs in the screens-redesign scope (he expected it was already in the simplification plan). Awaiting routing — candidate D-9 in `REDESIGN_BRIEFINGS_2026-06-03.md`; methodology per §16.15 (audit + per-role wireframe before PR A). |
 
 **QR codes — resolved 2026-05-27:**
 - **3-B public-schedule QR → SHIPPED (#531).** `qrcode.react` + `publicScheduleUrl` + `ShareScheduleButton` (QR + copy-link sheet) on TeamDetailHero (staff) and PublicSchedulePage. Encodes `/schedule/:teamId` (public route).
