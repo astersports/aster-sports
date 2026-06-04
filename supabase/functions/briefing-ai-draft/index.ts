@@ -15,7 +15,7 @@
 // resolved at preview/send).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { audienceFraming, AI_DRAFT_KINDS, buildAiDraftUserPrompt, factsToLines, parseAiDraftOutput } from "./_helpers.ts";
+import { audienceFraming, AI_DRAFT_KINDS, ANCHORED_KINDS, buildAiDraftUserPrompt, factsToLines, parseAiDraftOutput } from "./_helpers.ts";
 
 // Mirrors suggest-briefing-closer's proven model string for this deployment;
 // bump to the latest per CLAUDE.md once a gateway smoke confirms it.
@@ -105,6 +105,7 @@ Deno.serve(async (req) => {
 
     const userPrompt = buildAiDraftUserPrompt({
       kind, framing: audienceFraming(teamName), factLines: factsToLines(facts ?? null), gist,
+      narrativeOnly: ANCHORED_KINDS.includes(kind),
     });
     const temperature = mode === "redraft" ? 0.9 : 0.7;
 
