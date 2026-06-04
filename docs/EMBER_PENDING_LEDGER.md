@@ -3733,51 +3733,153 @@ Yesterday's console triage surfaced `[useFavoriteAudiences] persist failed there
 
 ---
 
-### §4.BX — Briefings L99 audit + redesign locked (2026-06-03 PM)
+### §4.BX — Briefings full audit + redesign arc dispatched (2026-06-02 PM)
 
-> **Decision (Frank, 2026-06-03):** "briefings gets the full L99 audit +
-> redesign." Surfaced when smoke-testing the rebrand Resend key — the key is
-> fine (proven via direct `pg_net` → Resend, `200` + email id, landed in the
-> pilot inbox), but six in-app send attempts mapped a broadly broken briefings
-> send surface.
+Frank routed: full briefing system audit + redesign + ship. Surface scope = engine + composer + 32 SECTION_RENDERERS + audience picker + send path + auto-draft cron + token handlers + admin UI + parent-facing inbox (which doesn't yet exist; named in §4.AI as a redesign target). Stream A reminders, team-feed ICS, send-push fanout, financial briefings, Slack/SMS channels, and `suggest-briefing-closer` prompt-engineering are explicit out-of-scope (§2 of the audit doc).
 
-**Live-state findings (chat-CC half) captured in
-`docs/AUDIT_BRIEFINGS_L99_LIVESTATE_SEED.md`** — verified against prod
-`vrwwpsbfbnveawqwbdmj` 2026-06-03 PM. Five breakages, all on the "newer kind"
-side (tournament kinds work end-to-end):
+**Companion doc:** `docs/AUDIT_BRIEFINGS_2026-06-02.md` — methodology lock + 3-phase plan + Wave B1 initial findings. Per §16.15 L99 template: scope, methodology (line-by-line + 2-pass addendum), AP catalog cross-ref, per-role wireframes (for parent inbox), explicit out-of-scope list.
 
-1. **BUG A** — `comms_messages_weekly_digest_unique` (PR #657 design, applied
-   `20260602195100`) collides with the compose flow: the auto-draft cron
-   pre-writes the week's draft; the composer INSERTs a new row → `23505`.
-   chat-CC leans **narrow predicate (drop `'draft'`)** over the composer-reuse
-   option; **Frank to route a-vs-b.**
-2. **BUG B** — `comms_messages_audience_type_check` is missing
-   `multi_event_attendees`, which is locked/shipped everywhere in code
-   (`kindMetadata.js:57`, `recipientFilter.js:49`, UI, tests, doc). Consequence:
-   `games_recap` has **never** sent in prod. Fix = widen constraint to match
-   code.
-3. **Pilot mode AP #63 split** — digest path REDIRECTS (synthetic per-team rows
-   → `pilot_test_recipient_email`, returns 5); `rsvp_nudge`/event/team paths
-   FILTER on `guardians.is_pilot_family` (=0) and return 0. One mechanism
-   needed across all kinds. Highest-value redesign fix.
-4. **BUG C** — preview panel supports only 4 kinds; wizard offers `rsvp_nudge`
-   → "No engine composer." Ties AP #28.
-5. **Meta** — composer leaks raw Postgres errors (`23505`/`23514`/"Save
-   failed") to admins; needs §16.3 translation, gated **after** A/B/pilot.
+**Three-phase structure with hard pause gates** (per saved memory `autopilot-overreach-on-decisions-and-irreversible-ops`):
+- **Phase 1 — Audit** (doc-only, multi-batch Wave B1–B5). Stops when all 12 categories have findings + cross-pattern synthesis.
+- **Phase 2 — Redesign proposal** (doc-only). Per-surface options + tradeoffs + per-role wireframes + migration plan with reversible-first + irreversible-needs-confirm gates. Stops when Frank routes each call.
+- **Phase 3 — Ship** (multi-PR arc). Each PR scoped tight; irreversible ops get explicit confirm prompts.
 
-**Side flag (out of redesign scope):** `game_recap` (singular) has 15,770 rows
-/ 15,759 trigger-created, mostly archived — possible runaway trigger; separate
-data-hygiene look.
+**Three folded-in bugs from §17.5 P1 close session:**
+- **BUG A** (my regression, owned): `comms_messages_weekly_digest_unique` index (mig 20260602195100, PR #657) blocks composer re-INSERT of this-week's draft. Pilot mode masks tonight; would block first real weekly digest. Anchored at §1.3 of the audit doc.
+- **BUG B** (pre-existing): `comms_messages_audience_type_check` CHECK constraint missing 4 of 9 documented audience types (`player_specific`, `multi_event_attendees`, `coach_self`, `family_specific`). Anchored at §1.2 of the audit doc.
+- **Meta** (UX category): composer surfaces raw Postgres errors instead of §16.3 kindness microcopy. Folded into Wave B4.
 
-**Methodology:** §16.15 L99 template — all five elements (initial audit,
-deep-read addendum, AP cross-ref, per-role + **per-kind** wireframes,
-out-of-scope list) ship in the consolidated audit doc **before any PR-A code.**
-Lane split: chat-CC live-state (this seed) + terminal-CC code-read + doc
-assembly. Routed fixes (A schema, B schema, pilot unification, C preview, Meta
-microcopy) await the locked audit; none shipped tonight.
+**Wave B1 initial findings (this commit):**
+- 1.1 kind taxonomy CLEAN
+- 1.2 audience CHECK incomplete (P0; BUG B anchor)
+- 1.3 weekly_digest unique index regression (P0; BUG A anchor)
+- 1.5 comms_message_recipients schema CLEAN
+- 2.1 three sources of truth identified for kind taxonomy; suggested redesign-phase parity test
+- 2.2 dual dispatch path (RESOLVER_REGISTRY + legacy KIND_COMPOSERS) flagged for B2 consolidation review
+- 3.1 resolver two-stage contract initial-CLEAN; deep-read addendum queued
+- 3.2 substitute helpers (AP #29) sound on initial pass; deep-read in B2/B3
+- 2 cross-cutting patterns: B1-α (schema CHECK lags taxonomy doc) and B1-β (composer + auto-draft cron don't share a draft lifecycle)
 
-**AP #45** satisfied by this same-PR ledger entry alongside the seed doc.
-**AP #49** satisfied by full-paste of the seed in chat in this turn.
+**Standing items going forward:**
+- Wave B1 deep-read addendum (audience CHECK INSERT call-site grep + resolver purity verify + substitute helper field-name discipline + suppress_unsubscribed_recipients trigger ↔ code filter parity)
+- Waves B2–B5 dispatch
+- Phase 2 + Phase 3 hard-pause gates
+
+**AP #45** satisfied by this same-commit ledger entry — guard self-test (ledger-reconcile-guard CI check from PR #671 / AP #45 update).
+
+**Wave B1 deep-read addendum (this commit append):** Per §16.15 ~30-40% cascade rate, deep-read surfaced 3 new sub-findings + confirmed clean state on 2 categories left as "verify in addendum" from initial pass. New findings:
+- 1.2-DEEP-1: production has been silently coercing audience_type to wrong-but-allowed values for coach_roundup + family_guide (21 rows total across 2 kinds use `team`/`multi_team` instead of documented `coach_self`/`family_specific`). BUG B fix shape sharpened — Phase 2 must decide between widen-CHECK + backfill, widen-CHECK + accept legacy, or refactor wizard to derive audience_type mechanically.
+- 1.3-DEEP-1: BUG A failure mode refined — flush() in useBriefingDraft.js DOES distinguish new-vs-existing via local draftId state; failure fires when admin picks "Start fresh" in StepKindPicker for a kind with a pre-existing auto-draft. Phase 2 fix scoped to that specific UI surface + flush-time pre-check.
+- 1.5-DEEP-1: trigger ↔ code suppression layers operate on different lifecycle stages (no race) but emit different forensic trails (trigger silently drops; code preserves audit row). PATTERN B1-γ surfaced.
+- 2.1 / 3.2 deep-CLEAN: AP #27 resolver purity holds across all 9 resolver files; AP #29 substitute helper discipline holds end-to-end + implementation is stronger than AP body requires (throws on missing tokens; renderer fail-loud fallback).
+
+**B1 status:** CLOSED for Phase 1 purposes. Ready to dispatch Wave B2.
+
+**Consolidation pass — chat-CC live-state seed folded in (PR #673, same-day commit append):** Per §16.15 the L99 audit needs both code-read + live-state halves. Chat-CC's seed doc captures the production-truth half (live row counts, six send-attempt mapping, advisor checks); this audit doc references the seed by section rather than duplicating. Bug list grew from 3 → 5 in consolidation:
+- **BUG A fix-shape sharpened:** chat-CC leans narrow-predicate (drop `'draft'` from index); I leaned composer-reuse (B1-DEEP-1). Converged on: narrow-predicate = immediate fix; composer-reuse = Phase 2 structural target. Frank routes.
+- **BUG C (NEW):** preview composer gap — wizard offers `rsvp_nudge` (and likely other registry-dispatched kinds) but preview only knows 4 kinds. Ties to AP #28 dual-dispatch (RESOLVER_REGISTRY + legacy KIND_COMPOSERS).
+- **BUG D (NEW; I missed this in B1):** pilot mode has two implementations — digest path REDIRECTs (5 synthetic rows, correct); per-event/team/nudge paths FILTER on `guardians.is_pilot_family` which has 0 rows in production (broken). **AP #63 instance — PATTERN A extended to send-path recipient resolution** (not a new candidate; my initial framing of "AP #63-class candidate" was wrong — chat-CC corrected the AP #61 ↔ #63 inversion and the registration framing in a same-day exchange; doc fixed to reflect).
+- **GAP-1 (owned):** I treated pilot mode as a B2 audience surface and didn't query production for its implementation. Discipline going forward (folded into B2–B5 method): **for any cross-kind concept** (pilot, audience derivation, error microcopy, preview, send retries), MCP-query the live implementation per kind to check for divergence before assuming uniformity. Operational form of AP #63 applied to audit method.
+- **PATTERN B1-δ (NEW):** mature vs newer kind wiring inconsistency. Tournament kinds got the mature path; newer kinds each diverged on pilot resolution / preview / audience-type coercion. Behavioral-layer manifestation of AP #63's render-layer pattern.
+- **§S-1 (NEW out-of-scope flag from chat-CC seed §6):** `game_recap` (singular) has 15,770 rows (15,759 trigger-created). Possible runaway trigger / data hygiene issue. Explicitly out of the briefings redesign scope; flagged for a separate data-hygiene investigation.
+
+PRs: #672 (code-read half, mine) + #673 (live-state seed, chat-CC). Both merge separately; audit doc references the seed by section. No PR-A code lands until both PRs are in main and the full §16.15 doc set is consolidated.
+
+**AP #45** satisfied by this same-commit ledger append — guard self-test holds for the consolidation pass (ledger-reconcile-guard CI check fires on any `docs/AUDIT_*.md` diff requiring the ledger in the same commit).
+
+**Methodology refinement — symptom signature vs mechanism + standing cross-kind query instruction (same-commit append):** Frank's substantive hold after the AP-inversion concession was that the AP tag being correct doesn't make the *mechanism* settled. PATTERN A is a symptom signature (a concept implemented divergently with contradictory truths); per-kind wiring is one of several candidate mechanisms behind any given instance. The §16.15 deep-read addendum's job is to TEST which mechanism produced the divergence, not to CONFIRM the leading hypothesis. If the audit promotes per-kind-wiring to settled, the deep-read becomes confirmation rather than testing — exactly the failure mode the addendum prevents.
+
+Audit doc updates (same commit):
+- New §3.f **standing instruction — cross-kind query discipline.** For any cross-kind concept (pilot resolution, audience derivation, error microcopy, preview dispatch, send-path retries, substitute helpers, anchor resolution), MUST query the live per-kind callsite (MCP or grep) and check for divergence — don't infer from the abstraction's name. Lessons collapsed: `players.notes` phantom-column miss + pilot-mode miss share the same root (assuming uniformity from naming).
+- New §3.g **symptom signature vs mechanism rule.** PATTERN A instances tag the symptom; mechanisms remain hypothesis until tested. Four candidate mechanisms named: per-kind wiring / shared-helper-bad-param / drifted-siblings / one-intended-other-bug. Each redesigns differently.
+- BUG D row updated: tag stays at "AP #63 instance — PATTERN A extended to send-path recipient resolution" (settled); mechanism flagged as hypothesis with four candidates explicitly listed for Wave B2 to test.
+- PATTERN B1-δ rewritten to separate "symptom signature (verified)" from "mechanism (hypothesis — what the deep-read tests)" sections.
+- Task descriptions B2–B5 updated to carry §3.f + §3.g discipline as method, not afterthoughts.
+
+This refinement keeps both true: BUG D is a confirmed AP #63 PATTERN A instance AND the mechanism behind it remains the hypothesis the audit tests. Not in tension.
+
+**Production tilt + falsifiable tests append (chat-CC, post-§3.g refinement; same-commit append):** chat-CC named the production tilt without settling. The digest REDIRECT is the more-designed/newer path (override + synthetic-CTE, per-team inbox labels); the `is_pilot_family` filter is the cruder path; `guardians.is_pilot_family` count = 0 in production. Together those signals lean toward a **(iv)→(i) blend** — REDIRECT was intended universal; digest path adopted it; event/team/nudge paths are un-migrated stragglers on the deprecated filter. If true, the redesign is "migrate stragglers + delete the filter" — smaller than from-scratch unification because the target mechanism exists.
+
+Three falsifiable tests now embedded in PATTERN B1-δ + Wave B2's task body so the deep-read runs them in order:
+1. Migration / git chronology — was `get_digest_recipients` introduced after `is_pilot_family` filter paths?
+2. Migration notes / PR / comments — does any artifact declare REDIRECT as the intended universal mechanism or filter as deprecated?
+3. Writers for `guardians.is_pilot_family` — any UI/seed/migration/trigger?
+
+Finding a writer in (3) falsifies the supersession tilt and means (i) parallel-built. The tilt stays a prior + tests, not a settled call.
+
+**Wave B2 dispatch (2026-06-03 AM) — BUG D mechanism resolved via §3.f cross-kind code-read:** terminal-CC ran the three falsifiable tests:
+- **Test 1 (chronology):** FILTER shipped 2026-05-09, REDIRECT shipped 2026-05-11 — REDIRECT IS newer, corroborating part of chat-CC's tilt.
+- **Test 2 (declared intent):** Migration `20260511115858` line 12-13 says verbatim: "Production cutover path: set pilot_test_recipient_email = NULL and flip is_pilot_family = true on real families to start sending to humans." **REDIRECT was explicitly intended as a temporary verification override; FILTER is the documented production target.** Inverts the supersession tilt.
+- **Test 3 (writers):** ZERO writers for `is_pilot_family` in code/migrations/triggers/seed. The "flip is_pilot_family=true" cutover step was never built.
+
+**Refined mechanism:** "partial supersession that stalled in the verification stage" — a sub-shape of (iv) where the OTHER path is "the unmigrated remainder of a half-done supersession that was *intended* to be partial." Wave 4.3-I migrated `tournamentPrelimHelpers.js` to use the RPC (code comment is explicit); three stragglers never got migrated: `academyCallupNotice.js`, `rsvpNudge.js`, `briefing-auto-draft-tick/_reminderSend.ts`.
+
+**Two operator decisions surfaced for Phase 2 (Frank's calls):**
+- **D-1 strategic:** (a) cut over (finish migration + build flag-flipper UI), (b) REDIRECT-only permanent (DROP `is_pilot_family` — irreversible), (c) exit pilot entirely (send to all).
+- **D-2 tactical:** regardless of D-1, the three stragglers should be migrated to use the RPC pattern for symmetry. Smaller, reversible, can ship independently.
+
+PATTERN B1-δ refined: "supersession migration that stalls" is a specific AP #63 sub-shape that produces the same symptom signature (divergent computations) as (i) parallel-built. Tests 1+2+3 together distinguished them.
+
+**AP #45** satisfied by this same-commit ledger append — guard self-test holds for the B2 first-batch commit.
+
+**Wave B2 second batch — composer dispatch + BUG C mechanism + audience picker + substitute helpers + SECTION_RENDERERS catalog (2026-06-03 AM):**
+- **BUG C mechanism resolved:** `PreviewPanel.jsx:64` gates registry-path on `sendPath === 'composerSubmit'`. rsvp_nudge's sendPath is `'rsvpNudgeSend'` → falls through to legacy KIND_COMPOSERS → no entry → throws. weekly_digest + academy_callup_notice avoid this via defensive KIND_COMPOSERS entries. Two named fix shapes: (a) extend criterion to `entry !== null` (structural — eliminates DUAL-COMPOSE drift simultaneously); (b) add `composeRsvpNudge` to KIND_COMPOSERS (minimal patch).
+- **DUAL-COMPOSE drift (B2.6) already self-documented in code** since 2026-05-22 (Phase 3 Q5 routing). PATTERN A: same concept (weekly_digest compose output) in two places, observationally identical only because data shape is currently invariant. Fix shape (a) above closes this too.
+- **Audience picker / kindMetadata cross-check confirms BUG B at application boundary:** 4 of 12 `defaultAudienceType` values in kindMetadata are rejected by the production CHECK — `multi_event_attendees` (games_recap, LOCKED), `coach_self` (coach_roundup), `family_specific` (family_guide), `player_specific` (academy_callup_notice, LOCKED). Confirms 1.2-DEEP-1.
+- **Substitute helpers (B2.8):** callsites verified — `rsvpNudgeSend.js:67` + `academyCallupSend.js:64` both call their substitute helpers correctly per AP #29. **NEW finding B2.8-P3:** rsvp_nudge + academy_callup_notice use bespoke send paths that bypass `send-tournament-message`; need Wave B3 verification that unsubscribe-suppression discipline applies symmetrically.
+- **SECTION_RENDERERS catalog:** 33 entries in `sectionRenderers.js`; coverage doc says 32. Minor PATTERN B1-α re-fire (schema/doc drift); orphan-kind guard discipline (AP #38) is clean.
+- **B2.10 cross-pattern observation:** the briefing engine has two dispatch tables (RESOLVER_REGISTRY + KIND_COMPOSERS) overlapping on 2 kinds + diverging on 8. Every B2 drift surface traces back to which table the call lands in. The right Phase 2 question isn't "fix BUG C" but "is the dual-dispatch a structural liability worth retiring?" — routes BUG C + B2.6 drift + registry hygiene together (per AP #34: registry/dispatch-table removals need caller migration in same PR).
+
+Wave B2 status: CLOSED for Phase 1 purposes. 6 findings + 2 confirms + 1 cross-pattern observation + 1 new P3 (B2.8 asymmetric suppression queued for B3). Ready to dispatch Wave B3.
+
+**Wave B3 (2026-06-03 AM) — send path + auto-draft cron + token handlers (closed):**
+- **B3.1 — THIRD pilot mechanism found (refines B2.2):** `send-tournament-message:156-189` is a fail-loud safety guard at send time. Reads `is_pilot_family` from guardians for every recipient with non-null guardian_id; 403s if any non-pilot reaches dispatch. REDIRECT's synthetic rows (`guardian_id=NULL`) BYPASS this check (line 167 `.filter(Boolean)`), which is what makes the verification state work today. Cutover decision Phase 2.D-1 needs to reason about Layer 2 simultaneously — flipping `is_pilot_family=true` simultaneously stops resolvers filtering AND stops Layer 2 blocking. Not PATTERN A (different concept: safety vs recipient resolution); separate purpose.
+- **B3.2 — Unsubscribe suppression confirmed symmetric (closes B2.8-P3 CLEAN):** both bespoke send paths (`rsvpNudgeSend.js:91`, `academyCallupSend.js:89`) route final dispatch through `send-tournament-message`. Code-side suppression filter applies to all. Admin BCC bypass (guardian_id NULL) intentional.
+- **B3.3 — NEW P0 (BUG B extension at the write boundary):** `academyCallupSend.js:81` hard-codes `audience_type: 'player_specific'` on INSERT. Production CHECK rejects → every callup_notice send fails at INSERT (23514). Matches production data: 0 academy_callup_notice rows ever sent. BUG B has wider blast than B1 framing — confirmed at the application-write boundary, not just the schema-doc-drift one. rsvpNudgeSend hard-codes `event_attendees` which is in the CHECK; what blocks rsvp_nudge sends is the BUG D pilot-mode straggler, not BUG B.
+- **B3.4 — BUG A composer fix shape sharpened:** `briefing-auto-draft-tick` already handles BUG A race with a defensive SELECT-existing-then-INSERT-with-23505-handling pattern (lines 62-82). Composer's `flush()` lacks the equivalent pre-check. Phase 2 fix is now "adopt the cron's existing model" not "invent new pattern." Smaller redesign surface.
+- **B3.5 — Token handlers CLEAN:** rsvp + callup use SECURITY DEFINER RPCs (anonymous, `verify_jwt:false`); unsubscribe is idempotent + UPSERTs `guardian_email_preferences`; feedback is intentional 410 Gone tombstone per §4.AJ. All sound.
+- **B3.6 — Cron separation CLEAN:** `briefing-auto-draft-tick` handles 3 independent responsibilities (expire sweep + change-alert dispatch + trigger loop); `briefing-cron-dispatch` is separately for scheduled → queued → sent transitions. Clean separation.
+- **B3.7 — Resend webhook state machine CLEAN:** rank-based delivery_status transitions prevent out-of-order downgrades. Terminal states all rank 100. Sound.
+
+Wave B3 status: CLOSED for Phase 1 purposes. 1 new P0 + 1 P1 + 1 mechanism refinement + 4 CLEAN confirmations. Ready to dispatch Wave B4 (admin UI).
+
+**Wave B4 (2026-06-03 AM) — admin UI: composer wizard + history + drafts (closed):**
+- **B4.1 — Audience-type 4-way drift fully resolves B2.7 silent coercion mechanism:** four independent catalogs with no single source of truth — production CHECK (6 values), KIND_METADATA defaultAudienceType (11 distinct), AudiencePicker MODES (6, ≠ CHECK), AUDIENCE_LABEL display catalog (7, partial overlap). Mechanism: admin picks `coach_roundup`/`family_guide` → state.audience_type initializes to kindMetadata default (`coach_self`/`family_specific`) → AudiencePicker MODES doesn't include those values → admin clicks one of the 6 offered modes (typically Single/Multi team) → SET_AUDIENCE flips state → flush() INSERTs the chosen value → CHECK accepts it → production has 21 rows with wrong-but-allowed values. Three named Phase 2 redesign options: (α) single source of truth + parity test, (β) refactor wizard to NOT show picker when kind has derivable audience, (γ) keep picker but make kindMetadata default the active option.
+- **B4.2 — StepKindPicker is the BUG A entry point:** auto-draft writes a draft → admin sees DraftResumeRow + kind grid → clicks weekly_digest tile (instead of Resume) → composer state has no draftId → flush() INSERTs → 23505. Phase 2 has two non-mutually-exclusive layers: (i) adopt cron's defensive SELECT + 23505-catch in flush() (B3.4); (ii) detect existing-anchor draft in StepKindPicker → force Resume route. Simplest first PR is (i).
+- **B4.3 — useBriefingDraft.flush() discipline CLEAN:** correctly distinguishes INSERT vs UPDATE via local draftId state. The bug isn't in flush(); the fix is upstream pre-check or at the boundary catch.
+- **B4.4 — Composer wizard structure sound:** 4-step flow (kind → anchor+audience → body+signoff → confirm) orchestrated via composerReducer (121L, 12 actions). State mirrors comms_messages persisted fields. No findings.
+- **B4.5 — Wizard ↔ kindMetadata 12-kind alignment CLEAN:** KIND_METADATA covers all 12 production kinds; KindTile renders consistently. Taxonomy aligned.
+- **B4.6 — History page deferred:** read-only display surface; no bugs surfaced through live-state seed. If Phase 2 redesign touches it, bring back in scope.
+
+Wave B4 status: CLOSED for Phase 1. 1 P0 mechanism (B4.1 — 3 redesign options) + 1 P1 sharpening (B4.2 — 2-layer fix shape) + 2 CLEAN + 1 deferred. Ready to dispatch Wave B5 (parent inbox + cross-cutting).
+
+**Wave B5 (2026-06-03 AM) — parent inbox + cross-cutting (closed):**
+- **B5.1 — Microcopy Meta bug CONFIRMED at code boundary:** `useBriefingDraft.flush()` propagates raw Postgres `e.message` upward; composer renders verbatim. Phase 2 fix is small + reversible (error-class translation map), but gate AFTER A/B/C land so microcopy matches final behavior.
+- **B5.2 — a11y baseline CLEAN-ish:** wizard steps have ARIA roles in expected places (`role="grid"`, `role="status"`, `role="alert"`). Not a full audit; flagged as Phase 2 routing decision D-8 (dedicated a11y in scope or separate).
+- **B5.3 — NEW P2 multi-tenant breach:** `PreviewPanel.jsx:28` hardcodes `https://app.legacyhoopers.org/unsubscribe?preview=1`. Only LH-specific leak in production code; small + reversible fix.
+- **B5.4 — PII surface CLEAN at engine layer:** briefings necessarily carry guardian + kid + team data; RLS controls visibility. Parent SELECT policy on `comms_message_recipients` not yet built — part of parent inbox redesign target.
+- **B5.5 — Parent inbox redesign target scoped:** doesn't exist today (per §4.AI deferred). Three named scopes: (a) minimal viable (list + detail + RSVP/callup), (b) full-featured (filter + mark-as-read + unsubscribe), (c) punt (email-only). Phase 2.D-6 routing.
+- **B5.6 — PATTERN B5-ε (final cross-cutting): catalog drift is structural in the briefings engine.** Five independent catalogs (kind, audience, send-path, pilot mechanism, section renderers) with partial parity tests. Extend AP #28 discipline systemically. Phase 2.D-7 routing.
+
+**Phase 1 CLOSED (2026-06-03 AM).** 5 confirmed bugs (BUG A/B/C/D + Meta) + 1 owned gap (GAP-1) + 6 cross-cutting patterns (B1-α/β/γ/δ + B5-ε + dual-dispatch B2.10) + 8 Phase 2 routing decisions queued for Frank. Naturally clusters into 3 Phase 2 batches: schema (D-1+D-2+D-7), pilot (D-4+D-5), UI (D-3+D-6+D-8).
+
+**Phase 2 does NOT auto-dispatch** — hard pause gate per saved memory `autopilot-overreach-on-decisions-and-irreversible-ops`. Frank routes when ready.
+
+**Phase 2 redesign proposal (2026-06-03 AM) — Frank routed "auto execute through phase 2":** Doc `docs/REDESIGN_BRIEFINGS_2026-06-03.md` landed. Per §16.15 element structure: per-surface named options + tradeoffs (§2), per-role wireframes for parent inbox (§3), migration plan with reversible-first sequencing (§4), Phase 3 PR sequence (§5), out-of-scope (§6).
+
+Each of the 8 routing decisions presents 2–3 named options with recommendation + rationale. Recommendations are NOT decisions; terminal-CC doesn't pick architectural options or pull irreversible triggers per the memory. Highlights:
+- **D-1 (BUG A):** recommend (a) narrow predicate + (c) cron-pattern in flush(). Reversible, no confirm gate.
+- **D-2 (BUG B):** recommend (α) CHECK widen + parity test + (γ) AudiencePicker prepend default. **Backfill of 21 wrong-coerced rows is a confirm-gated PR.**
+- **D-3 (BUG C):** recommend (a) widen PreviewPanel registry-path criterion — closes DUAL-COMPOSE drift simultaneously.
+- **D-4 (pilot strategic):** **HARD HOLD — Frank's strategic call.** (b) and (c) both require **DROP COLUMN guardians.is_pilot_family — explicit confirm + pre-flight 0-callsite proof.**
+- **D-5 (pilot tactical):** recommend (a) migrate 3 stragglers NOW (forward-compatible with all D-4 outcomes).
+- **D-6 (parent inbox):** recommend (a) minimal viable for Phase 3. **New RLS policy on comms_message_recipients is confirm-gated.**
+- **D-7 (parity tests):** recommend (a) in scope. Reversible, no gate.
+- **D-8 (a11y):** recommend (b) defer existing surface audit + (a) axe-core scan on new parent inbox PRs.
+
+Phase 3 PR sequence: 8 reversible PRs (§4.1) + 4 confirm-gated PRs (§4.2). 3 PRs (H-1/2/3 for D-4 outcomes) held until Frank routes D-4.
+
+Phase 2 status: DOC ONLY. **Phase 3 does NOT auto-dispatch** — hard pause for Frank to route each decision per the audit's 3-phase structure + saved memory. AP #45 satisfied by this same-commit ledger append.
 
 ---
 
