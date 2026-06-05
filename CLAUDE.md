@@ -1180,11 +1180,13 @@ Per-row writes (RSVPs, rides, duties, score entry one-game-at-a-time) ship optim
 
 Microcopy on rollback: "Looks like that didn't go through. Try again?"
 
-### 16.2 Density (NowSection-scoped)
+### 16.2 Density (home-level, 2-state)
 
-NowSection components on parent and coach home pages read `useDensity` and render MIN/MED/MAX variants. Density may extend to other surfaces when a specific user need is named; the `useDensity` hook + `user_preferences.card_density` JSONB storage are ready for extension. Default density is MED. Other surfaces ship with one well-tuned density.
+Density is a single home-level setting (`minimal` | `maximum`) stored in `user_preferences.card_density` and applied uniformly to all home cards. It governs card verbosity only and never gates whether a Needs-you item appears. Per-section density scoping is retired.
 
-Scoped down from "everywhere" on Apr 30, 2026 (IA Map v1, Decision 2). Prior aspiration: every list/card/section reads `useDensity` and exposes a chevron. Reality through Wave 3c-a.2: 1 of ~9 candidate surfaces complies (NextUpCard router on parent home). Cost to extend (~3-4 sessions, threading through 8 components) outweighed marginal payoff at typical 5-10 item list lengths. Storage backbone retained for re-entry when a real user need surfaces.
+**Ratified by Frank 2026-06-05** (home-redesign GO packet) — supersedes both the prior 3-level (MIN/MED/MAX) locked decision and the per-section (NowSection-scoped) model. The `useDensity` hook is 2-state (`minimal`/`maximum`); the dead `medium`/3-level references in `DensityToggle.jsx` were removed in the same change. `card_density` stays the JSONB storage (one home/default key now, not a per-section map). No migration.
+
+History: density was scoped from "everywhere" → NowSection (Apr 30, 2026, IA Map v1, Decision 2) → home-level 2-state (Jun 5, 2026). The per-section storage map reached 1 of ~9 candidate surfaces before the home redesign collapsed it to one home-level control.
 
 ### 16.3 Kindness microcopy mandate
 
