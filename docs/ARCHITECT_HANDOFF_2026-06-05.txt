@@ -1,0 +1,153 @@
+ARCHITECT HANDOFF — Comms / Compose Arc + Open Decisions
+Date: 2026-06-05
+From: Claude Code (build session)
+To: Architect (claude.ai design)
+Read time: ~5 min. Two decisions actually block forward progress (D1, D2); the rest is confirm-and-go.
+
+================================================================
+0. TL;DR
+================================================================
+This session shipped the full W0 "compose simplification" arc + an email render-quality
+fix, all live on main. The briefings surface is now: ONE composer screen, 5 inline kind
+chips, Radar as the single front door (Ready / Drafts / Scheduled / Sent), the 4-step
+wizard + /new route retired. Separately, the two "recap" email kinds were promoted from
+plain text to styled game cards (reusing the engine's existing renderer).
+
+What needs YOU (real forks):
+  D1. Stream B notification model — align impl <-> spec (this has been waiting on a call).
+  D2. PR-D designs — token chip / cancellation card / facts-panel polish (I should not
+      improvise these per anti-drift rule #8; I need the designs).
+  D3. W1+ entry point — which surface leads next.
+
+What needs a light confirm:
+  C1. Ratify the design canon (docs/LH_END_STATE_MOCKUPS.html) as THE reference.
+  C2. Drafts-bucket UX micro-call (label + default-open).
+  C3. Render-quality scope confirm (structured kinds rich / text-first kinds plain).
+
+Executable without you (FYI list at the bottom).
+
+================================================================
+1. WHAT SHIPPED THIS SESSION (all merged to main)
+================================================================
+Compose redesign (W0), converging on the locked design canon:
+  - PR-A (#724): one-screen composer. Retired the 4-step wizard; kind + audience + body
+    + AI draft + send all on a single FullScreenForm.
+  - PR-B (#726): inline kind chips (the 5 MANUAL kinds) replacing the 12-tile picker;
+    Radar "+ New" repointed to /compose; /new route + BriefingNewPage deleted; the
+    free-form AI draft re-homed into the composer so retiring /new did NOT regress it.
+  - PR-C pt1 (#727): deleted the now-orphaned wizard chrome (StepKindPicker, the briefings
+    WizardHeader, DraftResumeRow, KindTile + tests); dropped the now-stale BriefingComposer
+    >150 cap exception from CLAUDE.md.
+  - PR-C pt2 (#728): Radar "Drafts" bucket. bucketFeed now splits live draft rows by
+    origin — created_by_trigger (cron auto-proposal) -> Ready; null (user WIP) -> Drafts.
+    This RESTORES user-draft resume that the chip-swap removed.
+
+Render quality:
+  - Recap game cards (#729): games_recap + game_recap now emit game_card sections (colored
+    rail, matchup headline, venue, score + W/L-toned stake line, team-color accent) —
+    reusing the SAME renderer tournament_prelim uses. The Coach-voice narrative paragraph
+    stays below the cards. Locked by contract tests.
+
+Earlier in the session (context, by content):
+  - The AI-draft arc: a draft edge function + the anchored-recap AI draft (AI-1) and the
+    facts-panel pass (AI-2) across the recap kinds.
+  - Subject-line em-dash -> colon fix.
+  - The §16.15 audit pass + the architect handoff docs that preceded this one.
+  - The design canon committed to docs/ (LH_END_STATE_MOCKUPS.html).
+
+================================================================
+2. THE RENDER-QUALITY FINDING (important context for C3 + your model)
+================================================================
+Frank flagged a quality gap between his hand-built tournament-briefing HTML (rich: game
+cards, colored section bars, bracket path, standings, weather, rules) and the engine's
+games_recap output (plain: header + text result lines + a paragraph).
+
+A file-grounded map of the engine's HTML render layer (src/lib/engine/sectionRenderers.js,
+34 registered renderers; per-kind resolvers) corrected the first impression. The truth:
+
+  RICH already (match Frank's bar): tournament_prelim, tournament_recap, family_guide
+  STRUCTURED already: weekly_digest, schedule_change, rsvp_nudge, academy_callup_notice,
+                      coach_roundup
+  PLAIN: game_recap, games_recap  (now FIXED, #729)
+  PLAIN on purpose: announcement, custom_message  (text-first by design)
+
+So the engine ALREADY embodies Frank's quality bar everywhere except the two recaps, which
+were plain only because of a deliberate "ship fast, no new renderers" tradeoff. The fix was
+pure reuse of the existing game_card renderer — NOT a redesign, NOT an architect design item.
+The render quality is in good shape platform-wide.
+
+================================================================
+3. DECISIONS NEEDED (real forks)
+================================================================
+
+--- D1. STREAM B NOTIFICATION MODEL — align impl <-> spec --------------------
+This is the one that's been waiting on a call (CLAUDE.md §16.5 / Wave 3.A #19 P1-1).
+
+  SPEC says:  RSVP nudges at T-4h + T-1h, anchored on the RSVP-LOCK DEADLINE; Sunday
+              digest auto-SENT.
+  IMPL does:  a 24-hour coverage-threshold model anchored on EVENT START; Sunday digest
+              is auto-DRAFT only (lands in Radar, admin sends).
+
+These are materially different parent experiences. Two clean resolutions:
+  (a) Align impl -> spec (build the deadline-anchored T-4h/T-1h cadence + auto-send digest).
+  (b) Update spec -> impl (ratify the shipped behavior as the truer position).
+
+Build-side lean: (b). Per anti-pattern #39 (position+hedge) and #60 (the shipped system is
+the ground truth), the impl is usually the truer position — UNLESS the deadline-anchored
+cadence + auto-send is a deliberate product want you're holding. Your call; this is a
+product/UX decision, not a build one.
+
+--- D2. PR-D DESIGNS — token chip / cancellation card / facts panel ----------
+Three composer-touching items were grouped to "build once" (PR-D), but I can't build them
+to canon without the designs (anti-drift rule #8 forbids improvising design):
+  - Per-recipient TOKEN CHIP (the {{token_*_url}} substitution surface in the composer/
+    preview — how the admin sees/places per-recipient action links).
+  - B2 CANCELLATION CARD (the schedule_change "cancelled" treatment as a card).
+  - AI-2 FACTS-PANEL polish (the facts the AI draft is grounded on — presentation).
+Need: exact layout/spec for each (the way LH_END_STATE_MOCKUPS gives the composer). Once I
+have them, PR-D is one focused build.
+
+--- D3. W1+ ENTRY POINT -------------------------------------------------------
+Which surface leads the next wave: parent moat, auto share card, coach screens, or Insights.
+A product-priority call. W0 (compose) is closed, so the lane is open.
+
+================================================================
+4. CONFIRMATIONS (light — confirm and I proceed)
+================================================================
+
+  C1. RATIFY THE DESIGN CANON. docs/LH_END_STATE_MOCKUPS.html is the artifact this session
+      converged the composer + Radar on. Confirm it is THE reference W1+ keys off (or amend).
+      Everything assumed it; it should be ratified before more builds lean on it.
+
+  C2. DRAFTS-BUCKET UX. I shipped the Drafts section collapsed-by-default, reusing the
+      proposal card's "Review & send" label (slightly off for WIP). The canon shows Drafts
+      as a peer tab. If you want OPEN-by-default + a "Resume" label, it's a ~10-min change.
+      Confirm: keep as-is, or apply the polish.
+
+  C3. RENDER SCOPE. Frank already said: structured-data kinds get the rich card/bar/accent
+      treatment; text-first kinds (announcement, custom_message) stay plain on purpose.
+      Confirm that's the standing rule (it's what §2 above reflects). If yes, no further
+      render work is needed — the platform is at bar except those two-by-design.
+
+================================================================
+5. EXECUTABLE WITHOUT YOU (FYI — I'll just do these)
+================================================================
+  - Reducer step-action cleanup (GO_FORWARD/GO_BACK/JUMP_TO/step are now vestigial after
+    the one-screen composer). Pure hygiene + test churn; no behavior change.
+  - §0-grep vs check-file-length.sh reconciliation: the CLAUDE.md §0 manual grep is stale
+    vs the real CI gate on rsvpNudge.js (167 LOC) + academyCallupNotice.js (161 LOC) —
+    they're over 150 + unlisted in §6, but the CI script excepts them. Doc reconcile.
+  - Body em-dash sweep (the em-dash->colon pass beyond subject lines).
+  - Audience kind-smart-default mapping (e.g. recap -> TEAM scope).
+  - Per-recipient pilot path.
+
+================================================================
+6. RECOMMENDED NEXT SEQUENCE
+================================================================
+  1. You: answer D1 (Stream B) + hand over D2 (PR-D designs). Those two unblock the most.
+  2. Me: build PR-D once designs land; knock out the §5 FYI items in parallel.
+  3. You: pick D3 (W1+ lane); confirm C1/C2/C3.
+  4. Frank: desktop smoke of the live one-screen composer + Radar Drafts + the new recap
+     cards (the outstanding human step).
+
+End of handoff.
