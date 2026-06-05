@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { composeGameRecap } from '../gameRecap';
 import { composeTournamentPrelim } from '../tournamentPrelim';
 import { composeAnnouncement } from '../announcement';
 import { composeCustomMessage } from '../customMessage';
@@ -11,38 +10,6 @@ import { composeCustomMessage } from '../customMessage';
 // (still tested) until they're flagged for removal too.
 
 const COACHES = [{ display_name: 'Frank', title: 'Program Director', phone: '(917) 991-9830' }];
-
-describe('composeGameRecap', () => {
-  it('renders header + score + highlights + signoff + footer', () => {
-    const out = composeGameRecap({
-      teamName: '11U Girls', opponent: 'Storm Blue',
-      score: { ours: 42, theirs: 38 },
-      our_highlights: 'Strong third quarter.', opp_highlights: 'Their #12 had a hot first half.',
-      player_of_game_name: 'Sara K.', coach_note: 'Proud of the team.',
-      signoff_message: 'Onward.', coaches: COACHES,
-    });
-    expect(out.subject).toBe('Recap: 11U Girls 42-38 vs Storm Blue');
-    expect(out.html).toContain('GAME RECAP');
-    expect(out.html).toContain('Final: 11U Girls 42 – Storm Blue 38 (W)');
-    expect(out.html).toContain('Strong third quarter.');
-    expect(out.html).toContain('Player of the game: Sara K.');
-    expect(out.plainText).toContain('Final: 11U Girls 42 – Storm Blue 38 (W)');
-    const kinds = out.sections.map((s) => s.kind);
-    expect(kinds[0]).toBe('header');
-    expect(kinds[kinds.length - 1]).toBe('footer');
-  });
-
-  it('omits score line when score is missing (loss tag still works)', () => {
-    const out = composeGameRecap({ teamName: '10U', opponent: 'Mavs' });
-    expect(out.html).not.toContain('Final:');
-    expect(out.subject).toBe('Recap: 10U vs Mavs');
-  });
-
-  it('marks losses with L tag', () => {
-    const out = composeGameRecap({ teamName: '10U', opponent: 'Mavs', score: { ours: 30, theirs: 40 } });
-    expect(out.html).toContain('(L)');
-  });
-});
 
 describe('composeTournamentPrelim', () => {
   it('renders header + body sections + signoff + footer', () => {

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { composeTournamentPrelim } from '../tournamentPrelim';
-import { composeGameRecap } from '../gameRecap';
 
 const URL = 'https://setourney.app.link/test123';
 
@@ -20,30 +19,5 @@ describe('wave 3.16.1 — tourney CTA emission', () => {
     });
     expect(out.html).toContain(URL);
     expect(out.html).toContain('VIEW SCHEDULE');
-  });
-
-  it('gameRecap emits cta_buttons when parented to a tournament with tourney_url', () => {
-    const out = composeGameRecap({
-      teamName: '10U Blue',
-      opponent: 'Storm Blue',
-      score: { ours: 42, theirs: 38 },
-      our_highlights: 'Strong third quarter.',
-      tourney_link_label: 'VIEW LEAGUE STANDINGS',
-      tourney_url: URL,
-    });
-    expect(out.html).toContain('VIEW LEAGUE STANDINGS');
-    expect(out.html).toContain(URL);
-  });
-
-  it('gameRecap omits CTA when game has no parent tournament (URL null)', () => {
-    const out = composeGameRecap({
-      teamName: '11U Girls',
-      opponent: 'Storm Blue',
-      score: { ours: 42, theirs: 38 },
-      our_highlights: 'Strong third quarter.',
-      tourney_link_label: 'VIEW LEAGUE STANDINGS',
-      tourney_url: null,
-    });
-    expect(out.sections.find((s) => s.kind === 'cta_buttons')).toBeUndefined();
   });
 });
