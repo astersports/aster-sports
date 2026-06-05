@@ -72,9 +72,25 @@ describe('game_recap resolver — contract', () => {
     const fixturesNoHighlight = { ...FIXTURES, game_result: { ...game_result, coach_highlight: '' } };
     const { context, slices } = await resolveGameRecap({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient(fixturesNoHighlight), now: NOW });
     const { content_sections } = composeGameRecap(context, slices[0], {});
-    // The coach_highlight body 'defense' should not appear; other sections still present
+    // The coach_highlight body 'defense' should not appear; the game_card
+    // (final score) still renders before the narrative sections.
     const bodies = content_sections.filter((s) => s.kind === 'stats_narrative').map((s) => s.body);
     expect(bodies).not.toContain('defense');
-    expect(bodies.some((b) => b.startsWith('Final:'))).toBe(true);
+    const card = content_sections.find((s) => s.kind === 'game_card');
+    expect(card).toBeDefined();
+    expect(card.stakeLine.text).toBe('2–0 · Win');
+  });
+
+  it('8. emits one game_card (final score) before the narrative stats_narrative sections', async () => {
+    const { context, slices } = await resolveGameRecap({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient(FIXTURES), now: NOW });
+    const { content_sections } = composeGameRecap(context, slices[0], {});
+    const kinds = content_sections.map((s) => s.kind);
+    // header → game_card → POG narrative → coach_highlight narrative → signoff → footer
+    expect(kinds).toEqual(['header', 'game_card', 'stats_narrative', 'stats_narrative', 'signoff', 'footer']);
+    const card = content_sections[1];
+    expect(card.primary).toBe('10U Blue vs Resurrection White 4AB');
+    expect(card.stakeLine).toEqual({ text: '2–0 · Win', tone: 'green' });
+    expect(card.team_color).toBe('#94a3b8');
+    expect(card.secondary).toEqual({ text: 'CYO Spellman', link: null });
   });
 });

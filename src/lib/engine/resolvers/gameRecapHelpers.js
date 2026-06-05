@@ -3,8 +3,47 @@
 
 const NY_TZ = 'America/New_York';
 const dayLabelFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, weekday: 'long', month: 'long', day: 'numeric' });
+const railDayFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, weekday: 'short' });
+const railDateFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, month: 'numeric', day: 'numeric' });
+const timeFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, hour: 'numeric', minute: '2-digit', hour12: true });
 
 export const RESULT_VERB = { W: 'beat', L: 'fell to', T: 'tied' };
+
+const RESULT_TONE = { W: 'green', L: 'red', T: 'amber' };
+const RESULT_WORD = { W: 'Win', L: 'Loss', T: 'Tie' };
+
+// Build the single `game_card` section for a game_recap. Reuses the
+// existing game_card renderer (registered in SECTION_RENDERERS, used by
+// tournament_prelim) — no new renderer, no SECTION_RENDERERS orphan risk
+// (AP #38). Pure: same input -> deeply-equal output (AP #27). Mirrors
+// buildGameCard in gamesRecapHelpers.js but reads the single-game
+// game_recap context shape (team / event / location / game_result).
+//   rail   — day (e.g. "Sat 5/2") as label + tip time as timePrimary
+//   primary — "{team} vs {opponent}" (omits "vs ..." gracefully on null opp)
+//   secondary — venue (location.name) when present, else omitted
+//   stakeLine — "{us}–{them} · {Win|Loss|Tie}" toned green/red/amber
+// team_color is carried for parity with tournament_prelim + future use;
+// the game_card renderer owns its own variant colors (it does not read it).
+export function buildGameRecapCard(team, event, location, gr) {
+  const startAt = event?.start_at;
+  const label = startAt ? `${railDayFmt.format(new Date(startAt))} ${railDateFmt.format(new Date(startAt))}` : 'TBD';
+  const teamName = team?.name || 'Legacy Hoopers';
+  const opp = event?.opponent ? String(event.opponent).trim() : '';
+  const primary = opp ? `${teamName} vs ${opp}` : teamName;
+  const venue = location?.name ? String(location.name).trim() : '';
+  const tone = RESULT_TONE[gr.result] || 'muted';
+  const word = RESULT_WORD[gr.result] || gr.result || '';
+  const stakeText = word ? `${gr.our_score}–${gr.opponent_score} · ${word}` : `${gr.our_score}–${gr.opponent_score}`;
+  const section = {
+    kind: 'game_card', variant: 'regular',
+    rail: { label, timePrimary: startAt ? timeFmt.format(new Date(startAt)) : '' },
+    primary,
+    stakeLine: { text: stakeText, tone },
+    team_color: team?.team_color || null,
+  };
+  if (venue) section.secondary = { text: venue, link: null };
+  return section;
+}
 
 export class GameRecapNotPublishedError extends Error {
   constructor(eventId) {

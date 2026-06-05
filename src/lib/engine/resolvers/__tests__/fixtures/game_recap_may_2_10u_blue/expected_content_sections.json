@@ -7,7 +7,15 @@
     "sub_context": "Saturday, May 2 · CYO Spellman",
     "goldStripe": true
   },
-  { "kind": "stats_narrative", "body": "Final: 10U Blue 2 – Resurrection White 4AB 0 (W)" },
+  {
+    "kind": "game_card",
+    "variant": "regular",
+    "rail": { "label": "Sat 5/2", "timePrimary": "2:00 PM" },
+    "primary": "10U Blue vs Resurrection White 4AB",
+    "stakeLine": { "text": "2–0 · Win", "tone": "green" },
+    "team_color": "#94a3b8",
+    "secondary": { "text": "CYO Spellman", "link": null }
+  },
   { "kind": "stats_narrative", "body": "Player of the game: Giuseppe" },
   { "kind": "stats_narrative", "body": "defense" },
   {
