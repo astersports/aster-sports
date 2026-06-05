@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Briefing order, decided</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cobalt:#4a8fd4; --cobalt-ink:#2f6db0; --cobalt-wash:#eef4fb; --cobalt-deep:#2b5e9e;
+    --violet:#a78bfa; --amber:#f59e0b; --slate:#64748b; --cyan:#06b6d4;
+    --ink:#16191d; --ink-2:#5b6168; --ink-3:#9aa0a8; --line:#e8eaed; --line-2:#f0f1f3;
+    --surface:#fff; --bg:#f5f6f8;
+    --r-card:12px; --r-sm:8px; --r-pill:999px;
+    --sh-card:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);
+    --sh-soft:0 1px 2px rgba(16,24,40,.05);
+    --good:#1f9d57; --good-wash:#e9f7ef;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+  body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(1200px 600px at 50% -10%,#fbfcfe 0%,#eef0f3 60%,#e7e9ed 100%);
+    background-attachment:fixed;padding:0 0 70px}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 26px}
+  .hero{padding:54px 26px 6px;max-width:1120px;margin:0 auto}
+  .hero .k{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--cobalt-ink)}
+  .hero h1{font-size:32px;font-weight:800;letter-spacing:-.02em;margin:8px 0 9px;line-height:1.05}
+  .hero p{font-size:15px;color:var(--ink-2);max-width:640px;line-height:1.55}
+  .hero p b{color:var(--ink);font-weight:700}
+  .sec{margin-top:36px}
+  .sechead{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+  .sechead .n{font-size:12px;font-weight:800;color:#fff;background:var(--ink);width:23px;height:23px;border-radius:50%;display:grid;place-items:center}
+  .sechead h2{font-size:20px;font-weight:700;letter-spacing:-.01em}
+  .sechead .s{font-size:14px;color:var(--ink-2);font-weight:500}
+  /* entry cards */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:14px;margin-top:18px}
+  .ec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--sh-card);overflow:hidden;display:flex;flex-direction:column}
+  .ec .bar{height:4px}
+  .ec .pad{padding:15px 15px 16px;display:flex;flex-direction:column;gap:11px;flex:1}
+  .ec .top{display:flex;align-items:center;gap:10px}
+  .ec .ig{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:#fff;flex-shrink:0}
+  .ec .entry{font-size:14.5px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
+  .ec .entry span{display:block;font-size:11.5px;color:var(--ink-3);font-weight:600;margin-top:2px}
+  .ec .label{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .chip{font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:var(--r-pill);background:var(--cobalt-wash);color:var(--cobalt-ink)}
+  .chip.none{background:var(--line-2);color:var(--ink-3)}
+  .chip.do{background:var(--ink);color:#fff}
+  .ec .arrow{align-self:center;color:var(--ink-3)}
+  .ec .foot{margin-top:auto;font-size:11.5px;font-weight:700;color:var(--ink-2);background:var(--bg);border-radius:var(--r-sm);padding:8px 10px;text-align:center}
+  .ec .foot.best{background:var(--good-wash);color:#136e3c}
+  .takeaway{margin-top:16px;font-size:14px;color:var(--ink-2);line-height:1.55;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--cobalt);border-radius:var(--r-sm);padding:13px 15px}
+  .takeaway b{color:var(--ink);font-weight:700}
+  /* parent read */
+  .readwrap{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;margin-top:18px}
+  .phone{width:330px;flex-shrink:0}
+  .pscreen{background:#0d0f12;border-radius:34px;padding:8px;box-shadow:0 8px 30px rgba(16,24,40,.1)}
+  .pinner{background:#fff;border-radius:27px;overflow:hidden}
+  .band{position:relative;padding:14px 16px;border-bottom:1px solid var(--line-2)}
+  .band .tag{position:absolute;left:-11px;top:13px;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;box-shadow:var(--sh-soft)}
+  .b1{background:linear-gradient(135deg,var(--amber),#e08600);color:#fff}
+  .b1 .eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.1em;opacity:.95}
+  .b1 .ttl{font-size:19px;font-weight:800;letter-spacing:-.01em;margin-top:5px}
+  .b2{display:flex;align-items:center;justify-content:space-between}
+  .b2 .score{font-size:30px;font-weight:800;letter-spacing:-.03em}
+  .b2 .pill{font-size:11px;font-weight:800;padding:4px 11px;border-radius:var(--r-pill);background:#fee2e2;color:#b91c1c}
+  .b3{display:flex;gap:9px}
+  .b3 .cta{flex:1;text-align:center;font-size:13px;font-weight:700;border-radius:var(--r-sm);padding:11px;background:var(--cobalt);color:#fff}
+  .b3 .cta.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .b4{font-size:12.5px;color:var(--ink-2);line-height:1.55}
+  .b4 .sign{font-weight:700;color:var(--ink);margin-top:6px}
+  .readside{flex:1;min-width:240px;display:flex;flex-direction:column;gap:12px;padding-top:4px}
+  .pr{display:flex;gap:11px;align-items:flex-start}
+  .pr .num{width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;flex-shrink:0}
+  .pr .t b{font-size:14px;font-weight:700;display:block}
+  .pr .t span{font-size:13px;color:var(--ink-2);line-height:1.5}
+  .threes{background:var(--good-wash);border:1px solid #c7ead5;border-radius:var(--r-sm);padding:11px 13px;font-size:13px;color:#136e3c;font-weight:600;line-height:1.5}
+  .threes b{font-weight:800}
+  svg{display:block}
+  .ico{width:18px;height:18px;stroke-width:1.85;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .ico-sm{width:14px;height:14px;stroke-width:1.85;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  @media(max-width:520px){.hero h1{font-size:26px}.phone{width:100%;max-width:330px}}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="k">Briefing redesign · the order, decided</div>
+  <h1>Context sets the order, not a rule</h1>
+  <p>"Team first or type first" is three different questions. The admin's order is set by where they started. The coach has no order at all. The parent never composes, so their "order" is the order they <b>read</b>, which is the whole three-second test.</p>
+</div>
+
+<div class="wrap">
+
+  <!-- ADMIN -->
+  <div class="sec">
+    <div class="sechead"><span class="n">1</span><h2>Admin</h2><span class="s">The entry point pre-fills what you already implied. You only choose what's undetermined.</span></div>
+    <div class="grid">
+
+      <div class="ec"><div class="bar" style="background:var(--cobalt)"></div><div class="pad">
+        <div class="top"><div class="ig" style="background:var(--cobalt)"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></div><div class="entry">From Radar<span>tap a proposal</span></div></div>
+        <div><div class="label">Pre-filled</div><div class="chips" style="margin-top:5px"><span class="chip">Team</span><span class="chip">Kind</span><span class="chip">Audience</span></div></div>
+        <svg class="ico arrow" viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        <div><div class="label">You choose</div><div class="chips" style="margin-top:5px"><span class="chip do">Review &amp; send</span></div></div>
+        <div class="foot best">Most common · zero picks</div>
+      </div></div>
+
+      <div class="ec"><div class="bar" style="background:var(--violet)"></div><div class="pad">
+        <div class="top"><div class="ig" style="background:var(--violet)"><svg class="ico" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div><div class="entry">From a team<span>"Message this team"</span></div></div>
+        <div><div class="label">Pre-filled</div><div class="chips" style="margin-top:5px"><span class="chip">Team</span></div></div>
+        <svg class="ico arrow" viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        <div><div class="label">You choose</div><div class="chips" style="margin-top:5px"><span class="chip do">Kind</span></div></div>
+        <div class="foot">Team-first, naturally</div>
+      </div></div>
+
+      <div class="ec"><div class="bar" style="background:var(--amber)"></div><div class="pad">
+        <div class="top"><div class="ig" style="background:var(--amber)"><svg class="ico" viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="m8 14 3-4 3 3 4-6"/></svg></div><div class="entry">From a game<span>coach taps "request recap"</span></div></div>
+        <div><div class="label">Pre-filled</div><div class="chips" style="margin-top:5px"><span class="chip">Team</span><span class="chip">Kind</span><span class="chip">Game</span></div></div>
+        <svg class="ico arrow" viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        <div><div class="label">You choose</div><div class="chips" style="margin-top:5px"><span class="chip do">Review in Radar</span></div></div>
+        <div class="foot">Coach path · trigger-only</div>
+      </div></div>
+
+      <div class="ec"><div class="bar" style="background:var(--slate)"></div><div class="pad">
+        <div class="top"><div class="ig" style="background:var(--slate)"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div><div class="entry">Cold "+ New"<span>start blank</span></div></div>
+        <div><div class="label">Pre-filled</div><div class="chips" style="margin-top:5px"><span class="chip none">Nothing</span></div></div>
+        <svg class="ico arrow" viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        <div><div class="label">You choose</div><div class="chips" style="margin-top:5px"><span class="chip do">Kind first</span><span class="chip">then audience auto-defaults</span></div></div>
+        <div class="foot">The only kind-first path</div>
+      </div></div>
+
+    </div>
+    <div class="takeaway"><b>Why kind-first only on the cold path:</b> the kind decides which audiences are valid and what the smart default is, so "recap" can pre-fill "this team." Pick a team first from cold and the form still can't shape itself until you also pick the kind, so it just adds a step. Everywhere you have context, you get team-first for free.</div>
+  </div>
+
+  <!-- COACH -->
+  <div class="sec">
+    <div class="sechead"><span class="n">2</span><h2>Coach</h2><span class="s">No order to choose. The coach triggers from where they already are; it lands in your Radar pre-filled.</span></div>
+    <div class="takeaway" style="border-left-color:var(--amber)"><b>A game becomes "request recap." A team becomes "send update."</b> Team and kind are inferred from context, the coach's job ends at the tap, and you own the words. Simplest possible, and it holds the trigger-only line.</div>
+  </div>
+
+  <!-- PARENT -->
+  <div class="sec">
+    <div class="sechead"><span class="n">3</span><h2>Parent</h2><span class="s">Never composes. Their "order" is the order of information they read, and that is the three-second test.</span></div>
+    <div class="readwrap">
+      <div class="phone"><div class="pscreen"><div class="pinner">
+        <div class="band b1"><span class="tag">1</span><div class="eyebrow">8U BOYS · WEEKEND RECAP</div><div class="ttl">That's how we battle</div></div>
+        <div class="band b2"><span class="tag">2</span><div class="score">38 – 31</div><span class="pill" style="background:#dcfce7;color:#15803d">WIN</span></div>
+        <div class="band b3"><span class="tag">3</span><span class="cta">See Milo's card</span><span class="cta ghost">Schedule</span></div>
+        <div class="band b4" style="border-bottom:none"><span class="tag">4</span>Boys, what a Saturday. We went toe to toe with a strong Yorktown squad and never backed down...<div class="sign">Frank &amp; Coach Kenny</div></div>
+      </div></div></div>
+      <div class="readside">
+        <div class="pr"><span class="num">1</span><div class="t"><b>Identity</b><span>Team color + kind in the header. Which kid is this about, before reading a word. Critical for a multi-kid family.</span></div></div>
+        <div class="pr"><span class="num">2</span><div class="t"><b>The one fact</b><span>Score, new time, or the ask. Big, above the fold, impossible to miss.</span></div></div>
+        <div class="pr"><span class="num">3</span><div class="t"><b>The action</b><span>RSVP, view, the card. Tappable, if there's anything to do.</span></div></div>
+        <div class="pr"><span class="num">4</span><div class="t"><b>The voice</b><span>The prose and detail, below, for whoever wants it.</span></div></div>
+        <div class="threes"><b>The 3-second test:</b> bands 1 and 2 are grokked before a parent could swipe away. Color and score grab the eye instantly. The old plain version failed here, a gray paragraph gives the eye nothing to grab, so the parent bounces.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
