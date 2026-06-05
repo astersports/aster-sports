@@ -11,6 +11,7 @@ import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
 import { useGameResultsMap } from '../hooks/useGameResultsMap';
 import { useWeather } from '../hooks/useWeather';
+import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { useDensity } from '../hooks/useDensity';
 import { useAlertEvaluator } from '../hooks/useAlertEvaluator';
@@ -47,7 +48,7 @@ export default function ParentHomePage() {
   const { counts: rideCounts } = useEventRideCounts(filteredNext7);
   const { counts: dutyCounts } = useEventDutyCounts(filteredNext7);
   const gameResults = useGameResultsMap(filteredNext7);
-  const weather = useWeather(41.03, -73.76);
+  const weather = useWeather(...WEATHER_DEFAULT_COORDS);
   const { alerts: allAlerts, loading: alertsLoading } = useAlertEvaluator();
   const parentAlerts = useMemo(() => filterAlertsForParent(allAlerts, myChildren), [allAlerts, myChildren]);
 

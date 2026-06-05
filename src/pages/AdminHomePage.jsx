@@ -12,6 +12,7 @@ import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { useAdminHomeSignals } from '../hooks/useAdminHomeSignals';
 import { useNow } from '../hooks/useNow';
 import { getWeatherForTime, useWeather } from '../hooks/useWeather';
+import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import AlertZone from '../components/alerts/AlertZone';
 import ActionZone from '../components/home/ActionZone';
 import PendingQueuesLanes from '../components/home/PendingQueuesLanes';
@@ -42,7 +43,7 @@ export default function AdminHomePage() {
   const { programs } = usePrograms();
   const { activities, loading: activitiesLoading, refetch } = useActivities();
   const { byTeamId: recordsByTeam } = useOrgTeamRecords(orgId);
-  const weather = useWeather(41.03, -73.76);
+  const weather = useWeather(...WEATHER_DEFAULT_COORDS);
   const { alerts, loading: alertsLoading } = useAlertEvaluator();
   useRefetchOnVisible(refetch);
   const navigate = useNavigate();

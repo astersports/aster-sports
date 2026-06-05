@@ -6,6 +6,7 @@ import { useGameResultsMap } from '../../hooks/useGameResultsMap';
 import { useWeather } from '../../hooks/useWeather';
 import { useDensity } from '../../hooks/useDensity';
 import { formatCountdown } from '../../lib/formatters';
+import { WEATHER_DEFAULT_COORDS } from '../../lib/constants';
 import DateGroupedList from '../schedule/DateGroupedList';
 import FilterSelect from '../shared/FilterSelect';
 
@@ -13,7 +14,7 @@ export default function AdminScheduleSection({ activities }) {
   const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(activities);
   const { counts: rideCounts } = useEventRideCounts(activities);
   const gameResults = useGameResultsMap(activities);
-  const weather = useWeather(41.03, -73.76);
+  const weather = useWeather(...WEATHER_DEFAULT_COORDS);
   const now = useNow();
   const weekEnd = now + 7 * 24 * 60 * 60 * 1000;
   const [selectedTeam, setSelectedTeam] = useState(null);

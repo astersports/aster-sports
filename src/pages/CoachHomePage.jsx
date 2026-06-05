@@ -6,6 +6,7 @@ import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
 import { useEventRideCounts } from '../hooks/useEventRideCounts';
 import { useGameResultsMap } from '../hooks/useGameResultsMap';
 import { useWeather } from '../hooks/useWeather';
+import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useNow } from '../hooks/useNow';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
@@ -32,7 +33,7 @@ export default function CoachHomePage() {
   const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(activities);
   const { counts: rideCounts } = useEventRideCounts(activities);
   const gameResults = useGameResultsMap(activities);
-  const weather = useWeather(41.03, -73.76);
+  const weather = useWeather(...WEATHER_DEFAULT_COORDS);
   const navigate = useNavigate();
   useRefetchOnVisible(refetch);
   const now = useNow();
