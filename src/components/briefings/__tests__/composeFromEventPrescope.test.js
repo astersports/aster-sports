@@ -28,8 +28,8 @@ function prescope(event, isPast, opts) {
   });
 }
 
-const GAME = { id: 'evt-game-1', event_type: 'game', opponent: 'Rivals' };
-const TOURNEY_EVENT = { id: 'evt-tourn-1', event_type: 'tournament', tournament_id: 'tour-9' };
+const GAME = { id: 'evt-game-1', event_type: 'game', opponent: 'Rivals', team_id: 'team-7' };
+const TOURNEY_EVENT = { id: 'evt-tourn-1', event_type: 'tournament', tournament_id: 'tour-9', team_id: 'team-7' };
 
 describe('compose-from-event pre-scope (AP #43)', () => {
   it('PAST game → game_recap, Body step, event anchor pre-selected', () => {
@@ -69,23 +69,40 @@ describe('compose-from-event pre-scope (AP #43)', () => {
     expect(s.anchor_id).toBe('evt-game-1'); // anchor still carried, not lost
   });
 
-  // "Notify families" (intent=notify) — always schedule_change on the event,
-  // Body step, event pre-selected. The kind+anchor pair skips the cold picker;
-  // the resolver self-fetches the diff from event_change_audit by anchor_id.
-  it('NOTIFY upcoming game → schedule_change, Body step, event anchor pre-selected', () => {
+  // "Notify families" (intent=notify) — general event-scoped announcement
+  // (changed 2026-06-05). The kind+TEAM-anchor pair skips the cold picker and
+  // lands at the Body step PRE-SCOPED to the event's team families (audience
+  // 'team' + team_ids=[event.team_id]) — NOT org_all. This reuses the
+  // "Message this team" entry point machinery (audienceFromAnchor +
+  // reconcileAudienceForKind honoring the team pre-fill for announcement).
+  it('NOTIFY upcoming game → announcement, Body step, team-scoped audience (not org_all)', () => {
     const s = prescope(GAME, false, { intent: 'notify' });
-    expect(s.kind).toBe('schedule_change');
+    expect(s.kind).toBe('announcement');
     expect(s.step).toBe(3); // not the cold Kind step
-    expect(s.anchor_kind).toBe('event');
-    expect(s.anchor_id).toBe('evt-game-1');
-    expect(s.audience_type).toBe('event_attendees');
+    expect(s.anchor_kind).toBe('team');
+    expect(s.anchor_id).toBe('team-7');
+    // The load-bearing assertion: audience pre-scopes to THIS team's families,
+    // not the org_all default (announcement's KIND_METADATA default).
+    expect(s.audience_type).toBe('team');
+    expect(s.audience_type).not.toBe('org_all');
+    expect(s.audience_filter).toEqual({ team_ids: ['team-7'] });
   });
 
-  it('NOTIFY tournament event → schedule_change on the EVENT anchor (not the tournament)', () => {
+  it('NOTIFY tournament event → announcement on the event TEAM (not the tournament)', () => {
     const s = prescope(TOURNEY_EVENT, false, { intent: 'notify' });
-    expect(s.kind).toBe('schedule_change');
+    expect(s.kind).toBe('announcement');
     expect(s.step).toBe(3);
-    expect(s.anchor_kind).toBe('event');
-    expect(s.anchor_id).toBe('evt-tourn-1'); // the event, NOT tour-9
+    expect(s.anchor_kind).toBe('team');
+    expect(s.anchor_id).toBe('team-7'); // the event's team, NOT tour-9
+    expect(s.audience_type).toBe('team');
+    expect(s.audience_filter).toEqual({ team_ids: ['team-7'] });
+  });
+
+  it('NOTIFY event WITHOUT team_id → announcement pre-selected, Kind step (admin picks scope)', () => {
+    const noTeam = { id: 'evt-multi-1', event_type: 'tournament' };
+    const s = prescope(noTeam, false, { intent: 'notify' });
+    expect(s.kind).toBe('announcement');
+    expect(s.step).toBe(1); // no anchor id → cannot skip to Body; admin scopes
+    expect(s.audience_type).toBe('org_all'); // announcement's default when no anchor
   });
 });

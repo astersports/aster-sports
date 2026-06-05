@@ -5,8 +5,8 @@
 import { describe, expect, it } from 'vitest';
 import { composeFromEvent } from '../composeFromEvent';
 
-const GAME = { id: 'evt-game-1', event_type: 'game', opponent: 'Rivals' };
-const TOURNEY_EVENT = { id: 'evt-tourn-1', event_type: 'tournament', tournament_id: 'tour-9' };
+const GAME = { id: 'evt-game-1', event_type: 'game', opponent: 'Rivals', team_id: 'team-7' };
+const TOURNEY_EVENT = { id: 'evt-tourn-1', event_type: 'tournament', tournament_id: 'tour-9', team_id: 'team-7' };
 
 describe('composeFromEvent — event-type × timing default kind', () => {
   it('PAST tournament event → tournament_recap anchored on the tournament', () => {
@@ -44,23 +44,31 @@ describe('composeFromEvent — event-type × timing default kind', () => {
   });
 });
 
-describe('composeFromEvent — intent=notify forces schedule_change on the event', () => {
-  it('UPCOMING game + notify → schedule_change anchored on the event', () => {
+describe('composeFromEvent — intent=notify → team-scoped announcement', () => {
+  // Changed 2026-06-05: "Notify families" is now a general event-scoped
+  // announcement (works immediately, no edit-diff), anchored on the event's
+  // TEAM so the audience pre-scopes to that team's families (not org_all).
+  it('UPCOMING game + notify → announcement anchored on the event team', () => {
     expect(composeFromEvent(GAME, false, { intent: 'notify' }))
-      .toBe('/admin/briefings/compose?anchor=event&id=evt-game-1&kind=schedule_change');
+      .toBe('/admin/briefings/compose?anchor=team&id=team-7&kind=announcement');
   });
 
-  it('PAST game + notify → schedule_change anchored on the event (kind not past-dependent)', () => {
+  it('PAST game + notify → announcement anchored on the event team (kind not past-dependent)', () => {
     expect(composeFromEvent(GAME, true, { intent: 'notify' }))
-      .toBe('/admin/briefings/compose?anchor=event&id=evt-game-1&kind=schedule_change');
+      .toBe('/admin/briefings/compose?anchor=team&id=team-7&kind=announcement');
   });
 
-  it('tournament event + notify → schedule_change on the EVENT anchor (not the tournament)', () => {
-    // Notify = "this event changed", so the anchor is the event, not the
-    // tournament — even though the cold-compose path would anchor the
-    // tournament for recap/prelim.
+  it('tournament event + notify → announcement on the event TEAM (not the tournament)', () => {
+    // Notify scopes to the event's families; the team anchor carries that
+    // scope even when the cold-compose path would anchor the tournament.
     expect(composeFromEvent(TOURNEY_EVENT, false, { intent: 'notify' }))
-      .toBe('/admin/briefings/compose?anchor=event&id=evt-tourn-1&kind=schedule_change');
+      .toBe('/admin/briefings/compose?anchor=team&id=team-7&kind=announcement');
+  });
+
+  it('event WITHOUT team_id + notify → announcement, no team anchor (admin picks scope)', () => {
+    const noTeam = { id: 'evt-multi-1', event_type: 'tournament' };
+    expect(composeFromEvent(noTeam, false, { intent: 'notify' }))
+      .toBe('/admin/briefings/compose?kind=announcement');
   });
 
   it('null event + notify → null (no link)', () => {

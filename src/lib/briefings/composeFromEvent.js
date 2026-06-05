@@ -26,26 +26,45 @@
 // falls back to the event anchor (kind omitted) so the action still pre-scopes
 // to that event rather than dumping the admin on a fully cold picker.
 //
-// intent='notify' override:
-//   The hero "Notify families" action ALWAYS means "tell families about a
-//   change to THIS event" — that's the schedule_change kind, regardless of
-//   event_type or past/upcoming. So intent='notify' forces
-//   anchor=event&id=<eventId>&kind=schedule_change (event anchor, not the
-//   tournament anchor — the change is to this event). schedule_change's
-//   anchorKind is locked to 'event' (KIND_METADATA), and its resolver
-//   self-fetches the before/after diff from event_change_audit by eventId;
-//   the deep-link pre-scopes kind + event so the admin lands in the Body
-//   step instead of the cold picker. The actual diff is captured when the
-//   admin edits + resaves the event (buildSaveDiff / ScheduleChangeBody),
-//   so a notify deep-link with no recent edit shows the "open from the
-//   EventDetail edit flow" prompt — the best available pre-scope.
+// intent='notify' override (changed 2026-06-05):
+//   The hero "Notify families" action means "send a heads-up to THIS event's
+//   families" — a general event-scoped announcement, NOT a change-notification.
+//   schedule_change needs an actual event edit to generate its before/after
+//   diff (event_change_audit), which makes it a poor COLD default: a notify
+//   tap with no recent edit lands on an empty diff prompt. So intent='notify'
+//   now maps to kind=announcement, which works immediately (free-form headline
+//   + body, no diff required).
+//
+//   Audience pre-scope: the families who'd attend THIS event = the event's
+//   TEAM families. announcement's valid anchorKinds are ['team','org'] (event
+//   is NOT a valid announcement anchor — KIND_METADATA), so we anchor on the
+//   event's team: anchor=team&id=<team_id>&kind=announcement. That is exactly
+//   the established "Message this team" entry point (#2): buildInitial ->
+//   audienceFromAnchor lands audience_type='team' + audience_filter.team_ids
+//   pre-set, and reconcileAudienceForKind HONORS that team pre-fill for
+//   announcement (it lists 'team' as a real send mode). Net: the composer
+//   lands at the Body step pre-scoped to this team's families, NOT org_all
+//   (102 families).
+//
+//   FLAGGED: this deliberately uses anchor=team (the event's team), not
+//   anchor=event. announcement cannot carry an event anchor cleanly — 'event'
+//   is not in its anchorKinds, so reconcileAnchorForKind would drop it. The
+//   team anchor is the closest-correct scope using EXISTING machinery (no
+//   parallel path), and announcement is free-form so no event-anchored body
+//   content is lost. If the event has no team_id (rare — e.g. a multi-team
+//   tournament event), we fall back to kind=announcement with no team anchor;
+//   the composer opens on the Kind step pre-selecting announcement and the
+//   admin picks the scope (better than silently forcing org_all).
 
 const COMPOSE_BASE = '/admin/briefings/compose';
 
 export function composeFromEvent(event, isPast, { intent } = {}) {
   if (!event?.id) return null;
   if (intent === 'notify') {
-    return `${COMPOSE_BASE}?anchor=event&id=${event.id}&kind=schedule_change`;
+    if (event.team_id) {
+      return `${COMPOSE_BASE}?anchor=team&id=${event.team_id}&kind=announcement`;
+    }
+    return `${COMPOSE_BASE}?kind=announcement`;
   }
   const isTournament = event.event_type === 'tournament';
   if (isTournament && event.tournament_id) {
