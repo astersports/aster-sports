@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AsterSports — Family Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cobalt:#4a8fd4; --cobalt-ink:#2f6db0; --cobalt-wash:#eef4fb;
+    --lh:#4a8fd4; --stp:#2f9e6f; --stp-wash:#eaf6f0; --ext:#8a9099;
+    --k-milo:#f59e0b; --k-charlie:#a78bfa; --k-theo:#06b6d4;
+    --ink:#16191d; --ink-2:#5b6168; --ink-3:#9aa0a8; --line:#e8eaed; --line-2:#f0f1f3;
+    --surface:#fff; --app-bg:#f5f6f8;
+    --r-card:10px; --r-sm:8px; --r-pill:999px;
+    --sh-card:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);
+    --sh-soft:0 1px 2px rgba(16,24,40,.05); --sh-float:0 8px 30px rgba(16,24,40,.10);
+    --warn:#b54708; --warn-wash:#fef3e6; --good:#1f9d57;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+  body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(1200px 600px at 50% -10%,#fbfcfe 0%,#eef0f3 60%,#e7e9ed 100%);
+    background-attachment:fixed;padding:0 0 80px}
+  .hero{max-width:1180px;margin:0 auto;padding:56px 28px 8px}
+  .hero .kicker{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--cobalt-ink)}
+  .hero h1{font-size:34px;font-weight:800;letter-spacing:-.02em;margin:8px 0 10px;line-height:1.05}
+  .hero p{font-size:15px;color:var(--ink-2);max-width:660px;line-height:1.55}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .legend .sw{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--r-pill);padding:6px 12px 6px 7px;font-size:12px;font-weight:600;color:var(--ink-2);box-shadow:var(--sh-soft)}
+  .legend .dot{width:13px;height:13px;border-radius:50%}
+  .legend .dot.dash{border:2px dashed var(--ext);background:transparent}
+  .phones{max-width:1180px;margin:26px auto 0;padding:0 28px;display:flex;flex-wrap:wrap;gap:30px}
+  .col{display:flex;flex-direction:column;gap:12px}
+  .col .cap{font-size:12.5px;font-weight:600;color:var(--ink-2);padding-left:6px;max-width:380px;line-height:1.45}
+  .col .cap b{color:var(--ink);font-weight:700}
+  .phone{width:380px;background:#0d0f12;border-radius:42px;padding:9px;box-shadow:var(--sh-float);flex-shrink:0}
+  .screen{background:var(--app-bg);border-radius:34px;overflow:hidden;position:relative}
+  .statusbar{display:flex;align-items:center;justify-content:space-between;padding:12px 22px 6px;font-size:13px;font-weight:600}
+  .statusbar .bar{width:17px;height:11px;border:1.5px solid var(--ink);border-radius:3px;position:relative}
+  .statusbar .bar::after{content:"";position:absolute;inset:1.5px;right:5px;background:var(--ink);border-radius:1px}
+  .body{padding:6px 16px 16px;display:flex;flex-direction:column;gap:12px}
+  .apphead{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 2px}
+  .apphead .who{display:flex;align-items:center;gap:11px}
+  .crest{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#5b8fd6,#7c6cf0);display:grid;place-items:center;color:#fff;font-weight:800;font-size:16px;box-shadow:var(--sh-soft)}
+  .apphead .greet .h{font-size:18px;font-weight:700;letter-spacing:-.01em}
+  .apphead .greet .s{font-size:12.5px;color:var(--ink-3);font-weight:500;margin-top:1px}
+  .iconbtn{width:38px;height:38px;border-radius:11px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink-2)}
+  .kidrow{display:flex;gap:7px;flex-wrap:wrap}
+  .kidchip{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-pill);padding:5px 12px 5px 5px;font-size:12.5px;font-weight:600;box-shadow:var(--sh-soft)}
+  .kidchip.all{background:var(--ink);color:#fff;border-color:var(--ink);padding-left:13px}
+  .av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:10.5px;font-weight:700}
+  .daylabel{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:4px 4px 0}
+  .conflict{background:linear-gradient(180deg,#fff6ea,#fffaf3);border:1px solid #f3dcb8;border-radius:var(--r-card);padding:13px 14px;box-shadow:var(--sh-card)}
+  .conflict .top{display:flex;align-items:center;gap:9px;color:var(--warn);font-size:12.5px;font-weight:800;letter-spacing:.02em}
+  .conflict .t{font-size:13px;color:#3a2a14;line-height:1.5;margin:8px 0 11px;font-weight:500}
+  .conflict .t b{font-weight:800}
+  .conflict .act{width:100%;background:var(--warn);color:#fff;border:none;border-radius:var(--r-sm);padding:10px;font-size:13px;font-weight:700;font-family:inherit}
+  .evt{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--sh-card);padding:12px 13px;display:flex;gap:11px;align-items:flex-start;position:relative;overflow:hidden}
+  .evt .rail{position:absolute;left:0;top:0;bottom:0;width:3px}
+  .evt.ext{border-style:dashed;border-color:#d4d8dd}
+  .evt .time{width:58px;flex-shrink:0;text-align:center}
+  .evt .time .h{font-size:15px;font-weight:800;letter-spacing:-.02em;line-height:1}
+  .evt .time .ap{font-size:10.5px;font-weight:700;color:var(--ink-3);margin-top:2px}
+  .evt .main{flex:1;min-width:0}
+  .evt .l1{display:flex;align-items:center;gap:7px}
+  .evt .l1 .nm{font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+  .evt .l2{font-size:12.5px;color:var(--ink-2);font-weight:500;margin-top:3px;display:flex;align-items:center;gap:6px}
+  .src{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:var(--r-pill);margin-top:8px}
+  .src.lh{background:var(--cobalt-wash);color:var(--cobalt-ink)}
+  .src.stp{background:var(--stp-wash);color:#1f7a52}
+  .src.ext{background:#f1f3f5;color:#6b7280}
+  .rsvp{margin-left:auto;font-size:11px;font-weight:700;color:var(--good);display:inline-flex;align-items:center;gap:4px}
+  .rsvp.none{color:var(--warn)}
+  .synced{margin-left:auto;font-size:10.5px;font-weight:600;color:var(--ink-3);display:inline-flex;align-items:center;gap:4px}
+  .addcal{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--surface);border:1px dashed #c9ced4;border-radius:var(--r-card);padding:13px;font-size:13.5px;font-weight:700;color:var(--ink-2);font-family:inherit}
+  .nav{display:flex;justify-content:space-around;align-items:center;background:var(--surface);border-top:1px solid var(--line);padding:9px 8px 14px}
+  .nav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:600;color:var(--ink-3);text-decoration:none;flex:1}
+  .nav a.on{color:var(--cobalt)}
+  /* sources screen */
+  .readhead{display:flex;align-items:center;gap:8px;padding:8px 4px 4px;font-size:14px;font-weight:600;color:var(--ink-2)}
+  .seclabel{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:4px 4px 0}
+  .source{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--sh-card);padding:13px 14px;display:flex;align-items:center;gap:12px}
+  .source.ext{border-style:dashed;border-color:#d4d8dd}
+  .source .badge{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:14px;flex-shrink:0}
+  .source .badge.extb{background:#eef0f3;color:#8a9099;border:1px dashed #c9ced4}
+  .source .info{flex:1;min-width:0}
+  .source .info .nm{font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+  .source .info .meta{font-size:12px;color:var(--ink-2);font-weight:500;margin-top:2px}
+  .statuspill{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:var(--r-pill)}
+  .statuspill.live{background:#e9f7ef;color:#1f7a52}
+  .statuspill.sync{background:#f1f3f5;color:#6b7280}
+  .note{font-size:12px;color:var(--ink-2);line-height:1.55;background:var(--cobalt-wash);border:1px solid #d8e6f7;border-radius:var(--r-sm);padding:11px 13px;font-weight:500}
+  .note b{color:var(--cobalt-ink)}
+  .linkrow{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--sh-card);padding:12px 13px}
+  .stack{display:flex;margin-right:2px}
+  .stack .av{border:2px solid #fff;margin-left:-7px}
+  .stack .av:first-child{margin-left:0}
+  svg{display:block}
+  .ico-sm{width:15px;height:15px;stroke-width:1.75;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .ico-nav{width:21px;height:21px;stroke-width:1.75;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  footer.note2{max-width:1180px;margin:44px auto 0;padding:0 28px;font-size:13px;color:var(--ink-3);line-height:1.6}
+  @media(max-width:520px){.phone{width:100%;max-width:380px}.hero h1{font-size:27px}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="kicker">AsterSports · Family Hub</div>
+  <h1>One family. Every program.</h1>
+  <p>Built around the parent, not the org. Every kid, every grade, every program in one schedule, including the ones that aren't on AsterSports. The org becomes a source feeding your view, not the box that holds it. Sources are color-coded; the ones not on the platform import read-only by calendar link.</p>
+  <div class="legend">
+    <span class="sw"><span class="dot" style="background:var(--lh)"></span>Legacy Hoopers · native</span>
+    <span class="sw"><span class="dot" style="background:var(--stp)"></span>St Patrick's · connected</span>
+    <span class="sw"><span class="dot dash"></span>External · imported</span>
+  </div>
+</header>
+
+<div class="phones">
+
+  <!-- Family Hub schedule -->
+  <div class="col">
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>7:15</span><span style="display:flex;gap:6px;align-items:center"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M5 12.5a7 7 0 0 1 14 0"/><path d="M2 9a11 11 0 0 1 20 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor" stroke="none"/></svg><span class="bar"></span></span></div>
+      <div class="body">
+        <div class="apphead">
+          <div class="who"><div class="crest">S</div><div class="greet"><div class="h">The Samaritano family</div><div class="s">3 kids · 4 programs</div></div></div>
+          <div class="iconbtn"><svg class="ico-nav" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+        <div class="kidrow">
+          <span class="kidchip all">All kids</span>
+          <span class="kidchip"><span class="av" style="background:var(--k-milo)">M</span>Milo · 2nd</span>
+          <span class="kidchip"><span class="av" style="background:var(--k-charlie)">C</span>Charlie · 5th</span>
+          <span class="kidchip"><span class="av" style="background:var(--k-theo)">T</span>Theo · 8th</span>
+        </div>
+
+        <div class="daylabel">Saturday, June 7</div>
+        <div class="conflict">
+          <div class="top"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>TWO PLACES AT ONCE · 10:00 AM</div>
+          <div class="t"><b>Charlie</b> at St Patrick's (Armonk) and <b>Milo</b> at Legacy Hoopers (Sportsplex). The gyms are 18 minutes apart.</div>
+          <button class="act">Plan the morning</button>
+        </div>
+        <div class="evt"><span class="rail" style="background:var(--stp)"></span>
+          <div class="time"><div class="h">10:00</div><div class="ap">AM</div></div>
+          <div class="main">
+            <div class="l1"><span class="av" style="background:var(--k-charlie);width:20px;height:20px;font-size:9px">C</span><span class="nm">Charlie · Tournament</span></div>
+            <div class="l2"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>St Pat's Gym, Armonk</div>
+            <span class="src stp"><span style="width:7px;height:7px;border-radius:50%;background:var(--stp);display:inline-block"></span>St Patrick's<span class="rsvp" style="margin-left:8px"><svg class="ico-sm" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M20 6 9 17l-5-5"/></svg>Going</span></span>
+          </div>
+        </div>
+        <div class="evt"><span class="rail" style="background:var(--lh)"></span>
+          <div class="time"><div class="h">10:00</div><div class="ap">AM</div></div>
+          <div class="main">
+            <div class="l1"><span class="av" style="background:var(--k-milo);width:20px;height:20px;font-size:9px">M</span><span class="nm">Milo · Practice</span></div>
+            <div class="l2"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Westchester Sportsplex</div>
+            <span class="src lh"><span style="width:7px;height:7px;border-radius:50%;background:var(--lh);display:inline-block"></span>Legacy Hoopers<span class="rsvp none" style="margin-left:8px">Tap to RSVP</span></span>
+          </div>
+        </div>
+        <div class="evt ext"><span class="rail" style="background:var(--ext)"></span>
+          <div class="time"><div class="h">2:00</div><div class="ap">PM</div></div>
+          <div class="main">
+            <div class="l1"><span class="av" style="background:var(--k-theo);width:20px;height:20px;font-size:9px">T</span><span class="nm">Theo · League game</span></div>
+            <div class="l2"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Greenwich Rec</div>
+            <span class="src ext"><svg class="ico-sm" viewBox="0 0 24 24" style="width:11px;height:11px"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>Chris Ward<span class="synced" style="margin-left:8px">synced 2h ago</span></span>
+          </div>
+        </div>
+
+        <div class="daylabel">Sunday, June 8</div>
+        <div class="evt ext"><span class="rail" style="background:var(--ext)"></span>
+          <div class="time"><div class="h">11:00</div><div class="ap">AM</div></div>
+          <div class="main">
+            <div class="l1"><span class="av" style="background:var(--k-theo);width:20px;height:20px;font-size:9px">T</span><span class="nm">Theo · School scrimmage</span></div>
+            <div class="l2"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Riverside MS</div>
+            <span class="src ext"><svg class="ico-sm" viewBox="0 0 24 24" style="width:11px;height:11px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Riverside MS<span class="synced" style="margin-left:8px">Google Calendar</span></span>
+          </div>
+        </div>
+        <div class="evt"><span class="rail" style="background:var(--stp)"></span>
+          <div class="time"><div class="h">1:00</div><div class="ap">PM</div></div>
+          <div class="main">
+            <div class="l1"><span class="av" style="background:var(--k-milo);width:20px;height:20px;font-size:9px">M</span><span class="nm">Milo · Skills session</span></div>
+            <div class="l2"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>St Pat's Gym, Armonk</div>
+            <span class="src stp"><span style="width:7px;height:7px;border-radius:50%;background:var(--stp);display:inline-block"></span>St Patrick's<span class="rsvp" style="margin-left:8px"><svg class="ico-sm" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M20 6 9 17l-5-5"/></svg>Going</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="nav">
+        <a class="on"><svg class="ico-nav" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Family</a>
+        <a><svg class="ico-nav" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 6h13l3.5 6v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6Z"/></svg>Inbox</a>
+        <a><svg class="ico-nav" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>Teams</a>
+        <a><svg class="ico-nav" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg>You</a>
+      </div>
+    </div></div>
+    <div class="cap"><b>The family schedule.</b> All three kids, all four programs, one timeline. The amber card is the feature no one else has: it caught that Charlie and Milo are in two gyms at the same hour before you did. Color tells you the source; dashed cards are imported from programs not on the platform.</div>
+  </div>
+
+  <!-- Sources / connect -->
+  <div class="col">
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>7:16</span><span style="display:flex;gap:6px;align-items:center"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M5 12.5a7 7 0 0 1 14 0"/><path d="M2 9a11 11 0 0 1 20 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor" stroke="none"/></svg><span class="bar"></span></span></div>
+      <div class="body">
+        <div class="readhead"><svg class="ico-sm" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="m15 18-6-6 6-6"/></svg>Programs & calendars</div>
+
+        <div class="seclabel">On AsterSports</div>
+        <div class="source">
+          <div class="badge" style="background:linear-gradient(135deg,var(--lh),#3a7ac0)">LH</div>
+          <div class="info"><div class="nm">Legacy Hoopers</div><div class="meta">Milo · Charlie · live sync</div></div>
+          <span class="statuspill live">Connected</span>
+        </div>
+        <div class="source">
+          <div class="badge" style="background:linear-gradient(135deg,var(--stp),#1f7a52)">SP</div>
+          <div class="info"><div class="nm">St Patrick's CYO</div><div class="meta">Milo · Charlie · Theo · live sync</div></div>
+          <span class="statuspill live">Connected</span>
+        </div>
+
+        <div class="seclabel">Imported calendars</div>
+        <div class="source ext">
+          <div class="badge extb"><svg class="ico-sm" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg></div>
+          <div class="info"><div class="nm">Chris Ward Basketball</div><div class="meta">Theo · calendar link · synced 2h ago</div></div>
+          <span class="statuspill sync">Read-only</span>
+        </div>
+        <div class="source ext">
+          <div class="badge extb"><svg class="ico-sm" viewBox="0 0 24 24" style="width:18px;height:18px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+          <div class="info"><div class="nm">Riverside Middle School</div><div class="meta">Theo · Google Calendar · live</div></div>
+          <span class="statuspill sync">Read-only</span>
+        </div>
+
+        <button class="addcal"><svg class="ico-sm" viewBox="0 0 24 24" style="width:17px;height:17px"><path d="M12 5v14M5 12h14"/></svg>Add a program or calendar</button>
+
+        <div class="seclabel">Your kids</div>
+        <div class="linkrow">
+          <div class="stack"><span class="av" style="background:var(--k-theo)">T</span></div>
+          <div class="info" style="flex:1"><div class="nm" style="font-size:14px;font-weight:700">Theo</div><div class="meta" style="font-size:12px;color:var(--ink-2)">8th grade · St Patrick's, Chris Ward, school</div></div>
+          <span style="font-size:11.5px;font-weight:700;color:var(--cobalt-ink)">3 linked</span>
+        </div>
+
+        <div class="note"><b>Connected programs</b> on AsterSports sync live, scores, RSVPs, briefings and all. <b>Everything else</b> imports read-only by calendar link or Google Calendar, so your whole family is in one place even when the program will never be on the platform.</div>
+      </div>
+    </div></div>
+    <div class="cap"><b>Sources.</b> The model in one screen: programs on AsterSports sync live; everything else imports read-only. Theo plays in three programs, linked under one kid. This is the household living above the org, which is the real architecture shift.</div>
+  </div>
+
+</div>
+
+<footer class="note2">
+  Built around you, not Legacy Hoopers. Within-program aggregation ships in W1. External calendar import is the near-term unlock, your idea, and it delivers most of this without the multi-tenant lift. Native cross-program (LH plus St Pat's under one roof) lands with the multi-tenant phase; until then St Pat's rides in as an import like any other source. Conflict detection is the wedge no competitor has, because they are all built around a team, not a family.
+</footer>
+
+</body>
+</html>
