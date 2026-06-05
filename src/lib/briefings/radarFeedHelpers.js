@@ -57,21 +57,25 @@ export function audiencePill(row, ctx = {}) {
   return `${who} · ${anchorTitle(row, ctx)}`;
 }
 
-// Bucket a flat comms_messages list into the 3 Radar sections. `now` injected
-// for testability. ready = LIVE drafts only (expires_at > now, the #678 fix).
+// Bucket a flat comms_messages list into the Radar sections. `now` injected for
+// testability. LIVE drafts only (expires_at > now, the #678 fix), then split by
+// origin: created_by_trigger (cron auto-proposal) -> READY; null (composer
+// autosave / user WIP) -> DRAFTS. Keeps the one clear "ready to send" signal
+// from getting muddied by half-finished work (architect Q3).
 export function bucketFeed(rows, now = Date.now()) {
-  const ready = []; const scheduled = []; const sent = [];
+  const ready = []; const drafts = []; const scheduled = []; const sent = [];
   const weekAgo = now - 7 * 86400000;
   for (const r of rows || []) {
     if (r.status === 'draft') {
-      if (!r.expires_at || new Date(r.expires_at).getTime() > now) ready.push(r);
+      if (r.expires_at && new Date(r.expires_at).getTime() <= now) continue; // expired proposal
+      (r.created_by_trigger ? ready : drafts).push(r);
     } else if (r.status === 'scheduled') {
       scheduled.push(r);
     } else if (r.status === 'sent' && r.sent_at && new Date(r.sent_at).getTime() > weekAgo) {
       sent.push(r);
     }
   }
-  return { ready, scheduled, sent };
+  return { ready, drafts, scheduled, sent };
 }
 
 export { fmtDateTime, fmtTime };

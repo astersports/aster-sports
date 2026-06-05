@@ -6,14 +6,17 @@ const iso = (deltaMs) => new Date(NOW + deltaMs).toISOString();
 const DAY = 86400000;
 
 describe('bucketFeed', () => {
-  it('ready = live drafts only (expires_at > now); expired drafts excluded (#678 lifecycle)', () => {
+  it('live drafts split by origin: created_by_trigger -> ready, null -> drafts; expired excluded (#678)', () => {
     const rows = [
-      { id: 'a', status: 'draft', expires_at: iso(DAY) },      // live
-      { id: 'b', status: 'draft', expires_at: iso(-DAY) },     // expired -> out
-      { id: 'c', status: 'draft', expires_at: null },          // no expiry -> in
+      { id: 'a', status: 'draft', expires_at: iso(DAY), created_by_trigger: 't1' },  // live proposal -> ready
+      { id: 'b', status: 'draft', expires_at: iso(-DAY), created_by_trigger: 't2' }, // expired -> out
+      { id: 'c', status: 'draft', expires_at: null, created_by_trigger: 't3' },      // proposal, no expiry -> ready
+      { id: 'd', status: 'draft', expires_at: null, created_by_trigger: null },      // user WIP -> drafts
+      { id: 'e', status: 'draft', expires_at: iso(DAY) },                            // user WIP (no field) -> drafts
     ];
-    const { ready } = bucketFeed(rows, NOW);
+    const { ready, drafts } = bucketFeed(rows, NOW);
     expect(ready.map((r) => r.id)).toEqual(['a', 'c']);
+    expect(drafts.map((r) => r.id)).toEqual(['d', 'e']);
   });
 
   it('scheduled bucket + sent-within-7d bucket; older sent excluded', () => {
