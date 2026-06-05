@@ -1,0 +1,70 @@
+==============================================================================
+FAMILY HUB — SYNC ADDENDUM   (architect -> terminal-CC)
+Supersedes the "import" framing in FAMILY_HUB_BUILD_PLAN §3. Same architecture,
+corrected intent. Fold into your current review BEFORE building the source layer.
+==============================================================================
+Date: 2026-06-05. Trigger: Frank, correctly, "events are always changing, sync
+not import."
+
+------------------------------------------------------------------------------
+1. THE CORRECTION
+------------------------------------------------------------------------------
+External sources are SUBSCRIPTIONS, not one-time imports. The distinction is the
+whole point: a one-time import goes stale the moment a game moves, and a Hub that
+shows a stale time is worse than no Hub, it misleads the parent. Rename "import"
+-> "subscribe / sync" in code, UI copy, and the doc. The calendar_subscriptions
+table + sync edge fn in the build plan were already subscription-shaped; this
+just makes the intent explicit so nothing gets built as a snapshot.
+
+------------------------------------------------------------------------------
+2. SYNC SEMANTICS (build to these)
+------------------------------------------------------------------------------
+- ONE-WAY, READ-ONLY. We read the source feed; we NEVER write back. No two-way
+  sync (different, riskier, not wanted).
+- POLL on a schedule. Default cadence ~every 3-6h; add an on-demand "refresh"
+  and (optional) tighter cadence in the 48h before an event.
+- DIFF + PROPAGATE, keyed on source_uid:
+    new uid in feed                    -> insert
+    existing uid, fields changed       -> update (start/end/location/title)
+    uid gone from feed OR STATUS:CANCELLED -> mark CANCELLED (do NOT hard-delete;
+       keep it so the Hub can show "cancelled" and notify)
+- STALENESS IS VISIBLE. Show "synced Xh ago". If a poll fails, show a stale
+  state; never present old data as if it were fresh.
+
+------------------------------------------------------------------------------
+3. FRESHNESS TIERS (set expectations honestly)
+------------------------------------------------------------------------------
+  Native AsterSports (LH now, St Pat's later): LIVE / instant.
+  Google Calendar (later): near-real-time via push/webhook + incremental tokens.
+  ICS feed (v1): POLLED. As fresh as the poll interval AND how often the source
+                 updates its own feed. Fine for reschedules a day+ out; can lag a
+                 same-day change. This is the accepted v1 tradeoff; Google push
+                 is the upgrade path for sources that support it.
+
+------------------------------------------------------------------------------
+4. THE PAYOFF SYNC UNLOCKS (a feature, not just plumbing)
+------------------------------------------------------------------------------
+Because we watch the feed, the Hub can CATCH a change and surface it:
+"Chris Ward moved Theo's game to 3:00 PM" / "School scrimmage cancelled."
+A one-time import could never do this. v1 minimum: flag changed/cancelled events
+visually in the Hub. Nice-to-have: a change nudge. This is also what feeds the
+conflict detector correctly when times move.
+
+------------------------------------------------------------------------------
+5. DATA-MODEL TWEAKS (vs FAMILY_HUB_BUILD_PLAN §2)
+------------------------------------------------------------------------------
+- Rename imported_events -> synced_events (conceptual; pick the clearer name).
+- Keep source_uid (the diff key). Add status ('active' | 'cancelled').
+- Add a change-detect signal: either a content hash of the synced fields, or
+  compare-on-write of (starts_at, ends_at, location, title) to detect updates.
+- calendar_subscriptions keeps last_synced_at + last_sync_status.
+
+------------------------------------------------------------------------------
+6. ASK BACK
+------------------------------------------------------------------------------
+Confirm the source layer is built as a polled one-way SUBSCRIPTION with diff +
+cancellation propagation (§2), not a snapshot import. Everything else in
+FAMILY_HUB_BUILD_PLAN stands.
+==============================================================================
+END.
+==============================================================================

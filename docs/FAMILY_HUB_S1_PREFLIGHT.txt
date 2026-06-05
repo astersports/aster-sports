@@ -1,0 +1,138 @@
+==============================================================================
+FAMILY HUB — S1 SCHEMA PRE-FLIGHT REPORT   (terminal-CC -> architect)
+Read-only Supabase introspection. Step 1 of FAMILY_HUB_BUILD_PLAN §10.
+Pairs with docs/FAMILY_HUB_BUILD_PLAN.txt + docs/FAMILY_HUB_MOCKUP.html.
+==============================================================================
+Date: 2026-06-05. Project: vrwwpsbfbnveawqwbdmj (live LH, orgs_count = 1).
+NOTHING MODIFIED. Every claim grounded in query output.
+
+------------------------------------------------------------------------------
+HEADLINE FINDING (this shapes S1 scope — read first)
+------------------------------------------------------------------------------
+Only 2 of 175 guardian rows have a populated user_id (173 NULL). The auth->player
+bridge the ENTIRE native-Hub composition depends on (guardians.user_id =
+auth.uid()) is unclaimed for ~99% of families today. Frank's own user is one of
+the 2 linked, so the archetype works. But the native Hub union is EMPTY for any
+parent whose guardians.user_id hasn't been claimed.
+
+  => S1 can build + prove RLS on the linked-user archetype (Frank's family) today.
+  => Broad Hub value is GATED on the account-claim/invite flow that populates
+     guardians.user_id. That flow is NOT part of S1 — it is the prerequisite for
+     S2 rollout.
+
+ARCHITECT DECISION NEEDED before S1 migration is drafted:
+  Confirm S1 targets the linked-user archetype, and that the guardian-claim flow
+  is a tracked S2-rollout prerequisite (not folded into S1). This is the "surface
+  anything that changes the model before building" item (plan §10).
+
+------------------------------------------------------------------------------
+1. THE NATIVE CHAIN (auth user -> kid -> events), as it exists today
+------------------------------------------------------------------------------
+auth.uid() -> guardians.user_id -> player_guardians -> players
+           -> roster_members.team_id -> events / event_rsvps
+Fully RLS-gated; already encapsulated in current_user_player_ids() + helpers.
+
+Tables + key columns (org scoping noted):
+  guardians       id; user_id (uuid, NULLABLE); org_id (NOT NULL); email UNIQUE
+  player_guardians id; player_id; guardian_id; UNIQUE(player_id,guardian_id); FK-scoped
+  players         id; org_id (NOT NULL); member_type ('roster'|'futures_academy')
+  roster_members  id; player_id; team_id; registered_at; left_at; UNIQUE(player_id,team_id)
+  team_players    id; team_id; player_id; roster_type; status; UNIQUE(team_id,player_id)
+  teams           id; org_id (NOT NULL); team_color
+  events          id; team_id (NOT NULL); start_at; end_at  (NO org_id — scopes via team)
+  event_rsvps     id; event_id (NOT NULL); player_id (NULLABLE); guardian_id (NULLABLE)
+                  UNIQUE(event_id,player_id); FK ONLY on event_id
+
+------------------------------------------------------------------------------
+2. THE RLS SPINE S1 MUST COMPOSE *THROUGH* (not around)
+------------------------------------------------------------------------------
+All chain tables have RLS enabled. Parent read path (from pg_policies):
+  (a) own children   players_select_parent: id = ANY(current_user_player_ids())
+  (b) memberships    roster_members_select_own_child: player_id = ANY(current_user_player_ids())
+  (c) events         events_select: team_id IN (SELECT id FROM teams WHERE org_id = current_user_org_id())
+  (d) rsvp           event_rsvps_org_authenticated_read: auth.uid() NOT NULL AND event_org_matches(event_id)
+
+Helper functions (all SECURITY DEFINER STABLE, search_path=public):
+  current_user_guardian_id()      -> guardians.id WHERE user_id=auth.uid()  [auth->guardian bridge]
+  current_user_player_ids()       -> player ids via player_guardians JOIN guardians WHERE user_id=auth.uid()  [ROOT of parent visibility]
+  current_user_child_team_ids()   -> roster_members.team_id for the user's kids  [reads roster_members]
+  current_user_teammate_player_ids() -> players on the user's kids' teams
+  current_user_org_id()           -> user_roles.organization_id WHERE user_id=auth.uid()  [drives events_select; LIMIT 1]
+  event_org_matches(event_id)     -> event's team.org_id is in user's orgs
+
+COMPOSITION RULE: the Hub's native union must run AS THE PARENT (SECURITY INVOKER),
+NOT SECDEF over these tables (SECDEF would bypass org isolation — violates plan §5).
+Intersect child_links.ember_player_id WITH current_user_player_ids() at read time so
+a forged link row can never widen native visibility.
+
+------------------------------------------------------------------------------
+3. AUTH-USER -> GUARDIAN LINK (the bridge)
+------------------------------------------------------------------------------
+guardians.user_id = auth.uid() is the ONLY parent bridge (nullable, claimed per-row).
+A parent needs TWO independent links, both required:
+  - user_roles(user_id, organization_id, role='parent')  -> org/event scope (events_select)
+  - guardians.user_id populated                            -> child scope (players_select)
+Parents CAN self-insert their user_roles row; they CANNOT self-set guardians.user_id
+(admin-only writes). The claim happens via invite/account-linking, not self-service.
+S1's RLS proof must assert BOTH links present for the test user; the Hub cannot assume
+one implies the other.
+
+------------------------------------------------------------------------------
+4. LINK-VS-DUPLICATE MAPPING FOR child_links (S1 is a clean build)
+------------------------------------------------------------------------------
+No family_* tables exist yet (confirmed). For link_type='ember_player':
+  child_links.ember_org_id    -> organizations.id  (nullable; today always the 1 LH org)
+  child_links.ember_player_id -> players.id         (recommend FK for integrity)
+The (ember_org_id, ember_player_id) pair is the minimal coupling (players.org_id
+already pins org; storing both lets the union tag source without an extra join).
+FK guarantees the player exists; RLS/helper intersection guarantees the owner is
+actually that player's guardian — keep BOTH.
+
+EVENTS ARE LINKED, NEVER DUPLICATED. Per-user Hub view UNIONs:
+  native  : live events table via the RLS chain (no copy), child_links.ember_player_id
+            -> roster_members.team_id -> events; rsvp_state from event_rsvps(player_id)
+  external: imported_events (the ONLY store of external data), keyed subscription_id +
+            source_uid, child_id -> family_children
+One family_children row fans out to many sources via child_links rows.
+
+------------------------------------------------------------------------------
+5. RISKS / SURPRISES (resolve before S1 migration design)
+------------------------------------------------------------------------------
+1. 173/175 guardians unclaimed (user_id NULL) — THE gating adoption dependency
+   (see headline). Not a schema bug; a rollout prerequisite.
+2. Two membership tables disagree by design: RLS gates events through
+   roster_members (current_user_child_team_ids), but §11.5 + parent_context_v
+   treat team_players as canonical. S1 must pick ONE for the native union —
+   recommend roster_members (it's what actually gates events/event_rsvps RLS) —
+   and document the divergence so no kid is silently dropped.
+3. event_rsvps has NO FK + nullable player_id. Join RSVP state on (event_id,
+   player_id); tolerate NULL player_id (guardian-level RSVPs).
+4. Parent needs TWO links (user_roles + guardians.user_id) — see §3.
+5. Multi-org LIMIT 1 helpers (current_user_org_id / current_user_guardian_id) are
+   a known S6 seam: ambiguous once a 2nd org exists. Prefer the array-returning
+   current_user_org_ids() for the Hub's cross-org union. Not an S1 blocker.
+6. New SECDEF helpers trip existing advisors (45 WARN, 0 ERROR, all pre-existing
+   hygiene) + must follow AP #23/#57 (REVOKE FROM PUBLIC *and* explicit REVOKE
+   FROM anon). Plan §5: prefer SECURITY INVOKER on the native-read path so it
+   cannot bypass org RLS at all.
+7. Household tables are intentionally org-less (plan §2 rule-break) — CONFIRMED
+   correct vs schema. No org_id on family_children/calendar_subscriptions/
+   imported_events; child_links.ember_org_id is a pointer into native data, not a
+   tenancy scope. A reviewer forcing org_id here is wrong per plan + data model.
+
+------------------------------------------------------------------------------
+BOTTOM LINE
+------------------------------------------------------------------------------
+The native chain is auth.uid() -> guardians.user_id -> player_guardians ->
+players -> roster_members.team_id -> events/event_rsvps, fully RLS-gated and
+already encapsulated in current_user_player_ids() + friends. child_links
+(ember_org_id->organizations, ember_player_id->players) links to it; imported_events
+holds external data; the per-user Hub view unions them without duplicating events.
+Run the composition AS THE PARENT (INVOKER) and intersect linked player ids with
+current_user_player_ids(). The one real risk is adoption, not architecture: 173/175
+guardians are unclaimed, so the native Hub is empty for everyone except the 2 linked
+users until the claim flow runs. Confirm S1 = archetype scope + claim-flow = S2
+prerequisite, and S1 can proceed to a migration proposal.
+==============================================================================
+END.
+==============================================================================
