@@ -129,6 +129,13 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
   --as-academy:        #7C3AED;
   --as-academy-soft:   rgba(124, 58, 237, 0.1);
 
+  /* Achievement (palette role: gold = achievement ONLY — never act-now
+     amber, never system cobalt). Operator-ratified 2026-06-05 (home-redesign
+     D5); values from the v2 render. --as-gold-text on --as-gold-soft = 6.8:1 (AA). */
+  --as-gold:           #B8860B;
+  --as-gold-soft:      #FBF3DC;
+  --as-gold-text:      #8F6708;
+
   /* ─── Brand (Ember defaults — overridden per org at runtime) ─── */
   --as-header:         #151525;
   --as-accent:         #C9952E;

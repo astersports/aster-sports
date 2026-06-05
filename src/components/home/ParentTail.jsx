@@ -6,9 +6,8 @@ import { Trophy } from 'lucide-react';
 // no game_results means progress only, never a fake 0-0. Presentational;
 // the page shapes the props.
 //
-// NOTE (decision D5, flagged to design lane): canon palette wants
-// gold-for-achievement, but §3 has no gold token and §0 forbids inventing
-// non-a11y tokens. Using --as-accent until a gold-token call lands.
+// Palette: gold = achievement ONLY (--as-gold*, operator-ratified D5
+// 2026-06-05). The Trophy + record badge are the only gold on the page.
 const LABEL = {
   fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
   textTransform: 'uppercase', color: 'var(--as-text-meta)', marginBottom: 8,
@@ -33,7 +32,7 @@ export default function ParentTail({ achievement, seasonLabel, progressLabel, on
       <div style={CARD}>
         {achievement && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Trophy size={20} strokeWidth={1.75} color="var(--as-accent)" aria-hidden="true" />
+            <Trophy size={20} strokeWidth={1.75} color="var(--as-gold)" aria-hidden="true" />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--as-text-primary)' }}>{achievement.title}</div>
               {achievement.subtitle && (
@@ -41,7 +40,7 @@ export default function ParentTail({ achievement, seasonLabel, progressLabel, on
               )}
             </div>
             {achievement.recordBadge && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--as-accent)', backgroundColor: 'var(--as-accent-soft)', borderRadius: 6, padding: '3px 9px', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--as-gold-text)', backgroundColor: 'var(--as-gold-soft)', borderRadius: 6, padding: '3px 9px', whiteSpace: 'nowrap' }}>
                 {achievement.recordBadge}
               </span>
             )}
