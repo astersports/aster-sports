@@ -21,12 +21,20 @@ const KIND_LABEL = {
 };
 
 const rowStyle = {
-  display: 'block', width: '100%', textAlign: 'left',
+  display: 'block', width: '100%', minHeight: 44, textAlign: 'left',
   background: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)',
-  borderRadius: 10, padding: '12px 14px', marginBottom: 8, cursor: 'pointer',
+  borderRadius: 10, padding: '12px 14px 12px 18px', marginBottom: 8, cursor: 'pointer',
   fontFamily: 'inherit', color: 'var(--as-text-primary)',
+  position: 'relative', overflow: 'hidden',
 };
+// 3px left color bar per row, in the briefing's team color (mockup .inrow .rail).
+// Neutral fallback when the briefing has no team (org-wide briefings).
+const railStyle = (color) => ({ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: color || 'var(--as-border-default)' });
+// Small cobalt dot on unread rows (mockup .inrow .unread). Color alone is not
+// the cue — the row aria-label carries an "Unread" prefix (a11y, §16.4).
+const unreadDotStyle = { width: 8, height: 8, borderRadius: 9999, backgroundColor: 'var(--as-accent)', flexShrink: 0 };
 const metaStyle = { fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 4 };
+const kindRowStyle = { display: 'flex', alignItems: 'center', gap: 6 };
 const kindStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', color: 'var(--as-text-secondary)' };
 
 function bucketFor(now, sent) {
@@ -77,21 +85,29 @@ export default function InboxList({ items, onSelect }) {
       {groups.map((group) => (
         <section key={group.label} style={{ marginBottom: 16 }}>
           <Label>{group.label}</Label>
-          {group.items.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="listitem"
-              className="as-press"
-              style={rowStyle}
-              onClick={() => onSelect(item)}
-              aria-label={`${KIND_LABEL[item.kind] || item.kind}: ${item.subject}`}
-            >
-              <div style={kindStyle}>{KIND_LABEL[item.kind] || item.kind}</div>
-              <div style={{ fontSize: 14, fontWeight: 500, marginTop: 2 }}>{item.subject}</div>
-              <div style={metaStyle}>{relTime(now, item.sent_at)}</div>
-            </button>
-          ))}
+          {group.items.map((item) => {
+            const unread = !item.opened_at;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="listitem"
+                className="as-press"
+                style={rowStyle}
+                onClick={() => onSelect(item)}
+                aria-label={`${unread ? 'Unread. ' : ''}${KIND_LABEL[item.kind] || item.kind}: ${item.subject}`}
+              >
+                {/* Team-color rail: briefing's team color (DB), neutral for org-wide. */}
+                <span style={railStyle(item.team_color)} aria-hidden="true" />
+                <div style={kindRowStyle}>
+                  {unread && <span style={unreadDotStyle} aria-hidden="true" />}
+                  <div style={kindStyle}>{KIND_LABEL[item.kind] || item.kind}</div>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 500, marginTop: 2 }}>{item.subject}</div>
+                <div style={metaStyle}>{relTime(now, item.sent_at)}</div>
+              </button>
+            );
+          })}
         </section>
       ))}
     </div>
