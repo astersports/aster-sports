@@ -1,0 +1,92 @@
+==============================================================================
+ACCOUNT-CLAIM FLOW — the Hub on-ramp   (architect -> terminal-CC)
+Trigger: pre-flight found 173/175 guardians unclaimed (user_id NULL). Native Hub
+is empty for ~99% of families until claim runs. Frank's family is 1 of the 2
+linked, so the archetype is proven; this lights it up for everyone else.
+==============================================================================
+Date: 2026-06-05.
+
+------------------------------------------------------------------------------
+1. THE READ — prerequisite, not blocker
+------------------------------------------------------------------------------
+The Hub builds and works for a CLAIMED user today (Frank). It shows nothing for
+unclaimed guardians because the Hub is the FIRST account-REQUIRED surface.
+Comms (email via Resend) is account-OPTIONAL, which is why the pilot reached all
+175 while only 2 signed in. "Go big on the Hub" therefore puts account-claim on
+the critical path. Claim is the on-ramp for the ENTIRE in-app parent experience
+(Hub, RSVP, inbox), not just the Hub.
+
+------------------------------------------------------------------------------
+2. THE DISTRIBUTION BRIDGE (use what already reaches everyone)
+------------------------------------------------------------------------------
+We already email all 175 guardians. That channel IS the claim funnel:
+  - Every briefing email carries a "See your family's full schedule · Claim your
+    account" magic-link CTA.
+  - Optional: a dedicated claim invite email to the unclaimed list at Hub launch.
+Reach we already built becomes onboarding. No new channel needed.
+
+------------------------------------------------------------------------------
+3. CHECK FIRST — do not build net-new if a path exists
+------------------------------------------------------------------------------
+- An `invite-parent` edge function already exists (JWT verification OFF per prior
+  notes). VERIFY what it does and whether the 2 claimed guardians came through
+  it. Extend that path rather than build a parallel one.
+- guardians.user_id ALREADY exists (173 NULL, 2 set). The claim TARGET column is
+  there; no schema change to claim itself. Confirm via the pre-flight you ran.
+
+------------------------------------------------------------------------------
+4. CLAIM FLOW MECHANICS
+------------------------------------------------------------------------------
+  a. Guardian record has an email on file.
+  b. Claim entry = magic link (passwordless) to that email, delivered via the
+     briefing CTA or a dedicated invite (Resend, existing channel).
+  c. Claimant clicks -> authenticates (magic link / OAuth).
+  d. VERIFY the authenticated email matches the guardian record's email, then
+     write auth user_id onto guardians.user_id (the claim). Never link a user to
+     a guardian whose email they did not prove.
+  e. ON CLAIM, populate the household layer (FAMILY_HUB_BUILD_PLAN §2):
+       - create family_children from the guardian's linked players
+         (roster_members / players — map from the REAL schema the pre-flight read).
+       - create child_links (link_type 'ember_player', this org) per player.
+     Hub lights up immediately post-claim.
+  f. EDGE CASES:
+       - multiple guardians per family: each claims their own guardian record.
+       - a kid rostered on multiple teams: multiple player rows -> match to ONE
+         family_child (de-dupe by player identity), multiple child_links.
+       - already-claimed / re-claim: idempotent; do not double-link.
+
+------------------------------------------------------------------------------
+5. PRIVACY / RLS
+------------------------------------------------------------------------------
+- Link a user ONLY to their own guardian record + their own players, on verified
+  email ownership.
+- Household tables stay user-scoped per FAMILY_HUB_BUILD_PLAN §5; a claim creates
+  rows owned by the claiming user only.
+- No path where claiming exposes another family's data.
+
+------------------------------------------------------------------------------
+6. SEQUENCING
+------------------------------------------------------------------------------
+Claim is NOT a later bolt-on. It is how the household populates for a real
+family, so it ships in the SAME parent-moat wave as the Hub foundation:
+  - Build the Hub on the already-claimed case now (Frank validates).
+  - Build claim alongside S1/S2; it populates the household for everyone else.
+  - Hub + claim go live for families together. A Hub with no accounts is a demo.
+
+------------------------------------------------------------------------------
+7. DEFERRED (Frank's call, when Hub is build-ready, NOT now)
+------------------------------------------------------------------------------
+How hard to drive claims. Architect lean: gentle CTA in briefings first, then a
+dedicated claim campaign the week the Hub launches. This affects rollout copy and
+intensity, not the flow build, so it does not block anything now.
+
+------------------------------------------------------------------------------
+8. ASK BACK
+------------------------------------------------------------------------------
+  1. Report what invite-parent does + how the 2 existing claims happened.
+  2. Map player -> family_child from the real roster schema (pre-flight output).
+  3. Propose the claim flow (and any migration) for architect review before
+     apply (GO gate if it changes schema).
+==============================================================================
+END.
+==============================================================================
