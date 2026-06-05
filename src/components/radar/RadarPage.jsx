@@ -48,7 +48,7 @@ export default function RadarPage() {
       <span style={pageTitle}>Briefings</span>
       <div style={{ display: 'flex', gap: 8 }}>
         <button type="button" className="as-press" style={{ ...newBtn, backgroundColor: 'transparent', color: 'var(--as-accent)', border: '1px solid var(--as-border-default)' }} onClick={() => navigate('/admin/briefings/history')}>Sent</button>
-        <button type="button" className="as-press" style={newBtn} onClick={() => navigate('/admin/briefings/new')}>+ New briefing</button>
+        <button type="button" className="as-press" style={newBtn} onClick={() => navigate('/admin/briefings/compose')}>+ New briefing</button>
       </div>
     </div>
   );
