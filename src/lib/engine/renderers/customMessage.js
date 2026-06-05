@@ -8,6 +8,15 @@
 
 import { renderSections, renderSectionsPlainText } from '../composer';
 import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
+import { BODY_TOKENS, splitBodyTokens } from '../substitution/bodyTokens';
+
+// PR-D — the token kinds present in a body, in stable BODY_TOKENS order.
+// Compose stays pure: it tags the narrative section with this list as
+// body_token_placeholders (AP #29); the send pipeline resolves URLs.
+function bodyTokenKinds(text) {
+  const present = new Set(splitBodyTokens(text).filter((s) => s.token).map((s) => s.token));
+  return Object.keys(BODY_TOKENS).filter((k) => present.has(k));
+}
 
 
 export function composeCustomMessage(data = {}) {
@@ -21,7 +30,13 @@ export function composeCustomMessage(data = {}) {
   const sections = [
     { kind: 'header', eyebrow: `${orgName}`, eyebrow_link: eyebrowLink, headline: subject ? subject.toUpperCase() : 'MESSAGE', goldStripe: true },
   ];
-  if (body_text?.trim()) sections.push({ kind: 'stats_narrative', body: body_text.trim() });
+  if (body_text?.trim()) {
+    const trimmed = body_text.trim();
+    const tokenKinds = bodyTokenKinds(trimmed);
+    sections.push(tokenKinds.length
+      ? { kind: 'stats_narrative', body: trimmed, body_token_placeholders: tokenKinds }
+      : { kind: 'stats_narrative', body: trimmed });
+  }
   if (signoff_message?.trim() || coaches.length) {
     sections.push({ kind: 'signoff', prose: signoff_message?.trim() || '', coaches: coaches.map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' })) });
   }

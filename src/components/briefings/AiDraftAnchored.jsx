@@ -10,14 +10,13 @@ import { RESOLVER_REGISTRY } from '../../lib/engine/resolvers/registry';
 import { supabase } from '../../lib/supabase';
 import { useAiDraft } from '../../hooks/useAiDraft';
 import { AI_DRAFT_FIELD, anchoredFacts } from '../../lib/briefings/anchoredAiFacts';
+import AiFactsPanel from './AiFactsPanel';
 
 const wrap = { display: 'flex', flexDirection: 'column', gap: 8, padding: 12, borderRadius: 10, border: '1px dashed var(--as-border-default)', backgroundColor: 'var(--as-bg-secondary)' };
 const label = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' };
 const btn = (on) => ({ minHeight: 36, padding: '0 12px', borderRadius: 8, border: '1.5px solid var(--as-accent)', background: 'transparent', color: 'var(--as-accent)', fontSize: 13, fontWeight: 600, cursor: on ? 'pointer' : 'wait', opacity: on ? 1 : 0.6, display: 'inline-flex', alignItems: 'center', gap: 6 });
 const note = { fontSize: 12, color: 'var(--as-text-tertiary)', margin: 0, lineHeight: 1.4 };
 const summary = { fontSize: 13, fontWeight: 600, color: 'var(--as-text-secondary)', margin: 0 };
-const factRow = { display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, padding: '2px 0' };
-const warnBox = { margin: 0, padding: '8px 12px', borderRadius: 8, fontSize: 12, lineHeight: 1.4, listStyle: 'none', backgroundColor: 'var(--as-warning-soft)', color: 'var(--as-warning)' };
 const errBox = { margin: 0, padding: '8px 12px', borderRadius: 8, fontSize: 12, lineHeight: 1.4, backgroundColor: 'var(--as-danger-soft)', color: 'var(--as-danger)' };
 
 export default function AiDraftAnchored({ state, dispatch }) {
@@ -52,7 +51,12 @@ export default function AiDraftAnchored({ state, dispatch }) {
     }
   };
 
-  const factEntries = sourceFacts ? Object.entries(sourceFacts) : [];
+  // PR-D facts panel — prefer the VERBATIM facts the draft reported using
+  // (ai.factsUsed: [{k,v}]); fall back to the client-resolved source facts
+  // shape if the response carried none. Missing facts = the draft warnings.
+  const factPairs = ai.factsUsed?.length
+    ? ai.factsUsed
+    : (sourceFacts ? Object.entries(sourceFacts).map(([k, v]) => ({ k, v: String(v) })) : []);
   return (
     <div style={wrap}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -70,16 +74,7 @@ export default function AiDraftAnchored({ state, dispatch }) {
       {resolveErr && <p style={errBox} aria-live="polite">{resolveErr}</p>}
       {ai.error && <p style={errBox} aria-live="polite">{ai.error.message || "Couldn't draft that. Try again in a moment."}</p>}
       {ai.cardSummary && <p style={summary}>{ai.cardSummary}</p>}
-      {factEntries.length > 0 && (
-        <div aria-label="Facts used">
-          {factEntries.map(([k, v]) => (
-            <div key={k} style={factRow}><span style={{ color: 'var(--as-text-tertiary)' }}>{k}</span><span style={{ color: 'var(--as-text-primary)' }}>{String(v)}</span></div>
-          ))}
-        </div>
-      )}
-      {ai.warnings?.length > 0 && (
-        <ul style={warnBox} aria-live="polite">{ai.warnings.map((w, i) => <li key={i}>{String(w)}</li>)}</ul>
-      )}
+      {hasDrafted && <AiFactsPanel facts={factPairs} missing={ai.warnings || []} />}
     </div>
   );
 }

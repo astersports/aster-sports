@@ -22,6 +22,15 @@ export const AMBER_DEEP       = '#92400e';   //  6.6:1 — tournament suffix amb
 export const GOLD             = '#fbbf24';
 export const CREAM            = '#fffbeb';
 
+// PR-D cancellation card — warn tone (NOT red). Matches the
+// BRIEFING_FULL_PRESENTATION §4 spec (--warn #b54708 / --warn-wash #fef3e6 /
+// --warn-line #f3dcb8). Left border + label pill use WARN; the wash is the
+// card fill so the treatment reads as caution, distinct from the red
+// destructive RSVP_OUT_RED used elsewhere.
+export const WARN             = '#b54708';   //  5.9:1 — cancellation label + left border
+export const WARN_WASH        = '#fef3e6';   // cancellation card fill
+export const WARN_LINE        = '#f3dcb8';   // cancellation card border
+
 // Borders + backgrounds
 export const BORDER_DEFAULT   = '#e5e7eb';
 export const BORDER_SUBTLE    = '#f1f5f9';

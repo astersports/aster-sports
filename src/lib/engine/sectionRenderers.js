@@ -18,6 +18,7 @@ import { renderHeader } from './renderers/header';
 import { renderGameCard } from './renderers/gameCard';
 import { renderFooter } from './renderers/footer';
 import scheduleChangeDiff from './renderers/scheduleChangeDiff';
+import cancellationCard from './renderers/cancellationCard';
 import weeklySchedule from './renderers/weeklySchedule';
 import hotelBlock from './renderers/hotelBlock';
 import opsNotes from './renderers/opsNotes';
@@ -62,6 +63,7 @@ export const SECTION_RENDERERS = {
   stats_narrative: statsNarrative,
   signoff,
   schedule_change_diff: scheduleChangeDiff,
+  cancellation_card: cancellationCard,
   rsvp_request: rsvpRequest,
   callup_response: callupResponse,
   day_header: dayHeader,

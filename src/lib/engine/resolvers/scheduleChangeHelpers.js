@@ -20,6 +20,33 @@ export function trim(s) { return (s == null ? '' : String(s)).trim(); }
 
 export function eventTypeLabel(type) { return EVENT_TYPE_LABEL[type] || 'Event'; }
 
+// Section builders for composeScheduleChange (moved here to keep
+// scheduleChange.js under the AP #6 150-line cap, PR-D).
+export function buildLabel(event, team) {
+  return event.title || `${team?.name || ''} ${eventTypeLabel(event.event_type)}`.trim();
+}
+
+// PR-D — cancellation_card section for the cancelled variant. Warn-tone card
+// with the struck OLD time + reason (no action buttons). AP #38: the renderer
+// is registered in sectionRenderers in the same PR as this emission.
+export function buildCancellationCard(event, team, before, reason) {
+  return {
+    kind: 'cancellation_card',
+    title: buildLabel(event, team),
+    old_time: formatRange(before.start_at, before.end_at),
+    reason: reason || '',
+  };
+}
+
+export function buildDiffSection(event, location, before, after, changed) {
+  return {
+    kind: 'schedule_change_diff',
+    changed_fields: changed,
+    before: { time: formatRange(before.start_at, before.end_at), label: event.title || '', location: before.location ?? location?.name ?? null, opponent: before.opponent ?? null },
+    after: { time: formatRange(after.start_at, after.end_at), label: event.title || '', location: after.location ?? location?.name ?? null, opponent: after.opponent ?? null },
+  };
+}
+
 export function formatLongDay(iso) { return iso ? longDayFmt.format(new Date(iso)) : ''; }
 export function formatTime(iso) { return iso ? timeFmt.format(new Date(iso)) : ''; }
 export function formatRange(startIso, endIso) {
