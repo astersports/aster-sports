@@ -18,11 +18,12 @@ import recipients from './fixtures/game_recap_may_2_10u_blue/recipients.json';
 import recipientsPilot from './fixtures/game_recap_may_2_10u_blue/recipients_pilot.json';
 import player_guardians from './fixtures/game_recap_may_2_10u_blue/player_guardians.json';
 import coaches from './fixtures/game_recap_may_2_10u_blue/coaches.json';
+import team_staff from './fixtures/game_recap_may_2_10u_blue/team_staff.json';
 import organization from './fixtures/game_recap_may_2_10u_blue/organization.json';
 
 const EVENT_ID = 'a0b2d68a-cd2a-4d15-9922-5c2becc0c806';
 const NOW = new Date('2026-05-10T14:00:00Z');
-const FIXTURES = { event, game_result, player_of_game, tournament, recipients, player_guardians, coaches, organization };
+const FIXTURES = { event, game_result, player_of_game, tournament, recipients, player_guardians, coaches, team_staff, organization };
 const norm = (v) => JSON.parse(JSON.stringify(v));
 
 describe('game_recap resolver — contract', () => {

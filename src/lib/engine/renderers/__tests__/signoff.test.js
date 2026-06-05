@@ -29,4 +29,18 @@ describe('free-text F2 — signoff', () => {
   it('matches snapshot', () => {
     expect(render(fixture)).toMatchSnapshot();
   });
+
+  // Team-aware voice signature (architect C3): the narrative signs in voice.
+  it('renders the voice signature line above the contact block', () => {
+    const { html, plainText } = render({ kind: 'signoff', prose: 'Hello.', signature: 'Frank & Coach Kenny', coaches: [] });
+    expect(html).toContain('&#8212; Frank &amp; Coach Kenny');
+    // signature precedes the prose paragraph
+    expect(html.indexOf('Frank &amp; Coach Kenny')).toBeLessThan(html.indexOf('Hello.'));
+    expect(plainText).toContain('— Frank & Coach Kenny');
+  });
+  it('omits the signature line when absent (back-compat)', () => {
+    const { html, plainText } = render({ kind: 'signoff', prose: 'Hi.', coaches: [] });
+    expect(html).not.toContain('&#8212;');
+    expect(plainText).not.toMatch(/^—/m);
+  });
 });

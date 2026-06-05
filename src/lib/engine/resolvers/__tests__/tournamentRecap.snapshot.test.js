@@ -13,6 +13,7 @@ import locations from './fixtures/tournament_recap_chase_for_the_chain/locations
 import players from './fixtures/tournament_recap_chase_for_the_chain/players.json';
 import recipients from './fixtures/tournament_recap_chase_for_the_chain/recipients.json';
 import coaches from './fixtures/tournament_recap_chase_for_the_chain/coaches.json';
+import team_staff from './fixtures/tournament_recap_chase_for_the_chain/team_staff.json';
 import organization from './fixtures/tournament_recap_chase_for_the_chain/organization.json';
 import expected11uGirlsBare from './fixtures/tournament_recap_chase_for_the_chain/expected_content_sections_11u_girls_bare.json';
 import expected8uBoysBare from './fixtures/tournament_recap_chase_for_the_chain/expected_content_sections_8u_boys_bare.json';
@@ -40,7 +41,7 @@ const TID = '61e2cbca-af87-4685-a928-57d3da06cd84';
 const NOW = new Date('2026-05-07T12:00:00Z');
 const FIXTURES = {
   tournament, tournament_teams, events, game_results, locations, players,
-  coaches, organization,
+  coaches, team_staff, organization,
   recipients: recipientsToRpcShape(recipients),
   player_guardians: buildPlayerGuardians(recipients),
 };
