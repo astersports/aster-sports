@@ -15,7 +15,7 @@
 // a separate wave; today these are file-level defaults.
 
 import { formatPeriodLabel, periodIsoBounds } from '../digestPeriod';
-import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
+import { buildOrgContext } from '../buildOrgContext';
 
 // Wave 4.3-K: composeWeeklyDigest lives in a sibling file to keep this
 // module under the 150-line cap. Re-export preserves the public surface.
@@ -92,7 +92,7 @@ export async function resolveWeeklyDigest({ orgId, period, pilotOnly = false }, 
   const { data: coaches = [], error: coachesErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
   if (coachesErr) throw coachesErr;
 
-  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
+  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
   if (orgErr) throw orgErr;
 
   const guardianIds = (rpcRows || []).map((r) => r.guardian_id);
@@ -113,13 +113,7 @@ export async function resolveWeeklyDigest({ orgId, period, pilotOnly = false }, 
 
   return {
     context: {
-      org: {
-        id: orgId, name: ORG_NAME_DEFAULT,
-        branding: { eyebrowLink: ORG_WEBSITE_DEFAULT, contactEmail: ORG_CONTACT_DEFAULT, logoUrl: ORG_LOGO_DEFAULT },
-        voice_config: org?.voice_config || null,
-        brand_colors: org?.brand_colors || null,
-        coaches: coaches || [],
-      },
+      org: buildOrgContext({ orgId, org, coaches }),
       period: { start: period.start, end: period.end, label: formatPeriodLabel(period) },
       events: events || [],
       teams: [...teamsMap.values()],

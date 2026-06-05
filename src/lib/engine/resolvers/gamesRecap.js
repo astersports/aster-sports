@@ -12,7 +12,8 @@
 // recipient); slices only carry the audience.
 
 import { buildGameCell, buildGamesSubject, dayLabel, fetchSlicesForTeams, summarizeGames, trim } from './gamesRecapHelpers';
-import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
+import { ORG_NAME_DEFAULT } from '../../constants';
+import { buildOrgContext } from '../buildOrgContext';
 
 
 const EVENT_SELECT = 'id, team_id, start_at, location, opponent, teams ( id, name, team_color, org_id )';
@@ -60,12 +61,7 @@ export async function resolveGamesRecap({ eventIds, pilotOnly }, { supabase, now
 
   return {
     context: {
-      org: {
-        id: orgId, name: org?.display_name || org?.name || ORG_NAME_DEFAULT,
-        branding: { eyebrowLink: ORG_WEBSITE_DEFAULT, contactEmail: ORG_CONTACT_DEFAULT, logoUrl: ORG_LOGO_DEFAULT },
-        voice_config: org?.voice_config || null, brand_colors: org?.brand_colors || null,
-        coaches: coachesData || [],
-      },
+      org: buildOrgContext({ orgId, org, coaches: coachesData }),
       games, summary, subject: buildGamesSubject(games, summary.record),
     },
     slices,

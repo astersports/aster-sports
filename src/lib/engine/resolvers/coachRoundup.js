@@ -18,6 +18,7 @@ import {
   buildSignoffSection, buildTeamSections,
 } from './coachRoundupSections';
 import { detectConflicts, groupEventsByTeam } from './coachRoundupHelpers';
+import { buildOrgContext } from '../buildOrgContext';
 
 export async function resolveCoachRoundup({ coachUserId, dateRange }, { supabase } = {}) {
   if (!coachUserId) throw new Error('Missing coachUserId');
@@ -60,13 +61,16 @@ export async function resolveCoachRoundup({ coachUserId, dateRange }, { supabase
     coaches = cRows || [];
   }
 
-  let orgName = 'Legacy Hoopers';
+  let orgRow = null;
   if (coach.org_id) {
-    const { data: orgRow, error: orgErr } = await supabase.from('organizations')
+    const { data, error: orgErr } = await supabase.from('organizations')
       .select('name, display_name').eq('id', coach.org_id).maybeSingle();
     if (orgErr) throw orgErr;
-    if (orgRow) orgName = orgRow.display_name || orgRow.name || orgName;
+    orgRow = data;
   }
+  // AP #63 — route the org-name through the shared builder so the
+  // display_name||name||default precedence is identical to every other kind.
+  const orgName = buildOrgContext({ orgId: coach.org_id, org: orgRow, coaches }).name;
 
   // Fetch coach email via SECDEF RPC. staff_profiles has no email
   // column; auth.users does. get_staff_email checks the requested

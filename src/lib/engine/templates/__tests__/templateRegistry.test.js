@@ -19,7 +19,7 @@ const EDITOR_SHAPES = {
   tournament_recap: ['standout_moments', 'coach_reflection', 'coach_note', 'parent_shoutout'],
   announcement: ['headline', 'body_text'],
   custom_message: ['subject', 'body_text'],
-  rsvp_nudge: ['headline_override', 'custom_message', 'ask_comment_field'],
+  rsvp_nudge: ['coach_note', 'parent_shoutout'],
 };
 
 describe('TEMPLATES_BY_KIND', () => {

@@ -22,7 +22,7 @@ import {
 import { buildGoldSections } from './tournamentPrelimGoldSections';
 import { buildSubject, buildTeamSlices, fetchParticipantGuardiansByTeam, fetchRecipientGuardians, trim } from './tournamentPrelimHelpers';
 import { fetchTournamentWeather, weatherLocationFrom } from './tournamentWeather';
-import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
+import { buildOrgContext } from '../buildOrgContext';
 
 export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { supabase, now = new Date(), fetchWeather = fetchTournamentWeather } = {}) {
   if (!tournamentId) throw new Error('Missing tournamentId');
@@ -90,12 +90,7 @@ export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { sup
 
   return {
     context: {
-      org: {
-        id: orgId, name: org?.display_name || org?.name || ORG_NAME_DEFAULT,
-        branding: { eyebrowLink: ORG_WEBSITE_DEFAULT, contactEmail: ORG_CONTACT_DEFAULT, logoUrl: ORG_LOGO_DEFAULT },
-        voice_config: org?.voice_config || null, brand_colors: org?.brand_colors || null,
-        coaches: coaches || [],
-      },
+      org: buildOrgContext({ orgId, org, coaches }),
       tournament, tournament_teams, events_by_team, locations,
       weather, weather_city,
     },
@@ -143,6 +138,12 @@ export function composeTournamentPrelim(context, slice, overrides = {}) {
 
   const tagline = buildTaglineFooter(overrides);
   if (tagline) sections.push(tagline);
+  // tournament_prelim is a PARENT broadcast (scoped to tournament-roster
+  // guardians), so it needs the compliance footer (contact email per §13#5
+  // + CAN-SPAM {{UNSUBSCRIBE_URL}}). The brand_footer is tagline-only and
+  // carries neither, so it alone is not compliant for a broadcast. Emit the
+  // full footer first, then the brand band as the closing flourish.
+  sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
   sections.push(buildBrandFooter(org.name));
 
   return { subject: buildSubject(slice, tournament), content_sections: sections };

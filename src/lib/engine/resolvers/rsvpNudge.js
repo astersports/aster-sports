@@ -21,11 +21,8 @@
 //   - event.start_at <= options.now -> EventAlreadyStartedError
 //   - All roster responded / empty roster -> slices = []
 
-import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
-import {
-  computeUrgency, deriveEventLabel, EventAlreadyStartedError,
-  EventHasNoTeamError, joinKidNames, trim,
-} from './rsvpNudgeHelpers';
+import { buildOrgContext } from '../buildOrgContext';
+import { computeUrgency, EventAlreadyStartedError, EventHasNoTeamError } from './rsvpNudgeHelpers';
 
 
 const EVENT_SELECT = 'id, title, team_id, event_type, start_at, end_at, location, location_id, opponent, status, publish_status, teams ( id, name, team_color, sort_order, org_id )';
@@ -73,7 +70,9 @@ async function fetchUnrespondedSlices(supabase, event, now, pilotOnly) {
 
   let pgRows = [];
   if (unresponded.length) {
-    const { data } = await supabase.from('player_guardians').select('guardian_id, player_id, players ( first_name ), guardians ( id, email )').in('player_id', unresponded.map((r) => r.player_id));
+    // AP #36 — guard error so RLS/transient failure doesn't silently yield 0 recipients.
+    const { data, error: pgErr } = await supabase.from('player_guardians').select('guardian_id, player_id, players ( first_name ), guardians ( id, email )').in('player_id', unresponded.map((r) => r.player_id));
+    if (pgErr) throw pgErr;
     pgRows = data || [];
   }
 
@@ -124,12 +123,12 @@ export async function resolveRsvpNudge({ eventId, pilotOnly }, { supabase, now =
   const { data: coachesData, error: coachesErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
   if (coachesErr) throw coachesErr;
   const coaches = coachesData || [];
-  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
+  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
   if (orgErr) throw orgErr;
 
   return {
     context: {
-      org: { id: orgId, name: ORG_NAME_DEFAULT, branding: { eyebrowLink: ORG_WEBSITE_DEFAULT, contactEmail: ORG_CONTACT_DEFAULT, logoUrl: ORG_LOGO_DEFAULT }, voice_config: org?.voice_config || null, brand_colors: org?.brand_colors || null, coaches: coaches || [] },
+      org: buildOrgContext({ orgId, org, coaches }),
       event: { id: event.id, title: event.title, team_id: event.team_id, event_type: event.event_type, start_at: event.start_at, end_at: event.end_at, location_id: event.location_id, opponent: event.opponent, status: event.status, publish_status: event.publish_status },
       team: event.teams ? { id: event.teams.id, name: event.teams.name, team_color: event.teams.team_color, sort_order: event.teams.sort_order } : null,
       location,
@@ -140,28 +139,5 @@ export async function resolveRsvpNudge({ eventId, pilotOnly }, { supabase, now =
   };
 }
 
-export function composeRsvpNudge(context, slice, overrides = {}) {
-  if (!context || !slice) throw new Error('Missing context or slice');
-  const { event, team, location, urgency, org } = context;
-  const eventLabel = deriveEventLabel(event);
-  const subjectLabel = event.title || `${team?.name || ''} ${eventLabel}`.trim();
-  const kids = slice.unresponded_kids || [];
-  const namesJoined = joinKidNames(kids.map((k) => k.first_name));
-  const sections = [];
-  sections.push({ kind: 'header', eyebrow: `${team?.name || org.name} · RSVP NEEDED`, eyebrow_link: org.branding.eyebrowLink, headline: 'QUICK RSVP', urgency_label: (urgency.day_label || '').toUpperCase(), goldStripe: true });
-  for (const kid of kids) {
-    sections.push({ kind: 'rsvp_request', kid_first_name: kid.first_name, player_id: kid.player_id, team_name: team?.name || '', team_color: team?.team_color || '#4a8fd4', event_label: eventLabel, urgency_phrase: `${urgency.day_label} at ${urgency.time_label}`, rsvp_token_placeholders: { going: '{{rsvp_going_url}}', maybe: '{{rsvp_maybe_url}}', not_going: '{{rsvp_not_going_url}}' } });
-  }
-  sections.push({ kind: 'event_card', team_color: team?.team_color || '#4a8fd4', date: ((iso) => iso ? new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'long', month: 'long', day: 'numeric' }).format(new Date(iso)) : '')(event.start_at), time: urgency.time_range_label, location_name: location?.name || event.location || null, location_map_url: location?.google_maps_url || null, opponent: event.opponent || null });
-  for (const key of ['coach_note', 'parent_shoutout']) {
-    const v = trim(overrides[key]); if (v) sections.push({ kind: 'stats_narrative', body: v });
-  }
-  const validCoaches = (org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
-  const signoffProse = trim(overrides.signoff_message);
-  if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
-  sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
-  const subject = `RSVP needed for ${namesJoined}: ${subjectLabel}`;
-  return { subject, content_sections: sections };
-}
-
+export { composeRsvpNudge } from './rsvpNudgeCompose';
 export { EventAlreadyStartedError, EventHasNoTeamError } from './rsvpNudgeHelpers';

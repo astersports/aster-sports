@@ -3,15 +3,14 @@
 // the coach's teams. No DB calls; no IO. Caller passes data; helpers
 // transform. Tested in isolation against fixtures.
 
+import { formatDayLabel, formatTime } from '../etDate';
+
 const DEFAULT_GAME_MINUTES = 60;
 
-function pad2(n) { return String(n).padStart(2, '0'); }
-
-function toEt(iso) {
-  if (!iso) return null;
-  const utcMs = new Date(iso).getTime();
-  return new Date(utcMs - 4 * 60 * 60 * 1000);
-}
+// DST-correct ET formatting now lives in the shared engine/etDate module
+// (replaced the hardcoded -4h offset that was wrong in EST, Nov–Mar).
+// Re-exported so existing importers of these names keep working.
+export { formatDayLabel, formatTime } from '../etDate';
 
 export function formatDateRange(dateRange) {
   if (!dateRange?.start || !dateRange?.end) return '';
@@ -20,21 +19,6 @@ export function formatDateRange(dateRange) {
     return m ? `${parseInt(m[2], 10)}/${parseInt(m[3], 10)}` : s;
   };
   return `${fmt(dateRange.start)} – ${fmt(dateRange.end)}`;
-}
-
-export function formatDayLabel(iso) {
-  const et = toEt(iso);
-  if (!et) return 'TBD';
-  const wk = et.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }).toUpperCase();
-  return `${wk} ${et.getUTCMonth() + 1}/${et.getUTCDate()}`;
-}
-
-export function formatTime(iso) {
-  const et = toEt(iso);
-  if (!et) return 'TBD';
-  let h = et.getUTCHours(); const m = et.getUTCMinutes();
-  const am = h < 12; if (h === 0) h = 12; else if (h > 12) h -= 12;
-  return `${h}:${pad2(m)} ${am ? 'AM' : 'PM'}`;
 }
 
 // Returns [{ team_id, team_name, team_color, sort_order, role,
