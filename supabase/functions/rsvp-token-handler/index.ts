@@ -1,7 +1,7 @@
 // Wave 4.0 — RSVP one-tap handler. Public anonymous endpoint.
 // Auth IS the signed token: HMAC verify happens server-side via
 // public.verify_rsvp_token RPC (SECURITY DEFINER, reads secret from
-// app.settings.rsvp_token_secret GUC).
+// app_secrets.rsvp_token_secret per AP #33).
 //
 // Flow:
 //   GET /rsvp-token-handler?t=<token>&action=going|maybe|not_going
@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
 
   const playerName = player?.first_name || "your kid";
   const niceAction = LABELS[payload.r] || payload.r;
-  const eventLine = ctx ? `${ctx.title || "Event"} · ${new Date(ctx.start_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}${ctx.location ? " · " + escape(ctx.location) : ""}` : "";
+  const eventLine = ctx ? `${ctx.title || "Event"} · ${new Date(ctx.start_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })}${ctx.location ? " · " + escape(ctx.location) : ""}` : "";
   return htmlPage(
     `Got it — ${escape(playerName)} is ${niceAction}`,
     eventLine,

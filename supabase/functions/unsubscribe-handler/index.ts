@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
   if (existing?.unsubscribed_at) {
     return htmlPage(
       "Already unsubscribed",
-      "You were unsubscribed on " + new Date(existing.unsubscribed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + `. You will no longer receive briefing emails. Reply to ${escape(replyEmail)} if you want to resubscribe.`,
+      "You were unsubscribed on " + new Date(existing.unsubscribed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" }) + `. You will no longer receive briefing emails. Reply to ${escape(replyEmail)} if you want to resubscribe.`,
       orgName,
       replyEmail,
     );

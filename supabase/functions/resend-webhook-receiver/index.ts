@@ -26,6 +26,28 @@
 // Terminal states always win, even if current rank is higher. Transient
 // signals (email.delivery_delayed) log a warning but don't transition.
 //
+// Suppression (Wave 3.A #19 P1 closure follow-up): a spam complaint or a
+// HARD bounce must stop ALL future sends to that guardian, not just stamp
+// the recipient row. Both the send path (send-tournament-message) and the
+// Stream A reminders read guardian_email_preferences.unsubscribed_at as the
+// canonical opt-out signal. This receiver was stamping delivery_status only,
+// so a spam-reporter or dead mailbox kept receiving. We now also set
+// guardian_email_preferences.unsubscribed_at = now() for:
+//   - email.complained — ALWAYS (a spam report is an unambiguous "stop").
+//   - email.bounced — ONLY when the bounce is permanent/hard. Resend's
+//     bounce payload carries data.bounce.type ("Permanent" | "Transient" |
+//     "Undetermined"); soft/transient bounces (full mailbox, greylisting)
+//     are recoverable and must NOT permanently suppress. When the type is
+//     absent or not "Permanent", we do NOT suppress (fail-safe toward not
+//     over-suppressing a legitimate recipient). The recipient row's
+//     bounced_at/delivery_status still records every bounce regardless.
+// The matched recipient row carries guardian_id (the same column the send
+// path stamps at queue time; NULL only for admin BCC audit copies). We read
+// it off the row we already fetched by email — no extra join — and upsert
+// guardian_email_preferences (guardian_id is its PRIMARY KEY) with
+// unsubscribed_at=now(). If the matched row has no guardian_id (admin BCC),
+// we skip the suppression write (there is no guardian to suppress).
+//
 // Structured logging: every handled event emits one console line with
 // event_type, recipient_id, action taken. Failures emit error level.
 // Signature verification failures emit 401 + log without leaking secret.
@@ -34,6 +56,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Webhook } from "https://esm.sh/svix@1.21.0";
+import { shouldSuppress } from "./_suppression.ts";
 
 // Event type → handler config. ts=column name to stamp first-time event;
 // status=delivery_status value to write; level=log severity.
@@ -81,7 +104,7 @@ Deno.serve(async (req) => {
   if (!svixId || !svixTs || !svixSig) { log("warn", "missing svix headers"); return json({ error: "Missing svix headers" }, 401); }
 
   const payload = await req.text();
-  let evt: { type?: string; data?: { to?: string[]; email?: string; created_at?: string }; created_at?: string };
+  let evt: { type?: string; data?: { to?: string[]; email?: string; created_at?: string; bounce?: { type?: string }; tags?: Record<string, string> }; created_at?: string };
   try {
     evt = new Webhook(secret).verify(payload, { "svix-id": svixId, "svix-timestamp": svixTs, "svix-signature": svixSig }) as typeof evt;
   } catch (err) {
@@ -103,18 +126,56 @@ Deno.serve(async (req) => {
   // Wave 4.4-A2b: always read delivery_status (rank comparison) in addition
   // to id and the event's timestamp column. selectCols dedupes via Set so
   // delivery_status doesn't duplicate when handler.ts is null.
-  const colSet = new Set<string>(["id", "delivery_status"]);
+  const colSet = new Set<string>(["id", "delivery_status", "guardian_id"]);
   if (handler.ts) colSet.add(handler.ts);
-  const { data: rec, error: recErr } = await sb.from("comms_message_recipients")
-    .select([...colSet].join(", "))
-    .eq("email_at_send", recipientEmail)
-    .gte("created_at", sevenDaysAgo)
-    .order("created_at", { ascending: false })
-    .limit(1).maybeSingle();
-  if (recErr) { log("error", "recipient lookup failed", { event_type: eventType, email: recipientEmail, reason: recErr.message }); return json({ error: recErr.message }, 500); }
-  if (!rec) { log("warn", "no matching recipient row", { event_type: eventType, email: recipientEmail }); return json({ ok: true, note: "no matching recipient row" }); }
+  const selectCols = [...colSet].join(", ");
+  // Recipient match: prefer the exact recipient_id tag the send path attaches
+  // (send-tournament-message/_lib.ts buildEmailRow → Resend `tags`, echoed in
+  // data.tags.recipient_id). This is an EXACT row match, immune to the
+  // misattribution the email_at_send + 7-day-window + limit(1) fallback
+  // suffered when one address received multiple briefings inside 7 days.
+  // Fallback (no tag) covers emails sent before this tag shipped + any send
+  // path that doesn't tag (e.g. Stream A reminders, which don't write
+  // comms_message_recipients rows anyway, so they simply won't match).
+  const taggedRecipientId = data.tags?.recipient_id;
+  const query = sb.from("comms_message_recipients").select(selectCols);
+  const { data: rec, error: recErr } = taggedRecipientId
+    ? await query.eq("id", taggedRecipientId).maybeSingle()
+    : await query.eq("email_at_send", recipientEmail).gte("created_at", sevenDaysAgo)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (recErr) { log("error", "recipient lookup failed", { event_type: eventType, email: recipientEmail, recipient_id: taggedRecipientId, reason: recErr.message }); return json({ error: recErr.message }, 500); }
+  if (!rec) { log("warn", "no matching recipient row", { event_type: eventType, email: recipientEmail, recipient_id: taggedRecipientId }); return json({ ok: true, note: "no matching recipient row" }); }
 
   const recId = (rec as { id: string }).id;
+
+  // Suppression (see header): a complaint or HARD bounce stamps
+  // guardian_email_preferences.unsubscribed_at so the send path + Stream A
+  // reminders (which read that column) stop ALL future sends. Runs BEFORE the
+  // idempotent no-op check below so a re-delivered terminal event still
+  // guarantees suppression even when the recipient-row write is a no-op.
+  // Idempotent: we only stamp when unsubscribed_at is currently NULL.
+  const guardianId = (rec as { guardian_id?: string | null }).guardian_id ?? null;
+  if (guardianId && shouldSuppress(eventType, data)) {
+    const { data: pref, error: prefErr } = await sb.from("guardian_email_preferences")
+      .select("unsubscribed_at").eq("guardian_id", guardianId).maybeSingle();
+    if (prefErr) {
+      log("error", "suppression pref lookup failed", { event_type: eventType, recipient_id: recId, guardian_id: guardianId, reason: prefErr.message });
+    } else if (pref?.unsubscribed_at) {
+      log("info", "already suppressed", { event_type: eventType, recipient_id: recId, guardian_id: guardianId });
+    } else {
+      const nowIso = new Date().toISOString();
+      const { error: supErr } = await sb.from("guardian_email_preferences").upsert({
+        guardian_id: guardianId,
+        unsubscribed_at: nowIso,
+        digest_subscribed: false,
+        tournament_subscribed: false,
+        updated_at: nowIso,
+      }, { onConflict: "guardian_id" });
+      if (supErr) log("error", "suppression write failed", { event_type: eventType, recipient_id: recId, guardian_id: guardianId, reason: supErr.message });
+      else log("warn", "guardian suppressed", { event_type: eventType, recipient_id: recId, guardian_id: guardianId });
+    }
+  }
+
   const update: Record<string, unknown> = {};
   // Idempotent timestamp write (only if column is currently NULL).
   if (handler.ts && !(rec as Record<string, unknown>)[handler.ts]) update[handler.ts] = eventTimestamp;
