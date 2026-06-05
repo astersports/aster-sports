@@ -46,8 +46,20 @@ function renderSub(sub_context, variant) {
   return `<div style="font-size:13px;color:${color};line-height:1.5;margin:0;">${escapeHtml(sub_context)}</div>`;
 }
 
+// Wave (recap-at-bar): optional record pill in the cobalt_band variant —
+// a rounded chip under the headline (e.g. "0–2 RECORD · MAY 18 – MAY 20").
+// Only rendered inside the cobalt band; omitted otherwise. Backward-compat:
+// headers without record_pill are byte-identical to before.
+function renderRecordPill(record_pill, variant) {
+  if (!record_pill || variant !== 'cobalt_band') return '';
+  return '<div style="margin:6px 0 0 0;">'
+    + '<span style="display:inline-block;background-color:rgba(0,0,0,0.18);border-radius:999px;'
+    + `padding:6px 15px;font-size:12px;font-weight:700;letter-spacing:1px;color:#ffffff;">${escapeHtml(record_pill)}</span>`
+    + '</div>';
+}
+
 export function renderHeader(section) {
-  const { eyebrow, eyebrow_link, headline, sub_context, goldStripe, variant } = section || {};
+  const { eyebrow, eyebrow_link, headline, sub_context, goldStripe, variant, record_pill } = section || {};
   const isCobaltBand = variant === 'cobalt_band';
   const tableStyle = isCobaltBand
     ? `border-collapse:collapse;font-family:Inter,system-ui,sans-serif;background-color:${COBALT};`
@@ -59,6 +71,7 @@ export function renderHeader(section) {
     + renderEyebrow(eyebrow, eyebrow_link, variant)
     + renderHeadline(headline, variant)
     + renderSub(sub_context, variant)
+    + renderRecordPill(record_pill, variant)
     + '</td></tr></table>';
   const goldHtml = (goldStripe && !isCobaltBand)
     ? '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
@@ -73,6 +86,7 @@ export function renderHeader(section) {
   const plainLines = [
     eyebrowLine,
     headline ? String(headline).toUpperCase() : '',
+    record_pill ? String(record_pill).toUpperCase() : '',
     sub_context || '',
     '────────────────────────',
   ].filter(Boolean);

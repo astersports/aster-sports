@@ -21,7 +21,7 @@
 
 import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 import {
-  buildGameRecapCard, buildSubject, fetchSlices, formatSubContext,
+  buildGameRecapCard, buildGameRecapPill, buildSubject, fetchSlices,
   GameRecapNotPublishedError, trim,
 } from './gameRecapHelpers';
 
@@ -93,14 +93,21 @@ export async function resolveGameRecap({ eventId, pilotOnly }, { supabase, now =
   };
 }
 
+// Framed "designed object" treatment (recap-at-bar): same structure as
+// games_recap (frame + cobalt band + section bars + per-team-color game
+// cell + narrative), scaled to one game. Reuses existing rich renderers;
+// no per-kind branching. See docs/GAMES_RECAP_AT_BAR.html.
 export function composeGameRecap(context, slice, overrides = {}) {
   if (!context || !slice) throw new Error('Missing context or slice');
   const { team, event, game_result: gr, player_of_game: pog, location, org } = context;
   const sections = [];
-  sections.push({ kind: 'header', eyebrow: `${org.name} · GAME RECAP`, eyebrow_link: org.branding.eyebrowLink, headline: 'GAME RECAP', sub_context: formatSubContext(event.start_at, location?.name), goldStripe: true });
+  sections.push({ kind: 'frame_open' });
+  sections.push({ kind: 'header', variant: 'cobalt_band', eyebrow: `${org.name} · GAME RECAP`, eyebrow_link: org.branding.eyebrowLink, headline: 'GAME RECAP', record_pill: buildGameRecapPill(event, gr) });
 
+  sections.push({ kind: 'section_bar', label: 'The Game' });
   sections.push(buildGameRecapCard(team, event, location, gr));
 
+  sections.push({ kind: 'section_bar', label: 'From the Sideline' });
   if (pog?.first_name) sections.push({ kind: 'stats_narrative', body: `Player of the game: ${pog.first_name}` });
   if (trim(gr.coach_highlight)) sections.push({ kind: 'stats_narrative', body: trim(gr.coach_highlight) });
 
@@ -114,6 +121,7 @@ export function composeGameRecap(context, slice, overrides = {}) {
   if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
 
   sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
+  sections.push({ kind: 'frame_close' });
 
   return { subject: buildSubject(team, event, gr), content_sections: sections };
 }

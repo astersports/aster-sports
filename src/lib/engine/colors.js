@@ -31,6 +31,16 @@ export const BG_PAGE          = '#f8fafc';
 export const STATUS_WIN       = '#16a34a';
 export const STATUS_LOSS      = '#dc2626';
 
+// Recap game-cell result pills (games_recap / game_recap framed treatment).
+// Explicit light bg + dark text per pill so they read in both light and
+// dark email clients — never relying on transparency that inverts.
+export const PILL_WIN_BG      = '#dcfce7';   // success-soft
+export const PILL_WIN_TX      = '#15803d';   //  4.5:1 on win bg — WIN pill text
+export const PILL_LOSS_BG     = '#fee2e2';   // danger-soft
+export const PILL_LOSS_TX     = '#b91c1c';   //  5.9:1 on loss bg — LOSS pill text
+export const PILL_TIE_BG      = '#fef3c7';   // warning-soft
+export const PILL_TIE_TX      = '#b45309';   //  4.5:1 on tie bg — TIE pill text
+
 // Wave 3.7 hotfix §D-RSVP-1 — RSVP count tones in renderer #6.
 // Compound visual: each count + label colored to its status. Separators
 // remain in TEXT_GRAPHITE for visual breathing room.

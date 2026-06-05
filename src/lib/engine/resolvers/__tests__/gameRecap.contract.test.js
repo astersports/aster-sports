@@ -72,25 +72,32 @@ describe('game_recap resolver — contract', () => {
     const fixturesNoHighlight = { ...FIXTURES, game_result: { ...game_result, coach_highlight: '' } };
     const { context, slices } = await resolveGameRecap({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient(fixturesNoHighlight), now: NOW });
     const { content_sections } = composeGameRecap(context, slices[0], {});
-    // The coach_highlight body 'defense' should not appear; the game_card
-    // (final score) still renders before the narrative sections.
+    // The coach_highlight body 'defense' should not appear; the
+    // recap_game_cell (final score) still renders before the narrative.
     const bodies = content_sections.filter((s) => s.kind === 'stats_narrative').map((s) => s.body);
     expect(bodies).not.toContain('defense');
-    const card = content_sections.find((s) => s.kind === 'game_card');
-    expect(card).toBeDefined();
-    expect(card.stakeLine.text).toBe('2–0 · Win');
+    const cell = content_sections.find((s) => s.kind === 'recap_game_cell');
+    expect(cell).toBeDefined();
+    expect(cell.our_score).toBe(2);
+    expect(cell.opponent_score).toBe(0);
+    expect(cell.result).toBe('W');
   });
 
-  it('8. emits one game_card (final score) before the narrative stats_narrative sections', async () => {
+  it('8. framed structure: frame + cobalt band + section bars + recap_game_cell (with team_color) before the narrative', async () => {
     const { context, slices } = await resolveGameRecap({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient(FIXTURES), now: NOW });
     const { content_sections } = composeGameRecap(context, slices[0], {});
     const kinds = content_sections.map((s) => s.kind);
-    // header → game_card → POG narrative → coach_highlight narrative → signoff → footer
-    expect(kinds).toEqual(['header', 'game_card', 'stats_narrative', 'stats_narrative', 'signoff', 'footer']);
-    const card = content_sections[1];
-    expect(card.primary).toBe('10U Blue vs Resurrection White 4AB');
-    expect(card.stakeLine).toEqual({ text: '2–0 · Win', tone: 'green' });
-    expect(card.team_color).toBe('#94a3b8');
-    expect(card.secondary).toEqual({ text: 'CYO Spellman', link: null });
+    expect(kinds).toEqual([
+      'frame_open', 'header', 'section_bar', 'recap_game_cell',
+      'section_bar', 'stats_narrative', 'stats_narrative', 'signoff', 'footer', 'frame_close',
+    ]);
+    const header = content_sections[1];
+    expect(header.variant).toBe('cobalt_band');
+    expect(header.record_pill).toBe('WIN · MAY 2');
+    const cell = content_sections.find((s) => s.kind === 'recap_game_cell');
+    expect(cell.matchup).toBe('10U Blue vs Resurrection White 4AB');
+    expect(cell.team_color).toBe('#94a3b8');
+    expect(cell.context).toBe('CYO Spellman');
+    expect(cell.date_label).toBe('Sat · May 2');
   });
 });

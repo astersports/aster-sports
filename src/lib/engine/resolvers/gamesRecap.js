@@ -11,7 +11,7 @@
 // game_recap). Content is invariant across slices (same recap to every
 // recipient); slices only carry the audience.
 
-import { buildGameCard, buildGamesSubject, dayLabel, fetchSlicesForTeams, summarizeGames, trim } from './gamesRecapHelpers';
+import { buildGameCell, buildGamesSubject, dayLabel, fetchSlicesForTeams, summarizeGames, trim } from './gamesRecapHelpers';
 import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 
 
@@ -72,14 +72,24 @@ export async function resolveGamesRecap({ eventIds, pilotOnly }, { supabase, now
   };
 }
 
+// Framed "designed object" treatment (recap-at-bar): the whole body is
+// wrapped in the brand cobalt frame (frame_open/frame_close), opens with
+// a cobalt header band + record pill, then a "The Weekend" section bar
+// over one recap_game_cell PER GAME (each cell carries its own team
+// color), then a "From the Sideline" section bar over the narrative +
+// signoff, then the footer — all inside the frame. Reuses existing rich
+// renderers; no per-kind branching. See docs/GAMES_RECAP_AT_BAR.html.
 export function composeGamesRecap(context, slice, overrides = {}) {
   if (!context || !slice) throw new Error('Missing context or slice');
   const { org, games, summary, subject } = context;
   const sections = [];
-  sections.push({ kind: 'header', eyebrow: `${org.name} · GAMES RECAP`, eyebrow_link: org.branding.eyebrowLink, headline: 'GAMES RECAP', sub_context: summary.label, goldStripe: true });
+  sections.push({ kind: 'frame_open' });
+  sections.push({ kind: 'header', variant: 'cobalt_band', eyebrow: `${org.name} · GAMES RECAP`, eyebrow_link: org.branding.eyebrowLink, headline: 'GAMES RECAP', record_pill: summary.recordPill });
 
-  for (const g of games) sections.push(buildGameCard(g));
+  sections.push({ kind: 'section_bar', label: 'The Weekend' });
+  for (const g of games) sections.push(buildGameCell(g));
 
+  sections.push({ kind: 'section_bar', label: 'From the Sideline' });
   for (const key of ['our_highlights', 'coach_note', 'parent_shoutout']) {
     const v = trim(overrides[key]);
     if (v) sections.push({ kind: 'stats_narrative', body: v });
@@ -90,6 +100,7 @@ export function composeGamesRecap(context, slice, overrides = {}) {
   if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
 
   sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
+  sections.push({ kind: 'frame_close' });
 
   return { subject, content_sections: sections };
 }
