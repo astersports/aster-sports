@@ -59,15 +59,15 @@ describe('Cross-surface invariant — MY TEAMS records (anti-pattern #43)', () =
     expect(zoneSrc).toMatch(/summary=\{recordsByTeam\[/);
   });
 
-  it('d. ParentHomeSignalZone MY TEAMS threads recordsByTeam (via MyTeamsStrip)', () => {
-    // Post-PR-#422 preemptive split: MY TEAMS render moved from
-    // ParentHomePage into ParentHomeSignalZone. ParentHomePage owns
-    // useOrgTeamRecords + threads `recordsByTeam` into the zone;
-    // zone passes it to MyTeamsStrip as `byTeamId={recordsByTeam}`.
+  it('d. ParentHomePage sources team records from useOrgTeamRecords (records peek lives in ParentTail)', () => {
+    // Home redesign Phase 1 (shell contract v2): the parent MY TEAMS strip +
+    // ParentHomeSignalZone were retired. The records peek now lives in
+    // ParentTail (the achievement record badge + "View records"). Records
+    // still source from the canonical useOrgTeamRecords hook — the same
+    // source Coach's MY TEAMS uses — so the anti-pattern #43 invariant (no
+    // per-surface records divergence) holds across the redesign.
     const pageSrc = readFileSync('src/pages/ParentHomePage.jsx', 'utf8');
     expect(pageSrc).toMatch(/useOrgTeamRecords/);
-    expect(pageSrc).toMatch(/recordsByTeam=\{recordsByTeam\}/);
-    const zoneSrc = readFileSync('src/components/parent-home/ParentHomeSignalZone.jsx', 'utf8');
-    expect(zoneSrc).toMatch(/byTeamId=\{recordsByTeam\}/);
+    expect(pageSrc).toMatch(/recordsByTeam/);
   });
 });
