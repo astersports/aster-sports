@@ -1,49 +1,103 @@
 [
   {
+    "kind": "frame_open"
+  },
+  {
     "kind": "header",
+    "variant": "cobalt_band",
     "eyebrow": "8U BOYS · TOURNAMENT RECAP",
     "eyebrow_link": "https://www.legacyhoopers.org/",
     "headline": "TOURNAMENT RECAP",
     "sub_context": "ZG Chase for the Chain NY · Apr 11–12 · Westchester County, NY",
-    "goldStripe": true,
-    "team_color": "#f59e0b"
-  },
-  { "kind": "placement_block", "team_color": "#f59e0b", "final_place": "Finalists", "record": "2-2" },
-  {
-    "kind": "game_log",
     "team_color": "#f59e0b",
-    "days": [
-      {
-        "day_label": "SAT · APR 11",
-        "rows": [
-          { "time": "10:00 AM", "opponent": "Triple Double Blue", "location_name": "Sarah Lawrence College", "location_map_url": "https://maps.app.goo.gl/udiiCd7HiDLmwLSZ6", "result": "W", "our_score": 12, "opponent_score": 11, "player_of_game": "Milo", "coach_highlight": "Amazing experience and effort" },
-          { "time": "12:00 PM", "opponent": "RTG", "location_name": "Sarah Lawrence College", "location_map_url": "https://maps.app.goo.gl/udiiCd7HiDLmwLSZ6", "result": "W", "our_score": 38, "opponent_score": 14 }
-        ]
-      },
-      {
-        "day_label": "SUN · APR 12",
-        "rows": [
-          { "time": "8:00 AM", "opponent": "Rundown NYC", "location_name": "The Leffell School", "location_map_url": "https://maps.app.goo.gl/CGHy3EgcoHUXfmNJ8", "result": "L", "our_score": 14, "opponent_score": 28 },
-          { "time": "4:00 PM", "opponent": "Rundown NYC", "location_name": "The Leffell School", "location_map_url": "https://maps.app.goo.gl/CGHy3EgcoHUXfmNJ8", "result": "L", "our_score": 12, "opponent_score": 45 }
-        ]
-      }
-    ]
+    "record_pill": "2–2 RECORD"
   },
-  { "kind": "standout_moments", "text": "First win of the spring." },
-  { "kind": "coach_reflection", "text": "We were right there in the final." },
+  {
+    "kind": "placement_block",
+    "team_color": "#f59e0b",
+    "final_place": "Finalists",
+    "record": "2-2"
+  },
+  {
+    "kind": "section_bar",
+    "label": "The Run"
+  },
+  {
+    "kind": "recap_game_cell",
+    "team_color": "#f59e0b",
+    "date_label": "Sat · Apr 11",
+    "matchup": "8U Boys vs Triple Double Blue",
+    "our_score": 12,
+    "opponent_score": 11,
+    "result": "W",
+    "context": "Sarah Lawrence College"
+  },
+  {
+    "kind": "recap_game_cell",
+    "team_color": "#f59e0b",
+    "date_label": "Sat · Apr 11",
+    "matchup": "8U Boys vs RTG",
+    "our_score": 38,
+    "opponent_score": 14,
+    "result": "W",
+    "context": "Sarah Lawrence College"
+  },
+  {
+    "kind": "recap_game_cell",
+    "team_color": "#f59e0b",
+    "date_label": "Sun · Apr 12",
+    "matchup": "8U Boys vs Rundown NYC",
+    "our_score": 14,
+    "opponent_score": 28,
+    "result": "L",
+    "context": "The Leffell School"
+  },
+  {
+    "kind": "recap_game_cell",
+    "team_color": "#f59e0b",
+    "date_label": "Sun · Apr 12",
+    "matchup": "8U Boys vs Rundown NYC",
+    "our_score": 12,
+    "opponent_score": 45,
+    "result": "L",
+    "context": "The Leffell School"
+  },
+  {
+    "kind": "section_bar",
+    "label": "From the Sideline"
+  },
+  {
+    "kind": "standout_moments",
+    "text": "First win of the spring."
+  },
+  {
+    "kind": "coach_reflection",
+    "text": "We were right there in the final."
+  },
   {
     "kind": "signoff",
     "prose": "",
     "coaches": [
-      { "display_name": "Frank", "title": "Program Director", "phone": "(917) 991-9830" },
-      { "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" }
+      {
+        "display_name": "Frank",
+        "title": "Program Director",
+        "phone": "(917) 991-9830"
+      },
+      {
+        "display_name": "Coach Kenny",
+        "title": "Coaching Director",
+        "phone": "(516) 644-0208"
+      }
     ]
   },
   {
     "kind": "footer",
     "logoUrl": "https://astersports.app/knight-logo-240.png",
-    "orgName": "Legacy Hoopers",
+    "orgName": "Legacy Hoopers LLC",
     "websiteUrl": "https://www.legacyhoopers.org/",
     "contactEmail": "support@astersports.app"
+  },
+  {
+    "kind": "frame_close"
   }
 ]

@@ -6,7 +6,8 @@
 // by bodyOverrides (not part of state.body).
 //
 // Placement + per-game results auto-render from DB (placement_block +
-// game_log sections in compose). No body editor needed for those.
+// framed recap_game_cell "The Run" + bracket path in compose). No body
+// editor needed for those. standings_paste is the one paste-fed section.
 
 import { fieldGap, inputStyle, labelStyle, textareaStyle } from './_styles';
 
@@ -15,14 +16,20 @@ export const defaultValue = {
   coach_reflection: '',
   coach_note: '',
   parent_shoutout: '',
+  // Full-depth (2026-06-05): FINAL pool standings. Operator pastes from
+  // SortableEngine / TourneyMachine / league site — one team per line.
+  // Empty = section omitted. Mirrors TournamentPrelimBody.standings_paste;
+  // composeTournamentRecap feeds it to buildStandingsSection -> pool_standings.
+  standings_paste: '',
 };
 
 export function validate(v) {
   const hasContent = v?.standout_moments?.trim()
     || v?.coach_reflection?.trim()
     || v?.coach_note?.trim()
-    || v?.parent_shoutout?.trim();
-  if (!hasContent) return ['Add at least one section — coach reflection, standout moments, coach note, or parent shoutout.'];
+    || v?.parent_shoutout?.trim()
+    || v?.standings_paste?.trim();
+  if (!hasContent) return ['Add at least one section — coach reflection, standout moments, coach note, parent shoutout, or final standings.'];
   return [];
 }
 
@@ -46,6 +53,10 @@ export default function TournamentRecapBody({ value, onChange }) {
       <label>
         <span style={labelStyle}>Parent shoutout (optional)</span>
         <input type="text" value={v.parent_shoutout} onChange={(e) => set({ parent_shoutout: e.target.value })} style={inputStyle} placeholder="Thanks to the carpool crew this weekend." />
+      </label>
+      <label>
+        <span style={labelStyle}>Final standings (paste · one team per line)</span>
+        <textarea value={v.standings_paste} onChange={(e) => set({ standings_paste: e.target.value })} style={textareaStyle} placeholder="ASA (MA)&#10;Legacy Hoopers (NY)&#10;Team Spartans Academy (MA)" />
       </label>
     </div>
   );
