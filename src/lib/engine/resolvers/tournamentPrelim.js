@@ -1,11 +1,9 @@
 // Wave 4.2-A-3 — tournament_prelim resolver pair.
-// Wave 5 (cutover wave PR 1, 2026-05-16) — compose() rewritten to
-// align with Frank's hand-composed pattern per
-// docs/archive/CUTOVER_WAVE_GAP_AUDIT.md. Previously emitted an orphaned
-// `team_schedule_table` section (no registered renderer → silent
-// empty render). Now emits cobalt-band header + RSVP callout +
-// venue list + day-grouped game_card rows + bracket section +
-// logistics line + tagline footer + brand footer.
+// Wave 5 (cutover wave PR 1, 2026-05-16) — compose() aligned to Frank's
+// hand-composed pattern. Emits header + RSVP callout + venue list +
+// day-grouped game_card rows + bracket + standings + weather + rules +
+// logistics + tagline + brand footer. Gold-standard showcase sections
+// (standings/weather/rules) added per the §2 reference render.
 //
 // Two-stage contract (locked across wave 4.2-A):
 //   resolveTournamentPrelim({ tournamentId, pilotOnly }, options)
@@ -13,19 +11,20 @@
 //   composeTournamentPrelim(context, slice, overrides)
 //     -> { subject, content_sections }
 //
-// Section builders extracted to tournamentPrelimSections.js to keep
-// this file under the 150-line cap.
+// Section builders live in tournamentPrelimSections.js +
+// tournamentPrelimGoldSections.js to keep this file under the 150-line cap.
 
 import {
   buildBracketSections, buildBrandFooter, buildHeaderSection, buildLogisticsLine,
   buildRsvpCalloutSection, buildScheduleSections, buildTaglineFooter,
   buildVenueListSection, buildVenueNotesSection,
 } from './tournamentPrelimSections';
+import { buildGoldSections } from './tournamentPrelimGoldSections';
 import { buildSubject, buildTeamSlices, fetchParticipantGuardiansByTeam, fetchRecipientGuardians, trim } from './tournamentPrelimHelpers';
+import { fetchTournamentWeather, weatherLocationFrom } from './tournamentWeather';
 import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 
-
-export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { supabase, now = new Date() } = {}) {
+export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { supabase, now = new Date(), fetchWeather = fetchTournamentWeather } = {}) {
   if (!tournamentId) throw new Error('Missing tournamentId');
   if (!supabase) throw new Error('Missing supabase client (pass via options.supabase)');
   void now;
@@ -65,10 +64,19 @@ export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { sup
   const locationIds = [...new Set(events.map((e) => e.location_id).filter(Boolean))];
   const locations = {};
   if (locationIds.length) {
-    const { data: locRows, error: locErr } = await supabase.from('locations').select('id, name, address, google_maps_url, notes, parking_notes, entry_instructions').in('id', locationIds);
+    const { data: locRows, error: locErr } = await supabase.from('locations').select('id, name, address, google_maps_url, notes, parking_notes, entry_instructions, lat, lon').in('id', locationIds);
     if (locErr) throw locErr;
-    for (const l of locRows || []) locations[l.id] = { id: l.id, name: l.name, address: l.address, google_maps_url: l.google_maps_url, notes: l.notes, parking_notes: l.parking_notes, entry_instructions: l.entry_instructions };
+    for (const l of locRows || []) locations[l.id] = { id: l.id, name: l.name, address: l.address, google_maps_url: l.google_maps_url, notes: l.notes, parking_notes: l.parking_notes, entry_instructions: l.entry_instructions, lat: l.lat, lon: l.lon };
   }
+
+  // Weather strip (AP #27: IO injected via fetchWeather). Anchor on the
+  // first event-location with coords; empty array when none -> compose
+  // omits the section (NEVER fabricates).
+  const wxLoc = weatherLocationFrom(events.slice().sort((a, b) => new Date(a.start_at) - new Date(b.start_at)), locations);
+  const weather = wxLoc
+    ? await fetchWeather({ lat: wxLoc.lat, lon: wxLoc.lon, startDate: tournament.start_date, endDate: tournament.end_date })
+    : [];
+  const weather_city = wxLoc?.city || null;
 
   const coachesRes = orgId ? await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null) : { data: [], error: null };
   if (coachesRes.error) throw coachesRes.error;
@@ -89,6 +97,7 @@ export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { sup
         coaches: coaches || [],
       },
       tournament, tournament_teams, events_by_team, locations,
+      weather, weather_city,
     },
     slices,
   };
@@ -116,6 +125,10 @@ export function composeTournamentPrelim(context, slice, overrides = {}) {
   if (sched.schedule?.length) sections.push(...sched.schedule);
   else sections.push({ kind: 'day_header', label: 'Schedule TBD', venue_suffix: null });
   if (sched.brackets?.length) sections.push(...buildBracketSections(sched.brackets, locations));
+
+  // Gold-standard showcase sections, reference order standings ->
+  // weather -> rules (after bracket). Each omitted when data absent (AP #27).
+  sections.push(...buildGoldSections(context, slice, overrides));
 
   // Wave 5 PR 1 — hotel_block preserved from prior resolver for
   // tournaments with hotel info (override OR tournament.hotel_block_info).
