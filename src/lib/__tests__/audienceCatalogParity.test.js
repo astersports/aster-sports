@@ -10,7 +10,10 @@ import { join } from 'node:path';
 //
 //   1. Production CHECK constraint  — encoded as CANONICAL below
 //   2. KIND_METADATA.defaultAudienceType in src/lib/briefings/kindMetadata.js
-//   3. AudiencePicker MODES + NON_MODE_LABELS in src/components/briefings/AudiencePicker.jsx
+//   3. MODES + NON_MODE_LABELS in src/lib/briefings/audienceModes.js
+//      (moved out of AudiencePicker.jsx in the audience one-control fix —
+//      the picker grid was collapsed into AudienceControl + AudienceSheet;
+//      the canonical mode/label set now lives in the lib module)
 //   4. The shared AUDIENCE_LABEL map in src/lib/briefings/audienceLabels.js
 //      (consolidated out of StepAnchorAudience in PR #703; StepAnchorAudience
 //      + StepSendConfirm now import it)
@@ -21,7 +24,7 @@ import { join } from 'node:path';
 // show coach_self / family_specific as options).
 
 const KIND_METADATA_FILE = join(process.cwd(), 'src', 'lib', 'briefings', 'kindMetadata.js');
-const AUDIENCE_PICKER_FILE = join(process.cwd(), 'src', 'components', 'briefings', 'AudiencePicker.jsx');
+const AUDIENCE_PICKER_FILE = join(process.cwd(), 'src', 'lib', 'briefings', 'audienceModes.js');
 // The AUDIENCE_LABEL map was consolidated out of StepAnchorAudience into the
 // shared src/lib/briefings/audienceLabels.js (PR #703, AP #63 — it was also
 // duplicated in StepSendConfirm + leaking raw enums in HistoryView/chips).
