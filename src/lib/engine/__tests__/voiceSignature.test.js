@@ -30,20 +30,29 @@ describe('buildVoiceSignature — natural-list voice line', () => {
 });
 
 // Stub supabase: a chained query builder whose terminal awaits resolve to a
-// preset { data, error } keyed by table. fetchSignatureCoaches issues two
-// queries: staff_profiles (Program Director) + team_staff (team coaches).
-function makeSupabase({ programDirectors = [], teamStaff = [], errorOn = null }) {
+// preset { data, error } keyed by table. fetchSignatureCoaches issues three
+// queries: staff_profiles (Program Director, by title) + team_staff (team
+// coach rows) + staff_profiles (coach profiles, by user_id — JS join, since
+// team_staff has no FK to staff_profiles). The mock returns `programDirectors`
+// for the title query and `staffProfiles` for the by-user_id query.
+function makeSupabase({ programDirectors = [], staffProfiles = [], teamStaff = [], errorOn = null }) {
   return {
     from(table) {
-      const result = errorOn === table
-        ? { data: null, error: new Error(`boom:${table}`) }
-        : { data: table === 'staff_profiles' ? programDirectors : teamStaff, error: null };
+      let byUserId = false;
       const builder = {
         select() { return builder; },
         eq() { return builder; },
-        in() { return builder; },
+        in(col) { if (col === 'user_id') byUserId = true; return builder; },
         not() { return builder; },
-        then(resolve) { return Promise.resolve(result).then(resolve); },
+        then(resolve) {
+          if (errorOn === table) {
+            return Promise.resolve({ data: null, error: new Error(`boom:${table}`) }).then(resolve);
+          }
+          let data = [];
+          if (table === 'team_staff') data = teamStaff;
+          else if (table === 'staff_profiles') data = byUserId ? staffProfiles : programDirectors;
+          return Promise.resolve({ data, error: null }).then(resolve);
+        },
       };
       return builder;
     },
@@ -59,8 +68,12 @@ describe('fetchSignatureCoaches — data-driven team-staff signature', () => {
     const supabase = makeSupabase({
       programDirectors: [FRANK],
       teamStaff: [
-        { user_id: 'u-kenny', role: 'head_coach', team_id: 't-9u', staff_profiles: { user_id: 'u-kenny', display_name: 'Coach Kenny', title: 'Coaching Director', phone: '516' } },
-        { user_id: 'u-darien', role: 'assistant_coach', team_id: 't-9u', staff_profiles: { user_id: 'u-darien', display_name: 'Coach Darien', title: 'Assistant Coach', phone: '914' } },
+        { user_id: 'u-kenny', role: 'head_coach', team_id: 't-9u' },
+        { user_id: 'u-darien', role: 'assistant_coach', team_id: 't-9u' },
+      ],
+      staffProfiles: [
+        { user_id: 'u-kenny', display_name: 'Coach Kenny', title: 'Coaching Director', phone: '516' },
+        { user_id: 'u-darien', display_name: 'Coach Darien', title: 'Assistant Coach', phone: '914' },
       ],
     });
     const coaches = await fetchSignatureCoaches(supabase, orgId, 't-9u');
@@ -72,7 +85,10 @@ describe('fetchSignatureCoaches — data-driven team-staff signature', () => {
     const supabase = makeSupabase({
       programDirectors: [FRANK],
       teamStaff: [
-        { user_id: 'u-kenny', role: 'head_coach', team_id: 't-10u', staff_profiles: { user_id: 'u-kenny', display_name: 'Coach Kenny', title: 'Coaching Director', phone: '516' } },
+        { user_id: 'u-kenny', role: 'head_coach', team_id: 't-10u' },
+      ],
+      staffProfiles: [
+        { user_id: 'u-kenny', display_name: 'Coach Kenny', title: 'Coaching Director', phone: '516' },
       ],
     });
     const coaches = await fetchSignatureCoaches(supabase, orgId, 't-10u');
@@ -86,9 +102,13 @@ describe('fetchSignatureCoaches — data-driven team-staff signature', () => {
     const supabase = makeSupabase({
       programDirectors: [FRANK],
       teamStaff: [
-        { user_id: 'u-kenny', role: 'head_coach', team_id: 't-9u', staff_profiles: { user_id: 'u-kenny', display_name: 'Coach Kenny', title: 'Coaching Director', phone: '516' } },
-        { user_id: 'u-kenny', role: 'head_coach', team_id: 't-10u', staff_profiles: { user_id: 'u-kenny', display_name: 'Coach Kenny', title: 'Coaching Director', phone: '516' } },
-        { user_id: 'u-darien', role: 'assistant_coach', team_id: 't-9u', staff_profiles: { user_id: 'u-darien', display_name: 'Coach Darien', title: 'Assistant Coach', phone: '914' } },
+        { user_id: 'u-kenny', role: 'head_coach', team_id: 't-9u' },
+        { user_id: 'u-kenny', role: 'head_coach', team_id: 't-10u' },
+        { user_id: 'u-darien', role: 'assistant_coach', team_id: 't-9u' },
+      ],
+      staffProfiles: [
+        { user_id: 'u-kenny', display_name: 'Coach Kenny', title: 'Coaching Director', phone: '516' },
+        { user_id: 'u-darien', display_name: 'Coach Darien', title: 'Assistant Coach', phone: '914' },
       ],
     });
     const coaches = await fetchSignatureCoaches(supabase, orgId, ['t-9u', 't-10u']);
@@ -99,8 +119,12 @@ describe('fetchSignatureCoaches — data-driven team-staff signature', () => {
     const supabase = makeSupabase({
       programDirectors: [FRANK],
       teamStaff: [
-        { user_id: 'u-darien', role: 'assistant_coach', team_id: 't-9u', staff_profiles: { user_id: 'u-darien', display_name: 'Coach Darien', title: 'Assistant Coach', phone: '914' } },
-        { user_id: 'u-kenny', role: 'head_coach', team_id: 't-9u', staff_profiles: { user_id: 'u-kenny', display_name: 'Coach Kenny', title: 'Coaching Director', phone: '516' } },
+        { user_id: 'u-darien', role: 'assistant_coach', team_id: 't-9u' },
+        { user_id: 'u-kenny', role: 'head_coach', team_id: 't-9u' },
+      ],
+      staffProfiles: [
+        { user_id: 'u-darien', display_name: 'Coach Darien', title: 'Assistant Coach', phone: '914' },
+        { user_id: 'u-kenny', display_name: 'Coach Kenny', title: 'Coaching Director', phone: '516' },
       ],
     });
     const coaches = await fetchSignatureCoaches(supabase, orgId, 't-9u');

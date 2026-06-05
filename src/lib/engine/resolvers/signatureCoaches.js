@@ -21,6 +21,10 @@
 // AP #37 exception: team_staff is FK-scoped via team_id → teams.org_id (no
 // org_id column), so no .eq('org_id') on that chain; staff_profiles carries
 // org_id and is filtered by it.
+// team_staff has NO FK to staff_profiles (team_staff.user_id → auth.users),
+// so a PostgREST embed throws "Could not find a relationship between
+// 'team_staff' and 'staff_profiles' in the schema cache". Join in JS by
+// user_id — mirrors familyGuideCoaches.fetchTeamCoaches.
 
 const PROGRAM_DIRECTOR_TITLE = 'Program Director';
 
@@ -55,22 +59,33 @@ export async function fetchSignatureCoaches(supabase, orgId, teamIds) {
   if (ids.length) {
     const { data: tsData, error: tsErr } = await supabase
       .from('team_staff')
-      .select('user_id, role, team_id, staff_profiles!inner ( user_id, display_name, title, phone )')
+      .select('user_id, role, team_id')
       .in('team_id', ids);
     if (tsErr) throw tsErr;
+    const staffIds = [...new Set((tsData || []).map((r) => r.user_id).filter(Boolean))];
+    let profByUser = new Map();
+    if (staffIds.length) {
+      const { data: spData, error: spErr } = await supabase
+        .from('staff_profiles')
+        .select('user_id, display_name, title, phone')
+        .eq('org_id', orgId)
+        .in('user_id', staffIds);
+      if (spErr) throw spErr;
+      profByUser = new Map((spData || []).map((p) => [p.user_id, p]));
+    }
     teamRows = (tsData || [])
-      .filter((r) => r.staff_profiles?.display_name)
-      .slice()
+      .map((r) => ({ ...r, profile: profByUser.get(r.user_id) }))
+      .filter((r) => r.profile?.display_name)
       .sort((a, b) => {
         const rd = roleRank(a.role) - roleRank(b.role);
         if (rd !== 0) return rd;
-        return (a.staff_profiles?.display_name || '').localeCompare(b.staff_profiles?.display_name || '');
+        return (a.profile.display_name || '').localeCompare(b.profile.display_name || '');
       })
       .map((r) => ({
         user_id: r.user_id,
-        display_name: r.staff_profiles.display_name,
-        title: r.staff_profiles.title || '',
-        phone: r.staff_profiles.phone || '',
+        display_name: r.profile.display_name,
+        title: r.profile.title || '',
+        phone: r.profile.phone || '',
       }));
   }
 
