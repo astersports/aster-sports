@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import { useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -35,6 +35,7 @@ export default function EventDetailPage() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { orgId, role, myChildren } = useAuth();
   const { showToast } = useToast();
   const { event, loading: eventLoading, refetch, patchEvent } = useEventDetail(id, location.state?.event);
@@ -100,7 +101,7 @@ export default function EventDetailPage() {
   return (
     <div style={{ backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} onCancel={() => setEventStatus('cancelled')} onReinstate={() => setEventStatus('scheduled')} />
-      <EventDetailHero event={event} isStaff={isStaff} isPast={isPast} rsvps={rsvps} roster={roster} onEnterScore={() => setShowScoreSheet(true)} onLockRoster={() => document.querySelector('[data-section="lock-roster"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} onNotify={() => window.location.assign(`/admin/briefings/compose?anchor=event&id=${event.id}`)} onRsvpChange={refetchRsvps} />
+      <EventDetailHero event={event} isStaff={isStaff} isPast={isPast} rsvps={rsvps} roster={roster} onEnterScore={() => setShowScoreSheet(true)} onLockRoster={() => document.querySelector('[data-section="lock-roster"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} onNotify={() => navigate(`/admin/briefings/compose?anchor=event&id=${event.id}`)} onRsvpChange={refetchRsvps} />
       {isStaff && <GameDayMode event={event} isStaff={isStaff} isGameType={isGameType} />}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
       {isStaff && !isPast && <div data-section="lock-roster"><EventRosterLockSection event={event} isStaff={isStaff} rsvps={rsvps} roster={roster} onChange={refetchAll} /></div>}

@@ -55,7 +55,14 @@ export default function RadarPage() {
 
   let body;
   if (loading && isEmpty) {
-    body = <>{[0, 1, 2].map((i) => <div key={i} style={skel} aria-hidden="true" />)}</>;
+    // COMPOSE-FRONT a11y: announce the loading state for screen readers and
+    // expose aria-busy on the region (skeletons themselves stay aria-hidden).
+    body = (
+      <div aria-busy="true" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <span className="sr-only" role="status" aria-live="polite">Loading briefings…</span>
+        {[0, 1, 2].map((i) => <div key={i} style={skel} aria-hidden="true" />)}
+      </div>
+    );
   } else if (error && isEmpty) {
     body = (
       <div style={errBox} role="alert">

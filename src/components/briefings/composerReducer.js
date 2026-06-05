@@ -7,8 +7,20 @@
 // drafts (e.g. anchor_id NULL surfaces inline on Step 2).
 
 import { STEPS } from './composerSteps';
+import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 
 export const ANCHOR_KINDS_REQUIRING_ID = new Set(['event', 'tournament', 'team']);
+
+// COMPOSE-FRONT P2: stale-anchor-on-kind-switch reconcile. Mirrors
+// reconcileAudienceForKind. If the carried anchor_kind isn't valid for the
+// new kind, fall back to the kind's default; org/null defaults drop the id so
+// a stale event/tournament/team anchor never leaks into the draft.
+export function reconcileAnchorForKind(kind, candidateAnchorKind, candidateAnchorId) {
+  const meta = KIND_METADATA[kind] || {};
+  const anchorKind = (meta.anchorKinds || []).includes(candidateAnchorKind) ? candidateAnchorKind : (meta.defaultAnchorKind || null);
+  const anchorId = ANCHOR_KINDS_REQUIRING_ID.has(anchorKind) ? (candidateAnchorId || null) : null;
+  return { anchor_kind: anchorKind, anchor_id: anchorId };
+}
 
 export function step2Valid(state) {
   if (!state.anchor_kind || !state.audience_type) return false;
@@ -68,19 +80,24 @@ export function hydrateTargetStep(payload = {}) {
 
 export function composerReducer(state, action) {
   switch (action.type) {
-    case 'SET_KIND':
+    case 'SET_KIND': {
       // audience_filter: honored when the action carries the key at all
       // (entry-point #2 reconciliation passes null to DROP a now-invalid
       // team pre-fill). Absent key → preserve existing filter via spread.
+      // COMPOSE-FRONT P2: reconcile the carried anchor against the new kind
+      // so a stale event/tournament anchor_id doesn't persist when switching
+      // to an org/null-anchored kind.
+      const anchor = reconcileAnchorForKind(action.kind, action.anchor_kind || state.anchor_kind, action.anchor_id || state.anchor_id);
       return {
         ...state,
         kind: action.kind,
         body: action.defaultBody || {},
-        anchor_kind: action.anchor_kind || state.anchor_kind,
-        anchor_id: action.anchor_id || state.anchor_id,
+        anchor_kind: anchor.anchor_kind,
+        anchor_id: anchor.anchor_id,
         audience_type: action.audience_type || state.audience_type,
         audience_filter: 'audience_filter' in action ? (action.audience_filter ?? null) : state.audience_filter,
       };
+    }
     case 'SET_ANCHOR':
       return { ...state, anchor_kind: action.anchor_kind, anchor_id: action.anchor_id };
     case 'CLEAR_ANCHOR':

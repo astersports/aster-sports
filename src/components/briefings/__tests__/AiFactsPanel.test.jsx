@@ -35,14 +35,15 @@ describe('AiFactsPanel', () => {
     expect(screen.getByText('38 – 31')).toBeInTheDocument();
   });
 
-  it('renders a MISSING fact as an amber row, value "not on file" (never invented)', () => {
+  it('renders a MISSING fact as an amber row, value "not available" (never invented)', () => {
     render(<AiFactsPanel facts={facts} missing={['opponent record']} />);
     fireEvent.click(screen.getByRole('button', { name: /facts used · 2/i }));
     const miss = screen.getByText(/Missing · opponent record/);
     expect(miss).toBeInTheDocument();
     // amber tone applied via the warning token
     expect(miss).toHaveStyle({ color: 'var(--as-warning)' });
-    expect(screen.getByText('not on file')).toBeInTheDocument();
+    // COMPOSE-FRONT P3: softer "not available" (don't presume why a fact is missing)
+    expect(screen.getByText('not available')).toBeInTheDocument();
   });
 
   it('count reflects only facts, not missing rows', () => {

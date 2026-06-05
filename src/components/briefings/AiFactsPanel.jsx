@@ -41,7 +41,7 @@ export default function AiFactsPanel({ facts = [], missing = [] }) {
           {missing.map((w, i) => (
             <div key={`m${i}`} role="listitem" style={{ ...row(true), borderTop: (facts.length === 0 && i === 0) ? 'none' : row(true).borderTop }}>
               <span style={fl(true)}>Missing · {String(w)}</span>
-              <span style={fv(true)}>not on file</span>
+              <span style={fv(true)}>not available</span>
             </div>
           ))}
         </div>

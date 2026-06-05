@@ -71,8 +71,8 @@ export default function AiDraftAnchored({ state, dispatch }) {
         </button>
       </div>
       <p style={note}>Writes the coach narrative in your voice. The score and stats stay in the structured block; edit the result below.</p>
-      {resolveErr && <p style={errBox} aria-live="polite">{resolveErr}</p>}
-      {ai.error && <p style={errBox} aria-live="polite">{ai.error.message || "Couldn't draft that. Try again in a moment."}</p>}
+      {resolveErr && <p style={errBox} role="alert" aria-live="assertive">{resolveErr}</p>}
+      {ai.error && <p style={errBox} role="alert" aria-live="assertive">{ai.error.message || "Couldn't draft that. Try again in a moment."}</p>}
       {ai.cardSummary && <p style={summary}>{ai.cardSummary}</p>}
       {hasDrafted && <AiFactsPanel facts={factPairs} missing={ai.warnings || []} />}
     </div>

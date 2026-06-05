@@ -34,7 +34,7 @@ const rowValue = { fontSize: 14, color: 'var(--as-text-primary)', lineHeight: 1.
 const banner = { display: 'flex', alignItems: 'flex-start', gap: 10, padding: 12, borderRadius: 10, backgroundColor: 'var(--as-warning-soft)', borderLeft: '3px solid var(--as-warning)', fontSize: 13, color: 'var(--as-text-primary)', lineHeight: 1.4 };
 const sendBtn = (disabled) => ({ width: '100%', minHeight: 48, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 });
 
-export default function StepSendConfirm({ state, audience, onSend, sending = false, pilotModeEnabled = false }) {
+export default function StepSendConfirm({ state, audience, onSend, sending = false, pilotModeEnabled = false, audienceResolving = false }) {
   const scheduleValue = state.scheduled_for ? `Scheduled for ${fmtSchedule(state.scheduled_for)}` : 'Send now';
   const scheduleInvalid = useMemo(() => {
     if (state.send_mode !== 'scheduled') return false;
@@ -46,7 +46,12 @@ export default function StepSendConfirm({ state, audience, onSend, sending = fal
   const a = audience || { filtered: null, mode: 'standard' };
   const pilotZeroBlock = a.mode === 'pilot_zero' && !state.test_only;
   const recipientCountBlock = a.filtered === 0 && !state.test_only;
-  const disabled = sending || scheduleInvalid || pilotZeroBlock || recipientCountBlock;
+  // COMPOSE-FRONT P1 send-gate hole: an UNKNOWN audience count (null) must
+  // never read as "0 is fine" and send silently. Block until a count resolves
+  // (or while it's still resolving) for a non-test send. test_only sends BCC
+  // admin@ regardless of audience, so they stay enabled.
+  const audienceUnknown = a.filtered == null && !state.test_only;
+  const disabled = sending || scheduleInvalid || pilotZeroBlock || recipientCountBlock || audienceUnknown;
 
   return (
     <div style={wrap}>
@@ -68,6 +73,11 @@ export default function StepSendConfirm({ state, audience, onSend, sending = fal
           <ShieldAlert size={16} strokeWidth={1.75} color="var(--as-warning)" style={{ flexShrink: 0, marginTop: 1 }} />
           <span>Pilot mode is on. Only flagged pilot families (or the admin BCC) will receive this send.</span>
         </div>
+      )}
+      {audienceUnknown && (
+        <p role="status" data-testid="audience-unknown-note" style={{ margin: 0, fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.4 }}>
+          {audienceResolving ? 'Confirming who will receive this…' : "Couldn't confirm recipients — check the audience above before sending."}
+        </p>
       )}
       <button type="button" onClick={onSend} disabled={disabled} className="as-press" style={sendBtn(disabled)} data-testid="send-button">
         {sending

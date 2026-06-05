@@ -63,4 +63,29 @@ describe('StepSendConfirm', () => {
     expect(btn).toBeDisabled();
     expect(btn.textContent).toMatch(/Sending/);
   });
+
+  // COMPOSE-FRONT P1 send-gate hole: a null/unknown audience count must block
+  // a real send (not read as "0 is fine") and show honest copy.
+  it('f. blocks send when audience.filtered is null (unknown audience)', () => {
+    setup({ audience: { filtered: null, mode: 'standard' } });
+    expect(screen.getByTestId('send-button')).toBeDisabled();
+    expect(screen.getByTestId('audience-unknown-note').textContent).toMatch(/Couldn't confirm recipients/);
+  });
+
+  it('g. unknown-audience note reads "Confirming…" while resolving', () => {
+    setup({ audience: { filtered: null, mode: 'standard' }, audienceResolving: true });
+    expect(screen.getByTestId('send-button')).toBeDisabled();
+    expect(screen.getByTestId('audience-unknown-note').textContent).toMatch(/Confirming who will receive/);
+  });
+
+  it('h. null audience does NOT block a test_only send (admin BCC always reachable)', () => {
+    setup({ state: { ...BASE_STATE, test_only: true }, audience: { filtered: null, mode: 'standard' } });
+    expect(screen.getByTestId('send-button')).not.toBeDisabled();
+    expect(screen.queryByTestId('audience-unknown-note')).not.toBeInTheDocument();
+  });
+
+  it('i. resolved count (non-null) enables send', () => {
+    setup({ audience: { filtered: 12, total: 12, mode: 'standard' } });
+    expect(screen.getByTestId('send-button')).not.toBeDisabled();
+  });
 });

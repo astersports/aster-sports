@@ -31,4 +31,21 @@ describe('countByAudienceType', () => {
   it('5d-b-1: team mode — team_ids[] wins over team_id when both present', () => {
     expect(countByAudienceType({ recipients: FULL_RECIPIENTS, audienceType: 'team', audienceFilter: { team_ids: [team10UBlack], team_id: team10UBlue } })).toBe(1);
   });
+
+  // COMPOSE-FRONT P1: previously returned null forever → "Computing audience…"
+  // never cleared and the send gate couldn't fire. coach_self / family_specific
+  // resolve to a single recipient/family synchronously.
+  it('coach_self resolves to 1 (the composing coach)', () => {
+    expect(countByAudienceType({ recipients: FULL_RECIPIENTS, audienceType: 'coach_self' })).toBe(1);
+  });
+  it('family_specific resolves to 1 family', () => {
+    expect(countByAudienceType({ recipients: FULL_RECIPIENTS, audienceType: 'family_specific' })).toBe(1);
+  });
+
+  // The 4 anchor/player types remain null here — they need the async
+  // useResolvedAudienceCount path; null is the "defer to resolver" signal.
+  it.each(['event_attendees', 'tournament_attendees', 'multi_event_attendees', 'player_specific'])(
+    '%s returns null (deferred to async resolver)', (type) => {
+      expect(countByAudienceType({ recipients: FULL_RECIPIENTS, audienceType: type })).toBe(null);
+    });
 });

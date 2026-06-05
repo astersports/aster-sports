@@ -20,10 +20,22 @@
 const TEAM_AUDIENCE_TYPES = new Set(['team']);
 const MULTI_TEAM_AUDIENCE_TYPES = new Set(['multi_team']);
 
+// COMPOSE-FRONT P1: types whose count needs an async anchor/player lookup
+// (resolveAudience in recipientFilter.js). countByAudienceType returns null
+// for these; useResolvedAudienceCount supplies the number and computeAudience
+// merges it via the resolvedCount override.
+export const ASYNC_RESOLVED_AUDIENCE_TYPES = new Set([
+  'event_attendees', 'tournament_attendees', 'multi_event_attendees', 'player_specific',
+]);
+
 export function countByAudienceType({ recipients, audienceType, audienceFilter, anchorId }) {
   if (!recipients) return null;
   if (!audienceType) return null;
   if (audienceType === 'org_all') return recipients.length;
+  // COMPOSE-FRONT P1: coach_self = the single composing coach; family_specific
+  // = one family (family_guide aggregates per parent_user_id). Both resolve to
+  // 1, so the count line + send gate stop reading "Computing audience…" forever.
+  if (audienceType === 'coach_self' || audienceType === 'family_specific') return 1;
   if (TEAM_AUDIENCE_TYPES.has(audienceType)) {
     // 5d-b-1: prefer audience_filter.team_ids[] (new shape from
     // TeamGroupedPicker). Fall back to legacy audience_filter.team_id
@@ -52,6 +64,11 @@ export function computeAudience({
   audienceFilter,
   anchorId,
   pilotModeOn,
+  // COMPOSE-FRONT P1: async-resolved recipient count for the anchor/player
+  // audience types (see ASYNC_RESOLVED_AUDIENCE_TYPES). When provided and
+  // countByAudienceType returns null, this number stands in for `filtered`
+  // so the count line + send gate stop treating an unknown audience as 0.
+  resolvedCount = null,
 }) {
   // Wave 4.3-I: pilot_test_recipient_email override.
   // Wave 4.3-L: detection generalized to N synthetic rows. 4.3-J added
@@ -74,8 +91,15 @@ export function computeAudience({
       testRecipientEmail: recipientsFiltered[0].email || null,
     };
   }
-  const filtered = countByAudienceType({ recipients: recipientsFiltered, audienceType, audienceFilter, anchorId });
-  const total = countByAudienceType({ recipients: recipientsTotal, audienceType, audienceFilter, anchorId });
+  const rawFiltered = countByAudienceType({ recipients: recipientsFiltered, audienceType, audienceFilter, anchorId });
+  const rawTotal = countByAudienceType({ recipients: recipientsTotal, audienceType, audienceFilter, anchorId });
+  // Merge the async-resolved count only when countByAudienceType can't
+  // compute it (null). Never overrides a synchronously-known count. Anchor/
+  // player audiences aren't pilot-scoped, so resolvedCount feeds both
+  // filtered and total to keep the standard-mode comparison consistent.
+  const useResolved = rawFiltered == null && typeof resolvedCount === 'number';
+  const filtered = useResolved ? resolvedCount : rawFiltered;
+  const total = rawTotal == null && useResolved ? resolvedCount : rawTotal;
   let mode = 'standard';
   if (pilotModeOn && total != null && filtered != null) {
     if (filtered === 0 && total > 0) mode = 'pilot_zero';
