@@ -121,6 +121,64 @@ describe('tournament_prelim gold — standings (paste-fed)', () => {
   });
 });
 
+// AP #43 cross-surface invariant: buildStandingsSection is shared by
+// BOTH tournament_prelim (buildGoldSections) AND tournament_recap
+// (tournamentRecapHelpers), so the acronym/initials match must hold
+// for any caller. These exercise the builder directly (the one source).
+describe('tournament_prelim gold — standings home-row acronym match', () => {
+  it('highlights an abbreviated row ("LH (NY)") for "Legacy Hoopers LLC"', () => {
+    const sec = buildStandingsSection(
+      { standings_paste: 'ASA (MA)\nLH (NY)\nTeam Spartans Academy (MA)' },
+      'X', ['Legacy Hoopers LLC'],
+    );
+    const home = sec.rows.filter((r) => r.is_home);
+    expect(home).toHaveLength(1);
+    expect(home[0].text).toBe('LH (NY)');
+  });
+
+  it('still highlights the full-name row (existing substring match preserved)', () => {
+    const sec = buildStandingsSection(
+      { standings_paste: 'ASA (MA)\nLegacy Hoopers (NY)\nSpartans (MA)' },
+      'X', ['Legacy Hoopers LLC'],
+    );
+    const home = sec.rows.filter((r) => r.is_home);
+    expect(home).toHaveLength(1);
+    expect(home[0].text).toBe('Legacy Hoopers (NY)');
+  });
+
+  it('does NOT highlight a non-matching row, and does not match initials inside a word', () => {
+    // "FLASH" contains the letters l-h but the \bLH\b token guard must
+    // not fire; no row should highlight.
+    const sec = buildStandingsSection(
+      { standings_paste: 'ASA (MA)\nFLASH Elite (NJ)\nAlhambra Hoops (CA)' },
+      'X', ['Legacy Hoopers LLC'],
+    );
+    expect(sec.rows.filter((r) => r.is_home)).toHaveLength(0);
+  });
+
+  it('matches the team_name acronym too (second home-name signal)', () => {
+    // homeNames is [org.name, slice.team_name] at the callsites; a row
+    // abbreviating the team name highlights.
+    const sec = buildStandingsSection(
+      { standings_paste: 'ASA (MA)\nWB (NY)' },
+      'X', ['Some Org', 'Westchester Ballers'],
+    );
+    const home = sec.rows.filter((r) => r.is_home);
+    expect(home).toHaveLength(1);
+    expect(home[0].text).toBe('WB (NY)');
+  });
+
+  it('single-word home name yields no acronym (no 1-letter false positives)', () => {
+    // "Spartans" -> no 2+ word acronym; a stray "S ..." row must not
+    // highlight off a single initial.
+    const sec = buildStandingsSection(
+      { standings_paste: 'S Team (MA)\nOther (NY)' },
+      'X', ['Spartans'],
+    );
+    expect(sec.rows.filter((r) => r.is_home)).toHaveLength(0);
+  });
+});
+
 describe('tournament_prelim gold — rules (paste-fed)', () => {
   it('splits lines; bolds the "Label:" lead; plain line has no lead', () => {
     const sec = buildRulesSection({ rules_paste: 'Format: two halves.\nArrive 20 minutes early.' }, 'Zero Gravity Rules');

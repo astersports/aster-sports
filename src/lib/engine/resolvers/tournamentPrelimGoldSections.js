@@ -16,12 +16,37 @@
 
 import { trim } from './tournamentPrelimHelpers';
 
+// Words skipped when building an acronym (legal suffixes + trivia that
+// shouldn't contribute an initial). "Legacy Hoopers LLC" -> "LH".
+const ACRONYM_SKIP = new Set(['llc', 'inc', 'co', 'ltd', 'the', 'of', 'and', '&']);
+
+// Build the acronym/initials from an org/team name's significant words:
+// "Legacy Hoopers" -> "LH". Returns null when fewer than 2 significant
+// words contribute (a single-word name has no meaningful acronym and a
+// 1-letter token is far too false-positive-prone to match on).
+function acronymOf(name) {
+  const initials = trim(name)
+    .toLowerCase()
+    .replace(/[.,]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w && !ACRONYM_SKIP.has(w))
+    .map((w) => w[0]);
+  return initials.length >= 2 ? initials.join('') : null;
+}
+
 // STANDINGS (paste-fed). Each non-empty pasted line becomes one
 // standings row. The home team's row is highlighted (.standrow.me in
 // the mockup) by matching the org/team name case-insensitively against
 // the line text. Parsing is intentionally line-per-row (heuristic v1):
 // pasted formats from SortableEngine / TourneyMachine / league sites
 // vary wildly, so the robust contract is "one line in = one row out".
+//
+// Two match signals (either highlights the row):
+//   (1) substring — the (suffix-stripped) full name appears in the line
+//       ("Legacy Hoopers (NY)" contains "legacy hoopers").
+//   (2) acronym — the name's initials appear as a standalone token
+//       ("LH (NY)" -> "LH" for "Legacy Hoopers"). Word-boundary anchored
+//       (\bLH\b) so "LH" doesn't match inside "FLASH" or "ALHambra".
 export function buildStandingsSection(overrides, label, homeNames) {
   const raw = trim(overrides?.standings_paste);
   if (!raw) return null;
@@ -30,13 +55,20 @@ export function buildStandingsSection(overrides, label, homeNames) {
   const matchers = (homeNames || [])
     .map((n) => trim(n).toLowerCase().replace(/[\s,]+(llc|inc|inc\.|co|co\.|ltd)\.?$/i, '').trim())
     .filter((n) => n.length >= 3);
+  // Acronyms built from the significant words of each home name, matched
+  // as whole tokens to avoid substring false positives.
+  const acronyms = (homeNames || [])
+    .map((n) => acronymOf(n))
+    .filter(Boolean)
+    .map((a) => new RegExp(`\\b${a}\\b`, 'i'));
   const rows = raw.split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
-    .map((text) => ({
-      text,
-      is_home: matchers.some((m) => text.toLowerCase().includes(m)),
-    }));
+    .map((text) => {
+      const lc = text.toLowerCase();
+      const is_home = matchers.some((m) => lc.includes(m)) || acronyms.some((re) => re.test(text));
+      return { text, is_home };
+    });
   if (!rows.length) return null;
   return { kind: 'pool_standings', bar_label: trim(label) || 'Standings', rows };
 }
