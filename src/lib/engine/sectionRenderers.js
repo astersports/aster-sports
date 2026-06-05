@@ -48,6 +48,7 @@ import coachReflection from './renderers/coachReflection';
 import vipHeader from './renderers/vipHeader';
 import kidColorPill from './renderers/kidColorPill';
 import quickLinkNav from './renderers/quickLinkNav';
+import coachesBlock from './renderers/coachesBlock';
 import { renderRecapFrameClose, renderRecapFrameOpen } from './renderers/recapFrame';
 import sectionBar from './renderers/sectionBar';
 import recapGameCell from './renderers/recapGameCell';
@@ -90,6 +91,7 @@ export const SECTION_RENDERERS = {
   vip_header: vipHeader,
   kid_color_pill: kidColorPill,
   quick_link_nav: quickLinkNav,
+  coaches_block: coachesBlock,
   frame_open: renderRecapFrameOpen,
   frame_close: renderRecapFrameClose,
   section_bar: sectionBar,

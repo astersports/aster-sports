@@ -100,6 +100,22 @@ export function buildQuickLinkNav(kidsWithEvents) {
   };
 }
 
+// "Your coaches" reference block — per-team coach contact groups. teamCoaches
+// is already deduped + sorted (oldest-to-youngest) by buildTeamCoaches. Each
+// group carries team_name + coaches [{ display_name, title, phone }]. Returns
+// null when no team has a coach (composer skips — no fabrication, AP #27).
+export function buildCoachesBlockSection(teamCoaches) {
+  const teams = (teamCoaches || []).filter((g) => (g.coaches || []).length);
+  if (!teams.length) return null;
+  return {
+    kind: 'coaches_block',
+    teams: teams.map((g) => ({
+      team_name: g.team_name || 'Team',
+      coaches: g.coaches.map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' })),
+    })),
+  };
+}
+
 export function buildSignoffSection(overrides, coaches) {
   const prose = trim(overrides?.signoff_message);
   const validCoaches = (coaches || []).filter((c) => c.display_name && c.phone)
