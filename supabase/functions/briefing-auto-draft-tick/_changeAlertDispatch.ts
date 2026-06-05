@@ -94,7 +94,7 @@ export async function handleEventChangeDispatch(
         const change = (r.change_summary as { change?: string } | null)?.change;
         const briefingOwned = change === "rescheduled" || change === "relocated";
         const pushSent = (cat.push && cronSecret) ? await sendReminderPush(supabaseUrl, cronSecret, rec.userIds, c.title, c.pushBody) : 0;
-        const emailSent = (cat.email && !briefingOwned) ? await sendReminderEmail(sb, orgId, rec.emails, c.subject, c.html, c.plain) : 0;
+        const emailSent = (cat.email && !briefingOwned) ? await sendReminderEmail(sb, orgId, rec.emailGuardians, c.subject, c.html, c.plain) : 0;
         await sb.from("event_notifications").update({ status: "sent", sent_at: now.toISOString(), delivered_at: now.toISOString() }).eq("id", r.id);
         out.push({ ...base, anchor_id: r.id, type: r.notification_type, briefing_owned: briefingOwned, push_sent: pushSent, email_sent: emailSent, recipients: rec.count, sent: true });
       } catch (e) {

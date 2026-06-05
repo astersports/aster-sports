@@ -9,6 +9,18 @@
 // buildEmailRow: shapes one Resend email object including the optional
 // List-Unsubscribe / List-Unsubscribe-Post headers when an unsubscribe
 // URL is available.
+//
+// Recipient-attribution tag: we attach a Resend tag { recipient_id: <row.id> }
+// so the resend-webhook-receiver can correlate open/click/bounce events back
+// to the EXACT comms_message_recipients row. Resend echoes tags in the
+// webhook payload (data.tags, an object keyed by tag name) but does NOT echo
+// custom headers — so a tag is the only structural channel that survives the
+// round-trip without a schema change. This replaces the receiver's fuzzy
+// email_at_send + 7-day-window + limit(1) match, which misattributed events
+// when the same address received multiple briefings inside 7 days. The row id
+// is a UUID (ASCII hex + dashes), valid under Resend's tag-value charset
+// (letters/numbers/underscores/dashes). Admin BCC rows still carry their own
+// id, so their opens attribute to the BCC row (not a real family's row).
 
 export async function mintUnsubscribeUrl(sb: any, supabaseUrl: string, guardianId: string | null) {
   if (!guardianId) return null;
@@ -65,6 +77,7 @@ export function buildEmailRow(r: any, message: any, fromHeader: string, replyTo:
     html: r.body_html_rendered ?? message.body_html,
     text: r.body_plain_rendered ?? message.body_plain,
     reply_to: replyTo,
+    ...(r.id ? { tags: [{ name: "recipient_id", value: String(r.id) }] } : {}),
     ...(headers ? { headers } : {}),
   };
 }

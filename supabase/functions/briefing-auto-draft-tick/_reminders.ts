@@ -69,7 +69,7 @@ export async function handleEventReminder(sb: SupabaseClient, trigger: Trigger, 
     const rec = await resolveRecipients(sb, e.team_id, trigger.org_id, pilotMode);
     const c = composeReminder(e, decision.sendBucket);
     const pushSent = cronSecret ? await sendReminderPush(supabaseUrl, cronSecret, rec.userIds, c.title, c.pushBody) : 0;
-    const emailSent = await sendReminderEmail(sb, trigger.org_id, rec.emails, c.subject, c.html, c.plain);
+    const emailSent = await sendReminderEmail(sb, trigger.org_id, rec.emailGuardians, c.subject, c.html, c.plain);
     await sb.from("event_reminder_log").update({ recipient_count: rec.count, push_sent: pushSent, email_sent: emailSent })
       .eq("event_id", e.id).eq("offset_bucket", decision.sendBucket);
     out.push({ ...base, anchor_id: e.id, sent_bucket: decision.sendBucket, push_sent: pushSent, email_sent: emailSent, recipients: rec.count, reminder_sent: true } as HandlerResult);
