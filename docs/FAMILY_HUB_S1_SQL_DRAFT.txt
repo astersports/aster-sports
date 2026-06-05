@@ -1,0 +1,315 @@
+==============================================================================
+FAMILY HUB S1 — SQL DRAFT for the architect's SECURITY PASS
+terminal-CC -> architect. 2026-06-05. REVIEW ARTIFACT — NOTHING APPLIED.
+Drafted to docs/ARCH_DECISIONS_HUB_S1.txt C1 (8 conditions) + C2 (COND-1/2).
+Schema-grounded against live introspection of project vrwwpsbfbnveawqwbdmj.
+On approval: apply via Supabase MCP + mirror file same turn (AP #21), run the
+abuse + RLS proofs (Appendix B), then build S2 (Hub home).
+==============================================================================
+
+SCHEMA FACTS THAT SHAPED THE SQL (verified, not inferred):
+- guardians.email is NULLABLE (4 NULL rows today) -> match predicate requires
+  guardians.email IS NOT NULL so NULL never matches.
+- guardians.email UNIQUE (guardians_email_unique, single-col) -> at most one
+  guardian per email today; C1 multi-match loop is future-proofing for org #2.
+- guardians.user_id FK->auth.users(id), nullable -> NULL->self is the only write.
+- user_roles UNIQUE(user_id, organization_id); role CHECK in {admin,coach,parent}
+  -> ON CONFLICT (user_id, organization_id) DO NOTHING valid; 'parent' passes.
+- players: id, org_id NOT NULL, first_name, last_name, grade, member_type.
+- auth.users.email varchar, email_confirmed_at timestamptz -> read both server-side.
+- current_user_player_ids() exists (SECDEF STABLE, uuid[]) -> reused by the S2
+  INVOKER read intersection (documented, not built in S1).
+- guardians_update_own USING = user_id = (SELECT auth.uid()) -> confirms the gap:
+  an unclaimed row (user_id IS NULL) fails this -> client UPDATE is RLS-blocked
+  -> SECDEF RPC required.
+- No family_*/child_links/calendar_subscriptions/synced_events tables -> clean build.
+
+==============================================================================
+THE COMPLETE DRAFT SQL
+==============================================================================
+
+-- ============================================================================
+-- Family Hub S1 — household foundation: tables + RLS + claim/populate RPCs
+-- DRAFT for security review (Rule 19 GO gate). Mirror file written same turn
+-- as apply_migration (AP #21). DELIBERATE RULE-8 BREAK: household tables are
+-- USER-scoped, NO org_id (build plan §2).
+-- ============================================================================
+
+-- ---- PART 3 (tables first, so the RPCs can reference them) -----------------
+
+CREATE TABLE public.family_children (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id uuid NOT NULL,
+  display_name  text NOT NULL,
+  grade         integer,
+  avatar_color  text,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.family_children
+  ADD CONSTRAINT family_children_owner_fkey
+  FOREIGN KEY (owner_user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+CREATE INDEX family_children_owner_idx ON public.family_children (owner_user_id);
+-- NOTE (Q5): family_children has NO ember_player_id; the native-player dedupe key
+-- lives on child_links (child_links_owner_ember_player_uniq). No unique index on
+-- family_children itself. (An earlier draft had one marked DO-NOT-SHIP; dropped.)
+
+CREATE TABLE public.calendar_subscriptions (
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id    uuid NOT NULL,
+  label            text,
+  color            text,
+  source_type      text NOT NULL DEFAULT 'ics',
+  ics_url          text,
+  default_child_id uuid,
+  status           text NOT NULL DEFAULT 'active',
+  last_synced_at   timestamptz,
+  last_sync_status text,
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT calendar_subscriptions_source_type_check CHECK (source_type IN ('ics','google')),
+  CONSTRAINT calendar_subscriptions_status_check CHECK (status IN ('active','paused','error'))  -- Q6
+);
+ALTER TABLE public.calendar_subscriptions
+  ADD CONSTRAINT calendar_subscriptions_owner_fkey
+  FOREIGN KEY (owner_user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE public.calendar_subscriptions
+  ADD CONSTRAINT calendar_subscriptions_default_child_fkey
+  FOREIGN KEY (default_child_id) REFERENCES public.family_children(id) ON DELETE SET NULL;
+CREATE INDEX calendar_subscriptions_owner_idx ON public.calendar_subscriptions (owner_user_id);
+
+CREATE TABLE public.child_links (
+  id                       uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id            uuid NOT NULL,
+  child_id                 uuid NOT NULL,
+  link_type                text NOT NULL,
+  ember_org_id             uuid,        -- pointer into native data, NOT a tenancy scope
+  ember_player_id          uuid,
+  calendar_subscription_id uuid,
+  created_at               timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT child_links_link_type_check CHECK (link_type IN ('ember_player','calendar'))
+);
+ALTER TABLE public.child_links ADD CONSTRAINT child_links_owner_fkey
+  FOREIGN KEY (owner_user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE public.child_links ADD CONSTRAINT child_links_child_fkey
+  FOREIGN KEY (child_id) REFERENCES public.family_children(id) ON DELETE CASCADE;
+ALTER TABLE public.child_links ADD CONSTRAINT child_links_ember_org_fkey
+  FOREIGN KEY (ember_org_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE public.child_links ADD CONSTRAINT child_links_ember_player_fkey
+  FOREIGN KEY (ember_player_id) REFERENCES public.players(id) ON DELETE CASCADE;
+ALTER TABLE public.child_links ADD CONSTRAINT child_links_calendar_subscription_fkey
+  FOREIGN KEY (calendar_subscription_id) REFERENCES public.calendar_subscriptions(id) ON DELETE CASCADE;
+CREATE UNIQUE INDEX child_links_owner_ember_player_uniq
+  ON public.child_links (owner_user_id, ember_org_id, ember_player_id)
+  WHERE link_type = 'ember_player';
+CREATE INDEX child_links_owner_idx ON public.child_links (owner_user_id);
+CREATE INDEX child_links_child_idx ON public.child_links (child_id);
+
+-- synced_events: owner_user_id DENORMALIZED (Q3) so RLS is single-column, no join.
+CREATE TABLE public.synced_events (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id   uuid NOT NULL,
+  subscription_id uuid NOT NULL,
+  child_id        uuid,
+  title           text,
+  starts_at       timestamptz,
+  ends_at         timestamptz,
+  location        text,
+  source_uid      text NOT NULL,
+  status          text NOT NULL DEFAULT 'active',
+  content_hash    text,
+  synced_at       timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT synced_events_status_check CHECK (status IN ('active','cancelled'))
+);
+ALTER TABLE public.synced_events ADD CONSTRAINT synced_events_owner_fkey
+  FOREIGN KEY (owner_user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE public.synced_events ADD CONSTRAINT synced_events_subscription_fkey
+  FOREIGN KEY (subscription_id) REFERENCES public.calendar_subscriptions(id) ON DELETE CASCADE;
+ALTER TABLE public.synced_events ADD CONSTRAINT synced_events_child_fkey
+  FOREIGN KEY (child_id) REFERENCES public.family_children(id) ON DELETE SET NULL;
+CREATE UNIQUE INDEX synced_events_subscription_source_uid_uniq
+  ON public.synced_events (subscription_id, source_uid);   -- diff key (sync addendum)
+CREATE INDEX synced_events_owner_idx ON public.synced_events (owner_user_id);
+
+-- ---- RLS: every household table owner_user_id = (SELECT auth.uid()) ---------
+-- Per-command policies (no cmd=ALL); every write has explicit WITH CHECK (AP #20).
+
+ALTER TABLE public.family_children        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.child_links            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.calendar_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.synced_events          ENABLE ROW LEVEL SECURITY;
+
+-- (family_children)
+CREATE POLICY family_children_select_own ON public.family_children
+  FOR SELECT USING (owner_user_id = (SELECT auth.uid()));
+CREATE POLICY family_children_insert_own ON public.family_children
+  FOR INSERT WITH CHECK (owner_user_id = (SELECT auth.uid()));
+CREATE POLICY family_children_update_own ON public.family_children
+  FOR UPDATE USING (owner_user_id = (SELECT auth.uid())) WITH CHECK (owner_user_id = (SELECT auth.uid()));
+CREATE POLICY family_children_delete_own ON public.family_children
+  FOR DELETE USING (owner_user_id = (SELECT auth.uid()));
+-- (child_links)
+CREATE POLICY child_links_select_own ON public.child_links
+  FOR SELECT USING (owner_user_id = (SELECT auth.uid()));
+CREATE POLICY child_links_insert_own ON public.child_links
+  FOR INSERT WITH CHECK (owner_user_id = (SELECT auth.uid()));
+CREATE POLICY child_links_update_own ON public.child_links
+  FOR UPDATE USING (owner_user_id = (SELECT auth.uid())) WITH CHECK (owner_user_id = (SELECT auth.uid()));
+CREATE POLICY child_links_delete_own ON public.child_links
+  FOR DELETE USING (owner_user_id = (SELECT auth.uid()));
+-- (calendar_subscriptions)
+CREATE POLICY calendar_subscriptions_select_own ON public.calendar_subscriptions
+  FOR SELECT USING (owner_user_id = (SELECT auth.uid()));
+CREATE POLICY calendar_subscriptions_insert_own ON public.calendar_subscriptions
+  FOR INSERT WITH CHECK (owner_user_id = (SELECT auth.uid()));
+CREATE POLICY calendar_subscriptions_update_own ON public.calendar_subscriptions
+  FOR UPDATE USING (owner_user_id = (SELECT auth.uid())) WITH CHECK (owner_user_id = (SELECT auth.uid()));
+CREATE POLICY calendar_subscriptions_delete_own ON public.calendar_subscriptions
+  FOR DELETE USING (owner_user_id = (SELECT auth.uid()));
+-- (synced_events)
+CREATE POLICY synced_events_select_own ON public.synced_events
+  FOR SELECT USING (owner_user_id = (SELECT auth.uid()));
+CREATE POLICY synced_events_insert_own ON public.synced_events
+  FOR INSERT WITH CHECK (owner_user_id = (SELECT auth.uid()));
+CREATE POLICY synced_events_update_own ON public.synced_events
+  FOR UPDATE USING (owner_user_id = (SELECT auth.uid())) WITH CHECK (owner_user_id = (SELECT auth.uid()));
+CREATE POLICY synced_events_delete_own ON public.synced_events
+  FOR DELETE USING (owner_user_id = (SELECT auth.uid()));
+
+-- READ-PATH BOUNDARY (S2, documented NOT built): the Hub READ composition is
+-- SECURITY INVOKER (runs as the parent), unioning (a) NATIVE events through the
+-- existing org RLS chain intersected with current_user_player_ids() so a forged
+-- child_links row can NEVER widen native visibility, and (b) synced_events from
+-- the caller's own subscriptions. NO SECDEF over the read path. SECDEF is used
+-- ONLY for the claim/populate WRITES below. (C2 COND-1.)
+
+-- ---- PART 2: populate_household() — C2 COND-2 ------------------------------
+-- SECDEF, scoped strictly to auth.uid(), NO target-user param. Writes only
+-- owner_user_id = auth.uid() rows. Idempotent (ON CONFLICT no-op).
+CREATE OR REPLACE FUNCTION public.populate_household()
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_created_kids int := 0; v_created_links int := 0;
+  r record; v_child_id uuid;
+BEGIN
+  IF v_uid IS NULL THEN RETURN jsonb_build_object('ok', false, 'reason', 'unauthenticated'); END IF;
+  FOR r IN
+    SELECT DISTINCT p.id AS player_id, p.org_id, p.first_name, p.last_name, p.grade
+    FROM public.guardians g
+    JOIN public.player_guardians pg ON pg.guardian_id = g.id
+    JOIN public.players p ON p.id = pg.player_id
+    WHERE g.user_id = v_uid
+  LOOP
+    SELECT cl.child_id INTO v_child_id FROM public.child_links cl
+     WHERE cl.owner_user_id = v_uid AND cl.link_type = 'ember_player'
+       AND cl.ember_org_id = r.org_id AND cl.ember_player_id = r.player_id LIMIT 1;
+    IF v_child_id IS NULL THEN
+      INSERT INTO public.family_children (owner_user_id, display_name, grade)
+      VALUES (v_uid, trim(r.first_name || ' ' || r.last_name), r.grade)
+      RETURNING id INTO v_child_id;
+      v_created_kids := v_created_kids + 1;
+      INSERT INTO public.child_links (owner_user_id, child_id, link_type, ember_org_id, ember_player_id)
+      VALUES (v_uid, v_child_id, 'ember_player', r.org_id, r.player_id)
+      ON CONFLICT (owner_user_id, ember_org_id, ember_player_id) WHERE link_type = 'ember_player' DO NOTHING;
+      v_created_links := v_created_links + 1;
+    END IF;
+  END LOOP;
+  RETURN jsonb_build_object('ok', true, 'children_created', v_created_kids, 'links_created', v_created_links);
+END; $$;
+REVOKE EXECUTE ON FUNCTION public.populate_household() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.populate_household() FROM anon;
+GRANT  EXECUTE ON FUNCTION public.populate_household() TO authenticated;
+
+-- ---- PART 1: claim_guardian() — C1, all 8 conditions -----------------------
+-- NO org param (Q1): claims ALL unclaimed rows matching the confirmed session
+-- email (COND-5 cross-org). Inserts user_roles(parent) per claimed org.
+CREATE OR REPLACE FUNCTION public.claim_guardian()
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_email text; v_confirmed timestamptz; v_norm text;
+  v_claimed_ids uuid[] := '{}'; g record;
+BEGIN
+  IF v_uid IS NULL THEN RETURN jsonb_build_object('claimed', false, 'reason', 'unauthenticated'); END IF;
+  -- C1.1 session-derived + C1.2 confirmed-only
+  SELECT u.email::text, u.email_confirmed_at INTO v_email, v_confirmed FROM auth.users u WHERE u.id = v_uid;
+  IF v_confirmed IS NULL THEN RETURN jsonb_build_object('claimed', false, 'reason', 'email_not_confirmed'); END IF;
+  v_norm := lower(trim(v_email));
+  IF v_norm IS NULL OR v_norm = '' THEN RETURN jsonb_build_object('claimed', false, 'reason', 'no_session_email'); END IF;
+  -- C1.3 exact match + C1.4 NULL->self + C1.5 multi-match (skip claimed via user_id IS NULL)
+  FOR g IN
+    SELECT gd.id, gd.org_id FROM public.guardians gd
+     WHERE gd.user_id IS NULL AND gd.email IS NOT NULL AND lower(trim(gd.email)) = v_norm
+     FOR UPDATE
+  LOOP
+    UPDATE public.guardians SET user_id = v_uid, updated_at = now() WHERE id = g.id AND user_id IS NULL;
+    IF FOUND THEN
+      v_claimed_ids := array_append(v_claimed_ids, g.id);
+      INSERT INTO public.user_roles (user_id, organization_id, role)
+      VALUES (v_uid, g.org_id, 'parent') ON CONFLICT (user_id, organization_id) DO NOTHING;
+    END IF;
+  END LOOP;
+  -- C1.7 atomic: populate from whatever the caller now guards (backfill on re-claim too)
+  PERFORM public.populate_household();
+  -- C1.8 fail closed
+  IF array_length(v_claimed_ids, 1) IS NULL THEN
+    IF EXISTS (SELECT 1 FROM public.guardians WHERE user_id = v_uid) THEN
+      RETURN jsonb_build_object('claimed', false, 'reason', 'already_claimed', 'guardian_ids', '[]'::jsonb);
+    END IF;
+    RETURN jsonb_build_object('claimed', false, 'reason', 'no_matching_guardian');
+  END IF;
+  RETURN jsonb_build_object('claimed', true, 'guardian_ids', to_jsonb(v_claimed_ids),
+    'orgs_claimed', (SELECT count(DISTINCT organization_id) FROM public.user_roles WHERE user_id = v_uid));
+END; $$;
+REVOKE EXECUTE ON FUNCTION public.claim_guardian() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.claim_guardian() FROM anon;
+GRANT  EXECUTE ON FUNCTION public.claim_guardian() TO authenticated;
+
+-- POST-APPLY: verify anon has NO EXECUTE on either fn via
+-- information_schema.routine_privileges (AP #57 — Supabase default-grants anon).
+
+==============================================================================
+APPENDIX A — CONDITION-COMPLIANCE CHECKLIST
+==============================================================================
+C1 claim_guardian:
+ 1 session-derived email: no params; SELECT u.email FROM auth.users WHERE id=v_uid
+ 2 confirmed-only: IF v_confirmed IS NULL -> 'email_not_confirmed'
+ 3 exact normalized match: lower(trim(gd.email)) = v_norm  (no ILIKE)
+ 4 NULL->self: WHERE gd.user_id IS NULL loop + UPDATE ... WHERE user_id IS NULL re-check
+ 5 multi-match skip-claimed: loop all unclaimed matches; claimed excluded by user_id IS NULL
+ 6 SECDEF hardening: SECURITY DEFINER, SET search_path=public,auth, REVOKE PUBLIC+anon, GRANT authenticated
+ 7 atomic+idempotent: one body (flip + user_roles ON CONFLICT + populate); re-check + ON CONFLICT = no-op
+ 8 fail-closed: each guard RETURNs structured {claimed:false} and writes nothing
+ user_roles parent row: YES (required — parent needs BOTH user_id AND user_roles). Inserted per claimed org.
+C2:
+ COND-1 read INVOKER, no SECDEF over reads: no read fn in S1; READ-PATH BOUNDARY comment documents S2 INVOKER + current_user_player_ids() intersection
+ COND-2 populate scoped to auth.uid(): no param; v_uid:=auth.uid(); writes only owner_user_id=v_uid; ON CONFLICT idempotent
+
+==============================================================================
+APPENDIX B — ABUSE-PROOF TEST PLAN (run AFTER apply; BEGIN/ROLLBACK; SET LOCAL role + request.jwt.claims)
+==============================================================================
+(a) own-email-only: U_A claims g_a; g_b (other email) untouched; user_roles(U_A,g_a.org) present.
+(b) cannot-steal: g_b claimed by U_B; U_A call -> claimed:false; g_b.user_id STILL U_B (excluded by user_id IS NULL).
+(c) unconfirmed: U_C email_confirmed_at NULL -> {claimed:false,'email_not_confirmed'}; nothing written.
+(d) repeat no-op: 1st claimed:true; 2nd claimed:false 'already_claimed'; counts identical (ON CONFLICT held).
+(e) anon cannot EXECUTE: SET LOCAL role anon -> permission denied; routine_privileges shows authenticated only, no anon/PUBLIC.
+RLS proof (#710-style): owner sees own household; 2nd user sees 0 of family_children/child_links/synced_events.
+
+==============================================================================
+APPENDIX C — OPEN QUESTIONS for the security pass
+==============================================================================
+Q1 claim_guardian drops the proposal's p_org_id (cross-org claim is inherent to COND-5; one email today anyway). Confirm dropping the param (simpler magic-link URL) or want an optional narrowing p_org_id.
+Q2 populate_household is SECDEF-scoped-to-uid vs INVOKER. Both satisfy COND-2. Lean SECDEF (self-contained, scope airtight). Confirm.
+Q3 synced_events.owner_user_id denormalized (single-column RLS, no join) vs join-through-subscription. Recommend denormalized. Confirm.
+Q4 owner_user_id FK -> auth.users(id) ON DELETE CASCADE (precedent: guardians.user_id). Confirm wanted vs plain uuid.
+Q5 family_children dedupe via child_links partial-unique (no ember_player_id on family_children). Confirm this model.
+Q6 calendar_subscriptions.status CHECK ('active','paused','error') — addendum only specs last_sync_status. Confirm enum or leave unconstrained until S3.
+Q7 abuse-test harness: SET LOCAL request.jwt.claims in rolled-back tx vs real signed JWTs on staging + a gateway curl (AP #32). Confirm harness.
+Q8 claim PERFORMs populate (nested SECDEF, DRY) vs inlining. Lean nested. Confirm.
+
+==============================================================================
+NEXT: architect security pass on this draft. On approval -> apply via MCP +
+mirror (AP #21), run Appendix B proofs, then S2 (Hub home) to FAMILY_HUB_MOCKUP.html.
+NOTHING APPLIED UNTIL APPROVED.
+==============================================================================
+END.
+==============================================================================
