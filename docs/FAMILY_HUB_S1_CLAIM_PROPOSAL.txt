@@ -1,0 +1,131 @@
+==============================================================================
+FAMILY HUB — S1 + CLAIM-FLOW PROPOSAL   (terminal-CC -> architect, GO GATE)
+For review BEFORE apply (schema change = Rule 19). Pairs with:
+docs/FAMILY_HUB_S1_PREFLIGHT.txt, docs/FAMILY_HUB_BUILD_PLAN.txt,
+docs/FAMILY_HUB_SYNC_ADDENDUM.txt, docs/ACCOUNT_CLAIM_FLOW.txt.
+==============================================================================
+Date: 2026-06-05. Project: vrwwpsbfbnveawqwbdmj. NOTHING APPLIED YET.
+
+------------------------------------------------------------------------------
+0. CORRECTION TO THE PREMISE (verify pass finding — read first)
+------------------------------------------------------------------------------
+The ACCOUNT_CLAIM_FLOW doc assumed `invite-parent` is the claim mechanism and
+that we extend it. The code says otherwise:
+
+- `invite-parent` (edge fn, admin-only, verify_jwt off + self-auth) does NOT
+  write guardians.user_id and never touches public.guardians. It only mints an
+  auth.users row via inviteUserByEmail + stamps invite metadata. It is an
+  AUTH-USER MINTER, not a claim.
+- The ONLY code that writes guardians.user_id today is `src/lib/autoLinkGuardian.js`
+  (client-side, on first login): ilike(email) match on a guardian with user_id
+  NULL, gated on email_confirmed_at, then UPDATE guardians SET user_id + insert
+  user_roles. Orchestrated by resolveNewUserContext (src/lib/claimInvite.js),
+  called from AuthContext ONLY when the user has zero user_roles rows.
+- `claim_invite()` RPC (SECDEF) writes user_roles ONLY (from invite metadata);
+  does not touch guardians.
+- The 2 existing claims (Frank + Stephanie) were NOT made by any of these — both
+  have NULL invite metadata, provider 'email', user_roles written seconds after
+  signup. Best-supported inference: HAND-LINKED via admin SQL during early setup.
+  => The repeatable claim flow effectively does NOT exist yet. The archetype is
+     proven only because it was set up by hand.
+
+------------------------------------------------------------------------------
+1. THE LOAD-BEARING GAP (why a client UPDATE can't be the claim)
+------------------------------------------------------------------------------
+guardians UPDATE policies: guardians_update_admin (admin in org) and
+guardians_update_own (USING user_id = auth.uid(), same WITH CHECK). For an
+UNCLAIMED row (user_id IS NULL), the _own USING qual is FALSE -> a parent's own
+JWT cannot flip NULL->self. So autoLinkGuardian's client-side
+`UPDATE guardians SET user_id` is RLS-BLOCKED for exactly the rows it targets.
+This is consistent with "only 2 manual claims exist." A working, repeatable
+claim CANNOT be a client UPDATE; it must be a SECURITY DEFINER RPC.
+
+------------------------------------------------------------------------------
+2. PROPOSAL — one SECDEF claim RPC + idempotent household population
+------------------------------------------------------------------------------
+claim_guardian(p_org_id uuid) RETURNS jsonb   -- SECURITY DEFINER, STABLE? (VOLATILE; it writes)
+  Runs as the authenticated user. Steps, atomic, idempotent:
+   1. au := auth.uid(); require au IS NOT NULL.
+   2. Require the caller's email is CONFIRMED (auth.users.email_confirmed_at NOT
+      NULL) — proves email ownership. Read the caller email from auth.users.
+   3. Find guardian g WHERE org_id = p_org_id AND lower(email) = lower(caller email)
+      AND user_id IS NULL  (the NULL->self claim; never steal a claimed row).
+      If none: if a guardian already linked to au exists, treat as re-claim (ok);
+      else return {claimed:false, reason:'no_matching_guardian'}.
+   4. UPDATE guardians SET user_id = au WHERE id = g.id AND user_id IS NULL.
+   5. INSERT user_roles(user_id, organization_id, role) VALUES (au, p_org_id,
+      'parent') ON CONFLICT (user_id, organization_id) DO NOTHING.
+   6. Call populate_household(au)  (step 3 below).
+   7. Return {claimed:true, guardian_id, children_created}.
+  Grants: REVOKE EXECUTE FROM PUBLIC; REVOKE EXECUTE FROM anon; GRANT EXECUTE TO
+  authenticated. (AP #23/#57.) SET search_path = public.
+
+populate_household(p_user uuid) RETURNS void   -- SECDEF, IDEMPOTENT, re-runnable
+  For each DISTINCT player the user guards:
+     SELECT DISTINCT p.id, p.first_name, p.last_name, p.org_id, p.member_type
+     FROM guardians g JOIN player_guardians pg ON pg.guardian_id=g.id
+     JOIN players p ON p.id=pg.player_id WHERE g.user_id = p_user;
+   - upsert family_children (owner_user_id=p_user, one per player identity)
+   - upsert child_links (owner_user_id=p_user, link_type 'ember_player',
+     ember_org_id=p.org_id, ember_player_id=p.id) ON CONFLICT DO NOTHING.
+  De-dupe: today players are 1:1 (0 duplicate identities, 0 multi-team, 1 org —
+  verified), so DISTINCT p.id suffices; fan-out matters only at 2nd org (S6).
+
+WIRING: call claim_guardian on post-login, and call populate_household on EVERY
+login (not behind the "zero user_roles" gate) so new players backfill and a
+failed mid-claim self-heals. resolveNewUserContext is extended to call
+claim_guardian (replacing the RLS-blocked autoLinkGuardian UPDATE); the
+first-login-only gate is removed for the populate step. invite-parent stays the
+auth-user minter / email sender (unchanged); the briefing-email magic-link CTA
+(ACCOUNT_CLAIM_FLOW §2) lands on /login -> resolver -> claim_guardian.
+
+------------------------------------------------------------------------------
+3. S1 MIGRATION SCOPE (household foundation — sync-shaped per addendum)
+------------------------------------------------------------------------------
+NEW TABLES (all user-scoped; RLS owner_user_id = (SELECT auth.uid()) per the
+initplan pattern; NO org_id on the household rows per plan §2 rule-break):
+  family_children(id, owner_user_id, display_name, grade, avatar_color, created_at)
+  child_links(id, owner_user_id, child_id->family_children, link_type
+    ['ember_player'|'calendar'], ember_org_id->organizations NULL,
+    ember_player_id->players NULL, calendar_subscription_id NULL, created_at;
+    UNIQUE(owner_user_id, ember_org_id, ember_player_id) for idempotent upsert)
+  calendar_subscriptions(id, owner_user_id, label, color, source_type
+    ['ics'|'google'], ics_url NULL, default_child_id NULL, status,
+    last_synced_at, last_sync_status, created_at)        [S3 fills these]
+  synced_events(id, subscription_id->calendar_subscriptions, child_id->
+    family_children, title, starts_at, ends_at, location, source_uid,
+    status ['active'|'cancelled'], content_hash, synced_at;
+    UNIQUE(subscription_id, source_uid))                 [S3 fills these; sync addendum naming]
+RPCs: claim_guardian(), populate_household() (§2), both SECDEF + revokes.
+RLS PROOF (like #710) before declaring S1 done: owner sees only own household;
+a 2nd user sees zero of it; native event reads still go through the existing
+org RLS (composition is INVOKER, intersected with current_user_player_ids()).
+
+NOT in S1: the Hub UI (S2), the ICS sync edge fn (S3), conflict detection (S4).
+S1 = tables + RLS + claim/populate RPCs + native-union read proof on the
+archetype (Frank's family, already linked).
+
+------------------------------------------------------------------------------
+4. RISKS CARRIED FORWARD
+------------------------------------------------------------------------------
+- Email mismatch: a parent whose login email != guardian email has no auto-claim
+  (by design — we never link unproven email). Needs an admin-assisted path later;
+  out of S1.
+- Every parent needs a guardian row WITH an email to claim. Confirm all 173
+  unclaimed guardians have emails before a claim campaign (rollout item, not S1).
+- ilike match could in theory hit 2 guardian rows (same email, 2 orgs) once
+  multi-org exists; p_org_id scopes it. Fine at 1 org.
+- populate_household on every login is cheap at this scale; revisit if it grows.
+
+------------------------------------------------------------------------------
+5. ASK BACK (GO GATE)
+------------------------------------------------------------------------------
+1. Approve the claim_guardian SECDEF RPC as the claim mechanism (replacing the
+   RLS-blocked client UPDATE) — this is the load-bearing correction.
+2. Approve the S1 table set + the populate-on-every-login (de-gated) wiring.
+3. On GO: apply S1 migration via Supabase MCP + the mirror file (AP #21), prove
+   RLS, then build S2 (Hub home) to FAMILY_HUB_MOCKUP.html.
+Nothing is applied until this proposal is approved.
+==============================================================================
+END.
+==============================================================================
