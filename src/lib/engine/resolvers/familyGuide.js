@@ -20,6 +20,7 @@ import {
   buildQuickLinkNav, buildSignoffSection, buildVipHeaderSection,
 } from './familyGuideSections';
 import { detectConflicts, groupEventsByKid } from './familyGuideHelpers';
+import { buildOrgContext } from '../buildOrgContext';
 
 export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly }, { supabase } = {}) {
   if (!parentUserId) throw new Error('Missing parentUserId');
@@ -110,13 +111,16 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
     coaches = cRows || [];
   }
 
-  let orgName = 'Legacy Hoopers';
+  let orgRow = null;
   if (parent.org_id) {
-    const { data: orgRow, error: orgErr } = await supabase.from('organizations')
+    const { data, error: orgErr } = await supabase.from('organizations')
       .select('name, display_name').eq('id', parent.org_id).maybeSingle();
     if (orgErr) throw orgErr;
-    if (orgRow) orgName = orgRow.display_name || orgRow.name || orgName;
+    orgRow = data;
   }
+  // AP #63 — route the org-name through the shared builder so the
+  // display_name||name||default precedence is identical to every other kind.
+  const orgName = buildOrgContext({ orgId: parent.org_id, org: orgRow, coaches }).name;
 
   return {
     context: { parent, kidsWithEvents, conflicts, dateRange, coaches, orgName },

@@ -1,57 +1,45 @@
-// Section renderer — schedule_change_diff. Compares before/after raw
-// payloads (event row shape) and renders only the fields that changed.
+// Section renderer — schedule_change_diff. Renders the was/now swap card for
+// a non-cancelled schedule change. The "cancelled" treatment is a separate
+// `cancellation_card` section, so this renderer never handles cancellation.
 //
-// Section shape:
+// Section shape (PRODUCED BY composer buildDiffSection in
+// resolvers/scheduleChangeHelpers.js — this renderer consumes it directly):
 //   { kind: 'schedule_change_diff',
-//     before: { start_at, end_at, location, status, ... },
-//     after:  { start_at, end_at, location, status, ... },
-//     eventTitle: 'Event title for context' }
+//     changed_fields: ['start_at','end_at','location','opponent'],  // event-row field names
+//     before: { time: 'Mon, May 11 from 7:35 PM to 8:35 PM', label, location, opponent },
+//     after:  { time: '...', label, location, opponent },
+//     eventTitle?: 'optional context heading' }
 //
-// Fields handled:
-//   - start_at + end_at  → rendered as time RANGE "7:35 PM – 9:05 PM"
-//                          (so duration changes are visible)
-//   - location           → location string
-//   - status='cancelled' → big "CANCELLED" callout, suppresses range diff
+// `time` is PRE-FORMATTED by the composer (DST-correct ET range). `start_at`
+// and `end_at` in changed_fields both map to the single "When" (time) row.
 //
 // HTML: strikethrough old + bold new (color contrast per D-RSVP-1).
 // Plain-text: uppercase PREVIOUS / UPDATED prefixes, no markup.
-//
-// Wave 3.8.1 hotfix: previously rendered start_at only, so end-only
-// and location-only changes were invisible.
 
 import { escapeHtml } from './_util';
-import { BORDER_DEFAULT, RSVP_OUT_RED, TEXT_GRAPHITE, TEXT_NAVY } from '../colors';
+import { BORDER_DEFAULT, TEXT_GRAPHITE, TEXT_NAVY } from '../colors';
 
-function fmtDate(iso) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
-}
-function fmtTime(iso) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
-}
-function timeRange(start, end) {
-  if (!start) return '';
-  const date = fmtDate(start);
-  const startT = fmtTime(start);
-  const endT = end ? fmtTime(end) : '';
-  return endT ? `${date} · ${startT} – ${endT}` : `${date} · ${startT}`;
-}
+// Map each row kind to the before/after field it reads + its label.
+const ROWS = [
+  { kind: 'time', label: 'When', field: 'time', triggers: ['start_at', 'end_at'] },
+  { kind: 'location', label: 'Where', field: 'location', triggers: ['location'] },
+  { kind: 'opponent', label: 'Opponent', field: 'opponent', triggers: ['opponent'] },
+];
 
-function diffFields(before = {}, after = {}) {
-  const changed = [];
-  const timeChanged = (before.start_at || null) !== (after.start_at || null)
-    || (before.end_at || null) !== (after.end_at || null);
-  const locChanged = (before.location || null) !== (after.location || null);
-  const oppChanged = (before.opponent || null) !== (after.opponent || null);
-  const cancelled = after.status === 'cancelled' && before.status !== 'cancelled';
-  if (cancelled) changed.push({ kind: 'cancelled' });
-  else {
-    if (timeChanged) changed.push({ kind: 'time', prev: timeRange(before.start_at, before.end_at), next: timeRange(after.start_at, after.end_at) });
-    if (locChanged) changed.push({ kind: 'location', prev: before.location || '—', next: after.location || '—' });
-    if (oppChanged) changed.push({ kind: 'opponent', prev: before.opponent || 'TBD', next: after.opponent || 'TBD' });
+function diffRows(changedFields = [], before = {}, after = {}) {
+  const changed = new Set(changedFields);
+  const rows = [];
+  for (const r of ROWS) {
+    if (!r.triggers.some((f) => changed.has(f))) continue;
+    const prev = before?.[r.field];
+    const next = after?.[r.field];
+    rows.push({
+      label: r.label,
+      prev: prev == null || prev === '' ? '—' : String(prev),
+      next: next == null || next === '' ? '—' : String(next),
+    });
   }
-  return changed;
+  return rows;
 }
 
 function rowHtml(label, prev, next) {
@@ -66,23 +54,14 @@ function rowHtml(label, prev, next) {
     + '</div>';
 }
 
-function cancelledHtml() {
-  return '<div style="margin:0 0 14px 0;">'
-    + `<div style="font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${RSVP_OUT_RED};margin:0 0 6px 0;">CANCELLED</div>`
-    + `<div style="font-size:15px;color:${TEXT_NAVY};line-height:1.5;">This event has been cancelled.</div>`
-    + '</div>';
-}
-
-const LABELS = { time: 'When', location: 'Where', opponent: 'Opponent' };
-
 export default function render(section) {
   const title = section?.eventTitle || '';
-  const changes = diffFields(section?.before, section?.after);
-  if (!changes.length) return { html: '', plainText: '' };
+  const rows = diffRows(section?.changed_fields, section?.before, section?.after);
+  if (!rows.length) return { html: '', plainText: '' };
   const titleHtml = title
     ? `<div style="font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:${TEXT_GRAPHITE};margin:0 0 8px 0;">${escapeHtml(title)}</div>`
     : '';
-  const blocks = changes.map((c) => c.kind === 'cancelled' ? cancelledHtml() : rowHtml(LABELS[c.kind], c.prev, c.next)).join('');
+  const blocks = rows.map((r) => rowHtml(r.label, r.prev, r.next)).join('');
   const html = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
     + ` style="border-collapse:collapse;font-family:Inter,system-ui,sans-serif;margin:8px 0 16px 0;">`
     + `<tr><td style="padding:16px 20px;border:1px solid ${BORDER_DEFAULT};border-radius:10px;">`
@@ -90,9 +69,9 @@ export default function render(section) {
     + '</td></tr></table>';
   const plainLines = [];
   if (title) plainLines.push(title);
-  changes.forEach((c) => {
-    if (c.kind === 'cancelled') plainLines.push('CANCELLED: This event has been cancelled.');
-    else { plainLines.push(`PREVIOUS ${LABELS[c.kind]}: ${c.prev}`); plainLines.push(`UPDATED ${LABELS[c.kind]}: ${c.next}`); }
+  rows.forEach((r) => {
+    plainLines.push(`PREVIOUS ${r.label}: ${r.prev}`);
+    plainLines.push(`UPDATED ${r.label}: ${r.next}`);
   });
   return { html, plainText: plainLines.join('\n') };
 }

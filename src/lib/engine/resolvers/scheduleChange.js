@@ -27,7 +27,7 @@ import {
   NoActualScheduleChangeError, NoScheduleChangeError, trim,
 } from './scheduleChangeHelpers';
 import { fetchKidNames } from './gameRecapHelpers';
-import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
+import { buildOrgContext } from '../buildOrgContext';
 
 
 const EVENT_SELECT = 'id, title, team_id, event_type, start_at, end_at, location, location_id, opponent, status, publish_status, teams ( id, name, team_color, sort_order, org_id )';
@@ -79,7 +79,7 @@ export async function resolveScheduleChange({ eventId, pilotOnly }, { supabase, 
   const { data: coachesData, error: coachesErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
   if (coachesErr) throw coachesErr;
   const coaches = coachesData || [];
-  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
+  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
   if (orgErr) throw orgErr;
   const slices = await fetchSlices(supabase, orgId, event.team_id, effectivePilotOnly);
 
@@ -87,12 +87,7 @@ export async function resolveScheduleChange({ eventId, pilotOnly }, { supabase, 
 
   return {
     context: {
-      org: {
-        id: orgId, name: ORG_NAME_DEFAULT,
-        branding: { eyebrowLink: ORG_WEBSITE_DEFAULT, contactEmail: ORG_CONTACT_DEFAULT, logoUrl: ORG_LOGO_DEFAULT },
-        voice_config: org?.voice_config || null, brand_colors: org?.brand_colors || null,
-        coaches: coaches || [],
-      },
+      org: buildOrgContext({ orgId, org, coaches }),
       event: { id: event.id, title: event.title, team_id: event.team_id, event_type: event.event_type, start_at: event.start_at, end_at: event.end_at, location: event.location, location_id: event.location_id, opponent: event.opponent, status: event.status, publish_status: event.publish_status, teams: event.teams },
       team: event.teams ? { id: event.teams.id, name: event.teams.name, team_color: event.teams.team_color, sort_order: event.teams.sort_order } : null,
       location,

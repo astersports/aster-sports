@@ -27,7 +27,7 @@
 //   - Override sections render iff override present.
 //   - Override beats data (consistent with 4.2-A-3).
 
-import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
+import { buildOrgContext } from '../buildOrgContext';
 import { buildTeamSlices, fetchRecipientGuardians } from './tournamentPrelimHelpers';
 import { buildRecapSections, buildSubject } from './tournamentRecapHelpers';
 
@@ -108,12 +108,7 @@ export async function resolveTournamentRecap({ tournamentId, pilotOnly }, { supa
 
   return {
     context: {
-      org: {
-        id: orgId, name: org?.display_name || org?.name || ORG_NAME_DEFAULT,
-        branding: { eyebrowLink: ORG_WEBSITE_DEFAULT, contactEmail: ORG_CONTACT_DEFAULT, logoUrl: ORG_LOGO_DEFAULT },
-        voice_config: org?.voice_config || null, brand_colors: org?.brand_colors || null,
-        coaches: coaches || [],
-      },
+      org: buildOrgContext({ orgId, org, coaches }),
       tournament, tournament_teams, events_by_team, game_results_by_event, players_by_id, locations,
     },
     slices,

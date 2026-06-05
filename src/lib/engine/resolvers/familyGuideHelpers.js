@@ -13,16 +13,15 @@
 // Same-day non-overlapping with reasonable travel: NOT a conflict.
 // Different-day: NOT a conflict.
 
+import { etDateStr, formatDayLabel, formatTime } from '../etDate';
+
 const DEFAULT_GAME_MINUTES = 60;
 const TRAVEL_GAP_MIN = 30;
 
-function pad2(n) { return String(n).padStart(2, '0'); }
-
-function toEt(iso) {
-  if (!iso) return null;
-  const utcMs = new Date(iso).getTime();
-  return new Date(utcMs - 4 * 60 * 60 * 1000);
-}
+// DST-correct ET formatting now lives in the shared engine/etDate module
+// (replaced the hardcoded -4h offset that was wrong in EST, Nov–Mar).
+// Re-exported so existing importers of these names keep working.
+export { formatDayLabel, formatTime } from '../etDate';
 
 export function formatDateRange(dateRange) {
   if (!dateRange?.start || !dateRange?.end) return '';
@@ -31,21 +30,6 @@ export function formatDateRange(dateRange) {
     return m ? `${parseInt(m[2], 10)}/${parseInt(m[3], 10)}` : s;
   };
   return `${fmt(dateRange.start)} – ${fmt(dateRange.end)}`;
-}
-
-export function formatDayLabel(iso) {
-  const et = toEt(iso);
-  if (!et) return 'TBD';
-  const wk = et.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }).toUpperCase();
-  return `${wk} ${et.getUTCMonth() + 1}/${et.getUTCDate()}`;
-}
-
-export function formatTime(iso) {
-  const et = toEt(iso);
-  if (!et) return 'TBD';
-  let h = et.getUTCHours(); const m = et.getUTCMinutes();
-  const am = h < 12; if (h === 0) h = 12; else if (h > 12) h -= 12;
-  return `${h}:${pad2(m)} ${am ? 'AM' : 'PM'}`;
 }
 
 // Groups events by kid (one row per kid×team because a kid on two
@@ -106,11 +90,13 @@ export function detectConflicts(kidsWithEvents) {
     const a = allEvents[i];
     const aStart = new Date(a.start_at).getTime();
     const aEnd = a.end_at ? new Date(a.end_at).getTime() : aStart + DEFAULT_GAME_MINUTES * 60 * 1000;
-    const aDay = new Date(a.start_at).toISOString().slice(0, 10);
+    // ET calendar date (not UTC) so an evening-ET event isn't mis-grouped
+    // into the next UTC day (e.g. 8 PM EST = 01:00 UTC next day).
+    const aDay = etDateStr(a.start_at);
     for (let j = i + 1; j < allEvents.length; j++) {
       const b = allEvents[j];
       const bStart = new Date(b.start_at).getTime();
-      const bDay = new Date(b.start_at).toISOString().slice(0, 10);
+      const bDay = etDateStr(b.start_at);
       if (aDay !== bDay) break;
       if (a._kid.player_id === b._kid.player_id) continue;
       const gapMin = (bStart - aEnd) / (60 * 1000);

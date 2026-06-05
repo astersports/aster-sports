@@ -1,6 +1,7 @@
 {
   "id":"e3e95e21-3571-4e9a-985a-d5d01480d4a6",
   "name":"Legacy Hoopers LLC",
+  "display_name":"Legacy Hoopers",
   "brand_colors":{"accent":"#4a8fd4","header":"#1e3a5f","accent_hover":"#5BA0E0","text_on_dark":"#FFFFFF"},
   "voice_config":{"signoff_default":"Frankie + Kenny"}
 }
