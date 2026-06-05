@@ -689,6 +689,49 @@ infrastructure.
 
 ---
 
+### §4.C.2 — Home Pages L99 Redesign (2026-06-05)
+
+Source: `docs/AUDIT_HOME_REDESIGN_L99.md` (the canonical §16.15 audit
+artifact) + `docs/HOME_REDESIGN_KICKOFF.md`. Audit COMPLETE; scope-lock
+pending operator review. No PR-A code until scope locks.
+
+**Dominant finding (Pattern α / AP#63):** 9 same-concept/divergent-source
+instances across the three homes — "next event" computed 3 ways
+(`AdminHomePage:49` / `CoachHomePage:51` / `useParentHomeSignals`),
+weather coords `41.03,-73.76` hardcoded ×7 (AP#7), `seasonProgress()`
+duplicated (ActiveSeasonCard vs ProgramHealthCard), admin PastEvents
+`gameResults={{}}` (scoreless), `dutyCounts` on parent-not-coach
+DateGroupedList, `relativeTime` casing drift, NextEventCard raw
+`event.location` (no tournament fallback). Records/rides/alerts already
+flow through single shared hooks (clean).
+
+**Other queued surfaces:** AdminHomePage flat 12-section scroll →
+§16.14 hero+collapsible + §6 decomposition into `src/components/admin-home/`
+(the decomposition trigger is now fired); 6 self-fetching admin cards
+defeat the page loading gate (the §17.8 LCP ~5s, 3.3×-over-budget anchor
+driver, PR #569); soft-on-soft a11y contrast 3.6–3.9:1 (γ); 4 AP#36
+error-swallows in self-fetching cards (data-hook layer is clean);
+AlertCard `rgba(0,0,0,0.06)` border (AP#2); DensityToggle 3-state/2-state
+dead code.
+
+**Proposed PR sequence:** A (admin decomposition, no behavior change) →
+B (AP#63 shared-helper consolidation + AP#43 invariant tests) → C (§16.14
+hero+collapsible restructure) → D (a11y sweep) → E (error-handling sweep)
+→ F (perf / LCP re-measure) → G (test debt + first home-router E2E).
+
+**Decisions pending operator sign-off (→ audit §7):** D1 a11y contrast
+corollary token (§0 accessibility-corollary, `--as-text-meta` precedent);
+D2 ratify density 2-state as final (vs restore MED — §16.2 currently says
+3-state but code is 2-state); D3 admin hero KPI row with scope labels; D4
+PR granularity (7 vs folded).
+
+**Test debt (AP#43 gaps):** next-event hero parity (3-role), owing-money
+source+scope render, MY-TEAMS-records extend to admin, weather render +
+shared coords, density variants, RSVP-going on admin, home-router E2E
+(zero E2E today).
+
+---
+
 ### §4.D — Sprint G Rides redesign
 
 Source: `RIDES_DESIGN_SPEC.md`. Status reconciled 2026-05-20 via
