@@ -57,7 +57,18 @@ export default function EventHeroActions({
     if (isGameType) {
       // FinalizedGameView below renders the result if scored; tapping
       // Enter Score on a scored game opens the sheet in edit mode.
-      return <div style={ROW}><button type="button" onClick={onEnterScore} className="as-press" style={BTN}>Enter Score</button></div>;
+      // Coach game-recap trigger mirrors the tournament Compose-briefing
+      // deep link above (compose entry point #3): a past 'game' event
+      // pre-fills the composer with the game anchor + game_recap kind.
+      const isGameEvent = event.event_type === 'game';
+      return (
+        <div style={ROW}>
+          <button type="button" onClick={onEnterScore} className="as-press" style={BTN}>Enter Score</button>
+          {isGameEvent && (
+            <button type="button" onClick={() => navigate(`/admin/briefings/compose?anchor=event&id=${event.id}&kind=game_recap`)} className="as-press" style={BTN_SEC}><Send size={14} strokeWidth={1.75} />Request recap</button>
+          )}
+        </div>
+      );
     }
     return null;
   }

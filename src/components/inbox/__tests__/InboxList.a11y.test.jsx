@@ -20,10 +20,14 @@ afterEach(cleanup);
 // regressions a structural test can catch in CI without a browser dep.
 
 const FIXTURE_ITEMS = [
+  // r-1: team briefing, unread (no opened_at), carries a team_color rail.
   { id: 'r-1', message_id: 'm-1', kind: 'weekly_digest', subject: "This week ahead",
-    sent_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString() },
+    sent_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    team_color: '#4a8fd4', opened_at: null },
+  // r-2: org-wide briefing (no team_color → neutral rail), read (opened_at set).
   { id: 'r-2', message_id: 'm-2', kind: 'game_recap', subject: 'vs Eagles 45-32',
-    sent_at: new Date(Date.now() - 26 * 3600 * 1000).toISOString() },
+    sent_at: new Date(Date.now() - 26 * 3600 * 1000).toISOString(),
+    team_color: null, opened_at: new Date(Date.now() - 60 * 1000).toISOString() },
 ];
 
 describe('InboxList a11y (Phase 3 D-8 a-new)', () => {
@@ -67,5 +71,30 @@ describe('InboxList a11y (Phase 3 D-8 a-new)', () => {
   it('empty state announces via role=status', () => {
     render(<InboxList items={[]} onSelect={() => {}} />);
     expect(screen.getByRole('status')).toHaveTextContent(/nothing here yet/i);
+  });
+
+  // Task 1 — team-color rail + unread dot polish.
+  it('renders a team-color rail in the briefing team color, neutral fallback for org-wide', () => {
+    render(<InboxList items={FIXTURE_ITEMS} onSelect={() => {}} />);
+    const items = screen.getAllByRole('listitem');
+    // Each row has exactly one rail span (aria-hidden) as its first child.
+    const teamRail = items[0].querySelector('span[aria-hidden="true"]');
+    const orgRail = items[1].querySelector('span[aria-hidden="true"]');
+    // r-1 (team briefing) rail paints the DB team_color; r-2 (org-wide) falls
+    // back to a neutral border token (no hardcoded hex).
+    expect(teamRail.style.backgroundColor).toBe('rgb(74, 143, 212)'); // #4a8fd4
+    expect(orgRail.style.backgroundColor).toBe('var(--as-border-default)');
+  });
+
+  it('shows an unread dot + an "Unread" aria cue on unopened rows, absent when read', () => {
+    render(<InboxList items={FIXTURE_ITEMS} onSelect={() => {}} />);
+    const items = screen.getAllByRole('listitem');
+    // r-1 unread: aria-label leads with "Unread" (text/aria cue, not color
+    // alone) and the row carries 2 aria-hidden spans (rail + dot).
+    expect(items[0].getAttribute('aria-label')).toMatch(/^Unread/i);
+    expect(items[0].querySelectorAll('span[aria-hidden="true"]')).toHaveLength(2);
+    // r-2 read: no "Unread" prefix, only the rail span (no dot).
+    expect(items[1].getAttribute('aria-label')).not.toMatch(/unread/i);
+    expect(items[1].querySelectorAll('span[aria-hidden="true"]')).toHaveLength(1);
   });
 });

@@ -10,8 +10,10 @@ import { useAuth } from '../context/AuthContext';
 // Returns:
 //   items: Array<{
 //     id, message_id, kind, subject, sent_at, opened_at,
-//     subject_rendered, teams_included, kid_first_names
+//     teams_included, anchor_kind, anchor_id, team_color
 //   }>
+//   (opened_at null = unread; team_color drives the per-row rail,
+//    null for org-wide briefings)
 //   loading, error
 //
 // The hook is purposely simple — no filter, no mark-as-read yet
@@ -33,7 +35,7 @@ export function useInboxList() {
     const { data, error: err } = await supabase
       .from('comms_message_recipients')
       .select(`id, message_id, opened_at, subject_rendered, teams_included,
-        comms_messages ( kind, subject, sent_at, anchor_kind, anchor_id )`)
+        comms_messages ( kind, subject, sent_at, anchor_kind, anchor_id, team_id, teams ( team_color ) )`)
       .eq('guardian_id', guardianId)
       .order('id', { ascending: false })
       .limit(PAGE_SIZE);
@@ -48,6 +50,10 @@ export function useInboxList() {
       teams_included: r.teams_included || [],
       anchor_kind: r.comms_messages?.anchor_kind || null,
       anchor_id: r.comms_messages?.anchor_id || null,
+      // Team-color rail source: the briefing's own team (comms_messages.team_id
+      // -> teams.team_color), the same join Radar's ProposalCard uses. null for
+      // org-wide briefings (no team_id) -> neutral rail.
+      team_color: r.comms_messages?.teams?.team_color || null,
     }));
     setItems(flat);
     setLoading(false);

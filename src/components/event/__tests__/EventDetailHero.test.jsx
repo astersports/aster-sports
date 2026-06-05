@@ -59,7 +59,7 @@ describe('EventDetailHero', () => {
     expect(container.textContent).not.toMatch(/Lock roster/);
   });
 
-  it('past game (staff) renders Enter Score', () => {
+  it('past game (staff) renders Enter Score + Request recap trigger', () => {
     const event = {
       id: 'e4', team_id: 't-1', event_type: 'game',
       start_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
@@ -68,6 +68,22 @@ describe('EventDetailHero', () => {
     };
     const { container } = withRouter(<EventDetailHero event={event} isStaff isPast rsvps={[]} roster={[]} onEnterScore={vi.fn()} />);
     expect(container.textContent).toMatch(/Enter Score/);
+    // Coach game-recap trigger (compose entry point #3) — mirrors the
+    // tournament Compose-briefing deep link.
+    expect(container.textContent).toMatch(/Request recap/);
+  });
+
+  it('past tournament (staff) renders Enter Score only — no game_recap Request recap', () => {
+    // game_recap is a 'game'-scoped trigger; tournaments recap via the
+    // separate tournament_recap path, not the per-game Request recap.
+    const event = {
+      id: 'e5', team_id: 't-1', event_type: 'tournament',
+      start_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      opponent: 'Zero Gravity', status: 'scheduled', teams: TEAM,
+    };
+    const { container } = withRouter(<EventDetailHero event={event} isStaff isPast rsvps={[]} roster={[]} onEnterScore={vi.fn()} />);
+    expect(container.textContent).toMatch(/Enter Score/);
+    expect(container.textContent).not.toMatch(/Request recap/);
   });
 
   it('Skeleton renders without props', () => {
