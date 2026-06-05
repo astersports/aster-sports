@@ -21,7 +21,7 @@
 
 import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 import {
-  buildSubject, fetchSlices, formatSubContext,
+  buildGameRecapCard, buildSubject, fetchSlices, formatSubContext,
   GameRecapNotPublishedError, trim,
 } from './gameRecapHelpers';
 
@@ -99,12 +99,7 @@ export function composeGameRecap(context, slice, overrides = {}) {
   const sections = [];
   sections.push({ kind: 'header', eyebrow: `${org.name} · GAME RECAP`, eyebrow_link: org.branding.eyebrowLink, headline: 'GAME RECAP', sub_context: formatSubContext(event.start_at, location?.name), goldStripe: true });
 
-  const teamName = team?.name || org.name;
-  const opp = event?.opponent ? String(event.opponent).trim() : '';
-  const finalLine = opp
-    ? `Final: ${teamName} ${gr.our_score} – ${opp} ${gr.opponent_score} (${gr.result})`
-    : `Final: ${teamName} ${gr.our_score}-${gr.opponent_score} (${gr.result})`;
-  sections.push({ kind: 'stats_narrative', body: finalLine });
+  sections.push(buildGameRecapCard(team, event, location, gr));
 
   if (pog?.first_name) sections.push({ kind: 'stats_narrative', body: `Player of the game: ${pog.first_name}` });
   if (trim(gr.coach_highlight)) sections.push({ kind: 'stats_narrative', body: trim(gr.coach_highlight) });

@@ -11,11 +11,11 @@
 // game_recap). Content is invariant across slices (same recap to every
 // recipient); slices only carry the audience.
 
-import { buildGamesSubject, dayLabel, fetchSlicesForTeams, summarizeGames, trim } from './gamesRecapHelpers';
+import { buildGameCard, buildGamesSubject, dayLabel, fetchSlicesForTeams, summarizeGames, trim } from './gamesRecapHelpers';
 import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 
 
-const EVENT_SELECT = 'id, team_id, start_at, opponent, teams ( id, name, team_color, org_id )';
+const EVENT_SELECT = 'id, team_id, start_at, location, opponent, teams ( id, name, team_color, org_id )';
 
 export async function resolveGamesRecap({ eventIds, pilotOnly }, { supabase, now = new Date() } = {}) {
   if (!Array.isArray(eventIds) || !eventIds.length) throw new Error('Missing eventIds');
@@ -43,7 +43,7 @@ export async function resolveGamesRecap({ eventIds, pilotOnly }, { supabase, now
     .filter((e) => resultByEvent.has(e.id))
     .map((e) => {
       const gr = resultByEvent.get(e.id);
-      return { team_name: e.teams?.name || ORG_NAME_DEFAULT, opponent: e.opponent, start_at: e.start_at, our_score: gr.our_score, opponent_score: gr.opponent_score, result: gr.result, day_label: dayLabel(e.start_at) };
+      return { team_name: e.teams?.name || ORG_NAME_DEFAULT, team_color: e.teams?.team_color || null, opponent: e.opponent, venue: e.location || null, start_at: e.start_at, our_score: gr.our_score, opponent_score: gr.opponent_score, result: gr.result, day_label: dayLabel(e.start_at) };
     })
     .sort((a, b) => String(a.start_at).localeCompare(String(b.start_at)));
   if (!games.length) throw new Error('No published results among selected games');
@@ -78,13 +78,7 @@ export function composeGamesRecap(context, slice, overrides = {}) {
   const sections = [];
   sections.push({ kind: 'header', eyebrow: `${org.name} · GAMES RECAP`, eyebrow_link: org.branding.eyebrowLink, headline: 'GAMES RECAP', sub_context: summary.label, goldStripe: true });
 
-  for (const g of games) {
-    const opp = g.opponent ? String(g.opponent).trim() : '';
-    const line = opp
-      ? `${g.day_label} — ${g.team_name} ${g.our_score} – ${opp} ${g.opponent_score} (${g.result})`
-      : `${g.day_label} — ${g.team_name} ${g.our_score}-${g.opponent_score} (${g.result})`;
-    sections.push({ kind: 'stats_narrative', body: line });
-  }
+  for (const g of games) sections.push(buildGameCard(g));
 
   for (const key of ['our_highlights', 'coach_note', 'parent_shoutout']) {
     const v = trim(overrides[key]);

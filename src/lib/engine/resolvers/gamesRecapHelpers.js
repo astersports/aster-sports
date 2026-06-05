@@ -9,9 +9,44 @@ export { trim };
 const NY_TZ = 'America/New_York';
 const dayFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, weekday: 'short', month: 'short', day: 'numeric' });
 const rangeFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, month: 'short', day: 'numeric' });
+const railDayFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, weekday: 'short' });
+const railDateFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, month: 'numeric', day: 'numeric' });
+const timeFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, hour: 'numeric', minute: '2-digit', hour12: true });
 
 export function dayLabel(startAt) {
   return startAt ? dayFmt.format(new Date(startAt)) : 'Date TBD';
+}
+
+const RESULT_TONE = { W: 'green', L: 'red', T: 'amber' };
+const RESULT_WORD = { W: 'Win', L: 'Loss', T: 'Tie' };
+
+// Build one `game_card` section from a recap game. Reuses the existing
+// game_card renderer (registered in SECTION_RENDERERS, used by
+// tournament_prelim) — no new renderer, no SECTION_RENDERERS orphan risk
+// (AP #38). Pure: same input -> deeply-equal output (AP #27).
+//   rail   — day (e.g. "Sat 5/3") as label + tip time as timePrimary
+//   primary — "{team} vs {opponent}" (omits "vs ..." gracefully on null opp)
+//   secondary — venue when present, else omitted
+//   stakeLine — "{us}–{them} · {Win|Loss|Tie}" toned green/red/amber
+// team_color is carried for parity with the resolver fetch + future use;
+// the game_card renderer owns its own variant colors (it does not read it).
+export function buildGameCard(g) {
+  const label = g.start_at ? `${railDayFmt.format(new Date(g.start_at))} ${railDateFmt.format(new Date(g.start_at))}` : 'TBD';
+  const opp = g.opponent ? String(g.opponent).trim() : '';
+  const primary = opp ? `${g.team_name} vs ${opp}` : g.team_name;
+  const venue = g.venue ? String(g.venue).trim() : '';
+  const tone = RESULT_TONE[g.result] || 'muted';
+  const word = RESULT_WORD[g.result] || g.result || '';
+  const stakeText = word ? `${g.our_score}–${g.opponent_score} · ${word}` : `${g.our_score}–${g.opponent_score}`;
+  const section = {
+    kind: 'game_card', variant: 'regular',
+    rail: { label, timePrimary: g.start_at ? timeFmt.format(new Date(g.start_at)) : '' },
+    primary,
+    stakeLine: { text: stakeText, tone },
+    team_color: g.team_color || null,
+  };
+  if (venue) section.secondary = { text: venue, link: null };
+  return section;
 }
 
 // W-L(-T) record across the games + a date-range label for the hero.
