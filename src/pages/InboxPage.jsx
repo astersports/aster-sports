@@ -16,12 +16,15 @@ const errBox = { padding: 16, borderRadius: 10, backgroundColor: 'var(--as-dange
 const retryBtn = { minHeight: 36, padding: '0 14px', borderRadius: 8, border: 'none', backgroundColor: 'var(--as-danger)', color: 'var(--as-text-inverse)', fontSize: 13, fontWeight: 600, cursor: 'pointer' };
 
 export default function InboxPage() {
-  const { items, loading, error, refetch } = useInboxList();
+  const { items, loading, error, refetch, markOpened } = useInboxList();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeId, setActiveId] = useState(() => searchParams.get('r') || null);
 
   const openDetail = (item) => {
     setActiveId(item.id);
+    // Optimistically clear the unread dot in the list the instant the row
+    // is opened (§16.1) — no refetch needed when we return from detail.
+    markOpened(item.id);
     const next = new URLSearchParams(searchParams);
     next.set('r', String(item.id));
     setSearchParams(next, { replace: false });

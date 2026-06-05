@@ -32,6 +32,10 @@ export default function InboxDetail({ recipientId, onBack }) {
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Surfaced (not swallowed) read-state persist failure (§16.3 kindness
+  // microcopy). The body still renders; this only flags that the
+  // "mark as read" write didn't stick.
+  const [readPersistFailed, setReadPersistFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,13 +55,18 @@ export default function InboxDetail({ recipientId, onBack }) {
       if (err) { setError(err); setRecord(null); setLoading(false); return; }
       setRecord(data || null);
       setLoading(false);
-      // Best-effort mark-as-opened on detail view. Idempotent — only writes
-      // if currently null. Mark-as-read state proper is deferred to a
-      // follow-up wave per Phase 2 D-6(a) minimal-viable scope.
+      setReadPersistFailed(false);
+      // Mark-as-opened on detail view. Idempotent — only writes if
+      // currently null. The unread dot is cleared optimistically in the
+      // list (§16.1); this persists the read-state. Surface (not swallow)
+      // a write failure so a silently-denied write is visible.
       if (data && !data.opened_at) {
         supabase.from('comms_message_recipients')
           .update({ opened_at: new Date().toISOString() })
-          .eq('id', recipientId).then(() => {}, () => {});
+          .eq('id', recipientId)
+          .then(({ error: writeErr }) => {
+            if (!cancelled && writeErr) setReadPersistFailed(true);
+          }, () => { if (!cancelled) setReadPersistFailed(true); });
       }
     });
     return () => { cancelled = true; };
@@ -83,6 +92,11 @@ export default function InboxDetail({ recipientId, onBack }) {
           </div>
         </div>
       </div>
+      {readPersistFailed && (
+        <div role="status" style={{ padding: '8px 16px', fontSize: 12, color: 'var(--as-warning)', background: 'var(--as-warning-soft)' }}>
+          Couldn’t save your read status. It’ll try again next time you open this.
+        </div>
+      )}
       <iframe srcDoc={html} title={subject} sandbox="allow-same-origin" style={frameStyle} />
     </div>
   );

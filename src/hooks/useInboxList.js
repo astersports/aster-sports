@@ -16,12 +16,25 @@ import { useAuth } from '../context/AuthContext';
 //    null for org-wide briefings)
 //   loading, error
 //
-// The hook is purposely simple — no filter, no mark-as-read yet
-// (deferred per Phase 2 D-6(a) minimal-viable scope). Items are
-// sorted server-side by sent_at DESC; the component groups them
-// by recency bucket at render time.
+// Items are sorted by the joined comms_messages.sent_at DESC. PostgREST
+// `.order(..., { foreignTable })` only sorts embedded subarrays, not
+// parent rows (AP #48), so the fetch orders by id (stable) and the sort
+// by sent_at happens JS-side below. Null sent_at (drafts/queued) sort to
+// the top of their bucket (treated as "now"), tie-broken by id desc.
+//
+// markOpened(id) optimistically clears the unread dot in-place (§16.1)
+// when a row is opened, so the list reflects read-state without a
+// refetch round-trip.
 
 const PAGE_SIZE = 50;
+
+// sent_at DESC; null (unsent: draft/queued) sorts first. id desc tiebreak.
+function bySentAtDesc(a, b) {
+  const am = a.sent_at ? new Date(a.sent_at).getTime() : Infinity;
+  const bm = b.sent_at ? new Date(b.sent_at).getTime() : Infinity;
+  if (am !== bm) return bm - am;
+  return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
+}
 
 export function useInboxList() {
   const { guardianId } = useAuth();
@@ -55,9 +68,21 @@ export function useInboxList() {
       // org-wide briefings (no team_id) -> neutral rail.
       team_color: r.comms_messages?.teams?.team_color || null,
     }));
+    flat.sort(bySentAtDesc);
     setItems(flat);
     setLoading(false);
   }, [guardianId]);
+
+  // Optimistic mark-as-read: clear the unread dot for one row in-place
+  // (§16.1). Called when InboxDetail opens a row. Idempotent — leaves
+  // an already-opened row untouched.
+  const markOpened = useCallback((id) => {
+    setItems((prev) => prev.map((it) => (
+      it.id === id && !it.opened_at
+        ? { ...it, opened_at: new Date().toISOString() }
+        : it
+    )));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,5 +90,5 @@ export function useInboxList() {
     return () => { cancelled = true; };
   }, [load]);
 
-  return { items, loading, error, refetch: load };
+  return { items, loading, error, refetch: load, markOpened };
 }
