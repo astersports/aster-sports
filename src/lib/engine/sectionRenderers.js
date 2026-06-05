@@ -50,6 +50,9 @@ import quickLinkNav from './renderers/quickLinkNav';
 import { renderRecapFrameClose, renderRecapFrameOpen } from './renderers/recapFrame';
 import sectionBar from './renderers/sectionBar';
 import recapGameCell from './renderers/recapGameCell';
+import poolStandings from './renderers/poolStandings';
+import weather from './renderers/weather';
+import rules from './renderers/rules';
 
 export const SECTION_RENDERERS = {
   header: renderHeader,
@@ -89,6 +92,9 @@ export const SECTION_RENDERERS = {
   frame_close: renderRecapFrameClose,
   section_bar: sectionBar,
   recap_game_cell: recapGameCell,
+  pool_standings: poolStandings,
+  weather,
+  rules,
 };
 
 function warnUnknownKind(kind) {

@@ -13,10 +13,14 @@ export const defaultValue = {
   // audit §9.5 (NOT a comms_messages column).
   tagline: '',
   rsvp_coach_first_name: '',
+  // Gold-standard showcase sections — operator pastes from
+  // SortableEngine / TourneyMachine / league site / email. Each line
+  // = one row (standings) / one rule (rules). Empty = section omitted.
+  standings_paste: '', rules_paste: '',
 };
 
 export function validate(v) {
-  const filled = ['hotel_block', 'sat_notes', 'sun_notes', 'opponent_scouting', 'lineup_notes', 'tagline'].filter((k) => v?.[k]?.trim());
+  const filled = ['hotel_block', 'sat_notes', 'sun_notes', 'opponent_scouting', 'lineup_notes', 'tagline', 'standings_paste', 'rules_paste'].filter((k) => v?.[k]?.trim());
   if (!filled.length) return ['Add at least one section so the briefing has body content.'];
   return [];
 }
@@ -32,6 +36,8 @@ export default function TournamentPrelimBody({ value, onChange }) {
     { key: 'sun_notes', label: 'Sunday plan', placeholder: 'Bracket play TBD pending Saturday results.' },
     { key: 'opponent_scouting', label: 'Opponent scouting', placeholder: 'Saturday opponent leans on #12 — physical defender on her.' },
     { key: 'lineup_notes', label: 'Lineup considerations', placeholder: 'Start with Sara, Sienna, Stella, Sloane, Skyla.' },
+    { key: 'standings_paste', label: 'Standings (paste · one team per line)', placeholder: 'ASA (MA)\nLegacy Hoopers (NY)\nTeam Spartans Academy (MA)' },
+    { key: 'rules_paste', label: 'Rules (paste · one rule per line)', placeholder: 'Format: two 14-minute stop-time halves.\nFouls: bonus on the 10th team foul.\nArrive 20 minutes early.' },
   ];
   return (
     <div style={fieldGap}>
