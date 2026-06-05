@@ -25,11 +25,28 @@
 // A tournament event with no tournament_id cannot anchor on the tournament; it
 // falls back to the event anchor (kind omitted) so the action still pre-scopes
 // to that event rather than dumping the admin on a fully cold picker.
+//
+// intent='notify' override:
+//   The hero "Notify families" action ALWAYS means "tell families about a
+//   change to THIS event" — that's the schedule_change kind, regardless of
+//   event_type or past/upcoming. So intent='notify' forces
+//   anchor=event&id=<eventId>&kind=schedule_change (event anchor, not the
+//   tournament anchor — the change is to this event). schedule_change's
+//   anchorKind is locked to 'event' (KIND_METADATA), and its resolver
+//   self-fetches the before/after diff from event_change_audit by eventId;
+//   the deep-link pre-scopes kind + event so the admin lands in the Body
+//   step instead of the cold picker. The actual diff is captured when the
+//   admin edits + resaves the event (buildSaveDiff / ScheduleChangeBody),
+//   so a notify deep-link with no recent edit shows the "open from the
+//   EventDetail edit flow" prompt — the best available pre-scope.
 
 const COMPOSE_BASE = '/admin/briefings/compose';
 
-export function composeFromEvent(event, isPast) {
+export function composeFromEvent(event, isPast, { intent } = {}) {
   if (!event?.id) return null;
+  if (intent === 'notify') {
+    return `${COMPOSE_BASE}?anchor=event&id=${event.id}&kind=schedule_change`;
+  }
   const isTournament = event.event_type === 'tournament';
   if (isTournament && event.tournament_id) {
     const kind = isPast ? 'tournament_recap' : 'tournament_prelim';
