@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { anchorTitle, audiencePill, bucketFeed, kindLabel, summaryLine } from '../lib/briefings/radarFeedHelpers';
 
-const FIELDS = 'id, kind, status, anchor_kind, anchor_id, subject, expires_at, scheduled_for, sent_at, last_edited_at, recipient_count, audience_type, team_id';
+const FIELDS = 'id, kind, status, anchor_kind, anchor_id, subject, expires_at, scheduled_for, sent_at, last_edited_at, recipient_count, audience_type, team_id, created_by_trigger';
 
 async function fetchContext(rows) {
   const idsFor = (k) => [...new Set(rows.filter((r) => r.anchor_kind === k).map((r) => r.anchor_id).filter(Boolean))];
@@ -52,7 +52,7 @@ function toViewModel(row, maps) {
 // teams' proposals (the coach read-only view, D5 app-layer filter); an empty
 // array yields an empty feed by design.
 export function useRadarFeed({ orgId, teamIds = null } = {}) {
-  const [state, setState] = useState({ ready: [], scheduled: [], sent: [], loading: false, error: null });
+  const [state, setState] = useState({ ready: [], drafts: [], scheduled: [], sent: [], loading: false, error: null });
   const teamKey = teamIds === null ? null : teamIds.join(',');
 
   const refetch = useCallback(async () => {
@@ -66,9 +66,9 @@ export function useRadarFeed({ orgId, teamIds = null } = {}) {
       const { data, error } = await query;
       if (error) throw error;
       const maps = await fetchContext(data || []);
-      const { ready, scheduled, sent } = bucketFeed(data || []);
+      const { ready, drafts, scheduled, sent } = bucketFeed(data || []);
       const map = (list) => list.map((r) => toViewModel(r, maps));
-      setState({ ready: map(ready), scheduled: map(scheduled), sent: map(sent), loading: false, error: null });
+      setState({ ready: map(ready), drafts: map(drafts), scheduled: map(scheduled), sent: map(sent), loading: false, error: null });
     } catch (e) {
       setState((s) => ({ ...s, loading: false, error: e }));
     }
