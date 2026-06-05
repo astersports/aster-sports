@@ -1,47 +1,91 @@
 [
   {
+    "kind": "frame_open"
+  },
+  {
     "kind": "header",
+    "variant": "cobalt_band",
     "eyebrow": "11U GIRLS · TOURNAMENT RECAP",
     "eyebrow_link": "https://www.legacyhoopers.org/",
     "headline": "TOURNAMENT RECAP",
     "sub_context": "ZG Chase for the Chain NY · Apr 11–12 · Westchester County, NY",
-    "goldStripe": true,
-    "team_color": "#a78bfa"
-  },
-  { "kind": "placement_block", "team_color": "#a78bfa", "final_place": "Champions", "record": "4-0" },
-  {
-    "kind": "game_log",
     "team_color": "#a78bfa",
-    "days": [
-      {
-        "day_label": "SAT · APR 11",
-        "rows": [
-          { "time": "5:00 PM", "opponent": "Level Up", "location_name": "East Coast Sports & Fitness", "location_map_url": "https://maps.app.goo.gl/4mmdfPTpRdBp3kpJ6", "result": "W", "our_score": 29, "opponent_score": 12, "coach_highlight": "Amazing work" }
-        ]
-      },
-      {
-        "day_label": "SUN · APR 12",
-        "rows": [
-          { "time": "12:00 PM", "opponent": "Showtime Elite", "location_name": "Rippowam Cisqua School", "location_map_url": "https://maps.app.goo.gl/sKz13y4bh4Cv9zky7", "result": "W", "our_score": 40, "opponent_score": 9 },
-          { "time": "2:00 PM", "opponent": "NY Extreme Black", "location_name": "Rippowam Cisqua School", "location_map_url": "https://maps.app.goo.gl/sKz13y4bh4Cv9zky7", "result": "W", "our_score": 26, "opponent_score": 16 },
-          { "time": "6:00 PM", "opponent": "NY Extreme Black", "location_name": "East Coast Sports & Fitness", "location_map_url": "https://maps.app.goo.gl/4mmdfPTpRdBp3kpJ6", "result": "W", "our_score": 35, "opponent_score": 21 }
-        ]
-      }
-    ]
+    "record_pill": "4–0 RECORD"
+  },
+  {
+    "kind": "placement_block",
+    "team_color": "#a78bfa",
+    "final_place": "Champions",
+    "record": "4-0"
+  },
+  {
+    "kind": "section_bar",
+    "label": "The Run"
+  },
+  {
+    "kind": "recap_game_cell",
+    "team_color": "#a78bfa",
+    "date_label": "Sat · Apr 11",
+    "matchup": "11U Girls vs Level Up",
+    "our_score": 29,
+    "opponent_score": 12,
+    "result": "W",
+    "context": "East Coast Sports & Fitness"
+  },
+  {
+    "kind": "recap_game_cell",
+    "team_color": "#a78bfa",
+    "date_label": "Sun · Apr 12",
+    "matchup": "11U Girls vs Showtime Elite",
+    "our_score": 40,
+    "opponent_score": 9,
+    "result": "W",
+    "context": "Rippowam Cisqua School"
+  },
+  {
+    "kind": "recap_game_cell",
+    "team_color": "#a78bfa",
+    "date_label": "Sun · Apr 12",
+    "matchup": "11U Girls vs NY Extreme Black",
+    "our_score": 26,
+    "opponent_score": 16,
+    "result": "W",
+    "context": "Rippowam Cisqua School"
+  },
+  {
+    "kind": "recap_game_cell",
+    "team_color": "#a78bfa",
+    "date_label": "Sun · Apr 12",
+    "matchup": "11U Girls vs NY Extreme Black",
+    "our_score": 35,
+    "opponent_score": 21,
+    "result": "W",
+    "context": "East Coast Sports & Fitness"
   },
   {
     "kind": "signoff",
     "prose": "",
     "coaches": [
-      { "display_name": "Frank", "title": "Program Director", "phone": "(917) 991-9830" },
-      { "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" }
+      {
+        "display_name": "Frank",
+        "title": "Program Director",
+        "phone": "(917) 991-9830"
+      },
+      {
+        "display_name": "Coach Kenny",
+        "title": "Coaching Director",
+        "phone": "(516) 644-0208"
+      }
     ]
   },
   {
     "kind": "footer",
     "logoUrl": "https://astersports.app/knight-logo-240.png",
-    "orgName": "Legacy Hoopers",
+    "orgName": "Legacy Hoopers LLC",
     "websiteUrl": "https://www.legacyhoopers.org/",
     "contactEmail": "support@astersports.app"
+  },
+  {
+    "kind": "frame_close"
   }
 ]

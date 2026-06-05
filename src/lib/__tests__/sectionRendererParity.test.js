@@ -25,9 +25,17 @@ const SCAN_SUBDIRS = ['renderers', 'resolvers'];
 
 // Some section kinds are emitted under conditional branches the grep
 // catches but only fire from external code (admin BCC sample, dev
-// fixtures, etc.). Allowlist for known dead-emit cases — empty today;
-// extend with justification.
-const ALLOWED_DEAD_RENDERERS = new Set();
+// fixtures, etc.). Allowlist for known dead-emit cases — extend with
+// justification.
+const ALLOWED_DEAD_RENDERERS = new Set([
+  // game_log — retired 2026-06-05 when tournament_recap moved to the
+  // framed recap_game_cell shell (full-depth render). It was the only
+  // emitter; grep confirms no other kind pushes `kind: 'game_log'`. The
+  // renderer + SECTION_RENDERERS entry stay registered (kept per spec /
+  // AP #34: no dispatch-table removal without a sweep). Delete the
+  // renderer + this entry together if a future sweep retires it for real.
+  'game_log',
+]);
 
 // Renderer entries whose section.kind is referenced via dynamic string
 // rather than literal (rare). Add with justification — exempts them
