@@ -15,6 +15,7 @@ import tournaments from './fixtures/weekly_digest_may_11_17/tournaments.json';
 import event_rsvps from './fixtures/weekly_digest_may_11_17/event_rsvps.json';
 import recipients from './fixtures/weekly_digest_may_11_17/recipients.json';
 import coaches from './fixtures/weekly_digest_may_11_17/coaches.json';
+import team_staff from './fixtures/weekly_digest_may_11_17/team_staff.json';
 import organization from './fixtures/weekly_digest_may_11_17/organization.json';
 import player_guardians from './fixtures/weekly_digest_may_11_17/player_guardians.json';
 import expectedContentSections from './fixtures/weekly_digest_may_11_17/expected_content_sections.json';
@@ -22,7 +23,7 @@ import expectedContentSections from './fixtures/weekly_digest_may_11_17/expected
 const ORG_ID = 'e3e95e21-3571-4e9a-985a-d5d01480d4a6';
 const PERIOD = { start: new Date('2026-05-11T04:00:00Z'), end: new Date('2026-05-17T04:00:00Z') };
 const NOW = new Date('2026-05-09T14:13:44Z');
-const FIXTURES = { events, tournaments, event_rsvps, recipients, coaches, organization, player_guardians };
+const FIXTURES = { events, tournaments, event_rsvps, recipients, coaches, team_staff, organization, player_guardians };
 
 describe('weekly_digest resolver — snapshot vs production row 3b431eb1', () => {
   it('slices[0] is Stephanie Samaritano (lowest guardian_id under ASC ordering)', async () => {

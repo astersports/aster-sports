@@ -20,6 +20,8 @@
 // (4.2-A-3).
 
 import { buildOrgContext } from '../buildOrgContext';
+import { buildVoiceSignature } from '../voiceSignature';
+import { fetchSignatureCoaches } from './signatureCoaches';
 import {
   buildGameRecapCard, buildGameRecapPill, buildSubject, fetchSlices,
   GameRecapNotPublishedError, trim,
@@ -70,13 +72,14 @@ export async function resolveGameRecap({ eventId, pilotOnly }, { supabase, now =
   const { data: coachesData, error: coachesErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
   if (coachesErr) throw coachesErr;
   const coaches = coachesData || [];
+  const signatureCoaches = await fetchSignatureCoaches(supabase, orgId, event.team_id);
   const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
   if (orgErr) throw orgErr;
   const slices = await fetchSlices(supabase, orgId, event.team_id, effectivePilotOnly);
 
   return {
     context: {
-      org: buildOrgContext({ orgId, org, coaches }),
+      org: buildOrgContext({ orgId, org, coaches, signature_coaches: signatureCoaches }),
       event: { id: event.id, start_at: event.start_at, opponent: event.opponent, location_id: event.location_id, tournament_id: event.tournament_id, team_id: event.team_id },
       team: event.teams ? { id: event.teams.id, name: event.teams.name, team_color: event.teams.team_color, sort_order: event.teams.sort_order } : null,
       game_result: gameResult,
@@ -112,8 +115,9 @@ export function composeGameRecap(context, slice, overrides = {}) {
   }
 
   const validCoaches = (org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
+  const signature = buildVoiceSignature(org.signature_coaches);
   const signoffProse = trim(overrides.signoff_message);
-  if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
+  if (signoffProse || signature || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, signature, coaches: validCoaches });
 
   sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
   sections.push({ kind: 'frame_close' });

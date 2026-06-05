@@ -28,6 +28,7 @@
 //   - Override beats data (consistent with 4.2-A-3).
 
 import { buildOrgContext } from '../buildOrgContext';
+import { fetchSignatureCoaches } from './signatureCoaches';
 import { buildTeamSlices, fetchRecipientGuardians } from './tournamentPrelimHelpers';
 import { buildRecapSections, buildSubject } from './tournamentRecapHelpers';
 
@@ -106,9 +107,21 @@ export async function resolveTournamentRecap({ tournamentId, pilotOnly }, { supa
   const allRecipients = orgId ? await fetchRecipientGuardians(supabase, orgId, teamIds, effectivePilotOnly) : [];
   const slices = buildTeamSlices(tournament_teams, allRecipients);
 
+  // tournament_recap is per-team (one slice per team), so the voice signature
+  // is per-team: each team signs with the org Program Director + ITS OWN
+  // team_staff coaches. Resolve a team_id → coaches map; the per-slice
+  // compose (buildRecapSections) reads its slice.team_id entry.
+  const signature_coaches_by_team = {};
+  if (orgId) {
+    for (const tid of teamIds) {
+      signature_coaches_by_team[tid] = await fetchSignatureCoaches(supabase, orgId, tid);
+    }
+  }
+
   return {
     context: {
       org: buildOrgContext({ orgId, org, coaches }),
+      signature_coaches_by_team,
       tournament, tournament_teams, events_by_team, game_results_by_event, players_by_id, locations,
     },
     slices,

@@ -1,0 +1,9 @@
+[
+  { "user_id": "u-kenny", "role": "head_coach", "team_id": "507d7a4e-553e-4ba7-a61c-38d6cdf2f364", "staff_profiles": { "user_id": "u-kenny", "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" } },
+  { "user_id": "u-kenny", "role": "head_coach", "team_id": "6abb0447-8866-461c-bd78-1c58eebf9551", "staff_profiles": { "user_id": "u-kenny", "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" } },
+  { "user_id": "u-kenny", "role": "head_coach", "team_id": "13abc98d-5e88-4fe0-8929-690add6e2bdd", "staff_profiles": { "user_id": "u-kenny", "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" } },
+  { "user_id": "u-kenny", "role": "head_coach", "team_id": "0366db32-e9ae-454b-a43c-504bb150c77f", "staff_profiles": { "user_id": "u-kenny", "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" } },
+  { "user_id": "u-kenny", "role": "head_coach", "team_id": "e6dde2e0-38f7-46c9-ad1a-5ac253a2a570", "staff_profiles": { "user_id": "u-kenny", "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" } },
+  { "user_id": "u-darien", "role": "assistant_coach", "team_id": "0366db32-e9ae-454b-a43c-504bb150c77f", "staff_profiles": { "user_id": "u-darien", "display_name": "Coach Darien", "title": "Assistant Coach", "phone": "(914) 555-0142" } },
+  { "user_id": "u-darien", "role": "assistant_coach", "team_id": "e6dde2e0-38f7-46c9-ad1a-5ac253a2a570", "staff_profiles": { "user_id": "u-darien", "display_name": "Coach Darien", "title": "Assistant Coach", "phone": "(914) 555-0142" } }
+]

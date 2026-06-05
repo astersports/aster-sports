@@ -16,6 +16,7 @@
 
 import { formatPeriodLabel, periodIsoBounds } from '../digestPeriod';
 import { buildOrgContext } from '../buildOrgContext';
+import { fetchSignatureCoaches } from './signatureCoaches';
 
 // Wave 4.3-K: composeWeeklyDigest lives in a sibling file to keep this
 // module under the 150-line cap. Re-export preserves the public surface.
@@ -111,9 +112,16 @@ export async function resolveWeeklyDigest({ orgId, period, pilotOnly = false }, 
   const teamsMap = new Map();
   for (const ev of events || []) if (ev.teams && !teamsMap.has(ev.teams.id)) teamsMap.set(ev.teams.id, ev.teams);
 
+  // Voice signature for the org-wide weekly digest = org Program Director +
+  // the union of every team appearing in the digest's events (deduped). In
+  // the common case (one coaching director across all teams) this collapses
+  // to "Frank & Coach Kenny"; it grows team-aware as team_staff grows.
+  const digestTeamIds = [...teamsMap.keys()];
+  const signatureCoaches = await fetchSignatureCoaches(supabase, orgId, digestTeamIds);
+
   return {
     context: {
-      org: buildOrgContext({ orgId, org, coaches }),
+      org: buildOrgContext({ orgId, org, coaches, signature_coaches: signatureCoaches }),
       period: { start: period.start, end: period.end, label: formatPeriodLabel(period) },
       events: events || [],
       teams: [...teamsMap.values()],

@@ -14,13 +14,14 @@ import tournaments from './fixtures/weekly_digest_may_11_17/tournaments.json';
 import event_rsvps from './fixtures/weekly_digest_may_11_17/event_rsvps.json';
 import recipients from './fixtures/weekly_digest_may_11_17/recipients.json';
 import coaches from './fixtures/weekly_digest_may_11_17/coaches.json';
+import team_staff from './fixtures/weekly_digest_may_11_17/team_staff.json';
 import organization from './fixtures/weekly_digest_may_11_17/organization.json';
 import player_guardians from './fixtures/weekly_digest_may_11_17/player_guardians.json';
 
 const ORG_ID = 'e3e95e21-3571-4e9a-985a-d5d01480d4a6';
 const PERIOD = { start: new Date('2026-05-11T04:00:00Z'), end: new Date('2026-05-17T04:00:00Z') };
 const NOW = new Date('2026-05-09T14:13:44Z');
-const FIXTURES = { events, tournaments, event_rsvps, recipients, coaches, organization, player_guardians };
+const FIXTURES = { events, tournaments, event_rsvps, recipients, coaches, team_staff, organization, player_guardians };
 const norm = (v) => JSON.parse(JSON.stringify(v));
 
 describe('resolver contract — wave 4.2-A-1', () => {

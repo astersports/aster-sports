@@ -14,6 +14,8 @@
 import { buildGameCell, buildGamesSubject, dayLabel, fetchSlicesForTeams, summarizeGames, trim } from './gamesRecapHelpers';
 import { ORG_NAME_DEFAULT } from '../../constants';
 import { buildOrgContext } from '../buildOrgContext';
+import { buildVoiceSignature } from '../voiceSignature';
+import { fetchSignatureCoaches } from './signatureCoaches';
 
 
 const EVENT_SELECT = 'id, team_id, start_at, location, opponent, teams ( id, name, team_color, org_id )';
@@ -57,11 +59,17 @@ export async function resolveGamesRecap({ eventIds, pilotOnly }, { supabase, now
   if (orgErr) throw orgErr;
 
   const teamIds = [...new Set(events.map((e) => e.team_id).filter(Boolean))];
+  // Multi-team default (architect-flagged): games_recap can span 1+ teams
+  // (e.g. 9U + 10U in one weekend digest). The voice signature is the UNION
+  // of all involved teams' coaches (+ the org Program Director), deduped —
+  // so a 9U+10U digest signs "Frank, Coach Kenny & Coach Darien" when Darien
+  // coaches 9U. fetchSignatureCoaches takes the full teamIds array.
+  const signatureCoaches = await fetchSignatureCoaches(supabase, orgId, teamIds);
   const slices = await fetchSlicesForTeams(supabase, orgId, teamIds, effectivePilotOnly);
 
   return {
     context: {
-      org: buildOrgContext({ orgId, org, coaches: coachesData }),
+      org: buildOrgContext({ orgId, org, coaches: coachesData, signature_coaches: signatureCoaches }),
       games, summary, subject: buildGamesSubject(games, summary.record),
     },
     slices,
@@ -92,8 +100,9 @@ export function composeGamesRecap(context, slice, overrides = {}) {
   }
 
   const validCoaches = (org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
+  const signature = buildVoiceSignature(org.signature_coaches);
   const signoffProse = trim(overrides.signoff_message);
-  if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
+  if (signoffProse || signature || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, signature, coaches: validCoaches });
 
   sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
   sections.push({ kind: 'frame_close' });

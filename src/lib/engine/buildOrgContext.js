@@ -12,10 +12,17 @@
 // Pass the org row from `.select('id, name, display_name, brand_colors, voice_config')`
 // (widen the select to include display_name) plus the org's coaches array.
 // `org` may be null (e.g. orgId unresolved) — the defaults then apply.
+//
+// `signature_coaches` (optional) is the team-aware voice-signature staff
+// (org Program Director + the game's team's team_staff coaches) resolved by
+// fetchSignatureCoaches. It drives the narrative sign-off line ("Frank &
+// Coach Kenny" / "& Coach Darien" on 9U/8U) and is DISTINCT from `coaches`
+// (the org-wide contact block at the bottom of the signoff). When omitted,
+// it falls back to `coaches` so callers not yet wired keep prior behavior.
 
 import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../constants';
 
-export function buildOrgContext({ orgId, org, coaches }) {
+export function buildOrgContext({ orgId, org, coaches, signature_coaches }) {
   return {
     id: orgId,
     name: org?.display_name || org?.name || ORG_NAME_DEFAULT,
@@ -27,5 +34,6 @@ export function buildOrgContext({ orgId, org, coaches }) {
     voice_config: org?.voice_config || null,
     brand_colors: org?.brand_colors || null,
     coaches: coaches || [],
+    signature_coaches: signature_coaches || coaches || [],
   };
 }

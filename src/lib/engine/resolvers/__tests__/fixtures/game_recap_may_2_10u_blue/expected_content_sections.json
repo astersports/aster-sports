@@ -25,6 +25,7 @@
   {
     "kind": "signoff",
     "prose": "",
+    "signature": "Frank & Coach Kenny",
     "coaches": [
       { "display_name": "Frank", "title": "Program Director", "phone": "(917) 991-9830" },
       { "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" }

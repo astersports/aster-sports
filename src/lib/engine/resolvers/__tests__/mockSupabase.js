@@ -9,19 +9,27 @@
 // would have filtered.
 
 function mockChain(rows) {
-  const promise = Promise.resolve({ data: rows, error: null });
+  // Thin filter awareness ONLY for the predicates fetchSignatureCoaches
+  // depends on: title= (staff_profiles WHERE title='Program Director')
+  // resolves to the PD subset, and in('team_id', [...]) (team_staff scoped
+  // to a slice's team) resolves to that team's coaches. Both are narrowly
+  // column-gated so every other .eq()/.in() stays filter-agnostic per the
+  // mock's "fixtures are pre-shaped" doctrine (e.g. .in('id', eventIds)
+  // still returns the whole fixture, which is already pre-shaped).
+  let current = rows;
+  const settle = () => Promise.resolve({ data: current, error: null });
   const chain = {
     select: () => chain,
-    eq: () => chain,
+    eq: (col, val) => { if (col === 'title') current = (current || []).filter((r) => r.title === val); return chain; },
     neq: () => chain,
     gte: () => chain,
     lt: () => chain,
-    in: () => chain,
+    in: (col, vals) => { if (col === 'team_id') { const set = new Set(vals || []); current = (current || []).filter((r) => set.has(r.team_id)); } return chain; },
     not: () => chain,
     order: () => chain,
-    maybeSingle: () => Promise.resolve({ data: rows[0] || null, error: null }),
-    then: promise.then.bind(promise),
-    catch: promise.catch.bind(promise),
+    maybeSingle: () => Promise.resolve({ data: (current || [])[0] || null, error: null }),
+    then: (onF, onR) => settle().then(onF, onR),
+    catch: (onR) => settle().catch(onR),
   };
   return chain;
 }
@@ -45,6 +53,7 @@ export function mockClient(fixtures) {
     event_change_audit: fixtures.event_change_audit || [],
     team_players: fixtures.team_players || [],
     staff_profiles: fixtures.coaches || [],
+    team_staff: fixtures.team_staff || [],
     organizations: fixtures.organization ? [fixtures.organization] : [],
     organization_settings: fixtures.organization_settings ? [fixtures.organization_settings] : [],
     player_guardians: fixtures.player_guardians || [],

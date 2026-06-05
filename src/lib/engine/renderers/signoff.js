@@ -11,6 +11,16 @@ function renderProse(prose) {
     + '</p>';
 }
 
+// Voice signature line — the narrative sign-off ("— Frank & Coach Kenny").
+// Team-aware, data-driven (see ../voiceSignature.js + resolvers/
+// signatureCoaches.js). Renders above the prose + contact block.
+function renderSignature(signature) {
+  if (!signature) return '';
+  return '<p style="font-family:Inter,system-ui,sans-serif;font-size:14px;color:#0f172a;line-height:1.6;margin:8px 0;font-style:italic;">'
+    + `&#8212; ${escapeHtml(signature)}`
+    + '</p>';
+}
+
 function renderDivider() {
   return '<hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" />';
 }
@@ -23,8 +33,9 @@ function renderCoach(c) {
     + '</div>';
 }
 
-function renderPlain({ prose, coaches }) {
+function renderPlain({ prose, signature, coaches }) {
   const lines = [];
+  if (signature) { lines.push(`— ${signature}`); lines.push(''); }
   if (prose) { lines.push(prose); lines.push(''); }
   (coaches || []).forEach((c) => {
     const meta = [c?.title, c?.phone].filter(Boolean).join(' · ');
@@ -36,7 +47,8 @@ function renderPlain({ prose, coaches }) {
 
 export default function render(section) {
   const coaches = section?.coaches || [];
-  const html = renderProse(section?.prose)
+  const html = renderSignature(section?.signature)
+    + renderProse(section?.prose)
     + (coaches.length ? renderDivider() : '')
     + coaches.map(renderCoach).join('');
   return { html, plainText: renderPlain(section || {}) };
