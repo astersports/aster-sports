@@ -1,0 +1,98 @@
+==============================================================================
+ARCH DECISIONS — Hub S1 claim + render   (architect -> terminal-CC)
+Answers ARCHITECTURE_REVIEW_2026-06-05 Part C. GO with conditions.
+==============================================================================
+Date: 2026-06-05.
+
+------------------------------------------------------------------------------
+PART A (render) — CLOSED
+------------------------------------------------------------------------------
+Render verified at bar (per-cell cyan/slate rails, kind-scoped, no leakage,
+parity clean, §13 ok). Accepted. The screenshot -> fix -> rendered-output
+re-verification loop worked. Only C4 (live dark-mode) remains = Frank re-sends
+the 0-2 recap and screenshots it in a dark client. Not a build gate.
+
+------------------------------------------------------------------------------
+C1 — claim_guardian SECDEF RPC : GO (pattern) + HARD CONDITIONS + pre-apply review
+------------------------------------------------------------------------------
+The SECDEF RPC is the correct fix for the RLS-blocked client UPDATE (a parent's
+session cannot flip their own user_id IS NULL row). Approved as the approach.
+A self-service claim is the one place a bug = account takeover, so the EXACT SQL
+returns to architect before apply, and it MUST satisfy ALL of:
+
+  1. SESSION-DERIVED EMAIL. The email matched against guardians is read
+     server-side from the authenticated user (auth.uid() -> auth.users.email),
+     NEVER a caller parameter. This is the entire claim-vs-takeover line.
+  2. CONFIRMED ONLY. Require auth.users.email_confirmed_at IS NOT NULL before any
+     claim. An unconfirmed email cannot claim.
+  3. EXACT NORMALIZED MATCH. lower(trim(guardians.email)) = lower(trim(session_email)).
+     NOT a wildcard ILIKE. (Defense in depth against pattern injection.)
+  4. NULL -> SELF ONLY. Only flip guardians.user_id from NULL to auth.uid().
+     NEVER touch a row already claimed by another user. No reassignment, ever.
+  5. MULTI-MATCH: claim ALL unclaimed guardian rows matching the confirmed email
+     (they are the same person); skip any already claimed by another. Fail safe.
+  6. SECDEF HARDENING: SET search_path = public, auth; REVOKE EXECUTE FROM public,
+     anon; GRANT EXECUTE TO authenticated (AP #23/#57).
+  7. ATOMIC + IDEMPOTENT: flip + user_roles(parent) + populate in one tx; a repeat
+     call is a no-op.
+  8. FAIL CLOSED on email mismatch (guardian email != session email -> no claim;
+     correcting a guardian's email is an admin path, not a claim bypass).
+
+  ABUSE PROOF before "done" (like #710): prove a user (a) claims only their own
+  email's row, (b) CANNOT claim another's row, (c) CANNOT claim with an
+  unconfirmed email, (d) repeat call no-ops, (e) anon/public cannot execute.
+
+------------------------------------------------------------------------------
+C2 — S1 tables + populate-on-every-login : GO + pre-apply review + 2 conditions
+------------------------------------------------------------------------------
+Table set (family_children, child_links, calendar_subscriptions, synced_events
+with status/content_hash/last_sync_status) accepted; user-scoped RLS
+owner_user_id = (SELECT auth.uid()), no org_id on household rows. Exact DDL
+returns before apply (Rule 19); RLS proof on Frank's family before S1 is "done".
+
+  COND-1 (read path, keep as designed): the Hub READ composes as the INVOKER
+    (the parent), intersecting child_links with current_user_player_ids(). NO
+    SECURITY DEFINER over the read path. Org isolation is never bypassed to read.
+    This separation (SECDEF only for the claim/populate WRITES, INVOKER for the
+    READ) is correct, hold it.
+  COND-2 (populate_household): it MUST NOT act on a target-user parameter. Either
+    drop the param and use auth.uid() internally, or assert p_user = auth.uid()
+    and reject otherwise. A SECDEF write fn that accepts an arbitrary user is the
+    same takeover risk as C1, one step removed. Derive players solely from the
+    caller's own claimed guardian; write only rows owned by the caller; idempotent
+    upsert. Prefer INVOKER if RLS allows; if SECDEF, scope strictly to auth.uid().
+
+------------------------------------------------------------------------------
+C3 — render fidelity : PARTIAL (match the voice, not the literal)
+------------------------------------------------------------------------------
+- Bold lead phrase: SKIP. Mock flourish. Hard-coding a bold first sentence
+  misfires on narratives that don't open punchy. Uniform <p> is correct.
+- Voice signature: KEEP. The narrative should sign in voice ("Frank & Coach
+  Kenny"; team-aware "& Coach Darien" on 9U/8U) from the AI/voice layer, not a
+  byte-match. Verify the AI-draft path already emits it; for templated narratives,
+  append the team-appropriate signature.
+- Contact footer: keep as-is. Body voice-signature + contact footer is Frank's
+  actual style; both is correct.
+
+------------------------------------------------------------------------------
+C4 — dark-mode : Frank verification step (not a build)
+------------------------------------------------------------------------------
+Frank re-sends the 0-2 recap to himself, screenshots in a dark client; we confirm
+the light interior holds. Last render check.
+
+------------------------------------------------------------------------------
+C5 — retire dead renderers/gameRecap.js + 8-test file : GO
+------------------------------------------------------------------------------
+Dead code, no production importer, coverage preserved by gameRecap.snapshot +
+gamesRecap.contract. Retire it (AP #51).
+
+------------------------------------------------------------------------------
+NEXT STEP
+------------------------------------------------------------------------------
+Draft the EXACT claim_guardian SQL + the S1 DDL to the C1/C2 conditions and bring
+BOTH back for the security pass BEFORE apply. On that approval: apply via MCP +
+mirror file (AP #21), run the abuse + RLS proofs, then build S2 (the Hub home) to
+canon. C3 + C5 proceed in parallel and gate nothing.
+==============================================================================
+END.
+==============================================================================
