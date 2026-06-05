@@ -1218,22 +1218,32 @@ ELITE-28 ships CONTINUOUSLY — not a Phase 1.5 step.
 - Admin-configurable per org/team
 - Suppressed by Quiet Mode unless severity 'critical'
 
-**Stream B: RSVP nudges** (you haven't RSVP'd yet)
-- T-4h + T-1h before RSVP-lock deadline
-- Banner + push at both intervals
-- Email weekly digest Sunday 6 PM
-- SMS reserved for cancellations + admin 'critical' only
+**Stream B: RSVP nudges** (the team is short on confirmed players)
+- **Trigger (operator-locked 2026-06-05):** an upcoming game with **fewer than N
+  confirmed "going" RSVPs** drafts a nudge, where **N is org-configurable via
+  `organizations.auto_notifications.rsvp_min_going`, default 5** ("you need 5 to
+  field a game"). This replaced the prior `<70%`-of-active-roster coverage model.
+- **Auto-DRAFT into the Radar only** — admin reviews + sends. NOTHING auto-fires
+  to families (deliberate: avoid flooding parents).
+- Nudge targets the kids who haven't confirmed going (non-responders / not-going).
+- Event-proximity window: games starting within the next ~24h (`handleRsvpLow24h`).
+  FLAG: widening this window for more lead time to rally players is an open option
+  pending an operator decision; shipped at 24h to avoid scope creep.
+- Threshold + going-floor decision live in the AP #30 mirror pair
+  `src/lib/cron/rsvpNudgeThreshold.js` ↔
+  `supabase/functions/briefing-auto-draft-tick/_rsvpNudgeThreshold.ts`; the IO
+  handler is `briefing-auto-draft-tick/_handlers.ts:handleRsvpLow24h`. Operator
+  control surfaces in `AutoNotificationSettingsSheet` (Stream B → "Minimum
+  confirmed going").
 
 Both streams run independently. Both are admin-configurable.
 
-**SPEC vs IMPL drift flagged 2026-05-29 (Wave 3.A #19 P1-1, restated 2026-06-02):**
-Stream B production today uses a 24-hour coverage-threshold model anchored on
-event start, not the T-4h + T-1h anchored-on-RSVP-lock-deadline spec above.
-The Sunday digest is auto-DRAFT-only (not auto-SEND). Pending Frank's call on
-truer position: either (a) align the impl to this spec, or (b) update this
-spec to match the impl. Logged as P1; not blocking the §17.8 gate. See
-§4.AR (Wave 3.A audit) for the original write-up + the 2026-06-02 §4.BV
-note flagging it as a deferred follow-up.
+**Stream B model RESOLVED 2026-06-05** (was: Wave 3.A #19 P1-1 SPEC-vs-IMPL
+drift, flagged 2026-05-29 / restated 2026-06-02). The prior "24-hour
+coverage-threshold anchored on event start" impl and the older "T-4h + T-1h
+anchored-on-RSVP-lock-deadline" spec are both superseded by the operator's
+"fewer than N confirmed going (default 5), auto-DRAFT" decision above. The
+Sunday weekly digest remains auto-DRAFT-only (not auto-SEND), unchanged.
 
 ### 16.6 Translation scope (Phase 3 lock)
 

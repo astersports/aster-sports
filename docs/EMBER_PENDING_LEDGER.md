@@ -3913,7 +3913,7 @@ Closes the P1 layer of the §17.5 fix-PR routing campaign opened by §4.AR / §4
 **Routing rule applied:** the audit gate doesn't require every P1 to ship code — it requires every P1 to be **routed**. A documented decision-required state IS a routing answer. Deferred items have named decisions, recommendations, and operator vs CC ownership.
 
 **Standing items going forward** (all listed in `AUDIT_WAVE_3_P1_BACKLOG_STATUS.md`):
-- Notifications: Stream B spec/impl drift (operator call); Sunday digest auto-SEND (operator call); `guardian_notification_prefs` PATTERN OMEGA wiring; Stream A RSVP-aware skip
+- Notifications: ~~Stream B spec/impl drift (operator call)~~ ✅ **RESOLVED 2026-06-05** — operator locked "fewer than N confirmed going (default 5), auto-DRAFT"; see the §4 "Out of scope" reconciliation note above + §16.5; Sunday digest auto-SEND (operator call); `guardian_notification_prefs` PATTERN OMEGA wiring; Stream A RSVP-aware skip
 - Onboarding: bulk-invite UX, push opt-in promo UX, PWA install prompt re-design, Resend bounce admin viewer, branded Supabase invite email (operator)
 - Briefings: recipient preview chip UI, briefings_templates retire-vs-wire decision, parent inbox feature, academy_callup_notice smoke (operator)
 - Compliance: `team_feed_token` revocation strategy, `team_achievements` consent UI, SafeSport cert surface, `guardian_email_preferences` admin UI
@@ -4055,7 +4055,7 @@ Closes the 4 P0 doctrine-drift findings from `AUDIT_WAVE_3B_2026-05-29.md` (cate
 - AP #50 textual residue: 2 lines (in AP #53 candidate body + §16.15 framing) marked with explicit `(retired 2026-05-28)` parenthetical so future readers don't follow the historical methodology citation as live guidance.
 
 **Out of scope** (deferred to follow-up PRs):
-- §16.5 Stream B drift (24h coverage vs T-4h+T-1h spec) — needs Frank's call on which is the truer position
+- ~~§16.5 Stream B drift (24h coverage vs T-4h+T-1h spec) — needs Frank's call on which is the truer position~~ ✅ **RESOLVED 2026-06-05** (operator decision). Stream B rsvp_nudge now drafts when an upcoming game has **fewer than N confirmed "going"** RSVPs (N = `organizations.auto_notifications.rsvp_min_going`, default 5; "you need 5 to field a game"). Replaces the `<70%`-coverage model. Stays auto-DRAFT into the Radar (nothing auto-sends to families). Pure decision in AP #30 mirror pair `src/lib/cron/rsvpNudgeThreshold.js` ↔ `supabase/functions/briefing-auto-draft-tick/_rsvpNudgeThreshold.ts`; handler `briefing-auto-draft-tick/_handlers.ts:handleRsvpLow24h`; operator control in `AutoNotificationSettingsSheet`. §16.5 Stream B doc rewritten to match. **FLAG (open, deferred):** widening the ~24h event-proximity window for more rally lead time — pending a separate operator decision; not implemented in this PR.
 - BRIEFINGS_COVERAGE_L99.md refresh — separate doc, separate PR
 - `docs/archive/SKYFIRE_BUILD_QUEUE_v2.md` rename — file is archived (not active); falls under the "historical docs kept as-is" doctrine clause; not renamed
 

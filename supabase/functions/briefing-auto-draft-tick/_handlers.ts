@@ -17,6 +17,7 @@
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { computeExpiryForKind } from "./_helpers.ts";
+import { rsvpMinGoingThreshold, shouldNudgeLowGoing } from "./_rsvpNudgeThreshold.ts";
 import { draftExists, HandlerResult, placeholderDraft, Trigger, tryInsert } from "./_draftRow.ts";
 
 export async function handleGameCompleted(sb: SupabaseClient, trigger: Trigger, now: Date): Promise<HandlerResult[]> {
@@ -126,12 +127,21 @@ export async function handleScheduleChanged(sb: SupabaseClient, trigger: Trigger
 
 export async function handleRsvpLow24h(sb: SupabaseClient, trigger: Trigger, now: Date): Promise<HandlerResult[]> {
   const nowIso = now.toISOString();
+  // Event-proximity window: games starting within the next 24h. FLAG (2026-06-05):
+  // a short-roster draft may be more useful with more lead time to rally players —
+  // widening this window to e.g. 48-72h is an open option pending operator decision;
+  // shipped as-is (existing 24h) to avoid expanding scope.
   const in24h = new Date(now.getTime() + 24 * 3600000).toISOString();
-  // Per-org RSVP coverage threshold from organization_settings.nudge_rules.
-  // Default 0.7 = nudge any event with under 70% of active roster responded.
-  const { data: orgSettings } = await sb.from("organization_settings")
-    .select("nudge_rules").eq("organization_id", trigger.org_id).maybeSingle();
-  const threshold = (orgSettings?.nudge_rules as { rsvp_coverage_threshold?: number } | null)?.rsvp_coverage_threshold ?? 0.7;
+  // Per-org "fewer than N confirmed going" floor from
+  // organizations.auto_notifications.rsvp_min_going (default 5 — "you need 5 to
+  // field a game"). Operator-locked 2026-06-05; replaced the prior
+  // organization_settings.nudge_rules <70%-coverage model. Mirrors the
+  // reminders_enabled default-when-unset pattern the same column uses.
+  // AP #36 — destructure error; a read miss falls back to the default floor.
+  const { data: org, error: orgErr } = await sb.from("organizations")
+    .select("auto_notifications").eq("id", trigger.org_id).maybeSingle();
+  const autoCfg = (orgErr ? {} : (org?.auto_notifications as Record<string, unknown> | null) ?? {}) as { rsvp_min_going?: unknown };
+  const threshold = rsvpMinGoingThreshold(autoCfg);
   const { data: eventsData, error } = await sb.from("events")
     .select("id, team_id, start_at, teams!inner(org_id)").gt("start_at", nowIso).lte("start_at", in24h);
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "rsvp_nudge", error: error.message }];
@@ -139,18 +149,14 @@ export async function handleRsvpLow24h(sb: SupabaseClient, trigger: Trigger, now
   const orgEvents = events.filter((e: any) => e.teams?.org_id === trigger.org_id);
   const out: HandlerResult[] = [];
   for (const e of orgEvents as any[]) {
-    const { count: total } = await sb.from("team_players")
-      .select("*", { count: "exact", head: true }).eq("team_id", e.team_id).eq("status", "active");
-    if (!total || total === 0) {
-      out.push({ trigger_id: trigger.id, org_id: trigger.org_id, kind: "rsvp_nudge", anchor_id: e.id, skipped: "no_active_roster" });
-      continue;
-    }
-    const { data: respRows, error: respErr } = await sb.from("event_rsvps").select("player_id").eq("event_id", e.id);
-    if (respErr) throw respErr;
-    const responded = new Set((respRows || []).map((r: any) => r.player_id)).size;
-    const coverage = responded / total;
-    if (responded > 0 && coverage >= threshold) {
-      out.push({ trigger_id: trigger.id, org_id: trigger.org_id, kind: "rsvp_nudge", anchor_id: e.id, skipped: "coverage_met" });
+    // Count confirmed "going" RSVPs for the event. AP #36 — destructure error
+    // and surface it rather than letting a false-empty count draft a spurious
+    // nudge.
+    const { count: goingCount, error: goingErr } = await sb.from("event_rsvps")
+      .select("*", { count: "exact", head: true }).eq("event_id", e.id).eq("response", "going");
+    if (goingErr) { out.push({ trigger_id: trigger.id, org_id: trigger.org_id, kind: "rsvp_nudge", anchor_id: e.id, error: goingErr.message }); continue; }
+    if (!shouldNudgeLowGoing(goingCount ?? 0, threshold)) {
+      out.push({ trigger_id: trigger.id, org_id: trigger.org_id, kind: "rsvp_nudge", anchor_id: e.id, skipped: "going_floor_met" });
       continue;
     }
     const anchorTime = e.start_at ? new Date(e.start_at) : null;

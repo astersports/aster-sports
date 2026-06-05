@@ -33,6 +33,7 @@ const PAIRS = [
   { ts: 'supabase/functions/parse-tournament-schedule/_helpers.ts', js: 'src/lib/import/parseTournamentSchedulePrompt.js', baseline: 4 },
   { ts: 'supabase/functions/suggest-briefing-closer/_helpers.ts', js: 'src/lib/briefings/suggestCloserPrompt.js', baseline: 2 },
   { ts: 'supabase/functions/suggest-briefing-closer/_scheduleGaps.ts', js: 'src/lib/briefings/scheduleGaps.js', baseline: 9 },
+  { ts: 'supabase/functions/briefing-auto-draft-tick/_rsvpNudgeThreshold.ts', js: 'src/lib/cron/rsvpNudgeThreshold.js', baseline: 0 },
 ];
 
 function stripComments(src) {

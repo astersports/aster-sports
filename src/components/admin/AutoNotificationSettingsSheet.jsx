@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/useToast';
+import { RSVP_MIN_GOING_DEFAULT } from '../../lib/cron/rsvpNudgeThreshold';
 import FullScreenForm from '../shared/FullScreenForm';
+import Input from '../shared/Input';
 import Toggle from '../shared/Toggle';
 
 export default function AutoNotificationSettingsSheet({ open, onClose, orgId }) {
   const { showToast } = useToast();
   const [reminders, setReminders] = useState(true);
   const [nudges, setNudges] = useState(true);
+  const [minGoing, setMinGoing] = useState(String(RSVP_MIN_GOING_DEFAULT));
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -20,6 +23,8 @@ export default function AutoNotificationSettingsSheet({ open, onClose, orgId }) 
         const cfg = data?.auto_notifications || {};
         setReminders(cfg.reminders_enabled !== false);
         setNudges(cfg.nudges_enabled !== false);
+        const raw = cfg.rsvp_min_going;
+        setMinGoing(String(Number.isInteger(raw) && raw > 0 ? raw : RSVP_MIN_GOING_DEFAULT));
         setLoaded(true);
       });
     return () => { cancelled = true; };
@@ -27,8 +32,10 @@ export default function AutoNotificationSettingsSheet({ open, onClose, orgId }) 
 
   const handleSave = useCallback(async () => {
     setSaving(true);
+    const parsedMin = parseInt(minGoing, 10);
+    const rsvp_min_going = Number.isInteger(parsedMin) && parsedMin > 0 ? parsedMin : RSVP_MIN_GOING_DEFAULT;
     const { error } = await supabase.from('organizations').update({
-      auto_notifications: { reminders_enabled: reminders, nudges_enabled: nudges },
+      auto_notifications: { reminders_enabled: reminders, nudges_enabled: nudges, rsvp_min_going },
     }).eq('id', orgId);
     setSaving(false);
     if (error) {
@@ -37,7 +44,7 @@ export default function AutoNotificationSettingsSheet({ open, onClose, orgId }) 
     }
     showToast('Notification settings saved', 'success');
     onClose();
-  }, [reminders, nudges, orgId, onClose, showToast]);
+  }, [reminders, nudges, minGoing, orgId, onClose, showToast]);
 
   const footer = (
     <button type="button" onClick={handleSave} disabled={saving} className="as-press"
@@ -65,7 +72,12 @@ export default function AutoNotificationSettingsSheet({ open, onClose, orgId }) 
           </Section>
           <Section title="Stream B — RSVP Nudges">
             <Toggle label="RSVP Nudges" checked={nudges} onChange={setNudges}
-              description="Nudge parents 4 hours and 1 hour before RSVP deadline if they haven't responded" />
+              description="Draft a nudge when a game has fewer than the minimum confirmed going. Drafts land in the Radar for you to review and send — nothing is sent automatically." />
+            <div style={{ marginTop: 16 }}>
+              <Input label="Minimum confirmed going" type="number" inputMode="numeric" min={1} step={1}
+                value={minGoing} onChange={(e) => setMinGoing(e.target.value)}
+                aria-label="Minimum confirmed going before drafting an RSVP nudge" />
+            </div>
           </Section>
         </div>
       )}
