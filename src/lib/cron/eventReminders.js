@@ -5,12 +5,14 @@
 // mirror the edge function imports). When you change one, change BOTH in the
 // same commit. Logic uses only standard ES + Intl so the two stay in sync.
 //
-// Stream A (§16.5): automatic "don't forget your event" reminders at a
-// 3-day / 1-day / 4-hour cadence. These are transactional, direct-send
-// (push + email) — NOT the editorial briefing pipeline.
+// Stream A (§16.5 + D1 lock): automatic "don't forget your event"
+// reminders at a 3-day / 2-day / 1-day / 4-hour cadence (72h/48h/24h/4h).
+// These are transactional, direct-send (push + email) — NOT the editorial
+// briefing pipeline.
 
 export const REMINDER_OFFSETS = [
   { bucket: '72h', ms: 72 * 3600000 },
+  { bucket: '48h', ms: 48 * 3600000 },
   { bucket: '24h', ms: 24 * 3600000 },
   { bucket: '4h', ms: 4 * 3600000 },
 ];
@@ -42,7 +44,7 @@ export function decideReminder(startAtMs, nowMs, loggedBuckets = []) {
   return { sendBucket: passed[0].bucket, supersededBuckets: passed.slice(1).map((o) => o.bucket) };
 }
 
-const WHEN_PHRASE = { '72h': 'in 3 days', '24h': 'tomorrow', '4h': 'in 4 hours' };
+const WHEN_PHRASE = { '72h': 'in 3 days', '48h': 'in 2 days', '24h': 'tomorrow', '4h': 'in 4 hours' };
 
 // Build the reminder content for one event + offset. Pure: same input ->
 // deeply-equal output. All time formatting is timeZone-pinned (AP #43).

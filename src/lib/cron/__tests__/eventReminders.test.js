@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { composeReminder, decideReminder, isQuietHoursET } from '../eventReminders.js';
+import { composeReminder, decideReminder, isQuietHoursET, REMINDER_OFFSETS } from '../eventReminders.js';
 
 const H = 3600000;
+
+describe('REMINDER_OFFSETS vocabulary (D1 locked cadence)', () => {
+  it('is exactly 72h/48h/24h/4h, descending', () => {
+    expect(REMINDER_OFFSETS.map((o) => o.bucket)).toEqual(['72h', '48h', '24h', '4h']);
+    expect(REMINDER_OFFSETS.map((o) => o.ms)).toEqual([72 * H, 48 * H, 24 * H, 4 * H]);
+  });
+});
 
 describe('decideReminder cadence + burst-collapse', () => {
   const start = Date.parse('2026-05-30T18:30:00Z'); // Sat 2:30pm ET game
@@ -16,24 +23,29 @@ describe('decideReminder cadence + burst-collapse', () => {
     expect(decideReminder(start, now, [])).toEqual({ sendBucket: '72h', supersededBuckets: [] });
   });
 
-  it('fires 24h after 72h already logged', () => {
+  it('fires 48h once its threshold passes after 72h already logged', () => {
+    const now = start - 47 * H;
+    expect(decideReminder(start, now, ['72h'])).toEqual({ sendBucket: '48h', supersededBuckets: [] });
+  });
+
+  it('fires 24h after 72h + 48h already logged', () => {
     const now = start - 23 * H;
-    expect(decideReminder(start, now, ['72h'])).toEqual({ sendBucket: '24h', supersededBuckets: [] });
+    expect(decideReminder(start, now, ['72h', '48h'])).toEqual({ sendBucket: '24h', supersededBuckets: [] });
   });
 
-  it('collapses a burst: event found already inside 24h window sends 24h, supersedes 72h', () => {
-    const now = start - 20 * H; // both 72h and 24h thresholds passed, 4h not
-    expect(decideReminder(start, now, [])).toEqual({ sendBucket: '24h', supersededBuckets: ['72h'] });
+  it('collapses a burst: event found already inside 24h window sends 24h, supersedes 48h + 72h', () => {
+    const now = start - 20 * H; // 72h, 48h and 24h thresholds passed, 4h not
+    expect(decideReminder(start, now, [])).toEqual({ sendBucket: '24h', supersededBuckets: ['48h', '72h'] });
   });
 
-  it('sends the most-urgent (4h) and supersedes both larger when found very late', () => {
+  it('sends the most-urgent (4h) and supersedes all larger when found very late', () => {
     const now = start - 2 * H;
-    expect(decideReminder(start, now, [])).toEqual({ sendBucket: '4h', supersededBuckets: ['24h', '72h'] });
+    expect(decideReminder(start, now, [])).toEqual({ sendBucket: '4h', supersededBuckets: ['24h', '48h', '72h'] });
   });
 
   it('returns null once all passed offsets are logged', () => {
     const now = start - 2 * H;
-    expect(decideReminder(start, now, ['72h', '24h', '4h'])).toBeNull();
+    expect(decideReminder(start, now, ['72h', '48h', '24h', '4h'])).toBeNull();
   });
 
   it('never fires for an event that already started', () => {
@@ -66,6 +78,12 @@ describe('composeReminder', () => {
     expect(r.pushBody).toContain('Arrive 20 min early. Jersey: Black side out.');
     expect(r.subject).toBe('vs OAU (MA) - Marcos Sr tomorrow — 2:30 PM');
     expect(r.html).toContain('Wheaton College');
+  });
+
+  it('renders the 48h "in 2 days" phrase', () => {
+    const r = composeReminder(event, '48h');
+    expect(r.title).toBe('Reminder: vs OAU (MA) - Marcos Sr in 2 days');
+    expect(r.subject).toBe('vs OAU (MA) - Marcos Sr in 2 days — 2:30 PM');
   });
 
   it('is pure: same input -> deeply-equal output', () => {
