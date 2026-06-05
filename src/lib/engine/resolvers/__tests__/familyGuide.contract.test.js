@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { composeFamilyGuide, resolveFamilyGuide } from '../familyGuide';
 import { detectConflicts, formatDateRange, groupEventsByKid, summarizeEventKinds } from '../familyGuideHelpers';
 
-function mockSb({ parent = null, pgRows = [], tpRows = [], events = [], coaches = [], org = null, orgSettings = null, rpcRows = [] }) {
+function mockSb({ parent = null, pgRows = [], tpRows = [], events = [], coaches = [], teamStaff = [], org = null, orgSettings = null, rpcRows = [] }) {
   return {
     rpc() { return Promise.resolve({ data: rpcRows, error: null }); },
     from(table) {
@@ -20,7 +20,7 @@ function mockSb({ parent = null, pgRows = [], tpRows = [], events = [], coaches 
           return { data: null, error: null };
         },
         then(resolve) {
-          const map = { player_guardians: pgRows, team_players: tpRows, events, staff_profiles: coaches };
+          const map = { player_guardians: pgRows, team_players: tpRows, events, staff_profiles: coaches, team_staff: teamStaff };
           return Promise.resolve({ data: map[this._t] ?? [], error: null }).then(resolve);
         },
       };
@@ -101,6 +101,110 @@ describe('resolveFamilyGuide', () => {
     expect(r.context.kidsWithEvents).toHaveLength(2);
     expect(r.context.kidsWithEvents[0].first_name).toBe('Charlie');
     expect(r.context.kidsWithEvents[0].events).toHaveLength(1);
+  });
+});
+
+describe('resolveFamilyGuide — coaches block (team-grouped, deduped)', () => {
+  const TS = (tid, name, sort, uid) => ({ team_id: tid, user_id: uid, teams: { name, sort_order: sort } });
+  const SP = (uid, name, title, phone) => ({ user_id: uid, display_name: name, title, phone });
+
+  it('a parent with kids on 9U + 10U gets both teams’ coaches, grouped + phones rendered', async () => {
+    const r = await resolveFamilyGuide(
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { supabase: mockSb({
+        parent: PARENT,
+        pgRows: [KID('p-1', 'Charlie'), KID('p-2', 'Milo')],
+        tpRows: [TEAM('p-1', 't-9u', '9U Boys', '#4a8fd4', 4), TEAM('p-2', 't-10b', '10U Black', '#1a1a1a', 2)],
+        teamStaff: [TS('t-9u', '9U Boys', 4, 'c-kenny'), TS('t-10b', '10U Black', 2, 'c-kenny'), TS('t-10b', '10U Black', 2, 'c-darien')],
+        coaches: [SP('c-kenny', 'Coach Kenny', 'Coaching Director', '(516) 644-0208'), SP('c-darien', 'Coach Darien', 'Assistant Coach', '(914) 555-0190')],
+      }) },
+    );
+    const tc = r.context.teamCoaches;
+    // sort_order ascending → 10U Black (2) before 9U Boys (4)
+    expect(tc.map((g) => g.team_name)).toEqual(['10U Black', '9U Boys']);
+    expect(tc[0].coaches.map((c) => c.display_name)).toEqual(['Coach Kenny', 'Coach Darien']);
+    expect(tc[1].coaches.map((c) => c.display_name)).toEqual(['Coach Kenny']);
+    expect(tc[0].coaches[0].phone).toBe('(516) 644-0208');
+  });
+
+  it('two kids on the SAME team → that team’s coaches appear once (deduped across kids)', async () => {
+    const r = await resolveFamilyGuide(
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { supabase: mockSb({
+        parent: PARENT,
+        pgRows: [KID('p-1', 'A'), KID('p-2', 'B')],
+        tpRows: [TEAM('p-1', 't-9u', '9U Boys', '#4a8fd4', 4), TEAM('p-2', 't-9u', '9U Boys', '#4a8fd4', 4)],
+        teamStaff: [TS('t-9u', '9U Boys', 4, 'c-kenny')],
+        coaches: [SP('c-kenny', 'Coach Kenny', 'Coaching Director', '(516) 644-0208')],
+      }) },
+    );
+    expect(r.context.teamCoaches).toHaveLength(1);
+    expect(r.context.teamCoaches[0].coaches).toHaveLength(1);
+    // signoff list is the flattened, distinct-name list
+    expect(r.context.coaches).toEqual([{ display_name: 'Coach Kenny', title: 'Coaching Director', phone: '(516) 644-0208' }]);
+  });
+
+  it('coaches with no phone (or no staff_profile) are dropped — no fabrication (AP #27)', async () => {
+    const r = await resolveFamilyGuide(
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { supabase: mockSb({
+        parent: PARENT,
+        pgRows: [KID('p-1', 'A')],
+        tpRows: [TEAM('p-1', 't-9u', '9U Boys', '#4a8fd4', 4)],
+        teamStaff: [TS('t-9u', '9U Boys', 4, 'c-kenny'), TS('t-9u', '9U Boys', 4, 'c-nophone'), TS('t-9u', '9U Boys', 4, 'c-noprofile')],
+        coaches: [SP('c-kenny', 'Coach Kenny', 'Coaching Director', '(516) 644-0208'), SP('c-nophone', 'Coach NoPhone', 'Helper', null)],
+      }) },
+    );
+    expect(r.context.teamCoaches).toHaveLength(1);
+    expect(r.context.teamCoaches[0].coaches.map((c) => c.display_name)).toEqual(['Coach Kenny']);
+  });
+
+  it('no teams → empty teamCoaches + coaches (graceful omit)', async () => {
+    const r = await resolveFamilyGuide(
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { supabase: mockSb({ parent: PARENT, pgRows: [] }) },
+    );
+    expect(r.context.teamCoaches).toEqual([]);
+    expect(r.context.coaches).toEqual([]);
+  });
+});
+
+describe('composeFamilyGuide — coaches_block placement + omit', () => {
+  const TC = [
+    { team_name: '10U Black', coaches: [{ display_name: 'Coach Kenny', title: 'Coaching Director', phone: '(516) 644-0208' }] },
+    { team_name: '9U Boys', coaches: [{ display_name: 'Coach Kenny', title: 'Coaching Director', phone: '(516) 644-0208' }] },
+  ];
+  const baseCtx = (over) => ({
+    parent: PARENT,
+    kidsWithEvents: [{ player_id: 'p-1', first_name: 'Charlie', team_id: 't-1', team_name: '9U Boys', team_color: '#4a8fd4', events: [{ start_at: '2026-05-18T15:00:00Z' }] }],
+    conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], teamCoaches: [], orgName: 'LH', ...over,
+  });
+
+  it('emits coaches_block after quick_link_nav and before signoff', () => {
+    const out = composeFamilyGuide(baseCtx({ teamCoaches: TC, coaches: TC[0].coaches }), { parent_name: 'Frank' });
+    const kinds = out.content_sections.map((s) => s.kind);
+    const navIdx = kinds.indexOf('quick_link_nav');
+    const blockIdx = kinds.indexOf('coaches_block');
+    const signoffIdx = kinds.indexOf('signoff');
+    expect(blockIdx).toBeGreaterThan(navIdx);
+    expect(signoffIdx).toBeGreaterThan(blockIdx);
+  });
+
+  it('coaches_block carries per-team groups with phones', () => {
+    const out = composeFamilyGuide(baseCtx({ teamCoaches: TC, coaches: TC[0].coaches }), { parent_name: 'Frank' });
+    const block = out.content_sections.find((s) => s.kind === 'coaches_block');
+    expect(block.teams.map((t) => t.team_name)).toEqual(['10U Black', '9U Boys']);
+    expect(block.teams[0].coaches[0].phone).toBe('(516) 644-0208');
+  });
+
+  it('omits coaches_block when no team has coaches (graceful, AP #27)', () => {
+    const out = composeFamilyGuide(baseCtx({ teamCoaches: [] }), { parent_name: 'Frank' });
+    expect(out.content_sections.some((s) => s.kind === 'coaches_block')).toBe(false);
+  });
+
+  it('AP #38 parity: coaches_block kind has a registered SECTION_RENDERERS handler', async () => {
+    const { SECTION_RENDERERS } = await import('../../sectionRenderers');
+    expect(typeof SECTION_RENDERERS.coaches_block).toBe('function');
   });
 });
 

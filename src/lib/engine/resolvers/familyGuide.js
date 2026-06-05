@@ -16,10 +16,11 @@
 // before using data.
 
 import {
-  buildBrandFooter, buildConflictCalloutSection, buildKidColorPillSections,
-  buildQuickLinkNav, buildSignoffSection, buildVipHeaderSection,
+  buildBrandFooter, buildCoachesBlockSection, buildConflictCalloutSection,
+  buildKidColorPillSections, buildQuickLinkNav, buildSignoffSection, buildVipHeaderSection,
 } from './familyGuideSections';
 import { detectConflicts, groupEventsByKid } from './familyGuideHelpers';
+import { fetchTeamCoaches } from './familyGuideCoaches';
 import { buildOrgContext } from '../buildOrgContext';
 
 export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly }, { supabase } = {}) {
@@ -51,7 +52,7 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
     if (rpcErr) throw rpcErr;
     const allowed = new Set((rpcRows || []).filter((r) => r.guardian_id).map((r) => r.guardian_id));
     if (!allowed.has(parent.id)) {
-      return { context: { parent, kidsWithEvents: [], conflicts: [], dateRange, coaches: [], orgName: 'Legacy Hoopers' }, slices: [] };
+      return { context: { parent, kidsWithEvents: [], conflicts: [], dateRange, coaches: [], teamCoaches: [], orgName: 'Legacy Hoopers' }, slices: [] };
     }
   }
 
@@ -64,6 +65,7 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
 
   const kids = [];
   let events = [];
+  let teamIds = [];
   if (playerIds.length) {
     const { data: tpRows, error: tpErr } = await supabase.from('team_players')
       .select('player_id, team_id, teams ( id, name, team_color, sort_order, org_id )')
@@ -88,7 +90,7 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
         teams: byPlayer.get(k.player_id) || [],
       });
     }
-    const teamIds = [...new Set(kids.flatMap((k) => k.teams.map((t) => t.team_id)))];
+    teamIds = [...new Set(kids.flatMap((k) => k.teams.map((t) => t.team_id)))];
     if (teamIds.length && dateRange?.start && dateRange?.end) {
       const { data: evRows, error: evErr } = await supabase.from('events')
         .select('id, team_id, start_at, end_at, opponent, location, sub_location, title, event_type, is_scrimmage')
@@ -103,13 +105,9 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
   const kidsWithEvents = groupEventsByKid(kids, events);
   const conflicts = detectConflicts(kidsWithEvents);
 
-  let coaches = [];
-  if (parent.org_id) {
-    const { data: cRows, error: cErr } = await supabase.from('staff_profiles')
-      .select('display_name, title, phone').eq('org_id', parent.org_id).not('display_name', 'is', null);
-    if (cErr) throw cErr;
-    coaches = cRows || [];
-  }
+  // Coaches: per-team groups (teamCoaches) for the coaches_block reference
+  // section + the de-duplicated signoff list (coaches). AP #27 — injected client.
+  const { teamCoaches, coaches } = await fetchTeamCoaches(supabase, { orgId: parent.org_id, teamIds });
 
   let orgRow = null;
   if (parent.org_id) {
@@ -123,20 +121,25 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
   const orgName = buildOrgContext({ orgId: parent.org_id, org: orgRow, coaches }).name;
 
   return {
-    context: { parent, kidsWithEvents, conflicts, dateRange, coaches, orgName },
+    context: { parent, kidsWithEvents, conflicts, dateRange, coaches, teamCoaches, orgName },
     slices: [{ kind: 'single_recipient', guardian_id: parent.id, email: parent.email, parent_name: parent.first_name }],
   };
 }
 
 export function composeFamilyGuide(context, slice, overrides = {}) {
   if (!context || !slice) throw new Error('Missing context or slice');
-  const { parent, kidsWithEvents, conflicts, dateRange, coaches, orgName } = context;
+  const { parent, kidsWithEvents, conflicts, dateRange, coaches, teamCoaches, orgName } = context;
   const sections = [buildVipHeaderSection(parent, kidsWithEvents, dateRange, conflicts)];
   const conflictSection = buildConflictCalloutSection(conflicts);
   if (conflictSection) sections.push(conflictSection);
   sections.push(...buildKidColorPillSections(kidsWithEvents));
   const navSection = buildQuickLinkNav(kidsWithEvents);
   if (navSection) sections.push(navSection);
+  // "Your coaches" reference block — per-team coach contact rows. Placed
+  // after the schedule + quick links (VIP-reference reading flow), before
+  // the signoff. Omitted when no team has a coach with a phone.
+  const coachesSection = buildCoachesBlockSection(teamCoaches);
+  if (coachesSection) sections.push(coachesSection);
   const signoff = buildSignoffSection(overrides, coaches);
   if (signoff) sections.push(signoff);
   sections.push(buildBrandFooter(orgName));
