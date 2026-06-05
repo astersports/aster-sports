@@ -20,6 +20,7 @@ import ChildRsvp from '../schedule/ChildRsvp';
 import ParentArrivalActions from '../gameday/ParentArrivalActions';
 import { useNow } from '../../hooks/useNow';
 import { PARENT_ARRIVAL_WINDOW_AFTER_MS, PARENT_ARRIVAL_WINDOW_BEFORE_MS } from '../../lib/eventWindows';
+import { composeFromEvent } from '../../lib/briefings/composeFromEvent';
 
 const ROW = { display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' };
 const BTN = { flex: '1 1 140px', minHeight: 44, padding: '0 14px', borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 };
@@ -61,11 +62,18 @@ export default function EventHeroActions({
       // deep link above (compose entry point #3): a past 'game' event
       // pre-fills the composer with the game anchor + game_recap kind.
       const isGameEvent = event.event_type === 'game';
+      // Past tournament event → tournament_recap (composeFromEvent maps it,
+      // requires tournament_id). Past game → game_recap. Both pre-scope so
+      // the admin lands in a filled composer, not the cold picker.
+      const isPastTournament = event.event_type === 'tournament' && !!event.tournament_id;
       return (
         <div style={ROW}>
           <button type="button" onClick={onEnterScore} className="as-press" style={BTN}>Enter Score</button>
           {isGameEvent && (
-            <button type="button" onClick={() => navigate(`/admin/briefings/compose?anchor=event&id=${event.id}&kind=game_recap`)} className="as-press" style={BTN_SEC}><Send size={14} strokeWidth={1.75} />Request recap</button>
+            <button type="button" onClick={() => navigate(composeFromEvent(event, isPast))} className="as-press" style={BTN_SEC}><Send size={14} strokeWidth={1.75} />Request recap</button>
+          )}
+          {isPastTournament && (
+            <button type="button" onClick={() => navigate(composeFromEvent(event, isPast))} className="as-press" style={BTN_SEC}><Send size={14} strokeWidth={1.75} />Compose recap</button>
           )}
         </div>
       );
@@ -79,7 +87,7 @@ export default function EventHeroActions({
     return (
       <div style={ROW}>
         {isTournamentDraft && event.tournament_id ? (
-          <button type="button" onClick={() => navigate(`/admin/briefings/compose?anchor=tournament&id=${event.tournament_id}`)} className="as-press" style={BTN}><Send size={14} strokeWidth={1.75} />Compose briefing</button>
+          <button type="button" onClick={() => navigate(composeFromEvent(event, isPast))} className="as-press" style={BTN}><Send size={14} strokeWidth={1.75} />Compose briefing</button>
         ) : null}
         <button type="button" onClick={onNotify} className="as-press" style={BTN}><Send size={14} strokeWidth={1.75} />Notify families</button>
         {!isTournamentDraft && <button type="button" onClick={onLockRoster} className="as-press" style={BTN_SEC}>Lock roster{lockCount != null ? ` · ${lockCount}` : ''}</button>}
