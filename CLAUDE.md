@@ -56,8 +56,8 @@ grep -r 'as-shadow-xl\|as-border-strong\|as-bg-muted\|as-bg-subtle' src/ && echo
 # 3. No hardcoded #FFFFFF in components (only allowed in team_color swatches in TeamFormSheet)
 grep -rn '#FFFFFF' src/ --include='*.jsx' | grep -v 'TeamFormSheet' | grep -v 'COLOR_SWATCHES' && echo "FAIL: hardcoded #FFFFFF" || echo "PASS"
 
-# 4. All files ≤150 lines (with 5 documented exceptions — see §6 "Known >150 exceptions")
-find src/ -name '*.jsx' -o -name '*.js' | grep -v __tests__ | xargs wc -l | awk '$1 > 150 && !/total/ && $2 !~ /(AuthContext\.jsx|BriefingComposer\.jsx|kindMetadata\.js|familyGuideHelpers\.js|registry\.js)$/ {print "FAIL: "$2" is "$1" lines"}' || echo "PASS: all files ≤150 (excl. 5 documented exceptions)"
+# 4. All files ≤150 lines (with 4 documented exceptions — see §6 "Known >150 exceptions")
+find src/ -name '*.jsx' -o -name '*.js' | grep -v __tests__ | xargs wc -l | awk '$1 > 150 && !/total/ && $2 !~ /(AuthContext\.jsx|kindMetadata\.js|familyGuideHelpers\.js|registry\.js)$/ {print "FAIL: "$2" is "$1" lines"}' || echo "PASS: all files ≤150 (excl. 4 documented exceptions)"
 
 # 5. Lint + build
 npm run lint && npm run build && echo "PASS: lint + build clean"
@@ -328,16 +328,14 @@ locked after Q8 irony test fired on initial Option C single-line comment).
 
 ### Known >150 LOC exceptions (documented per Wave 3.B #29 P0-1, 2026-06-02)
 
-The §0 verification grep #4 excludes these 5 non-test files. Each carries
+The §0 verification grep #4 excludes these 4 non-test files. Each carries
 the same cap-pressure-trigger discipline as the AdminHomePage zone
 decomposition above — wait for the next material change, then split. Do
 not preemptively decompose.
 
 | File | LOC | Split shape when triggered |
 |---|---|---|
-| `src/context/AuthContext.jsx` | 172 | Auth state + org branding apply + cache wiring can split into `useAuthBranding` hook (extracts the useOrgBranding side effect) + `AuthOrgProvider` (separates org-load from session-load). Initial step: extract the `parentContext` derivation. |
-| `src/components/briefings/BriefingComposer.jsx` | 164 | Composer header + body + footer already separated. Next: extract the `useResolverPreview` bridge state into a dedicated hook file (currently inline) and the kind-specific body switcher into its own component. |
-| `src/lib/briefings/kindMetadata.js` | 169 | Per-kind metadata blocks (one per of 12 canonical `comms_messages.kind` values) — split per kind into `kindMetadata/<kind>.js` files + an `index.js` registry. Same shape as `RESOLVER_REGISTRY` per AP #28. |
+| `src/context/AuthContext.jsx` | 172 | Auth state + org branding apply + cache wiring can split into `useAuthBranding` hook (extracts the useOrgBranding side effect) + `AuthOrgProvider` (separates org-load from session-load). Initial step: extract the `parentContext` derivation. || `src/lib/briefings/kindMetadata.js` | 169 | Per-kind metadata blocks (one per of 12 canonical `comms_messages.kind` values) — split per kind into `kindMetadata/<kind>.js` files + an `index.js` registry. Same shape as `RESOLVER_REGISTRY` per AP #28. |
 | `src/lib/engine/resolvers/familyGuideHelpers.js` | 155 | New since 2026-05-29 (post-original-audit). Helpers cluster by section type — split into `familyGuideHelpers/{schedule,coaches,quick_links}.js` when next material edit lands. |
 | `src/lib/engine/resolvers/registry.js` | 159 | New since 2026-05-29. Registry entries already structured per kind — the file's growth is from per-entry metadata, not logic. Split when adding 13th kind would push it past 175. |
 
