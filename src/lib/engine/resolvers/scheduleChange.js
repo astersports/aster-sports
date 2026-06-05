@@ -23,8 +23,8 @@
 //     "All future {team} {event_type}s: ".
 
 import {
-  buildNarrative, computeDiff, eventTypeLabel, formatRange, NoActualScheduleChangeError,
-  NoScheduleChangeError, trim,
+  buildCancellationCard, buildDiffSection, buildLabel, buildNarrative, computeDiff,
+  NoActualScheduleChangeError, NoScheduleChangeError, trim,
 } from './scheduleChangeHelpers';
 import { fetchKidNames } from './gameRecapHelpers';
 import { ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_NAME_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
@@ -103,19 +103,6 @@ export async function resolveScheduleChange({ eventId, pilotOnly }, { supabase, 
   };
 }
 
-function buildLabel(event, team) { return event.title || `${team?.name || ''} ${eventTypeLabel(event.event_type)}`.trim(); }
-
-function buildDiffSection(event, location, before, after, changed) {
-  const beforeTime = formatRange(before.start_at, before.end_at);
-  const afterTime = formatRange(after.start_at, after.end_at);
-  return {
-    kind: 'schedule_change_diff',
-    changed_fields: changed,
-    before: { time: beforeTime, label: event.title || '', location: before.location ?? location?.name ?? null, opponent: before.opponent ?? null },
-    after: { time: afterTime, label: event.title || '', location: after.location ?? location?.name ?? null, opponent: after.opponent ?? null },
-  };
-}
-
 export function composeScheduleChange(context, slice, overrides = {}) {
   if (!context || !slice) throw new Error('Missing context or slice');
   const { event, team, location, audit, diff, org } = context;
@@ -126,8 +113,15 @@ export function composeScheduleChange(context, slice, overrides = {}) {
   const eventLabel = buildLabel(event, team);
   const sections = [];
   sections.push({ kind: 'header', eyebrow: `${org.name} · SCHEDULE CHANGE`, eyebrow_link: org.branding.eyebrowLink, headline: isCancellation ? 'CANCELLED' : 'SCHEDULE UPDATE', goldStripe: true });
-  sections.push({ kind: 'stats_narrative', body: buildNarrative(audit, event, audit.before_jsonb || {}, audit.after_jsonb || {}, diff.changed_fields) });
-  if (!isCancellation) sections.push(buildDiffSection(event, location, audit.before_jsonb || {}, audit.after_jsonb || {}, diff.changed_fields));
+  const narrative = buildNarrative(audit, event, audit.before_jsonb || {}, audit.after_jsonb || {}, diff.changed_fields);
+  if (isCancellation) {
+    // PR-D cancellation card carries the title + struck old time + reason in
+    // one warn-tone treatment, in place of the free-text narrative line.
+    sections.push(buildCancellationCard(event, team, audit.before_jsonb || {}, trim(overrides.cancellation_reason) || narrative));
+  } else {
+    sections.push({ kind: 'stats_narrative', body: narrative });
+    sections.push(buildDiffSection(event, location, audit.before_jsonb || {}, audit.after_jsonb || {}, diff.changed_fields));
+  }
 
   for (const key of ['coach_note', 'parent_shoutout']) {
     const v = trim(overrides[key]); if (v) sections.push({ kind: 'stats_narrative', body: v });

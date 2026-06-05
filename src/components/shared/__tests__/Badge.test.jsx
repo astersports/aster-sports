@@ -58,6 +58,10 @@ const INLINE_REMAINING = new Set([
   'src/components/briefings/inbox/InboxFilters.jsx',
   'src/components/briefings/PilotModeChip.jsx',
   'src/components/briefings/SaveStatusPill.jsx',
+  // PR-D token chip — the .tchip cobalt-wash chip (check icon + label) is a
+  // purpose-built composer authoring affordance per BRIEFING_FULL_PRESENTATION
+  // §4, distinct from the shared Badge (carries an icon + token semantics).
+  'src/components/briefings/TokenChipPreview.jsx',
   'src/components/ride/ClaimStatusPill.jsx',
   'src/components/alerts/AllClearPill.jsx',
   'src/components/admin/CutoverGateChip.jsx',

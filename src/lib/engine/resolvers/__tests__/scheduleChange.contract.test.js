@@ -81,7 +81,7 @@ describe('schedule_change resolver — contract', () => {
     expect(content_sections.find((s) => s.kind === 'schedule_change_diff').changed_fields).toEqual(['location']);
   });
 
-  it('9. cancellation: CANCELLED headline + Cancelled subject prefix + no diff section', async () => {
+  it('9. cancellation: CANCELLED headline + Cancelled subject + PR-D cancellation_card, no diff/narrative', async () => {
     const audit = [{ ...event_change_audit[0], change_kind: 'cancelled', before_jsonb: { status: 'scheduled' }, after_jsonb: { status: 'cancelled', cancellation_reason: 'Gym closed' } }];
     const { context, slices } = await resolveScheduleChange({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient({ ...FIXTURES, event_change_audit: audit }), now: NOW });
     const { subject, content_sections } = composeScheduleChange(context, slices[0], {});
@@ -89,9 +89,22 @@ describe('schedule_change resolver — contract', () => {
     const header = content_sections.find((s) => s.kind === 'header');
     expect(header.headline).toBe('CANCELLED');
     expect(content_sections.find((s) => s.kind === 'schedule_change_diff')).toBeUndefined();
-    const narrative = content_sections.find((s) => s.kind === 'stats_narrative');
-    expect(narrative.body).toContain('cancelled');
-    expect(narrative.body).toContain('Gym closed');
+    // PR-D: cancellation emits a cancellation_card (warn-tone, no actions) in
+    // place of the free-text narrative line.
+    expect(content_sections.find((s) => s.kind === 'stats_narrative')).toBeUndefined();
+    const card = content_sections.find((s) => s.kind === 'cancellation_card');
+    expect(card).toBeTruthy();
+    expect(card.title).toBe('11U Girls Skills Lab');
+    expect(card.reason).toContain('cancelled');
+  });
+
+  it('9b. cancellation_card uses overrides.cancellation_reason verbatim when provided', async () => {
+    const audit = [{ ...event_change_audit[0], change_kind: 'cancelled', before_jsonb: { status: 'scheduled', start_at: '2026-05-11T23:35:00+00:00', end_at: '2026-05-12T01:05:00+00:00' }, after_jsonb: { status: 'cancelled' } }];
+    const { context, slices } = await resolveScheduleChange({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient({ ...FIXTURES, event_change_audit: audit }), now: NOW });
+    const { content_sections } = composeScheduleChange(context, slices[0], { cancellation_reason: 'Sportsplex double-booked. Back to normal Thursday.' });
+    const card = content_sections.find((s) => s.kind === 'cancellation_card');
+    expect(card.reason).toBe('Sportsplex double-booked. Back to normal Thursday.');
+    expect(card.old_time).toBeTruthy();
   });
 
   it('10a. opponent-only change: opponent narrative + diff (Frank 11U Girls championship, 2026-05-20)', async () => {

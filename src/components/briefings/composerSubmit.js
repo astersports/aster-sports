@@ -33,6 +33,7 @@ import { resolveAudience } from '../../lib/briefings/recipientFilter';
 import { queueRecipients } from '../../lib/briefings/queueRecipients';
 import { queueComposedMessages } from '../../lib/briefings/queueComposedMessages';
 import { getDispatchSendPath, NoRecipientsError, RESOLVER_REGISTRY } from '../../lib/engine/resolvers/registry';
+import { resolveBodyTokenUrls, substituteAndRenderLegacy } from '../../lib/briefings/bodyTokenUrls';
 
 const HTML_OPEN = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">';
 const HTML_CLOSE = '</div>';
@@ -68,7 +69,14 @@ async function resolveAndComposePerSlice(state) {
 
 async function composeLegacy(state, coaches) {
   const tourneyUrl = await resolveTourneyUrl(state);
-  return compose({ kind: state.kind, data: { ...state.body, tourney_url: tourneyUrl, signoff_message: state.signoff_message, coaches } });
+  const composed = compose({ kind: state.kind, data: { ...state.body, tourney_url: tourneyUrl, signoff_message: state.signoff_message, coaches } });
+  const hasTokens = (composed.sections || []).some((s) => Array.isArray(s.body_token_placeholders));
+  if (!hasTokens) return composed;
+  // PR-D — resolve the static body-token URLs (schedule, directions) and
+  // substitute; per-recipient rsvp tokens stay literal (fail-loud) in this
+  // single-body legacy path. See lib/briefings/bodyTokenUrls.js.
+  const urlMap = await resolveBodyTokenUrls(state, supabase);
+  return substituteAndRenderLegacy(composed, urlMap, { renderSections, renderSectionsPlainText, htmlOpen: HTML_OPEN, htmlClose: HTML_CLOSE });
 }
 
 async function queueForDispatch({ messages, composed, state, recipients, messageId }) {
