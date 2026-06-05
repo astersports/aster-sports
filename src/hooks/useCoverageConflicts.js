@@ -49,10 +49,22 @@ export function useCoverageConflicts(rows) {
 
         const { data: staff, error: stErr } = await supabase
           .from('team_staff')
-          .select('team_id, user_id, role, staff_profiles ( display_name )')
+          .select('team_id, user_id, role')
           .in('team_id', teamIds)
           .eq('role', 'head_coach');
         if (stErr) throw stErr;
+
+        // team_staff has no FK to staff_profiles — join names in JS by user_id.
+        const staffIds = [...new Set((staff || []).map((s) => s.user_id).filter(Boolean))];
+        let profByUser = new Map();
+        if (staffIds.length) {
+          const { data: profs, error: spErr } = await supabase
+            .from('staff_profiles')
+            .select('user_id, display_name')
+            .in('user_id', staffIds);
+          if (spErr) throw spErr;
+          profByUser = new Map((profs || []).map((p) => [p.user_id, p]));
+        }
 
         const eventIds = (events || []).map((e) => e.id);
         let assignments = [];
@@ -70,7 +82,8 @@ export function useCoverageConflicts(rows) {
         const names = new Map();
         for (const s of staff || []) {
           if (!teamHeadCoachMap.has(s.team_id)) teamHeadCoachMap.set(s.team_id, s.user_id);
-          if (s.user_id && s.staff_profiles?.display_name) names.set(s.user_id, s.staff_profiles.display_name);
+          const dn = profByUser.get(s.user_id)?.display_name;
+          if (s.user_id && dn) names.set(s.user_id, dn);
         }
         const assignmentMap = new Map(assignments.map((a) => [a.event_id, a.coach_user_id]));
 

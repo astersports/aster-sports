@@ -34,26 +34,35 @@ export function useTeamHeadCoach(teamId) {
       setError(null);
       const { data, error: qErr } = await supabase
         .from('team_staff')
-        .select('user_id, role, staff_profiles!inner ( user_id, display_name, phone )')
+        .select('user_id, role')
         .eq('team_id', teamId)
         .eq('role', 'head_coach');
       if (cancelled) return;
       if (qErr) { setError(qErr); setLoading(false); return; }
       const rows = data || [];
       if (rows.length === 0) { setCoach(null); setLoading(false); return; }
+      // team_staff has NO FK to staff_profiles — join in JS by user_id (RLS
+      // scopes staff_profiles to the viewer's org). Mirrors familyGuideCoaches.
+      const staffIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))];
+      const { data: profs, error: pErr } = await supabase
+        .from('staff_profiles')
+        .select('user_id, display_name, phone')
+        .in('user_id', staffIds);
+      if (cancelled) return;
+      if (pErr) { setError(pErr); setLoading(false); return; }
+      const profByUser = new Map((profs || []).map((p) => [p.user_id, p]));
       // Co-coach rule: alphabetical sort by display_name (head_coach flag
       // not present in schema; pick rule stays deterministic across reloads).
-      const sorted = [...rows].sort((a, b) => {
-        const an = a.staff_profiles?.display_name || '';
-        const bn = b.staff_profiles?.display_name || '';
-        return an.localeCompare(bn);
-      });
-      const pick = sorted[0];
-      const profile = pick.staff_profiles || {};
+      const withProfiles = rows
+        .map((r) => ({ user_id: r.user_id, profile: profByUser.get(r.user_id) }))
+        .filter((r) => r.profile);
+      if (withProfiles.length === 0) { setCoach(null); setLoading(false); return; }
+      withProfiles.sort((a, b) => (a.profile.display_name || '').localeCompare(b.profile.display_name || ''));
+      const pick = withProfiles[0];
       setCoach({
         user_id: pick.user_id,
-        name: profile.display_name || 'Coach',
-        phone: profile.phone || null,
+        name: pick.profile.display_name || 'Coach',
+        phone: pick.profile.phone || null,
         email: null,
       });
       setLoading(false);

@@ -8,7 +8,7 @@
 // already be pre-shaped to what the resolver expects after PostgREST
 // would have filtered.
 
-function mockChain(rows) {
+function mockChain(rows, userIdSource) {
   // Thin filter awareness ONLY for the predicates fetchSignatureCoaches
   // depends on: title= (staff_profiles WHERE title='Program Director')
   // resolves to the PD subset, and in('team_id', [...]) (team_staff scoped
@@ -16,6 +16,13 @@ function mockChain(rows) {
   // column-gated so every other .eq()/.in() stays filter-agnostic per the
   // mock's "fixtures are pre-shaped" doctrine (e.g. .in('id', eventIds)
   // still returns the whole fixture, which is already pre-shaped).
+  //
+  // staff_profiles only: fetchSignatureCoaches now joins coaches in JS via a
+  // separate `.in('user_id', staffIds)` query (team_staff has no FK to
+  // staff_profiles). When `userIdSource` is provided (the team_staff nested
+  // staff_profiles), that query resolves from it by user_id — reproducing
+  // what the old PostgREST embed returned. The PD title query + any direct
+  // staff_profiles scan keep using `rows` (coaches.json), unchanged.
   let current = rows;
   const settle = () => Promise.resolve({ data: current, error: null });
   const chain = {
@@ -24,7 +31,11 @@ function mockChain(rows) {
     neq: () => chain,
     gte: () => chain,
     lt: () => chain,
-    in: (col, vals) => { if (col === 'team_id') { const set = new Set(vals || []); current = (current || []).filter((r) => set.has(r.team_id)); } return chain; },
+    in: (col, vals) => {
+      if (col === 'team_id') { const set = new Set(vals || []); current = (current || []).filter((r) => set.has(r.team_id)); }
+      else if (col === 'user_id' && userIdSource) { const set = new Set(vals || []); current = userIdSource.filter((r) => set.has(r.user_id)); }
+      return chain;
+    },
     not: () => chain,
     order: () => chain,
     maybeSingle: () => Promise.resolve({ data: (current || [])[0] || null, error: null }),
@@ -60,8 +71,15 @@ export function mockClient(fixtures) {
     game_results: fixtures.game_result ? [fixtures.game_result] : (fixtures.game_results || []),
     players: fixtures.player_of_game ? [fixtures.player_of_game] : (fixtures.player ? [fixtures.player] : (fixtures.players || [])),
   };
+  // Coach profiles for the JS-join query (`.in('user_id', staffIds)` on
+  // staff_profiles) come from the team_staff nested staff_profiles — they
+  // carry user_id, which coaches.json (the PD/direct fixture) does not.
+  const staffProfilesByUser = (fixtures.team_staff || []).map((r) => r.staff_profiles).filter(Boolean);
   return {
-    from(table) { return mockChain(tables[table] || []); },
+    from(table) {
+      if (table === 'staff_profiles') return mockChain(tables.staff_profiles, staffProfilesByUser);
+      return mockChain(tables[table] || []);
+    },
     rpc(name, args) {
       if (name === 'get_digest_recipients') {
         const all = fixtures.recipients || [];
