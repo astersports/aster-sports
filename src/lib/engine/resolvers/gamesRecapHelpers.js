@@ -9,43 +9,44 @@ export { trim };
 const NY_TZ = 'America/New_York';
 const dayFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, weekday: 'short', month: 'short', day: 'numeric' });
 const rangeFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, month: 'short', day: 'numeric' });
-const railDayFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, weekday: 'short' });
-const railDateFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, month: 'numeric', day: 'numeric' });
-const timeFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, hour: 'numeric', minute: '2-digit', hour12: true });
+const cellDayFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, weekday: 'short' });
+const cellDateFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, month: 'short', day: 'numeric' });
 
 export function dayLabel(startAt) {
   return startAt ? dayFmt.format(new Date(startAt)) : 'Date TBD';
 }
 
-const RESULT_TONE = { W: 'green', L: 'red', T: 'amber' };
-const RESULT_WORD = { W: 'Win', L: 'Loss', T: 'Tie' };
+// Date eyebrow for a recap game cell — "Mon · May 18" (matches the mock).
+export function cellDateLabel(startAt) {
+  if (!startAt) return 'Date TBD';
+  const d = new Date(startAt);
+  return `${cellDayFmt.format(d)} · ${cellDateFmt.format(d)}`;
+}
 
-// Build one `game_card` section from a recap game. Reuses the existing
-// game_card renderer (registered in SECTION_RENDERERS, used by
-// tournament_prelim) — no new renderer, no SECTION_RENDERERS orphan risk
-// (AP #38). Pure: same input -> deeply-equal output (AP #27).
-//   rail   — day (e.g. "Sat 5/3") as label + tip time as timePrimary
-//   primary — "{team} vs {opponent}" (omits "vs ..." gracefully on null opp)
-//   secondary — venue when present, else omitted
-//   stakeLine — "{us}–{them} · {Win|Loss|Tie}" toned green/red/amber
-// team_color is carried for parity with the resolver fetch + future use;
-// the game_card renderer owns its own variant colors (it does not read it).
-export function buildGameCard(g) {
-  const label = g.start_at ? `${railDayFmt.format(new Date(g.start_at))} ${railDateFmt.format(new Date(g.start_at))}` : 'TBD';
+// Build one `recap_game_cell` section from a recap game. The cell carries
+// THIS GAME'S OWN team_color as the left rail (per-cell color — a
+// multi-team recap puts each team's color on its own cell). Pure: same
+// input -> deeply-equal output (AP #27); null opponent/venue omit
+// gracefully (never "undefined").
+//   team_color — per-game rail color (read by the renderer)
+//   date_label — "Mon · May 18"
+//   matchup    — "{team} vs {opponent}" (omits "vs ..." on null opp)
+//   context    — venue when present, else omitted
+//   our_score / opponent_score / result — score + W/L pill
+export function buildGameCell(g) {
   const opp = g.opponent ? String(g.opponent).trim() : '';
-  const primary = opp ? `${g.team_name} vs ${opp}` : g.team_name;
+  const matchup = opp ? `${g.team_name} vs ${opp}` : g.team_name;
   const venue = g.venue ? String(g.venue).trim() : '';
-  const tone = RESULT_TONE[g.result] || 'muted';
-  const word = RESULT_WORD[g.result] || g.result || '';
-  const stakeText = word ? `${g.our_score}–${g.opponent_score} · ${word}` : `${g.our_score}–${g.opponent_score}`;
   const section = {
-    kind: 'game_card', variant: 'regular',
-    rail: { label, timePrimary: g.start_at ? timeFmt.format(new Date(g.start_at)) : '' },
-    primary,
-    stakeLine: { text: stakeText, tone },
+    kind: 'recap_game_cell',
     team_color: g.team_color || null,
+    date_label: cellDateLabel(g.start_at),
+    matchup,
+    our_score: g.our_score,
+    opponent_score: g.opponent_score,
+    result: g.result,
   };
-  if (venue) section.secondary = { text: venue, link: null };
+  if (venue) section.context = venue;
   return section;
 }
 
@@ -63,7 +64,14 @@ export function summarizeGames(games) {
     const last = rangeFmt.format(new Date(dates[dates.length - 1]));
     range = first === last ? first : `${first}–${last}`;
   }
-  return { record, label: range ? `${record} · ${range}` : record };
+  // Header-band record pill: "0–2 RECORD · MAY 18 – MAY 20" (en-dash in
+  // the record, uppercased range). Falls back to "{record} RECORD" with
+  // no date range when no dated games are present.
+  const recordDashed = record.replace(/-/g, '–');
+  const recordPill = range
+    ? `${recordDashed} RECORD · ${range.replace('–', ' – ').toUpperCase()}`
+    : `${recordDashed} RECORD`;
+  return { record, label: range ? `${record} · ${range}` : record, recordPill };
 }
 
 export function buildGamesSubject(games, record) {

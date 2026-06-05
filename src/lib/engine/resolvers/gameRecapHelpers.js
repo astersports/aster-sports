@@ -3,45 +3,54 @@
 
 const NY_TZ = 'America/New_York';
 const dayLabelFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, weekday: 'long', month: 'long', day: 'numeric' });
-const railDayFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, weekday: 'short' });
-const railDateFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, month: 'numeric', day: 'numeric' });
-const timeFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, hour: 'numeric', minute: '2-digit', hour12: true });
+const cellDayFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, weekday: 'short' });
+const cellDateFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, month: 'short', day: 'numeric' });
+const pillDateFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, month: 'short', day: 'numeric' });
 
 export const RESULT_VERB = { W: 'beat', L: 'fell to', T: 'tied' };
 
-const RESULT_TONE = { W: 'green', L: 'red', T: 'amber' };
-const RESULT_WORD = { W: 'Win', L: 'Loss', T: 'Tie' };
+const RESULT_WORD = { W: 'WIN', L: 'LOSS', T: 'TIE' };
 
-// Build the single `game_card` section for a game_recap. Reuses the
-// existing game_card renderer (registered in SECTION_RENDERERS, used by
-// tournament_prelim) — no new renderer, no SECTION_RENDERERS orphan risk
-// (AP #38). Pure: same input -> deeply-equal output (AP #27). Mirrors
-// buildGameCard in gamesRecapHelpers.js but reads the single-game
+// Date eyebrow for a recap game cell — "Mon · May 18" (matches the mock).
+export function cellDateLabel(startAt) {
+  if (!startAt) return 'Date TBD';
+  const d = new Date(startAt);
+  return `${cellDayFmt.format(d)} · ${cellDateFmt.format(d)}`;
+}
+
+// Header-band record pill for a single game — "WIN · MAY 2" (single-game
+// recap has no W-L tally, so the result word stands in for the record).
+export function buildGameRecapPill(event, gr) {
+  const word = RESULT_WORD[gr?.result] || (gr?.result ? String(gr.result).toUpperCase() : '');
+  const date = event?.start_at ? pillDateFmt.format(new Date(event.start_at)).toUpperCase() : '';
+  return [word, date].filter(Boolean).join(' · ');
+}
+
+// Build the single `recap_game_cell` section for a game_recap. The cell
+// carries the team's color as the left rail. Pure: same input ->
+// deeply-equal output (AP #27); null opponent/venue omit gracefully.
+// Mirrors buildGameCell in gamesRecapHelpers.js but reads the single-game
 // game_recap context shape (team / event / location / game_result).
-//   rail   — day (e.g. "Sat 5/2") as label + tip time as timePrimary
-//   primary — "{team} vs {opponent}" (omits "vs ..." gracefully on null opp)
-//   secondary — venue (location.name) when present, else omitted
-//   stakeLine — "{us}–{them} · {Win|Loss|Tie}" toned green/red/amber
-// team_color is carried for parity with tournament_prelim + future use;
-// the game_card renderer owns its own variant colors (it does not read it).
+//   team_color — rail color
+//   date_label — "Mon · May 2"
+//   matchup    — "{team} vs {opponent}" (omits "vs ..." on null opp)
+//   context    — venue (location.name) when present, else omitted
+//   our_score / opponent_score / result — score + W/L pill
 export function buildGameRecapCard(team, event, location, gr) {
-  const startAt = event?.start_at;
-  const label = startAt ? `${railDayFmt.format(new Date(startAt))} ${railDateFmt.format(new Date(startAt))}` : 'TBD';
   const teamName = team?.name || 'Legacy Hoopers';
   const opp = event?.opponent ? String(event.opponent).trim() : '';
-  const primary = opp ? `${teamName} vs ${opp}` : teamName;
+  const matchup = opp ? `${teamName} vs ${opp}` : teamName;
   const venue = location?.name ? String(location.name).trim() : '';
-  const tone = RESULT_TONE[gr.result] || 'muted';
-  const word = RESULT_WORD[gr.result] || gr.result || '';
-  const stakeText = word ? `${gr.our_score}–${gr.opponent_score} · ${word}` : `${gr.our_score}–${gr.opponent_score}`;
   const section = {
-    kind: 'game_card', variant: 'regular',
-    rail: { label, timePrimary: startAt ? timeFmt.format(new Date(startAt)) : '' },
-    primary,
-    stakeLine: { text: stakeText, tone },
+    kind: 'recap_game_cell',
     team_color: team?.team_color || null,
+    date_label: cellDateLabel(event?.start_at),
+    matchup,
+    our_score: gr.our_score,
+    opponent_score: gr.opponent_score,
+    result: gr.result,
   };
-  if (venue) section.secondary = { text: venue, link: null };
+  if (venue) section.context = venue;
   return section;
 }
 

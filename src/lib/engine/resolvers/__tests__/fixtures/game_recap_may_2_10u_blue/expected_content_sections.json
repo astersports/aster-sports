@@ -1,21 +1,25 @@
 [
+  { "kind": "frame_open" },
   {
     "kind": "header",
+    "variant": "cobalt_band",
     "eyebrow": "Legacy Hoopers · GAME RECAP",
     "eyebrow_link": "https://www.legacyhoopers.org/",
     "headline": "GAME RECAP",
-    "sub_context": "Saturday, May 2 · CYO Spellman",
-    "goldStripe": true
+    "record_pill": "WIN · MAY 2"
   },
+  { "kind": "section_bar", "label": "The Game" },
   {
-    "kind": "game_card",
-    "variant": "regular",
-    "rail": { "label": "Sat 5/2", "timePrimary": "2:00 PM" },
-    "primary": "10U Blue vs Resurrection White 4AB",
-    "stakeLine": { "text": "2–0 · Win", "tone": "green" },
+    "kind": "recap_game_cell",
     "team_color": "#94a3b8",
-    "secondary": { "text": "CYO Spellman", "link": null }
+    "date_label": "Sat · May 2",
+    "matchup": "10U Blue vs Resurrection White 4AB",
+    "our_score": 2,
+    "opponent_score": 0,
+    "result": "W",
+    "context": "CYO Spellman"
   },
+  { "kind": "section_bar", "label": "From the Sideline" },
   { "kind": "stats_narrative", "body": "Player of the game: Giuseppe" },
   { "kind": "stats_narrative", "body": "defense" },
   {
@@ -32,5 +36,6 @@
     "orgName": "Legacy Hoopers",
     "websiteUrl": "https://www.legacyhoopers.org/",
     "contactEmail": "support@astersports.app"
-  }
+  },
+  { "kind": "frame_close" }
 ]
