@@ -20,7 +20,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildWeeklyDigestDraftRow, isWeeklySundayWindow, weeklyDigestPeriod } from "./_helpers.ts";
 import {
-  handleGameCompleted, handleRsvpLow24h, handleScheduleChanged,
+  handleGameCompleted, handleRsvpLowGoing, handleScheduleChanged,
   handleTournamentApproaching, handleTournamentCompleted,
 } from "./_handlers.ts";
 import { handleEventReminder } from "./_reminders.ts";
@@ -89,7 +89,7 @@ async function dispatchTrigger(sb: ReturnType<typeof createClient>, t: TriggerRo
     case "tournament_approaching": return await handleTournamentApproaching(sb, t, now);
     case "tournament_completed": return await handleTournamentCompleted(sb, t, now);
     case "schedule_changed": return await handleScheduleChanged(sb, t, now);
-    case "rsvp_low_24h_before": return await handleRsvpLow24h(sb, t, now);
+    case "rsvp_low_24h_before": return await handleRsvpLowGoing(sb, t, now);
     case "event_reminder_due": return await handleEventReminder(sb, t, now);
     default: return [{ trigger_id: t.id, org_id: t.org_id, kind: t.briefing_kind, skipped: "unknown_trigger_event", trigger_event: t.trigger_event }];
   }

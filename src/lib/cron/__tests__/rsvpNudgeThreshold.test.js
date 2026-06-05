@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  nudgeWindowEndIso,
   RSVP_MIN_GOING_DEFAULT,
+  RSVP_NUDGE_WINDOW_HOURS,
   rsvpMinGoingThreshold,
   shouldNudgeLowGoing,
 } from '../rsvpNudgeThreshold.js';
@@ -48,5 +50,36 @@ describe('shouldNudgeLowGoing', () => {
     const threshold = rsvpMinGoingThreshold({ rsvp_min_going: 3 });
     expect(shouldNudgeLowGoing(2, threshold)).toBe(true);
     expect(shouldNudgeLowGoing(3, threshold)).toBe(false);
+  });
+});
+
+// Event-proximity window (§16.5) — operator-widened 2026-06-05 from 24h to 48h.
+// nudgeWindowEndIso is the handler's `start_at <= windowEnd` upper bound; a game
+// inside the window with a short roster drafts a nudge, a game beyond it does not.
+describe('nudgeWindowEndIso (48h proximity window)', () => {
+  const now = new Date('2026-06-05T12:00:00Z');
+  // Replicates the handler gate: start_at > now AND start_at <= windowEnd.
+  const inWindow = (startAt) => startAt > now && startAt <= new Date(nudgeWindowEndIso(now));
+
+  it('is widened to 48h', () => {
+    expect(RSVP_NUDGE_WINDOW_HOURS).toBe(48);
+    expect(nudgeWindowEndIso(now)).toBe('2026-06-07T12:00:00.000Z');
+  });
+
+  it('a game 40h out (short roster, 4 going) is inside the window → drafts', () => {
+    const game40h = new Date(now.getTime() + 40 * 3600000);
+    expect(inWindow(game40h)).toBe(true);
+    // 4 going against the default floor of 5 → nudge
+    expect(shouldNudgeLowGoing(4, RSVP_MIN_GOING_DEFAULT)).toBe(true);
+  });
+
+  it('a game 60h out is beyond the window → does NOT draft', () => {
+    const game60h = new Date(now.getTime() + 60 * 3600000);
+    expect(inWindow(game60h)).toBe(false);
+  });
+
+  it('the 48h boundary is inclusive; just past it is excluded', () => {
+    expect(inWindow(new Date(now.getTime() + 48 * 3600000))).toBe(true);
+    expect(inWindow(new Date(now.getTime() + 48 * 3600000 + 1000))).toBe(false);
   });
 });

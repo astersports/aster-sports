@@ -17,7 +17,7 @@
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { computeExpiryForKind } from "./_helpers.ts";
-import { rsvpMinGoingThreshold, shouldNudgeLowGoing } from "./_rsvpNudgeThreshold.ts";
+import { nudgeWindowEndIso, rsvpMinGoingThreshold, shouldNudgeLowGoing } from "./_rsvpNudgeThreshold.ts";
 import { draftExists, HandlerResult, placeholderDraft, Trigger, tryInsert } from "./_draftRow.ts";
 
 export async function handleGameCompleted(sb: SupabaseClient, trigger: Trigger, now: Date): Promise<HandlerResult[]> {
@@ -125,13 +125,14 @@ export async function handleScheduleChanged(sb: SupabaseClient, trigger: Trigger
   return out;
 }
 
-export async function handleRsvpLow24h(sb: SupabaseClient, trigger: Trigger, now: Date): Promise<HandlerResult[]> {
+// The DB trigger_event value stays `rsvp_low_24h_before` (briefing_triggers
+// CHECK + seed rows); only the function + its window were renamed/widened.
+export async function handleRsvpLowGoing(sb: SupabaseClient, trigger: Trigger, now: Date): Promise<HandlerResult[]> {
   const nowIso = now.toISOString();
-  // Event-proximity window: games starting within the next 24h. FLAG (2026-06-05):
-  // a short-roster draft may be more useful with more lead time to rally players —
-  // widening this window to e.g. 48-72h is an open option pending operator decision;
-  // shipped as-is (existing 24h) to avoid expanding scope.
-  const in24h = new Date(now.getTime() + 24 * 3600000).toISOString();
+  // Event-proximity window: games starting within RSVP_NUDGE_WINDOW_HOURS of now.
+  // Operator-widened 2026-06-05 from 24h to 48h — more lead time to rally players
+  // for a short-rostered game. The window bound lives in the AP #30 mirror pair.
+  const windowEnd = nudgeWindowEndIso(now);
   // Per-org "fewer than N confirmed going" floor from
   // organizations.auto_notifications.rsvp_min_going (default 5 — "you need 5 to
   // field a game"). Operator-locked 2026-06-05; replaced the prior
@@ -143,7 +144,7 @@ export async function handleRsvpLow24h(sb: SupabaseClient, trigger: Trigger, now
   const autoCfg = (orgErr ? {} : (org?.auto_notifications as Record<string, unknown> | null) ?? {}) as { rsvp_min_going?: unknown };
   const threshold = rsvpMinGoingThreshold(autoCfg);
   const { data: eventsData, error } = await sb.from("events")
-    .select("id, team_id, start_at, teams!inner(org_id)").gt("start_at", nowIso).lte("start_at", in24h);
+    .select("id, team_id, start_at, teams!inner(org_id)").gt("start_at", nowIso).lte("start_at", windowEnd);
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "rsvp_nudge", error: error.message }];
   const events = eventsData || [];
   const orgEvents = events.filter((e: any) => e.teams?.org_id === trigger.org_id);

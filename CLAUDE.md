@@ -1226,15 +1226,16 @@ ELITE-28 ships CONTINUOUSLY — not a Phase 1.5 step.
 - **Auto-DRAFT into the Radar only** — admin reviews + sends. NOTHING auto-fires
   to families (deliberate: avoid flooding parents).
 - Nudge targets the kids who haven't confirmed going (non-responders / not-going).
-- Event-proximity window: games starting within the next ~24h (`handleRsvpLow24h`).
-  FLAG: widening this window for more lead time to rally players is an open option
-  pending an operator decision; shipped at 24h to avoid scope creep.
-- Threshold + going-floor decision live in the AP #30 mirror pair
+- Event-proximity window: games starting within the next **48h** of now
+  (`handleRsvpLowGoing`). **Operator-widened 2026-06-05 from 24h to 48h** — more
+  lead time to rally players for a short-rostered game (resolves the prior open
+  FLAG). The window bound is `RSVP_NUDGE_WINDOW_HOURS` in the AP #30 mirror pair.
+- Threshold + going-floor + window decisions live in the AP #30 mirror pair
   `src/lib/cron/rsvpNudgeThreshold.js` ↔
   `supabase/functions/briefing-auto-draft-tick/_rsvpNudgeThreshold.ts`; the IO
-  handler is `briefing-auto-draft-tick/_handlers.ts:handleRsvpLow24h`. Operator
-  control surfaces in `AutoNotificationSettingsSheet` (Stream B → "Minimum
-  confirmed going").
+  handler is `briefing-auto-draft-tick/_handlers.ts:handleRsvpLowGoing` (the DB
+  trigger_event value stays `rsvp_low_24h_before`). Operator control surfaces in
+  `AutoNotificationSettingsSheet` (Stream B → "Minimum confirmed going").
 
 Both streams run independently. Both are admin-configurable.
 
