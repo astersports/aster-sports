@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Briefing — Full Presentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cobalt:#4a8fd4;--cobalt-ink:#2f6db0;--cobalt-wash:#eef4fb;--cobalt-deep:#2b5e9e;
+    --t-11ug:#a78bfa;--t-10ub:#4a8fd4;--t-10blue:#94a3b8;--t-9u:#06b6d4;--t-8u:#f59e0b;
+    --ink:#16191d;--ink-2:#5b6168;--ink-3:#9aa0a8;--line:#e8eaed;--line-2:#f0f1f3;
+    --surface:#fff;--app-bg:#f5f6f8;
+    --warn:#b54708;--warn-wash:#fef3e6;--warn-line:#f3dcb8;--good:#1f9d57;--good-wash:#e9f7ef;--good-line:#c7ead5;
+    --r-card:10px;--r-sm:8px;--r-pill:999px;
+    --sh-card:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);
+    --sh-soft:0 1px 2px rgba(16,24,40,.05);--sh-float:0 8px 30px rgba(16,24,40,.1);--sh-pop:0 8px 26px rgba(16,24,40,.14);
+    /* dark email */
+    --mail:#16191f;--ebody:#171b22;--ecell:#1c212a;--ebar:#202632;--etx:#f3f5f7;--etx2:#aab2bc;--etx3:#79828d;--eline:#2a313c;
+    --loss-bg:#3a2122;--loss-tx:#f0908f;--win-bg:#1d3a2a;--win-tx:#67d39b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+  body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:#eceef1;padding:0 0 80px}
+  /* nav */
+  .topnav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:12px 26px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .topnav .brand{font-size:13px;font-weight:800;letter-spacing:-.01em;margin-right:8px}
+  .topnav a{font-size:12px;font-weight:700;color:var(--ink-2);text-decoration:none;background:var(--app-bg);border:1px solid var(--line);border-radius:var(--r-pill);padding:6px 12px}
+  .hero{max-width:1180px;margin:0 auto;padding:46px 26px 6px}
+  .hero .k{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--cobalt-ink)}
+  .hero h1{font-size:34px;font-weight:800;letter-spacing:-.02em;margin:8px 0 9px}
+  .hero p{font-size:15px;color:var(--ink-2);max-width:680px;line-height:1.55}
+  .flow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:18px}
+  .flow .step{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-pill);padding:8px 15px;font-size:13px;font-weight:700;box-shadow:var(--sh-soft)}
+  .flow .arr{color:var(--ink-3)}
+  .section{max-width:1180px;margin:44px auto 0;padding:0 26px;scroll-margin-top:64px}
+  .shead{display:flex;align-items:baseline;gap:13px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:6px}
+  .shead .lt{font-size:13px;font-weight:900;color:#fff;background:var(--ink);width:26px;height:26px;border-radius:7px;display:grid;place-items:center}
+  .shead h2{font-size:22px;font-weight:800;letter-spacing:-.02em}
+  .shead .s{font-size:14px;color:var(--ink-2);font-weight:500;margin-left:auto}
+  .sub{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:24px 0 12px}
+  .rowwrap{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+  .col{display:flex;flex-direction:column;gap:10px}
+  .cap{font-size:12.5px;font-weight:600;color:var(--ink-2);max-width:360px;line-height:1.45;padding-left:4px}
+  .cap b{color:var(--ink)}
+  /* phone */
+  .phone{width:340px;background:#0d0f12;border-radius:38px;padding:8px;box-shadow:var(--sh-float);flex-shrink:0}
+  .screen{background:var(--app-bg);border-radius:30px;overflow:hidden}
+  .sb{display:flex;justify-content:space-between;align-items:center;padding:11px 20px 5px;font-size:12px;font-weight:600}
+  .sb .bar{width:16px;height:10px;border:1.4px solid var(--ink);border-radius:3px}
+  .pbody{padding:5px 14px 13px;display:flex;flex-direction:column;gap:10px}
+  .ah{display:flex;align-items:center;justify-content:space-between;padding:7px 2px 2px}
+  .crest{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--cobalt),#3a7ac0);display:grid;place-items:center;color:#fff;font-weight:800;font-size:14px}
+  .ah .h{font-size:17px;font-weight:700;letter-spacing:-.01em}
+  .ah .s{font-size:12px;color:var(--ink-3);font-weight:500}
+  .icbtn{width:34px;height:34px;border-radius:10px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink-2)}
+  .tabs{display:flex;gap:3px;background:var(--line-2);border-radius:var(--r-pill);padding:3px}
+  .tab{flex:1;text-align:center;font-size:11.5px;font-weight:700;padding:7px 3px;border-radius:var(--r-pill);color:var(--ink-2)}
+  .tab.on{background:var(--surface);color:var(--ink);box-shadow:var(--sh-soft)}
+  .tab .c{color:var(--cobalt)}
+  .prop{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--sh-card);padding:12px 13px;border-left:3px solid var(--ink-3)}
+  .prop .top{display:flex;align-items:center;justify-content:space-between}
+  .prop .team{font-size:12.5px;font-weight:800}
+  .prop .kind{font-size:10.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-top:1px}
+  .aichip{display:inline-flex;align-items:center;gap:4px;background:var(--cobalt-wash);color:var(--cobalt-ink);font-size:10px;font-weight:700;padding:3px 8px;border-radius:var(--r-pill)}
+  .prop .snip{font-size:12px;color:var(--ink-2);line-height:1.4;margin:7px 0 10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .prop .acts{display:flex;gap:8px}
+  .prop .review{flex:1;background:var(--cobalt);color:#fff;border:none;border-radius:6px;padding:9px;font-size:12.5px;font-weight:700;font-family:inherit}
+  .prop .edit{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:9px 13px;font-size:12.5px;font-weight:600}
+  .newbtn{display:flex;align-items:center;justify-content:center;gap:7px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-card);padding:13px;font-size:14px;font-weight:700;font-family:inherit}
+  .seclabel{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:2px 4px 0}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-size:12px;font-weight:700;padding:7px 12px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--line);color:var(--ink-2)}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .audctl{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px}
+  .audctl .l{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700}
+  .audctl .ch{font-size:12px;font-weight:700;color:var(--cobalt-ink)}
+  .aibox{background:linear-gradient(180deg,var(--cobalt-wash),#f7fafe);border:1px solid #d8e6f7;border-radius:var(--r-sm);padding:11px}
+  .aibox .ti{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:800;color:var(--cobalt-ink);margin-bottom:8px}
+  .aibox .db{font-size:12.5px;line-height:1.5;color:#23272c;background:#fff;border:1px solid #e3edf9;border-radius:6px;padding:9px}
+  .aibox .facts{display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:11.5px;font-weight:700;color:var(--cobalt-ink);background:#fff;border:1px solid #e3edf9;border-radius:6px;padding:8px 10px}
+  .bodyf{border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 11px;font-size:13px;line-height:1.6;background:var(--surface)}
+  .tchip{display:inline-flex;align-items:center;gap:4px;background:var(--cobalt-wash);color:var(--cobalt-ink);border:1px solid #cfe1f5;border-radius:var(--r-pill);padding:1px 8px;font-size:11.5px;font-weight:700}
+  .optrow{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;font-size:13px;font-weight:600}
+  .tog{width:38px;height:22px;border-radius:var(--r-pill);background:var(--line);position:relative}
+  .tog i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:var(--sh-soft)}
+  .prevbar{display:flex;align-items:center;gap:8px;background:var(--good-wash);border:1px solid var(--good-line);border-radius:var(--r-sm);padding:10px 12px;font-size:12.5px;font-weight:700;color:#136e3c}
+  .send{background:var(--cobalt);color:#fff;border:none;border-radius:var(--r-card);padding:13px;font-size:14.5px;font-weight:700;font-family:inherit}
+  .nav5{display:flex;justify-content:space-around;background:var(--surface);border-top:1px solid var(--line);padding:8px 6px 12px}
+  .nav5 a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;font-weight:600;color:var(--ink-3);text-decoration:none}
+  .nav5 a.on{color:var(--cobalt)}
+  /* inbox list */
+  .inrow{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--sh-card);padding:12px 13px;display:flex;gap:11px;align-items:flex-start;position:relative;overflow:hidden}
+  .inrow .rail{position:absolute;left:0;top:0;bottom:0;width:3px}
+  .inrow .unread{width:8px;height:8px;border-radius:50%;background:var(--cobalt);margin-top:5px;flex-shrink:0}
+  .inrow .m{flex:1;min-width:0}
+  .inrow .k{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3)}
+  .inrow .t{font-size:14px;font-weight:700;letter-spacing:-.01em;margin:2px 0 3px}
+  .inrow .p{font-size:12.5px;color:var(--ink-2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .inrow .when{font-size:11px;color:var(--ink-3);font-weight:600;flex-shrink:0}
+  /* read bands */
+  .pinner{background:#fff;border-radius:26px;overflow:hidden}
+  .band{padding:13px 15px;border-bottom:1px solid var(--line-2);position:relative}
+  .b1{background:linear-gradient(135deg,var(--t-8u),#e08600);color:#fff}
+  .b1 .e{font-size:10px;font-weight:800;letter-spacing:.1em;opacity:.95}
+  .b1 .t{font-size:18px;font-weight:800;letter-spacing:-.01em;margin-top:4px}
+  .b2{display:flex;align-items:center;justify-content:space-between}
+  .b2 .sc{font-size:28px;font-weight:800;letter-spacing:-.03em}
+  .b2 .pill{font-size:10.5px;font-weight:800;padding:3px 10px;border-radius:var(--r-pill);background:var(--good-wash);color:#15803d}
+  .b3{display:flex;gap:8px}
+  .b3 .c{flex:1;text-align:center;font-size:12.5px;font-weight:700;border-radius:6px;padding:10px;background:var(--cobalt);color:#fff}
+  .b3 .c.g{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .b4{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+  /* email render */
+  .email{width:360px;flex-shrink:0;background:var(--ebody);border:2px solid var(--cobalt);border-radius:6px;overflow:hidden;box-shadow:var(--sh-float);color:var(--etx)}
+  .email.t11{border-color:var(--t-11ug)} .email.warn{border-color:var(--warn)}
+  .eband{background:linear-gradient(140deg,var(--cobalt),var(--cobalt-deep));padding:16px 16px 15px;text-align:center}
+  .eband.t11{background:linear-gradient(140deg,var(--t-11ug),#7c5fd6)} .eband.callup{background:linear-gradient(150deg,#5b8fd6,#7c6cf0)}
+  .eband .o{font-size:10px;font-weight:800;letter-spacing:.14em;opacity:.92}
+  .eband h3{font-size:23px;font-weight:900;letter-spacing:.01em;margin:7px 0 6px;line-height:1}
+  .eband .meta{font-size:11.5px;opacity:.88;font-weight:500}
+  .eband .pill{display:inline-block;background:rgba(0,0,0,.18);border-radius:var(--r-pill);padding:5px 13px;font-size:12px;font-weight:700;margin-top:7px}
+  .ebar{background:var(--ebar);border-top:2px solid var(--cobalt);padding:9px 16px;text-align:center}
+  .ebar.gold{border-top-color:var(--t-8u)}.ebar.t11{border-top-color:var(--t-11ug)}
+  .ebar .l{font-size:11px;font-weight:800;letter-spacing:.16em;color:var(--cobalt);text-transform:uppercase}
+  .ebar.gold .l{color:var(--t-8u)}.ebar.t11 .l{color:var(--t-11ug)}
+  .epad{padding:13px 14px}
+  .gcell{background:var(--ecell);border:1px solid var(--eline);border-radius:8px;position:relative;overflow:hidden;padding:11px 13px 11px 16px;margin-bottom:9px;display:flex;align-items:center;gap:10px}
+  .gcell .rail{position:absolute;left:0;top:0;bottom:0;width:4px}
+  .gcell .m{flex:1;min-width:0}
+  .gcell .d{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--etx3)}
+  .gcell .mt{font-size:14px;font-weight:700;color:#fff;margin-top:3px;line-height:1.2}
+  .gcell .sc{font-size:20px;font-weight:800;letter-spacing:-.02em;color:#fff;text-align:right}
+  .gcell .res{display:inline-block;margin-top:5px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:var(--r-pill)}
+  .res.l{background:var(--loss-bg);color:var(--loss-tx)}.res.w{background:var(--win-bg);color:var(--win-tx)}
+  .schedrow{display:flex;gap:0;border:1px solid var(--eline);border-radius:8px;overflow:hidden;margin-bottom:8px}
+  .schedrow .when{width:74px;flex-shrink:0;background:var(--ecell);padding:11px 10px;text-align:center;border-right:1px solid var(--eline)}
+  .schedrow .when .g{font-size:10px;font-weight:800;color:var(--cobalt);letter-spacing:.04em}
+  .schedrow .when .h{font-size:15px;font-weight:800;color:#fff;margin-top:2px}
+  .schedrow .det{padding:11px 12px;flex:1}
+  .schedrow .det .o{font-size:14px;font-weight:700;color:#fff;line-height:1.2}
+  .schedrow .det .v{font-size:11.5px;color:var(--etx2);margin-top:3px}
+  .bracket{border:1px solid var(--eline);border-radius:8px;overflow:hidden;margin-bottom:8px}
+  .bkrow{display:flex;border-bottom:1px solid var(--eline)}
+  .bkrow:last-child{border-bottom:none}
+  .bkrow .stage{width:74px;flex-shrink:0;background:#241d12;padding:10px;text-align:center;border-right:1px solid var(--eline)}
+  .bkrow .stage .s{font-size:9.5px;font-weight:800;color:var(--t-8u);letter-spacing:.06em}
+  .bkrow .stage .h{font-size:13px;font-weight:800;color:#fff;margin-top:2px}
+  .bkrow .opp{padding:10px 12px;font-size:13px;font-weight:600;color:#fff;display:flex;align-items:center}
+  .standrow{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-bottom:1px solid var(--eline);font-size:13px;color:#fff}
+  .standrow.me{background:rgba(74,143,212,.16);font-weight:800;color:var(--cobalt)}
+  .wx{display:flex;border:1px solid var(--eline);border-radius:8px;overflow:hidden}
+  .wxd{flex:1;text-align:center;padding:11px 6px;border-right:1px solid var(--eline)}
+  .wxd:last-child{border-right:none}
+  .wxd .day{font-size:10px;font-weight:700;color:var(--etx3);letter-spacing:.06em}
+  .wxd .em{font-size:20px;margin:5px 0}
+  .wxd .tp{font-size:15px;font-weight:800;color:#fff}
+  .wxd .rn{font-size:10.5px;font-weight:700;color:var(--cobalt);margin-top:3px}
+  .rule{display:flex;gap:8px;margin-bottom:9px}
+  .rule .dot{width:5px;height:5px;border-radius:50%;background:var(--cobalt);margin-top:7px;flex-shrink:0}
+  .rule .rt{font-size:12.5px;line-height:1.5;color:var(--etx)}
+  .rule .rt b{color:var(--cobalt);font-weight:700}
+  .enar{font-size:13px;line-height:1.6;color:var(--etx)}
+  .enar p{margin-bottom:9px}
+  .enar .sign{font-weight:700;color:#fff}
+  .callup-ic{width:48px;height:48px;border-radius:13px;background:rgba(255,255,255,.18);display:grid;place-items:center;margin:0 auto 11px}
+  .cxcard{background:var(--ecell);border:1px solid var(--eline);border-left:3px solid var(--warn);border-radius:8px;padding:13px 14px}
+  .cxlabel{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#f0a36a;background:rgba(181,71,8,.22);border-radius:var(--r-pill);padding:4px 10px}
+  .cxt{font-size:15px;font-weight:700;color:#fff;margin:10px 0 6px}
+  .cxm{font-size:13px;color:var(--etx2)}.cxm .strike{text-decoration:line-through;color:var(--etx3)}
+  .efoot{border-top:1px solid var(--eline);padding:15px 16px;text-align:center}
+  .efoot .b{font-size:11.5px;font-weight:800;letter-spacing:.16em;color:#fff}
+  .efoot .l{font-size:11.5px;color:var(--cobalt);font-weight:600;margin-top:6px;line-height:1.6}
+  /* catalog */
+  .cat{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px}
+  .tier{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--sh-card);overflow:hidden}
+  .tier .th{padding:11px 14px;font-size:12px;font-weight:800;letter-spacing:.04em;color:#fff;display:flex;align-items:center;justify-content:space-between}
+  .th.rich{background:var(--cobalt)}.th.struct{background:var(--ink)}.th.plain{background:var(--ink-3)}
+  .th .ct{font-weight:700;opacity:.85}
+  .krow{padding:10px 14px;border-bottom:1px solid var(--line-2);display:flex;align-items:flex-start;gap:9px}
+  .krow:last-child{border-bottom:none}
+  .krow .kn{font-size:13px;font-weight:700;min-width:0}
+  .krow .kd{font-size:12px;color:var(--ink-2);margin-top:1px;line-height:1.4}
+  .krow .ai{font-size:9.5px;font-weight:800;color:var(--cobalt-ink);background:var(--cobalt-wash);border-radius:var(--r-pill);padding:2px 7px;margin-left:auto;flex-shrink:0;white-space:nowrap}
+  /* component spec mini */
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--sh-card);padding:14px;width:330px;flex-shrink:0}
+  .ptitle{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+  .prevbtn{display:inline-block;background:var(--cobalt);color:#fff;font-weight:700;font-size:12.5px;border-radius:var(--r-pill);padding:6px 13px;text-decoration:none}
+  .factrow{display:flex;justify-content:space-between;padding:8px 11px;border-top:1px solid var(--line-2);font-size:12.5px}
+  .factrow:first-child{border-top:none}.factrow .fl{color:var(--ink-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.factrow .fv{font-weight:700}
+  .factrow.miss{background:var(--warn-wash)}.factrow.miss .fl,.factrow.miss .fv{color:var(--warn)}
+  svg{display:block}
+  .i{width:14px;height:14px;stroke-width:1.8;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .in{width:19px;height:19px;stroke-width:1.75;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  @media(max-width:520px){.phone,.email{width:100%;max-width:340px}.hero h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <span class="brand">Briefing · full presentation</span>
+  <a href="#admin">1 · Admin</a><a href="#kinds">2 · The kinds</a><a href="#parent">3 · Parent</a><a href="#components">4 · Components</a>
+</div>
+
+<div class="hero">
+  <div class="k">Legacy Hoopers · the complete briefing</div>
+  <h1>Front to back, one language</h1>
+  <p>Everything the briefing is, in order: the admin creates and sends it, each kind renders to its tier, the parent receives and reads it. Same Inter type, cobalt brand, team color as the only variable. App screens are light (the cockpit), email renders are dark (how a phone client shows them).</p>
+  <div class="flow"><span class="step">Admin composes</span><span class="arr">→</span><span class="step">Kind renders</span><span class="arr">→</span><span class="step">Parent reads</span></div>
+</div>
+
+<!-- ===================== 1. ADMIN ===================== -->
+<div class="section" id="admin">
+  <div class="shead"><span class="lt">1</span><h2>Admin · create &amp; send</h2><span class="s">Radar is the front door. The composer is one screen.</span></div>
+
+  <div class="sub">The front door + the composer</div>
+  <div class="rowwrap">
+
+    <!-- Radar -->
+    <div class="col">
+      <div class="phone"><div class="screen">
+        <div class="sb"><span>7:30</span><span class="bar"></span></div>
+        <div class="pbody">
+          <div class="ah"><div style="display:flex;gap:10px;align-items:center"><div class="crest">LH</div><div><div class="h">Radar</div><div class="s">AI drafted 3 overnight</div></div></div><div class="icbtn"><svg class="in" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div></div>
+          <div class="tabs"><span class="tab on">Ready <span class="c">3</span></span><span class="tab">Drafts <span>2</span></span><span class="tab">Scheduled</span><span class="tab">Sent</span></div>
+          <div class="prop" style="border-left-color:var(--t-10ub)"><div class="top"><div><div class="team">10U Black</div><div class="kind">Game recap</div></div><span class="aichip">AI</span></div><div class="snip">We took a strong Yorktown squad to the wire and came out on top, 38 to 31...</div><div class="acts"><button class="review">Review &amp; send</button><button class="edit">Edit</button></div></div>
+          <div class="prop" style="border-left-color:var(--t-11ug)"><div class="top"><div><div class="team">11U Girls</div><div class="kind">Weekend digest</div></div><span class="aichip">AI</span></div><div class="snip">Two games this weekend and the defense traveled. Here's the week ahead...</div><div class="acts"><button class="review">Review &amp; send</button><button class="edit">Edit</button></div></div>
+          <div class="prop" style="border-left-color:var(--t-8u)"><div class="top"><div><div class="team">8U Boys</div><div class="kind">Tournament recap</div></div><span class="aichip">AI</span></div><div class="snip">Summer Hoops Jam, day one in the books. Two wins and a battle...</div><div class="acts"><button class="review">Review &amp; send</button><button class="edit">Edit</button></div></div>
+          <button class="newbtn"><svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>New briefing</button>
+        </div>
+        <div class="nav5"><a><svg class="in" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Home</a><a class="on"><svg class="in" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>Radar</a><a><svg class="in" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>Insights</a><a><svg class="in" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1l-.3-2.5h-4l-.3 2.5a7 7 0 0 0-1.7 1l-2.3-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5a7 7 0 0 0 .1-1Z"/></svg>Settings</a></div>
+      </div></div>
+      <div class="cap"><b>Radar.</b> The single front door. AI drafts each team's recap and digest overnight in your voice; you review and send. Color names the team before you read.</div>
+    </div>
+
+    <!-- Composer -->
+    <div class="col">
+      <div class="phone"><div class="screen">
+        <div class="sb"><span>7:34</span><span class="bar"></span></div>
+        <div class="pbody">
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 2px;font-size:14px;font-weight:600;color:var(--ink-2)"><svg class="i" viewBox="0 0 24 24" style="width:17px;height:17px"><path d="m15 18-6-6 6-6"/></svg>New briefing</div>
+          <div class="seclabel">What kind</div>
+          <div class="chips"><span class="chip on">Announcement</span><span class="chip">Custom</span><span class="chip">Games recap</span><span class="chip">Coach roundup</span><span class="chip">Family guide</span></div>
+          <div class="seclabel" style="margin-top:4px">Who gets it</div>
+          <div class="audctl"><span class="l"><span style="width:9px;height:9px;border-radius:50%;background:var(--t-10ub);display:inline-block"></span>10U Black families · 14</span><span class="ch">Change</span></div>
+          <div class="seclabel" style="margin-top:4px">Message</div>
+          <div class="aibox"><div class="ti"><span style="display:flex;align-items:center;gap:6px"><svg class="i" viewBox="0 0 24 24"><path d="m12 3 1.9 4.6L18 9.5l-4.1 1.9L12 16l-1.9-4.6L6 9.5l4.1-1.9Z"/></svg>Drafted in your voice</span><span style="font-size:11px;background:#fff;border:1px solid #cfe1f5;border-radius:var(--r-pill);padding:4px 9px">↻ Redraft</span></div><div class="db">Team photos are next Tuesday at 5:15 before practice. Wear your game jersey. <span class="tchip"><svg class="i" viewBox="0 0 24 24" style="width:11px;height:11px"><path d="M20 6 9 17l-5-5"/></svg>RSVP</span> so we have a count.</div><div class="facts"><span>Facts used · 3</span><svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div></div>
+          <div class="optrow"><span style="display:flex;align-items:center;gap:8px"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Send later</span><span class="tog"><i></i></span></div>
+          <div class="prevbar"><svg class="i" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Preview · 14 families</div>
+          <button class="send">Send briefing</button>
+        </div>
+      </div></div>
+      <div class="cap"><b>One-screen composer.</b> Five kinds as chips, one audience control with a smart default, an AI draft grounded in real facts, a token chip in the body, send. No wizard.</div>
+    </div>
+  </div>
+
+  <div class="sub">Where compose starts · context sets the order</div>
+  <div class="rowwrap" style="gap:12px">
+    <div class="panel" style="width:auto;flex:1;min-width:230px"><div class="ptitle" style="color:var(--cobalt-ink)">From Radar</div><div style="font-size:13px;color:var(--ink-2);line-height:1.5">Team + kind + audience pre-filled. Review &amp; send. <b style="color:var(--ink)">Most common, zero picks.</b></div></div>
+    <div class="panel" style="width:auto;flex:1;min-width:230px"><div class="ptitle" style="color:var(--t-11ug)">From a team</div><div style="font-size:13px;color:var(--ink-2);line-height:1.5">Team pre-filled, pick the kind. <b style="color:var(--ink)">Team-first, naturally.</b></div></div>
+    <div class="panel" style="width:auto;flex:1;min-width:230px"><div class="ptitle" style="color:var(--warn)">From a game (coach)</div><div style="font-size:13px;color:var(--ink-2);line-height:1.5">Coach triggers; team + kind + game land in Radar. <b style="color:var(--ink)">Trigger-only.</b></div></div>
+    <div class="panel" style="width:auto;flex:1;min-width:230px"><div class="ptitle">Cold "+ New"</div><div style="font-size:13px;color:var(--ink-2);line-height:1.5">Nothing known, so kind first (it shapes the form), audience auto-defaults. <b style="color:var(--ink)">The only kind-first path.</b></div></div>
+  </div>
+</div>
+
+<!-- ===================== 2. THE KINDS ===================== -->
+<div class="section" id="kinds">
+  <div class="shead"><span class="lt">2</span><h2>The kinds · what gets sent</h2><span class="s">12 kinds, three render tiers. Color codes the team.</span></div>
+
+  <div class="sub">The full catalog</div>
+  <div class="cat">
+    <div class="tier"><div class="th rich">RICH <span class="ct">5</span></div>
+      <div class="krow"><div><div class="kn">games_recap</div><div class="kd">Multi-game results, one cell per game</div></div><span class="ai">AI</span></div>
+      <div class="krow"><div><div class="kn">game_recap</div><div class="kd">Single game recap</div></div><span class="ai">AI</span></div>
+      <div class="krow"><div><div class="kn">tournament_prelim</div><div class="kd">Schedule, bracket path, standings, weather, rules</div></div><span class="ai">AI</span></div>
+      <div class="krow"><div><div class="kn">tournament_recap</div><div class="kd">Post-tournament run + result</div></div><span class="ai">AI</span></div>
+      <div class="krow"><div><div class="kn">family_guide</div><div class="kd">VIP family reference guide</div></div><span class="ai">AI</span></div>
+    </div>
+    <div class="tier"><div class="th struct">STRUCTURED <span class="ct">5</span></div>
+      <div class="krow"><div><div class="kn">weekly_digest</div><div class="kd">The week ahead (auto-draft Sunday)</div></div><span class="ai">AI</span></div>
+      <div class="krow"><div><div class="kn">schedule_change</div><div class="kd">Time/venue change card</div></div></div>
+      <div class="krow"><div><div class="kn">rsvp_nudge</div><div class="kd">Reminder · 3/2/1 day + 4h to non-responders</div></div></div>
+      <div class="krow"><div><div class="kn">academy_callup_notice</div><div class="kd">Futures Academy call-up</div></div></div>
+      <div class="krow"><div><div class="kn">coach_roundup</div><div class="kd">A coach's cross-team game aggregate</div></div></div>
+    </div>
+    <div class="tier"><div class="th plain">PLAIN by design <span class="ct">2</span></div>
+      <div class="krow"><div><div class="kn">announcement</div><div class="kd">Broadcast note, text-first</div></div></div>
+      <div class="krow"><div><div class="kn">custom_message</div><div class="kd">Free-form, the escape hatch</div></div></div>
+      <div class="krow" style="border-top:1px dashed var(--line)"><div><div class="kd" style="color:var(--ink-3)">Plain is a deliberate choice, not a gap. These two carry no structured data to render.</div></div></div>
+    </div>
+  </div>
+
+  <div class="sub">Rendered · rich tier</div>
+  <div class="rowwrap">
+    <!-- games_recap -->
+    <div class="col">
+      <div class="email"><div class="eband"><div class="o">LEGACY HOOPERS · GAMES RECAP</div><h3>That's how we battle</h3><span class="pill">2–0 · MAY 31</span></div>
+        <div class="ebar"><div class="l">The Weekend</div></div>
+        <div class="epad">
+          <div class="gcell"><span class="rail" style="background:var(--t-9u)"></span><div class="m"><div class="d">Sat · 9U Boys</div><div class="mt">vs 6th Boro</div></div><div><div class="sc">14–12</div><span class="res w">WIN</span></div></div>
+          <div class="gcell"><span class="rail" style="background:var(--t-10blue)"></span><div class="m"><div class="d">Sat · 10U Blue</div><div class="mt">vs Holy Family</div></div><div><div class="sc">31–28</div><span class="res w">WIN</span></div></div>
+        </div>
+        <div class="ebar"><div class="l">From the Sideline</div></div>
+        <div class="epad"><div class="enar"><p>Both squads came to play this weekend and the defense traveled. Two wins, both earned in the fourth.</p><p class="sign">Frank &amp; Coach Kenny</p></div></div>
+        <div class="efoot"><div class="b">LEGACY HOOPERS</div><div class="l">legacyhoopers.org · support@astersports.app</div></div>
+      </div>
+      <div class="cap"><b>games_recap.</b> One cell per game, each with its own team-color rail, score, and win/loss pill. Narrative below a section bar. Framed.</div>
+    </div>
+
+    <!-- tournament_prelim -->
+    <div class="col">
+      <div class="email"><div class="eband"><div class="o">8U BOYS · ZERO GRAVITY</div><h3>National Finals</h3><span class="meta" style="display:block;margin-top:5px">Division 3 Orange · June 6–7</span></div>
+        <div class="ebar gold"><div class="l">Saturday · Monty Tech HS</div></div>
+        <div class="epad">
+          <div class="schedrow"><div class="when"><div class="g">GAME 1</div><div class="h">2:30</div></div><div class="det"><div class="o">vs Team Spartans Academy</div><div class="v">Monty Tech HS · Court 1</div></div></div>
+          <div class="schedrow"><div class="when"><div class="g">GAME 2</div><div class="h">5:45</div></div><div class="det"><div class="o">vs ASA (MA)</div><div class="v">Monty Tech HS · Court 1</div></div></div>
+        </div>
+        <div class="ebar gold"><div class="l">If we win the pool · Bracket</div></div>
+        <div class="epad"><div class="bracket">
+          <div class="bkrow"><div class="stage"><div class="s">QUARTER</div><div class="h">2:00</div></div><div class="opp">vs Division 3 Red 2nd</div></div>
+          <div class="bkrow"><div class="stage"><div class="s">SEMI</div><div class="h">4:00</div></div><div class="opp">vs Division 3 Green 1st</div></div>
+          <div class="bkrow"><div class="stage"><div class="s">FINAL</div><div class="h">6:00</div></div><div class="opp">Championship</div></div>
+        </div></div>
+        <div class="ebar gold"><div class="l">Division 3 Orange</div></div>
+        <div class="epad" style="padding:0">
+          <div class="standrow">ASA (MA)</div><div class="standrow me">Legacy Hoopers (NY)</div><div class="standrow" style="border-bottom:none">Team Spartans Academy (MA)</div>
+        </div>
+        <div class="ebar gold"><div class="l">Weather · Waltham, MA</div></div>
+        <div class="epad"><div class="wx"><div class="wxd"><div class="day">FRI 6/5</div><div class="em">⛅</div><div class="tp">91°</div><div class="rn">1% rain</div></div><div class="wxd"><div class="day">SAT 6/6</div><div class="em">⛈️</div><div class="tp">94°</div><div class="rn">55% storms</div></div><div class="wxd"><div class="day">SUN 6/7</div><div class="em">🌧️</div><div class="tp">82°</div><div class="rn">96% rain</div></div></div></div>
+        <div class="ebar gold"><div class="l">Zero Gravity Rules · 4th grade</div></div>
+        <div class="epad">
+          <div class="rule"><span class="dot"></span><div class="rt"><b>Format:</b> two 14-minute stop-time halves; running clock at a 20-point lead.</div></div>
+          <div class="rule"><span class="dot"></span><div class="rt"><b>Fouls:</b> bonus on the 10th team foul, two shots on the 12th; foul out at 6.</div></div>
+          <div class="rule" style="margin-bottom:0"><span class="dot"></span><div class="rt"><b>Arrive 20 minutes early.</b> Bring plenty of water and a poncho.</div></div>
+        </div>
+        <div class="efoot"><div class="b">LEGACY HOOPERS</div><div class="l">legacyhoopers.org · support@astersports.app</div></div>
+      </div>
+      <div class="cap"><b>tournament_prelim.</b> The gold standard. Header band, schedule cards, the bracket ladder, pool standings with you highlighted, weather strip, rules. This is the bar every rich kind matches.</div>
+    </div>
+  </div>
+
+  <div class="sub">Rendered · structured tier</div>
+  <div class="rowwrap">
+    <!-- schedule_change -->
+    <div class="col">
+      <div class="email" style="border-color:var(--t-10ub)"><div class="eband"><div class="o">10U BLACK</div><h3>Time change</h3></div>
+        <div class="ebar"><div class="l">Saturday's game</div></div>
+        <div class="epad"><div class="schedrow" style="margin-bottom:0"><div class="when" style="background:var(--loss-bg)"><div class="g" style="color:var(--loss-tx)">WAS</div><div class="h" style="text-decoration:line-through;color:var(--etx3)">10:00</div></div><div class="det" style="background:var(--win-bg)"><div class="o" style="color:var(--win-tx)">Now 8:30 AM</div><div class="v" style="color:#bfe9cf">Same place · Westchester Sportsplex</div></div></div>
+          <div class="enar" style="margin-top:11px"><p>Tournament shifted us earlier. Doors open at 8:00 for warmups.</p><p class="sign" style="margin-bottom:0">Frank &amp; Coach Kenny</p></div>
+        </div>
+        <div class="efoot"><div class="b">LEGACY HOOPERS</div><div class="l">legacyhoopers.org</div></div>
+      </div>
+      <div class="cap"><b>schedule_change.</b> Was/now as a single legible swap, old time struck. Routed through Radar, never an auto-blast.</div>
+    </div>
+
+    <!-- academy_callup -->
+    <div class="col">
+      <div class="email" style="border-color:#7c6cf0"><div class="eband callup"><div class="callup-ic"><svg viewBox="0 0 24 24" style="width:26px;height:26px;stroke:#fff;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round"><path d="m12 2 2.5 6.5L21 9l-5 4.5L17.5 21 12 17l-5.5 4L8 13.5 3 9l6.5-.5Z"/></svg></div><div class="o">FUTURES ACADEMY</div><h3>Milo's been called up</h3><span class="meta" style="display:block;margin-top:6px">Invite-only · U10 Futures</span></div>
+        <div class="epad"><div class="schedrow" style="margin-bottom:0"><div class="when"><div class="g">THU</div><div class="h">6:00</div></div><div class="det"><div class="o">Futures session</div><div class="v">Sportsplex · Court 2</div></div></div>
+          <div style="text-align:center;margin-top:12px"><span style="display:inline-flex;gap:7px;align-items:center;background:rgba(0,0,0,.2);border-radius:var(--r-pill);padding:7px 14px;font-size:12px;font-weight:800;color:#fff"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Respond within 1h 42m</span></div>
+        </div>
+        <div class="efoot"><div class="b">LEGACY HOOPERS</div><div class="l">legacyhoopers.org</div></div>
+      </div>
+      <div class="cap"><b>academy_callup_notice.</b> The Futures Academy moment, with the 2-hour response window. Headline feature, never a footnote.</div>
+    </div>
+
+    <!-- weekly_digest -->
+    <div class="col">
+      <div class="email t11" style="border-color:var(--t-11ug)"><div class="eband t11"><div class="o">11U GIRLS</div><h3>The week ahead</h3><span class="meta" style="display:block;margin-top:5px">Jun 9 – Jun 15</span></div>
+        <div class="ebar t11"><div class="l">3 events</div></div>
+        <div class="epad">
+          <div class="schedrow"><div class="when"><div class="g" style="color:var(--t-11ug)">TUE</div><div class="h">5:30</div></div><div class="det"><div class="o">Practice</div><div class="v">Sportsplex</div></div></div>
+          <div class="schedrow"><div class="when"><div class="g" style="color:var(--t-11ug)">SAT</div><div class="h">9:00</div></div><div class="det"><div class="o">Game vs Somers</div><div class="v">Home</div></div></div>
+          <div class="schedrow" style="margin-bottom:0"><div class="when"><div class="g" style="color:var(--t-11ug)">SUN</div><div class="h">11:00</div></div><div class="det"><div class="o">Skills session</div><div class="v">Sportsplex</div></div></div>
+        </div>
+        <div class="efoot"><div class="b">LEGACY HOOPERS</div><div class="l">legacyhoopers.org</div></div>
+      </div>
+      <div class="cap"><b>weekly_digest.</b> The week as scannable schedule cards. Auto-drafted Sunday to Radar; you send.</div>
+    </div>
+
+    <!-- announcement (plain) -->
+    <div class="col">
+      <div class="email" style="border-color:var(--eline)"><div class="eband" style="background:var(--ebar);border-bottom:1px solid var(--eline)"><div class="o" style="color:var(--cobalt)">LEGACY HOOPERS</div><h3 style="color:#fff;font-size:19px;font-weight:800">Picture day Tuesday</h3></div>
+        <div class="epad"><div class="enar"><p>Team photos are next Tuesday, June 10, at 5:15 before practice. Wear your game jersey and bring your best smile. We'll be done before warmups.</p><p class="sign" style="margin-bottom:0">Frank &amp; Coach Kenny</p></div></div>
+        <div class="efoot"><div class="b">LEGACY HOOPERS</div><div class="l">legacyhoopers.org</div></div>
+      </div>
+      <div class="cap"><b>announcement (plain by design).</b> Header, clean text, signoff. No structured data to render, so structure would be noise. Plain is correct here.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 3. PARENT ===================== -->
+<div class="section" id="parent">
+  <div class="shead"><span class="lt">3</span><h2>Parent · receive &amp; read</h2><span class="s">The inbox, then the 3-second read.</span></div>
+  <div class="rowwrap">
+
+    <!-- Inbox -->
+    <div class="col">
+      <div class="phone"><div class="screen">
+        <div class="sb"><span>8:42</span><span class="bar"></span></div>
+        <div class="pbody">
+          <div class="ah"><div style="display:flex;gap:10px;align-items:center"><div class="crest">LH</div><div><div class="h">Inbox</div><div class="s">2 new</div></div></div></div>
+          <div class="inrow" style="border-left:3px solid var(--t-8u)"><span class="rail"></span><span class="unread"></span><div class="m"><div class="k">8U Boys · Weekend recap</div><div class="t">That's how we battle</div><div class="p">Boys, what a Saturday. We took a strong Yorktown squad to the wire...</div></div><span class="when">2h</span></div>
+          <div class="inrow" style="border-left:3px solid var(--t-11ug)"><span class="unread"></span><div class="m"><div class="k">11U Girls · Time change</div><div class="t">Saturday moves to 8:30</div><div class="p">Tournament shifted us earlier. Doors open at 8:00 for warmups...</div></div><span class="when">5h</span></div>
+          <div class="inrow" style="border-left:3px solid var(--t-8u);opacity:.72"><div class="m" style="margin-left:19px"><div class="k">8U Boys · Week ahead</div><div class="t">Three on the calendar</div><div class="p">Here's everything for the week, plus a heads-up on Saturday...</div></div><span class="when">2d</span></div>
+        </div>
+        <div class="nav5"><a><svg class="in" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Home</a><a><svg class="in" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Schedule</a><a class="on"><svg class="in" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 6h13l3.5 6v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6Z"/></svg>Inbox</a><a><svg class="in" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg>You</a></div>
+      </div></div>
+      <div class="cap"><b>Inbox.</b> Briefings land here too, color-coded by team, unread dotted. The same render as the email, read in-app.</div>
+    </div>
+
+    <!-- Read -->
+    <div class="col">
+      <div class="phone"><div class="screen">
+        <div class="sb"><span>8:43</span><span class="bar"></span></div>
+        <div style="padding:8px 14px 13px">
+          <div style="display:flex;align-items:center;gap:8px;padding:4px 2px 10px;font-size:13px;font-weight:600;color:var(--ink-2)"><svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="m15 18-6-6 6-6"/></svg>Inbox</div>
+          <div class="pinner" style="border:1px solid var(--line)">
+            <div class="band b1"><div class="e">8U BOYS · WEEKEND RECAP</div><div class="t">That's how we battle</div></div>
+            <div class="band b2"><div class="sc">38 – 31</div><span class="pill">WIN</span></div>
+            <div class="band b3"><span class="c">See Milo's card</span><span class="c g">Schedule</span></div>
+            <div class="band b4" style="border-bottom:none">Boys, what a Saturday. We took a strong Yorktown squad to the wire and came out on top...<div style="font-weight:700;color:var(--ink);margin-top:6px">Frank &amp; Coach Kenny</div></div>
+          </div>
+        </div>
+      </div></div>
+      <div class="cap"><b>The read · 3-second test.</b> Identity (team color + kind), then the one fact (score) big, then the action, then the voice. A parent knows which kid, what, and what to do before they could swipe away.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 4. COMPONENTS ===================== -->
+<div class="section" id="components">
+  <div class="shead"><span class="lt">4</span><h2>Components · PR-D</h2><span class="s">The three composer-touching pieces.</span></div>
+  <div class="rowwrap">
+    <div class="panel"><div class="ptitle">Token chip · body &amp; preview</div>
+      <div class="bodyf">Quick one. <span class="tchip"><svg class="i" viewBox="0 0 24 24" style="width:11px;height:11px"><path d="M20 6 9 17l-5-5"/></svg>RSVP for Saturday</span> so we have a count.</div>
+      <div style="border:1px dashed #cdd3da;border-radius:var(--r-sm);padding:11px;margin-top:9px;font-size:12.5px;line-height:1.6;background:#fbfcfd">Quick one. <a class="prevbtn">RSVP for Saturday</a> so we have a count.</div>
+      <div style="font-size:12px;color:var(--ink-2);margin-top:9px;line-height:1.45">Chip in authoring, real button to the family. 4 tokens: RSVP, Schedule, Latest briefing, Directions. Resolves per-recipient.</div>
+    </div>
+    <div class="panel"><div class="ptitle">Cancellation card</div>
+      <div class="cxcard"><span class="cxlabel"><svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>Cancelled</span><div class="cxt">8U Boys · Practice</div><div class="cxm">Tomorrow · <span class="strike">5:30 PM</span></div><div style="font-size:12.5px;color:var(--etx);margin-top:9px;line-height:1.5">Sportsplex double-booked. Back to normal Thursday.</div></div>
+      <div style="font-size:12px;color:var(--ink-2);margin-top:9px;line-height:1.45">Warn tone, not red. No actions. Retires the last auto-email via a Radar proposal, on your GO.</div>
+    </div>
+    <div class="panel"><div class="ptitle">AI facts panel</div>
+      <div style="border:1px solid #e3edf9;border-radius:6px;overflow:hidden">
+        <div class="factrow"><span class="fl">Final score</span><span class="fv">38 – 31</span></div>
+        <div class="factrow"><span class="fl">Date</span><span class="fv">May 31</span></div>
+        <div class="factrow"><span class="fl">Venue</span><span class="fv">Sportsplex</span></div>
+        <div class="factrow"><span class="fl">Player of game</span><span class="fv">Milo</span></div>
+        <div class="factrow miss"><span class="fl">Missing · opponent record</span><span class="fv">not on file</span></div>
+      </div>
+      <div style="font-size:12px;color:var(--ink-2);margin-top:9px;line-height:1.45">Verbatim facts the draft used; missing ones flag amber, never invented. Read-only, verifies grounding before send.</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
