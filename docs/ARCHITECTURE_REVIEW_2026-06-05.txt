@@ -1,0 +1,150 @@
+==============================================================================
+ARCHITECTURE REVIEW — Briefing Render + Family Hub (full passes)
+terminal-CC -> architect. 2026-06-05.
+Consolidates: independent render verification + the Family Hub pre-flight +
+claim-flow verify + the S1 proposal. One document, two tracks, the decisions.
+==============================================================================
+Source docs: docs/GAMES_RECAP_AT_BAR.html, GAMES_RECAP_RENDER_TARGET.txt,
+FAMILY_HUB_BUILD_PLAN.txt, FAMILY_HUB_SYNC_ADDENDUM.txt, ACCOUNT_CLAIM_FLOW.txt,
+FAMILY_HUB_S1_PREFLIGHT.txt, FAMILY_HUB_S1_CLAIM_PROPOSAL.txt.
+
+==============================================================================
+PART A — BRIEFING RENDER (independently verified, full pass)
+==============================================================================
+Method: ran the real resolvers/composers against fixtures via vite-node, dumped
+actual rendered HTML through renderSections, ran the full vitest suite
+(1233 passed / 6 skipped / 0 failed), read every relevant renderer. Grounded in
+rendered output, not documentation.
+
+A1. GAMES_RECAP / GAME_RECAP "AT BAR" — PASS (fully verified)
+  Every element of docs/GAMES_RECAP_AT_BAR.html is present in the rendered HTML:
+   - cobalt FRAME (frame_open/close) is the outermost element; footer is INSIDE it
+   - cobalt HEADER BAND + record pill ("0–2 RECORD · MAY 18 – MAY 20")
+   - TWO section bars: "The Weekend" (over results) + "From the Sideline" (over narrative)
+   - one game CELL per result; PER-CELL team-color rail CONFIRMED:
+       cell 1 rail #06b6d4 (9U cyan), cell 2 rail #94a3b8 (10U slate) — DIFFERENT
+       colors per cell. This is the exact fix the earlier single-team route missed.
+   - score + WIN/LOSS pill (LOSS #fee2e2/#b91c1c, WIN #dcfce7/#15803d)
+   - narrative below the 2nd bar; section order locked by gamesRecap.contract.test.js
+  game_recap mirrors this for a single game ("The Game" bar, single-game pill).
+
+A2. REGRESSION — the 4 new renderers are KIND-SCOPED — PASS
+  The frame lives in content_sections (frame_open/frame_close), NOT the shared
+  wrapper. Only games_recap/game_recap carry it. header's record_pill is gated to
+  the cobalt_band variant — byte-identical output for every other header. All 10
+  other kinds rendered with no frame leakage, no broken headers, no orphan warnings.
+
+A3. §13 COMPLIANCE — PASS
+  Zero <style> blocks; table-based layout (the <div>s are text spans inside <td>,
+  not layout); zero U+2022 unicode bullets (the "·" are content separators, not
+  list bullets — outside §13 #4); brand colors from src/lib/engine/colors.js; only
+  literal hex in the new renderers is #ffffff (structural; email can't use CSS vars).
+  Off-palette hex exists only in DEAD renderers (poolStandings/championCallout/
+  labeledKeys/otherGames) — none registered in SECTION_RENDERERS, no production path.
+
+A4. AP #38 RENDERER-EMIT PARITY — PASS, zero orphans
+  36 distinct content-section kinds emitted across resolvers; all 36 have a
+  SECTION_RENDERERS handler. The 4 new kinds registered at sectionRenderers.js:88-91.
+
+A5. TWELVE-KIND RICHNESS VERDICT (as actually rendered)
+  RICH (5): games_recap, game_recap, tournament_prelim, tournament_recap, family_guide
+  STRUCTURED (5): weekly_digest, coach_roundup, schedule_change, rsvp_nudge,
+                  academy_callup_notice
+  PLAIN by design (2): announcement, custom_message  <- the ONLY two; confirmed
+  No structured-data kind renders below its bar.
+
+A6. OPEN ITEMS (all LOW / cosmetic / informational)
+  1. Mock fidelity, cosmetic: the mock bolds a lead phrase (.lead) in the narrative
+     and signs "Frank & Coach Kenny"; the engine renders uniform <p> narrative + the
+     standard coach-contact signoff rows. DECISION A (below): match byte-for-byte?
+  2. Dark-mode: interior is intentionally LIGHT (white bg + explicit dark text per
+     element) so it holds in both client modes; only the record-pill uses rgba
+     (darkens safely). Color VALUES verified in source; actual Gmail/Apple-Mail
+     dark rendering NOT verified — requires a live send. => Frank's recap re-send
+     is the last verification step.
+  3. Null scores -> empty right cell (no "null"/"NaN" — safe, but lopsided). Edge
+     case; published results always carry scores.
+  4. DEAD TEST: src/lib/engine/renderers/gameRecap.js is a legacy flat-arg composer
+     with ZERO production importers (registry uses resolvers/gameRecap.js). Only
+     renderers/__tests__/briefingKinds.test.js imports it — 8 green tests exercising
+     a no-production-path composer. AP #51 retirement candidate; coverage not lost
+     (real path locked by gameRecap.snapshot + gamesRecap.contract). I can retire it.
+
+BRIEFING VERDICT: render quality is AT BAR platform-wide. games_recap/game_recap
+fix shipped + independently verified. Remaining items are cosmetic + one live-send
+dark-mode confirmation + one dead-test cleanup. No architecture concern.
+
+==============================================================================
+PART B — FAMILY HUB (consolidated: pre-flight + claim verify + S1 proposal)
+==============================================================================
+B0. WHAT "THE VERIFY PASS FOUND" (plain language)
+  The account-claim feature DOES NOT WORK YET for real parents. The only code that
+  links a parent's login to their guardian record (autoLinkGuardian, client-side)
+  is BLOCKED by RLS for the rows it targets. The 2 working accounts (Frank +
+  Stephanie) were wired by hand in SQL during setup. Since the Hub is the first
+  account-REQUIRED surface, a real claim mechanism is a prerequisite to the Hub
+  having any users beyond the 2.
+
+B1. THE NATIVE RLS CHAIN (pre-flight, query-grounded)
+  auth.uid() -> guardians.user_id -> player_guardians -> players ->
+  roster_members.team_id -> events / event_rsvps. Fully RLS-gated; already
+  encapsulated in current_user_player_ids() + helpers. The Hub must compose ON TOP
+  (as the parent / INVOKER), intersecting child_links with current_user_player_ids()
+  — never bypass org isolation (no SECDEF over these tables for the read path).
+
+B2. THE LOAD-BEARING GAP (claim verify, code-grounded)
+  - invite-parent does NOT claim — it only mints an auth.users row + sends an invite
+    email; never touches guardians.
+  - autoLinkGuardian (the only guardians.user_id writer) issues a client UPDATE that
+    RLS blocks: guardians_update_own is USING user_id = auth.uid(), which is FALSE
+    when user_id IS NULL. A parent's own session cannot flip their unclaimed row.
+  - The 2 existing claims were hand-linked admin SQL (NULL invite metadata, provider
+    'email', user_roles written seconds after signup). No repeatable flow exists.
+
+B3. PROPOSAL (GO GATE — nothing applied until approved)
+  - claim_guardian(p_org_id) SECURITY DEFINER RPC = the real claim: require caller's
+    email CONFIRMED + matches an unclaimed guardian (ilike) -> flip guardians.user_id
+    NULL->self -> insert user_roles(parent) -> populate household. Atomic + idempotent.
+    REVOKE FROM PUBLIC + anon (AP #23/#57). Replaces the RLS-blocked client UPDATE.
+  - populate_household(user) SECDEF, idempotent, called on EVERY login (de-gated from
+    the "first login only" branch) so new players backfill + a half-claim self-heals.
+    Maps DISTINCT players via player_guardians -> family_children + child_links
+    (ember_org_id, ember_player_id). De-dupe not needed today (1 org, 0 dup players,
+    0 multi-team); fan-out matters only at the 2nd org (S6).
+  - S1 TABLES (user-scoped; RLS owner_user_id = (SELECT auth.uid()); NO org_id on
+    household rows per plan §2): family_children, child_links, calendar_subscriptions,
+    synced_events (sync-shaped per the addendum: status active/cancelled + content_hash
+    + last_sync_status). RLS proof (like #710) before S1 is "done."
+  - NOT in S1: Hub UI (S2), ICS sync edge fn (S3), conflict detection (S4).
+
+B4. ADOPTION FINDING (rollout, not architecture)
+  173/175 guardians are unclaimed (user_id NULL). The native Hub is empty for ~99%
+  of families until the claim flow runs. The briefing email channel (already reaches
+  all 175) is the claim funnel: a magic-link "Claim your account" CTA. Confirm all
+  173 have emails on file before a claim campaign. Claim ships in the SAME wave as
+  the Hub foundation (a Hub with no accounts is a demo).
+
+==============================================================================
+PART C — DECISIONS FOR THE ARCHITECT
+==============================================================================
+GO-GATE (blocks S1 build):
+  C1. Approve claim_guardian SECDEF RPC as the claim mechanism (replaces the
+      RLS-blocked client UPDATE) — the load-bearing correction.
+  C2. Approve the S1 table set + populate-on-every-login (de-gated) wiring.
+      On GO: apply S1 via Supabase MCP + mirror file (AP #21), prove RLS, build S2.
+
+LIGHT (don't block anything):
+  C3. Render fidelity: match the mock byte-for-byte (bold lead phrase + "Frank &
+      Coach Kenny" signature line), or keep the standard narrative + coach-contact
+      signoff? (~10 min if yes.)
+  C4. Dark-mode: confirmed in source; needs Frank's recap re-send to confirm in a
+      real client. (Verification step, not a build.)
+  C5. Retire the dead renderers/gameRecap.js legacy composer + its 8-test file
+      (AP #51)? Coverage is not lost. (I can do this without review; flagging.)
+
+NEXT STEP: on C1+C2 GO, I draft + apply the S1 migration (proposal for the exact
+DDL precedes apply per Rule 19) and prove RLS on Frank's family. C3/C4/C5 proceed
+in parallel and gate nothing.
+==============================================================================
+END.
+==============================================================================
