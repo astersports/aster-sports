@@ -11,7 +11,7 @@
 // Spec-vs-reality note (locked in PR #120 investigation): the prompt's
 // "keep rsvp_nudge + weekly_digest_due" assumed rsvp_nudge had a
 // fetchRsvpNudgeItems sub-stream here. It never did — rsvp_nudge is
-// auto-drafted exclusively (handleRsvpLow24h in _handlers.ts) and
+// auto-drafted exclusively (handleRsvpLowGoing in _handlers.ts) and
 // surfaces via RPC Branch A. The "Do NOT add new logic" fallback
 // applies: keep only what existed, which is weekly_digest_due.
 
