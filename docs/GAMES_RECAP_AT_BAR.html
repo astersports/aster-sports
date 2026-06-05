@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Games Recap — at bar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cobalt:#4a8fd4; --cobalt-deep:#2b5e9e;
+    --t-9u:#06b6d4; --t-10blue:#94a3b8;
+    --page:#0c0e12; --mail:#16191f; --body:#171b22; --cell:#1c212a; --bar:#202632;
+    --ink:#f3f5f7; --ink-2:#aab2bc; --ink-3:#79828d; --line:#2a313c;
+    --loss-bg:#3a2122; --loss-tx:#f0908f; --win-bg:#1d3a2a; --win-tx:#67d39b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--page);padding:34px 0 70px;color:var(--ink)}
+  .wrap{max-width:760px;margin:0 auto;padding:0 22px}
+  .head{margin-bottom:18px}
+  .head .k{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--cobalt)}
+  .head h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:7px 0 8px;color:#fff}
+  .head p{font-size:14px;color:var(--ink-2);line-height:1.55;max-width:620px}
+  .stage{max-width:440px;margin:26px auto 0}
+  /* mail chrome */
+  .mailchrome{background:var(--mail);border-radius:20px 20px 0 0;padding:16px 18px 14px;border:1px solid var(--line);border-bottom:none}
+  .mailrow{display:flex;align-items:center;gap:11px}
+  .senderav{width:38px;height:38px;border-radius:50%;background:var(--cobalt);display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px}
+  .mailrow .who{flex:1}
+  .mailrow .who .s{font-size:14px;font-weight:700;color:#fff}
+  .mailrow .who .t{font-size:12px;color:var(--ink-3);margin-top:1px}
+  .subject{font-size:15px;font-weight:700;color:#fff;margin-top:13px;letter-spacing:-.01em}
+  /* the email, framed */
+  .email{background:var(--body);border:2px solid var(--cobalt);border-top:none;border-radius:0 0 4px 4px;overflow:hidden}
+  .hdrband{background:linear-gradient(140deg,var(--cobalt),var(--cobalt-deep));padding:20px 20px 18px;text-align:center}
+  .hdrband .org{font-size:11px;font-weight:800;letter-spacing:.16em;color:rgba(255,255,255,.9)}
+  .hdrband h2{font-size:30px;font-weight:900;letter-spacing:.02em;color:#fff;margin:9px 0 8px;line-height:1}
+  .hdrband .rec{display:inline-flex;align-items:center;gap:9px;background:rgba(0,0,0,.18);border-radius:999px;padding:6px 15px;font-size:13px;font-weight:700;color:#fff}
+  .secbar{background:var(--bar);border-top:2px solid var(--cobalt);padding:11px 18px;text-align:center}
+  .secbar .l{font-size:12px;font-weight:800;letter-spacing:.18em;color:var(--cobalt);text-transform:uppercase}
+  .games{padding:14px 14px 4px}
+  .gcell{background:var(--cell);border:1px solid var(--line);border-radius:9px;position:relative;overflow:hidden;padding:14px 15px 14px 18px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+  .gcell .rail{position:absolute;left:0;top:0;bottom:0;width:4px}
+  .gcell .gmeta{flex:1;min-width:0}
+  .gcell .date{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+  .gcell .match{font-size:15.5px;font-weight:700;letter-spacing:-.01em;color:#fff;margin-top:4px;line-height:1.2}
+  .gcell .opp{font-size:12.5px;color:var(--ink-2);font-weight:500;margin-top:3px}
+  .gcell .right{text-align:right;flex-shrink:0}
+  .gcell .score{font-size:24px;font-weight:800;letter-spacing:-.02em;color:#fff;line-height:1}
+  .gcell .res{display:inline-block;margin-top:7px;font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 9px;border-radius:999px}
+  .res.l{background:var(--loss-bg);color:var(--loss-tx)}
+  .res.w{background:var(--win-bg);color:var(--win-tx)}
+  .narr{padding:6px 20px 4px}
+  .narr p{font-size:14.5px;line-height:1.62;color:var(--ink);margin-bottom:12px}
+  .narr p .lead{font-weight:800;color:#fff;letter-spacing:.01em}
+  .narr .sign{font-weight:700;color:#fff;margin-top:2px}
+  .foot{border-top:1px solid var(--line);margin-top:8px;padding:20px 20px 22px;text-align:center}
+  .foot .contacts{display:flex;flex-direction:column;gap:9px;text-align:left;max-width:300px;margin:0 auto 18px}
+  .foot .c .n{font-size:14px;font-weight:700;color:#fff}
+  .foot .c .r{font-size:12.5px;color:var(--ink-3);margin-top:1px}
+  .foot .knight{width:64px;height:64px;border-radius:14px;background:#11151b;border:1px solid var(--line);display:grid;place-items:center;margin:0 auto 12px}
+  .foot .brand{font-size:13px;font-weight:800;letter-spacing:.18em;color:#fff}
+  .foot .links{font-size:12.5px;color:var(--cobalt);font-weight:600;margin-top:9px;line-height:1.7}
+  .note{max-width:440px;margin:16px auto 0;font-size:12.5px;color:var(--ink-3);line-height:1.5;text-align:center}
+  svg{display:block}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <div class="k">Games recap · rendered at bar</div>
+      <h1>Same content. Built right.</h1>
+      <p>This is the exact 0-2 two-game recap from your test send, routed through the rich section components the engine already uses on your tournament briefings: a colored frame, a header band, one game cell per result with the team's color rail and a win/loss tone, a section bar over the narrative, then the footer. Nothing new was invented. The plain text result lines are gone.</p>
+    </div>
+
+    <div class="stage">
+      <div class="mailchrome">
+        <div class="mailrow">
+          <div class="senderav">L</div>
+          <div class="who"><div class="s">Legacy Hoopers</div><div class="t">to me · 9:03 PM</div></div>
+        </div>
+        <div class="subject">Games recap: 2 games (0-2)</div>
+      </div>
+
+      <div class="email">
+        <div class="hdrband">
+          <div class="org">LEGACY HOOPERS · GAMES RECAP</div>
+          <h2>GAMES RECAP</h2>
+          <span class="rec">0–2 RECORD · MAY 18 – MAY 20</span>
+        </div>
+
+        <div class="secbar"><div class="l">The Weekend</div></div>
+        <div class="games">
+          <div class="gcell">
+            <span class="rail" style="background:var(--t-9u)"></span>
+            <div class="gmeta">
+              <div class="date">Mon · May 18</div>
+              <div class="match">9U Boys vs 6th Boro 3AB</div>
+              <div class="opp">One-possession game to the whistle</div>
+            </div>
+            <div class="right"><div class="score">12<span style="color:var(--ink-3)">–</span>13</div><span class="res l">LOSS</span></div>
+          </div>
+          <div class="gcell">
+            <span class="rail" style="background:var(--t-10blue)"></span>
+            <div class="gmeta">
+              <div class="date">Wed · May 20</div>
+              <div class="match">10U Blue vs Holy Family-NR 4AB</div>
+              <div class="opp">Battled all night, never stopped competing</div>
+            </div>
+            <div class="right"><div class="score">24<span style="color:var(--ink-3)">–</span>30</div><span class="res l">LOSS</span></div>
+          </div>
+        </div>
+
+        <div class="secbar"><div class="l">From the Sideline</div></div>
+        <div class="narr">
+          <p><span class="lead">Okay, everyone exhale.</span> Two losses. One by a single possession, one by six. The 9U Boys were right there against 6th Boro until the final whistle. The 10U Blue battled Holy Family all night and never stopped competing.</p>
+          <p>These aren't blowouts. These are games where a few possessions flip the script. The effort was there. The fight was there. Now Coach Kenny gets real practice time to sharpen what showed up.</p>
+          <p>When the shots start falling and the rotations tighten, this group will be dangerous. We were right there. Let's get after it.</p>
+          <p class="sign">Frank &amp; Coach Kenny</p>
+        </div>
+
+        <div class="foot">
+          <div class="contacts">
+            <div class="c"><div class="n">Coach Kenny</div><div class="r">Coaching Director · (516) 644-0208</div></div>
+            <div class="c"><div class="n">Frank</div><div class="r">Program Director · (917) 991-9830</div></div>
+          </div>
+          <div class="knight"><svg viewBox="0 0 24 24" style="width:34px;height:34px;fill:none;stroke:#7fb0e6;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M14 4c-3 0-7 2-8 7-.6 3 .4 6 .4 6L5 19h9c2.5 0 4-2 4-5 0-2 0-4-1-6-.8-1.6-1.8-4-2-4Z"/><path d="M9 11h.01"/><path d="M6 19l-1 2h11l-1-2"/></svg></div>
+          <div class="brand">LEGACY HOOPERS</div>
+          <div class="links">legacyhoopers.org<br>support@astersports.app</div>
+        </div>
+      </div>
+    </div>
+    <div class="note">Compare to the plain version: header, then two text lines, then a paragraph. Same words, but the structure is what your eye reads first.</div>
+  </div>
+</body>
+</html>

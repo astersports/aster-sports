@@ -1,0 +1,48 @@
+==============================================================================
+GAMES_RECAP RENDER TARGET — match the mock   (architect -> terminal-CC)
+Pairs with GAMES_RECAP_AT_BAR.html. Extends ARCHITECT_RETURN_2026-06-05 §1.
+==============================================================================
+Date: 2026-06-05.
+
+WHY IT LOOKS PLAIN (root cause, for shared understanding):
+  Not a capability gap. The engine already renders frames, colored section bars,
+  and bordered data cells for tournament_prelim / tournament_recap / family_guide
+  (Frank's bar). games_recap was wired to a PLAIN fallback (header + text result
+  lines + paragraph) to ship fast. The fix is to route it through the SAME rich
+  section renderers it already owns. No new components.
+
+TARGET (build to GAMES_RECAP_AT_BAR.html):
+  1. FRAME: wrap the whole email body in the brand cobalt frame (same treatment
+     the tournament briefing uses), so it reads as a designed object.
+  2. HEADER BAND: cobalt band, org eyebrow + "GAMES RECAP" + record + date range.
+  3. SECTION BAR before the results ("The Weekend") and before the narrative
+     ("From the Sideline"): full-width bar, cobalt top-border + tracked-caps
+     cobalt label. Reuse the existing section-bar renderer.
+  4. ONE GAME CELL PER RESULT (this is the core fix; retire the text lines):
+       - left rail in THAT GAME's team color. MULTI-TEAM recap = each cell
+         carries its own team color (9U Boys cyan #06b6d4, 10U Blue slate
+         #94a3b8, etc.). This per-cell color is what the single-team fix missed.
+       - date eyebrow (Mon · May 18)
+       - matchup headline (team vs opponent), bold
+       - optional one-line context if present (venue, or a short stake line)
+       - right side: score (NN–NN) + a result pill: LOSS muted-red, WIN green.
+  5. NARRATIVE: the Coach-voice paragraph(s) below the second section bar,
+     readable white text, lead phrase bolded, "Frank & Coach Kenny" signoff.
+  6. FOOTER: knight logo + LEGACY HOOPERS + legacyhoopers.org +
+     support@astersports.app + the Coach/Frank contact block (as today).
+
+DARK-MODE: the mock is dark to match how Frank's client renders it; ensure the
+treatment holds in both light and dark client modes (test both).
+
+SCOPE: games_recap AND single game_recap use this cell treatment. announcement /
+custom_message stay plain by design (C3). Structured kinds already rich.
+
+VERIFY FIRST (from ARCHITECT_RETURN §1): confirm #729's deploy time vs the 9:03
+test. If #729 predated the test, re-send and re-judge against this mock. If it
+was live and still rendered text lines, this target is the fix.
+
+ASK BACK: ship to this mock; Frank re-sends the 0-2 recap and confirms two game
+cells with cyan/slate rails and LOSS pills, framed, with section bars.
+==============================================================================
+END.
+==============================================================================

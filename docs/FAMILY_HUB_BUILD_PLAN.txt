@@ -1,0 +1,158 @@
+==============================================================================
+FAMILY HUB — BUILD PLAN + ARCHITECTURE   (architect -> terminal-CC)
+Decision: GO BIG. The Hub + calendar import are the headline of the parent
+experience. This reframes W1. Read before any table is touched.
+==============================================================================
+Date: 2026-06-05. Canon: docs/LH_END_STATE_MOCKUPS.html + FAMILY_HUB_MOCKUP.html.
+
+------------------------------------------------------------------------------
+0. WHAT CHANGES
+------------------------------------------------------------------------------
+- W1 parent moat is now the FAMILY HUB, not a single-org parent home.
+- Calendar import (ICS) moves from fast-follow to a near-term HEADLINE feature.
+- The HOUSEHOLD (user-centric) layer is pulled FORWARD from the multi-tenant
+  phase to now. This is the biggest single architecture addition to date.
+- Comms work (recap render fix, audience one-control fix, PR-D) is UNAFFECTED
+  and continues in parallel. The Hub is the surface; comms is the content.
+
+------------------------------------------------------------------------------
+1. POSITIONING (why this is worth the lift)
+------------------------------------------------------------------------------
+The app stops being "Legacy Hoopers' app" and becomes the parent's command
+center across every kid, grade, and program, including programs that will never
+be on AsterSports. The wedge no competitor has: cross-program CONFLICT
+DETECTION (two kids, two gyms, same hour). Parents pull their other programs in;
+some of those programs become AsterSports leads. Aggregator wins.
+
+------------------------------------------------------------------------------
+2. ARCHITECTURE — the household layer (USER-scoped, NOT org-scoped)
+------------------------------------------------------------------------------
+DELIBERATE RULE BREAK: per CLAUDE.md Rule 8 everything scopes to org_id. The
+household layer is the intentional exception: it lives ABOVE org, scoped to the
+auth USER. Do not force org_id onto these tables. Flag any reviewer who tries.
+
+PRE-FLIGHT (Rule 13/14): before creating anything, Supabase MCP introspect the
+existing schema (guardians, players, roster_members, events, etc.). The
+household layer LINKS to existing player/event records; it does NOT duplicate
+them. Confirm the real guardian->player->events RLS chain first.
+
+v1 DATA MODEL (pragmatic; user = household root, co-guardians later):
+  family_children
+    (id, owner_user_id, display_name, grade, avatar_color)
+    the parent's view of a kid, independent of any org.
+  child_links
+    (id, child_id -> family_children, link_type ['ember_player'|'calendar'],
+     ember_org_id NULL, ember_player_id NULL, calendar_subscription_id NULL)
+    maps one child to many sources (Theo -> St Pat's player + Chris Ward cal +
+    school cal). ember_* set for link_type 'ember_player'; calendar_* for 'calendar'.
+  calendar_subscriptions
+    (id, owner_user_id, label, color, source_type ['ics'|'google'],
+     ics_url NULL, google_token_ref NULL, default_child_id NULL,
+     status, last_synced_at)
+  imported_events
+    (id, subscription_id, child_id, title, starts_at, ends_at, location,
+     source_uid, synced_at)
+    cached external events; read-only in the Hub.
+
+THE HUB COMPOSITION (the surface):
+  A per-user function/view that UNIONS, for owner_user_id:
+   (a) native Ember events for the user's children's linked player records,
+       read through the EXISTING org RLS chain (do NOT bypass it), tagged
+       source = the org;
+   (b) imported_events from the user's subscriptions, tagged source = external.
+  Ordered by start time, grouped by day, each row carrying {child, source,
+  source_kind native|connected|external, rsvp_state if native}.
+
+------------------------------------------------------------------------------
+3. SOURCES MODEL + ICS IMPORT (the headline)
+------------------------------------------------------------------------------
+Three source kinds, as the mockup shows:
+  NATIVE     org the user is a guardian in, on AsterSports (LH now). Live data,
+             RSVP/scores/briefings.
+  CONNECTED  another AsterSports org (St Pat's later). Native once multi-tenant
+             linking exists; until then it is imported like any external source.
+  EXTERNAL   not on AsterSports. Read-only via ICS link or Google Calendar.
+
+ICS FIRST: almost every league/school/club publishes an ICS feed. One pasted URL,
+zero per-partner integration. Build:
+  - edge function `sync-calendar-subscription` (cron + on-demand): fetch ICS,
+    parse (ical parser), upsert imported_events keyed on source_uid, set
+    last_synced_at. Respect CLAUDE.md edge-fn rules (GRANT EXECUTE, SET
+    search_path, secret handling).
+  - UI: "Add a program or calendar" -> paste link -> pick which child -> color.
+  - Show "Read-only · synced Xh ago" on external rows. Dashed rail in the canon.
+Google Calendar (OAuth) is LATER; ICS covers most of the value first.
+
+------------------------------------------------------------------------------
+4. CONFLICT DETECTION (the wedge)
+------------------------------------------------------------------------------
+v1: over the composed timeline for one user, flag events whose [starts_at,
+ends_at] OVERLAP across DIFFERENT children (or a single child double-booked) at
+DIFFERENT locations. Surface as the amber conflict card (canon) with both
+events. Works from day one with LH + one imported calendar.
+v1.1 add: travel-time hint via Nominatim geocoding ("18 min apart").
+
+------------------------------------------------------------------------------
+5. RLS / PRIVACY (HARD REQUIREMENTS, not optional)
+------------------------------------------------------------------------------
+- family_children, child_links, calendar_subscriptions, imported_events:
+  RLS = owner_user_id = auth.uid() ONLY. No cross-user reads. USER-scoped.
+- Native Ember reads in the Hub composition MUST go through the existing org
+  RLS (guardian -> own children's players -> events). The Hub composes ON TOP;
+  it never bypasses org isolation. A user sees only their own kids' data in any
+  org, ever.
+- External calendar data is private to the owning household.
+- Verify with a live RLS proof (like #710): owner sees own household only;
+  a second user sees zero of it; cross-org native reads stay scoped.
+
+------------------------------------------------------------------------------
+6. BUILD SEQUENCE (big on vision, incremental on build)
+------------------------------------------------------------------------------
+  S1  household foundation: tables (§2) + RLS (§5) + the per-user Hub
+      composition over NATIVE LH only. Pre-flight schema introspection first.
+  S2  Family Hub home (canon): the unified within-LH schedule on the foundation,
+      kid switcher, briefing read inside it. THIS IS W1.
+  S3  ICS import: sync edge fn + add-calendar UI + external rows. THE HEADLINE.
+  S4  conflict detection v1 (time overlap across kids), amber card.
+  S5  later: Google Calendar connect; travel-time hint.
+  S6  multi-tenant phase: native cross-org via a new child_link of type
+      'ember_player' in a second org once multi-tenant identity/linking exists.
+      No rebuild: it is one more link row + the composition already unions orgs.
+
+------------------------------------------------------------------------------
+7. WHY PULLING THIS FORWARD IS SAFE
+------------------------------------------------------------------------------
+The household layer is precisely what the multi-tenant family story needs. Built
+now for LH + imports, St Pat's-native later is a slot-in (add an ember_player
+link), not a retrofit. We pay the foundation cost once, early, on the archetype
+user (Frank's own family).
+
+------------------------------------------------------------------------------
+8. GATES + GUARDRAILS
+------------------------------------------------------------------------------
+- Scope: the Hub is the SHAPE of the parent experience, not a separate
+  mega-project. It ships in the S1-S4 increments above, not all at once.
+- Deliverability (DEF-11) is a separate comms gate, unaffected by the Hub.
+- Comms work continues in parallel; do not serialize it behind the Hub.
+- ICS parsing edge cases (timezones, recurring events, malformed feeds): cache +
+  last_synced + read-only framing; never block the Hub on a bad feed.
+
+------------------------------------------------------------------------------
+9. DOC UPDATES
+------------------------------------------------------------------------------
+- Update docs/EMBER_TENANCY_ARCHITECTURE_v3.md: add the household (user-scoped)
+  layer above org, and the source kinds (native/connected/external).
+- Add FAMILY_HUB_MOCKUP.html to the canon set alongside LH_END_STATE_MOCKUPS.html.
+
+------------------------------------------------------------------------------
+10. THE ASK BACK / FIRST STEP
+------------------------------------------------------------------------------
+  1. Supabase MCP pre-flight: introspect guardians/players/events; report the
+     existing guardian->player->events RLS chain so S1 links to it, not around it.
+  2. Propose the S1 migration (household tables + RLS) for architect review
+     BEFORE applying (schema change = GO gate, CLAUDE.md Rule 19).
+  3. On GO, apply S1, prove RLS (§5), then build S2 (the Hub home) to canon.
+Surface anything in the existing schema that changes this model before building.
+==============================================================================
+END.
+==============================================================================
