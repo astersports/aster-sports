@@ -43,3 +43,27 @@ describe('composeFromEvent — event-type × timing default kind', () => {
     expect(composeFromEvent({ event_type: 'game' }, true)).toBeNull();
   });
 });
+
+describe('composeFromEvent — intent=notify forces schedule_change on the event', () => {
+  it('UPCOMING game + notify → schedule_change anchored on the event', () => {
+    expect(composeFromEvent(GAME, false, { intent: 'notify' }))
+      .toBe('/admin/briefings/compose?anchor=event&id=evt-game-1&kind=schedule_change');
+  });
+
+  it('PAST game + notify → schedule_change anchored on the event (kind not past-dependent)', () => {
+    expect(composeFromEvent(GAME, true, { intent: 'notify' }))
+      .toBe('/admin/briefings/compose?anchor=event&id=evt-game-1&kind=schedule_change');
+  });
+
+  it('tournament event + notify → schedule_change on the EVENT anchor (not the tournament)', () => {
+    // Notify = "this event changed", so the anchor is the event, not the
+    // tournament — even though the cold-compose path would anchor the
+    // tournament for recap/prelim.
+    expect(composeFromEvent(TOURNEY_EVENT, false, { intent: 'notify' }))
+      .toBe('/admin/briefings/compose?anchor=event&id=evt-tourn-1&kind=schedule_change');
+  });
+
+  it('null event + notify → null (no link)', () => {
+    expect(composeFromEvent(null, false, { intent: 'notify' })).toBeNull();
+  });
+});

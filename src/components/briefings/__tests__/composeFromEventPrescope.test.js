@@ -18,8 +18,8 @@ import { buildInitial } from '../briefingComposerHelpers';
 
 // Mirror BriefingsComposePage: feed the deep-link's composerInit into
 // buildInitial with the same field names BriefingComposer uses.
-function prescope(event, isPast) {
-  const url = new URL(composeFromEvent(event, isPast), 'https://app.test');
+function prescope(event, isPast, opts) {
+  const url = new URL(composeFromEvent(event, isPast, opts), 'https://app.test');
   const { composerInit } = parseBriefingDeepLink(url.pathname, url.searchParams);
   return buildInitial({
     initialKind: composerInit.kind,
@@ -67,5 +67,25 @@ describe('compose-from-event pre-scope (AP #43)', () => {
     expect(s.step).toBe(1);
     expect(s.anchor_kind).toBe('event');
     expect(s.anchor_id).toBe('evt-game-1'); // anchor still carried, not lost
+  });
+
+  // "Notify families" (intent=notify) — always schedule_change on the event,
+  // Body step, event pre-selected. The kind+anchor pair skips the cold picker;
+  // the resolver self-fetches the diff from event_change_audit by anchor_id.
+  it('NOTIFY upcoming game → schedule_change, Body step, event anchor pre-selected', () => {
+    const s = prescope(GAME, false, { intent: 'notify' });
+    expect(s.kind).toBe('schedule_change');
+    expect(s.step).toBe(3); // not the cold Kind step
+    expect(s.anchor_kind).toBe('event');
+    expect(s.anchor_id).toBe('evt-game-1');
+    expect(s.audience_type).toBe('event_attendees');
+  });
+
+  it('NOTIFY tournament event → schedule_change on the EVENT anchor (not the tournament)', () => {
+    const s = prescope(TOURNEY_EVENT, false, { intent: 'notify' });
+    expect(s.kind).toBe('schedule_change');
+    expect(s.step).toBe(3);
+    expect(s.anchor_kind).toBe('event');
+    expect(s.anchor_id).toBe('evt-tourn-1'); // the event, NOT tour-9
   });
 });

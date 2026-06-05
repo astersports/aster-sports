@@ -25,6 +25,7 @@ import GameDayMode from '../components/event/GameDayMode';
 import EventBriefingHistory from '../components/event/EventBriefingHistory';
 import ScopeChoiceDialog from '../components/event/ScopeChoiceDialog';
 import CollapsibleSection from '../components/shared/CollapsibleSection';
+import { composeFromEvent } from '../lib/briefings/composeFromEvent';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 const ScheduleChangeComposer = lazy(() => import('../components/event/ScheduleChangeComposer'));
@@ -101,7 +102,7 @@ export default function EventDetailPage() {
   return (
     <div style={{ backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} onCancel={() => setEventStatus('cancelled')} onReinstate={() => setEventStatus('scheduled')} />
-      <EventDetailHero event={event} isStaff={isStaff} isPast={isPast} rsvps={rsvps} roster={roster} onEnterScore={() => setShowScoreSheet(true)} onLockRoster={() => document.querySelector('[data-section="lock-roster"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} onNotify={() => navigate(`/admin/briefings/compose?anchor=event&id=${event.id}`)} onRsvpChange={refetchRsvps} />
+      <EventDetailHero event={event} isStaff={isStaff} isPast={isPast} rsvps={rsvps} roster={roster} onEnterScore={() => setShowScoreSheet(true)} onLockRoster={() => document.querySelector('[data-section="lock-roster"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} onNotify={() => navigate(composeFromEvent(event, isPast, { intent: 'notify' }))} onRsvpChange={refetchRsvps} />
       {isStaff && <GameDayMode event={event} isStaff={isStaff} isGameType={isGameType} />}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
       {isStaff && !isPast && <div data-section="lock-roster"><EventRosterLockSection event={event} isStaff={isStaff} rsvps={rsvps} roster={roster} onChange={refetchAll} /></div>}
