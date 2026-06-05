@@ -1,0 +1,80 @@
+==============================================================================
+BRIEFING — FINISH LINE + HUB PARK   (architect -> terminal-CC)
+Directive from Frank: finish the briefing first, no deviation. Park the Family
+Hub. This doc is the bounded definition-of-done so we don't drift.
+==============================================================================
+Date: 2026-06-05.
+
+------------------------------------------------------------------------------
+0. PARK THE FAMILY HUB (safe, not lost)
+------------------------------------------------------------------------------
+- HOLD all Hub work: FAMILY_HUB_S1_SQL_DRAFT (claim_guardian RPC + S1 DDL) is
+  HELD at the security gate. Do NOT apply. The C1/C2 conditions already block it
+  from running until architect review, and that review is DEFERRED until we
+  resume the Hub. The SQL is on the architect's desk for when we return.
+- The Hub is NOT part of the briefing concept. Briefing = OUTBOUND comms (email +
+  the in-app read). Hub = the parent's family-aggregation home. They touch at two
+  seams only: (a) the in-app screen where a briefing is read, (b) later, using
+  briefing emails to drive account claim. Finishing the briefing requires ZERO
+  Hub work. No Hub item appears on the finish list below.
+
+------------------------------------------------------------------------------
+1. THE FINISH LIST (everything, bounded — nothing else is in scope)
+------------------------------------------------------------------------------
+COMPOSE
+  1a. AUDIENCE one-control fix (AUDIENCE_CONTROL_FIX_chatai): single chip + Change
+      sheet; per-kind valid-mode map + smart default; Recent/Favorites inside the
+      sheet. family_guide default = ALL FAMILIES (now confirmed; close that doc's
+      open item). This is the screenshot defect, STILL OPEN. Build.
+  1b. PR-D (ARCHITECT_RETURN §3): token chip, cancellation card, facts panel.
+      Build once.
+  1c. C3 voice signature: narrative signs in voice ("Frank & Coach Kenny";
+      team-aware "& Coach Darien" on 9U/8U) from the voice layer; skip the bold
+      lead; keep the contact footer.
+
+RENDER
+  1d. DONE + verified (games_recap/game_recap at bar). Only open item is FRANK's:
+      re-send the 0-2 recap to himself, screenshot in a dark client (C4).
+
+COMMS-MODEL CLOSEOUT (decisions already made)
+  1e. Stream B reminders aligned to the LOCKED cadence (D1): 3 / 2 / 1 day + 4h
+      before event start, non-responders only, admin-configurable; Sunday digest
+      stays auto-DRAFT to Radar. Reconcile the 24h-coverage impl to this.
+  1f. B2 cancellation: retire the last auto-email via the new cancellation card +
+      a Radar proposal (mirrors #680). Requires FRANK's GO to flip it.
+
+HYGIENE (engine, no gate)
+  1g. C5 retire dead renderers/gameRecap.js + its 8 tests.
+  1h. §5 FYI items: reducer step-action cleanup, §0-grep reconcile, body em-dash
+      sweep, audience kind-smart-default mapping, per-recipient pilot path.
+
+------------------------------------------------------------------------------
+2. THE GO-LIVE GATE (separate from feature-complete; FRANK's)
+------------------------------------------------------------------------------
+  DELIVERABILITY / SMTP cap (DEF-11): the 3-email/hr limit. The briefing is
+  FEATURE-COMPLETE when section 1 is clear, but cannot go to all families at
+  scale until this is solved. This is the line between "finished" and "live."
+  The briefing email is account-OPTIONAL, so it can go live without the Hub.
+
+------------------------------------------------------------------------------
+3. SEQUENCE
+------------------------------------------------------------------------------
+  Engine: 1a audience fix -> 1b PR-D -> 1e reminder reconcile, with 1c/1g/1h in
+          parallel. 1f on Frank's GO.
+  Frank:  1d dark-mode screenshot; the 1f GO; the DEF-11 go-live gate when ready.
+  No Hub work until section 1 is clear and Frank says resume.
+
+------------------------------------------------------------------------------
+4. DEFINITION OF DONE (the finish line)
+------------------------------------------------------------------------------
+The briefing is FINISHED when:
+  - compose is the one-control composer with per-kind audience + PR-D + voice
+    signature (1a-1c),
+  - render is verified at bar incl. Frank's dark-mode confirm (1d),
+  - reminders match the locked cadence and the last auto-email is retired (1e-1f),
+  - hygiene closed (1g-1h).
+Going LIVE to all families additionally requires DEF-11 (section 2).
+On done: resume the Hub; the S1 security review is the first thing up.
+==============================================================================
+END.
+==============================================================================

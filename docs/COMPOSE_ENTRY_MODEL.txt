@@ -1,0 +1,44 @@
+==============================================================================
+COMPOSE ENTRY MODEL — context-first (locks the "order" question)  (architect->CC)
+Visual: BRIEFING_ORDER_DECIDED.html. Folds into the audience one-control fix
+(AUDIENCE_CONTROL_FIX §2-4). Not new scope; the entry behavior it should ship.
+==============================================================================
+Date: 2026-06-05.
+
+THE DECISION: there is no global "team-first vs kind-first." The ENTRY POINT
+pre-fills what the admin already implied; they only choose what's undetermined.
+
+ADMIN — four entry points, all landing in the SAME one-screen composer:
+  1. From RADAR (most common): proposal carries team + kind + audience.
+     Composer opens to review & send. Already built.
+  2. From a TEAM context ("Message this team" on a team view): team PRE-FILLED;
+     admin picks kind; audience defaults to that team. *** THE ONE NEW ENTRY ***
+     to wire. Gives Frank team-first whenever he is in a team.
+  3. From a GAME (coach trigger "request recap"): team + kind + anchor pre-filled;
+     lands in Radar. Coach path; already the model.
+  4. Cold "+ New": nothing pre-filled -> KIND FIRST (structurally required: the
+     kind determines valid audiences + the smart default), then audience
+     auto-defaults per the per-kind map. Already specced.
+
+  Net: team-first everywhere there is context; kind-first only on the cold path,
+  where it is the correct order. Do NOT add a team-picker step to the cold path.
+
+COACH — no order. Trigger-only from context (game -> request recap, team -> send
+  update). Arrives in Radar pre-filled. Holds the coach=trigger-only line.
+
+PARENT — never composes; their "order" is the READ hierarchy (the 3-second test),
+  which the rich render already delivers. Lock it as the render contract:
+    1 Identity (team color + kind, header) — which kid, instantly
+    2 The one fact (score / new time / the ask) — big, above the fold
+    3 The action (RSVP / view) — tappable, if any
+    4 The voice/detail — below
+  Bands 1-2 must be grokkable before a swipe-away. A plain text-first render
+  fails this; the rich render passes it.
+
+BUILD NOTE: the only net-new item is entry point #2 (the "Message this team"
+affordance pre-scoping the composer). Everything else is the audience one-control
+fix + the render already in the finish list. This CLOSES the order question for
+the briefing redesign.
+==============================================================================
+END.
+==============================================================================
