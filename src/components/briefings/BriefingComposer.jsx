@@ -21,7 +21,8 @@ import { composerReducer } from './composerReducer';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 import { computeAudience } from '../../lib/briefings/audience';
 import { translateBriefingError } from '../../lib/briefings/translateBriefingError';
-import StepKindPicker from './StepKindPicker';
+import InlineKindChips from './InlineKindChips';
+import { MANUAL_KINDS } from '../../lib/briefings/composeKinds';
 import ComposerSections from './ComposerSections';
 import { submitBriefing } from './composerSubmit';
 import { friendlySendError } from '../../lib/briefings/sendErrorMessage';
@@ -107,30 +108,30 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   // wizardSupported:false (academy_callup) renders a redirect card in the body
   // (no audience/options/send) — ComposerSections gates on `blocked`.
   const wizardBlocked = !!state.kind && KIND_METADATA[state.kind]?.wizardSupported === false;
+  // Inline kind chips show for "+ New" (no kind) and the 5 manual kinds (switch
+  // among them). A hydrated proposal of an auto kind has no chips (kind fixed).
+  const showChips = !state.kind || MANUAL_KINDS.includes(state.kind);
   return (
     <FullScreenForm open onClose={onClose} title={state.kind ? `Compose · ${KIND_METADATA[state.kind]?.label || ''}` : 'New briefing'}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {!state.kind && (
-          <StepKindPicker
-            visibleKinds={state.kindFilter}
-            onResume={(d) => loadDraft(d.id)}
+        {showChips && (
+          <InlineKindChips
+            selected={state.kind}
             onPick={(kind, meta) => dispatch({ type: 'SET_KIND', kind, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType, defaultBody: {} })}
           />
         )}
+        {!state.kind && (
+          <p style={{ fontSize: 13, color: 'var(--as-text-tertiary)', padding: '4px 2px', margin: 0 }}>Pick a kind above to start.</p>
+        )}
         {state.kind && (
-          <>
-            <button type="button" onClick={() => dispatch({ type: 'RESET' })} className="as-press" style={{ alignSelf: 'flex-start', background: 'none', border: 'none', padding: 4, color: 'var(--as-text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-              ← Change kind
-            </button>
-            <ComposerSections
-              state={state} dispatch={dispatch} audience={audience}
-              recipients={recipients} recipientsLoading={recipientsLoading} coaches={coaches}
-              pilotTestRecipientEmail={pilotTestRecipientEmail} pilotModeEnabled={pilotModeEnabled}
-              hasParentTournament={hasParentTournament} blocked={wizardBlocked}
-              onSend={onSend} sending={busy}
-              onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose}
-            />
-          </>
+          <ComposerSections
+            state={state} dispatch={dispatch} audience={audience}
+            recipients={recipients} recipientsLoading={recipientsLoading} coaches={coaches}
+            pilotTestRecipientEmail={pilotTestRecipientEmail} pilotModeEnabled={pilotModeEnabled}
+            hasParentTournament={hasParentTournament} blocked={wizardBlocked}
+            onSend={onSend} sending={busy}
+            onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose}
+          />
         )}
       </div>
     </FullScreenForm>

@@ -14,6 +14,7 @@ import { lazy, Suspense, useState } from 'react';
 import { labelStyle, textareaStyle } from './bodies/_styles';
 import TemplatePicker from './TemplatePicker';
 import AiDraftAnchored from './AiDraftAnchored';
+import AiDraftFreeForm from './AiDraftFreeForm';
 import PilotModeChip from './PilotModeChip';
 import { audienceCopy } from '../../lib/briefings/audience';
 import { useAuth } from '../../context/AuthContext';
@@ -83,6 +84,7 @@ export default function StepBodySignoff({ state, dispatch, audience, hasParentTo
         }}
       />
       <AiDraftAnchored state={state} dispatch={dispatch} />
+      <AiDraftFreeForm state={state} dispatch={dispatch} />
       <Suspense fallback={<div style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>Loading editor…</div>}>
         <Body value={state.body} onChange={(patch) => dispatch({ type: 'UPDATE_BODY', patch })}
           anchorId={state.anchor_id} audienceFilter={state.audience_filter}
