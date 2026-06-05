@@ -130,6 +130,34 @@ describe('computeAudience pilot mode states', () => {
     expect(result.filtered).toBe(1);
   });
 
+  // COMPOSE-FRONT P1: resolvedCount stands in for the async anchor/player
+  // audiences (countByAudienceType returns null for them).
+  it('resolvedCount fills filtered for event_attendees (count would be null)', () => {
+    const result = computeAudience({
+      recipientsFiltered: FULL_RECIPIENTS, recipientsTotal: FULL_RECIPIENTS,
+      audienceType: 'event_attendees', anchorId: 'e-1', pilotModeOn: false, resolvedCount: 7,
+    });
+    expect(result.filtered).toBe(7);
+    expect(result.total).toBe(7);
+    expect(result.mode).toBe('standard');
+  });
+
+  it('resolvedCount NEVER overrides a synchronously-known count (org_all)', () => {
+    const result = computeAudience({
+      recipientsFiltered: FULL_RECIPIENTS, recipientsTotal: FULL_RECIPIENTS,
+      audienceType: 'org_all', pilotModeOn: false, resolvedCount: 999,
+    });
+    expect(result.filtered).toBe(5);
+  });
+
+  it('filtered stays null when resolvedCount absent for an async type (gate blocks)', () => {
+    const result = computeAudience({
+      recipientsFiltered: FULL_RECIPIENTS, recipientsTotal: FULL_RECIPIENTS,
+      audienceType: 'event_attendees', anchorId: 'e-1', pilotModeOn: false,
+    });
+    expect(result.filtered).toBe(null);
+  });
+
   it('Bug B reality — 21 total guardians on 10U Blue, 0 pilot', () => {
     const total = Array.from({ length: 21 }, (_, i) => ({ guardian_id: `g${i}`, team_ids: [team10UBlue] }));
     const result = computeAudience({

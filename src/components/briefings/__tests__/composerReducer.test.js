@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canAdvance, composerReducer, hydrateTargetStep, INITIAL_STATE, step2Valid } from '../composerReducer';
+import { canAdvance, composerReducer, hydrateTargetStep, INITIAL_STATE, reconcileAnchorForKind, step2Valid } from '../composerReducer';
 
 describe('composerReducer', () => {
   it('SET_KIND populates kind + meta defaults', () => {
@@ -46,6 +46,31 @@ describe('composerReducer', () => {
   it('canAdvance gates step 2 on anchor + audience (org never needs id)', () => {
     expect(canAdvance({ step: 2 })).toBe(false);
     expect(canAdvance({ step: 2, anchor_kind: 'org', audience_type: 'org_all' })).toBe(true);
+  });
+
+  // COMPOSE-FRONT P2: stale anchor must be cleared when switching to a kind
+  // whose default anchor is org/null (e.g. a "Notify families" event-anchored
+  // pre-fill → coach_roundup). Previously the `|| state` preserve kept the
+  // mismatched event anchor_id in the draft.
+  it('SET_KIND clears a stale event anchor when switching to an org-only kind', () => {
+    const withAnchor = { ...INITIAL_STATE, anchor_kind: 'event', anchor_id: 'evt-stale' };
+    const s = composerReducer(withAnchor, { type: 'SET_KIND', kind: 'coach_roundup', anchor_kind: 'event' });
+    expect(s.kind).toBe('coach_roundup');
+    expect(s.anchor_kind).toBe('org');
+    expect(s.anchor_id).toBe(null);
+  });
+
+  it('SET_KIND preserves a valid anchor when the new kind supports it', () => {
+    const withAnchor = { ...INITIAL_STATE, anchor_kind: 'event', anchor_id: 'evt-keep' };
+    // custom_message accepts event anchors → keep it.
+    const s = composerReducer(withAnchor, { type: 'SET_KIND', kind: 'custom_message', anchor_kind: 'event' });
+    expect(s.anchor_kind).toBe('event');
+    expect(s.anchor_id).toBe('evt-keep');
+  });
+
+  it('reconcileAnchorForKind drops the id for org/null defaults', () => {
+    expect(reconcileAnchorForKind('coach_roundup', 'event', 'evt-x')).toEqual({ anchor_kind: 'org', anchor_id: null });
+    expect(reconcileAnchorForKind('custom_message', 'team', 'team-x')).toEqual({ anchor_kind: 'team', anchor_id: 'team-x' });
   });
 
   it('RESET returns INITIAL_STATE', () => {

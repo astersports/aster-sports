@@ -4,7 +4,7 @@
 // Reached from Radar (review a proposal, or + New). Bug fixes locked in wave
 // 4.1b + 4.2-A-8d (weekly_digest short-circuit).
 
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useEffect, useMemo, useReducer, useState } from 'react';
 import { useDraftUrlSync } from '../../hooks/useDraftUrlSync';
 import { useGameRecapTournament } from '../../hooks/useGameRecapTournament';
 import { useResetOnOrgChange } from '../../hooks/useResetOnOrgChange';
@@ -15,8 +15,9 @@ import { useOrgSettings } from '../../hooks/useOrgSettings';
 import { useDigestRecipients } from '../../hooks/useDigestRecipients';
 import { useOrgStaff } from '../../hooks/useOrgStaff';
 import { useBriefingDraft } from '../../hooks/useBriefingDraft';
+import { useResolvedAudienceCount } from '../../hooks/useResolvedAudienceCount';
+import { useLoadBriefingDraft } from '../../hooks/useLoadBriefingDraft';
 import { useWizardDigestData } from '../../hooks/useWizardDigestData';
-import { supabase } from '../../lib/supabase';
 import { composerReducer } from './composerReducer';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 import { reconcileAudienceForKind } from '../../lib/briefings/audienceReconcile';
@@ -25,6 +26,7 @@ import { translateBriefingError } from '../../lib/briefings/translateBriefingErr
 import InlineKindChips from './InlineKindChips';
 import { MANUAL_KINDS } from '../../lib/briefings/composeKinds';
 import ComposerSections from './ComposerSections';
+import SaveStatusPill from './SaveStatusPill';
 import { submitBriefing } from './composerSubmit';
 import { friendlySendError } from '../../lib/briefings/sendErrorMessage';
 import { sendWeeklyDigestFromWizard } from '../../lib/briefings/sendWeeklyDigestFromWizard';
@@ -57,13 +59,7 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
     });
   }, [state.kindFilter, state.kind, state.anchor_kind, state.audience_type, state.audience_filter]);
 
-  const loadDraft = useCallback(async (id) => {
-    if (!id) return;
-    const { data, error } = await supabase.from('comms_messages').select('*').eq('id', id).maybeSingle();
-    if (error || !data) return;
-    dispatch({ type: 'HYDRATE_DRAFT', payload: { kind: data.kind, anchor_kind: data.anchor_kind, anchor_id: data.anchor_id, audience_type: data.audience_type, audience_filter: data.audience_filter, body: data.content_sections?.body || {}, signoff_message: data.signoff_message || '', draft_id: data.id } });
-  }, []);
-  useEffect(() => { if (initialDraftId) Promise.resolve().then(() => loadDraft(initialDraftId)); }, [initialDraftId, loadDraft]);
+  useLoadBriefingDraft(initialDraftId, dispatch);
 
   // Wave 4.3-H: keep state.pilot_only in sync with org-level pilot
   // mode so preview-vs-send filters stay consistent (without this,
@@ -81,11 +77,13 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
     draft.save({ kind: state.kind, anchor_kind: state.anchor_kind, anchor_id: state.anchor_id, audience_type: state.audience_type, audience_filter: state.audience_filter, content_sections: { body: state.body }, signoff_message: state.signoff_message });
   }, [state.kind, state.anchor_kind, state.anchor_id, state.audience_type, state.audience_filter, state.body, state.signoff_message, draft]);
 
+  // COMPOSE-FRONT P1: anchor/player audiences need an async lookup for their
+  // recipient count — reuse the send pipeline's resolveAudience (AP #63).
+  const { count: resolvedCount, resolving: audienceResolving } = useResolvedAudienceCount({ recipients, audienceType: state.audience_type, audienceFilter: state.audience_filter, anchorId: state.anchor_id });
   const audience = useMemo(() => computeAudience({
-    recipientsFiltered: recipients, recipientsTotal,
-    audienceType: state.audience_type, audienceFilter: state.audience_filter,
-    anchorId: state.anchor_id, pilotModeOn: pilotModeEnabled,
-  }), [recipients, recipientsTotal, state.audience_type, state.audience_filter, state.anchor_id, pilotModeEnabled]);
+    recipientsFiltered: recipients, recipientsTotal, audienceType: state.audience_type,
+    audienceFilter: state.audience_filter, anchorId: state.anchor_id, pilotModeOn: pilotModeEnabled, resolvedCount,
+  }), [recipients, recipientsTotal, state.audience_type, state.audience_filter, state.anchor_id, pilotModeEnabled, resolvedCount]);
 
   // game_recap's league/bracket CTA shows only when the anchor event has a
   // parent tournament (stale-anchor-guarded lookup).
@@ -118,6 +116,10 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
   return (
     <FullScreenForm open onClose={onClose} title={state.kind ? `Compose · ${KIND_METADATA[state.kind]?.label || ''}` : 'New briefing'}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {state.kind && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <SaveStatusPill busy={draft.busy} savedAt={draft.savedAt} error={draft.error} hasKind />
+          </div>)}
         {showChips && (
           <InlineKindChips
             selected={state.kind}
@@ -131,15 +133,14 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
           />
         )}
         {!state.kind && (
-          <p style={{ fontSize: 13, color: 'var(--as-text-tertiary)', padding: '4px 2px', margin: 0 }}>Pick a kind above to start.</p>
-        )}
+          <p style={{ fontSize: 13, color: 'var(--as-text-tertiary)', padding: '4px 2px', margin: 0 }}>Pick a kind above to start.</p>)}
         {state.kind && (
           <ComposerSections
             state={state} dispatch={dispatch} audience={audience}
             recipients={recipients} recipientsLoading={recipientsLoading} coaches={coaches}
             pilotTestRecipientEmail={pilotTestRecipientEmail} pilotModeEnabled={pilotModeEnabled}
             hasParentTournament={hasParentTournament} blocked={wizardBlocked}
-            onSend={onSend} sending={busy}
+            audienceResolving={audienceResolving} onSend={onSend} sending={busy}
             onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose}
           />
         )}

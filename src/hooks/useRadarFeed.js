@@ -13,18 +13,32 @@ const FIELDS = 'id, kind, status, anchor_kind, anchor_id, subject, expires_at, s
 
 async function fetchContext(rows) {
   const idsFor = (k) => [...new Set(rows.filter((r) => r.anchor_kind === k).map((r) => r.anchor_id).filter(Boolean))];
-  const eventsById = {}; const tournamentsById = {}; const teamColorByEvent = {}; const changeByEvent = {};
+  // COMPOSE-FRONT P3: color-code EVERY anchored card, not just event-anchored.
+  // teamColorByAnchor keys on anchor_id across event/team/tournament so the
+  // ProposalCard glyph + left-border resolve a color for all three kinds.
+  const eventsById = {}; const tournamentsById = {}; const teamColorByAnchor = {}; const changeByEvent = {};
   const eventIds = idsFor('event');
   if (eventIds.length) {
     const { data, error } = await supabase.from('events').select('id, title, team_id, teams ( team_color )').in('id', eventIds);
     if (error) throw error;
-    for (const e of data || []) { eventsById[e.id] = e; if (e.teams?.team_color) teamColorByEvent[e.id] = e.teams.team_color; }
+    for (const e of data || []) { eventsById[e.id] = e; if (e.teams?.team_color) teamColorByAnchor[e.id] = e.teams.team_color; }
+  }
+  const teamIds = idsFor('team');
+  if (teamIds.length) {
+    const { data, error } = await supabase.from('teams').select('id, team_color').in('id', teamIds);
+    if (error) throw error;
+    for (const t of data || []) if (t.team_color) teamColorByAnchor[t.id] = t.team_color;
   }
   const tournIds = idsFor('tournament');
   if (tournIds.length) {
     const { data, error } = await supabase.from('tournaments').select('id, name').in('id', tournIds);
     if (error) throw error;
     for (const t of data || []) tournamentsById[t.id] = t;
+    // Tournament cards take the first participating team's color (the whole
+    // bracket isn't one team; the dot/border is a visual anchor, not a legend).
+    const { data: tt, error: ttErr } = await supabase.from('tournament_teams').select('tournament_id, teams ( team_color )').in('tournament_id', tournIds);
+    if (ttErr) throw ttErr;
+    for (const r of tt || []) if (r.teams?.team_color && !teamColorByAnchor[r.tournament_id]) teamColorByAnchor[r.tournament_id] = r.teams.team_color;
   }
   const scIds = [...new Set(rows.filter((r) => r.kind === 'schedule_change' && r.anchor_kind === 'event').map((r) => r.anchor_id).filter(Boolean))];
   if (scIds.length) {
@@ -32,7 +46,7 @@ async function fetchContext(rows) {
     if (error) throw error;
     for (const c of data || []) if (!changeByEvent[c.event_id]) changeByEvent[c.event_id] = c; // first row = latest
   }
-  return { eventsById, tournamentsById, teamColorByEvent, changeByEvent };
+  return { eventsById, tournamentsById, teamColorByAnchor, changeByEvent };
 }
 
 function toViewModel(row, maps) {
@@ -44,7 +58,7 @@ function toViewModel(row, maps) {
     title: anchorTitle(row, ctx),
     summary: summaryLine(row, ctx),
     audience: audiencePill(row, ctx),
-    teamColor: maps.teamColorByEvent[row.anchor_id] || null,
+    teamColor: maps.teamColorByAnchor[row.anchor_id] || null,
   };
 }
 

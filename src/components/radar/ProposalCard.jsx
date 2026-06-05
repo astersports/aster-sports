@@ -6,7 +6,11 @@ import SummaryLine from './SummaryLine';
 import AudiencePill from './AudiencePill';
 import CardActions from './CardActions';
 
-const card = { backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)', borderRadius: 10, padding: 16, boxShadow: 'var(--as-shadow-sm)', display: 'flex', flexDirection: 'column', gap: 8 };
+// COMPOSE-FRONT P3: team color renders as a left border (mock's
+// border-left-color) in addition to the glyph dot, so the card is
+// color-coded at a glance. Falls back to the default border when no
+// team color resolves (org-wide proposals).
+const card = (color) => ({ backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)', borderLeft: `3px solid ${color || 'var(--as-border-default)'}`, borderRadius: 10, padding: 16, boxShadow: 'var(--as-shadow-sm)', display: 'flex', flexDirection: 'column', gap: 8 });
 const headRow = { display: 'flex', alignItems: 'center', gap: 8 };
 const glyph = (color) => ({ width: 10, height: 10, borderRadius: 9999, backgroundColor: color || 'var(--as-neutral)', flexShrink: 0 });
 const eyebrow = { fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' };
@@ -16,7 +20,7 @@ const tag = { fontSize: 12, color: 'var(--as-text-tertiary)' };
 
 export default function ProposalCard({ item, onReview, onDismiss, busy = false, showActions = true }) {
   return (
-    <article style={card} aria-label={`${item.kindLabel}: ${item.title}`}>
+    <article style={card(item.teamColor)} aria-label={`${item.kindLabel}: ${item.title}`}>
       <div style={headRow}>
         <span style={glyph(item.teamColor)} aria-hidden="true" />
         <span style={eyebrow}>{item.kindLabel}</span>

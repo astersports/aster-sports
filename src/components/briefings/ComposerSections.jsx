@@ -16,7 +16,7 @@ import ScheduleForLaterPicker from './ScheduleForLaterPicker';
 export default function ComposerSections({
   state, dispatch, audience, recipients, recipientsLoading, coaches,
   pilotTestRecipientEmail, pilotModeEnabled, hasParentTournament, blocked,
-  onSend, sending, onSaveDraft, onCancel,
+  audienceResolving = false, onSend, sending, onSaveDraft, onCancel,
 }) {
   const body = (
     <StepBodySignoff
@@ -39,7 +39,7 @@ export default function ComposerSections({
         onChange={(payload) => dispatch({ type: 'SET_SCHEDULE', payload })}
       />
       <PreviewPanel state={state} families={recipients} coaches={coaches} recipientCount={audience.filtered} />
-      <StepSendConfirm state={state} audience={audience} onSend={onSend} sending={sending} pilotModeEnabled={pilotModeEnabled} />
+      <StepSendConfirm state={state} audience={audience} onSend={onSend} sending={sending} pilotModeEnabled={pilotModeEnabled} audienceResolving={audienceResolving} />
     </>
   );
 }

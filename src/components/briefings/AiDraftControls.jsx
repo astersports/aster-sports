@@ -31,7 +31,7 @@ export default function AiDraftControls({ gist, onGistChange, onDraft, loading, 
         <Sparkles size={16} strokeWidth={1.75} />
         {loading ? 'Drafting...' : (hasDrafted ? 'Redraft' : 'Draft with AI')}
       </button>
-      {error && <p style={errBox} aria-live="polite">{error.message || "Couldn't draft that. Try again in a moment."}</p>}
+      {error && <p style={errBox} role="alert" aria-live="assertive">{error.message || "Couldn't draft that. Try again in a moment."}</p>}
       {warnings?.length > 0 && (
         <ul style={warnBox} aria-live="polite">
           {warnings.map((w, i) => <li key={i}>{String(w)}</li>)}
