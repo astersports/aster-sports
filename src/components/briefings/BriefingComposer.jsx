@@ -19,6 +19,7 @@ import { useWizardDigestData } from '../../hooks/useWizardDigestData';
 import { supabase } from '../../lib/supabase';
 import { composerReducer } from './composerReducer';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
+import { reconcileAudienceForKind } from '../../lib/briefings/audienceReconcile';
 import { computeAudience } from '../../lib/briefings/audience';
 import { translateBriefingError } from '../../lib/briefings/translateBriefingError';
 import InlineKindChips from './InlineKindChips';
@@ -48,10 +49,13 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
     if (state.kind || !state.kindFilter || state.kindFilter.length !== 1) return;
     const [only] = state.kindFilter;
     const meta = KIND_METADATA[only] || {};
+    // Reconcile any anchor-prefilled audience (e.g. "Message this team")
+    // against the kind being auto-selected — honor it only if valid.
+    const aud = reconcileAudienceForKind(only, state.audience_type, state.audience_filter);
     Promise.resolve().then(() => {
-      dispatch({ type: 'SET_KIND', kind: only, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType });
+      dispatch({ type: 'SET_KIND', kind: only, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: aud.audience_type, audience_filter: aud.audience_filter });
     });
-  }, [state.kindFilter, state.kind, state.anchor_kind, state.audience_type]);
+  }, [state.kindFilter, state.kind, state.anchor_kind, state.audience_type, state.audience_filter]);
 
   const loadDraft = useCallback(async (id) => {
     if (!id) return;
@@ -117,7 +121,13 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
         {showChips && (
           <InlineKindChips
             selected={state.kind}
-            onPick={(kind, meta) => dispatch({ type: 'SET_KIND', kind, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: state.audience_type || meta.defaultAudienceType, defaultBody: {} })}
+            onPick={(kind, meta) => {
+              // Entry point #2: honor a "Message this team" pre-fill only
+              // when the chosen kind supports a team audience; otherwise
+              // fall back to that kind's smart default (dropping the team).
+              const aud = reconcileAudienceForKind(kind, state.audience_type, state.audience_filter);
+              dispatch({ type: 'SET_KIND', kind, anchor_kind: state.anchor_kind || meta.defaultAnchorKind, audience_type: aud.audience_type, audience_filter: aud.audience_filter, defaultBody: {} });
+            }}
           />
         )}
         {!state.kind && (
