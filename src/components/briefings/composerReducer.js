@@ -69,7 +69,18 @@ export function hydrateTargetStep(payload = {}) {
 export function composerReducer(state, action) {
   switch (action.type) {
     case 'SET_KIND':
-      return { ...state, kind: action.kind, body: action.defaultBody || {}, anchor_kind: action.anchor_kind || state.anchor_kind, anchor_id: action.anchor_id || state.anchor_id, audience_type: action.audience_type || state.audience_type };
+      // audience_filter: honored when the action carries the key at all
+      // (entry-point #2 reconciliation passes null to DROP a now-invalid
+      // team pre-fill). Absent key → preserve existing filter via spread.
+      return {
+        ...state,
+        kind: action.kind,
+        body: action.defaultBody || {},
+        anchor_kind: action.anchor_kind || state.anchor_kind,
+        anchor_id: action.anchor_id || state.anchor_id,
+        audience_type: action.audience_type || state.audience_type,
+        audience_filter: 'audience_filter' in action ? (action.audience_filter ?? null) : state.audience_filter,
+      };
     case 'SET_ANCHOR':
       return { ...state, anchor_kind: action.anchor_kind, anchor_id: action.anchor_id };
     case 'CLEAR_ANCHOR':

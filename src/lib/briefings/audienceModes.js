@@ -122,3 +122,7 @@ export function modesForKind(kind) {
 
   return modes;
 }
+
+// Compose entry point #2 ("Message this team") audience reconciliation
+// (reconcileAudienceForKind) lives in ./audienceReconcile.js — split out
+// to keep this module under the §6 150-line cap. Import it from there.
