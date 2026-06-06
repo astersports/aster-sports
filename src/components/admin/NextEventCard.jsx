@@ -1,8 +1,13 @@
 import { useNow } from '../../hooks/useNow';
 import { formatEventTitleString } from '../../lib/eventTitle';
+import { GAME_DAY_WINDOW_BEFORE_MS } from '../../lib/eventWindows';
 import Label from '../shared/Label';
 
 const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
+
+// Arrival protocol copy (HOME_RENDER_RULES_CC #3): games + tournaments call
+// for 15 minutes early, practices (+ everything else) for 5.
+const arriveMinutes = (t) => (t === 'game' || t === 'tournament' ? 15 : 5);
 
 function useLiveCountdown(targetDate) {
   const now = useNow(1000);
@@ -22,19 +27,25 @@ function useLiveCountdown(targetDate) {
 
 export default function NextEventCard({ event, weather }) {
   const countdown = useLiveCountdown(event?.start_at);
+  const nowMs = useNow(30000);
   if (!event) return null;
   const teamName = event.teams?.name;
   const dt = new Date(event.start_at);
   const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
   const timeStr = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
   const title = formatEventTitleString(event);
+  // Urgent tint (HOME_RENDER_RULES_CC #1a): amber the card once we're inside
+  // the canonical event-soon window (GAME_DAY_WINDOW_BEFORE_MS = 4h) before
+  // start, derived purely from the start time.
+  const startMs = dt.getTime();
+  const isSoon = startMs > nowMs && startMs - nowMs <= GAME_DAY_WINDOW_BEFORE_MS;
   return (
     <div
       className="as-stagger-5"
       style={{
-        backgroundColor: 'var(--as-bg-card)',
+        backgroundColor: isSoon ? 'var(--as-warning-soft)' : 'var(--as-bg-card)',
         borderRadius: 10,
-        border: '1px solid var(--as-border-default)',
+        border: `1px solid ${isSoon ? 'var(--as-warning)' : 'var(--as-border-default)'}`,
         boxShadow: 'var(--as-shadow-sm)',
         padding: '12px 16px',
         marginTop: 8,
@@ -50,6 +61,9 @@ export default function NextEventCard({ event, weather }) {
         </div>
         <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 2 }}>
           {dateStr} · {timeStr}{event.location ? ` · ${event.location}` : ''}
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 3 }}>
+          Arrive {arriveMinutes(event.event_type)} minutes early
         </div>
       </div>
       <div style={{ textAlign: 'right' }}>

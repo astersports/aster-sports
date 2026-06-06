@@ -40,4 +40,20 @@ describe('NextEventCard', () => {
     const { container } = render(<NextEventCard event={event} />);
     expect(container.firstChild).not.toBeNull();
   });
+
+  it('arrival line: 15 min for games/tournaments, 5 min for practices (#3)', () => {
+    const game = render(<NextEventCard event={{ id: 'g', start_at: inHours(8), event_type: 'game', teams: { name: '10U Blue' } }} />);
+    expect(game.container.textContent).toMatch(/Arrive 15 minutes early/);
+    cleanup();
+    const practice = render(<NextEventCard event={{ id: 'p', start_at: inHours(8), event_type: 'practice', teams: { name: '10U Blue' } }} />);
+    expect(practice.container.textContent).toMatch(/Arrive 5 minutes early/);
+  });
+
+  it('urgent tint: amber border inside the 4h event-soon window, default border outside it (#1a)', () => {
+    const soon = render(<NextEventCard event={{ id: 's', start_at: inHours(2), event_type: 'game', teams: { name: '10U Blue' } }} />);
+    expect(soon.container.firstChild.style.border).toContain('var(--as-warning)');
+    cleanup();
+    const later = render(<NextEventCard event={{ id: 'l', start_at: inHours(8), event_type: 'game', teams: { name: '10U Blue' } }} />);
+    expect(later.container.firstChild.style.border).toContain('var(--as-border-default)');
+  });
 });
