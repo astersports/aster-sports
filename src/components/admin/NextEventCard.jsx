@@ -1,6 +1,7 @@
 import { useNow } from '../../hooks/useNow';
 import { formatEventTitleString } from '../../lib/eventTitle';
 import { GAME_DAY_WINDOW_BEFORE_MS } from '../../lib/eventWindows';
+import { rsvpCloseLabel } from '../../lib/rsvpDeadline';
 import Label from '../shared/Label';
 
 const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
@@ -25,7 +26,7 @@ function useLiveCountdown(targetDate) {
   return `${mins}m ${secs}s`;
 }
 
-export default function NextEventCard({ event, weather, draft }) {
+export default function NextEventCard({ event, weather, draft, rsvpClose }) {
   const countdown = useLiveCountdown(event?.start_at);
   const nowMs = useNow(30000);
   if (!event) return null;
@@ -39,6 +40,9 @@ export default function NextEventCard({ event, weather, draft }) {
   // start, derived purely from the start time.
   const startMs = dt.getTime();
   const isSoon = startMs > nowMs && startMs - nowMs <= GAME_DAY_WINDOW_BEFORE_MS;
+  // Deadline chip (#1b): RSVP closes at event start. Parent-gated via the
+  // rsvpClose prop (admin/coach don't RSVP); amber once inside the soon window.
+  const closeLabel = rsvpClose ? rsvpCloseLabel(event.start_at, nowMs) : null;
   return (
     <div
       className="as-stagger-5"
@@ -65,8 +69,13 @@ export default function NextEventCard({ event, weather, draft }) {
         <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 3 }}>
           Arrive {arriveMinutes(event.event_type)} minutes early
         </div>
+        {closeLabel && (
+          <span style={{ display: 'inline-block', marginTop: 5, fontSize: 11, fontWeight: 600, color: isSoon ? 'var(--as-warning)' : 'var(--as-text-secondary)', backgroundColor: isSoon ? 'var(--as-warning-soft)' : 'var(--as-bg-secondary)', borderRadius: 6, padding: '2px 8px' }}>
+            {closeLabel}
+          </span>
+        )}
         {draft && (
-          <span style={{ display: 'inline-block', marginTop: 5, fontSize: 10, fontWeight: 600, letterSpacing: '0.03em', color: 'var(--as-text-tertiary)', backgroundColor: 'var(--as-bg-secondary)', borderRadius: 6, padding: '1px 7px' }}>
+          <span style={{ display: 'inline-block', marginTop: 5, marginLeft: closeLabel ? 6 : 0, fontSize: 10, fontWeight: 600, letterSpacing: '0.03em', color: 'var(--as-text-tertiary)', backgroundColor: 'var(--as-bg-secondary)', borderRadius: 6, padding: '1px 7px' }}>
             may reschedule · draft
           </span>
         )}

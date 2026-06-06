@@ -17,12 +17,12 @@ const SEE_MORE = {
   cursor: 'pointer', fontFamily: 'inherit',
 };
 
-export default function ComingUpSection({ event, weather, draft, onSeeSchedule }) {
+export default function ComingUpSection({ event, weather, draft, rsvpClose, onSeeSchedule }) {
   if (!event) return null;
   return (
     <section className="min-w-0" aria-label="Coming up">
       <div style={SECTION_LABEL}>Coming up</div>
-      <NextEventCard event={event} weather={weather} draft={draft} />
+      <NextEventCard event={event} weather={weather} draft={draft} rsvpClose={rsvpClose} />
       <button type="button" onClick={onSeeSchedule} className="as-press" style={SEE_MORE}>
         See full schedule
       </button>

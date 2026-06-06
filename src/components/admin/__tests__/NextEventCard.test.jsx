@@ -58,6 +58,16 @@ describe('NextEventCard', () => {
     expect(off.container.textContent).not.toMatch(/may reschedule/);
   });
 
+  it('deadline chip: shows "RSVP closes…" only when rsvpClose is passed (parent-gated, #1b)', () => {
+    const event = { id: 'r', start_at: inHours(28), event_type: 'game', teams: { name: '10U Blue' } };
+    const on = render(<NextEventCard event={event} rsvpClose />);
+    expect(on.container.textContent).toMatch(/RSVP closes in 1d 3h|RSVP closes in 1d 4h/);
+    cleanup();
+    // admin/coach: no rsvpClose prop → no chip
+    const off = render(<NextEventCard event={event} />);
+    expect(off.container.textContent).not.toMatch(/RSVP closes/);
+  });
+
   it('urgent tint: amber border inside the 4h event-soon window, default border outside it (#1a)', () => {
     const soon = render(<NextEventCard event={{ id: 's', start_at: inHours(2), event_type: 'game', teams: { name: '10U Blue' } }} />);
     expect(soon.container.firstChild.style.border).toContain('var(--as-warning)');
