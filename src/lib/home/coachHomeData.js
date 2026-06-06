@@ -34,6 +34,30 @@ export function summarizeActionQueue(items) {
     .join(' · ');
 }
 
+// Group a coach's teams by the active program each belongs to (C-12: GROUP,
+// not filter — a camp's teams render under their program header, not hidden).
+// `programs` is the useActivePrograms shape ([{ id, programType, name, teamIds }]).
+// NO-REGRESSION: with one active program every team maps to it → one group, and
+// CoachTail falls through to its flat render. Teams with no matched program land
+// in a trailing '__none__' group (defensive; shouldn't happen for active teams).
+const PROGRAM_NOUN = { season: 'teams', camp: 'camp', group_training: 'training', clinic: 'clinic' };
+
+export function groupTeamsByProgram(teams, programs) {
+  const programOf = new Map();
+  for (const p of programs || []) for (const tid of p.teamIds || []) programOf.set(tid, p);
+  const groups = new Map();
+  for (const t of teams || []) {
+    const p = programOf.get(t.id);
+    const key = p?.id || '__none__';
+    if (!groups.has(key)) {
+      const label = p ? `${p.name} · ${PROGRAM_NOUN[p.programType] || 'teams'}` : 'Other';
+      groups.set(key, { programId: key, label, teams: [] });
+    }
+    groups.get(key).teams.push(t);
+  }
+  return [...groups.values()];
+}
+
 export function alertToActionItem(alert) {
   const label = ALERT_LABELS[alert.alert_type_key] || alert.alert_type_key;
   const n = (alert.data?.events?.length || 0) + (alert.data?.tournaments?.length || 0);

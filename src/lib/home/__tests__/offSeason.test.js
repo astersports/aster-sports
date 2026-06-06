@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isOffSeason } from '../offSeason';
+import { isHomeOffSeason, isOffSeason } from '../offSeason';
 import { shapeChildRecords } from '../parentHomeData';
 
 // D-D off-season trigger + parent season-wrap shaping. The trigger drives
@@ -30,6 +30,35 @@ describe('isOffSeason (D-D trigger)', () => {
 
   it('true when ended and the activities list is empty', () => {
     expect(isOffSeason(ENDED, [], NOW)).toBe(true);
+  });
+});
+
+// isHomeOffSeason — the off-season gate generalized to the active-program SET
+// (Phase 1, multi-program). With one program it MUST equal isOffSeason(that
+// program) — the no-regression invariant.
+describe('isHomeOffSeason (multi-program gate)', () => {
+  it('false when there are no active programs', () => {
+    expect(isHomeOffSeason([], [], NOW)).toBe(false);
+    expect(isHomeOffSeason(undefined, [], NOW)).toBe(false);
+  });
+
+  it('matches isOffSeason for a single active program (no-regression)', () => {
+    const ended = [{ endDate: '2026-06-14' }];
+    const live = [{ endDate: '2026-07-30' }];
+    expect(isHomeOffSeason(ended, [], NOW)).toBe(isOffSeason(ENDED, [], NOW));
+    expect(isHomeOffSeason(live, [], NOW)).toBe(isOffSeason(LIVE, [], NOW));
+    expect(isHomeOffSeason(ended, [], NOW)).toBe(true);
+    expect(isHomeOffSeason(live, [], NOW)).toBe(false);
+  });
+
+  it('off-season only when EVERY program has ended (one live program keeps it in-season)', () => {
+    const mixed = [{ endDate: '2026-06-14' }, { endDate: '2026-07-30' }];
+    expect(isHomeOffSeason(mixed, [], NOW)).toBe(false);
+  });
+
+  it('off-season when all programs ended and nothing is upcoming', () => {
+    const allEnded = [{ endDate: '2026-06-10' }, { endDate: '2026-06-14' }];
+    expect(isHomeOffSeason(allEnded, [{ start_at: '2026-06-09T18:00:00Z' }], NOW)).toBe(true);
   });
 });
 

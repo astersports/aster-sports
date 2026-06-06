@@ -13,3 +13,13 @@ export function isOffSeason(activeSeason, activities, nowMs = Date.now()) {
   );
   return !hasUpcoming;
 }
+
+// isHomeOffSeason — the home off-season gate generalized to the active-program
+// SET (Phase 1, multi-program). The home is off-season only when EVERY active
+// program is off-season. With one active program this equals the prior
+// isOffSeason(activeSeason, …) — the no-regression invariant. programs entries
+// carry `endDate` (useActivePrograms shape).
+export function isHomeOffSeason(programs, activities, nowMs = Date.now()) {
+  if (!programs?.length) return false;
+  return programs.every((p) => isOffSeason({ end_date: p.endDate }, activities, nowMs));
+}

@@ -19,7 +19,8 @@ import CoachRosterHealthCard from '../components/home/CoachRosterHealthCard';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { firstNameFrom } from '../lib/greetings';
 import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
-import { isOffSeason } from '../lib/home/offSeason';
+import { isHomeOffSeason } from '../lib/home/offSeason';
+import { useActivePrograms } from '../hooks/useActivePrograms';
 import { useCoachComp } from '../hooks/useCoachComp';
 import { useCoachRosterHealth } from '../hooks/useCoachRosterHealth';
 
@@ -42,7 +43,8 @@ export default function CoachHomePage() {
   const comingUp = useParentComingUp(activities, now, excludeIds);
   const weather = useWeather(...WEATHER_DEFAULT_COORDS);
   const { byTeamId: recordsByTeam, loading: recordsLoading } = useOrgTeamRecords(orgId);
-  const offSeason = useMemo(() => isOffSeason(activeSeason, activities, now), [activeSeason, activities, now]);
+  const activePrograms = useActivePrograms();
+  const offSeason = useMemo(() => isHomeOffSeason(activePrograms.programs, activities, now), [activePrograms.programs, activities, now]);
   const comp = useCoachComp(user?.id, orgId);
   const coachedTeamIds = useMemo(() => needsYou.myTeams.map((t) => t.id), [needsYou.myTeams]);
   const rosterHealth = useCoachRosterHealth(coachedTeamIds, activeSeason?.id);
@@ -86,6 +88,7 @@ export default function CoachHomePage() {
             onTeamClick={(id) => navigate(`/schedule?team=${id}`)}
             offSeason={offSeason}
             seasonLabel={activeSeason?.name}
+            programs={activePrograms.programs}
           />
           <CoachCompCard {...comp} />
           {!offSeason && <CoachRosterHealthCard {...rosterHealth} onStartCheckIn={() => navigate('/schedule')} />}
