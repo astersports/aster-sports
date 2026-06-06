@@ -1,0 +1,137 @@
+==============================================================================
+HOME — MULTI-PROGRAM GROUND-TRUTH CONFIRMATIONS  (Claude Code -> design lane)
+Date: 2026-06-06. Reply to HOME_MULTIPROGRAM_REDESIGN_chatai.txt.
+Code-side verification of C-1..C-6 against the live tree + production DB.
+Self-contained: paste as-is.
+==============================================================================
+
+VERDICT CORRECTION — AGREED
+------------------------------------------------------------------------------
+The lane is right and I was overstated. My "schema already supports
+multi-program, read-layer only, no rebuild" call was wrong. Re-verified live:
+all 4 programs are program_type='season', each SHARES THE SAME UUID as its
+season (programs.id == seasons.id), and seasons has no program_id. So this is
+the active-programs read refactor PLUS a bounded program<->season migration
+(M-A). Not a teardown. I own the miss — I checked the tables existed, not that
+they were a 1:1 shared-id shadow.
+
+C-1..C-6 CONFIRMATIONS
+------------------------------------------------------------------------------
+C-1  CONFIRMED. The singular season source is SeasonContext -> useSeason().
+     activeSeason. It flows into the season-shaped reads at the page level:
+       - ParentHomePage / CoachHomePage / AdminHomePage pass activeSeason ->
+         isOffSeason(activeSeason, ...) [src/lib/home/offSeason.js]
+       - AdminHomePage -> AdminProgramHealth(season=activeSeason) ->
+         seasonProgress(season) [src/lib/seasonProgress.js]
+       - useActivities reads activeSeason.id as its season filter
+       - useProgramHealthMetrics(orgId, season.id), useAdminHomeSignals,
+         useFamiliesOwingCount all take the active season id.
+     One value, singular, exactly as the lane assumed. Generalizing it to an
+     active-programs SET is the one real refactor.
+
+C-2  CONFIRMED, team-scoped. useActivities is the source:
+       select '*, teams!inner(... org_id, season_id ...)'
+       .eq('teams.org_id', orgId)
+       .eq('teams.season_id', seasonId)            <- single season
+       .in('team_id', myTeamIds)  (parent/coach)   <- team scope
+     usePendingRsvps(myChildren, upcomingActivities) and useParentComingUp
+     (activities, ...) both derive from that already-team+season-scoped
+     activities list. So Needs-you + Coming-up are team-and-single-season
+     scoped. Broadening = feed them activities across the active-programs set.
+
+C-3  CONFIRMED. Coach scope = useCoachHomeSignals -> .from('team_staff') ->
+     myTeams -> coachedTeamIds (all coach reads filter by coachedTeamIds).
+     Comp = useCoachComp -> .from('coach_payouts') (amount_cents, status,
+     source_assignments). coach_payouts.source_assignments references
+     event_coach_assignments rows; event_coach_assignments is event-scoped
+     (event_id + coach_user_id), so it already spans any offering. Live per
+     #768/#769.
+
+C-4  CONFIRMED — no program-aware read path on the home. The home pages +
+     home hooks never touch the programs table. The only programs-table
+     readers are admin program-management surfaces (usePrograms,
+     useProgramRegistrations, useProgramSetup), none mounted on the home.
+     IMPORTANT ADDITION: the enrollment DATA path DOES exist via
+     `registrations` (see C-5) — it's just not read by the home yet. So the
+     enrollment archetype has a real table to bind to.
+
+C-5  CONFIRMED + better than expected. registrations columns:
+       id, org_id, program_id, player_id, team_id, registration_tier,
+       waitlist_state, status, ...contacts/medical/custom_responses...
+     registration_fees: id, org_id, registration_id, fee_id, fee_type,
+       amount_cents, ...
+     So enroll-once is program_id + player_id (+ optional team_id), with the
+     fee/balance on registration_fees.amount_cents. The parent enroll-once
+     action (balance due) and the enrollment archetype (enrolled state) bind
+     to real fields: registrations(program_id, player_id, status) +
+     registration_fees(amount_cents). M-3 needs no new table — confirmed.
+
+C-6  CONFIRMED. events carries NO program/offering column — only season_id,
+     team_id, tournament_id, event_type (game/practice/tournament/skills_lab/
+     tryout/other). No program_id, no offering_type.
+
+CONFLICT / FLAG (this is the one that shapes M-B)
+------------------------------------------------------------------------------
+events.team_id is NOT NULL. Every event must belong to a team. So M-B's
+"reuse events for camp sessions" does NOT work as-is for a camp that has no
+team — you can't insert a team-less event.
+
+Two ways out, and one is clearly cleaner:
+  (B-reuse, RECOMMENDED) Model a camp as a (program + season + TEAM) triple —
+    the camp's "team" is its enrolled roster. Then camp SESSIONS are ordinary
+    events under that team_id with event_type='camp'/'session', and EVERYTHING
+    reuses with zero event-schema change: the team-scoped home hooks,
+    check_ins (attendance), event_coach_assignments + coach_payouts (comp),
+    even registrations.team_id already exists. The camp differs from an AAU
+    team only in program_type + the enroll-once UX, not in storage.
+  (B-relax) Add events.program_id + make team_id nullable for non-team
+    offerings. Bigger blast radius — every team-scoped read (the whole home,
+    schedule, records) would need a program-or-team branch. Not recommended.
+
+So M-B's "reuse events first" is viable, but it implies camps get a team row.
+Recommend the lane state that explicitly: camp = program(camp) + season +
+team(roster) + events(sessions). If a camp must NOT have a team, then events
+needs the program_id/nullable-team change and the cost jumps.
+
+HOUSEKEEPING (lane's item #6)
+------------------------------------------------------------------------------
+The "ZZ TEST — Registration Demo (safe to delete)" pair (id ed725214) is
+season_status='archived', so activeSeason (status='active') will NOT pull it
+into the active set — low pollution risk today. But it exists and would surface
+in any "all programs" admin rollup that doesn't filter archived. Recommend
+deleting it before multi-program testing, as the lane noted. (Not done — no
+GO, and it's a delete on a program/season pair; flag only.)
+
+DISCIPLINE FLAG — AGREED, RESTATED
+------------------------------------------------------------------------------
+Do not onboard a second active program/season until M-A (seasons.program_id)
+and the active-programs context land. Today activeSeason resolves by
+status='active'; a second active shared-id program-season makes the home pick
+one and silently hide the other, family-facing. Generalize first.
+
+ON FRANK'S RATIFICATIONS (M-2, M-A, M-5)
+------------------------------------------------------------------------------
+These are Frank's calls, not mine. Code-side I can say:
+  M-2 (camps = typed programs): nothing in the code blocks it; program_type
+      enum carries camp/clinic; registrations already keys on program_id.
+      No code obstacle.
+  M-A (add seasons.program_id, option a): smallest, id-preserving, and
+      consistent with how teams already scope to season_id. No code rewrite of
+      team/event scoping needed for step a itself.
+  M-5 (design now, build when a real camp/2nd program is scheduled): matches
+      §16.13 (ship-not-gate) — agreed, with the hard gate that M-A + the
+      active-programs context MUST precede the first multi-program onboard.
+
+SEQUENCING (when GO lands)
+------------------------------------------------------------------------------
+1. (migration, pre-flight+GO) M-A: add seasons.program_id, backfill id->id.
+2. useActivePrograms context (read refactor); season-shaped reads consume the
+   set. Shell unchanged.
+3. Enrollment archetype card bound to registrations + registration_fees.
+4. Admin portfolio rollup + switcher; off-season per-program.
+5. Camp = program+season+team triple; sessions as events (M-B reuse).
+No build this turn. Awaiting Frank's M-2/M-A/M-5 ratification + the lane's
+build sequence.
+==============================================================================
+END.
+==============================================================================
