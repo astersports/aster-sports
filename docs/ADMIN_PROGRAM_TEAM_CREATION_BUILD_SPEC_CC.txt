@@ -1,0 +1,254 @@
+==============================================================================
+BUILD SPEC — PROGRAM / TEAM CREATION (self-serve camps & non-season programs)
+Claude Code -> architect lane. Date: 2026-06-06. L99 §16.15 template.
+Expands the gap finding ADMIN_GAP_PROGRAM_TEAM_CREATION_CC.txt (merged #780)
+into a build-ready spec. All current-state claims verified against live src +
+production schema (AP#60). DESIGN DECISIONS that I will not improvise are
+collected in §7 OPEN DECISIONS — those need Frank's ratification before the
+implementing PRs lock. Everything else (wireframes, per-file change list,
+schema deltas, acceptance criteria) is mechanical from the verified gaps.
+==============================================================================
+
+GOAL
+------------------------------------------------------------------------------
+Make camps/clinics (and the rest of the program_type enum) self-serve in-app:
+create a non-season program, create teams of a chosen type under it, manage
+those teams, and (already works) assign events to them. Remove the need to SQL-
+seed what the camp arc just seeded by hand.
+
+------------------------------------------------------------------------------
+(a) CURRENT-STATE AUDIT  (verified — file:line)
+------------------------------------------------------------------------------
+ROUTES (src/App.jsx):
+  /admin/programs/new  -> ProgramSetupPage   (program create)
+  /admin/programs/:id  -> ProgramDetailPage  (per-program home)
+  /admin/teams         -> AdminTeamsPage      (team CRUD)
+  /admin/seasons       -> AdminSeasonsPage
+  /admin/rollover      -> SeasonRolloverPage
+
+PROGRAM CREATE — src/pages/admin/ProgramSetupPage.jsx + src/hooks/useProgramSetup.js
+  - useProgramSetup.js:23 hardcodes program_type:'season'.
+  - Creates programs (status:'archived' guard, :27) + divisions + division_fees.
+  - ProgramSetupPage.jsx:32 already says "Tryouts & camps coming soon" — the
+    product intent to extend this page is pre-existing.
+  - On success navigates to /admin/programs/:id (ProgramDetailPage).
+  GAP A: no program_type selector; non-season programs uncreatable.
+
+TEAM CREATE/EDIT — src/components/admin/TeamFormSheet.jsx + src/hooks/usePrograms.js
+  - TeamFormSheet fields: name, age_group (8U-12U only, :6), gender, circuit
+    (aau/league_play/tournament), circuit_name, team_color, practice_day,
+    practice_location, sort_order. NO team_type_id. NO program picker.
+  - usePrograms.js:49-51 insert { ...input, org_id, season_id:activeSeason.id }.
+  - usePrograms.js:30 list filters .eq('season_id', seasonId).
+  GAP B: team_type_id never set (prod default NULL -> teamTypes.js classifies
+         NULL as COMPETITIVE; non-competitive teams uncreatable in-app).
+  GAP C: teams hard-bind to active season; no program picker; non-season teams
+         invisible on /admin/teams.
+  GAP D: age_group lacks 'Mixed' (camps use it).
+
+EVENT ASSIGN — src/components/wizard/StepTeam.jsx:9-13  (NO GAP)
+  - teams by org_id only; every team (incl. camp) appears in the wizard picker.
+
+CLASSIFICATION — src/lib/teamTypes.js
+  - COMPETITIVE_TEAM_SLUGS = ['game_team','tournament_team','hybrid_team'].
+  - isCompetitiveTeam(team): slug undefined -> true (NULL = competitive).
+  - Non-competitive (type-excluded from Records/Games/tournament picker):
+    academy, clinic_camp, training_only.
+
+PRODUCTION SCHEMA (verified via execute_sql):
+  - program_type enum: season, tryout, camp, clinic, interest_list, evaluation
+  - team_types: academy, clinic_camp, game_team, hybrid_team, tournament_team,
+    training_only  (ids in §6)
+  - teams.team_type_id default: NULL
+  - ALIGNMENT-LOCK TRIGGER tg_team_players_alignment_check (migration
+    20260505201932): an ACTIVE team_players row REQUIRES a matching
+    roster_members(team_id,player_id) row first. Any team+roster create flow
+    must insert roster_members BEFORE team_players.
+
+------------------------------------------------------------------------------
+(b) DEEP-READ ADDENDUM  (second-pass findings the gap doc didn't surface)
+------------------------------------------------------------------------------
+D1. PROGRAM_NOUN drift — src/lib/home/coachHomeData.js:43 maps
+    { season, camp, group_training, clinic } to display nouns. 'group_training'
+    is NOT in the enum; tryout / evaluation / interest_list have NO noun. When
+    program create opens to all six types, this map must cover all six or the
+    coach-home grouping renders blank/undefined nouns. (Mechanical fix; flagged
+    so it isn't missed — same orphan-map class as AP #34/#38.)
+D2. Divisions/fees coupling — ProgramSetupPage couples program create to a
+    Divisions section (divisions + division_fees). Camps/clinics often have a
+    flat fee and no divisions. Forcing a division on a camp is wrong shape.
+    -> §7 OPEN DECISION 2.
+D3. circuit vs team_type axis — the form's "Competition type" chip
+    (aau/league_play/tournament) is orthogonal to team_type_id and does NOT
+    drive classification. Adding a team_type control means the form now has TWO
+    type-ish controls; spec keeps both (circuit = AAU sanctioning label for
+    competitive teams; team_type = competitive-vs-not). Do NOT merge them.
+D4. AdminTeamsPage empty-state — "No active season … create a season before
+    adding teams" (AdminTeamsPage.jsx:46-56) assumes season context. A program-
+    switcher rework must not strand camp-only orgs behind a "no active season"
+    wall.
+D5. ProgramDetailPage already exists as the per-program home (/admin/programs/:id)
+    — the natural host for "this program's teams," which argues for adding team
+    management THERE rather than only on the season-scoped /admin/teams. -> §7
+    OPEN DECISION 4.
+D6. SeasonContext drives usePrograms' season scoping. A program-aware team list
+    needs a program selector decoupled from the global active-season context, or
+    it will keep snapping back to the active season. Non-trivial; see §5 STEP 3.
+
+------------------------------------------------------------------------------
+(c) ANTI-PATTERN CROSS-REFERENCE
+------------------------------------------------------------------------------
+  - AP #34/#38 (orphan dispatch/map): D1 PROGRAM_NOUN must cover all enum values
+    in the same PR that opens program_type selection.
+  - Alignment-lock (schema invariant): roster_members before team_players in any
+    create-with-roster flow (camp seed §3 lesson).
+  - AP #43 (cross-surface invariant test): the competitive-vs-not classification
+    is consumed by Records, Games, tournament picker, coach home, wizard. A new
+    team-type control must ship a test asserting a clinic_camp/training_only team
+    is excluded from the AAU surfaces and included in the grouped surfaces.
+  - AP #6 / §6 150-LOC cap: TeamFormSheet is already 143 lines; adding a program
+    picker + team_type chip + Mixed will push it over. Plan to split (extract the
+    color picker or the chip cluster) in the SAME PR.
+  - Anti-drift #7: program-type status defaults + division applicability are
+    design decisions -> §7, not improvised.
+
+------------------------------------------------------------------------------
+(d) PER-ROLE WIREFRAMES
+------------------------------------------------------------------------------
+Only ADMIN creates programs/teams; coach/parent are read surfaces (already
+grouped via useActivePrograms). So wireframes are admin-only.
+
+W1. Program create  (/admin/programs/new — extend ProgramSetupPage)
+  ┌─────────────────────────────────────────┐
+  │ ← Admin            New Program            │
+  │ Program type:  [Season][Camp][Clinic]     │  <- NEW chip row (program_type)
+  │                [Tryout][Eval][Interest]   │
+  │ Program name:  [_______________________]  │
+  │ Start date [__]   End date [__]           │
+  │ Public link · /r/<slug>  [_____]          │
+  │ Reg opens [__]   Reg closes [__]          │
+  │ ☐ Publish now                              │
+  │ ── Divisions ──   (HIDDEN unless type=     │  <- §7 DECISION 2
+  │                    season; see decision)   │
+  │ [ Create program ]                         │
+  └─────────────────────────────────────────┘
+  Type chip changes: (i) the status default written (§7 D1), (ii) whether the
+  Divisions section shows, (iii) the helper copy ("Season setup"/"Camp setup").
+
+W2. Team create/edit  (TeamFormSheet — add two controls + Mixed)
+  ┌─────────────────────────────────────────┐
+  │ New team                                  │
+  │ Program:  [ Spring 2026 ▾ ]               │  <- NEW picker (program_id);
+  │                                            │     defaults to active season
+  │ Team type: [Game][Tournament][Hybrid]      │  <- NEW chip (team_type_id);
+  │            [Academy][Training][Clinic/Camp]│     default from program type (§7 D3)
+  │ Display name: [______]   Age: [..][Mixed] │  <- 'Mixed' added to age chips
+  │ Gender / Competition type / Color / …      │  (unchanged)
+  │ [ Create team ]                            │
+  └─────────────────────────────────────────┘
+
+W3. Teams management  (§7 DECISION 4 — one of:)
+  Option α: /admin/teams gains a [ Program ▾ ] switcher at top; list scopes to
+            the picked program (not the global active season).
+  Option β: team management moves onto ProgramDetailPage (/admin/programs/:id),
+            so each program shows + manages its own teams; /admin/teams becomes
+            the season default view or is retired.
+  Recommendation in §7.
+
+------------------------------------------------------------------------------
+(e) OUT OF SCOPE  (this spec)
+------------------------------------------------------------------------------
+  - Registration/enrollment archetype for camps (home-redesign Phase 2).
+  - DISTINCT-people dedup across programs (Phase 3).
+  - Coach-comp setup per camp session (coach-pay flag CLOSED — Kenny unpaid).
+  - The event wizard assign path (works; optional program-grouping is non-block).
+  - Public registration pages for non-season types (/r/:slug flow) — separate.
+
+------------------------------------------------------------------------------
+5. IMPLEMENTATION PLAN (PR sequence)
+------------------------------------------------------------------------------
+PR-1  Program-type-aware create.
+  Files: src/hooks/useProgramSetup.js (accept form.program_type; default status
+  per §7 D1; gate divisions per §7 D2), src/pages/admin/ProgramSetupPage.jsx
+  (add program_type ChipField; conditional Divisions; helper copy), and EITHER
+  reuse register/fields or FormControls ChipField (consistent token styling).
+  Also src/lib/home/coachHomeData.js PROGRAM_NOUN -> cover all 6 enum values (D1).
+  Test: create each program_type; assert program_type persisted + status default.
+
+PR-2  Team-type + program picker + Mixed.
+  Files: src/components/admin/TeamFormSheet.jsx (add Program picker fed by a
+  programs list; add Team type ChipField; add 'Mixed' to AGE_GROUPS; SPLIT to
+  stay <150 LOC), src/hooks/usePrograms.js (createProgram takes program_id from
+  form instead of injecting active season; include team_type_id in insert).
+  Test (AP #43): a clinic_camp/training_only team is excluded from Records/Games/
+  tournament picker and included in coach-home grouping + wizard picker.
+
+PR-3  Program-aware Teams management (§7 DECISION 4 — α or β).
+  Files: src/pages/AdminTeamsPage.jsx (+ program switcher) and/or
+  src/pages/admin/ProgramDetailPage.jsx (+ teams section); decouple from
+  SeasonContext scoping (D6). Reuse the Phase-3 portfolio switcher component if
+  it exists by then (see §8). Fix the empty-state (D4) so camp-only orgs aren't
+  walled behind "no active season."
+
+Sequencing: PR-1 -> PR-2 are strictly ordered (can't pick a program for a team
+until non-season programs can be created). PR-3 can land after PR-2 or fold into
+the Phase-3 switcher work.
+
+------------------------------------------------------------------------------
+6. REFERENCE IDS (team_types — for the team_type chip mapping)
+------------------------------------------------------------------------------
+  game_team        0b592bb1-5201-40c9-93ad-6e0633ad296f   (competitive)
+  tournament_team  1cc07417-5d1f-4f84-86cb-e0b487cc598a   (competitive)
+  hybrid_team      d1f59df2-de90-402a-b5b1-5f15d68acf72   (competitive)
+  academy          f51cbd34-b6ef-4f1f-b48e-eb250b798f61   (non-competitive)
+  training_only    be0462e3-5fb3-4a81-8c79-1fc630dc327a   (non-competitive)
+  clinic_camp      d08aa27b-39d7-44ff-960d-3fa198759b57   (non-competitive)
+NOTE: the UI should resolve these by slug at runtime (SELECT id FROM team_types
+WHERE slug=$1), NOT hardcode the UUIDs — ids differ per environment.
+
+------------------------------------------------------------------------------
+7. OPEN DECISIONS — RATIFY BEFORE PR LOCK  (recommendations included; AP #39 —
+   where I lean, I commit; the hedge is not the answer)
+------------------------------------------------------------------------------
+D1. Status default on create, per program_type.
+    Season already defaults 'archived' (guard against a 2nd active season
+    hijacking the home cards). Recommendation: non-season types
+    (camp/clinic/group-less) default 'active' (they don't touch the seasons view
+    so they can't hijack season cards, and self-serve wants them live
+    immediately); tryout/evaluation/interest_list default 'archived' (pre-launch
+    states). RECOMMEND: camp/clinic active; tryout/eval/interest archived.
+
+D2. Do non-season programs get Divisions/fees?
+    Recommendation: HIDE the Divisions section for non-season types in PR-1
+    (camps bill a flat fee, modeled later in the Phase-2 enrollment archetype,
+    not as season divisions). RECOMMEND: divisions = season-only for now.
+
+D3. team_type default from program_type, override allowed?
+    Recommendation: default the team_type chip from the parent program_type
+    (camp->clinic_camp, season->game_team, etc.) but allow override (a season
+    can have an academy team; a camp could have a hybrid). RECOMMEND:
+    smart-default + override.
+
+D4. Where does team management live (W3 α vs β)?
+    Recommendation: β-leaning — put team management on ProgramDetailPage
+    (/admin/programs/:id) since it already exists as the per-program home, AND
+    add a lightweight program switcher to /admin/teams for the common "jump
+    between programs" case, sharing the Phase-3 portfolio switcher component.
+    RECOMMEND: teams on ProgramDetailPage + switcher on /admin/teams (shared
+    component with Phase 3).
+
+D5. 'Mixed' age_group — just add to the chip set? RECOMMEND: yes, add 'Mixed';
+    keep 8U-12U. Trivial, low-risk.
+
+------------------------------------------------------------------------------
+8. SEQUENCING WITH HOME-REDESIGN PHASE 3
+------------------------------------------------------------------------------
+PR-3's program switcher (W3) and the Phase-3 portfolio rollup + program switcher
+are the SAME surface. Strong recommendation: scope them together so the admin
+Teams page and the home portfolio share one program-switcher component, rather
+than building two switchers that drift. If Phase 3 lands first, PR-3 consumes its
+switcher; if this spec lands first, PR-3 builds the switcher Phase 3 then reuses.
+
+==============================================================================
+END — ADMIN_PROGRAM_TEAM_CREATION_BUILD_SPEC_CC
+==============================================================================
