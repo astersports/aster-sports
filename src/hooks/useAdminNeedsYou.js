@@ -16,7 +16,7 @@ import { formatCurrency } from '../lib/formatters';
 const CAP = 4;
 const HANDLED_ALERTS = new Set(['payment_overdue', 'briefing_overdue', 'rsvp_shortfall']);
 
-export function useAdminNeedsYou({ orgId, activities, seasonId }) {
+export function useAdminNeedsYou({ orgId, activities, seasonId, nowMs }) {
   const { rows: briefingRows, isLoading: briefingsLoading } = useInboxQueue({ orgId });
   const { alerts, loading: alertsLoading } = useAlertEvaluator();
   const { count: owingCount, totalCents: owingCents, loading: owingLoading } = useFamiliesOwingCount(orgId);
@@ -25,9 +25,18 @@ export function useAdminNeedsYou({ orgId, activities, seasonId }) {
   const items = useMemo(() => {
     const out = [];
     if ((briefingRows || []).length) {
+      // D-E split: ready = comms_messages drafts, to-write = synthetic
+      // needs-briefing rows, overdue = synthetic past their anchor (cadence).
+      const ready = briefingRows.filter((r) => r.source === 'comms_messages').length;
+      const synthetic = briefingRows.filter((r) => r.source === 'synthetic');
+      const overdue = synthetic.filter((r) => r.anchor_time && new Date(r.anchor_time).getTime() < nowMs).length;
+      const parts = [];
+      if (ready) parts.push(`${ready} ready`);
+      if (synthetic.length) parts.push(`${synthetic.length} to write`);
+      if (overdue) parts.push(`${overdue} overdue`);
       out.push({
         domain: 'comms', id: 'briefings', primary: 'Briefings', pinned: true,
-        subtitle: `${briefingRows.length} to review`, to: '/admin/briefings/radar',
+        subtitle: parts.join(' · ') || 'Open Radar', to: '/admin/briefings/radar',
       });
     }
     const rsvpAlert = (alerts || []).find((a) => a.alert_type_key === 'rsvp_shortfall');
@@ -50,7 +59,7 @@ export function useAdminNeedsYou({ orgId, activities, seasonId }) {
       });
     }
     return out;
-  }, [briefingRows, alerts, owingCount, owingCents, actionItems]);
+  }, [briefingRows, alerts, owingCount, owingCents, actionItems, nowMs]);
 
   return {
     items: items.slice(0, CAP),

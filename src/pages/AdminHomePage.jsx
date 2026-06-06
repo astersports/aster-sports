@@ -30,7 +30,7 @@ export default function AdminHomePage() {
   useRefetchOnVisible(refetch);
   const navigate = useNavigate();
 
-  const needsYou = useAdminNeedsYou({ orgId, activities, seasonId: activeSeason?.id });
+  const needsYou = useAdminNeedsYou({ orgId, activities, seasonId: activeSeason?.id, nowMs: now });
   const excludeIds = useMemo(
     () => needsYou.items.filter((i) => i.event_id).map((i) => i.event_id),
     [needsYou.items],
