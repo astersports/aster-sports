@@ -1,0 +1,102 @@
+==============================================================================
+HOME — MULTI-PROGRAM PILOT: ACADEMY/LAB GROUND TRUTH  (Claude Code -> design lane)
+Date: 2026-06-06. Frank supplied the real pilot: the "Active Roster Lab".
+Source files: SpringActiveRosterLabSchedule06_06_2026.csv (sessions) +
+Registrations_4.csv (full LeagueApps export). Self-contained; paste as-is.
+No build, no migration, no rows written this turn.
+==============================================================================
+
+THE PILOT IS REAL — and it's the M-5 trigger
+------------------------------------------------------------------------------
+The offering is "Active Roster Lab - Optional" (LeagueApps program). This is
+the first real second-offering, so M-5 fires: build the multi-program path,
+with the Lab as the pilot.
+
+GROUND TRUTH FROM THE FILES + PRODUCTION
+------------------------------------------------------------------------------
+ROSTER (Registrations_4.csv, full export = 527 rows):
+  - "Active Roster Lab" registrations: 36 rows. THIS is the ~30 Frank meant.
+  - For contrast, production has only 12 players flagged member_type=
+    'futures_academy' / roster_type='futures'. So the Lab roster (36) is NOT
+    the same set as our futures flag (12), and is NOT loaded as a Lab roster.
+  - The export also carries: 179 Spring 2026 Season rows, 10 Interest List,
+    program types CLUBTEAM (336) + CAMP (87). The Lab registrants must be
+    FILTERED from this export by program; many will already exist as players
+    (member ids present), some may be new.
+
+SESSIONS (SpringActiveRosterLabSchedule CSV):
+  - 10 sessions, type CLASS, "Active Roster Lab - Optional", St. Patrick's:
+    3/23, 4/6, 4/13, 4/20, 4/27, 5/4, 5/11, 5/18, 6/1, 6/8. (NB: no 3/30.)
+  - 9 sessions at 19:35-20:35; the FINALE 6/8 moved to 20:00-21:00 (St Pat's
+    needed the earlier slot for a playoff). 6/8 is the last session.
+  - Standard note carries a 5-minute-arrival rule (offering-specific copy).
+
+EXISTING DB STATE (the dedup problem):
+  - Our DB already has Monday 7:35pm St. Patrick's events, but as THREE team
+    practices per Monday (10U Black, 10U Blue, 11U Girls) across 11 Mondays
+    (3/23..6/8 INCLUDING 3/30) = ~33 practice rows.
+  - These overlap the Lab nights exactly (time + place). They are almost
+    certainly the Lab session mis-modeled as 3 per-team practices. Loading the
+    Lab as one CLASS offering must RECONCILE these, not duplicate them:
+      decision: re-home the 33 team-practice rows into the single Lab CLASS
+      session per night (recommended), vs leave them and add Lab on top
+      (creates double-booked St Pat's events — do NOT).
+  - The 3/30 team-practice has no Lab counterpart — confirm whether 3/30 was a
+    real team practice or a stray.
+
+WHY THIS IS A BUILD, NOT A HAND-LOAD
+------------------------------------------------------------------------------
+Per the locked design (M-B): a camp/clinic = program(type) + season + team
+(roster, typed) + events(sessions). The Lab maps to:
+  program = "Active Roster Lab" (program_type camp/clinic),
+  season  = within Spring 2026's window (3/23-6/8),
+  team    = the Lab roster (the 36 registrants, a typed team),
+  events  = the 10 CLASS sessions (event_type 'class'/'skills_lab', a
+            constants.js value, zero DB enum migration).
+That requires M-A + useActivePrograms FIRST (the gate). It also requires an
+IMPORT of the 36 Lab registrants -> players + the Lab roster, and the dedup
+above. None of this is a quick row insert.
+
+THE GATE (unchanged, now concrete)
+------------------------------------------------------------------------------
+Do not stand up the Lab as a live distinct program before STEP 1 (M-A) and
+STEP 2 (useActivePrograms). Today program==season by shared id and
+activeSeason resolves by status='active'; a second active program-season
+silently hides one, family-facing. So the FIRST action is the lane's: M-A
+pre-flight + GO.
+
+RECOMMENDED SEQUENCE FOR THE PILOT (extends the build doc)
+------------------------------------------------------------------------------
+  1. [LANE] M-A migration (seasons.program_id), pre-flight + GO.
+  2. [CC]   useActivePrograms (step 2), single-program no-regression test.
+  3. [CC]   Enrollment archetype + useFamilyEnrollments.
+  4. [CC]   Lab pilot import + model (NEW, pilot-specific):
+            - identify the 36 Lab registrants from the export, map to players
+              (reuse existing where member id matches; flag any new).
+            - create the Lab program (camp/clinic) + Lab roster team (typed) +
+              the 10 CLASS sessions (6/8 = 20:00-21:00).
+            - RECONCILE the existing 33 Monday team-practices (re-home, no dup).
+            - pre-flight (counts: registrants matched/new, sessions, practices
+              to re-home) + Frank GO before any write. Money/family-facing data.
+  5. [CC]   Admin rollup + switcher; off-season per-program (step 4 of the
+            build doc).
+
+OPEN DECISIONS (Frank)
+------------------------------------------------------------------------------
+  P-1  Lab roster = the 36 Lab registrants (recommended; matches "~30
+       invited"). Confirm, vs the 12 futures-flagged.
+  P-2  Reconcile the existing Monday team-practices INTO the Lab CLASS
+       (recommended, no duplicates) vs keep them separate.
+  P-3  Timing: build the full multi-program path now with the Lab as pilot
+       (lane starts M-A), or hold until next season given the Lab's last
+       session is this Monday 6/8 (so this instance is ending; the pilot value
+       is establishing the pattern for Summer/Fall).
+  P-4  Is "Active Roster Lab" program_type camp or clinic? (program_type enum
+       carries both; design call — affects the offering color + copy.)
+
+Nothing applied. The pilot data is grounded and in hand. Next action is the
+lane's M-A pre-flight once Frank rules P-1..P-4 (or just "build it, all
+recommended").
+==============================================================================
+END.
+==============================================================================
