@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { usePendingRsvps } from './usePendingRsvps';
 import { useRideNeeded } from './useRideNeeded';
 import { useVolunteerSlots } from './useVolunteerSlots';
@@ -27,9 +27,11 @@ export function useParentNeedsYou({ myChildren, activities, nowMs, userId }) {
   const { items: volunteers, loading: volLoading } = useVolunteerSlots(myChildren, next7days);
   const { items: inbox, loading: inboxLoading } = useInboxList();
 
-  const [dismissed, setDismissed] = useState(() => new Set());
-  const onRsvpResolved = useCallback((eventId, playerId) => {
-    setDismissed((prev) => new Set(prev).add(`${eventId}:${playerId}`));
+  // Inline RSVP resolution: refetch and let usePendingRsvps re-derive the
+  // pending set. ChildRsvp.onSave fires on BOTH set and CLEAR — relying on
+  // the refetch (not a local dismissed-Set) means a cleared RSVP correctly
+  // reappears as pending instead of being permanently hidden.
+  const onRsvpResolved = useCallback(() => {
     Promise.resolve().then(refetchRsvps);
   }, [refetchRsvps]);
 
@@ -44,7 +46,6 @@ export function useParentNeedsYou({ myChildren, activities, nowMs, userId }) {
 
   const items = useMemo(() => {
     const rsvpItems = (pending || [])
-      .filter((p) => !dismissed.has(`${p.event_id}:${p.player_id}`))
       .map((p) => ({
         ...p, domain: 'rsvp', id: `rsvp-${p.event_id}-${p.player_id}`,
         child: childById.get(p.player_id) || { playerId: p.player_id, firstName: p.kid_first_name },
@@ -58,7 +59,7 @@ export function useParentNeedsYou({ myChildren, activities, nowMs, userId }) {
     const out = [...actionable];
     if (commsItem) out.splice(Math.min(1, out.length), 0, commsItem);
     return out;
-  }, [pending, rides, volunteers, commsItem, dismissed, childById, eventTypeById]);
+  }, [pending, rides, volunteers, commsItem, childById, eventTypeById]);
 
   return {
     items: items.slice(0, CAP),

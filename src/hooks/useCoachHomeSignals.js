@@ -18,19 +18,26 @@ import { filterAlertsForCoach } from '../lib/alerts/relevanceFilters';
 
 export function useCoachHomeSignals(userId, nowMs) {
   const [myTeams, setMyTeams] = useState([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) { Promise.resolve().then(() => setTeamsLoading(false)); return undefined; }
+    let cancelled = false;
     Promise.resolve().then(async () => {
       const { data, error } = await supabase
         .from('team_staff')
         .select('team_id, teams(id, name, team_color, sort_order)')
         .eq('user_id', userId);
-      if (error) throw error;
+      if (cancelled) return;
+      // AP#36: surface the error into an empty state, don't throw (an
+      // uncaught throw here became an unhandled rejection + silent no-teams).
+      if (error) { console.error('useCoachHomeSignals team_staff:', error.message); setMyTeams([]); setTeamsLoading(false); return; }
       const teams = (data || [])
         .filter((r) => r.teams)
         .map((r) => ({ id: r.teams.id, name: r.teams.name, team_color: r.teams.team_color, sort_order: r.teams.sort_order ?? 999 }));
       setMyTeams(teams.sort((a, b) => a.sort_order - b.sort_order));
+      setTeamsLoading(false);
     });
+    return () => { cancelled = true; };
   }, [userId]);
 
   const coachedTeamIds = useMemo(() => myTeams.map((t) => t.id), [myTeams]);
@@ -60,7 +67,7 @@ export function useCoachHomeSignals(userId, nowMs) {
   const { messages: recentTeamMessages } = useRecentTeamMessages(coachedTeamIds, userId, nowMs);
 
   return {
-    myTeams, coachedTeamIds,
+    myTeams, teamsLoading, coachedTeamIds,
     coachAlerts, alertsLoading,
     actionQueueItems, actionQueueLoading,
     recentTeamMessages,

@@ -51,7 +51,14 @@ export default function CoachHomePage() {
       greeting={(
         <HomeGreeting name={name} sublabel={sublabel} action={<DensityToggle sectionKey="coach-home" />} />
       )}
-      needsYou={<NeedsYouSection {...needsYou} onNavigate={navigate} />}
+      needsYou={(
+        <NeedsYouSection
+          {...needsYou}
+          onNavigate={navigate}
+          emptyHeading="You're all caught up"
+          emptySub="Check-ins, scores, and shortfalls show up here."
+        />
+      )}
       comingUp={(
         <ComingUpSection
           event={comingUp}

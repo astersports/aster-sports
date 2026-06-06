@@ -21,7 +21,7 @@ const CAP = 4;
 export function useCoachNeedsYou({ userId, activities, nowMs }) {
   const {
     myTeams, coachedTeamIds, coachAlerts, actionQueueItems,
-    alertsLoading, actionQueueLoading,
+    teamsLoading, alertsLoading, actionQueueLoading,
   } = useCoachHomeSignals(userId, nowMs);
 
   const teamSet = useMemo(() => new Set(coachedTeamIds), [coachedTeamIds]);
@@ -51,7 +51,7 @@ export function useCoachNeedsYou({ userId, activities, nowMs }) {
     items: items.slice(0, CAP),
     overflowCount: Math.max(0, items.length - CAP),
     totalCount: items.length,
-    loading: alertsLoading || actionQueueLoading,
+    loading: teamsLoading || alertsLoading || actionQueueLoading,
     onRsvpResolved: () => {}, // coach NeedsYou has no inline RSVP
     myTeams,
   };

@@ -49,7 +49,14 @@ export default function AdminHomePage() {
   return (
     <HomeShell
       greeting={<HomeGreeting name={name} sublabel={sublabel} />}
-      needsYou={<NeedsYouSection {...needsYou} onNavigate={navigate} />}
+      needsYou={(
+        <NeedsYouSection
+          {...needsYou}
+          onNavigate={navigate}
+          emptyHeading="Nothing needs you"
+          emptySub="Briefings, RSVPs, and payments show up here."
+        />
+      )}
       comingUp={(
         <ComingUpSection
           event={comingUp}
