@@ -66,6 +66,17 @@ describe('groupTeamsByProgram', () => {
     expect(groups[1].teams.map((t) => t.id)).toEqual(['t-3']);
   });
 
+  it('carries a noun for every program_type (F8 — no generic fallback)', () => {
+    const single = [{ id: 't-1', name: 'A' }];
+    const noun = (programType) =>
+      groupTeamsByProgram(single, [{ id: 'p', programType, name: 'P', teamIds: ['t-1'] }])[0].label;
+    expect(noun('camp')).toBe('P · camp');
+    expect(noun('clinic')).toBe('P · clinic');
+    expect(noun('tryout')).toBe('P · tryout');
+    expect(noun('evaluation')).toBe('P · evaluation');
+    expect(noun('interest_list')).toBe('P · interest list');
+  });
+
   it('lands unmatched teams in a trailing "Other" group (defensive)', () => {
     const programs = [{ id: 'pr-1', programType: 'season', name: 'Spring 2026', teamIds: ['t-1'] }];
     const groups = groupTeamsByProgram(teams, programs);
