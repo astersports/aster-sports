@@ -1,0 +1,128 @@
+HOME REDESIGN — OPEN DECISIONS FOR THE DESIGN LANE
+From: Claude Code (build lane)  ·  To: claude.ai (design lane)  ·  re: PR #762
+Date: 2026-06-06
+
+Status: all three role homes shipped on the v2 shell + bug-scanned + dead-code
+swept (1370 tests green, preview live). The items below are the genuine
+design-lane calls still open. CC recommendations included. NONE are blockers
+for a smoke of the three homes.
+
+====================================================================
+D-A — COACH COMP CARD  (the one real spec-vs-reality gap)
+====================================================================
+The canon's coach tail wants a "this month · pay · $850 · 17 sessions" comp
+card. Verified against production, the data to render it honestly does NOT
+exist:
+  - coach_payouts = 0 rows (no accrued amounts)
+  - event_coach_assignments = 0 rows (no per-session count; "sessions worked"
+    is ambiguous for a multi-team coach like Kenny without it)
+  - coaching_assignments has the per-session RATE only
+  - there is NO coach-facing pay surface to link to
+Rendering "$X · N sessions" would be fabrication (AP#27), so it's deferred —
+CoachTail is "My teams" only today.
+Options:
+  A (current) — defer comp until a coach-pay surface + an accrual source exist.
+  B — build it: needs event_coach_assignments populated (or a heuristic) + a
+      coach pay view. A real Phase-2.5 feature.
+  C — rate-only ("$X/session", no accrual/link) — low value, odd with no
+      destination.
+CC recommendation: A for the pilot; B as a scoped follow-up when per-session
+data lands.
+
+====================================================================
+D-B — ALERT -> NEEDS-YOU VISUAL MERGE  (coach + admin)
+====================================================================
+The canon says alerts are "grouped into Needs you." Today, coach/admin alerts
+(RSVP shortfall, opponent/location-unassigned, etc.) render as plain Needs-you
+ROWS via a small label map (alertToActionItem) — functional and tappable, but
+not the richer AlertCard treatment (severity color, expandable event lists)
+the old AlertZone had.
+Decision: is the day-one row treatment acceptable, or do you want the full
+alert-card visual merged into the Needs-you archetype (and if so, spec the
+severity / expansion behavior inside the action card)?
+CC recommendation: rows are fine for the pilot; spec the full merge only if
+the severity signal is being lost.
+
+====================================================================
+D-C — DENSITY TOGGLE: WIRE IT OR RETIRE IT
+====================================================================
+Parent + coach homes carry the density toggle (it persists to
+user_preferences.card_density, 2-state per D2). But the new v2 shell cards do
+NOT read density — they render one fixed verbosity. So the toggle currently
+changes nothing visible.
+Decision: either (1) define what "minimal vs maximum" actually changes on the
+v2 cards (which cards, what collapses) and CC wires it; or (2) retire the
+toggle for day-one (storage stays, control hidden) until a verbosity need is
+named.
+CC recommendation: retire the visible toggle for the pilot (it's a no-op
+today); re-add when a concrete min/max card spec exists.
+
+====================================================================
+D-D — OFF-SEASON STATES  (per role)
+====================================================================
+The shell contract lists off-season as a shared home state, and the renders
+show it for all three roles (parent: "Spring wrapped" + records + next-season;
+admin: "wrapped · reconcile financials · roll rosters"). Today only ParentTail
+has a minimal off-season branch; coach + admin off-season are not built (they
+will just show empty Needs-you + no Coming-up between seasons). Pilot hits
+off-season ~June 15.
+Decision: confirm the off-season content per role so CC can build all three
+(parent wrap, coach wrap, admin reconcile/rollover prompt) before June 15.
+CC recommendation: spec the three off-season bodies now; it is a dated need.
+
+====================================================================
+D-E — ADMIN BRIEFINGS ITEM: READY / OVERDUE SPLIT
+====================================================================
+The admin Needs-you "Briefings" item (pinned first) shows a single total count
+("N to review") -> Radar. The render wanted "X ready to send · Y overdue." CC
+can split it from the queue source (comms_messages drafts = ready; synthetic
+needs-briefing rows = to-write/overdue), but the exact labels + whether
+"synthetic" maps cleanly to "overdue" need your confirmation.
+CC recommendation: confirm the mapping (ready = drafts, overdue = past-game
+synthetic) and CC splits the subtitle.
+
+====================================================================
+D-F — NEEDS-YOU COMPOSITION  (coach + admin: the 3 vs. the extras)
+====================================================================
+The contract lists 3 headline items per role (admin: briefings / RSVP-shortfall
+/ payments; coach: prep / RSVP-shortfall / roster-gated). CC also fills the
+remaining cap-4 slots with the existing action queues — admin: unscored games +
+pending invites; coach: unpublished scores + pending achievements. The renders
+show only the 3 headline items.
+Decision: should admin/coach Needs-you include those secondary action-queue
+items (scores/invites/achievements), or be strictly the 3 contract items
+(moving the rest to their own pages)?
+CC recommendation: keep them — they are genuine admin/coach actions and
+grouping holds the cap; but your call on whether they belong on home.
+
+====================================================================
+D-G — PARENT COMMS ITEM: PILOT RECIPIENT-ROW  (CC to verify; FYI)
+====================================================================
+Per Decision 2 (locked: A), the parent comms card = the latest UNREAD briefing,
+absent otherwise. Pilot mode is on, so it is empty until a briefing reaches a
+guardian. Open question CC will verify (NOT an architect call): does a PILOT
+send actually write the in-app comms_message_recipients row for the guardian
+(so the card lights up for Ashley), or does pilot only route the email? If
+pilot skips the in-app row, CC fixes that path. Flagging so you know the parent
+comms card may read empty in the smoke until confirmed.
+
+====================================================================
+ALREADY CLOSED  (context — no action)
+====================================================================
+- D1 a11y meta-text token, D2 density 2-state, D5 gold-for-achievement token:
+  ratified + shipped.
+- Migration premise (013/018/020 all applied; gate is data not schema), RSVP
+  3-state present, NextEventCard naming, UPCOMING_SEED already gone, B4 coach
+  page, coach scopes-to-team day-one, hooks-own-fetching, week -> Schedule tab,
+  weather constant dedup: all reconciled + built.
+- The live "Draft with AI" bug (team_staff <-> staff_profiles): fixed + swept.
+- Bundle: the redesign shrank the entry chunk (184.9 vs 198.6 KB gz on main).
+
+====================================================================
+SUMMARY
+====================================================================
+One real product gap (D-A comp), one dated build need (D-D off-season), and
+four "confirm the treatment" calls (D-B merge, D-C density, D-E briefings
+split, D-F needs-you composition). D-G is a CC verification flagged for
+awareness. The pilot can smoke the three homes today without any of these
+resolved.
