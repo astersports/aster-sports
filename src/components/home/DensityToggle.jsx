@@ -1,9 +1,10 @@
 // src/components/home/DensityToggle.jsx
 // Phase 1 Step 5E-1: Density toggle chip for SectionShell.titleAction slot.
-// Cycles minimal → medium → maximum and persists to user_preferences.card_density
-// JSONB via useDensity(sectionKey).
+// Toggles minimal ⇄ maximum and persists to user_preferences.card_density
+// JSONB via useDensity(sectionKey). 2-state per CLAUDE.md §16.2 (home-level,
+// ratified 2026-06-05; the dead 3-level `medium` references were removed here).
 //
-// Visual: adaptive bar icon (4/3/2 lines for min/med/max) + uppercase label.
+// Visual: adaptive bar icon (4/2 lines for min/max) + uppercase label.
 // Pattern matches the 11px uppercase-tertiary aesthetic of section titles.
 // 44px tap target with smaller visible chip; pad area is transparent hitbox.
 //
@@ -18,7 +19,7 @@ const LABELS = { minimal: 'Compact', maximum: 'Detailed' };
 const NEXT_DENSITY = { minimal: 'maximum', maximum: 'minimal' };
 
 function DensityIcon({ density }) {
-  const lineCount = density === 'minimal' ? 4 : density === 'medium' ? 3 : 2;
+  const lineCount = density === 'minimal' ? 4 : 2;
   const top = 3;
   const bottom = 13;
   const span = bottom - top;
@@ -45,8 +46,8 @@ function DensityIcon({ density }) {
 
 export default function DensityToggle({ sectionKey = 'default' }) {
   const { density, cycleDensity, loading } = useDensity(sectionKey);
-  const label = LABELS[density] || LABELS.medium;
-  const nextLabel = LABELS[NEXT_DENSITY[density]] || LABELS.medium;
+  const label = LABELS[density] || LABELS.minimal;
+  const nextLabel = LABELS[NEXT_DENSITY[density]] || LABELS.minimal;
 
   const handleClick = () => {
     if (loading) return;

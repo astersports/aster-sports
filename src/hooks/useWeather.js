@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { registerCacheBuster } from '../lib/cacheBuster';
+import { WEATHER_TZ } from '../lib/constants';
 
 const CACHE_PREFIX = 'aster-weather-cache:';
 const FALLBACK_PREFIX = 'aster-weather-fallback:';
@@ -64,7 +65,7 @@ export function useWeather(lat, lon) {
         if (Date.now() - parsed.ts < CACHE_TTL) { Promise.resolve().then(() => setWeather(parsed.data)); return; }
       } catch { /* ignore */ }
     }
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=America%2FNew_York&forecast_days=7`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=${encodeURIComponent(WEATHER_TZ)}&forecast_days=7`;
     fetch(url).then((r) => r.json()).then((json) => {
       if (!json.hourly) return;
       const codes = json.hourly.weather_code || json.hourly.weathercode;

@@ -40,4 +40,49 @@ describe('NextEventCard', () => {
     const { container } = render(<NextEventCard event={event} />);
     expect(container.firstChild).not.toBeNull();
   });
+
+  it('arrival line (#3): parent-gated via `arrival`; 15 min + "· game day" for games, 5 min for practices', () => {
+    const game = render(<NextEventCard event={{ id: 'g', start_at: inHours(8), event_type: 'game', teams: { name: '10U Blue' } }} arrival />);
+    expect(game.container.textContent).toMatch(/Arrive 15 minutes early · game day/);
+    cleanup();
+    const practice = render(<NextEventCard event={{ id: 'p', start_at: inHours(8), event_type: 'practice', teams: { name: '10U Blue' } }} arrival />);
+    expect(practice.container.textContent).toMatch(/Arrive 5 minutes early/);
+    expect(practice.container.textContent).not.toMatch(/game day/);
+    cleanup();
+    // admin/coach: no `arrival` prop → no line
+    const none = render(<NextEventCard event={{ id: 'n', start_at: inHours(8), event_type: 'game', teams: { name: '10U Blue' } }} />);
+    expect(none.container.textContent).not.toMatch(/Arrive/);
+  });
+
+  it('draft pill (#2): renders "May reschedule · draft" only when draft is true', () => {
+    const event = { id: 't', start_at: inHours(48), event_type: 'tournament', teams: { name: '11U Girls' } };
+    const on = render(<NextEventCard event={event} draft />);
+    expect(on.container.textContent).toMatch(/May reschedule · draft/);
+    cleanup();
+    const off = render(<NextEventCard event={event} draft={false} />);
+    expect(off.container.textContent).not.toMatch(/reschedule/);
+  });
+
+  it('eyebrow: renders the role-specific label (parent "Next · Milo", default "Next event")', () => {
+    const ev = { id: 'e', start_at: inHours(8), event_type: 'game', teams: { name: '10U Blue' } };
+    const withKid = render(<NextEventCard event={ev} eyebrow="Next · Milo" />);
+    expect(withKid.container.textContent).toMatch(/Next · Milo/i);
+    cleanup();
+    const dflt = render(<NextEventCard event={ev} />);
+    expect(dflt.container.textContent).toMatch(/Next event/i);
+  });
+
+  it('minimal (coach): hides the countdown + weather', () => {
+    const ev = { id: 'm', start_at: inHours(8), event_type: 'practice', teams: { name: '9U Boys' } };
+    const { container } = render(<NextEventCard event={ev} weather={{ icon: '☁', temp: 64 }} minimal />);
+    expect(container.textContent).not.toMatch(/\d+h \d+m/); // no countdown
+    expect(container.textContent).not.toMatch(/64°/); // no weather
+    expect(container.textContent).toMatch(/9U Boys/); // still shows the event
+  });
+
+  it('team-color left rail: the event card edges in the team color', () => {
+    const { container } = render(<NextEventCard event={{ id: 'c', start_at: inHours(8), event_type: 'game', teams: { name: '10U Blue', team_color: '#4a8fd4' } }} />);
+    // jsdom normalizes the hex to rgb()
+    expect(container.firstChild.style.borderLeft).toBe('3px solid rgb(74, 143, 212)');
+  });
 });

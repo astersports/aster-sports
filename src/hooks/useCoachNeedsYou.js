@@ -1,0 +1,63 @@
+import { useMemo } from 'react';
+import { useCoachHomeSignals } from './useCoachHomeSignals';
+import { alertToActionItem, summarizeActionQueue } from '../lib/home/coachHomeData';
+import { TYPE_LABELS } from '../lib/constants';
+
+// useCoachNeedsYou — owns the coach "Needs you" signals (shell contract v2).
+// Day-one scope (HOME_DAYONE): the prep card for the next TEAM event (Rule 1
+// — coach scopes to team via team_staff until event_coach_assignments is
+// populated) + the action chips, then RSVP shortfall + coach action queue
+// (unpublished scores, pending achievements). Roster-health is deferred
+// (check_ins = 0). Capped at CAP with a "see all" overflow. Re-exports
+// myTeams so the page doesn't double-call useCoachHomeSignals.
+const PREP_CHIPS = [
+  { label: 'Start Check-In', to: '/schedule', primary: true },
+  { label: 'Quick Score', to: '/records' },
+  { label: 'Message', to: '/messages' },
+  { label: 'Briefings', to: '/team-briefings' },
+];
+const CAP = 4;
+
+export function useCoachNeedsYou({ userId, activities, nowMs }) {
+  const {
+    myTeams, coachedTeamIds, coachAlerts, actionQueueItems,
+    teamsLoading, alertsLoading, actionQueueLoading,
+  } = useCoachHomeSignals(userId, nowMs);
+
+  const teamSet = useMemo(() => new Set(coachedTeamIds), [coachedTeamIds]);
+  const prep = useMemo(() => {
+    const next = (activities || [])
+      .filter((a) => a.start_at && a.status !== 'cancelled' && teamSet.has(a.team_id)
+        && new Date(a.start_at).getTime() >= nowMs)
+      .sort((a, b) => new Date(a.start_at) - new Date(b.start_at))[0];
+    if (!next) return null;
+    const teamName = next.teams?.name || '';
+    const typeLabel = TYPE_LABELS[next.event_type] || 'Event';
+    return {
+      domain: 'prep', id: 'prep', event_id: next.id,
+      // "{team} · {type}" title + location subtitle, matching HOME_RENDERS.
+      title: [teamName, typeLabel].filter(Boolean).join(' · '),
+      subtitle: next.location || next.locations?.name || null,
+      start_at: next.start_at, team_name: teamName,
+      team_color: next.teams?.team_color || 'var(--as-accent)', chips: PREP_CHIPS,
+    };
+  }, [activities, teamSet, nowMs]);
+
+  const items = useMemo(() => {
+    const alertItems = (coachAlerts || []).map(alertToActionItem);
+    const queueItem = (actionQueueItems || []).length ? {
+      domain: 'generic', id: 'coach-queue', primary: 'Action queue', queue: true,
+      grouped: actionQueueItems.length, subtitle: summarizeActionQueue(actionQueueItems), to: '/records',
+    } : null;
+    return [...(prep ? [prep] : []), ...alertItems, ...(queueItem ? [queueItem] : [])];
+  }, [prep, coachAlerts, actionQueueItems]);
+
+  return {
+    items: items.slice(0, CAP),
+    overflowCount: Math.max(0, items.length - CAP),
+    totalCount: items.length,
+    loading: teamsLoading || alertsLoading || actionQueueLoading,
+    onRsvpResolved: () => {}, // coach NeedsYou has no inline RSVP
+    myTeams,
+  };
+}

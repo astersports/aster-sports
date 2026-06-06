@@ -7,8 +7,9 @@ const FALLBACK = 'minimal';
 
 /**
  * useDensity(sectionKey)
- * Per-section density hook. Reads from user_preferences.card_density JSONB.
- * Resolution: card_density[sectionKey] -> card_density.default -> 'medium'.
+ * Density hook. Reads from user_preferences.card_density JSONB. 2-state
+ * (minimal | maximum) per CLAUDE.md §16.2 (home-level, ratified 2026-06-05).
+ * Resolution: card_density[sectionKey] -> card_density.default -> defaultDensity.
  */
 export function useDensity(sectionKey, defaultDensity = FALLBACK) {
   const { preferences, loading, mergePreferenceJson } = usePreferences();

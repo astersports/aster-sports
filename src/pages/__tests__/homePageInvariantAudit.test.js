@@ -32,9 +32,9 @@ const PAGES_DIR = join(__dirname, '..');
 const SRC_DIR = join(__dirname, '..', '..');
 
 const HOMES = [
-  { file: 'ParentHomePage.jsx', hook: 'useParentHomeSignals' },
-  { file: 'CoachHomePage.jsx',  hook: 'useCoachHomeSignals'  },
-  { file: 'AdminHomePage.jsx',  hook: 'useAdminHomeSignals'  },
+  { file: 'ParentHomePage.jsx', hook: 'useParentNeedsYou' },
+  { file: 'CoachHomePage.jsx',  hook: 'useCoachNeedsYou'  },
+  { file: 'AdminHomePage.jsx',  hook: 'useAdminNeedsYou'  },
 ];
 
 // Cross-role home cards/widgets shipped through today's session arc
@@ -42,18 +42,15 @@ const HOMES = [
 // silent growth past anti-pattern #11's threshold on any of the
 // signal-agnostic shells or the small role-specific cards.
 const HOME_COMPONENTS = [
-  'components/home/ActionZone.jsx',
-  'components/home/PendingQueuesLanes.jsx',
-  'components/home/UpcomingPrepCard.jsx',
-  'components/home/RegistrationReminderCard.jsx',
-  'components/home/CoachMessageBlock.jsx',
-  'components/home/CoachHomeQuickActions.jsx',
-  'components/home/LiveNowCard.jsx',
-  'components/home/TournamentWeekendBanner.jsx',
-  'components/home/RecognitionCard.jsx',
-  'components/admin/ProgramHealthCard.jsx',
-  'components/admin/RecentActivityFeed.jsx',
-  'components/admin/RidesTodayCard.jsx',
+  'components/home/HomeShell.jsx',
+  'components/home/HomeGreeting.jsx',
+  'components/home/NeedsYouSection.jsx',
+  'components/home/ActionRow.jsx',
+  'components/home/ComingUpSection.jsx',
+  'components/home/ParentTail.jsx',
+  'components/home/CoachTail.jsx',
+  'components/home/AdminTail.jsx',
+  'components/home/AdminProgramHealth.jsx',
 ];
 
 const LINE_CAP = 150;

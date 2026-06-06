@@ -41,6 +41,9 @@ export default function AdminSeasonsPage() {
       <AdminSeasonsHeader title="Seasons" actions={
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link to="/admin/programs/new" style={{ color: 'var(--as-accent)', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>+ Program</Link>
+          {/* Season rollover lives here (manage seasons → roll the roster to
+              the next one). Rehomed from the retired admin-home Manage links. */}
+          <Link to="/admin/rollover" style={{ color: 'var(--as-accent)', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Rollover</Link>
           <AdminSeasonsActions onNew={openNew} />
         </div>
       } />

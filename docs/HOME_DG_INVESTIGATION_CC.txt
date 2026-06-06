@@ -1,0 +1,116 @@
+==============================================================================
+D-G PILOT RECIPIENT ROW — INVESTIGATION FINDINGS  (Claude Code -> design lane)
+Date: 2026-06-06.  Sequence item #5 (last) from HOME_RENDER_RULES_CC.txt.
+==============================================================================
+
+REQUIREMENT (verbatim):
+  "a pilot send MUST write the in-app comms_message_recipients row for the
+   guardian so the parent comms card lights up. If pilot only routes email,
+   fix that path."
+
+VERDICT: There are TWO pilot paths. One is fine; one only routes email.
+The broken one needs a SCHEMA change (CREATE OR REPLACE on the
+get_digest_recipients RPC), so per Rule 19 + the "no migration" build
+constraint I am STOPPING and reporting rather than applying. Decision +
+GO needed from the design lane / Frank before the fix lands.
+
+------------------------------------------------------------------------------
+HOW THE PARENT COMMS CARD LIGHTS UP
+------------------------------------------------------------------------------
+- Parent home "Needs you" comms item  ← useParentNeedsYou.commsItem
+  ← useInboxList: SELECT FROM comms_message_recipients
+       .eq('guardian_id', <the parent's guardianId>)
+- No filter on delivery_status or sent_at. Any row whose guardian_id matches
+  the parent shows up (null sent_at sorts to the top). So the ONLY thing that
+  makes a parent's card light up is a comms_message_recipients row carrying
+  THAT guardian's guardian_id.
+
+------------------------------------------------------------------------------
+PATH 1 — ORG PILOT MODE (is_pilot_family).  STATUS: WORKS, no change needed.
+------------------------------------------------------------------------------
+- organizations / org pilot mode on, pilot_test_recipient_email NOT set.
+- get_digest_recipients(p_org_id, p_pilot_only=TRUE) returns the REAL
+  is_pilot_family guardians (6 for Legacy Hoopers) with real guardian_id.
+- digestSend writes one comms_message_recipients row per family with
+  guardian_id = f.family.guardian_id (real). → those parents' cards light up.
+  ✓ Correct already.
+
+------------------------------------------------------------------------------
+PATH 2 — PILOT TEST OVERRIDE (pilot_test_recipient_email).  STATUS: BROKEN.
+------------------------------------------------------------------------------
+- organization_settings.pilot_test_recipient_email set (e.g.
+  admin@legacyhoopers.org), p_pilot_only=TRUE.
+- get_digest_recipients returns ONE SYNTHETIC row, by design:
+      guardian_id = NULL  (migration 20260511122118 calls null the
+      "sentinel for UI to surface override state"),
+      email       = pilot_test_recipient_email,
+      team_ids    = all org teams.
+- digestSend.js:102 stamps guardian_id: f.family.guardian_id  → NULL.
+  A comms_message_recipients row IS written, but with guardian_id = NULL.
+- useInboxList filters .eq('guardian_id', guardianId). A NULL-guardian row
+  matches NO parent. → the email routes (edge fn reads the row) but the
+  parent comms card NEVER lights up.  ✗  This is exactly the
+  "pilot only routes email" failure the requirement names.
+
+(Same shape as the admin BCC row: guardian_id NULL, email-only, invisible
+in any parent inbox — intended for BCC, not for lighting a card.)
+
+Scope note: the synthetic-override path is wired through the WEEKLY DIGEST
+send (sendWeeklyDigestFromWizard → digestSend, via get_digest_recipients).
+The 6 calendar-anchored kinds (game_recap, schedule_change, tournament_*,
+rsvp_nudge, academy_callup) resolve their audience through recipientFilter /
+audience.js, NOT get_digest_recipients, so they don't hit the synthetic
+override at all — a pilot-test send of those kinds has no per-guardian row
+either (it BCCs admin only via test_only). Confirmed: test_only →
+buildFamilyRows returns [] (queueRecipients.js:21, queueComposedMessages
+buildFanoutRows), admin BCC only.
+
+------------------------------------------------------------------------------
+FIX OPTIONS
+------------------------------------------------------------------------------
+OPTION A (clean, single source) — RPC change = MIGRATION (needs GO, Rule 19):
+  In get_digest_recipients, when pilot_test_recipient_email matches a REAL
+  guardian's email in the org, return that guardian's real guardian_id (and
+  their team_ids) instead of the NULL synthetic. Then digestSend writes a
+  guardian-matched row and that parent's card lights up — while the email
+  still routes to the same address. If the pilot test email is NOT a guardian
+  (e.g. a pure admin address with no kids), keep the NULL synthetic (nothing
+  to light up — correct).
+  Cost: CREATE OR REPLACE FUNCTION public.get_digest_recipients(...).
+  This is a migration. STOP-and-report per Rule 19 — not applied.
+
+OPTION B (app-layer, no migration) — resolve guardian_id before insert:
+  In digestSend (and the wizard mapper), for a synthetic row whose email
+  matches a guardian in the org, look up guardians.id by email and stamp it
+  on the comms_message_recipients row. Covers weekly_digest only. Downsides:
+  (1) mutates the "guardian_id = NULL = override sentinel" contract the UI
+  relies on to surface override state — needs a parallel signal; (2) adds a
+  per-send guardians-by-email lookup; (3) doesn't touch the calendar-anchored
+  kinds (they never write a per-guardian row in pilot/test today). It's a
+  design-contract change, not a mechanical edit — so it also wants a GO.
+
+OPTION C (reframe) — is the pilot test recipient even a guardian?
+  pilot_test_recipient_email is admin@legacyhoopers.org (Frank, the admin).
+  If Frank's test family should see the card, the pilot test email needs to
+  be a guardian email that belongs to a real family (or org pilot mode /
+  is_pilot_family should be used instead of the override). Worth confirming
+  the intended test identity before picking A vs B.
+
+------------------------------------------------------------------------------
+RECOMMENDATION
+------------------------------------------------------------------------------
+Option A is the truer fix (one source, no sentinel-contract churn), but it
+is a migration. Recommend: confirm the intended pilot-test identity (Option
+C question) → if it should light a real family's card, GO on Option A
+(I'll write the migration + DO-block verification + mirror file in one PR
+once GO lands). If the pilot test is meant to stay an email-only smoke
+(admin-only, no card), then PATH 2 is working as designed and D-G closes as
+"no change — use org pilot mode (is_pilot_family) when you want the parent
+card to light up," which PATH 1 already does correctly.
+
+Everything else in the HOME_RENDER_RULES_CC sequence is shipped + green:
+off-season (D-D), arrival line (#3), urgent tint (#1a), draft pill (#2),
+deadline chip (#1b). D-G is the only open item, blocked on this decision.
+==============================================================================
+END.
+==============================================================================

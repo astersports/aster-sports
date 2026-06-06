@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useActivities } from '../../hooks/useActivities';
 import { useNow } from '../../hooks/useNow';
 import { getWeatherForTime, useWeather } from '../../hooks/useWeather';
+import { WEATHER_DEFAULT_COORDS } from '../../lib/constants';
 import TextEmptyState from '../shared/TextEmptyState';
 import EventCard from '../schedule/EventCard';
 
@@ -13,7 +14,7 @@ export default function UpcomingEvents({ teamId }) {
   const { activities } = useActivities();
   const navigate = useNavigate();
   const now = useNow();
-  const weather = useWeather(41.03, -73.76);
+  const weather = useWeather(...WEATHER_DEFAULT_COORDS);
 
   const upcoming = useMemo(() => {
     if (!teamId) return [];

@@ -1,8 +1,14 @@
+import { Clock } from 'lucide-react';
 import { useNow } from '../../hooks/useNow';
 import { formatEventTitleString } from '../../lib/eventTitle';
+import Badge from '../shared/Badge';
 import Label from '../shared/Label';
 
 const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
+
+// Arrival protocol copy (HOME_RENDER_RULES_CC #3): games + tournaments call
+// for 15 minutes early ("· game day"), practices (+ everything else) for 5.
+const arriveMinutes = (t) => (t === 'game' || t === 'tournament' ? 15 : 5);
 
 function useLiveCountdown(targetDate) {
   const now = useNow(1000);
@@ -20,50 +26,62 @@ function useLiveCountdown(targetDate) {
   return `${mins}m ${secs}s`;
 }
 
-export default function NextEventCard({ event, weather }) {
+// draft (#2, tournaments) + arrival (#3) render only on the PARENT Coming-up
+// card per HOME_RENDERS — admin/coach pass neither. Team-color left rail is
+// the event archetype's identity edge. eyebrow varies by role ("Next · {kid}"
+// / "Next team event" / "Next event"); minimal (coach) drops countdown+weather.
+export default function NextEventCard({ event, weather, draft, arrival, eyebrow = 'Next event', minimal = false }) {
   const countdown = useLiveCountdown(event?.start_at);
   if (!event) return null;
   const teamName = event.teams?.name;
+  const rail = event.teams?.team_color || 'var(--as-accent)';
   const dt = new Date(event.start_at);
   const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
   const timeStr = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
   const title = formatEventTitleString(event);
+  const mins = arriveMinutes(event.event_type);
   return (
     <div
       className="as-stagger-5"
       style={{
-        backgroundColor: 'var(--as-bg-card)',
-        borderRadius: 10,
-        border: '1px solid var(--as-border-default)',
-        boxShadow: 'var(--as-shadow-sm)',
-        padding: '12px 16px',
-        marginTop: 8,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        backgroundColor: 'var(--as-bg-card)', borderRadius: 10,
+        border: '1px solid var(--as-border-default)', borderLeft: `3px solid ${rail}`,
+        boxShadow: 'var(--as-shadow-sm)', padding: '12px 14px', marginTop: 8,
       }}
     >
-      <div>
-        <Label style={{ marginBottom: 0 }}>NEXT EVENT</Label>
-        <div className="font-semibold" style={{ fontSize: 15, color: 'var(--as-text-primary)', marginTop: 2 }}>
-          {title}{teamName ? ` · ${teamName}` : ''}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ minWidth: 0 }}>
+          <Label style={{ marginBottom: 0 }}>{eyebrow}</Label>
+          <div className="font-semibold" style={{ fontSize: 15, color: 'var(--as-text-primary)', marginTop: 2 }}>
+            {title}{teamName ? ` · ${teamName}` : ''}
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 2 }}>
+            {dateStr} · {timeStr}{event.location ? ` · ${event.location}` : ''}
+          </div>
         </div>
-        <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 2 }}>
-          {dateStr} · {timeStr}{event.location ? ` · ${event.location}` : ''}
-        </div>
-      </div>
-      <div style={{ textAlign: 'right' }}>
-        {weather && <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginBottom: 2 }}>{weather.icon} {weather.temp}°</div>}
-        <div className="font-bold" style={{ fontSize: 17, color: 'var(--as-accent)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-          {countdown || '—'}
-        </div>
-        {countdown === 'Now' && (
-          <div className="as-pulse-dot" style={{
-            width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--as-success)',
-            margin: '4px 0 0 auto',
-          }} />
+        {!minimal && (
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            {weather && <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginBottom: 2 }}>{weather.icon} {weather.temp}°</div>}
+            <div className="font-bold" style={{ fontSize: 17, color: 'var(--as-accent)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+              {countdown || '—'}
+            </div>
+            {countdown === 'Now' && (
+              <div className="as-pulse-dot" style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--as-success)', margin: '4px 0 0 auto' }} />
+            )}
+          </div>
         )}
       </div>
+      {draft && (
+        <div style={{ marginTop: 8 }}>
+          <Badge pill variant="warning" compact style={{ border: '1px solid var(--as-warning)' }}>May reschedule · draft</Badge>
+        </div>
+      )}
+      {arrival && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: 'var(--as-text-secondary)', marginTop: 9 }}>
+          <Clock size={13} strokeWidth={1.85} color="var(--as-accent)" aria-hidden="true" />
+          Arrive {mins} minutes early{mins === 15 ? ' · game day' : ''}
+        </div>
+      )}
     </div>
   );
 }

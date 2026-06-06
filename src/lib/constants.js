@@ -34,6 +34,14 @@ export const USER_ROLES = ['admin', 'coach', 'parent'];
 
 export const MEMBER_TYPES = ['roster', 'futures_academy'];
 
+// Default weather location + forecast timezone. Single source for the
+// coords that were duplicated across the home + schedule surfaces
+// (home-redesign cleanup, Rule 8 multi-tenant-leak). Today this is Legacy
+// Hoopers' Westchester anchor (WCC); per-org coordinates (org.location
+// lat/lon) are a separate multi-tenant item — not built yet.
+export const WEATHER_DEFAULT_COORDS = [41.03, -73.76];
+export const WEATHER_TZ = 'America/New_York';
+
 export function buildTitle(type, opponent) {
   if ((type === 'game' || type === 'tournament') && opponent) return `vs. ${opponent}`;
   return TYPE_LABELS[type] || 'Event';

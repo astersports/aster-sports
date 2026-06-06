@@ -65,7 +65,7 @@ export function useAlertEvaluator() {
         .select('id, org_id, alert_type_id, instance_key, enabled, threshold_config, evaluation_order, alert_type:alert_types ( key, default_severity, is_primitive )')
         .eq('org_id', orgId).eq('enabled', true);
       if (cancelled) return;
-      if (err) { setError(err); setLoading(false); return; }
+      if (err) { setError(err); setConfigs([]); setLoading(false); return; }
       const flat = (data || []).map((c) => ({ ...c, alert_type_key: c.alert_type?.key }));
       setConfigs(flat);
     });
