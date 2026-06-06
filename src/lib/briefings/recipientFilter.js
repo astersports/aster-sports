@@ -86,9 +86,22 @@ export async function resolveAudience({ recipients, audienceType, audienceFilter
 export async function resolvePlayerSpecificAudience(playerIds) {
   if (!Array.isArray(playerIds) || !playerIds.length) return [];
   const { supabase } = await import('../supabase');
+  // players has NO team_id column — team membership lives in team_players
+  // (a player can be on MULTIPLE teams). Look up each player's team(s)
+  // from team_players, then join to the player's guardians in JS.
+  const { data: tpRows, error: tpError } = await supabase
+    .from('team_players').select('player_id, team_id').in('player_id', playerIds);
+  if (tpError) throw tpError;
+  const teamIdsByPlayer = new Map();
+  for (const row of tpRows || []) {
+    if (!row.player_id || !row.team_id) continue;
+    if (!teamIdsByPlayer.has(row.player_id)) teamIdsByPlayer.set(row.player_id, []);
+    const list = teamIdsByPlayer.get(row.player_id);
+    if (!list.includes(row.team_id)) list.push(row.team_id);
+  }
   const { data, error } = await supabase
     .from('player_guardians')
-    .select('guardian_id, guardians(email), players(team_id)')
+    .select('player_id, guardian_id, guardians(email)')
     .in('player_id', playerIds);
   if (error) throw error;
   const dedupe = new Map();
@@ -98,8 +111,9 @@ export async function resolvePlayerSpecificAudience(playerIds) {
     if (!gid || !email) continue;
     if (!dedupe.has(gid)) dedupe.set(gid, { guardian_id: gid, email, team_ids: [] });
     const slot = dedupe.get(gid);
-    const tid = row.players?.team_id;
-    if (tid && !slot.team_ids.includes(tid)) slot.team_ids.push(tid);
+    for (const tid of teamIdsByPlayer.get(row.player_id) || []) {
+      if (tid && !slot.team_ids.includes(tid)) slot.team_ids.push(tid);
+    }
   }
   return Array.from(dedupe.values());
 }
