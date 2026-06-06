@@ -40,8 +40,8 @@ export function alertToActionItem(alert) {
   return {
     domain: 'generic',
     id: `alert-${alert.config_id}`,
-    primary: label,
-    subtitle: n ? `${n} event${n !== 1 ? 's' : ''}` : null,
+    // HOME_RENDERS alert rows read "{label} · {N events}" on one line.
+    primary: n ? `${label} · ${n} event${n !== 1 ? 's' : ''}` : label,
     to: '/schedule',
     // Severity drives the act-now treatment (amber/red rail + icon) in
     // ActionRow — D-B. critical → danger, warning → amber, else neutral.

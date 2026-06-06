@@ -66,6 +66,8 @@ export default function CoachHomePage() {
         <ComingUpSection
           event={comingUp}
           weather={getWeatherForTime(weather, comingUp?.start_at)}
+          eyebrow="Next team event"
+          minimal
           onSeeSchedule={() => navigate('/schedule')}
         />
       )}

@@ -62,6 +62,7 @@ export function useAdminNeedsYou({ orgId, activities, seasonId, nowMs, offSeason
     if (owingCount > 0) {
       out.push({
         domain: 'generic', id: 'payments', primary: 'Payments overdue',
+        severity: 'warning', iconKey: 'dollar', grouped: owingCount,
         subtitle: `${formatCurrency(owingCents)} · ${owingCount} famil${owingCount === 1 ? 'y' : 'ies'}`,
         to: '/admin/financials',
       });

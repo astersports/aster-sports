@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useCoachHomeSignals } from './useCoachHomeSignals';
-import { formatEventTitleString } from '../lib/eventTitle';
 import { alertToActionItem, summarizeActionQueue } from '../lib/home/coachHomeData';
+import { TYPE_LABELS } from '../lib/constants';
 
 // useCoachNeedsYou — owns the coach "Needs you" signals (shell contract v2).
 // Day-one scope (HOME_DAYONE): the prep card for the next TEAM event (Rule 1
@@ -11,7 +11,7 @@ import { alertToActionItem, summarizeActionQueue } from '../lib/home/coachHomeDa
 // (check_ins = 0). Capped at CAP with a "see all" overflow. Re-exports
 // myTeams so the page doesn't double-call useCoachHomeSignals.
 const PREP_CHIPS = [
-  { label: 'Check-In', to: '/schedule' },
+  { label: 'Start Check-In', to: '/schedule', primary: true },
   { label: 'Quick Score', to: '/records' },
   { label: 'Message', to: '/messages' },
   { label: 'Briefings', to: '/team-briefings' },
@@ -31,10 +31,14 @@ export function useCoachNeedsYou({ userId, activities, nowMs }) {
         && new Date(a.start_at).getTime() >= nowMs)
       .sort((a, b) => new Date(a.start_at) - new Date(b.start_at))[0];
     if (!next) return null;
+    const teamName = next.teams?.name || '';
+    const typeLabel = TYPE_LABELS[next.event_type] || 'Event';
     return {
       domain: 'prep', id: 'prep', event_id: next.id,
-      title: formatEventTitleString(next),
-      start_at: next.start_at, team_name: next.teams?.name || '',
+      // "{team} · {type}" title + location subtitle, matching HOME_RENDERS.
+      title: [teamName, typeLabel].filter(Boolean).join(' · '),
+      subtitle: next.location || next.locations?.name || null,
+      start_at: next.start_at, team_name: teamName,
       team_color: next.teams?.team_color || 'var(--as-accent)', chips: PREP_CHIPS,
     };
   }, [activities, teamSet, nowMs]);

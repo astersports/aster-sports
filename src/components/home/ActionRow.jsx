@@ -1,4 +1,4 @@
-import { AlertTriangle, ChevronRight, ListChecks, Mail } from 'lucide-react';
+import { AlertTriangle, ChevronRight, DollarSign, ListChecks, Send } from 'lucide-react';
 import ChildRsvp from '../schedule/ChildRsvp';
 import Badge from '../shared/Badge';
 import { formatDayTime } from '../../lib/formatters';
@@ -29,7 +29,7 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
       <button type="button" onClick={() => onNavigate(item.to || '/messages')} className="as-press"
         style={{ ...card('var(--as-accent)'), ...TAP }} aria-label={`${label}${sub ? `: ${sub}` : ''}`}>
         <span style={{ width: 30, height: 30, borderRadius: 8, display: 'grid', placeItems: 'center', flexShrink: 0, backgroundColor: 'var(--as-accent-soft)', color: 'var(--as-accent)' }}>
-          <Mail size={16} strokeWidth={1.75} aria-hidden="true" />
+          <Send size={16} strokeWidth={1.75} aria-hidden="true" />
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={KT}>
@@ -74,12 +74,17 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
   if (item.domain === 'prep') {
     return (
       <div style={card(rail)}>
-        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--as-text-meta)' }}>Prep · next up</div>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--as-accent)' }}>Prep · {formatDayTime(item.start_at)}</div>
         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-text-primary)', marginTop: 3 }}>{item.title}</div>
-        <div style={EVLINE}>{formatDayTime(item.start_at)}{item.team_name ? ` · ${item.team_name}` : ''}</div>
+        {item.subtitle && <div style={EVLINE}>{item.subtitle}</div>}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 9 }}>
           {item.chips.map((c) => (
-            <button key={c.label} type="button" onClick={() => onNavigate(c.to)} className="as-press" style={CHIP}>{c.label}</button>
+            <button key={c.label} type="button" onClick={() => onNavigate(c.to)} className="as-press"
+              style={c.primary
+                ? { ...CHIP, backgroundColor: 'var(--as-accent)', borderColor: 'var(--as-accent)', color: 'var(--as-text-inverse)' }
+                : CHIP}>
+              {c.label}
+            </button>
           ))}
         </div>
       </div>
@@ -96,7 +101,9 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
       style={{ ...card(genRail), ...TAP }} aria-label={item.primary}>
       {sevColor && (
         <span style={{ width: 28, height: 28, borderRadius: 7, display: 'grid', placeItems: 'center', flexShrink: 0, backgroundColor: item.severity === 'critical' ? 'var(--as-danger-soft)' : 'var(--as-warning-soft)', color: sevColor }}>
-          <AlertTriangle size={16} strokeWidth={1.75} aria-hidden="true" />
+          {item.iconKey === 'dollar'
+            ? <DollarSign size={16} strokeWidth={1.75} aria-hidden="true" />
+            : <AlertTriangle size={16} strokeWidth={1.75} aria-hidden="true" />}
         </span>
       )}
       {!sevColor && item.queue && (

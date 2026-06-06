@@ -63,6 +63,23 @@ describe('NextEventCard', () => {
     expect(off.container.textContent).not.toMatch(/reschedule/);
   });
 
+  it('eyebrow: renders the role-specific label (parent "Next · Milo", default "Next event")', () => {
+    const ev = { id: 'e', start_at: inHours(8), event_type: 'game', teams: { name: '10U Blue' } };
+    const withKid = render(<NextEventCard event={ev} eyebrow="Next · Milo" />);
+    expect(withKid.container.textContent).toMatch(/Next · Milo/i);
+    cleanup();
+    const dflt = render(<NextEventCard event={ev} />);
+    expect(dflt.container.textContent).toMatch(/Next event/i);
+  });
+
+  it('minimal (coach): hides the countdown + weather', () => {
+    const ev = { id: 'm', start_at: inHours(8), event_type: 'practice', teams: { name: '9U Boys' } };
+    const { container } = render(<NextEventCard event={ev} weather={{ icon: '☁', temp: 64 }} minimal />);
+    expect(container.textContent).not.toMatch(/\d+h \d+m/); // no countdown
+    expect(container.textContent).not.toMatch(/64°/); // no weather
+    expect(container.textContent).toMatch(/9U Boys/); // still shows the event
+  });
+
   it('team-color left rail: the event card edges in the team color', () => {
     const { container } = render(<NextEventCard event={{ id: 'c', start_at: inHours(8), event_type: 'game', teams: { name: '10U Blue', team_color: '#4a8fd4' } }} />);
     // jsdom normalizes the hex to rgb()

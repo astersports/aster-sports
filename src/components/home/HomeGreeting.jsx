@@ -23,7 +23,7 @@ export default function HomeGreeting({ name, kids = [], sublabel, action }) {
             {kids.map((k) => (
               <span
                 key={k.playerId}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, color: 'var(--as-text-secondary)' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 700, color: k.color || 'var(--as-text-secondary)' }}
               >
                 <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: k.color || 'var(--as-neutral)' }} />
                 {k.label}

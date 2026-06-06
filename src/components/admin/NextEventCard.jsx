@@ -28,8 +28,9 @@ function useLiveCountdown(targetDate) {
 
 // draft (#2, tournaments) + arrival (#3) render only on the PARENT Coming-up
 // card per HOME_RENDERS — admin/coach pass neither. Team-color left rail is
-// the event archetype's identity edge.
-export default function NextEventCard({ event, weather, draft, arrival }) {
+// the event archetype's identity edge. eyebrow varies by role ("Next · {kid}"
+// / "Next team event" / "Next event"); minimal (coach) drops countdown+weather.
+export default function NextEventCard({ event, weather, draft, arrival, eyebrow = 'Next event', minimal = false }) {
   const countdown = useLiveCountdown(event?.start_at);
   if (!event) return null;
   const teamName = event.teams?.name;
@@ -50,7 +51,7 @@ export default function NextEventCard({ event, weather, draft, arrival }) {
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
         <div style={{ minWidth: 0 }}>
-          <Label style={{ marginBottom: 0 }}>NEXT EVENT</Label>
+          <Label style={{ marginBottom: 0 }}>{eyebrow}</Label>
           <div className="font-semibold" style={{ fontSize: 15, color: 'var(--as-text-primary)', marginTop: 2 }}>
             {title}{teamName ? ` · ${teamName}` : ''}
           </div>
@@ -58,15 +59,17 @@ export default function NextEventCard({ event, weather, draft, arrival }) {
             {dateStr} · {timeStr}{event.location ? ` · ${event.location}` : ''}
           </div>
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          {weather && <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginBottom: 2 }}>{weather.icon} {weather.temp}°</div>}
-          <div className="font-bold" style={{ fontSize: 17, color: 'var(--as-accent)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-            {countdown || '—'}
+        {!minimal && (
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            {weather && <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginBottom: 2 }}>{weather.icon} {weather.temp}°</div>}
+            <div className="font-bold" style={{ fontSize: 17, color: 'var(--as-accent)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+              {countdown || '—'}
+            </div>
+            {countdown === 'Now' && (
+              <div className="as-pulse-dot" style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--as-success)', margin: '4px 0 0 auto' }} />
+            )}
           </div>
-          {countdown === 'Now' && (
-            <div className="as-pulse-dot" style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--as-success)', margin: '4px 0 0 auto' }} />
-          )}
-        </div>
+        )}
       </div>
       {draft && (
         <div style={{ marginTop: 8 }}>

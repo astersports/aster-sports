@@ -62,6 +62,11 @@ export default function ParentHomePage() {
   const achievement = useMemo(() => shapeAchievement(achievements[0], recordsByTeam), [achievements, recordsByTeam]);
   const progressLabel = useMemo(() => seasonProgress(activeSeason, now).label, [activeSeason, now]);
   const offSeason = useMemo(() => isOffSeason(activeSeason, activities, now), [activeSeason, activities, now]);
+  const comingUpEyebrow = useMemo(() => {
+    if (!comingUp?.team_id) return 'Next event';
+    const kid = (myChildren || []).find((k) => (k.teamIds || []).includes(comingUp.team_id) || k.teamId === comingUp.team_id);
+    return kid?.firstName ? `Next · ${kid.firstName}` : 'Next event';
+  }, [comingUp, myChildren]);
   const childRecords = useMemo(
     () => shapeChildRecords(myChildren, activities, recordsByTeam, new Set(achievements.map((a) => a.team_id))),
     [myChildren, activities, recordsByTeam, achievements],
@@ -84,6 +89,7 @@ export default function ParentHomePage() {
           weather={getWeatherForTime(weather, comingUp?.start_at)}
           draft={comingUpDraft}
           arrival
+          eyebrow={comingUpEyebrow}
           onSeeSchedule={() => navigate('/schedule')}
         />
       )}
