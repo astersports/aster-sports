@@ -16,13 +16,31 @@ import { formatCurrency } from '../lib/formatters';
 const CAP = 4;
 const HANDLED_ALERTS = new Set(['payment_overdue', 'briefing_overdue', 'rsvp_shortfall']);
 
-export function useAdminNeedsYou({ orgId, activities, seasonId, nowMs }) {
+export function useAdminNeedsYou({ orgId, activities, seasonId, nowMs, offSeason }) {
   const { rows: briefingRows, isLoading: briefingsLoading } = useInboxQueue({ orgId });
   const { alerts, loading: alertsLoading } = useAlertEvaluator();
   const { count: owingCount, totalCents: owingCents, loading: owingLoading } = useFamiliesOwingCount(orgId);
   const { actionItems, actionLoading } = useAdminHomeSignals(activities, orgId, seasonId);
 
   const items = useMemo(() => {
+    // Off-season (D-D): the close-out queue replaces the in-season signals.
+    // Reconcile finances surfaces ONLY when a balance is outstanding (amber);
+    // Roll rosters always (cobalt → the rollover wizard, which opens the next
+    // season's registration). Briefings/RSVP/queue are season-bound — dropped.
+    if (offSeason) {
+      const close = [];
+      if (owingCount > 0) {
+        close.push({
+          domain: 'generic', id: 'reconcile', primary: 'Reconcile finances',
+          subtitle: `${formatCurrency(owingCents)} outstanding`, to: '/admin/financials', severity: 'warning',
+        });
+      }
+      close.push({
+        domain: 'generic', id: 'roll-rosters', primary: 'Roll rosters',
+        subtitle: 'Set up the next season', team_color: 'var(--as-accent)', to: '/admin/rollover',
+      });
+      return close;
+    }
     const out = [];
     if ((briefingRows || []).length) {
       // D-E split: ready = comms_messages drafts, to-write = synthetic
@@ -59,7 +77,7 @@ export function useAdminNeedsYou({ orgId, activities, seasonId, nowMs }) {
       });
     }
     return out;
-  }, [briefingRows, alerts, owingCount, owingCents, actionItems, nowMs]);
+  }, [offSeason, briefingRows, alerts, owingCount, owingCents, actionItems, nowMs]);
 
   return {
     items: items.slice(0, CAP),

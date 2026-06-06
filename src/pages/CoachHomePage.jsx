@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSeason } from '../context/SeasonContext';
 import { useActivities } from '../hooks/useActivities';
 import { useNow } from '../hooks/useNow';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
@@ -16,6 +17,7 @@ import CoachTail from '../components/home/CoachTail';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { firstNameFrom } from '../lib/greetings';
 import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
+import { isOffSeason } from '../lib/home/offSeason';
 
 // Coach home — shell-contract-v2 rewrite (home redesign Phase 2). Composes
 // HomeShell's inner slots over AppShell chrome. Day-one scopes to TEAM
@@ -23,6 +25,7 @@ import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 // generic next-event selector (name predates the coach reuse).
 export default function CoachHomePage() {
   const { user, orgId } = useAuth();
+  const { activeSeason } = useSeason();
   const { activities, loading, refetch } = useActivities();
   const now = useNow();
   useRefetchOnVisible(refetch);
@@ -36,6 +39,7 @@ export default function CoachHomePage() {
   const comingUp = useParentComingUp(activities, now, excludeIds);
   const weather = useWeather(...WEATHER_DEFAULT_COORDS);
   const { byTeamId: recordsByTeam, loading: recordsLoading } = useOrgTeamRecords(orgId);
+  const offSeason = useMemo(() => isOffSeason(activeSeason, activities, now), [activeSeason, activities, now]);
 
   const name = firstNameFrom(user);
   const teamCount = needsYou.myTeams.length;
@@ -50,7 +54,7 @@ export default function CoachHomePage() {
       greeting={(
         <HomeGreeting name={name} sublabel={sublabel} />
       )}
-      needsYou={(
+      needsYou={offSeason ? null : (
         <NeedsYouSection
           {...needsYou}
           onNavigate={navigate}
@@ -58,7 +62,7 @@ export default function CoachHomePage() {
           emptySub="Check-ins, scores, and shortfalls show up here."
         />
       )}
-      comingUp={(
+      comingUp={offSeason ? null : (
         <ComingUpSection
           event={comingUp}
           weather={getWeatherForTime(weather, comingUp?.start_at)}
@@ -71,6 +75,8 @@ export default function CoachHomePage() {
           recordsByTeam={recordsByTeam}
           recordsLoading={recordsLoading}
           onTeamClick={(id) => navigate(`/schedule?team=${id}`)}
+          offSeason={offSeason}
+          seasonLabel={activeSeason?.name}
         />
       )}
     />

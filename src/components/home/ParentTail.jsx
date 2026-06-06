@@ -48,15 +48,18 @@ export default function ParentTail({ achievement, seasonLabel, progressLabel, on
         )}
 
         {offSeason && (
-          <div style={{ marginTop: achievement ? 11 : 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--as-text-primary)' }}>{seasonLabel}, wrapped</div>
-            <div style={{ fontSize: 12, color: 'var(--as-text-secondary)', marginTop: 4 }}>No events on the calendar right now.</div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--as-text-primary)' }}>🏁 {seasonLabel}, wrapped</div>
+            <div style={{ fontSize: 12, color: 'var(--as-text-secondary)', marginTop: 3 }}>Final records — see you next season.</div>
             {offSeason.records?.length > 0 && (
-              <div style={{ display: 'flex', gap: 8, marginTop: 11 }}>
-                {offSeason.records.map((r) => (
-                  <div key={r.label} style={{ flex: 1, textAlign: 'center', backgroundColor: 'var(--as-bg-secondary)', borderRadius: 8, padding: 8 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-text-primary)' }}>{r.value}</div>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--as-text-meta)' }}>{r.label}</div>
+              <div style={{ marginTop: 9 }}>
+                {offSeason.records.map((r, i) => (
+                  <div key={r.key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderTop: i > 0 ? '1px solid var(--as-border-subtle)' : 'none' }}>
+                    <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: r.color, flexShrink: 0 }} />
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: 'var(--as-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
+                    <span style={r.gold
+                      ? { fontSize: 12, fontWeight: 700, color: 'var(--as-gold-text)', backgroundColor: 'var(--as-gold-soft)', borderRadius: 6, padding: '2px 8px', whiteSpace: 'nowrap' }
+                      : { fontSize: 12, fontWeight: 600, color: 'var(--as-text-secondary)', whiteSpace: 'nowrap' }}>{r.record}</span>
                   </div>
                 ))}
               </div>

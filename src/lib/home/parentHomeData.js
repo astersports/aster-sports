@@ -24,3 +24,27 @@ export function shapeAchievement(achievement, recordsByTeam = {}) {
     recordBadge: recordsByTeam[achievement.team_id]?.record || null,
   };
 }
+
+// Off-season season-wrap rows (D-D). One row per child: color dot ·
+// "Charlie · 11U" · final record badge. Team age + color derive from the
+// season's events; the record from recordsByTeam. Gold badge ONLY when the
+// team earned an achievement (gold = achievement-only per §3) — a winning
+// record alone stays neutral. No record → "—" (honest, never a fake 0-0).
+export function shapeChildRecords(myChildren, activities, recordsByTeam = {}, achievementTeamIds = new Set()) {
+  const meta = new Map();
+  for (const a of activities || []) {
+    if (a.team_id && !meta.has(a.team_id)) {
+      meta.set(a.team_id, { age: a.teams?.age_group || a.teams?.name || '', color: a.teams?.team_color });
+    }
+  }
+  return (myChildren || []).map((c) => {
+    const m = meta.get(c.teamId) || {};
+    return {
+      key: c.playerId,
+      label: [c.firstName, m.age].filter(Boolean).join(' · '),
+      color: m.color || 'var(--as-neutral)',
+      record: recordsByTeam[c.teamId]?.record || '—',
+      gold: achievementTeamIds.has(c.teamId),
+    };
+  });
+}

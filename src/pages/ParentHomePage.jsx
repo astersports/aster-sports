@@ -19,7 +19,8 @@ import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { firstNameFrom } from '../lib/greetings';
 import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import { seasonProgress } from '../lib/seasonProgress';
-import { shapeAchievement } from '../lib/home/parentHomeData';
+import { shapeAchievement, shapeChildRecords } from '../lib/home/parentHomeData';
+import { isOffSeason } from '../lib/home/offSeason';
 
 // Parent home — shell-contract-v2 rewrite (home redesign Phase 1). Composes
 // HomeShell's inner slots over AppShell chrome; the data hooks own fetching
@@ -58,6 +59,11 @@ export default function ParentHomePage() {
 
   const achievement = useMemo(() => shapeAchievement(achievements[0], recordsByTeam), [achievements, recordsByTeam]);
   const progressLabel = useMemo(() => seasonProgress(activeSeason, now).label, [activeSeason, now]);
+  const offSeason = useMemo(() => isOffSeason(activeSeason, activities, now), [activeSeason, activities, now]);
+  const childRecords = useMemo(
+    () => shapeChildRecords(myChildren, activities, recordsByTeam, new Set(achievements.map((a) => a.team_id))),
+    [myChildren, activities, recordsByTeam, achievements],
+  );
 
   // Composite gate (anti-pattern #43/#44) — wait on activities + the
   // needs-you signals so the page doesn't flash a partial layout.
@@ -69,8 +75,8 @@ export default function ParentHomePage() {
       greeting={(
         <HomeGreeting name={name} kids={kids} sublabel={orgName} />
       )}
-      needsYou={<NeedsYouSection {...needsYou} onNavigate={navigate} />}
-      comingUp={(
+      needsYou={offSeason ? null : <NeedsYouSection {...needsYou} onNavigate={navigate} />}
+      comingUp={offSeason ? null : (
         <ComingUpSection
           event={comingUp}
           weather={getWeatherForTime(weather, comingUp?.start_at)}
@@ -79,11 +85,11 @@ export default function ParentHomePage() {
       )}
       tail={(
         <ParentTail
-          achievement={achievement}
+          achievement={offSeason ? null : achievement}
           seasonLabel={activeSeason?.name}
-          progressLabel={progressLabel}
+          progressLabel={offSeason ? null : progressLabel}
           onViewRecords={() => navigate('/records')}
-          offSeason={activeSeason ? null : { records: [] }}
+          offSeason={offSeason ? { records: childRecords } : null}
         />
       )}
     />

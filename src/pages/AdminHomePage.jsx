@@ -17,6 +17,7 @@ import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { firstNameFrom } from '../lib/greetings';
 import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import { seasonProgress } from '../lib/seasonProgress';
+import { isOffSeason } from '../lib/home/offSeason';
 
 // Admin home — shell-contract-v2 rewrite (home redesign Phase 3). Composes
 // HomeShell's inner slots over AppShell chrome; the hooks own the fetching,
@@ -30,7 +31,8 @@ export default function AdminHomePage() {
   useRefetchOnVisible(refetch);
   const navigate = useNavigate();
 
-  const needsYou = useAdminNeedsYou({ orgId, activities, seasonId: activeSeason?.id, nowMs: now });
+  const offSeason = useMemo(() => isOffSeason(activeSeason, activities, now), [activeSeason, activities, now]);
+  const needsYou = useAdminNeedsYou({ orgId, activities, seasonId: activeSeason?.id, nowMs: now, offSeason });
   const excludeIds = useMemo(
     () => needsYou.items.filter((i) => i.event_id).map((i) => i.event_id),
     [needsYou.items],
@@ -57,7 +59,7 @@ export default function AdminHomePage() {
           emptySub="Briefings, RSVPs, and payments show up here."
         />
       )}
-      comingUp={(
+      comingUp={offSeason ? null : (
         <ComingUpSection
           event={comingUp}
           weather={getWeatherForTime(weather, comingUp?.start_at)}
