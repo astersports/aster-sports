@@ -48,16 +48,15 @@ describe('Cross-surface invariant — MY TEAMS records (anti-pattern #43)', () =
     expect(src).toMatch(/from ['"]\.\.\/hooks\/useOrgTeamRecords['"]/);
   });
 
-  it('c. CoachTail threads recordsByTeam to ParentHomeTeamCard', () => {
-    // Home redesign Phase 2 (shell contract v2): MY TEAMS render moved from
-    // CoachHomeSignalZone into CoachTail. CoachHomePage owns useOrgTeamRecords
-    // + threads `recordsByTeam` into the tail; CoachTail passes it to
-    // ParentHomeTeamCard as `summary={recordsByTeam[t.id]}` — same source +
-    // card as Parent, preserving the anti-pattern #43 invariant.
+  it('c. CoachTail renders team records from the recordsByTeam source', () => {
+    // Render-alignment: coach My-teams is a compact context card with team
+    // rails (per HOME_RENDERS), not ParentHomeTeamCard tiles. Records still
+    // come from recordsByTeam (useOrgTeamRecords) — the same source as Parent —
+    // so the anti-pattern #43 records-source invariant holds.
     const pageSrc = readFileSync('src/pages/CoachHomePage.jsx', 'utf8');
     expect(pageSrc).toMatch(/recordsByTeam=\{recordsByTeam\}/);
     const tailSrc = readFileSync('src/components/home/CoachTail.jsx', 'utf8');
-    expect(tailSrc).toMatch(/summary=\{recordsByTeam\[/);
+    expect(tailSrc).toMatch(/recordsByTeam\[t\.id\]/);
   });
 
   it('d. ParentHomePage sources team records from useOrgTeamRecords (records peek lives in ParentTail)', () => {
