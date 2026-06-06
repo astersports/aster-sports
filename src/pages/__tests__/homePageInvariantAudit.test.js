@@ -49,6 +49,8 @@ const HOME_COMPONENTS = [
   'components/home/ComingUpSection.jsx',
   'components/home/ParentTail.jsx',
   'components/home/CoachTail.jsx',
+  'components/home/CoachCompCard.jsx',
+  'components/home/CoachRosterHealthCard.jsx',
   'components/home/AdminTail.jsx',
   'components/home/AdminProgramHealth.jsx',
 ];
