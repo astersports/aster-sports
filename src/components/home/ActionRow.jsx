@@ -3,9 +3,11 @@ import ChildRsvp from '../schedule/ChildRsvp';
 import { formatDayTime } from '../../lib/formatters';
 
 // ActionRow — the "action" card archetype (shell contract v2), one of three
-// platform archetypes. Three variants by domain: rsvp (inline ChildRsvp),
-// comms (the unread-briefing touchpoint), and ride/volunteer (tap-through).
-// The team-color left rail is identity; cobalt rail = system/comms.
+// platform archetypes. Variants by domain: rsvp (inline ChildRsvp), comms
+// (the unread-briefing touchpoint), prep (coach next-event + action chips —
+// the R-a "event-context body + chip row" refinement), and generic
+// (ride/volunteer/alert/queue tap-through). Team-color left rail = identity;
+// cobalt rail = system/comms.
 const card = (rail) => ({
   backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)',
   borderLeft: `3px solid ${rail}`, borderRadius: 12,
@@ -15,6 +17,7 @@ const KT = { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13,
 const dot = (c) => ({ width: 8, height: 8, borderRadius: '50%', backgroundColor: c, flexShrink: 0 });
 const EVLINE = { fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 5 };
 const TAP = { display: 'flex', alignItems: 'center', gap: 9, width: '100%', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' };
+const CHIP = { fontSize: 12, fontWeight: 600, padding: '0 12px', minHeight: 44, borderRadius: 9999, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', cursor: 'pointer', fontFamily: 'inherit' };
 
 export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
   if (item.domain === 'comms') {
@@ -34,6 +37,7 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
   }
 
   const rail = item.team_color || 'var(--as-neutral)';
+
   if (item.domain === 'rsvp') {
     return (
       <div style={card(rail)}>
@@ -45,13 +49,30 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
     );
   }
 
-  // ride / volunteer — tap through to the event.
+  if (item.domain === 'prep') {
+    return (
+      <div style={card(rail)}>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--as-text-meta)' }}>Prep · next up</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-text-primary)', marginTop: 3 }}>{item.title}</div>
+        <div style={EVLINE}>{formatDayTime(item.start_at)}{item.team_name ? ` · ${item.team_name}` : ''}</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 9 }}>
+          {item.chips.map((c) => (
+            <button key={c.label} type="button" onClick={() => onNavigate(c.to)} className="as-press" style={CHIP}>{c.label}</button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // generic — ride / volunteer / coach action-queue / alert tap-through.
   return (
-    <button type="button" onClick={() => onNavigate(`/events/${item.event_id}`)} className="as-press"
+    <button type="button" onClick={() => onNavigate(item.to || `/events/${item.event_id}`)} className="as-press"
       style={{ ...card(rail), ...TAP }} aria-label={item.primary}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={KT}><span aria-hidden="true" style={dot(rail)} />{item.primary}</div>
-        <div style={EVLINE}>{item.team_name} · {formatDayTime(item.start_at)}</div>
+        <div style={KT}>{item.team_color && <span aria-hidden="true" style={dot(rail)} />}{item.primary}</div>
+        {(item.subtitle || item.start_at) && (
+          <div style={EVLINE}>{item.subtitle || `${item.team_name} · ${formatDayTime(item.start_at)}`}</div>
+        )}
       </div>
       <ChevronRight size={16} strokeWidth={1.75} color="var(--as-text-tertiary)" aria-hidden="true" style={{ flexShrink: 0 }} />
     </button>

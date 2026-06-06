@@ -33,7 +33,7 @@ const SRC_DIR = join(__dirname, '..', '..');
 
 const HOMES = [
   { file: 'ParentHomePage.jsx', hook: 'useParentNeedsYou' },
-  { file: 'CoachHomePage.jsx',  hook: 'useCoachHomeSignals'  },
+  { file: 'CoachHomePage.jsx',  hook: 'useCoachNeedsYou'  },
   { file: 'AdminHomePage.jsx',  hook: 'useAdminHomeSignals'  },
 ];
 
