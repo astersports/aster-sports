@@ -742,13 +742,27 @@ with main (#763/#764 superseded my parallel briefing fixes).
 **Render items (HOME_RENDER_RULES_CC.txt) — all shipped + green:**
 off-season (D-D, all 3 homes), arrival line (#3), urgent tint (#1a),
 draft pill (#2, tournaments only), RSVP deadline chip (#1b, parent-gated).
-**OPEN — D-G pilot recipient row (#5): BLOCKED, needs decision.** The
-pilot-TEST-override path (`pilot_test_recipient_email`) writes a synthetic
-`comms_message_recipients` row with `guardian_id=NULL`, so the parent
-inbox (filters `guardian_id`) never lights up — "pilot only routes email."
-Org pilot mode (`is_pilot_family`) is fine (real guardian_ids). Clean fix
-= `get_digest_recipients` RPC change (MIGRATION → Rule 19 stop-and-report).
-Full investigation + fix options A/B/C in `docs/HOME_DG_INVESTIGATION_CC.txt`.
+**D-G pilot recipient row (#5): CLOSED 2026-06-06, no migration** (design-lane
+ruling, `HOME_DG_CLOSE_AND_BATCH_GO`). Resolve via org pilot mode — `is_pilot_family`
+writes real `guardian_id` rows so the parent comms card lights up + deep-links
+to `/inbox?r=<id>` (the #765 fix). The synthetic `pilot_test_recipient_email`
+path (`guardian_id=NULL`) stays as the email-only admin smoke. Self-test ready:
+Frank's guardian (`fsamaritano@gmail.com`) is already `is_pilot_family=true` —
+send a pilot briefing to verify. The `get_digest_recipients` RPC migration is
+NOT applied.
+
+**HARDENING BATCH — SHIPPED 2026-06-06 (branch `claude/home-hardening-vE7Hf`):**
+- a11y: next-event weather temp `--as-text-tertiary` → `--as-text-meta` (AA);
+  static a11y audit of all 3 homes clean (aria-labels/roles/live-regions/h1 OK).
+- #4b opponent on the parent RSVP card ("Charlie · 11U vs Somers"); #4a coach
+  name on the comms card DEFERRED — `comms_messages` has no sender column
+  (only `coach_user_ids[]`), would need a schema field; kept "New from your coach".
+- Tests: home role-router (`homeRouter.test.jsx`) + AP#63/#43/#7 signal
+  invariants (`homeSignalInvariants.test.js` — owing-money single-source,
+  admin-no-inline-RSVP, shared weather coords).
+- Perf: home pages lazy-loaded, single coordinated fetch gate per page (the old
+  6-self-fetching-card fan-out is gone), entry chunk 104.7 KB gz < 350 KB. Field
+  LCP/FCP not measured here (headless — no Lighthouse); recommend a browser run.
 
 ---
 

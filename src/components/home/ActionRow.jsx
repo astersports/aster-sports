@@ -57,7 +57,7 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
     return (
       <div style={rsvpStyle}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <div style={KT}><span aria-hidden="true" style={dot(rail)} />{item.kid_first_name} · {item.team_name}</div>
+          <div style={KT}><span aria-hidden="true" style={dot(rail)} />{item.kid_first_name} · {item.team_name}{item.opponent ? ` vs ${item.opponent}` : ''}</div>
           {item.rsvpCloseLabel && (
             <Badge pill variant="warning" compact style={{ backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-warning)', whiteSpace: 'nowrap', flexShrink: 0 }}>
               {item.rsvpCloseLabel}
