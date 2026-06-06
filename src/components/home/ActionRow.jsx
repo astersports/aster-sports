@@ -1,4 +1,4 @@
-import { ChevronRight, Mail } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Mail } from 'lucide-react';
 import ChildRsvp from '../schedule/ChildRsvp';
 import { formatDayTime } from '../../lib/formatters';
 
@@ -70,11 +70,20 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
   }
 
   // generic — ride / volunteer / coach action-queue / alert tap-through.
+  // Severity (alerts) drives an amber/red rail + warning icon (act-now, D-B).
+  const sevColor = item.severity === 'critical' ? 'var(--as-danger)'
+    : item.severity === 'warning' ? 'var(--as-warning)' : null;
+  const genRail = sevColor || item.team_color || 'var(--as-neutral)';
   return (
     <button type="button" onClick={() => onNavigate(item.to || `/events/${item.event_id}`)} className="as-press"
-      style={{ ...card(rail), ...TAP }} aria-label={item.primary}>
+      style={{ ...card(genRail), ...TAP }} aria-label={item.primary}>
+      {sevColor && (
+        <span style={{ width: 28, height: 28, borderRadius: 7, display: 'grid', placeItems: 'center', flexShrink: 0, backgroundColor: item.severity === 'critical' ? 'var(--as-danger-soft)' : 'var(--as-warning-soft)', color: sevColor }}>
+          <AlertTriangle size={16} strokeWidth={1.75} aria-hidden="true" />
+        </span>
+      )}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={KT}>{item.team_color && <span aria-hidden="true" style={dot(rail)} />}{item.primary}</div>
+        <div style={KT}>{item.team_color && !sevColor && <span aria-hidden="true" style={dot(genRail)} />}{item.primary}</div>
         {(item.subtitle || item.start_at) && (
           <div style={EVLINE}>{item.subtitle || `${item.team_name} · ${formatDayTime(item.start_at)}`}</div>
         )}

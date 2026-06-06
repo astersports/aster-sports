@@ -15,7 +15,6 @@ import HomeGreeting from '../components/home/HomeGreeting';
 import NeedsYouSection from '../components/home/NeedsYouSection';
 import ComingUpSection from '../components/home/ComingUpSection';
 import ParentTail from '../components/home/ParentTail';
-import DensityToggle from '../components/home/DensityToggle';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { firstNameFrom } from '../lib/greetings';
 import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
@@ -68,7 +67,7 @@ export default function ParentHomePage() {
   return (
     <HomeShell
       greeting={(
-        <HomeGreeting name={name} kids={kids} sublabel={orgName} action={<DensityToggle sectionKey="parent-home" />} />
+        <HomeGreeting name={name} kids={kids} sublabel={orgName} />
       )}
       needsYou={<NeedsYouSection {...needsYou} onNavigate={navigate} />}
       comingUp={(

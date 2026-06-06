@@ -13,7 +13,6 @@ import HomeGreeting from '../components/home/HomeGreeting';
 import NeedsYouSection from '../components/home/NeedsYouSection';
 import ComingUpSection from '../components/home/ComingUpSection';
 import CoachTail from '../components/home/CoachTail';
-import DensityToggle from '../components/home/DensityToggle';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { firstNameFrom } from '../lib/greetings';
 import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
@@ -49,7 +48,7 @@ export default function CoachHomePage() {
   return (
     <HomeShell
       greeting={(
-        <HomeGreeting name={name} sublabel={sublabel} action={<DensityToggle sectionKey="coach-home" />} />
+        <HomeGreeting name={name} sublabel={sublabel} />
       )}
       needsYou={(
         <NeedsYouSection

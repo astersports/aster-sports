@@ -22,5 +22,8 @@ export function alertToActionItem(alert) {
     primary: label,
     subtitle: n ? `${n} event${n !== 1 ? 's' : ''}` : null,
     to: '/schedule',
+    // Severity drives the act-now treatment (amber/red rail + icon) in
+    // ActionRow — D-B. critical → danger, warning → amber, else neutral.
+    severity: alert.severity || 'warning',
   };
 }
