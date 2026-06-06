@@ -32,6 +32,9 @@ export function useTeamHeadCoach(teamId) {
       }
       setLoading(true);
       setError(null);
+      // staff_profiles has NO FK from team_staff — a PostgREST embed throws
+      // "Could not find a relationship". Fetch team_staff, then staff_profiles
+      // by user_id, and join in JS.
       const { data, error: qErr } = await supabase
         .from('team_staff')
         .select('user_id, role')
@@ -41,28 +44,27 @@ export function useTeamHeadCoach(teamId) {
       if (qErr) { setError(qErr); setLoading(false); return; }
       const rows = data || [];
       if (rows.length === 0) { setCoach(null); setLoading(false); return; }
-      // team_staff has NO FK to staff_profiles — join in JS by user_id (RLS
-      // scopes staff_profiles to the viewer's org). Mirrors familyGuideCoaches.
-      const staffIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))];
-      const { data: profs, error: pErr } = await supabase
+      const userIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))];
+      const { data: profData, error: pErr } = await supabase
         .from('staff_profiles')
         .select('user_id, display_name, phone')
-        .in('user_id', staffIds);
+        .in('user_id', userIds);
       if (cancelled) return;
       if (pErr) { setError(pErr); setLoading(false); return; }
-      const profByUser = new Map((profs || []).map((p) => [p.user_id, p]));
+      const profByUser = new Map((profData || []).map((p) => [p.user_id, p]));
       // Co-coach rule: alphabetical sort by display_name (head_coach flag
       // not present in schema; pick rule stays deterministic across reloads).
-      const withProfiles = rows
-        .map((r) => ({ user_id: r.user_id, profile: profByUser.get(r.user_id) }))
-        .filter((r) => r.profile);
-      if (withProfiles.length === 0) { setCoach(null); setLoading(false); return; }
-      withProfiles.sort((a, b) => (a.profile.display_name || '').localeCompare(b.profile.display_name || ''));
-      const pick = withProfiles[0];
+      const sorted = [...rows].sort((a, b) => {
+        const an = profByUser.get(a.user_id)?.display_name || '';
+        const bn = profByUser.get(b.user_id)?.display_name || '';
+        return an.localeCompare(bn);
+      });
+      const pick = sorted[0];
+      const profile = profByUser.get(pick.user_id) || {};
       setCoach({
         user_id: pick.user_id,
-        name: pick.profile.display_name || 'Coach',
-        phone: pick.profile.phone || null,
+        name: profile.display_name || 'Coach',
+        phone: profile.phone || null,
         email: null,
       });
       setLoading(false);

@@ -47,6 +47,9 @@ export function useCoverageConflicts(rows) {
           .lte('start_at', winEnd);
         if (evErr) throw evErr;
 
+        // staff_profiles has NO FK from team_staff — embedding it throws
+        // "Could not find a relationship". Fetch team_staff, then
+        // staff_profiles by user_id, and join the names in JS below.
         const { data: staff, error: stErr } = await supabase
           .from('team_staff')
           .select('team_id, user_id, role')
@@ -54,16 +57,15 @@ export function useCoverageConflicts(rows) {
           .eq('role', 'head_coach');
         if (stErr) throw stErr;
 
-        // team_staff has no FK to staff_profiles — join names in JS by user_id.
-        const staffIds = [...new Set((staff || []).map((s) => s.user_id).filter(Boolean))];
+        const staffUserIds = [...new Set((staff || []).map((s) => s.user_id).filter(Boolean))];
         let profByUser = new Map();
-        if (staffIds.length) {
-          const { data: profs, error: spErr } = await supabase
+        if (staffUserIds.length) {
+          const { data: profData, error: pErr } = await supabase
             .from('staff_profiles')
             .select('user_id, display_name')
-            .in('user_id', staffIds);
-          if (spErr) throw spErr;
-          profByUser = new Map((profs || []).map((p) => [p.user_id, p]));
+            .in('user_id', staffUserIds);
+          if (pErr) throw pErr;
+          profByUser = new Map((profData || []).map((p) => [p.user_id, p]));
         }
 
         const eventIds = (events || []).map((e) => e.id);

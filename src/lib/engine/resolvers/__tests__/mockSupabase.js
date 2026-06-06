@@ -8,21 +8,25 @@
 // already be pre-shaped to what the resolver expects after PostgREST
 // would have filtered.
 
-function mockChain(rows, userIdSource) {
+function mockChain(rows, opts = {}) {
   // Thin filter awareness ONLY for the predicates fetchSignatureCoaches
   // depends on: title= (staff_profiles WHERE title='Program Director')
-  // resolves to the PD subset, and in('team_id', [...]) (team_staff scoped
-  // to a slice's team) resolves to that team's coaches. Both are narrowly
-  // column-gated so every other .eq()/.in() stays filter-agnostic per the
-  // mock's "fixtures are pre-shaped" doctrine (e.g. .in('id', eventIds)
-  // still returns the whole fixture, which is already pre-shaped).
+  // resolves to the PD subset; in('team_id', [...]) (team_staff scoped to a
+  // slice's team) resolves to that team's coaches; in('user_id', [...])
+  // (staff_profiles fetched by the team_staff user_ids — the JS-join half of
+  // fetchSignatureCoaches, since there is NO FK between team_staff and
+  // staff_profiles to embed) resolves to those coaches' profiles. All three
+  // are narrowly column-gated so every other .eq()/.in() stays
+  // filter-agnostic per the mock's "fixtures are pre-shaped" doctrine (e.g.
+  // .in('id', eventIds) still returns the whole fixture).
   //
-  // staff_profiles only: fetchSignatureCoaches now joins coaches in JS via a
-  // separate `.in('user_id', staffIds)` query (team_staff has no FK to
-  // staff_profiles). When `userIdSource` is provided (the team_staff nested
-  // staff_profiles), that query resolves from it by user_id — reproducing
-  // what the old PostgREST embed returned. The PD title query + any direct
-  // staff_profiles scan keep using `rows` (coaches.json), unchanged.
+  // `opts.byUserId` (staff_profiles only): a SEPARATE dataset the
+  // `.in('user_id', [...])` lookup resolves against — the union of
+  // coaches.json + the per-team coach profiles. This models reality where a
+  // team's assistant (Darien on 9U/8U) is resolvable by user_id for the
+  // team-aware SIGNATURE while the org-wide CONTACT-block query (coaches.json)
+  // legitimately differs. Pre-fix this came free via the PostgREST embed;
+  // post-fix the JS-join needs the profile from the staff_profiles table.
   let current = rows;
   const settle = () => Promise.resolve({ data: current, error: null });
   const chain = {
@@ -33,7 +37,11 @@ function mockChain(rows, userIdSource) {
     lt: () => chain,
     in: (col, vals) => {
       if (col === 'team_id') { const set = new Set(vals || []); current = (current || []).filter((r) => set.has(r.team_id)); }
-      else if (col === 'user_id' && userIdSource) { const set = new Set(vals || []); current = userIdSource.filter((r) => set.has(r.user_id)); }
+      else if (col === 'user_id') {
+        const set = new Set(vals || []);
+        const source = opts.byUserId || current;
+        current = (source || []).filter((r) => set.has(r.user_id));
+      }
       return chain;
     },
     not: () => chain,
@@ -55,6 +63,21 @@ export function mockClient(fixtures) {
   const eventsArr = fixtures.events || (fixtures.event ? [fixtures.event] : []);
   const tournamentsArr = fixtures.tournaments || (fixtures.tournament && fixtures.tournament.id ? [fixtures.tournament] : []);
   const locationsArr = fixtures.locations || (fixtures.location ? [fixtures.location] : []);
+  const teamStaffArr = fixtures.team_staff || [];
+  // staff_profiles resolvable BY USER ID = org-wide coaches.json UNION the
+  // per-team coach profiles carried on team_staff fixtures (nested
+  // `staff_profiles`). Deduped by user_id. fetchSignatureCoaches resolves the
+  // team-aware signature against this set (.in('user_id', [...])) while the
+  // org-wide CONTACT block keeps reading coaches.json (`fixtures.coaches`).
+  const staffByUserId = (() => {
+    const byId = new Map();
+    for (const c of fixtures.coaches || []) if (c.user_id) byId.set(c.user_id, c);
+    for (const ts of teamStaffArr) {
+      const p = ts.staff_profiles;
+      if (p?.user_id && !byId.has(p.user_id)) byId.set(p.user_id, p);
+    }
+    return [...byId.values()];
+  })();
   const tables = {
     events: eventsArr,
     tournaments: tournamentsArr,
@@ -64,21 +87,17 @@ export function mockClient(fixtures) {
     event_change_audit: fixtures.event_change_audit || [],
     team_players: fixtures.team_players || [],
     staff_profiles: fixtures.coaches || [],
-    team_staff: fixtures.team_staff || [],
+    team_staff: teamStaffArr,
     organizations: fixtures.organization ? [fixtures.organization] : [],
     organization_settings: fixtures.organization_settings ? [fixtures.organization_settings] : [],
     player_guardians: fixtures.player_guardians || [],
     game_results: fixtures.game_result ? [fixtures.game_result] : (fixtures.game_results || []),
     players: fixtures.player_of_game ? [fixtures.player_of_game] : (fixtures.player ? [fixtures.player] : (fixtures.players || [])),
   };
-  // Coach profiles for the JS-join query (`.in('user_id', staffIds)` on
-  // staff_profiles) come from the team_staff nested staff_profiles — they
-  // carry user_id, which coaches.json (the PD/direct fixture) does not.
-  const staffProfilesByUser = (fixtures.team_staff || []).map((r) => r.staff_profiles).filter(Boolean);
   return {
     from(table) {
-      if (table === 'staff_profiles') return mockChain(tables.staff_profiles, staffProfilesByUser);
-      return mockChain(tables[table] || []);
+      const opts = table === 'staff_profiles' ? { byUserId: staffByUserId } : {};
+      return mockChain(tables[table] || [], opts);
     },
     rpc(name, args) {
       if (name === 'get_digest_recipients') {

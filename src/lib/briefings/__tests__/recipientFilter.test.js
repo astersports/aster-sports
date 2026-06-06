@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { filterRecipientsByTeams, resolveAudience } from '../recipientFilter';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  filterRecipientsByTeams,
+  resolveAudience,
+  resolvePlayerSpecificAudience,
+} from '../recipientFilter';
 
 const RECIPIENTS = [
   { guardian_id: 'g1', email: 'a@x', team_ids: ['t-11g', 't-8b'] },
@@ -66,6 +70,73 @@ describe('resolveAudience for player_specific (G2)', () => {
       audienceFilter: { player_ids: 'not-an-array' }, anchorId: null,
     });
     expect(out.audience).toEqual([]);
+  });
+});
+
+// player_specific resolves players → teams via team_players (NOT players.team_id,
+// which does not exist). A player can be on MULTIPLE teams; a guardian's team_ids
+// must union across all their kids' team_players rows.
+describe('resolvePlayerSpecificAudience — teams via team_players', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  // Mock shaped to the real schema: team_players(player_id, team_id) +
+  // player_guardians(player_id, guardian_id, guardians(email)). No players.team_id.
+  function mockSupabase({ teamPlayers, playerGuardians }) {
+    const from = vi.fn((table) => {
+      const data = table === 'team_players' ? teamPlayers : playerGuardians;
+      const builder = {
+        select: vi.fn(() => builder),
+        in: vi.fn(() => Promise.resolve({ data, error: null })),
+      };
+      return builder;
+    });
+    vi.doMock('../../supabase', () => ({ supabase: { from } }));
+    return { from };
+  }
+
+  it('resolves a player on 2 teams — guardian gets both team_ids; no players.team_id read', async () => {
+    const { from } = mockSupabase({
+      // p1 is on two teams; p2 is on one. g1 guards both p1 and p2.
+      teamPlayers: [
+        { player_id: 'p1', team_id: 't-a' },
+        { player_id: 'p1', team_id: 't-b' },
+        { player_id: 'p2', team_id: 't-c' },
+      ],
+      playerGuardians: [
+        { player_id: 'p1', guardian_id: 'g1', guardians: { email: 'g1@x' } },
+        { player_id: 'p2', guardian_id: 'g1', guardians: { email: 'g1@x' } },
+        { player_id: 'p1', guardian_id: 'g2', guardians: { email: 'g2@x' } },
+      ],
+    });
+    const out = await resolvePlayerSpecificAudience(['p1', 'p2']);
+
+    // team_players was queried (the fix) — never players.
+    expect(from).toHaveBeenCalledWith('team_players');
+    expect(from).not.toHaveBeenCalledWith('players');
+
+    const g1 = out.find((a) => a.guardian_id === 'g1');
+    const g2 = out.find((a) => a.guardian_id === 'g2');
+    // g1 guards p1 (t-a, t-b) and p2 (t-c) → union of all three.
+    expect(g1.team_ids.sort()).toEqual(['t-a', 't-b', 't-c']);
+    // g2 guards only p1 → both of p1's teams.
+    expect(g2.team_ids.sort()).toEqual(['t-a', 't-b']);
+  });
+
+  it('player with no team_players rows yields a guardian with empty team_ids', async () => {
+    mockSupabase({
+      teamPlayers: [],
+      playerGuardians: [
+        { player_id: 'p9', guardian_id: 'g9', guardians: { email: 'g9@x' } },
+      ],
+    });
+    const out = await resolvePlayerSpecificAudience(['p9']);
+    expect(out).toEqual([{ guardian_id: 'g9', email: 'g9@x', team_ids: [] }]);
+  });
+
+  it('empty playerIds short-circuits without any supabase touch', async () => {
+    const { from } = mockSupabase({ teamPlayers: [], playerGuardians: [] });
+    expect(await resolvePlayerSpecificAudience([])).toEqual([]);
+    expect(from).not.toHaveBeenCalled();
   });
 });
 

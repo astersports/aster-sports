@@ -16,6 +16,9 @@ export function useOrgCoaches() {
     if (!orgId) { Promise.resolve().then(() => setCoaches([])); return undefined; }
     let cancelled = false;
     (async () => {
+      // teams!inner is a valid FK embed (org filter). staff_profiles has NO
+      // FK from team_staff — embedding it throws "Could not find a
+      // relationship", so it's fetched separately and joined by user_id.
       const { data, error } = await supabase
         .from('team_staff')
         .select('user_id, role, teams!inner ( org_id )')
@@ -23,18 +26,16 @@ export function useOrgCoaches() {
         .in('role', ['head_coach', 'assistant_coach']);
       if (cancelled) return;
       if (error) { console.error('useOrgCoaches:', error.message); setCoaches([]); return; }
-      // team_staff has no FK to staff_profiles — join names in JS by user_id.
-      const staffIds = [...new Set((data || []).map((r) => r.user_id).filter(Boolean))];
+      const userIds = [...new Set((data || []).map((r) => r.user_id).filter(Boolean))];
       let profByUser = new Map();
-      if (staffIds.length) {
-        const { data: profs, error: pErr } = await supabase
+      if (userIds.length) {
+        const { data: profData, error: pErr } = await supabase
           .from('staff_profiles')
           .select('user_id, display_name')
-          .eq('org_id', orgId)
-          .in('user_id', staffIds);
+          .in('user_id', userIds);
         if (cancelled) return;
-        if (pErr) { console.error('useOrgCoaches profiles:', pErr.message); setCoaches([]); return; }
-        profByUser = new Map((profs || []).map((p) => [p.user_id, p]));
+        if (pErr) { console.error('useOrgCoaches:', pErr.message); setCoaches([]); return; }
+        profByUser = new Map((profData || []).map((p) => [p.user_id, p]));
       }
       const byUser = new Map();
       for (const r of data || []) {
