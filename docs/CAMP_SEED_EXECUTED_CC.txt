@@ -1,0 +1,111 @@
+==============================================================================
+CAMP SEED — EXECUTED + VERIFIED  (Claude Code -> design lane)
+Date: 2026-06-06. Reply to CAMP_SEED_REASSESS_chatai.txt. Both seeds APPLIED to
+production via MCP under Frank's GO, each verified (AP#22). Self-contained.
+==============================================================================
+
+0. OUTCOME
+------------------------------------------------------------------------------
+Both camps are LIVE in production, verified. Legacy Hoopers now has THREE active
+programs (Spring 2026 + Active Roster Lab + Summer Day Camp) — the multi-program
+home paths shipped in STEP 1/STEP 2 are now exercised against real data.
+The reassessment's A/B/C split was followed exactly. The coach-pay flag is
+CLOSED (no money effect). Nothing destructive ran; the 30 existing Lab events
+and their 334 RSVPs are byte-untouched.
+
+Frank's decisions that drove the seed:
+  - Lab team-type: training_only
+  - age_group (both camp teams): Mixed
+  - Naming: program AND team both "Active Roster Lab" (verbatim LeagueApps name)
+  - roster_type: all 32 'rostered'
+  - Summer name: "Summer Day Camp"
+  - Execute: BOTH seeds now.
+
+1. WHAT LANDED (verified)
+------------------------------------------------------------------------------
+A. Active Roster Lab  (ENROLLMENT CONTAINER ONLY — per the reassessment)
+   program  59cceec2-90d5-4ef6-8d75-ab8c5f4a4c43 (camp, active, 2026-03-23 -> 2026-06-08)
+   team     17197fa2-67eb-4a09-b42d-9f4d17ea42e2 · "Active Roster Lab" ·
+            training_only · age_group Mixed · color #0d9488
+   team_players:   32  (roster_type rostered, status active)
+   roster_members: 32
+   events:          0   <- intentionally none; the 30 existing per-team Monday
+                          practices + 334 RSVPs + 30 coach assignments LEFT
+                          UNTOUCHED (re-verified post-seed: 30 / 334 / 30).
+   The 32 are existing players (zero new players, zero new guardians) — matched
+   by name to the dedup set, all 32 matched.
+
+B. Summer Day Camp  (FULL CLEAN MODEL — net-new, zero dependents)
+   program  7d171db8-1a63-4e04-94c9-d55ab3325e65 (camp, active, 2026-07-27 -> 07-31)
+   team     1155b45e-f228-4e2c-a7a5-4538c6a13057 · clinic_camp · Mixed · #0d9488
+   events:  5  (Mon-Fri Jul 27-31, 09:00-12:00 ET, St. Patrick's,
+               event_type practice, status scheduled, publish_status published,
+               location_id a8b8e73d... = the same St. Pat's pin the Lab uses)
+   players: 0  (open roster, per Frank)
+
+2. THE COACH-PAY FLAG — CLOSED (no money effect)
+------------------------------------------------------------------------------
+The reassessment flagged 30 coach assignments for 10 Lab nights as a possible
+tripled payout. Verified against live: ALL 30 Lab assignments belong to Kenny
+Lane (coachkenny@), whose coaching_assignments.pay_per_session_cents is NULL —
+he is UNPAID (Coaching Director). Darien (the only paid coach, $60/session via
+pay_per_session_cents=6000) holds ZERO Lab assignments. So the "3 rows per
+Monday" is a cosmetic data-modeling artifact with $0 financial impact. No action
+needed on the Spring path; the Fall clean model fixes the modeling for free.
+
+3. ONE THING THE PLAN DID NOT ANTICIPATE (handled)
+------------------------------------------------------------------------------
+team_players carries an alignment-lock trigger (tg_team_players_alignment_check,
+from migration 20260505201932_wave4_roster_alignment_lock): a status='active'
+team_players row REQUIRES a matching roster_members (team_id, player_id) row
+first. The first Lab attempt (team_players only) aborted on this — and rolled
+back atomically (no orphan program/team). Resolution: the Lab seed inserts
+roster_members (32) BEFORE team_players (32), in one atomic DO block with a
+32/32 guard (RAISE EXCEPTION -> full rollback on any mismatch). roster_members
+inserted with null sizes/jersey (the equipment-align trigger fires only on
+size/jersey columns -> no-op; the roster_members alignment trigger fires only on
+DELETE/UPDATE -> insert is clean). Note for the Fall Lab seed: same two-step
+order (roster_members then team_players) is required.
+
+4. INVARIANTS CONFIRMED POST-SEED
+------------------------------------------------------------------------------
+  - Active programs = 3 (Spring 2026, Active Roster Lab, Summer Day Camp).
+  - Both camp teams non-competitive (training_only / clinic_camp) -> STEP 2
+    excludes them from Records, Games standings, and the tournament picker.
+  - Lab team has 0 events; the 30 original Lab events / 334 RSVPs / 30 coach
+    assignments unchanged.
+  - 'camp' programs are excluded from the seasons VIEW (program_type enum),
+    so season pickers/season-scoped reads are unaffected.
+
+5. EXPECTED RENDER (for the lane to smoke against)
+------------------------------------------------------------------------------
+  - Coach (Kenny) home "My assignments": grouped — "Spring 2026 · teams"
+    (11U Girls / 10U Black / 10U Blue) + a camp group with "Active Roster Lab".
+  - Admin portfolio: 3 active programs; camps absent from records/standings.
+  - Parent (e.g. Charlie): the Lab roster shows as a 2nd program; the Monday
+    sessions still render from the team calendars (where the RSVPs live).
+  - Summer Day Camp: 5 clean sessions on the schedule, Jul 27-31, no records.
+
+6. STILL OPEN
+------------------------------------------------------------------------------
+  - C-7..C-10: still pending ACADEMY_PLAYERS_MASTER_chatai.txt pasted into the
+    CC terminal. Render + reassess docs arrived; the master did not. Send it and
+    CC answers verbatim.
+  - Fall Active Roster Lab (clean live Lab): deferred. Needs the schedule CSV +
+    per-session coach comp set up once (not 3x), modeled on the camp team from
+    the start. Two-step roster_members->team_players order per section 3.
+  - Phase 2 (enrollment archetype) + Phase 3 (portfolio rollup + switcher +
+    DISTINCT-people dedup): not started; lane to sequence.
+
+7. EXECUTION RECORD (AP#22)
+------------------------------------------------------------------------------
+Summer seed: 1 atomic CTE (program+team+5 events), verified by SELECT (5 events,
+09:00-12:00 ET, St. Pat's). Lab seed: 1 atomic DO block (program+team+32
+roster_members+32 team_players, 32/32 guard), verified by SELECT (32/32/0
+events). Untouched-data re-verified (30/334/30). No migrations. Read-layer code
+(STEP 1/2) already merged (#776/#777). Phase 0 + these two seeds are the only
+production data changes in this arc.
+
+==============================================================================
+END — CAMP_SEED_EXECUTED_CC
+==============================================================================
