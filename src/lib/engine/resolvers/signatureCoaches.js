@@ -19,8 +19,10 @@
 //
 // AP #36: destructure `error` and throw before trusting `data`.
 // AP #37 exception: team_staff is FK-scoped via team_id → teams.org_id (no
-// org_id column), so no .eq('org_id') on that chain; staff_profiles carries
-// org_id and is filtered by it.
+// org_id column), so no .eq('org_id') on that chain. The team-coach
+// staff_profiles fetch is keyed by the team_staff user_ids (.in('user_id'))
+// — there is no FK between team_staff and staff_profiles, so a PostgREST
+// embed cannot be used; the join is done in JS by user_id.
 
 const PROGRAM_DIRECTOR_TITLE = 'Program Director';
 
@@ -51,26 +53,40 @@ export async function fetchSignatureCoaches(supabase, orgId, teamIds) {
 
   // Team coaches (Kenny; Darien once on 9U/8U team_staff). FK-scoped via
   // team_id → teams.org_id, so no org_id filter on this chain (AP #37).
+  // staff_profiles has NO FK from team_staff — a PostgREST embed throws
+  // "Could not find a relationship". Fetch team_staff + staff_profiles
+  // separately and join by user_id in JS (mirrors familyGuideCoaches).
   let teamRows = [];
   if (ids.length) {
     const { data: tsData, error: tsErr } = await supabase
       .from('team_staff')
-      .select('user_id, role, team_id, staff_profiles!inner ( user_id, display_name, title, phone )')
+      .select('user_id, role, team_id')
       .in('team_id', ids);
     if (tsErr) throw tsErr;
-    teamRows = (tsData || [])
-      .filter((r) => r.staff_profiles?.display_name)
-      .slice()
+    const tsRows = tsData || [];
+    const userIds = [...new Set(tsRows.map((r) => r.user_id).filter(Boolean))];
+    let profByUser = new Map();
+    if (userIds.length) {
+      const { data: spData, error: spErr } = await supabase
+        .from('staff_profiles')
+        .select('user_id, display_name, title, phone')
+        .in('user_id', userIds);
+      if (spErr) throw spErr;
+      profByUser = new Map((spData || []).map((p) => [p.user_id, p]));
+    }
+    teamRows = tsRows
+      .map((r) => ({ ...r, profile: profByUser.get(r.user_id) || null }))
+      .filter((r) => r.profile?.display_name)
       .sort((a, b) => {
         const rd = roleRank(a.role) - roleRank(b.role);
         if (rd !== 0) return rd;
-        return (a.staff_profiles?.display_name || '').localeCompare(b.staff_profiles?.display_name || '');
+        return (a.profile.display_name || '').localeCompare(b.profile.display_name || '');
       })
       .map((r) => ({
         user_id: r.user_id,
-        display_name: r.staff_profiles.display_name,
-        title: r.staff_profiles.title || '',
-        phone: r.staff_profiles.phone || '',
+        display_name: r.profile.display_name,
+        title: r.profile.title || '',
+        phone: r.profile.phone || '',
       }));
   }
 
