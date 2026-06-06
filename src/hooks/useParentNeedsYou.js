@@ -3,6 +3,7 @@ import { usePendingRsvps } from './usePendingRsvps';
 import { useRideNeeded } from './useRideNeeded';
 import { useVolunteerSlots } from './useVolunteerSlots';
 import { useInboxList } from './useInboxList';
+import { isRsvpClosingSoon, rsvpCloseLabel } from '../lib/rsvpDeadline';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const CAP = 4;
@@ -50,6 +51,9 @@ export function useParentNeedsYou({ myChildren, activities, nowMs, userId }) {
         ...p, domain: 'rsvp', id: `rsvp-${p.event_id}-${p.player_id}`,
         child: childById.get(p.player_id) || { playerId: p.player_id, firstName: p.kid_first_name },
         eventType: eventTypeById.get(p.event_id) || null,
+        // #1b deadline chip + #1a urgent tint, rendered by ActionRow.
+        rsvpCloseLabel: rsvpCloseLabel(p.start_at, nowMs),
+        isSoon: isRsvpClosingSoon(p.start_at, nowMs),
       }));
     const rideItems = (rides || []).map((r) => ({ ...r, domain: 'ride', id: `ride-${r.event_id}-${r.player_id}` }));
     const volItems = (volunteers || []).map((v) => ({ ...v, domain: 'volunteer', id: `vol-${v.event_id}` }));
@@ -59,7 +63,7 @@ export function useParentNeedsYou({ myChildren, activities, nowMs, userId }) {
     const out = [...actionable];
     if (commsItem) out.splice(Math.min(1, out.length), 0, commsItem);
     return out;
-  }, [pending, rides, volunteers, commsItem, childById, eventTypeById]);
+  }, [pending, rides, volunteers, commsItem, childById, eventTypeById, nowMs]);
 
   return {
     items: items.slice(0, CAP),

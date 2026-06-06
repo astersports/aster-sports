@@ -22,6 +22,7 @@ export function shapeAchievement(achievement, recordsByTeam = {}) {
     title,
     subtitle: achievement.description || null,
     recordBadge: recordsByTeam[achievement.team_id]?.record || null,
+    teamColor: achievement.teams?.team_color || null,
   };
 }
 

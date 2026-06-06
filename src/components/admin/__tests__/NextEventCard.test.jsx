@@ -41,38 +41,31 @@ describe('NextEventCard', () => {
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('arrival line: 15 min for games/tournaments, 5 min for practices (#3)', () => {
-    const game = render(<NextEventCard event={{ id: 'g', start_at: inHours(8), event_type: 'game', teams: { name: '10U Blue' } }} />);
-    expect(game.container.textContent).toMatch(/Arrive 15 minutes early/);
+  it('arrival line (#3): parent-gated via `arrival`; 15 min + "· game day" for games, 5 min for practices', () => {
+    const game = render(<NextEventCard event={{ id: 'g', start_at: inHours(8), event_type: 'game', teams: { name: '10U Blue' } }} arrival />);
+    expect(game.container.textContent).toMatch(/Arrive 15 minutes early · game day/);
     cleanup();
-    const practice = render(<NextEventCard event={{ id: 'p', start_at: inHours(8), event_type: 'practice', teams: { name: '10U Blue' } }} />);
+    const practice = render(<NextEventCard event={{ id: 'p', start_at: inHours(8), event_type: 'practice', teams: { name: '10U Blue' } }} arrival />);
     expect(practice.container.textContent).toMatch(/Arrive 5 minutes early/);
+    expect(practice.container.textContent).not.toMatch(/game day/);
+    cleanup();
+    // admin/coach: no `arrival` prop → no line
+    const none = render(<NextEventCard event={{ id: 'n', start_at: inHours(8), event_type: 'game', teams: { name: '10U Blue' } }} />);
+    expect(none.container.textContent).not.toMatch(/Arrive/);
   });
 
-  it('draft pill: renders "may reschedule · draft" only when draft is true (#2)', () => {
+  it('draft pill (#2): renders "May reschedule · draft" only when draft is true', () => {
     const event = { id: 't', start_at: inHours(48), event_type: 'tournament', teams: { name: '11U Girls' } };
     const on = render(<NextEventCard event={event} draft />);
-    expect(on.container.textContent).toMatch(/may reschedule · draft/);
+    expect(on.container.textContent).toMatch(/May reschedule · draft/);
     cleanup();
     const off = render(<NextEventCard event={event} draft={false} />);
-    expect(off.container.textContent).not.toMatch(/may reschedule/);
+    expect(off.container.textContent).not.toMatch(/reschedule/);
   });
 
-  it('deadline chip: shows "RSVP closes…" only when rsvpClose is passed (parent-gated, #1b)', () => {
-    const event = { id: 'r', start_at: inHours(28), event_type: 'game', teams: { name: '10U Blue' } };
-    const on = render(<NextEventCard event={event} rsvpClose />);
-    expect(on.container.textContent).toMatch(/RSVP closes in 1d 3h|RSVP closes in 1d 4h/);
-    cleanup();
-    // admin/coach: no rsvpClose prop → no chip
-    const off = render(<NextEventCard event={event} />);
-    expect(off.container.textContent).not.toMatch(/RSVP closes/);
-  });
-
-  it('urgent tint: amber border inside the 4h event-soon window, default border outside it (#1a)', () => {
-    const soon = render(<NextEventCard event={{ id: 's', start_at: inHours(2), event_type: 'game', teams: { name: '10U Blue' } }} />);
-    expect(soon.container.firstChild.style.border).toContain('var(--as-warning)');
-    cleanup();
-    const later = render(<NextEventCard event={{ id: 'l', start_at: inHours(8), event_type: 'game', teams: { name: '10U Blue' } }} />);
-    expect(later.container.firstChild.style.border).toContain('var(--as-border-default)');
+  it('team-color left rail: the event card edges in the team color', () => {
+    const { container } = render(<NextEventCard event={{ id: 'c', start_at: inHours(8), event_type: 'game', teams: { name: '10U Blue', team_color: '#4a8fd4' } }} />);
+    // jsdom normalizes the hex to rgb()
+    expect(container.firstChild.style.borderLeft).toBe('3px solid rgb(74, 143, 212)');
   });
 });

@@ -17,6 +17,8 @@ const CARD = {
   borderTop: '3px solid var(--as-accent)', borderRadius: 12,
   boxShadow: 'var(--as-shadow-sm)', padding: 14,
 };
+// The achievement's own team color edges the "Your season" card (per
+// HOME_RENDERS — the achieving team's identity), falling back to accent.
 const LINK_BTN = {
   display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
   width: '100%', minHeight: 44, marginTop: 11, paddingTop: 10,
@@ -29,7 +31,7 @@ export default function ParentTail({ achievement, seasonLabel, progressLabel, on
   return (
     <section className="min-w-0" aria-label="Your season">
       <div style={LABEL}>Your season</div>
-      <div style={CARD}>
+      <div style={{ ...CARD, borderTop: `3px solid ${achievement?.teamColor || 'var(--as-accent)'}` }}>
         {achievement && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Trophy size={20} strokeWidth={1.75} color="var(--as-gold)" aria-hidden="true" />

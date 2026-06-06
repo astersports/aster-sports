@@ -8,7 +8,6 @@ import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { getWeatherForTime, useWeather } from '../hooks/useWeather';
 import { useAdminNeedsYou } from '../hooks/useAdminNeedsYou';
 import { useParentComingUp } from '../hooks/useParentComingUp';
-import { useEventDraftStatus } from '../hooks/useEventDraftStatus';
 import HomeShell from '../components/home/HomeShell';
 import HomeGreeting from '../components/home/HomeGreeting';
 import NeedsYouSection from '../components/home/NeedsYouSection';
@@ -39,7 +38,6 @@ export default function AdminHomePage() {
     [needsYou.items],
   );
   const comingUp = useParentComingUp(activities, now, excludeIds);
-  const comingUpDraft = useEventDraftStatus(comingUp);
   const weather = useWeather(...WEATHER_DEFAULT_COORDS);
 
   const name = firstNameFrom(user);
@@ -65,7 +63,6 @@ export default function AdminHomePage() {
         <ComingUpSection
           event={comingUp}
           weather={getWeatherForTime(weather, comingUp?.start_at)}
-          draft={comingUpDraft}
           onSeeSchedule={() => navigate('/schedule')}
         />
       )}

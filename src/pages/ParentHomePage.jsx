@@ -83,7 +83,7 @@ export default function ParentHomePage() {
           event={comingUp}
           weather={getWeatherForTime(weather, comingUp?.start_at)}
           draft={comingUpDraft}
-          rsvpClose
+          arrival
           onSeeSchedule={() => navigate('/schedule')}
         />
       )}

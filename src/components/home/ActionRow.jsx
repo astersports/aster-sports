@@ -1,5 +1,6 @@
 import { AlertTriangle, ChevronRight, ListChecks, Mail } from 'lucide-react';
 import ChildRsvp from '../schedule/ChildRsvp';
+import Badge from '../shared/Badge';
 import { formatDayTime } from '../../lib/formatters';
 
 // ActionRow — the "action" card archetype (shell contract v2), one of three
@@ -45,9 +46,24 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
   const rail = item.team_color || 'var(--as-neutral)';
 
   if (item.domain === 'rsvp') {
+    // Urgent tint (#1a) + deadline chip (#1b) live on the act-now RSVP card
+    // per HOME_RENDERS: amber wash when the event is event-soon, an amber
+    // "RSVP closes…" chip top-right (rsvpCloseLabel/isSoon set by the hook).
+    const rsvpStyle = { ...card(rail) };
+    if (item.isSoon) {
+      delete rsvpStyle.backgroundColor;
+      rsvpStyle.background = 'linear-gradient(92deg, var(--as-warning-soft), var(--as-bg-card) 62%)';
+    }
     return (
-      <div style={card(rail)}>
-        <div style={KT}><span aria-hidden="true" style={dot(rail)} />{item.kid_first_name} · {item.team_name}</div>
+      <div style={rsvpStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <div style={KT}><span aria-hidden="true" style={dot(rail)} />{item.kid_first_name} · {item.team_name}</div>
+          {item.rsvpCloseLabel && (
+            <Badge pill variant="warning" compact style={{ backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-warning)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {item.rsvpCloseLabel}
+            </Badge>
+          )}
+        </div>
         <div style={EVLINE}>{formatDayTime(item.start_at)}</div>
         <ChildRsvp child={item.child} eventId={item.event_id} eventType={item.eventType}
           onSave={() => onRsvpResolved(item.event_id, item.player_id)} />

@@ -26,3 +26,13 @@ export function rsvpCloseLabel(startAt, nowMs = Date.now()) {
   const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
   return `RSVP by ${day} ${time}`;
 }
+
+// #1a urgent tint companion to the deadline chip: an upcoming event is
+// "RSVP closing soon" within the same RELATIVE_MAX_MS window the chip uses
+// its relative countdown for — so the amber tint and the relative chip fire
+// together (per HOME_RENDERS: the act-now RSVP card washes amber ~a day out).
+export function isRsvpClosingSoon(startAt, nowMs = Date.now()) {
+  if (!startAt) return false;
+  const diff = new Date(startAt).getTime() - nowMs;
+  return diff > 0 && diff <= RELATIVE_MAX_MS;
+}

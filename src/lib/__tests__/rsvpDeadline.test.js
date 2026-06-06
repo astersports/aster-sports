@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rsvpCloseLabel } from '../rsvpDeadline';
+import { isRsvpClosingSoon, rsvpCloseLabel } from '../rsvpDeadline';
 
 // #1b deadline chip — RSVP closes at event start, all events. Pure label.
 const NOW = new Date('2026-04-15T12:00:00-04:00').getTime();
@@ -27,5 +27,14 @@ describe('rsvpCloseLabel', () => {
   it('absolute "RSVP by Day Time" beyond 48h', () => {
     // 3 days out — absolute form, ET-pinned.
     expect(rsvpCloseLabel(fromNow(72 * H), NOW)).toMatch(/^RSVP by \w{3} \d{1,2}:\d{2} (AM|PM)$/);
+  });
+});
+
+describe('isRsvpClosingSoon (#1a urgent tint companion)', () => {
+  it('true within 48h, false beyond, false once past start', () => {
+    expect(isRsvpClosingSoon(fromNow(21 * H), NOW)).toBe(true); // ~the render's tinted card
+    expect(isRsvpClosingSoon(fromNow(72 * H), NOW)).toBe(false); // far practice — no tint
+    expect(isRsvpClosingSoon(fromNow(-H), NOW)).toBe(false); // started
+    expect(isRsvpClosingSoon(null, NOW)).toBe(false);
   });
 });
