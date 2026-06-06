@@ -1,0 +1,182 @@
+==============================================================================
+HOME — STEP 1 + STEP 2 SHIPPED + CAMP-SEED PRE-FLIGHT  (Claude Code -> design lane)
+Date: 2026-06-06. Covers: the multi-program foundation build (Phase 1 / STEP 1),
+the C-12 team-type scope build (STEP 2), production ground truth, and the queued
+camp seeds (Active Roster Lab pilot + July summer day camp). Self-contained.
+No production data writes have happened — seeds are pre-flight only, awaiting GO.
+==============================================================================
+
+0. TL;DR
+------------------------------------------------------------------------------
+- STEP 1 (multi-program foundation) MERGED — PR #776.
+- STEP 2 (C-12 type-exclude on AAU-semantics surfaces) MERGED — PR #777.
+- The 7 held design-lane exchange docs MERGED — PRs #767, #770, #771, #772,
+  #773, #774, #775.
+- The onboarding gate is now OPEN: a 2nd active program (a camp) can be seeded
+  without leaking onto records/standings/brackets. STEP 1 + STEP 2 both live.
+- No-regression held for both PRs: every change is a no-op while Legacy has one
+  active season and five competitive teams. Full vitest suite green at each step
+  (1425 -> 1432 passing).
+- Camp seeds are PRE-FLIGHT ONLY. Nothing written to production. Frank's GO + a
+  handful of open inputs gate the actual write (CC executes, verifies each row).
+
+1. STEP 1 — MULTI-PROGRAM FOUNDATION (PR #776, MERGED)
+------------------------------------------------------------------------------
+Built exactly as GO'd: useActivePrograms + the season-read switch + the C-12
+coach grouping, one Vercel-verified PR, no-regression guaranteed for the
+single-program case.
+
+  (a) src/hooks/useActivePrograms.js (NEW)
+      The active program-season SET for the current user. `programs` is the
+      unified entity (`seasons` is a VIEW over it: programs WHERE
+      program_type='season'), so this reads status='active' ACROSS
+      program_type. Role-scoped: admin -> all active programs; coach/parent ->
+      active programs whose teams they touch (myTeamIds). AP#36 error-surfaced.
+      Returns { programs:[{id,programType,name,status,startDate,endDate,
+      teamIds}], teamIds, loading, refetch }.
+
+  (b) src/lib/home/offSeason.js — added isHomeOffSeason(programs, activities,
+      nowMs). Home is off-season only when EVERY active program has ended. With
+      one program this equals the prior isOffSeason(activeSeason,...) — the
+      no-regression invariant. Wired into all three home pages in place of the
+      singular gate.
+
+  (c) src/components/home/CoachTail.jsx + src/lib/home/coachHomeData.js —
+      groupTeamsByProgram(teams, programs). When the coach touches >1 active
+      program, teams render GROUPED under per-program headers
+      ("Spring 2026 · teams" / "Active Roster Lab · camp"). With one program,
+      groups.length===1 and the flat render path is BYTE-UNCHANGED.
+
+  No-regression proof: isHomeOffSeason parity test vs isOffSeason for 1 program;
+  CoachTail flat-for-1 render test; useActivePrograms one-entry test. Full suite
+  green (198 files / 1425 passed). Lint + build clean. All files <=150 LOC.
+
+2. STEP 2 — C-12 TYPE-EXCLUDE (PR #777, MERGED)
+------------------------------------------------------------------------------
+The gate before a camp can go live. Ruling applied: GROUP non-competitive
+programs everywhere they belong; type-EXCLUDE them ONLY from AAU-semantics
+surfaces (records / standings / game+bracket pickers).
+
+  (a) src/lib/teamTypes.js (NEW) — COMPETITIVE_TEAM_SLUGS =
+      [game_team, tournament_team, hybrid_team]; isCompetitiveTeam(team) reads
+      the team_types(slug) embed. Unknown/legacy type DEFAULTS to competitive
+      (no-regression). Non-competitive = clinic_camp / training_only / academy.
+
+  (b) src/hooks/useTeams.js — embeds team_types(slug) so consumers classify.
+  (c) src/pages/RecordsPage.jsx — standings list + counts filter to competitive.
+  (d) src/components/schedule/GamesView.jsx — StandingsTable filters to
+      competitive. (The team-filter dropdown was ALREADY safe: gameTeams derives
+      from game/tournament events, which camp teams lack.)
+  (e) src/components/tournament/TeamMultiSelect.jsx — bracket picker embeds slug
+      + filters to competitive.
+
+  Surfaces deliberately NOT filtered (GROUP, don't exclude): coach home (Phase 1
+  grouping), schedule list, briefing audience pickers (comms is not AAU-
+  semantics — you may legitimately message a camp). useChannels left as-is (a
+  camp team channel is fine).
+
+  No-regression proof: all 5 Legacy teams map to game/tournament/hybrid slugs
+  today (verified via MCP), so every filter is a no-op until a camp exists.
+  AP#43 cross-surface invariant test locks the exclusion across RecordsPage +
+  GamesView + TeamMultiSelect and asserts the slug embed is present. Full suite
+  green (199 files / 1432 passed). Lint + build clean. GamesView at 150 LOC.
+
+3. PRODUCTION GROUND TRUTH (verified via Supabase MCP, 2026-06-06)
+------------------------------------------------------------------------------
+  Active programs: EXACTLY ONE — Spring 2026 (season, 2026-03-23 -> 2026-06-14).
+  Other programs: Fall 2025 (archived), Winter 2025-26 (archived), a ZZ TEST
+  demo (archived). No camp program exists in the DB.
+
+  Teams (all Spring 2026, all competitive):
+    11U Girls -> hybrid_team ; 10U Black -> tournament_team ;
+    10U Blue -> game_team ; 9U Boys -> game_team ; 8U Boys -> tournament_team.
+
+  team_types catalog (org-scoped, all active):
+    game_team (sort 1) — league play, weekly games
+    tournament_team (sort 2) — AAU travel, tournaments only
+    hybrid_team (sort 3) — both league + tournament
+    training_only (sort 4) — skills dev, NO games/tournaments
+    academy (sort 5) — Futures pipeline
+    clinic_camp (sort 6) — time-bounded camps/clinics
+
+  Required (NOT NULL, no default) columns for the seed:
+    programs: org_id, name
+    teams: org_id, season_id, name, age_group
+    team_players: (team_id, player_id) + roster_type IN (rostered, futures) +
+      status IN (active, inactive)
+    events: team_id, title, start_at
+  programs.program_type has NO check constraint (free text) -> 'camp' is valid
+  and is excluded from the seasons view (which filters program_type='season').
+
+4. CAMP-SEED PRE-FLIGHT (PRE-FLIGHT ONLY — no writes yet)
+------------------------------------------------------------------------------
+  Source: Frank's Registrations_5.csv (Active Roster Lab) — NOT committed to the
+  repo (carries parent emails, mobiles, home addresses, birthdates -> §16.7
+  privacy lock). Reference/out-of-band only.
+
+  DEDUP FINDING (verified via MCP): ALL 32 Active Roster Lab players ALREADY
+  EXIST as player rows in the org (31 member_type='roster', 1 'futures_academy'
+  — Jake Perkiel), each already on a Spring 2026 team. So the Lab seed creates
+  ZERO new players and ZERO new guardians — it is purely:
+    1 camp program + 1 camp team + 32 team_players links to existing player_ids
+    + the Monday session events.
+
+  RECONCILIATION RESOLVED: the authoritative Lab roster is 32 (matches the
+  "render 32" figure). The earlier "gold 36 / DB 37" were over-counts (staff +
+  dupes). 32 is truth.
+
+  PLAN A — Active Roster Lab (the pilot):
+    program: name "Active Roster Lab", type camp, status active,
+      2026-03-23 -> 2026-06-08 (last session this coming Monday Jun 8)
+    team: 1 team, team_type_id = a NON-competitive type (so STEP 2 excludes it
+      from records/standings)
+    team_players: 32 links to the resolved existing player_ids
+    events: the Monday 7:35-8:35 PM sessions
+
+  PLAN B — Summer Day Camp (Frank chose Jul 27-31, empty roster):
+    program: type camp, status active, 2026-07-27 -> 2026-07-31
+    team: 1 team, team_type_id = clinic_camp, no enrollments yet
+    events: 5 daily sessions Mon-Fri 9:00 AM - 12:00 PM at St. Patrick's
+
+  OPEN INPUTS gating execution (Frank to confirm):
+    1. Active Roster Lab session dates — need the SpringActiveRosterLabSchedule
+       .csv re-sent (no PII) to seed the right events.
+    2. Lab team-type: training_only vs academy vs clinic_camp (all excluded by
+       STEP 2; semantic label only).
+    3. Lab enrollment roster_type: rostered vs futures.
+    4. age_group label for both camp teams (required field): Academy / Grades
+       2-5 / Mixed?
+    5. Summer camp program name: Summer Day Camp / July Skills Camp / Frank's
+       call.
+
+  Execution model (Frank-chosen): CC executes the seed via MCP after STEP 2 is
+  smoked + GO, writes exact INSERTs, verifies each row (AP#22). No fabrication
+  (AP#27).
+
+5. WHAT'S GATED / NEXT (NOT built — for the lane to sequence)
+------------------------------------------------------------------------------
+  Phase 2 — enrollment archetype (the 4th home archetype: action/event/context
+    + enrollment). Not started.
+  Phase 3 — admin portfolio rollup + program switcher + per-program off-season
+    + DISTINCT-people dedup (usePortfolioMetrics via COUNT(DISTINCT player_id)).
+    Not started.
+  Phase 4 — camp seed execution (section 4 above). Awaiting GO + open inputs.
+
+  STEP-2 follow-ups intentionally left (low-risk, no live leak today):
+    - The 9 other .from('teams') callsites (StepTeam wizard, AnchorPicker,
+      InboxFilters, etc.) are display/comms/creation surfaces — GROUP semantics,
+      no exclude needed. Re-audit only if a new AAU-semantics surface appears.
+
+6. OPEN FLAGS FOR THE LANE
+------------------------------------------------------------------------------
+  - C-7..C-10 verbatim answers still pending the ACADEMY_PLAYERS_MASTER content
+    (named but not attached). Send it and CC answers exactly in a _CC.txt.
+  - The "Active Roster Lab" render line still reads "One migration (M-A)" — that
+    is STALE. M-A is VOIDED (seasons is a VIEW; the build is migration-free).
+    Recommend the lane scrub that line from the render.
+  - Decision needed (section 4 open inputs) before the pilot can go live for
+    Monday Jun 8.
+
+==============================================================================
+END — HOME_STEP1_2_SHIPPED_CC
+==============================================================================
