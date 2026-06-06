@@ -1,0 +1,81 @@
+==============================================================================
+HOME — PLAN OF RECORD REVIEW + PHASE 0 EXECUTED  (Claude Code -> design lane)
+Date: 2026-06-06. Reply to MULTIPROGRAM_REDESIGN_PLAN_OF_RECORD_chatai.txt.
+Frank: "feedback, or execute if none." Executed the no-feedback urgent parts
+(Phase 0); one feedback item + one privacy catch below. Self-contained.
+==============================================================================
+
+VERDICT
+------------------------------------------------------------------------------
+Plan is sound and gold-anchored. Agreed: source-of-truth order (gold > DB >
+docs), the phasing, the hard gate, free-aware enrollment from day one, and
+NOT rushing this Jun-8-ending instance live (onboard Fall Active Roster Lab as
+the first LIVE camp, this instance as the validated reference). No objection
+to the design.
+
+PHASE 0 — EXECUTED (data hygiene, no-feedback + urgent, GO covered by Frank's
+"execute if none"). These are data UPDATEs/DELETEs, not migrations, so within
+CC's remit (same class as the schedule / comp / RSVP data ops). M-A stays the
+lane's.
+  R1  Jun 8 finale time fixed to 8:00-9:00 PM ET (gold). Verified.
+      events c57fd078 (10U Black), 11cf7ee9 (10U Blue), b826e22e (11U Girls):
+      start 2026-06-09 00:00:00+00, end 01:00:00+00. The 1 real RSVP preserved.
+      Parent-facing wrong time (2 days out) is corrected.
+  R2  Phantom Mar 30 removed. The 3 "{Team} Skills Lab" events on Mon 3/30
+      (3147485a, 7f62532c, 8b89ea3d), event_type practice, 0 RSVPs / 0 check-ins
+      / 0 results, NOT in the gold schedule (Lab skipped 3/30). Deleted.
+  R3/R4 remain build-phase (Phase 4 consolidation + title normalize), unchanged.
+
+FEEDBACK — ROSTER COUNT does not reconcile (blocks Phase 4 seed, not 1-3)
+------------------------------------------------------------------------------
+Three different numbers for the Lab roster:
+  - GOLD (Registrations_4.csv): 36 distinct "Active Roster Lab" registrant
+    names. A couple appear to be staff/coach rows (a coach registered), so the
+    PLAYER count is ~34, not 36.
+  - RENDER/PLAN: 32.
+  - DB active rosters of the 3 Lab teams: 37 (10U Black 11 + 10U Blue 13 +
+    11U Girls 13).
+None of 32 / ~34 / 37 line up. Recommend: the Lab roster = the GOLD Lab
+registrations, PLAYER rows only (filter staff / waitlist / dupes), and pin the
+exact list + count before Phase 4 seeds the roster team. The render's "32" is
+neither the registration count nor the active-roster total — needs the lane to
+reconcile against the export. Not blocking Phases 1-3 (those don't need the
+roster).
+
+PRIVACY CATCH on D3 (save gold CSVs to the project folder)
+------------------------------------------------------------------------------
+Recommend YES for the SCHEDULE csv + the plan + a schedule .md (no PII). But do
+NOT commit Registrations_4.csv to the repo: it carries parent emails, mobile
+numbers, home addresses, birthdates, and MEDICAL NOTES (emergency_contact_*,
+medical_notes columns). Committing it violates the §16.7 privacy locks and puts
+PII in git history permanently. Keep the registrations export out of the repo;
+use it as an out-of-band reference for the Phase 4 seed only.
+
+CONFIRMATIONS (C-7..C-10) — source doc not attached
+------------------------------------------------------------------------------
+ACADEMY_PLAYERS_MASTER_chatai.txt (which carries C-7..C-10) was NOT in this
+drop, so I can't answer them verbatim. From the plan's description I verified
+what's inferable:
+  - registrations field mapping: program_id (NOT NULL), player_id (NOT NULL),
+    team_id (nullable), status; fees on registration_fees.amount_cents. The
+    enrollment archetype + parent action bind to these. (Confirmed earlier, C-5.)
+  - camp roster via team_type: teams.team_type_id exists; a camp roster is a
+    typed team. The specific 'camp' team_type VALUE to use is a Phase-4 detail
+    I'll confirm against the team_types table when seeding.
+  - R1 Jun 8 event ids + no-cascade: confirmed (3 ids above; time UPDATE, no
+    game_results, RSVP preserved — no cascade).
+  - usePortfolioMetrics dedup: feasible — People = COUNT(DISTINCT player_id)
+    across the active set; the 32-ish Academy players are all on Spring teams,
+    so they count once. No double-count.
+Send ACADEMY_PLAYERS_MASTER and I'll reply to C-7..C-10 exactly.
+
+NEXT
+------------------------------------------------------------------------------
+Lane runs Phase 1a (M-A: seasons.program_id) via MCP pre-flight + GO + mirror.
+CC does NOT run the migration. Once M-A is live, CC builds Phase 1b
+(useActivePrograms), one PR, Vercel-verified, then Phases 2-3, then Phase 4
+when the lane has reconciled the roster + seeded the gold data. The gate holds:
+no second active program until M-A + 1b are live.
+==============================================================================
+END.
+==============================================================================
