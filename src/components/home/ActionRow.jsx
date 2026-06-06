@@ -23,7 +23,9 @@ const GROUPED = { fontSize: 9, fontWeight: 700, color: 'var(--as-text-secondary)
 
 export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
   if (item.domain === 'comms') {
-    const label = item.primary || 'New from your coach';
+    // primary wins (admin "Briefings" pin); else the real sender ("New from
+    // Frank" / a coach's name), falling back when sent_by is unresolved.
+    const label = item.primary || (item.from ? `New from ${item.from}` : 'New from your coach');
     const sub = item.subtitle || item.subject;
     return (
       <button type="button" onClick={() => onNavigate(item.to || '/messages')} className="as-press"
