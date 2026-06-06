@@ -9,40 +9,25 @@
 // to EMPTY_SUMMARY which renders "0-0" for every team. ParentHomePage
 // passed records correctly via useOrgTeamRecords.
 //
-// This test locks the invariant:
-//   (a) ParentHomeTeamCard renders the same output regardless of
-//       which page wraps it, given the same summary
+// This test locks the invariant (the live surfaces both source records from
+// the canonical useOrgTeamRecords hook — no per-surface divergence):
 //   (b) CoachHomePage uses useOrgTeamRecords (the canonical hook)
-//   (c) CoachHomePage threads recordsByTeam to ParentHomeTeamCard
-//   (d) ParentHomePage threads recordsByTeam (via MyTeamsStrip)
+//   (c) CoachTail reads recordsByTeam[t.id]
+//   (d) ParentHomePage threads recordsByTeam (records peek in ParentTail)
 //
 // If any future PR reverts to a direct team_staff query without records,
-// or removes the summary prop, this test fails and forces the structural
-// fix rather than per-surface patches.
+// this test fails and forces the structural fix rather than per-surface
+// patches. (The old test (a) rendered ParentHomeTeamCard directly; that
+// component was retired in the home redesign — the parent MY TEAMS strip is
+// gone — so the render-level case was removed with it.)
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import { readFileSync } from 'fs';
-import ParentHomeTeamCard from '../ParentHomeTeamCard';
 
 afterEach(cleanup);
 
-const TEAM = {
-  id: 't-10b', name: '10U Black', team_color: '#4a8fd4', sort_order: 2,
-};
-const SUMMARY = {
-  record: '9-4', ties: 0, streak: 'W4', last5: [], ppg: 31.8,
-};
-
 describe('Cross-surface invariant — MY TEAMS records (anti-pattern #43)', () => {
-  it('a. ParentHomeTeamCard renders the same record line regardless of caller', () => {
-    const { container } = render(
-      <ParentHomeTeamCard team={TEAM} summary={SUMMARY} loading={false} onClick={() => {}} />,
-    );
-    expect(container.textContent).toContain('9-4');
-    expect(container.textContent).toContain('W4');
-  });
-
   it('b. CoachHomePage imports useOrgTeamRecords (canonical hook for team records)', () => {
     const src = readFileSync('src/pages/CoachHomePage.jsx', 'utf8');
     expect(src).toMatch(/from ['"]\.\.\/hooks\/useOrgTeamRecords['"]/);
