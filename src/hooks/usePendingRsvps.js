@@ -46,6 +46,9 @@ export function usePendingRsvps(myChildren, upcomingActivities) {
           event_title: formatEventTitleString(ev),
           team_name: ev.teams?.name || '—',
           team_color: ev.teams?.team_color || 'var(--as-neutral)',
+          // opponent surfaces on the RSVP card ("Charlie · 11U vs Somers");
+          // null for practices, so the renderer omits it.
+          opponent: ev.opponent || null,
         });
       }
     }

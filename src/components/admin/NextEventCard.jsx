@@ -61,7 +61,7 @@ export default function NextEventCard({ event, weather, draft, arrival, eyebrow 
         </div>
         {!minimal && (
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            {weather && <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginBottom: 2 }}>{weather.icon} {weather.temp}°</div>}
+            {weather && <div style={{ fontSize: 13, color: 'var(--as-text-meta)', marginBottom: 2 }}>{weather.icon} {weather.temp}°</div>}
             <div className="font-bold" style={{ fontSize: 17, color: 'var(--as-accent)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
               {countdown || '—'}
             </div>
