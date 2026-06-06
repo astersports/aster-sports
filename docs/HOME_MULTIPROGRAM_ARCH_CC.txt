@@ -1,0 +1,135 @@
+==============================================================================
+HOME — MULTI-PROGRAM READINESS  (Claude Code -> design lane)
+Date: 2026-06-06. Frank's question: when AsterSports brings in camps, group
+trainings, and multiple programs each with their own season, what happens to
+the home (esp. Admin)? Did we redesign it the right way?
+==============================================================================
+
+VERDICT
+------------------------------------------------------------------------------
+The SHELL is right and extensible. The DATA ASSUMPTIONS are scoped to today
+(single program, single active season, team-shaped offerings) — which was the
+correct call for what Legacy Hoopers is now, but two of them must generalize
+the day a second program / camp / group-training block goes live. We did not
+build into a corner: the expensive-to-change part (structure) is sound; the
+part that must flex (scope) is contained and named below.
+
+Bottom line: built right for today, multi-program seams named — not papered
+over. One hard discipline flag at the end.
+
+------------------------------------------------------------------------------
+WHAT HOLDS (scales as-is — do not touch)
+------------------------------------------------------------------------------
+- The 4-slot shell: HomeGreeting -> NeedsYouSection -> ComingUpSection ->
+  RoleTail. Offering-agnostic. "What needs you / what's next / your context"
+  are true whether the thing is a game, a camp day, or a drop-in session. The
+  shell never queries; it just composes slots.
+- Hooks own fetching, cards are presentational. THE key growth property: a new
+  offering = a new hook + a new card archetype, NOT a page restructure. (Same
+  property that fixed the LCP fan-out.)
+- Role-routing (useHomeRole -> parent/coach/admin) carries over unchanged.
+- The 3 card archetypes (action / event / context) carry over; camps/training
+  add new ones beside them, they don't replace them.
+
+------------------------------------------------------------------------------
+THE TWO SEAMS (must generalize for multi-program)
+------------------------------------------------------------------------------
+SEAM 1 — `activeSeason` is SINGULAR (the big one).
+  useSeason().activeSeason is load-bearing: it drives seasonProgress(),
+  AdminProgramHealth's KPI strip, and the off-season (D-D) trigger
+  (isOffSeason). With multiple programs each running their own season,
+  "the active season" stops being one thing.
+  FAILURE MODE is the dangerous kind: a second program would be SILENTLY
+  HIDDEN — the home picks one season and frames everything by it — rather
+  than erroring. A parent with a kid on the 10U team and a kid in a July
+  camp would see only the team's season lens.
+
+SEAM 2 — TEAM = SCOPE.
+  Everything routes org -> team -> event. useActivities (season+team),
+  useParentNeedsYou (myChildren -> teams), useCoachNeedsYou (team_staff ->
+  coachedTeamIds), useOrgTeamRecords. A camp or a group-training block is not
+  a "team with a roster and games" — it's an ENROLLMENT with sessions.
+  RSVP-per-event, arrival lines, records/standings, the event_type enum
+  (game/practice/tournament/skills_lab/tryout) all assume the AAU/league
+  shape.
+
+NOTE: the SCHEMA already supports multi-program — `programs`, `seasons`
+(status + rollover), and multi-org all exist. The gap is purely that the home
+hooks consume a single activeSeason and team scope. So this is a read-layer
+generalization, not a schema rebuild.
+
+------------------------------------------------------------------------------
+PER-ROLE IMPACT
+------------------------------------------------------------------------------
+PARENT (easiest): a family with a kid on a team + a kid in a camp should see
+  both fold into ONE Needs-you / Coming-up. The shell already does this IF the
+  hooks query across all the kid's enrollments, not just team events. Today
+  they're team-scoped. Generalize usePendingRsvps/useParentComingUp's source
+  from "the kid's teams" to "the kid's active enrollments."
+
+COACH / TRAINER: comp (coach_payouts) + roster-health (check_ins) already
+  generalize — a camp coach has assignments, pay, and attendance too. "My
+  teams" broadens to "my assignments across programs." CoachTail's team rails
+  become assignment rails.
+
+ADMIN (the real one): Program health is currently ONE program's KPI strip
+  (players / events / collected / out for the active season). With N programs
+  you need either:
+    (a) a PORTFOLIO ROLLUP — "across 3 programs: X players, $Y collected" —
+        plus a per-program drill, or
+    (b) a PROGRAM SWITCHER / filter at the top of the admin home.
+  And off-season (D-D) basically stops firing globally (there's always
+  something active somewhere), so D-D becomes PER-PROGRAM, not a global home
+  state.
+
+------------------------------------------------------------------------------
+THE PATH (bounded — not a teardown)
+------------------------------------------------------------------------------
+1. Generalize the singular season context into an ACTIVE-PROGRAMS / PORTFOLIO
+   context (e.g., useActivePrograms) that returns the set of active
+   program-seasons for the current user. The shell stays; the season-shaped
+   hooks (seasonProgress, program-health, isOffSeason, the *NeedsYou/ComingUp
+   sources) broaden to consume the set. THIS IS THE ONE REAL REFACTOR.
+2. Add ENROLLMENT-shaped archetypes (camp week, group-training punch-card /
+   credits) beside the existing action/event/context cards.
+3. Give Admin PROGRAM SCOPING — rollup + per-program drill, or a switcher.
+4. Generalize event semantics (arrival line, RSVP deadline, "Coming up" copy)
+   per offering type — a camp doesn't RSVP per day; training is drop-in.
+5. D-D off-season becomes per-program.
+
+Everything in WHAT-HOLDS survives intact. The work is broadening scope from
+"this team's season" to "this user's active programs."
+
+------------------------------------------------------------------------------
+DISCIPLINE FLAG (important)
+------------------------------------------------------------------------------
+Do NOT add a second program / season to production until the active-context
+generalization (path step 1) lands. The current home will not error on a
+second program — it will SILENTLY frame everything by one season and hide the
+other. Silent-hide on live family data is the worst failure class. Sequence:
+generalize first, then onboard the second program.
+
+------------------------------------------------------------------------------
+DECISIONS REQUESTED
+------------------------------------------------------------------------------
+  M-1  Admin multi-program: portfolio rollup + drill, or a program switcher?
+       (Or both — rollup default, switcher to focus.)
+  M-2  Are camps / group trainings modeled as PROGRAMS (with their own
+       season/sessions) or as a new offering type under a program? Sets where
+       the active-programs context reads from.
+  M-3  Enrollment vs per-event RSVP for camps — confirm camps are enroll-once
+       (not RSVP-per-day), so the parent Needs-you treats a camp as one
+       enrollment action, not N daily RSVPs.
+  M-4  Does D-D off-season stay a per-program wrap, or do we retire the global
+       off-season state once the org is multi-program (always-something-active)?
+  M-5  Priority/timing: is this the next build after the current home arc, or
+       does it wait until a real camp/2nd-program is on the calendar? (YAGNI
+       says wait, but step-1 must precede the first multi-program onboard.)
+
+------------------------------------------------------------------------------
+RULES (when this builds): 150-line cap, targeted edits, --as-* tokens,
+org-scoped, hooks own fetching. Shell stays; broaden the hooks. No schema
+rebuild expected (programs/seasons already exist) — confirm per M-2.
+==============================================================================
+END.
+==============================================================================
