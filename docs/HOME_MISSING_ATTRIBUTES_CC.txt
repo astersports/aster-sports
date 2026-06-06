@@ -1,0 +1,122 @@
+==============================================================================
+HOME — MISSING ATTRIBUTES TO COMPLETE THE BUILD  (Claude Code -> design lane)
+Date: 2026-06-06. The three role homes are LIVE in production (#762, #765,
+#766). This is the punch list of what's NOT yet complete, with the exact
+requirement + the decision each needs from the lane.
+==============================================================================
+
+LEGEND: [BUILD-READY] nothing missing but the wiring · [DATA-GATED] needs rows
+that don't exist yet · [TOOLING] needs a browser/device · MIGRATION = schema
+change (Rule 19, needs explicit GO).
+
+------------------------------------------------------------------------------
+1. COACH NAME ON THE COMMS CARD  —  [BUILD-READY], NO MIGRATION
+------------------------------------------------------------------------------
+Correction to the earlier D-G/batch report: I previously said comms_messages
+had no sender column. That was a grep miss. comms_messages.sent_by EXISTS and
+is populated (16 of 17 sent briefings carry it).
+
+  Missing attribute: NONE.
+  Required (wiring only):
+    - useInboxList: add sent_by to the comms_messages select.
+    - JS-join staff_profiles by user_id to resolve the sender name (NO FK
+      embed — the #763 team_staff↔staff_profiles lesson; fetch + join in JS).
+    - Expose a `from` field; ActionRow comms renders "New from Coach {first}"
+      with the current "New from your coach" as the fallback (the 1 row with
+      null sent_by, plus any future null).
+  Migration: none. Data: present.
+  DECISION: GO to ship this now? (One small PR, no schema, no data work.)
+
+------------------------------------------------------------------------------
+2. COACH COMP CARD (D-A)  —  [DATA-GATED] + one card to build
+------------------------------------------------------------------------------
+Admin-side payout infra ALREADY EXISTS: coach_payouts table, CoachPayoutsSection.jsx
+(inside the financial dashboard), useCoachPayoutsPending.js. The 11
+coaching_assignments rate rows exist (coach × team × per-session rate). What's
+missing is the data that feeds payouts AND the coach-facing card.
+
+  Missing attribute 1 — event_coach_assignments (0 rows):
+    WHO coached WHICH event. The keystone — without it there is nothing to
+    accrue a payout against.
+    Required: a capture path. Either (a) an admin "assign coach to event"
+    action on the event, or (b) derive the assignment from who runs check-in
+    at the event. Until rows exist, no accrual is possible.
+
+  Missing attribute 2 — coach_payouts (0 rows):
+    the accrued amounts. Required: an accrual step that, when an assigned
+    session completes, writes one payout row = coaching_assignments rate ×
+    session, status 'pending'. Depends on attribute 1. Can be a DB trigger
+    (auto-accrue on session completion) or an admin action (review-then-accrue).
+
+  Missing build — the COACH'S OWN comp card:
+    CoachPayoutsSection is the ADMIN view. The coach-home comp card + a
+    useCoachComp hook (this coach's pending/paid totals) is NOT built
+    (deferred in CoachTail).
+
+  Migration: probably none (tables exist); ONE trigger/function only if you
+  want auto-accrual rather than a manual admin step.
+  DECISIONS:
+    D-A1: How are coaches assigned to events — explicit admin action, or
+          derived from check-in? (Sets where event_coach_assignments comes from.)
+    D-A2: Accrual = automatic (trigger on session-complete) or admin
+          review-then-mark? (Auto = a migration; manual = no migration.)
+    D-A3: Coach-home comp card scope — just "you're owed $X (N sessions
+          pending)" tapping to detail, or a fuller breakdown?
+
+------------------------------------------------------------------------------
+3. COACH ROSTER-HEALTH  —  [DATA-GATED] on usage
+------------------------------------------------------------------------------
+Data layer exists (useCheckIns, useAttendanceData). check_ins = 0 rows — the
+game-day check-in feature simply hasn't been used yet.
+
+  Missing attribute — check_ins (0 rows):
+    generated when a coach checks players in at an event.
+  Required: real check-in usage at events (or a one-time historical
+  attendance backfill) to produce rows; then the coach-home roster-health
+  summary (attendance %, trend) renders off useAttendanceData. The summary
+  CARD on the coach home still needs building.
+  Migration: none.
+  DECISION:
+    D-B1: Wait for organic check-in usage, or backfill historical attendance
+          now so the card has data day one? (Backfill source?)
+    D-B2: Build the coach-home roster-health card now (renders empty/"no data
+          yet" until check_ins exist) or hold until there's data?
+
+------------------------------------------------------------------------------
+4. FIELD LCP / FCP NUMBER  —  [TOOLING], not an attribute
+------------------------------------------------------------------------------
+The fan-out fix is confirmed architecturally (homes lazy-loaded; single
+coordinated fetch gate per page; entry chunk 104.7 KB gz < 350 KB). What's
+missing is a real-browser measurement vs the §16.10 budget (FCP <=1.5s on 4G).
+  Required: a Lighthouse/RUM run against the AUTHED production home, OR a
+  Playwright perf probe wired into CI (needs test credentials + a login step;
+  the existing e2e/login-smoke proves auth is automatable).
+  DECISION: add the Playwright perf probe to CI, or take a manual Lighthouse
+  reading? (CC can build the probe.)
+
+------------------------------------------------------------------------------
+5. DEVICE VOICEOVER PASS  —  [TOOLING], manual
+------------------------------------------------------------------------------
+Static a11y audit of all three homes is clean (every interactive element has
+text or aria-label; loading gates + all-clear carry role=status/aria-live;
+greeting uses <h1>; weather-temp contrast bumped to --as-text-meta). What
+remains is a real-device screen-reader sweep before broad parent rollout.
+  Required: a human VoiceOver pass on a real iOS device. No code blocker.
+
+------------------------------------------------------------------------------
+DECISIONS REQUESTED (summary)
+------------------------------------------------------------------------------
+  #1  GO to ship coach-name-on-comms now (no migration)?
+  D-A1  Coach→event assignment source (admin action vs check-in derived)?
+  D-A2  Payout accrual: auto-trigger (migration) vs manual admin step?
+  D-A3  Coach comp card scope?
+  D-B1  Roster-health: wait for usage vs backfill attendance?
+  D-B2  Build the roster-health card now (empty-state) or hold?
+  #4   Playwright perf probe in CI vs manual Lighthouse?
+  #5   (no decision — schedule a device VoiceOver pass)
+
+RULES (unchanged): 150-line cap, targeted edits, --as-* tokens, org-scoped,
+hooks own fetching. No migration without explicit GO (Rule 19).
+==============================================================================
+END.
+==============================================================================
