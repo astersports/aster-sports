@@ -1,0 +1,137 @@
+==============================================================================
+ADMIN GAP — PROGRAM / TEAM / EVENT CREATION FLOW  (Claude Code -> architect lane)
+Date: 2026-06-06. L99 finding. Trigger: Frank, "If it's set up as a team, I
+should be able to set up teams then assign the team to the event. Correct? Is
+this an admin gap?" Answer: model correct; the ASSIGN half works; the
+CREATE/MANAGE half has gaps. This doc is the finding + proposed flow for the
+architect to scope. NO code built. All findings verified against live src +
+production schema (AP#60 source hierarchy: file Read + execute_sql).
+==============================================================================
+
+0. THE MODEL IS CORRECT
+------------------------------------------------------------------------------
+events.team_id -> teams.id ; teams.season_id -> programs.id ; teams.team_type_id
+-> team_types.id (competitive vs non-competitive). So "create a team, then
+assign the team to an event" is exactly the data spine. The question is purely
+whether the ADMIN UI can drive each step. Verdict:
+
+  ASSIGN team -> event ....... WORKS today (no gap)
+  CREATE a program (non-season) .... GAP
+  CREATE a team of a chosen type ... GAP
+  ATTACH a team to a non-active program ... GAP
+  MANAGE (see/edit) a non-season team ..... GAP
+
+This is why the two camps (Active Roster Lab, Summer Day Camp) had to be SEEDED
+VIA SQL — they are not buildable through the app today.
+
+1. WHAT WORKS — ASSIGN (no gap)
+------------------------------------------------------------------------------
+src/components/wizard/StepTeam.jsx:9-13
+    supabase.from('teams').select('id,name,team_color,sort_order')
+      .eq('org_id', orgId).order('sort_order')
+The event wizard's team picker filters by org_id ONLY — no team_type filter, no
+program/season filter. So EVERY team in the org appears, including the two camp
+teams. An admin can create an event and attach it to a camp team through the
+normal wizard right now. Confirmed: the assign path is complete.
+
+2. GAP A — CANNOT CREATE A NON-SEASON PROGRAM
+------------------------------------------------------------------------------
+src/hooks/useProgramSetup.js:22-23
+    supabase.from('programs').insert({ org_id, name, program_type: 'season', ... })
+program_type is HARDCODED to 'season'. The production enum supports six values:
+    season, tryout, camp, clinic, interest_list, evaluation   (verified)
+There is no admin surface to create a camp/clinic/tryout/evaluation/interest_list
+program. The CONTAINER for a camp cannot be created in-app at all. (Note: the
+seasons VIEW = programs WHERE program_type='season', so the entire non-season
+slice of the enum is currently unreachable from the UI.)
+
+3. GAP B — CANNOT SET A TEAM'S TYPE
+------------------------------------------------------------------------------
+src/components/admin/TeamFormSheet.jsx — the team form has NO team_type_id field.
+Its fields: name, age_group, gender, circuit, circuit_name, team_color,
+practice_day, practice_location, sort_order.
+src/hooks/usePrograms.js:49-51
+    supabase.from('teams').insert({ ...input, org_id, season_id })
+No team_type_id in the payload. Production default for teams.team_type_id is NULL
+(verified — not 'competitive'). teamTypes.js then CLASSIFIES a null/absent type as
+competitive (isCompetitiveTeam returns true when slug is undefined). Net effect:
+every team created in-app is treated as a competitive game team. The six real
+team_types (verified): academy, clinic_camp, game_team, hybrid_team,
+tournament_team, training_only. None are selectable in the form. A training_only
+(Lab) or clinic_camp (camp) team cannot be created through the UI.
+
+  Sub-note: the form's "Competition type" chip (circuit: aau / league_play /
+  tournament) is a DIFFERENT axis from team_type_id and does NOT drive the
+  competitive-vs-non-competitive classification (STEP 2 keys off
+  team_types.slug, not circuit). So circuit is not a substitute for a team-type
+  control — it's orthogonal.
+
+4. GAP C — TEAMS HARD-BIND TO THE ACTIVE SEASON (no program picker)
+------------------------------------------------------------------------------
+src/hooks/usePrograms.js:30  (list)   .eq('season_id', seasonId)
+src/hooks/usePrograms.js:48-51 (create) season_id: activeSeason.id (injected)
+The team form has no program/season selector; create always attaches to the
+CURRENTLY-ACTIVE SEASON. Two consequences:
+  (a) You cannot attach a new team to a camp/clinic program through the UI.
+  (b) AdminTeamsPage lists ONLY active-season teams, so the two camp teams I
+      seeded are INVISIBLE on the Teams admin page — there is currently no
+      in-app surface to rename / recolor / delete them. They can only be
+      reached via SQL or the event wizard's picker.
+
+5. GAP D — age_group LOCKED TO 8U-12U (no "Mixed")
+------------------------------------------------------------------------------
+src/components/admin/TeamFormSheet.jsx:6
+    const AGE_GROUPS = ['8U','9U','10U','11U','12U']
+Camps use age_group 'Mixed' (what I seeded). It is not selectable in the form.
+Minor relative to A-C, but it blocks clean camp/clinic team creation.
+
+6. PROPOSED FLOW (for the architect to scope — NOT built)
+------------------------------------------------------------------------------
+The smallest coherent flow that closes A-D and makes camps self-serve:
+
+  STEP 1 — Program create, type-aware.
+    Extend useProgramSetup / ProgramSetupPage to accept program_type (chip:
+    Season / Camp / Clinic / Tryout / Evaluation / Interest list). Keep the
+    status='archived'-on-create guard (useProgramSetup.js:27 — prevents a new
+    program silently becoming a 2nd active season). For non-season types,
+    'active' on create is arguably fine (they don't hijack the season cards);
+    architect to decide the status default per type.
+
+  STEP 2 — Team create, program- + type-aware.
+    Add to TeamFormSheet: (a) a program picker (which program does this team
+    belong to — defaults to active season for the common case), (b) a team_type
+    chip (Game team / Tournament / Hybrid / Academy / Training only / Clinic-
+    camp), (c) 'Mixed' in the age_group set. usePrograms.createProgram stops
+    injecting season_id unconditionally — it takes the picked program_id.
+
+  STEP 3 — Teams page shows non-season teams.
+    AdminTeamsPage currently scopes to the active season. Either add a program
+    switcher at the top (portfolio-aware, dovetails with the Phase 3 portfolio
+    rollup + switcher already on the home-redesign backlog) or group teams by
+    program. Without this, non-season teams are unmanageable in-app.
+
+  STEP 4 (assign) — already works; no change. The wizard picker may OPTIONALLY
+    group teams by program once 3+ programs are common, but it is not blocking.
+
+7. SEQUENCING NOTE
+------------------------------------------------------------------------------
+This gap doc pairs with the camp-seed arc (CAMP_SEED_EXECUTED_CC.txt) and the
+home-redesign Phase 3 (portfolio rollup + program switcher). STEP 3 here and the
+Phase 3 switcher are the same surface — recommend they're scoped together so the
+Teams page and the home portfolio share one program-switcher component rather
+than building two. The alignment-lock two-step (roster_members BEFORE
+team_players, per the seed doc section 3) must be honored by any team+roster
+create flow the architect builds — the trigger will reject an active team_players
+row without a matching roster_members row.
+
+8. OUT OF SCOPE (this doc)
+------------------------------------------------------------------------------
+- Registration/enrollment archetype for camps (home-redesign Phase 2).
+- DISTINCT-people dedup across programs (Phase 3).
+- Coach-comp setup per camp session (separate; coach-pay flag already CLOSED in
+  the seed doc — Kenny unpaid, $0 effect).
+- Any change to the wizard assign path (it works).
+
+==============================================================================
+END — ADMIN_GAP_PROGRAM_TEAM_CREATION_CC
+==============================================================================
