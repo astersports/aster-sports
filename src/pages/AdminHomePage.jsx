@@ -64,7 +64,7 @@ export default function AdminHomePage() {
           onSeeSchedule={() => navigate('/schedule')}
         />
       )}
-      tail={<AdminTail season={activeSeason} nowMs={now} />}
+      tail={<AdminTail season={activeSeason} nowMs={now} eventsCount={activities.length} />}
     />
   );
 }

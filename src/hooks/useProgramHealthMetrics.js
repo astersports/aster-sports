@@ -30,6 +30,7 @@ export function useProgramHealthMetrics(orgId, seasonId) {
   const [rsvpPct, setRsvpPct] = useState(null);
   const [activeTeamsCount, setActiveTeamsCount] = useState(0);
   const [newRegistrationsCount, setNewRegistrationsCount] = useState(0);
+  const [playersCount, setPlayersCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -43,12 +44,13 @@ export function useProgramHealthMetrics(orgId, seasonId) {
       setRsvpPct(null);
       setActiveTeamsCount(0);
       setNewRegistrationsCount(0);
+      setPlayersCount(0);
       setLoading(false);
       return;
     }
     setLoading(true);
     const sevenDaysAgo = new Date(Date.now() - SEVEN_DAYS_MS).toISOString();
-    const [rsvpRes, teamsRes, regRes] = await Promise.all([
+    const [rsvpRes, teamsRes, regRes, playersRes] = await Promise.all([
       supabase
         .from('event_rsvps')
         .select('response, events!inner(id, teams!inner(id, season_id))')
@@ -64,8 +66,14 @@ export function useProgramHealthMetrics(orgId, seasonId) {
         .eq('org_id', orgId)
         .eq('season_id', seasonId)
         .gte('created_at', sevenDaysAgo),
+      // Distinct active players in the season (a kid on two teams counts once).
+      supabase
+        .from('team_players')
+        .select('player_id, teams!inner(season_id)')
+        .eq('teams.season_id', seasonId)
+        .eq('status', 'active'),
     ]);
-    const firstErr = rsvpRes.error || teamsRes.error || regRes.error;
+    const firstErr = rsvpRes.error || teamsRes.error || regRes.error || playersRes.error;
     if (firstErr) {
       console.error('useProgramHealthMetrics fetch:', firstErr.message);
       setError(firstErr.message);
@@ -78,6 +86,7 @@ export function useProgramHealthMetrics(orgId, seasonId) {
     setRsvpPct(total > 0 ? Math.round((going / total) * 100) : null);
     setActiveTeamsCount(teamsRes.count || 0);
     setNewRegistrationsCount(regRes.count || 0);
+    setPlayersCount(new Set((playersRes.data || []).map((r) => r.player_id)).size);
     setError(null);
     setLoading(false);
   }, [orgId, seasonId]);
@@ -89,6 +98,7 @@ export function useProgramHealthMetrics(orgId, seasonId) {
     rsvpPct,
     activeTeamsCount,
     newRegistrationsCount,
+    playersCount,
     loading: loading || financialLoading,
     error,
     refetch,

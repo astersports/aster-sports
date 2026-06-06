@@ -50,7 +50,7 @@ const HOME_COMPONENTS = [
   'components/home/ParentTail.jsx',
   'components/home/CoachTail.jsx',
   'components/home/AdminTail.jsx',
-  'components/admin/ProgramHealthCard.jsx',
+  'components/home/AdminProgramHealth.jsx',
 ];
 
 const LINE_CAP = 150;
