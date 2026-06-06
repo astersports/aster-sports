@@ -17,7 +17,8 @@ import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { firstNameFrom } from '../lib/greetings';
 import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import { seasonProgress } from '../lib/seasonProgress';
-import { isOffSeason } from '../lib/home/offSeason';
+import { isHomeOffSeason } from '../lib/home/offSeason';
+import { useActivePrograms } from '../hooks/useActivePrograms';
 
 // Admin home — shell-contract-v2 rewrite (home redesign Phase 3). Composes
 // HomeShell's inner slots over AppShell chrome; the hooks own the fetching,
@@ -31,7 +32,8 @@ export default function AdminHomePage() {
   useRefetchOnVisible(refetch);
   const navigate = useNavigate();
 
-  const offSeason = useMemo(() => isOffSeason(activeSeason, activities, now), [activeSeason, activities, now]);
+  const activePrograms = useActivePrograms();
+  const offSeason = useMemo(() => isHomeOffSeason(activePrograms.programs, activities, now), [activePrograms.programs, activities, now]);
   const needsYou = useAdminNeedsYou({ orgId, activities, seasonId: activeSeason?.id, nowMs: now, offSeason });
   const excludeIds = useMemo(
     () => needsYou.items.filter((i) => i.event_id).map((i) => i.event_id),
