@@ -730,6 +730,26 @@ source+scope render, MY-TEAMS-records extend to admin, weather render +
 shared coords, density variants, RSVP-going on admin, home-router E2E
 (zero E2E today).
 
+**SHIPPED — shell-contract-v2 build (branch `claude/home-redesign-kickoff-vE7Hf`, 2026-06-06):**
+Built WITH the design lane (claude.ai) per `HOME_BUILD_HANDOFF_CC.md §6`.
+HomeShell composes 4 inner slots; hooks own all fetching (cards
+presentational) — the 6 self-fetching admin cards retired (LCP fan-out
+fix). All three role homes rewritten; density toggle retired from home
+(D-C, §16.2 2-state); `--as-gold*` tokens (D5); Needs-you domain-grouped
+cap-4 + see-all, admin briefings pinned w/ D-E split; coach My-teams +
+admin program-health context cards; 40-file dead-code sweep. Reconciled
+with main (#763/#764 superseded my parallel briefing fixes).
+**Render items (HOME_RENDER_RULES_CC.txt) — all shipped + green:**
+off-season (D-D, all 3 homes), arrival line (#3), urgent tint (#1a),
+draft pill (#2, tournaments only), RSVP deadline chip (#1b, parent-gated).
+**OPEN — D-G pilot recipient row (#5): BLOCKED, needs decision.** The
+pilot-TEST-override path (`pilot_test_recipient_email`) writes a synthetic
+`comms_message_recipients` row with `guardian_id=NULL`, so the parent
+inbox (filters `guardian_id`) never lights up — "pilot only routes email."
+Org pilot mode (`is_pilot_family`) is fine (real guardian_ids). Clean fix
+= `get_digest_recipients` RPC change (MIGRATION → Rule 19 stop-and-report).
+Full investigation + fix options A/B/C in `docs/HOME_DG_INVESTIGATION_CC.txt`.
+
 ---
 
 ### §4.D — Sprint G Rides redesign
