@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useCoachHomeSignals } from './useCoachHomeSignals';
 import { formatEventTitleString } from '../lib/eventTitle';
-import { alertToActionItem } from '../lib/home/coachHomeData';
+import { alertToActionItem, summarizeActionQueue } from '../lib/home/coachHomeData';
 
 // useCoachNeedsYou — owns the coach "Needs you" signals (shell contract v2).
 // Day-one scope (HOME_DAYONE): the prep card for the next TEAM event (Rule 1
@@ -41,10 +41,11 @@ export function useCoachNeedsYou({ userId, activities, nowMs }) {
 
   const items = useMemo(() => {
     const alertItems = (coachAlerts || []).map(alertToActionItem);
-    const queueItems = (actionQueueItems || []).map((q, i) => ({
-      domain: 'generic', id: `q-${q.kind}-${i}`, primary: q.primary, to: '/records',
-    }));
-    return [...(prep ? [prep] : []), ...alertItems, ...queueItems];
+    const queueItem = (actionQueueItems || []).length ? {
+      domain: 'generic', id: 'coach-queue', primary: 'Action queue', queue: true,
+      grouped: actionQueueItems.length, subtitle: summarizeActionQueue(actionQueueItems), to: '/records',
+    } : null;
+    return [...(prep ? [prep] : []), ...alertItems, ...(queueItem ? [queueItem] : [])];
   }, [prep, coachAlerts, actionQueueItems]);
 
   return {

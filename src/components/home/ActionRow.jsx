@@ -1,4 +1,4 @@
-import { AlertTriangle, ChevronRight, Mail } from 'lucide-react';
+import { AlertTriangle, ChevronRight, ListChecks, Mail } from 'lucide-react';
 import ChildRsvp from '../schedule/ChildRsvp';
 import { formatDayTime } from '../../lib/formatters';
 
@@ -18,6 +18,7 @@ const dot = (c) => ({ width: 8, height: 8, borderRadius: '50%', backgroundColor:
 const EVLINE = { fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 5 };
 const TAP = { display: 'flex', alignItems: 'center', gap: 9, width: '100%', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' };
 const CHIP = { fontSize: 12, fontWeight: 600, padding: '0 12px', minHeight: 44, borderRadius: 9999, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', cursor: 'pointer', fontFamily: 'inherit' };
+const GROUPED = { fontSize: 9, fontWeight: 700, color: 'var(--as-text-secondary)', backgroundColor: 'var(--as-bg-secondary)', border: '1px solid var(--as-border-default)', borderRadius: 9999, padding: '1px 6px' };
 
 export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
   if (item.domain === 'comms') {
@@ -82,8 +83,17 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
           <AlertTriangle size={16} strokeWidth={1.75} aria-hidden="true" />
         </span>
       )}
+      {!sevColor && item.queue && (
+        <span style={{ width: 28, height: 28, borderRadius: 7, display: 'grid', placeItems: 'center', flexShrink: 0, backgroundColor: 'var(--as-bg-secondary)', color: 'var(--as-text-secondary)' }}>
+          <ListChecks size={16} strokeWidth={1.75} aria-hidden="true" />
+        </span>
+      )}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={KT}>{item.team_color && !sevColor && <span aria-hidden="true" style={dot(genRail)} />}{item.primary}</div>
+        <div style={KT}>
+          {item.team_color && !sevColor && !item.queue && <span aria-hidden="true" style={dot(genRail)} />}
+          {item.primary}
+          {item.grouped != null && <span style={GROUPED}>grouped · {item.grouped}</span>}
+        </div>
         {(item.subtitle || item.start_at) && (
           <div style={EVLINE}>{item.subtitle || `${item.team_name} · ${formatDayTime(item.start_at)}`}</div>
         )}

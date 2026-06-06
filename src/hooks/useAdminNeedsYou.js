@@ -3,7 +3,7 @@ import { useInboxQueue } from './useInboxQueue';
 import { useAlertEvaluator } from './useAlertEvaluator';
 import { useFamiliesOwingCount } from './useFamiliesOwingCount';
 import { useAdminHomeSignals } from './useAdminHomeSignals';
-import { alertToActionItem } from '../lib/home/coachHomeData';
+import { alertToActionItem, summarizeActionQueue } from '../lib/home/coachHomeData';
 import { formatCurrency } from '../lib/formatters';
 
 // useAdminNeedsYou — owns the admin "Needs you" signals (shell contract v2).
@@ -43,8 +43,11 @@ export function useAdminNeedsYou({ orgId, activities, seasonId }) {
       if (HANDLED_ALERTS.has(a.alert_type_key)) continue;
       out.push(alertToActionItem(a));
     }
-    for (const q of actionItems || []) {
-      out.push({ domain: 'generic', id: `q-${q.kind}-${q.event_id || q.id || out.length}`, primary: q.primary, to: q.href || '/schedule' });
+    if ((actionItems || []).length) {
+      out.push({
+        domain: 'generic', id: 'admin-queue', primary: 'Action queue', queue: true,
+        grouped: actionItems.length, subtitle: summarizeActionQueue(actionItems), to: '/schedule',
+      });
     }
     return out;
   }, [briefingRows, alerts, owingCount, owingCents, actionItems]);
