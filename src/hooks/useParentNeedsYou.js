@@ -45,7 +45,7 @@ export function useParentNeedsYou({ myChildren, activities, nowMs, userId }) {
     // The comms card is a received BRIEFING — open it in the inbox (deep-link
     // by recipient id), NOT team chat. There is no Inbox nav tab, so this card
     // is the parent's only path to the briefing.
-    return { domain: 'comms', id: `comms-${unread.id}`, message_id: unread.message_id, subject: unread.subject, to: `/inbox?r=${unread.id}` };
+    return { domain: 'comms', id: `comms-${unread.id}`, message_id: unread.message_id, subject: unread.subject, from: unread.from, to: `/inbox?r=${unread.id}` };
   }, [inbox]);
 
   const items = useMemo(() => {

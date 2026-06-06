@@ -48,17 +48,29 @@ export function useInboxList() {
     const { data, error: err } = await supabase
       .from('comms_message_recipients')
       .select(`id, message_id, opened_at, subject_rendered, teams_included,
-        comms_messages ( kind, subject, sent_at, anchor_kind, anchor_id, team_id, teams ( team_color ) )`)
+        comms_messages ( kind, subject, sent_at, sent_by, anchor_kind, anchor_id, team_id, teams ( team_color ) )`)
       .eq('guardian_id', guardianId)
       .order('id', { ascending: false })
       .limit(PAGE_SIZE);
     if (err) { setError(err); setItems([]); setLoading(false); return; }
+    // Resolve sender names for the "New from {name}" comms card. There is no
+    // FK comms_messages→staff_profiles, so fetch + JS-join by user_id (the
+    // #763 lesson). Best-effort enrichment: a failure leaves `from` null and
+    // the card falls back to "New from your coach" — never blocks the inbox.
+    const senderIds = [...new Set((data || []).map((r) => r.comms_messages?.sent_by).filter(Boolean))];
+    let nameByUserId = {};
+    if (senderIds.length) {
+      const { data: staff } = await supabase
+        .from('staff_profiles').select('user_id, display_name').in('user_id', senderIds);
+      nameByUserId = Object.fromEntries((staff || []).map((s) => [s.user_id, s.display_name]));
+    }
     const flat = (data || []).map((r) => ({
       id: r.id,
       message_id: r.message_id,
       kind: r.comms_messages?.kind || null,
       subject: r.subject_rendered || r.comms_messages?.subject || '(no subject)',
       sent_at: r.comms_messages?.sent_at || null,
+      from: nameByUserId[r.comms_messages?.sent_by] || null,
       opened_at: r.opened_at || null,
       teams_included: r.teams_included || [],
       anchor_kind: r.comms_messages?.anchor_kind || null,
