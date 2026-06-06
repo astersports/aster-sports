@@ -14,15 +14,18 @@ import HomeGreeting from '../components/home/HomeGreeting';
 import NeedsYouSection from '../components/home/NeedsYouSection';
 import ComingUpSection from '../components/home/ComingUpSection';
 import CoachTail from '../components/home/CoachTail';
+import CoachCompCard from '../components/home/CoachCompCard';
+import CoachRosterHealthCard from '../components/home/CoachRosterHealthCard';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { firstNameFrom } from '../lib/greetings';
 import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import { isOffSeason } from '../lib/home/offSeason';
+import { useCoachComp } from '../hooks/useCoachComp';
+import { useCoachRosterHealth } from '../hooks/useCoachRosterHealth';
 
 // Coach home — shell-contract-v2 rewrite (home redesign Phase 2). Composes
 // HomeShell's inner slots over AppShell chrome. Day-one scopes to TEAM
-// (Rule 1); comp card deferred (see CoachTail). useParentComingUp is the
-// generic next-event selector (name predates the coach reuse).
+// (Rule 1). Tail = My teams + Your pay (comp) + Roster health.
 export default function CoachHomePage() {
   const { user, orgId } = useAuth();
   const { activeSeason } = useSeason();
@@ -40,6 +43,9 @@ export default function CoachHomePage() {
   const weather = useWeather(...WEATHER_DEFAULT_COORDS);
   const { byTeamId: recordsByTeam, loading: recordsLoading } = useOrgTeamRecords(orgId);
   const offSeason = useMemo(() => isOffSeason(activeSeason, activities, now), [activeSeason, activities, now]);
+  const comp = useCoachComp(user?.id, orgId);
+  const coachedTeamIds = useMemo(() => needsYou.myTeams.map((t) => t.id), [needsYou.myTeams]);
+  const rosterHealth = useCoachRosterHealth(coachedTeamIds, activeSeason?.id);
 
   const name = firstNameFrom(user);
   const teamCount = needsYou.myTeams.length;
@@ -72,14 +78,18 @@ export default function CoachHomePage() {
         />
       )}
       tail={(
-        <CoachTail
-          teams={needsYou.myTeams}
-          recordsByTeam={recordsByTeam}
-          recordsLoading={recordsLoading}
-          onTeamClick={(id) => navigate(`/schedule?team=${id}`)}
-          offSeason={offSeason}
-          seasonLabel={activeSeason?.name}
-        />
+        <>
+          <CoachTail
+            teams={needsYou.myTeams}
+            recordsByTeam={recordsByTeam}
+            recordsLoading={recordsLoading}
+            onTeamClick={(id) => navigate(`/schedule?team=${id}`)}
+            offSeason={offSeason}
+            seasonLabel={activeSeason?.name}
+          />
+          <CoachCompCard {...comp} />
+          {!offSeason && <CoachRosterHealthCard {...rosterHealth} onStartCheckIn={() => navigate('/schedule')} />}
+        </>
       )}
     />
   );
