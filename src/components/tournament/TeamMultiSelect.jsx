@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, Search } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { isCompetitiveTeam } from '../../lib/teamTypes';
 
 const TYPEAHEAD_THRESHOLD = 15;
 
@@ -13,10 +14,12 @@ export default function TeamMultiSelect({ selectedIds = [], onChange }) {
   useEffect(() => {
     if (!orgId) return;
     supabase.from('teams')
-      .select('id, name, sort_order, team_color')
+      .select('id, name, sort_order, team_color, team_type_id, team_types(slug)')
       .eq('org_id', orgId)
       .order('sort_order', { ascending: true })
-      .then(({ data }) => setTeams(data || []));
+      // C-12: a tournament bracket is AAU-semantics — only competitive teams
+      // are selectable (camp/clinic/training/academy can't play a bracket).
+      .then(({ data }) => setTeams((data || []).filter(isCompetitiveTeam)));
   }, [orgId]);
 
   const useTypeahead = teams.length > TYPEAHEAD_THRESHOLD;

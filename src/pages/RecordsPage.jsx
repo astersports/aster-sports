@@ -4,6 +4,7 @@ import { useTeams } from '../hooks/useTeams';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { usePublicTournaments } from '../hooks/usePublicTournaments';
 import { EMPTY_SUMMARY } from '../lib/teamRecords';
+import { isCompetitiveTeam } from '../lib/teamTypes';
 import { supabase } from '../lib/supabase';
 import StatHeroBar from '../components/broadcast/StatHeroBar';
 import TournamentCard from '../components/broadcast/TournamentCard';
@@ -12,7 +13,11 @@ import AdminBackHeader from '../components/admin/AdminBackHeader';
 
 export default function RecordsPage() {
   const { orgId, org } = useAuth();
-  const { loading: teamsLoading, teams } = useTeams(orgId);
+  const { loading: teamsLoading, teams: allTeams } = useTeams(orgId);
+  // C-12: standings + season records are AAU-semantics — exclude camp /
+  // clinic / training-only / academy teams (no games → no record). No-op today
+  // (all org teams are game/tournament/hybrid), guards the camp onboarding.
+  const teams = useMemo(() => allTeams.filter(isCompetitiveTeam), [allTeams]);
   const { data: tournaments } = usePublicTournaments(orgId);
   const { byTeamId: recordsByTeam } = useOrgTeamRecords(orgId);
   const [expandedTeam, setExpandedTeam] = useState(null);

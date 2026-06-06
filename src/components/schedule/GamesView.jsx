@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useOrgTeamRecords } from '../../hooks/useOrgTeamRecords';
 import { useTeams } from '../../hooks/useTeams';
+import { isCompetitiveTeam } from '../../lib/teamTypes';
 import { useSeason } from '../../context/SeasonContext';
 import { useNow } from '../../hooks/useNow';
 import { ChevronRight } from 'lucide-react';
@@ -33,7 +34,9 @@ function useGameResults(eventIds) {
 
 export default function GamesView({ activities, orgId }) {
   const { byTeamId: recordsByTeamId } = useOrgTeamRecords(orgId);
-  const { teams: allTeams } = useTeams(orgId);
+  const { teams: orgTeams } = useTeams(orgId);
+  // C-12: standings exclude non-competitive teams (camp/clinic/training/academy).
+  const allTeams = useMemo(() => orgTeams.filter(isCompetitiveTeam), [orgTeams]);
   const { activeSeason } = useSeason();
   const seasonStartDate = activeSeason?.start_date;
   const now = useNow();
