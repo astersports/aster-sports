@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
-import { COMPETITIVE_TEAM_SLUGS, isCompetitiveTeam } from '../teamTypes';
+import {
+  COMPETITIVE_TEAM_SLUGS, defaultTeamTypeSlugForProgram, isCompetitiveSlug,
+  isCompetitiveTeam, TEAM_TYPE_OPTIONS,
+} from '../teamTypes';
 
 // C-12 team-type semantics + the cross-surface invariant (anti-pattern #43):
 // the SAME exclusion (non-competitive teams off AAU-semantics surfaces) must
@@ -24,6 +27,33 @@ describe('isCompetitiveTeam', () => {
     expect(isCompetitiveTeam({})).toBe(true);
     expect(isCompetitiveTeam({ team_types: null })).toBe(true);
     expect(isCompetitiveTeam(undefined)).toBe(true);
+  });
+});
+
+// PR-2 team-form helpers.
+describe('defaultTeamTypeSlugForProgram (GO D3)', () => {
+  it('season + tryout default to a competitive game team', () => {
+    expect(defaultTeamTypeSlugForProgram('season')).toBe('game_team');
+    expect(defaultTeamTypeSlugForProgram('tryout')).toBe('game_team');
+  });
+  it('camp + clinic default to the non-competitive clinic/camp type', () => {
+    expect(defaultTeamTypeSlugForProgram('camp')).toBe('clinic_camp');
+    expect(defaultTeamTypeSlugForProgram('clinic')).toBe('clinic_camp');
+  });
+  it('falls back to game_team for an unknown program type', () => {
+    expect(defaultTeamTypeSlugForProgram('interest_list')).toBe('game_team');
+  });
+});
+
+describe('TEAM_TYPE_OPTIONS', () => {
+  it('every option’s competitive flag matches isCompetitiveSlug (no drift)', () => {
+    for (const o of TEAM_TYPE_OPTIONS) {
+      expect(o.competitive).toBe(isCompetitiveSlug(o.slug));
+    }
+  });
+  it('the competitive options are exactly the AAU set', () => {
+    const comp = TEAM_TYPE_OPTIONS.filter((o) => o.competitive).map((o) => o.slug).sort();
+    expect(comp).toEqual([...COMPETITIVE_TEAM_SLUGS].sort());
   });
 });
 

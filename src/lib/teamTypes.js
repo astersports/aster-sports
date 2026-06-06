@@ -21,3 +21,30 @@ export function isCompetitiveTeam(team) {
   if (!slug) return true;
   return COMPETITIVE_TEAM_SLUGS.includes(slug);
 }
+
+// ── PR-2: admin team-form support ────────────────────────────────────────
+// Selectable team types for the team form. Competitive types carry W-L
+// records / standings / brackets; non-competitive are grouped but type-
+// excluded from those AAU surfaces.
+export const TEAM_TYPE_OPTIONS = [
+  { slug: 'game_team', label: 'Game', competitive: true },
+  { slug: 'tournament_team', label: 'Tournament', competitive: true },
+  { slug: 'hybrid_team', label: 'Hybrid', competitive: true },
+  { slug: 'academy', label: 'Academy', competitive: false },
+  { slug: 'training_only', label: 'Training', competitive: false },
+  { slug: 'clinic_camp', label: 'Clinic / Camp', competitive: false },
+];
+
+export function isCompetitiveSlug(slug) {
+  return COMPETITIVE_TEAM_SLUGS.includes(slug);
+}
+
+// Smart default team_type slug from the parent program's type (GO D3); the
+// admin can override in the form. interest_list / evaluation are not team-
+// bearing (F9) so they never reach this map.
+const DEFAULT_TEAM_TYPE_BY_PROGRAM = {
+  season: 'game_team', tryout: 'game_team', camp: 'clinic_camp', clinic: 'clinic_camp',
+};
+export function defaultTeamTypeSlugForProgram(programType) {
+  return DEFAULT_TEAM_TYPE_BY_PROGRAM[programType] || 'game_team';
+}
