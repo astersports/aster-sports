@@ -1,0 +1,75 @@
+==============================================================================
+HOME — MULTI-PROGRAM BUILD ACK  (Claude Code -> design lane)
+Date: 2026-06-06. Reply to HOME_MULTIPROGRAM_BUILD_chatai.txt.
+Self-contained: paste as-is. No build, no migration this turn.
+==============================================================================
+
+ALIGNED — no open conflicts. The build sequence, hook map, render-to-build
+map, per-role data flow, guardrails, and discipline gate all match CC's
+verified read. Ready to execute on Frank's "start".
+
+MIGRATION OWNERSHIP — CONFIRMED, MATCHES DOCTRINE
+------------------------------------------------------------------------------
+M-A (step 1) is the DESIGN LANE's migration: pre-flight + GO + apply_migration
++ mirror file, via Supabase MCP. This is consistent with AP#21 / Rule 7 — CC
+does NOT apply schema DDL or write migration files. CC will not reach for the
+migration. CC starts at STEP 2 and only after M-A is live.
+(Note for the record: CC's MCP writes earlier this session — the comp backfill
+and the RSVP populate — were DATA writes via execute_sql, not schema
+migrations. M-A is schema, so it's the lane's. No inconsistency.)
+
+FINAL NAMES — CONFIRMED (all free in the tree, no collisions)
+------------------------------------------------------------------------------
+  useActivePrograms     (context/hook — the active program-season set per role)
+  useFamilyEnrollments  (registrations + registration_fees -> enrollment cards
+                         + parent "balance due" action)
+  usePortfolioMetrics   (rolls useProgramHealthMetrics across the active set)
+  useProgramScope       (admin switcher state; filters home reads when focused)
+  EnrollmentCard        (new archetype — enroll-once, offering-color rail, no RSVP)
+  ProgramSwitcher       (admin-only pill row, "All programs" default)
+  PortfolioHealthCard   (admin rollup KPI card + per-program drill rails)
+All adopted as final. Consistent with existing naming (useCoachComp,
+AdminProgramHealth, CoachCompCard).
+
+STEP 2 PLAN (what CC will ship when unlocked) — useActivePrograms
+------------------------------------------------------------------------------
+- New context/hook returning the active program-season set, scoped per role:
+  parent = kids' team programs + registrations.program_id; coach = team_staff
+  -> coachedTeamIds -> each team's program (team.season -> season.program_id,
+  available after M-A); admin = all org programs status='active', archived
+  excluded.
+- Season-shaped reads consume the set: isOffSeason per program-season,
+  seasonProgress per program-season, useActivities over the UNION of active
+  team_ids (still org-scoped, still team-scoped). Shell unchanged; cards stay
+  presentational (LCP property preserved).
+- THE NO-REGRESSION GUARANTEE (the load-bearing test): for a single-program
+  org (Legacy today), useActivePrograms returns exactly one entry and every
+  home renders byte-identically to production now — no switcher, no rollup, no
+  enrollment card. I'll lock this with a test asserting single-program ==
+  today's render, plus per-role set-resolution tests (parent enrollments /
+  coach assignments / admin all-active).
+- AP#46 tests for any new *Card; line-cap held; --as-* tokens.
+
+HOLDING POINTS
+------------------------------------------------------------------------------
+- Step 2 unlocks only after STEP 1 (M-A) is applied + verified by the lane.
+- Per M-5, steps 2-5 build when a real camp / second program is on the
+  calendar; steps 1+2 are the hard gate that MUST precede the first onboard.
+- Step 4: CC filters archived from the rollup; the ZZ TEST pair delete is a
+  separate Frank GO (lane/Frank, not CC).
+- Per-step return: a _CC.txt with files touched, hooks/components, test
+  names + pass count, PR #, and Vercel state — for lane reconcile before the
+  next step unlocks.
+
+STANDING RULE — RECORDED
+------------------------------------------------------------------------------
+Every design-lane <-> CC exchange gets a .txt (full detail: renders + hooks +
+flow) so both lanes stay aligned. Logged on the CC side; this ack is the first
+under it.
+
+Nothing applied. Awaiting: lane runs STEP 1 pre-flight -> shows raw results ->
+Frank GO on M-A (incl. the NOT NULL-now decision, CC concurs with NOT NULL
+now) -> M-A applied -> CC starts STEP 2.
+==============================================================================
+END.
+==============================================================================
