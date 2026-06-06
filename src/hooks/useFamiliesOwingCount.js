@@ -9,10 +9,11 @@ import { supabase } from '../lib/supabase';
 // Sums balance per guardian across all seasons; counts net-owing guardians.
 export function useFamiliesOwingCount(orgId) {
   const [count, setCount] = useState(0);
+  const [totalCents, setTotalCents] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const refetch = useCallback(async () => {
-    if (!orgId) { setCount(0); setLoading(false); return; }
+    if (!orgId) { setCount(0); setTotalCents(0); setLoading(false); return; }
     setLoading(true);
     const { data, error } = await supabase
       .from('family_balances')
@@ -20,13 +21,15 @@ export function useFamiliesOwingCount(orgId) {
       .eq('org_id', orgId);
     if (error) {
       console.error('useFamiliesOwingCount:', error.message);
-      setCount(0); setLoading(false); return;
+      setCount(0); setTotalCents(0); setLoading(false); return;
     }
     const byGuardian = {};
     for (const r of data || []) {
       byGuardian[r.guardian_id] = (byGuardian[r.guardian_id] || 0) + (Number(r.balance_cents) || 0);
     }
-    setCount(Object.values(byGuardian).filter((b) => b > 0).length);
+    const owing = Object.values(byGuardian).filter((b) => b > 0);
+    setCount(owing.length);
+    setTotalCents(owing.reduce((s, b) => s + b, 0));
     setLoading(false);
   }, [orgId]);
 
@@ -35,5 +38,5 @@ export function useFamiliesOwingCount(orgId) {
   // useProgramHealthMetrics.
   useEffect(() => { Promise.resolve().then(refetch); }, [refetch]);
 
-  return { count, loading };
+  return { count, totalCents, loading };
 }

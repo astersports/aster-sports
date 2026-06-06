@@ -21,15 +21,20 @@ const CHIP = { fontSize: 12, fontWeight: 600, padding: '0 12px', minHeight: 44, 
 
 export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
   if (item.domain === 'comms') {
+    const label = item.primary || 'New from your coach';
+    const sub = item.subtitle || item.subject;
     return (
-      <button type="button" onClick={() => onNavigate('/messages')} className="as-press"
-        style={{ ...card('var(--as-accent)'), ...TAP }} aria-label={`Unread from your coach: ${item.subject}`}>
+      <button type="button" onClick={() => onNavigate(item.to || '/messages')} className="as-press"
+        style={{ ...card('var(--as-accent)'), ...TAP }} aria-label={`${label}${sub ? `: ${sub}` : ''}`}>
         <span style={{ width: 30, height: 30, borderRadius: 8, display: 'grid', placeItems: 'center', flexShrink: 0, backgroundColor: 'var(--as-accent-soft)', color: 'var(--as-accent)' }}>
           <Mail size={16} strokeWidth={1.75} aria-hidden="true" />
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={KT}>New from your coach</div>
-          <div style={{ ...EVLINE, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.subject}</div>
+          <div style={KT}>
+            {label}
+            {item.pinned && <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, color: 'var(--as-accent)', backgroundColor: 'var(--as-accent-soft)', borderRadius: 9999, padding: '1px 6px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>pinned</span>}
+          </div>
+          {sub && <div style={{ ...EVLINE, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
         </div>
         <span aria-label="unread" style={{ width: 9, height: 9, borderRadius: '50%', backgroundColor: 'var(--as-accent)', flexShrink: 0 }} />
       </button>

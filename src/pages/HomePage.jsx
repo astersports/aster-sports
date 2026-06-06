@@ -6,10 +6,10 @@
 import { lazy, Suspense } from 'react';
 import { House } from 'lucide-react';
 import { useHomeRole } from '../hooks/useHomeRole';
-import ParentHomePage from './ParentHomePage';
 import PlaceholderPage from './PlaceholderPage';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 
+const ParentHomePage = lazy(() => import('./ParentHomePage'));
 const AdminHomePage = lazy(() => import('./AdminHomePage'));
 const CoachHomePage = lazy(() => import('./CoachHomePage'));
 
@@ -30,7 +30,13 @@ export default function HomePage() {
 
   if (loading) return withChrome(FALLBACK);
 
-  if (activeRole === 'parent') return withChrome(<ParentHomePage />);
+  if (activeRole === 'parent') {
+    return withChrome(
+      <Suspense fallback={FALLBACK}>
+        <ParentHomePage />
+      </Suspense>
+    );
+  }
 
   if (activeRole === 'admin') {
     return withChrome(
