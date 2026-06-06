@@ -25,7 +25,7 @@ function useLiveCountdown(targetDate) {
   return `${mins}m ${secs}s`;
 }
 
-export default function NextEventCard({ event, weather }) {
+export default function NextEventCard({ event, weather, draft }) {
   const countdown = useLiveCountdown(event?.start_at);
   const nowMs = useNow(30000);
   if (!event) return null;
@@ -65,6 +65,11 @@ export default function NextEventCard({ event, weather }) {
         <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 3 }}>
           Arrive {arriveMinutes(event.event_type)} minutes early
         </div>
+        {draft && (
+          <span style={{ display: 'inline-block', marginTop: 5, fontSize: 10, fontWeight: 600, letterSpacing: '0.03em', color: 'var(--as-text-tertiary)', backgroundColor: 'var(--as-bg-secondary)', borderRadius: 6, padding: '1px 7px' }}>
+            may reschedule · draft
+          </span>
+        )}
       </div>
       <div style={{ textAlign: 'right' }}>
         {weather && <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginBottom: 2 }}>{weather.icon} {weather.temp}°</div>}

@@ -10,6 +10,7 @@ import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { useRecentAchievements } from '../hooks/useRecentAchievements';
 import { useParentNeedsYou } from '../hooks/useParentNeedsYou';
 import { useParentComingUp } from '../hooks/useParentComingUp';
+import { useEventDraftStatus } from '../hooks/useEventDraftStatus';
 import HomeShell from '../components/home/HomeShell';
 import HomeGreeting from '../components/home/HomeGreeting';
 import NeedsYouSection from '../components/home/NeedsYouSection';
@@ -39,6 +40,7 @@ export default function ParentHomePage() {
     [needsYou.items],
   );
   const comingUp = useParentComingUp(activities, now, excludeIds);
+  const comingUpDraft = useEventDraftStatus(comingUp);
   const weather = useWeather(...WEATHER_DEFAULT_COORDS);
   const { byTeamId: recordsByTeam } = useOrgTeamRecords(orgId);
   const { achievements } = useRecentAchievements(myTeamIds, now);
@@ -80,6 +82,7 @@ export default function ParentHomePage() {
         <ComingUpSection
           event={comingUp}
           weather={getWeatherForTime(weather, comingUp?.start_at)}
+          draft={comingUpDraft}
           onSeeSchedule={() => navigate('/schedule')}
         />
       )}

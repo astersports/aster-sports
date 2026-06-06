@@ -49,6 +49,15 @@ describe('NextEventCard', () => {
     expect(practice.container.textContent).toMatch(/Arrive 5 minutes early/);
   });
 
+  it('draft pill: renders "may reschedule · draft" only when draft is true (#2)', () => {
+    const event = { id: 't', start_at: inHours(48), event_type: 'tournament', teams: { name: '11U Girls' } };
+    const on = render(<NextEventCard event={event} draft />);
+    expect(on.container.textContent).toMatch(/may reschedule · draft/);
+    cleanup();
+    const off = render(<NextEventCard event={event} draft={false} />);
+    expect(off.container.textContent).not.toMatch(/may reschedule/);
+  });
+
   it('urgent tint: amber border inside the 4h event-soon window, default border outside it (#1a)', () => {
     const soon = render(<NextEventCard event={{ id: 's', start_at: inHours(2), event_type: 'game', teams: { name: '10U Blue' } }} />);
     expect(soon.container.firstChild.style.border).toContain('var(--as-warning)');
