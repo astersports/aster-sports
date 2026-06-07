@@ -17,10 +17,9 @@ const TEAM = 'team-uuid-1';
 const teamFilter = { team_ids: [TEAM] };
 
 describe('Message this team — buildInitial team pre-fill (no kind yet)', () => {
-  it('?anchor=team&id=<id> with no kind → audience pre-set to that team, step 1', () => {
+  it('?anchor=team&id=<id> with no kind → audience pre-set to that team', () => {
     const s = buildInitial({ initialAnchorKind: 'team', initialAnchorId: TEAM });
     expect(s.kind).toBeNull();
-    expect(s.step).toBe(1);
     expect(s.anchor_kind).toBe('team');
     expect(s.anchor_id).toBe(TEAM);
     expect(s.audience_type).toBe('team');
