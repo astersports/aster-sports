@@ -1631,6 +1631,19 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   send action); optional weekly_digest send-path unification. Awaiting architect
   confirm of the three scoping calls (academy preserve / tournament density defer /
   weekly_digest unify-now-or-later) before A1–A3 code.
+- **Part A SHIPPING (architect ruled 2026-06-07 PM, `ARCHITECT_RULING_PART_A_A2_A3.txt`):**
+  #1 grouping = Option B (Recaps/Outreach/Guides); #2 usage-rank = STATIC for pilot;
+  #3 single-item header = KEEP; #4 order = A3-then-A2. A1 MERGED (#809, 2df3477).
+  A3 MERGED (#812, 29c2c68 — test_only toggle relocated to the send action). A2
+  (grouped picker, Option B, static order, KIND_GROUPS in lib, picker invariant
+  test AP#43) in flight.
+- **POST-PILOT TICKET (deferred, NOT decided-against — usage-rank data-driven):**
+  A2 ships STATIC kind order (KIND_GROUPS in `composeKinds.js`). The data-driven
+  version — order kinds within each picker group by the org's send count
+  (`comms_messages` GROUP BY kind) — is the eventual answer, deferred because pilot
+  send volume is too sparse to rank meaningfully. Revisit when real send volume
+  exists post-pilot. Ticketed here so "static" doesn't silently become permanent
+  (the deferred-item drift guard, PC-12 / architect ruling §2).
 
 ---
 
