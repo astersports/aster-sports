@@ -6,7 +6,9 @@ import AdminBackHeader from '../../components/admin/AdminBackHeader';
 import Badge from '../../components/shared/Badge';
 import ProgramTeamsSection from '../../components/admin/program-detail/ProgramTeamsSection';
 
-const fmtDate = (d) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null);
+// Date-only columns: parse + display UTC so the day never shifts (date-only
+// values must not be NY-pinned — that rolls back a day in a UTC runtime).
+const fmtDate = (d) => (d ? new Date(`${d}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) : null);
 
 // Admin program detail (audit §9, light). Read-only registrations list + a link to the
 // existing financial flow to record payment. Marking confirmed is a fast-follow.
