@@ -1,0 +1,142 @@
+==============================================================================
+CROSS-SECTION CLOSE   Claude Code -> architect lane
+Date: 2026-06-07 PM. Closes the cross-section review round (answers
+CROSS_SECTION_SCAN_FOR_CC.txt). Records what was FIXED + MERGED, the home
+ratifications, the D-G verification result, and the one decision still on the
+architect's desk. Pairs with CROSS_SECTION_FINDINGS_CC.txt (the findings) +
+HOME_CLOSEOUT_REVIEW_CC.txt (the home reconcile). Every claim is a merged PR,
+a file:line, or a live query (AP#60). Self-contained.
+==============================================================================
+
+0. HEADLINE
+------------------------------------------------------------------------------
+The findings round is closed and the routed fixes are SHIPPED. Merge audit is
+clean: every session item is on main; the only open PR is an unrelated
+Dependabot bump (#633). Programs is closed; home is closeable (one dated copy
+confirm left); briefings is verified-and-safely-held; schedule + teams are
+scoped and parked. The single decision still on the architect's desk is the
+briefings Part A screens-redesign routing pick.
+
+1. SHIPPED THIS ROUND (Frank-routed fixes — both MERGED)
+------------------------------------------------------------------------------
+#803  fix(admin): block program delete when registrations exist (pre-check).
+      registrations.program_id is ON DELETE RESTRICT (verified live; all other
+      program children CASCADE). deleteProgram() now COUNTS registrations FIRST
+      and returns a kind message ("This program can't be deleted — N families
+      have registered. Archive it instead.") BEFORE attempting the delete —
+      count-and-block, NOT catch-and-translate (which would still attempt and
+      throw raw 23503). Latent today (0 registrations); guards the first one.
+      Frank's explicit constraint ("pre-check not post-catch") satisfied.
+#804  fix(home): admin-hero scope labels + honest record default + dead-code.
+      - BUG-H1 (AP#63): the four Program-health KPIs each carry an explicit
+        scope line (season / all-time) + scope in aria-label. "Collected %"
+        (this-season) no longer reads as contradicting "Out $" (all-seasons —
+        kept all-seasons to match the payment_overdue alert, per Frank: label
+        the divergence, don't re-scope). Un-blocks the prematurely-"closed" D3.
+      - BUG-H2 (AP#27/#43): CoachTail renders '—' for a recordless team (was a
+        fabricated '0-0'), matching parent; invariant test case (e) locks BOTH
+        surfaces to '—'.
+      - BUG-H3 (AP#44): "Out" KPI gated on its own owingLoading — no "$0" flash.
+      - Dead-code (AP#51): retired the unconsumed pendingLanes aggregate (+ its
+        dead useCoachPayoutsPending/useFamiliesOwingCount reads) and
+        recentTeamMessages; DELETED the two now-orphan hook files. Added an
+        in-flight dedup to useFamiliesOwingCount so the two remaining concurrent
+        admin-home consumers share ONE family_balances query (3 → 1).
+      Verified: lint + build clean (104.94 KB gz, within budget); full suite
+      green under CI dummy env (204 files / 1471 tests, +1 new H2 case); all
+      touched files ≤150 LOC.
+
+#805 (docs) reconciled the ledger §4.S.3 so the record isn't stale.
+
+2. HOME DECISIONS — RATIFIED (Frank 2026-06-07) + D-G VERIFIED
+------------------------------------------------------------------------------
+Ratified:
+  - D-A coach comp — hidden-until-data (CoachCompCard, sibling slot, hides when
+    no accrual). Option A honored; stale comment fixed in #804.
+  - D-C density — retired from home (storage/hook survive for Schedule).
+  - D-E briefings ready/overdue — mapping confirmed (ready = comms_messages
+    drafts; to-write/overdue = synthetic).
+Pilot-fine, revisit post-pilot (NOT spec'd now):
+  - D-B — rows + severity rail (signal not lost); full alert-card merge deferred.
+  - D-F — secondary action-queue extras stay on home (fill cap-4) until real
+    usage says otherwise.
+Dated, the ONE remaining home item:
+  - D-D off-season — content shipped for all three roles; Frank to CONFIRM THE
+    COPY against the live preview before the pilot off-season (~June 15). A look,
+    not code.
+Verified GREEN (CC's lane, not an architect call):
+  - D-G — a real pilot send writes the in-app comms_message_recipients row WITH
+    the guardian's guardian_id (expandSliceToRows stamps it; useInboxList reads
+    by guardian_id), so the parent comms card lights. The synthetic
+    pilot_test_recipient_email path is guardian_id=null by design (admin
+    email-only smoke; correctly does NOT light a parent card). Code path
+    confirmed; only an end-to-end live send is the final belt-and-suspenders.
+
+=> HOME IS CLOSEABLE: all three bugs fixed + merged, D-A…D-F ratified, D-G
+   green. Closes fully once D-D copy is confirmed against the live preview.
+
+3. BRIEFINGS — FRAMING LOCKED (not "resolved")
+------------------------------------------------------------------------------
+Verified and SAFELY HELD, not closed. Phase 3 shipped; game_recap bounded; D-4
+correctly an uncrossed Frank gate (column intact, pilot ON). Before families go
+live there remain: DEF-11 deliverability (the 3-email/hour free-SMTP cap — a
+HARD prerequisite) and the underspecified coach_roundup SEND path. The honest
+status line is "verified and safely held, with a deliverability prereq and one
+underspecified send path before real-family send" — NOT "resolved."
+
+THE ONE DECISION ON THE ARCHITECT'S DESK — Part A screens-redesign routing:
+  OPTION A (CC lean) — Collapse to one composer. Retire the 4-step wizard;
+    extend the one-screen composer to ALL kinds (fields + AI Draft + inline
+    preview + send); kind selection becomes a lean grouped+usage-ranked entry;
+    send-mode moves to the send action; resume moves to Radar. Truest to "clean
+    up the screens," one model, kills P1–P5; the pieces already exist (re-host,
+    not rebuild). Biggest single change; needs a per-kind field audit + §16.15
+    audit before PR A.
+  OPTION B — Keep a wizard, radically simplify (merge steps 1+2, group kinds,
+    resume→Radar, send-mode→send step). Lower blast radius; leaves two composers
+    (P1 unsolved) — half-measure.
+  OPTION C — Radar-first (compose always starts from a Radar card; no standalone
+    kind grid). Boldest; largest IA change; needs Radar to cover free-form well.
+  CC leans A but explicitly does NOT default to it — architect picks.
+  Kind grouping for any option: Recaps / Schedule / Outreach.
+
+4. NEXT REDESIGNS — SCOPED, PARKED (do NOT start; forks-first like programs)
+------------------------------------------------------------------------------
+TEAMS (§4.S):
+  - AGE_GROUPS hardcoded in teamFormConstants.js:5
+    (['8U','9U','10U','11U','12U','Mixed']) — the next float-free-enum to close;
+    make it a declarative, parity-tested (likely org-scoped) catalog mirroring
+    team_types. GENDERS + CIRCUITS hardcoded in the same file.
+  - `division` is queried by useTeams/useOrgTeams/useProgramTeams/rollover but
+    NEVER read or written by TeamFormSheet — a dangling column; decide its fate.
+  - team_type_id→team_types.slug (competitive axis, isCompetitiveTeam) vs
+    `circuit` (aau|league_play CHECK, surfaced as "Competition type", gated by
+    team_type) — three names for an entangled concept; disentangle in scoping.
+  - /admin/teams was DEMOTED under Programs (header "Programs →", uses
+    usePrograms). TeamRow is a *Row → AP#46 row-rhythm guard applies.
+SCHEDULE:
+  - /schedule → SchedulePage, two views (list / games). EventCard (list) and
+    MatchupCard (games) are TWO card components rendering the SAME events rows —
+    a consolidation candidate (MatchupCard already row-rhythm-tested, #359).
+  - Spine = useActivities (events + teams!inner + locations embeds, org+season
+    scoped, module-cached). Per-role is data-scoping, not separate pages.
+  - Imperative day-jump via document.querySelector/scrollTo (SchedulePage.jsx:
+    51-54) brushes AP#5 (DOM in React) — fold into the redesign.
+
+5. MERGE AUDIT (clean)
+------------------------------------------------------------------------------
+Released to main this session: #796 (registry build), #797–#802 + #805 (docs),
+#803 + #804 (the fixes above). Open: only #633 (Dependabot, pre-existing, not
+ours). Nothing of ours is hanging.
+
+WHAT'S WAITING ON WHOM:
+  - Architect: the Part A routing pick (§3). Everything else is merged, ratified,
+    or explicitly parked.
+  - Frank: D-D off-season copy confirm against the live preview (~June 15);
+    relay this doc + the package to the architect.
+  - CC: nothing pending until the Part A pick lands or teams/schedule scoping
+    opens.
+
+==============================================================================
+END — CROSS_SECTION_CLOSE_CC
+==============================================================================
