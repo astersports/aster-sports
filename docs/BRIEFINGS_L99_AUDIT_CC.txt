@@ -1,292 +1,276 @@
 ==============================================================================
-BRIEFINGS — L99 REDESIGN-GRADE AUDIT v2 (full surface + deep-read addendum)
-CC -> architect. Date: 2026-06-07 PM. Operator directive: review the ENTIRE
-briefings build — every screen, entry/exit point, option, the AI, per profile
-(coach pushing off a game / admin / parent reading) — prove 100% clean,
-optimized, simple, intuitive, every hook wired; then doc-to-doc with the
-architect. §16.15 ("dial l99"). v2 = v1 (#814) + the §16.15(b) deep-read
-addendum (Radar / History+delivery / scheduling / audience / templates /
-cross-cutting states / a11y / pilot-safety) + the §16.13 elite-stack gate run +
-cross-cutting product gaps. THREE mapping agents + CC verification of the
-load-bearing findings. Every claim is file:line from live code. NOTHING APPLIED.
-This is the complete CC-recommendation set BEFORE architect additions.
+BRIEFINGS — L99 REDESIGN-GRADE AUDIT v3 (100% COVERAGE — full stack)
+CC -> architect. Date: 2026-06-07 PM. Operator directive: deploy multiple agents,
+surface EVERYTHING not yet surfaced, 100% covered before the architect. v3 =
+v1 (UI/render) + v2 (deep-read addendum) + the v3 four-agent sweep of the NON-UI
+stack (data layer / edge+send+delivery / per-kind resolver correctness / tests+
+integration+perf). FIVE mapping agents total + CC verification of every
+load-bearing finding (incl. live SQL + send-path tracing). Every claim is
+file:line or [LIVE] query. NOTHING APPLIED. This is the complete CC set before
+architect additions.
+
+COVERAGE STATEMENT (the "100%" claim, honestly): the briefings stack =
+UI(compose+render+radar+inbox) · DATA(schema/RLS/migrations) · EDGE(send/cron/
+webhook/AI) · LOGIC(12 resolvers/composers) · TESTS+INTEGRATION+PERF. All five
+layers are now audited. Remaining uncertainty is explicitly flagged per finding.
 ==============================================================================
 
 0. HEADLINE
 ------------------------------------------------------------------------------
-The briefings ENGINE is architecturally strong: pure resolve/compose (AP#27),
-single dispatch (RESOLVER_REGISTRY), ONE render path (email == in-app, parity by
-construction), AI honest-by-design, secrets in app_secrets (AP#33), one-screen
-composer (A1), delivery webhook writeback + per-recipient delivery table, warm
-empty/loading/error states almost everywhere, strong parent InboxList a11y. The
-DEEP-READ ADDENDUM (v2) confirms the v1 read was incomplete — the gaps cluster at
-the EDGES and in the OPERATIONAL surfaces (Radar, scheduling, delivery
-visibility) the first pass under-weighted. 18 findings now, severity-ranked.
+The briefings build is GENUINELY WELL-ENGINEERED — and the v3 sweep confirms it
+at the layers a UI read can't see: clean pure resolve/compose (no fabrication/
+swallow/mis-scope across all 12 kinds), solid RLS (parent isolation, AP#20 WITH
+CHECK on every write, auth.uid subselap-wrapped — zero initplan warnings), good
+edge-fn auth (verify_jwt config + secrets in app_secrets), a fail-CLOSED send-
+gate, single render path (email==in-app), real invariant/parity tests, indexed
+hot paths, lazy bundle, no N+1. The work is concentrated in a SHORT list of real
+issues at the edges + operations + one live migration drift.
 
-THE TOP 5 (read these):
-  P0  F-PILOT  8 resolvers default pilot OFF on a missing/unreadable settings row
-              (`?? false`), while the composer hook fails CLOSED (`?? true`). Two
-              opposite safety defaults for the SAME flag. Latent for LH (row
-              exists); a new org with no row → a self-determined send goes to
-              EVERY real family. The go-live (D-4) safety gate has a fail-open
-              seam. FIX: fail closed everywhere.
-  P1  F-SCHED No cancel / edit / reschedule UI for a scheduled send. The only
-              stop is an unlabeled "Dismiss" (archive) that RACES the cron tick.
-              Scheduling is near fire-and-forget.
-  P1  F-DELIV Delivery outcome (bounce / fail) is invisible except one-click-deep
-              in a per-briefing table; no rollup, no alert. An admin cannot see
-              "3 of 14 bounced." `queued`/`failed` rows appear in NEITHER Radar
-              NOR History — a failed scheduled send is fully invisible. (Ties
-              DEF-11.)
-  P1  F-SIG   Every recap/digest emails staff CELL PHONES to every guardian by
-              default + a redundant signature; no opt-in. (v1 F1; operator-named.)
-  P1  F-COACH A coach who just pushed off a game gets two staff buttons for the
-              same job — header modal works, hero "Request recap" dead-ends at
-              /unauthorized. (v1 F2.)
+THE TRUE PRIORITY STACK (corrected by v3 verification):
+  P0  DEF-11   No rate cap in code; a full-family send hits Resend's tier ceiling
+              and dumps overflow to `failed` (briefings, no retry) or SILENTLY
+              drops it (Stream A reminders). Provider/account-layer fix. THE moat
+              blocker, unaddressed in app code. [v3-verified]
+  P1  GHOST    Migration 20260603104534 (narrow weekly_digest unique index) is in
+              the repo but NEVER APPLIED; the live index still includes `draft`,
+              so the cron-draft vs admin-composer 23505 collision is reachable +
+              digestSend.js comments describe a non-existent schema state.
+              [CC-verified LIVE]. Quick chat-CC MCP fix.
+  P1  F-SIG    Staff CELL PHONES to every guardian by default + redundant
+              signature, no opt-in. (operator-named) FORK A.
+  P1  F-PATTERNA  Admin home shows a drafted-but-unsent recap as BOTH "ready"
+              (Needs-You) AND "pending" (AlertZone) — two predicates, one screen,
+              no AP#43 test. [v3]
+  P1  F-COACH  Coach recap-compose dead-ends (hero) while the header modal works.
+              FORK B.
+  P1  F-DELIV / F-SCHED / F-INBOX-A11Y / F-RECIPCHIP  parent-moat + ops visibility
+              (delivery health invisible; no cancel-scheduled; inbox iframe AT-trap;
+              recipient chip ≠ §13.7).
+  P1  SEND-4   Stream A reminders: claim-before-send, no rollback, swallowed batch
+              errors → silently undelivered, marked done. [v3]
 
-1. SURFACE MAP — entry / screens / exit (S-1)  [unchanged from v1, condensed]
+  ** CORRECTION (verify discipline, AP#60): v2 called the resolver pilot default
+  a P0 "could send to all families." VERIFIED FALSE. All 5 send paths
+  (composerSubmit, scheduleChangeSend, rsvpNudgeSend, digestSend, academyCallupSend)
+  invoke send-tournament-message, whose pilot gate (index.ts:163 `?? true`) FAILS
+  CLOSED and aborts 403 on any non-pilot guardian — even on a missing settings
+  row. So F-PILOT (8 resolvers `?? false`) is DOWNGRADED to P2: it widens the
+  computed recipient set + preview counts on a missing-row org, but the actual
+  SEND is double-gated fail-closed. Align resolvers to `?? true` for consistency/
+  preview-accuracy/defense-in-depth — NOT a blast risk. **
+
+1. FINDINGS BY LAYER + SEVERITY (consolidated v1+v2+v3, deduped)
 ------------------------------------------------------------------------------
-ENTRY (role): Radar "+New"/"Review&send" (ADMIN) · /admin/briefings→radar (ADMIN)
-· History/QuickActions (ADMIN) · EventDetail hero CTAs + EventDetailHeader icon
-(STAFF=admin||coach — see F-COACH) · TournamentHeader (ADMIN ctx) · AlertCard
-(ADMIN home) · Academy call-up (EventDetail, own FullScreenForm).
-SCREEN (one-screen, ComposerSections.jsx:29-44): KindChips (A2 grouped, #813
-pending) → Anchor+Audience → Body+AI+signoff → Schedule → Preview → SendConfirm.
-academy_callup → body-only redirect (preserved).
-EXIT (composerSubmit.js:90 + BriefingComposer.jsx:92-108): Send (per-kind
-branch) / Schedule-for-later / Save-draft (autosave 3s) / Cancel (navigate, does
-NOT discard — F-CANCEL).
+DELIVERABILITY (edge/provider)
+  DEF-11 [P0] No rate cap/throttle/retry in code (grep: none). send-tournament-
+    message:206-233 loops ALL recipients in 100-batches back-to-back; on Resend
+    rejection the WHOLE batch → `failed`, no retry/re-queue/re-drain. Stream A
+    reminders worse: _reminderSend.ts:146 DISCARDS the batch error, writes no
+    recipient rows → rate-capped reminder vanishes with zero trail. The 3/hr cap
+    is an external Resend free-tier limit the code is blind to. FIX: provider/
+    account upgrade + an app-side throttle/queue + a failed-row re-drain.
 
-  IA RENDER:
-    [Radar card]─Review&send─┐                         ┌─ Send → queue + edge fn
-    [+New]───────────────────┤                         ├─ Schedule → status=scheduled (cron)
-    [hero CTAs]──────────────┤─► /compose (ADMIN-only) ├─ Save draft → status=draft
-    [TournamentHeader]───────┤   ──► BriefingComposer ──┤
-    [AlertCard]──────────────┤                         └─ Cancel → navigate('/')  (no discard)
-    [Header ✉ icon]──────────┘ (MODAL, bypasses guard)
+DATA LAYER (schema/RLS/migrations)
+  GHOST/AP21-1 + PC-11-A [P1] migration 20260603104534 unregistered; live index
+    `comms_messages_weekly_digest_unique` still WHERE status IN (draft,scheduled,
+    queued,sent) [CC-verified]. 23505 draft-collision reachable; digestSend.js:
+    81-90 comments stale. FIX (chat-CC MCP): apply the narrow-index migration +
+    fix comments + register mirror.
+  PC-1 [P2] comms_message_recipients.delivery_method has NO CHECK (parent column
+    does). Add CHECK.
+  RLS-1 [P2] parent_update_own_recipients grants parents UPDATE on the FULL
+    recipient row (RLS can't column-restrict); WITH CHECK guards only guardian_id.
+    Accepted floor today; no exploit path. Note for the parent-write hardening.
+  RLS-2 [P2] comms_messages still grants ALL to anon (sibling revoke covered only
+    comms_message_recipients); RLS backstops (no live exposure) — close the
+    defense-in-depth asymmetry.
+  [P3] get_digest_recipients SECURITY INVOKER vs DEFINER siblings; guardian_
+    notification_prefs (0 rows) redundant w/ guardian_email_preferences; advisor
+    multiple_permissive_policies + unindexed-FK + unused-index (low volume).
+  CLEAN: parent isolation correct; AP#20 WITH CHECK on ALL writes; auth.uid
+    subselect (zero initplan); no phantom columns/functions; CASCADE/SET NULL
+    correct (recipients CASCADE w/ parent, guardian SET NULL for admin-BCC); hot
+    paths indexed; app_secrets deny-by-default.
 
-2. PER-ROLE RENDERS + VERDICT (S-4 / §16.15-d)
+EDGE / SEND PIPELINE
+  SEND-4 [P1] Stream A reminder claim-before-send + no rollback + swallowed batch
+    error (_reminders.ts:57-72, _reminderSend.ts:146) → reminder permanently
+    skipped + marked done. FIX: claim-after-success or rollback-on-throw.
+  SEND-3 / PC-5-1 [P2] digestSend.js:121-125 stamps status='sent' WITHOUT checking
+    dispatch.ok AND without sent_at — contradicts the edge fn's authoritative
+    ownership (send-tournament-message:235 comment "client must NOT own this"),
+    latent 23514, and a failed digest reports success. FIX: check dispatch.ok;
+    drop the client status write (let the edge fn own it).
+  SEND-2 [P2] rsvpNudgeSend/academyCallupSend also re-write status='sent' post-
+    invoke — redundant second writer. Fold into SEND-3 fix.
+  PC-7 [P2] weekly_digest two entry points (wizard filterSendable vs DigestComposer
+    passthrough) can compute different recipient sets for the "same" digest. FIX:
+    one audience-filter path.
+  WH-1 [P3] resend-webhook unhandled event types no-op (fine; note for rollup).
+  CLEAN: verify_jwt config (AP#31) all consistent; secrets in app_secrets (AP#33,
+    only the exempt RESEND_WEBHOOK_SECRET in Deno.env); scheduled-send atomic claim
+    (no double-dispatch); interactive idempotency (sent_at 409); token
+    substitution + handler-URL-wrap + fail-loud (AP#29); webhook signature + rank
+    state machine + suppression. Provider message-id not persisted (minor).
+
+LOGIC (12 resolvers/composers)
+  F-PILOT [P2, downgraded] 8 resolvers `?? false` fail-open on missing settings
+    row vs useOrgSettings `?? true`. Double-gated by the fail-closed send edge fn
+    (see §0 correction). FIX: align to `?? true` + a parity test asserting every
+    resolver defaults pilot-ON. Consistency + correct preview counts.
+  F1 [P3 latent] games_recap derives org from events[0]; a cross-org event set
+    would leak into the body (recipients still scope to org#1). LH-only today.
+    FIX: events.every(org===orgId) assertion.
+  F2 [P3 latent] family_guide pilot-skip branch hardcodes orgName 'Legacy Hoopers'
+    (inert — slices empty). Cosmetic.
+  F-FORFEIT [P2] no is_forfeit concept; 20-0 forfeit renders as a real WIN. Engine
+    truthful; gap is UPSTREAM score-entry. FORK C (own phase).
+  CLEAN: AP#27 purity + no-fabrication (honest omit/placeholder) all 12 kinds;
+    AP#36 no-swallow (only the deliberate weather catch); AP#37 org-scope; AP#28/
+    #34 registry dispatch; AP#38 renderer-emit parity (game_log is orphan RENDERER
+    not orphan emit). buildOrgContext branding hardcoded to defaults for all orgs
+    = documented multi-tenant limitation (scaffold "2nd tenant" reminder).
+
+RENDER / CONTENT
+  F-SIG [P1] signoff bundles signature + cell-phone contacts, unconditional, no
+    opt-in (gameRecap.js:120 + signoff.js:48-54 [CC-verified]). F-SIGDUP [P2]
+    family_guide coaches twice. F-SIGSCOPE [P2] org-wide coaches vs team signature.
+    FORK A closes all three in one signoff renderer.
+  CLEAN: single render path (body_html_rendered stored once, email==in-app); no
+    token/hardcoded-hex violations (colors.js); SECTION_RENDERERS 40 kinds parity.
+
+UI — COMPOSE / RADAR / HISTORY / SCHEDULING / AUDIENCE / INBOX
+  F-COACH [P1] recap-compose dead-end (hero→/unauthorized) vs working header modal
+    [CC-verified App.jsx:118 + EventHeroActions:55,73 + SendBriefingButton:37].
+    FORK B. (+ F-DUALMOUNT P3, F-COACHSCOPE P2 app-layer-not-RLS, F-COACHERR P2
+    AP#36 swallowed feed error.)
+  F-PATTERNA [P1] AlertZone briefing_overdue (dedup queued/sent, 7d) vs Needs-You
+    briefing_active_queue RPC (draft=handled, 14d) → drafted recap shows ready +
+    pending on one screen; tournament_recap same. No AP#43 test. [v3] FIX: shared
+    "is this recap handled?" source + cross-surface invariant test.
+  F-SCHED [P1] no cancel/edit/reschedule UI for a scheduled send; the only stop is
+    "Dismiss" (archive) which RACES the cron claim. (+ F-SCHED-TIME P2 card shows
+    no time; F-DELIV-QUEUED queued/failed rows invisible in Radar+History.)
+  F-DELIV [P1] bounce/fail visible only one-click-deep (BriefingHistoryDetail); no
+    rollup/alert; admin can't see "3 of 14 bounced." (+ F-BOUNCEREASON P2 selected-
+    but-unrendered; F-SENDERR P2 friendlySendError narrow.) Ties DEF-11.
+  F-RECIPCHIP [P1] recipient chip "Will send to N families" ≠ §13.7 "Active:X ·
+    Futures:Y · Recipients:Z guardians" (noun + roster-split wrong; families≠emails).
+  F-INBOX-A11Y [P1] parent InboxDetail renders email in an iframe → screen-reader
+    trap + non-visualViewport height (AP#18), on the hard-10/10 surface.
+  F-RADAR1 [P1] Radar "Review & send" only OPENS the composer — no headless one-tap
+    send (hub value prop one nav short). (+ F-RADAR-DISMISS P2 no confirm/undo/
+    non-atomic; F-RADAR-SNOOZE P3.)
+  Cleanups [P2/P3]: F-CANCEL (Cancel doesn't discard → scratch drafts), F-ORPHAN
+    (useNeedsBriefing orphan, AP#51), F-TEMPLATE (rsvp_nudge template likely dead),
+    F-STALE (composeFromEvent no-kind self-flag + stale StepKindPicker docs),
+    F-INBOX-READ (no mark-as-read, intentional MVP).
+  CLEAN: warm empty/loading/error microcopy almost everywhere; InboxList a11y
+    strong (test-locked); zero-recipient + null-count send-gate solid.
+
+PERF (v3)
+  [P2/MED] per-recipient mint_unsubscribe_token RPC in the send loop (~175 round-
+    trips, parallelized in 100-batches). Batched RPC → 2 calls. Scale note.
+  [P3/LOW] Radar fetchContext 5 sequential awaits (could Promise.all).
+  CLEAN: no N+1 in slice expansion; alert evaluators parallelized; lazy composer +
+    13 lazy body editors; .limit(200)/PAGE_SIZE bounds present; push fanout batched.
+
+TESTS (v3) — coverage map
+  WELL-TESTED: composer reducer/dispatch, all 12 resolvers (contract+snapshot),
+    SECTION_RENDERERS parity, radar helpers, inbox, send-pipeline JS wrappers,
+    audience, queue builders, auto-draft handlers. Strong invariant guards:
+    pilotMechanismParity, verifyJwtConfigAudit, sectionRendererParity,
+    audienceCatalogParity, edgeFunctionMirror/DirectoryParity, resendWebhook
+    Suppression, voiceSignatureCrossSurface, timezoneAuditPin.
+  HIGH-RISK UNTESTED (silent-regression surface): send-tournament-message edge fn
+    (mid-batch failure + delivery writeback — was a live regression 2026-05-27),
+    the pilot fail-closed default, the cron scheduled-send race claim, unsubscribe
+    suppression on send, digestSend ok-check. Convention hygiene clean (§11.6).
+    FIX: add edge-fn + cron tests for these paths as the fork fixes land.
+
+2. PER-ROLE VERDICT (condensed — full renders in v1/v2)
 ------------------------------------------------------------------------------
-COACH ("just pushed off a game") — NOT simple/intuitive (F-COACH).
-    ┌ Game (past) ─────────────┐
-    │ [Request recap] ─tap─► /admin/briefings/compose ─► /unauthorized   ✗ DEAD-END
-    └───────────────────────────┘
-    [✉ icon] (header SendBriefingButton) ─tap─► BriefingComposer MODAL    ✓ WORKS
-  Same job, two staff buttons, opposite outcomes. Coach also has read-only
-  /team-briefings (coherent), but the team-scope is APP-LAYER only, not RLS
-  (F-COACHSCOPE), and its feed swallows errors as "empty" (F-COACHERR).
+COACH — NOT simple/intuitive (F-COACH dead-end). ADMIN — functional/dense; gaps
+in ops visibility (F-SCHED/F-DELIV/F-PATTERNA/F-RADAR1). PARENT — render honest by
+construction; tail over-shares (F-SIG) + iframe a11y (F-INBOX-A11Y) + forfeit
+reads as WIN (F-FORFEIT).
 
-ADMIN — functional/dense/near-bar. Composer + Radar + History coherent. Residual:
-  dual-mount divergence (F-DUALMOUNT); Radar is review-only not send (F-RADAR1);
-  scheduled/delivery visibility gaps (F-SCHED/F-DELIV).
-
-PARENT ("reading it") — render honest BY CONSTRUCTION (one stored body for email
-  + in-app, guardian_id RLS-scoped, strong InboxList a11y). Tail over-shares
-  (F-SIG: signature + 2 cell numbers every send) + the InboxDetail iframe is an
-  AT trap + non-visualViewport height (F-INBOX-A11Y, anti-pattern #18) + forfeit
-  reads as a real WIN (F-FORFEIT).
-
-3. AI / MACHINE-LEARNING — clean, well-bounded (STRENGTH)
+3. §16.13 ELITE-STACK GATE — briefings does NOT yet pass
 ------------------------------------------------------------------------------
-3 Claude calls (claude-sonnet-4-5, keys in app_secrets, no-invent/prose-only/
-JSON-only): AiDraftAnchored (recap kinds → coach_note/coach_reflection, model
-writes prose only, never restates scores), AiDraftFreeForm (announcement/
-custom_message), Suggest-closer (tournament_prelim only). Auto-draft cron =
-NO LLM (placeholder rows; resolver runs at preview/send). No AI finding beyond
-"well-built." RECOMMENDATION (forward, not a defect): the cron's placeholder-
-then-resolve-at-send model is good; consider an AI "card summary" on Radar Ready
-cards later (deferred).
+FAILS: item 4 (a11y — F-INBOX-A11Y + no axe-core pass), item 6 (translation — NO
+EN↔ES path, G-TRANSLATE), item 7 (privacy — F-SIG default PII). PARTIAL: optimistic
+(dismiss non-atomic), audit-trail (no override log). PASS: density(n/a), microcopy,
+cadence, presence(n/a), perf. These three fails are the parent-bar closure
+conditions.
 
-4. ENGINE / RENDER — strengths + the signature + forfeit findings (v1, condensed)
+4. CROSS-CUTTING GAPS (named — scaffold §5)
 ------------------------------------------------------------------------------
-Strengths: SECTION_RENDERERS 40 kinds, unknown→''+DEV-warn (AP#38 holds, no
-orphans); table+inline-styled per §13, hex from colors.js (no token violations);
-ONE render path (body_html_rendered stored per-recipient, reused email+in-app).
-F-SIG (verified gameRecap.js:117-120 + signoff.js:48-54): one 'signoff' bundles
-signature + prose + per-coach contact (name+title+CELL PHONE), unconditional, no
-opt-in; signature=PD+THIS team, coaches=ALL org staff org-wide (scope mismatch,
-F-SIGSCOPE); family_guide emits coaches TWICE (F-SIGDUP). F-FORFEIT (verified
-useScoreDraft.js:14-18): no is_forfeit concept; 20-0 forfeit renders as real WIN.
+G-TRANSLATE [phase] no EN↔ES anywhere in briefings/inbox (§16.6); parent moat;
+  dedicated later phase, named now. G-DELIV-MOAT [link] DEF-11 + F-DELIV are the
+  same "comms actually works" concern from two ends (can't send at scale + can't
+  see what delivered). G-MULTITENANT [link] F1/F2/buildOrgContext + RLS-2 + the
+  org-from-events[0] shapes all surface the same latent: untested until a 2nd real
+  org (St. Patrick's) — re-run a schema-truth org-scope pass before that onboard.
 
-5. FINDINGS — full set, by area + severity (S-3)
+5. FORKS FOR THE ARCHITECT (leans labeled, none pre-picked — §11.8.2)
 ------------------------------------------------------------------------------
-PILOT-SAFETY
-  F-PILOT [P0] 8 resolvers `?? false` fail-OPEN vs useOrgSettings `?? true`
-    fail-CLOSED. (rsvpNudge:111, gameRecap:50, gamesRecap:38, tournamentRecap:61,
-    tournamentPrelim:51, scheduleChange:63, familyGuide:48, academyCallupNotice:57.)
-    Latent (LH row exists); fires on missing/unreadable settings row via a
-    self-determined resolve. FIX: `?? true` everywhere + a parity test asserting
-    every resolver defaults pilot-ON (mirror pilotMechanismParity.test.js).
-  F-DIGESTGUARD [P2] digestSend.js:36 has no independent pilot guard — trusts the
-    caller's recipients. Defense-in-depth gap (mitigated today).
+FORK A — signature/contacts model (F-SIG/SIGDUP/SIGSCOPE). Operator pref: clean
+  default + opt-in. CC lean A3+A1: voice signature default (no PII); phone contacts
+  opt-in per send + choose-contacts, team-scoped, dedup'd. Closes elite item 7.
+FORK B — coach access (F-COACH/DUALMOUNT/COACHSCOPE). CC lean B3: coach REQUESTS
+  (hero→draft/proposal), admin sends; unify mount; RLS the coach scope.
+FORK C — forfeit (F-FORFEIT). Upstream is_forfeit + "W—Forfeit" render. Own phase.
+FORK D — pilot fail-closed (F-PILOT). CC lean: NOT a fork — align 8 resolvers to
+  `?? true` + parity test; safety-consistency, ships with Tier 0. (Severity
+  corrected to P2 — the send gate already backstops.)
+FORK E — operational visibility (F-SCHED + F-DELIV + F-RADAR1 + PATTERNA + queued/
+  failed). Architect to scope redesign-now vs post-pilot: MINIMUM = cancel-
+  scheduled (safety) + a failed/bounced lane (DEF-11 prereq) + the PATTERNA shared-
+  source fix (correctness). FULLER = Radar one-tap send + delivery rollup.
 
-DELIVERY VISIBILITY
-  F-DELIV [P1] Bounce/fail outcome only on BriefingHistoryDetail (one-click-deep);
-    Radar "Sent" cards + History list show no delivery health; no failed/bounced
-    rollup or alert anywhere. Admin can't see "3 of 14 bounced." (Ties DEF-11 —
-    deliverability is the moat prereq; you can't manage what you can't see.)
-  F-DELIV-QUEUED [P1] `queued` (mid-dispatch) + cron-path `failed` rows appear in
-    NEITHER Radar (fetches draft/scheduled/sent) NOR History (sent-only). A failed
-    scheduled send is fully invisible. FIX: surface a "Needs attention / Failed"
-    lane.
-  F-BOUNCEREASON [P2] BriefingHistoryDetail selects `bounce_reason` but never
-    renders it — bounced row shows no reason. Written-but-not-shown.
-  F-SENDERR [P2] friendlySendError only translates NoRecipientsError; post-dispatch
-    delivery failures aren't surfaced at send time (only the detail table).
-
-SCHEDULING
-  F-SCHED [P1] No cancel/edit/reschedule UI for status='scheduled'. Only stop =
-    unlabeled "Dismiss" (archive) that RACES the cron claim (scheduled→queued); if
-    cron wins, the archive no-ops and it sends. FIX: explicit "Cancel scheduled
-    send" (guard the archive against the queued race) + edit/reschedule.
-  F-SCHED-TIME [P2] Scheduled Radar card shows only "Scheduled" tag, not WHEN
-    (scheduledFor is in the view-model, never displayed).
-
-RADAR
-  F-RADAR1 [P1] "Review & send" only OPENS the composer — no one-tap headless
-    send. The hub's value prop is one navigation short (CardActions.jsx:4 admits
-    it). Decide: build headless send, or rename the affordance honestly.
-  F-RADAR-DISMISS [P2] Dismiss = archive, no confirm, no undo, non-atomic (update
-    then full refetch → card flashes). Accidentally archiving a real cron-proposed
-    schedule_change is silent loss (won't re-draft). FIX: confirm + undo toast.
-  F-RADAR-SNOOZE [P3] No snooze (spec mentioned; only dismiss exists).
-
-AUDIENCE
-  F-RECIPCHIP [P1] Recipient preview is "Will send to N families." — does NOT
-    match §13.7 "Active: X · Futures: Y · Recipients: Z guardians." No roster-type
-    split, wrong noun (families vs guardians; a family has 1-2 guardians, so the
-    shown number ≠ emails sent). FIX: implement the §13.7 chip (Active/Futures/
-    guardian count). [Strength: zero-recipient + null-count send-gate is solid.]
-
-PARENT INBOX (hard 10/10 bar)
-  F-INBOX-A11Y [P1] InboxDetail renders the email HTML in an `<iframe srcDoc
-    sandbox=allow-same-origin>` at minHeight calc(100vh-140px) — iframe body text
-    is a screen-reader trap (not app-reachable AT content) AND fixed vh height
-    (not window.visualViewport) brushes anti-pattern #18 (iOS clip/scroll). FIX:
-    render the briefing as in-app DOM (not an iframe) for the parent read, or an
-    AT-labeled accessible-name + visualViewport sizing.
-  F-INBOX-READ [P3] No mark-as-read affordance / no filter (auto-read-on-open
-    only) — documented as intentional MVP; leave deferred.
-
-COACH SURFACES
-  F-COACH [P1] recap-compose dead-end (hero) vs working modal. (v1 F2.) FORK B.
-  F-COACHSCOPE [P2] /team-briefings team-scope is APP-LAYER filter, not RLS
-    ("pre-cutover hardening" per file). A query bypassing the app filter sees all
-    org briefings. Harden with RLS before multi-tenant.
-  F-COACHERR [P2] CoachTeamBriefingsPage destructures no `error` (AP#36) — a
-    failed feed renders as "empty," indistinguishable from genuinely empty.
-
-ENGINE/CONTENT (v1)
-  F-SIG [P1] signature+contacts default-on, cell phones to every guardian, no
-    opt-in. FORK A.  F-SIGDUP [P2] family_guide coaches twice. F-SIGSCOPE [P2]
-    org-wide coaches vs team signature. (All fold into FORK A.)
-  F-FORFEIT [P2] no forfeit concept → 20-0 reads as real WIN. FORK C (upstream
-    score-entry, its own small phase).
-
-HYGIENE / DEAD CODE
-  F-CANCEL [P2] Cancel doesn't call useBriefingDraft.discard() (defined, unwired)
-    → authored-then-cancelled scratch drafts linger in Radar Drafts. FIX: wire
-    discard (or confirm-on-cancel-if-authored).
-  F-ORPHAN [P3] useNeedsBriefing — orphan, no live importer (AP#51). Remove/wire.
-  F-DUALMOUNT [P3] BriefingComposer route-mount vs modal-mount diverge (only route
-    runs deep-link consume + PilotModeChip host). Resolve with FORK B.
-  F-TEMPLATE [P3] rsvp_nudge template imported but likely unreachable (rsvp_nudge
-    short-circuits before TemplatePicker). Verify + remove if dead.
-  F-STALE [P3] composeFromEvent upcoming-game returns no kind (self-flagged);
-    stale docs reference retired "StepKindPicker"/"4-step wizard."
-
-6. CROSS-CUTTING PRODUCT GAPS (named so they're not silently missing — scaffold §5)
+6. RECOMMENDED TIER SEQUENCE (CC proposal — architect/Frank route)
 ------------------------------------------------------------------------------
-  G-TRANSLATE [phase] §16.6 mandates bidirectional EN↔ES for parent comms (admin
-    auto-translate before send; parent reads translated + "view original"). The
-    ENTIRE briefings/inbox surface has NO translation path. Parent comms are the
-    moat; LH has Spanish-speaking families. Likely a dedicated later phase, but it
-    must be NAMED now, not discovered at go-live.
-  G-DELIV-MOAT [link] F-DELIV + DEF-11 are the same moat concern from two ends:
-    you can't send at 175-guardian scale (DEF-11 SMTP cap) AND you can't SEE what
-    got delivered (F-DELIV). Treat as a paired "comms actually works" workstream.
-  G-RECIP-TRUTH [link] F-RECIPCHIP noun drift (families vs guardians) is a §11.5
-    ground-truth question: the moat surface should show the real recipient count.
-
-7. §16.13 ELITE-STACK GATE — run against briefings (the project's own merge gate)
-------------------------------------------------------------------------------
-  1 Optimistic UI (16.1) — PARTIAL: inbox unread-clear + radar dismiss optimistic;
-    dismiss non-atomic (F-RADAR-DISMISS). OK.
-  2 Density (16.2) — N/A to compose; OK.
-  3 Kindness microcopy (16.3) — STRONG (warm empty/error almost everywhere);
-    exceptions F-COACHERR, F-INBOX detail-stuck-on-loading.
-  4 Accessibility (16.4) — MIXED: InboxList strong (locked by test); InboxDetail
-    iframe a trap (F-INBOX-A11Y); no axe-core pass run (scaffold §5). FAIL until
-    F-INBOX-A11Y + an a11y pass.
-  5 Notification cadence (16.5) — Stream B (rsvp_nudge) wired; auto-draft handlers
-    present. OK (D-4/DEF-11 gate the real send).
-  6 Translation-extractable (16.6) — FAIL: no translation path (G-TRANSLATE).
-  7 Privacy locks (16.7) — FAIL by default: F-SIG ships staff cell PII to every
-    guardian unconditionally. FORK A closes it.
-  8 Audit trail (16.8) — PARTIAL: History + per-recipient delivery table exist;
-    no who-sent-what override log surfaced. OK-ish.
-  9 Presence (16.9) — N/A to briefings. OK.
-  10 Perf budget (16.10) — OK (lazy composer; bundle within budget).
-  GATE VERDICT: briefings does NOT yet pass the elite-stack gate — items 4
-  (a11y), 6 (translation), 7 (privacy/F-SIG) fail. These are the redesign's real
-  closure conditions for the PARENT bar.
-
-8. FORKS FOR THE ARCHITECT (leans labeled, none pre-picked — §11.8.2)
-------------------------------------------------------------------------------
-FORK A — signature/contacts model (F-SIG/F-SIGDUP/F-SIGSCOPE). Operator pref:
-  clean default, signatures opt-in. CC lean A3+A1: keep voice signature (warmth,
-  no PII) as default; phone CONTACT BLOCKS opt-in per send + choose-contacts
-  (coach+#, PD+#, other), team-scoped + dedup'd. One signoff renderer; resolves
-  all three + closes elite-gate item 7.
-FORK B — coach compose access (F-COACH/F-DUALMOUNT/F-COACHSCOPE). CC lean B3:
-  coach REQUESTS (hero creates a draft/proposal), admin sends — matches read-only
-  /team-briefings model; fix the dead-end + unify the mount + RLS the coach scope.
-  (B1 coaches self-serve; B2 admin-only remove coach CTAs.)
-FORK C — forfeit (F-FORFEIT). is_forfeit at score entry + "W — Forfeit" no
-  fabricated score. Upstream, its own small phase. CC lean: ticket separately.
-FORK D [NEW] — pilot fail-closed (F-PILOT). CC lean: NOT a fork — it's a P0 safety
-  fix; align all 8 resolvers to `?? true` + parity test. Architect to CONFIRM
-  fail-closed is the intended default pre-go-live (it matches useOrgSettings' own
-  stated intent), then CC ships it as the first fix PR.
-FORK E [NEW] — operational visibility scope (F-SCHED + F-DELIV + F-RADAR1 +
-  F-DELIV-QUEUED). These are one theme: the admin can't see/manage in-flight,
-  scheduled, or failed sends. Architect to scope how much of this rides the
-  redesign now vs post-pilot: minimum = cancel-scheduled (safety) + a failed/
-  bounced lane (DEF-11 prereq); fuller = Radar one-tap send + delivery rollup.
-
-9. RECOMMENDED SEQUENCE (CC proposal — architect/Frank route)
-------------------------------------------------------------------------------
-  Tier 0 (safety, ship first): F-PILOT fail-closed (FORK D).
-  Tier 1 (parent-moat, redesign core): FORK A (signatures/PII) + F-INBOX-A11Y +
-    F-RECIPCHIP (§13.7) — these close the elite-gate parent failures.
+  Tier 0 (safety/correctness, ship first, all small):
+    GHOST migration apply (P1, chat-CC MCP) · FORK D pilot `?? true` + parity test ·
+    SEND-3/SEND-2 digest ok-check + drop client status write · SEND-4 reminder
+    rollback.
+  Tier 1 (parent-moat redesign core — closes elite gate): FORK A (signatures/PII) ·
+    F-INBOX-A11Y (de-iframe the parent read) · F-RECIPCHIP (§13.7 chip) ·
+    F-PATTERNA (shared recap-handled source + AP#43 test).
   Tier 2 (coach coherence): FORK B.
-  Tier 3 (operational visibility): FORK E minimum (cancel-scheduled + failed lane).
-  Tier 4 (cleanups, ride-along): F-CANCEL, F-ORPHAN, F-BOUNCEREASON, F-COACHERR,
-    F-TEMPLATE, F-STALE, F-SCHED-TIME, F-RADAR-DISMISS.
-  Phases (named, not now): FORK C (forfeit), G-TRANSLATE, DEF-11, D-4.
+  Tier 3 (ops visibility, FORK E minimum): cancel-scheduled + failed/bounced lane +
+    bounce_reason render.
+  Tier 4 (cleanups, ride-along): F-CANCEL, F-ORPHAN, F-TEMPLATE, F-STALE, PC-1
+    CHECK, RLS-2 anon revoke, F-SCHED-TIME, F-RADAR-DISMISS, perf batched-
+    unsubscribe-RPC + radar Promise.all, F1/F2 latent, get_digest_recipients secdef
+    review.
+  Phases (named, not now): DEF-11 (P0 provider/account — gates real-family send) ·
+    FORK C forfeit · G-TRANSLATE · D-4 pilot cutover.
+  ** Note: Tier 1 ships but briefings is NOT "go-live done" until DEF-11 + D-4. **
 
-10. OUT OF SCOPE (S-6) / §16.15 ELEMENTS
+7. OUT OF SCOPE / §16.15 ELEMENTS
 ------------------------------------------------------------------------------
-OUT: D-4 (pilot cutover, Frank gate), DEF-11 (SMTP cap, go-live prereq — paired
-  with F-DELIV per G-DELIV-MOAT), coach_roundup SEND-spec, weekly_digest
-  dual-dispatch unification, FORK C score-entry feature, G-TRANSLATE phase.
-  A2 (#813) + A3 (merged) = in-flight compose polish.
-§16.15: (a) audit — 3 agents, full mount tree, file:line. (b) deep-read addendum
-  — THIS v2 (Radar/History/scheduling/audience/templates/states/a11y/pilot),
-  CC-verified the load-bearing finds (F-PILOT 8 resolvers, F-SIG, F-COACH).
-  (c) AP/PC cross-ref — F-PILOT pilot-safety, F-COACHERR AP#36, F-INBOX-A11Y AP#18,
-  F-ORPHAN AP#51, strengths AP#27/#33/#38. (d) per-role renders §2. (e) out-of-
-  scope above.
+OUT: D-4 (pilot cutover, Frank gate), DEF-11 build is provider/account + a
+  throttle (its own workstream), coach_roundup SEND-spec, weekly_digest dual-
+  dispatch unification (PC-7 rides Tier-?), FORK C, G-TRANSLATE. A2 (#813)+A3
+  (merged) = in-flight compose polish.
+§16.15: (a) audit — 5 agents, full stack. (b) deep-read addendum — v2 + the v3
+  non-UI sweep; CC-verified the load-bearing finds (F-PILOT double-gate via send-
+  path trace, GHOST via live SQL, F-SIG/F-COACH via direct read). (c) AP/PC cross-
+  ref — throughout (AP#18/#20/#27/#28/#29/#31/#33/#34/#36/#37/#38/#43/#51/#63 +
+  PC-1/5/7/11). (d) per-role §2. (e) out-of-scope above.
 
-11. WAITING ON WHOM
+8. WAITING ON WHOM
 ------------------------------------------------------------------------------
-  - Frank: read v2, confirm nothing's still missing; hand to architect. Confirm
-    FORK A pref + FORK D (fail-closed) intent. Standing: D-D (June 15), D-G live
-    send, smoke A2 (#813).
-  - Architect: add recommendations; rule FORKS A/B/C/D/E + the Tier sequence.
-  - CC: on rulings, rewrite this doc (final) with architect additions, then build
-    Tier 0 first (F-PILOT), each fix a small smoked PR reported as TXT.
+  - Frank: read v3; confirm it's 100% (nothing still missing on CC's side); hand to
+    architect. Confirm FORK A pref. Standing: D-D (June 15), D-G live send, smoke
+    A2 (#813).
+  - Architect: add recommendations; rule FORKS A/B/C/D/E + the Tier sequence;
+    confirm DEF-11 ownership (Frank/provider).
+  - CC: on rulings, rewrite this doc FINAL with architect additions, then build
+    Tier 0 first (GHOST + FORK D + SEND fixes), each a small smoked PR / MCP apply,
+    reported as TXT.
 
 ==============================================================================
-END — BRIEFINGS_L99_AUDIT_CC v2
+END — BRIEFINGS_L99_AUDIT_CC v3 (100% coverage)
 ==============================================================================
