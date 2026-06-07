@@ -9,6 +9,8 @@
 // from the AAU-semantics surfaces — Records standings, Games standings, and
 // the tournament team picker — where a camp team would otherwise render a
 // meaningless 0-0 record or be selectable into a bracket it can't play in.
+import { programRule } from './programRegistry';
+
 export const COMPETITIVE_TEAM_SLUGS = ['game_team', 'tournament_team', 'hybrid_team'];
 
 // A team is competitive when its joined team_types.slug is in the set. A team
@@ -39,12 +41,8 @@ export function isCompetitiveSlug(slug) {
   return COMPETITIVE_TEAM_SLUGS.includes(slug);
 }
 
-// Smart default team_type slug from the parent program's type (GO D3); the
-// admin can override in the form. interest_list / evaluation are not team-
-// bearing (F9) so they never reach this map.
-const DEFAULT_TEAM_TYPE_BY_PROGRAM = {
-  season: 'game_team', tryout: 'game_team', camp: 'clinic_camp', clinic: 'clinic_camp',
-};
+// Smart default team_type slug from the parent program's type (GO D3) — reads
+// PROGRAM_TYPE_REGISTRY (single source); the admin can override in the form.
 export function defaultTeamTypeSlugForProgram(programType) {
-  return DEFAULT_TEAM_TYPE_BY_PROGRAM[programType] || 'game_team';
+  return programRule(programType).defaultTeamType;
 }

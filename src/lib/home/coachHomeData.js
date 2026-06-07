@@ -1,4 +1,5 @@
 // Pure shapers for the coach home. Keep CoachHomePage + useCoachNeedsYou thin.
+import { programRule } from '../programRegistry';
 
 const ALERT_LABELS = {
   rsvp_shortfall: 'RSVP shortfall',
@@ -40,13 +41,8 @@ export function summarizeActionQueue(items) {
 // NO-REGRESSION: with one active program every team maps to it → one group, and
 // CoachTail falls through to its flat render. Teams with no matched program land
 // in a trailing '__none__' group (defensive; shouldn't happen for active teams).
-// Covers ALL program_type enum values (F8 / AP#34+#38: the noun map must not
-// fall through to a generic for any creatable type). season→'teams'; the rest
-// read naturally as "<Program> · <noun>".
-const PROGRAM_NOUN = {
-  season: 'teams', camp: 'camp', clinic: 'clinic',
-  tryout: 'tryout', evaluation: 'evaluation', interest_list: 'interest list',
-};
+// Per-type display noun now reads PROGRAM_TYPE_REGISTRY (single source) — covers
+// every enum value by construction (F8 / AP#34+#38: no generic fall-through).
 
 export function groupTeamsByProgram(teams, programs) {
   const programOf = new Map();
@@ -56,7 +52,7 @@ export function groupTeamsByProgram(teams, programs) {
     const p = programOf.get(t.id);
     const key = p?.id || '__none__';
     if (!groups.has(key)) {
-      const label = p ? `${p.name} · ${PROGRAM_NOUN[p.programType] || 'teams'}` : 'Other';
+      const label = p ? `${p.name} · ${programRule(p.programType).noun}` : 'Other';
       groups.set(key, { programId: key, label, teams: [] });
     }
     groups.get(key).teams.push(t);

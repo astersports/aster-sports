@@ -8,9 +8,9 @@ describe('statusForProgramType (GO D1)', () => {
     expect(statusForProgramType('camp')).toBe('active');
     expect(statusForProgramType('clinic')).toBe('active');
   });
-  it('season, tryout, evaluation, interest_list are created archived', () => {
-    for (const t of ['season', 'tryout', 'evaluation', 'interest_list']) {
-      expect(statusForProgramType(t)).toBe('archived');
+  it('season, tryout, evaluation, interest_list, other are created draft (Fork 1)', () => {
+    for (const t of ['season', 'tryout', 'evaluation', 'interest_list', 'other']) {
+      expect(statusForProgramType(t)).toBe('draft');
     }
   });
 });

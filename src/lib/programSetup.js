@@ -2,22 +2,24 @@
 // module top (AP#27) so these are unit-testable without the client singleton —
 // checkSlugAvailable takes the client as an injected argument instead.
 
+import { programRule } from './programRegistry';
+
 export function slugify(s) {
   return (s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
-// Status default per program_type (GO D1): time-bounded offerings (camp, clinic)
-// go live on create; the rest (season, tryout, evaluation, interest_list) are
-// created 'archived'. Season's archived default also protects the single-active-
-// season invariant — a new season must not silently become a 2nd active one (F4).
+// Status default on create — reads the registry (Fork 1): camp/clinic go live
+// ('active'); season/tryout/evaluation/interest_list/other are born 'draft'
+// (pre-launch), promoted via activate(). The old "season -> archived" guard is
+// replaced by draft-on-create + the single-active-season DB index.
 export function statusForProgramType(type) {
-  return type === 'camp' || type === 'clinic' ? 'active' : 'archived';
+  return programRule(type).defaultStatus;
 }
 
-// Divisions + per-division fees are season-only (GO D2). Non-season programs
-// bill a flat fee later via the Phase-2 enrollment archetype; no divisions here.
+// Divisions + per-division fees are season-only — reads the registry
+// (hasDivisions). Non-season programs bill a flat fee later (Phase-2 enrollment).
 export function divisionsApplyTo(type) {
-  return type === 'season';
+  return programRule(type).hasDivisions;
 }
 
 // App-level public_slug uniqueness on (org_id, slug) — the DB has no unique

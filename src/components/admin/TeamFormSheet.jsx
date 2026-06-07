@@ -5,6 +5,7 @@ import ColorPicker from './team-form/ColorPicker';
 import { ChipField, Field, Input } from './FormControls';
 import { useTeamTypes } from '../../hooks/useTeamTypes';
 import { defaultTeamTypeSlugForProgram, isCompetitiveSlug } from '../../lib/teamTypes';
+import { programDefaultsCompetitive } from '../../lib/programRegistry';
 import { AGE_GROUPS, CIRCUITS, DAYS, EMPTY, GENDERS, hintStyle, TEAM_TYPES, warnStyle } from './team-form/teamFormConstants';
 
 // FullScreenForm unmounts children when closed, so Body mounts fresh
@@ -64,7 +65,7 @@ function Body({ program, programType, onSave, onDelete }) {
         {!competitive && (
           <div style={hintStyle}>Non-competitive — kept off records, standings, and brackets.</div>
         )}
-        {competitive && programType !== 'season' && (
+        {competitive && !programDefaultsCompetitive(programType) && (
           <div style={warnStyle}>Competitive type: this team will appear in standings and game pickers.</div>
         )}
 

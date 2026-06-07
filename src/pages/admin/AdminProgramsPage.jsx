@@ -3,21 +3,17 @@ import { Link } from 'react-router-dom';
 import { Layers, Plus } from 'lucide-react';
 import { useAllPrograms } from '../../hooks/useAllPrograms';
 import { groupPrograms } from '../../lib/programGrouping';
+import { PROGRAM_TYPE_KEYS, programRule } from '../../lib/programRegistry';
 import AdminBackHeader from '../../components/admin/AdminBackHeader';
 import ProgramIndexRow from '../../components/admin/programs/ProgramIndexRow';
 import EmptyState from '../../components/shared/EmptyState';
 import LoadingSkeleton from '../../components/shared/LoadingSkeleton';
 
 // The /admin/programs index — the navigation spine (render R1, F5). Lists every
-// program across types + statuses, grouped Active / Upcoming / Archived, with a
-// type filter. Reachable from the admin-home Programs shortcut.
-const FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'season', label: 'Seasons' },
-  { key: 'camp', label: 'Camps' },
-  { key: 'clinic', label: 'Clinics' },
-  { key: 'tryout', label: 'Tryouts' },
-];
+// program across types + statuses, grouped Draft / Active / Upcoming / Archived,
+// with a type filter. Filter chips are registry-derived (every type, can't
+// drift). Reachable from the admin-home Programs shortcut.
+const FILTERS = [{ key: 'all', label: 'All' }, ...PROGRAM_TYPE_KEYS.map((key) => ({ key, label: programRule(key).label }))];
 
 export default function AdminProgramsPage() {
   const { programs, loading } = useAllPrograms();

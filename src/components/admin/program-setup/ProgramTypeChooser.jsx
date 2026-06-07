@@ -1,25 +1,10 @@
 import { Field } from '../../register/fields';
+import { PROGRAM_TYPE_KEYS, programRule } from '../../../lib/programRegistry';
 
-// Program-type selector for admin program create (GO D1/D2). The chosen type
-// drives status default, divisions visibility, and the helper copy below.
-// 'season' first (the common case); the rest are non-season offerings.
-const TYPES = [
-  { key: 'season', label: 'Season' },
-  { key: 'camp', label: 'Camp' },
-  { key: 'clinic', label: 'Clinic' },
-  { key: 'tryout', label: 'Tryout' },
-  { key: 'evaluation', label: 'Eval' },
-  { key: 'interest_list', label: 'Interest list' },
-];
-
-const HELPER = {
-  season: 'Divisions and per-division fees. Created archived — activate it from Seasons when it starts.',
-  camp: 'Time-bounded, flat fee, no divisions. Created active so it’s live right away.',
-  clinic: 'Time-bounded, flat fee, no divisions. Created active so it’s live right away.',
-  tryout: 'Pre-season tryout. No divisions. Created archived until you open it.',
-  evaluation: 'Player evaluation. No divisions. Created archived until you open it.',
-  interest_list: 'Collect signups before a program exists. No divisions. Created archived.',
-};
+// Program-type selector for admin program create. Entries + helper copy read
+// PROGRAM_TYPE_REGISTRY (single source) — the parity test asserts these keys
+// equal the registry keys and the DB enum, so the chooser can't drift.
+const TYPES = PROGRAM_TYPE_KEYS.map((key) => ({ key, label: programRule(key).label }));
 
 export default function ProgramTypeChooser({ value, onChange }) {
   return (
@@ -38,7 +23,7 @@ export default function ProgramTypeChooser({ value, onChange }) {
           );
         })}
       </div>
-      <div style={helperBox}>{HELPER[value] || HELPER.season}</div>
+      <div style={helperBox}>{programRule(value).chooserHelper}</div>
     </Field>
   );
 }

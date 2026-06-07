@@ -16,6 +16,15 @@ describe('groupPrograms (PR-3 index)', () => {
     expect(groups[1].programs.map((p) => p.id)).toEqual(['c']);   // starts Jul 27
     expect(groups[2].programs.map((p) => p.id)).toEqual(['a']);   // archived
   });
+  it('puts draft-status programs in their own Draft group (Fork 1)', () => {
+    const groups = groupPrograms([
+      { id: 'd', name: 'Fall Tryouts', status: 'draft', startDate: '2026-08-01' },
+      { id: 's', name: 'Spring 2026', status: 'active', startDate: '2026-03-23' },
+    ], today);
+    expect(groups.map((g) => g.key)).toEqual(['active', 'draft']);
+    expect(groups.find((g) => g.key === 'draft').programs.map((p) => p.id)).toEqual(['d']);
+  });
+
   it('drops empty groups', () => {
     const groups = groupPrograms([programs[0]], today);
     expect(groups.map((g) => g.key)).toEqual(['active']);
