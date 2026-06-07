@@ -1,0 +1,88 @@
+==============================================================================
+CC SESSION HANDOFF — 2026-06-07 PM (briefings audit arc + go-live build kickoff)
+Second handoff of the day (the AM one is CC_SESSION_HANDOFF_2026-06-07.txt,
+programs domain — left intact). For: the next CC chat + Frank + the architect.
+Per §11.8.5. Session got long; switching chats to keep discipline crisp.
+EVERYTHING is committed to git — no work is at risk in the switch.
+==============================================================================
+
+0. ONE-LINE STATE
+------------------------------------------------------------------------------
+Briefings audit arc DONE + architect-SIGNED; the go-live BUILD has started. The
+first build PR (G8) is up + HELD, narrowed after the architect's review caught a
+real double-send window. Three things are waiting (§3). No code is mid-flight.
+
+1. CANONICAL DOCS (read first, all on main)
+------------------------------------------------------------------------------
+  - docs/BRIEFINGS_L99_AUDIT_CC.txt — the FINAL audit (post-review + Frank's
+    answers): findings, forks A-F, tiers, go-live track G1-G9, §16.15. READ THIS.
+  - ARCHITECT_SIGNOFF_BRIEFINGS_L99_FINAL.txt (uploaded; in ledger) — §10-item-1
+    SIGNED, build green-lit, FF-1/FF-2.
+  - ARCHITECT_REVIEW_G8_SEND_IDEMPOTENCY (uploaded) — caught the crash window.
+  - docs/CC_G8_REVIEW_RESPONSE.txt — window confirmed open; claim narrowed;
+    G5 -> Option C; durable A-vs-B (CC leans B).
+  - docs/CC_G8_SEND_IDEMPOTENCY_REPORT.txt — the G8 PR report.
+  - docs/EMBER_PENDING_LEDGER.md §4 tail — the briefings arc is the last ~9 bullets.
+
+2. SHIPPED THIS SESSION (merged to main)
+------------------------------------------------------------------------------
+  Build: #796 registry · #803 programs delete pre-check · #804 home bug batch.
+  Part A compose redesign: A1 #809 (retire wizard step machinery) · A3 #812
+    (test_only -> send action) · A2 #813 GROUPED PICKER **HELD do-not-auto-merge,
+    still open, Frank smoke pending**.
+  Audit arc (docs): Part A audit #808 · L99 v1-v4 #814/#815/#816/#817 · FINAL #818
+    · Frank-answers #819 · sign-off carry #820 · G8 report #822 · G8 response #823.
+  Go-live build: G8 #821 (send idempotency kernels + tests) **HELD, NARROWED,
+    pending architect merge-nod**.
+
+3. WHAT'S WAITING (3 unblockers; nothing else startable in-order)
+------------------------------------------------------------------------------
+  A. ARCHITECT — on G8 (#821) + response (#823):
+     (1) OK narrowed-G8 to merge? (extraction + tests stand; no overclaim). Nod -> CC merges.
+     (2) Confirm G5 = Option C pilot floor (auto-re-drive only safe-`failed`;
+         surface ambiguous `queued`) + durable choice: CC leans Option B
+         (`sending` claim; precedent _changeAlertDispatch.ts:78) over A (Resend
+         keys; docs 403, likely per-batch-call — verify before relying).
+     On (1)+(2): merge G8, build G5 as Option C.
+  B. FRANK — G1 (B2 address+footer), parallel/independent: needs the LH physical
+     mailing address (CC can't invent — legal) + GO on
+     `ALTER TABLE organizations ADD COLUMN mailing_address text;`. Then G1 ships.
+  C. FRANK — smoke A2 (#813); two small opens: CAN-SPAM counsel one-liner (address
+     ships regardless), FORK A confirm (before the FORK A PR, expected yes).
+
+4. BUILD ORDER (architect-ruled)
+------------------------------------------------------------------------------
+  GO-LIVE TRACK: G1 address+footer (FIRST, Frank-blocked) · G2 B1 throttle +
+    Resend tier (Frank) · G3 DNS auth+warmup (Frank) · G4 reply-to · G5 recovery
+    sweep (Option C; needs G8) · G6 min delivery rollup · G7 pilot-gate test ·
+    G8 #821. SCHED-ANCHOR -> Tier 3 (send-now-only, Frank-confirmed).
+  TIER 0: GHOST migration 20260603104534 (chat-CC MCP, GO-gated, mirror — RE-
+    VERIFIED unapplied; weekly_digest unique index still has 'draft') · FORK D
+    resolvers `?? false`->`?? true` + parity · SEND-4 · SEND-3.
+  TIER 1 (+regression-guard each): FORK A signatures · F-INBOX-A11Y de-iframe/
+    shadow-DOM · F-RECIPCHIP §13.7 · AI verify-caption · FORK C forfeit interim ·
+    F-PATTERNA shared-source+AP#43 · M-5 summary-lead.
+  TIER 2 FORK B coach. TIER 3 cancel-scheduled/bounce/Radar/F-RADAR1/dashboard/
+    HISTORY-BACKFILL/SCHED-ANCHOR. TIER 4 cleanups. PHASES forfeit-full/
+    G-TRANSLATE(re-eval per-org FF-2)/RETENTION/D-4. MULTI-TENANT scan pre-2nd-org.
+
+5. PROTOCOL (the lapse this handoff corrects — carry into the next chat)
+------------------------------------------------------------------------------
+  §11.8.1: EVERY architect-lane artifact incl. each BUILD PR's report ships as a
+  committed .txt in docs/ PLUS full chat paste, SAME turn, .txt FIRST. This
+  session slipped twice (G8 report + FINAL paste), produced the .txt only after
+  Frank flagged. The chat also ran long. Next chat: tighter. Build PRs stay HELD
+  do-not-auto-merge for Frank's smoke; auto-merge is doc-PRs only.
+
+6. INVARIANTS (don't break)
+------------------------------------------------------------------------------
+  - G5 must NOT auto-re-drive ambiguous `queued` (double-send to 175 families).
+    Option C only. The crash-after-dispatch window is real + open (verified).
+  - GHOST migration = chat-CC MCP apply, GO-gated, mirror — not a CC-written file.
+  - FORK C interim = migration + score-entry checkbox + render branch (FF-1);
+    forfeit is human-entered (no auto-detect).
+  - Status line: "audit arc closed, build green-lit, go-live gates OPEN, D-4
+    uncrossed." A signed audit is a signed plan, not a shipped system.
+==============================================================================
+END — CC_SESSION_HANDOFF_2026-06-07_briefings_build
+==============================================================================
