@@ -1,0 +1,91 @@
+==============================================================================
+BRIEFINGS PART A2 — KIND-PICKER GROUPING QUESTION   CC -> architect
+Date: 2026-06-07 PM. A1 (#809) merged. Starting A2 (grouped + usage-ranked kind
+picker) surfaced a gap in the ratified grouping that is the architect's taxonomy
+call, not CC's to settle (§11.8.2). One decision needed before A2 code. Evidence
++ labeled lean below. NOTHING APPLIED.
+==============================================================================
+
+0. THE GAP (one decision)
+------------------------------------------------------------------------------
+The kind picker shows ONLY the manual kinds — `MANUAL_KINDS` (composeKinds.js:8)
+= [announcement, custom_message, games_recap, coach_roundup, family_guide]. The
+other 7 kinds arrive as auto-proposed Radar cards, never in the picker.
+
+Mapping the 5 manual kinds onto the ratified A7 grouping (Recaps / Schedule /
+Outreach):
+  - Recaps   : games_recap
+  - Schedule : (none — schedule_change, tournament_prelim, weekly_digest are all
+               AUTO, not in the picker)
+  - Outreach : announcement, custom_message
+  - UNCOVERED: coach_roundup, family_guide  <-- not in any ratified group
+
+So the ratified 3-group scheme, applied to the picker's actual contents, leaves
+2 of 5 kinds homeless, has an EMPTY "Schedule" group, and a single-item "Recaps"
+group. The grouping was ratified against the FULL kind space (incl. auto kinds);
+the manual picker is a different, smaller set.
+
+1. WHAT coach_roundup / family_guide ARE (for the call)
+------------------------------------------------------------------------------
+Both are periodic, SINGLE-RECIPIENT digests, not broadcasts:
+  - coach_roundup — a roundup for ONE coach over a date range (coach <select> +
+    from/to). audience = coach_self. (CoachRoundupBody.jsx)
+  - family_guide  — a guide for ONE family over a date range (parent <select> +
+    from/to). audience = family_specific. (FamilyGuideBody.jsx)
+They differ from Outreach's announcement/custom_message (one-off broadcasts to a
+team/org) — they're recurring per-person digests.
+
+2. OPTIONS
+------------------------------------------------------------------------------
+(A) Keep the ratified 3 groups; put both under OUTREACH.
+    Picker: Recaps [games_recap] · Outreach [announcement, custom_message,
+    coach_roundup, family_guide]. (Schedule group hidden — empty.)
+    + Honors the ratified scheme literally; no new taxonomy.
+    - "Outreach" then mixes one-off broadcasts with recurring per-person digests;
+      slightly muddies the group's meaning.
+
+(B) Add a 4th group GUIDES for coach_roundup + family_guide.
+    Picker: Recaps [games_recap] · Outreach [announcement, custom_message] ·
+    Guides [coach_roundup, family_guide]. (Schedule hidden — empty.)
+    + Cleanest semantic split; the two single-recipient digests get an honest home.
+    - Extends the ratified 3-group scheme to 4 (needs architect ratification).
+
+(C) Something else — e.g. rename "Outreach" to "Outreach & Guides", or a
+    different split entirely. Architect's call.
+
+3. CC LEAN (labeled — architect decides; §11.8.2)
+------------------------------------------------------------------------------
+Slight lean to (B), and naming the hedge per AP#39: the instinct is to say "keep
+3 groups (A), don't expand a ratified scheme" — but the truer read is that
+coach_roundup/family_guide are genuinely a distinct class (recurring, single-
+recipient digests) and "Outreach" already means one-off broadcasts. Since the
+manual picker's effective grouping is ALREADY not the clean A7 three (empty
+Schedule, singleton Recaps), a small honest 3-way for the manual set —
+Recaps / Outreach / Guides — reads better than forcing 2 digests into Outreach.
+But (A) is defensible if you want to hold the ratified scheme literally and not
+introduce a 4th label. This is a taxonomy/label call, your lane.
+
+4. SECOND, SMALLER SUB-QUESTION: "usage-rank"
+------------------------------------------------------------------------------
+A2 is "group + USAGE-RANK." Usage-rank needs a signal. Options:
+  - Data-driven: order kinds within a group by the org's send count per kind
+    (comms_messages GROUP BY kind). Real but adds a query; in pilot the counts
+    are tiny/sparse so the ranking would be near-arbitrary now.
+  - Static sensible default: a hardcoded order per group (e.g. most-common first:
+    announcement > custom_message; games_recap; coach_roundup > family_guide)
+    until real usage data exists.
+  CC lean: static default for the pilot (the data signal is too sparse to be
+  meaningful yet); revisit data-driven ranking post-pilot when send volume exists.
+  Confirm or override.
+
+5. WHAT CC DOES ON THE ANSWER
+------------------------------------------------------------------------------
+On (A/B/C) + the usage-rank call, CC builds A2 (InlineKindChips today maps
+MANUAL_KINDS flat at InlineKindChips.jsx:26 — A2 groups + orders it), held for
+Frank's smoke. A3 (relocate test_only to the send action) is INDEPENDENT of this
+decision and could ship first if you'd rather not block on the taxonomy call —
+Frank's routing.
+
+==============================================================================
+END — BRIEFINGS_PART_A2_GROUPING_QUESTION_CC
+==============================================================================
