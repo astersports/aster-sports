@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Field, TextInput } from '../../components/register/fields';
 import { primaryBtn } from '../../components/register/registerStyles';
 import DivisionRows from '../../components/admin/program-setup/DivisionRows';
+import ProgramTypeChooser from '../../components/admin/program-setup/ProgramTypeChooser';
 import { slugify, useProgramSetup } from '../../hooks/useProgramSetup';
 
 // Admin program-setup (spec §3, MVP, Season-first per Q-3). Lean single-page create form:
@@ -12,6 +13,7 @@ export default function ProgramSetupPage() {
   const navigate = useNavigate();
   const { createProgram, saving, error } = useProgramSetup();
   const [form, setForm] = useState({
+    program_type: 'season',
     name: '', start_date: '', end_date: '', public_slug: '',
     reg_opens_at: '', reg_closes_at: '', is_published: false,
     divisions: [{ name: '', grade_min: '', grade_max: '', gender: '', fee: '' }],
@@ -29,7 +31,9 @@ export default function ProgramSetupPage() {
     <div style={wrap}>
       <button type="button" onClick={() => navigate('/admin/seasons')} style={linkBtn}>← Admin</button>
       <h1 style={h1Style}>New Program</h1>
-      <p style={{ fontSize: 13, color: 'var(--as-text-tertiary)', margin: '0 0 16px' }}>Season setup. Tryouts &amp; camps coming soon.</p>
+      <div style={{ height: 12 }} />
+
+      <ProgramTypeChooser value={form.program_type} onChange={(v) => set('program_type', v)} />
 
       <Field label="Program name" htmlFor="pname"><TextInput id="pname" value={form.name} onChange={(v) => set('name', v)} placeholder="Spring 2026" /></Field>
       <div style={{ display: 'flex', gap: 8 }}>
@@ -46,8 +50,12 @@ export default function ProgramSetupPage() {
         Publish now (parents can register at the public link)
       </label>
 
-      <h2 style={h2Style}>Divisions</h2>
-      <DivisionRows divisions={form.divisions} onChange={(d) => set('divisions', d)} />
+      {form.program_type === 'season' && (
+        <>
+          <h2 style={h2Style}>Divisions</h2>
+          <DivisionRows divisions={form.divisions} onChange={(d) => set('divisions', d)} />
+        </>
+      )}
 
       {error && <div style={errStyle}>{error}</div>}
       <button type="button" className="as-press" style={{ ...primaryBtn, opacity: valid && !saving ? 1 : 0.5 }} disabled={!valid || saving} onClick={handleCreate}>

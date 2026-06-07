@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { checkSlugAvailable, divisionsApplyTo, slugify, statusForProgramType } from '../lib/programSetup';
 
-export function slugify(s) {
-  return (s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-}
+// Re-exported so existing callers keep their import path (ProgramSetupPage
+// imports slugify from here); the pure logic lives in lib/programSetup (AP#27).
+export { checkSlugAvailable, divisionsApplyTo, slugify, statusForProgramType };
 
 // Admin program creation (spec §3, MVP). Writes programs + divisions + division_fees,
 // org-scoped via the admin RLS write policies (user_has_role_in_org admin with_check).
@@ -17,21 +18,24 @@ export function useProgramSetup() {
   async function createProgram(form) {
     setSaving(true);
     setError(null);
+    const programType = form.program_type || 'season';
     const slug = (form.public_slug || '').trim() || slugify(form.name);
 
+    const slugErr = await checkSlugAvailable(supabase, orgId, slug);
+    if (slugErr) { setError(slugErr); setSaving(false); return { ok: false, error: slugErr }; }
+
     const { data: prog, error: e1 } = await supabase.from('programs').insert({
-      org_id: orgId, name: form.name.trim(), program_type: 'season',
-      // status='archived' (NOT the table default 'active'): a newly-created program must not
-      // silently become a second active season and hijack the admin-home season/health cards.
-      // Admin promotes it via the Seasons "set active" flow when the season actually starts.
-      status: 'archived',
+      org_id: orgId, name: form.name.trim(), program_type: programType,
+      status: statusForProgramType(programType),
       public_slug: slug || null, is_published: !!form.is_published,
       reg_opens_at: form.reg_opens_at || null, reg_closes_at: form.reg_closes_at || null,
       start_date: form.start_date || null, end_date: form.end_date || null,
     }).select('id').single();
     if (e1) { setError(e1.message); setSaving(false); return { ok: false, error: e1.message }; }
 
-    const divInput = (form.divisions || []).filter((d) => d.name?.trim());
+    const divInput = divisionsApplyTo(programType)
+      ? (form.divisions || []).filter((d) => d.name?.trim())
+      : [];
     if (divInput.length) {
       const divRows = divInput.map((d, i) => ({
         org_id: orgId, program_id: prog.id, name: d.name.trim(),

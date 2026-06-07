@@ -40,7 +40,13 @@ export function summarizeActionQueue(items) {
 // NO-REGRESSION: with one active program every team maps to it → one group, and
 // CoachTail falls through to its flat render. Teams with no matched program land
 // in a trailing '__none__' group (defensive; shouldn't happen for active teams).
-const PROGRAM_NOUN = { season: 'teams', camp: 'camp', group_training: 'training', clinic: 'clinic' };
+// Covers ALL program_type enum values (F8 / AP#34+#38: the noun map must not
+// fall through to a generic for any creatable type). season→'teams'; the rest
+// read naturally as "<Program> · <noun>".
+const PROGRAM_NOUN = {
+  season: 'teams', camp: 'camp', clinic: 'clinic',
+  tryout: 'tryout', evaluation: 'evaluation', interest_list: 'interest list',
+};
 
 export function groupTeamsByProgram(teams, programs) {
   const programOf = new Map();
