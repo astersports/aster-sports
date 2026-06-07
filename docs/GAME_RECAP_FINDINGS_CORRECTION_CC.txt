@@ -1,0 +1,65 @@
+==============================================================================
+GAME_RECAP FINDINGS — CORRECTION  (CC -> architect lane)
+Date: 2026-06-07. Amends GAME_RECAP_AND_D4_FINDINGS_CC.txt (#794) item 13.
+Trigger: read the actual idempotency code (don't-infer discipline). NOTHING
+APPLIED. This narrows the remaining action from "logic fix + purge" to
+"purge only".
+==============================================================================
+
+WHAT #794 SAID (item 13)
+------------------------------------------------------------------------------
+"Active write-amplification bug. FIX: (a) ROOT — auto-draft dedup/update-in-
+place; (b) one-time purge." Implied a code fix still needed.
+
+THE CORRECTION (after reading supabase/functions/briefing-auto-draft-tick/_draftRow.ts)
+------------------------------------------------------------------------------
+The runaway was REAL but is ALREADY FIXED IN CODE. draftExists() — the
+idempotency probe handleGameCompleted() calls via tryInsert() — now includes
+'archived' in its status set (lines 42-44):
+
+  .in("status", ["draft","scheduled","queued","sent","archived"])
+
+with the exact root cause documented inline (PR-A / G-23):
+  "'archived' MUST be in this list… a game whose start_at is >14d before its
+   score is published gets a game_recap whose expires_at is already in the past
+   -> the expire sweep archives it -> draftExists no longer saw it -> the handler
+   re-created it -> archived again, every minute… Counting 'archived' makes it
+   one-and-done."
+
+CONSEQUENCES
+------------------------------------------------------------------------------
+  - With 'archived' in the dedup set, ANY anchor that ever had a game_recap is
+    skipped forever. No anchor can accumulate a 2nd row post-fix. So:
+      * the 17,014 archived game_recap rows are ENTIRELY pre-fix historical bloat;
+      * post-fix growth = exactly one recap per newly-scored game (correct);
+      * the ~4-rows-in-3-days observed yesterday is normal new-game cadence, NOT
+        runaway (runaway was hundreds/day).
+  - The 15,759 (seed) -> 17,022 (now) delta straddles the fix and has plateaued.
+
+REVISED REMAINING ACTION — PURGE ONLY (no build)
+------------------------------------------------------------------------------
+  One-time data-hygiene purge of the historical archived placeholders. No logic
+  change to scope; the logic is correct. Proposed predicate (CC to verify the
+  exact count before running, on Frank's go):
+
+    DELETE FROM comms_messages
+    WHERE kind='game_recap' AND status='archived' AND created_by_trigger IS NOT NULL;
+
+  Safety: targets only trigger-made superseded placeholders (body_html='',
+  content_sections='[]'); leaves the 5 live drafts, the 3 sent, and any
+  human-archived row (created_by_trigger NULL). CC confirms the precise count +
+  that no targeted row has a non-empty body before executing.
+
+  NOTE: this needs NO architect scoping (it's a purge, not a design change). It's
+  Frank's go/no-go. Flagged to the architect only to correct the #794 record so
+  no one scopes a fix that already exists.
+
+WHAT STAYS CORRECT FROM #794
+------------------------------------------------------------------------------
+  Item 14 (D-4 / is_pilot_family / pilot mode) is unchanged and accurate: column
+  not dropped, FILTER-as-production live + test-guarded, pilot_mode ON (real-
+  family sends blocked — Frank confirmed ON is intended this session).
+
+==============================================================================
+END — GAME_RECAP_FINDINGS_CORRECTION_CC
+==============================================================================
