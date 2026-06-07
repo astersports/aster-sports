@@ -1,0 +1,116 @@
+==============================================================================
+CC RESPONSE — ARCHITECT G8 REVIEW (the crash-after-dispatch window)  CC -> architect
+Date: 2026-06-07 PM. Response to ARCHITECT_REVIEW_G8_SEND_IDEMPOTENCY. Verdict:
+the architect is RIGHT — CC verified the window is OPEN against the live code
+(file:line below). Hold accepted. G8's claim narrowed (PR #821 updated, comment-
+only). G5 re-scoped to the Option C pilot floor. Durable-track analysis (A vs B)
+with the Resend-key verification result. NOTHING APPLIED beyond the #821 comment
+narrowing. Per §11.8 this ships as a committed .txt + full chat paste.
+==============================================================================
+
+0. HEADLINE
+------------------------------------------------------------------------------
+Confirmed open. The crash-after-dispatch window exists exactly as the review
+traced it. The hold on G5's auto-re-drive of `queued` is correct and accepted.
+G8 (#821) is now narrowed to its honest claim and is mergeable on that basis.
+G5 will ship as Option C (pilot floor) — auto-re-drive ONLY safe-`failed`;
+surface ambiguous `queued` for human review. Durable closure: CC leans Option B
+(sending-claim) over A (Resend keys), because the Resend key is per-batch-call
+not per-recipient (see §4) — but A is verification-pending (docs 403).
+
+1. WINDOW VERIFICATION — the architect's trace holds (file:line)
+------------------------------------------------------------------------------
+The review invited "show me the live code closes it and I sign." It does NOT
+close it. Verified:
+  - buildEmailRow (`_lib.ts:80-81`) sets only `tags` (recipient_id) + optional
+    unsubscribe `headers`. NO idempotency key on the Resend email.
+  - The send loop (`index.ts`) is: resend.batch.send -> classifyBatchResult ->
+    .update() writeback. NO mark-before-dispatch; no claim state. So between
+    Resend-accept and the writeback, rows are `queued`. Crash there => emailed-
+    but-`queued`.
+  - comms_message_recipients.delivery_status has NO `sending` value (the only
+    `sending` in the repo is on a DIFFERENT table, event_notifications, migrations
+    019/020). So there is no existing state to disambiguate attempted-vs-not.
+  Conclusion: the window is open as described. alreadySent (409) only fires on a
+  FINALIZED message, which a stuck message never is — so it never protects the
+  sweep's case (the review's §1 is correct). The queued-filter is necessary but
+  not sufficient. CC's prior "idempotency proven" was a PC-12 overclaim; accepted.
+
+2. G8 CLAIM NARROWED (PR #821 updated — comment-only, no logic change)
+------------------------------------------------------------------------------
+Per the ruling, G8 may merge with a narrowed claim. Done:
+  - sendDispatch.js + _dispatch.ts (mirror) headers: claim is now "finalized +
+    clean-queued idempotency proven; the crash-after-dispatch window is NOT
+    covered; G5 must auto-re-drive only safe-`failed` + surface ambiguous
+    `queued` until the window is closed durably."
+  - sendIdempotencyInvariant.test.js: comment narrowed (guards are NECESSARY,
+    NOT SUFFICIENT; names the window).
+  - index.ts: a warning at the queued-filter so the G5 builder sees it inline.
+  Comments are stripped by the mirror normalizer, so the baseline (4) + all tests
+  are unchanged (lint + full suite green). The extraction, classifyBatchResult,
+  the 409 test, and the queued-filter lock all stand — they're correct for what
+  they cover. PR title/body updated to drop "G5 unblocked."
+
+3. G5 RE-SCOPE — Option C (pilot floor), confirmed
+------------------------------------------------------------------------------
+G5 (when built, after this) auto-re-drives ONLY the provably-safe class:
+  - `failed` from a BATCH REJECTION (Resend said no before sending; no email went
+    out) -> safe to auto-re-drive.
+And SURFACES the ambiguous class in Radar for Frank to decide, never auto-re-
+sends it:
+  - `queued` with no terminal status (fn died) -> could be emailed-but-unwritten;
+    show it ("N sends interrupted — review") with a manual re-send action, not an
+    automatic one.
+This solves LIFECYCLE-QUEUED/FAILED's real problem (invisible-forever) WITHOUT
+the double-send, needs no schema/provider change, and is safe immediately. It is
+the §16.1 "cascading/ambiguous ops stay pessimistic" posture applied to recovery.
+
+4. DURABLE WINDOW-CLOSURE — A vs B, with the Resend finding
+------------------------------------------------------------------------------
+The review leaned Option A (Resend idempotency keys). CC verification result:
+  - Resend docs are 403 to WebFetch from this environment; I could NOT first-party
+    confirm batch-key behavior. Labeling the next as INFERENCE (§11.7 source 5),
+    to be verified before relying: Resend's idempotency key is applied PER API
+    CALL (one Idempotency-Key header per request), NOT per-recipient within a
+    batch. If so, Option A on the batch API does NOT give per-recipient dedup on
+    a re-drive — and worse, a re-drive's batch composition differs (already-sent
+    rows excluded), so a per-call key wouldn't even match. Per-recipient keys
+    would require switching batch.send -> per-recipient emails.send (a throughput
+    change that collides with B1's throttle work).
+  - Option B (a `sending` claim state) has an IN-CODEBASE PRECEDENT: the change-
+    alert dispatcher already does an atomic `queued->sending` claim before
+    dispatch (`_changeAlertDispatch.ts:78`) and reverts to `failed` on throw. The
+    same pattern on comms_message_recipients (add `sending` to the delivery_status
+    CHECK — a small migration) disambiguates: `queued`=never-attempted (re-drive
+    safe), `sending`=attempted-unknown (do NOT auto-re-drive; surface). It's
+    proven here, survives a state-machine bug less gracefully than A's provider-
+    level dedup but doesn't depend on an unverified provider feature.
+  CC LEAN (labeled, architect decides): Option B for the durable fix — it's
+  in-codebase-proven and provider-independent — UNLESS CC confirms Resend batch
+  supports per-recipient idempotency keys, in which case A is the cleaner
+  defense-in-depth. Either way, Option C ships first as the pilot floor; the
+  durable choice (A or B) is its own post-pilot item, not a go-live blocker
+  (pilot mode + send-now-only + C's no-auto-re-drive-of-queued already make the
+  pilot safe).
+
+5. THE WRITEBACK'S OWN FAILURE (review §6 note) — covered by C
+------------------------------------------------------------------------------
+The review noted the bulk `.update().in(sentIds)` can itself fail, leaving
+emailed rows `queued` — same window. Confirmed; it's the same class. Option C
+covers it (those rows surface as ambiguous `queued`, not auto-re-driven). Option
+B closes it at the source (the row was `sending`, not `queued`). No extra work.
+
+6. WHAT'S NEXT / WAITING ON WHOM
+------------------------------------------------------------------------------
+  - Architect: confirm the narrowed G8 is OK to merge (extraction + tests stand,
+    claim no longer overclaims); confirm G5 = Option C pilot floor + the durable
+    A/B choice (CC leans B pending the Resend-batch-key verification). On your nod,
+    CC merges G8 (#821) and builds G5 as Option C.
+  - CC: verify Resend batch idempotency-key support first-party before any Option
+    A work (docs were 403 here; will retry / check the esm.sh resend types).
+  - G1 (B2 address+footer) UNAFFECTED — still waiting only on Frank's LH mailing
+    address + the additive-migration GO; ships in parallel the moment it lands.
+  - Frank: mailing address (unblocks G1); A2 (#813) still your smoke.
+==============================================================================
+END — CC_G8_REVIEW_RESPONSE
+==============================================================================
