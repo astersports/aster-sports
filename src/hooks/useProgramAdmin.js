@@ -42,6 +42,15 @@ export function useProgramAdmin(programId) {
   }, [orgId, programId]);
 
   const deleteProgram = useCallback(async () => {
+    // Pre-check: registrations.program_id is ON DELETE RESTRICT (registration /
+    // financial records must never be cascade-nuked by a program delete). Count
+    // FIRST and BLOCK before attempting the delete — never let Postgres throw a
+    // raw 23502/23503 (count-and-block, NOT catch-and-translate, which would
+    // still attempt the delete).
+    const { count, error: cErr } = await supabase
+      .from('registrations').select('id', { count: 'exact', head: true }).eq('program_id', programId);
+    if (cErr) return { error: cErr.message };
+    if (count) return { error: `This program can't be deleted — ${count} famil${count === 1 ? 'y has' : 'ies have'} registered. Archive it instead.` };
     const { error } = await supabase.from('programs').delete().eq('id', programId);
     return { error: error?.message };
   }, [programId]);
