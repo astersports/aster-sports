@@ -2,11 +2,14 @@
 // compact context card (per HOME_RENDERS coach): one card, a team rail per
 // team (color dot · name · record). Records source stays useOrgTeamRecords
 // (threaded as recordsByTeam) — the same source Parent's records use, so the
-// anti-pattern #43 records invariant holds across the redesign.
+// anti-pattern #43 records invariant holds across the redesign — including the
+// empty-state default: a recordless team renders '—' here, matching parent
+// (parentHomeData), never a fabricated '0-0' (AP#27 / cross-section BUG-H2).
 //
-// COMP CARD DEFERRED (D-A, Phase 2.5): production has the per-session rate
-// but no accrual (coach_payouts = 0, event_coach_assignments = 0) and no
-// coach pay surface — rendering a figure would be fabrication (AP#27).
+// COMP CARD (D-A, ratified 2026-06-07): the comp card ships as a SIBLING slot
+// (CoachCompCard on CoachHomePage), hidden until accrual data exists
+// (coach_payouts/event_coach_assignments) — option A honored, no fabrication.
+// CoachTail itself stays "My teams" only.
 import { groupTeamsByProgram } from '../../lib/home/coachHomeData';
 
 const LABEL = {
@@ -56,7 +59,7 @@ export default function CoachTail({ teams, recordsByTeam, recordsLoading, onTeam
                   <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: t.team_color || 'var(--as-neutral)', flexShrink: 0 }} />
                   <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--as-text-primary)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
                   <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 600, color: 'var(--as-text-secondary)', flexShrink: 0 }}>
-                    {recordsLoading ? '—' : (recordsByTeam[t.id]?.record || '0-0')}
+                    {recordsLoading ? '—' : (recordsByTeam[t.id]?.record || '—')}
                   </span>
                 </button>
               ))}
@@ -94,7 +97,7 @@ export default function CoachTail({ teams, recordsByTeam, recordsLoading, onTeam
             <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: t.team_color || 'var(--as-neutral)', flexShrink: 0 }} />
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--as-text-primary)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
             <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 600, color: 'var(--as-text-secondary)', flexShrink: 0 }}>
-              {recordsLoading ? '—' : (recordsByTeam[t.id]?.record || '0-0')}
+              {recordsLoading ? '—' : (recordsByTeam[t.id]?.record || '—')}
             </span>
           </button>
         ))}

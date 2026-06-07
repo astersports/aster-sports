@@ -55,4 +55,16 @@ describe('Cross-surface invariant — MY TEAMS records (anti-pattern #43)', () =
     expect(pageSrc).toMatch(/useOrgTeamRecords/);
     expect(pageSrc).toMatch(/recordsByTeam/);
   });
+
+  it('e. empty-state record default is "—" on BOTH surfaces (BUG-H2 — never a fabricated 0-0)', () => {
+    // AP#27 + AP#43: a recordless team must render the SAME honest dash on coach
+    // and parent. CoachTail previously defaulted to '0-0' (fabrication) while
+    // parentHomeData used '—'. Lock both to '—' so neither surface can regress
+    // to a fake record (cross-section scan BUG-H2).
+    const tailSrc = readFileSync('src/components/home/CoachTail.jsx', 'utf8');
+    expect(tailSrc).not.toMatch(/record \|\| '0-0'/);
+    expect(tailSrc).toMatch(/recordsByTeam\[t\.id\]\?\.record \|\| '—'/);
+    const parentData = readFileSync('src/lib/home/parentHomeData.js', 'utf8');
+    expect(parentData).toMatch(/recordsByTeam\[c\.teamId\]\?\.record \|\| '—'/);
+  });
 });

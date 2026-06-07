@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { usePendingAchievements } from './usePendingAchievements';
 import { useUnpublishedScores } from './useUnpublishedScores';
-import { useRecentTeamMessages } from './useRecentTeamMessages';
 import { useAlertEvaluator } from './useAlertEvaluator';
 import { filterAlertsForCoach } from '../lib/alerts/relevanceFilters';
 
@@ -60,16 +59,15 @@ export function useCoachHomeSignals(userId, nowMs) {
   );
   const actionQueueLoading = pendingAchievementsLoading || unpublishedScoresLoading;
 
-  // MESSAGING BLOCK per HOME_DESIGN_SPEC §2.1.4. Team-channel
-  // messages last 24h, excluding coach's own posts. Reuses the same
-  // CoachMessageBlock component parent home uses (PR #287); only the
-  // data source differs.
-  const { messages: recentTeamMessages } = useRecentTeamMessages(coachedTeamIds, userId, nowMs);
+  // The MESSAGING BLOCK (recentTeamMessages via useRecentTeamMessages) was
+  // retired 2026-06-07 (cross-section scan §4.S.3): no consumer read it off
+  // this hook, so it was a dead fetch. Removed per AP#51. nowMs is retained on
+  // the signature for caller stability.
+  void nowMs;
 
   return {
     myTeams, teamsLoading, coachedTeamIds,
     coachAlerts, alertsLoading,
     actionQueueItems, actionQueueLoading,
-    recentTeamMessages,
   };
 }

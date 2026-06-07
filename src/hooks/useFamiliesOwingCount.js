@@ -7,6 +7,23 @@ import { supabase } from '../lib/supabase';
 // Previously the lane read useSeasonFinancials.familiesOwing (active season
 // only), so it showed 0 while the alert showed 1 for a prior-season debtor.
 // Sums balance per guardian across all seasons; counts net-owing guardians.
+
+// In-flight dedup: admin home mounts two concurrent consumers (useAdminNeedsYou
+// + AdminProgramHealth). Keyed by orgId, concurrent refetches share ONE
+// family_balances query instead of firing duplicates; the entry clears on
+// settle so a later refetch re-queries fresh (no stale cross-time cache).
+const inFlight = new Map();
+function fetchBalances(orgId) {
+  if (inFlight.has(orgId)) return inFlight.get(orgId);
+  const p = supabase
+    .from('family_balances')
+    .select('guardian_id, balance_cents')
+    .eq('org_id', orgId)
+    .then((res) => { inFlight.delete(orgId); return res; }, (err) => { inFlight.delete(orgId); throw err; });
+  inFlight.set(orgId, p);
+  return p;
+}
+
 export function useFamiliesOwingCount(orgId) {
   const [count, setCount] = useState(0);
   const [totalCents, setTotalCents] = useState(0);
@@ -15,10 +32,7 @@ export function useFamiliesOwingCount(orgId) {
   const refetch = useCallback(async () => {
     if (!orgId) { setCount(0); setTotalCents(0); setLoading(false); return; }
     setLoading(true);
-    const { data, error } = await supabase
-      .from('family_balances')
-      .select('guardian_id, balance_cents')
-      .eq('org_id', orgId);
+    const { data, error } = await fetchBalances(orgId);
     if (error) {
       console.error('useFamiliesOwingCount:', error.message);
       setCount(0); setTotalCents(0); setLoading(false); return;
