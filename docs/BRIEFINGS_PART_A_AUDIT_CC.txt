@@ -1,0 +1,196 @@
+==============================================================================
+BRIEFINGS PART A — §16.15 AUDIT (the Option-A gate artifact)   CC -> architect
+Date: 2026-06-07 PM. Satisfies the architect's gate: "per-kind field audit +
+§16.15 audit run FIRST; no PR-A code until this doc exists." Answers the one
+question that decides A vs B-fallback: can EVERY kind re-host into the one-screen
+composer, or does one break? Every claim is file:line, read against actual code
+(agent map + CC verification of the load-bearing claims). NOTHING APPLIED.
+==============================================================================
+
+0. HEADLINE — the result is stronger than the brief assumed
+------------------------------------------------------------------------------
+**Option A is ~80% already shipped.** The one-screen composer is LIVE and already
+hosts ALL 11 composable kinds; the "4-step wizard" is VESTIGIAL (dead state-
+machine code + naming-lag comments), not a second mounted surface. The heavy
+lift A was scoped for — "re-host every kind into one composer" — was already done
+in the compose-simplification arc (#722–#751).
+
+**The B-fallback signal did NOT fire.** No kind structurally cannot re-host —
+they all already render in the one-screen composer today. So A is confirmed
+viable for every kind. Two kinds carry caveats that are NOT structural blockers:
+academy_callup_notice is a deliberate blocked-redirect (PRESERVE, not re-host),
+and tournament_prelim/recap are density-heavy (UX polish, not feasibility).
+
+Net: A proceeds. The real Part A work is small — remove the dead wizard
+machinery, group+rank the kind picker, relocate the test/send toggle — NOT a
+rebuild. PR sequence in §5.
+
+1. THE TWO SURFACES — there is effectively ONE composer (verified)
+------------------------------------------------------------------------------
+- `/admin/briefings/compose` → `BriefingsComposePage.jsx:25` mounts
+  `BriefingComposer` (the one-screen model). Both "+ New" and "resume a proposal"
+  reach this same component (`BriefingComposer.jsx:4`). There is NO separate
+  `/new` route and NO second composer component mounted.
+- **VERIFIED (CC read, the load-bearing claim):** `ComposerSections.jsx:29-44`
+  renders every section UNCONDITIONALLY on one scroll — anchor+audience, body,
+  schedule, preview, send — with NO step gating. Header comment: "rendered on ONE
+  screen (no step gating)." `blocked` (`:27`) short-circuits to body-only for the
+  one blocked kind (academy_callup).
+- **The wizard is vestigial.** `composerSteps.js` still exports
+  `STEPS=['Kind','Audience','Body','Send']` and `composerReducer.js` still carries
+  `step`/`GO_FORWARD`/`JUMP_TO`/`canAdvance`/`step2Valid`/`step3Valid` — but
+  NOTHING in the render path reads them (`ComposerSections` ignores them;
+  `BriefingComposer` never reads `state.step`). **VERIFIED via grep:** no live
+  consumer of that machinery outside `composerReducer.js`/`composerSteps.js`
+  (the only other hits — CreateActivityWizard, RegisterFlowPage, the redirect
+  card's own STEPS const — are unrelated surfaces). Safe to delete (one confirming
+  grep on the `briefingComposerHelpers.js:12` STEPS re-export before removal).
+- Resume-draft already lives on the **Radar** (`/admin/briefings/radar`), not in
+  the composer — resume is a `?draft=<id>` deep link. So A's "resume → Radar" is
+  ALREADY TRUE.
+
+2. KIND TABLE — dispatch class + sendPath (registry.js / composer.js)
+------------------------------------------------------------------------------
+MANUAL_KINDS (the only chips in the picker) = announcement, custom_message,
+games_recap, coach_roundup, family_guide (`composeKinds.js:8`). All others arrive
+pre-anchored from Radar/auto-draft or EventDetail.
+  weekly_digest        AUTO (Sun cron)      digestSend
+  schedule_change      AUTO                 composerSubmit   (anchor+audience LOCKED)
+  game_recap           AUTO                 composerSubmit
+  games_recap          MANUAL               composerSubmit   (audience derived+locked)
+  tournament_prelim    AUTO                 composerSubmit
+  tournament_recap     AUTO                 composerSubmit
+  rsvp_nudge           AUTO                 rsvpNudgeSend     (per-recipient mint @ send)
+  academy_callup_notice EventDetail         academyCallupSend (BLOCKED in composer)
+  coach_roundup        MANUAL               composerSubmit
+  family_guide         MANUAL               composerSubmit
+  announcement         MANUAL/LEGACY        legacy (KIND_COMPOSERS)
+  custom_message       MANUAL/LEGACY        legacy (KIND_COMPOSERS)
+
+3. PER-KIND RE-HOST MATRIX (the core deliverable)
+------------------------------------------------------------------------------
+All 11 body editors are already wired in the one-screen composer via
+`BODY_LAZY` (`StepBodySignoff.jsx:23-39`). Verdicts:
+
+CLEAN — fields already fit the one-screen model, nothing to re-host (8 kinds):
+  - schedule_change  — read-only diff display; anchor+audience locked. CLEAN.
+  - game_recap       — resolver rows + free-text overrides + optional CTA. CLEAN.
+  - games_recap      — in-body multi-game checkbox list (dual-writes audience_filter
+                       .event_ids); taller, not a step. CLEAN.
+  - rsvp_nudge       — 2 textareas; the one-tap RSVP buttons are per-recipient
+                       minted at SEND, not compose fields. CLEAN (compose-side).
+  - coach_roundup    — coach <select> + date range. CLEAN.
+  - family_guide     — parent <select> + date range. CLEAN.
+  - announcement     — headline + body + token chips. CLEAN (free-form).
+  - custom_message   — subject + body + token chips. CLEAN (the generic case).
+
+CLEAN-compose, send-path divergence (1 kind):
+  - weekly_digest    — compose fields are 2 textareas (intro + "before you go"),
+                       re-host CLEAN. BUT send dispatches through a DEDICATED
+                       branch: `BriefingComposer.jsx:95` `state.kind ===
+                       'weekly_digest' ? sendWeeklyDigestFromWizard(...) :
+                       submitBriefing(...)`. This is a residual dual-path at the
+                       onSend dispatcher (the same "dual-everything" family the
+                       audit named) — but it is ORTHOGONAL to the screens redesign
+                       (compose UX). Note it; optionally unify under A; NOT a
+                       re-host blocker.
+
+DENSITY FLAG — functions on one scroll today, UX-polish not feasibility (2 kinds):
+  - tournament_prelim — the densest body: ~9 textareas + 1 input (tagline, coach,
+                       hotel/parking, Sat, Sun, scouting, lineup, standings, rules,
+                       CTA) + a "Suggest closer" AI call gated to this kind
+                       (`StepBodySignoff.jsx:48,57`). Works as a long scroll now.
+                       If A introduces any vertical-budget constraint, this is
+                       where it strains. UX density pass, NOT a B-fallback.
+  - tournament_recap  — 5 free-text sections + DB-rendered placement/per-game
+                       blocks. Less dense than prelim; same density-flag class.
+
+PRESERVE — not a re-host, a deliberate block (1 kind):
+  - academy_callup_notice — `kindMetadata.js:145` `wizardSupported:false`; the body
+                       renders `AcademyCallupRedirectCard` pointing to the canonical
+                       EventDetail flow (the composer cannot activate a player on an
+                       event). `ComposerSections.jsx:27` already body-only-short-
+                       circuits it. **A MUST PRESERVE this blocked-redirect path** —
+                       it is correct as-is, not a failure to re-host.
+
+=> RE-HOST VERDICT: CONFIRMED for all kinds. 8 CLEAN, 1 CLEAN-compose (weekly_digest
+   send-path noted), 2 density-flag (tournament_*), 1 PRESERVE (academy_callup). No
+   kind structurally resists the one-screen model. B-fallback not triggered.
+
+4. SHARED OPTIONS — current placement (to scope A's moves)
+------------------------------------------------------------------------------
+ALL already on the one-screen composer; A's moves are smaller than the brief:
+  - test_only (test vs real send) — checkbox buried IN the body section
+    (`StepBodySignoff.jsx:107-110`), default true (`composerReducer.js:41`), read
+    by the Send gate (`StepSendConfirm.jsx:47-53`). **A move: relocate to the Send
+    action.** Minor.
+  - pilot vs real — org-level `pilotModeEnabled` (read-only banner in
+    `StepSendConfirm.jsx:71-76`), not a composer toggle. No move.
+  - audience / anchor — `AudienceControl` + `AnchorPicker`/`LockedAnchorChip` in
+    `StepAnchorAudience.jsx`. Already one-screen. No move.
+  - schedule — `ScheduleForLaterPicker`, own section. Already one-screen. No move.
+  - AI Draft (anchored + free-form) — in the body section. Already one-screen.
+  - resume — Radar deep link. ALREADY where A wants it.
+  - kind picker — `InlineKindChips` maps `MANUAL_KINDS` FLAT today (no grouping,
+    no usage-rank). **A move: group into Recaps/Schedule/Outreach + usage-rank.**
+    This is the one genuinely-new UI piece.
+
+5. PROPOSED PR SEQUENCE (post-gate; small, low-risk — NOT a rebuild)
+------------------------------------------------------------------------------
+  PR A1 — Retire the vestigial wizard machinery: delete `step`/`GO_FORWARD`/
+    `JUMP_TO`/`canAdvance`/`step2Valid`/`step3Valid` from composerReducer.js +
+    `STEPS` from composerSteps.js + the backcompat re-export
+    (briefingComposerHelpers.js:12, after the confirming grep); rename the
+    "wizard"/"Step N" comments to "section." Makes the code honestly one-screen.
+    AP#51 (dead-code retirement). Behavior-neutral.
+  PR A2 — Kind picker: group `MANUAL_KINDS` into Recaps / Schedule / Outreach +
+    usage-rank (the ratified grouping). The one new UI piece.
+  PR A3 — Relocate `test_only` from the body section to the Send action
+    (StepSendConfirm), so "send mode" lives with the send. Minor.
+  Optional / separate: weekly_digest send-path unification (fold
+    sendWeeklyDigestFromWizard into submitBriefing) — addresses the residual
+    onSend dual-path; NOT required for the screens redesign.
+  Deferred polish: tournament_prelim/recap vertical-density pass (collapsible
+    sub-sections within the one body) IF real use shows the scroll is too long.
+  PRESERVE (no PR): academy_callup blocked-redirect path stays.
+
+6. §16.15 ELEMENTS
+------------------------------------------------------------------------------
+(a) Audit pass — full compose mount-tree read (BriefingComposer, ComposerSections,
+    composerReducer/Steps, StepAnchorAudience, StepBodySignoff, StepSendConfirm,
+    AnchorPicker, AiDraft*, all 11 bodies/*, registry.js, kindMetadata.js,
+    composeKinds.js, composer.js, _handlers.ts).
+(b) Deep-read addendum — CC verified the two load-bearing claims directly:
+    ComposerSections renders one-screen no-gating (read), and the step machinery
+    has no live consumer (grep). Plus the weekly_digest onSend branch (read).
+(c) AP cross-reference — the weekly_digest onSend branch is a residual instance
+    of the dual-dispatch family the arc has been closing (AP#34/#28 spirit); the
+    dead step machinery is AP#51 dead-code; the tournament_* density flag is the
+    §16.14 detail-density concern; no AP#27 fabrication or AP#36 swallow found in
+    the compose path.
+(d) Per-role wireframes — COMPOSE IS ADMIN-ONLY. There is no coach/parent compose
+    surface; parents/coaches RECEIVE (inbox) but never compose. So Option A has
+    ONE role variant (admin). The per-role wireframe requirement is satisfied by
+    "admin-only; no other role composes" — noted so it isn't mistaken for a gap.
+(e) OUT OF SCOPE (explicit) — Part A is compose UX, NOT go-live readiness:
+    - D-4 (pilot REDIRECT->FILTER cutover) — Frank gate, uncrossed. Not touched.
+    - DEF-11 (3-email/hr SMTP deliverability cap) — hard go-live prereq. Not touched.
+    - coach_roundup SEND-path spec (the underspecified send UX) — post-Phase-3
+      remainder, separate from the screens redesign.
+    - The auto-draft/Radar proposal pipeline — A changes the composer, not the
+      cron or Radar.
+
+7. RECOMMENDATION (CC lean — architect confirms)
+------------------------------------------------------------------------------
+Proceed with Option A; the "re-host not rebuild" claim is not just true, it is
+already largely executed. Ship A1–A3 as small PRs. The architect's gate question
+("does any kind fail to re-host → B-fallback?") resolves NO — every kind already
+renders in the one-screen composer. Recommend the architect confirm: (i) accept
+academy_callup as PRESERVE (not a re-host failure), (ii) accept tournament_*
+density as deferred polish (not a blocker), (iii) rule whether weekly_digest's
+send-path unification rides Part A or stays a separate cleanup. None of these
+changes the A decision; they scope the PR set.
+
+==============================================================================
+END — BRIEFINGS_PART_A_AUDIT_CC
+==============================================================================

@@ -1618,6 +1618,19 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   B-fallback signal. Grouping Recaps/Schedule/Outreach ratified. OUT of Part A
   (do not conflate): D-4 (Frank gate) + DEF-11 (deliverability prereq) — Part A
   is compose UX, not go-live readiness. CC's next action: produce the audit doc.
+- **Part A §16.15 AUDIT LANDED 2026-06-07 PM** (`docs/BRIEFINGS_PART_A_AUDIT_CC.txt`).
+  Result: **re-host CONFIRMED for all kinds; B-fallback NOT triggered.** Key
+  finding — Option A is **~80% already shipped**: the one-screen composer
+  (ComposerSections, no step-gating) already hosts all 11 body editors; the
+  4-step wizard is VESTIGIAL dead code (verified: no live `step`/`canAdvance`
+  consumer); resume is already Radar-based. Matrix: 8 CLEAN, weekly_digest
+  CLEAN-compose (send-path divergence noted), tournament_prelim/recap density-flag
+  (UX polish not blocker), academy_callup PRESERVE (blocked-redirect by design).
+  Remaining Part A = small PR set A1 (retire dead wizard machinery, AP#51) + A2
+  (group+rank kind picker — the one new UI piece) + A3 (relocate test_only to the
+  send action); optional weekly_digest send-path unification. Awaiting architect
+  confirm of the three scoping calls (academy preserve / tournament density defer /
+  weekly_digest unify-now-or-later) before A1–A3 code.
 
 ---
 
