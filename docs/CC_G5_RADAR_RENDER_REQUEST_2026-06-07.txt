@@ -1,0 +1,100 @@
+==============================================================================
+CC -> architect: G5 RADAR RENDER REQUEST  (recovery sweep, Option C)
+Date: 2026-06-07 PM. Frank merged G8 (#821) and routed G5 to "hold for architect
+render." This doc gives the design lane what it needs to spec the ambiguous-queued
+Radar surface, then CC builds the whole G5 in one pass. Evidence is file:line /
+[LIVE]. NOTHING APPLIED — this is a render request, not a build.
+==============================================================================
+
+0. WHAT'S SETTLED (so the render builds on solid ground)
+------------------------------------------------------------------------------
+- G8 (#821) MERGED to main (squash 1168f97). The pure dispatch kernels are now on
+  main: src/lib/briefings/sendDispatch.js + supabase/functions/send-tournament-
+  message/_dispatch.ts (AP#30 mirror pair) + sendDispatch.test.js. They expose:
+  alreadySent (finalized 409), classifyBatchResult (per-recipient writeback
+  decision), and the delivery_status='queued' filter lock.
+- Option C is RULED (architect): G5 auto-re-drives ONLY the provably-safe class
+  (batch-rejection 'failed' = Resend rejected, no email sent) and SURFACES ambiguous
+  'queued' for human review with NO auto-re-send. The crash-after-dispatch window
+  stays open (durable Option A — provider idempotency keys — on a separate track,
+  gated on the Resend ordering confirm per CC_AUDIT_VERIFICATION_ANSWERS V1).
+
+1. THE TWO RECIPIENT CLASSES G5 ACTS ON
+------------------------------------------------------------------------------
+Per comms_message_recipients.delivery_status [LIVE CHECK: queued, sent, delivered,
+opened, clicked, bounced, complained, unsubscribed, failed]:
+- 'failed' (batch-rejection): set at send-tournament-message/index.ts:213-215 when
+  resend.batch.send returns batchErr (whole batch rejected) OR :228-231 when a
+  per-row result has no id. These recipients did NOT get an email -> SAFE to
+  auto-re-drive. CC builds this half mechanically (no UX question).
+- 'queued' (ambiguous): a recipient still 'queued' after the message left 'draft'
+  means the dispatch never marked them sent. This is EITHER never-attempted OR the
+  crash-window victim who GOT the email but the row write never landed (audit
+  F-IDEMPOTENCY). We CANNOT tell which from the row alone -> re-sending risks a
+  double-send. This is the class that needs the human-review Radar surface.
+
+2. THE KEY GAP THE RENDER MUST CLOSE (audit finding, [LIVE])
+------------------------------------------------------------------------------
+The Radar TODAY does not show stuck sends at all. useRadarFeed.js:77 filters
+.in('status', ['draft','scheduled','sent']) at the MESSAGE level; radarFeedHelpers.js
+buckets that feed. A message stuck mid-send sits at status='queued' (the message
+status, set by briefing-cron-dispatch/index.ts:93-98) or its recipients sit at
+delivery_status='queued'/'failed' — none of which the current Radar surfaces. So
+G5's surface is NET-NEW Radar content, not a tweak to an existing card.
+[LIVE today: 0 queued/failed recipient rows, 0 messages stuck at status='queued'.
+So this surface is built AHEAD of need — dormant until go-live real sends. It is
+admin-facing only; no parent/coach exposure.]
+
+3. WHAT CC NEEDS THE ARCHITECT TO SPEC (the render decisions / forks)
+------------------------------------------------------------------------------
+D1. WHERE THE SWEEP RUNS. Options: (a) a new handler in briefing-auto-draft-tick
+    (cron, runs every tick — auto-re-drives 'failed', writes nothing for 'queued'
+    beyond surfacing); (b) an admin-triggered "check stuck sends" action; (c) both.
+    CC lean: (a) cron for the safe 'failed' re-drive (it's safe and should self-heal)
+    + the Radar surface reads 'queued' passively. Architect rules.
+D2. THE AMBIGUOUS-QUEUED CARD: what does it show + offer? The honest content is
+    "N recipients for <briefing> may not have received it (status unknown). Re-sending
+    risks a duplicate." Action choices (architect picks):
+      - visibility-only (no action; admin investigates in Resend dashboard), OR
+      - "Mark as sent" (admin asserts they confirmed delivery elsewhere -> clears
+        the row), OR
+      - "Resend to these N" WITH an explicit double-send warning + confirm.
+    CC lean (AP#39 commit-to-lean): "Mark as sent" + a secondary "Resend (may
+    duplicate)" behind a confirm. Pure visibility is too passive for a go-live moat;
+    blind resend is the exact double-send the hold is preventing. Architect rules.
+D3. THE 'FAILED' RE-DRIVE FEEDBACK: silent self-heal, or a "retried N failed sends"
+    note on the card so the admin sees it happened? CC lean: a small note (honesty
+    over silence), no action needed from the admin.
+D4. CARD PLACEMENT + SHAPE: where in the Radar/admin surface, and does it follow the
+    §16.14 hero+collapsible detail pattern? This is squarely the architect's render.
+D5. MICROCOPY (§16.3 kindness, but this is an admin diagnostic — clarity over warmth):
+    the "may not have received it / re-sending risks a duplicate" language is
+    safety-critical; architect locks the exact wording.
+
+4. WHAT CC BUILDS ONCE THE RENDER LANDS (one PR, held do-not-auto-merge)
+------------------------------------------------------------------------------
+- The safe re-drive: reuse the merged classifyBatchResult/sendDispatch kernels;
+  select recipients delivery_status='failed' for non-archived messages, re-invoke
+  the dispatch for ONLY those rows, never touch 'queued'. + tests (AP#30 mirror if
+  it lands in the edge fn).
+- The 'queued' surface: a hook (mirrors useRadarFeed shape) selecting stuck
+  'queued' recipients + their message, feeding the architect-specced card.
+- Regression-guard line per Tier-1 discipline: assert G5 NEVER auto-re-drives
+  'queued' (the invariant the whole hold exists to protect).
+- Org-scoped (AP#37), admin-only, §16.14 detail pattern per the render.
+
+5. DEPENDENCIES / OWED (so the render doesn't assume away a gate)
+------------------------------------------------------------------------------
+- Durable window-closure (Option A, Resend per-recipient idempotency key) is NOT in
+  G5 and stays gated on the Resend ordering/idempotency-field confirm (V1). G5 Option
+  C is safe WITHOUT it precisely because it never re-drives 'queued'.
+- F-DUAL-FINALIZE (audit P1): the 4 send helpers force status='sent' ignoring
+  dispatch.ok — that can mask a partial-send into looking fully sent, which would
+  HIDE rows from G5's sweep. Recommend the F-DUAL-FINALIZE fix lands with or before
+  G5 so the sweep sees the true state. Architect: sequence call.
+
+NOTHING APPLIED. Awaiting the architect's G5 Radar render + D1-D5 rulings; then CC
+builds the full Option C in one held PR.
+==============================================================================
+END — CC G5 RADAR RENDER REQUEST 2026-06-07
+==============================================================================
