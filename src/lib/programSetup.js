@@ -49,3 +49,12 @@ export function validateProgramDates({ start_date, end_date, reg_opens_at, reg_c
   }
   return null;
 }
+
+// Registration windows are picked at day granularity; store the implied
+// boundary time so opens = start-of-day (midnight) and closes = end-of-day
+// (inclusive of the close date). Pass a 'YYYY-MM-DD' string; returns a
+// timestamp string or null.
+export function dayBoundaryTs(dateStr, edge) {
+  if (!dateStr) return null;
+  return `${dateStr}T${edge === 'close' ? '23:59:59' : '00:00:00'}`;
+}

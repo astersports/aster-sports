@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { checkSlugAvailable, divisionsApplyTo, slugify, statusForProgramType, validateProgramDates } from '../lib/programSetup';
+import { checkSlugAvailable, dayBoundaryTs, divisionsApplyTo, slugify, statusForProgramType, validateProgramDates } from '../lib/programSetup';
 
 // Re-exported so existing callers keep their import path (ProgramSetupPage
 // imports slugify from here); the pure logic lives in lib/programSetup (AP#27).
-export { checkSlugAvailable, divisionsApplyTo, slugify, statusForProgramType, validateProgramDates };
+export { checkSlugAvailable, dayBoundaryTs, divisionsApplyTo, slugify, statusForProgramType, validateProgramDates };
 
 // Admin program creation (spec §3, MVP). Writes programs + divisions + division_fees,
 // org-scoped via the admin RLS write policies (user_has_role_in_org admin with_check).
@@ -32,7 +32,7 @@ export function useProgramSetup() {
       org_id: orgId, name: form.name.trim(), program_type: programType,
       status: statusForProgramType(programType),
       public_slug: slug || null, is_published: !!form.is_published,
-      reg_opens_at: form.reg_opens_at || null, reg_closes_at: form.reg_closes_at || null,
+      reg_opens_at: dayBoundaryTs(form.reg_opens_at, 'open'), reg_closes_at: dayBoundaryTs(form.reg_closes_at, 'close'),
       start_date: form.start_date || null, end_date: form.end_date || null,
     }).select('id').single();
     if (e1) { setError(e1.message); setSaving(false); return { ok: false, error: e1.message }; }

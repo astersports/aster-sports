@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkSlugAvailable, divisionsApplyTo, statusForProgramType, validateProgramDates } from '../programSetup';
+import { checkSlugAvailable, dayBoundaryTs, divisionsApplyTo, statusForProgramType, validateProgramDates } from '../programSetup';
 
 // PR-1 decision logic for type-aware program create (GO D1/D2 + F3).
 
@@ -41,6 +41,17 @@ describe('validateProgramDates', () => {
   });
   it('rejects registration closing after the program ends (the smoke case)', () => {
     expect(validateProgramDates({ end_date: '2026-07-26', reg_closes_at: '2026-07-31T10:00' })).toMatch(/close after the program ends/i);
+  });
+});
+
+describe('dayBoundaryTs (registration day-boundary times)', () => {
+  it('opens at midnight, closes at end of day, inclusive of the close date', () => {
+    expect(dayBoundaryTs('2026-06-07', 'open')).toBe('2026-06-07T00:00:00');
+    expect(dayBoundaryTs('2026-07-26', 'close')).toBe('2026-07-26T23:59:59');
+  });
+  it('returns null for an empty date', () => {
+    expect(dayBoundaryTs('', 'open')).toBeNull();
+    expect(dayBoundaryTs(null, 'close')).toBeNull();
   });
 });
 

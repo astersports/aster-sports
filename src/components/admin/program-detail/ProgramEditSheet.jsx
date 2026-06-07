@@ -2,10 +2,7 @@ import { useState } from 'react';
 import FullScreenForm from '../../shared/FullScreenForm';
 import { Field, TextInput } from '../../register/fields';
 import { primaryBtn } from '../../register/registerStyles';
-import { slugify, validateProgramDates } from '../../../lib/programSetup';
-
-// timestamptz → datetime-local ('YYYY-MM-DDTHH:MM') for the input value.
-const toLocalInput = (ts) => (ts ? ts.slice(0, 16) : '');
+import { dayBoundaryTs, slugify, validateProgramDates } from '../../../lib/programSetup';
 
 // Edit a program's name / dates / public link / publish state (PR-3 F14).
 // 3+ fields → FullScreenForm (anti-pattern #15). program_type is intentionally
@@ -23,7 +20,7 @@ export default function ProgramEditSheet({ open, program, onClose, onSave }) {
 function Body({ program, onSave }) {
   const [form, setForm] = useState({
     name: program?.name || '', start_date: program?.start_date || '', end_date: program?.end_date || '',
-    reg_opens_at: toLocalInput(program?.reg_opens_at), reg_closes_at: toLocalInput(program?.reg_closes_at),
+    reg_opens_at: (program?.reg_opens_at || '').slice(0, 10), reg_closes_at: (program?.reg_closes_at || '').slice(0, 10),
     public_slug: program?.public_slug || '', is_published: !!program?.is_published,
   });
   const [err, setErr] = useState(null);
@@ -38,8 +35,8 @@ function Body({ program, onSave }) {
       name: form.name.trim(),
       start_date: form.start_date || null,
       end_date: form.end_date || null,
-      reg_opens_at: form.reg_opens_at || null,
-      reg_closes_at: form.reg_closes_at || null,
+      reg_opens_at: dayBoundaryTs(form.reg_opens_at, 'open'),
+      reg_closes_at: dayBoundaryTs(form.reg_closes_at, 'close'),
       public_slug: slugify(form.public_slug || form.name) || null,
       is_published: form.is_published,
     });
@@ -52,9 +49,10 @@ function Body({ program, onSave }) {
         <div style={{ flex: 1, minWidth: 0 }}><Field label="Start date" htmlFor="ep-sd"><TextInput id="ep-sd" type="date" value={form.start_date} onChange={(v) => set('start_date', v)} /></Field></div>
         <div style={{ flex: 1, minWidth: 0 }}><Field label="End date" htmlFor="ep-ed"><TextInput id="ep-ed" type="date" value={form.end_date} onChange={(v) => set('end_date', v)} /></Field></div>
       </div>
-      {/* datetime-local needs the full row — half-width overflows iOS (the date+time value won't shrink). */}
-      <Field label="Registration opens" htmlFor="ep-ro"><TextInput id="ep-ro" type="datetime-local" value={form.reg_opens_at} onChange={(v) => set('reg_opens_at', v)} /></Field>
-      <Field label="Registration closes" htmlFor="ep-rc"><TextInput id="ep-rc" type="datetime-local" value={form.reg_closes_at} onChange={(v) => set('reg_closes_at', v)} /></Field>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0 }}><Field label="Registration opens" htmlFor="ep-ro"><TextInput id="ep-ro" type="date" value={form.reg_opens_at} onChange={(v) => set('reg_opens_at', v)} /></Field></div>
+        <div style={{ flex: 1, minWidth: 0 }}><Field label="Registration closes" htmlFor="ep-rc"><TextInput id="ep-rc" type="date" value={form.reg_closes_at} onChange={(v) => set('reg_closes_at', v)} /></Field></div>
+      </div>
       <Field label={`Public link · /r/${slugify(form.public_slug || form.name) || '…'}`} htmlFor="ep-slug">
         <TextInput id="ep-slug" value={form.public_slug} onChange={(v) => set('public_slug', v)} />
       </Field>
