@@ -1,281 +1,274 @@
 ==============================================================================
-BRIEFINGS — L99 REDESIGN-GRADE AUDIT v4 (FINAL — 100% agent-reachable coverage)
-CC -> architect. Date: 2026-06-07 PM. Operator directive: deploy multiple agents,
-surface EVERYTHING, 100% before the architect. v4 = v1(UI) + v2(deep-read) +
-v3(non-UI stack: data/edge-send/resolver/tests) + the v4 final three (AI quality /
-delivery-channels+compliance / lifecycle-retention). EIGHT agent-passes + CC
-verification of every load-bearing finding (live SQL + send-path trace + footer
-read). Every claim file:line or [LIVE]. NOTHING APPLIED.
+BRIEFINGS — L99 AUDIT, FINAL (post-architect-review)   CC -> architect
+Date: 2026-06-07 PM. The rewritten FINAL incorporating ARCHITECT_REVIEW_BRIEFINGS_
+L99_AUDIT (the peer review of v4 #817). Absorbs the §10 must-changes: the go-live
+REFRAME (send+legal+see+RECOVER) is now a first-class track, NOT split into Tier 3;
+the two lifecycle items are re-rated P0-FOR-GO-LIVE; B2 annotated classification-
+dependent; M-1..M-7 folded in with tiers; IC-1/2/3 resolved; SEAM-1/2/3 carried as
+go-live GATES with CC's verification answers; regression-guard on every Tier-1 PR.
+Supersedes v4. NOTHING APPLIED.
 
-COVERAGE: all agent-reachable layers swept — UI · DATA · EDGE/SEND · LOGIC ·
-TESTS/INTEGRATION/PERF · AI-QUALITY · DELIVERY/COMPLIANCE · LIFECYCLE/RETENTION.
-The ONLY remaining gaps need a human/browser, not an agent — listed in §10 as
-OWED. This is the honest 100%: everything code can reach is audited; what it
-can't is named, not hidden.
+PROOF-OF-ABSORPTION (the architect's §10-item-1 test): the recovery sweep + the
+minimum delivery rollup appear ONLY in the GO-LIVE TRACK below — they do NOT
+appear under Tier 3.
 ==============================================================================
 
-0. HEADLINE
+0. HEADLINE — the honest go-live gate is FOUR things
 ------------------------------------------------------------------------------
-The briefings build is GENUINELY WELL-ENGINEERED across every layer an agent
-reached — clean pure resolve/compose (no fabrication/swallow/mis-scope, 12 kinds),
-solid RLS (AP#20 everywhere, zero initplan, parent isolation), good edge-fn auth
-(verify_jwt + app_secrets), a fail-CLOSED send gate, single render path, a
-SUBSTANTIVE+SAFE AI layer (voice-profile system prompt + structural anchored
-hallucination guard + cron-no-LLM), a complete RFC-8058 unsubscribe + suppression
-flow, a working proposal-expiry sweep, real invariant tests, indexed, lazy, no
-N+1. The work is a SHORT, ranked list — and it splits cleanly into TWO GO-LIVE
-BLOCKERS (not redesign) + the redesign tiers.
+The build is well-engineered across every agent-reachable layer (the v4 verdict
+stands, architect-endorsed §1). The redesign work is real but secondary to the
+go-live gate, which is: SEND (B1) + LEGAL (B2) + SEE (minimum delivery rollup) +
+RECOVER (failed/queued sweep). You cannot point real sends at 175 families if a
+failed send is an invisible dead-end and there's no panel showing what delivered.
+v4 named this (G-DELIV-MOAT) then split it; the FINAL reunites it.
 
-TWO GO-LIVE BLOCKERS (gate turning pilot OFF — neither is "redesign"):
-  B1  DEF-11 [P0]  No rate cap in code + the deliverability layer (new domain
-       astersports.app, SPF/DKIM/DMARC unproven in-repo, no warmup) → a 175-family
-       blast overflows to `failed`/silent-drop AND likely lands in spam.
-  B2  CAN-SPAM [P0]  No physical postal address in any briefing email [CC-verified
-       footer.js] → a legal violation for commercial email to 175 families. (The
-       unsubscribe half IS compliant; the address half is missing.)
+THE LOAD-BEARING DEPENDENCY (architect SEAM-3, the sharpest finding): the recovery
+sweep re-drives stuck sends and is SAFE ONLY IF send-tournament-message's sent_at
+409 idempotency holds — and CC has now VERIFIED that idempotency is NOT test-
+covered. So the go-live track must test the idempotency BEFORE the sweep re-drives
+in production; a sweep on unproven idempotency can double-send to 175 families —
+worse than the stranded send it fixes. This is a blocker-of-the-blocker.
 
-TWO v4 CORRECTIONS (the verify discipline working, AP#60):
-  - F-PILOT downgraded P0→P2 (v3): all 5 send paths route through the fail-CLOSED
-    send gate; resolver `?? false` only widens computed set/preview.
-  - F-CANCEL downgraded P2→P3 (v4): the expiry sweep (expires_at, Wave 4.8-6c)
-    auto-archives abandoned drafts (7-30d) — they self-clean; discard() being
-    unwired is cosmetic, not an accumulation leak. [live: 0 drafts >30d]
+TWO CORRECTIONS carried (verify discipline): F-PILOT P0->P2 (send-trace; double-
+gated). F-CANCEL P2->P3 (expiry sweep auto-cleans; live 0 drafts >30d).
 
-1. THE TWO BLOCKERS (B1/B2) — detail
+1. THE GO-LIVE TRACK (parallel; gates turning pilot OFF) — FORK F, expanded
 ------------------------------------------------------------------------------
-B1 DEF-11 [P0, provider+app+DNS — its own go-live workstream]:
-   - No rate cap/throttle/retry in code (grep: none). send-tournament-message:206
-     loops ALL recipients in 100-batches back-to-back; on Resend rejection the
-     WHOLE batch → `failed`, no re-drain (briefings) or the error is DISCARDED
-     with no row (Stream A reminders, _reminderSend.ts:146).
-   - DOMAIN: from = hardcoded noreply@astersports.app (a BRAND-NEW rebrand domain);
-     SPF/DKIM/DMARC have ZERO in-repo proof; no warmup. 100-batch to 175 cold
-     recipients on a fresh domain = spam-folder risk independent of the rate cap.
-   - reply_to_email is a PERSONAL GMAIL live (olivejuiceinc1@gmail.com) — trust +
-     DMARC-alignment.
-   FIX (Frank/provider + a little code): Resend account tier + an app-side throttle/
-     queue + failed-row re-drain; verify+warm astersports.app DNS auth; set a real
-     reply-to.
-B2 CAN-SPAM [P0, small code + an org field]:
-   - footer.js renders org/website/contact/unsubscribe but NO physical postal
-     address [CC-verified]. 15 U.S.C. §7704(a)(5) requires a valid postal address
-     in every commercial email. No mailing_address column exists on org/org_settings.
-   FIX: add organizations.mailing_address + render it in footer.js before pilot off.
+Ordered, smallest-first. CC owns code+tests; Frank owns account/DNS/address/legal.
+  G1 B2 CAN-SPAM address [P0, classification-dependent] — add organizations.
+     mailing_address + render in footer.js. SMALLEST, ships FIRST. (Severity note:
+     worst-case commercial-email classification; youth recaps MAY be transactional/
+     relationship — Frank gets a counsel one-liner, M-1. Ship regardless: mandatory
+     the instant a briefing promotes camp/clinic/registration; can't cleanly gate
+     which email is which; sender is an LLC on commercial SaaS; cost = 1 field + 1
+     footer line.)
+  G2 B1 DEF-11 [P0] — app throttle/queue + failed-row re-drain (CC) + Resend
+     account tier (Frank). No rate cap in code today; 100-batch back-to-back ->
+     whole-batch-failed on rejection, no re-drain.
+  G3 DELIV-DOMAIN [P1, part of B1] — verify+warm astersports.app SPF/DKIM/DMARC
+     (Frank/DNS). Fresh rebrand domain, zero in-repo proof, no warmup = spam risk.
+  G4 REPLYTO [P1] — set a real org reply-to (live is a personal Gmail).
+  G5 RECOVERY SWEEP [P0-for-go-live] — re-drive stuck `queued` + retryable `failed`
+     + surface both in Radar. Resolves LIFECYCLE-QUEUED + LIFECYCLE-FAILED.
+     ** GATED ON G8 (idempotency test) — must not re-drive until proven. **
+  G6 MINIMUM DELIVERY ROLLUP [P0-for-go-live, from F-DELIV] — an admin panel/lane
+     showing per-send delivered/bounced/failed counts. Data source VERIFIED
+     complete (SEAM-2 green: webhook writes delivered/bounced/complained/failed).
+  G7 SEAM-1 GATE — TEST the pilot/auto-send fail-closed gate (CC-VERIFIED untested).
+     Cannot turn pilot off relying on an untested fail-closed gate.
+  G8 SEAM-3 GATE — TEST the sent_at 409 idempotency + the edge-fn failure/writeback
+     (CC-VERIFIED untested). PREREQUISITE for G5.
+  G9 SEAM-2 — CLOSED GREEN (CC-verified the webhook covers every rollup event); no
+     action beyond noting WH-1 stays P3 (only non-rollup events no-op).
+  Conditional: SCHED-ANCHOR joins this track IFF launch uses scheduled sends (Frank
+     Q). If send-now-only at launch -> Tier 3.
+  Until G1-G8 close, pilot stays ON (no real-family send). These gate GO-LIVE, not
+  the redesign tiers (which proceed in parallel).
 
-2. FINDINGS BY LAYER + SEVERITY (full consolidated v1-v4, deduped)
+2. FINDINGS BY LAYER (consolidated, with architect verdicts + CC verifications)
 ------------------------------------------------------------------------------
-DELIVERABILITY / COMPLIANCE (v4)
-  B1 DEF-11 [P0] · B2 CAN-SPAM addr [P0] · DELIV-DOMAIN [P1] SPF/DKIM/DMARC+warmup ·
-  REPLYTO [P1] personal Gmail · FROMDOMAIN [P2] hardcoded, ignores org from_email/
-  custom_domain (multi-tenant unwired) · UNSUB-GRANULAR [P2] digest_subscribed/
-  tournament_subscribed written-never-read + guardian_notification_prefs fully dead
-  (0 rows/0 readers; §11.5 two-tables-one-concept) · PUSH-UNSUB [P3] push ignores
-  email unsubscribe + notification_channels.briefing.push:false.
-  CLEAN: RFC-8058 List-Unsubscribe one-click header; signed-token unsubscribe link
-  in every kind's footer; suppression read on EVERY email path; hard-bounce/
-  complaint auto-suppress w/ correct soft-bounce fail-safe. Channels: email-first
-  (real, Resend); push best-effort secondary (2 device subs today); SMS + in_app
-  are DEAD enum values (aspirational, unbuilt).
+DELIVERABILITY/COMPLIANCE: B1[P0 G2] · B2[P0 G1, classification-dependent] ·
+  DELIV-DOMAIN[P1 G3] · REPLYTO[P1 G4] · FROMDOMAIN[P2 → multi-tenant scan] ·
+  UNSUB-GRANULAR[P2, CC-VERIFIED no parent-visible toggle → stays P2 dead-schema
+  cleanup, NOT a lying control; M-4 resolved] · PUSH-UNSUB[P3]. CLEAN (endorsed):
+  RFC-8058 one-click, signed-token unsub every footer, suppression every path,
+  hard-bounce/complaint auto-suppress — the compliant half; B2 is the ONLY gap.
+LIFECYCLE/RECOVERY/RETENTION: LIFECYCLE-FAILED [P0-FOR-GO-LIVE → G5] (was "P1,
+  P0-on-scale"; re-rated — terminal dead-end, no reader [CC-verified], the clean
+  "0 today" tempts deferral until the first real send drops silently). LIFECYCLE-
+  QUEUED [P0-FOR-GO-LIVE → G5] same root. SCHED-ANCHOR [P1, conditional — go-live
+  if scheduled-launch else Tier 3]. HISTORY-BACKFILL [P1 → Tier 3 ride-along,
+  one-time data correctness]. RETENTION [P1 → post-pilot PHASE, with named
+  direction: one-body-per-send + per-recipient variables (render on read) + purge —
+  the per-recipient inline-HTML denormalization is what won't scale]. DIGEST-DEDUP
+  [P2 T4] · IMPERSONATE-LOOP [P2 latent T4]. CLEAN (endorsed): expiry sweep 112/144,
+  per-anchor dedup, game_recap bounded.
+AI/ML — substantive+safe (endorsed strength): AI-FREEFORM [P2 → Tier 1 verify-
+  caption, the highest-value cheap fix; structural guard on anchored is good
+  architecture, gap is free-form instruction-only + model-self-reported facts_used].
+  AI P3 hardening [T4: prose-JSON parse, fetch-timeout, closer-temp, anchored-gap
+  weekly_digest/tournament_prelim, facts-verifier]. CLEAN: voice-profile prompt +
+  few-shot + fails-loud+retry + cron-no-LLM + mandatory device preview.
+DATA: GHOST/PC-11-A [P1 → Tier 0, CC-RE-VERIFIED unapplied live; chat-CC MCP apply
+  GO-gated + mirror] · PC-1 delivery_method no CHECK [P2 T4, float-free-enum class] ·
+  RLS-1 [P2 accepted-floor — keep LABELED as accepted-risk, not clean] · RLS-2 anon
+  grants [P2 → multi-tenant scan, RLS backstops] · P3 get_digest_recipients secdef.
+  CLEAN (endorsed): parent isolation, AP#20 all writes, 0 initplan, no phantom
+  columns, CASCADE/SET NULL, indexed, app_secrets deny-by-default.
+EDGE/SEND: SEND-4 [P1 → Tier 0, PC-8 silent-fail on a SEND path — surface the
+  swallow, don't mark done on swallowed failure] · SEND-3/PC-5-1 [P2 → Tier 0,
+  digest reports success on failure; same success-on-failure family] · SEND-2 [P2
+  T4] · PC-7 [P2 FINDING, DEFERRED to its own dual-dispatch ticket — IC-2 resolved:
+  it is a finding AND deferred, linked, not two orphan lists] · WH-1 [P3, SEAM-2
+  confirmed it's only non-rollup events]. CLEAN (endorsed): verify_jwt, app_secrets,
+  atomic scheduled-claim, sent_at 409 idempotency (LOAD-BEARING under G5 — must be
+  tested G8), token-sub fail-loud, webhook signature+state-machine.
+LOGIC: all 12 kinds CLEAN (endorsed — the honesty foundation). F-PILOT [P2, FORK D
+  aligns `?? true`+parity anyway]. F-FORFEIT [P2 finding; full model = PHASE; cheap
+  interim guard = Tier 1 (FORK C) — CC-scoped cheapest guard: a minimal is_forfeit
+  boolean (score-entry checkbox) + recap render branch "W — Forfeit" suppressing the
+  fabricated scoreline; no is_forfeit signal exists today (CC-verified)]. F1/F2 [P3
+  → multi-tenant scan].
+RENDER/CONTENT: F-SIG [P1 → Tier 1, LIVE-not-latent: a coach's personal cell to all
+  175 families every briefing = the most concrete present-tense parent harm; top of
+  Tier 1]. F-SIGDUP/F-SIGSCOPE [P2 → fold into FORK A]. CLEAN (endorsed): single
+  render path (= preview==send), SECTION_RENDERERS parity, no token/hex.
+UI: F-COACH [P1 → Tier 2 FORK B, fix via the REQUEST flow not a 2nd compose path] ·
+  F-PATTERNA [P1 → TIER 1 (IC-1 RESOLVED: placed in Tier 1, removed from Tier 3;
+  cheap known AP#63 fix, one shared source + AP#43 test)] · F-SCHED [P1 → Tier 3;
+  note cancel-scheduled is go-live safety IF scheduled-launch] · F-DELIV [P1 →
+  MINIMUM rollup to go-live G6; fuller dashboard Tier 3] · F-RECIPCHIP [P1 → Tier 1,
+  §13.7 Active/Futures/guardians, PC-2 one-source] · F-INBOX-A11Y [P1 → Tier 1, with
+  the architect's STYLE-ISOLATION strategy: de-iframe via shadow-DOM (or sanitize+
+  scope), NEVER raw-inline email HTML into the React tree — a11y win without style
+  bleed] · F-RADAR1 [P1 → Tier 3] · Cleanups [F-CANCEL P3, F-ORPHAN, F-TEMPLATE,
+  F-STALE, F-INBOX-READ → T4]. CLEAN (endorsed): warm microcopy, InboxList a11y
+  test-locked, send-gate zero/null.
+PERF: per-recipient mint_unsubscribe RPC [P2 → FOLD into G2 B1 throttle (175 serial
+  RPCs in the send loop compound the throughput problem the throttle solves —
+  architect interaction note)] · radar 5 serial awaits [P3 T4]. CLEAN: no N+1,
+  parallel evaluators, lazy bundle, bounds.
+TESTS: WELL-TESTED set endorsed (= why LOGIC-clean is credible). HIGH-RISK UNTESTED
+  intersects go-live: pilot fail-closed gate (G7), sent_at 409 idempotency +
+  failure/writeback (G8), recovery paths (built in G5). RULE: the go-live track
+  CLOSES its own test dependencies — tests are part of go-live, not a Tier-4
+  afterthought.
 
-LIFECYCLE / RECOVERY / RETENTION (v4)
-  LIFECYCLE-FAILED [P1, P0-on-scale] `failed` is a terminal dead-end — no re-drain,
-    no reader in src/ [CC-verified], no UI. A transient cron/Resend error strands a
-    scheduled send forever. (live: 0 today.)
-  LIFECYCLE-QUEUED [P1, P0-on-scale] `queued` orphaned if the edge fn dies between
-    submitSend (composerSubmit:129) and invoke (:132), or mid-cron-dispatch —
-    invisible in all 4 surfaces, never re-driven. (send-tournament-message IS
-    idempotent via sent_at 409, so a re-drive sweep is the clean fix.)
-  HISTORY-BACKFILL [P1] 17 messages DELIVERED to families sit `archived`/sent_at=
-    NULL (pre-2026-05-27 artifacts) → absent from History; CHECK forbids relabel
-    without sent_at. One-time backfill.
-  SCHED-ANCHOR [P1, latent] comms_messages.anchor_id has NO FK; a scheduled send is
-    NOT invalidated if its anchor event is deleted/cancelled/rescheduled (6 live
-    orphan rows) → a stale briefing would send. Latent (0 scheduled today). Fix:
-    re-validate anchor at dispatch.
-  RETENTION [P1] no retention/cap; comms_message_recipients = 1 row/recipient/send
-    w/ inline rendered HTML → unbounded at 175×N×multi-org. Fine at pilot (52 rows);
-    no plan. Fix: purge archived after N months + consider body offload.
-  DIGEST-DEDUP [P2] weekly_digest dedup excludes `archived` → re-draftable within
-    one Sunday-8am hour (unique-index backstops). IMPERSONATE-LOOP [P2 latent]
-    no_user_to_impersonate revert loop for a scheduled row lacking last_edited_by.
-  Two P0s share one root: queued/failed are fire-and-forget with no recovery driver
-  + no observability. ONE fix shape: a sweep that re-drives stuck queued + retryable
-  failed + surfaces both in Radar. (Folds into FORK E.)
-  CLEAN/HEALTHY: proposal expiry sweep works (112/144 archived via expiry); trigger
-  →draft per-anchor dedup correct (archive/sent both block re-propose); game_recap
-  bloat bounded; cron placeholders bounded.
-
-AI / ML (v4) — substantive + safe (a STRENGTH)
-  AI-FREEFORM [P2] no-invent guard is STRUCTURAL for anchored recaps (model writes
-    narrative only; numbers render from resolver facts it never touches — solid) but
-    INSTRUCTION-ONLY for free-form announcement/custom_message (could fabricate a
-    date/venue). facts_used panel is MODEL-self-reported (grounding signal, not a
-    verifier). Mitigated by gist-input + mandatory preview. Cheap fix: a "verify any
-    specifics" preview caption on free-form AI output.
-  AI P3 hardening: prose-wrapped (non-fenced) JSON not parsed; no fetch-timeout/
-    transport-retry (only parse-retry); closer fn no explicit temperature (~1.0);
-    weekly_digest + tournament_prelim in ANCHORED_KINDS but lack fact-extractors →
-    "Draft with AI" silently absent for them; facts_used could cross-check injected
-    facts to become a verifier.
-  CLEAN: ~170-line org voice-profile system prompt + 4 few-shot + per-kind templates
-    + facts-discipline; output fails loud + 1 retry + strips fences; cron uses NO
-    LLM (placeholder shells only — no unattended AI, nothing auto-sends); every AI
-    draft passes the 375/600/plain device-frame preview before send (§9.12 met);
-    optional/editable/regenerate/labeled. Model claude-sonnet-4-5, temp 0.7/0.9.
-
-DATA LAYER (v3)
-  GHOST/PC-11-A [P1] migration 20260603104534 unapplied; weekly_digest unique index
-    still includes `draft` LIVE [CC-verified] → 23505 collision reachable + stale
-    digestSend comments. Quick chat-CC MCP fix. · PC-1 [P2] delivery_method no CHECK ·
-    RLS-1 [P2] parent UPDATE full recipient row (accepted floor) · RLS-2 [P2]
-    comms_messages anon ALL grants (RLS backstops) · P3: get_digest_recipients
-    SECURITY INVOKER; advisor multiple-permissive/unindexed-FK/unused-index.
-  CLEAN: parent isolation; AP#20 WITH CHECK all writes; auth.uid subselect (0
-    initplan); no phantom columns/functions; CASCADE/SET NULL correct; hot paths
-    indexed; app_secrets deny-by-default.
-
-EDGE / SEND (v3)
-  SEND-4 [P1] reminder claim-before-send + no rollback + swallowed batch error →
-    silently undelivered, marked done. · SEND-3/PC-5-1 [P2] digestSend status='sent'
-    w/o dispatch.ok + w/o sent_at (contradicts edge-fn ownership; latent 23514;
-    failed digest reports success). · SEND-2 [P2] redundant client status writes. ·
-    PC-7 [P2] weekly_digest two entry points → different recipient sets. · WH-1 [P3]
-    unhandled webhook events no-op.
-  CLEAN: verify_jwt config (AP#31); secrets in app_secrets (AP#33); scheduled-send
-    atomic claim (no double-dispatch); interactive idempotency (sent_at 409); token
-    substitution + handler-URL-wrap + fail-loud (AP#29); webhook signature + rank
-    state machine.
-
-LOGIC (v3) — all 12 kinds CLEAN (AP#27/#36/#37/#28/#34/#38/#29). F-PILOT [P2,
-  downgraded] resolver `?? false` (double-gated). F-FORFEIT [P2] no forfeit concept
-  (FORK C). F1 [P3] games_recap org[0] latent. F2 [P3] family_guide hardcoded org.
-
-RENDER / CONTENT (v1)
-  F-SIG [P1] signoff bundles signature + cell-phone contacts, unconditional, no
-    opt-in [CC-verified]. F-SIGDUP [P2] family_guide coaches twice. F-SIGSCOPE [P2]
-    org-wide vs team scope. FORK A. CLEAN: single render path; SECTION_RENDERERS
-    parity; no token/hex violations.
-
-UI (v1/v2)
-  F-COACH [P1] recap-compose dead-end vs working modal [CC-verified]. FORK B
-    (+F-DUALMOUNT P3, F-COACHSCOPE P2, F-COACHERR P2 AP#36). · F-PATTERNA [P1]
-    AlertZone vs Needs-You disagree on drafted-recap-handled, no AP#43 test (AP#63). ·
-    F-SCHED [P1] no cancel/edit scheduled (+F-SCHED-TIME P2). · F-DELIV [P1] delivery
-    health invisible except 1-click-deep (+F-BOUNCEREASON P2, F-SENDERR P2). ·
-    F-RECIPCHIP [P1] chip ≠ §13.7 Active/Futures/guardians. · F-INBOX-A11Y [P1]
-    parent iframe AT-trap + non-visualViewport (AP#18). · F-RADAR1 [P1] Review&send
-    no headless send (+F-RADAR-DISMISS P2). · Cleanups P2/P3: F-CANCEL [P3 downgraded],
-    F-ORPHAN, F-TEMPLATE, F-STALE, F-INBOX-READ.
-  CLEAN: warm empty/loading/error microcopy; InboxList a11y test-locked; send-gate
-    zero/null solid.
-
-PERF (v3) [P2] per-recipient mint_unsubscribe RPC in send loop (~175); [P3] radar 5
-  serial awaits. CLEAN: no N+1; evaluators parallel; lazy bundle; bounds present.
-
-TESTS (v3) WELL-TESTED: reducer/dispatch/12 resolvers/renderers/audience/queue/
-  auto-draft + strong invariant guards. HIGH-RISK UNTESTED: send-tournament-message
-  edge fn (failure+writeback), pilot fail-closed default, cron race, suppression,
-  digest ok-check, AND (v4) the queued/failed recovery paths once built.
-
-3. PER-ROLE VERDICT (condensed)
+3. PER-ROLE VERDICT
 ------------------------------------------------------------------------------
-COACH — NOT simple/intuitive (F-COACH). ADMIN — functional; ops-visibility gaps
-(F-SCHED/F-DELIV/F-PATTERNA/F-RADAR1 + lifecycle queued/failed). PARENT — render
-honest by construction; tail over-shares PII (F-SIG) + iframe a11y + forfeit-as-WIN;
-content arrives via a compliant unsubscribe but a NON-compliant (no-address) email.
+COACH — not simple/intuitive (F-COACH dead-end → FORK B request-flow). ADMIN —
+functional; ops-visibility gaps, the go-live-critical ones (failed/queued recovery
++ minimum rollup) pulled to the go-live track. PARENT — render honest by
+construction (12-kind purity + single render path); the present-tense harms are
+F-SIG (cell-phone PII), F-INBOX-A11Y, forfeit-as-WIN (interim guard Tier 1); and
+the email is non-CAN-SPAM-compliant until G1.
 
 4. §16.13 ELITE-STACK GATE — does NOT yet pass
 ------------------------------------------------------------------------------
-FAILS: a11y (F-INBOX-A11Y + no axe pass), translation (NO EN↔ES, G-TRANSLATE),
-privacy (F-SIG PII). PARTIAL: optimistic, audit-trail. PASS: density(n/a),
-microcopy, cadence, presence(n/a), perf. + the compliance layer (B2) is a
-non-§16.13 legal gate that ALSO blocks the parent send.
+FAILS: a11y (F-INBOX-A11Y + no axe pass, §11 OWED), translation (M-2 — tier gated
+on the Spanish-primary fraction, NOT auto-deferred), privacy (F-SIG). + B2 is a
+non-§16.13 legal gate that also blocks the parent send. Tier 1 closes a11y(partial)+
+privacy; translation tier is Frank's demographic call.
 
 5. CROSS-CUTTING (named — scaffold §5)
 ------------------------------------------------------------------------------
-G-TRANSLATE [phase] no EN↔ES anywhere; parent moat; named. G-DELIV-MOAT B1+F-DELIV
-= "comms actually works" (can't send at scale + can't see delivered). G-MULTITENANT
-F1/F2/buildOrgContext-defaults/FROMDOMAIN/RLS-2/org-from-events[0] all latent until
-a 2nd real org (St. Patrick's) — re-run org-scope before that onboard.
+G-TRANSLATE [M-2 — TIER gated, not "phase-not-now" by default]: English-only is a
+  MOAT HOLE, not a future nicety, IF a meaningful fraction of pilot families are
+  Spanish-primary (Westchester has substantial Spanish-primary communities). The
+  fraction decides the tier. QUESTION FOR FRANK. G-DELIV-MOAT = B1+F-DELIV, reunited
+  in the go-live track. G-MULTITENANT (F1/F2/buildOrgContext-defaults/FROMDOMAIN/
+  RLS-2/org-from-events[0]) — pre-2nd-org scan before St. Patrick's; not now.
 
-6. FORKS FOR THE ARCHITECT (leans labeled, none pre-picked — §11.8.2)
+6. STRENGTHS TO PROTECT + THE REGRESSION-GUARD MANDATE (review §5)
 ------------------------------------------------------------------------------
-FORK A — signature/contacts (F-SIG/SIGDUP/SIGSCOPE). Pref: clean default + opt-in.
-  CC lean A3+A1: voice signature default (no PII); phone contacts opt-in per send,
-  team-scoped, dedup'd. Closes elite item 7.
-FORK B — coach access (F-COACH/DUALMOUNT/COACHSCOPE). CC lean B3: coach REQUESTS →
-  admin sends; unify mount; RLS the scope.
-FORK C — forfeit (F-FORFEIT). Upstream is_forfeit + "W—Forfeit". Own phase.
-FORK D — pilot fail-closed (F-PILOT). Not a fork — align 8 resolvers `?? true` +
-  parity test. Ships Tier 0.
-FORK E — operational visibility + RECOVERY (F-SCHED/F-DELIV/F-RADAR1/PATTERNA +
-  the v4 lifecycle P1s: failed/queued recovery sweep, SCHED-ANCHOR invalidation,
-  HISTORY-BACKFILL, RETENTION). Architect scopes redesign-now vs post-pilot.
-  MINIMUM = cancel-scheduled + failed/queued recovery sweep + the PATTERNA shared-
-  source fix.
-FORK F [NEW] — go-live deliverability + compliance gate (B1 DEF-11 + B2 CAN-SPAM +
-  DELIV-DOMAIN + REPLYTO). NOT redesign — the "can we legally + reliably email 175
-  families" prereq. Frank/provider-owned (account tier, DNS) + small code (address
-  field + footer + throttle). Gates turning pilot OFF. CC can do the code; the
-  account/DNS/legal-address are Frank's.
+These CLEAN claims are load-bearing; a redesign that breaks one to fix a P1 is a
+net loss. EVERY Tier-1 PR carries a regression-guard line confirming it didn't
+break the relevant clean claim:
+  - pure resolve/compose (12 kinds, no fabrication) — parent honest-by-construction.
+  - single render path + SECTION_RENDERERS parity — preview==send. (FORK A must not
+    break parity; F-INBOX-A11Y de-iframe must not break the single-render
+    equivalence — hence shadow-DOM isolation.)
+  - fail-closed send gate + sent_at 409 idempotency — the safety floor (protect +
+    TEST it, G7/G8; the idempotency is what makes the recovery sweep possible).
+  - RFC-8058 unsub + suppression every path — the compliant half (B2 the only gap).
+  - cron-no-LLM + mandatory device preview — what makes the AI layer safe.
+  - no phantom columns + AP#20 all writes + parent isolation + 0 initplan — data floor.
 
-7. RECOMMENDED TIER SEQUENCE (CC proposal — architect/Frank route)
+7. INTERNAL-CONSISTENCY RESOLUTIONS (IC-1/2/3 — review §3)
 ------------------------------------------------------------------------------
-  BLOCKERS (parallel go-live track, FORK F): B1 DEF-11 (account+throttle+re-drain),
-    B2 CAN-SPAM address, domain SPF/DKIM/DMARC+warmup, reply-to. Until these, pilot
-    stays ON (no real-family send) — so they don't block the redesign tiers, they
-    block GO-LIVE.
-  Tier 0 (safety/correctness, small): GHOST migration apply · FORK D pilot `?? true`
-    + parity test · SEND-3/SEND-4 fixes.
-  Tier 1 (parent-moat redesign — closes elite gate): FORK A signatures · F-INBOX-
-    A11Y de-iframe · F-RECIPCHIP §13.7 · F-PATTERNA shared source+AP#43 test · AI
-    free-form verify-caption.
-  Tier 2 (coach): FORK B.
-  Tier 3 (ops visibility + recovery, FORK E): cancel-scheduled · queued/failed
-    recovery sweep + Radar surface · delivery rollup + bounce_reason · SCHED-ANCHOR
-    invalidation · HISTORY-BACKFILL · RETENTION plan.
-  Tier 4 (cleanups, ride-along): F-CANCEL, F-ORPHAN, F-TEMPLATE, F-STALE, PC-1,
-    RLS-2, FROMDOMAIN, UNSUB-GRANULAR/dead-prefs, PUSH-UNSUB, AI P3 hardening
-    (json/timeout/closer-temp/anchored-gap/facts-verifier), DIGEST-DEDUP,
-    IMPERSONATE-LOOP, autosave-floor verify, perf (batched-unsub-RPC, radar
-    Promise.all), F1/F2, get_digest_recipients secdef review.
-  Phases (named, not now): FORK C forfeit · G-TRANSLATE · D-4 pilot cutover.
+IC-1 F-PATTERNA -> TIER 1 only (removed from Tier 3). IC-2 PC-7 -> stated as
+"finding, DEFERRED to its own dual-dispatch ticket" (one link, not two orphan
+lists). IC-3 RECOVERY SWEEP -> GO-LIVE TRACK only (G5); removed from Tier 3
+entirely. (The proof the reframe was absorbed, per review §10-item-1.)
 
-8. OWED — gaps an agent CANNOT close (human/browser, named not hidden)
+8. FORKS — ARCHITECT RULINGS (the action output)
 ------------------------------------------------------------------------------
-  - CROSS-CLIENT EMAIL RENDER: the briefing HTML in real Gmail / Apple Mail /
-    Outlook (web+desktop+iOS). Code confirms table-based + inline-styled per §13,
-    but only a real send to those clients proves it renders. OWED: a test send to a
-    multi-client inbox set.
-  - A11Y PASS: a real axe-core + VoiceOver/TalkBack run, esp. the parent inbox
-    (F-INBOX-A11Y is code-evident; the full pass is not). OWED before parent-10/10.
-  - CONTENT/VOICE TASTE: the actual briefing copy reading right to a family — needs
-    Frank's eye, not an agent (the recap signature/forfeit instincts came from you).
-  - REAL-DEVICE: composer + inbox on an actual iPhone (the 375px frame is a proxy).
-  - LIVE END-TO-END SEND (D-G): one real pilot send proving the parent comms card
-    lights end-to-end — the belt-and-suspenders the architect already flagged.
+FORK A — CONFIRMED. No-PII voice-signature default; per-send team-scoped deduped
+  contact opt-in. Tier 1. Privacy gate. (Closes F-SIG/SIGDUP/SIGSCOPE.)
+FORK B — B3 FOR PILOT: coach REQUESTS -> admin sends; eventual team-scoped-send
+  NAMED not built; fix the dead-end via the request flow; unify mount; RLS scope.
+  Tier 2.
+FORK C — full forfeit model = PHASE; cheap Tier-1 INTERIM honesty guard (CC-scoped:
+  minimal is_forfeit boolean + recap render branch, no fabricated-win).
+FORK D — CONFIRMED (not a fork): 8 resolvers `?? true` + parity test. Tier 0.
+FORK E — SPLIT: recovery sweep + minimum rollup -> GO-LIVE (G5/G6); cancel-scheduled
+  / bounce_reason / Radar surface / F-RADAR1 -> Tier 3; F-PATTERNA -> Tier 1 (IC-1);
+  SCHED-ANCHOR -> conditional on launch shape; HISTORY-BACKFILL -> Tier 3 ride-along;
+  RETENTION -> post-pilot phase (named direction).
+FORK F — CONFIRMED + EXPANDED to send+legal+see+recover: G1-G9 (B1+B2+DELIV-DOMAIN+
+  REPLYTO + recovery sweep + minimum rollup + the three go-live test gates +
+  SEAM-2 closed). Frank owns account/DNS/address/legal; CC owns code+tests.
 
-9. OUT OF SCOPE / §16.15
+9. REVISED TIERS (recovery sweep is in GO-LIVE only — IC-3/§10-1 proof)
 ------------------------------------------------------------------------------
-OUT: D-4 (pilot cutover), coach_roundup SEND-spec, weekly_digest dual-dispatch
-  unification (PC-7), G-TRANSLATE. A2(#813)+A3(merged) = in-flight compose polish.
-§16.15: (a) audit — 8 agent-passes, full stack. (b) deep-read addendum — v2 + v3 +
-  v4; CC-verified every load-bearing find (F-PILOT send-trace, GHOST live-SQL, F-SIG
-  + CAN-SPAM footer read, failed-dead-end grep). (c) AP/PC cross-ref throughout.
-  (d) per-role §3. (e) out-of-scope here.
+  GO-LIVE TRACK (gates pilot-OFF): G1 B2 address+footer (FIRST) · G2 B1 throttle/
+    queue/re-drain (+ folded batched-unsub-RPC) + Resend tier · G3 domain auth+warmup ·
+    G4 reply-to · G5 recovery sweep (gated on G8) · G6 minimum delivery rollup ·
+    G7 pilot-gate test · G8 idempotency+writeback test · [SCHED-ANCHOR if scheduled-
+    launch]. + the OWED human checks (§11) before any parent-10/10-final claim.
+  TIER 0 (safety, small): GHOST migration (chat-CC MCP, GO-gated, mirror) · FORK D
+    `?? true`+parity · SEND-4 (surface the swallow) · SEND-3 (check dispatch.ok).
+  TIER 1 (parent moat; each PR + regression-guard line): FORK A · F-INBOX-A11Y
+    de-iframe+shadow-DOM · F-RECIPCHIP §13.7 · AI free-form verify-caption · FORK C
+    interim forfeit guard · F-PATTERNA (IC-1) · M-5 summary-lead content-contract.
+  TIER 2 (coach): FORK B.
+  TIER 3 (admin ops): cancel/edit scheduled · bounce_reason detail · Radar surface ·
+    F-RADAR1 · fuller delivery dashboard · HISTORY-BACKFILL ride-along · [SCHED-ANCHOR
+    if not go-live]. (NO recovery sweep here — it's G5.)
+  TIER 4 (cleanups): SEND-2 · PC-1 CHECK · RLS-2 · FROMDOMAIN · UNSUB-GRANULAR wire-
+    or-remove · PUSH-UNSUB · AI P3 hardening · DIGEST-DEDUP · IMPERSONATE-LOOP ·
+    radar Promise.all · F1/F2 · get_digest_recipients secdef review.
+  PHASES: FORK C full forfeit · G-TRANSLATE (tier per M-2) · RETENTION redesign
+    (one-body-per-send) · D-4 cutover (FORK F is its hard prereq).
+  MULTI-TENANT (pre-2nd-org scan): F1/F2/buildOrgContext/FROMDOMAIN/RLS-2/
+    org-from-events[0] before St. Patrick's.
 
-10. WAITING ON WHOM
+10. M-1..M-7 (review §7 — folded in with tiers)
 ------------------------------------------------------------------------------
-  - Frank: this is the final agent-reachable audit — confirm it's complete; hand to
-    architect. Own the FORK F go-live items (Resend account tier, astersports.app
-    DNS auth + warmup, the org mailing address, reply-to). Confirm FORK A pref.
-    Standing: D-D (June 15), D-G live send, smoke A2 (#813). The §8 OWED items need
-    your eye / a device / a test send.
-  - Architect: add recommendations; rule FORKS A/B/C/D/E/F + the Tier sequence.
-  - CC: on rulings, rewrite FINAL with architect additions; build Tier 0 first
-    (GHOST + FORK D + SEND fixes) + the B2 address-render code; each a small smoked
-    PR / MCP apply, reported as TXT.
+  M-1 CAN-SPAM classification one-liner from counsel — Frank; address ships
+      regardless (G1). M-2 translation TIER gated on Spanish-primary fraction —
+      Frank Q (§5). M-3 forfeit interim guard — Tier 1 (FORK C). M-4 no lying
+      toggle — CC-VERIFIED no parent-visible granular toggle, so UNSUB-GRANULAR
+      stays P2 cleanup; rule stands (never ship a toggle that does nothing). M-5
+      10-second-summary content-contract (parent briefings lead with bolded
+      who/what/when — specifiable+testable, distinct from voice taste) — Tier 1.
+      M-6 retention DIRECTION named (one-body-per-send + render-on-read) — the
+      post-pilot phase's destination. M-7 the three go-live TEST dependencies
+      (pilot gate G7, idempotency G8, recovery paths) — in the go-live track, not
+      Tier 4. Blockers-of-the-blockers.
 
+11. QUESTIONS OWED / VERIFICATIONS
+------------------------------------------------------------------------------
+  FROM FRANK (no agent can answer):
+    - CAN-SPAM classification one-liner from counsel (M-1).
+    - Spanish-primary pilot-family fraction (M-2) — decides translation tier.
+    - Does launch use SCHEDULED sends? — decides SCHED-ANCHOR tier + whether the
+      fire-and-forget family all becomes go-live.
+    - FORK A pref confirm (expected yes).
+  FROM CC — DONE this session (verify-before-relying, answers above):
+    - SEAM-1 pilot fail-closed gate: VERIFIED UNTESTED -> go-live gate G7.
+    - SEAM-2 webhook rollup events: VERIFIED COMPLETE (delivered/bounced/complained/
+      failed all mapped) -> closed green G9.
+    - SEAM-3 sent_at 409 idempotency: VERIFIED UNTESTED -> go-live gate G8, blocks G5.
+    - M-4 parent-visible granular toggle: VERIFIED NONE -> UNSUB-GRANULAR stays P2.
+    - FORK C cheapest guard: minimal is_forfeit boolean + render branch (no
+      is_forfeit signal exists today).
+    - GHOST migration: RE-VERIFIED unapplied live -> Tier 0 chat-CC apply GO-gated.
+  OWED (human/browser — endorsed): cross-client email render test; real axe-core +
+    VoiceOver/TalkBack pass (before any parent-10/10-final claim); content/voice
+    taste (Frank); real-device composer+inbox; one live D-G send.
+
+12. BUILD ORDER + WHAT'S NEXT
+------------------------------------------------------------------------------
+  Build the GO-LIVE TRACK + TIER 0 first; B2 address+footer is the FIRST PR
+  (smallest, unblocks the legal gate). Then G8 (idempotency test) BEFORE G5 (sweep).
+  Each a small smoked PR / GO-gated MCP apply, reported back as TXT, with the
+  regression-guard line on Tier-1 PRs.
+  - Architect: §10-item-1 check — recovery sweep moved to go-live (done, §1 G5 +
+    IC-3 + §9; it does NOT appear under Tier 3). Confirm the FINAL absorbed the
+    reframe; rule anything still open.
+  - Frank: the four §11 questions; FORK F go-live ownership (account/DNS/address/
+    legal); standing D-D (June 15) + D-G live send + smoke A2 (#813).
 ==============================================================================
-END — BRIEFINGS_L99_AUDIT_CC v4 (FINAL, 100% agent-reachable)
+END — BRIEFINGS_L99_AUDIT_CC FINAL (post-architect-review)
 ==============================================================================
