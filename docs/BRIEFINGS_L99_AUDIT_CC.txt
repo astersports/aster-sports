@@ -60,8 +60,10 @@ Ordered, smallest-first. CC owns code+tests; Frank owns account/DNS/address/lega
      (CC-VERIFIED untested). PREREQUISITE for G5.
   G9 SEAM-2 — CLOSED GREEN (CC-verified the webhook covers every rollup event); no
      action beyond noting WH-1 stays P3 (only non-rollup events no-op).
-  Conditional: SCHED-ANCHOR joins this track IFF launch uses scheduled sends (Frank
-     Q). If send-now-only at launch -> Tier 3.
+  SCHED-ANCHOR: RESOLVED -> Tier 3. Frank confirmed 2026-06-07 launch is SEND-NOW-
+     ONLY (no scheduled sends), so a stale-scheduled-send can't fire; SCHED-ANCHOR is
+     NOT a go-live blocker. (The whole fire-and-forget family stays redesign-tier;
+     only the recovery sweep + rollup are go-live.)
   Until G1-G8 close, pilot stays ON (no real-family send). These gate GO-LIVE, not
   the redesign tiers (which proceed in parallel).
 
@@ -213,13 +215,14 @@ FORK F — CONFIRMED + EXPANDED to send+legal+see+recover: G1-G9 (B1+B2+DELIV-DO
     interim forfeit guard · F-PATTERNA (IC-1) · M-5 summary-lead content-contract.
   TIER 2 (coach): FORK B.
   TIER 3 (admin ops): cancel/edit scheduled · bounce_reason detail · Radar surface ·
-    F-RADAR1 · fuller delivery dashboard · HISTORY-BACKFILL ride-along · [SCHED-ANCHOR
-    if not go-live]. (NO recovery sweep here — it's G5.)
+    F-RADAR1 · fuller delivery dashboard · HISTORY-BACKFILL ride-along · SCHED-ANCHOR
+    (RESOLVED here — send-now-only launch). (NO recovery sweep here — it's G5.)
   TIER 4 (cleanups): SEND-2 · PC-1 CHECK · RLS-2 · FROMDOMAIN · UNSUB-GRANULAR wire-
     or-remove · PUSH-UNSUB · AI P3 hardening · DIGEST-DEDUP · IMPERSONATE-LOOP ·
     radar Promise.all · F1/F2 · get_digest_recipients secdef review.
-  PHASES: FORK C full forfeit · G-TRANSLATE (tier per M-2) · RETENTION redesign
-    (one-body-per-send) · D-4 cutover (FORK F is its hard prereq).
+  PHASES: FORK C full forfeit · G-TRANSLATE (RESOLVED: later phase — Frank confirmed
+    ~near-zero Spanish-primary at pilot) · RETENTION redesign (one-body-per-send) ·
+    D-4 cutover (FORK F is its hard prereq).
   MULTI-TENANT (pre-2nd-org scan): F1/F2/buildOrgContext/FROMDOMAIN/RLS-2/
     org-from-events[0] before St. Patrick's.
 
@@ -239,12 +242,15 @@ FORK F — CONFIRMED + EXPANDED to send+legal+see+recover: G1-G9 (B1+B2+DELIV-DO
 
 11. QUESTIONS OWED / VERIFICATIONS
 ------------------------------------------------------------------------------
-  FROM FRANK (no agent can answer):
-    - CAN-SPAM classification one-liner from counsel (M-1).
-    - Spanish-primary pilot-family fraction (M-2) — decides translation tier.
-    - Does launch use SCHEDULED sends? — decides SCHED-ANCHOR tier + whether the
-      fire-and-forget family all becomes go-live.
-    - FORK A pref confirm (expected yes).
+  FROM FRANK — three ANSWERED 2026-06-07 (folded in), one still open:
+    - Spanish-primary fraction (M-2): ANSWERED ~near-zero -> G-TRANSLATE stays a
+      named later PHASE (not pulled earlier).
+    - Scheduled sends at launch? ANSWERED send-now-only -> SCHED-ANCHOR = Tier 3
+      (not go-live; §1 resolved).
+    - Build start: ANSWERED start on architect sign-off (B2 first PR), each held
+      for Frank's smoke.
+    - STILL OPEN: CAN-SPAM classification one-liner from counsel (M-1; address ships
+      regardless via G1). FORK A pref confirm (expected yes).
   FROM CC — DONE this session (verify-before-relying, answers above):
     - SEAM-1 pilot fail-closed gate: VERIFIED UNTESTED -> go-live gate G7.
     - SEAM-2 webhook rollup events: VERIFIED COMPLETE (delivered/bounced/complained/
