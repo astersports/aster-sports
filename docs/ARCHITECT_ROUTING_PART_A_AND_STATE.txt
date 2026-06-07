@@ -1,0 +1,143 @@
+==============================================================================
+ARCHITECT ROUTING — Part A pick + cross-section state   architect -> CC
+Date: 2026-06-07 PM. Routes the one decision on the architect's desk (briefings
+Part A screens-redesign) and records the full open-items state so nothing drifts
+across lanes. Pairs with CROSS_SECTION_CLOSE_CC.txt. Self-contained. NOTHING
+APPLIED — this is a routing + gating doc; no code, no migration.
+(Committed to the repo by CC as the durable decision trail — §11.8.4. Verbatim
+relay of the architect's routing doc.)
+==============================================================================
+
+0. HEADLINE
+------------------------------------------------------------------------------
+Part A routing: OPTION A (collapse to one composer), GATED on a per-kind field
+audit + a §16.15 audit running BEFORE any PR-A code. No PR-A until that audit doc
+exists. Kind grouping (Recaps / Schedule / Outreach) ratified for any option.
+Everything else is merged, ratified, or parked. Two things stay explicitly OUT of
+Part A: D-4 (pilot cutover, Frank gate) and DEF-11 (deliverability prereq).
+
+1. PART A — ROUTED: OPTION A, AUDIT-GATED
+------------------------------------------------------------------------------
+DECISION: Option A — retire the 4-step wizard, extend the one-screen composer to
+ALL kinds (fields + AI Draft + inline preview + send), kind-selection becomes a
+lean grouped+usage-ranked entry, send-mode moves to the send action, resume moves
+to Radar.
+
+WHY A, NOT B OR C:
+  - The briefings system's documented disease is dual-everything: dual-dispatch
+    (RESOLVER_REGISTRY + KIND_COMPOSERS), DUAL-COMPOSE drift (preview vs send
+    path), per-kind divergence (PATTERN A / B5-epsilon). Option B explicitly
+    LEAVES TWO COMPOSERS (P1 unsolved — CC's own "half-measure"). Choosing B
+    keeps the exact structural duality the audit spent five waves diagnosing.
+    You don't fix a dual-path system by simplifying one path and keeping both —
+    that's "fix by addition" in a simplification costume.
+  - Option A collapses to ONE model (kills P1–P5). Same move as the programs
+    registry: stop N per-kind paths, have one path the kinds parametrize. CC's
+    "pieces exist, re-host not rebuild" is what makes A's larger blast radius
+    acceptable.
+  - Option C (Radar-first) takes a DEPENDENCY on Radar covering free-form well —
+    a second unverified bet stacked on the first. Don't take a dependency you
+    haven't verified (the players.notes lesson at the IA layer). C may be the
+    eventual destination; it is not the right move now.
+
+THE GATE (non-negotiable, same shape as the programs 10-branch grep):
+  - Per-kind field audit + §16.15 audit run FIRST. No PR-A code until that audit
+    doc exists.
+  - The audit is where "the pieces already exist for ALL kinds" and "re-host not
+    rebuild" get CONFIRMED or BROKEN. CC checked some kinds; the audit checks
+    every kind.
+  - If the audit finds a kind whose fields can't re-host cleanly into the
+    one-screen composer, THAT is the signal that would push toward B as a
+    fallback. Better found in the audit than in PR A.
+  - Ratified for any option: kind grouping = Recaps / Schedule / Outreach.
+
+2. WHAT STAYS OUT OF PART A (name them so they don't get conflated)
+------------------------------------------------------------------------------
+Part A is the compose UX. It is NOT go-live readiness. Keep separate:
+  - D-4 — pilot REDIRECT->FILTER cutover. Frank's strategic gate, uncrossed.
+    Live state reinforces "do not drop is_pilot_family": column intact, now TRUE
+    on 1 guardian (was ~0), actively used. NOT routed, correctly held.
+  - DEF-11 — deliverability: the 3-email/hour free-SMTP cap is a HARD prereq
+    before ANY real-family send. Track + resolve before go-live.
+  - coach_roundup SEND path — underspecified; part of the post-Phase-3 remainder.
+  Honest briefings status line stays: "compose UX redesigned (A), verified and
+  held, with D-4 uncrossed and DEF-11 unresolved before families go live." Part A
+  shipping is NOT briefings-done.
+
+3. HOME — CLOSEABLE, ONE DATED ITEM LEFT
+------------------------------------------------------------------------------
+  - BUG-H1 / H2 / H3 fixed + merged (#804). H1 labeled KPI scope (did NOT
+    re-scope Out) — un-blocks the prematurely-"closed" D3. H2 coach -> '—' +
+    invariant test. H3 own loading gate. Confirmed correct as routed.
+  - D-A / D-C / D-E ratified. D-B / D-F pilot-fine, revisit post-pilot (do NOT
+    spec the full alert-card merge now).
+  - D-G GREEN-ON-READ, NOT fully closed: real per-guardian send stamps
+    guardian_id (parent card lights); synthetic pilot path is guardian_id=null
+    BY DESIGN (admin smoke, correctly does not light a card). HOLD full-close
+    pending ONE real live send proving it end-to-end — this is the parent comms
+    card, the 10/10 surface; worth the one send.
+  - D-D off-season copy — THE ONE REMAINING HOME ITEM. A look, not code. Frank
+    confirms copy against the live preview. HARD DATE ~June 15 (pilot off-season
+    actually arrives). This is the only home item with a real deadline; do not
+    let it slip to "someday."
+  => Home closes when D-D copy is confirmed (and D-G's one live send is the
+     belt-and-suspenders proof).
+
+4. PROGRAMS — CLOSED (with a note worth keeping)
+------------------------------------------------------------------------------
+  - Closed clean, architect-signed (10 branches absorbed, competitive stayed
+    team-level, parity test enforces both).
+  - #803 fixed a latent P1 (deleteProgram RESTRICT) found in the cross-section
+    deep-dive AFTER close — count-and-block pre-check, exactly as routed (not
+    catch-and-translate). LESSON: "closed" and "no latent issue will ever surface
+    here" are different claims. Finding one post-close = fix it (#803 did), not
+    defend the close. Correct handling.
+
+5. CARRIED STANDING QUEUE (a section close does NOT clear these — ledger §4.S.2)
+------------------------------------------------------------------------------
+  - game_recap (item 13) — RESOLVED. 19 rows, bounded, one-per-anchor, not
+    climbing. Was pre-purge bloat, not write-amplification. Closed.
+  - Briefings Phase 3 — RESOLVED as a question (shipped engine lane; D-4 held;
+    tests benign). The SYSTEM remains safely-held, not done (see §2).
+  - D-G one live send — pending (§3).
+  - D-D off-season copy — pending, dated June 15 (§3).
+  - Rebrand operator items (task #55 NOT truly closed): Supabase display-name
+    rename (UI-only), Drive Aster brand-asset upload (needs source files),
+    SKYFIRE folder lock (accept doctrine, don't chase). Task #55 should not read
+    "closed" while these are open.
+  - E3 / E6 cosmetic deferrals (programs); E4 ticketed deferred-with-reason
+    (travels with the §4.S teams redesign).
+
+6. NEXT REDESIGNS — PARKED, SCOPED FORKS-FIRST (do NOT start)
+------------------------------------------------------------------------------
+TEAMS (§4.S) — when scoping opens, frame forks-first like programs:
+  - AGE_GROUPS hardcoded (teamFormConstants.js:5) — the NEXT float-free-enum.
+    Make it a declarative, parity-tested, likely org-scoped catalog mirroring
+    team_types. Same B5-epsilon close as the program registry. GENDERS + CIRCUITS
+    hardcoded same file — same treatment.
+  - `division` queried by useTeams/useOrgTeams/useProgramTeams/rollover but never
+    read/written by TeamFormSheet — dangling column, decide its fate (FORK).
+  - team_type_id->team_types.slug (competitive axis) vs `circuit` (aau|league_play,
+    surfaced "Competition type") — three names for an entangled concept;
+    disentangle in scoping (FORK).
+  - /admin/teams demoted under Programs; TeamRow is a *Row (AP#46 row-rhythm).
+SCHEDULE — when scoping opens:
+  - EventCard (list) + MatchupCard (games) render the SAME events rows — a
+    consolidation candidate (MatchupCard already row-rhythm-tested #359).
+  - Spine = useActivities (events + teams!inner + locations, org+season scoped,
+    module-cached). Per-role is data-scoping, not separate pages.
+  - Imperative day-jump (SchedulePage.jsx:51-54 querySelector/scrollTo) brushes
+    AP#5 (DOM in React) — fold into the redesign.
+
+7. WHAT'S WAITING ON WHOM
+------------------------------------------------------------------------------
+  - CC: run the Part A per-kind field audit + §16.15 audit (§1). Produce the
+    audit doc. NO PR-A code until it exists. Report findings to architect lane as
+    a TXT doc.
+  - Frank: D-D off-season copy confirm vs live preview (~June 15, hard date);
+    one real pilot live send to close D-G; relay this doc to CC.
+  - Architect: review the Part A audit when it lands; confirm "re-host not
+    rebuild" held for every kind, or route to B-fallback for any kind that can't.
+==============================================================================
+END — ARCHITECT_ROUTING_PART_A_AND_STATE
+==============================================================================

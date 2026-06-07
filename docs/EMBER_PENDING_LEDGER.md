@@ -1609,6 +1609,15 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
 - **Briefings framing (locked):** "verified and safely held" — DEF-11 deliverability
   (3/hr SMTP cap) + underspecified coach_roundup SEND path before families go live.
   NOT "resolved." Part A screens-redesign routing (A/B/C) still awaits the architect.
+- **Part A ROUTED 2026-06-07 PM → OPTION A, AUDIT-GATED** (architect, doc
+  `docs/ARCHITECT_ROUTING_PART_A_AND_STATE.txt`). Collapse to one composer; retire
+  the 4-step wizard; extend the one-screen composer to ALL kinds. **GATE: a
+  per-kind field audit + §16.15 audit run FIRST — NO PR-A code until that audit
+  doc exists** (same shape as the programs 10-branch grep). The audit confirms or
+  breaks "re-host not rebuild" per kind; a kind that can't re-host cleanly is the
+  B-fallback signal. Grouping Recaps/Schedule/Outreach ratified. OUT of Part A
+  (do not conflate): D-4 (Frank gate) + DEF-11 (deliverability prereq) — Part A
+  is compose UX, not go-live readiness. CC's next action: produce the audit doc.
 
 ---
 
