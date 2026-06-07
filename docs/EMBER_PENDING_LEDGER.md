@@ -1476,6 +1476,25 @@ worth pre-flighting on similar reports.
 
 ---
 
+### §4.S — Teams section redesign (deferred; Frank-flagged 2026-06-07)
+
+Surfaced during the multi-program F14 smoke (PR #788). Holding item for a
+later, holistic teams-section redesign — do NOT patch piecemeal:
+
+- **Age-group options are hardcoded to `8U/9U/10U/11U/12U/Mixed`** in
+  `src/components/admin/team-form/teamFormConstants.js` (AGE_GROUPS). No
+  13U/14U/HS or other groups — teams are effectively capped at 12U. Frank:
+  "the teams are restricted to only 12u … we will redesign the teams sections
+  later." The age set should become org-configurable / broader in that redesign
+  rather than a hardcoded chip list.
+- Likely travels with: team_type vs circuit axis clarity, division linkage,
+  and the broader Teams surface. Scope the age-group source as part of it.
+
+Everything else in the program create/team-create/F14 arc (PRs #782–784, #788)
+shipped and smoked clean; this is the one explicit deferral.
+
+---
+
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 
 The drift classes from CC's L99 analysis. Each is a pattern that
