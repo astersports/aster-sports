@@ -1078,6 +1078,41 @@ Shared fixtures for E2E live in `e2e/_fixtures/` or `e2e/_helpers/` (underscore 
 
 ---
 
+## 11.8. ARCHITECT COLLABORATION RULES (PERMANENT — operator-directed 2026-06-07)
+
+The platform is built across three lanes: **CC** (Claude Code — implementation +
+live verification), the **architect** (design lane — design, decisions, fork
+ratification), and **Frank** (operator — ratifies + relays between lanes). Rules
+for that collaboration:
+
+1. **Every architect-review artifact is a committed plain-text `.txt` in `docs/`
+   PLUS a full chat paste — always, no exceptions.** Applies to: gap findings,
+   build specs, verification findings, close-out reviews, design-question docs,
+   and any handoff intended for the architect's review. Plain text; no
+   triple-backtick wrap around the whole doc; never a summary-instead-of-paste;
+   never deferred ("I'll write it next"). The doc IS the deliverable; the chat
+   paste IS how the architect receives it. This is the explicit architect-scoped
+   restatement of §49's full-paste discipline — when in doubt, produce the doc.
+
+2. **Division of labor.** CC verifies against the closest ground truth available
+   (file:line, query results, deployed state — the §11.7 / AP#60 source
+   hierarchy) and produces the artifact with evidence. The architect frames the
+   decisions/forks and reviews. Frank ratifies and relays. CC does NOT settle an
+   architectural fork unilaterally — it surfaces evidence + a labeled lean
+   (AP#39: commit to the lean), and the architect/Frank decide.
+
+3. **Round-trip is doc-to-doc.** Architect questions arrive as a doc; CC answers
+   with an evidence-grounded doc, not inline prose, so the decision record stays
+   durable across sessions. Frank's questions for the architect are carried
+   verbatim inside CC's doc.
+
+4. **Forks ratified before a phase closes.** A build phase (e.g. "programs") is
+   not "closed" until its open architectural forks are ratified via a close-out
+   review doc. CC writes the close-out review (audit result + open forks +
+   triage); the architect's ratification is the close.
+
+---
+
 ## 12. DEVELOPMENT WORKFLOW
 
 ```bash
