@@ -24,11 +24,13 @@ export function divisionsApplyTo(type) {
 // constraint (F3), so two programs could otherwise resolve the same /r/<slug>.
 // Case-INSENSITIVE (.ilike): slugs are normalized to lowercase on write, but an
 // older mixed-case row must still collide. (slugified slugs are [a-z0-9-] only,
-// so .ilike carries no wildcard chars.) Returns null when free, message if taken.
-export async function checkSlugAvailable(client, orgId, slug) {
+// so .ilike carries no wildcard chars.) Pass excludeId on EDIT so a program
+// doesn't collide with itself. Returns null when free, message if taken.
+export async function checkSlugAvailable(client, orgId, slug, excludeId = null) {
   if (!slug) return null;
-  const { data, error } = await client
-    .from('programs').select('id').eq('org_id', orgId).ilike('public_slug', slug).limit(1);
+  let q = client.from('programs').select('id').eq('org_id', orgId).ilike('public_slug', slug);
+  if (excludeId) q = q.neq('id', excludeId);
+  const { data, error } = await q.limit(1);
   if (error) return error.message;
   return data && data.length ? 'That public link is already taken. Pick another.' : null;
 }

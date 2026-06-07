@@ -11,7 +11,7 @@ import { dependencySummary } from '../../../lib/programDelete';
 // programs index. Archive/Activate is deferred to the draft-status build.
 export default function ProgramManageZone({ program, onUpdated }) {
   const navigate = useNavigate();
-  const { counts, updateProgram, deleteProgram } = useProgramAdmin(program.id);
+  const { counts, refetchCounts, updateProgram, deleteProgram } = useProgramAdmin(program.id);
   const [editOpen, setEditOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [toast, setToast] = useState(null);
@@ -35,7 +35,7 @@ export default function ProgramManageZone({ program, onUpdated }) {
     <div style={zone}>
       <div style={{ display: 'flex', gap: 8 }}>
         <button type="button" onClick={() => setEditOpen(true)} className="as-press" style={editBtn}>Edit program</button>
-        <button type="button" onClick={() => setConfirmDel(true)} className="as-press" style={delBtn}>Delete</button>
+        <button type="button" onClick={() => { refetchCounts(); setConfirmDel(true); }} className="as-press" style={delBtn}>Delete</button>
       </div>
 
       <ProgramEditSheet open={editOpen} program={program} onClose={() => setEditOpen(false)} onSave={save} />

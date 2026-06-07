@@ -56,12 +56,12 @@ describe('dayBoundaryTs (registration day-boundary times)', () => {
 });
 
 describe('checkSlugAvailable (F3 — app-level uniqueness)', () => {
-  // Minimal fake matching .from().select().eq().eq().limit() -> { data, error }.
-  const fake = (rows, error = null) => ({
-    from: () => ({
-      select: () => ({ eq: () => ({ ilike: () => ({ limit: () => Promise.resolve({ data: rows, error }) }) }) }),
-    }),
-  });
+  // Fake matching .from().select().eq().ilike()[.neq()].limit() -> { data, error }.
+  const fake = (rows, error = null) => {
+    const tail = { limit: () => Promise.resolve({ data: rows, error }) };
+    const afterIlike = { ...tail, neq: () => tail };
+    return { from: () => ({ select: () => ({ eq: () => ({ ilike: () => afterIlike }) }) }) };
+  };
   it('returns null when slug is empty (nothing to check)', async () => {
     expect(await checkSlugAvailable(fake([]), 'org-1', '')).toBeNull();
   });
@@ -74,5 +74,9 @@ describe('checkSlugAvailable (F3 — app-level uniqueness)', () => {
   });
   it('surfaces the query error message', async () => {
     expect(await checkSlugAvailable(fake(null, { message: 'boom' }), 'org-1', 'x')).toBe('boom');
+  });
+  it('on edit, excludes the program itself (no false collision with its own slug)', async () => {
+    // The query filters out excludeId, so the fake returns no rows → available.
+    expect(await checkSlugAvailable(fake([]), 'org-1', 'spring-2026', 'p-1')).toBeNull();
   });
 });

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { checkSlugAvailable } from '../lib/programSetup';
 
 // Dependency counts + update/delete for a single program (PR-3 F14). Counts feed
 // the delete-confirm; the FK chain cascades teams → {team_players,
@@ -21,20 +22,28 @@ export function useProgramAdmin(programId) {
       supabase.from('team_players').select('id', { count: 'exact', head: true }).in('team_id', teamIds),
       supabase.from('events').select('id', { count: 'exact', head: true }).in('team_id', teamIds),
     ]);
+    if (pRes.error) console.error('useProgramAdmin players:', pRes.error.message);
+    if (eRes.error) console.error('useProgramAdmin events:', eRes.error.message);
     setCounts({ teams: teamIds.length, players: pRes.count || 0, events: eRes.count || 0 });
   }, [orgId, programId]);
 
   useEffect(() => { Promise.resolve().then(refetchCounts); }, [refetchCounts]);
 
   const updateProgram = useCallback(async (fields) => {
+    // Edit must not let a renamed public link collide with another program (F3);
+    // exclude self so a program never collides with its own slug.
+    if (fields.public_slug) {
+      const slugErr = await checkSlugAvailable(supabase, orgId, fields.public_slug, programId);
+      if (slugErr) return { error: slugErr };
+    }
     const { error } = await supabase.from('programs').update(fields).eq('id', programId);
     return { error: error?.message };
-  }, [programId]);
+  }, [orgId, programId]);
 
   const deleteProgram = useCallback(async () => {
     const { error } = await supabase.from('programs').delete().eq('id', programId);
     return { error: error?.message };
   }, [programId]);
 
-  return { counts, updateProgram, deleteProgram };
+  return { counts, refetchCounts, updateProgram, deleteProgram };
 }
