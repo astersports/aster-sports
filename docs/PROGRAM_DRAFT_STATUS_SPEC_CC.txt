@@ -1,0 +1,100 @@
+==============================================================================
+PROGRAM DRAFT STATUS — SPEC  (Claude Code -> architect lane)
+Date: 2026-06-07. Smoke-driven. Frank ratified "add a true draft status"
+during PR-3 smoke (the multi-program spine). This specs it for GO. All
+current-state claims verified against live src + production schema (AP#60).
+NOTHING APPLIED. Does NOT block the PR-1/2/3 stack (#782/#783/#784), which
+ships with D1-as-ratified ('archived' for pre-launch) until this lands.
+==============================================================================
+
+0. PROBLEM (what smoke surfaced)
+------------------------------------------------------------------------------
+`programs.status` is overloaded. Per the ratified GO D1, tryout / evaluation /
+interest_list programs are created with status='archived' (a "pre-launch"
+intent). But 'archived' ALSO means "retired/ended" (Fall 2025). Result on the
+new /admin/programs index: a brand-new Tryout shows the "Archived" badge and
+sorts into the Archived group, right next to genuinely-retired seasons. Frank's
+smoke reaction: a just-created program reading "Archived" is confusing. The fix
+is a distinct third status — draft — so pre-launch ≠ retired.
+
+1. VERIFIED SCHEMA FACT (changes the migration story)
+------------------------------------------------------------------------------
+programs.status is TEXT, default 'active', and has **NO CHECK constraint**
+(verified via pg_constraint). Live values in use: 'active', 'archived'. So:
+  - Introducing 'draft' needs NO column migration to ALLOW the value.
+  - This is primarily an APPLICATION-LAYER change.
+  - OPTIONAL hardening: a migration adding CHECK (status IN
+    ('active','draft','archived')) to formalize the set — design-lane,
+    GO-gated, deferrable. Not required to ship the feature.
+
+2. PROPOSED LIFECYCLE
+------------------------------------------------------------------------------
+  draft  → not launched yet (created, editable, invisible to coaches/parents)
+  active → running / published (shows on homes via useActivePrograms)
+  archived → retired / ended (historical)
+
+Transitions: draft → active (Activate), active → archived (Archive). Seasons
+keep the single-active invariant (only one active season; activating one
+archives the prior).
+
+3. D1 REVISION (status default per program_type on create)
+------------------------------------------------------------------------------
+  camp, clinic                       → 'active'   (unchanged — go live now)
+  tryout, evaluation, interest_list  → 'draft'    (WAS 'archived' — the fix)
+  season                             → 'draft'    (WAS 'archived' — cleaner:
+        a new season is a draft, not "archived"; promoted to active via the
+        existing Seasons "Set active" flow, which already enforces single-active)
+
+This supersedes the GO D1 'archived'-for-pre-launch decision. The single-active-
+season guard (F4) is PRESERVED — it just keys off "create as draft, promote to
+active" instead of "create as archived, promote to active."
+
+4. SURFACE AREA (files to touch)
+------------------------------------------------------------------------------
+  - src/lib/programSetup.js `statusForProgramType` — return 'draft' for season/
+    tryout/evaluation/interest_list; 'active' for camp/clinic. (Currently
+    returns 'archived' for the non-camp/clinic set.)
+  - src/lib/programGrouping.js — add a DRAFT group (and badge): Active (running)
+    / Upcoming (active, future start) / **Draft (not launched)** / Archived.
+    programBadge gains a 'draft' → { label: 'Draft', variant: 'subtle' } (locked
+    token; subtle = bg-tertiary/text-tertiary).
+  - src/pages/admin/ProgramDetailPage.jsx — an **Activate** action for draft
+    non-season programs (draft → active). Seasons route through the existing
+    Set-active flow.
+  - src/pages/AdminSeasonsPage.jsx / src/hooks/useSeasons.js — createSeason
+    currently sets status 'active' (first) or 'archived' (subsequent); change
+    the subsequent default to 'draft'; render a Draft badge; the Set-active flow
+    already promotes.
+  - src/lib/__tests__/programGrouping.test.js + programSetup.test.js — extend
+    for the draft group + the revised statusForProgramType.
+  - Verify NO regression in status='active' consumers (useActivePrograms, home
+    cards, financials) — draft is naturally excluded (they filter active), which
+    is the desired behavior (drafts invisible to coaches/parents).
+
+5. OPEN QUESTIONS (ratify before build)
+------------------------------------------------------------------------------
+  Q1. Season-on-create: 'draft' (recommended — uniform pre-launch) or keep the
+      current 'archived' guard? Recommend 'draft'; the single-active invariant
+      is preserved either way.
+  Q2. Draft grouping: its own "Draft" group on the index (recommended) or fold
+      into "Upcoming"? Recommend its own group — drafts are a distinct workflow
+      state (needs an Activate action), not merely future-dated.
+  Q3. Activate UX for non-season programs: a button on ProgramDetailPage
+      (recommended) vs an inline toggle on the index. Recommend the detail-page
+      button (matches the hero/section pattern §16.14).
+  Q4. CHECK-constraint hardening migration (status IN active|draft|archived):
+      ship with the build, or defer? Recommend defer (app-layer is sufficient;
+      the CHECK is belt-and-suspenders, design-lane GO-gated like M-1).
+  Q5. Backfill: the two existing 'archived' test programs created under the old
+      D1 (the Fall 2026 tryout) — leave as test junk (slated for cleanup) or
+      backfill to 'draft'? Recommend leave (test data; cleanup separately).
+
+6. SEQUENCING
+------------------------------------------------------------------------------
+Independent of and AFTER the PR-1/2/3 spine stack merges. Single PR once Q1-Q5
+are ratified: statusForProgramType + programGrouping + Activate action + Seasons
+create default + tests. ~1 PR, app-layer, no required migration.
+
+==============================================================================
+END — PROGRAM_DRAFT_STATUS_SPEC_CC
+==============================================================================
