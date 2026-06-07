@@ -1,0 +1,135 @@
+==============================================================================
+PROGRAMS REGISTRY — IMPLEMENTATION-PREP FINDINGS  (CC -> architect lane)
+Date: 2026-06-07. Re: PROGRAMS_L99_ARCHITECTURE_RECOMMENDATION (architect).
+The "confirm-before-build" verification that recommendation asks for. Every
+claim is a grep/query result or file:line (AP#60). NOTHING APPLIED.
+Recommendation accepted as the design; this grounds it before the build.
+==============================================================================
+
+A. PER-TYPE BRANCH INVENTORY (§2 — what PROGRAM_TYPE_REGISTRY must absorb)
+------------------------------------------------------------------------------
+Grep for program_type/programType branching across src/. The registry must
+absorb ALL of these (not just statusForProgramType). Each row = a current
+scattered per-type rule + the registry field that replaces it:
+
+  1. statusForProgramType(type)            src/lib/programSetup.js:9-14
+     camp/clinic -> 'active', else 'archived'.   -> registry.defaultStatus
+  2. divisionsApplyTo(type)                src/lib/programSetup.js:16-18
+     type === 'season'.                          -> registry.hasDivisions
+  3. divisions UI gate (DUPLICATE of #2)   src/pages/admin/ProgramSetupPage.jsx:54
+     inline `form.program_type === 'season'` — a SECOND copy of the divisions
+     rule in the component. Registry collapses #2 and #3 into one read.
+  4. defaultTeamTypeSlugForProgram(type)   src/lib/teamTypes.js:44-49
+     season/tryout->game_team, camp/clinic->clinic_camp, else game_team.
+                                                 -> registry.defaultTeamType
+  5. PROGRAM_NOUN[type]                     src/lib/home/coachHomeData.js:43-50
+     per-type display noun.                      -> registry.noun
+  6. programBadge(type) — label            src/lib/programGrouping.js:14-21
+     TYPE_LABEL map.                             -> registry.label
+  7. programBadge(type) — variant          src/lib/programGrouping.js:20
+     season->'info', else 'academy'.             -> registry.badgeVariant
+  8. ProgramTypeChooser TYPES + HELPER      src/components/admin/program-setup/ProgramTypeChooser.jsx
+     the chooser's per-type label + setup helper copy (also narrates the
+     status default).                            -> registry.chooserLabel + registry.helper
+  9. TeamFormSheet override warning         src/components/admin/TeamFormSheet.jsx:67
+     `competitive && programType !== 'season'`.  -> see the competitive nuance below
+ 10. AdminProgramsPage FILTERS list         src/pages/admin/AdminProgramsPage.jsx (FILTERS)
+     all/season/camp/clinic/tryout chips (omits eval/interest_list — E3).
+     UI list; registry-derivable so it can't drift -> parity-guarded.
+
+NON-branches (reads/passes only — NOT registry, listed so they're not mistaken
+for rules): useActivePrograms/useAllPrograms/useProgramRegistrations select+map
+program_type; ProgramDetailPage/ProgramTeamsSection/TeamFormSheet pass
+programType as a prop; groupPrograms groups by STATUS+DATE (universal, not type).
+
+CORRECTION — "records exclusion" is NOT a program_type branch (don't infer from
+the name): standings/records/bracket exclusion keys on team_types.slug via
+isCompetitiveTeam(team) at the TEAM level (src/lib/teamTypes.js COMPETITIVE_
+TEAM_SLUGS), NOT on program_type. So the registry's `competitive` field is best
+defined as "does this program type DEFAULT to a competitive team type" (drives
+the #9 warning + the team-type default), and team-level records exclusion STAYS
+on isCompetitiveTeam(team). If the registry instead tried to own records
+exclusion at the program level it would duplicate a team-level truth — keep them
+separate. Recommend registry.competitive be derived-from / consistent-with
+registry.defaultTeamType rather than a free-standing flag.
+
+NET registry field set (from the grep): defaultStatus, hasDivisions,
+defaultTeamType, noun, label, badgeVariant, chooserLabel, helper, singleActive
+(new, §B), and competitive (derived from defaultTeamType, drives the #9 warning).
+
+B. SEASON ACTIVATION SHAPE (§3 — for the unified activate())
+------------------------------------------------------------------------------
+src/hooks/useSeasons.js:59-69, setActive(id):
+  step 1: supabase.from('seasons').update({status:'archived'}).eq('org_id',orgId).neq('id',id)
+  step 2: supabase.from('seasons').update({status:'active'}).eq('id', id)
+  then refetch.
+Confirmed facts the unified activate() must honor:
+  - TWO separate awaits, NOT a transaction. If step 2 fails after step 1, the
+    org is left with ZERO active seasons. (The unified version should wrap both
+    in a single transaction/RPC — strict improvement.)
+  - It operates on the `seasons` VIEW (= programs WHERE program_type='season'),
+    so "archive all others" is implicitly scoped to seasons.
+  - SCOPING NUANCE: a generalized activate() over `programs` (all types) MUST add
+    `.eq('program_type', target.type)` to the archive-others step, or activating
+    a season would archive nothing / activating any type could over-reach. The
+    current code gets type-scoping "for free" from the view; the generalized one
+    must scope explicitly by type (+ org). This is the load-bearing detail.
+  - single-active is APP-ONLY (no DB trigger/constraint/unique index — re-
+    confirmed). The §3 optional partial-unique index would need to be partial on
+    (org_id, program_type) WHERE status='active' AND program_type IN
+    (the singleActive types), since only some types are single-active.
+
+C. STATUS READER FILTER-SHAPE (§6 — draft-leak check) — CLEAN
+------------------------------------------------------------------------------
+Grepped every neq('status',...) / != 'archived' / status-comparison across src/.
+Result: NO exclude-archived reader exists on programs OR seasons.
+  - All programs/seasons status readers are INCLUDE-ACTIVE (== 'active' /
+    .eq('status','active')): useActivePrograms:26, SeasonContext:53,
+    useActiveSeasonEnd:11, useProgramHealthMetrics:74, SeasonRolloverPage:25,
+    FinancialImportPage:33, FinancialDashboardPage:44. Admin-unfiltered (show
+    all by design): useSeasons (select *), useAllPrograms (index).
+  - The only `.neq('status','archived')` in the repo is usePublicTournaments:44
+    — that's the TOURNAMENTS table, a different concern, not programs.
+  - The only `.neq('status','cancelled')` hits are all on EVENTS.
+CONCLUSION: introducing `draft` will NOT leak a draft program to any parent/
+coach surface. No reader conversions required. (Only the 2 admin DISPLAY
+binaries need draft-awareness — programGrouping:28 + ProgramDetailPage:43 — both
+admin-only; part of the build.)
+
+D. ARCHIVED-PROGRAMS CHECK (§6) — no real program stranded, BUT new test junk
+------------------------------------------------------------------------------
+SELECT of all 8 programs (org LH):
+  ACTIVE:   Spring 2026 (season), Active Roster Lab (camp), Summer Day Camp (camp)
+  ARCHIVED: Fall 2025 (season) + Winter 2025-26 (season) — genuinely RETIRED,
+            correctly archived, NOT stranded.
+            Fall 2026 AAU (season), Fall 2026 Tryouts (tryout), Fall 2026 (season)
+            — NEW smoke-test programs created during #788 smoke (after the first
+            cleanup). Test junk, archived. Recommend deletion (Frank go) before
+            close — same cleanup as the prior batch; none carry financial/roster
+            data (verify on delete). This is data hygiene, independent of the
+            architecture.
+
+E. RECONFIRMED + READINESS
+------------------------------------------------------------------------------
+  - Fork 1 (windows hold per-type timing): reg_opens_at / reg_closes_at exist on
+    programs; no phase/workflow column. Re-confirmed. Status stays universal.
+  - Parity-test triple (the B5-ε guard) is buildable now: DB enum =
+    {season,tryout,camp,clinic,interest_list,evaluation}; ProgramTypeChooser
+    TYPES currently lists those 6 (program-setup/ProgramTypeChooser.jsx);
+    registry keys (to build) must equal both. Adding `other` (§taxonomy) = enum
+    value + chooser entry + registry row, parity asserts all three.
+  - The build in §5 of the recommendation is implementable as specified once
+    ratified; no blockers surfaced.
+
+F. OPEN (architect / Frank — not CC code)
+------------------------------------------------------------------------------
+  - §4 archetype mapping pass (~1hr): is clinic == LeagueApps "Class"? do
+    Event/Tournament stay their own surfaces (Tournament IS its own surface
+    today — confirmed it's not a program archetype)? Map the 6 + `other`.
+  - The 3 new test programs (D) — Frank's go to delete (CC runs it, confirms
+    each, like last time).
+  - Ratification checklist §8 — Frank/architect.
+
+==============================================================================
+END — PROGRAMS_REGISTRY_IMPL_PREP_CC
+==============================================================================
