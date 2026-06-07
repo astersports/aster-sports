@@ -1,0 +1,148 @@
+==============================================================================
+CC VERIFICATION ANSWERS -> architect   (re: 8-agent audit review ruling)
+Date: 2026-06-07 PM. Answers the architect's "verify-before-relying" gate +
+the two confirm-items, all CC-lane (file:line / [LIVE] / web). Pairs with
+docs/BRIEFINGS_8AGENT_AUDIT_2026-06-07.txt. NOTHING APPLIED.
+==============================================================================
+
+V1. RESEND v4 PARTIAL-BATCH POSITIONAL ALIGNMENT  (architect's promoted OWED — GATE)
+------------------------------------------------------------------------------
+Code under question: send-tournament-message/index.ts:225-235.
+  const updates = (batchData?.data ?? []).map((res, i) => {
+    const recipientId = group[i].id;        // <-- positional assumption
+    if (res?.id) { ...mark group[i] sent... } else { ...mark group[i] failed... }
+  });
+So the per-recipient delivery_status write assumes batchData.data[i] aligns
+index-by-index to the i-th email submitted (group[i] -> buildEmailRow at :208).
+
+Verification result: PARTIAL — NO hard guarantee documented.
+  - Resend does NOT explicitly document that batch.send returns data in input
+    order. [web: resend.com/docs/dashboard/emails/batch-sending;
+    resend.com/changelog/batch-validation-modes]
+  - Indirect positive signal: Resend's permissive validation mode reports errors
+    by "the email index in the payload of the request" — i.e. Resend DOES track
+    input position for error reporting, consistent with (but not a promise of)
+    positional data alignment.
+RULING IMPACT (this sits under THREE fixes, per the architect):
+  - It is load-bearing for: (a) the current per-row writeback (index.ts:225),
+    (b) Option A per-recipient idempotency_key keyed on r.id, (c) F-DUAL-FINALIZE's
+    per-row logic.
+  - CC recommendation: do NOT commit Option A on positional alignment alone.
+    Safer keying for Option A = an idempotency key derived from a value that does
+    NOT depend on response ordering (e.g. `${message.id}:${r.id}` set INTO each
+    buildEmailRow at SEND time, so Resend dedupes by the key we minted, independent
+    of how data[] comes back). That removes the dependency entirely. Verify the
+    Resend idempotency-key field name/semantics for batch.send before building.
+  - STILL OWED (cannot close from repo+public docs): a definitive Resend ordering
+    statement — needs a Resend support confirm OR a controlled batch test. Until
+    then, treat index.ts:225 positional writeback as "works in practice, unproven
+    contract."
+
+V2. DOES THE DIGEST SEND PATH ALWAYS SET pilot_only=true?  (architect's OWED)
+------------------------------------------------------------------------------
+Answer: the question's premise doesn't match the code — and the real answer
+reframes F-WEEKLY-DIGEST-FAIL-OPEN's live severity DOWN (defense-in-depth gap,
+not a live "blast 175" path).
+  - digestSend.sendWeeklyDigest (src/lib/digestSend.js:25-128) takes a pre-fetched
+    `recipients` array and has NO pilot_only param and NO get_digest_recipients
+    call. It builds slices straight from the passed recipients
+    (buildSlicesFromRecipients, :45). So the resolver default Agent 1 flagged
+    (resolveWeeklyDigest pilotOnly=false, weeklyDigest.js:60) governs the PREVIEW
+    path (useResolverPreview), NOT the production send recipient set.
+  - Production digest pilot scoping happens UPSTREAM: sendWeeklyDigestFromWizard ->
+    mapWizardStateToDigestArgs -> filterSendable over `recipients`, and the
+    recipients themselves come from useDigestRecipients(pilotOnly=pilotModeEnabled)
+    [Agent 7]. So the wizard's recipient set IS pilot-filtered before digestSend
+    sees it.
+  - THE REAL BACKSTOP (verified [file:line]): even if digestSend were ever handed
+    unfiltered recipients, the edge fn re-checks at send time —
+    send-tournament-message/index.ts:163 `pilotMode = ...pilot_mode_enabled ?? true`
+    (fail-closed), and :180-186 if pilotMode AND any guardian_id-bearing row is a
+    non-pilot guardian, it 403s and ABORTS THE WHOLE SEND (message-level, not a
+    silent drop). [LIVE pilot_mode_enabled=true] So a weekly_digest with a real
+    non-pilot family in the queue is blocked at the gateway today.
+  - NET RECONCILE: F-WEEKLY-DIGEST-FAIL-OPEN's "broadcast to all 175" requires
+    pilot_mode_enabled to read false/null AT THE EDGE FN — which is not the case
+    live. The resolver fail-open default is a PREVIEW + defense-in-depth concern,
+    still worth fixing (FORK D fail-closed), but it is NOT a live mass-send path.
+    THE INTERLOCK: this backstop IS the edge-fn gate that F-FAILCLOSED-UNTESTED
+    (G7) says is untested. So weekly_digest's safety leans on an unproven gate —
+    which is exactly why G7 (test the gate) and FORK D (fail-close the resolvers)
+    should ship together. "Is the property enough" -> the property is the edge gate,
+    and it's untested.
+  - Caveat retained (Agent 7 sub-hole, confirmed at :167): the gate runs the
+    guardian check ONLY when guardianIds.length>0; an all-NULL-guardian_id queue
+    (synthetic REDIRECT rows) skips it by design. Fine for REDIRECT test sends;
+    means the gate protects guardian_id-bearing (real-family) rows only.
+
+V3. G8 / PR #821 MERGE STATUS + NARROWED-CLAIM CHECK  (architect's OWED)
+------------------------------------------------------------------------------
+[LIVE GitHub] PR #821 "test(briefings): G8 — finalized + clean-queued idempotency
+proven (claim narrowed per review)": state=open, draft=false, merged=false,
+labels=[do-not-auto-merge], head=fix/briefings-g8-send-idempotency-test
+@0ea60ea, base=main@c69bb49. 243+/22-, 6 files, full suite green (1472 tests).
+  - NOT on main (confirms Agent 3's OWED: the sendDispatch.js <-> _dispatch.ts
+    AP#30 mirror pair + tests live only on the PR branch; main's
+    send-tournament-message still has no idempotency key / no sending-state /
+    dispatch->classify->writeback as the audit's F-IDEMPOTENCY describes).
+  - The claim is ALREADY NARROWED in the PR body, matching the architect's required
+    framing verbatim in substance: "finalized + clean-queued idempotency proven;
+    the crash window is NOT covered (tracked for G5)." It explicitly states
+    buildEmailRow sets no idempotency key (_lib.ts L80-81), no mark-before-dispatch,
+    no `sending` state — i.e. the crash window is open. G5 is to be re-scoped to
+    Option C (auto-re-drive only batch-rejection `failed`, surface ambiguous
+    `queued`).
+  - CC read: the narrowed claim in #821 is honest and consistent with the audit's
+    F-IDEMPOTENCY. The formal merge-nod is still the architect's (turns on the test
+    CONTENT in the 3 G8 docs); this verification only confirms the PR's stated claim
+    is already narrowed and the window is genuinely open on main.
+
+V4. BUG C REFRAME — is the rsvp_nudge 0-sent fully the expiry trap, or also a
+    composer/preview gap?  (architect's confirm-item)
+------------------------------------------------------------------------------
+Answer: the expiry trap (F-RSVP-EXPIRY-TRAP) is the operative cause; NO independent
+composer/preview gap found.
+  - Cron side (Agent 4): computeExpiryForKind('rsvp_nudge') returns event start_at
+    verbatim -> draft born expiring at kickoff -> handleExpireSweep archives at
+    kickoff -> draftExists counts archived as drafted -> never recreated. All 72
+    aged out. Live counts 0 sent / 72 archived / 2 draft fit exactly.
+  - Composer side (Agent 1, verified): rsvpNudge.js + rsvpNudgeCompose.js +
+    rsvpNudgeHelpers.js produce well-formed slices and complete content_sections
+    with literal {{rsvp_*_url}} placeholders (AP#29). No compose/preview defect
+    would block a send.
+  - Send side (Agent 3, verified): rsvpNudgeSend.js mints + URL-wraps tokens
+    correctly; the only send-side smell is the F-DUAL-FINALIZE client status='sent'
+    write (shared with 3 siblings), not an rsvp-specific blocker.
+  - CONCLUSION: build the EXPIRY fix (widen expires_at to start_at + grace, or the
+    product call), NOT a composer fix. A composer fix would fix nothing — confirms
+    the architect's caution. One residual to watch: rsvp_nudge has never had an
+    admin OPEN+SEND within the <=48h window, so we have no live proof the UI send
+    button works end-to-end for this kind; the first widened-expiry nudge is the
+    real test (UI reachability is Agent 8's lane, no defect found there).
+
+V5. RETIRE THE STALE game_recap WRITE-AMPLIFICATION GATE  (architect's confirm-item)
+------------------------------------------------------------------------------
+[LIVE] information_schema: game_recap table EXISTS = false; game_results EXISTS =
+true. Confirmed via MCP (the architect's 30-second check). There is NO game_recap
+table, no ~15,759-row trigger delta. game_recap is a comms_messages KIND;
+game_results is the stats table. The gate is formally DEAD — retire it from the
+carried gates and from saved memory. Triple-corroborated now (reconciliation patch
++ this audit + this MCP confirm).
+
+SUMMARY FOR THE RULING
+------------------------------------------------------------------------------
+  - V1 Resend alignment: NO documented guarantee; key Option A off a self-minted
+    `${message.id}:${r.id}` idempotency key (order-independent), and still get a
+    Resend confirm before relying. GATE stands.
+  - V2 digest pilot: digestSend has no pilot param; production scoping is upstream
+    + the edge-fn 403 gate. F-WEEKLY-DIGEST-FAIL-OPEN live severity is defense-in-
+    depth, not a live blast path — but its backstop is the UNTESTED G7 gate, so
+    ship FORK D + G7 together.
+  - V3 G8 #821: open, held, claim already narrowed, NOT on main. Window open on
+    main confirmed. Formal nod still architect's (needs the 3 G8 docs).
+  - V4 BUG C: expiry trap is the cause; no composer gap; build the expiry fix.
+  - V5 game_recap gate: dead, retire it.
+NOTHING APPLIED.
+==============================================================================
+END — CC VERIFICATION ANSWERS 2026-06-07
+==============================================================================
