@@ -1,0 +1,127 @@
+==============================================================================
+BRIEFINGS PHASE 3 — VERIFICATION FINDINGS   Claude Code -> architect lane
+Date: 2026-06-07. Closes the carried item "briefings Phase 3 status" (the #2
+chase after programs close). Answers Frank's two questions: (1) did Phase 3
+ship? (2) was D-4 Frank-routed or auto-picked? Verification only — NOTHING
+APPLIED. Every state claim is a live query or a file:line (AP#60 / §11.7).
+==============================================================================
+
+0. HEADLINE
+------------------------------------------------------------------------------
+Both questions resolve cleanly and the news is good:
+  - Briefings "Phase 3" (the REDESIGN_BRIEFINGS_2026-06-03 D-1…D-8 implementation
+    sequence) SUBSTANTIALLY SHIPPED via the engine lane. It is not an unshipped
+    phase; the remainder is a well-inventoried post-Phase-3 build/tuning/gates
+    surface (BRIEFINGS_WHATS_LEFT_2026-06-04 Part B).
+  - D-4 (the is_pilot_family DROP-vs-FILTER strategic decision) was NEITHER
+    auto-picked NOR yet routed. It sits correctly as an UNCROSSED Frank gate. No
+    irreversible action was taken; the column is intact; the autopilot-overreach
+    guard held. This is exactly the right state for a strategic, irreversible-
+    option decision.
+  - The 5 failing briefings test files (the thread Frank thought pointed at an
+    unverified system) are a LOCAL env-var artifact that PASSES in CI — not
+    evidence of broken or unverified briefings logic.
+
+1. WHAT "BRIEFINGS PHASE 3" IS (pinned, not assumed)
+------------------------------------------------------------------------------
+From REDESIGN_BRIEFINGS_2026-06-03.md + ledger §4.BX:
+  - Phase 1 = the audit. CLOSED 2026-06-03 AM (5 bugs A/B/C/D + Meta, GAP-1,
+    6 patterns, 8 routing decisions D-1…D-8).
+  - Phase 2 = the 8 routing decisions themselves (DOC ONLY; "Frank routes when
+    ready"; hard-pause per saved memory autopilot-overreach-on-decisions).
+  - Phase 3 = the IMPLEMENTATION PR sequence (§5): 8 reversible PRs + 4 confirm-
+    gated PRs, with H-1/H-2/H-3 (the D-4 outcome PRs) explicitly HELD until Frank
+    routes D-4.
+NOTE: a SECOND, later briefings arc exists and is easy to conflate — the
+2026-06-04 compose-simplification arc (PR-A/B/C/D one-screen composer, #722–#751+,
+audit AUDIT_BRIEFINGS_COMPOSE_SIMPLIFICATION_2026-06-04). That is a different
+redesign (screens/compose UX), not the D-1…D-8 Phase 3. Both are live in the tree.
+
+2. DID PHASE 3 SHIP? — YES, SUBSTANTIALLY (engine lane)
+------------------------------------------------------------------------------
+Authoritative reconciliation: BRIEFINGS_WHATS_LEFT_2026-06-04 lines 136–138 —
+"Much of the old D-1…D-8 Phase-2 set ALREADY SHIPPED (engine lane)":
+  - D-2  audience CHECK widen ............ PR #677
+  - D-5(a) RPC pilot (get_digest_recipients) PR #685
+  - D-7  pilot parity test ............... PR #687
+  - D-6(a) parent inbox .................. PR #690
+  - D-8  inbox a11y ...................... PR #691
+  - RLS role-scoping ..................... PR #710
+The live remainder (Part B) is NOT "Phase 3 unshipped" — it is the post-Phase-3
+surface: B1 UI/engine build remainder (AI-2 kinds, token kinds, B2 cancellation,
+recap-default-audience, R-4 inbox polish), B2 AI-draft voice tuning (Frank's),
+B3 Frank gates (below), B4 deliverability prereq (3-email/hr SMTP cap, DEF-11),
+B5 cheap confirms, B6 explicit deferrals. The only genuinely-held "phase" piece
+is the SCREENS redesign (Part A) — a NEW arc awaiting routing, not a Phase-3
+regression.
+VERDICT: Phase 3 shipped. Do NOT re-plan D-2/D-5/D-6/D-7/D-8 — they're done.
+
+3. WAS D-4 FRANK-ROUTED OR AUTO-PICKED? — NEITHER; UNCROSSED FRANK GATE (correct)
+------------------------------------------------------------------------------
+D-4 = REDIRECT->FILTER pilot cutover, with options (a) FILTER cutover, (b) DROP
+COLUMN guardians.is_pilot_family [IRREVERSIBLE], (c) exit pilot [IRREVERSIBLE].
+Designation everywhere it appears: "HARD HOLD — Frank's strategic call"
+(ledger §4.BX line 4016) and "B3. FRANK GATES — do not cross without explicit
+GO: DEF-3 pilot REDIRECT -> FILTER cutover (per-tenant, strategic)"
+(BRIEFINGS_WHATS_LEFT_2026-06-04 line 168).
+
+Live state (queried 2026-06-07, fresh — AP#60):
+  - guardians.is_pilot_family column EXISTS (information_schema = 1). DROP did
+    NOT happen. The irreversible options (b)/(c) were never taken.
+  - 175 guardians; is_pilot_family = TRUE on 1 (Frank's guardian, written by the
+    D-G home-redesign work 2026-06-06). At the D-4 snapshot this was ~0 — the
+    "0 rows pointed the wrong way toward DROP" concern. It is now 1 and actively
+    used, which REINFORCES "do not drop."
+  - organization_settings.pilot_mode_enabled = TRUE;
+    pilot_test_recipient_email = olivejuiceinc1@gmail.com.
+FILTER-as-production is the live, wired, test-guarded mechanism (send-tournament-
+message aborts if a non-pilot is queued; briefing-auto-draft-tick filters;
+pilotMechanismParity.test.js enforces the get_digest_recipients RPC pattern).
+
+VERDICT: D-4 was NOT auto-picked — no irreversible drop/exit occurred; the
+autopilot-overreach guard held. It also has NOT been routed — it remains an
+uncrossed B3 Frank gate. The current "FILTER live, column kept, pilot ON" is the
+SAFE pre-decision status quo, not a strategic choice that got made for you. When
+you're ready to take families live, D-4 is the decision to route (and DEF-11
+deliverability is its hard prereq). WHO-routed is not in the DB; the OUTCOME
+matches the documented hard-hold and nothing irreversible was auto-done.
+
+4. THE 5 FAILING BRIEFINGS TESTS — BENIGN (gentle correction)
+------------------------------------------------------------------------------
+Your read was that the 5 failing briefings test files thread back to an
+unverified briefings state. Verified: they don't. All 5 (GamesRecapBody,
+scheduleChangeSend.regression, mapWizardStateToDigestArgs, queueComposedMessages,
+wave_4_1d_2) fail ONLY on `Missing VITE_SUPABASE_URL` at module import — they
+statically import the supabase client, which throws when env vars aren't bound
+LOCALLY. They PASS in CI, where VITE_SUPABASE_URL is set — proven by #796's green
+lint-test-build (CI would be red if these threw on import there). So the briefings
+logic IS test-covered and green; the local failures are an env-var artifact, not
+a signal. (The static-import-in-test is a latent AP#27 smell worth a future
+cleanup, but it is not a correctness or coverage gap.)
+
+5. CARRIED FORWARD (the briefings surface that genuinely remains — for routing)
+------------------------------------------------------------------------------
+None of these block anything; they are the inventoried post-Phase-3 surface.
+  - B3 FRANK GATES (uncrossed, yours): D-4/DEF-3 cutover; AUTO-SEND graduation
+    (auto-COMPOSE is on, auto-SEND is off); B2 cancellation auto-email retirement;
+    coach WRITE-scope tighten to admin-only.
+  - B4 PREREQ: DEF-11 deliverability — the 3-email/hour free-SMTP cap is a hard
+    cutover prerequisite before any real-family send. Track + resolve first.
+  - B1 build remainder: AI-2 for games_recap/tournament_recap (paused mid-build),
+    token-kind chip-preview + per-recipient pilot path, recap default audience
+    -> TEAM, R-4 inbox polish, coach_roundup compose/SEND path (underspecified).
+  - Screens redesign (Part A): the NEW arc awaiting your Option A/B/C routing.
+
+6. RECOMMENDED NEXT (CC lean — architect/Frank decide)
+------------------------------------------------------------------------------
+  - No code action falls out of this verification. Phase 3 shipped; D-4 is
+    correctly held.
+  - When families go live is a sequencing call: DEF-11 deliverability (B4) is the
+    gating prereq, then D-4/DEF-3 cutover (flip pilot_mode_enabled = FALSE + the
+    FILTER mechanism already in place), then AUTO-SEND graduation.
+  - The screens redesign (Part A) routing ask (Option A/B/C) is still open from
+    2026-06-04; terminal-CC leaned A.
+
+==============================================================================
+END — BRIEFINGS_PHASE3_VERIFICATION_CC
+==============================================================================
