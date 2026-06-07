@@ -1547,6 +1547,47 @@ this is the physical ticket).
 
 ---
 
+### §4.S.3 — Cross-section close scan (briefings/home/programs) findings (2026-06-07)
+
+Architect-requested cross-section close + deep-scan (`docs/CROSS_SECTION_FINDINGS_CC.txt`,
+answers `CROSS_SECTION_SCAN_FOR_CC.txt`). 4 parallel deep-dive agents, every claim
+file:line/query/PR-backed. Per-section verdict + the actionable queue this opened:
+
+- **PROGRAMS — CLOSED** (#796 merged 7073988; 1a/1b/1c all confirmed). NEW
+  **P1 (LATENT):** `deleteProgram()` hard-fails on any program with a registration
+  — `registrations.program_id` is ON DELETE **RESTRICT** (verified live; all other
+  children CASCADE), but `useProgramAdmin.js:8-10` comment says "cascades… clean"
+  and `programDelete.js` dependencySummary omits registrations → raw 23503 in the
+  Toast once a registration exists. Latent (registrations empty today). Fix: count
+  registrations + BLOCK delete with a kind message (RESTRICT is correct). Awaiting
+  Frank's go (NOT a reopen). E3 likely already-closed (chips are PROGRAM_TYPE_KEYS-
+  derived; ledger note stale); P3 stale comment ProgramSetupPage.jsx:12.
+- **HOME — SHIPPED, NOT FORMALLY CLOSED** (the assumed-closed risk, confirmed).
+  **P1:** AdminProgramHealth.jsx:30-38 PATTERN A — "Collected %" (season-scoped) vs
+  "Out $" (all-seasons), neither labels scope (BUG-1/HOME-2 contradiction); fix =
+  label scope per KPI. **P2:** coach renders fabricated `0-0` vs parent `—` for
+  recordless team (CoachTail.jsx:59,97 vs parentHomeData.js:47 — AP#43/#27);
+  **P2:** "Out" KPI not in its own loading gate (AP#44). **Dead computations:**
+  useAdminHomeSignals.pendingLanes (45-54) + useCoachHomeSignals.recentTeamMessages
+  (73) — no consumers. Draft-leak check PASSES (useActivePrograms is include-active).
+  **Gap:** home has NO close-out doc; D-A/D-D/D-E built ahead of HOME_OPEN_DECISIONS_CC
+  + D-B/D-C/D-F shipped/retired on CC lean — none architect-ratified. Needs a
+  close-out doc + the bug fixes.
+- **BRIEFINGS — NOT closed, but every named open item RESOLVED** (Phase 3 shipped
+  engine-lane #677/#685/#687/#690/#691/#710; 5 tests benign env-var; game_recap 19
+  rows bounded 1-per-anchor; D-4 uncrossed Frank gate, column intact). Hooks/
+  registries/secrets all clean. Real remainder = Part A screens routing (architect
+  pick, CC leans A) + Frank gates (D-4/AUTO-SEND/B2/coach-write) + DEF-11
+  deliverability prereq + B1 build remainder (coach_roundup SEND path underspecified).
+- **NEXT REDESIGNS scoped (not started):** teams §4.S — AGE_GROUPS hardcoded
+  (teamFormConstants.js:5) is the next float-free-enum to close; `division` column
+  queried-but-never-written by TeamFormSheet (dangling); team_type vs circuit vs
+  "Competition type" naming axis to disentangle. schedule — EventCard vs MatchupCard
+  are two cards for the same events rows (consolidation candidate); imperative
+  day-jump scroll brushes AP#5.
+
+---
+
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 
 The drift classes from CC's L99 analysis. Each is a pattern that
