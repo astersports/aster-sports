@@ -4,6 +4,7 @@ import { Field, TextInput } from '../../components/register/fields';
 import { primaryBtn } from '../../components/register/registerStyles';
 import DivisionRows from '../../components/admin/program-setup/DivisionRows';
 import ProgramTypeChooser from '../../components/admin/program-setup/ProgramTypeChooser';
+import AdminBackHeader from '../../components/admin/AdminBackHeader';
 import { slugify, useProgramSetup } from '../../hooks/useProgramSetup';
 
 // Admin program-setup (spec §3, MVP, Season-first per Q-3). Lean single-page create form:
@@ -29,7 +30,7 @@ export default function ProgramSetupPage() {
 
   return (
     <div style={wrap}>
-      <button type="button" onClick={() => navigate('/admin/seasons')} style={linkBtn}>← Admin</button>
+      <AdminBackHeader to="/admin/programs" />
       <h1 style={h1Style}>New Program</h1>
       <div style={{ height: 12 }} />
 
@@ -66,7 +67,6 @@ export default function ProgramSetupPage() {
 }
 
 const wrap = { maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px' };
-const linkBtn = { background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, cursor: 'pointer', padding: 0 };
 const h1Style = { fontSize: 24, fontWeight: 700, color: 'var(--as-text-primary)', margin: '8px 0 0' };
 const h2Style = { fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--as-text-tertiary)', margin: '20px 0 8px' };
 const checkRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--as-text-secondary)', margin: '0 0 8px' };

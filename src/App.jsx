@@ -39,6 +39,7 @@ const RegisterEntryPage = lazy(() => import('./pages/RegisterEntryPage'));
 const RegisterFlowPage = lazy(() => import('./pages/RegisterFlowPage'));
 const ProgramSetupPage = lazy(() => import('./pages/admin/ProgramSetupPage'));
 const ProgramDetailPage = lazy(() => import('./pages/admin/ProgramDetailPage'));
+const AdminProgramsPage = lazy(() => import('./pages/admin/AdminProgramsPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
 
@@ -101,6 +102,7 @@ export default function App() {
 
       {/* Admin-only management routes */}
       <Route path="/admin/seasons" element={<Protected allowedRoles={['admin']}><AdminSeasonsPage /></Protected>} />
+      <Route path="/admin/programs" element={<Protected allowedRoles={['admin']}><AdminProgramsPage /></Protected>} />
       <Route path="/admin/programs/new" element={<Protected allowedRoles={['admin']}><ProgramSetupPage /></Protected>} />
       <Route path="/admin/programs/:id" element={<Protected allowedRoles={['admin']}><ProgramDetailPage /></Protected>} />
       <Route path="/admin/teams" element={<Protected allowedRoles={['admin']}><AdminTeamsPage /></Protected>} />
