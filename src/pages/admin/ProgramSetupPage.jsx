@@ -38,13 +38,13 @@ export default function ProgramSetupPage() {
 
       <Field label="Program name" htmlFor="pname"><TextInput id="pname" value={form.name} onChange={(v) => set('name', v)} placeholder="Spring 2026" /></Field>
       <div style={{ display: 'flex', gap: 8 }}>
-        <div style={{ flex: 1 }}><Field label="Start date" htmlFor="sd"><TextInput id="sd" type="date" value={form.start_date} onChange={(v) => set('start_date', v)} /></Field></div>
-        <div style={{ flex: 1 }}><Field label="End date" htmlFor="ed"><TextInput id="ed" type="date" value={form.end_date} onChange={(v) => set('end_date', v)} /></Field></div>
+        <div style={{ flex: 1, minWidth: 0 }}><Field label="Start date" htmlFor="sd"><TextInput id="sd" type="date" value={form.start_date} onChange={(v) => set('start_date', v)} /></Field></div>
+        <div style={{ flex: 1, minWidth: 0 }}><Field label="End date" htmlFor="ed"><TextInput id="ed" type="date" value={form.end_date} onChange={(v) => set('end_date', v)} /></Field></div>
       </div>
       <Field label={`Public link  ·  /r/${slugPreview || '…'}`} htmlFor="slug"><TextInput id="slug" value={form.public_slug} onChange={(v) => set('public_slug', v)} placeholder={slugify(form.name) || 'auto from name'} /></Field>
       <div style={{ display: 'flex', gap: 8 }}>
-        <div style={{ flex: 1 }}><Field label="Registration opens" htmlFor="ro"><TextInput id="ro" type="datetime-local" value={form.reg_opens_at} onChange={(v) => set('reg_opens_at', v)} /></Field></div>
-        <div style={{ flex: 1 }}><Field label="Registration closes" htmlFor="rc"><TextInput id="rc" type="datetime-local" value={form.reg_closes_at} onChange={(v) => set('reg_closes_at', v)} /></Field></div>
+        <div style={{ flex: 1, minWidth: 0 }}><Field label="Registration opens" htmlFor="ro"><TextInput id="ro" type="date" value={form.reg_opens_at} onChange={(v) => set('reg_opens_at', v)} /></Field></div>
+        <div style={{ flex: 1, minWidth: 0 }}><Field label="Registration closes" htmlFor="rc"><TextInput id="rc" type="date" value={form.reg_closes_at} onChange={(v) => set('reg_closes_at', v)} /></Field></div>
       </div>
       <label style={checkRow}>
         <input type="checkbox" checked={form.is_published} onChange={(e) => set('is_published', e.target.checked)} />
