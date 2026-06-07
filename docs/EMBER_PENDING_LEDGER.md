@@ -1495,6 +1495,51 @@ shipped and smoked clean; this is the one explicit deferral.
 
 ---
 
+### §4.S.2 — Programs phase CLOSED + #13 game_recap RESOLVED + E4 ticket (2026-06-07)
+
+**Programs CLOSED.** PR #796 (PROGRAM_TYPE_REGISTRY + draft status + unified
+activate) merged to main (squash, `7073988`) after Frank's smoke + the
+architect's build-review sign-off. Both sign-off conditions met: the registry
+absorbed all 10 branch sites (parity-test-enforced), and records/standings
+exclusion correctly stayed team-level (`isCompetitiveTeam`), not folded into the
+registry. Pre-merge digit check: full vitest suite on base (main) vs head (#796)
+showed the **identical 5 failing test files** — all briefings/comms modules
+throwing `Missing VITE_SUPABASE_URL` (static supabase import at module load; they
+pass in CI where the env var is set). #796 only adds green (+1 file, +7 tests).
+No new failure in the costume. Close-out doc: `docs/PROGRAMS_CLOSED_CC.txt` (PR
+#797, merged). Forks 1/2/3 + Q4 + taxonomy ("6 + Other") all ratified + built.
+
+**Item #13 (game_recap row-count) — RESOLVED, NOT write-amplification.** Live
+query 2026-06-07: post-purge `comms_messages` holds **19 `game_recap` rows total**
+(was 15,759+ historical bloat, purged earlier this session) — 10 archived + 6
+trigger-draft + 2 trigger-sent + 1 old sent. The trigger is still installed and
+active (newest draft edited today 16:21 UTC) but **bounded one-per-anchor**: all
+8 trigger-made rows are exactly 1 row per `anchor_id` (zero duplicates). The
+`draftExists`-includes-`archived` dedup (PR-A/G-23) is holding. Not climbing,
+not a bug — hygiene done. Closes the five-turns-open question with two queries.
+
+**E4 TICKET (programs index player-count) — deferred-with-reason, ticketed here.**
+The `/admin/programs` index "X players" count sums `team_players` ROWS (roster
+spots), not distinct people: a kid rostered on two teams double-counts. Correct
+for LH today (1 team/kid); a label nuance for the multi-team future. When fixed,
+either count `DISTINCT player_id` or relabel to "roster spots." Lives with the
+§4.S teams redesign surface. NOT a blocker — programs is closed with this as a
+known, recorded deferral (was only "intent to ticket" in PROGRAMS_CLOSED_CC §2;
+this is the physical ticket).
+
+**Carried standing queue (a programs close does NOT clear these):**
+- **Briefings Phase 3 status** — still unverified whether Phase 3 shipped, and
+  whether the D-4 `is_pilot_family` decision (documented intent: FILTER-as-
+  production, pilot mode ON) was Frank-routed vs auto-picked. The 5 failing
+  briefings test files above are a thread back to this system's unverified state.
+  Next chase. (See §4.C.2 / D4 references.)
+- **Rebrand operator items (task #55 not truly closed):** Supabase display-name
+  rename, Drive brand-asset upload, SKYFIRE folder lock (accept doctrine).
+- E3 (index filter chips omit evaluation + interest_list) + E6 (/admin/teams
+  empty-state walls a camp-only org) — cosmetic, deferred.
+
+---
+
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 
 The drift classes from CC's L99 analysis. Each is a pattern that
