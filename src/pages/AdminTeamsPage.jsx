@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Plus, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Users } from 'lucide-react';
 import { usePrograms } from '../hooks/usePrograms';
 import { useSeason } from '../context/SeasonContext';
 import AdminBackHeader from '../components/admin/AdminBackHeader';
 import TeamFormSheet from '../components/admin/TeamFormSheet';
 import Badge from '../components/shared/Badge';
-import Button from '../components/shared/Button';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import Toast from '../components/shared/Toast';
@@ -20,7 +20,6 @@ export default function AdminTeamsPage() {
   const [editing, setEditing] = useState(null);
   const [toast, setToast] = useState(null);
 
-  const openNew = () => { setEditing(null); setSheetOpen(true); };
   const openEdit = (p) => { setEditing(p); setSheetOpen(true); };
 
   const save = async (payload) => {
@@ -68,9 +67,9 @@ export default function AdminTeamsPage() {
             <div style={{ color: 'var(--as-text-secondary)', fontSize: 13 }}>{activeSeason.name}</div>
           )}
         </div>
-        <Button onClick={openNew}>
-          <Plus size={18} strokeWidth={1.75} /> New
-        </Button>
+        <Link to="/admin/programs" className="as-press" style={{ color: 'var(--as-accent)', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+          Programs →
+        </Link>
       </div>
 
       {loading ? (
@@ -79,7 +78,7 @@ export default function AdminTeamsPage() {
         <EmptyState
           icon={Users}
           title="No teams yet"
-          description="Add your first team to start building rosters."
+          description="Add teams from each program — open Programs to get started."
         />
       ) : (
         <ul className="flex flex-col gap-2">

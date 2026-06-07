@@ -19,7 +19,9 @@ export function useProgramSetup() {
     setSaving(true);
     setError(null);
     const programType = form.program_type || 'season';
-    const slug = (form.public_slug || '').trim() || slugify(form.name);
+    // Always slugify — a typed public link is normalized to lowercase-hyphenated
+    // so it can't store mixed-case variants that dodge the uniqueness check (F3).
+    const slug = slugify(form.public_slug || form.name);
 
     const slugErr = await checkSlugAvailable(supabase, orgId, slug);
     if (slugErr) { setError(slugErr); setSaving(false); return { ok: false, error: slugErr }; }

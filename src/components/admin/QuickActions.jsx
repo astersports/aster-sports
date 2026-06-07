@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { CalendarPlus, DollarSign, Inbox, Megaphone, Trophy, Upload, UserPlus } from 'lucide-react';
+import { CalendarPlus, DollarSign, Inbox, Layers, Megaphone, Trophy, Upload, UserPlus } from 'lucide-react';
 
 // 2026-05-23 (§4.AI Option C): the 'Briefings' tile now points directly
 // at /admin/briefings/compose. The inbox surface (BriefingsInboxPage)
@@ -53,6 +53,7 @@ const GROUPS = [
   {
     label: 'OPERATE',
     tiles: [
+      { label: 'Programs',        icon: Layers,     to: '/admin/programs'        },
       { label: 'Financials',      icon: DollarSign, to: '/admin/financials'      },
       { label: 'Tournaments',     icon: Trophy,     to: '/tournaments'           },
       { label: 'Import Schedule', icon: Upload,     to: '/admin/import-schedule' },

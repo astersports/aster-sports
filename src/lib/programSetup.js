@@ -22,11 +22,13 @@ export function divisionsApplyTo(type) {
 
 // App-level public_slug uniqueness on (org_id, slug) — the DB has no unique
 // constraint (F3), so two programs could otherwise resolve the same /r/<slug>.
-// Returns null when free, or a kindness message when taken.
+// Case-INSENSITIVE (.ilike): slugs are normalized to lowercase on write, but an
+// older mixed-case row must still collide. (slugified slugs are [a-z0-9-] only,
+// so .ilike carries no wildcard chars.) Returns null when free, message if taken.
 export async function checkSlugAvailable(client, orgId, slug) {
   if (!slug) return null;
   const { data, error } = await client
-    .from('programs').select('id').eq('org_id', orgId).eq('public_slug', slug).limit(1);
+    .from('programs').select('id').eq('org_id', orgId).ilike('public_slug', slug).limit(1);
   if (error) return error.message;
   return data && data.length ? 'That public link is already taken. Pick another.' : null;
 }
