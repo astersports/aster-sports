@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { checkSlugAvailable, divisionsApplyTo, slugify, statusForProgramType } from '../lib/programSetup';
+import { checkSlugAvailable, divisionsApplyTo, slugify, statusForProgramType, validateProgramDates } from '../lib/programSetup';
 
 // Re-exported so existing callers keep their import path (ProgramSetupPage
 // imports slugify from here); the pure logic lives in lib/programSetup (AP#27).
-export { checkSlugAvailable, divisionsApplyTo, slugify, statusForProgramType };
+export { checkSlugAvailable, divisionsApplyTo, slugify, statusForProgramType, validateProgramDates };
 
 // Admin program creation (spec §3, MVP). Writes programs + divisions + division_fees,
 // org-scoped via the admin RLS write policies (user_has_role_in_org admin with_check).
@@ -19,6 +19,8 @@ export function useProgramSetup() {
     setSaving(true);
     setError(null);
     const programType = form.program_type || 'season';
+    const dateErr = validateProgramDates(form);
+    if (dateErr) { setError(dateErr); setSaving(false); return { ok: false, error: dateErr }; }
     // Always slugify — a typed public link is normalized to lowercase-hyphenated
     // so it can't store mixed-case variants that dodge the uniqueness check (F3).
     const slug = slugify(form.public_slug || form.name);

@@ -32,3 +32,20 @@ export async function checkSlugAvailable(client, orgId, slug) {
   if (error) return error.message;
   return data && data.length ? 'That public link is already taken. Pick another.' : null;
 }
+
+// Logical date guards shared by program create + edit. Returns the first
+// violation as a kindness message (§16.3), or null when consistent. start/end
+// are 'YYYY-MM-DD'; reg_* are datetime-local 'YYYY-MM-DDTHH:MM' (compare the
+// date portion of reg_closes against end_date).
+export function validateProgramDates({ start_date, end_date, reg_opens_at, reg_closes_at } = {}) {
+  if (start_date && end_date && end_date < start_date) {
+    return "End date can't be before the start date.";
+  }
+  if (reg_opens_at && reg_closes_at && reg_opens_at > reg_closes_at) {
+    return "Registration can't close before it opens.";
+  }
+  if (end_date && reg_closes_at && reg_closes_at.slice(0, 10) > end_date) {
+    return "Registration can't close after the program ends.";
+  }
+  return null;
+}

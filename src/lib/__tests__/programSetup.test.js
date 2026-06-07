@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkSlugAvailable, divisionsApplyTo, statusForProgramType } from '../programSetup';
+import { checkSlugAvailable, divisionsApplyTo, statusForProgramType, validateProgramDates } from '../programSetup';
 
 // PR-1 decision logic for type-aware program create (GO D1/D2 + F3).
 
@@ -21,6 +21,26 @@ describe('divisionsApplyTo (GO D2 — season-only)', () => {
     for (const t of ['camp', 'clinic', 'tryout', 'evaluation', 'interest_list']) {
       expect(divisionsApplyTo(t)).toBe(false);
     }
+  });
+});
+
+describe('validateProgramDates', () => {
+  it('passes when dates are consistent or absent', () => {
+    expect(validateProgramDates({})).toBeNull();
+    expect(validateProgramDates({ start_date: '2026-07-10', end_date: '2026-07-26' })).toBeNull();
+    expect(validateProgramDates({
+      start_date: '2026-07-10', end_date: '2026-07-26',
+      reg_opens_at: '2026-06-07T10:00', reg_closes_at: '2026-07-09T10:00',
+    })).toBeNull();
+  });
+  it('rejects end before start', () => {
+    expect(validateProgramDates({ start_date: '2026-07-26', end_date: '2026-07-10' })).toMatch(/end date can't be before/i);
+  });
+  it('rejects registration closing before it opens', () => {
+    expect(validateProgramDates({ reg_opens_at: '2026-07-10T10:00', reg_closes_at: '2026-06-07T10:00' })).toMatch(/close before it opens/i);
+  });
+  it('rejects registration closing after the program ends (the smoke case)', () => {
+    expect(validateProgramDates({ end_date: '2026-07-26', reg_closes_at: '2026-07-31T10:00' })).toMatch(/close after the program ends/i);
   });
 });
 
