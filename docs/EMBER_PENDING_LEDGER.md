@@ -1711,6 +1711,25 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   cross-client email render, axe-core a11y pass, content/voice taste, real-device,
   D-G live send. v4 is the final agent-reachable audit; awaiting Frank read →
   architect additions → CC final rewrite → build Tier 0 + B2 code.
+- **BRIEFINGS L99 AUDIT — FINAL (post-architect-review) 2026-06-07 PM** — rewritten
+  per ARCHITECT_REVIEW_BRIEFINGS_L99_AUDIT. Architect endorsed the audit as strong/
+  trustworthy (the two self-downgrades = the reliability signal), accepted it as the
+  redesign basis, and added the key REFRAME: the honest go-live gate is FOUR things
+  — SEND(B1)+LEGAL(B2)+SEE(min delivery rollup)+RECOVER(failed/queued sweep) — so
+  the recovery sweep + minimum rollup MOVE to the go-live track (NOT Tier 3). CC
+  absorbed all §10 must-changes: lifecycle-failed/queued RE-RATED P0-for-go-live;
+  B2 annotated classification-dependent (M-1 counsel one-liner owed); IC-1 F-PATTERNA
+  →Tier 1 only; IC-2 PC-7 finding-deferred-to-ticket; IC-3 recovery sweep→go-live
+  only; M-1..M-7 folded; regression-guard line on every Tier-1 PR. CC-VERIFIED the
+  seam checks: SEAM-1 pilot fail-closed gate UNTESTED (→go-live gate), SEAM-2 webhook
+  rollup events COMPLETE (→green), SEAM-3 sent_at 409 idempotency UNTESTED (→go-live
+  gate, BLOCKS the recovery sweep — the sharpest dependency: a sweep on unproven
+  idempotency could double-send 175 families), M-4 no parent-visible granular toggle
+  (→UNSUB-GRANULAR stays P2). FORK C cheapest interim forfeit guard scoped (minimal
+  is_forfeit boolean + render branch). Build order: GO-LIVE track + Tier 0 first,
+  B2 address+footer the FIRST PR, G8 idempotency test BEFORE G5 sweep. Open Frank Qs:
+  CAN-SPAM classification, Spanish-primary fraction (M-2, decides translation tier),
+  scheduled-sends-at-launch (decides SCHED-ANCHOR tier), FORK A confirm.
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 
