@@ -1,0 +1,106 @@
+==============================================================================
+CC PR REPORT — G8: SEND IDEMPOTENCY + WRITEBACK (SEAM-3 GATE)   CC -> architect
+Date: 2026-06-07 PM. The TXT report for PR #821 (held do-not-auto-merge), the
+first build PR of the briefings go-live track. G8 is the SEAM-3 gate: it makes
+send-tournament-message's idempotency test-proven BEFORE the recovery sweep (G5)
+is built, so the sweep can re-drive stuck sends without double-sending to 175
+families. Per §11.8 every build PR for the architect lane ships as a committed
+.txt + full chat paste. NOTHING APPLIED beyond the PR branch. Held for the
+architect's review (flagged "hardest look") + Frank's sign-off.
+==============================================================================
+
+0. WHY G8 EXISTS (the dependency the architect named)
+------------------------------------------------------------------------------
+SEAM-3: the recovery sweep (G5) re-invokes send-tournament-message to re-drive
+stuck `queued`/`failed` sends. That is SAFE ONLY IF the send is idempotent — and
+CC verified the idempotency was NOT test-covered. A sweep built on unproven
+idempotency could double-send to every family — worse than the stranded send it
+fixes. So G8 closes the test gap FIRST. G5 does not re-drive until G8 is green.
+
+1. WHAT IDEMPOTENCY ACTUALLY MEANS HERE (two guards, both load-bearing)
+------------------------------------------------------------------------------
+A re-invoke is safe because of TWO guards in send-tournament-message/index.ts:
+  (a) MESSAGE-LEVEL: `if (alreadySent(message)) return 409` — a finalized message
+      (sent_at set) short-circuits; never re-sends. (index.ts:101)
+  (b) RECIPIENT-LEVEL: the recipient query filters `delivery_status='queued'`
+      (index.ts:116), so a re-invoke only processes still-queued rows and never
+      re-sends to already-`sent` ones. THIS is the one that makes a partial-send
+      re-drive safe.
+G8 proves (a) by unit test and LOCKS (b) by a static invariant test (a DB-query
+guarantee a pure unit test can't reach).
+
+2. APPROACH — AP#30 mirror extraction (the established pattern)
+------------------------------------------------------------------------------
+The edge fn is Deno; vitest can't import index.ts. Per AP#30, pure logic shared
+with vitest lives in a mirrored pair. So the two decision kernels were extracted:
+  NEW  src/lib/briefings/sendDispatch.js          (vitest source of truth)
+  NEW  send-tournament-message/_dispatch.ts       (Deno mirror, registered in
+       edgeFunctionMirrorAudit PAIRS, baseline 4 — matches the other typed pairs)
+  - alreadySent(message)            -> the sent_at 409 decision (guard a)
+  - classifyBatchResult(group,res)  -> per-recipient writeback decision: batch
+       error => whole group failed (one batch-level error string); batch success
+       => per row, id => sent / else => failed with "<email>: <error>".
+index.ts now DELEGATES to these (the IO — the .update() writeback — stays in
+index.ts). Refactored two spots only: line 101 (alreadySent) + the send-loop
+writeback (classifyBatchResult + apply).
+
+3. BEHAVIOR-EQUIVALENCE (the thing to check on a live send path)
+------------------------------------------------------------------------------
+Same rows get the same delivery_status, same sent/failed counts, same error
+strings as the prior inline loop. ONE IO shape change: the writeback now does a
+bulk `.update().in('id', failedIds)` + `.update().in('id', sentIds)` per batch
+instead of a per-row Promise.all of `.eq()` updates. Identical OUTCOME (each row
+ends at the same status), fewer round-trips. NOT touched: the 409 guard's effect,
+the `delivery_status='queued'` recipient filter, the unsubscribe suppression, the
+pilot fail-closed gate, the finalize (status='sent'+sent_at), the push fan-out.
+
+4. TESTS (the deliverable — G8 IS the tests)
+------------------------------------------------------------------------------
+  src/lib/briefings/__tests__/sendDispatch.test.js — both kernels:
+    alreadySent true (sent_at set) / false (null/absent/null-message);
+    classifyBatchResult: batch-error => all failed + one error; missing message
+    => "Batch rejected"; all-sent; mixed (per-row sent/failed + "<email>: <err>");
+    success-row-without-id-or-error => "unknown"; empty group => empty result.
+  src/lib/__tests__/sendIdempotencyInvariant.test.js — STATIC lock on index.ts:
+    asserts alreadySent(message) + a literal 409 remain; asserts the
+    `.eq("delivery_status","queued")` recipient filter remains; asserts the
+    writeback delegates to classifyBatchResult. If a future edit removes the
+    queued-filter (the re-drive safety property), this fails loudly. Same shape
+    as verifyJwtConfigAudit / sectionRendererParity.
+  edgeFunctionMirrorAudit.test.js — the new pair registered (baseline 4).
+
+5. VERIFICATION STATUS (honest)
+------------------------------------------------------------------------------
+  - lint clean; build clean; full vitest suite GREEN (206 files / 1472 tests,
+    +9 for the new kernels + invariant).
+  - NOT done (and can't be by an agent): a LIVE send through the edge fn. This is
+    a backend send path — there is no UI to smoke. Its verification IS the test
+    suite + the architect's code review. That's exactly why #821 is held for the
+    architect's read, not a Frank UI-smoke. The behavior-equivalence in §3 is the
+    claim to scrutinize.
+  - On merge, the edge fn redeploys (the index.ts + _dispatch.ts change ships).
+
+6. WHAT THE ARCHITECT SHOULD CHECK (the hardest-look targets)
+------------------------------------------------------------------------------
+  1. Behavior-equivalence of the writeback refactor (§3) — does the bulk-by-status
+     apply produce the same per-row outcomes as the prior per-row loop? (It does;
+     confirm the reasoning.)
+  2. classifyBatchResult matches the prior inline logic exactly (whole-batch-fail
+     vs per-row; the error-string format).
+  3. The static invariant test is the right lock for the re-drive safety property
+     — is asserting the `delivery_status='queued'` filter's PRESENCE sufficient,
+     or do you want a stronger integration test (mock-client) before G5?
+  4. The mirror baseline (4) is honest TS-annotation residual, not hidden drift.
+
+7. WHAT'S NEXT (build order)
+------------------------------------------------------------------------------
+  - On G8 merge (architect review + Frank): build G5 (the recovery sweep) — it
+    re-drives stuck queued/failed + surfaces them in Radar, now safe on the
+    proven idempotency.
+  - G1 (B2 address+footer) is parallel and still waiting on Frank: the LH physical
+    mailing address value + go on the additive organizations.mailing_address
+    migration. Ships the moment the address lands.
+  - Then G2/G6/G7 (+ Frank's G3/G4 DNS/reply-to), then Tier 0.
+==============================================================================
+END — CC_G8_SEND_IDEMPOTENCY_REPORT
+==============================================================================
