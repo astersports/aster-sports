@@ -1,0 +1,165 @@
+==============================================================================
+PROGRAMS — CLOSED (close-out confirmation)   Claude Code -> architect lane
+Date: 2026-06-07. Purpose: confirm the multi-program admin build is COMPLETE and
+the programs phase is CLOSED. This is the close-out artifact that pairs with
+PROGRAMS_CLOSEOUT_REVIEW_CC.txt (the pre-close review) — that doc framed the open
+forks; this doc records that they were ratified and built. Self-contained.
+NOTHING APPLIED by this doc (the build landed in #796; the two migrations were
+already applied + mirrored).
+==============================================================================
+
+0. HEADLINE
+------------------------------------------------------------------------------
+The ratified programs architecture (architect's L99 recommendation §5 —
+PROGRAM_TYPE_REGISTRY) is BUILT and verified. PR #796 passed Frank's smoke and is
+green on all required checks. Programs is CLOSED clean, with no residuals, pending
+only two human steps: (1) Frank merges #796 (held do-not-auto-merge for exactly
+this gate), and (2) the architect's build-review sign-off confirming the registry
+absorbed all 10 branch sites.
+
+PR #796 — feat(admin): PROGRAM_TYPE_REGISTRY + draft status + unified activate (L99)
+  state: open, ready (not draft), mergeable_state: clean, label: do-not-auto-merge
+  diff: +258 / -80 across 16 files, 1 commit (bf5bb8d)
+  CI (all 5 green):
+    - lint-test-build ......... success  (full vitest suite + lint + build)
+    - e2e ..................... success
+    - anti-pattern-46-guard ... success
+    - ledger-reconcile-guard .. success
+    - Vercel preview .......... success (deployment completed)
+  Frank's smoke: PASSED (2026-06-07).
+
+1. THE §8 RATIFICATION CHECKLIST — ALL ITEMS RATIFIED + BUILT
+------------------------------------------------------------------------------
+Every open decision from PROGRAMS_CLOSEOUT_REVIEW_CC §2-§3 is now closed. The
+architect ratified each via the L99 recommendation; CC built each in #796.
+
+Fork 1 — DRAFT STATUS (born-state per type)
+  RATIFIED: status stays a small UNIVERSAL closed set (draft -> active ->
+  archived); per-type timing lives on the windows (reg_opens_at/reg_closes_at),
+  NOT on status. Future type-states go on windows, never by forking status.
+  BUILT: programs are born `draft` for season / tryout / evaluation /
+  interest_list / other, and `active` for camp / clinic. The index gets its own
+  Draft group; the detail page renders a 3-way status label (Draft / Active /
+  Archived) instead of the old archived?Archived:Active binary (this also
+  resolves review item E5 — see §2). Source: registry.defaultStatus, asserted by
+  the parity test to be one of the three CHECK values.
+
+Fork 2 — DECLARATIVE TABLE + PARITY (the B5-epsilon trap, closed)
+  RATIFIED: replace every per-type switch/else catch-all with one declarative
+  table + a parity test that fails CI on any unmapped type. "Add an archetype"
+  becomes mechanical, never a silent half-land.
+  BUILT: `src/lib/programRegistry.js` is the keystone. PROGRAM_TYPE_KEYS +
+  PROGRAM_TYPE_REGISTRY (one row per type: label, noun, badgeVariant,
+  defaultStatus, hasDivisions, singleActive, defaultTeamType, competitive,
+  chooserHelper). programRule(type) reads the table (fallback to 'other' for an
+  unknown string — never a silent wrong default). The registry imports NOTHING
+  (no cycle). B5-epsilon parity test
+  (`src/lib/__tests__/programRegistry.parity.test.js`) asserts, in CI:
+    - registry keys === PROGRAM_TYPE_KEYS === the DB program_type enum (read
+      from the migration files via regex, not recollection — AP#60),
+    - ProgramTypeChooser derives its entries from PROGRAM_TYPE_KEYS (no hardcoded
+      list),
+    - competitive === isCompetitiveSlug(defaultTeamType) for every type,
+    - every type carries the full consumer field set,
+    - defaultStatus is always one of the DB CHECK values.
+  If any of those three sets drift, CI fails — the trap can't reopen.
+
+Fork 3 — UNIFIED ACTIVATE (single-active, guarded)
+  RATIFIED: one activate() concept parametrized by single-active, NOT two naked
+  activation paths that could each flip a season.
+  BUILT: useProgramAdmin.activate(programType). For types where
+  registry.singleActive is true (season), it archives the org's current active
+  program of the SAME type first, then activates. A DB partial-unique index
+  (programs_one_active_season_per_org ON programs(org_id) WHERE status='active'
+  AND program_type='season') backstops the app-level write — belt + suspenders.
+  An "Activate program" button appears on draft programs (ProgramManageZone).
+
+Q4 — STATUS CHECK CONSTRAINT
+  RATIFIED + SHIPPED with the build: status was free TEXT; writers/readers were
+  de-facto clean, so the CHECK formalizes the clean set at the cheapest moment.
+  BUILT: migration 20260607162813 adds CHECK (status IN ('active','draft',
+  'archived')). Applied + mirrored.
+
+TAXONOMY FORK (Frank's question: freeform vs curated/general)
+  RATIFIED: CURATED archetype set — "The 6 + Other" (Frank's selection
+  2026-06-07). Not freeform. A new offering that doesn't fit the 6 gets the
+  single `other` escape hatch (a KNOWN type, treated non-competitive by default),
+  not an arbitrary free-text type. This holds the line against the float-free-enum
+  risk (the class that produced briefings BUG B) while giving admins a real
+  catch-all. Adding a genuine 8th archetype stays the deliberate, parity-tested
+  path (enum value + registry row), per Fork 2.
+  BUILT: migration 20260607162758 adds 'other' to the program_type enum
+  (ALTER TYPE ... ADD VALUE IF NOT EXISTS). Registry 'other' row: defaultStatus
+  'draft', defaultTeamType 'training_only', competitive false, badgeVariant
+  'neutral'. Applied + mirrored. The chooser renders it from PROGRAM_TYPE_KEYS.
+
+2. REVIEW-ITEM TRIAGE (E3-E6 + §4.S) — RESOLVED OR DEFERRED-WITH-REASON
+------------------------------------------------------------------------------
+  E5 — RESOLVED by the draft-status build. The detail-page status binary that
+       would have mislabeled a draft as "Active" is now the 3-way label. Done.
+  E1/E2/B1 — already fixed in #788 (slug-uniqueness on edit, error logging on the
+       count queries, delete-confirm count refetch). Merged.
+  E3 — DEFERRED (cosmetic). Index filter chips omit evaluation + interest_list;
+       both types are still reachable via "All". A chip-set nicety, no data risk.
+  E4 — DEFERRED-WITH-REASON (ticketed). The index "X players" count is
+       team_players ROWS (roster spots), so a kid on two teams double-counts.
+       Correct for LH today (1 team/kid); a label nuance for the multi-team
+       future. Logged so it isn't rediscovered as a bug.
+  E6 — DEFERRED (cosmetic). /admin/teams "no active season" empty-state could
+       wall a camp-only org. Edge case; no LH org hits it today.
+  §4.S — SEPARATE ARC (does not block close). The teams-section redesign (age
+       groups currently hardcoded 8U-12U+Mixed, Frank-flagged) is its own
+       holistic redesign, tracked in EMBER_PENDING_LEDGER §4.S.
+
+3. SCOPE LINE — WHAT STAYS WHERE (records/standings exclusion)
+------------------------------------------------------------------------------
+Records / standings exclusion stays TEAM-LEVEL (isCompetitiveTeam, keyed off the
+team_type), NOT folded into the program registry. This is deliberate and was held
+through the build: a single program can carry both competitive and
+non-competitive teams, so the exclusion decision belongs at the team, not the
+program. The registry's per-type `competitive` field is the team-type DEFAULT a
+new team inherits — it is not the records gate. The parity test locks
+registry.competitive === isCompetitiveSlug(defaultTeamType) so the default and
+the team-level truth can never silently disagree.
+
+4. VERIFICATION RUN (grounding — AP#60)
+------------------------------------------------------------------------------
+  - PR #796 status + check_runs read live via GitHub MCP (all 5 success; §0).
+  - The two §6 verification greps from the architect recommendation were run:
+    (a) no per-type switch/catch-all survives outside the registry — the 10
+        branch sites (statusForProgramType, divisionsApplyTo,
+        defaultTeamTypeSlugForProgram, PROGRAM_NOUN, programBadge,
+        ProgramTypeChooser TYPES+helper, AdminProgramsPage filters,
+        TeamFormSheet competitive warning, coachHomeData noun, programGrouping
+        badge) all read programRule()/PROGRAM_TYPE_KEYS now;
+    (b) enum/registry/chooser parity holds (the B5-epsilon test is the
+        executable form of this grep — green in CI).
+  - Full vitest suite green in CI (only the 5 pre-existing env-var briefings
+    failures, unrelated to this build and present before it).
+  - Build clean: 104.94 KB gz entry chunk (within the §16.10 350 KB budget).
+  - All touched files <= 150 LOC.
+  - Production data: 5 real programs (Spring 2026, Active Roster Lab, Summer Day
+    Camp active; Fall 2025, Winter 2025-26 archived). Genuinely multi-program;
+    all test programs purged.
+
+5. WHAT "CLOSED" MEANS HERE — AND THE TWO REMAINING HUMAN STEPS
+------------------------------------------------------------------------------
+Per PROGRAMS_CLOSEOUT_REVIEW §4, programs is CLOSED when (A) the 3 forks + Q4 are
+ratified, (B) E3-E6/§4.S are triaged, (C) the taxonomy fork is decided, and the
+resulting build is scoped AND shipped. All four conditions are met: the forks are
+ratified (§1), the build is shipped as #796 (smoke-passed, CI-green), the review
+items are triaged (§2), and the taxonomy fork is decided ("6 + Other", built).
+
+Remaining (human, not CC):
+  1. Frank merges #796 (held do-not-auto-merge for this manual gate).
+  2. Architect build-review sign-off: confirm the registry absorbed all 10 branch
+     sites and that records/standings exclusion correctly stayed team-level (§3).
+
+Neither is a residual in the build; both are the agreed human close steps. With
+them done, the programs phase is complete. The teams-section redesign (§4.S) and
+the cosmetic E3/E4/E6 items are explicitly OUT of the programs phase and carried
+forward in the ledger.
+
+==============================================================================
+END — PROGRAMS_CLOSED_CC
+==============================================================================
