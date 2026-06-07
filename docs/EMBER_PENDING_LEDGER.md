@@ -1669,8 +1669,26 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   + failed lane). CC-proposed tier sequence: Tier0 F-PILOT → Tier1 parent-moat
   (FORK A + inbox a11y + recipient chip) → Tier2 coach (FORK B) → Tier3 visibility
   → Tier4 cleanups. Awaiting Frank read → architect additions → CC final rewrite.
-
----
+- **BRIEFINGS L99 AUDIT v3 (100% coverage) 2026-06-07 PM** — four-agent sweep of
+  the NON-UI stack (data/schema/RLS · edge/send/delivery · per-kind resolver
+  correctness · tests/integration/perf), 5 agents total, all load-bearing finds
+  CC-verified (live SQL + send-path trace). Verdict: build is genuinely
+  well-engineered (clean resolve/compose all 12 kinds, solid RLS w/ AP#20 + zero
+  initplan, verify_jwt+app_secrets, fail-CLOSED send gate, single render path,
+  real parity tests, indexed, lazy, no N+1). **CORRECTION (AP#60):** v2's F-PILOT
+  "P0 send-to-all" is FALSE — all 5 send paths route through send-tournament-
+  message's fail-CLOSED pilot gate (`?? true`, 403 on non-pilot), so F-PILOT
+  DOWNGRADED to P2 (widens recipient set/preview only). True P0 = **DEF-11** (no
+  rate cap in code; full-family send overflows to `failed`/silently-dropped —
+  provider/account fix). NEW P1s: **GHOST** migration 20260603104534 unapplied →
+  weekly_digest unique index still includes `draft` LIVE → 23505 collision
+  reachable + stale digestSend comments (quick chat-CC MCP fix); **F-PATTERNA**
+  AlertZone vs Needs-You disagree on drafted-recap-handled (AP#63, no AP#43 test);
+  **SEND-4** Stream A reminders silently undelivered-but-marked-done. P2s: SEND-3
+  digest no ok-check, PC-1 delivery_method no CHECK, RLS-1/RLS-2 defense-in-depth,
+  PC-7 digest audience asymmetry. Tier 0 (ship first): GHOST + FORK D + SEND fixes.
+  v3 doc is the complete CC set; awaiting Frank read → architect additions → final
+  rewrite → build Tier 0.
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 
