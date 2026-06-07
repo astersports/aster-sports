@@ -1572,7 +1572,11 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   (73) — no consumers. Draft-leak check PASSES (useActivePrograms is include-active).
   **Gap:** home has NO close-out doc; D-A/D-D/D-E built ahead of HOME_OPEN_DECISIONS_CC
   + D-B/D-C/D-F shipped/retired on CC lean — none architect-ratified. Needs a
-  close-out doc + the bug fixes.
+  close-out doc + the bug fixes. **Close-out written 2026-06-07:**
+  `docs/HOME_CLOSEOUT_REVIEW_CC.txt` reconciles D-A…D-G vs shipped code + the
+  BUG-H1/H2/H3 close-gates (fixes QUEUED for architect per Frank); home CLOSES on
+  architect ratification (A) + bug routing (B) + the D-G CC verification (C) +
+  dead-code cleanup (D).
 - **BRIEFINGS — NOT closed, but every named open item RESOLVED** (Phase 3 shipped
   engine-lane #677/#685/#687/#690/#691/#710; 5 tests benign env-var; game_recap 19
   rows bounded 1-per-anchor; D-4 uncrossed Frank gate, column intact). Hooks/

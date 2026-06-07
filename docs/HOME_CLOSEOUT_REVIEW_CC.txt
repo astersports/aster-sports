@@ -1,0 +1,175 @@
+==============================================================================
+HOME REDESIGN — CLOSE-OUT REVIEW   Claude Code -> architect lane
+Date: 2026-06-07. Purpose: give the home redesign the same close discipline
+programs got. The home redesign SHIPPED (PR #762, 2026-06-06) but never received
+a close-out doc; several design-lane decisions (D-A…D-F) were built or retired on
+CC's recommendation and were never ratified. This doc reconciles each decision
+against the ACTUAL shipped code (verified by the 2026-06-07 cross-section deep-
+dive, CROSS_SECTION_FINDINGS_CC.txt §2), lists the bug surface that gates close,
+and gives the architect a ratification checklist. NOTHING APPLIED — code fixes are
+QUEUED for the architect to route (Frank's 2026-06-07 decision). Self-contained.
+==============================================================================
+
+0. STATUS
+------------------------------------------------------------------------------
+SHIPPED to main: the v2 shell-contract home for all three roles (HomeShell pure
+composition; 22 presentational home components with ZERO supabase imports; pages
+own hook wiring; the 6 self-fetching admin cards retired for LCP; density toggle
+retired from home; --as-gold + --as-text-meta tokens). useActiveRole/
+ActiveRoleContext fully removed (AP#42 closed). Entry chunk shrank (184.9 vs
+198.6 KB gz). All home files ≤150 LOC.
+NOT DONE: a close-out reconciling the built-ahead decisions, and the bug surface
+below. That is what this doc is for.
+
+Source decision doc: docs/HOME_OPEN_DECISIONS_CC.txt (2026-06-06). The reconcile
+below pairs each decision's doc-status with its verified shipped-code state.
+
+1. DECISION RECONCILIATION (doc-status -> shipped code -> what closes it)
+------------------------------------------------------------------------------
+ALREADY RATIFIED + SHIPPED (no action): D1 (--as-text-meta a11y token), D2
+(density 2-state), D3 (admin hero KPI row — but see BUG-H1 below), D5 (gold
+token). These are closed.
+
+D-A — COACH COMP CARD.
+  Doc: CC rec "A for pilot" (defer comp; render would be AP#27 fabrication —
+  coach_payouts/event_coach_assignments are 0 rows).
+  Shipped: CoachCompCard IS rendered (CoachHomePage.jsx:93) but HIDES when
+  hasComp=false (CoachCompCard.jsx:18) — i.e. option A in practice (nothing
+  fabricated; card simply absent until accrual data exists). CoachTail.jsx:7
+  comment still says "COMP CARD DEFERRED" — STALE.
+  To close: architect ratifies "ship hidden-until-data" as the pilot answer
+  (this is option A honored). Fix the stale comment. B (build accrual) stays a
+  scoped Phase-2.5 follow-up.
+
+D-B — ALERT -> NEEDS-YOU VISUAL MERGE.
+  Doc: CC rec rows are fine for pilot; full alert-card merge only if severity
+  signal is lost.
+  Shipped: plain Needs-you rows via alertToActionItem (coachHomeData.js:63), with
+  a severity rail in ActionRow.jsx:98. So the severity signal is NOT lost (rail
+  present); the richer expandable AlertCard treatment is not merged.
+  To close: architect confirms rows + severity rail are acceptable for the pilot,
+  OR specs the full alert-card merge (severity/expansion behavior in the action
+  card). PENDING treatment confirmation.
+
+D-C — DENSITY TOGGLE: WIRE OR RETIRE.
+  Doc: CC rec retire the visible toggle for the pilot (no-op on v2 cards;
+  storage stays).
+  Shipped: RETIRED from home (no DensityToggle mounted on any home page;
+  DensityToggle.jsx still used by Schedule/Locations — correctly home-only
+  retired). Storage + hook survive.
+  To close: architect ratifies the retire (re-add when a concrete min/max card
+  spec exists). Low-risk sign-off.
+
+D-D — OFF-SEASON STATES (per role). [dated need ~June 15]
+  Doc: CC rec spec the three off-season bodies now (parent wrap / coach wrap /
+  admin reconcile+rollover); only ParentTail had a branch at doc time.
+  Shipped: BUILT for all three roles — parent (ParentTail off-season branch),
+  coach (CoachTail wrap, useCoachNeedsYou gated), admin (useAdminNeedsYou.js:30-43
+  reconcile + roll-rosters close-out).
+  To close: architect ratifies the per-role off-season CONTENT (it shipped on
+  CC's read of the canon; the dated need is met, but the copy/affordances were
+  not re-ratified). Confirm before June 15 pilot off-season.
+
+D-E — ADMIN BRIEFINGS READY/OVERDUE SPLIT.
+  Doc: CC rec confirm mapping (ready = comms_messages drafts; overdue = past-game
+  synthetic) then split the subtitle.
+  Shipped: BUILT on that mapping — useAdminNeedsYou.js:46-58 splits
+  ready=comms_messages / to-write+overdue=synthetic.
+  To close: architect confirms the labels + that "synthetic" maps cleanly to
+  "overdue/to-write." Shipped ahead of confirmation.
+
+D-F — NEEDS-YOU COMPOSITION (3 headline vs extras).
+  Doc: CC rec keep the secondary action-queue items (admin: unscored games +
+  pending invites; coach: unpublished scores + pending achievements) filling
+  cap-4; architect's call whether they belong on home.
+  Shipped: extras INCLUDED (useAdminNeedsYou.js:74, useCoachNeedsYou.js:48).
+  To close: architect rules "extras on home" yes/no. Shipped CC's recommendation,
+  not ratified.
+
+D-G — PARENT COMMS PILOT RECIPIENT-ROW. [CC verification, NOT an architect call]
+  Doc: open question — does a PILOT send write the in-app
+  comms_message_recipients row (so the parent comms card lights up), or does
+  pilot only route email? If pilot skips the in-app row, CC fixes that path.
+  Shipped: useParentNeedsYou.js:42 reads useInboxList unread; the pilot-write-
+  path verification is still outstanding.
+  To close: CC runs the verification (trace the pilot send pipeline ->
+  comms_message_recipients write). NOT blocked on the architect. Offered; say go.
+
+2. BUG SURFACE — CLOSE-GATES (verified 2026-06-07; FIXES QUEUED for architect)
+------------------------------------------------------------------------------
+Per Frank's 2026-06-07 routing, code fixes are NOT applied here — the architect
+reviews + routes each. These gate a clean home close:
+
+  BUG-H1 (P1, PATTERN A / AP#63) — admin hero scope contradiction.
+    AdminProgramHealth.jsx:30-38: "Collected %" is ACTIVE-SEASON scoped
+    (useProgramHealthMetrics -> useSeasonFinancials(orgId, season.id)) while the
+    adjacent "Out $" is ALL-SEASONS (useFamiliesOwingCount). Neither labels its
+    scope -> the BUG-1/HOME-2 contradiction (can read "Collected 100%" next to
+    "Out $1.3k" for a prior-season debtor). The all-seasons "Out" is intentional
+    (matches payment_overdue alert); FIX = label the scope per KPI (AP#63
+    prescription), not change the source. This is the finance analogue of the
+    draft-leak class: invisible until a prior-season debtor exists. NOTE: this
+    sits on the D3 admin-hero KPI row that was marked "closed" — D3 should not be
+    considered closed until this label fix lands.
+
+  BUG-H2 (P2, AP#43 + AP#27) — cross-role record default divergence.
+    A recordless team renders '—' on parent (parentHomeData.js:47, "honest, never
+    a fake 0-0") but a fabricated '0-0' on coach (CoachTail.jsx:59,97). FIX = make
+    coach render '—' too + add the cross-surface invariant test (the existing
+    myTeamsCrossSurfaceInvariant.test does not cover the empty-state default).
+
+  BUG-H3 (P2, AP#44) — "Out" KPI not in its own loading gate.
+    AdminProgramHealth.jsx:51 gates all KPIs on useProgramHealthMetrics.loading
+    only; useFamiliesOwingCount.loading is ignored, so initial totalCents=0 can
+    render "$0 Out" briefly before the owing query resolves (bounded, self-
+    corrects). FIX = include the owing hook's loading in the gate.
+
+3. DEAD-CODE CLEANUP (low-risk, queued)
+------------------------------------------------------------------------------
+  - useAdminHomeSignals.js:45-54 computes pendingLanes/pendingLanesLoading with
+    ZERO consumers (grep: doc refs only) — dead branch; remove or wire.
+  - useCoachHomeSignals.js:73 returns recentTeamMessages — not consumed by
+    useCoachNeedsYou; dead branch.
+  - Minor perf (not a bug): useFamiliesOwingCount runs 3x concurrently on admin
+    home (useAdminNeedsYou.js:22, useAdminHomeSignals.js:31, AdminProgramHealth
+    .jsx:31) — same all-seasons query, candidate for a shared/deduped source.
+  - Stale comment: CoachTail.jsx:7 "COMP CARD DEFERRED" (D-A shipped hidden-card).
+
+4. WHAT "CLOSED" MEANS FOR HOME + RATIFICATION CHECKLIST
+------------------------------------------------------------------------------
+Home is CLOSED when:
+  (A) the architect ratifies the built/retired decisions:
+      [ ] D-A ship hidden-until-data (option A honored)
+      [ ] D-B rows + severity rail acceptable, OR spec the full alert-card merge
+      [ ] D-C density retire ratified
+      [ ] D-D per-role off-season content ratified (before ~June 15)
+      [ ] D-E ready/overdue labels + synthetic->overdue mapping confirmed
+      [ ] D-F extras-on-home ruled yes/no
+  (B) the bug surface is routed + fixed (or explicitly accepted as-is):
+      [ ] BUG-H1 scope labels on the admin hero (also un-blocks the D3 "closed")
+      [ ] BUG-H2 coach record default -> '—' + cross-role invariant test
+      [ ] BUG-H3 Out-KPI loading gate
+  (C) CC verification:
+      [ ] D-G pilot send writes the in-app comms_message_recipients row (CC runs
+          on go; fix the path if it skips the row)
+  (D) dead-code cleanup (§3) lands.
+Draft-leak check already PASSES (useActivePrograms is include-active) — no gate
+there. None of the above blocks a SMOKE of the three homes today; they block the
+formal CLOSE.
+
+5. OPEN FORKS FOR THE ARCHITECT (the decisions only you/Frank make)
+------------------------------------------------------------------------------
+  1. D-B: rows-with-severity-rail vs full alert-card merge (if merge, spec the
+     severity + expansion behavior in the action card).
+  2. D-F: do the secondary action-queue items (scores/invites/achievements)
+     belong on home, or move to their own pages?
+  3. BUG-H1 framing: confirm the FIX is "label both KPIs' scope" (CC lean), not
+     "re-scope Out to active-season" — the all-seasons Out is intentional per
+     HOME-2, so labeling is the right close, but it's your call.
+  4. Routing order: do the home bug fixes (B) ship as one PR before the
+     ratifications (A), or interleave? (CC lean: BUG-H1 + BUG-H2 first — they're
+     the cross-surface-truth class; the ratifications are confirmations.)
+
+==============================================================================
+END — HOME_CLOSEOUT_REVIEW_CC
+==============================================================================
