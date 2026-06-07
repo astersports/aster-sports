@@ -1689,6 +1689,28 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   PC-7 digest audience asymmetry. Tier 0 (ship first): GHOST + FORK D + SEND fixes.
   v3 doc is the complete CC set; awaiting Frank read → architect additions → final
   rewrite → build Tier 0.
+- **BRIEFINGS L99 AUDIT v4 (FINAL, 100% agent-reachable) 2026-06-07 PM** — three
+  more agents (AI quality · delivery-channels+compliance · lifecycle/retention), 8
+  agent-passes total, all load-bearing finds CC-verified (footer read + failed-grep
+  + send-trace + live SQL). The build is well-engineered everywhere an agent
+  reached. Findings now split into TWO GO-LIVE BLOCKERS (not redesign) + redesign
+  tiers. **B1 DEF-11 [P0]** no rate cap + new-domain SPF/DKIM/DMARC unproven + no
+  warmup + personal-Gmail reply-to. **B2 CAN-SPAM [P0]** no physical postal address
+  in any briefing email [CC-verified footer.js] — legal blocker for 175-family send
+  (unsubscribe half IS compliant). v4 CORRECTION: F-CANCEL downgraded P2→P3 (expiry
+  sweep auto-cleans abandoned drafts — verified healthy). NEW: AI is substantive+
+  safe (voice-profile prompt + structural anchored hallucination guard + cron-no-
+  LLM) w/ AI-FREEFORM [P2] caveat (free-form no-invent is instruction-only); two
+  lifecycle P1s (failed = terminal dead-end no-reader [CC-verified] · queued orphan
+  if edge fn dies — both need a recovery sweep, fold FORK E); HISTORY-BACKFILL [P1]
+  17 delivered msgs stuck archived/no-history; SCHED-ANCHOR [P1 latent] scheduled
+  send not invalidated on anchor delete (no FK, 6 orphans); RETENTION [P1] no
+  cap/purge. Delivery CLEAN: RFC-8058 one-click unsub + suppression every path.
+  NEW FORK F = go-live deliverability+compliance gate (B1+B2+domain+reply-to;
+  Frank/provider-owned + small code). §8 OWED (agent-can't-reach, human/browser):
+  cross-client email render, axe-core a11y pass, content/voice taste, real-device,
+  D-G live send. v4 is the final agent-reachable audit; awaiting Frank read →
+  architect additions → CC final rewrite → build Tier 0 + B2 code.
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 
