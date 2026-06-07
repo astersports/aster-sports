@@ -1,0 +1,139 @@
+==============================================================================
+PROGRAMS CLOSE-OUT REVIEW  (Claude Code -> architect lane)
+Date: 2026-06-07. Purpose: consolidate everything needed to formally CLOSE the
+multi-program admin build. One architect pass ratifies the open decisions; that
+pass is what closes programs. Self-contained. NOTHING APPLIED by this doc.
+==============================================================================
+
+0. STATUS (what's on main + in flight)
+------------------------------------------------------------------------------
+Merged to main:
+  - PR-1/2/3 spine: program-type-aware create (#782), team-type-aware team form
+    (#783), programs index + ProgramDetailPage + nav + /admin/teams demote (#784).
+  - Draft-status SPEC (#785) + verification FINDINGS (#786).
+  - timezone-pin fix + AP#46 test (#787); §4.S ledger note (#789).
+In flight:
+  - #788 — program Edit + Delete (F14) + registration window + date validation +
+    mobile layout fix + day-granularity reg + pre-close audit fixes (B1/E1/E2).
+    Held for Frank's merge; CC-audited clean.
+Data: the 3 test programs (ZZ TEST + 2 Fall 2026) deleted; 5 real programs
+remain (Spring 2026, Active Roster Lab, Summer Day Camp, Fall 2025, Winter
+2025-26). Production is genuinely multi-program.
+
+1. PRE-CLOSE AUDIT RESULT (CC, 2026-06-07)
+------------------------------------------------------------------------------
+Full read of the program surface: 6 hooks (useAllPrograms, useProgramTeams,
+useProgramAdmin, useProgramRegistrations, useProgramSetup, useTeamTypes), 3 pure
+libs (programGrouping, programSetup, programDelete), 8 screens/components.
+VERDICT: no P0/P1 bugs; the create -> index -> detail -> teams -> edit/delete
+flow is correct end-to-end; one source per metric (no PATTERN A divergence);
+cascades verified; #36 error handling on load paths; tokens/LOC/tests clean.
+
+Fixed in #788 (the audit fixes):
+  B1 - delete-confirm dependency count was fetched once on mount; adding a team
+       in-session left a stale count. Now refetched when the confirm opens.
+  E1 - program Edit didn't check slug uniqueness (create did). checkSlugAvailable
+       gained excludeId; updateProgram now validates (case-insensitive, excl self).
+  E2 - useProgramAdmin count queries now log errors instead of silently 0 (#36).
+
+Remaining findings — cosmetic/deferred, for architect triage (NONE block close):
+  E3 - /admin/programs index filter chips omit evaluation + interest_list (those
+       enum types reachable only via "All"). Cosmetic.
+  E4 - index "X players" counts team_players ROWS (roster spots), not distinct
+       people; a kid on two teams double-counts. Fine for LH (1 team/kid); a
+       label nuance for the multi-team future.
+  E5 - ProgramDetailPage status is a binary (archived ? "Archived" : "Active").
+       A future "draft" status would mislabel as Active. RESOLVED BY the
+       draft-status build (do not patch separately).
+  E6 - /admin/teams "no active season" empty-state could wall a camp-only org.
+  §4.S - teams-section redesign: age groups hardcoded 8U-12U+Mixed (Frank-flagged).
+
+2. DECISIONS THE ARCHITECT MUST MAKE TO CLOSE PROGRAMS
+------------------------------------------------------------------------------
+A. RATIFY THE 3 DRAFT-STATUS FORKS + Q4 (evidence already in #786 findings):
+   - Fork 1 -> CLOSED-UNIVERSAL: reg_opens_at/reg_closes_at already hold per-type
+     timing; keep status = a small universal set; future type-states go on
+     windows, not status. (CC lean: agree.)
+   - Fork 2 -> TABLE + PARITY: program_type is a DB enum (closed), but
+     statusForProgramType's else is a silent catch-all (the B5-ε trap) ->
+     declarative map + a parity test that fails on any unmapped type. (CC lean:
+     agree.) [Intersects section 3 below.]
+   - Fork 3 -> UNIFY/GUARD: single-active is APP-ONLY (no DB trigger/constraint);
+     a 2nd activation path is unsafe only if it can flip a season. One
+     activate() parametrized by single-active, or strictly guard the non-season
+     path off seasons. (CC lean: unify or guard.)
+   - Q4 -> SHIP THE CHECK with the draft build: status is free TEXT; writers/
+     readers are de-facto clean today, so CHECK(status IN active|draft|archived)
+     formalizes a clean set at the cheapest moment. (CC + architect lean: ship.)
+
+B. TRIAGE E3-E6 + §4.S: fix-now vs fold-into-the-draft-build vs defer. E5 should
+   ride the draft build. §4.S is a holistic teams-section redesign (its own arc).
+
+C. FRANK'S TAXONOMY QUESTION (section 3) — the one new architectural fork.
+
+3. FRANK'S QUESTION — program taxonomy: freeform vs curated/general (LeagueApps)
+------------------------------------------------------------------------------
+Frank, verbatim:
+  "Does it make sense to allow for a program setup Freeform if another type of
+   program wants to be setup? Or use the general system like LeagueApps?"
+
+Context / reference (LeagueApps manager, screenshots 2026-06-07):
+  - LeagueApps "Create program" opens a fixed "Create a new..." archetype menu:
+    League · Event · Tournament · Camp · Club team · Class. A CURATED, fixed set
+    of program archetypes (not freeform) — each with its own setup flow.
+  - Its Program Summary index groups by Live and Upcoming / Unpublished /
+    Completed, with columns Activity Start · Invoiced · Paid · Outstanding ·
+    Players · Staff. (Useful reference for our own index column set later.)
+
+Our current model:
+  - program_type is a DB ENUM: season, tryout, camp, clinic, interest_list,
+    evaluation — a curated, DB-constrained set. ProgramTypeChooser + type-aware
+    create (divisions season-only, status default per type, etc.).
+
+The fork:
+  (A) FREEFORM — let an admin spin up a program of an arbitrary/custom type (a
+      generic container they configure) when a new offering doesn't fit.
+  (B) CURATED/GENERAL — keep a fixed archetype set (like LeagueApps' 6), each
+      with a tailored setup flow; extend the set deliberately when a genuinely
+      new archetype appears.
+
+Why it matters / CC framing (architect decides):
+  - This is Fork 2 at the product level. Freeform program types become free-text
+    -> the exact float-free-enum risk that produced briefings BUG B, AND it
+    breaks per-type behavior (you can't "exclude camps from standings / brackets"
+    if the type is an arbitrary string). Every per-type rule in the platform
+    (statusForProgramType, team-type defaults, records exclusion, divisions
+    gating, PROGRAM_NOUN) keys off a known type.
+  - Data point worth weighing: LeagueApps — a mature, general youth-sports
+    platform — chose CURATED archetypes, not freeform. That's evidence for (B):
+    a curated set with good coverage + a deliberate "add an archetype" path beats
+    freeform. If our 6 enum values don't cover a real offering, the move is to
+    add an archetype (DB enum value + its setup flow + per-type rules), not open
+    freeform.
+  - CC lean: (B) curated, aligned with Fork 2's table+parity. But it's Frank's +
+    architect's call; if there's a real need for one-off ad-hoc programs, a
+    single generic "other/custom" archetype (still a known type, treated
+    non-competitive by default) is the safer middle than true freeform.
+
+  Sub-questions for the architect if (B):
+   - Do our 6 enum values map cleanly onto the archetypes Frank actually runs
+     (season=league, camp, clinic=class?, tryout, evaluation, interest_list)? Is
+     anything LeagueApps offers (Event, Tournament, Club team) missing as a
+     PROGRAM archetype vs already handled elsewhere (tournaments are their own
+     surface; events are per-team)?
+   - If a new archetype is needed, what's the "add an archetype" checklist
+     (enum value + ProgramTypeChooser entry + statusForProgramType + PROGRAM_NOUN
+     + team-type default + any records/index rules)? Codify it so adding one is
+     mechanical and parity-tested (ties to Fork 2).
+
+4. WHAT "CLOSED" MEANS
+------------------------------------------------------------------------------
+Programs is CLOSED when: (A) the 3 forks + Q4 are ratified, (B) E3-E6/§4.S are
+triaged, (C) the taxonomy fork (section 3) is decided, and the resulting
+draft-status build is scoped (and ideally shipped). #788 should merge regardless
+(self-contained, audited). The teams-section redesign (§4.S) is its own arc and
+does not block closing programs.
+
+==============================================================================
+END — PROGRAMS_CLOSEOUT_REVIEW_CC
+==============================================================================
