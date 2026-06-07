@@ -1651,6 +1651,24 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   likely its own small phase). Cleanups: F6 Cancel doesn't discard (scratch drafts
   in Radar), F7 useNeedsBriefing orphan (PC-6), F9 stale docs. Awaiting architect
   ruling on A/B/C before fix PRs.
+- **BRIEFINGS L99 AUDIT v2 (deep-read addendum) 2026-06-07 PM** — expanded the
+  above to the complete CC-recommendation set before architect handoff (v1 read
+  was incomplete; the addendum covered Radar/History+delivery/scheduling/audience/
+  templates/states/a11y/pilot-safety + ran the §16.13 elite-stack gate). 18
+  findings; NEW criticals: **F-PILOT [P0]** 8 resolvers default pilot OFF on a
+  missing settings row (`?? false`) while useOrgSettings fails closed (`?? true`)
+  — latent for LH, fail-open seam for a new org → could send to all real families
+  (FORK D: align to `?? true` + parity test, ship FIRST). **F-SCHED [P1]** no
+  cancel/edit UI for a scheduled send (archive races cron). **F-DELIV [P1]**
+  bounce/fail invisible except one-click-deep; queued/failed rows in neither Radar
+  nor History (ties DEF-11). **F-RECIPCHIP [P1]** recipient preview "Will send to
+  N families" ≠ §13.7 "Active/Futures/guardians". **F-INBOX-A11Y [P1]** parent
+  InboxDetail iframe = AT trap + non-visualViewport (AP#18). Elite-stack gate
+  FAILS items 4 (a11y), 6 (translation G-TRANSLATE, no EN↔ES path), 7 (privacy,
+  F-SIG). New forks D (fail-closed) + E (operational visibility: scheduled-cancel
+  + failed lane). CC-proposed tier sequence: Tier0 F-PILOT → Tier1 parent-moat
+  (FORK A + inbox a11y + recipient chip) → Tier2 coach (FORK B) → Tier3 visibility
+  → Tier4 cleanups. Awaiting Frank read → architect additions → CC final rewrite.
 
 ---
 
