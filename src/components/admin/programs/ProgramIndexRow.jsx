@@ -2,9 +2,11 @@ import { Link } from 'react-router-dom';
 import Badge from '../../shared/Badge';
 import { programBadge } from '../../../lib/programGrouping';
 
-// One row on the /admin/programs index (render R1). Date-only strings are
-// parsed at local midnight so the month/day don't shift across time zones.
-const fmt = (d) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null);
+// One row on the /admin/programs index (render R1). Date-only columns are
+// parsed + displayed in UTC so the month/day never shift (NY-pinning a date-
+// only value would roll back a day in a UTC runtime) — satisfies the timezone
+// audit (anti-pattern #31) with the correct pin for date-only values.
+const fmt = (d) => (d ? new Date(`${d}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) : null);
 
 export default function ProgramIndexRow({ program }) {
   const { label, variant } = programBadge(program.programType);
