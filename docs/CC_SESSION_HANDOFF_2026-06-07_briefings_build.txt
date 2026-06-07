@@ -32,13 +32,12 @@ real double-send window. Three things are waiting (§3). No code is mid-flight.
     still open, Frank smoke pending**.
   Audit arc (docs): Part A audit #808 · L99 v1-v4 #814/#815/#816/#817 · FINAL #818
     · Frank-answers #819 · sign-off carry #820 · G8 report #822 · G8 response #823.
-  Go-live build: G8 #821 (send idempotency kernels + tests) **HELD, NARROWED,
-    pending architect merge-nod**.
+  Go-live build: G8 #821 (send idempotency kernels + tests) **MERGED (narrowed
+    claim accepted) — on main. G5 is now unblocked on architect §3.A(2) only.**
 
 3. WHAT'S WAITING (3 unblockers; nothing else startable in-order)
 ------------------------------------------------------------------------------
-  A. ARCHITECT — on G8 (#821) + response (#823):
-     (1) OK narrowed-G8 to merge? (extraction + tests stand; no overclaim). Nod -> CC merges.
+  A. ARCHITECT — G8 (#821) is MERGED (A.1 resolved). REMAINING:
      (2) Confirm G5 = Option C pilot floor (auto-re-drive only safe-`failed`;
          surface ambiguous `queued`) + durable choice: CC leans Option B
          (`sending` claim; precedent _changeAlertDispatch.ts:78) over A (Resend
