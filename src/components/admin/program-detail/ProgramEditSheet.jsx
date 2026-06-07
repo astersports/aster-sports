@@ -1,0 +1,60 @@
+import { useState } from 'react';
+import FullScreenForm from '../../shared/FullScreenForm';
+import { Field, TextInput } from '../../register/fields';
+import { primaryBtn } from '../../register/registerStyles';
+import { slugify } from '../../../lib/programSetup';
+
+// Edit a program's name / dates / public link / publish state (PR-3 F14).
+// 3+ fields → FullScreenForm (anti-pattern #15). program_type is intentionally
+// NOT editable here (changing a created program's type is a separate concern);
+// status/archive is deferred to the draft-status build. Slug is normalized on
+// save so a typed link can't store a mixed-case variant (F3).
+export default function ProgramEditSheet({ open, program, onClose, onSave }) {
+  return (
+    <FullScreenForm open={open} onClose={onClose} title="Edit program">
+      <Body key={program?.id} program={program} onSave={onSave} />
+    </FullScreenForm>
+  );
+}
+
+function Body({ program, onSave }) {
+  const [form, setForm] = useState({
+    name: program?.name || '', start_date: program?.start_date || '', end_date: program?.end_date || '',
+    public_slug: program?.public_slug || '', is_published: !!program?.is_published,
+  });
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const valid = form.name.trim().length > 0;
+
+  const submit = () => {
+    if (!valid) return;
+    onSave({
+      name: form.name.trim(),
+      start_date: form.start_date || null,
+      end_date: form.end_date || null,
+      public_slug: slugify(form.public_slug || form.name) || null,
+      is_published: form.is_published,
+    });
+  };
+
+  return (
+    <div>
+      <Field label="Program name" htmlFor="ep-name"><TextInput id="ep-name" value={form.name} onChange={(v) => set('name', v)} /></Field>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ flex: 1 }}><Field label="Start date" htmlFor="ep-sd"><TextInput id="ep-sd" type="date" value={form.start_date} onChange={(v) => set('start_date', v)} /></Field></div>
+        <div style={{ flex: 1 }}><Field label="End date" htmlFor="ep-ed"><TextInput id="ep-ed" type="date" value={form.end_date} onChange={(v) => set('end_date', v)} /></Field></div>
+      </div>
+      <Field label={`Public link · /r/${slugify(form.public_slug || form.name) || '…'}`} htmlFor="ep-slug">
+        <TextInput id="ep-slug" value={form.public_slug} onChange={(v) => set('public_slug', v)} />
+      </Field>
+      <label style={checkRow}>
+        <input type="checkbox" checked={form.is_published} onChange={(e) => set('is_published', e.target.checked)} />
+        Published (parents can register at the public link)
+      </label>
+      <button type="button" className="as-press" style={{ ...primaryBtn, opacity: valid ? 1 : 0.5 }} disabled={!valid} onClick={submit}>
+        Save changes
+      </button>
+    </div>
+  );
+}
+
+const checkRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--as-text-secondary)', margin: '0 0 12px' };

@@ -5,6 +5,7 @@ import { programBadge } from '../../lib/programGrouping';
 import AdminBackHeader from '../../components/admin/AdminBackHeader';
 import Badge from '../../components/shared/Badge';
 import ProgramTeamsSection from '../../components/admin/program-detail/ProgramTeamsSection';
+import ProgramManageZone from '../../components/admin/program-detail/ProgramManageZone';
 
 // Date-only columns: parse + display UTC so the day never shifts (date-only
 // values must not be NY-pinned — that rolls back a day in a UTC runtime).
@@ -25,7 +26,7 @@ const wrap = { maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px' };
 
 export default function ProgramDetailPage() {
   const { id } = useParams();
-  const { program, registrations, loading, error } = useProgramRegistrations(id);
+  const { program, registrations, loading, error, refetch } = useProgramRegistrations(id);
 
   if (loading) return <div style={centered}>Loading…</div>;
   if (error || !program) return <div style={centered}>Couldn’t load this program.</div>;
@@ -71,6 +72,8 @@ export default function ProgramDetailPage() {
       {registrations.length > 0 && (
         <Link to="/admin/financials" style={{ ...linkBtn, display: 'inline-block', marginTop: 16, fontWeight: 500 }}>Record payments in Financials →</Link>
       )}
+
+      <ProgramManageZone program={program} onUpdated={refetch} />
     </div>
   );
 }
