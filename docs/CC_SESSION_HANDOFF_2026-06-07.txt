@@ -1,0 +1,93 @@
+==============================================================================
+CC SESSION HANDOFF — 2026-06-07  (CC -> Frank -> architect)
+Programs domain: F14 close-out + pre-close audit + L99 architecture prep.
+Relay artifact per CLAUDE.md §11.8.5. Plain text. NOTHING here is unmerged
+doctrine — see "shipped" vs "open".
+==============================================================================
+
+1. SHIPPED TO MAIN THIS SESSION
+------------------------------------------------------------------------------
+  #789  docs: §4.S ledger note — team age groups capped at 12U (teams-redesign
+        deferral, Frank-flagged).
+  #790  docs: programs close-out review for the architect.
+  #791  docs(claude): §11.8 Architect Collaboration Rules (txt-doc-per-review).
+  #792  docs: programs registry impl-prep findings (the confirm-before-build
+        verification of the architecture recommendation).
+  (This PR) docs(claude): §11.8.5 session-handoff rule + this handoff.
+  Data: deleted the first batch of test programs (ZZ TEST + 2 original Fall 2026)
+        — verified no financial/roster data.
+
+  Prior in this arc (already on main): #782 program-type create, #783 team-type
+  team form, #784 programs index + ProgramDetailPage + nav + /admin/teams demote,
+  #785 draft-status spec, #786 draft-status findings, #787 tz-pin fix.
+
+2. IN FLIGHT / HELD
+------------------------------------------------------------------------------
+  #788  feat(admin): program Edit + Delete (F14) + registration window + date
+        validation + mobile-overflow fix + day-granularity registration +
+        pre-close audit fixes (B1 stale-count, E1 edit-slug-uniqueness, E2 count
+        error logging). HELD with do-not-auto-merge for Frank's merge. Smoked
+        clean through ~6 rounds. Merges regardless of the architecture decisions
+        (self-contained).
+
+3. AUDIT RESULT (pre-close, CC 2026-06-07)
+------------------------------------------------------------------------------
+  Full program surface read: no P0/P1. Flow correct end-to-end. 3 minor items
+  fixed in #788 (B1/E1/E2). Remaining cosmetic/deferred: E3 (index filter chips
+  omit eval/interest_list), E4 (player count = roster spots not distinct people
+  — ticket deferred-with-reason per architect), E5 (detail status binary —
+  resolved by draft build), E6 (/admin/teams empty-state), §4.S (teams redesign).
+
+4. ARCHITECTURE DECIDED (architect recommendation, accepted as design)
+------------------------------------------------------------------------------
+  Three orthogonal axes: TYPE (closed enum) / STATUS (closed 3-value universal:
+  draft->active->archived) / WINDOWS (open per-type, already exist). One
+  declarative PROGRAM_TYPE_REGISTRY every per-type rule reads + a parity test
+  (enum == registry keys == chooser entries). Activation unified + parametrized
+  by registry.singleActive. Curated taxonomy + an `other` escape hatch. CHECK on
+  status ships with the build (Q4).
+
+5. CC IMPL-PREP FINDINGS (#792 — confirm-before-build)
+------------------------------------------------------------------------------
+  - Registry must absorb 10 per-type branch sites (file:line in #792), NOT just
+    statusForProgramType.
+  - CORRECTION for the architect: records/standings exclusion is TEAM-level
+    (team_types.slug via isCompetitiveTeam), NOT program_type — keep it there;
+    registry.competitive = "defaults to a competitive team type."
+  - activate(): season flow is useSeasons:59-69, two-statement NON-atomic; the
+    unified version must add .eq('program_type', target.type) to archive-others
+    and should be transactional. single-active is app-only.
+  - Status readers: all include-active; NO exclude-archived on programs/seasons
+    -> draft cannot leak. No conversions needed.
+  - Parity-triple buildable now; §5 build implementable as specified, no blockers.
+
+6. DECISIONS AWAITING ARCHITECT RATIFICATION (the close gate — §8 checklist)
+------------------------------------------------------------------------------
+  [ ] Fork 1 status closed-universal   [ ] Fork 2 registry + parity test
+  [ ] Fork 3 one parametrized activate() (+ optional DB partial-unique index)
+  [ ] Q4 CHECK ships with build        [ ] Taxonomy: curated + `other`
+  [ ] §4 archetype mapping pass (~1hr, Frank/architect): clinic==Class?
+      Event/Tournament stay their own surfaces (Tournament already is)?
+  [ ] E4 ticketed deferred-with-reason
+  Architect should also confirm the registry absorbed all 10 branches from #792,
+  not just the named one.
+
+7. NEXT ACTION WHEN RATIFIED
+------------------------------------------------------------------------------
+  Build per recommendation §5 (ONE PR + 1 optional GO-gated migration):
+  PROGRAM_TYPE_REGISTRY absorbing the 10 branches; status=draft-on-create per
+  registry; programGrouping Draft group; unified activate(); status CHECK;
+  parity test; `other` archetype. Then programs is CLOSED (not closed-with-
+  residuals).
+
+8. FRANK ACTION ITEMS
+------------------------------------------------------------------------------
+  - Merge #788 when ready.
+  - Relay #792 (impl-prep) + this handoff to the architect; run the §4 mapping.
+  - Give the go to delete the 3 NEW test programs (Fall 2026 AAU / Fall 2026
+    Tryouts / Fall 2026) created during #788 smoke — archived test junk, no real
+    data; CC will confirm each before deleting.
+
+==============================================================================
+END — CC_SESSION_HANDOFF_2026-06-07
+==============================================================================

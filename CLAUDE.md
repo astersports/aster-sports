@@ -1111,6 +1111,15 @@ for that collaboration:
    review doc. CC writes the close-out review (audit result + open forks +
    triage); the architect's ratification is the close.
 
+5. **Every session ends with a committed session-handoff `.txt`** that Frank can
+   hand straight to the architect — `docs/CC_SESSION_HANDOFF_<date>.txt`. It
+   states: what shipped (PRs, one line each), what's in flight / held, the
+   decisions awaiting architect ratification, and the next action when those
+   land. Plain text + full chat paste + delivered as a file (same discipline as
+   the rest of §11.8). Produced when Frank signals session close OR on request —
+   the handoff is the relay artifact, so "the session happened" without it is
+   not a complete handoff. (Operator-directed 2026-06-07.)
+
 ---
 
 ## 12. DEVELOPMENT WORKFLOW
