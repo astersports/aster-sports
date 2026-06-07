@@ -49,13 +49,12 @@ function Body({ program, onSave }) {
     <div>
       <Field label="Program name" htmlFor="ep-name"><TextInput id="ep-name" value={form.name} onChange={(v) => set('name', v)} /></Field>
       <div style={{ display: 'flex', gap: 8 }}>
-        <div style={{ flex: 1 }}><Field label="Start date" htmlFor="ep-sd"><TextInput id="ep-sd" type="date" value={form.start_date} onChange={(v) => set('start_date', v)} /></Field></div>
-        <div style={{ flex: 1 }}><Field label="End date" htmlFor="ep-ed"><TextInput id="ep-ed" type="date" value={form.end_date} onChange={(v) => set('end_date', v)} /></Field></div>
+        <div style={{ flex: 1, minWidth: 0 }}><Field label="Start date" htmlFor="ep-sd"><TextInput id="ep-sd" type="date" value={form.start_date} onChange={(v) => set('start_date', v)} /></Field></div>
+        <div style={{ flex: 1, minWidth: 0 }}><Field label="End date" htmlFor="ep-ed"><TextInput id="ep-ed" type="date" value={form.end_date} onChange={(v) => set('end_date', v)} /></Field></div>
       </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <div style={{ flex: 1 }}><Field label="Registration opens" htmlFor="ep-ro"><TextInput id="ep-ro" type="datetime-local" value={form.reg_opens_at} onChange={(v) => set('reg_opens_at', v)} /></Field></div>
-        <div style={{ flex: 1 }}><Field label="Registration closes" htmlFor="ep-rc"><TextInput id="ep-rc" type="datetime-local" value={form.reg_closes_at} onChange={(v) => set('reg_closes_at', v)} /></Field></div>
-      </div>
+      {/* datetime-local needs the full row — half-width overflows iOS (the date+time value won't shrink). */}
+      <Field label="Registration opens" htmlFor="ep-ro"><TextInput id="ep-ro" type="datetime-local" value={form.reg_opens_at} onChange={(v) => set('reg_opens_at', v)} /></Field>
+      <Field label="Registration closes" htmlFor="ep-rc"><TextInput id="ep-rc" type="datetime-local" value={form.reg_closes_at} onChange={(v) => set('reg_closes_at', v)} /></Field>
       <Field label={`Public link · /r/${slugify(form.public_slug || form.name) || '…'}`} htmlFor="ep-slug">
         <TextInput id="ep-slug" value={form.public_slug} onChange={(v) => set('public_slug', v)} />
       </Field>
