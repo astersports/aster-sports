@@ -1,0 +1,70 @@
+==============================================================================
+GAME_RECAP + D-4 FINDINGS  (CC -> architect lane)
+Date: 2026-06-07. Re: consolidated open items #13 (game_recap row count, open
+4 turns) + #14 (briefings Phase 3 / D-4 / is_pilot_family). Verification only —
+NOTHING APPLIED. Every number is a live query result (AP#60).
+==============================================================================
+
+ITEM 13 — game_recap accumulation: CONFIRMED ACTIVE BUG (not hygiene)
+------------------------------------------------------------------------------
+  - comms_messages total ~17,183; kind='game_recap' = 17,022.
+      status: 17,014 ARCHIVED (superseded), 5 draft, 3 sent.
+  - 17,011 carry created_by_trigger = ONE sentinel (8164ba0f-7392-...) = the
+    auto-draft source. 30 distinct anchors (games), 5 teams -> ~567 rows/game.
+  - last_edited_at max = TODAY (2026-06-07); count grew 15,759 (seed) -> 17,022.
+    STILL CLIMBING. Answers the 4-turns-open question: yes, climbing; it's a bug.
+  - It is NOT a DB trigger on the scoring tables. Triggers on game_results/events
+    are updated_at + cancelled/rescheduled/relocated-notify + tournament-team /
+    opponent sync only — none insert comms_messages. The writer is the AUTO-DRAFT
+    path (briefing-auto-draft-tick / sentinel actor): it re-drafts a game_recap
+    each cycle and ARCHIVES the prior, so superseded archived drafts accumulate
+    unbounded (~567 per game).
+  - VERDICT: active write-amplification = accumulation of superseded archived
+    auto-drafts. The 17,014 'archived' rows are dead weight (never draft, never
+    sent).
+  - FIX (architect to scope):
+    (a) ROOT: auto-draft must not re-create when an equivalent draft already
+        exists for the anchor — dedup / skip-if-unchanged, OR UPDATE the existing
+        draft in place instead of archive-and-recreate.
+    (b) ONE-TIME PURGE of the 17,014 archived game_recap rows (safe: status
+        archived, not draft, not sent; CC can run on go).
+    Purge ALONE re-accumulates — the logic fix is the real one. Do (a) then (b).
+
+ITEM 14 — D-4 / is_pilot_family / pilot mode: HARD-HOLD HELD, FILTER IS LIVE
+------------------------------------------------------------------------------
+  - guardians.is_pilot_family STILL EXISTS (boolean). The DROP did NOT happen.
+  - FILTER-as-production is the LIVE, wired mechanism (not orphaned columns):
+      * supabase/functions/send-tournament-message: in pilot mode, ABORTS the
+        send if any non-pilot guardian is in the queue (hard guard against
+        leaking to real families).
+      * briefing-auto-draft-tick/_reminderSend.ts: filter (!pilotMode ||
+        is_pilot_family).
+      * src/lib/__tests__/pilotMechanismParity.test.js enforces the
+        is_pilot_family-via-get_digest_recipients RPC pattern (the BUG-D guard).
+  - Reading: 175 guardians; is_pilot_family=true = 1 (was likely 0 at the D-4
+    snapshot — that's the "0 rows pointed the wrong way" concern; now 1).
+  - organization_settings: pilot_mode_enabled = TRUE,
+    pilot_test_recipient_email = olivejuiceinc1@gmail.com.
+  - VERDICT on D-4: the documented FILTER-as-production intent is what shipped;
+    the column was not dropped; the hard-hold held. (WHO routed it isn't readable
+    from the DB, but the OUTCOME matches the documented intent — no destructive
+    drop occurred. If the architect needs the decision-trail confirmed, that's a
+    chat-history question, not a code/state one.)
+  - OPERATIONAL FLAG (Frank): pilot_mode is ON, so production sends to the ~60
+    real families are BLOCKED — only is_pilot_family routes, and a send aborts if
+    a non-pilot is queued. This also explains item 13's tiny 'sent' count (3).
+    Flip organization_settings.pilot_mode_enabled = FALSE when ready for
+    real-family sends. Confirm ON is intended for now.
+  - "Did Phase 3 ship": cannot confirm a named milestone from DB/code alone; the
+    pilot-mechanism infra + parity test + RPC pattern are all present and current.
+
+RECOMMENDED NEXT
+------------------------------------------------------------------------------
+  - Item 13: architect scopes the auto-draft dedup/update fix; CC runs the
+    one-time purge of the 17,014 archived game_recap rows on go.
+  - Item 14: no code action needed (filter live, nothing dropped). Frank confirms
+    pilot-mode-ON is intended; flip to FALSE when comms go live to families.
+
+==============================================================================
+END — GAME_RECAP_AND_D4_FINDINGS_CC
+==============================================================================
