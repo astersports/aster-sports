@@ -4,19 +4,12 @@
 import { INITIAL_STATE } from './composerReducer';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 
-// Wave 4.4-B housekeeping — STEPS sourced from composerSteps.js (a leaf
-// module) so composerReducer.js can import it without creating a cycle
-// through this file's INITIAL_STATE import above. Re-exported here so
-// existing consumers (BriefingComposer.jsx) keep importing from helpers
-// without breakage. STEPS literal: ['Kind', 'Audience', 'Body', 'Send'].
-export { STEPS } from './composerSteps';
-
 // Wave 4.4-B Session 1: audience pre-fill from anchor. When the deep-link
 // supplies anchor=team&id=<uuid>, default audience to {type:'team',
 // filter:{team_ids:[id]}}. anchor=event / anchor=tournament land here
 // too (param taxonomy scaffolded now; audience pre-fill for those kinds
-// ships in Sessions 5+ — for now they pass through and let the wizard
-// derive from KIND_METADATA at Step 1).
+// ships in Sessions 5+ — for now they pass through and let the composer
+// derive from KIND_METADATA).
 function audienceFromAnchor(anchorKind, anchorId) {
   if (anchorKind === 'team' && anchorId) {
     return { audience_type: 'team', audience_filter: { team_ids: [anchorId] } };
@@ -29,16 +22,11 @@ export function buildInitial({ initialKind, initialAnchorKind, initialAnchorId, 
   if (!initialKind && !initialAnchorId) return base;
   const meta = KIND_METADATA[initialKind] || {};
   const anchorAudience = audienceFromAnchor(initialAnchorKind, initialAnchorId);
-  // Wave 4.4-B Session 1 step-skipping rules:
-  //   anchor + id + kind → step 3 (Body) — everything pre-filled
-  //   anchor + id only   → step 1 (Kind) — pick kind first, audience already set
-  //   cold start         → step 1 (Kind)
-  // Draft hydration lands at step 3 via HYDRATE_DRAFT action in
-  // BriefingComposer's useEffect — not this function's concern.
-  const hasKindAndAnchor = !!(initialKind && initialAnchorId);
+  // One-screen composer: pre-fill kind + anchor + audience from the deep-link;
+  // no step to skip to. The admin lands on the single compose scroll with these
+  // pre-filled (or empty for a cold start).
   return {
     ...base,
-    step: hasKindAndAnchor ? 3 : 1,
     kind: initialKind || null,
     anchor_kind: initialAnchorKind || meta.defaultAnchorKind || null,
     anchor_id: initialAnchorId || null,

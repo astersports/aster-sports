@@ -1,12 +1,12 @@
-// Wave 3.11 follow-up — reducer for BriefingComposer wizard state.
+// Wave 3.11 follow-up — reducer for BriefingComposer composer state.
 // Pure module, no React. Easy to unit-test.
 //
-// Wave 4.1b §1 + §3 — Bug A: anchor_id is required when anchor_kind
-// is event/tournament/team (not for org). Bug C: HYDRATE_DRAFT
-// targets the earliest invalid step so admins can recover broken
-// drafts (e.g. anchor_id NULL surfaces inline on Step 2).
+// The composer is ONE screen — no step gating (see ComposerSections). The
+// vestigial wizard machinery (step / GO_FORWARD / GO_BACK / JUMP_TO /
+// canAdvance / step{2,3}Valid / hydrateTargetStep / STEPS) was retired in
+// Part A1 (2026-06-07, AP#51); only the live actions + reconcileAnchorForKind
+// remain. reconcileAnchorForKind is live (SET_KIND uses it).
 
-import { STEPS } from './composerSteps';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 
 export const ANCHOR_KINDS_REQUIRING_ID = new Set(['event', 'tournament', 'team']);
@@ -22,14 +22,7 @@ export function reconcileAnchorForKind(kind, candidateAnchorKind, candidateAncho
   return { anchor_kind: anchorKind, anchor_id: anchorId };
 }
 
-export function step2Valid(state) {
-  if (!state.anchor_kind || !state.audience_type) return false;
-  if (ANCHOR_KINDS_REQUIRING_ID.has(state.anchor_kind) && !state.anchor_id) return false;
-  return true;
-}
-
 export const INITIAL_STATE = {
-  step: 1,
   kind: null,
   kindFilter: null,         // string[]|null — when non-null, picker shows only these
   anchor_kind: null,
@@ -54,29 +47,6 @@ export const INITIAL_STATE = {
   // BriefingComposer gates on org.pilot_test_recipient_email !== null.
   pilot_test_scope_team_id: null,
 };
-
-// Wave 4.4-B Session 5c: Step 3 (Body) is now advanceable to Step 4
-// (Send). Body content is template-driven (resolver fills it at
-// preview/send for the 6 wizard-flow kinds; free-form for the other 2).
-// Gate is the upstream-state invariant — if kind + audience_type are
-// set, Step 3 can advance; the SEND button on Step 4 has its own gates
-// for pilot-zero / scheduleInvalid / recipient-count-zero.
-export function step3Valid(state) {
-  return !!(state.kind && state.audience_type);
-}
-
-export function canAdvance(state) {
-  if (state.step === 1) return !!state.kind;
-  if (state.step === 2) return step2Valid(state);
-  if (state.step === 3) return step3Valid(state);
-  return false;
-}
-
-export function hydrateTargetStep(payload = {}) {
-  if (!payload.kind) return 1;
-  if (!step2Valid(payload)) return 2;
-  return 3;
-}
 
 export function composerReducer(state, action) {
   switch (action.type) {
@@ -130,17 +100,10 @@ export function composerReducer(state, action) {
       return { ...state, pilot_test_scope_team_id: action.value || null };
     case 'SET_PREVIEW_FAMILY':
       return { ...state, preview_family_id: action.id };
-    case 'GO_BACK':
-      return { ...state, step: Math.max(1, state.step - 1) };
-    case 'GO_FORWARD':
-      // Wave 4.4-B housekeeping: clamp derived from STEPS.length so
-      // future STEPS array changes don't drift this hardcoded value.
-      // STEPS lives in composerSteps.js (leaf module — no cycle).
-      return canAdvance(state) ? { ...state, step: Math.min(STEPS.length, state.step + 1) } : state;
-    case 'JUMP_TO':
-      return { ...state, step: action.step };
     case 'HYDRATE_DRAFT':
-      return { ...state, ...action.payload, step: hydrateTargetStep({ ...state, ...action.payload }) };
+      // One-screen: hydrate the draft fields; no step targeting. A broken
+      // draft (e.g. anchor_id null) surfaces its missing field inline.
+      return { ...state, ...action.payload };
     case 'RESET':
       return { ...INITIAL_STATE };
     default:
