@@ -88,6 +88,48 @@ doctrine — see "shipped" vs "open".
     Tryouts / Fall 2026) created during #788 smoke — archived test junk, no real
     data; CC will confirm each before deleting.
 
+9. POST-MERGE CLOSE (appended 2026-06-07 PM — the build landed + programs CLOSED)
+------------------------------------------------------------------------------
+  SHIPPED since the above was written:
+    #796  feat(admin): PROGRAM_TYPE_REGISTRY + draft status + unified activate.
+          MERGED to main (squash, 7073988) after Frank's smoke (PASSED) + the
+          architect's build-review sign-off (BOTH conditions met).
+    #797  docs: PROGRAMS_CLOSED_CC.txt — architect close-out confirmation. MERGED.
+
+  ARCHITECT SIGN-OFF (received 2026-06-07, both conditions CONFIRMED):
+    (1) Registry absorbed all 10 branch sites; parity test enforces going forward.
+    (2) Records/standings exclusion stayed TEAM-level (isCompetitiveTeam); the
+        CC correction held through to implementation. Parity test locks
+        registry.competitive === isCompetitiveSlug(defaultTeamType).
+    §8 checklist: Fork 1/2/3 + Q4 + taxonomy ("6 + Other") all ratified + built.
+
+  PRE-MERGE DIGIT CHECK (Frank's "trust the digit"): full vitest run on base
+  (main) vs head (#796) = IDENTICAL 5 failing test files — all briefings/comms
+  modules throwing Missing VITE_SUPABASE_URL (static supabase import at load;
+  green in CI where the env var is set). #796 adds only green (+1 file, +7 tests).
+  No new failure in the costume. (Precise count: 5 failing FILES / 3 failing
+  tests — same root cause; PROGRAMS_CLOSED_CC's "5 failing tests" worded loosely.)
+
+  ITEM #13 (game_recap) — RESOLVED, NOT write-amplification (two queries, live):
+  19 game_recap rows total post-purge (was 15,759+ bloat), 8 trigger-made, all
+  exactly 1-per-anchor (zero dupes). Dedup (draftExists incl. archived) holding.
+  Bounded, not climbing. Recorded in ledger §4.S.2.
+
+  E4 TICKET — now physically recorded in ledger §4.S.2 (was only "intent to
+  ticket"). Roster-spots-not-distinct-people; fine for LH (1 team/kid); fix =
+  COUNT(DISTINCT player_id) or relabel. Travels with the §4.S teams redesign.
+
+  CARRIED STANDING QUEUE (programs close does NOT clear — ledger §4.S.2):
+    - Briefings Phase 3 status — UNVERIFIED. Whether Phase 3 shipped + whether
+      D-4 (is_pilot_family FILTER-as-production, pilot mode ON) was Frank-routed.
+      The 5 failing briefings test files point straight at this. NEXT CHASE.
+    - Rebrand operator items (task #55 not truly closed): Supabase display-name
+      rename, Drive asset upload, SKYFIRE folder lock.
+    - E3 / E6 cosmetic deferrals.
+
+  STATE: programs phase is CLOSED, clean, no residuals. Next session opens on the
+  briefings Phase 3 verification unless Frank routes elsewhere.
+
 ==============================================================================
 END — CC_SESSION_HANDOFF_2026-06-07
 ==============================================================================
