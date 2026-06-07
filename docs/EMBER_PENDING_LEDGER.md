@@ -5948,3 +5948,36 @@ is 3600+ lines, so per the >2000-line clause only the touched sections
 are pasted, not the whole file).
 
 ---
+
+### §4.BW — Briefings 8-agent audit (fresh re-run, 2026-06-07 PM)
+
+`docs/BRIEFINGS_8AGENT_AUDIT_2026-06-07.txt` — independent 8-agent
+line-by-line re-run of the briefings engine against current main,
+grounded on a centrally-verified LIVE-STATE package (counters the ~50%
+false-positive rate). CONFIRMS the architect-signed FINAL
+(`BRIEFINGS_L99_AUDIT_CC.txt`) and adds/sharpens the pending surface:
+
+- **P0** F-IDEMPOTENCY — send crash window OPEN on main (= G8/G5; G5 stays
+  HELD, G8 claim narrowed; Option C now / Option A durable).
+- **P1** F-DUAL-FINALIZE (4 send helpers force `status='sent'` ignoring
+  `dispatch.ok` — `digestSend/rsvpNudgeSend/academyCallupSend/scheduleChangeSend`);
+  F-PARENT-MOAT-LEAK (archived briefings leak into parent inbox + Needs-you;
+  no status gate in `useInboxList` or `parent_select_own_recipients` RLS;
+  latent — dormant under REDIRECT mode, fires at FILTER go-live);
+  F-WEEKLY-DIGEST-FAIL-OPEN + F-FORKD-8 (FORK D extended to 9 resolvers,
+  fail-closed); F-FAILCLOSED-UNTESTED (G7 gate untested).
+- **P2** F-RSVP-EXPIRY-TRAP (root cause of 0-sent/72-archived rsvp_nudge:
+  `computeExpiryForKind` returns `start_at` -> archive-at-kickoff);
+  F-BUGA-UNAPPLIED (Tier-0 GHOST migration `20260603104534` still
+  unapplied); F-TOURNEY-COUNT-SPLIT (chip vs send roster scope);
+  F-AI-FREEFORM (no verify caption); F-EMAIL-WRAPPER-DUP (7 copies).
+- **Decisions owed** to Frank/architect: parent-moat fix shape (lean BOTH
+  RLS+hook), rsvp expiry product call, idempotency durable Option A vs B.
+- **Downgrades (trust signal):** `event_reminder` enum mismatch P0->P3
+  (direct-send Stream A, never inserts comms_messages); BUG D resolved
+  (pilot = one RPC mechanism, `is_pilot_family` load-bearing).
+
+Per AP#45 this audit is a `.txt` (does not trip the `AUDIT_*.md` guard)
+but reconciled here for §11.8 doctrine. NOTHING APPLIED.
+
+---
