@@ -36,6 +36,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@4";
 import { buildEmailRow, dispatchPushFanout, mintUnsubscribeUrl } from "./_lib.ts";
+import { alreadySent, classifyBatchResult } from "./_dispatch.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -98,7 +99,7 @@ Deno.serve(async (req) => {
     .select("id, org_id, subject, headline, body_html, body_plain, sent_at")
     .eq("id", body.message_id).single();
   if (msgErr || !message) return json({ error: "Message not found" }, 404);
-  if (message.sent_at) return json({ error: "Already sent" }, 409);
+  if (alreadySent(message)) return json({ error: "Already sent" }, 409);
 
   const { data: roles, error: rolesErr } = await sb
     .from("user_roles")
@@ -207,29 +208,26 @@ Deno.serve(async (req) => {
     const unsubUrls = await Promise.all(group.map((r) => mintUnsubscribeUrl(sb, supabaseUrl, r.guardian_id)));
     const batch = group.map((r, idx) => buildEmailRow(r, message, fromHeader, replyTo, unsubUrls[idx]));
     const { data: batchData, error: batchErr } = await resend.batch.send(batch);
-    if (batchErr) {
-      failed += group.length;
-      errors.push(batchErr.message ?? "Batch rejected");
-      await sb.from("comms_message_recipients")
+    // Pure decision (mirror: ./_dispatch.ts, tested in sendDispatch.test.js):
+    // which rows are sent vs failed for this batch. IO (the status writeback)
+    // stays here. Bulk .in() per status — same rows get the same status as the
+    // prior per-row writeback, fewer round-trips.
+    const c = classifyBatchResult(group, { data: batchData, error: batchErr });
+    sent += c.sent;
+    failed += c.failed;
+    errors.push(...c.errors);
+    const ops = [];
+    if (c.failedIds.length) {
+      ops.push(sb.from("comms_message_recipients")
         .update({ delivery_status: "failed", delivery_method: "resend_api" })
-        .in("id", group.map((r) => r.id));
-      continue;
+        .in("id", c.failedIds));
     }
-    const updates = (batchData?.data ?? []).map((res: any, i: number) => {
-      const recipientId = group[i].id;
-      if (res?.id) {
-        sent++;
-        return sb.from("comms_message_recipients")
-          .update({ delivery_status: "sent", delivery_method: "resend_api" })
-          .eq("id", recipientId);
-      }
-      failed++;
-      errors.push(`${group[i].email_at_send}: ${res?.error ?? "unknown"}`);
-      return sb.from("comms_message_recipients")
-        .update({ delivery_status: "failed", delivery_method: "resend_api" })
-        .eq("id", recipientId);
-    });
-    await Promise.all(updates);
+    if (c.sentIds.length) {
+      ops.push(sb.from("comms_message_recipients")
+        .update({ delivery_status: "sent", delivery_method: "resend_api" })
+        .in("id", c.sentIds));
+    }
+    await Promise.all(ops);
   }
 
   // Finalize the message row. status='sent' is authoritative here (service
