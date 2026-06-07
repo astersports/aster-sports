@@ -1736,6 +1736,26 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   for Frank's smoke). Still open: CAN-SPAM counsel one-liner (M-1; address ships
   regardless) + FORK A confirm (expected yes). Next: architect §10-item-1 sign-off
   → CC builds go-live track + Tier 0, B2 first, G8 idempotency test before G5 sweep.
+- **BRIEFINGS AUDIT ARC — SIGNED + BUILD GREEN-LIT (architect, 2026-06-07 PM)**
+  (`ARCHITECT_SIGNOFF_BRIEFINGS_L99_FINAL.txt`). §10-item-1 SIGNED — all 7 checklist
+  items pass against the body (recovery sweep in go-live only, verified in 3 places).
+  Honest status: "audit arc closed, build green-lit, go-live gates (G1-G8) OPEN, D-4
+  uncrossed" — a signed audit is a signed plan, not a shipped system. Build order
+  per §5: G1 (B2 address+footer, FIRST) → G8 (idempotency+writeback test) → G5
+  (recovery sweep, gated on G8) → G2 (B1 throttle; Frank: Resend tier) → G6 (rollup)
+  → G7 (pilot-gate test) → G3/G4 (Frank: DNS+warmup, reply-to) → Tier 0 (GHOST apply
+  GO-gated; FORK D; SEND-4/SEND-3). Two FORWARD FLAGS carried:
+  **FF-1** FORK C interim guard = migration (is_forfeit boolean) + score-entry
+  checkbox + render branch (3 things, not a one-liner); migration runs GO-gated MCP
+  discipline (not a CC-written file); guard fires only if the result-enterer CHECKS
+  the box (human-entered fact, no auto-detection — inherent, named).
+  **FF-2** G-TRANSLATE deferral is PILOT-correct not FOREVER — it's a per-org concern;
+  tag "deferred for LH pilot on demographic evidence; RE-EVALUATE at each new-org
+  onboard" and ride it on the G-MULTITENANT pre-2nd-org scan (deferred-with-reason-
+  AND-trigger). Opens: CAN-SPAM counsel one-liner (before promoting anything, NOT
+  before G1 — address ships regardless); FORK A pref yes (before the FORK A PR, not
+  before G1). CC build kickoff: G1 needs Frank's LH mailing-address value + the
+  additive migration; G8 starts in parallel (unblocked; the gate G5 depends on).
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 
