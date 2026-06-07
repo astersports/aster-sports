@@ -1,0 +1,169 @@
+==============================================================================
+PROGRAM DRAFT STATUS — VERIFICATION FINDINGS  (CC -> architect lane)
+Date: 2026-06-07. Re: PROGRAM_DRAFT_STATUS_DESIGN_QUESTIONS_FOR_CC.txt.
+Read-only. Every item cites a query result or file:line. NOTHING APPLIED.
+Verified against production schema (project vrwwpsbfbnveawqwbdmj) + main @ 8584834.
+==============================================================================
+
+FORK 1 — status: closed universal lifecycle, or first of type-specific states?
+------------------------------------------------------------------------------
+1a. Distinct production status values (SELECT status, count(*) ... GROUP BY):
+      archived = 4,  active = 4.  Exactly {active, archived}. Spec claim CONFIRMED.
+
+1b. Every WRITER of programs.status (incl. the `seasons` view = programs WHERE
+    program_type='season'). Four writers, ALL write only 'active' | 'archived':
+      - src/hooks/useProgramSetup.js:29-31 (program create) → value from
+        statusForProgramType(programType). See 2c.
+      - src/hooks/useSeasons.js:43 createSeason → status from caller; the caller
+        AdminSeasonsPage.jsx:24 passes status = (seasons.length===0 ? 'active'
+        : 'archived').
+      - src/hooks/useSeasons.js:62,66 setActive → 'archived' (all others) then
+        'active' (target). [Fork 3.]
+      - src/hooks/useSeasonRollover.js:16 (insert new season) + :26 (update prior
+        → status:'archived', rolled_over_at).
+      No writer sets status type-specifically beyond statusForProgramType's binary.
+      (usePrograms.js writes the `teams` table, NOT programs.status.)
+
+1c. Per-type lifecycle/windowing concept? Programs columns (information_schema):
+      id, org_id, sport_id, program_type, parent_program_id, name, start_date,
+      end_date, status, rolled_over_at, created_at, updated_at, public_slug,
+      reg_opens_at, reg_closes_at, is_published.
+      → There IS a registration-window concept: **reg_opens_at / reg_closes_at**
+        (+ is_published, start_date/end_date). But these are UNIVERSAL columns on
+        every program, NOT a per-type phase/workflow column. No phase/workflow/
+        state column exists. parent_program_id + rolled_over_at are lineage, not
+        lifecycle.
+    RESOLUTION SIGNAL: type-specific TIMING already lives in reg_opens_at/
+    reg_closes_at (universal columns), not in status. So status should stay a
+    CLOSED UNIVERSAL set (draft/active/archived); future type-specific states
+    (collecting, evaluating, …) belong on the window/date columns, NOT status.
+    The spec should state that boundary explicitly.
+
+FORK 2 — program types: closed set or growth axis? (switch vs declarative table)
+------------------------------------------------------------------------------
+2a. program_type is defined as a Postgres ENUM (not a constants.js list driving
+    the DB). Values (pg_enum): season, tryout, camp, clinic, interest_list,
+    evaluation. The app mirrors these as literals in statusForProgramType
+    (lib/programSetup.js), TEAM_TYPE defaults (lib/teamTypes.js), PROGRAM_NOUN
+    (lib/home/coachHomeData.js), programBadge (lib/programGrouping.js),
+    ProgramTypeChooser TYPES (components/admin/program-setup/) — no single shared
+    enum constant; each surface re-lists.
+2b. program_type column type: USER-DEFINED / udt=program_type (a DB ENUM —
+    CONSTRAINED). Adding a 7th type requires ALTER TYPE (deliberate, not silent).
+    Contrast: programs.status is `text` / udt=text — FREE TEXT, and programs has
+    **zero CHECK constraints** (pg_constraint contype='c' → none). So types are
+    DB-locked; status is not. (Bears on Q4.)
+2c. statusForProgramType (src/lib/programSetup.js, current on main):
+      return type === 'camp' || type === 'clinic' ? 'active' : 'archived';
+    It is a BINARY expression, not a per-type map, and the ELSE branch is a
+    SILENT CATCH-ALL: any unlisted/new program_type falls through to 'archived'
+    with no failure. The default ('archived') is safe-ish (hidden, see B1 — not
+    an active-leak), but the silent fall-through IS the drift-trap shape.
+    RESOLUTION SIGNAL: types are a DB-closed set (switch is defensible), BUT the
+    silent catch-all is exactly the B5-ε trap. Recommend a single declarative map
+    (program_type → default_status) + a parity test that FAILS if any enum value
+    has no mapping. Low cost, closes the trap before draft is the 3rd value.
+
+FORK 3 — activation: one concept or two?
+------------------------------------------------------------------------------
+3a. Season Set-active flow: src/hooks/useSeasons.js:59-69 (setActive). Two-step
+    APPLICATION-CODE transaction: (1) update all OTHER seasons in the org to
+    'archived' (.eq('org_id',orgId).neq('id',id)); (2) update the target to
+    'active'. Two separate awaits — NOT a DB transaction: if step 2 fails after
+    step 1, the org can be left with ZERO active seasons. The hook's own comment
+    (lines 7-9, 55-58) states: "Postgres doesn't enforce 'only one active per
+    org', so we archive all others and then promote."
+3b. Single-active invariant enforcement: APP-ONLY. Confirmed two ways —
+    (i) pg_trigger on programs = only trg_programs_updated_at (set_updated_at);
+        no enforcing trigger. No unique/partial index on status (pg_indexes:
+        none matching status/active). No CHECK constraints.
+    (ii) the useSeasons comment above says so explicitly.
+3c. Any non-season type with a single-active-style constraint today? None. No
+    "one open interest_list per audience" rule exists in schema or code. (Could
+    be a future want, but nothing today.)
+    RESOLUTION SIGNAL: because single-active is APP-ONLY, a second activation
+    path is a real risk surface ONLY if it can flip a SEASON to active outside
+    setActive. The non-season Activate (draft→active for camp/clinic/tryout)
+    does NOT need single-active and is safe — PROVIDED it is guarded to
+    non-season types (a season must always route through setActive). Cleanest
+    dominant form: ONE activate(programId) concept that applies the archive-
+    others step only when program_type='season' (single-active as a parameter),
+    rather than two divergent paths. At minimum the spec must NAME that the
+    non-season path must never touch a season.
+
+CHEAP CHECK A — are the archived rows test junk? (Q5)
+------------------------------------------------------------------------------
+A1. SELECT id,name,program_type,status,created,org_id WHERE status='archived':
+      - Fall 2025        (season,  created 2026-05-05) — REAL historical season.
+      - Winter 2025-26   (season,  created 2026-05-06) — REAL historical season.
+      - ZZ TEST — Registration Demo (safe to delete) (season, 2026-06-01) — test.
+      - Fall 2026        (tryout,  created 2026-06-07) — test row from PR-3 smoke
+        (created under old D1 → archived).
+    FINDING: NO real non-season program is stranded in 'archived'. The two real
+    archived rows are legitimately-retired SEASONS (correctly grouped under
+    Archived). Only ZZ TEST + the Fall 2026 tryout are junk. "Leave as junk" is
+    safe; deleting those two is also safe (CC can delete on Frank's go — confirm
+    each). Note: there is ALSO a Fall 2026 CAMP (status=active, the slug-variant
+    sibling) — not in this set; it's the active test camp.
+
+CHEAP CHECK B — every programs.status reader: include-active vs exclude-archived
+------------------------------------------------------------------------------
+B1. All readers of programs.status / seasons.status (the view). Classification:
+    INCLUDE-ACTIVE (== 'active' / .eq('status','active')) — SAFE, draft excluded:
+      - src/context/SeasonContext.jsx:53   rows.find(s => s.status === 'active')
+      - src/hooks/useActivePrograms.js:26  .eq('status','active')
+      - src/hooks/useActiveSeasonEnd.js:11 .eq('status','active')
+      - src/hooks/useProgramHealthMetrics.js:74 .eq('status','active')
+      - src/pages/SeasonRolloverPage.jsx:25 .eq('status','active')
+      - src/pages/FinancialImportPage.jsx:33 .eq('status','active')
+      - src/pages/FinancialDashboardPage.jsx:44 seasons.find(s=>s.status==='active')
+    UNFILTERED admin surfaces (show all statuses by design — not a family leak):
+      - src/hooks/useSeasons.js:21 select('*')  (AdminSeasonsPage list)
+      - src/hooks/useAllPrograms.js:17 (the /admin/programs index)
+      - src/pages/FinancialDashboardPage.jsx:32 select('id,name,status')
+    DISPLAY binaries (admin-only; need draft-awareness in the build, no leak):
+      - src/lib/programGrouping.js:28  p.status === 'archived' (index grouping)
+      - src/pages/admin/ProgramDetailPage.jsx:41  status==='archived'?'Archived':'Active'
+    EXCLUDE-ARCHIVED readers on programs/seasons (the draft-leak shape): **NONE
+    FOUND.** Every `neq('status','cancelled')` in the codebase is on the EVENTS
+    table; every `.in('status',['queued','sent'])` is comms_messages. No program/
+    season reader uses `!= 'archived'`.
+    FINDING: the reader side is SAFE — a `draft` value will NOT leak to any
+    parent/coach surface, because no consumer is exclude-archived; the gating
+    consumers are all include-active. The only draft-aware edits the build needs
+    are the two ADMIN display binaries above (group draft correctly; label it
+    "Draft") — neither is family-facing.
+
+Q4 (ship the CHECK with the build?) — evidence
+------------------------------------------------------------------------------
+Confirmed asymmetry: program_type is a DB ENUM (locked), programs.status is free
+TEXT with zero CHECK (2b). That IS the float-free-enum condition that produced
+briefings BUG B. But the de-facto set is already clean: 1b shows all 4 writers
+emit only active|archived, and B1 shows all readers are include-active or
+admin-unfiltered (no sloppy exclude-archived reader). So a CHECK (status IN
+('active','draft','archived')) would formalize an already-disciplined set —
+LOW risk, HIGH future-proofing, cheapest at the moment the 3rd value is added.
+Evidence supports the architect's lean: SHIP THE CHECK WITH THE BUILD (one
+small migration, design-lane GO-gated like M-1). The writers/readers are clean
+enough that it won't break anything today; it guards tomorrow's sloppy writer.
+
+SUMMARY — how the evidence resolves each fork
+------------------------------------------------------------------------------
+  Fork 1 → CLOSED UNIVERSAL. reg_opens_at/reg_closes_at already hold per-type
+           timing; status stays draft/active/archived; future type states go on
+           windows, not status. State the boundary in the spec.
+  Fork 2 → types are DB-closed (switch defensible) BUT statusForProgramType's
+           silent else-catch-all is the trap → recommend declarative map +
+           parity test. Lean: table.
+  Fork 3 → single-active is APP-ONLY → a 2nd activation path is unsafe only if it
+           can touch a season → recommend ONE parametrized activate() (single-
+           active when type='season'), or at minimum guard the non-season path
+           off seasons. Lean: unify/guard.
+  Check A → no real program stranded; only ZZ TEST + Fall 2026 tryout are junk
+           (deletable on go); the 2 real archived seasons stay.
+  Check B → reader side SAFE (no exclude-archived); only 2 admin display binaries
+           need draft-awareness. No family leak path.
+  Q4 → ship the CHECK with the build (set is already clean; cheapest now).
+==============================================================================
+END
+==============================================================================
