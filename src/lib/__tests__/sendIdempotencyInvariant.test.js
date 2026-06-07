@@ -1,11 +1,13 @@
-// G8 / SEAM-3 invariant lock. The recovery sweep (G5) re-invokes
-// send-tournament-message to re-drive stuck sends. That is SAFE ONLY IF the
-// edge fn is idempotent: (1) a finalized message 409s instead of re-sending,
-// and (2) the recipient query processes ONLY delivery_status='queued' rows, so
-// a re-invoke never double-sends to already-sent recipients. Both guards live
-// in index.ts; this static assertion fails loudly if either is ever removed —
-// the cheapest way to lock a DB-query invariant the unit tests can't reach.
-// Same shape as verifyJwtConfigAudit / sectionRendererParity (static-grep lock).
+// G8 / SEAM-3 invariant lock. These two guards are NECESSARY for re-drive
+// safety: (1) a finalized message 409s instead of re-sending; (2) the recipient
+// query processes ONLY delivery_status='queued' rows, so a re-invoke skips rows
+// already marked 'sent'. This static assertion fails loudly if either is removed.
+// NOT SUFFICIENT (architect G8 review): the queued-filter does NOT cover the
+// crash-after-dispatch window — a recipient emailed-but-not-yet-marked-'sent'
+// still reads 'queued', so a blind re-drive double-sends. G5 must therefore
+// auto-re-drive only safe-'failed' rows and surface ambiguous 'queued' for human
+// review until the window is closed durably. Same lock shape as
+// verifyJwtConfigAudit / sectionRendererParity (static-grep).
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';

@@ -2,16 +2,23 @@
 // AP#30 mirror: this is the Deno mirror; the vitest source of truth is
 // src/lib/briefings/sendDispatch.js (keep in sync).
 //
-// Why this exists (G8 / SEAM-3): the recovery sweep (G5) re-drives stuck sends
-// and is SAFE ONLY IF the send is idempotent. The edge fn enforces idempotency
-// two ways: (1) a message-level guard — alreadySent() drives the 409 short-
-// circuit so a re-invoke of a finalized message never re-sends; (2) the
-// recipient query filters delivery_status='queued', so a re-invoke only
-// processes still-queued rows and never double-sends to already-sent ones
-// (that filter lives at the DB query in index.ts and is locked by a static
-// invariant test). classifyBatchResult is the per-recipient writeback decision
-// — pure, so the "whole batch -> failed on rejection" + "per-row sent/failed on
-// success" behavior is unit-tested instead of buried inline in the send loop.
+// Why this exists (G8 / SEAM-3): the recovery sweep (G5) re-drives stuck sends.
+// This proves the PARTIAL idempotency that DOES hold: (1) a message-level guard
+// — alreadySent() drives the 409 so a re-invoke of a FINALIZED message never
+// re-sends; (2) the recipient query filters delivery_status='queued', so a
+// re-invoke skips rows already marked 'sent'. classifyBatchResult is the
+// per-recipient writeback decision (pure, unit-tested: "whole batch -> failed on
+// rejection" + "per-row sent/failed on success") instead of buried in the loop.
+//
+// SCOPE LIMIT (architect G8 review, 2026-06-07): this does NOT cover the
+// crash-after-dispatch window — if the fn dies AFTER Resend accepts a batch but
+// BEFORE the rows are marked 'sent', those recipients were emailed yet their
+// rows still read 'queued'. A blind re-drive of 'queued' would double-send them.
+// So G5 must NOT auto-re-drive ambiguous 'queued' rows on the strength of these
+// guards: it auto-re-drives only the provably-safe class (failed-by-batch-
+// rejection, no email sent) and surfaces ambiguous 'queued' for human review,
+// until the window is closed durably (sending-claim state or provider
+// idempotency keys). "Idempotency proven" here = finalized + clean-queued only.
 
 // Message-level idempotency: a message with sent_at set has already been
 // finalized — re-invoking must 409, never re-send.

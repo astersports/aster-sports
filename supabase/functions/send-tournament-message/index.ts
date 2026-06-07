@@ -110,6 +110,12 @@ Deno.serve(async (req) => {
   if (rolesErr) return json({ error: `Role lookup failed: ${rolesErr.message}` }, 500);
   if (!roles || roles.length === 0) return json({ error: "Not authorized" }, 403);
 
+  // The delivery_status='queued' filter is the re-drive idempotency guard
+  // (skips already-'sent' rows). NOTE (G8 review): 'queued' is AMBIGUOUS for a
+  // RECOVERY re-drive — a recipient emailed-but-crashed-before-writeback still
+  // reads 'queued'. A blind re-drive double-sends them. G5 must auto-re-drive
+  // only safe-'failed' rows + surface 'queued' for review until the window is
+  // closed (sending-claim state or provider idempotency keys).
   const { data: recipients, error: recErr } = await sb
     .from("comms_message_recipients")
     .select("id, email_at_send, guardian_id, body_html_rendered, body_plain_rendered, subject_rendered")
