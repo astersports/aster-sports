@@ -34,7 +34,7 @@ const rowValue = { fontSize: 14, color: 'var(--as-text-primary)', lineHeight: 1.
 const banner = { display: 'flex', alignItems: 'flex-start', gap: 10, padding: 12, borderRadius: 10, backgroundColor: 'var(--as-warning-soft)', borderLeft: '3px solid var(--as-warning)', fontSize: 13, color: 'var(--as-text-primary)', lineHeight: 1.4 };
 const sendBtn = (disabled) => ({ width: '100%', minHeight: 48, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 });
 
-export default function StepSendConfirm({ state, audience, onSend, sending = false, pilotModeEnabled = false, audienceResolving = false }) {
+export default function StepSendConfirm({ state, dispatch, audience, onSend, sending = false, pilotModeEnabled = false, audienceResolving = false }) {
   const scheduleValue = state.scheduled_for ? `Scheduled for ${fmtSchedule(state.scheduled_for)}` : 'Send now';
   const scheduleInvalid = useMemo(() => {
     if (state.send_mode !== 'scheduled') return false;
@@ -79,6 +79,10 @@ export default function StepSendConfirm({ state, audience, onSend, sending = fal
           {audienceResolving ? 'Confirming who will receive this…' : "Couldn't confirm recipients — check the audience above before sending."}
         </p>
       )}
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--as-text-secondary)' }}>
+        <input type="checkbox" data-testid="test-only-toggle" checked={state.test_only} onChange={(e) => dispatch({ type: 'TOGGLE_TEST', value: e.target.checked })} />
+        Send test to admin@ only (recommended first)
+      </label>
       <button type="button" onClick={onSend} disabled={disabled} className="as-press" style={sendBtn(disabled)} data-testid="send-button">
         {sending
           ? <><Loader2 size={16} strokeWidth={1.75} className="as-spin" /> Sending…</>

@@ -88,4 +88,17 @@ describe('StepSendConfirm', () => {
     setup({ audience: { filtered: 12, total: 12, mode: 'standard' } });
     expect(screen.getByTestId('send-button')).not.toBeDisabled();
   });
+
+  // A3: test_only toggle relocated from the body to the send action. It renders
+  // in the send section, reflects state.test_only, and flips it via dispatch.
+  it('j. test-only toggle renders here and flips test_only via dispatch', async () => {
+    const dispatch = vi.fn();
+    const user = userEvent.setup();
+    render(<StepSendConfirm state={BASE_STATE} dispatch={dispatch} audience={AUDIENCE_OK} onSend={() => {}} sending={false} pilotModeEnabled={false} />);
+    const toggle = screen.getByTestId('test-only-toggle');
+    expect(toggle).toBeInTheDocument();
+    expect(toggle).not.toBeChecked(); // BASE_STATE test_only:false
+    await user.click(toggle);
+    expect(dispatch).toHaveBeenCalledWith({ type: 'TOGGLE_TEST', value: true });
+  });
 });

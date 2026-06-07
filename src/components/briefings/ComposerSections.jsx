@@ -39,7 +39,7 @@ export default function ComposerSections({
         onChange={(payload) => dispatch({ type: 'SET_SCHEDULE', payload })}
       />
       <PreviewPanel state={state} families={recipients} coaches={coaches} recipientCount={audience.filtered} />
-      <StepSendConfirm state={state} audience={audience} onSend={onSend} sending={sending} pilotModeEnabled={pilotModeEnabled} audienceResolving={audienceResolving} />
+      <StepSendConfirm state={state} dispatch={dispatch} audience={audience} onSend={onSend} sending={sending} pilotModeEnabled={pilotModeEnabled} audienceResolving={audienceResolving} />
     </>
   );
 }
