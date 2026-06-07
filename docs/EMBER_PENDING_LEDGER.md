@@ -1631,6 +1631,26 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   send action); optional weekly_digest send-path unification. Awaiting architect
   confirm of the three scoping calls (academy preserve / tournament density defer /
   weekly_digest unify-now-or-later) before A1–A3 code.
+- **Part A SHIPPING:** A1 MERGED (#809, retire wizard machinery). A3 MERGED (#812,
+  test_only toggle → send action). A2 (#813, grouped picker Recaps/Outreach/Guides,
+  static order, AP#43 invariant) HELD for Frank's smoke. Architect ruled all 4
+  (Option B grouping / static rank / keep single-item header / A3-first). Post-pilot
+  ticket: data-driven usage-rank (deferred, not decided-against).
+- **BRIEFINGS L99 AUDIT (full surface) 2026-06-07 PM** (`docs/BRIEFINGS_L99_AUDIT_CC.txt`).
+  Operator-directed redesign-grade pass over the ENTIRE briefings build (screens,
+  entry/exit, AI, per-role coach/admin/parent) with renders. Engine strong (pure
+  resolve/compose, single render path email==in-app, AI honest-by-design, secrets
+  in app_secrets); gaps at the edges. 9 findings, 3 architect FORKS: **FORK A**
+  signature/contact blocks default-on — staff cell phones to every guardian, no
+  opt-in (F1 + F4 family_guide-double + F5 org-vs-team scope mismatch; Frank wants
+  clean default + opt-in signatures; CC lean A3 signature-stays/phones-opt-in + A1
+  per-send control). **FORK B** coach recap-compose dead-ends via event-hero
+  "Request recap" (admin-only route) while the header modal works — two staff paths
+  disagree (F2 + F8 dual-mount; CC lean B3 coach-requests/admin-sends). **FORK C**
+  no forfeit concept → 20-0 forfeit renders as a real WIN (F3; upstream score-entry,
+  likely its own small phase). Cleanups: F6 Cancel doesn't discard (scratch drafts
+  in Radar), F7 useNeedsBriefing orphan (PC-6), F9 stale docs. Awaiting architect
+  ruling on A/B/C before fix PRs.
 
 ---
 
