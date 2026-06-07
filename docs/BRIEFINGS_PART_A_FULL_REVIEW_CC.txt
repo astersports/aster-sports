@@ -1,0 +1,200 @@
+==============================================================================
+BRIEFINGS PART A — FULL REVIEW + RENDERS (A2 + A3)   CC -> architect
+Date: 2026-06-07 PM. Frank pulled back the piecemeal ship: nothing else lands
+until the WHOLE remaining Part A is reviewed and re-reviewed, WITH renders. This
+is that package — current state (post-A1), proposed A2 + A3 with wireframe
+renders, every open decision consolidated, and a re-reviewed cleanliness pass
+(files / regression risk / verification). Supersedes the narrower
+BRIEFINGS_PART_A2_GROUPING_QUESTION_CC.txt (#810) — its question is §3 here.
+Every UI fact is read from live code (file:line). NOTHING APPLIED — review only.
+==============================================================================
+
+0. STATE
+------------------------------------------------------------------------------
+A1 MERGED (#809, 2df3477) — vestigial wizard machinery retired; composer is
+honestly one-screen; behavior-neutral, smoke-approved. Remaining Part A:
+  A2 — grouped + usage-ranked kind picker (one new UI piece). BLOCKED on a
+       taxonomy call (§3) + a usage-rank call (§4).
+  A3 — relocate test_only to the send action (minor). Render in §6. Independent
+       of A2, but per Frank now bundled into this single review.
+weekly_digest send-path unification stays SEPARATE (dual-dispatch ticket). D-4 +
+DEF-11 remain go-live gates, out of Part A.
+
+1. CURRENT STATE — the one-screen composer (post-A1), rendered
+------------------------------------------------------------------------------
+Route /admin/briefings/compose -> BriefingComposer -> ComposerSections renders,
+top to bottom (after a kind is chosen), on ONE scroll:
+
+  ┌─ Briefing composer ───────────────────────────────┐
+  │  WHAT KIND                                         │  <- InlineKindChips
+  │  (Announcement)(Custom message)(Games recap)       │     FLAT, 5 chips,
+  │  (Coach roundup)(Family guide)                     │     wrap row
+  │                                                    │
+  │  ANCHOR + AUDIENCE                                 │  <- StepAnchorAudience
+  │  [anchor chip]   Audience: <chip>  [Change]        │
+  │                                                    │
+  │  BODY                                              │  <- StepBodySignoff
+  │  [TemplatePicker] [AI Draft] [<Kind>Body editor]   │
+  │  [signoff textarea]                                │
+  │  [x] Send test to admin@ only (recommended first)  │  <- test_only HERE (body)
+  │  (pilot chip)  audience copy                       │
+  │  [Save draft] [Cancel]                             │
+  │                                                    │
+  │  SCHEDULE  ( Send now | Schedule for later )       │  <- ScheduleForLaterPicker
+  │                                                    │
+  │  PREVIEW   [device-frame preview]                  │  <- PreviewPanel
+  │                                                    │
+  │  READY TO SEND                                     │  <- StepSendConfirm
+  │  ┌ Kind / Audience / Schedule / [Mode: Test] ┐     │     summary card ALREADY
+  │  │ (pilot banner if pilot mode on)           │     │     shows Mode:Test when
+  │  └───────────────────────────────────────────┘     │     test_only=true
+  │  [ Send ]                                          │
+  └────────────────────────────────────────────────────┘
+
+academy_callup: ComposerSections short-circuits to BODY-ONLY (the EventDetail
+redirect card) — no audience/schedule/preview/send. (Preserved, untouched.)
+
+CURRENT PAIN (what A2/A3 fix):
+  - The picker is a FLAT 5-chip row (InlineKindChips.jsx:26, maps MANUAL_KINDS) —
+    no grouping, no ordering. Fine at 5, but it's the "12 equal tiles" smell the
+    redesign named (G2).
+  - test_only lives in the BODY section (StepBodySignoff.jsx:107), far from the
+    Send button at the bottom — the send-mode decision is separated from the send
+    action (A3 fixes this). Note the send summary card ALREADY reflects it
+    ("Mode: Test send (admin@ only)", StepSendConfirm.jsx:66-69).
+
+2. A2 — GROUPED KIND PICKER (render, both options)
+------------------------------------------------------------------------------
+The picker shows ONLY the 5 manual kinds. Labels (KIND_METADATA): Announcement,
+Custom message, Games recap, Coach roundup, Family guide.
+
+OPTION A — keep the ratified 3 groups; coach_roundup + family_guide under Outreach:
+  ┌─ WHAT DO YOU WANT TO SEND? ───────────────────────┐
+  │  RECAPS                                            │
+  │   (Games recap)                                    │
+  │  OUTREACH                                          │
+  │   (Announcement) (Custom message) (Coach roundup)  │
+  │   (Family guide)                                   │
+  └────────────────────────────────────────────────────┘
+  (Schedule group hidden — no manual kinds in it.)
+
+OPTION B — 4th "Guides" group for the two single-recipient digests:
+  ┌─ WHAT DO YOU WANT TO SEND? ───────────────────────┐
+  │  RECAPS                                            │
+  │   (Games recap)                                    │
+  │  OUTREACH                                          │
+  │   (Announcement) (Custom message)                  │
+  │  GUIDES                                            │
+  │   (Coach roundup) (Family guide)                   │
+  └────────────────────────────────────────────────────┘
+  (Schedule group hidden — empty.)
+
+Notes for the call:
+  - "Recaps" is a singleton (games_recap) either way — the other recaps
+    (game_recap, tournament_recap) are AUTO (Radar), not in the picker. A
+    one-chip "Recaps" group header is slightly heavy but honest; alternative is
+    to drop group headers when a group has 1 item (render the chip without the
+    header). Flagging as a micro-decision inside A2.
+  - coach_roundup/family_guide are recurring SINGLE-RECIPIENT digests (coach
+    <select> / parent <select> + date range), semantically distinct from
+    Outreach's one-off broadcasts — the §3 question.
+
+3. OPEN DECISION #1 — where do coach_roundup + family_guide go? (architect)
+------------------------------------------------------------------------------
+The ratified Recaps/Schedule/Outreach scheme (A7, full kind space) doesn't list
+these two. (A) fold into Outreach (keep 3 groups). (B) add a 4th "Guides" group.
+(C) other (e.g. rename Outreach -> "Outreach & Guides").
+CC LEAN: slight (B) — they're a distinct class and "Outreach" already means
+one-off broadcasts; the manual picker's effective grouping is already not the
+clean A7 three (empty Schedule, singleton Recaps), so a small honest
+Recaps/Outreach/Guides reads better. (A) is defensible to hold the ratified
+scheme literally. Your taxonomy call (§11.8.2).
+
+4. OPEN DECISION #2 — what does "usage-rank" key off? (architect/Frank)
+------------------------------------------------------------------------------
+A2 = "group + USAGE-RANK." Options: (i) data-driven order by org send count per
+kind (comms_messages GROUP BY kind) — real but the pilot's counts are too sparse
+to mean anything yet; (ii) STATIC sensible default order per group until volume
+exists. CC LEAN: (ii) static for the pilot (e.g. Outreach: Announcement >
+Custom message; Guides: Coach roundup > Family guide), revisit data-driven
+post-pilot. Confirm or override.
+
+5. OPEN DECISION #3 — single-item group headers (micro, architect/Frank)
+------------------------------------------------------------------------------
+"Recaps" has exactly 1 manual chip (Games recap). Show the "RECAPS" header over
+one chip, or suppress headers for single-item groups? CC LEAN: suppress the
+header when a group has 1 item (less chrome). Trivial either way.
+
+6. A3 — RELOCATE test_only TO THE SEND ACTION (render, before/after)
+------------------------------------------------------------------------------
+BEFORE (today): the toggle sits in the BODY section, ~5 sections above Send:
+  BODY: … [signoff] [x] Send test to admin@ only … [Save draft][Cancel]
+  …
+  READY TO SEND: summary card shows "Mode: Test send" + [ Send ]
+
+AFTER (A3): the toggle moves DOWN to the send action, with the summary it drives:
+  BODY: … [signoff] [Save draft][Cancel]        (no test toggle here)
+  …
+  ┌─ READY TO SEND ───────────────────────────────────┐
+  │  ┌ Kind / Audience / Schedule ┐                    │
+  │  │ (pilot banner if pilot on)  │                    │
+  │  └─────────────────────────────┘                    │
+  │  [x] Send test to admin@ only (recommended first)  │  <- toggle MOVES here
+  │  [ Send ]   (label/summary reflects test vs real)  │
+  └────────────────────────────────────────────────────┘
+  Mechanics: test_only stays state (TOGGLE_TEST); only the CHECKBOX JSX moves
+  from StepBodySignoff -> StepSendConfirm. The "Mode: Test send" summary row
+  (StepSendConfirm.jsx:66-69) already exists; A3 just co-locates the control with
+  it. Default stays test_only=true (composerReducer INITIAL_STATE).
+  CC NOTE: this is the smallest of the three and purely a relocation; no logic
+  change. Open micro-decision: keep the "(recommended first)" hint, or simplify
+  to "Send a test to admin@ first" near the button — CC lean keep the existing
+  copy to minimize churn.
+
+7. RE-REVIEWED CLEANLINESS (files / regression risk / verification)
+------------------------------------------------------------------------------
+A2 touches: InlineKindChips.jsx (flat -> grouped render), a new grouping source
+(extend composeKinds.js with the group map + order, OR a small KIND_GROUPS const)
+— keeps the lib-holds-data rule. NO reducer/dispatch change (SET_KIND unchanged).
+NO change to which kinds exist. Regression surface: only the picker's visual +
+that every manual kind still renders a chip that dispatches SET_KIND. Verify:
+a render test asserting all 5 manual kinds appear exactly once across the groups
+(cross-check against MANUAL_KINDS so a future kind can't silently fall out of the
+picker — AP#43 invariant shape).
+
+A3 touches: StepBodySignoff.jsx (remove the checkbox JSX), StepSendConfirm.jsx
+(add it). State + action unchanged (TOGGLE_TEST). Regression surface: the toggle
+still flips test_only and the send gate still reads it (StepSendConfirm.jsx:47-48
+already consume test_only). Verify: the existing StepSendConfirm test +
+StepBodySignoff test still pass; add an assertion that the toggle renders in the
+send section and flips state.
+
+Both are held for Frank's smoke, one PR at a time, A2 then A3 (or A3 first —
+Frank's routing). NEITHER changes send behavior, the auto-draft/Radar pipeline,
+or the dispatch layer.
+
+8. §16.15 ELEMENTS
+------------------------------------------------------------------------------
+(a) audit — current composer read live (§1, file:line). (b) deep-read addendum —
+re-read InlineKindChips, StepBodySignoff test_only block, StepSendConfirm in full
+for the renders (§1/§2/§6). (c) AP cross-ref — A2 picker invariant = AP#43
+(every manual kind in the picker); A1 already cleared the AP#51 dead-code; no new
+AP risk. (d) per-role wireframes — COMPOSE IS ADMIN-ONLY (one role); renders in
+§1/§2/§6 are the admin variant; no coach/parent compose surface exists. (e)
+out-of-scope — D-4, DEF-11, coach_roundup SEND-path spec, weekly_digest send
+unification, the Radar/auto-draft pipeline.
+
+9. DECISIONS NEEDED BEFORE ANY A2/A3 CODE
+------------------------------------------------------------------------------
+  #1 (architect): coach_roundup/family_guide group — A / B / C (§3). CC lean B.
+  #2 (architect/Frank): usage-rank — data-driven vs static-default (§4). CC lean
+     static for pilot.
+  #3 (architect/Frank): single-item group header — show vs suppress (§5). CC lean
+     suppress.
+  #4 (Frank routing): ship order — A2-then-A3, or A3-first while #1-#3 settle.
+  On the answers, CC builds A2 + A3 (held for smoke), each with its invariant
+  test, and reports each PR back as a TXT.
+
+==============================================================================
+END — BRIEFINGS_PART_A_FULL_REVIEW_CC
+==============================================================================
