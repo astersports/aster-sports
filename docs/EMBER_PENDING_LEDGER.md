@@ -1528,11 +1528,18 @@ known, recorded deferral (was only "intent to ticket" in PROGRAMS_CLOSED_CC §2;
 this is the physical ticket).
 
 **Carried standing queue (a programs close does NOT clear these):**
-- **Briefings Phase 3 status** — still unverified whether Phase 3 shipped, and
-  whether the D-4 `is_pilot_family` decision (documented intent: FILTER-as-
-  production, pilot mode ON) was Frank-routed vs auto-picked. The 5 failing
-  briefings test files above are a thread back to this system's unverified state.
-  Next chase. (See §4.C.2 / D4 references.)
+- **Briefings Phase 3 status — RESOLVED 2026-06-07** (`docs/BRIEFINGS_PHASE3_VERIFICATION_CC.txt`).
+  Phase 3 (the REDESIGN_BRIEFINGS_2026-06-03 D-1…D-8 implementation) SUBSTANTIALLY
+  SHIPPED via the engine lane (D-2 #677, D-5(a) #685, D-7 #687, D-6(a) #690, D-8
+  #691, RLS #710); the remainder is the inventoried post-Phase-3 surface
+  (BRIEFINGS_WHATS_LEFT_2026-06-04 Part B). **D-4 was NOT auto-picked NOR routed**
+  — it sits correctly as an uncrossed B3 Frank gate (DEF-3 REDIRECT→FILTER
+  cutover); live state confirms `is_pilot_family` column intact (no DROP), 1
+  pilot-true of 175, pilot_mode ON. The 5 failing briefings test files are a
+  LOCAL env-var artifact that PASSES in CI (#796 green proves it), not a coverage
+  gap. Real remaining briefings surface = B3 Frank gates (D-4 cutover, AUTO-SEND
+  graduation, B2 cancellation), B4 DEF-11 deliverability prereq, B1 build
+  remainder, Part A screens-redesign routing (Option A/B/C, still open).
 - **Rebrand operator items (task #55 not truly closed):** Supabase display-name
   rename, Drive brand-asset upload, SKYFIRE folder lock (accept doctrine).
 - E3 (index filter chips omit evaluation + interest_list) + E6 (/admin/teams
