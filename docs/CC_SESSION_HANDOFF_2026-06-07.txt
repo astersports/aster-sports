@@ -127,8 +127,62 @@ doctrine — see "shipped" vs "open".
       rename, Drive asset upload, SKYFIRE folder lock.
     - E3 / E6 cosmetic deferrals.
 
-  STATE: programs phase is CLOSED, clean, no residuals. Next session opens on the
-  briefings Phase 3 verification unless Frank routes elsewhere.
+  STATE: programs phase is CLOSED, clean, no residuals.
+
+10. CROSS-SECTION CLOSE REVIEW (appended 2026-06-07 PM — briefings/home/programs)
+------------------------------------------------------------------------------
+  Frank's directive: "review the 3 latest redesigns to be sure we're not waiting
+  on the architect to close; deep-dive code for active hooks + bugs; next
+  redesigns are schedule + teams." Architect sent CROSS_SECTION_SCAN_FOR_CC.txt.
+  Method: 4 parallel deep-dive agents, every claim file:line/query/PR-backed.
+
+  SHIPPED since §9 (all merged):
+    #799  docs: BRIEFINGS_PHASE3_VERIFICATION_CC.txt — Phase 3 SHIPPED (engine
+          lane #677/#685/#687/#690/#691/#710); D-4 correctly an uncrossed Frank
+          gate (column intact, pilot ON); 5 tests benign env-var (pass in CI);
+          game_recap bounded. Carried item RESOLVED (ledger §4.S.2).
+    #800  docs: CROSS_SECTION_FINDINGS_CC.txt — the 5-section deep-dive (ledger
+          §4.S.3).
+    #801  docs: HOME_CLOSEOUT_REVIEW_CC.txt — home given the close discipline it
+          lacked (D-A…D-G reconcile + BUG-H1/H2/H3 close-gates).
+
+  PER-SECTION VERDICT:
+    PROGRAMS — CLOSED. New LATENT P1: deleteProgram() vs registrations RESTRICT
+      (comment + dependencySummary wrong; raw 23503 once a registration exists;
+      0 rows today). Fix = count + block with kind message. QUEUED (Frank).
+    HOME — SHIPPED, NOT FORMALLY CLOSED. Live P1 (AdminProgramHealth scope-label
+      PATTERN A; also un-blocks "closed" D3), P2 coach 0-0 vs parent — , P2
+      Out-KPI loading gate, 2 dead computations (pendingLanes,
+      recentTeamMessages). D-A…D-F built/retired on CC lean, NONE ratified; no
+      close-out doc until #801. Draft-leak check PASSES (useActivePrograms
+      include-active).
+    BRIEFINGS — NOT closed, but every NAMED open item RESOLVED. Real remainder =
+      Part A screens routing (architect pick, CC leans A) + Frank gates
+      (D-4/AUTO-SEND/B2/coach-write) + DEF-11 deliverability prereq + B1 build
+      remainder (coach_roundup SEND path underspecified).
+
+  FRANK'S ROUTING (2026-06-07):
+    1. Code fixes (programs P1 + home BUG-H1/H2/H3) — QUEUE ALL for architect
+       (CC applied NOTHING).
+    2. Home close — CC writes the close-out doc (DONE, #801).
+    3. Schedule + teams — HOLD; architect scopes first.
+
+  ON THE ARCHITECT'S DESK NOW (nothing waiting on CC except D-G verification):
+    - PROGRAMS: ratify-then-fix the latent deleteProgram P1.
+    - HOME: ratify D-A…D-F + route BUG-H1/H2/H3 + dead-code cleanup -> then home
+      closes. D-G (pilot writes in-app comms_message_recipients row) is CC's to
+      verify on go.
+    - BRIEFINGS: pick Part A screens redesign (A/B/C). Frank gates stay Frank's.
+    - NEXT: scope teams (AGE_GROUPS = next float-free-enum; division dangling;
+      team_type/circuit axis) + schedule (EventCard/MatchupCard consolidation,
+      AP#5 imperative scroll) — forks-named like programs.
+
+  RELAY PACKAGE (the docs to hand the architect, all on main):
+    PROGRAMS_CLOSED_CC.txt · BRIEFINGS_PHASE3_VERIFICATION_CC.txt ·
+    CROSS_SECTION_FINDINGS_CC.txt · HOME_CLOSEOUT_REVIEW_CC.txt
+    (+ this handoff). Earlier-session references: PROGRAMS_CLOSEOUT_REVIEW_CC.txt,
+    PROGRAMS_REGISTRY_IMPL_PREP_CC.txt, GAME_RECAP_AND_D4_FINDINGS_CC.txt (+ its
+    correction).
 
 ==============================================================================
 END — CC_SESSION_HANDOFF_2026-06-07
