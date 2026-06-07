@@ -21,7 +21,7 @@ export default function ProgramSetupPage() {
   });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const valid = form.name.trim().length > 0;
-  const slugPreview = (form.public_slug || '').trim() || slugify(form.name);
+  const slugPreview = slugify(form.public_slug || form.name);
 
   async function handleCreate() {
     const r = await createProgram(form);

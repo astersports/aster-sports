@@ -28,7 +28,7 @@ describe('checkSlugAvailable (F3 — app-level uniqueness)', () => {
   // Minimal fake matching .from().select().eq().eq().limit() -> { data, error }.
   const fake = (rows, error = null) => ({
     from: () => ({
-      select: () => ({ eq: () => ({ eq: () => ({ limit: () => Promise.resolve({ data: rows, error }) }) }) }),
+      select: () => ({ eq: () => ({ ilike: () => ({ limit: () => Promise.resolve({ data: rows, error }) }) }) }),
     }),
   });
   it('returns null when slug is empty (nothing to check)', async () => {
