@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { checkSlugAvailable } from '../lib/programSetup';
+import { programRule } from '../lib/programRegistry';
 
 // Dependency counts + update/delete for a single program (PR-3 F14). Counts feed
 // the delete-confirm; the FK chain cascades teams → {team_players,
@@ -45,5 +46,20 @@ export function useProgramAdmin(programId) {
     return { error: error?.message };
   }, [programId]);
 
-  return { counts, refetchCounts, updateProgram, deleteProgram };
+  // Unified activate() parametrized by registry.singleActive (Fork 3): one
+  // concept, not two naked paths. For single-active types (season) archive the
+  // org's current active program of the SAME type first; the partial-unique DB
+  // index (programs_one_active_season_per_org) backstops this app-level write.
+  const activate = useCallback(async (programType) => {
+    if (programRule(programType).singleActive) {
+      const { error: archErr } = await supabase.from('programs')
+        .update({ status: 'archived' })
+        .eq('org_id', orgId).eq('program_type', programType).eq('status', 'active').neq('id', programId);
+      if (archErr) return { error: archErr.message };
+    }
+    const { error } = await supabase.from('programs').update({ status: 'active' }).eq('id', programId);
+    return { error: error?.message };
+  }, [orgId, programId]);
+
+  return { counts, refetchCounts, updateProgram, deleteProgram, activate };
 }

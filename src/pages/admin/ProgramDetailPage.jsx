@@ -41,7 +41,7 @@ export default function ProgramDetailPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
         <Badge variant={badge.variant}>{badge.label}</Badge>
         <span style={{ fontSize: 13, color: 'var(--as-text-secondary)' }}>
-          {range}{range && program.status ? ' · ' : ''}{program.status === 'archived' ? 'Archived' : 'Active'}
+          {range}{range && program.status ? ' · ' : ''}{program.status === 'draft' ? 'Draft' : program.status === 'archived' ? 'Archived' : 'Active'}
         </span>
       </div>
       <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginBottom: 16 }}>
