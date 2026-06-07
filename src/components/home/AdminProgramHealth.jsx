@@ -28,14 +28,21 @@ function shortDollars(cents) {
 export default function AdminProgramHealth({ season, nowMs, eventsCount = 0 }) {
   const { orgId } = useAuth();
   const { paymentPct, playersCount, loading } = useProgramHealthMetrics(orgId, season?.id);
-  const { totalCents } = useFamiliesOwingCount(orgId);
+  const { totalCents, loading: owingLoading } = useFamiliesOwingCount(orgId);
   if (!season) return null;
   const prog = seasonProgress(season, nowMs);
+  // BUG-H1 (AP#63): "Collected" is THIS-SEASON (useProgramHealthMetrics(season.id))
+  // while "Out" is ALL-SEASONS (useFamiliesOwingCount — matches the
+  // payment_overdue alert scope, HOME-2). Both are honest; the fix is to LABEL
+  // the scope on each KPI so they don't read as a contradiction (e.g. "Collected
+  // 100%" beside "Out $1.3k" for a prior-season debtor), NOT to re-scope "Out".
+  // BUG-H3: "Out" is gated on its OWN loading (owingLoading), not the metrics
+  // loading, so it never flashes "$0" before family_balances resolves.
   const kpis = [
-    { v: playersCount, l: 'Players' },
-    { v: eventsCount, l: 'Events' },
-    { v: paymentPct != null ? `${paymentPct}%` : '—', l: 'Collected', good: paymentPct === 100 },
-    { v: shortDollars(totalCents), l: 'Out' },
+    { v: playersCount, l: 'Players', scope: 'season' },
+    { v: eventsCount, l: 'Events', scope: 'season' },
+    { v: paymentPct != null ? `${paymentPct}%` : '—', l: 'Collected', scope: 'season', good: paymentPct === 100 },
+    { v: shortDollars(totalCents), l: 'Out', scope: 'all-time', loading: owingLoading },
   ];
   return (
     <section className="min-w-0" aria-label="Program health">
@@ -46,12 +53,15 @@ export default function AdminProgramHealth({ season, nowMs, eventsCount = 0 }) {
         </div>
         <div style={{ display: 'flex', gap: 5, marginTop: 8 }}>
           {kpis.map((k) => (
-            <div key={k.l} style={KPI}>
+            <div key={k.l} style={KPI} aria-label={`${k.l} (${k.scope}): ${(k.loading ?? loading) ? '—' : k.v}`}>
               <div style={{ fontSize: 15, fontWeight: 700, color: k.good ? 'var(--as-success)' : 'var(--as-text-primary)' }}>
-                {loading ? '—' : k.v}
+                {(k.loading ?? loading) ? '—' : k.v}
               </div>
               <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--as-text-meta)', marginTop: 1 }}>
                 {k.l}
+              </div>
+              <div aria-hidden="true" style={{ fontSize: 8, fontWeight: 500, letterSpacing: '0.03em', color: 'var(--as-text-meta)', marginTop: 1 }}>
+                {k.scope}
               </div>
             </div>
           ))}

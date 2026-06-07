@@ -2,20 +2,23 @@ import { useMemo } from 'react';
 import { useNow } from './useNow';
 import { useUnscoredGames } from './useUnscoredGames';
 import { usePendingInvitations } from './usePendingInvitations';
-import { useCoachPayoutsPending } from './useCoachPayoutsPending';
-import { useFamiliesOwingCount } from './useFamiliesOwingCount';
 
-// §4.C Sprint D — Aggregates admin-home signal hooks into the two
-// shells admin home renders today:
-//   - actionItems  → ActionZone (per-item rows, time-critical)
-//   - pendingLanes → PendingQueuesLanes (aggregate review queues)
+// §4.C Sprint D — aggregates the admin-home ActionZone signal hooks:
+//   - actionItems → ActionZone (per-item rows, time-critical)
 // Lives in a hook so AdminHomePage stays under the 150-line cap
 // (anti-pattern #11). Caller passes activities + orgId; hook owns
 // the rest of the wiring.
+//
+// pendingLanes/PendingQueuesLanes retired 2026-06-07 (cross-section scan
+// §4.S.3): the aggregate had ZERO consumers (no mounted PendingQueuesLanes),
+// so its useCoachPayoutsPending + useFamiliesOwingCount reads were dead
+// queries — removed per AP#51. The live owing-count read stays on
+// useAdminNeedsYou + AdminProgramHealth.
 
 export function useAdminHomeSignals(activities, orgId, activeSeasonId) {
   const now = useNow();
   void activities;
+  void activeSeasonId;
   // Frank-reported 2026-05-20: "Actions for admin should only include
   // scores and not RSVPs updates or it becomes a long list." Dropped
   // the lowRsvpEvents feed from the ActionZone. RSVP triage still
@@ -24,11 +27,6 @@ export function useAdminHomeSignals(activities, orgId, activeSeasonId) {
   // items that genuinely block admin action.
   const { items: unscoredGames, loading: unscoredLoading } = useUnscoredGames(orgId, now);
   const { items: pendingInvitations, loading: invitationsLoading } = usePendingInvitations(orgId, now);
-  const { count: coachPayoutsPendingCount, loading: payoutsLoading } = useCoachPayoutsPending(orgId);
-  // HOME-2: all-seasons owing (matches the payment_overdue alert scope),
-  // not the active-season-only useSeasonFinancials.familiesOwing.
-  void activeSeasonId;
-  const { count: familiesOwingCount, loading: financialsLoading } = useFamiliesOwingCount(orgId);
 
   const actionItems = useMemo(
     () => [...(unscoredGames || []), ...(pendingInvitations || [])],
@@ -36,20 +34,5 @@ export function useAdminHomeSignals(activities, orgId, activeSeasonId) {
   );
   const actionLoading = unscoredLoading || invitationsLoading;
 
-  // The achievements lane was removed 2026-05-20 — the REVIEW button
-  // routed to /admin/teams (no actual review screen exists), so the
-  // lane was dead UX. Frank archived the 3 stale seed-data rows via
-  // MCP. Re-add this lane only when a dedicated achievement review
-  // screen is built (anti-pattern #34: ship the consumer with the
-  // surface, not before).
-  const pendingLanes = useMemo(
-    () => [
-      { kind: 'coach_payouts', emoji: '\u{1F4B0}', label: 'Coach payouts pending', count: coachPayoutsPendingCount, href: '/admin/financials' },
-      { kind: 'families_owing', emoji: '\u{1F4B3}', label: 'Families with outstanding balance', count: familiesOwingCount, href: '/admin/financials' },
-    ],
-    [coachPayoutsPendingCount, familiesOwingCount],
-  );
-  const pendingLanesLoading = payoutsLoading || financialsLoading;
-
-  return { actionItems, actionLoading, pendingLanes, pendingLanesLoading };
+  return { actionItems, actionLoading };
 }
