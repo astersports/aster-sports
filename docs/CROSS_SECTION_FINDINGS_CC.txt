@@ -1,0 +1,269 @@
+==============================================================================
+CROSS-SECTION FINDINGS   Claude Code -> architect lane
+Date: 2026-06-07. Answers CROSS_SECTION_SCAN_FOR_CC.txt (architect -> CC).
+Method: 4 parallel deep-dive agents (programs / home / briefings / schedule+teams),
+each reading actual file contents + live DB/CI/PR reads. Every claim carries a
+file:line, a query result, or a PR/CI status. "Can't verify" is written where it
+applies. NOTHING APPLIED by this doc — findings only.
+==============================================================================
+
+HEADLINE (the verdict the scan asked for, per section)
+------------------------------------------------------------------------------
+  PROGRAMS  — (b) CLOSED pending nothing new. #796 merged. One LATENT P1
+              (deleteProgram vs registrations RESTRICT) to queue; not a reopen.
+  HOME      — (c) SHIPPED BUT NOT FORMALLY CLOSED. 1 live P1 (PATTERN A scope
+              contradiction on the admin hero), 2 P2, 2 dead hook computations,
+              ~6 decisions built/retired on CC's lean but never architect-
+              ratified, and NO close-out doc. This is the assumed-closed risk you
+              named — confirmed. Draft-leak check PASSES.
+  BRIEFINGS — (c) NOT closed, but every SPECIFIC open item you listed is now
+              RESOLVED (Phase 3 shipped, tests benign, game_recap bounded, D-4
+              correctly held). What remains is the Part A screens-redesign
+              ROUTING (your pick) + Frank gates + a deliverability prereq.
+
+------------------------------------------------------------------------------
+SECTION 1 — PROGRAMS (confirm closeable)
+------------------------------------------------------------------------------
+1a. #796 MERGED — squash 7073988 (GitHub PR read live). Not held.
+1b. The 5 failing vitest files are STILL the same 5, by NAME, and all fail ONLY
+    on `Missing VITE_SUPABASE_URL` at module import (env artifact; CI sets dummy
+    env at ci.yml:28-29,181-182, so they PASS in CI — re-run: 766/766 green):
+      - src/components/briefings/bodies/__tests__/GamesRecapBody.test.js
+      - src/lib/__tests__/scheduleChangeSend.regression.test.js
+      - src/lib/briefings/__tests__/mapWizardStateToDigestArgs.test.js
+      - src/lib/briefings/__tests__/queueComposedMessages.test.js
+      - src/lib/briefings/__tests__/wave_4_1d_2.test.js
+    Base(main) vs head(#796) diff: identical set; #796 added only green
+    (+1 file / +7 tests). No new failure in the set. Precise: 5 failing FILES /
+    3 failing TESTS (same root cause).
+1c. E4 ticket PHYSICALLY EXISTS — docs/EMBER_PENDING_LEDGER.md §4.S.2, with its
+    reason verbatim (roster-rows-not-distinct-people; fine for LH 1-team/kid;
+    fix = COUNT(DISTINCT player_id) or relabel). Was intent-only in
+    PROGRAMS_CLOSED_CC §2; now ticketed.
+
+NEW FINDING — P1 (LATENT): deleteProgram() will hard-fail on any program that
+    has a registration. Agent verified live: registrations.program_id is ON
+    DELETE **RESTRICT** (all other children CASCADE: teams, team_players,
+    roster_members, events, divisions, division_fees). But:
+      - useProgramAdmin.js:8-10 COMMENT claims the chain "cascades … so the
+        delete itself is clean" — factually wrong for registrations.
+      - programDelete.js dependencySummary counts teams/players/events only —
+        NEVER registrations; the confirm dialog under-states the blocker.
+      - useProgramAdmin.js:44-47 deleteProgram throws raw Postgres 23503 into the
+        Toast (ProgramManageZone.jsx:36) the moment a real registration exists.
+    LATENT only: SELECT FROM registrations returned 0 rows today → no production
+    program affected yet; becomes P0 on first registration.
+    FIX (small, unambiguous, NOT a reopen of the architecture): count
+    registrations in refetchCounts + add to dependencySummary + BLOCK the delete
+    with a kind message when registrations>0 (RESTRICT there is correct — a
+    program-delete must not nuke registration/financial rows). Awaiting your go.
+
+Also: E3 (filter chips omit evaluation+interest_list) appears ALREADY CLOSED —
+    AdminProgramsPage.jsx:16 derives FILTERS from PROGRAM_TYPE_KEYS (all 7 types);
+    the ledger E3 note is likely stale. And a P3 stale comment at
+    ProgramSetupPage.jsx:12 ("Tryout/Camp coming soon") that the shipped registry
+    contradicts. Everything else verified sound (registry fallback; activate()
+    single-active + the live DB partial-unique index programs_one_active_season_
+    per_org; parity test asserts enum==registry==chooser; AP#36/#37/#48 clean;
+    all files ≤150 — largest TeamFormSheet 127).
+
+------------------------------------------------------------------------------
+SECTION 2 — HOME (the assumed-closed risk — CONFIRMED)
+------------------------------------------------------------------------------
+2a. HOOKS. useHomeRole (useHomeRole.js:24) is the sole, load-bearing role hook;
+    useActiveRole/ActiveRoleContext CONFIRMED FULLY REMOVED (no file exists) —
+    AP#42 parallel-system closed, not just doc'd. Shell-contract-v2 intact: all
+    22 src/components/home/*.jsx have ZERO supabase imports (presentational);
+    pages own hook wiring; no file >150 (largest ActionRow 129). No InstallPrompt/
+    WelcomeOverlay/DensityToggle mounted on home (AP#51 retirements hold;
+    DensityToggle still used by Schedule/Locations — correctly home-only retired).
+    DEAD COMPUTATIONS (actionable):
+      - useAdminHomeSignals.js:45-54 computes pendingLanes/pendingLanesLoading —
+        ZERO consumers (grep: doc refs only). Dead branch.
+      - useCoachHomeSignals.js:73 returns recentTeamMessages — not consumed.
+    Minor perf: useFamiliesOwingCount called 3× concurrently on admin home
+    (useAdminNeedsYou.js:22, useAdminHomeSignals.js:31, AdminProgramHealth.jsx:31)
+    — same all-seasons query, no dedup.
+
+2b. DRAFT-LEAK CHECK — PASSES. The only home read of programs.status is
+    useActivePrograms.js:26 `.eq('status','active')` — positive include-active
+    selection (org-scoped, AP#36-compliant). Draft programs CANNOT surface on any
+    home. This is the safe shape; no exclude-archived anywhere in the home tree.
+
+2c. REGISTRY/PATTERN-A. Home does NOT fork programRule() — useActivePrograms
+    filters status directly, consistent with the universal status model. BUT one
+    live PATTERN A bug:
+    P1 — AdminProgramHealth.jsx:30-38: "Collected %" KPI is season-scoped
+      (useProgramHealthMetrics → useSeasonFinancials(orgId, season.id),
+      useProgramHealthMetrics.js:40,97) sitting beside "Out $" which is
+      ALL-SEASONS (useFamiliesOwingCount.js:21). Neither labels its scope → the
+      exact BUG-1/HOME-2 contradiction (can read "Collected 100%" next to "Out
+      $1.3k" for a prior-season debtor). The all-seasons "Out" is intentional
+      (matches the payment_overdue alert) — so the fix is to LABEL the scope on
+      each KPI (AP#63 prescription), not change the source. Invisible until a
+      prior-season debtor exists — the finance analogue of the draft-leak class.
+
+   OTHER HOME BUGS:
+   P2 — AP#43/#27 cross-role record default: a recordless team renders '—' on
+      parent (parentHomeData.js:47, "honest, never a fake 0-0") but a fabricated
+      '0-0' on coach (CoachTail.jsx:59,97). Cross-role invariant violation +
+      fabrication; the existing myTeamsCrossSurfaceInvariant.test doesn't cover
+      the empty-state default.
+   P2 — AP#44 on the "Out" KPI: AdminProgramHealth.jsx:51 gates all KPIs on
+      useProgramHealthMetrics.loading only; useFamiliesOwingCount.loading is
+      ignored, so initial totalCents=0 can render "$0 Out" briefly before the
+      owing query resolves (bounded, self-corrects). Finance-figure false-clear.
+   CLEAN: AP#36 (every fetching hook surfaces error), page-level loading gates
+      (AlertZone null-sentinel fix intact), LCP/presentational contract, ≤150.
+
+   OPEN DECISIONS (home has NO close-out doc — unlike programs):
+     CLOSED: D1 (--as-text-meta a11y token), D2 (density 2-state), D3 (admin hero
+       KPI row — but carries the P1 above), D5 (gold token).
+     BUILT AHEAD OF THE DECISIONS DOC, ratification NOT recorded: D-A (coach comp
+       card — CoachCompCard shipped, hides when no payouts), D-D (off-season all
+       3 roles), D-E (briefings ready/to-write/overdue split).
+     SHIPPED/RETIRED ON CC LEAN, await your treatment sign-off: D-B (alert→needs-
+       you visual merge — still plain rows), D-C (density retired from home),
+       D-F (needs-you composition: extras included to fill cap-4).
+     CC-VERIFICATION PENDING (not architect): D-G (does a pilot send write the
+       in-app comms_message_recipients row for the parent comms card).
+   NET: home needs a close-out doc reconciling the built-ahead items against
+   HOME_OPEN_DECISIONS_CC.txt — the same close discipline programs got.
+
+------------------------------------------------------------------------------
+SECTION 3 — BRIEFINGS (status reality check)
+------------------------------------------------------------------------------
+3a. Phase 3 SHIPPED (engine lane), per BRIEFINGS_WHATS_LEFT_2026-06-04:136-138,
+    confirmed against live registry + parity tests: D-2 #677, D-5(a) #685, D-7
+    #687, D-6(a) #690, D-8 #691, RLS #710. Not "not started."
+3b. The 5 failing vitest files (same set as §1b) confirmed BENIGN per-file: each
+    fails only on Missing VITE_SUPABASE_URL at import via a UI/send-pipeline
+    module (GamesRecapBody→AuthContext; wave_4_1d_2→InboxFilters→AuthContext;
+    mapWizardStateToDigestArgs→digestSend; queueComposedMessages→unsubscribeUrl).
+    These are NOT pure resolvers (resolvers take the client via options.supabase;
+    grep of resolvers/* for supabase import = 0). PASS in CI (766/766 with dummy
+    env). Latent AP#27 TEST-coupling smell, not a correctness/coverage gap. P2.
+3c. game_recap (SINGULAR) row count TODAY = 19 (live query): 10 archived + 6
+    trigger-draft + 2 trigger-sent + 1 old sent (was 15,759+ historical bloat,
+    purged earlier this session). The auto-draft writer is the cron path (NOT a
+    DB trigger); its dedup (draftExists includes 'archived', _draftRow.ts) holds:
+    all 8 trigger-made rows are exactly 1-per-anchor_id (zero duplicates).
+    NOT climbing — bounded one-recap-per-game. NOT an active write-amplification
+    bug. Six-turns-open question CLOSED.
+3d. D-4 (is_pilot_family DROP-vs-FILTER): column INTACT (information_schema=1, no
+    DROP). pilot_mode_enabled=TRUE; 1 pilot guardian of 175. FILTER-as-production
+    is wired + test-guarded (send-tournament-message/index.ts:163-188 aborts the
+    dispatch with 403 if a non-pilot is queued; _reminderSend.ts:59 filters;
+    pilotMechanismParity.test.js enforces the get_digest_recipients RPC pattern).
+    D-4 is correctly an UNCROSSED Frank gate — NOT auto-resolved, NOT routed. The
+    autopilot-overreach guard held.
+
+    HOOKS/REGISTRY CLEAN: all briefings hooks ACTIVE (useScheduleChangeAudit,
+    useOrgSettings, useDigestRecipients/Events, useBriefingDraft/DeepLink/Filters,
+    useResolverPreview). Dead retirements CONFIRMED GONE: scheduleChange.js +
+    useComposeBriefing.js (files don't exist); KIND_COMPOSERS = {announcement,
+    custom_message} only. AP#34 schedule_change no-op class FIXED (ScheduleChange
+    Composer→recordAndDispatch→sendScheduleChange→RESOLVER_REGISTRY, never
+    compose({kind})). AP#38 renderer-emit parity CLEAN (one harmless unused
+    renderer: game_log has a renderer but no emitter — not a missing one). AP#30/
+    #31/#33 secrets clean (app_secrets, verify_jwt=false declared for all 6
+    shared-secret fns; audit tests pass).
+
+    OPEN (the briefings remainder — none are the items you listed as open):
+     - SCREENS Redesign Part A (Option A/B/C) → AWAITING YOUR ROUTING. CC leans A
+       (collapse to one composer). §16.15 audit + wireframes run on the pick.
+     - Frank gates (B3): D-4/DEF-3 cutover; AUTO-SEND graduation (auto-COMPOSE on,
+       auto-SEND off); B2 cancellation auto-email retirement; coach WRITE-scope
+       tighten to admin-only.
+     - DEF-11 deliverability (3-email/hr free-SMTP cap) — HARD prereq before any
+       real-family send.
+     - B1 build remainder: AI-2 games_recap/tournament_recap (paused), token-kind
+       chip preview + per-recipient pilot path, recap default audience→TEAM, R-4
+       inbox polish, coach_roundup compose/SEND path underspecified (infra exists,
+       no send UX spec).
+
+------------------------------------------------------------------------------
+SECTION 4 — DEEP-SCAN consolidated (hooks-active + bug classes)
+------------------------------------------------------------------------------
+INACTIVE / DEAD (the actionable list):
+  - HOME: useAdminHomeSignals.pendingLanes/pendingLanesLoading (45-54) — no
+    consumer. useCoachHomeSignals.recentTeamMessages (73) — no consumer.
+  - BRIEFINGS: game_log renderer with no emitter — harmless (unused renderer,
+    not a missing one). No orphan hooks.
+  - PROGRAMS: no orphan/dead hooks; every program hook has exactly one mounted
+    consumer.
+BUG CLASSES across the 3 sections (each backed by the scan above):
+  - Float-free enum / missing CHECK: programs CLOSED its instance (registry +
+    CHECK). comms_messages.kind has its 12-value CHECK. NEXT instance is teams
+    AGE_GROUPS (§5) — hardcoded JS array, no CHECK, no parity. No NEW instance in
+    home/briefings.
+  - PATTERN A / B5-ε: ONE live — AdminProgramHealth season-vs-all-seasons KPIs
+    (home P1). Programs/briefings single-sourced.
+  - exclude-archived draft-leak: checked all 3 — NONE. Home uses include-active
+    (§2b); programs status reads are include-active; briefings unaffected.
+  - Non-atomic multi-statement write to an invariant table: activate() (programs)
+    — already fixed + DB-index-backstopped. No others found (useSeasonRollover is
+    the known atomic path).
+  - PostgREST embedded-join-on-shared-FK silent failure: none found in these
+    sections' hooks (briefings JS-joins team_staff↔staff_profiles deliberately,
+    #763).
+PER-SECTION VERDICT (backed, not bare):
+  - PROGRAMS: read 8 hooks + pages/libs/components + parity test + live DB schema
+    (FK rules, enum, index); checked all 5 bug classes → 1 latent P1 (registrations
+    RESTRICT), E4 (known), else sound.
+  - HOME: read ~20 hooks + 22 presentational components + 3 role pages; checked
+    all classes → 1 P1 (PATTERN A scope labels), 2 P2 (coach 0-0; Out-KPI gate),
+    2 dead computations; draft-leak PASS; AP#36/LCP/≤150 clean.
+  - BRIEFINGS: read 8 hooks + composer tree + engine registries + 6 edge fns +
+    live pilot/game_recap state; checked all classes → no correctness findings;
+    1 P2 test-coupling smell; hooks/registries/secrets all clean.
+
+------------------------------------------------------------------------------
+SECTION 5 — NEXT REDESIGNS (schedule + teams) — scope only, NOT started
+------------------------------------------------------------------------------
+TEAMS (the §4.S arc — already flagged, do not re-derive):
+  - AGE_GROUPS hardcoded, teamFormConstants.js:5, verbatim:
+      export const AGE_GROUPS = ['8U','9U','10U','11U','12U','Mixed'].map(a=>({key:a,label:a}));
+    No DB table, no CHECK, no parity, no org-scoping — the SAME float-free shape
+    the platform keeps closing. GENDERS (:7) + CIRCUITS (:13) hardcoded too;
+    EMPTY.age_group defaults '10U' (:27). Redesign should make this a declarative,
+    parity-tested (likely org-scoped) catalog mirroring team_types.
+  - Surfaces: /teams (TeamsPage→TeamRow), /teams/:id (TeamDetailPage), /admin/teams
+    (AdminTeamsPage — DEMOTED under Programs: header "Programs →" link, empty-state
+    points to Programs, uses usePrograms not a teams hook). Hooks: usePrograms
+    (reads teams; "Program is the v2 UI term, table is teams, 1:1 for now"),
+    useTeams, useTeamTypes (declarative org-scoped catalog — the GOOD pattern),
+    useOrgTeamRecords, useRoster, useAttendanceData.
+  - LOOSE ENDS for the redesign: (1) two entangled axes — team_type_id→team_types
+    .slug (competitive axis, isCompetitiveTeam, teamTypes.js:14-25) vs `circuit`
+    (aau|league_play CHECK enum, surfaced as "Competition type", gated by
+    team_type; non-competitive forces circuit='aau' silently, TeamFormSheet.jsx:48)
+    — "team type" vs "circuit" vs "Competition type" is a live naming ambiguity.
+    (2) `division` is SELECTED by useTeams/useOrgTeams/useProgramTeams/rollover but
+    TeamFormSheet never reads or writes it (teamFormConstants EMPTY lacks it) — a
+    queried-but-uneditable dangling column.
+  - TeamRow.jsx is a *Row component → AP#46 row-rhythm guard applies to its redesign.
+
+SCHEDULE (lay of the land, for framing):
+  - Route /schedule → SchedulePage.jsx (App.jsx:86, all roles; separate public
+    /schedule/:teamId → PublicSchedulePage). TWO views via ViewToggle: 'all'
+    (ChildFilterChips→FilterBar→ScheduleListSections→DateGroupedList→EventCard)
+    and 'games' (GamesView→StandingsTable + MatchupCard). WeekStrip day-jump on top;
+    staff get ScheduleFab→CreateActivityWizard + ShareScheduleButton (QR).
+  - Data: useActivities (the spine — reads events with teams!inner + locations
+    embeds, org+season scoped, module-cached), useEventRsvpCounts (event_rsvps +
+    roster_members historical window), useEventRideCounts/useEventDutyCounts,
+    useGameResultsMap + GamesView's inline useGameResults (game_results,
+    published_at NOT NULL), useWeather, useDensity('schedule-list').
+  - REDESIGN SEAMS: EventCard (list) and MatchupCard (games) are TWO card
+    components rendering the SAME events rows — a consolidation candidate
+    (MatchupCard already row-rhythm-tested, PR #359). Imperative day-jump via
+    document.querySelector/scrollTo (SchedulePage.jsx:51-54) brushes AP#5 (DOM in
+    React) — worth folding into the redesign. Per-role is data-scoping in
+    useActivities, not separate pages.
+  - CARRY-IN from this arc: apply the float-free-enum lesson to teams AGE_GROUPS
+    first thing; name the team_type/circuit axis explicitly; decide division's fate.
+
+==============================================================================
+END — CROSS_SECTION_FINDINGS_CC
+==============================================================================
