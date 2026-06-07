@@ -1730,6 +1730,12 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   B2 address+footer the FIRST PR, G8 idempotency test BEFORE G5 sweep. Open Frank Qs:
   CAN-SPAM classification, Spanish-primary fraction (M-2, decides translation tier),
   scheduled-sends-at-launch (decides SCHED-ANCHOR tier), FORK A confirm.
+  **Frank answered 3 of 4 (2026-06-07):** launch is SEND-NOW-ONLY → SCHED-ANCHOR =
+  Tier 3 (not go-live); Spanish-primary ~near-zero → G-TRANSLATE stays a later
+  phase; build STARTS on architect sign-off (B2 address+footer first PR, each held
+  for Frank's smoke). Still open: CAN-SPAM counsel one-liner (M-1; address ships
+  regardless) + FORK A confirm (expected yes). Next: architect §10-item-1 sign-off
+  → CC builds go-live track + Tier 0, B2 first, G8 idempotency test before G5 sweep.
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 
