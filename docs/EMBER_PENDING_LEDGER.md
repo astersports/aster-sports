@@ -1590,6 +1590,26 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   are two cards for the same events rows (consolidation candidate); imperative
   day-jump scroll brushes AP#5.
 
+**UPDATE 2026-06-07 PM — fixes shipped + home ratified (Frank-routed):**
+- **Programs P1 → MERGED #803.** `deleteProgram()` now counts registrations FIRST
+  and blocks with a kind message before attempting (pre-check, not catch-and-
+  translate). Programs fully closed, no residuals.
+- **Home BUG-H1/H2/H3 + dead-code → MERGED #804.** H1 scope labels on the admin
+  hero (un-blocks D3); H2 coach record default `—` not `0-0` + invariant test
+  case (e); H3 Out-KPI own loading gate; pendingLanes + recentTeamMessages removed
+  + 2 orphan hook files deleted; useFamiliesOwingCount in-flight dedup (3 concurrent
+  admin-home queries → 1).
+- **Home D-A…D-F RATIFIED (Frank 2026-06-07):** D-A hidden-until-data (comment
+  fixed in #804), D-C density retire, D-E ready/overdue mapping — ratified. D-B
+  (rows + severity rail) + D-F (extras-on-home) — pilot-fine, revisit post-pilot.
+  D-D off-season — ratified, but copy to be confirmed against the live preview
+  before ~June 15 (dated). D-G — CC-verified GREEN (pilot send writes the in-app
+  `comms_message_recipients` row with guardian_id; synthetic email-only path is
+  guardian_id=null by design). Home now closeable pending the D-D copy confirm.
+- **Briefings framing (locked):** "verified and safely held" — DEF-11 deliverability
+  (3/hr SMTP cap) + underspecified coach_roundup SEND path before families go live.
+  NOT "resolved." Part A screens-redesign routing (A/B/C) still awaits the architect.
+
 ---
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
