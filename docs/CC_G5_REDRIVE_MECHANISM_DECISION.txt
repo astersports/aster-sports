@@ -1,0 +1,88 @@
+==============================================================================
+CC -> ARCHITECT: G5 FAILED-REDRIVE MECHANISM — DECISION OWED   (PR 1 blocker)
+Date: 2026-06-08. Building PR 1 (G5 Option C) surfaced a gap between the build
+spec (§4a "re-invoke the dispatch for the failed rows") and the actual edge-fn
+behavior. Same posture as the G8 window catch, pointing the other way: I'd rather
+surface this than build a re-drive that silently no-ops or double-sends. PR 1's
+foundation (redrive_count column) is shipped; the failed-redrive build is PAUSED
+pending your ruling. The queued surface is unaffected (buildable now — see §4).
+Per §11.8: committed .txt + chat paste. NOTHING beyond the column applied.
+==============================================================================
+
+0. THE BLOCKER IN ONE LINE
+------------------------------------------------------------------------------
+The cron 'failed'-re-drive cannot use a plain send-tournament-message re-invoke:
+the edge fn FINALIZES the message (sent_at set) on EVERY completed run, including
+partial/failed sends — so alreadySent() is true and the 409 guard blocks the
+re-invoke of exactly the messages the sweep targets.
+
+1. EVIDENCE (file:line, verified)
+------------------------------------------------------------------------------
+- send-tournament-message/index.ts:244-251 — after the send loop, the finalize
+  `UPDATE status='sent', sent_at=now, recipient_count=...` runs UNCONDITIONALLY
+  (no `if (failed===0)` wrapper). Line 258 returns `ok: failed===0 && !finalizeErr`
+  — so a partial send returns ok:false but STILL sets sent_at.
+- index.ts:102 — `if (alreadySent(message)) return 409`. alreadySent = !!sent_at.
+- So: batch-rejection 'failed' rows live on a message whose sent_at IS set →
+  a re-invoke 409s → the cron can't re-drive them by calling the edge fn.
+- PR 0 (F-DUAL-FINALIZE) removed the CLIENT false-finalize, but the EDGE FN's own
+  unconditional finalize still sets sent_at on a partial send. PR 0 was necessary
+  but doesn't, by itself, unblock the failed-redrive.
+
+2. WHY THE QUEUED PATH IS DIFFERENT (and why the human Resend still works)
+------------------------------------------------------------------------------
+A 'queued' row exists only if the run crashed BEFORE the finalize line (the loop
+marks every processed row sent/failed; a still-'queued' row means it was never
+processed → crash before :244). So a message with 'queued' rows has sent_at NULL
+→ alreadySent false → a re-invoke is NOT 409-blocked. This is why the human
+"Resend to these N" (§4c) works as specced, and why the queued surface is
+unaffected by this blocker. The asymmetry is real:
+   'failed' rows  -> message finalized (sent_at set) -> re-invoke 409-blocked.
+   'queued' rows  -> message NOT finalized (sent_at null) -> re-invoke works.
+
+3. RESOLUTION OPTIONS (your ruling; CC lean labeled — §11.8.2)
+------------------------------------------------------------------------------
+OPT-A — Finalize only on full success. Wrap the edge-fn finalize in
+  `if (failed === 0)`: a send with any failed recipient stays NON-finalized
+  (sent_at null, status stays 'queued'/a non-terminal value). Then the cron flips
+  the failed rows back to 'queued' (redrive_count++) and re-invokes — no 409,
+  because the message isn't finalized.
+  + Conceptually clean: a message with failures isn't really "sent."
+  - CHANGES the finalize contract G8/PR0 just established + History "sent" timing
+    (a partial send no longer shows as sent until it fully succeeds). Touches the
+    live send path's terminal-state semantics. Needs its own regression care.
+OPT-B — Dedicated cron re-send (my lean). The cron re-drives 'failed' rows by
+  sending them DIRECTLY via Resend (reuse buildEmailRow + classifyBatchResult +
+  the redrive_count cap), marking the rows sent/failed itself — WITHOUT going
+  through send-tournament-message's message-level entry, so the 409 never applies.
+  This mirrors the existing pattern: _reminderSend.ts already does its own Resend
+  send outside the message entry.
+  + No change to the finalize/History/409 contract; purely additive; Option C's
+    no-double-send holds (failed = batch-rejected = no email sent).
+  - Duplicates a slice of send logic in the cron (mitigated by reusing the
+    buildEmailRow + classifyBatchResult kernels; an AP#30 mirror if it grows).
+CC LEAN: OPT-B. It leaves the just-ratified finalize/idempotency contract intact,
+  matches the reminder-send precedent, and is additive. OPT-A is cleaner in theory
+  but re-opens the finalize semantics across History + the alreadySent guard right
+  after we locked them. Your call — this is a send-path-contract fork, not mine to
+  settle.
+
+4. WHAT'S UNBLOCKED (buildable now, independent of the ruling)
+------------------------------------------------------------------------------
+- The redrive_count column — SHIPPED (PR 1 branch; needed under A or B).
+- The QUEUED Radar surface (the §16.14 "Sends needing review" region) + the human
+  "Resend to these N" (re-invoke; works because queued => non-finalized) + "Mark
+  as delivered" + the never-auto-re-drive-queued regression guard. None of this
+  depends on the failed-redrive mechanism. I can build this slice while you rule
+  on §3 — confirm you want me to proceed with the queued surface in parallel, or
+  hold the whole PR 1 for the ruling.
+
+5. WHAT I NEED
+------------------------------------------------------------------------------
+  - Architect: rule OPT-A vs OPT-B for the failed-redrive (CC leans B). And: build
+    the queued surface now in parallel, or hold all of PR 1?
+  - On the ruling: I build the failed-redrive to it + the queued surface, as PR 1
+    (held), with the regression guard + tests, reported as TXT.
+==============================================================================
+END — CC_G5_REDRIVE_MECHANISM_DECISION
+==============================================================================
