@@ -75,23 +75,6 @@
     "text": "We were right there in the final."
   },
   {
-    "kind": "signoff",
-    "prose": "",
-    "signature": "Frank, Coach Kenny & Coach Darien",
-    "coaches": [
-      {
-        "display_name": "Frank",
-        "title": "Program Director",
-        "phone": "(917) 991-9830"
-      },
-      {
-        "display_name": "Coach Kenny",
-        "title": "Coaching Director",
-        "phone": "(516) 644-0208"
-      }
-    ]
-  },
-  {
     "kind": "footer",
     "logoUrl": "https://astersports.app/knight-logo-240.png",
     "orgName": "Legacy Hoopers",

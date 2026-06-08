@@ -20,7 +20,7 @@
 // (4.2-A-3).
 
 import { buildOrgContext } from '../buildOrgContext';
-import { buildVoiceSignature } from '../voiceSignature';
+import { buildSignoffSection } from '../buildSignoffSection';
 import { fetchSignatureCoaches } from './signatureCoaches';
 import {
   buildGameRecapCard, buildGameRecapPill, buildSubject, fetchSlices,
@@ -114,10 +114,8 @@ export function composeGameRecap(context, slice, overrides = {}) {
     if (v) sections.push({ kind: 'stats_narrative', body: v });
   }
 
-  const validCoaches = (org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
-  const signature = buildVoiceSignature(org.signature_coaches);
-  const signoffProse = trim(overrides.signoff_message);
-  if (signoffProse || signature || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, signature, coaches: validCoaches });
+  const signoff = buildSignoffSection({ overrides });
+  if (signoff) sections.push(signoff);
 
   sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
   sections.push({ kind: 'frame_close' });

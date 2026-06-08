@@ -35,19 +35,20 @@ export function factsToLines(facts) {
 export function buildAiDraftUserPrompt({ kind, framing, factLines, gist, narrativeOnly }) {
   const parts = [`Draft a ${String(kind).replace(/_/g, ' ')} briefing for ${framing}.`];
   if (narrativeOnly) {
-    parts.push("Write ONLY the coach's voice narrative: a short opening hook, a reflective line or two on what it meant and the effort, and a warm or rally close, then sign off by name. The scores, stats, and schedule already render in a structured block above your text, so do NOT restate raw scores, standings, or stat lines.");
+    parts.push("Write ONLY the coach's voice narrative: a short opening hook, a reflective line or two on what it meant and the effort, and a warm or rally close. Do NOT sign off by name (the signature is added separately, not by you). Weave the key facts (final score, opponent, player of the game, venue) naturally into the prose so the message itself carries the data; do not dump a bare stat list.");
   }
   if (gist && gist.trim()) parts.push(`What it needs to say: ${gist.trim()}`);
   if (factLines && factLines.length) {
     parts.push(narrativeOnly
-      ? 'Facts for context (already shown structurally above; write the narrative around them, do not list them):'
+      ? 'Facts to weave naturally into the narrative (use VERBATIM, reference the key ones like score and opponent; never invent or alter a number, name, time, or venue):'
       : 'Facts (use VERBATIM; never invent or alter a number, name, time, or venue; if a needed fact is missing, leave a clear blank and add a warnings entry):');
     parts.push(factLines.map((l) => `  - ${l}`).join('\n'));
   } else {
     parts.push('No structured facts were provided. Write from the gist only and do not invent specifics (scores, times, venues, names).');
   }
   parts.push(
-    (narrativeOnly ? '' : 'Follow the structure template for this kind from the voice profile, and sign off by name. ')
+    (narrativeOnly ? '' : 'Follow the structure template for this kind from the voice profile. ')
+    + 'Do NOT sign off by name (the signature is added separately, not by you). '
     + 'Return ONLY minified JSON (no markdown, no code fence) with exactly these keys: '
     + `body (the ${narrativeOnly ? 'narrative prose' : 'full briefing prose'}), card_summary (one ~10-second summary line), `
     + 'facts_used (array of {"k","v"} label/value pairs you relied on), '

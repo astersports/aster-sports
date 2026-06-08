@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-// Returns staff_profiles rows for the org (display_name, title, phone).
-// Used by the digest signoff signature block.
+// Returns staff_profiles rows for the org (user_id, display_name, title,
+// phone). Used by the signoff "who to include" picker (user_id is the stable
+// selection key) and the digest signoff signature block.
 
 export function useOrgStaff(orgId) {
   const [staff, setStaff] = useState([]);
@@ -16,7 +17,7 @@ export function useOrgStaff(orgId) {
       setLoading(true);
       const { data, error } = await supabase
         .from('staff_profiles')
-        .select('display_name, title, phone')
+        .select('user_id, display_name, title, phone')
         .eq('org_id', orgId)
         .not('display_name', 'is', null);
       if (cancelled) return;

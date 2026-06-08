@@ -69,7 +69,13 @@ async function resolveAndComposePerSlice(state) {
 
 async function composeLegacy(state, coaches) {
   const tourneyUrl = await resolveTourneyUrl(state);
-  const composed = compose({ kind: state.kind, data: { ...state.body, tourney_url: tourneyUrl, signoff_message: state.signoff_message, coaches } });
+  // Contact block is OFF by default; it renders only when the per-message
+  // toggle is on, carrying the selected staff (or the passed roster as a
+  // fallback when the toggle is on but nobody was explicitly picked).
+  const signoffCoaches = state.signoff_enabled === true
+    ? (Array.isArray(state.signoff_coaches) && state.signoff_coaches.length ? state.signoff_coaches : (coaches || []))
+    : [];
+  const composed = compose({ kind: state.kind, data: { ...state.body, tourney_url: tourneyUrl, signoff_message: state.signoff_message, coaches: signoffCoaches } });
   const hasTokens = (composed.sections || []).some((s) => Array.isArray(s.body_token_placeholders));
   if (!hasTokens) return composed;
   // PR-D — resolve the static body-token URLs (schedule, directions) and

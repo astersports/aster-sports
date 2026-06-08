@@ -12,7 +12,9 @@
   },
   {
     "kind": "schedule_change_diff",
-    "changed_fields": ["end_at"],
+    "changed_fields": [
+      "end_at"
+    ],
     "before": {
       "time": "Monday, May 11 from 7:35 PM to 8:35 PM",
       "label": "11U Girls Skills Lab",
@@ -25,14 +27,6 @@
       "location": "St. Patrick's",
       "opponent": null
     }
-  },
-  {
-    "kind": "signoff",
-    "prose": "",
-    "coaches": [
-      { "display_name": "Frank", "title": "Program Director", "phone": "(917) 991-9830" },
-      { "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" }
-    ]
   },
   {
     "kind": "footer",

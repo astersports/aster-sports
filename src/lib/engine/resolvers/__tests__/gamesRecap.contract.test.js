@@ -37,13 +37,13 @@ describe('buildGamesSubject', () => {
 describe('composeGamesRecap', () => {
   const context = { org: ORG, games: GAMES, summary: summarizeGames(GAMES), subject: 'Games recap: 2 games (1-1)' };
 
-  it('emits the framed structure: frame + cobalt band + section bars + one recap_game_cell per game + signoff + footer', () => {
+  it('emits the framed structure: frame + cobalt band + section bars + one recap_game_cell per game + footer (signoff off by default)', () => {
     const { subject, content_sections } = composeGamesRecap(context, { kind: 'family' }, {});
     expect(subject).toBe('Games recap: 2 games (1-1)');
     const kinds = content_sections.map((s) => s.kind);
     expect(kinds).toEqual([
       'frame_open', 'header', 'section_bar', 'recap_game_cell', 'recap_game_cell',
-      'section_bar', 'signoff', 'footer', 'frame_close',
+      'section_bar', 'footer', 'frame_close',
     ]);
     // Header band carries the record pill (cobalt_band variant)
     const header = content_sections[0 + 1];
@@ -87,12 +87,12 @@ describe('composeGamesRecap', () => {
     expect(JSON.stringify(cell)).not.toContain('undefined');
   });
 
-  it('keeps override highlights as stats_narrative under "From the Sideline", before signoff', () => {
+  it('keeps override highlights as stats_narrative under "From the Sideline", before the footer', () => {
     const { content_sections } = composeGamesRecap(context, { kind: 'family' }, { coach_note: 'Great bounce-back.' });
     const kinds = content_sections.map((s) => s.kind);
     expect(kinds).toEqual([
       'frame_open', 'header', 'section_bar', 'recap_game_cell', 'recap_game_cell',
-      'section_bar', 'stats_narrative', 'signoff', 'footer', 'frame_close',
+      'section_bar', 'stats_narrative', 'footer', 'frame_close',
     ]);
     const narratives = content_sections.filter((s) => s.kind === 'stats_narrative').map((s) => s.body);
     expect(narratives).toContain('Great bounce-back.');

@@ -31,6 +31,10 @@ export const INITIAL_STATE = {
   audience_filter: null,
   body: {},
   signoff_message: '',
+  // Per-message contact-info gate (OFF by default). signoff_coaches holds the
+  // staff objects chosen in the compose-time "who to include" picker.
+  signoff_enabled: false,
+  signoff_coaches: [],
   test_only: true,
   send_mode: 'now',          // 'now' | 'scheduled'
   scheduled_for: null,
@@ -86,6 +90,10 @@ export function composerReducer(state, action) {
       return { ...state, body: { ...state.body, ...action.patch } };
     case 'UPDATE_SIGNOFF':
       return { ...state, signoff_message: action.value };
+    case 'TOGGLE_SIGNOFF':
+      return { ...state, signoff_enabled: action.value === true };
+    case 'SET_SIGNOFF_COACHES':
+      return { ...state, signoff_coaches: Array.isArray(action.value) ? action.value : [] };
     case 'TOGGLE_TEST':
       return { ...state, test_only: action.value };
     case 'SET_SEND_MODE':

@@ -25,6 +25,7 @@ const ADMIN_BCC_EMAIL = 'olivejuiceinc1@gmail.com';
 export async function sendWeeklyDigest({
   orgId, period,
   bodyNotes, signoffMessage, opsNotes,
+  signoffEnabled = false, signoffCoaches = null,
   recipients, events, tournaments, teams, coaches,
   rsvpCountsByEvent,
   testOnly,
@@ -41,7 +42,7 @@ export async function sendWeeklyDigest({
   // anchor before scoping body events. Without this a multi-team family or a
   // synthetic per-team test row would render whichever team_ids the slice
   // happens to carry, ignoring the anchor.
-  const overrides = { body_notes: bodyNotes, signoff_message: signoffMessage, ops_notes: opsNotes, audience_team_ids: audienceTeamIds };
+  const overrides = { body_notes: bodyNotes, signoff_message: signoffMessage, ops_notes: opsNotes, audience_team_ids: audienceTeamIds, signoff_enabled: signoffEnabled === true, signoff_coaches: Array.isArray(signoffCoaches) ? signoffCoaches : [] };
   const slices = buildSlicesFromRecipients(recipients);
   const renderedFamilies = slices
     .map((slice) => {

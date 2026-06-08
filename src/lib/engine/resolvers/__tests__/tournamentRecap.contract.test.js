@@ -144,7 +144,7 @@ describe('tournament_recap resolver — contract', () => {
     expect(kinds).toEqual([
       'frame_open', 'header', 'placement_block', 'section_bar',
       'recap_game_cell', 'recap_game_cell', 'recap_game_cell', 'recap_game_cell',
-      'signoff', 'footer', 'frame_close',
+      'footer', 'frame_close',
     ]);
     expect(content_sections[0].kind).toBe('frame_open');
     expect(content_sections[content_sections.length - 1].kind).toBe('frame_close');

@@ -1,5 +1,7 @@
 [
-  { "kind": "frame_open" },
+  {
+    "kind": "frame_open"
+  },
   {
     "kind": "header",
     "variant": "cobalt_band",
@@ -8,7 +10,10 @@
     "headline": "GAME RECAP",
     "record_pill": "WIN · MAY 2"
   },
-  { "kind": "section_bar", "label": "The Game" },
+  {
+    "kind": "section_bar",
+    "label": "The Game"
+  },
   {
     "kind": "recap_game_cell",
     "team_color": "#94a3b8",
@@ -19,17 +24,17 @@
     "result": "W",
     "context": "CYO Spellman"
   },
-  { "kind": "section_bar", "label": "From the Sideline" },
-  { "kind": "stats_narrative", "body": "Player of the game: Giuseppe" },
-  { "kind": "stats_narrative", "body": "defense" },
   {
-    "kind": "signoff",
-    "prose": "",
-    "signature": "Frank & Coach Kenny",
-    "coaches": [
-      { "display_name": "Frank", "title": "Program Director", "phone": "(917) 991-9830" },
-      { "display_name": "Coach Kenny", "title": "Coaching Director", "phone": "(516) 644-0208" }
-    ]
+    "kind": "section_bar",
+    "label": "From the Sideline"
+  },
+  {
+    "kind": "stats_narrative",
+    "body": "Player of the game: Giuseppe"
+  },
+  {
+    "kind": "stats_narrative",
+    "body": "defense"
   },
   {
     "kind": "footer",
@@ -38,5 +43,7 @@
     "websiteUrl": "https://www.legacyhoopers.org/",
     "contactEmail": "support@astersports.app"
   },
-  { "kind": "frame_close" }
+  {
+    "kind": "frame_close"
+  }
 ]

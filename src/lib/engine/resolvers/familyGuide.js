@@ -17,8 +17,9 @@
 
 import {
   buildCoachesBlockSection, buildConflictCalloutSection, buildFamilyGuideFooter,
-  buildKidColorPillSections, buildQuickLinkNav, buildSignoffSection, buildVipHeaderSection,
+  buildKidColorPillSections, buildQuickLinkNav, buildVipHeaderSection,
 } from './familyGuideSections';
+import { buildSignoffSection } from '../buildSignoffSection';
 import { detectConflicts, groupEventsByKid } from './familyGuideHelpers';
 import { fetchTeamCoaches } from './familyGuideCoaches';
 import { buildOrgContext } from '../buildOrgContext';
@@ -128,19 +129,21 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
 
 export function composeFamilyGuide(context, slice, overrides = {}) {
   if (!context || !slice) throw new Error('Missing context or slice');
-  const { parent, kidsWithEvents, conflicts, dateRange, coaches, teamCoaches, orgName, orgBranding } = context;
+  const { parent, kidsWithEvents, conflicts, dateRange, teamCoaches, orgName, orgBranding } = context;
   const sections = [buildVipHeaderSection(parent, kidsWithEvents, dateRange, conflicts)];
   const conflictSection = buildConflictCalloutSection(conflicts);
   if (conflictSection) sections.push(conflictSection);
   sections.push(...buildKidColorPillSections(kidsWithEvents));
   const navSection = buildQuickLinkNav(kidsWithEvents);
   if (navSection) sections.push(navSection);
-  // "Your coaches" reference block — per-team coach contact rows. Placed
-  // after the schedule + quick links (VIP-reference reading flow), before
-  // the signoff. Omitted when no team has a coach with a phone.
-  const coachesSection = buildCoachesBlockSection(teamCoaches);
+  // "Your coaches" reference block — per-team coach contact rows (name · title
+  // · phone). This is coach CONTACT data through a different section, so it is
+  // gated by the SAME per-message contact toggle as the signoff: OFF by default
+  // (omitted), rendered only when the admin opts in (overrides.signoff_enabled).
+  // Otherwise a family_guide sent with contact "off" would still leak phones.
+  const coachesSection = overrides.signoff_enabled === true ? buildCoachesBlockSection(teamCoaches) : null;
   if (coachesSection) sections.push(coachesSection);
-  const signoff = buildSignoffSection(overrides, coaches);
+  const signoff = buildSignoffSection({ overrides });
   if (signoff) sections.push(signoff);
   sections.push(buildFamilyGuideFooter(orgName, orgBranding));
   return {

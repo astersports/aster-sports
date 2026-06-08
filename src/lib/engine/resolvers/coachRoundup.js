@@ -15,8 +15,9 @@
 
 import {
   buildBrandFooter, buildCoachHeaderSection, buildConflictCalloutSection,
-  buildSignoffSection, buildTeamSections,
+  buildTeamSections,
 } from './coachRoundupSections';
+import { buildSignoffSection } from '../buildSignoffSection';
 import { detectConflicts, groupEventsByTeam } from './coachRoundupHelpers';
 import { buildOrgContext } from '../buildOrgContext';
 
@@ -90,12 +91,12 @@ export async function resolveCoachRoundup({ coachUserId, dateRange }, { supabase
 
 export function composeCoachRoundup(context, slice, overrides = {}) {
   if (!context || !slice) throw new Error('Missing context or slice');
-  const { coach, teamsWithEvents, conflicts, dateRange, coaches, orgName } = context;
+  const { coach, teamsWithEvents, conflicts, dateRange, orgName } = context;
   const sections = [buildCoachHeaderSection(coach, teamsWithEvents, dateRange)];
   const conflictSection = buildConflictCalloutSection(conflicts);
   if (conflictSection) sections.push(conflictSection);
   sections.push(...buildTeamSections(teamsWithEvents));
-  const signoff = buildSignoffSection(overrides, coaches);
+  const signoff = buildSignoffSection({ overrides });
   if (signoff) sections.push(signoff);
   sections.push(buildBrandFooter(orgName));
   return {

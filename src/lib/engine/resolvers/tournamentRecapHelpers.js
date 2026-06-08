@@ -10,7 +10,7 @@
 import { buildGameCell } from './gamesRecapHelpers';
 import { buildSubContext, trim } from './tournamentPrelimHelpers';
 import { buildStandingsSection } from './tournamentPrelimGoldSections';
-import { buildVoiceSignature } from '../voiceSignature';
+import { buildSignoffSection } from '../buildSignoffSection';
 
 export function buildSubject(team, tournament) {
   return `${team.team_name}: ${tournament.name} Recap`;
@@ -104,7 +104,7 @@ export function buildBracketPathSections(events, gameResults, locations, teamNam
 // registered renderers (AP #38); omits each section when data is absent
 // (AP #27). Extracted from compose() for the 150-line cap (AP #6).
 export function buildRecapSections(context, slice, overrides) {
-  const { tournament, tournament_teams, events_by_team, locations, game_results_by_event, org, signature_coaches_by_team } = context;
+  const { tournament, tournament_teams, events_by_team, locations, game_results_by_event, org } = context;
   const tt = tournament_teams.find((t) => t.team_id === slice.team_id);
   const events = events_by_team[slice.team_id] || [];
   const sections = [];
@@ -138,11 +138,8 @@ export function buildRecapSections(context, slice, overrides) {
   }
   if (narrative.length) { sections.push({ kind: 'section_bar', label: 'From the Sideline' }); sections.push(...narrative); }
 
-  const validCoaches = (org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
-  const sigCoaches = (signature_coaches_by_team && signature_coaches_by_team[slice.team_id]) || org.signature_coaches;
-  const signature = buildVoiceSignature(sigCoaches);
-  const signoffProse = trim(overrides.signoff_message);
-  if (signoffProse || signature || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, signature, coaches: validCoaches });
+  const signoff = buildSignoffSection({ overrides });
+  if (signoff) sections.push(signoff);
   sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
   sections.push({ kind: 'frame_close' });
   return sections;

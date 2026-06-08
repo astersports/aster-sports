@@ -18,8 +18,6 @@ import { APP_BASE_URL, ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_WEBSITE_DEFAUL
 
 const FALLBACK_TEAM_COLOR = '#4a8fd4';
 
-function trim(s) { return typeof s === 'string' ? s.trim() : ''; }
-
 // PR 5b-3 — Family Guide gets its own conflict_callout section, mirroring
 // Coach Roundup's pattern. detectConflicts produces items with kid_a /
 // kid_b in addition to team_a / team_b — the shared renderer was
@@ -114,14 +112,6 @@ export function buildCoachesBlockSection(teamCoaches) {
       coaches: g.coaches.map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' })),
     })),
   };
-}
-
-export function buildSignoffSection(overrides, coaches) {
-  const prose = trim(overrides?.signoff_message);
-  const validCoaches = (coaches || []).filter((c) => c.display_name && c.phone)
-    .map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
-  if (!prose && !validCoaches.length) return null;
-  return { kind: 'signoff', prose, coaches: validCoaches };
 }
 
 // Decision 2 (architect, 2026-06-08): family_guide is parent-facing bulk email,

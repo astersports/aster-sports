@@ -35,12 +35,21 @@ describe('aiDraftPrompt helpers', () => {
     expect(p).toContain('NO em dashes');
   });
 
-  it('buildAiDraftUserPrompt: narrativeOnly writes voice prose, drops the full-template instruction', () => {
+  it('buildAiDraftUserPrompt: narrativeOnly weaves data in, no baked signature, drops the full-template instruction', () => {
     const p = buildAiDraftUserPrompt({ kind: 'game_recap', framing: '11U Girls families', factLines: ['Final: 42-38 (W)'], narrativeOnly: true });
     expect(p).toContain("Write ONLY the coach's voice narrative");
-    expect(p).toContain('do NOT restate raw scores');
+    expect(p).toContain('Weave the key facts');
     expect(p).toContain('narrative prose');
     expect(p).not.toContain('Follow the structure template');
+    // Signature is the separate (off-by-default) signoff, never baked into the body.
+    expect(p).not.toContain('then sign off by name');
+    expect(p).toContain('Do NOT sign off by name');
+  });
+
+  it('buildAiDraftUserPrompt: full-template path also forbids a baked signature', () => {
+    const p = buildAiDraftUserPrompt({ kind: 'announcement', framing: 'all families', factLines: [], gist: 'hi' });
+    expect(p).toContain('Follow the structure template');
+    expect(p).toContain('Do NOT sign off by name');
   });
 
   it('buildAiDraftUserPrompt: no-facts path forbids invention', () => {

@@ -27,6 +27,7 @@ import {
 } from './academyCallupNoticeHelpers';
 import { deriveEventLabel } from './rsvpNudgeHelpers';
 import { buildOrgContext } from '../buildOrgContext';
+import { buildSignoffSection } from '../buildSignoffSection';
 import { EVENT_SELECT, fetchHomeTeam, fetchSlices } from './academyCallupNoticeData';
 
 
@@ -102,9 +103,8 @@ export function composeAcademyCallupNotice(context, slice, overrides = {}) {
   for (const key of ['coach_note', 'parent_shoutout']) {
     const v = trim(overrides[key]); if (v) sections.push({ kind: 'stats_narrative', body: v });
   }
-  const validCoaches = (org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
-  const signoffProse = trim(overrides.signoff_message);
-  if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
+  const signoff = buildSignoffSection({ overrides });
+  if (signoff) sections.push(signoff);
   sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
   const subject = `Call-up: ${player.first_name} for ${subjectLabel}`;
   return { subject, content_sections: sections };

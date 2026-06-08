@@ -28,6 +28,7 @@ import {
 } from './scheduleChangeHelpers';
 import { fetchKidNames } from './gameRecapHelpers';
 import { buildOrgContext } from '../buildOrgContext';
+import { buildSignoffSection } from '../buildSignoffSection';
 
 
 const EVENT_SELECT = 'id, title, team_id, event_type, start_at, end_at, location, location_id, opponent, status, publish_status, teams ( id, name, team_color, sort_order, org_id )';
@@ -121,9 +122,8 @@ export function composeScheduleChange(context, slice, overrides = {}) {
   for (const key of ['coach_note', 'parent_shoutout']) {
     const v = trim(overrides[key]); if (v) sections.push({ kind: 'stats_narrative', body: v });
   }
-  const validCoaches = (org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
-  const signoffProse = trim(overrides.signoff_message);
-  if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
+  const signoff = buildSignoffSection({ overrides });
+  if (signoff) sections.push(signoff);
   sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
 
   const subject = `${isCancellation ? 'Cancelled' : 'Schedule update'}: ${eventLabel}`;

@@ -67,10 +67,10 @@ describe('registry — helpers', () => {
     expect(RESOLVER_REGISTRY.games_recap.anchorFromState(state)).toEqual({ eventIds: ['e-1', 'e-2'], pilotOnly: false });
   });
 
-  it('overridesFromState merges state.body + signoff_message', () => {
+  it('overridesFromState merges state.body + signoff_message + contact gate (off by default)', () => {
     const state = { body: { coach_note: 'hi', opp_highlights: 'oh' }, signoff_message: 'bye' };
     const overrides = RESOLVER_REGISTRY.game_recap.overridesFromState(state);
-    expect(overrides).toEqual({ coach_note: 'hi', opp_highlights: 'oh', signoff_message: 'bye' });
+    expect(overrides).toEqual({ coach_note: 'hi', opp_highlights: 'oh', signoff_message: 'bye', signoff_enabled: false, signoff_coaches: [] });
   });
 
   it('NoCallupTokenInfrastructureError is constructable', () => {

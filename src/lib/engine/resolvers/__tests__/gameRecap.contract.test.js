@@ -90,7 +90,7 @@ describe('game_recap resolver — contract', () => {
     const kinds = content_sections.map((s) => s.kind);
     expect(kinds).toEqual([
       'frame_open', 'header', 'section_bar', 'recap_game_cell',
-      'section_bar', 'stats_narrative', 'stats_narrative', 'signoff', 'footer', 'frame_close',
+      'section_bar', 'stats_narrative', 'stats_narrative', 'footer', 'frame_close',
     ]);
     const header = content_sections[1];
     expect(header.variant).toBe('cobalt_band');
