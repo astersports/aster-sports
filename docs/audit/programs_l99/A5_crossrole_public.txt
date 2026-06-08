@@ -1,0 +1,362 @@
+================================================================================
+A5 — PROGRAMS L99 AUDIT — CROSS-ROLE + PUBLIC(ANON) SURFACE + SEASONS-VIEW SEAM
+================================================================================
+Agent: A5 of 6 | Date: 2026-06-08 | Mode: READ-ONLY (SELECT-only SQL, no edits)
+Project: vrwwpsbfbnveawqwbdmj | Methodology: §16.15 (a-e all five)
+Scope: usePublicProgram + /r/:slug public registration; cross-role program
+visibility matrix (admin/coach/parent/anon/view-as); seasons compat-view
+cross-program consumers. All role-visibility claims verified vs live RLS
+policy + helper defs (AP#60). pwd confirmed: /home/user/skyfire-app
+
+================================================================================
+HEADLINE — ANON READ-PATH VERDICT
+================================================================================
+SOUND. The anon read path is a single SECURITY DEFINER RPC,
+public.get_public_program(p_slug), live def verified byte-identical to migration
+20260601044918. It is the ONLY anon read into the program graph.
+
+  - is_published=true is baked into the WHERE clause server-side (line 36 of the
+    migration / live def): `WHERE p.public_slug = p_slug AND p.is_published=true`.
+    A draft/unpublished program returns NULL regardless of slug. NOT client-gated.
+  - NO enumeration: the function takes ONE exact slug and returns ONE program.
+    There is no list/search anon path. Slug is globally unique
+    (programs_public_slug_key, nulls-distinct) so no slug collision across orgs.
+  - NO cross-org leak: the program is joined to its OWN org (programs.org_id ->
+    organizations) and only that org's name/logo/brand_colors are exposed. No
+    sibling-program rows, no other-org rows.
+  - NO direct anon table SELECT: programs/divisions/division_fees/etc. all have
+    RLS ENABLED (verified relrowsecurity=true, relkind='r' per AP#24); every
+    SELECT policy is roles={authenticated} with no anon/public SELECT policy.
+    anon carries the Supabase-default blanket table grants (SELECT/INSERT/...)
+    but RLS gates them to zero rows for anon. The grants are moot; RLS is the
+    gate and it holds.
+  - Reg-window (reg_opens_at/reg_closes_at) + is_published are enforced
+    SERVER-SIDE on the WRITE path too: submit_registration re-resolves the
+    program with the full published+in-window predicate and RAISE EXCEPTION
+    'registration_closed' on miss. The client resolveRegState() gate
+    (RegisterEntryPage.jsx:14-21) is UX-only; it is backed by the server. NOT a
+    client-only gate. No P0/P1 here.
+
+The one real anon concern is NOT a read-leak but an anon cross-org WRITE seam on
+guardians via global-unique email (F-1 below, P1, latent/multi-org).
+
+================================================================================
+(a) INITIAL PASS — findings (P0-P3, file:line)
+================================================================================
+
+[P1][AP#63 / multi-tenant] supabase/migrations/20260601044918_..._public_rpcs.sql:91
+  submit_registration upserts the primary guardian with `ON CONFLICT (email) DO
+  UPDATE SET first_name=..., last_name=..., phone=...`. guardians.email is
+  GLOBALLY UNIQUE (verified live: constraint guardians_email_unique = UNIQUE(email),
+  NOT per-org). Consequences for multi-org (and for an adversarial anon caller):
+    1. An anon registrant in org B who supplies an email that already exists as a
+       guardian in org A reuses org A's guardian row (v_guardian_id), and the DO
+       UPDATE OVERWRITES that org-A guardian's first_name/last_name/phone with the
+       anon-supplied values. => anon can mutate another org's guardian PII by
+       knowing/guessing an email. Anon-write to a different org's row.
+    2. player_guardians then links the org-A guardian to the org-B player
+       (line 140). The guardian's own org_id stays org A while it is now attached
+       to an org-B player => cross-org identity bleed.
+  EVIDENCE: live `guardians_email_unique UNIQUE (email)`; RPC is SECURITY DEFINER
+  (RLS-bypassing) so no RLS backstop on the guardian write.
+  Benign for the LH single-org pilot (one org, no collision surface today).
+  LEAN: gate the DO UPDATE to same-org (`WHERE guardians.org_id = v_org_id` in the
+  conflict target is impossible on a global-unique email — the truer fix is to make
+  the uniqueness per-org: UNIQUE(org_id, email) — see fork FK-1). Until multi-org,
+  flag as latent P1; the moment a 2nd org onboards with a published reg page this
+  becomes an active anon cross-org write. Pairs with the dedupe-player block
+  (line 127) which IS correctly org-scoped (org_id=v_org_id) — guardians is the
+  asymmetric one.
+
+[P2][multi-org divergence] live RLS: sports_select vs programs_select
+  sports_select USING `org_id = current_user_org_id()` (SINGULAR — LIMIT 1, picks
+  ONE arbitrary org row for the user). programs_select / divisions_select /
+  division_fees_select / registrations_select all USING `org_id = ANY
+  (current_user_org_ids())` (PLURAL — ARRAY_AGG of all the user's orgs). Verified
+  both helper defs live: current_user_org_id = `select organization_id ... limit 1`;
+  current_user_org_ids = `ARRAY_AGG(DISTINCT organization_id)`.
+  IMPACT: a user who is a member of >1 org sees programs/divisions/fees for ALL
+  their orgs (plural), but sees sports for only ONE arbitrary org (singular). If a
+  program in org X references a sport row that resolves only under org Y's
+  current_user_org_id() pick, the sport JOIN/label silently drops for that
+  multi-org user. Single-org (LH) is unaffected: LIMIT 1 == ANY when there's one
+  org. This is a real plural/singular divergence and a latent multi-org bug.
+  NOTE: the public anon RPC does NOT read sports (no sport in get_public_program
+  payload), so the ANON surface is unaffected — this is an authenticated multi-org
+  consistency issue, not an anon leak.
+  LEAN: converge sports_select onto current_user_org_ids() (plural) to match its
+  siblings. Cheap, no behavior change for single-org. (See fork FK-2.)
+
+[P3][stale comment] src/hooks/useSeasons.js:8-9 and :55-58
+  Two comments assert "Postgres doesn't enforce 'only one active per org'" /
+  "Postgres can't express 'set exactly one row'". This is now FALSE: live partial
+  unique index `programs_one_active_season_per_org ON programs(org_id) WHERE
+  status='active' AND program_type='season'` DOES enforce exactly that at the DB.
+  The setActive() two-statement archive-then-activate (lines 59-69) still works,
+  but the rationale comment is stale and (worse) masks F-2 below.
+  LEAN: update comment; address F-2 atomicity separately.
+
+================================================================================
+(b) DEEP-READ ADDENDUM (2nd pass — ~40% more)
+================================================================================
+
+[P2][atomicity] src/hooks/useSeasons.js:59-69  (F-2)
+  setActive() is NOT atomic and NOT transactional: stmt1 archives all-other
+  seasons in the org (`update status=archived ... neq id`), stmt2 activates the
+  target. If stmt2 fails (network, or the partial-unique index rejects because of
+  a race with a concurrent admin), the org is left with ZERO active seasons — and
+  SeasonContext.jsx:53-54 + useActiveSeasonEnd.js:11 silently fall back
+  (rows[0] / null). Now that the partial-unique index exists (P3 above), stmt2
+  can also throw 23505 if any other 'active' season slips in between the two
+  statements. The whole "two statements because Postgres can't enforce one active"
+  rationale is obsolete; the index would let a single `UPDATE ... SET status=CASE
+  WHEN id=$1 THEN 'active' ELSE 'archived' END` run atomically (or an RPC).
+  EVIDENCE: useSeasons.js:61-69 (no txn wrapper, sequential awaits with early
+  return between them).
+  LEAN: wrap in a SECURITY-INVOKER RPC or single CASE update so the activate is
+  atomic with the archive. Multi-org safe (index is per-org). Defer-able for LH
+  (admin rarely toggles), but it's a real "leaves org with no active season"
+  failure mode.
+
+[INFO/PASS] seasons compat VIEW — write-through correctness verified
+  Live: seasons is relkind='v', reloptions security_invoker=true,
+  check_option=cascaded; viewdef = `SELECT ... FROM programs WHERE
+  program_type='season'`. The SELECT list does NOT project program_type.
+  An INSERT through the view (useSeasons.createSeason:41-43,
+  useSeasonRollover.js:16-23) omits program_type; programs.program_type has
+  DEFAULT 'season'::program_type. So the default fills it, and the CASCADED CHECK
+  OPTION (program_type='season') is satisfied. No write through the view can set
+  program_type wrong (you cannot reference a column the view doesn't expose), and
+  CHECK OPTION blocks any update that would move a row out of program_type='season'.
+  VERDICT: the view seam is correct. createSeason/updateSeason/setActive/
+  useSeasonRollover all function against the VIEW (not the dropped table). PASS.
+  (Cross-program consumers spot-checked: useSeasons, useSeasonRollover,
+  useActiveSeasonEnd, SeasonContext — all read/write `.from('seasons')` filtered by
+  `.eq('org_id', orgId)`; all org-scoped, all view-compatible.)
+
+[INFO/PASS] SeasonContext active-season resolution vs single-active index + multi-org
+  SeasonContext.jsx:40-54 fetches seasons for ONE org (orgId from useAuth, which is
+  the AuthContext's single resolved org) and picks `status==='active'` else rows[0].
+  The single-active-season partial index guarantees at most one active row per org,
+  so `.find(s=>s.status==='active')` is unambiguous for that org. Because
+  SeasonContext is single-org (AuthContext.orgId is one value), it does NOT hit the
+  plural/singular divergence (P2 above) — it never reads sports, and its season
+  read is explicitly `.eq('org_id', orgId)`. PASS. (If/when a true multi-org
+  context lands, SeasonContext's single orgId becomes the question, but that's
+  out-of-scope authenticated-context work, not a programs-section bug.)
+
+[P3][client/server total divergence — acceptable, noted] StepReview.jsx:7,17 +
+  RegisterFlowPage.jsx:64
+  The review screen shows the CLIENT estimateCart total ("Due"); the server
+  submit_registration returns authoritative_total_cents (the truer number). The
+  file comment (StepReview.jsx:6) explicitly acknowledges this. RegisterConfirm.jsx
+  does NOT display any total (it shows "Spot reserved", count only) — so the
+  client estimate is never reconciled against the server number on screen, which
+  AVOIDS a visible PATTERN A #63 contradiction. Risk is only if client estimateCart
+  diverges from server fees (e.g., a fee added between page-load and submit); the
+  parent would see an estimate that differs from the admin's recorded charge. Low
+  for LH (lean no-Stripe flow, admin records payment manually). LEAN: when Stripe
+  lands, the charge MUST use authoritative_total_cents, never the client cart.
+  Acceptable today; record as a Stripe-track guardrail.
+
+[INFO] anon table grants are Supabase-default, not a leak (verified)
+  anon shows full INSERT/SELECT/UPDATE/DELETE grants on programs, divisions,
+  division_fees, registrations, registration_fees, guardians, players,
+  player_guardians, organizations, player_equipment, sports. These are the
+  Supabase default public-schema grants. RLS (enabled on all, verified relkind='r')
+  is the actual gate: no anon/public SELECT policy exists on any of them, and the
+  write policies all qual `user_has_role_in_org(org_id, ARRAY['admin'])` which anon
+  fails. So anon's only effective access is via the two SECDEF RPCs. NOT a finding,
+  documented so a future audit doesn't re-flag the grants as a P0.
+
+================================================================================
+(c) ANTI-PATTERN CROSS-REFERENCE (§11) + PATTERN A #63 HUNT
+================================================================================
+  - AP#63 PATTERN A (same concept, divergent source/scope across surfaces):
+      * F-1 guardian-by-global-email is the multi-org instance (one guardian
+        identity, two orgs' scope). Flagged.
+      * P2 sports(singular) vs programs(plural) = same "what orgs can I see"
+        concept resolved at two different scopes in RLS. Flagged.
+      * StepReview client total vs server authoritative total = same "amount due"
+        concept from two sources; mitigated because Confirm hides the total.
+  - AP#23/#57 (REVOKE-from-PUBLIC + per-role): get_public_program /
+    submit_registration both `REVOKE EXECUTE FROM PUBLIC` then `GRANT TO anon,
+    authenticated` — intentional anon grant (mirrors get_invitation_by_token).
+    Correct per the migration's own note. Live grants verified: anon:EXECUTE on
+    both. PASS (intentional, not the #23 footgun).
+  - AP#24 (RLS audit filter relkind='r'): applied — seasons is a VIEW (relkind='v'),
+    correctly excluded from the RLS-enabled table check; its security_invoker=true
+    means it inherits the underlying programs RLS at query time. PASS.
+  - AP#36 (destructured-default swallow): usePublicProgram.js:19-26 and
+    useSubmitRegistration.js:16-21 both destructure {data,error} and surface error
+    before use. COMPLIANT.
+  - AP#20 (cmd=ALL needs with_check): the program-graph write policies are split
+    per-cmd (insert/update/delete separate), not ALL; update policies carry
+    with_check. PASS.
+  - AP#43 (cross-role invariant test): NO cross-surface invariant test exists for
+    the program/registration concept across roles. The public reg surface has zero
+    role-divergence (it's anon-only, single render), so #43 mostly N/A there; but
+    the sports/programs plural-singular divergence (P2) is exactly the kind of
+    cross-surface concept #43 wants locked — recommend a policy-parity test.
+
+================================================================================
+(d) PER-ROLE WIREFRAMES — program-relevant surfaces per role
+================================================================================
+(verified each cell vs RLS policy quals + route guards; cannot impersonate, so
+ reasoned from policy + helper defs per task constraint)
+
+ROLE: ANON (unauthenticated) — THE PUBLIC SURFACE
+  Route /r/:slug  (RegisterEntryPage) — App.jsx:78, NO guard, outside RequireAuth
+    +--------------------------------------------------+
+    | [org logo]   ORG NAME (uppercase)                |
+    |   <Program Name>   (h1)   ───                    |
+    |   PICK A DIVISION                                |
+    |   [color bar] Division A   [OPEN]                |  <- DivisionCard
+    |               Grades 3-4 · $120                  |
+    |   [color bar] Division B   [OPENS Jun 15]        |  <- upcoming pill
+    |   Powered by Aster Sports · Privacy · Terms      |
+    +--------------------------------------------------+
+    DATA SOURCE: get_public_program RPC ONLY. Exposes: program id/name/type/dates/
+    reg window/org name/logo/brand_colors + divisions(name,grades,gender,color,
+    fees). NO PII, NO other programs, NO other orgs, NO unpublished. If slug not
+    published -> "This registration link isn't open yet" (RegisterEntryPage:38-45).
+  Route /r/:slug/apply (RegisterFlowPage) — App.jsx:79, NO guard
+    Wizard: Player -> Guardian -> Details -> Review -> Confirm. Writes via
+    submit_registration RPC ONLY (anon EXECUTE). Server re-validates published +
+    in-window + grade-band + division-belongs-to-program. Confirm shows
+    "Spot reserved" (no total). VERIFIED anon cannot read/enumerate; can WRITE only
+    through the validated RPC. The single anon-write risk is F-1 (guardian email).
+
+ROLE: ADMIN
+  /admin/programs, /admin/programs/new, /admin/programs/:id — guard
+  allowedRoles=['admin'] (App.jsx:105-107). Full CRUD. RLS: programs_select ANY
+  current_user_org_ids() (sees all own-org programs); writes gated
+  user_has_role_in_org(org_id,'admin'). Also /admin/seasons, /admin/rollover read
+  the seasons view (same org). Admin is the only role with a program-management UI.
+    +-------------------------------+
+    | Programs            [+ New]   |
+    |  Spring 2026 (season) active  |
+    |  Summer Camp (camp) draft     |
+    |  ...                          |
+    +-------------------------------+
+
+ROLE: COACH
+  NO program-aware surface. Verified: no /admin/programs access (admin-only guard);
+  grep of coach-home components for program|season -> NO matches. Coach is
+  team-scoped (teams.season_id ties a team to a program-as-season indirectly, but
+  no program/season label renders on coach surfaces in scope). RLS programs_select
+  is {authenticated} ANY current_user_org_ids() — a coach COULD technically SELECT
+  program rows for their org via the API, but no UI surfaces them.
+    +-------------------------------+
+    | (no program surface)          |
+    +-------------------------------+
+
+ROLE: PARENT
+  NO program-aware surface inside the app. Verified: no /admin/* access; grep of
+  parent-home for program|season -> NO matches. A parent's only program touchpoint
+  is the PUBLIC anon /r/:slug flow (pre-account, during registration) — which is
+  the ANON surface above, not a logged-in parent surface. Post-registration, the
+  parent sees players/teams, not the program entity.
+    +-------------------------------+
+    | (no program surface)          |
+    +-------------------------------+
+
+ROLE: VIEW-AS (admin impersonating coach/parent)
+  Inherits the impersonated role's surfaces. Since coach+parent have NO program
+  surface, view-as-coach / view-as-parent show NO program UI. View-as does not
+  change RLS (RLS keys off auth.uid(), not the view-as client state), so an
+  admin in view-as still has admin DB visibility but the UI hides program
+  management. No program-specific view-as divergence found.
+
+CROSS-ROLE MATRIX (program/season concept)
+  Concept            | Admin            | Coach   | Parent  | Anon(public)        | Verified-by
+  -------------------|------------------|---------|---------|---------------------|-------------
+  See program list   | YES (UI+RLS)     | RLS-yes/UI-no | RLS-yes/UI-no | NO (1 slug only) | programs_select={auth} ANY org_ids; routes admin-only; anon RPC single-slug
+  Manage program     | YES              | NO      | NO      | NO                  | writes qual user_has_role_in_org(...,'admin')
+  See divisions+fees | YES              | RLS-yes/UI-no | RLS-yes/UI-no | YES via RPC (published only) | divisions_select={auth} ANY org_ids; get_public_program
+  Register (write)   | (via admin flow) | NO      | NO(in-app) | YES via RPC (validated) | submit_registration anon EXECUTE
+  See sports label   | YES (1 org)      | 1 org (SINGULAR helper) | 1 org | n/a (not in RPC) | sports_select = current_user_org_id() SINGULAR  <-- P2 divergence cell
+  Seasons (view)     | YES              | RLS-yes | RLS-yes | NO                  | seasons view security_invoker -> programs RLS ANY org_ids
+
+  The single divergent cell is "See sports label" (singular helper) — the rest are
+  consistent. Anon column is uniformly "single published program by slug, no list,
+  no other org" — the public surface is intentionally minimal and leak-free.
+
+================================================================================
+(e) OUT-OF-SCOPE (this audit does NOT touch)
+================================================================================
+  - PublicSchedulePage (/schedule/:teamId) — a separate public seam; verified it
+    does NOT read programs/seasons (grep: no match). Left to whichever agent owns
+    public schedule.
+  - Admin program CRUD internals (ProgramSetupPage, ProgramDetailPage,
+    ProgramEditSheet, useProgramAdmin, useProgramSetup, useProgramRegistrations,
+    programSetup.js) — admin-only build correctness is another agent's slice; I
+    only touched them at the RLS/route-guard boundary.
+  - division_fees pricing math / family_cap_policy correctness beyond the
+    server-authoritative-total assertion.
+  - Stripe / payment track (explicitly not built; lean no-Stripe "reserve" flow).
+  - FinancialDashboardPage / FinancialImportPage seasons-view consumers — named in
+    grounding but financial-domain; only confirmed they read `.from('seasons')`
+    org-scoped (compat-safe), did not audit financial logic.
+  - AuthContext single-org orgId resolution as a multi-org architecture question
+    (the deeper "should the app be multi-org-context" fork) — platform-level, not
+    programs-section.
+  - waivers/form_fields/custom_responses capture correctness (registration capture
+    audit L99 owns that, docs/AUDIT_REGISTRATION_CAPTURE_L99.md).
+
+================================================================================
+FORKS (AP#39 — labeled LEAN, architect/Frank ratifies)
+================================================================================
+FK-1 [LEAN: per-org guardian uniqueness]  Re F-1. The global UNIQUE(email) on
+  guardians is the root of the anon cross-org write/identity-bleed. LEAN: move to
+  UNIQUE(org_id, email) and make submit_registration's ON CONFLICT target
+  (org_id,email). Counter-hedge: a single physical guardian (same email) across
+  two orgs would then be two rows — arguably MORE correct for tenant isolation
+  (each org owns its own guardian record). Per AP#39 the hedge (two rows per org)
+  is likely the truer position: tenant isolation > guardian de-dup across orgs.
+  Benign to defer while single-org, but must resolve BEFORE a 2nd org gets a
+  published reg page. LEAN: per-org uniqueness.
+
+FK-2 [LEAN: converge sports_select to plural]  Re P2. Change sports_select USING
+  to `org_id = ANY (current_user_org_ids())` to match programs/divisions/fees.
+  No single-org behavior change; removes the multi-org sport-drop. Low risk.
+  Alternative (do nothing until multi-org) is defensible but per AP#39 the
+  convergence is the truer position — it's a one-line policy fix that removes a
+  latent inconsistency now. LEAN: converge.
+
+FK-3 [LEAN: atomic setActive]  Re F-2. Replace the two-statement archive/activate
+  with a single CASE update or a SECURITY-INVOKER RPC so an org is never left with
+  zero active seasons. Defer-able for LH; the index makes the current code
+  race-throwable. LEAN: atomic single-statement.
+
+================================================================================
+SUMMARY
+================================================================================
+Severity counts: P0: 0 | P1: 1 (F-1 anon cross-org guardian write, latent/multi-org)
+                 P2: 2 (sports singular-helper divergence; setActive non-atomic)
+                 P3: 3 (stale useSeasons comment; client/server total divergence;
+                        — plus several INFO/PASS verifications)
+ANON READ-PATH VERDICT: SOUND. Single SECDEF RPC, is_published+slug enforced
+  server-side, no enumeration, no cross-org/sibling leak, RLS gates all direct
+  anon table access to zero. Reg-window enforced server-side on write. No P0/P1
+  on the READ path. The only anon risk is a WRITE seam (F-1, guardian email),
+  latent until multi-org.
+TOP 3:
+  1. [P1] F-1 — submit_registration ON CONFLICT(global-unique email) lets an anon
+     registrant overwrite/relink a DIFFERENT org's guardian record. Latent for
+     single-org LH; active P1 the moment a 2nd org publishes a reg page. Fork FK-1.
+  2. [P2] sports_select uses current_user_org_id() (SINGULAR) while
+     programs/divisions/fees use current_user_org_ids() (PLURAL) — multi-org users
+     get inconsistent sport visibility on programs. Fork FK-2.
+  3. [P2] useSeasons.setActive() is non-atomic (archive-then-activate, no txn);
+     stmt2 failure leaves the org with ZERO active seasons, and the new partial
+     unique index can now make stmt2 throw. Fork FK-3.
+FORKS: FK-1 (per-org guardian uniqueness), FK-2 (converge sports to plural helper),
+  FK-3 (atomic setActive). All single-org-benign; FK-1 is the one that MUST land
+  before multi-org publish.
+SEASONS-VIEW SEAM: PASS. View is security_invoker + cascaded CHECK OPTION over
+  programs WHERE program_type='season'; program_type DEFAULT 'season' makes
+  view-inserts CHECK-safe; all spot-checked consumers (useSeasons,
+  useSeasonRollover, useActiveSeasonEnd, SeasonContext) function org-scoped against
+  the VIEW. No write can set program_type wrong through the view.
+================================================================================

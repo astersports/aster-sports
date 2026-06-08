@@ -1,0 +1,365 @@
+================================================================================
+PROGRAMS SECTION — L99 MULTI-AGENT RE-AUDIT — MASTER SYNTHESIS
+================================================================================
+Date: 2026-06-08 · Branch: claude/programs-l99-audit-kickoff-Z1lS5 · PR #850
+Posture: already-built surface, redesign-grade re-audit at go-live scale.
+Method: §16.15 (a)-(e) per slice + AP#58 cross-batch synthesis. READ-ONLY.
+Grounding: AP#60 — every schema/RLS/data/metric claim verified against live SQL
+  (Supabase vrwwpsbfbnveawqwbdmj, SELECT-only) or file:line. Migrations are the
+  architect's lane; build PRs held for smoke. No code/DB changes in this arc.
+
+Per-slice findings (full file:line detail) live alongside this doc:
+  A1_data_schema_rls.txt      A2_setup_wizard.txt     A3_detail_manage.txt
+  A4_index_health_hooks.txt   A5_crossrole_public.txt A6_tests_perf_a11y.txt
+This doc is the consolidated architect-review artifact (§11.8): patterns, forks
+with labeled leans, per-role wireframes, routing. The fork decisions are the
+architect's/Frank's to ratify; CC commits to a lean per AP#39 but does not settle.
+
+================================================================================
+0. SEVERITY ROLLUP
+================================================================================
+Slice  P0  P1  P2  P3   Headline
+-----  --  --  --  --   ------------------------------------------------------
+A1      1   5   5   6   submit_registration TOCTOU double-billing race
+A2      0   3   5   6   slug global-unique scope mismatch; raw DB errors
+A3      1   4   6   7   program delete CASCADEs financial records unguarded
+A4      0   4   7   8   PATTERN A #63 cluster (people/active/health scope)
+A5      0   1   2   3   anon read SOUND; guardian cross-org write (multi-org)
+A6      1   6   6   3   delete/activate untested; playerCount invariant gap
+-----  --  --  --  --
+RAW    3  23  31  33
+
+DEDUPED PRODUCTION SEVERITY (overlaps collapsed):
+  P0 (2 production + 1 test-coverage of the same path):
+    P0-1  Program delete CASCADE destroys financial_accounts +
+          financial_transactions, unguarded (A3). ~$61k Fall 2025 one click from
+          loss. A6/TEST-3 is the test-coverage face of the same delete path.
+    P0-2  submit_registration TOCTOU duplicate-registration → double-billing,
+          no UNIQUE(program_id,player_id) (A1).
+  The single-active-season "0-active window" (A1/A3/A5 converge) and the
+  PATTERN A #63 cluster (A4 primary, A6 corroborates) are the dominant P1 mass.
+
+================================================================================
+1. THE TWO PRODUCTION P0s (act first; both are migration-lane fixes → architect)
+================================================================================
+
+P0-1 — PROGRAM DELETE BLAST RADIUS  [A3 (a)P0-1; A6 TEST-3]
+  src/hooks/useProgramAdmin.js:44-56 · src/lib/programDelete.js:4-7
+  deleteProgram() pre-checks ONLY registrations (FK RESTRICT). financial_accounts
+  .season_id → programs is ON DELETE CASCADE, and financial_transactions cascade
+  through financial_accounts. The confirm dialog (dependencySummary) lists only
+  teams/players/events — never financials, divisions, tryout_sessions,
+  season_locations, player_equipment (all CASCADE) or coach_payouts (NO ACTION →
+  raw 23503). The lone guard (registrations RESTRICT) is a NO-OP for every
+  production program: 0 registrations platform-wide (the LeagueApps financial
+  import predates the registrations table).
+  LIVE EVIDENCE: Fall 2025 (archived) = 0 regs, 64 financial_accounts, 181
+    financial_transactions (~$61,370). Winter 2025-26 = 0 regs, 40 accounts.
+    Spring 2026 = 0 regs, 60 accounts, 2 coach_payouts.
+  COMPOUNDED BY (A3 (b)): useProgramAdmin count-error is console-only and the
+    confirm opens synchronously before the async refetchCounts resolves — the
+    dialog can render "0 teams / 0 events" (stale/initial), reinforcing the
+    false-safety. (AP#36 + a stale-counts race.)
+  LEAN (A3, committed): BLOCK delete when financial_accounts>0 (mirror the
+    registrations guard) — "This season has N family financial records — archive
+    it instead." Add coach_payouts to the count-and-block. Archived seasons ARE
+    the financial record; they should not be deletable. → FORK-DELETE.
+
+P0-2 — REGISTRATION TOCTOU DOUBLE-BILLING  [A1 (b)P0; A5 confirms write path]
+  supabase/migrations/20260601044918_registration_public_rpcs.sql:150-167
+  The anon-executable submit_registration RPC's "already registered?" guard is a
+  non-atomic SELECT-then-INSERT with NO UNIQUE(program_id,player_id) backing it
+  (verified absent in pg_constraint). Two concurrent submits (double-tap, two
+  devices) both read zero rows → both INSERT a registration + a full set of
+  registration_fees → family billed twice. READ COMMITTED + SECURITY DEFINER does
+  not serialize them. Current zero-dupe count is low-traffic luck.
+  Otherwise the RPC is well-built: org_id server-derived (no spoof), is_published
+  + reg-window enforced server-side, fee total summed server-side, division→
+  program coupling checked. The TOCTOU is the lone defect.
+  LEAN (A1, committed): add UNIQUE(program_id,player_id) + change the guard to
+    INSERT ... ON CONFLICT DO NOTHING RETURNING id. The constraint is the real
+    fix; the guard cannot be made safe without it. → FORK-REG-UNIQUE.
+
+================================================================================
+2. AP#58 CROSS-BATCH PATTERN SYNTHESIS
+================================================================================
+Five cross-cutting patterns surfaced across ≥2 slices each. The synthesis is the
+value: each is one structural concern, not N surface-specific bugs.
+
+----------------------------------------------------------------------
+PATTERN A #63 — same concept, divergent source/scope  [A4 primary, A6, A1, A5]
+----------------------------------------------------------------------
+The dominant platform pattern, and the kickoff's named hunt target. Six instances;
+two already RESOLVED the canonical way (kept as reference), four open.
+
+CONCEPT             SURFACES                         SOURCES/SCOPES        STATE
+"people in a        ProgramDetail / index row /      registrations(EMPTY 0)  OPEN P1
+ program"           home health card                 vs team_players rows    (A4)
+                                                     vs tp DISTINCT active
+  → Detail shows "Registrations · 0" for EVERY program (table empty org-wide)
+    while the same Spring 2026 shows 63 players on index + home. Three truths.
+"players" math      index row vs health card         tp ROWS (dbl-count)     OPEN P1
+                                                     vs DISTINCT active      (A4/A6
+  → 63==63 today (no double-roster), LATENT; breaks on first double-rostered     XSURF-1)
+    or inactive team_player. No AP#43 invariant test locks the two.
+"active program"    programGrouping (date-gated)     running-now             OPEN P1
+                    vs useActivePrograms (status)    vs lifecycle-status     (A4)
+  → Summer Day Camp (status=active, starts 2026-07-27) is "active" to home
+    off-season logic but "Upcoming" on the index. Splits LIVE. Reaches all
+    roles via isHomeOffSeason (cross-role per AP#43).
+"Program health"    AdminProgramHealth card title    label=org-wide          OPEN P1
+                    vs its source                    source=1 active season  (A4)
+  → Card says "Program health" but measures ONE season while 4 programs are
+    active (Active Roster Lab camp alone = 32 players, invisible).
+"what orgs can I    sports_select (SINGULAR helper)  current_user_org_id()   OPEN P1
+ see" (sports)      vs programs/divisions/fees       vs current_user_org_ids() (A1/A5)
+  → Multi-org user sees all-org programs but ONE arbitrary org's sports →
+    blank sport labels. The lone single-org-scoped table in the graph. → FORK-SPORTS.
+"Collected% vs      AdminProgramHealth KPIs          season vs all-time      RESOLVED
+ Out$"              (per-KPI scope sub-line)          (LABELED)               (reference)
+  → The canonical #63 fix: label the scope on each KPI. This is the TEMPLATE
+    for fixing the four open instances. (BUG-H1 self-documented in-file.)
+"program-type       create wizard / badge / noun /   PROGRAM_TYPE_REGISTRY   RESOLVED
+ label/metadata"    filters / TeamFormSheet          (single source)         (exemplary)
+  → All consumers read programRule(type) — Pattern A cannot manifest. A2 flags
+    the cross-slice invariant to confirm no surface hardcodes a parallel label map.
+
+CANONICAL-SOURCE recommendation (§11.5-aligned): "people in a program" → ONE
+source per lifecycle. For LH's import-sourced reality, roster = team_players
+(DISTINCT, status=active); ProgramDetail's "Registrations" should show roster
+AND a separate "Online signups · 0" (honest future-pipeline metric), so neither
+reads as "empty program." Lock every #63 instance with an AP#43 invariant test.
+→ FORK-REGISTRATIONS-MEANING, FORK-ACTIVE-PREDICATE, FORK-HEALTH-LABEL,
+  FORK-PLAYERCOUNT-CANON.
+
+----------------------------------------------------------------------
+PATTERN B — multi-org singular/plural divergence (single-org-masked, latent)  [A1,A2,A5]
+----------------------------------------------------------------------
+A cluster of "correct today because LH is single-org, breaks on the 2nd org."
+The platform is multi-tenant; these are first-cross-org-customer bugs.
+  - sports_select uses current_user_org_id() (SINGULAR) vs the plural cohort. [A1 P1 / A5 P2]
+  - guardians.email is GLOBALLY UNIQUE; submit_registration ON CONFLICT(email)
+    lets an anon registrant in org B overwrite/relink org A's guardian PII. [A5 P1 F-1]
+    → the one that MUST land before a 2nd org publishes a reg page.
+  - public_slug is GLOBALLY UNIQUE but checkSlugAvailable pre-checks per-org →
+    org B passes the pre-check for a slug org A owns, hits a raw global unique
+    violation on INSERT. The code comment claiming "no DB constraint" is stale. [A2 P1]
+→ FORK-SPORTS-PLURAL, FORK-GUARDIAN-UNIQUE, FORK-SLUG-SCOPE. All single-org-benign
+  today; all should be resolved as a batch before multi-org onboarding.
+
+----------------------------------------------------------------------
+PATTERN C — destructive/financial safety  [A3, A1]
+----------------------------------------------------------------------
+The two production P0s (§1) are this pattern: a destructive op whose guard does
+not cover the financial/billing consequence. Both are migration-lane fixes.
+
+----------------------------------------------------------------------
+PATTERN D — AP#36 destructured-default / error-swallow on count paths  [A3,A4,A6]
+----------------------------------------------------------------------
+  - useAllPrograms / useActivePrograms: PRIMARY query error → setPrograms([]) +
+    console.error only; UI shows "No programs yet" empty state on a transient DB
+    error, indistinguishable from a real empty org. Secondary teams/players
+    counts swallow the same way. [A4 P2 / A6 P1 PERF/DATA-1]
+  - useProgramAdmin.refetchCounts: count error console-only, no reset → stale
+    counts feed the destructive delete confirm (compounds P0-1). [A3 P1]
+The canonical shape (destructure error, surface it, |ial-rows fallback only) is
+followed correctly in useProgramSetup, useProgramRegistrations, usePublicProgram,
+useSeasons — so this is an inconsistency, not a systemic miss.
+→ ship-this-phase app-layer fix (no migration): add error returns + distinct
+  error states; gate the delete confirm on fresh counts.
+
+----------------------------------------------------------------------
+PATTERN E — single-active-season enforcement incompleteness  [A1,A3,A5 converge]
+----------------------------------------------------------------------
+Three independent agents flagged the same seam. The partial unique index
+programs_one_active_season_per_org closes the >1-active race but NOT the 0-active
+window: useSeasons.setActive / useProgramAdmin.activate do archive-then-activate
+as TWO non-atomic statements. If stmt2 fails, the org is left with ZERO active
+seasons; and the index can now make stmt2 throw 23505 on a race. Stale comments in
+useSeasons.js (7-9, 55-58) still claim "Postgres doesn't enforce single-active."
+→ FORK-ACTIVATE-ATOMIC: single activate() RPC / CASE update. Defer-able for LH
+  (admin rarely toggles) but it's a real "no active season" failure mode.
+
+----------------------------------------------------------------------
+SECONDARY THREADS (single-slice, not cross-cutting but notable)
+----------------------------------------------------------------------
+  - PRIVACY: tryout_attendees.evaluation_note (coach eval text) is parent-readable
+    org-wide — tryout_attendees_select has no role narrowing. Real leak once
+    tryouts go live with multiple families. [A1 P1] → FORK-TRYOUT-PRIVACY.
+  - §16.14 DETAIL DEBT: ProgramDetailPage is flat always-on chrome with the
+    destructive Delete in a bottom manage zone (anti-§16.14). [A3 P2] → FORK-DETAIL-REDESIGN.
+  - DEAD COMPUTE (AP#51): useProgramHealthMetrics runs a 1709-row event_rsvps
+    query + computes rsvpPct/activeTeamsCount/newRegistrationsCount that NO
+    consumer renders. Heaviest query on admin-home path feeds nothing. [A4 P2]
+    → FORK-DEAD-METRICS (app-layer, ship-this-phase).
+  - ANON a11y: /r/:slug loading/error/"not open" states are bare <div>s with no
+    aria-live; verify DivisionCard ≥44px. Highest-priority surface (unauth parents
+    on phones). [A6 P1] Plus shared register input outline:none / no focus ring [A2].
+  - DIVISION FEES SILENTLY DROPPED: create filters divisions to named rows; a fee
+    typed on an unnamed row vanishes with no warning; no min-division guard. [A2 P1]
+  - STALE COMMENTS / doc-vs-impl drift: useSeasons single-active comments (A1/A5);
+    ProgramSetupPage "Tryout/Camp coming soon" header (all 7 types are live) (A2);
+    slug "no DB constraint" comment (A2); datetime-local vs date-only comment (A2).
+
+================================================================================
+3. WHAT IS SOLID (the reassuring half — verified, no action)
+================================================================================
+  - SEASONS→PROGRAMS COMPAT-VIEW SEAM: SOUND (A1 + A5 independently). The
+    kickoff's flagged highest-risk seam is correctly fenced. 8 FK repoints landed
+    with on-delete preserved; both dependent views are security_invoker; the WITH
+    CHECK OPTION write path CANNOT escape program_type='season' (the column is not
+    projected by the view — physically unreachable by any write); no seasons-TABLE
+    writer remains in src/.
+  - ANON PUBLIC READ PATH: SOUND (A5). Single SECDEF RPC get_public_program;
+    is_published + slug enforced server-side; no enumeration; no cross-org/sibling
+    leak; reg-window enforced server-side on the write path too. RLS gates all
+    direct anon table access to zero rows.
+  - programRegistry + parity test: EXEMPLARY (A2) — the reference AP#28/#34/#60
+    pattern. Registry ⇄ PROGRAM_TYPE_KEYS ⇄ DB enum ⇄ chooser, CI-guarded. All 7
+    enum values (incl. 'other') fully wired through chooser + create.
+  - RLS hygiene: AP#20 (no NULL with_check on program-graph ALL/UPDATE), AP#23/#57
+    (anon EXECUTE revoked on SECDEF helpers; intentional anon grant only on the 2
+    public RPCs), AP#24 (relkind filter) all CLEAN (A1).
+  - PERF: every filter column the 9 hooks hit is indexed (A6). AP#4 (no seq-await-
+    in-loops), AP#48 (no foreignTable parent-sort misuse) clean everywhere.
+  - AP#15: ProgramEditSheet uses FullScreenForm despite the "Sheet" name (A3);
+    create is a full-page route (A2). §16.1 create correctly pessimistic (A2).
+
+================================================================================
+4. FORKS FOR ARCHITECT RATIFICATION (deduped; AP#39 labeled leans)
+================================================================================
+Tier 1 — migration-lane, act before go-live / multi-org:
+  FORK-DELETE [P0]       Block program delete when financial_accounts>0 (+ coach_
+    (A3)                 payouts); surface full cascade; restrict to draft/empty.
+                         LEAN: block-on-financials ("archive instead").
+  FORK-REG-UNIQUE [P0]   Add UNIQUE(program_id,player_id) + ON CONFLICT in
+    (A1)                 submit_registration. LEAN: plain UNIQUE (partial on
+                         status<>'cancelled' only IF re-registration is a product req).
+  FORK-GUARDIAN-UNIQUE   guardians UNIQUE(email)→UNIQUE(org_id,email) + ON CONFLICT
+    [P1, multi-org gate] (org_id,email). LEAN: per-org uniqueness (tenant isolation
+    (A5)                 > cross-org guardian de-dup). MUST land before 2nd org publishes.
+  FORK-SPORTS-PLURAL[P1] sports_select → current_user_org_ids() (plural). LEAN:
+    (A1/A5)              converge (one-line, no single-org behavior change).
+  FORK-TRYOUT-PRIVACY    Narrow tryout_attendees / evaluation_note SELECT to
+    [P1] (A1)            admin+coach. LEAN: narrow (confirm parents aren't meant to
+                         see tryout evals).
+  FORK-SLUG-SCOPE [P1]   Per-org pre-check (match global DB index) NOW, OR re-scope
+    (A2)                 the index to (org_id,public_slug) if links are meant per-org
+                         (then /r/:slug must become org-aware). LEAN: (1) global
+                         pre-check now to match the DB contract.
+  FORK-ACTIVATE-ATOMIC   Single activate() RPC / CASE update to close the 0-active
+    [P1] (A1/A3/A5)      window. LEAN: atomic; defer-able for LH but real failure mode.
+
+Tier 2 — app-layer / design (ship-this-phase after ratification, no migration):
+  FORK-REGISTRATIONS-MEANING [P1] (A4)  ProgramDetail "Registrations" = online-
+    signup-pipeline (honestly 0) vs roster. LEAN: show team_players roster count
+    AND separate "Online signups · 0".
+  FORK-ACTIVE-PREDICATE [P1] (A4)  Shared isRunningNow(program,today) consumed by
+    both programGrouping + useActivePrograms; keep status=lifecycle. LEAN: shared predicate.
+  FORK-HEALTH-LABEL [P1] (A4)  Retitle "Program health" to lead with season name
+    only (drop org-wide implication). LEAN: retitle (least code; card already leads season.name).
+  FORK-PLAYERCOUNT-CANON [P1] (A4/A6)  Canonical "players" = DISTINCT active; align
+    index row to health card; lock with XSURF-1 invariant test. LEAN: distinct-active.
+  FORK-DEAD-METRICS [P2] (A4)  Remove rsvpPct/activeTeamsCount/newRegistrationsCount
+    + the event_rsvps query from useProgramHealthMetrics (no consumer). LEAN: remove.
+  FORK-DETAIL-REDESIGN [P2] (A3)  §16.14 hero+collapsible redesign of
+    ProgramDetailPage; Edit/Delete to header overflow. LEAN: redesign (dominant detail debt).
+  FORK-PUBLISH-VS-DRAFT [P2] (A2)  Allow is_published=true while status='draft' / no
+    reg window? LEAN: require a reg window when publishing (or block publish-on-draft).
+  FORK-ARCHIVE-ONEWAY [P2] (A3)  Is archived→active re-activation a required UI path?
+    Today archive is one-way (Activate button is draft-only). LEAN: add re-activate
+    for non-season types; season re-activation must respect single-active index.
+
+================================================================================
+5. PER-ROLE WIREFRAMES (consolidated)
+================================================================================
+Cross-role verdict (A5, verified vs RLS quals + route guards): ONLY ADMIN has a
+program-management UI. Coach + Parent have NO program-aware surface (grep of
+coach-home/parent-home = no program|season matches; /admin/* is admin-gated).
+View-as inherits the impersonated role → no program UI. Parent's sole program
+touchpoint is the pre-account ANON /r/:slug flow.
+
+ANON  /r/:slug (RegisterEntryPage, no guard) + /r/:slug/apply (RegisterFlowPage):
+  [org logo] ORG NAME / <Program Name> / PICK A DIVISION / [DivisionCard OPEN|OPENS date]
+  Data: get_public_program RPC ONLY (published-only, no PII, no other org/program).
+  Write: submit_registration RPC (server-validated). a11y gaps on loading/error states.
+
+ADMIN  /admin/programs index:
+  Programs [+New] · registry chips · ACTIVE(running-now) / UPCOMING(starts later) /
+  ARCHIVED(unbounded, unvirtualized). #63: "active" group split (Summer Day Camp),
+  player counts from team_players ROWS (detail will say 0).
+
+ADMIN  /admin/programs/:id detail (CURRENT — flat, anti-§16.14):
+  h1 + badges + publish line → always-on Teams → always-on Registrations(0) →
+  bottom manage zone with DESTRUCTIVE Delete. → FORK-DETAIL-REDESIGN to hero+collapsible.
+
+ADMIN  /admin/programs/new create (admin-only, DB-RLS second wall):
+  AdminBackHeader + 7-chip type chooser + name/dates/slug/reg-window/publish +
+  season-only divisions. Raw DB error banner on failure (P1). Chips 34px (<44px).
+
+ADMIN-HOME  "Program health" card (AdminTail):
+  PROGRAM HEALTH / season.name / [Players|Events|Collected|Out] with per-KPI scope
+  sub-line (the GOOD #63 fix) — but title overclaims org-wide vs one-season source.
+
+================================================================================
+6. ROUTING DECISION
+================================================================================
+SHIP-THIS-PHASE (app-layer, no migration; after architect ratifies the design forks):
+  - PATTERN D error-surfacing (useAllPrograms/useActivePrograms error states;
+    gate delete confirm on fresh counts).
+  - FORK-DEAD-METRICS (remove dead compute + heavy query).
+  - FORK-HEALTH-LABEL, FORK-ACTIVE-PREDICATE, FORK-REGISTRATIONS-MEANING,
+    FORK-PLAYERCOUNT-CANON (the #63 cluster) + their AP#43 invariant tests.
+  - A2 division-fee-drop guard + kindness microcopy on raw DB errors.
+  - a11y: anon /r/:slug aria-live; chip tap targets 44px; type-chooser group label.
+  - Stale-comment cleanup (useSeasons, ProgramSetupPage header/slug/date comments).
+
+ARCHITECT/MIGRATION-LANE (held for architect; do not ship from this session):
+  - FORK-DELETE (P0), FORK-REG-UNIQUE (P0), FORK-GUARDIAN-UNIQUE,
+    FORK-SPORTS-PLURAL, FORK-TRYOUT-PRIVACY, FORK-SLUG-SCOPE, FORK-ACTIVATE-ATOMIC.
+  Sequencing: the two P0s first; then the PATTERN B multi-org batch as one
+  migration before any 2nd-org onboarding; FORK-ACTIVATE-ATOMIC can ride with them
+  or defer.
+
+NEXT-PHASE / DEFER (YAGNI per AP#39, §16.13 ship-not-gate):
+  - Index/Registrations virtualization (6 rows today; Archived group is the
+    unbounded one — revisit at ~30).
+  - useAllPrograms grouped-count RPC (95 roster rows today; client-side count fine).
+  - FORK-DETAIL-REDESIGN (§16.14) — schedule as a dedicated L99 detail redesign.
+  - FORK-ARCHIVE-ONEWAY, FORK-PUBLISH-VS-DRAFT — product decisions, not bugs.
+  - Stripe-track guardrail: charge MUST use server authoritative_total_cents (A5).
+
+================================================================================
+7. CROSS-SURFACE INVARIANT TESTS TO ADD (AP#43/#46)
+================================================================================
+  - programPlayerCountInvariant: index row + health card + detail derive "players"
+    from the same source/scope on a shared fixture (locks FORK-PLAYERCOUNT-CANON).
+  - activeProgramPredicate: programGrouping + useActivePrograms agree on "active"
+    for a future-dated active program (locks FORK-ACTIVE-PREDICATE).
+  - sportsPolicyParity: a policy-parity assertion that sports_select uses the same
+    org helper as programs_select (locks FORK-SPORTS-PLURAL against regression).
+  - programTypeLabelSource: no surface hardcodes a program-type label/noun/badge;
+    all read programRule() (A2 cross-slice handoff).
+  - IO-hook coverage (A6 table): useProgramAdmin (delete RESTRICT + activate single-
+    active), useProgramSetup (multi-table create stop-points), usePublicProgram
+    (anon RPC null/error branches); + one e2e for create→activate→delete + anon read.
+
+================================================================================
+8. OUT OF SCOPE (consolidated — this audit did NOT touch)
+================================================================================
+  - Briefings/comms engine (just closed); financials except program_transactions/
+    financial_accounts cascade reachability; rebrand/token layer; Stripe/payment
+    internals; registration payment math beyond server-authoritative-total assertion.
+  - Season rollover wizard end-to-end atomicity (verified the view INSERT is safe;
+    did not audit multi-statement rollover). waivers/form_fields capture (owned by
+    docs/AUDIT_REGISTRATION_CAPTURE_L99.md). AuthContext single-org→multi-org
+    context as a platform question (not a programs-section bug).
+  - TeamFormSheet internals (Teams audit). PublicSchedulePage (separate public seam,
+    verified it does not read programs/seasons).
+
+================================================================================
+END — SYNTHESIS. Per-slice docs carry full file:line evidence. Forks await
+architect/Frank ratification (§11.8 #4: programs phase is not "closed" until its
+open forks are ratified). The two P0s and the PATTERN B multi-org batch are the
+pre-go-live gate.
+================================================================================

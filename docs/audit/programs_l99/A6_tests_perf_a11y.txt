@@ -1,0 +1,357 @@
+================================================================================
+A6 — TESTS + PERFORMANCE + ACCESSIBILITY
+L99 audit of the AsterSports "programs" surface
+Agent A6 of 6 · 2026-06-08 · READ-ONLY
+================================================================================
+
+SCOPE: test coverage, query-shape/perf, and a11y across the programs surface.
+Business logic owned by A1-A5; A6 owns coverage gaps, query shapes, a11y, and
+cross-surface invariant discipline (AP#43/#46).
+
+GROUNDING (verified live, AP#60):
+- Supabase vrwwpsbfbnveawqwbdmj. Indexes + row counts pulled live (see PERF).
+- Current data: 6 programs (4 active), 7 teams, 95 team_players, 0 registrations.
+  Virtualization reasoning is growth-based, not current-load based.
+- pwd confirmed: /home/user/skyfire-app
+
+SEVERITY: P0 = ship-blocker / data-wrong-or-inaccessible · P1 = should fix this
+phase · P2 = follow-up · P3 = nit.
+
+================================================================================
+(a) INITIAL PASS — coverage map + perf scan + a11y scan
+================================================================================
+
+-------------------------------------------------------------------------------
+COVERAGE MAP (existing tests found — MORE than the prompt's "1 test" premise)
+-------------------------------------------------------------------------------
+Vitest tests that exist (verified):
+  - src/lib/__tests__/programRegistry.parity.test.js  (registry⇄enum⇄chooser parity, competitive drift, field-set, status-CHECK)
+  - src/lib/__tests__/programSetup.test.js             (statusForProgramType, divisionsApplyTo, validateProgramDates, dayBoundaryTs, checkSlugAvailable incl. excludeId)
+  - src/lib/__tests__/programGrouping.test.js          (groupPrograms buckets + draft + empty-drop; programBadge)
+  - src/lib/__tests__/programDelete.test.js            (dependencySummary pluralization)
+  - src/hooks/__tests__/useActivePrograms.test.js      (5 cases: single-entry no-regression, coach/parent scope, admin all, null orgId, AP#36 error→empty)
+  - src/components/admin/programs/__tests__/ProgramIndexRow.test.jsx (AP#46 invariant: name/badge/range/counts, UTC date pin, link route)
+
+The PURE-LIB + registry layer is well covered. The UNTESTED surface is the
+IO-bearing admin hooks (delete CASCADE/RESTRICT, activate single-active
+collision, setup multi-table create) and every interactive UI form.
+
+E2E (Playwright e2e/**/*.spec.js): grep found NO program spec. Zero e2e coverage
+of the create→activate→delete admin arc OR the anon /r/:slug public read.
+
+-------------------------------------------------------------------------------
+PERF SCAN (live indexes confirmed)
+-------------------------------------------------------------------------------
+Indexes present that matter to these hooks (live pg_indexes):
+  programs:        programs_org_type_idx(org_id,program_type), programs_org_id_idx(org_id),
+                   programs_published_slug_idx(public_slug) WHERE is_published,
+                   programs_one_active_season_per_org UNIQUE(org_id) WHERE active+season
+  teams:           idx_teams_season(season_id), idx_teams_org(org_id)
+  team_players:    idx_team_players_team(team_id), idx_team_players_player(player_id)
+  registrations:   idx_registrations_program_id(program_id)
+  divisions:       idx_divisions_program_id, division_fees: idx_division_fees_division_id
+  event_rsvps:     idx_event_rsvps_event(event_id)
+=> Every filter column the 9 hooks hit IS indexed. No missing-index P0/P1.
+
+Query-shape findings: the index hooks (useAllPrograms, useProgramHealthMetrics,
+useProgramAdmin) all use .in() batching and Promise.all — NO sequential awaits
+in loops (AP#4 clean). Destructure-default error-swallow (AP#36): mostly clean —
+all read hooks destructure {data,error} and log/surface. See findings for the
+nuances (silent setPrograms([]) on error in two index hooks; FK-chain ordering).
+
+-------------------------------------------------------------------------------
+A11Y SCAN (§16.4 + §7)
+-------------------------------------------------------------------------------
+Shared primitives are solid: Field renders <label htmlFor>; TextInput/SelectInput
+take id; FullScreenForm = role=dialog + aria-modal + aria-label + Esc + focus
+trap; ConfirmDialog = role=dialog + aria-labelledby + 44px buttons; Toast =
+role=status aria-live=polite; LoadingSkeleton = aria-busy/aria-live;
+AdminBackHeader = aria-label="Back" + 44px; DivisionCard (anon) = aria-label +
+disabled-when-closed. as-press/as-fade-in both gated behind
+prefers-reduced-motion (index.css:158/179). Good baseline.
+
+Gaps surface where program components hand-roll buttons/labels OUTSIDE those
+primitives — the filter chips, the type chooser's orphan <label>, the teams-add
+button, and tap-target heights on chips. See findings.
+
+================================================================================
+(b) DEEP-READ ADDENDUM (2nd pass — ~40% more, labeled)
+================================================================================
+Caught on second pass:
+- ProgramTypeChooser uses <Field label="Program type"> with NO htmlFor and the
+  control is a group of <button>s, not a labelable input → orphaned <label>
+  (a11y) — see A11Y-1. Missed on pass 1 because Field "looks" accessible.
+- useAllPrograms playerCount double-counts (no status filter, no distinct) vs
+  useProgramHealthMetrics dedups + filters active → PATTERN A #63 across the
+  index row and the home health card (PERF/DATA-3 + XSURF-1).
+- useProgramAdmin.activate() single-active archive→activate is TWO non-atomic
+  writes; the partial-unique DB index backstops collision but the failure window
+  produces a confusing error, not a clean rollback (TEST-3 high-risk untested).
+- usePublicProgram has NO test and is the ONLY anon surface — highest-blast-
+  radius untested path (TEST-6).
+- ProgramSetupPage create flow (multi-table programs+divisions+division_fees
+  insert with partial-failure stop-points) has NO integration test (TEST-2).
+- DivisionRows uses key={i} (array index) — re-render/identity risk on
+  remove-middle-row, and each row has 5 inputs all correctly id'd via Field, but
+  the "Remove" button has no aria-label naming WHICH division (A11Y-4).
+- ProgramTeamsSection "+ Add team" and the per-team edit buttons: add button has
+  no aria-label; team rows are <button> with visible text (ok) but the color dot
+  is decorative without aria-hidden (A11Y-3, minor).
+- AdminProgramHealth KPI scope is exposed visually AND in aria-label (good,
+  BUG-H1 already self-documented in-file) — but the third <div> shows scope text
+  at fontSize 8/9 → contrast/size concern at --as-text-meta (A11Y-5).
+
+================================================================================
+(c) ANTI-PATTERN CROSS-REFERENCE (§11)
+================================================================================
+- AP#4  (seq await in loops): CLEAN — all hooks use .in() + Promise.all.
+- AP#36 (destructured-default error swallow): PARTIAL — hooks destructure
+  {data,error}, but useAllPrograms/useActivePrograms set [] AND only console.error
+  on the SECONDARY teams/players queries (no error state surfaced to UI). The
+  primary query error is also swallowed into an empty list with only a console
+  log — UI shows "No programs yet" empty state on a transient DB error, not an
+  error state. See PERF/DATA-1.
+- AP#37 (org_id-first): useProgramHealthMetrics RSVP + players sub-queries are
+  FK-scoped via teams!inner(season_id) and carry NO org_id (correct per AP#37
+  exception — event_rsvps/team_players are FK-scoped, no org_id column). NOT a
+  finding. teams/financial_accounts queries DO lead with .eq('org_id') — correct.
+- AP#43/#46 (cross-surface invariant / *Row test): ProgramIndexRow HAS its
+  invariant test (good). But the "players in a program" metric renders on TWO
+  surfaces from TWO sources (index row vs home health) with NO invariant locking
+  them — XSURF-1 (the AP#46 gap).
+- AP#48 (foreignTable .order on parent rows): NOT triggered — no hook orders
+  parent rows by a joined column; useProgramRegistrations orders registrations
+  by its own created_at (correct).
+- AP#63 PATTERN A: spotted incidentally — playerCount source/scope divergence
+  (detail deferred to A4 per instructions; flagged XSURF-1 + DATA-3).
+
+================================================================================
+(d) PER-ROLE A11Y NOTE (admin vs anon public)
+================================================================================
+ADMIN surfaces (AdminProgramsPage, ProgramSetupPage, ProgramDetailPage, manage
+zone): authenticated, desktop-or-phone, lower stakes. Gaps are real but the
+operator is a known power user (Frank). Filter-chip aria + type-chooser label are
+the meaningful ones.
+
+ANON public surface (RegisterEntryPage /r/:slug via usePublicProgram +
+DivisionCard): HIGHEST a11y priority — unauthenticated parents on phones, many
+on screen readers / low-end devices, no training, no fallback. Findings:
+  + GOOD: DivisionCard has aria-label, disabled-when-closed, the page sets
+    document.title, logo img alt="" (decorative, correct), privacy/terms links.
+  + GOOD: single-RPC read (get_public_program) = one round-trip, fast FCP.
+  - GAP: the "link isn't open yet" / error / loading states are plain centered
+    <div>s with NO aria-live / role=status — a screen reader on a slow 4G load
+    gets no announced state transition (A11Y-2, P1 for the anon surface).
+  - GAP: DivisionCard tap target — the card is a full-width <button> with
+    padding 12-14px; verify the rendered height ≥44px on the smallest division
+    card (A11Y-6, verify). The card has padding:0 on the button + inner padding,
+    so a single short division could fall under 44px.
+
+================================================================================
+(e) OUT OF SCOPE
+================================================================================
+- Business-logic correctness of grouping/registry/setup rules (A1-A5 own).
+- The financial-source-of-truth scope debate behind PATTERN A #63 (A4 owns the
+  detail; A6 only flags the cross-surface invariant gap).
+- TeamFormSheet internals (owned by the Teams audit, not programs).
+- useSeasonFinancials / useFamiliesOwingCount internals (financial audit).
+- DivisionCard visual design / registration wizard (PR-C flow, separate surface).
+- Writing the recommended tests (recommend-only per instructions).
+- RLS policy correctness (A2/security slice).
+
+================================================================================
+COVERAGE-GAP TABLE
+================================================================================
+FILE                                  | HAS TEST? | RISK | RECOMMENDED TEST (path + what it locks)
+--------------------------------------|-----------|------|----------------------------------------
+lib/programSetup.js                   | YES       | low  | covered (statusForType, dates, slug, dayBoundary)
+lib/programGrouping.js                | YES       | low  | covered (buckets, badge)
+lib/programDelete.js                  | YES       | low  | covered (pluralization)
+lib/programRegistry.js                | YES       | low  | covered (parity keystone)
+hooks/useActivePrograms.js            | YES       | low  | covered (5 cases incl AP#36)
+components/.../ProgramIndexRow.jsx     | YES       | low  | covered (AP#46 invariant + UTC pin)
+--------------------------------------|-----------|------|----------------------------------------
+hooks/useProgramAdmin.js              | NO        | P0   | src/hooks/__tests__/useProgramAdmin.test.js — lock: (1) deleteProgram BLOCKS when registrations>0 (RESTRICT pre-check returns kindness msg, never attempts delete); (2) deleteProgram proceeds when 0 regs; (3) activate(season) archives the org's OTHER active season of same type FIRST then activates (single-active collision); (4) activate(camp) does NOT archive (singleActive=false); (5) updateProgram slug-collision excludes self.
+hooks/useProgramSetup.js              | NO        | P1   | src/hooks/__tests__/useProgramSetup.test.js — lock: create stops on FIRST error at each of programs/divisions/division_fees inserts (AP#36 stop-points); divisions skipped for non-season (divisionsApplyTo); fee rows filtered to amount_cents>0; returns {ok,programId,slug}.
+hooks/useAllPrograms.js               | NO        | P1   | src/hooks/__tests__/useAllPrograms.test.js — lock: teamCount + playerCount aggregation; AP#36 error→[]; AND the playerCount semantic (see XSURF-1 — decide dedup/status first, then lock it).
+hooks/useProgramHealthMetrics.js      | NO        | P1   | src/hooks/__tests__/useProgramHealthMetrics.test.js — lock: playersCount = DISTINCT active player_id; paymentPct from shared financial source; loading composes both; null season → zeros.
+hooks/useProgramTeams.js              | NO        | P2   | src/hooks/__tests__/useProgramTeams.test.js — lock: season_id-scoped (NOT global active season), team_types embed, create writes season_id=programId, AP#36.
+hooks/useProgramRegistrations.js      | NO        | P2   | src/hooks/__tests__/useProgramRegistrations.test.js — lock: Promise.all program+regs, independent error checks, feeTotal/pending derivation, order by created_at desc.
+hooks/usePublicProgram.js             | NO        | P1   | src/hooks/__tests__/usePublicProgram.test.js — lock: RPC get_public_program returns null→data null (no throw), error surfaced, active-flag cleanup on unmount (ANON path).
+pages/admin/ProgramSetupPage.jsx      | NO        | P2   | (covered indirectly if useProgramSetup tested) — optional RTL: invalid→disabled CTA, season-only divisions render.
+components/.../ProgramManageZone.jsx   | NO        | P2   | RTL: draft→Activate button shows; delete confirm shows dependencySummary; toast on error.
+components/home/AdminProgramHealth.jsx | NO        | P2   | XSURF-1 cross-surface invariant (see below) — pairs playersCount with the index row.
+e2e (create→activate→delete arc)      | NO        | P2   | e2e/programs_admin.spec.js — anon /r/:slug read + admin create/activate happy path.
+
+================================================================================
+FINDINGS
+================================================================================
+
+--- TESTS ---
+
+[P0][AP#43] TEST-3 — useProgramAdmin.js:44-71 — delete CASCADE/RESTRICT +
+activate single-active collision are UNTESTED, highest blast radius.
+EVIDENCE: deleteProgram (line 50-53) pre-counts registrations and BLOCKS with a
+kindness message before attempting delete — this is the ONLY guard preventing a
+raw 23503 from nuking/erroring on financial records; it has zero test. activate
+(line 62-71) does archive-then-activate as TWO writes for single-active types,
+backstopped only by programs_one_active_season_per_org (verified live UNIQUE
+partial index). A regression here either orphans registrations or strands two
+active seasons.
+REC: add src/hooks/__tests__/useProgramAdmin.test.js per the table. P0 because
+the delete RESTRICT guard is financial-data-protective and load-bearing.
+
+[P1][AP#36] TEST-2 — useProgramSetup.js:18-66 — multi-table create
+(programs→divisions→division_fees) with per-insert stop-points is untested.
+EVIDENCE: three sequential inserts each guarded by {data,error} stop (lines 38,
+51, 60). A partial-failure (program created, divisions fail) leaves an orphan
+program with no test asserting the stop-and-surface behavior.
+REC: src/hooks/__tests__/useProgramSetup.test.js.
+
+[P1] TEST-6 — usePublicProgram.js — the ONLY anon surface has no test.
+EVIDENCE: drives RegisterEntryPage for unauthenticated parents; RPC null vs
+error vs data branches + the active-flag unmount cleanup are all untested.
+REC: src/hooks/__tests__/usePublicProgram.test.js (mock supabase.rpc).
+
+--- PERF / DATA ---
+
+[P1][AP#36] PERF/DATA-1 — useAllPrograms.js:21 & useActivePrograms.js:27 —
+primary-query error is swallowed into an empty list with only console.error; UI
+renders the "No programs yet" empty state on a transient DB error.
+EVIDENCE: `if (error) { console.error(...); setPrograms([]); setLoading(false);
+return; }` — no error state returned, so AdminProgramsPage (line 45) shows
+EmptyState, indistinguishable from a real zero-programs org. Contrast
+usePrograms.js (line 32-38) and useProgramRegistrations.js which DO expose error.
+LEAN: add an `error` return to useAllPrograms (matches the canonical shape) and
+have AdminProgramsPage render a retry/error state distinct from EmptyState.
+Defensible as P2 if Frank-only surface, but the anti-pattern is real.
+
+[P2] PERF/DATA-2 — useAllPrograms.js:24-44 — index does 3 round-trips
+(programs → teams → team_players) sequentially (each awaits the prior because
+ids feed the next .in()). Correct shape (can't .in() before you have ids), but
+at growth (many programs) the team_players fetch pulls EVERY roster row for the
+org to count in JS. At 95 rows today this is nothing; flag for the
+multi-program-scale conversation — a count-per-program via a grouped view/RPC
+would avoid shipping the full roster to the client.
+LEAN: leave as-is now (YAGNI, AP#39 — the dedicated-RPC alternative is the truer
+position only once data grows); note in the growth backlog.
+
+[P1][AP#63] PERF/DATA-3 — useAllPrograms.js:38-44 vs useProgramHealthMetrics.js:
+71-89 — "players in a program/season" computed two ways. useAllPrograms counts
+EVERY team_players row (no status filter, no distinct) → a kid on two teams in
+one program counts TWICE. useProgramHealthMetrics filters status='active' AND
+dedups via Set(player_id). Same real-world concept, divergent math.
+EVIDENCE: useAllPrograms line 43-44 `playerCount[pid] = (playerCount[pid]||0)+1`
+per row; health line 89 `new Set(...).size`.
+LEAN: align the index row to distinct-active to match the health card (the
+health definition is the truer "players" count). PATTERN A detail deferred to A4
+per instructions; A6 flags the invariant gap (XSURF-1).
+
+[P3] PERF/VIRT — AdminProgramsPage.jsx:51 — the index renders one
+<ProgramIndexRow> per program with no virtualization. Live count = 6 programs;
+§16.10 virtualization threshold is >30 items. Not needed now. Reason about
+growth: a multi-org / many-season future could exceed 30 grouped rows — revisit
+when a single org's program count crosses ~30. No action this phase.
+
+--- A11Y ---
+
+[P1] A11Y-1 — ProgramTypeChooser.jsx:11 — <Field label="Program type"> renders a
+<label htmlFor=undefined> over a group of <button>s (not a labelable control) →
+orphaned label; the chip group has no programmatic group label.
+EVIDENCE: Field (fields.jsx:16) emits <label htmlFor={undefined}>; the children
+are buttons with aria-pressed (good) but no role=group/aria-label tying them to
+"Program type".
+LEAN: wrap the chips in role="group" aria-label="Program type" (or render a
+<fieldset><legend>), and drop the htmlFor-less <label>. P1: it's the first
+control on the create form.
+
+[P1] A11Y-2 — RegisterEntryPage.jsx:36-44 (anon) — loading / error / "isn't open
+yet" states are plain <div>s with no role=status / aria-live. On a slow 4G load
+a screen-reader parent gets no announced transition.
+EVIDENCE: lines 36 (loading), 37 (error), 39-44 (not-open) all bare centered
+divs. Contrast Toast/LoadingSkeleton which DO use aria-live.
+LEAN: add role="status" (or aria-live="polite") to the loading + error
+containers on the anon page. Highest a11y priority per (d).
+
+[P2] A11Y-3 — AdminProgramsPage.jsx:36-40 — filter chips are <button>s with
+visible text but no aria-pressed reflecting the active filter, and min-height 30
+(chip style line 65) is BELOW the 44px tap-target minimum (§7).
+EVIDENCE: chip style `minHeight: 30`; chipOn changes color only, no aria-pressed.
+The "New" CTA is minHeight 34 (line 60) — also <44.
+LEAN: add aria-pressed={filter===f.key} to the chips; bump tap targets to 44px
+(or accept 30/34 as a documented density exception — but §7 says 44 is
+"non-negotiable", so this is a real gap). Same 34px issue on the index "New" CTA.
+NOTE: ProgramTypeChooser chips ARE 34 (line 33) — also sub-44.
+
+[P3] A11Y-4 — DivisionRows.jsx:21 — the per-division "Remove" button has no
+aria-label naming which division ("Remove division 2"); screen-reader users hear
+"Remove" with no context. Also key={i} (line 17) is array-index keyed → remove-
+middle-row remounts trailing rows (minor input-state/identity risk).
+LEAN: aria-label={`Remove division ${i+1}`}; consider a stable row id if rows
+ever carry async state.
+
+[P3] A11Y-5 — AdminProgramHealth.jsx:60-65 — KPI label fontSize 9 and scope text
+fontSize 8 on --as-text-meta. The scope <div> is aria-hidden (line 63, correct —
+it's mirrored into the parent aria-label line 56, good), but the 8/9px visual
+sizes are below comfortable legibility; verify contrast of --as-text-meta
+(#6B7280, 4.6:1 per CLAUDE.md §0 — passes AA for text, ok) at that size.
+LEAN: contrast OK; size is a design nit. No change required; noted for the
+design lane.
+
+[P2] A11Y-6 — DivisionCard.jsx (anon) — verify rendered height ≥44px. The button
+has padding:0 (line 36) with an inner div padding 12/14 (line 41); a single
+short division name could render under the 44px minimum tap target.
+LEAN: VERIFY in-app on smallest card; if under 44, add minHeight:44 to the
+button. Anon phone surface → matters most.
+
+[P2] A11Y-7 — ProgramTeamsSection.jsx:34 — "+ Add team" button has no aria-label
+(text "+ Add team" is acceptable as accessible name, so this is borderline ok);
+the team-color dot (line 45) lacks aria-hidden (decorative). Minor.
+LEAN: add aria-hidden="true" to the color dot span.
+
+================================================================================
+CROSS-SURFACE INVARIANT GAP (AP#43/#46)
+================================================================================
+[P1] XSURF-1 — "players in this program/season" renders on the /admin/programs
+index row (useAllPrograms.playerCount) AND the admin home Program-health card
+(useProgramHealthMetrics.playersCount) with DIFFERENT source/scope (PERF/DATA-3).
+There is NO invariant test locking the two to the same definition.
+REC: once A4 ratifies the canonical "players" definition (distinct-active is the
+lean), add a cross-surface invariant test (shape like
+src/pages/__tests__/homePageInvariantAudit.test.js) asserting the index row and
+the health card derive players from the same source/scope on shared fixtures.
+This is the AP#46 *Row/*Card guard ProgramIndexRow's own test does NOT cover
+(its test asserts render shape, not cross-surface source agreement).
+
+================================================================================
+SUMMARY
+================================================================================
+SEVERITY COUNTS: P0 = 1 · P1 = 6 · P2 = 6 · P3 = 3  (19 findings)
+  P0: TEST-3 (useProgramAdmin delete/activate untested)
+  P1: TEST-2, TEST-6, PERF/DATA-1, PERF/DATA-3, A11Y-1, A11Y-2, XSURF-1
+
+COVERAGE HEADLINE: the PURE lib + registry + useActivePrograms layer is well
+covered (6 test files, parity keystone solid). The GAP is the IO-bearing admin
+hooks — useProgramAdmin (delete RESTRICT + single-active activate), useProgramSetup
+(multi-table create), and the ANON usePublicProgram — none have tests. Zero e2e.
+
+TOP 3:
+  1. [P0] useProgramAdmin delete (financial RESTRICT guard) + activate
+     (single-active collision) untested — TEST-3.
+  2. [P1] PATTERN A #63 + AP#46: playerCount diverges between the index row and
+     the home health card (double-count vs distinct-active); no invariant test —
+     PERF/DATA-3 + XSURF-1.
+  3. [P1] Anon /r/:slug a11y: loading/error states lack aria-live; verify
+     DivisionCard 44px tap target — A11Y-2 + A11Y-6 (the unauthenticated parent
+     surface, highest a11y priority).
+
+FORKS (labeled leans, AP#39 — architect/Frank decide):
+  F1: useAllPrograms error surfacing — LEAN: add `error` + distinct error state
+      in AdminProgramsPage (vs accept console-only for a Frank-only surface).
+      Truer position: surface it; the empty-state-on-error is a real foot-gun.
+  F2: playerCount canonical definition — LEAN: distinct-active (match health
+      card). Defer the binding decision to A4's PATTERN A pass; A6 locks it with
+      the XSURF-1 invariant test once chosen.
+  F3: tap-target chips (30/34px) — LEAN: bump to 44px per §7 "non-negotiable"
+      (vs document a density exception). Truer position: §7 is explicit, fix it.
+================================================================================

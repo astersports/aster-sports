@@ -1,0 +1,290 @@
+AGENT A3 — L99 AUDIT: PROGRAM DETAIL + MANAGE (edit/manage/teams/delete)
+========================================================================
+Scope: src/pages/admin/ProgramDetailPage.jsx; src/components/admin/program-detail/{ProgramManageZone,ProgramTeamsSection,ProgramEditSheet}.jsx;
+       src/hooks/{useProgramAdmin,useProgramTeams}.js; src/lib/programDelete.js
+Method: §16.15 five-element (a-e). READ-ONLY. All DB claims verified live against vrwwpsbfbnveawqwbdmj 2026-06-08 (AP#60).
+Date: 2026-06-08
+
+LIVE DB GROUND TRUTH (verified, supersedes prompt grounding where they disagree):
+  FK on_delete to programs(id):
+    registrations.program_id      = RESTRICT   <- (prompt said CASCADE; WRONG. Code comment is right.)
+    teams.season_id               = CASCADE
+    events.season_id              = SET NULL    <- events orphan their season_id, NOT deleted via this FK
+    events.team_id                = CASCADE (via teams)
+    financial_accounts.season_id  = CASCADE     <- *** blast radius, see P0-1 ***
+    financial_transactions        -> CASCADE via financial_accounts
+    divisions.program_id          = CASCADE
+    tryout_sessions.program_id    = CASCADE
+    season_locations.season_id    = CASCADE
+    player_equipment.season_id    = CASCADE
+    coach_payouts.season_id       = NO ACTION   <- raw 23503 if rows exist (Spring 2026 has 2)
+    team_achievements.season_id   = SET NULL
+    season_rollovers.*            = NO ACTION
+    programs.parent_program_id    = SET NULL
+  Index: programs_one_active_season_per_org = UNIQUE (org_id) WHERE status='active' AND program_type='season'  (confirmed)
+  RLS: programs_update USING+WITH_CHECK admin; programs_delete USING admin (no with_check — correct for DELETE);
+       programs_select org_id=ANY(current_user_org_ids()); programs_insert with_check admin. All correct.
+  PRODUCTION DATA (the smoking gun):
+    Fall 2025 (season, archived): regs=0, fin_accts=64, fin_txns=181, ~$61,370 in txns.
+    Winter 2025-26 (season, archived): regs=0, fin_accts=40.
+    Spring 2026 (season, active): regs=0, fin_accts=60, coach_payouts=2, teams=5.
+    total registrations rows platform-wide = 0  (registrations table is new; historical financials predate it)
+
+
+(a) INITIAL LINE-BY-LINE PASS
+=============================
+
+[P0][#16.14 / DELETE-BLAST-RADIUS] useProgramAdmin.js:44-56 + programDelete.js:4-7 — DELETE GUARD DOES NOT
+  PROTECT FINANCIAL DATA; CONFIRM TEXT UNDERCOUNTS THE BLAST RADIUS.
+  desc: deleteProgram() pre-checks ONLY registrations (RESTRICT). It then issues programs.delete(). The
+        financial_accounts.season_id FK is ON DELETE CASCADE, so deleting a program silently destroys all
+        its financial_accounts AND (cascade) financial_transactions. The delete-confirm message
+        (dependencySummary) lists only teams/players/events — it NEVER mentions financial accounts,
+        transactions, divisions, tryout_sessions, season_locations, or player_equipment, all of which
+        CASCADE.
+  evidence (live): Fall 2025 has regs=0 (guard passes) but fin_accts=64 + 181 financial_transactions
+        (~$61,370). Winter 2025-26: regs=0, fin_accts=40. The registrations RESTRICT guard is a no-op for
+        EVERY program in production today (total registrations platform-wide = 0; the financial import
+        predates the registrations table). An admin who hits "Delete program" on an archived season passes
+        the only guard and CASCADE-nukes the historical LeagueApps financial record (CLAUDE.md §8: $166,910
+        billed / 164 accounts / 244 txns). Irreversible. No typed-confirm, no row-count of financial
+        impact, no archived-season block.
+  lean/rec (AP#39 committed): BLOCK delete when financial_accounts exist for the program (count-and-block,
+        same pattern as the registrations guard) with microcopy "This season has N family financial records
+        — it can't be deleted. Archive it instead." Add fin_accts (and coach_payouts) to the pre-check.
+        Separately, surface the FULL cascade in the confirm (or restrict program delete to status='draft'
+        programs with zero teams/financials). Cascading destructive op MUST be pessimistic (§16.1) — it is,
+        but the guard is incomplete.
+
+[P1][DELETE-BLAST-RADIUS] useProgramAdmin.js:54 — coach_payouts (NO ACTION FK) raises a raw 23503, not a
+  kind message. desc: a program with coach_payouts rows (Spring 2026 has 2) and zero registrations passes
+  the guard, then programs.delete() throws FK violation 23503. The raw Postgres message is surfaced verbatim
+  to the admin via Toast (catch-and-translate is explicitly NOT done — the comment at :47-49 says
+  count-and-block, but coach_payouts isn't one of the counted blocks). Violates §16.3 (no raw error to user).
+  evidence (live): coach_payouts.season_id = NO ACTION; Spring 2026 coach_payouts=2.
+  rec: add coach_payouts to the count-and-block pre-check (or accept that the block message is generic but
+  pre-checked, not a raw 23503).
+
+[P1][#63 PATTERN A] dependencySummary undercounts events / labels "roster row" ambiguously vs the index card.
+  desc: useProgramAdmin.refetchCounts (:22-28) counts events by team_id only. events.season_id=SET NULL
+  means a program-level event (season_id set, team_id NULL) is NOT counted and NOT deleted (it orphans).
+  Today programlevel_events_no_team=0 everywhere so no live divergence, but the "events" count in the
+  confirm is structurally a team-scoped count mislabeled as the program's events. Cross-ref: whatever the
+  index/health surface (A1/A2) shows as a program's event/team count must derive from the same scope or
+  PATTERN A #63 (same concept, divergent scope) fires.
+  rec: label the count as "team events" or count events.season_id directly; lock with an AP#43 cross-surface
+  invariant test against the index card metric.
+
+[P2][#15] ProgramEditSheet.jsx — NAME says "Sheet" but correctly uses FullScreenForm (6 fields). No AP#15
+  violation. desc: despite the misleading filename, line 14 wraps the body in <FullScreenForm>, and the form
+  has 6+ fields (name, start, end, reg_opens, reg_closes, slug, published) → correct per AP#15/§6. Flagging
+  only the naming smell (a future reader may assume BottomSheet from the name). No action required; optional
+  rename to ProgramEditForm.
+
+[P2][activate non-atomic] useProgramAdmin.js:62-71 — activate() is the documented "two-statement non-atomic
+  write." desc: for singleActive types it (1) archives the org's current active season, then (2) sets this
+  one active — two separate UPDATEs, not in a transaction. The partial-unique index backstops a true
+  collision (step 2 would 23505 if step 1 failed/raced), so the DB prevents two-active corruption. But the
+  failure mode is asymmetric: if step 1 succeeds and step 2 fails, the org is left with NO active season and
+  the user sees an error — recovery is manual re-activate. evidence: index
+  programs_one_active_season_per_org confirmed live; code does archive-then-activate at :64-69.
+  lean (AP#39 committed): acceptable for now (DB index prevents the dangerous direction — double-active),
+  but the "no active season" intermediate window is a real edge. Wrap in an RPC/transaction when this path
+  gets a material edit. Microcopy on failure is the generic raw message (see P3 below).
+
+[P3][§16.3] ProgramManageZone.jsx:21 + 36 — activate/delete error path surfaces error string raw.
+  desc: doActivate sets toast to `error` (the raw Postgres message from activate()). A single-active
+  collision (23505) would show "duplicate key value violates unique constraint
+  programs_one_active_season_per_org" to the admin. The app-level archive-first SHOULD prevent reaching the
+  index, but if it races, the raw message leaks. §16.3 wants a kind message.
+  rec: map known errors (unique_violation, FK violation) to kind copy before toasting.
+
+[P3][a11y] ProgramTeamsSection.jsx:34 "+ Add team" button — no aria-label and the only text is "+ Add team"
+  (fine), BUT the team rows (:43-50) are buttons with a color-dot + name + type; the color dot conveys
+  team_color with no text alternative. Minor — name+type carry the meaning. Tap target: row padding
+  '10px 2px' → height ~ 14(text)+20 = ~38px, BELOW the 44px min (§7). delBtn/editBtn/activateBtn are all
+  minHeight:44 (good); the team rows and the secLabel "+ Add team" (13px text, no minHeight) are under 44px.
+  rec: bump team row + add-team tap targets to 44px.
+
+[P3][token] All files use var(--as-*) tokens; team_color inline from DB (ProgramTeamsSection:45) is the
+  permitted inline-hex exception (#8). No hardcoded hex, no invented tokens. PASS.
+
+
+(b) DEEP-READ ADDENDUM (2nd pass)
+=================================
+
+[P1][#36] useProgramAdmin.js:17-21 — refetchCounts destructures {data: teams, error} and on error does
+  `console.error(...); return;` WITHOUT resetting counts. desc: if the teams query errors, counts retains
+  its previous value (or the {teams:0,...} initial). The delete-confirm then shows a STALE/ZERO dependency
+  summary while the program may actually have teams. Combined with P0-1, a transient error on the count read
+  → admin sees "0 teams, 0 roster rows, 0 events" → believes delete is safe → confirms. The error is only
+  console-logged, invisible to the admin. This is the AP#36 swallow class with a destructive consequence.
+  rec: on count error, surface to the user / disable the Delete button rather than showing a falsely-empty
+  summary. At minimum set a counts-failed flag the confirm respects.
+
+[P1][stale counts race] ProgramManageZone.jsx:47 — Delete button calls refetchCounts() then immediately
+  setConfirmDel(true) in the same tick. desc: refetchCounts is async (await chain); setConfirmDel(true)
+  fires synchronously before counts resolve. The ConfirmDialog renders with the PREVIOUS counts value
+  (initial {0,0,0} on first open, or the prior program's counts). The dependency summary in the confirm can
+  therefore read "0 team, 0 roster rows, 0 event" on first open even when teams exist — reinforcing the
+  P0-1 false-safety. evidence: refetchCounts at useProgramAdmin:15 is async; the dialog message at
+  ProgramManageZone:54 reads `counts` from the same render. There's a useEffect prime at :31 so counts is
+  usually warm, but the explicit refetch-then-open ordering is a no-op for the first paint of the dialog.
+  rec: await the count (gate the dialog open on a fresh fetch) or render a loading state in the confirm
+  until counts resolve.
+
+[P2][#37 org-first ordering] useProgramAdmin.js:18 + 50, useProgramTeams.js:20 — org-scoped chains.
+  teams query: .eq('org_id', orgId).eq('season_id', programId) — org_id FIRST. PASS (#37).
+  registrations count (:51): .eq('program_id', programId) only — registrations is FK-scoped via program_id
+  → programs.org_id (RLS), no org_id column on registrations, so #37 exception applies. PASS.
+  team_players/events counts (:23-24): .in('team_id', teamIds) — FK-scoped, teamIds already org-filtered.
+  PASS. No #37 violations.
+
+[P2][#48 foreignTable .order] No .order({foreignTable}) misuse found. useProgramTeams orders by sort_order
+  (own column, ascending) — correct, parent-row sort on a real column. useProgramRegistrations orders by
+  created_at (own column). PASS. NOTE: ProgramTeamsSection relies on teams.sort_order for ordering; if two
+  teams share sort_order the order is nondeterministic (no secondary key) — P3 cosmetic.
+
+[P2][updateProgram no with_check concern / status not editable] ProgramEditSheet:9-11 comment + form — edit
+  intentionally omits program_type and status. desc: status transitions are ONLY reachable via activate()
+  (draft→active) and the implicit archive inside activate's singleActive branch. There is NO UI path to
+  archived→active reactivation, archived→draft, or active→archived for a NON-season program. An admin who
+  archives a camp (no activate button once archived; activate button only shows for status==='draft' at
+  ProgramManageZone:42) has NO way to bring it back through this surface. evidence: ManageZone:42 gates the
+  Activate button on status==='draft' ONLY. A program in 'archived' or 'active' shows no status control.
+  lean (AP#39 committed): this is a functional gap, not a bug — but "archive is one-way via the UI" should
+  be an explicit product decision, not an accident of the draft-only gate. Flag for architect: is
+  re-activation of an archived non-season program a required path? (Season re-activation also unreachable
+  except by activating a DIFFERENT draft season.)
+
+[P2][#16.14 hero/collapsible] ProgramDetailPage.jsx — does NOT follow the §16.14 hero+collapsible pattern.
+  desc: the page is a flat scroll: h1 + badge row + publish line, then ProgramTeamsSection (always-on,
+  not collapsible), then a flat Registrations list (always-on, every row rendered — no virtualization;
+  §16.10 wants >30 items virtualized; a popular program could exceed that), then ProgramManageZone at the
+  BOTTOM with the Delete button. There is no single hero card summarizing state at a glance; sections are
+  always-on (the exact mid-page always-on chrome §16.14 warns against). The destructive Delete sits in a
+  bottom manage zone — §16.14 explicitly says destructive actions go in a header overflow menu, NOT a
+  floating/bottom destructive button. evidence: ProgramDetailPage:37-77 flat layout; ManageZone Delete at
+  :47 in a bottom zone.
+  rec (architect fork): redesign to §16.14 — hero card (name + type badge + status + range + publish +
+  RSVP/registration progress) + collapsible Teams + collapsible Registrations (summary in header:
+  "Registrations · N · P pending") + Edit/Delete moved to a header overflow menu. This is the dominant
+  detail-page debt on this surface.
+
+[P3][§16.10] ProgramDetailPage.jsx:59-70 — registrations list renders every row unconditionally, no
+  virtualization. For Legacy Hoopers a season can hit 60 families → 60 rows; §16.10 says >30 items must
+  virtualize. P3 today (no perf complaint), watch on growth.
+
+[P3][dayBoundaryTs timezone] ProgramEditSheet:38-39 → programSetup.dayBoundaryTs returns a NAIVE string
+  'YYYY-MM-DDT23:59:59' with no offset. desc: written to reg_closes_at (timestamptz). Postgres interprets a
+  zoneless literal in the SESSION timezone (likely UTC on the server). So "closes 2026-06-26" stores
+  2026-06-26 23:59:59+00 — which is 18:59 ET. The reg window close is ~5h early for ET users. evidence:
+  live reg_closes_at on Fall 2026 Tryouts = "2026-06-26 23:59:59+00" (stored as UTC midnight-ish, not ET
+  end-of-day). Out-of-strict-scope (helper is shared with create, A-other), but it surfaces on the EDIT
+  path here. Flag to whoever owns program create. P3.
+
+[P3][refetch loses status edit] ProgramDetailPage uses useProgramRegistrations which selects status; after
+  ManageZone activate/delete it calls onUpdated=refetch — good, the badge updates. But ProgramTeamsSection
+  has its OWN useProgramTeams hook and ProgramManageZone counts via useProgramAdmin — three independent
+  fetches of overlapping program state. After a team is added in ProgramTeamsSection, ManageZone's counts
+  do NOT refresh (separate hook, no shared invalidation) until the Delete button's manual refetchCounts.
+  This is fine because refetchCounts fires on delete-open, but it's a multi-source-of-truth smell (mild
+  PATTERN A #63 within the page). P3.
+
+
+(c) ANTI-PATTERN CROSS-REFERENCE (§11)
+======================================
+  #16.14 (detail hero/collapsible + no floating destructive) ...... VIOLATED — see (b) P2; Delete in bottom zone.
+  #15 (3+ fields FullScreenForm) ................................. OK (ProgramEditSheet uses FullScreenForm despite name).
+  #36 (destructured-default / swallowed error) .................. VIOLATED — useProgramAdmin:17-21 count error console-only,
+                                                                   stale counts feed a destructive confirm.
+  #37 (org_id-first) ............................................ OK (org-scoped chains org-first; FK-scoped exempt).
+  #48 (foreignTable .order) ..................................... OK (no misuse).
+  #63 PATTERN A (same concept divergent source/scope) .......... RISK — events count team-scoped vs program scope;
+                                                                   3 independent program-state fetches on one page.
+  #8 (hardcoded hex) ........................................... OK (team_color inline is the permitted exception).
+  #16/#17 (invented/changed tokens) ............................ OK.
+  #16.1 (cascading delete pessimistic) ......................... OK (delete is pessimistic) but guard incomplete (P0).
+  DELETE BLAST-RADIUS (financial_accounts CASCADE not guarded) .. P0 — the headline finding, see (a) P0-1.
+  #16.3 (kindness microcopy) ................................... PARTIAL — raw 23505/23503 can leak to Toast (P1/P3).
+
+
+(d) PER-ROLE WIREFRAME (admin-only; route is admin-gated lazy at App.jsx:107)
+============================================================================
+Role gate: confirmed admin-only. Route /admin/programs/:id is under the admin lazy block; programs RLS
+update/delete require user_has_role_in_org(org_id,['admin']). Coaches/parents cannot reach or mutate. PASS.
+
+CURRENT (flat, NOT §16.14):
+  [< Programs]
+  Fall 2025                       <- h1
+  [Season badge]  Mar 1 – Jun 14 · Archived
+  Published · /r/fall-2025
+  TEAMS  [+ Add team]             <- always-on
+   • 10U Black            Game team
+  REGISTRATIONS · 0               <- always-on, every row
+   (none)
+  ----- manage zone (bottom) -----
+  [ Activate program ]  (draft only)
+  [ Edit program ] [ Delete ]     <- DESTRUCTIVE at page bottom (anti §16.14)
+
+PROPOSED (§16.14 hero + collapsibles):
+  [< Programs]                         [⋯ overflow: Edit · Activate · Delete]   <- destructive in overflow
+  ┌ HERO CARD ─────────────────────────────────────────┐
+  │ Fall 2025   [Season]  [Archived]                    │
+  │ Mar 1 – Jun 14 · Registration closed                │
+  │ /r/fall-2025 (published)                            │
+  │ ████████░░  48/60 registered · 2 pending  (summary) │
+  └─────────────────────────────────────────────────────┘
+  ▸ Teams · 1                      (collapsed; header shows count)
+  ▸ Registrations · 0              (collapsed; header shows "· N pending")
+  Delete confirm (when fired from overflow): TYPED or full-cascade summary INCLUDING
+     "N family financial records, $X" + block if financial_accounts > 0.
+
+
+(e) OUT OF SCOPE (not touched by A3)
+====================================
+  - Programs INDEX / list / grouping / health cards (A1/A2) — but flagged #63 cross-surface event/team count
+    parity as a join point.
+  - Program CREATE wizard / ProgramTypeChooser / statusForProgramType create-path (A-other).
+  - TeamFormSheet internals (team create/edit form, team_type smart default) — only its invocation here read.
+  - Financials surface itself (/admin/financials linked at ProgramDetailPage:73).
+  - The registrations -> enrollment Phase-2 billing path.
+  - programSetup.dayBoundaryTs timezone fix ownership (shared with create) — flagged P3 here, owned elsewhere.
+  - Divisions UI (divisions CASCADE on program delete but no divisions UI in this scope).
+  - Season rollover wizard (separate page, NO ACTION FKs).
+
+
+SEVERITY COUNTS
+===============
+  P0: 1   (financial_accounts CASCADE unguarded on program delete)
+  P1: 4   (#36 count-error swallow feeding destructive confirm; stale-counts race on confirm open;
+           coach_payouts raw 23503; events-count scope/#63 + label)
+  P2: 6   (#15 naming smell; activate non-atomic; #37 OK-note; #48 OK-note; status one-way archive gap;
+           #16.14 hero/collapsible redesign)
+  P3: 7   (raw-error microcopy; team-row tap target <44px; no virtualization; dayBoundaryTs tz;
+           multi-source program state; sort_order tie; a11y color-dot)
+
+TOP 3
+=====
+  1. [P0] Program delete CASCADE-destroys financial_accounts + financial_transactions with NO guard and NO
+     mention in the confirm. The only guard (registrations RESTRICT) is a no-op for every production program
+     (0 registrations platform-wide). Fall 2025 = 64 accounts / 181 txns / ~$61k one click from irreversible
+     loss. FIX: count-and-block on financial_accounts (+ coach_payouts), surface full cascade, restrict to
+     draft/empty.
+  2. [P1/#36] useProgramAdmin count-error is console-only and stale counts can render in the delete confirm
+     (sync open before async refetch resolves) — falsely showing "0 teams / 0 events", reinforcing the P0
+     false-safety. FIX: gate confirm on fresh counts; surface count errors.
+  3. [P2/#16.14] Detail page violates the hero+collapsible pattern — flat always-on chrome + destructive
+     Delete in a bottom manage zone instead of a header overflow. FIX: §16.14 redesign.
+
+FORKS FOR ARCHITECT/FRANK (AP#39 leans labeled)
+================================================
+  FORK 1 (P0 fix shape): block-on-financials vs. allow-cascade-with-typed-confirm-showing-$.
+     LEAN: block delete entirely when financial_accounts>0 (mirror the registrations RESTRICT guard) —
+     "Archive instead." Archived seasons are the financial record; they should never be deletable.
+  FORK 2: is archived->active (or archived->draft) re-activation a required UI path? Today archive is
+     effectively one-way through this surface (Activate button is draft-only). LEAN: add a re-activate path
+     for non-season types; season re-activation must respect single-active index.
+  FORK 3 (activate atomicity): wrap archive-then-activate in an RPC/transaction to remove the "no active
+     season" intermediate window. LEAN: defer until material edit; DB index already blocks the dangerous
+     direction (double-active), only the benign direction (zero-active) is exposed.

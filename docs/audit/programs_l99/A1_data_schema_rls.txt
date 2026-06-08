@@ -1,0 +1,366 @@
+PROGRAMS L99 AUDIT — AGENT A1 — DATA / SCHEMA / RLS
+Scope: programs, sports, registrations, registration_fees, divisions, division_fees,
+tryout_sessions, tryout_attendees, financial_transactions, seasons compat-view seam,
+SECDEF helpers, public registration RPCs.
+Method: §16.15 (a)-(e). Every claim verified against live SQL (project vrwwpsbfbnveawqwbdmj,
+SELECT-only) or migration file:line. Verified 2026-06-08. AP#60 fact-grounding throughout.
+READ-ONLY: no DDL, no migrations, no code edits.
+
+SEVERITY KEY: P0 security/data-integrity · P1 wrong-data/missing-RLS-defense · P2 perf/maintainability · P3 nit
+AP refs = CLAUDE.md §11 anti-pattern numbers.
+
+================================================================================
+(a) INITIAL PASS — line-by-line migrations + live schema/RLS enumeration
+================================================================================
+
+--- SCHEMA BASELINE (all verified relkind='r', RLS enabled; AP#24 satisfied) ---
+All 11 base tables (programs, sports, registrations, registration_fees, divisions,
+division_fees, tryout_sessions, tryout_attendees, financial_transactions,
+season_locations, season_rollovers) are relkind='r', relrowsecurity=true,
+relforcerowsecurity=false. The 3 views (seasons, player_attendance_season,
+player_rsvp_season) correctly show relrowsecurity=false (views inherit RLS from base
+tables; AP#24 — not a finding).
+
+programs cols match kickoff grounding exactly: org_id NOT NULL, sport_id nullable,
+program_type NOT NULL DEFAULT 'season', status TEXT NOT NULL DEFAULT 'active'
+CHECK(active/draft/archived), is_published bool NOT NULL DEFAULT false, public_slug
+nullable. program_type enum = {season,tryout,camp,clinic,interest_list,evaluation,other}
+(verified live; 'other' added by migration 20260607162758).
+
+registration sub-enums (verified live):
+  registration_status = {pending,confirmed,waitlist,cancelled,payment_overdue}
+  registration_tier   = {full_roster,practice_roster,practice_player}
+  waitlist_state      = {none,on_list,promoted_credit,promoted_pay,refund_released}
+  division_fee_type   = {base,add_on,discount,early_bird,prorated,family_discount}
+
+--- FK on-delete map (verified pg_constraint) ---
+programs.org_id -> organizations ON DELETE RESTRICT; programs.sport_id -> sports
+ON DELETE RESTRICT; programs.parent_program_id -> programs ON DELETE SET NULL.
+8 external FKs to programs(id) all present + correct on-delete (see (c) seam section).
+registrations.program_id -> programs ON DELETE RESTRICT; .player_id -> players RESTRICT;
+.team_id -> teams SET NULL. registration_fees.registration_id -> registrations CASCADE;
+.fee_id -> division_fees SET NULL. divisions.program_id -> programs CASCADE.
+division_fees.division_id -> divisions CASCADE. tryout_sessions.program_id -> programs
+CASCADE. tryout_attendees.registration_id -> registrations CASCADE; .session_id ->
+tryout_sessions CASCADE; UNIQUE(registration_id, session_id). financial_transactions
+.account_id -> financial_accounts CASCADE; .org_id -> organizations (NO on-delete = NO ACTION).
+
+--- Live data (verified) ---
+programs: 1 season:active, 2 season:archived, 1 tryout:active, 2 camp:active.
+Exactly 1 active season for org e3e95e21 (single-active invariant currently HOLDS).
+Zero duplicate (program_id,player_id) registration rows.
+
+[P2][AP#7] schema — "program_transactions" table does NOT exist (confirms kickoff
+  "loose naming"). Migration 20260506215040_path_b_stage4f2_program_transactions.sql is
+  a DATA-ONLY INSERT into financial_transactions (head line: "25 paid program
+  transactions"). Evidence: migration line 4 `INSERT INTO public.financial_transactions`.
+  No table by that name. — REC: ignore the name; financial_transactions is canonical.
+
+[P1][AP#63 / AP#37] registrations — NO UNIQUE constraint on (program_id, player_id).
+  Evidence: pg_constraint shows only registrations_pkey(id) + 4 FKs; no unique. The
+  "already registered?" guard in submit_registration is a non-atomic SELECT-then-INSERT
+  (RPC lines 150-154). Two concurrent anon submits for the same player+program both read
+  zero rows -> both INSERT -> duplicate registration + double registration_fees. See (c)
+  TOCTOU finding. — LEAN: add `UNIQUE(program_id, player_id)` (partial on status<>'cancelled'
+  if re-registration after cancel is desired). Closes the race at the DB; current zero-dupe
+  count is luck-of-low-traffic, not a guarantee.
+
+--- RLS ENUMERATION (verified pg_policy) ---
+programs:            select USING(org_id = ANY current_user_org_ids()) [authenticated];
+                     insert WITH CHECK user_has_role_in_org(org_id,['admin']);
+                     update USING+WITH CHECK user_has_role_in_org(org_id,['admin']);
+                     delete USING user_has_role_in_org(org_id,['admin']). All write
+                     policies have explicit with_check where applicable (AP#20 OK).
+sports:              select USING(org_id = current_user_org_id())  <-- SINGULAR. SEE (c).
+                     insert/update/delete admin-gated, with_check present on insert+update.
+registrations:       select USING(org_id = ANY current_user_org_ids());
+                     insert/update/delete admin-only; update has with_check. NO parent
+                     SELECT policy (see (d) matrix — parents cannot read registrations).
+registration_fees:   same shape as registrations (admin-only writes, org-scoped select).
+divisions:           same shape (admin writes, org-scoped select via PLURAL helper).
+division_fees:       same shape.
+tryout_sessions:     same shape.
+tryout_attendees:    same shape.
+financial_transactions: fin_tx_admin_select USING admin; fin_tx_admin_insert WITH CHECK
+                     admin; fin_tx_parent_read USING(account_id IN guardians of (SELECT
+                     auth.uid())) — parent read path uses the (SELECT auth.uid()) subselect
+                     wrapper correctly. NO UPDATE/DELETE policy => no one can update/delete
+                     financial_transactions via PostgREST (immutable ledger by omission).
+season_locations:    select admin/coach/parent; write (ALL) admin, both USING+WITH CHECK
+                     present (AP#20 OK).
+season_rollovers:    admin (ALL) USING+WITH CHECK present (AP#20 OK).
+
+[P1][AP#63] sports — sports_select USING (org_id = current_user_org_id()) uses the
+  SINGULAR helper while every sibling program-graph table (programs, registrations,
+  divisions, division_fees, registration_fees, tryout_sessions, tryout_attendees) uses the
+  PLURAL `org_id = ANY(current_user_org_ids())`. Evidence: pg_policy dump — sports_select
+  qual `(org_id = current_user_org_id())`; programs_select qual
+  `(org_id = ANY (current_user_org_ids()))`. current_user_org_id() returns ONE org
+  (LIMIT 1 over user_roles). For a multi-org admin/coach, sports in their NON-first org are
+  invisible -> programs.sport_id joins render blank sport name on those orgs. This is the
+  classic AP#63 PATTERN-A "same concept, divergent scope across surfaces" seam and the
+  multi-org regression risk. Single-org LH is unaffected today. — LEAN: change sports_select
+  to `org_id = ANY(current_user_org_ids())` to match the cohort. (DB-side fix; out of A1
+  write-scope — flag only.)
+
+[P3][AP#20] write-policy roles array — most insert/update/delete policies on the
+  program-graph tables have roles="{}" (applies to PUBLIC/all roles) rather than
+  {authenticated}, unlike financial_transactions/season_locations which pin {authenticated}.
+  Functionally safe (the qual requires user_has_role_in_org which is false for anon), but
+  inconsistent. Evidence: pg_policy.roles = '{}' on programs_insert vs '{authenticated}' on
+  fin_tx_admin_insert. — REC: cosmetic consistency; no security impact (anon has no role row).
+
+================================================================================
+(b) DEEP-READ ADDENDUM — second pass (caught what (a) missed)
+================================================================================
+
+[P0][AP#26 / AP#25-adjacent] submit_registration TOCTOU race — registration_public_rpcs.sql
+  lines 150-167. The dedupe guard `SELECT id INTO v_reg_id FROM registrations WHERE
+  program_id=v_program_id AND player_id=v_player_id` then `IF v_reg_id IS NOT NULL ... CONTINUE`
+  else INSERT — is a read-modify-write with NO row lock and NO unique constraint backing it
+  (see (a) P1). Anon-executable (anon_exec=true verified). A double-submit (parent
+  double-taps "Register", or two devices) races: both transactions see no existing row, both
+  INSERT a registration + a full set of registration_fees -> family billed twice for one
+  child. SECURITY DEFINER runs each call in its own transaction; READ COMMITTED isolation
+  does not serialize these. — LEAN(P0): add UNIQUE(program_id,player_id) on registrations AND
+  change the guard to `INSERT ... ON CONFLICT (program_id,player_id) DO NOTHING RETURNING id`
+  (then treat null-return as "already registered"). The constraint is the real fix; the guard
+  alone cannot be made safe without it. This is the single highest-value finding in A1.
+
+[P1][AP#42 / seam-coupling] assert_org_owns_season SECDEF helper reads the seasons VIEW,
+  not programs. Evidence: pg_get_functiondef — `SELECT EXISTS(SELECT 1 FROM seasons WHERE
+  id=p_season_id AND org_id=p_org_id)`. It is STABLE SECURITY DEFINER search_path=public,
+  anon_exec=false (good). Functionally correct because the view = programs WHERE
+  program_type='season', so the helper silently scopes to seasons only. Latent: if a caller
+  ever passes a camp/tryout program id expecting "org owns this program", the helper returns
+  false (it's season-only by construction). The name implies season-only so this is arguably
+  intended, but the program-graph generalization (camps/clinics) makes a same-named
+  assert_org_owns_program desirable. — REC: leave as-is; note the season-only scope when the
+  registry generalizes ownership checks to non-season program types.
+
+[P1][stale-comment / data-integrity drift] useSeasons.js createSeason + setActive comments
+  are STALE post-migration 20260607162813. Lines 7-9 + 55-58 assert "Postgres doesn't enforce
+  only one active per org" and "the check constraint already guarantees valid status." Both
+  are now wrong: the partial unique index `programs_one_active_season_per_org`
+  (ON programs(org_id) WHERE status='active' AND program_type='season', verified live) DOES
+  enforce single-active at the DB. Two consequences:
+    (i) createSeason (useSeasons.js:43) inserts through the seasons view with no status =>
+        programs.status DEFAULT 'active' applies => if an active season already exists, the
+        INSERT fails with a unique_violation (23505). The error surfaces raw via
+        `return { error: e?.message }` with NO kindness microcopy (AP#16.3 violation —
+        "duplicate key value violates unique constraint programs_one_active_season_per_org"
+        shown to admin). — LEAN: createSeason should default new seasons to status='draft', OR
+        catch 23505 and render a kindness message ("There's already an active season —
+        archive it first.").
+    (ii) setActive (useSeasons.js:61-66) archives-others-then-activates. Order is safe for the
+        index (the conflicting active row is archived in statement 1 before statement 2
+        promotes the target). But it is NON-ATOMIC (AP per migration comment): if statement 1
+        succeeds and statement 2 fails/network-drops, the org is left with ZERO active seasons.
+        The unique index prevents >1 active but does not prevent 0 active. — REC: wrap in a
+        single RPC (the migration 20260607162813 comment anticipates "the unified activate()").
+        The index closes the >1 race; it does not close the 0-active window.
+
+[P2][AP#36] useSeasons setActive / createSeason error handling — `return { error: e?.message }`
+  surfaces the raw PostgREST error string. Combined with (b)(i), the 23505 leaks DB internals
+  to the UI. Not a destructured-default swallow, but same family (error string passed through
+  un-translated). — REC: map known sqlstates to microcopy.
+
+[P3][seam] seasons view + 2 dependent views GRANT ALL TO anon (migration
+  20260529185046 lines 52, 82, 106). Because the views are security_invoker, anon's effective
+  access is still gated by programs RLS (programs_select requires authenticated), so anon
+  reading `seasons` returns zero rows — verified the grant is inert. But GRANT ALL (incl
+  INSERT/UPDATE/DELETE) to anon on a view is a broad surface that relies entirely on the
+  underlying RLS holding. — REC: tighten to GRANT SELECT (the view is read-for-anon at most);
+  the write grants to anon serve no purpose (anon can't pass programs write RLS anyway).
+
+[P2][AP#48-adjacent perf] unindexed FKs in scope (get_advisors performance, INFO):
+  programs.sport_id (programs_sport_id_fkey), registrations.promoted_from_registration_id,
+  coach_payouts.season_id, financial_accounts.season_id, tryout_sessions.location_id,
+  season_rollovers.initiated_by, player_equipment.sport_id. The two season_id FKs on
+  financial_accounts/coach_payouts now point at programs(id) (PK-indexed on the parent side)
+  but the CHILD column is unindexed -> cascade-delete of a program scans those tables. Low
+  urgency at LH scale. — REC: add covering indexes when a program delete path ships.
+
+[P3][perf] unused_index (get_advisors, INFO) — programs_published_slug_idx,
+  programs_org_id_idx, programs_parent_idx, sports_org_id_idx, idx_divisions_org_id,
+  idx_registrations_org_id, idx_registration_fees_org_id, idx_division_fees_org_id, all
+  tryout_* org/fk indexes, idx_fin_tx_org_with_fees, financial_transactions_applied_to_player_id_idx,
+  financial_transactions_recorded_by_idx flagged unused. Expected for a freshly-built registry
+  with near-zero query traffic — these will light up once the programs UI ships. — REC: no
+  action; do NOT drop (false-positive on cold tables).
+
+================================================================================
+(c) ANTI-PATTERN CROSS-REF + SEASONS COMPAT-VIEW SEAM VERIFICATION
+================================================================================
+
+--- 8 FK REPOINTS: VERIFIED LANDED (pg_constraint live) ---
+All 8 external FKs reference programs(id) with on-delete preserved per migration
+20260529185046 lines 13-28:
+  teams_season_id_fkey                -> programs ON DELETE CASCADE   [verified]
+  events_season_id_fkey               -> programs ON DELETE SET NULL  [verified]
+  financial_accounts_season_id_fkey   -> programs ON DELETE CASCADE   [verified]
+  coach_payouts_season_id_fkey        -> programs ON DELETE NO ACTION [verified]
+  team_achievements_season_id_fkey    -> programs ON DELETE SET NULL  [verified]
+  season_locations_season_id_fkey     -> programs ON DELETE CASCADE   [verified]
+  season_rollovers_from_season_id_fkey-> programs ON DELETE NO ACTION [verified]
+  season_rollovers_to_season_id_fkey  -> programs ON DELETE NO ACTION [verified]
+Zero FKs still reference a `seasons` relation (the migration's own DO-block verify asserted
+this; re-confirmed live: seasons is relkind='v').
+
+--- 2 DEPENDENT VIEWS: VERIFIED security_invoker=true ---
+player_attendance_season + player_rsvp_season both reloptions security_invoker=true
+(verified pg_options_to_table). They JOIN `seasons` (the view) for season scope -> a
+two-hop view-over-view, both security_invoker, so programs RLS enforces against the querying
+user. Correct.
+
+--- WITH CHECK OPTION WRITE PATH: ESCAPE ANALYSIS (the highest-risk question) ---
+seasons view def (verified pg_get_viewdef): `SELECT id,org_id,name,start_date,end_date,
+status,created_at,updated_at,parent_program_id AS parent_season_id,rolled_over_at FROM
+programs WHERE program_type='season' WITH CHECK OPTION` (check_option=cascaded, verified).
+KEY RESULT — CANNOT ESCAPE THE VIEW:
+  * program_type is NOT a projected column of the view. A write through the view physically
+    cannot set program_type (PostgREST/SQL can only target the 10 projected columns). So
+    useSeasonRollover.js:16 INSERT and useSeasons.js:43/50/62/66 UPDATE/INSERT cannot flip a
+    row to program_type='camp' to "escape" — the column is unreachable.
+  * On INSERT through the view, programs.program_type DEFAULT 'season' supplies the value;
+    WITH CHECK OPTION (cascaded) then re-validates the inserted row satisfies the view qual
+    (program_type='season') — it does, by default. Safe.
+  * On UPDATE through the view, the row's program_type is untouched (not in the update target)
+    and WITH CHECK OPTION re-validates it still satisfies the qual — it does. Safe.
+  * sport_id defaults NULL on view INSERT (not projected) — seasons created via rollover have
+    no sport. Acceptable for LH single-sport; note for multi-sport orgs (rollover-created
+    seasons will have NULL sport_id).
+  VERDICT: the compat-view seam is SOUND. No write can escape program_type='season'. This was
+  the kickoff's flagged "highest-risk seam" — it is correctly fenced. (No P0/P1 here.)
+
+[P3][seam observation] No `seasons` TABLE write exists anywhere in src/ — verified
+  grep: every `from('seasons')` (useSeasons, useSeasonRollover, SeasonContext,
+  FinancialDashboard/Import, SeasonRollover, useTournaments, useActiveSeasonEnd,
+  useCreateActivity) targets the VIEW. The table was dropped (migration 20260529185046:39,
+  no CASCADE so it would have failed loudly if a dependency remained). No stale table writer.
+
+--- SECDEF HELPERS (AP#23, AP#57, auth_rls_initplan) ---
+current_user_org_id, current_user_org_ids, user_has_role_in_org: all STABLE SECURITY
+DEFINER, search_path=public PINNED (verified proconfig), anon_can_exec=FALSE (verified
+has_function_privilege). AP#23/#57 SATISFIED — anon has no EXECUTE.
+[P3][auth_rls_initplan] all 3 helper BODIES use bare `auth.uid()` (not `(SELECT auth.uid())`).
+  Evidence: pg_get_functiondef — `where user_id = auth.uid()`. Inside a SQL function the call
+  is evaluated once per function invocation, and RLS policies invoke the FUNCTION (cached as a
+  STABLE call), so the per-row initplan penalty is largely mitigated vs bare auth.uid() in a
+  policy qual. Lower impact than a raw policy reference. Note for completeness; CLAUDE.md
+  §"auth.uid() subselect wrapper" technically wants the wrap even here. — REC: optional.
+
+[P0-cleared][AP#20] NULL-with_check scan — NO program-graph ALL/UPDATE policy has NULL
+  with_check. season_locations_write (cmd=ALL) and season_rollovers_admin (cmd=ALL) both
+  carry explicit WITH CHECK matching their USING. All UPDATE policies (cmd='w') carry
+  with_check. AP#20 CLEAN across scope. (Recorded as a verified non-finding.)
+
+--- public registration RPCs (the anon write surface) ---
+get_public_program(slug): SECDEF, search_path pinned, anon_exec=true (INTENTIONAL per
+  migration 20260601044918:4). Returns published-only (is_published=true) program + divisions
+  + base/add_on fees + org branding. No PII. Org_id is exposed but that's needed for the form.
+  SOUND.
+submit_registration(payload): SECDEF, search_path pinned, anon_exec=true (INTENTIONAL).
+  v_org_id is server-derived from the resolved program (RPC line 75) NOT from payload -> no
+  org spoofing (good, AP#37-spirit). Program gate = is_published + within reg window (lines
+  76-80) bounds the anon write. Guardian upsert on email (globally unique). Server-authoritative
+  total returned (PATTERN A #63 compliant — fees summed server-side, lines 169-172, not trusted
+  from client). Family-cap discount computed server-side. The ONLY defect is the TOCTOU race
+  (b)(P0) — otherwise this RPC is well-built.
+[P2] submit_registration writes to 6+ org-scoped tables (guardians, players, player_guardians,
+  registrations, registration_fees, player_equipment) under SECURITY DEFINER, BYPASSING their
+  RLS. This is the intended design (anon has zero table grants; the RPC is the only door), but
+  it means every validation that RLS would normally provide must live in the RPC body. Audited:
+  division belongs to program (line 117 `program_id=v_program_id`), grade band check (121-124),
+  player dedupe scoped to v_org_id (128). org_id is consistently the server-derived value on
+  every INSERT. No cross-org leak found. — REC: keep the division/program coupling check; it's
+  the load-bearing guard against a forged division_id from another org.
+
+================================================================================
+(d) PER-ROLE DATA-VISIBILITY MATRIX (from live policies)
+================================================================================
+Legend: Y=allowed, N=denied, RPC=only via SECURITY DEFINER rpc, own=row-scoped.
+
+TABLE                | anon            | parent          | coach           | admin
+---------------------+-----------------+-----------------+-----------------+----------------
+programs   SELECT    | N (RPC: pub only)| Y (own org)    | Y (own org)     | Y (own org)
+programs   write     | N                | N               | N               | Y
+sports     SELECT    | N               | Y (1st org only!)| Y (1st org only!)| Y (1st org only!)  <- AP#63
+sports     write     | N               | N               | N               | Y
+registrations SELECT | N               | N (no parent pol)| N (no parent pol)| Y
+registrations write  | N (RPC insert)  | N (RPC insert)  | N               | Y
+registration_fees    | N               | N               | N               | Y (select+write)
+divisions  SELECT    | N (RPC: pub)    | Y (own org)     | Y (own org)     | Y
+divisions  write     | N               | N               | N               | Y
+tryout_sessions      | N               | Y(select own org)| Y(select)      | Y(select+write)
+tryout_attendees     | N               | Y(select own org)| Y(select)      | Y(select+write)
+fin_transactions SEL | N               | own (guardian)  | N (no coach pol)| Y (own org)
+fin_transactions wr  | N               | N               | N               | Y(insert only; no upd/del for anyone)
+
+GAPS / NOTES:
+- registrations has NO parent SELECT policy. A parent CANNOT see their own child's
+  registration row via PostgREST (only admin can). If the parent-facing registration-status
+  surface needs to read registrations, it will silently return [] for parents (AP#36 class if
+  a destructured default hides it). Flag for A2/A4 (hooks/UI): confirm whether any
+  parent-facing screen queries `registrations` directly — it will be empty for them.
+  (A1 verdict: this is a likely PRODUCT gap, not necessarily a bug — registration confirmation
+  may be intended admin-only. Surface to architect.)
+- tryout_sessions/tryout_attendees are parent/coach SELECT-able org-wide (org_id = ANY
+  current_user_org_ids()) — a parent can see ALL tryout attendees in their org incl
+  evaluation_note (tryout_attendees.evaluation_note is coach eval text). [P1][AP#16.7 privacy]
+  evaluation_note is coach-private eval content but the SELECT policy exposes it to any
+  authenticated parent in the org. Evidence: tryout_attendees_select USING(org_id = ANY
+  current_user_org_ids()) with no role narrowing. — LEAN: narrow tryout_attendees SELECT (and
+  evaluation_note specifically) to admin/coach; parents should not read other families' tryout
+  evaluations. This is a real privacy leak once tryouts go live with multiple families.
+- financial_transactions: no coach SELECT policy (coaches can't see the ledger) and NO
+  update/delete policy for ANY role => the transaction ledger is append-only by RLS omission.
+  Good (immutable financial record). Parent sees only own (via guardian->financial_accounts).
+
+================================================================================
+(e) OUT OF SCOPE (A1 did NOT touch)
+================================================================================
+- UI / component layer (ProgramsPage, registration wizard, season pickers) — A2/A4/A5.
+- Hooks beyond the seasons-seam + useSeasons spot-checks needed to verify the write path
+  (useRegistration, useDivisions, useTryouts, useProgramsList not read) — A2/A3.
+- Edge functions / cron (briefing_queue scope-to-active-season migration noted but not audited).
+- comms / briefing engine tables, team_types, player_equipment internals (beyond the
+  submit_registration insert path), guardians/players RLS (touched only where the RPC writes).
+- season_rollovers RPC body / useSeasonRollover full flow (verified the view INSERT is safe;
+  did not audit the multi-statement rollover atomicity end-to-end — flag for whoever owns
+  rollover).
+- Migration-mirror parity for NON-program migrations (AP#21). For IN-SCOPE program-build
+  migrations: all present-as-files AND registered (verified list_migrations vs ls): programs_table,
+  sports_table, backfill_programs, seasons_compat_view, divisions, division_fees,
+  registrations, registration_fees, player_equipment, tryout_sessions, players_extensions,
+  organizations_family_cap, rls_plural_parent_select, programs_public_registration_columns,
+  registration_public_rpcs, program_type_add_other, programs_status_check — NO drift in scope.
+
+================================================================================
+SUMMARY COUNTS
+================================================================================
+P0: 1   (submit_registration TOCTOU duplicate-registration race — needs UNIQUE(program_id,player_id))
+P1: 5   (sports_select singular-helper AP#63; registrations no parent SELECT gap; tryout
+         evaluation_note parent-readable privacy leak; useSeasons stale-comment +
+         createSeason 23505 raw-error / 0-active-window non-atomic setActive; missing
+         registrations unique constraint [same root as P0])
+P2: 5   (program_transactions naming; unindexed FKs; useSeasons raw error string; SECDEF RPC
+         RLS-bypass surface; -)
+P3: 6   (write-policy roles '{}'; seasons view GRANT ALL to anon; helper bare auth.uid();
+         unused indexes; no-seasons-table-writer confirm; -)
+
+FORKS (AP#39 labeled leans — architect to ratify):
+ FORK-1 (P0): registrations dup-registration — LEAN: add UNIQUE(program_id,player_id) +
+   ON CONFLICT in submit_registration. (Alternative: partial unique on status<>'cancelled'
+   IF re-registration-after-cancel is a product requirement — confirm with product before
+   choosing the partial form. The plain UNIQUE is the truer default per AP#39.)
+ FORK-2 (P1): sports_select singular vs plural helper — LEAN: change to plural
+   current_user_org_ids() to match the cohort. No reason sports should be the lone
+   single-org-scoped table in the program graph; the singular is almost certainly a
+   copy-paste miss from an older single-org policy.
+ FORK-3 (P1): tryout_attendees / evaluation_note visibility — LEAN: narrow SELECT to
+   admin+coach. Confirm with product that parents are not meant to see tryout evals.
+ FORK-4 (P1): single-active-season enforcement completeness — the partial unique index closes
+   the >1-active race but NOT the 0-active window in setActive's non-atomic two-statement
+   write. LEAN: move setActive into a single SECDEF activate() RPC (migration 20260607162813's
+   own comment anticipates "the unified activate()"). Index is necessary but not sufficient.
