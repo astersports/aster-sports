@@ -70,7 +70,13 @@ export default function DevicePreviewFrame({ html, plainText }) {
         ? <pre style={plainStyle}>{plainText || '(no plain-text body)'}</pre>
         : (
           <div style={frameWrap(viewport)}>
-            <iframe title="Briefing preview" sandbox="" srcDoc={buildSrcDoc(viewport, html)} style={iframeStyle} />
+            {/* key on viewport + html length so the iframe REMOUNTS when the
+               async preview arrives (loading -> loaded) or the viewport
+               changes. Updating srcDoc on an existing iframe does not reliably
+               repaint on iOS Safari, so the frame stayed blank until a tab
+               switch forced a remount (Frank-reported 2026-06-08). A remount
+               guarantees a fresh paint. */}
+            <iframe key={`${viewport}:${(html || '').length}`} title="Briefing preview" sandbox="" srcDoc={buildSrcDoc(viewport, html)} style={iframeStyle} />
           </div>
         )}
     </div>
