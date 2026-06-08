@@ -20,4 +20,15 @@ describe('free-text F1 — statsNarrative', () => {
   it('matches snapshot', () => {
     expect(render(fixture)).toMatchSnapshot();
   });
+  it('splits a multi-paragraph body into separate <p> blocks (no run-on blob)', () => {
+    const { html, plainText } = render({ kind: 'stats_narrative', body: 'Para one.\n\nPara two.\n\nPara three.' });
+    expect(html.match(/<p\s/g)).toHaveLength(3);
+    expect(html).toContain('Para one.');
+    expect(html).toContain('Para three.');
+    expect(plainText).toBe('Para one.\n\nPara two.\n\nPara three.');
+  });
+  it('single-paragraph body stays exactly one <p> (backward compatible)', () => {
+    const { html } = render({ kind: 'stats_narrative', body: 'Just one paragraph here.' });
+    expect(html.match(/<p\s/g)).toHaveLength(1);
+  });
 });

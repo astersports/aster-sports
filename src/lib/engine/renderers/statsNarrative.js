@@ -26,23 +26,31 @@ function tokenHref(kind, urls) {
 
 export default function render(section) {
   const body = section?.body || '';
-  const segments = splitBodyTokens(body);
-  const hasToken = segments.some((s) => s.token);
   const urls = section?.body_token_urls || null;
+  const P = 'font-family:Inter,system-ui,sans-serif;font-size:14px;color:#0f172a;line-height:1.6;margin:8px 0;padding:8px 0;';
 
-  const inner = hasToken
-    ? segments.map((s) => s.token
+  // Split into paragraphs on blank line(s) so the AI's paragraph structure
+  // survives. HTML collapses raw newlines, which rendered a multi-paragraph
+  // narrative as one run-on blob (Frank-reported 2026-06-08). A single-paragraph
+  // body (no blank line) renders exactly as before: one <p>.
+  const paras = body.split(/\n\s*\n+/).map((p) => p.trim()).filter(Boolean);
+  const blocks = paras.length ? paras : [body];
+
+  function htmlInner(text) {
+    const segments = splitBodyTokens(text);
+    if (!segments.some((s) => s.token)) return escapeHtml(text);
+    return segments.map((s) => s.token
       ? `<a href="${escapeHtml(tokenHref(s.token, urls))}" style="${BTN}">${escapeHtml(BODY_TOKENS[s.token].label)}</a>`
-      : escapeHtml(s.text)).join('')
-    : escapeHtml(body);
+      : escapeHtml(s.text)).join('');
+  }
+  function plainInner(text) {
+    const segments = splitBodyTokens(text);
+    if (!segments.some((s) => s.token)) return text;
+    return segments.map((s) => s.token ? `${BODY_TOKENS[s.token].label}: ${tokenHref(s.token, urls)}` : s.text).join('');
+  }
 
-  const html = '<p style="font-family:Inter,system-ui,sans-serif;font-size:14px;color:#0f172a;line-height:1.6;margin:8px 0;padding:8px 0;">'
-    + inner
-    + '</p>';
-
-  const plainText = hasToken
-    ? segments.map((s) => s.token ? `${BODY_TOKENS[s.token].label}: ${tokenHref(s.token, urls)}` : s.text).join('')
-    : body;
+  const html = blocks.map((b) => `<p style="${P}">${htmlInner(b)}</p>`).join('');
+  const plainText = blocks.map(plainInner).join('\n\n');
 
   return { html, plainText };
 }
