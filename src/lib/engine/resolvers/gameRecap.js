@@ -22,6 +22,7 @@
 import { buildOrgContext } from '../buildOrgContext';
 import { buildSignoffSection } from '../buildSignoffSection';
 import { fetchSignatureCoaches } from './signatureCoaches';
+import { fetchSeasonToDate } from './seasonToDate';
 import {
   buildGameRecapCard, buildGameRecapPill, buildSubject, fetchSlices,
   GameRecapNotPublishedError, trim,
@@ -77,9 +78,21 @@ export async function resolveGameRecap({ eventId, pilotOnly }, { supabase, now =
   if (orgErr) throw orgErr;
   const slices = await fetchSlices(supabase, orgId, event.team_id, effectivePilotOnly);
 
+  // Season-to-date for the AI narrative (fix B): a single game_recap is always
+  // single-team + single-scope, so the model gets true season position and won't
+  // call a mid-season game an opener. Pill is unchanged (the singular pill shows
+  // the result, not a record, so it never misread). Degrade quietly on failure.
+  let season_summary = null;
+  try {
+    season_summary = await fetchSeasonToDate(supabase, { teamId: event.team_id, scope: event.event_type, asOf: event.start_at });
+  } catch (e) {
+    console.warn('[gameRecap] season-to-date fetch failed; omitting season fact', e);
+  }
+
   return {
     context: {
       org: buildOrgContext({ orgId, org, coaches, signature_coaches: signatureCoaches }),
+      season_summary,
       event: { id: event.id, start_at: event.start_at, opponent: event.opponent, location_id: event.location_id, tournament_id: event.tournament_id, team_id: event.team_id },
       team: event.teams ? { id: event.teams.id, name: event.teams.name, team_color: event.teams.team_color, sort_order: event.teams.sort_order } : null,
       game_result: gameResult,

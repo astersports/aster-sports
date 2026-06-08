@@ -48,10 +48,23 @@ describe('composeGamesRecap', () => {
     // Header band carries the record pill (cobalt_band variant)
     const header = content_sections[0 + 1];
     expect(header.variant).toBe('cobalt_band');
-    expect(header.record_pill).toBe('1–1 RECORD · MAY 3 – MAY 9');
+    // GAMES is a 2-TEAM recap (no season_summary) -> neutral window pill, NOT a
+    // blended "1–1 RECORD" (that cross-team tally was the misread we're fixing).
+    expect(header.record_pill).toBe('2 GAMES · MAY 3 – MAY 9');
     // Section bars frame the results and the narrative
     const bars = content_sections.filter((s) => s.kind === 'section_bar').map((s) => s.label);
     expect(bars).toEqual(['The Weekend', 'From the Sideline']);
+  });
+
+  it('F3b pill invariant: single-team+single-scope -> season pill; multi-team -> window pill, never blended RECORD', () => {
+    // Single-team + single-scope: resolver attaches season_summary -> season pill.
+    const seasonCtx = { ...context, season_summary: { record: '3-5', gamesPlayed: 8, scope: 'game', scopeLabel: 'League Play' } };
+    const seasonHeader = composeGamesRecap(seasonCtx, { kind: 'family' }, {}).content_sections[1];
+    expect(seasonHeader.record_pill).toBe('3–5 League Play · Season');
+    // Multi-team fallback (no season_summary): neutral window pill, no "RECORD".
+    const fallbackHeader = composeGamesRecap(context, { kind: 'family' }, {}).content_sections[1];
+    expect(fallbackHeader.record_pill).toBe('2 GAMES · MAY 3 – MAY 9');
+    expect(fallbackHeader.record_pill).not.toContain('RECORD');
   });
 
   it('each cell carries its OWN game team_color (per-cell rail), toned W/L, date eyebrow, venue context', () => {

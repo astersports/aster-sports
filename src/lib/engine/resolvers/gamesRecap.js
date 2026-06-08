@@ -16,9 +16,10 @@ import { ORG_NAME_DEFAULT } from '../../constants';
 import { buildOrgContext } from '../buildOrgContext';
 import { buildSignoffSection } from '../buildSignoffSection';
 import { fetchSignatureCoaches } from './signatureCoaches';
+import { fetchSeasonToDate, seasonPillText } from './seasonToDate';
 
 
-const EVENT_SELECT = 'id, team_id, start_at, location, opponent, teams ( id, name, team_color, org_id )';
+const EVENT_SELECT = 'id, team_id, event_type, start_at, location, opponent, teams ( id, name, team_color, org_id )';
 
 export async function resolveGamesRecap({ eventIds, pilotOnly }, { supabase, now = new Date() } = {}) {
   if (!Array.isArray(eventIds) || !eventIds.length) throw new Error('Missing eventIds');
@@ -46,7 +47,7 @@ export async function resolveGamesRecap({ eventIds, pilotOnly }, { supabase, now
     .filter((e) => resultByEvent.has(e.id))
     .map((e) => {
       const gr = resultByEvent.get(e.id);
-      return { team_name: e.teams?.name || ORG_NAME_DEFAULT, team_color: e.teams?.team_color || null, opponent: e.opponent, venue: e.location || null, start_at: e.start_at, our_score: gr.our_score, opponent_score: gr.opponent_score, result: gr.result, day_label: dayLabel(e.start_at) };
+      return { team_id: e.team_id, event_type: e.event_type, team_name: e.teams?.name || ORG_NAME_DEFAULT, team_color: e.teams?.team_color || null, opponent: e.opponent, venue: e.location || null, start_at: e.start_at, our_score: gr.our_score, opponent_score: gr.opponent_score, result: gr.result, day_label: dayLabel(e.start_at) };
     })
     .sort((a, b) => String(a.start_at).localeCompare(String(b.start_at)));
   if (!games.length) throw new Error('No published results among selected games');
@@ -67,10 +68,26 @@ export async function resolveGamesRecap({ eventIds, pilotOnly }, { supabase, now
   const signatureCoaches = await fetchSignatureCoaches(supabase, orgId, teamIds);
   const slices = await fetchSlicesForTeams(supabase, orgId, teamIds, effectivePilotOnly);
 
+  // Season-to-date applies ONLY when the recap is SINGLE-TEAM and SINGLE-SCOPE
+  // (architect §2 gate): a blended cross-team/scope season number is undefined.
+  // Multi-team / mixed-scope -> season_summary stays null and compose falls back
+  // to the neutral window pill. A season-fetch failure degrades the same way
+  // (the recap still renders) rather than breaking the whole draft.
+  const scopes = [...new Set(games.map((g) => g.event_type).filter(Boolean))];
+  let season_summary = null;
+  if (teamIds.length === 1 && scopes.length === 1) {
+    const asOf = games[games.length - 1].start_at;
+    try {
+      season_summary = await fetchSeasonToDate(supabase, { teamId: teamIds[0], scope: scopes[0], asOf });
+    } catch (e) {
+      console.warn('[gamesRecap] season-to-date fetch failed; using window pill', e);
+    }
+  }
+
   return {
     context: {
       org: buildOrgContext({ orgId, org, coaches: coachesData, signature_coaches: signatureCoaches }),
-      games, summary, subject: buildGamesSubject(games, summary.record),
+      games, summary, season_summary, subject: buildGamesSubject(games, summary.record),
     },
     slices,
   };
@@ -85,10 +102,15 @@ export async function resolveGamesRecap({ eventIds, pilotOnly }, { supabase, now
 // renderers; no per-kind branching. See docs/GAMES_RECAP_AT_BAR.html.
 export function composeGamesRecap(context, slice, overrides = {}) {
   if (!context || !slice) throw new Error('Missing context or slice');
-  const { org, games, summary, subject } = context;
+  const { org, games, summary, season_summary, subject } = context;
   const sections = [];
   sections.push({ kind: 'frame_open' });
-  sections.push({ kind: 'header', variant: 'cobalt_band', eyebrow: `${org.name} · GAMES RECAP`, eyebrow_link: org.branding.eyebrowLink, headline: 'GAMES RECAP', record_pill: summary.recordPill });
+  // F3b: single-team + single-scope -> season-to-date pill ("3–5 LEAGUE PLAY ·
+  // SEASON"); multi-team / mixed-scope -> neutral window pill ("4 GAMES · range").
+  const record_pill = season_summary
+    ? seasonPillText(season_summary.record, season_summary.scope)
+    : summary.windowPill;
+  sections.push({ kind: 'header', variant: 'cobalt_band', eyebrow: `${org.name} · GAMES RECAP`, eyebrow_link: org.branding.eyebrowLink, headline: 'GAMES RECAP', record_pill });
 
   sections.push({ kind: 'section_bar', label: 'The Weekend' });
   for (const g of games) sections.push(buildGameCell(g));

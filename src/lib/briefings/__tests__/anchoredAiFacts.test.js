@@ -54,6 +54,34 @@ describe('anchoredAiFacts', () => {
     });
   });
 
+  it('emits "Season so far" when the resolver attached season_summary (fix B)', () => {
+    const ctx = {
+      season_summary: { record: '3-5', gamesPlayed: 8, scope: 'game', scopeLabel: 'League Play' },
+      summary: { record: '0-1' },
+      games: [{ day_label: 'Fri', team_name: '10U Blue', our_score: 22, opponent_score: 28, opponent: '6th Boro', result: 'L' }],
+    };
+    expect(anchoredFacts('games_recap', ctx)['Season so far']).toBe('3-5 in League Play (8 games)');
+  });
+
+  it('game_recap also gets "Season so far" (single-team always gated in)', () => {
+    const ctx = {
+      team: { name: '10U Blue' }, game_result: { our_score: 22, opponent_score: 28, result: 'L' },
+      season_summary: { record: '3-5', gamesPlayed: 8, scope: 'game', scopeLabel: 'League Play' },
+    };
+    expect(anchoredFacts('game_recap', ctx)['Season so far']).toBe('3-5 in League Play (8 games)');
+  });
+
+  it('NO "Season so far" without season_summary (multi-team/mixed-scope fallback)', () => {
+    const ctx = {
+      games: [
+        { day_label: 'Sat', team_name: '10U Blue', our_score: 24, opponent_score: 30, opponent: 'A', result: 'L' },
+        { day_label: 'Sun', team_name: '9U Boys', our_score: 40, opponent_score: 20, opponent: 'B', result: 'W' },
+      ],
+      summary: { record: '1-1' },
+    };
+    expect(anchoredFacts('games_recap', ctx)['Season so far']).toBeUndefined();
+  });
+
   it('tournament_recap narrative fills coach_reflection; extracts placement + records', () => {
     expect(AI_DRAFT_FIELD.tournament_recap).toBe('coach_reflection');
     const ctx = {

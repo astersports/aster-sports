@@ -21,6 +21,18 @@ function ordinal(n) {
   return `${v}${s[(m - 20) % 10] || s[m] || s[0]}`;
 }
 
+// Season-to-date fact (fix B): present only when the resolver attached
+// season_summary (single-team + single-scope, architect §2 gate). Gives the AI
+// true season position so it won't read a mid-season game as an opener. Multi-
+// team / mixed-scope recaps have no season_summary -> no fact (Level A governs).
+function addSeasonFact(out, ctx) {
+  const s = ctx?.season_summary;
+  if (!s?.record) return;
+  const scope = s.scopeLabel ? ` in ${s.scopeLabel}` : '';
+  const n = s.gamesPlayed;
+  out['Season so far'] = `${s.record}${scope}${n ? ` (${n} game${n === 1 ? '' : 's'})` : ''}`;
+}
+
 const EXTRACT = {
   game_recap: (ctx) => {
     const gr = ctx.game_result || {};
@@ -32,6 +44,7 @@ const EXTRACT = {
     }
     if (ctx.player_of_game?.first_name) out['Player of the game'] = ctx.player_of_game.first_name;
     if (ctx.location?.name) out.Venue = ctx.location.name;
+    addSeasonFact(out, ctx);
     return out;
   },
   games_recap: (ctx) => {
@@ -49,6 +62,7 @@ const EXTRACT = {
         return `${g.day_label ? `${g.day_label} ` : ''}${g.team_name} ${g.our_score}-${g.opponent_score} vs ${opp}${g.result ? ` (${g.result})` : ''}`.trim();
       }).join('; ');
     }
+    addSeasonFact(out, ctx);
     return out;
   },
   tournament_recap: (ctx) => {
