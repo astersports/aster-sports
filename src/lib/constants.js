@@ -85,9 +85,8 @@ export const TOURNAMENT_MESSAGE_TYPES = [
 // send time (queueComposedMessages → body_html_rendered), so this default (or a
 // VITE_APP_BASE_URL override) reaches production email.
 //
-// CUTOVER (2026-06-02): default is now https://astersports.app (was the
-// skyfire-app.vercel.app deploy host). VITE_APP_BASE_URL still overrides if set.
-// Trailing slash is stripped so callers can append paths.
+// CUTOVER (2026-06-02): default is now https://astersports.app. VITE_APP_BASE_URL
+// still overrides if set. Trailing slash is stripped so callers can append paths.
 //
 // SCOPE NOTE: in-app share links use window.location.origin (src/lib/publicUrls.js)
 // and are already domain-agnostic. The invite-parent EDGE FUNCTION resolves its
