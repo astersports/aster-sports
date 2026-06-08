@@ -1,0 +1,93 @@
+==============================================================================
+CC -> architect: FORK A MERGE CLOSE — PR #854 (per-message contact toggle)
+Date: 2026-06-08. #854 MERGED to main (squash 005f9e6). Records what shipped,
+the post-clearance AI-draft fix the architect has NOT yet seen, the auto-deploy,
+Frank's post-merge verify, and the remaining fast-follows. Self-contained.
+==============================================================================
+
+0. STATUS
+------------------------------------------------------------------------------
+MERGED + verified on main (005f9e6). Contact toggle + AI-draft fix both live on
+main. Branch deleted. The merge touched supabase/functions/briefing-ai-draft/,
+so deploy-edge-functions.yml auto-redeploys that function (path-scoped) — the
+AI-draft prompt change goes live on that deploy (shared Supabase project).
+
+1. WHAT SHIPPED (final)
+------------------------------------------------------------------------------
+Contact info (signature line + name·title·phone block) is OFF by default on
+every briefing; renders only on per-message opt-in (toggle + "who to include"
+picker). Mechanism: one shared buildSignoffSection gate (folded the 2 duplicated
+helpers, AP#63), threaded via bodyOverrides (9 kinds + rsvp_nudge + academy_
+callup), the weekly_digest manual chain, and the legacy free-form path. UI:
+SignoffContactToggle in the compose step. signoff_message prose independent of
+the toggle. Single render path (preview == send).
+
+Architect-cleared GAP fixes (in the merged PR):
+- GAP 1 (merge-decider): family_guide "Your coaches" block was rendering
+  title·phone UNCONDITIONALLY -> leaked coach phones to parents with the toggle
+  off. Now gated under the same overrides.signoff_enabled. Verified by code-read
+  (coachesBlock renderer emits phone), fixed in-PR.
+- GAP 2: named weekly_digest contact-gate test (digestSignoffGate.test.js) for
+  the 175-family manual digestSend path.
+
+2. POST-CLEARANCE ADDITION — ARCHITECT HEADS-UP (not in your clearance)
+------------------------------------------------------------------------------
+Frank's smoke surfaced two AI-draft issues; ONE is a real coherence gap with
+FORK A, so I fixed it in the same PR AFTER your merge clearance (you have not
+reviewed this change — flagging per the lane model):
+
+- AI-DRAFT BAKED A SIGNATURE. aiDraftPrompt.js (+ its AP#30 Deno mirror
+  briefing-ai-draft/_helpers.ts) explicitly instructed the model to "sign off by
+  name" — so every AI draft ended with "— Frank & Coach Kenny" baked into the
+  message BODY. That directly undermines FORK A (signature is supposed to be the
+  separate, off-by-default element). Fix: removed both "sign off by name"
+  instructions; the AI writes the body only, signature stays the separate signoff.
+- DATA IN THE MESSAGE (operator-directed). The narrativeOnly prompt previously
+  said "do NOT restate raw scores" (assuming the structured block carries them).
+  Frank chose "weave data into the message" — so the prompt now tells the model
+  to weave the key facts (final score, opponent, player of the game, venue)
+  naturally into the recap prose. The structured recap_game_cell still renders
+  too; mild intentional overlap, operator-ratified.
+- Prompt tests updated (no baked signature on either path; weaves data). AP#30
+  mirror audit green (both files in sync).
+
+Smoke false-alarm cleared: "preview not populating" was a misread by Frank — the
+preview was actually populating correctly. No preview bug.
+
+3. CONFIRMS — LOCKED (Frank, this session)
+------------------------------------------------------------------------------
+- C1 default-unsigned: CONFIRMED OK. Briefings end unsigned unless the sender
+  types a signoff or toggles contact on.
+- C2 automated-off: CONFIRMED OK. rsvp_nudge + academy_callup stay contact-off,
+  no opt-in path (no compose UI). Automated mail carries no personal cells.
+- Picker model: SHIP AS-IS (signoff-only). The "who to include" picker governs
+  the signoff; the family_guide coaches_block (when opted in) shows the kid's
+  full team coaches (reference purpose), NOT filtered to the picker. The
+  disclosure-allowlist model was declined. So NO coaches_block-intersection
+  fast-follow.
+
+4. FRANK POST-MERGE VERIFY (AI-draft, once briefing-ai-draft finishes deploying)
+------------------------------------------------------------------------------
+Compose a game_recap / games_recap, click Draft with AI, and confirm:
+  a. The narrative WEAVES IN the data (final score, opponent, etc.).
+  b. There is NO "— Frank & Coach Kenny" (or any name signoff) baked into the
+     AI body. The signature only appears if you toggle contact on.
+If the AI output still bakes a signature or omits data, it's a quick prompt
+fast-follow (the deploy may lag a minute or two behind the merge).
+
+5. REMAINING FAST-FOLLOWS (none blocking)
+------------------------------------------------------------------------------
+- GAP 4: organizations.voice_config.{primary,secondary}_contact_* are dead
+  (zero code refs). DESIGN-LANE data cleanup (MCP UPDATE to strip the keys),
+  GO-gated, whenever Frank wants. Not CC's lane.
+- GAP 3: persist the toggle across a saved/resumed draft — only if Frank wants
+  it (resumes safely OFF today).
+- C1/C2 + the picker ruling: document in the briefings doc.
+
+6. SITUATIONAL (not this PR)
+------------------------------------------------------------------------------
+Programs L99 re-audit (#849-#853) continues to surface real production P0s;
+route through that lane, not here. This session did not touch them.
+==============================================================================
+END — CC FORK A MERGE CLOSE 2026-06-08
+==============================================================================
