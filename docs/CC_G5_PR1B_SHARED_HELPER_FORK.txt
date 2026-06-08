@@ -1,0 +1,138 @@
+==============================================================================
+CC -> ARCHITECT: G5 PR 1b STOP — "ONE shared gated-send helper" collides with
+the repo's path-scoped edge-deploy CI. Architecture ruling owed.
+Date: 2026-06-08 (overnight autonomous build). Per the autonomous-build STOP
+rule (§0: "a build surfaces a contract/architecture fork ... write the TXT,
+stop that item, move to the next independent one") + §11.8.2 (CC does not
+settle an architecture fork unilaterally — surface evidence + a labeled lean).
+PR 1b + G7 are STOPPED pending this ruling. FORK-D, MOAT, G1 built tonight
+(independent of this fork). NOTHING applied, NOTHING merged.
+==============================================================================
+
+0. THE FORK IN ONE LINE
+------------------------------------------------------------------------------
+The build instruction §2 HARD REQUIREMENT — "extract the gated-send slice
+(suppression + pilot gate + dispatch + per-row writeback) into ONE shared Deno
+helper that BOTH send-tournament-message AND the cron call" — has no safe
+implementation in this repo's deploy model: there is no cross-function-dir
+import path that this repo's path-scoped CI will keep deployed, and the one
+mechanism the platform technically supports (`_shared/`) is an explicit
+"Nothing to deploy" dead branch in our workflow. So "one shared helper" must
+become EITHER a single `_shared/` file (verified-hazardous) OR an AP#30 mirror
+(which duplicates the send IO into the cron — the very "second path" §2 forbids).
+Which way is an architecture call on the go-live blast-radius send path.
+
+1. EVIDENCE (verified tonight, file:line — AP#60 source hierarchy)
+------------------------------------------------------------------------------
+- NO `supabase/functions/_shared/` dir exists; grep finds ZERO cross-function-
+  directory imports anywhere (`grep -rn 'from "\.\./' supabase/functions/`
+  returns only `__tests__/computeExpiry.test.ts -> ../_helpers.ts`, i.e. a test
+  importing within its OWN function dir). The repo has never shared code across
+  two function directories.
+- The established pattern is AP#30 MIRROR, even where `_shared` would have
+  worked: `briefing-auto-draft-tick/_reminderSend.ts:31` keeps a LOCAL copy of
+  `mintUnsubscribeUrl` with the comment "Local copy (not imported from
+  send-tournament-message/_lib.ts) because Edge deploys bundle the function
+  directory only — cross-tree imports don't resolve (AP #30 rationale)."
+- `.github/workflows/deploy-edge-functions.yml` is PATH-SCOPED: it deploys only
+  the function dirs whose files changed (lines 56-87). Line 76-82: a push that
+  touches `supabase/functions/**` but matches no individual function dir (the
+  regex strips `_*` dirs) prints **"Push touched supabase/functions/** but no
+  individual function dir matched (likely _shared/ or root file). Nothing to
+  deploy."** and deploys NOTHING.
+- CONSEQUENCE: put the gate in `_shared/gatedSend.ts`; the FIRST deploy (PR 1b
+  changes both function dirs) bundles it fine via the Supabase CLI's relative-
+  import follow. But the NEXT time someone edits ONLY `_shared/gatedSend.ts`
+  (e.g. a suppression-rule tweak), CI deploys nothing — both send-tournament-
+  message and the cron keep running their STALE bundled copy of the gate until
+  some unrelated change forces each to redeploy. A security-critical gate
+  silently diverging from source is precisely the AP#30 failure class
+  ("vitest passes, deploy succeeds, prod runs different code than tests cover"),
+  here aimed at the suppression + pilot fail-closed gate.
+
+2. WHY THIS IS A REAL FORK, NOT A CC IMPLEMENTATION CHOICE
+------------------------------------------------------------------------------
+- The §2 requirement was written, reasonably, against a "shared helper" mental
+  model. This repo's deploy model makes the literal reading hazardous. I can't
+  verify the deploy outcome tonight (edge deploy happens at merge via
+  `supabase functions deploy`, NOT in vitest), so building the wrong branch
+  risks a prod send-path break that only surfaces AFTER Frank merges — the one
+  thing the "nothing safety-critical unwatched" rule exists to prevent.
+- The doctrine-compliant alternative (AP#30 mirror) duplicates the dispatch+
+  writeback IO into the cron, which the §2 instruction explicitly says NOT to do
+  ("Do not build a second ... send path"). The instruction's own two clauses are
+  in tension once the deploy model is taken into account. That tension is the
+  architect's to resolve.
+
+3. RESOLUTION OPTIONS (CC lean labeled — §11.8.2)
+------------------------------------------------------------------------------
+OPT-B1 — Pure GATE-DECISION kernel, mirrored; IO stays per-caller (CC LEAN).
+  Add pure, side-effect-free kernels to the EXISTING G8 mirror pair
+  (`src/lib/briefings/sendDispatch.js` <-> `send-tournament-message/_dispatch.ts`):
+    decideSuppression(recipients, prefsRows) -> { suppressedIds, stillQueued }
+    decidePilotGate(guardians, pilotMode)    -> { abort, nonPilotEmails }
+  Refactor send-tournament-message/index.ts:133-196 to call them (no behavior
+  change). The cron redrive handler calls the SAME decisions via a Deno copy of
+  those kernels (register a 2nd mirror row in edgeFunctionMirrorAudit so the 3
+  copies are byte-locked). The dispatch+writeback IO is per-caller (the cron
+  reuses buildEmailRow + classifyBatchResult logic via its own copy, exactly as
+  _reminderSend.ts reuses mintUnsubscribeUrl via its own copy).
+  + Honors §2's REAL intent — there is no second UNGATED path; both paths run the
+    identical, unit-tested gate DECISION. G7 gets a clean pure helper to test
+    (the §3 prerequisite). Matches the precedent the architect already ratified
+    in this exact seam last session (classifyBatchResult: "pure decision, IO
+    stays in index.ts"). Survives the path-scoped CI: each function redeploys on
+    its OWN dir change; the mirror audit fails loudly if the copies drift.
+  - There are two send IO bodies (gated identically). More mirror surface (3-way
+    instead of the current 2-way). Not literally "one file."
+OPT-B2 — Single `supabase/functions/_shared/gatedSend.ts`, imported by both.
+  + Literally "one helper, one file." Matches §2's words exactly. First deploy
+    bundles correctly.
+  - VERIFIED HAZARD (section 1): edits to `_shared/` alone deploy NOTHING under
+    our CI; dependents run stale gate code. Would need a workflow change
+    (redeploy all `_shared`-importers when `_shared/**` changes) to be safe —
+    itself a CI change on the deploy path, and a first-of-its-kind pattern in
+    this repo. Bigger blast radius than the gate change itself.
+OPT-C — Cron invokes send-tournament-message with a `redrive:true` body flag;
+  the 409 guard becomes `if (alreadySent(message) && !body.redrive) 409`, and
+  the redrive branch re-selects ONLY delivery_status='failed' rows (never
+  'queued') and runs the existing in-function suppression + pilot gate verbatim.
+  + Truest "one mechanism" — literally the same function, same gate, ZERO
+    duplication, no deploy-model problem (only send-tournament-message changes).
+  - Adds a 409-bypass to the message-level idempotency contract that OPT-B was
+    chosen specifically to AVOID touching (your redrive ruling: "no change to
+    the finalize/History/409 contract; purely additive"). So OPT-C reopens the
+    contract OPT-B protected. Surfaced for completeness; defer to your ruling.
+
+CC LEAN: OPT-B1. It satisfies the no-ungated-second-path intent, keeps the
+just-ratified 409/finalize contract untouched (your OPT-B ruling), extends the
+precedent you already approved in this file (the G8 pure-decision/IO split),
+gives G7 a real pure helper to test, and is the only option that is both
+deploy-safe under the current CI AND free of a new CI/contract change. The cost
+is a 3-way byte-locked mirror, which the existing edgeFunctionMirrorAudit already
+makes cheap to enforce. Your call — this is a send-path architecture fork on the
+go-live set, not mine to settle at 1am unwatched.
+
+4. WHAT THIS BLOCKS / DOESN'T
+------------------------------------------------------------------------------
+BLOCKED pending ruling: PR 1b (the cron redrive + the shared/gated factoring),
+  and therefore PR G7 (it tests the helper 1b creates — §3 explicitly says STOP
+  if 1b doesn't expose a cleanly testable pure helper; that exposure is what
+  OPT-B1/B2/C decide).
+NOT BLOCKED (built tonight, separate held PRs + TXTs): FORK-D (resolver fail-
+  close), MOAT (parent-inbox archived filter code half), G1 (CAN-SPAM footer).
+  None depend on this fork.
+Already shipped + unaffected: the redrive_count column (mig 20260608002737) and
+  PR 1a (#831, the queued "Sends needing review" surface). The red escalation
+  ROW for redrive_count>=3 is a small StuckSendsRegion addition that belongs
+  WITH 1b (it renders the cron's escalation output) — held with 1b, not split.
+
+5. WHAT I NEED
+------------------------------------------------------------------------------
+  - Architect: rule OPT-B1 vs OPT-B2 vs OPT-C for the gated-send factoring
+    (CC leans B1). On the ruling I build PR 1b to it + the StuckSendsRegion red
+    escalation row + the §2 tests, then G7 against the exposed pure gate, both
+    held, reported as TXT.
+==============================================================================
+END — CC_G5_PR1B_SHARED_HELPER_FORK
+==============================================================================
