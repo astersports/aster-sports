@@ -36,7 +36,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@4";
 import { buildEmailRow, dispatchPushFanout, mintUnsubscribeUrl } from "./_lib.ts";
-import { alreadySent, classifyBatchResult } from "./_dispatch.ts";
+import { alreadySent, classifyBatchResult, decidePilotGate, decideSuppression } from "./_dispatch.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -139,20 +139,16 @@ Deno.serve(async (req) => {
         .select("guardian_id, unsubscribed_at")
         .in("guardian_id", recipientGuardianIds);
       if (prefsErr) return json({ error: `guardian_email_preferences lookup: ${prefsErr.message}` }, 500);
-      const unsub = new Set((prefs ?? []).filter((p) => p.unsubscribed_at).map((p) => p.guardian_id as string));
-      if (unsub.size) {
+      const { suppressedIds, stillQueued } = decideSuppression(recipients, prefs ?? []);
+      if (suppressedIds.length) {
         // Flip suppressed rows' delivery_status to 'unsubscribed' so the
         // audit trail records the skip (uses an existing allowed value
         // from the delivery_status CHECK constraint — no schema change).
-        const suppressedRows = recipients.filter((r) => r.guardian_id && unsub.has(r.guardian_id));
-        if (suppressedRows.length) {
-          await sb.from("comms_message_recipients")
-            .update({ delivery_status: "unsubscribed" })
-            .in("id", suppressedRows.map((r) => r.id));
-          suppressed = suppressedRows.length;
-        }
+        await sb.from("comms_message_recipients")
+          .update({ delivery_status: "unsubscribed" })
+          .in("id", suppressedIds);
+        suppressed = suppressedIds.length;
         // Drop suppressed rows from the in-memory list so the send loop skips them.
-        const stillQueued = recipients.filter((r) => !r.guardian_id || !unsub.has(r.guardian_id));
         if (stillQueued.length === 0) return json({ ok: true, sent: 0, failed: 0, suppressed, errors: [] });
         recipients.length = 0;
         recipients.push(...stillQueued);
@@ -184,12 +180,11 @@ Deno.serve(async (req) => {
         .eq("org_id", message.org_id)
         .in("id", guardianIds);
       if (gErr) return json({ error: `Pilot check failed: ${gErr.message}` }, 500);
-      const nonPilot = (guardians || []).filter((g) => !g.is_pilot_family);
-      if (nonPilot.length) {
-        const offending = nonPilot.map((g) => g.email).join(", ");
+      const gate = decidePilotGate(guardians, pilotMode);
+      if (gate.abort) {
         return json({
-          error: `PILOT MODE: ${nonPilot.length} non-pilot guardians in queue (${offending}). Aborting. Toggle organization_settings.pilot_mode_enabled=FALSE to allow production sends.`,
-          non_pilot_count: nonPilot.length, pilot_mode_active: true,
+          error: `PILOT MODE: ${gate.nonPilotCount} non-pilot guardians in queue (${gate.nonPilotEmails.join(", ")}). Aborting. Toggle organization_settings.pilot_mode_enabled=FALSE to allow production sends.`,
+          non_pilot_count: gate.nonPilotCount, pilot_mode_active: true,
         }, 403);
       }
     }

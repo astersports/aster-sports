@@ -6,7 +6,7 @@
 // is locked separately by sendIdempotencyInvariant.test.js.
 
 import { describe, expect, it } from 'vitest';
-import { alreadySent, classifyBatchResult } from '../sendDispatch';
+import { alreadySent, classifyBatchResult, decidePilotGate, decideSuppression } from '../sendDispatch';
 
 describe('alreadySent — message-level idempotency (drives the 409)', () => {
   it('true when sent_at is set (a finalized message must 409, never re-send)', () => {
@@ -68,5 +68,71 @@ describe('classifyBatchResult — per-recipient writeback decision', () => {
   it('empty group → empty result (no throw)', () => {
     const c = classifyBatchResult([], { data: { data: [] } });
     expect(c).toEqual({ sentIds: [], failedIds: [], sent: 0, failed: 0, errors: [] });
+  });
+});
+
+// G5 OPT-B: the suppression + pilot gate re-applied at re-drive time (cron path)
+// uses these SAME pure kernels the message-level send delegates to.
+describe('decideSuppression — pure unsubscribe gate', () => {
+  it('suppresses rows whose guardian unsubscribed; keeps the rest', () => {
+    const recipients = [
+      { id: 'r1', guardian_id: 'g1' },
+      { id: 'r2', guardian_id: 'g2' },
+      { id: 'r3', guardian_id: 'g3' },
+    ];
+    const prefs = [
+      { guardian_id: 'g1', unsubscribed_at: '2026-06-01T00:00:00Z' },
+      { guardian_id: 'g2', unsubscribed_at: null },
+    ];
+    const d = decideSuppression(recipients, prefs);
+    expect(d.suppressedIds).toEqual(['r1']);
+    expect(d.suppressed).toBe(1);
+    expect(d.stillQueued.map((r) => r.id)).toEqual(['r2', 'r3']);
+  });
+
+  it('keeps null-guardian (admin BCC) rows and non-unsubscribed rows', () => {
+    const recipients = [
+      { id: 'bcc', guardian_id: null },
+      { id: 'r1', guardian_id: 'g1' },
+    ];
+    const prefs = [{ guardian_id: 'g1', unsubscribed_at: null }];
+    const d = decideSuppression(recipients, prefs);
+    expect(d.suppressedIds).toEqual([]);
+    expect(d.stillQueued.map((r) => r.id)).toEqual(['bcc', 'r1']);
+  });
+
+  it('empty prefs → all rows still queued, none suppressed', () => {
+    const recipients = [{ id: 'r1', guardian_id: 'g1' }, { id: 'r2', guardian_id: 'g2' }];
+    const d = decideSuppression(recipients, []);
+    expect(d.suppressedIds).toEqual([]);
+    expect(d.stillQueued).toHaveLength(2);
+  });
+});
+
+describe('decidePilotGate — pure fail-closed pilot gate', () => {
+  it('pilotMode=false → no abort regardless of guardians', () => {
+    const d = decidePilotGate([{ email: 'a@x.com', is_pilot_family: false }], false);
+    expect(d.abort).toBe(false);
+    expect(d.nonPilotEmails).toEqual([]);
+    expect(d.nonPilotCount).toBe(0);
+  });
+
+  it('pilotMode=true + all pilot families → no abort', () => {
+    const d = decidePilotGate([
+      { email: 'a@x.com', is_pilot_family: true },
+      { email: 'b@x.com', is_pilot_family: true },
+    ], true);
+    expect(d.abort).toBe(false);
+    expect(d.nonPilotCount).toBe(0);
+  });
+
+  it('pilotMode=true + one non-pilot → abort with that email surfaced', () => {
+    const d = decidePilotGate([
+      { email: 'pilot@x.com', is_pilot_family: true },
+      { email: 'leak@x.com', is_pilot_family: false },
+    ], true);
+    expect(d.abort).toBe(true);
+    expect(d.nonPilotCount).toBe(1);
+    expect(d.nonPilotEmails).toEqual(['leak@x.com']);
   });
 });
