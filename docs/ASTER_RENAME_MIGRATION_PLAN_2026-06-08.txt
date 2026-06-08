@@ -1,0 +1,138 @@
+==============================================================================
+ASTER SPORTS RENAME MIGRATION PLAN — retire the `skyfire-app` repo/deploy id
+Date: 2026-06-08. CC plan (grounded against live Vercel/GitHub/repo state).
+Goal: everything in sync under "Aster Sports". NOTHING EXECUTED — this is the
+plan + the decisions needed from Frank. Operator does the account-level steps;
+CC does the in-repo text PR.
+==============================================================================
+
+0. TL;DR
+------------------------------------------------------------------------------
+Most of the rebrand already happened (2026-06-01): the Vercel project is already
+`aster-sports`, the production domain is already `astersports.app`, and the npm
+package is already `astersports`. The ONE big leftover is the GitHub repo name
+`LegacyHoopers/skyfire-app` (and the legacy `skyfire-app.vercel.app` alias).
+Renaming the repo is an account-level action with a few ripple effects — chief
+among them that CC's GitHub tooling is scoped to the repo name and must be
+re-pointed the moment it changes. A handful of in-repo text references (docs,
+one comment, one guard test) get updated by CC in a normal PR. The deeply-
+embedded lineage ids (a migration filename, a calendar dedup key, a CHECK value,
+archive docs) STAY — renaming them breaks things; rationale in §4.
+
+1. CURRENT STATE (grounded this session)
+------------------------------------------------------------------------------
+ALREADY under Aster Sports (no action):
+- Vercel project name = `aster-sports`; production domain = `www.astersports.app`
+  (custom domain on that project); preview URLs = `aster-sports-git-*`.
+- npm package.json name = `astersports` (PR #623).
+- Runtime base URL (app_config.app_base_url) = `https://astersports.app`
+  (cutover migration 20260602135445; email host cutover PR #629).
+- Supabase project ref = `vrwwpsbfbnveawqwbdmj` (opaque id — no "skyfire" in it;
+  nothing to rename; the dashboard *display name* is cosmetic).
+
+STILL says skyfire (the rename surface):
+- GitHub repo = `LegacyHoopers/skyfire-app` (owner is a USER account, not an org).
+- Legacy Vercel alias `skyfire-app.vercel.app` still resolves to the same app
+  (documented DR fallback in DISASTER_RECOVERY.md).
+- In-repo TEXT references (safe to edit): README.md (live URL + clone cmd),
+  CLAUDE.md (§1 repo/url/local-path + the legacy-id banner), DISASTER_RECOVERY.md,
+  docs/LH_OPS_SPEC.md, src/lib/constants.js:89 (a comment), and
+  src/lib/__tests__/docDriftGuardAudit.test.js:25 (asserts the `~/skyfire-app`
+  local-path string).
+
+2. DECISIONS NEEDED FROM FRANK (before anything runs)
+------------------------------------------------------------------------------
+D1 — HOW FAR: (pick one)
+  (A) Rename the repo in place: `LegacyHoopers/skyfire-app` ->
+      `LegacyHoopers/aster-sports`. Lower risk, achieves the rename, repo stays
+      under the LegacyHoopers account.
+  (B) Move under an Aster Sports GitHub ORG: create org `AsterSports`, transfer
+      the repo -> `AsterSports/aster-sports`. This is the truer "all under Aster
+      Sports" (separates the PLATFORM repo from the TENANT account, matching the
+      Aster-Sports-above-Legacy-Hoopers architecture), but it's a TRANSFER
+      (heavier: org creation, member/access re-grant, MCP re-scope, integration
+      re-auth).
+  CC LEAN: (A) now — it gets you the in-sync name with the least disruption; do
+  (B) later only if you want the platform repo formally separated from the LH
+  tenant account. If brand separation is the actual goal of "all under Aster
+  Sports," (B) is the one — say so and I'll expand §3 for the transfer path.
+
+D2 — LEGACY `skyfire-app.vercel.app`: keep it as a redirect (it's a harmless,
+  documented DR fallback host) or remove it. CC LEAN: keep as a redirect for now;
+  retire in a later cleanup. (Removing it means updating DISASTER_RECOVERY.md §134.)
+
+D3 — TIMING: do the rename in a quiet window (no in-flight PRs/builds), because
+  CC's GitHub MCP tooling goes blind for the gap between the rename and the
+  re-scope (step 3.4). ~10 minutes of operator attention.
+
+3. EXECUTION SEQUENCE (Option A; order matters)
+------------------------------------------------------------------------------
+3.1 (CC, anytime) Open the in-repo TEXT PR updating references to aster-sports:
+    README.md, CLAUDE.md §1 + legacy-id banner ("repo/deploy id renamed
+    2026-06-08; skyfire-app retired"), DISASTER_RECOVERY.md, docs/LH_OPS_SPEC.md,
+    src/lib/constants.js:89 comment, and docDriftGuardAudit.test.js:25
+    (`~/skyfire-app` -> `~/aster-sports`). Hold it un-merged until 3.2 lands so
+    the new clone URL is valid (the old URL keeps working via GitHub redirect
+    regardless, so this is belt-and-suspenders).
+3.2 (FRANK, GitHub UI) Settings -> rename repo to `aster-sports`. GitHub
+    auto-creates redirects for the old name (clones, links, API by old name
+    keep working). Instant, reversible.
+3.3 (FRANK/CC) Verify Vercel still builds: Vercel links the repo by numeric
+    repo ID (1206235975), not name, so the git integration should follow the
+    rename transparently — confirm by checking the next push produces a
+    production deploy. (deploy-edge-functions.yml needs NO edit: it uses
+    `--project-ref vrwwpsbfbnveawqwbdmj`; the GitHub Actions runner path
+    `/home/runner/work/aster-sports/...` regenerates from the new name.)
+3.4 (FRANK/operator) Re-point CC's GitHub MCP scope from `legacyhoopers/
+    skyfire-app` to `legacyhoopers/aster-sports` (the remote-execution
+    environment repo scope). Until this is done, CC cannot read/write PRs.
+3.5 (CC) Merge the 3.1 text PR.
+3.6 (FRANK, local) On your machine: `git remote set-url origin
+    git@github.com:LegacyHoopers/aster-sports.git` (redirect makes the old URL
+    keep working, but set it clean). Optionally `mv ~/skyfire-app ~/aster-sports`
+    and update the §12 resume command (CLAUDE.md already updated in 3.1).
+3.7 (CC, verify) Post-rename smoke: a trivial PR creates + auto-merges + Vercel
+    production deploy is green under the new name; `git log` clean.
+
+For Option B, insert before 3.2: create the `AsterSports` org, then "Transfer
+ownership" instead of rename; everything else is the same but re-grant org
+access + re-auth the Vercel + GitHub-App integrations against the new owner.
+
+4. OUT OF SCOPE — must-KEEP legacy ids (renaming breaks things)
+------------------------------------------------------------------------------
+These are NOT the repo/deploy id and are deliberately preserved (CLAUDE.md
+doctrine). Listed so "all under Aster Sports" doesn't accidentally sweep them:
+- `002_skyfire_foundation.sql` migration filename — immutable migration history;
+  renaming desyncs `supabase_migrations.schema_migrations` + breaks `db reset`.
+- `ember_live` CHECK-constraint VALUE — a data value (not "skyfire"); changing
+  it is a data migration with no user benefit.
+- `@ember` ICS `UID` suffix (icalHelpers.js + team-feed) — calendar dedup stable
+  key; changing it DUPLICATES every event in subscribers' calendars.
+- dead `--sf-*` tokens that survive only in docs/archive.
+- historical docs: docs/archive/SKYFIRE_*.md, EMBER_*.md, and brand-named
+  planning docs — archive doctrine: the names ARE the record, never retroactively
+  renamed. The migrations in §1 that mention `skyfire-app.vercel.app` are
+  historical seed rows already superseded by the astersports cutover — left as-is.
+No user-facing string says Skyfire (verified): every remaining hit is a repo id,
+a comment, a doc, a migration filename, or a guard-test string.
+
+5. RISK / ROLLBACK
+------------------------------------------------------------------------------
+- GitHub rename is reversible (rename back); redirects keep old refs alive, so
+  blast radius is small. The only hard-break window is 3.2->3.4 for CC's MCP
+  (mitigated by doing them back-to-back).
+- Vercel + CI follow the repo ID, so deploys are expected to be transparent;
+  3.3 is the explicit verify gate before merging the text PR.
+- No database, no edge-function, no domain change in Option A -> production
+  serving is unaffected throughout (astersports.app already the prod domain).
+
+6. ROUTING
+------------------------------------------------------------------------------
+Frank: answer D1 / D2 / D3. On D1=A, CC opens the 3.1 text PR immediately and
+you run 3.2/3.4 when ready. On D1=B, CC expands the transfer steps first. The
+architect may review this plan; it touches operational doctrine (CLAUDE.md §1 +
+the legacy-id banner), so the CLAUDE.md edit in 3.1 gets the §11.7.7 fresh-
+context doctrine review before merge.
+==============================================================================
+END — ASTER SPORTS RENAME MIGRATION PLAN 2026-06-08
+==============================================================================
