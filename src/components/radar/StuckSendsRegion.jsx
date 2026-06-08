@@ -6,11 +6,12 @@
 // org-scoped via the hook.
 
 import { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, XCircle } from 'lucide-react';
 import BottomSheet from '../shared/BottomSheet';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/useToast';
 import { useStuckSends } from '../../hooks/useStuckSends';
+import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
 import StuckSendCard from './StuckSendCard';
 
 const region = { background: 'var(--as-bg-card)', border: '1px solid var(--as-warning)', borderRadius: 10, boxShadow: 'var(--as-shadow-sm)', overflow: 'hidden' };
@@ -24,14 +25,22 @@ const sbtn = { minHeight: 46, borderRadius: 9, fontSize: 13, fontWeight: 700, fo
 const goBtn = { ...sbtn, background: 'var(--as-accent)', border: '1.5px solid var(--as-accent)', color: 'var(--as-text-inverse)' };
 const darkBtn = { ...sbtn, background: 'var(--as-text-primary)', border: '1.5px solid var(--as-text-primary)', color: 'var(--as-text-inverse)' };
 const cancelBtn = { ...sbtn, background: 'var(--as-bg-card)', border: '1.5px solid var(--as-border-default)', color: 'var(--as-text-secondary)' };
+// Escalation section (red): auto-retry exhausted, surface-only (no actions).
+const escWrap = { borderTop: '1px solid var(--as-danger)', background: 'var(--as-danger-soft)' };
+const escHead = { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 13px', color: 'var(--as-danger)' };
+const escNote = { fontSize: 11, color: 'var(--as-text-secondary)', lineHeight: 1.45, padding: '0 13px 8px' };
+const escRow = { display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderTop: '1px solid var(--as-border-subtle)', minHeight: 44 };
+const escDot = { width: 8, height: 8, borderRadius: '50%', flexShrink: 0 };
+const escTtl = { flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 600, color: 'var(--as-text-primary)' };
+const escCnt = { fontSize: 11, fontWeight: 700, color: 'var(--as-danger)' };
 
 export default function StuckSendsRegion({ orgId }) {
-  const { groups, count, loading, refetch } = useStuckSends({ orgId });
+  const { groups, escalations = [], count, loading, refetch } = useStuckSends({ orgId });
   const { showToast } = useToast();
   const [confirm, setConfirm] = useState(null); // { action: 'resend'|'mark', group }
   const [busy, setBusy] = useState(false);
 
-  if (loading || count === 0) return null; // nothing stuck (or still loading) -> region absent
+  if (loading || (count === 0 && escalations.length === 0)) return null; // nothing stuck/escalated (or loading) -> region absent
 
   const run = async () => {
     const { action, group } = confirm;
@@ -61,21 +70,45 @@ export default function StuckSendsRegion({ orgId }) {
   const isResend = confirm?.action === 'resend';
   const n = confirm?.group?.recipients.length ?? 0;
 
+  const borderColor = count > 0 ? 'var(--as-warning)' : 'var(--as-danger)';
   return (
-    <section style={region} aria-label="Sends needing review">
-      <div style={head}>
-        <span style={rc}><AlertTriangle size={16} strokeWidth={1.75} aria-hidden="true" /></span>
-        <div style={rt}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--as-text-primary)' }}>Sends needing review</div>
-          <div style={{ fontSize: 11, color: 'var(--as-text-secondary)' }}>Interrupted before delivery could be confirmed</div>
+    <section style={{ ...region, border: `1px solid ${borderColor}` }} aria-label="Sends needing review">
+      {count > 0 && (
+        <div style={head}>
+          <span style={rc}><AlertTriangle size={16} strokeWidth={1.75} aria-hidden="true" /></span>
+          <div style={rt}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--as-text-primary)' }}>Sends needing review</div>
+            <div style={{ fontSize: 11, color: 'var(--as-text-secondary)' }}>Interrupted before delivery could be confirmed</div>
+          </div>
+          <span style={cnt}>{count}</span>
         </div>
-        <span style={cnt}>{count}</span>
-      </div>
+      )}
       {groups.map((g) => (
         <StuckSendCard key={g.messageId} group={g}
           onResend={() => setConfirm({ action: 'resend', group: g })}
           onMark={() => setConfirm({ action: 'mark', group: g })} />
       ))}
+      {escalations.length > 0 && (
+        <div style={escWrap}>
+          <div style={escHead}>
+            <XCircle size={16} strokeWidth={1.75} aria-hidden="true" />
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Auto-retry exhausted</div>
+          </div>
+          <div style={escNote}>Auto-retry exhausted (3 attempts) — these failed to send and need manual attention.</div>
+          {escalations.map((g) => {
+            const en = g.recipients.length;
+            const label = KIND_METADATA[g.kind]?.label || g.kind;
+            const title = g.teamName ? `${g.teamName} · ${g.subject || label}` : (g.subject || label);
+            return (
+              <div key={g.messageId} style={escRow}>
+                <span style={{ ...escDot, background: g.teamColor || 'var(--as-danger)' }} aria-hidden="true" />
+                <span style={escTtl}>{title}</span>
+                <span style={escCnt}>{en} failed</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
       <BottomSheet open={!!confirm} onClose={() => { if (!busy) setConfirm(null); }}>
         <div style={sheet}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-text-primary)' }}>

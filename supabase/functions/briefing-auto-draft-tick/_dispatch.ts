@@ -1,6 +1,16 @@
-// Pure dispatch-decision kernels for the send-tournament-message edge fn.
-// AP#30 mirror: this is the Deno mirror; the vitest source of truth is
-// src/lib/briefings/sendDispatch.js (keep in sync).
+// Pure dispatch-decision kernels — the CRON's mirror copy.
+// AP#30 mirror: this is the cron's Deno mirror; the vitest source of truth is
+// src/lib/briefings/sendDispatch.js, and send-tournament-message keeps its own
+// Deno mirror at supabase/functions/send-tournament-message/_dispatch.ts. All
+// three stay byte-near-identical apart from TS annotations.
+//
+// Why the cron needs a LOCAL copy (not a cross-tree import): Edge deploys
+// bundle the function directory only, so importing from a sibling function's
+// directory doesn't resolve at deploy time (AP#30 rationale). The G5 OPT-B
+// re-drive sweep (_redrive.ts) imports decideSuppression/decidePilotGate/
+// classifyBatchResult from THIS file so the pilot + suppression gate is
+// re-applied at re-drive time using the SAME pure decision logic the
+// message-level send uses.
 //
 // Why this exists (G8 / SEAM-3): the recovery sweep (G5) re-drives stuck sends.
 // This proves the PARTIAL idempotency that DOES hold: (1) a message-level guard

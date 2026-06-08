@@ -54,3 +54,23 @@ export function classifyBatchResult(group, { data, error } = {}) {
     errors: failedRows.map((d) => `${d.r.email_at_send}: ${d.err}`),
   };
 }
+
+// Pure suppression decision: given recipient rows and their guardians'
+// email-preference rows, which rows are suppressed (guardian unsubscribed) vs
+// still sendable. Mirrors the inline logic in index.ts; IO (the status flip +
+// recipient reassignment) stays in the caller.
+export function decideSuppression(recipients, prefsRows) {
+  const unsub = new Set((prefsRows ?? []).filter((p) => p.unsubscribed_at).map((p) => p.guardian_id));
+  const suppressedIds = (recipients ?? []).filter((r) => r.guardian_id && unsub.has(r.guardian_id)).map((r) => r.id);
+  const stillQueued = (recipients ?? []).filter((r) => !r.guardian_id || !unsub.has(r.guardian_id));
+  return { suppressedIds, stillQueued, suppressed: suppressedIds.length };
+}
+
+// Pure pilot fail-closed gate: when pilot mode is on, any guardian_id-bearing
+// recipient whose guardian is not is_pilot_family aborts the whole send. Admin
+// BCC rows (no guardian) are not in `guardians`. pilotMode=false -> no gate.
+export function decidePilotGate(guardians, pilotMode) {
+  if (!pilotMode) return { abort: false, nonPilotEmails: [], nonPilotCount: 0 };
+  const nonPilot = (guardians ?? []).filter((g) => !g.is_pilot_family);
+  return { abort: nonPilot.length > 0, nonPilotEmails: nonPilot.map((g) => g.email), nonPilotCount: nonPilot.length };
+}

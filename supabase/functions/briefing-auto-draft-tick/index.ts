@@ -25,6 +25,7 @@ import {
 } from "./_handlers.ts";
 import { handleEventReminder } from "./_reminders.ts";
 import { handleEventChangeDispatch } from "./_changeAlertDispatch.ts";
+import { handleRedriveSweep } from "./_redrive.ts";
 
 interface TriggerRow {
   id: string;
@@ -116,13 +117,19 @@ Deno.serve(async (req) => {
   // in_app-only rows cleared). Independent of trigger rows. Wave 3.A #19 P0-1.
   const changeDispatch = await handleEventChangeDispatch(sb, now, SUPABASE_URL, expected);
 
+  // G5 OPT-B: re-drive provably-safe 'failed' recipients (no email sent) on
+  // dispatched messages, capped at redrive_count < 3, re-applying the pilot +
+  // suppression gate via the shared kernels. Independent of trigger rows; never
+  // touches ambiguous 'queued' rows (human-review only, PR 1a).
+  const redriveSweep = await handleRedriveSweep(sb, now);
+
   let query = sb.from("briefing_triggers")
     .select("id, org_id, team_type_id, trigger_event, briefing_kind, lead_time_hours, active")
     .eq("active", true);
   if (forceEvent) query = query.eq("trigger_event", forceEvent);
   const { data: triggers, error: trigErr } = await query;
   if (trigErr) return json({ error: trigErr.message }, 500);
-  if (!triggers || triggers.length === 0) return json({ processed: 0, expire_sweep: sweepResult, change_dispatch: changeDispatch, results: [], force: { forceEvent, forceNow } });
+  if (!triggers || triggers.length === 0) return json({ processed: 0, expire_sweep: sweepResult, change_dispatch: changeDispatch, redrive_sweep: redriveSweep, results: [], force: { forceEvent, forceNow } });
 
   // Per-org collapse: each (org_id, trigger_event) pair runs once.
   const seen = new Set<string>();
@@ -147,6 +154,7 @@ Deno.serve(async (req) => {
     drafts_created: draftsCreated,
     expire_sweep: sweepResult,
     change_dispatch: changeDispatch,
+    redrive_sweep: redriveSweep,
     results,
     force: forceEvent || forceNow ? { forceEvent, forceNow } : undefined,
   });
