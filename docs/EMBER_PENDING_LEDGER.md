@@ -1821,6 +1821,24 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   + parent_select_own_recipients) + Tier 0 ghost migration 20260603104534. Tomorrow: Frank
   smokes + merges 1b->G7 then the rest; architect rules the 1b fork + brand_footer + applies
   the GO-gated migrations.
+- **OVERNIGHT BUILD RESOLVED + ARCHITECT RULINGS LANDED (2026-06-08)** — Frank smoked the
+  3 held PRs (passed). **MERGED:** FORK-D #835, MOAT #836. **Migrations applied + mirrored
+  (#840):** parent-moat RLS backstop 20260608013307 (pairs with MOAT) + Tier 0 weekly_digest
+  narrowing 20260608083740 (drops 'draft', closes BUG A churn); orphan ghost 20260603104534
+  RETIRED. **#825** (parallel 8-agent audit) CLOSED as superseded; its audit TXT preserved on
+  main via #843. **Architect rulings (ARCHITECT_RULINGS_DECISIONS_1_2_2026-06-08):** Decision 1
+  = **OPT-B1** (pure decideSuppression/decidePilotGate kernels in the G8 mirror, 3-way
+  byte-locked; send-tournament-message + cron call them; IO per-caller) — PR 1b building, then
+  G7 (decidePilotGate vitest). Decision 2 = family_guide switch brand_footer -> full `footer`
+  kind (for the unsubscribe half) + verify applyUnsubscribeUrl; coach_roundup address part now
+  MOOT (see G1 below). **G1 (#837) CLOSED — DO NOT render any address to families.** Operator
+  directive 2026-06-08: organizations.mailing_address (Byram Brook) is **INTERNAL-ONLY for tax**
+  and must never appear in family communications. The footer-address approach is dropped;
+  mailing_address stays an internal data column, never rendered. **CAN-SPAM physical-address
+  requirement DEFERRED to counsel** (the open CAN-SPAM one-liner): bulk family email legally
+  needs a PUBLIC physical address (e.g. a USPS PO box), not the tax address — counsel provides
+  the value + the call before the 175-family send. This also moots the address half of the
+  brand_footer flag; the family_guide unsubscribe-switch (Decision 2) stands.
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 
