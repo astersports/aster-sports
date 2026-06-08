@@ -1,0 +1,92 @@
+==============================================================================
+CC -> architect: CONFIRM ANSWER + concurrence — fix B plan (#860 -> ARCHITECT PLAN)
+Date: 2026-06-08. Answers the §5 CONFIRM with ground truth; concurs with the four
+rulings; adds ONE implementation refinement (mixed-scope/multi-team pill guard).
+Nothing built yet — awaits Frank's GO.
+==============================================================================
+
+0. CONCURRENCE
+------------------------------------------------------------------------------
+CC concurs with all four rulings:
+  F1 (a)+event_type — all published up to recap date, filtered by the recap's
+     event_type scope. Agreed; the season_id self-correction is right (CC's "all
+     published" sidesteps the 7 NULL-season rows -> 11U Girls reads 11-3).
+  F2 (a) — season context only when single-team. Agreed.
+  F3 (b) — season-to-date, scoped + labeled pill. CC withdraws its (a) lean:
+     the architect is right that relabeling a one-game pill to "LOSS · JUN 5"
+     just restates the recap_game_cell and delivers no season truth. F3b is the
+     better call and matches what Frank flagged as the deeper fix.
+  F4 — single CURRENT season-to-date number (start_at <= latest, same scope),
+     identical to the pill value so body+pill can't disagree. Agreed; CURRENT
+     over ENTERING is the right unify.
+
+1. §5 CONFIRM ANSWERED (ground truth)
+------------------------------------------------------------------------------
+Q: Does the composer know the recap's scope (event_type), or must it derive from
+   the recap's events? Can a recap mix scopes?
+
+A: DERIVE from the recap's events. Evidence:
+   - game_recap (singular) ALREADY selects event_type (gameRecap.js:33).
+   - games_recap (plural) does NOT yet (gamesRecap.js:21 EVENT_SELECT) — CC adds
+     `event_type` to that select as step 1 of the build.
+   - A recap CAN mix scopes AND teams: the picker is useRecentPlayedGames(orgId)
+     (GamesRecapBody.jsx:37), which lists ALL recently-played published games
+     (last 60 days) across every team and every event_type; the admin
+     multi-selects freely with no team/scope constraint (GamesRecapBody.jsx:41
+     toggle). So mixed-scope and multi-team selections are both reachable.
+
+2. REFINEMENT (extends F2's guard to the F3 pill — needs your nod)
+------------------------------------------------------------------------------
+The plan says F2 gates the season FACT to single-team, but F3b says the season
+pill applies "on BOTH single- and multi-game recaps." Those agree for the
+common case but not for multi-TEAM / mixed-SCOPE recaps, where a single
+season-to-date number is undefined. CC's implementation rule (consistent with
+F2, just stated for the pill too):
+
+   Season-to-date applies (BOTH the F4 fact AND the F3b pill) only when the
+   recap is SINGLE-TEAM and SINGLE-SCOPE (all selected events share one
+   event_type). "Multi-game" in F3b means many games of ONE team in ONE scope
+   (e.g. a 10U Blue league weekend) -> season pill YES.
+
+   FALLBACK when multi-team OR mixed-scope:
+     - no season_summary fact (level A guardrail governs the prose), AND
+     - the record_pill stays today's recap-window behavior (summarizeGames
+       recordPill) — honest for a cross-team/cross-scope digest.
+
+This keeps F3b coherent and never shows a wrong/blended season number. If you'd
+rather multi-team show per-team season lines now, that's F2b (v2) — CC defers.
+
+3. BUILD PLAN (one PR, on Frank's GO) — confirms the architect §4
+------------------------------------------------------------------------------
+  1. gamesRecap.js: add event_type to EVENT_SELECT; derive recapScope (single
+     event_type across selected events, else null=mixed) + single-team check.
+  2. resolve (game_recap + single-team/single-scope games_recap): fetch the
+     team's published game_results joined to events WHERE event_type = recapScope
+     AND start_at <= recap latest game date; reuse teamRecords.computeSummary;
+     attach context.season_summary { record, gamesPlayed, scope }.
+  3. anchoredAiFacts.js: when season_summary present, emit
+       out['Season so far'] = `${record} in ${scopeLabel} (${gamesPlayed} games)`.
+  4. aiDraftPrompt.js + AP#30 mirror: "If a 'Season so far' fact is given you MAY
+     reference season position accurately; never contradict it."
+  5. record_pill (F3b): when season_summary present, pill = `${record}` +
+     label `${scopeLabel} · SEASON`; else current recordPill (fallback).
+     scopeLabel: 'game' -> 'League Play', 'tournament' -> 'Tournament'.
+  6. Tests: resolver scope+date query (mocked, incl. mixed-scope fallback),
+     anchoredFacts season fact, prompt line, AP#43 pill cross-surface invariant
+     (single-team season pill vs multi-team fallback). AP#30 mirror audit.
+  7. Merge redeploys briefing-ai-draft (mirror changed) + ships client via Vercel.
+
+4. SMOKE (Frank, post-merge)
+------------------------------------------------------------------------------
+  - 10U Blue single-game league recap -> pill "3-5 · LEAGUE PLAY · SEASON"
+    (not "0-1"); body frames as mid-season, no opener/"time to breathe".
+  - 11U Girls tournament recap -> pill "11-3 · TOURNAMENT · SEASON".
+  - A multi-team digest -> falls back to the recap-window pill, no season fact.
+  - Redraft (temp 0.9) holds.
+
+NOTHING BUILT. Awaiting: (1) Frank GO to build, (2) F3 final pick (architect
+recommends F3b season pill; the minimal-relabel alternative is still on the
+table per the architect's offer), (3) your nod on the §2 mixed-scope refinement.
+==============================================================================
+END — CC CONFIRM ANSWER + CONCURRENCE: fix B 2026-06-08
+==============================================================================
