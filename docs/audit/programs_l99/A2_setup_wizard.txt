@@ -1,0 +1,327 @@
+================================================================================
+AGENT A2 — L99 AUDIT: PROGRAM SETUP WIZARD (create-new flow)
+AsterSports "programs" section | 2026-06-08 | READ-ONLY
+================================================================================
+Scope files:
+  src/pages/admin/ProgramSetupPage.jsx
+  src/components/admin/program-setup/ProgramTypeChooser.jsx
+  src/hooks/useProgramSetup.js
+  src/lib/programSetup.js
+  src/lib/programRegistry.js
+Supporting (read for trace): components/register/fields.jsx, registerStyles.js,
+  admin/program-setup/DivisionRows.jsx, admin/AdminBackHeader.jsx, App.jsx,
+  lib/__tests__/programRegistry.parity.test.js
+Methodology: §16.15 (a)–(e). AP#60: every schema/RLS/constraint claim below is
+verified by live SELECT against vrwwpsbfbnveawqwbdmj (not inferred).
+
+LIVE-DB GROUNDING (verified this session):
+  - program_type enum (pg_enum): season, tryout, camp, clinic, interest_list,
+    evaluation, other  → 7 values. MATCHES PROGRAM_TYPE_KEYS exactly.
+  - programs constraints: ONLY programs_status_check
+    CHECK status IN ('active','draft','archived'). (No date/window CHECKs in DB —
+    date logic is app-only via validateProgramDates.)
+  - programs indexes:
+      programs_public_slug_key       UNIQUE (public_slug) WHERE public_slug IS NOT NULL  [GLOBAL, cross-org]
+      programs_published_slug_idx    (public_slug) WHERE is_published=true              [non-unique]
+      programs_one_active_season_per_org  UNIQUE (org_id) WHERE status='active' AND program_type='season'
+  - RLS: programs_insert WITH CHECK user_has_role_in_org(org_id,['admin']);
+    divisions_insert + division_fees_insert same. SELECT = org_id = ANY(current_user_org_ids()).
+  - divisions: gender nullable text, CHECK divisions_gender_check gender IN ('M','F')
+    (NULL allowed → "Mixed/—" path is null, passes). program_id NOT NULL, org_id NOT NULL.
+  - division_fees: division_id NOT NULL, fee_type USER-DEFINED(enum) NOT NULL,
+    amount_cents int NOT NULL.
+  - Route gate: App.jsx:106 /admin/programs/new wrapped in <Protected allowedRoles={['admin']}>
+    → RequireAuth allowedRoles. Admin-only confirmed.
+
+================================================================================
+(a) INITIAL LINE-BY-LINE PASS — findings P0/P1/P2/P3
+================================================================================
+
+--- [P1][AP#36 / kindness §16.3] useProgramSetup.js:38 — single-active-season
+    unique violation surfaces a RAW Postgres error string to the admin.
+    The create writes status from statusForProgramType(); for program_type='season'
+    that's 'draft' (registry season.defaultStatus='draft'), so a normal season
+    create does NOT hit programs_one_active_season_per_org (index is WHERE
+    status='active'). GOOD — draft-on-create deliberately dodges the collision at
+    create time (confirmed: registry comment lines 34-37 + programSetup.js:11-16).
+    BUT: the create path still does `if (e1) { setError(e1.message); ... }` — it
+    forwards the raw DB `error.message` verbatim. If ANY insert error fires
+    (the slug global-unique index below, a future activate-time path that routes
+    through here, an RLS denial, a NOT NULL miss), the admin sees a Postgres
+    string like "duplicate key value violates unique constraint
+    programs_public_slug_key" or "new row violates row-level security policy".
+    That is the §16.3 anti-pattern ("Error 403" / "Operation failed" raw).
+    Evidence: useProgramSetup.js:38 (e1.message), :51 (e2.message), :60 (e3.message).
+    LEAN: map known constraint names (programs_public_slug_key, RLS '42501',
+    programs_one_active_season_per_org) to kindness copy before setError; raw
+    message only as last-resort fallback. The slug path is partially guarded by
+    checkSlugAvailable (pre-insert) but that guard is per-org while the DB index
+    is GLOBAL — see next finding — so a raw collision IS reachable.
+
+--- [P1][AP#60 / data-integrity] programSetup.js:31-38 + DB —
+    SLUG UNIQUENESS SCOPE MISMATCH. checkSlugAvailable() filters
+    `.eq('org_id', orgId).ilike('public_slug', slug)` → per-org check. But the
+    enforcing DB index programs_public_slug_key is UNIQUE on (public_slug) GLOBALLY
+    (cross-org), WHERE public_slug IS NOT NULL. So: Org A already has slug "spring-2026";
+    Org B's admin types/derives "spring-2026" → checkSlugAvailable queries only Org B's
+    rows, returns null (free), the INSERT then RAISES a global unique violation, and
+    the admin gets the raw Postgres string (finding above). The pre-check's own comment
+    (programSetup.js:26 "App-level public_slug uniqueness on (org_id, slug) — the DB
+    has no unique constraint") is STALE/WRONG: the DB DOES have a unique constraint,
+    and it's cross-org, not (org_id, slug). This is a live correctness + first-cross-org-
+    customer bug (the platform is multi-tenant; today single-org Legacy Hoopers masks it).
+    Evidence: live pg_indexes programs_public_slug_key def vs checkSlugAvailable .eq org filter.
+    LEAN: either (1) make the pre-check global (drop the org_id filter) to match the DB,
+    OR (2) change the DB index to UNIQUE(org_id, public_slug) so slugs are org-scoped
+    (the /r/<slug> public route resolution must then also be org-aware). (1) is the
+    smaller, ship-now fix and matches the DB's current contract; flag (2) to architect
+    as the truer design if public links are meant to be per-org. Commit-to-lean: (1) now.
+
+--- [P2][AP#15 / FullScreenForm vs BottomSheet] ProgramSetupPage.jsx (whole page) —
+    PASS, noting for the record. The create form has 7+ fields (type, name, start,
+    end, slug, reg-opens, reg-closes, publish toggle, + N division sub-forms). Anti-
+    pattern #15 mandates FullScreenForm for 3+ field forms, NOT BottomSheet. This page
+    is a full-page route (ProgramSetupPage at /admin/programs/new, maxWidth 600 centered
+    wrap), which satisfies the intent (full-screen, not a sheet). No BottomSheet used.
+    COMPLIANT.
+
+--- [P2][§16.1 optimistic-vs-pessimistic] useProgramSetup.js:18-66 — PASS.
+    A create is a single logical write; §16.1 says per-row writes ship optimistic but
+    a CREATE that must return a server id for redirect is correctly PESSIMISTIC here
+    (await insert → .select('id').single() → navigate on r.ok). saving flag disables
+    the button (ProgramSetupPage:62). Correct. No optimistic-redirect-before-confirm bug.
+
+--- [P2][stale comment / AP#9 "don't refactor unrelated"] ProgramSetupPage.jsx:10-12 —
+    STALE HEADER COMMENT. The comment says: "Season-first per Q-3 ... Tryout/Camp are
+    deferred follow-ups (the picker shows them as 'coming soon')." This is FALSE in the
+    current code: ProgramTypeChooser renders ALL 7 PROGRAM_TYPE_KEYS as fully-active,
+    selectable chips (ProgramTypeChooser.jsx:7,13-24) — none are "coming soon", and the
+    registry gives camp/clinic/tryout/evaluation/interest_list/other full create rules
+    (programRegistry.js:45-81). The wizard genuinely creates any of the 7. Doc-vs-impl
+    drift; misleads the next reader about which types ship.
+    LEAN: update the header comment to reflect all-7-live (1-line, no logic change).
+
+--- [P2][§16.4 a11y / labels] ProgramTypeChooser.jsx:11 + DivisionRows gender —
+    The type chooser uses <Field label="Program type"> with NO htmlFor and the control
+    is a row of <button> chips (not a labelable input). The visible "Program type" text
+    is therefore an orphan <label> (no `for`, wraps nothing). Chips DO carry aria-pressed
+    (good). But there's no group semantics: screen-reader users hear 7 unlabeled toggle
+    buttons with no "Program type" group association. Minor — text is visible — but the
+    <label> is non-functional.
+    Evidence: ProgramTypeChooser.jsx:11 Field label has no htmlFor; fields.jsx:15-21
+    renders <label> only when label present, htmlFor undefined → <label> with no `for`.
+    LEAN: wrap chips in role="radiogroup" aria-label="Program type" (chips become
+    role="radio" aria-checked), or render the label as a plain <div>/legend not <label>.
+
+--- [P3][tap target §7] ProgramTypeChooser.jsx:33 chip minHeight:34 — BELOW the 44px
+    minimum tap-target rule (CLAUDE.md §7 "Tap targets: 44px minimum (non-negotiable)").
+    These are interactive selection chips, not text. 34px < 44px.
+    Evidence: chip style minHeight:34 (line 33). Compare AdminBackHeader minHeight:44,
+    primaryBtn minHeight:44, inputs minHeight:44.
+    LEAN: bump chip minHeight to 44 (or accept as a documented chip exception — but the
+    rule says non-negotiable, so this is a real miss). P3 because chips are wide and
+    horizontally easy to hit, but it violates the locked rule.
+
+--- [P3][tokens §3 / AP#8] ALL scope files — PASS. No hardcoded hex anywhere.
+    Every color is var(--as-*): chooser (--as-accent, --as-text-inverse, --as-bg-card,
+    --as-border-default, --as-text-secondary, --as-bg-secondary, --as-border-subtle),
+    page (--as-text-primary, --as-text-tertiary, --as-danger, --as-danger-soft),
+    fields/registerStyles (--as-bg-tertiary, --as-border-default, --as-accent). Inputs
+    are 44px, 1.5px border, 10px radius (fields.jsx:5-9) per §7. COMPLIANT. (No focus
+    RING though — see next.)
+
+--- [P3][§7 accent focus ring] fields.jsx:8 inputStyle has `outline:'none'` and NO
+    replacement focus ring (no :focus border-color swap, no box-shadow accent ring).
+    §7 requires "accent focus ring" on inputs. Setting outline:none WITHOUT a visible
+    focus substitute is also a §16.4 keyboard-a11y regression (focus invisible for
+    keyboard users). Note: this is a shared register-wizard primitive used beyond this
+    slice, so the fix is broader than the program wizard — flag, don't scope-creep.
+    Evidence: fields.jsx:8 `outline:'none'`; no focus style in the module.
+    LEAN: add :focus-visible accent ring to inputStyle (shared primitive; coordinate
+    with the registration-wizard owners — out of this slice to fix, in-scope to flag).
+
+================================================================================
+(b) DEEP-READ ADDENDUM — SECOND PASS (catches ~40% the first pass missed)
+================================================================================
+
+--- [P1][validation gap] ProgramSetupPage.jsx:23 + useProgramSetup.js:18-66 —
+    DIVISION FEES SILENTLY DROPPED, no feedback. divInput filters divisions to only
+    those with a non-blank name (useProgramSetup.js:41 `.filter(d => d.name?.trim())`).
+    A season created with the default single blank-name division row (ProgramSetupPage
+    initial state line 20: one empty division) and a fee typed but NO name → the row is
+    dropped entirely (no division, no fee), with ZERO warning. The admin filled in
+    "Season fee $800" but it vanishes because they didn't name the division. `valid`
+    (line 23) only checks form.name.trim() — it never validates that a season has at
+    least one named division. So a season can be created with no divisions at all and
+    the admin is redirected to the detail page as if success.
+    Evidence: ProgramSetupPage.jsx:23 `valid = form.name.trim().length > 0`;
+    useProgramSetup.js:41 name-filter; no min-division guard.
+    LEAN: for program_type='season', require ≥1 named division (block submit + inline
+    msg), or at minimum warn if a fee is entered on an unnamed row. §16.3 kindness.
+
+--- [P2][AP#36 destructured-default — NEAR MISS, actually OK] useProgramSetup.js:50,53 —
+    `const { data: divs, error: e2 } = ...insert(...).select(...)` then
+    `(divs || []).map(...)`. This is the CORRECT AP#36 shape (destructure error, check
+    e2 at :51 BEFORE using divs, `|| []` only as the success-zero-rows fallback). Same
+    at :35 in checkSlugAvailable (`const { data, error }` then check error). NO AP#36
+    swallow in this slice. Explicitly verified — the hook header comment line 12 claims
+    compliance and it holds. PASS.
+
+--- [P2][fee-match fragility] useProgramSetup.js:54 — feeRows matches the inserted
+    division back to its fee by NAME string equality
+    (`divInput.find(d => d.name.trim() === dv.name)`). If two divisions share the same
+    name (e.g. two "11U Girls" rows — nothing prevents it; no client or DB uniqueness on
+    division name within a program), .find() returns the FIRST match and BOTH inserted
+    divisions get the first row's fee. Low likelihood (admin error) but silent wrong-fee.
+    Evidence: useProgramSetup.js:53-57. No dedup on division name.
+    LEAN: zip by index instead of name-match (divs come back in insert order from a
+    single .insert(array)), or block duplicate division names. P2.
+
+--- [P2][reg window / publish coherence] ProgramSetupPage.jsx:49-52 + useProgramSetup.js —
+    is_published can be set true with NO reg_opens_at/reg_closes_at and no slug. A
+    published program with public_slug=null is reachable only via... nothing (the public
+    /r/<slug> route needs a slug). The checkbox copy says "parents can register at the
+    public link" but if slug is blank AND name is blank-ish the slug auto-derives from
+    name (line 24 slugPreview = slugify(public_slug||name)) — OK since name is required.
+    But publishing with no reg window means the public page has no open/close gating
+    semantics. Not a crash; a coherence gap. Also: is_published=true + status='draft'
+    (the season default) is an odd pair — a "draft" season that is simultaneously
+    "published" to parents. No guard reconciles publish vs status.
+    Evidence: ProgramSetupPage.jsx:50 (publish), useProgramSetup.js:32-34 (status from
+    type=draft for season, is_published from form independently).
+    LEAN: flag to architect — should is_published be allowed while status='draft'? At
+    minimum, if is_published require a reg window or warn. (Fork — see (forks) below.)
+
+--- [P3][date input type mismatch vs storage] programSetup.js:44,61-64 + ProgramSetupPage:46-47 —
+    reg_opens_at/reg_closes_at inputs are type="date" (ProgramSetupPage.jsx:46-47), so
+    they yield 'YYYY-MM-DD'. dayBoundaryTs() then appends T00:00:00 / T23:59:59 to make a
+    timestamp. validateProgramDates (programSetup.js:48-53) compares reg_opens_at >
+    reg_closes_at as DATE strings (both 'YYYY-MM-DD') — fine. BUT the function header
+    comment (programSetup.js:42-43) says "reg_* are datetime-local 'YYYY-MM-DDTHH:MM'" —
+    STALE: the actual inputs are type="date" (date-only), not datetime-local. The
+    .slice(0,10) at line 51 is a no-op safety on an already-10-char date. Comment drift,
+    not a logic bug (the date-only path works), but misleads.
+    LEAN: fix comment to say date-only. P3.
+
+--- [P3][redirect-on-blocked-error] ProgramSetupPage.jsx:26-29 — handleCreate only
+    navigates when r.ok; on error it stays and `error` renders (line 61). Correct. No
+    redirect-before-confirm. PASS (re-confirmed under deep read).
+
+--- [P2][AP#28 registry dispatch] programRegistry.js + consumers — STRONG PASS.
+    PROGRAM_TYPE_REGISTRY is the single source; statusForProgramType/divisionsApplyTo/
+    programDefaultsCompetitive/ProgramTypeChooser TYPES all read programRule(type) — no
+    per-type switch anywhere in the slice. programRule() has a safe `|| .other` fallback
+    (line 86), never throws on an unlisted type. This is exactly the AP#28 registry-
+    dispatch discipline. The parity test (programRegistry.parity.test.js) asserts
+    registry keys === PROGRAM_TYPE_KEYS === DB enum (reconstructed from migrations, AP#60)
+    === chooser derivation, plus competitive===isCompetitiveSlug(defaultTeamType), plus
+    full field-set presence, plus defaultStatus ∈ DB CHECK. AP#34 (registry/caller drift)
+    is actively CI-guarded. EXEMPLARY — no finding, called out as the reference pattern.
+
+--- [P3][program_type='other' wiring] VERIFIED end-to-end. enum has 'other' (live);
+    PROGRAM_TYPE_KEYS includes 'other' (line 31); registry.other row present
+    (lines 75-80: defaultStatus draft, hasDivisions false, defaultTeamType training_only,
+    competitive false, chooserHelper present); chooser renders it (derived from KEYS);
+    statusForProgramType('other')→'draft'; divisionsApplyTo('other')→false (no division
+    UI, gated by ProgramSetupPage.jsx:54 `program_type==='season'`). Fully wired. PASS.
+
+================================================================================
+(c) ANTI-PATTERN CROSS-REFERENCE (§11 #1–#63)
+================================================================================
+  #8  hardcoded hex → CSS vars: PASS (all var(--as-*), no hex in slice).
+  #15 BottomSheet for 3+ field form → FullScreenForm: PASS (full-page route, no sheet).
+  #28 calendar/registry dispatch via registry not switch: STRONG PASS (programRegistry).
+  #34 registry/caller drift, caller migration: PASS — parity test + safe fallback;
+      no dangling caller of a removed key (no removals in slice).
+  #36 destructured-default swallow: PASS — every {data,error} checks error first
+      (useProgramSetup.js:35,38,51,60; checkSlugAvailable :35).
+  #39 position+hedge: applied to forks below (committed leans, not bet-hedging).
+  #43 cross-surface invariant test: the program-TYPE LABEL is the PATTERN A #63 risk —
+      see below.
+  #60 fact-grounding: all schema/RLS/index/CHECK claims verified by live SQL this session.
+
+  PATTERN A (#63) HUNT — same-concept divergent source/scope across surfaces:
+  ----------------------------------------------------------------------------
+  The program-type LABEL ("Season", "Camp", "Interest list", "Other") and per-type
+  metadata (noun, badgeVariant, chooserHelper, defaultStatus) render in the create
+  wizard via programRule(key).label / .chooserHelper. The registry header comment
+  (programRegistry.js:4-6) explicitly lists OTHER consumers of the SAME concept:
+  PROGRAM_NOUN, programBadge, AdminProgramsPage filters, defaultTeamTypeSlugForProgram,
+  TeamFormSheet competitive warning. Those live OUTSIDE this slice (Agents A1/A3+).
+  GOOD NEWS — this is the ANTI-Pattern-A architecture done RIGHT: all consumers read
+  ONE source (PROGRAM_TYPE_REGISTRY) at ONE scope. As long as every other surface reads
+  programRule(type).<field> (not a local hardcoded label map), Pattern A #63 cannot
+  manifest for program-type metadata. RECOMMENDATION to lead: the cross-slice invariant
+  to lock (AP#43 test) is "no surface hardcodes a program-type label/noun/badge — all
+  go through programRule()". Hand this to whichever agent owns AdminProgramsPage /
+  programBadge / PROGRAM_NOUN to confirm they read the registry, not a parallel map.
+  Within THIS slice: single source, no divergence. No Pattern-A finding here.
+
+================================================================================
+(d) PER-ROLE WIREFRAME (setup is admin-only)
+================================================================================
+GATE CONFIRMED (AP#60): App.jsx:48-49 Protected = RequireAuth allowedRoles;
+App.jsx:106 /admin/programs/new wrapped allowedRoles={['admin']}. DB defense-in-depth:
+programs_insert/divisions_insert/division_fees_insert all WITH CHECK
+user_has_role_in_org(org_id,['admin']) (live RLS). So even if the route gate were
+bypassed, a coach/parent INSERT is rejected at the DB. NO non-admin path reaches a
+successful create.
+
+ADMIN create flow (the only role):
+  /admin/programs  --[+ New / button]-->  /admin/programs/new (ProgramSetupPage)
+  +------------------------------------------------+
+  | < Back            New Program                  |   AdminBackHeader (44px) + h1
+  | Program type: [Season*][Camp][Clinic][Tryout]  |   ProgramTypeChooser — 7 chips
+  |               [Evaluation][Interest list][Other]|   (chips 34px — P3 tap target)
+  |  > helper text for selected type               |   programRule(type).chooserHelper
+  | Program name [_______________] (Spring 2026)   |   required (valid gate)
+  | Start [date]   End [date]                      |
+  | Public link · /r/<slug-preview> [____________] |   slug auto from name
+  | Reg opens [date]   Reg closes [date]           |
+  | [x] Publish now (parents can register...)      |   is_published
+  | -- if Season only: --                          |   gated program_type==='season'
+  |   DIVISIONS                                     |
+  |   Division 1: name / grade min / max / gender  |   DivisionRows (+ Add)
+  |              / Season fee $                     |
+  | [error banner if create fails — RAW msg, P1]   |
+  | [ Create program ]  (disabled until name)      |   pessimistic → navigate detail
+  +------------------------------------------------+
+  on r.ok → navigate(/admin/programs/<newId>)  (ProgramDetailPage — A3 slice)
+NON-ADMIN (coach/parent): RequireAuth allowedRoles rejects → no render (redirect/deny
+per RequireAuth impl, outside slice). DB RLS rejects insert as second wall. Confirmed safe.
+
+================================================================================
+(e) OUT OF SCOPE (this audit did NOT cover)
+================================================================================
+  - ProgramDetailPage / activate() lifecycle (draft→active promotion, where the
+    single-active-season index ACTUALLY bites) — A3 slice. NOTE: the draft-on-create
+    design means the collision moves to ACTIVATE time; whoever audits activate() must
+    verify the unique-violation kindness handling there (this slice only proved create
+    dodges it).
+  - AdminProgramsPage list/filters, programBadge, PROGRAM_NOUN, defaultTeamTypeSlug,
+    TeamFormSheet competitive warning — other registry consumers (Pattern A #63 cross-
+    check handed off in section (c)).
+  - The public /r/<slug> registration route resolution (relevant to the slug-scope fork).
+  - RequireAuth internal redirect/deny behavior (auth layer, not programs).
+  - DivisionRows is read for the create trace; its edit-mode reuse (if any) on the
+    detail page is A3.
+  - seasons compat VIEW read paths (wizard writes programs directly — confirmed).
+  - Edit/update flow (checkSlugAvailable excludeId path) — create-only here; edit is
+    the detail-page slice.
+
+================================================================================
+SEVERITY TALLY
+================================================================================
+  P0: 0
+  P1: 3  — (1) raw DB error to admin / kindness §16.3 [useProgramSetup.js:38,51,60]
+           (2) slug uniqueness scope mismatch: per-org pre-check vs GLOBAL DB unique
+               index [programSetup.js:31-38 vs programs_public_slug_key]
+           (3) division fees silently dropped + no min-division guard for seasons
+               [ProgramSetupPage.jsx:23, useProgramSetup.js:41]
+  P2: 5  — stale "coming soon" header comment; type-chooser orphan <label>/a11y;
+           fee-by-name match fragility; publish-vs-draft/reg-window coherence;
+           (PASS-noted: AP#36 clean, optimistic correct, FullScreenForm compliant)
+  P3: 6  — chip 34px tap target; input outline:none no focus ring (shared primitive);
+           stale datetime-local comment; date-type mismatch note; +verified-PASS notes
+  EXEMPLARY: programRegistry + parity test (AP#28/#34/#60 reference pattern).
+================================================================================
