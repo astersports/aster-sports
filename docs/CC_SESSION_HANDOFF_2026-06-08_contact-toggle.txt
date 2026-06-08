@@ -1,0 +1,128 @@
+==============================================================================
+CC SESSION HANDOFF — 2026-06-08 (contact-toggle session)
+For: the architect (via Frank). Self-contained relay artifact. Records what
+shipped, the one change awaiting architect awareness, locked decisions, what's
+owed, and next actions. Live state verified against main.
+==============================================================================
+
+0. ONE-LINE
+------------------------------------------------------------------------------
+FORK A (per-message contact-info toggle, OFF by default) is BUILT, reviewed,
+GAP-fixed, and MERGED to main (#854). One post-clearance AI-draft fix landed in
+the same PR that the architect has NOT yet reviewed (§4 — flagged for awareness).
+
+1. WHAT SHIPPED THIS SESSION (PRs, one line each)
+------------------------------------------------------------------------------
+- #821 (G8 idempotency tests) — MERGED earlier this session; confirmed in main
+  (1168f97 is an ancestor of main). The only durable carryover from the start of
+  the session.
+- #854 (per-message contact-info toggle) — MERGED (squash 005f9e6). The session's
+  main deliverable. Detail in §3.
+- #855 (FORK A merge-close doc) — MERGED. docs/CC_FORKA_MERGE_CLOSE_2026-06-08.txt.
+- ABANDONED: branch claude/chat-handoff-docs-agent-audit-k2Wcm (closed PR #825).
+  Frank-directed. It was a STALE parallel track — a concurrent session had already
+  shipped the entire briefings arc (#827-#849) on top of my G8 merge, so k2Wcm's
+  ledger + docs were superseded. No AP#21 mirror gap (all registered migrations
+  have mirrors on main; verified). Nothing re-landed (Frank's call).
+
+2. SESSION SHAPE (for context)
+------------------------------------------------------------------------------
+Opened mid-flight reconciling the k2Wcm branch (an AP#35 branch-state surprise —
+main had moved 23 PRs ahead of the snapshot I started with). Once that was
+abandoned, the session pivoted to a NEW operator request: "turn off the contact
+information on the messages — should be off + an option to activate and who to
+include." That became FORK A / #854.
+
+3. FORK A — WHAT SHIPPED (final, on main)
+------------------------------------------------------------------------------
+Contact info (the signature line + the name·title·phone block) is OFF by default
+on every briefing kind; it renders only on per-message opt-in via a compose-step
+toggle ("Include coach contact info") + a "who to include" staff picker.
+- ONE shared gate: src/lib/engine/buildSignoffSection.js. Renders contact only
+  when overrides.signoff_enabled === true; selected staff carried in
+  overrides.signoff_coaches (objects from the picker — no resolver/org plumbing).
+  Folded the two duplicated coachRoundup/familyGuide signoff helpers into it
+  (AP#63 / PATTERN A cleanup).
+- Threaded OFF-by-default through: bodyOverrides (9 registry kinds + rsvp_nudge +
+  academy_callup), the weekly_digest manual chain (mapWizardStateToDigestArgs ->
+  digestSend), and the legacy free-form path (composerSubmit.composeLegacy).
+- signoff_message prose stays independent of the toggle (briefings not forced
+  unsigned). Single render path (preview == send).
+- UI: SignoffContactToggle.jsx wired into StepBodySignoff; useOrgStaff gained
+  user_id as the selection key.
+
+Architect-reviewed GAP fixes (in the merged PR):
+- GAP 1 (merge-decider): the family_guide "Your coaches" block rendered
+  title·phone UNCONDITIONALLY -> leaked coach phones to parents with the toggle
+  OFF. Confirmed by code-read (coachesBlock renderer emits phone). Now gated
+  under the same overrides.signoff_enabled. This was the only place "contact off"
+  wasn't honored; closed in-PR.
+- GAP 2: named weekly_digest contact-gate test (digestSignoffGate.test.js) for
+  the 175-family manual digestSend path.
+
+Verification: full suite 1519 passed | 6 skipped, lint clean, build clean (entry
+185.78 kB gz, under the 350 KB budget), all 5 CI checks green at merge.
+
+4. AWAITING ARCHITECT AWARENESS — post-clearance AI-draft fix
+------------------------------------------------------------------------------
+After the architect's merge clearance, Frank's smoke surfaced that the AI-DRAFT
+prompt baked a signature into the message body. I fixed it in the SAME PR (it's a
+direct coherence gap with FORK A), so the architect did NOT review this change:
+- aiDraftPrompt.js + its AP#30 Deno mirror briefing-ai-draft/_helpers.ts told the
+  model to "sign off by name" -> every AI draft ended with "— Frank & Coach
+  Kenny" baked into the BODY, defeating FORK A's "signature is the separate,
+  off-by-default element." Removed both "sign off by name" instructions.
+- Operator-directed: the narrative now WEAVES the data points (final score,
+  opponent, player of the game, venue) into the recap prose (was: "do NOT restate
+  raw scores," assuming the structured block carried them). Frank chose data-in-
+  the-message. The structured recap_game_cell still renders; mild intentional
+  overlap, operator-ratified.
+- Prompt tests updated; AP#30 mirror audit green. briefing-ai-draft auto-redeploys
+  from the merge (path-scoped deploy workflow).
+ARCHITECT: please ratify or flag. It's a small Frank-directed prompt change, but
+it landed outside your review window — surfacing per the lane model.
+
+5. LOCKED DECISIONS (Frank, this session)
+------------------------------------------------------------------------------
+- C1 default-unsigned: CONFIRMED OK. Briefings end unsigned unless the sender
+  types a signoff or toggles contact on.
+- C2 automated-off: CONFIRMED OK. rsvp_nudge + academy_callup stay contact-off,
+  no opt-in path (no compose UI). Automated mail carries no personal cells.
+- Picker model: SHIP AS-IS (signoff-only). The picker governs the signoff; the
+  family_guide coaches_block (when opted in) shows the kid's full team coaches
+  (reference purpose), NOT filtered to the picker. The disclosure-allowlist model
+  was DECLINED -> no coaches_block-intersection fast-follow.
+
+6. OWED / FAST-FOLLOWS (none blocking)
+------------------------------------------------------------------------------
+- DESIGN-LANE (architect, GO-gated MCP): GAP 4 — strip the dead
+  organizations.voice_config.{primary,secondary}_contact_* keys (zero code refs
+  now; the gate uses staff_profiles). Data cleanup, whenever Frank says GO.
+- GAP 3: persist the toggle across a saved/resumed draft — only if Frank wants it
+  (resumes safely OFF today).
+- Document C1/C2 + the picker ruling in the briefings doc.
+
+7. NEXT ACTION
+------------------------------------------------------------------------------
+Frank verifies the AI draft LIVE once briefing-ai-draft finishes deploying:
+compose a recap, Draft with AI, confirm (a) data is woven into the narrative and
+(b) NO name signoff is baked into the body. If wrong -> quick prompt fast-follow.
+
+8. LIVE STATE
+------------------------------------------------------------------------------
+- main tip: 005f9e6 (+ #855 merge-close on top). Local synced.
+- briefing-ai-draft: redeploying from the #854 merge (deploy-edge-functions.yml,
+  path-scoped to the changed function dir).
+- No open PRs from this session (both merged).
+
+9. SITUATIONAL (NOT this session's lane)
+------------------------------------------------------------------------------
+The parallel programs L99 re-audit (#849-#853) is surfacing real production P0s
+(program delete CASCADE on financial tables; submit_registration TOCTOU double-
+billing; non-atomic season rollover; anon TRUNCATE grant; guardian ON
+CONFLICT(email) cross-org PII overwrite) and B3-FORK-1 answered Direction A
+(team_type NOT NULL + RESTRICT, held for smoke). Route through that audit's lane.
+This session did not touch them.
+==============================================================================
+END — CC SESSION HANDOFF 2026-06-08 (contact-toggle session)
+==============================================================================
