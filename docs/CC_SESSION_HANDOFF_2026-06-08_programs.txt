@@ -1,0 +1,153 @@
+CC SESSION HANDOFF — 2026-06-08 (programs L99 re-audit + architect collaboration)
+Repo: LegacyHoopers/aster-sports (renamed from skyfire-app; container dir is still
+/home/user/skyfire-app). Next session: scope to LegacyHoopers/aster-sports.
+====================================================================
+SESSION OUTCOME: A 14-agent L99 re-audit of the PROGRAMS section is COMPLETE and on
+main. The collaboration loop with the architect (Claude.ai) is OPEN and mid-round-
+trip. NOTHING was applied to code or DB this session — all deliverables are docs.
+Three live P0s are confirmed; programs is NOT closeable until they land.
+====================================================================
+
+SHIPPED (PRs merged to main this session)
+--------------------------------------------------------------------
+- #850  docs(audit): programs L99 wave-1 re-audit (6 agents A1-A6) + master
+        synthesis PROGRAMS_L99_SYNTHESIS.txt.  (docs/audit/programs_l99/)
+- #851  docs(audit): programs L99 wave-2 re-audit (8 agents B1-B8) + the architect
+        collaboration doc PROGRAMS_L99_ARCHITECT_COLLAB.txt.
+        (docs/audit/programs_l99_wave2/)
+- #852  docs: COLLABORATION_PROTOCOL_CC_ARCHITECT.txt — the 3-lane operating
+        protocol (CC <-> architect <-> Frank).  (docs/)
+- #853  docs(audit): PROGRAMS_TEAMTYPE_GATE_ANSWER.txt — CC's evidence answer to
+        the architect's staged-brief §2 gate.  (docs/audit/programs_l99_wave2/)
+  (Also on main from a PARALLEL rename session: #865 rename plan, #866 rename text
+   refs. See "RENAME RESIDUAL" below.)
+
+THE PROGRAMS AUDIT — STATE OF PLAY
+--------------------------------------------------------------------
+Entry doc for the architect:
+  docs/audit/programs_l99_wave2/PROGRAMS_L99_ARCHITECT_COLLAB.txt
+Evidence: docs/audit/programs_l99/ (A1-A6) + docs/audit/programs_l99_wave2/ (B1-B8)
+          + PROGRAMS_TEAMTYPE_GATE_ANSWER.txt.
+
+THREE LIVE PRODUCTION P0s (all confirmed via live SQL, both waves + B5 self-verify):
+  P0-1 Program delete CASCADEs financial_accounts + financial_transactions
+       unguarded. The only delete guard checks registrations (RESTRICT) — a NO-OP
+       (0 registrations platform-wide). Fall 2025 archived = 64 accounts / 124 txns
+       / ~$61,370 one click from irreversible loss.
+  P0-2 submit_registration TOCTOU: no UNIQUE(program_id,player_id); anon RPC does
+       SELECT-then-INSERT with no lock -> concurrent submits double-register +
+       double-bill. Traffic-latent today (0 registrations).
+  P0-3 Season rollover is BROKEN + non-atomic: useSeasonRollover writes
+       status:'planning' (violates programs_status_check -> 23514 on first stmt) AND
+       inserts roster_members.roster_type (column doesn't exist). season_rollovers
+       table is EMPTY — never completed in production. CLAUDE.md S8 "rollover DONE
+       atomic" is FALSE.
+
+KEY RECONCILIATIONS (live state contradicts prior "done/closed/sound" claims):
+  - Architect grounding S1 "seasons view has no WITH CHECK OPTION" -> WRONG;
+    check_option=CASCADED is live (pg_get_viewdef doesn't render it). Seam SOUND.
+  - Prior #788 closeout "no P0/P1" -> REFUTED (both P0s reproduce; root cause = a
+    code-read that trusted "cascade clean" comments over pg_constraint).
+  - CLAUDE.md S5 waiver/form tables -> STALE (they don't exist; registration
+    captures no waiver/conduct — P1 liability).
+  - wave-1 A5 "anon grants moot" -> partially wrong: anon holds GRANT ALL incl
+    TRUNCATE on financial/graph tables (verified; TRUNCATE not RLS-gated).
+  SOLID (do not re-audit): seasons seam, anon READ path, type axis (PATTERN-A-
+  CLEAN), programRegistry (EXEMPLARY), standings exclusion (keys off team_types.
+  slug), S16.12 no per-player stats leak. wave-1 self-verified 0 false-positives/11.
+
+ARCHITECT ROUND-TRIP — WHERE IT STANDS
+--------------------------------------------------------------------
+- Architect sent: ARCHITECT_PROGRAMS_STAGED_REDESIGN_B1B3 (processed B1-B3 only) +
+  2 HTML renders (rollover fix; team-type phantom). They confirmed seam + type axis
+  SOUND, leaned Direction A on team_type NOT NULL (GATE-held on B6+B7), and staged
+  the B1 F-1 / D-1 fixes.
+- CC answered the gate (#853): SHIP DIRECTION A. The only insert-without-type path
+  is the rollover team-copy (useSeasonRollover.js:42-45 omits team_type_id) — and
+  it's dead today, being rebuilt, and one-field fixable (SeasonRolloverPage:37
+  already reads team_type_id via select('*')). Registration never inserts teams.
+  -> ship A + couple the rollover RPC to carry team_type_id.
+- THE ROLLOVER RPC IS THE CONVERGENCE POINT — one SECURITY DEFINER rebuild must
+  carry all five: (1) status 'draft' not 'planning'; (2) team_type_id on the
+  team-copy [makes Direction A safe]; (3) roster insert WITHOUT roster_type;
+  (4) atomic all-or-nothing + audit row in-txn; (5) activate-on-rollover in-txn.
+  Sequence: rollover RPC lands BEFORE/WITH the team_type NOT NULL migration.
+
+AWAITING ARCHITECT (the next round-trip inputs)
+--------------------------------------------------------------------
+1. Ratify Direction A (team_type NOT NULL + ON DELETE RESTRICT) + the rollover RPC
+   requirement set (1)-(5) as REQUIRED (not optional).
+2. Process B4-B8 (the architect has only seen B1-B3). B4 = the closeout-retraction
+   + the 3 P0s; B6/B7 = the registration + rollover deep-dives the gate relied on.
+   All are on main; they have NOT been formally handed to the architect yet beyond
+   CC's chat paste of B1-B5.
+3. Send the full F1-F16 failure catalog — only F1/F3/F4/F5/F8/F14 are reconstructable
+   repo-side (all verified live in B4); F2/F6/F7/F9-F13/F15/F16 must come from the
+   architect.
+4. Ratify FORK-CLOSEOUT-RETRACT (the #788 "no P0/P1" verdict is refuted; programs
+   re-opens until the P0s land).
+5. Rule the fork tiers (full list in PROGRAMS_L99_ARCHITECT_COLLAB.txt S6):
+   Tier 1 (pre-close): FORK-DELETE, FORK-REG-UNIQUE, FORK-ROLLOVER-RPC, FORK-ANON-
+     GRANTS. Tier 1b (pre-2nd-org): guardian-unique, sports-plural, slug-scope,
+     tryout-privacy. Tier 2 (app-layer): conduct checkbox, #63 cluster + AP#43
+     tests, AP#36 close, dead-metrics, fee-types+gender, D-1 divisions gate,
+     ProgramIndexRow noun.
+6. Answer the 5 open questions in the collab doc S7 (P0 sequencing; anon-grant scope;
+   taxonomy curated-vs-freeform [CC lean curated]; rollover financial-carry [CC lean
+   clean-slate]; multi-org timeline).
+
+NEXT CC ACTION (only on Frank's GO — migrations are the architect's GO-gated lane)
+--------------------------------------------------------------------
+- Draft the migration/RPC SPECS as TXT for architect review (NOT apply):
+  (a) rollover RPC (the 5-in-1 convergence above);
+  (b) FORK-DELETE guard (block delete when financial_accounts>0 / coach_payouts>0);
+  (c) FORK-REG-UNIQUE (UNIQUE(program_id,player_id) + ON CONFLICT);
+  (d) team_type NOT NULL + ON DELETE RESTRICT (pre-flighted safe — 0 NULL rows live;
+      lands after/with the rollover RPC);
+  (e) FORK-ANON-GRANTS (REVOKE anon table grants; keep the 2 SECDEF RPCs).
+- D-1 (ProgramSetupPage divisions UI gate -> divisionsApplyTo) is a 1-line UI fix,
+  held per the no-build-GO-mid-audit discipline; ride with synthesis.
+
+RENAME RESIDUAL (carry to the aster-sports-scoped session)
+--------------------------------------------------------------------
+The repo/deploy rename (skyfire-app -> aster-sports) is COMPLETE per the prior
+session's handoff (repo renamed, Vercel domains on astersports.{app,io,co}, deploy
+green on 61692ae). Open items NOT cleared this session:
+  - constants.js:~89 comment tidy: drop the stale "(was the skyfire-app.vercel.app
+    deploy host)" parenthetical (default value is already astersports.app). The
+    prior session's local commit (d41c4ba) was unpushed and is GONE (fresh
+    container). Re-apply as a 1-line change -> branch + PR + auto-merge. NOT a guard
+    failure (lint/docDriftGuard green with it present); pure cleanup.
+  - docDriftGuardAudit.test.js:25 FORBIDDEN label reads "use ~/skyfire-app". The
+    prior handoff claimed #866 updated it to ~/aster-sports, but live main still
+    shows ~/skyfire-app — AMBIGUOUS (the container dir is genuinely
+    /home/user/skyfire-app). DECISION NEEDED: leave (path matches the container) vs
+    update label to ~/aster-sports. Flag, don't auto-change.
+  - Repo About/description still says "Repo id (skyfire-app) ... kept as a legacy
+    carve-out" — now contradictory. Frank's click (no CC tool). Suggested:
+    "Aster Sports — youth sports operations platform by Olive Juice Inc. Live:
+     www.astersports.app. (Renamed from skyfire-app 2026-06-08.)"
+  - Optional: align Live URL apex->www (astersports.app -> www.astersports.app).
+
+ENVIRONMENT NOTES FOR THE NEXT SESSION
+--------------------------------------------------------------------
+- This session's git remote + GitHub MCP scope were bound to the OLD name
+  (LegacyHoopers/skyfire-app). The GitHub API/MCP redirect works (resolves to
+  aster-sports), but the git PUSH proxy went DOWN mid-session post-rename
+  ("remote end hung up"). PRs #850-#853 pushed earlier via git; this handoff was
+  committed locally then persisted via the GitHub API (create_or_update_file). The
+  next session should be scoped to LegacyHoopers/aster-sports directly.
+- Supabase project (unchanged): vrwwpsbfbnveawqwbdmj. All audit SQL was SELECT-only.
+- Auto-merge SQUASH was armed on every docs PR; all merged green (Vercel-only CI).
+- Discipline held all session: no migrations, no build PRs, no code/DB writes — the
+  architect's GO-gated lane is untouched. The audit + protocol + gate-answer docs
+  are the record.
+
+ONE-LINE NEXT MOVE
+--------------------------------------------------------------------
+Relay B4-B8 + this handoff to the architect; get Direction A + the rollover RPC set
+ratified + the F1-F16 catalog; then CC drafts the migration/RPC specs on GO. Clear
+the constants.js tidy in an aster-sports-scoped session.
+====================================================================
+END — CC SESSION HANDOFF 2026-06-08 (programs L99)
+====================================================================
