@@ -1,0 +1,62 @@
+==============================================================================
+CC -> ARCHITECT: G5 PR 1b BUILD REPORT (OPT-B1, held)
+Date: 2026-06-08. PR #845. Status: HELD do-not-auto-merge for Frank's smoke.
+Per-step gate met (CC-re-run, AP#22): lint + build clean + full vitest GREEN.
+==============================================================================
+
+WHAT: G5 OPT-B1 — cron re-drives provably-safe FAILED recipients via a shared,
+byte-locked pilot+suppression gate. Per the architect's Decision-1 ruling.
+
+SHARED GATE KERNELS (the "one mechanism, no second ungated path" guarantee):
+  decideSuppression(recipients, prefsRows) -> { suppressedIds, stillQueued, suppressed }
+  decidePilotGate(guardians, pilotMode)    -> { abort, nonPilotEmails, nonPilotCount }
+  Live in the G8 mirror pair (src/lib/briefings/sendDispatch.js <->
+  send-tournament-message/_dispatch.ts) + a 3rd byte-locked copy
+  briefing-auto-draft-tick/_dispatch.ts. New edgeFunctionMirrorAudit row
+  (cron _dispatch.ts <-> sendDispatch.js, baseline 4). All 3 copies normalized-equal.
+
+send-tournament-message/index.ts — BEHAVIOR-IDENTICAL refactor (CC-verified diff):
+  - suppression block -> decideSuppression(recipients, prefs ?? []); preserves the
+    'unsubscribed' write (.in id suppressedIds), suppressed count, the
+    stillQueued.length===0 early-return, and recipients.length=0; push(...stillQueued).
+  - pilot block -> decidePilotGate(guardians, pilotMode); same 403 error string,
+    non_pilot_count, pilot_mode_active. Fetches / finalize / queued-filter / 409 guard
+    / dispatch loop UNTOUCHED.
+
+CRON REDRIVE SWEEP (briefing-auto-draft-tick/_redrive.ts, 150 LOC):
+  - Selects ONLY delivery_status='failed' + redrive_count<3 on non-archived dispatched
+    messages. NEVER 'queued' (the crash-window class stays human-review-only, PR 1a).
+  - Per message group: re-applies suppression + the pilot gate (pilot_mode_enabled
+    ?? true, fail-closed) via the SHARED kernels; a non-pilot guardian aborts that
+    group's re-drive (left failed, skipped:'pilot_gate'). Fail-closed on every lookup
+    (prefs/org_settings/guardians error -> skip or pilot-on).
+  - Sends DIRECTLY via Resend (local buildEmailRow + mintUnsubscribeUrl copies, AP#30;
+    NOT the message entry -> no 409). classifyBatchResult drives writeback.
+  - Increments redrive_count per prior value; a row reaching 3 is no longer selected
+    next sweep -> counted as escalated.
+  - Wired into the cron tick (index.ts) like handleExpireSweep; result in `redrive_sweep`.
+
+ESCALATION SURFACE (StuckSendsRegion + useStuckSends):
+  useStuckSends now also returns `escalations` (failed + redrive_count>=3, grouped per
+  message). StuckSendsRegion renders a red "auto-retry exhausted (3 attempts) — needs
+  manual attention" section (--as-danger), surface-only (no send action). Existing
+  queued-group behavior unchanged.
+
+MIGRATION MIRROR backfilled: 20260608002737 (redrive_count integer NOT NULL DEFAULT 0)
+  — column was live (verified), mirror was missing from the repo (AP#21).
+
+TESTS: decideSuppression + decidePilotGate unit tests (sendDispatch.test.js);
+  redriveSweepGuard.test.jsx (only failed+<3, never 'queued'; decidePilotGate +
+  decideSuppression applied on the cron path); 3rd mirror lock. Full suite 210 files /
+  1499 tests GREEN (CC-re-run); build clean.
+
+LOC: _redrive.ts 150 (cap). cron index.ts 161 — edge-fn orchestration, NOT src/-gated
+  (§0 grep #4 is `find src/`); was 154 pre-PR; send-tournament-message/index.ts is 263.
+  Consistent with edge-fn reality; flagged for transparency.
+
+NEXT: PR G7 (vitest on decidePilotGate — the F-FAILCLOSED-UNTESTED coverage) stacks on
+  this branch's kernel. Then family_guide footer (Decision 2: brand_footer -> full
+  `footer` for the unsubscribe half; address part MOOT per the internal-address directive).
+==============================================================================
+END — CC_G5_PR1B_REPORT
+==============================================================================
