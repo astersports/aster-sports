@@ -1,0 +1,102 @@
+CC SESSION HANDOFF — 2026-06-08
+Topic: AsterSports repo/deploy-id rename (skyfire-app -> aster-sports)
+Branch worked: chore/aster-rename-text-refs (merged via #866), chore/constants-comment-skyfire-tidy (local-only)
+
+====================================================================
+SESSION OUTCOME: Rename COMPLETE and verified against live state.
+Repo, domains, docs, design tokens, and user-facing strings are all
+Aster Sports. Only the documented must-keep legacy IDs remain.
+====================================================================
+
+SHIPPED (PRs merged to main this session)
+--------------------------------------------------------------------
+- #865  docs: Aster Sports rename migration plan (retire skyfire-app
+        repo/deploy id). The decision/plan doc (options A/B, D2 URL
+        removal, sequencing).
+- #866  chore: rename skyfire-app references to aster-sports.
+        Files: README.md; CLAUDE.md (§1 app URL/repo/local-path,
+        the AP#52 worktree-path example, the resume command, and the
+        legacy-id banner -> now records the repo/deploy-id rename +
+        the skyfire-app.vercel.app removal, while explicitly KEEPING
+        the other legacy ids); docs/DISASTER_RECOVERY.md (repo URL +
+        removed the skyfire-app.vercel.app fallback per D2, repointed
+        at the aster-sports-git-main branch alias); docs/LH_OPS_SPEC.md
+        (live URL, repo, local path, resume cmd); docDriftGuardAudit
+        .test.js (stale-path guard label -> ~/aster-sports).
+        Lint + build + docDriftGuard (24) green. Text-only, no runtime
+        change.
+- (this PR) chore: drop stale skyfire-app.vercel.app mention from the
+        src/lib/constants.js:89 comment + this handoff doc. Pushed via
+        the GitHub MCP API (the git proxy push was dead post-rename).
+
+OPERATOR ACTIONS DONE (Frank, account-level — no CC tool exists for these)
+--------------------------------------------------------------------
+- GitHub repo renamed: LegacyHoopers/skyfire-app -> LegacyHoopers/
+  aster-sports (rename-in-place; GitHub auto-redirects the old name).
+- Vercel: skyfire-app.vercel.app removed; www.astersports.app is the
+  Production domain; astersports.{app,io,co} all Valid Configuration.
+- Repo About/description edited (now slightly stale — see OPEN ITEMS #2).
+
+VERIFIED (live state, via GitHub + Vercel MCP)
+--------------------------------------------------------------------
+- Latest PRODUCTION deploy: state READY on commit 61692ae (the #866
+  merge), Vercel project "aster-sports", branch alias
+  aster-sports-git-main-legacyhoopers-projects.vercel.app. Vercel
+  tracks the repo by ID (1206235975), so the rename was transparent —
+  no reconnect needed.
+- package.json name = "astersports"; index.html <title> + apple-mobile-
+  web-app-title = "Aster Sports"; icon = /aster-mark.svg.
+- runtime app_base_url = https://astersports.app (migration cutover
+  2026-06-02, confirmed).
+- Live code skyfire refs: ZERO (after the constants.js comment tidy).
+- Design tokens: --em-* = ZERO; namespace is fully --as-*.
+- GitHub MCP reads + writes work via the old-name redirect; the git
+  PROXY push from this session was BROKEN (bound to .../skyfire-app,
+  HTTP 503). This PR was therefore pushed via mcp github push_files.
+
+DELIBERATELY KEPT (doctrine — do NOT "fix" these)
+--------------------------------------------------------------------
+- supabase/migrations/002_skyfire_foundation.sql + skyfire mentions in
+  003_core_data_model.sql and the two app_base_url cutover migrations —
+  immutable migration history (editing applied migrations breaks
+  db reset / history).
+- @ember ICS UID in src/lib/icalHelpers.js + supabase/functions/
+  team-feed/index.ts — calendar dedup stable key; changing it
+  duplicates every event in subscribers' calendars.
+- ember_live value in src/lib/finalizePlayerStats.js — matches a DB
+  CHECK constraint; changing needs a data migration.
+- docs/EMBER_PENDING_LEDGER.md + docs/archive/SKYFIRE_*/EMBER_* —
+  archive doctrine: the names ARE the record.
+- Lineage/history lines in CLAUDE.md (Skyfire -> Ember -> Aster) and
+  the "renamed from skyfire-app" notes in DISASTER_RECOVERY — intentional
+  history.
+
+OPEN ITEMS for the NEXT SESSION (scope it to LegacyHoopers/aster-sports)
+--------------------------------------------------------------------
+1. Fix the repo About/description: it still reads "Repo id (skyfire-app)
+   ... kept as a legacy carve-out per rebrand doctrine", which is now
+   contradictory (the repo WAS renamed). Suggested replacement (Frank's
+   click; no CC tool for repo description):
+   "Aster Sports — youth sports operations platform by Olive Juice Inc.
+    Live: www.astersports.app. (Renamed from skyfire-app 2026-06-08.)"
+2. Optional doc polish: #866 wrote the Live URL as https://astersports.app
+   (apex), but the canonical Production domain is www.astersports.app
+   (apex 308-redirects to it). Works either way; align to www if desired.
+3. Frank local clone: git remote set-url origin
+   git@github.com:LegacyHoopers/aster-sports.git (optional; old URL
+   redirects).
+4. Future CC sessions: scope directly to LegacyHoopers/aster-sports so
+   the git proxy push path works (this session's was bound to the old
+   name and could only write via the MCP API).
+
+DECISIONS AWAITING RATIFICATION
+--------------------------------------------------------------------
+- None blocking from the rename arc. Note for the architect: the #866
+  CLAUDE.md legacy-id banner edit is a doctrine change; §11.7.7 normally
+  wants a fresh-context review pass before such a merge. Frank reviewed
+  the diff inline and elected to proceed live. Flagged for awareness.
+
+NEXT ACTION
+--------------------------------------------------------------------
+Open a fresh Claude Code session scoped to LegacyHoopers/aster-sports;
+clear OPEN ITEM #1 (repo description). Everything else is done.
