@@ -1,0 +1,259 @@
+==============================================================================
+PROGRAMS — TIER-1 FORK SPECS (HELD)   CC draft, 2026-06-08
+Drafted on Frank's GO. NOTHING APPLIED. Migrations are the GO-gated MCP lane;
+each spec applies only on architect/operator ratification, mirror .sql written
+the same turn as apply (AP#21). AP#60 live-verified (vrwwpsbfbnveawqwbdmj).
+Deep refs: docs/audit/programs_l99_wave2/PROGRAMS_L99_ARCHITECT_COLLAB.txt (§2,§6).
+==============================================================================
+
+APPLY ORDER (dependency-correct):
+  S1 rollover RPC  →  S2 team_type NOT NULL  (S2 needs S1's team_type_id carry)
+  S3 FORK-REG-UNIQUE, S4 FORK-DELETE, S5 FORK-ANON-GRANTS — independent, any order.
+Each spec is one migration unless noted. Verify block runs inside the same migration.
+
+==============================================================================
+S1 — FORK-ROLLOVER-RPC  [P0-3]  rebuild season rollover as one atomic SECDEF RPC
+==============================================================================
+PROBLEM (live-verified):
+ - useSeasonRollover.js is ~5+N uncoordinated client awaits (no txn/rollback).
+ - :16/:21 INSERT seasons.status='planning' → programs_status_check allows only
+   {active,draft,archived} → 23514 on the FIRST statement → nothing is created.
+ - :51-54 INSERT roster_members.roster_type='roster' → roster_members has NO
+   roster_type column (live cols: id,player_id,team_id,jersey_number,jersey_size,
+   shorts_size,amount_paid,amount_due,registered_at,created_at,updated_at,left_at)
+   → bare await (AP#36) swallows the error while playersCarried still increments.
+ - :42 team-copy OMITS team_type_id → typeless team (the §2 gate's one bad path).
+ - LIVE: season_rollovers=0 rows, seasons rolled_over_at=0, parent_season_id=0 —
+   rollover has NEVER completed. CLAUDE.md §8 "DONE atomic" is false (R-3).
+
+THE FIVE REQUIREMENTS (architect-ratified set; one txn, NOT separate PRs):
+ (1) status 'draft' not 'planning'
+ (2) team-copy carries team_type_id := source.team_type_id   [makes S2 safe]
+ (3) roster insert WITHOUT roster_type (correct cols only)
+ (4) atomic all-or-nothing + audit row written in the same txn
+ (5) activate-on-rollover decision inside the txn (see OPEN Q-A)
+
+PROPOSED RPC (signature + body sketch — architect ratifies shape):
+  CREATE OR REPLACE FUNCTION public.rollover_season(
+    p_from_season_id uuid,
+    p_plan           jsonb     -- { newSeasonName, startDate, endDate,
+                               --   carryLocations, activate,
+                               --   teams:[{ src_team_id, name, team_color,
+                               --     sort_order, age_group, division, circuit,
+                               --     players:[{id, action}], coaches:[{user_id,
+                               --     role, keep}] }] }
+  ) RETURNS season_rollovers
+  LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+  DECLARE
+    v_org_id uuid; v_new_season uuid; v_new_team uuid;
+    v_carried int:=0; v_advanced int:=0; v_dropped int:=0; v_coaches int:=0;
+    v_teams int:=0; v_row season_rollovers; t jsonb; p jsonb; c jsonb;
+  BEGIN
+    -- ORG-OWNERSHIP ASSERT (caller's org must own the source season).
+    SELECT org_id INTO v_org_id FROM seasons WHERE id = p_from_season_id;
+    IF v_org_id IS NULL OR v_org_id <> ANY (current_user_org_ids()) THEN
+      RAISE EXCEPTION 'not_authorized'; END IF;     -- see OPEN Q-C (helper choice)
+
+    -- (1) new season as DRAFT, lineage set
+    INSERT INTO seasons (org_id, name, start_date, end_date, status, parent_season_id)
+      VALUES (v_org_id, p_plan->>'newSeasonName',
+              (p_plan->>'startDate')::date, (p_plan->>'endDate')::date,
+              'draft', p_from_season_id)
+      RETURNING id INTO v_new_season;
+
+    -- carry season_locations (optional)
+    IF COALESCE((p_plan->>'carryLocations')::boolean, true) THEN
+      INSERT INTO season_locations (season_id, location_id)
+      SELECT v_new_season, location_id FROM season_locations WHERE season_id = p_from_season_id;
+    END IF;
+
+    -- recreate teams (2: carry team_type_id) + roster (3: no roster_type) + staff
+    FOR t IN SELECT * FROM jsonb_array_elements(p_plan->'teams') LOOP
+      INSERT INTO teams (org_id, season_id, name, team_color, sort_order,
+                         age_group, division, circuit, team_type_id)
+        VALUES (v_org_id, v_new_season, t->>'name', t->>'team_color',
+                NULLIF(t->>'sort_order','')::int, t->>'age_group', t->>'division',
+                COALESCE(t->>'circuit','aau'),
+                (SELECT team_type_id FROM teams WHERE id = (t->>'src_team_id')::uuid))
+        RETURNING id INTO v_new_team;
+      v_teams := v_teams + 1;
+      FOR p IN SELECT * FROM jsonb_array_elements(t->'players') LOOP
+        IF p->>'action' = 'drop' THEN v_dropped := v_dropped + 1; CONTINUE; END IF;
+        INSERT INTO roster_members (team_id, player_id, registered_at)
+          VALUES (v_new_team, (p->>'id')::uuid, now());   -- (3) no roster_type
+        v_carried := v_carried + 1;
+        IF p->>'action' = 'advance' THEN v_advanced := v_advanced + 1; END IF;
+      END LOOP;
+      FOR c IN SELECT * FROM jsonb_array_elements(t->'coaches') LOOP
+        IF COALESCE((c->>'keep')::boolean, false) THEN
+          INSERT INTO team_staff (team_id, user_id, role)
+            VALUES (v_new_team, (c->>'user_id')::uuid, c->>'role');
+          v_coaches := v_coaches + 1;
+        END IF;
+      END LOOP;
+    END LOOP;
+
+    -- archive the source season
+    UPDATE seasons SET status='archived', rolled_over_at=now() WHERE id = p_from_season_id;
+
+    -- (5) activate-on-rollover (OPEN Q-A). If activating, do it HERE in-txn,
+    -- archiving the org's other active season of the same scope first (CASE
+    -- update so the single-active partial index never sees 0 or 2).
+
+    -- (4) audit row, same txn
+    INSERT INTO season_rollovers (from_season_id, to_season_id, org_id, initiated_by,
+        players_carried, players_advanced_age, players_dropped, coaches_carried,
+        teams_recreated, financial_balances_carried_cents, status, completed_at)
+      VALUES (p_from_season_id, v_new_season, v_org_id, auth.uid(),
+        v_carried, v_advanced, v_dropped, v_coaches, v_teams,
+        0 /* OPEN Q-B financial-carry */, 'complete', now())
+      RETURNING * INTO v_row;
+    RETURN v_row;
+  END $$;
+  REVOKE EXECUTE ON FUNCTION public.rollover_season(uuid,jsonb) FROM PUBLIC;
+  REVOKE EXECUTE ON FUNCTION public.rollover_season(uuid,jsonb) FROM anon;   -- AP#23/#57
+  GRANT  EXECUTE ON FUNCTION public.rollover_season(uuid,jsonb) TO authenticated;
+
+CLIENT CHANGE (same arc, separate build PR, held for smoke): useSeasonRollover.js
+  collapses to a single `.rpc('rollover_season', { p_from_season_id, p_plan })`
+  call; plan.teams[] gains src_team_id (SeasonRolloverPage already selects '*', so
+  team_type_id is in hand). reportError on the single error; optimistic OFF (bulk,
+  pessimistic per §16.1).
+
+VERIFY (in-migration DO block): assert function exists, is SECDEF, anon has no
+  EXECUTE (routine_privileges), and a dry-run against a throwaway season rolls back.
+
+OPEN DECISIONS (architect/Frank):
+  Q-A activate-on-rollover: new season lands draft and admin activates later (CC
+      lean — matches "review then activate"), OR activate inside the RPC?
+  Q-B financial-carry: carry 0 (clean-slate-per-season — family_balances already
+      spans seasons; CC lean) OR carry balances forward?
+  Q-C org-assert: current_user_org_ids() inline (above) vs the assert_org_owns_*
+      SECDEF helper library (AP#57). CC lean: reuse the helper for consistency.
+
+==============================================================================
+S2 — FORK-TEAMTYPE-NOTNULL  [B3-FORK-1]  ship Direction A
+==============================================================================
+PRECONDITION: S1 lands first (so no rollover writes a typeless team). Live: 7
+teams, 0 NULL team_type_id → SET NOT NULL cannot fail. FK is currently ON DELETE
+SET NULL (confdeltype='n') — the back-door this closes.
+
+  ALTER TABLE teams ALTER COLUMN team_type_id SET NOT NULL;
+  ALTER TABLE teams DROP CONSTRAINT teams_team_type_id_fkey;
+  ALTER TABLE teams ADD  CONSTRAINT teams_team_type_id_fkey
+    FOREIGN KEY (team_type_id) REFERENCES team_types(id) ON DELETE RESTRICT;
+
+VERIFY (DO block):
+  - information_schema.columns: teams.team_type_id is_nullable='NO'
+  - pg_constraint: teams_team_type_id_fkey confdeltype='r'
+App guard TeamFormSheet.jsx:41 stays as defense-in-depth (no change).
+
+==============================================================================
+S3 — FORK-REG-UNIQUE  [P0-2]  close the submit_registration TOCTOU
+==============================================================================
+PROBLEM: registrations has ONLY registrations_pkey(id) (live-verified). The RPC
+DOES soft-check "already registered? skip" (SELECT-LIMIT-1 then CONTINUE), but
+with NO row lock + NO unique constraint, two concurrent anon submits both pass the
+SELECT and both INSERT → double registration + double registration_fees → double
+bill. Latent today (0 registrations) but anon-reachable.
+
+  -- 1. constraint (CONCURRENTLY not needed at 0 rows; plain is fine)
+  ALTER TABLE registrations
+    ADD CONSTRAINT registrations_program_player_uniq UNIQUE (program_id, player_id);
+  -- 2. make the INSERT race-safe (edit submit_registration body): the existing
+  --    INSERT INTO registrations (...) RETURNING id INTO v_reg_id  becomes
+  --    INSERT ... ON CONFLICT (program_id, player_id) DO NOTHING RETURNING id
+  --    INTO v_reg_id;  IF v_reg_id IS NULL THEN  -- lost the race
+  --      v_already := v_already || (v_child->'player'->>'first_name'); CONTINUE;
+  --    END IF;
+  -- (keeps the soft pre-check as a fast path; the constraint is the real guard.)
+
+VERIFY: pg_constraint contype='u' on (program_id,player_id); replay two rapid
+  submit_registration calls with the same (program,player) via execute_sql →
+  exactly one registrations row, one fee set.
+NOTE (B5): guardians_org_email_partial_idx(org_id,email) is NON-unique — do not
+  reuse it to back any ON CONFLICT.
+
+==============================================================================
+S4 — FORK-DELETE  [P0-1]  stop program-delete from cascade-nuking financials
+==============================================================================
+PROBLEM: financial_accounts.season_id → programs is ON DELETE CASCADE (live
+confdeltype='c'); financial_transactions cascade through it. deleteProgram's only
+guard counts registrations (0 platform-wide → NO-OP); the confirm names only
+teams/players/events. LIVE: Fall 2025 = 64 financial_accounts / 124 transactions
+(~$61k) one click from irreversible loss. coach_payouts.season_id → programs is
+ON DELETE NO ACTION (would already block, but with a raw error).
+
+TWO-LAYER FIX:
+  (a) DB defense — flip the cascade to RESTRICT so the ledger can never be
+      silently destroyed by a program delete:
+        ALTER TABLE financial_accounts DROP CONSTRAINT financial_accounts_season_id_fkey;
+        ALTER TABLE financial_accounts ADD  CONSTRAINT financial_accounts_season_id_fkey
+          FOREIGN KEY (season_id) REFERENCES programs(id) ON DELETE RESTRICT;
+  (b) App message (useProgramAdmin.js deleteProgram, separate build PR): extend
+      the pre-check to also count financial_accounts (and coach_payouts) and
+      return the kind "archive instead" message BEFORE attempting the delete
+      (count-and-block, not catch-and-translate — same pattern already used for
+      registrations). Also fix programDelete.js's stale "cascade clean" comment
+      that caused the R-2 false closeout.
+
+VERIFY: pg_constraint financial_accounts_season_id_fkey confdeltype='r'; attempt
+  DELETE of a program with a financial_accounts row → 23503 (blocked), ledger intact.
+LEAN: block + archive (collab §6). Archived programs are never deleted, so RESTRICT
+  costs nothing operationally and removes the footgun.
+
+==============================================================================
+S5 — FORK-ANON-GRANTS  [P1 / latent-P0 defense-in-depth]
+==============================================================================
+PROBLEM (live-verified): anon holds GRANT ALL — DELETE,INSERT,REFERENCES,SELECT,
+TRIGGER,TRUNCATE,UPDATE — on every program-graph + financial + guardian/player
+table (financial_accounts, financial_transactions, programs, teams, registrations,
+registration_fees, guardians, players, player_guardians, divisions, division_fees,
+coach_payouts, roster_members, team_staff, season_rollovers, season_locations).
+TRUNCATE is NOT RLS-gated. Practical API exploitability is bounded (PostgREST
+exposes no TRUNCATE endpoint; DELETE is RLS-gated to 0 anon rows) — but on the
+financial ledger it is a real hardening gap and the platform's dominant bug class
+is fail-open RLS.
+
+PROPOSED (REVOKE to the intended door — anon reaches everything via the 2 SECDEF
+RPCs only; CC lean Q2 = NOTHING for the write tables):
+  -- per AP#23/#57: revoke PUBLIC then anon explicitly; financial tables FIRST.
+  REVOKE ALL ON TABLE financial_accounts, financial_transactions, coach_payouts
+    FROM anon;
+  REVOKE ALL ON TABLE programs, teams, registrations, registration_fees,
+    guardians, players, player_guardians, divisions, division_fees,
+    roster_members, team_staff, season_rollovers, season_locations FROM anon;
+  -- anon's ONLY intended access is SELECT on the public-registration read surface
+  -- (programs/divisions/division_fees) used by the published /r/:slug flow + the
+  -- two SECDEF RPCs (submit_registration, public program read). RE-GRANT the
+  -- minimal SELECTs the anon read path actually needs AFTER confirming the live
+  -- read path (B6 says the read goes through a SECDEF RPC, so anon may need ZERO
+  -- direct table grants — VERIFY before revoking in prod).
+
+OPEN Q2 (architect): revoke to Supabase-minimal (S/I/U/D) or to NOTHING (CC lean:
+  nothing on write tables; re-grant only the SELECTs the published read path needs).
+GATE before apply: enumerate the live anon READ path (which exact tables the
+  unauthenticated /r/:slug page SELECTs directly vs via RPC) so the revoke doesn't
+  break public registration. This is the one spec that can cause a visible outage
+  if mis-scoped — smoke the public flow on a preview branch before prod.
+
+VERIFY: role_table_grants for anon on the financial tables = empty; public
+  /r/:slug registration still loads + submits on the preview deploy.
+
+==============================================================================
+CROSS-CUTTING NOTES
+==============================================================================
+- Each S# migration ends with its DO-block verify; mirror .sql written same turn
+  as apply (AP#21), filename = production version string prefix.
+- S1+S2 are the convergence (gate §2). S3/S4/S5 independent.
+- Q1 (collab §7): ship as separate GO-gated migrations (CC lean — each carries its
+  own verify + rollback story; S5 especially wants isolation for the read-path smoke).
+- Build-PR companions (client edits for S1, S3 body, S4 app message) are held for
+  smoke per §6 — they do NOT auto-merge mid-audit; they ride synthesis after the
+  migrations land.
+- NOTHING in this doc is applied. Awaiting architect ratification of the §2/§6
+  forks + answers to Q-A/Q-B/Q-C (S1) and Q2 (S5) before any GO-gated apply.
+==============================================================================
+END — PROGRAMS TIER-1 FORK SPECS (HELD). CC drafts the mirror .sql + applies via
+the GO-gated MCP lane on ratification.
+==============================================================================
