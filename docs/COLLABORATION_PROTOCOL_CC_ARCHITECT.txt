@@ -1,0 +1,141 @@
+==============================================================================
+COLLABORATION PROTOCOL — CLAUDE CODE (CC) <-> ARCHITECT (Claude.ai) <-> FRANK
+AsterSports platform. Owner: Frank Samaritano. Established 2026-06-08.
+Operating protocol for the three-lane build/audit/redesign loop.
+This doc is the canonical process reference. Save + reuse every session.
+==============================================================================
+
+0. WHY THIS EXISTS
+------------------------------------------------------------------------------
+The platform is built across three lanes that cannot see each other's tools.
+CC has the repo + live DB + GitHub. The architect (Claude.ai) has design judgment
+and the decision/fork lane but NO repo/DB access. Frank operates and relays
+between them. This protocol makes the hand-offs durable, evidence-grounded, and
+loss-free across sessions, so a decision made in one lane survives into the other.
+
+1. THE THREE LANES
+------------------------------------------------------------------------------
+CC (Claude Code — this agent):
+  - IMPLEMENTATION + LIVE VERIFICATION. Reads the repo, queries the live Supabase
+    DB (AP#60 source-of-truth), runs multi-agent audits, writes code, opens PRs.
+  - Produces evidence-grounded TXT artifacts (file:line + live SQL).
+  - Commits to a labeled LEAN on every fork (AP#39) but does NOT settle
+    architectural decisions unilaterally.
+  - Holds all migrations + build PRs for the architect's GO (see §5).
+
+ARCHITECT (Claude.ai — Frank's design lane):
+  - DESIGN + DECISIONS + FORK RATIFICATION. Frames the architectural questions,
+    rules the forks, designs the redesign, owns the closure verdict.
+  - Verifies every CC claim against live state before ruling (the ~50%-historical-
+    false-positive gate). CC's job is to make that verification cheap by citing
+    evidence; the architect's job is to not trust a claim without it.
+  - Has NO repo/DB access — works entirely from CC's TXT artifacts + Frank's relay.
+
+FRANK (operator):
+  - RATIFIES + RELAYS. Moves TXT docs between the two lanes (copy/paste or file
+    upload), carries each lane's questions verbatim to the other, makes the
+    product calls, and gives the GO that unblocks migrations/builds.
+
+2. THE ARTIFACT CONTRACT (how the lanes talk)
+------------------------------------------------------------------------------
+Everything that crosses a lane boundary is a COMMITTED PLAIN-TEXT .txt in docs/,
+AND is pasted in full in chat. Never a summary-instead-of-paste, never deferred.
+The doc IS the deliverable; the chat paste IS how the other lane receives it.
+Plain text, no triple-backtick wrap around the whole doc. (CLAUDE.md §11.8 / §49.)
+
+Artifact types + naming:
+  - GROUNDING doc  (architect -> CC): verified facts CC should baseline on, so
+    agents don't re-derive. e.g. ARCHITECT_PROGRAMS_AUDIT_GROUNDING_<date>.txt
+  - AUDIT FINDINGS (CC -> architect): per-slice evidence, §16.15 five-element.
+    e.g. docs/audit/<section>_l99[_waveN]/<slice>.txt  (A1.., B1..)
+  - SYNTHESIS / COLLAB doc (CC -> architect): the consolidated entry point with
+    reconciliations + forks + leans + open questions.
+    e.g. PROGRAMS_L99_ARCHITECT_COLLAB.txt
+  - DESIGN / DECISION doc (architect -> CC): ratified forks + redesign spec.
+  - CLOSE-OUT REVIEW (CC -> architect): what closes the phase; architect ratifies.
+  - SESSION HANDOFF (CC -> Frank -> architect): end-of-session relay.
+    e.g. CC_SESSION_HANDOFF_<date>.txt
+
+Round-trip is DOC-TO-DOC. Architect questions arrive as a doc; CC answers with an
+evidence-grounded doc, not inline prose, so the decision record stays durable.
+Frank's questions for the architect ride verbatim inside CC's doc, and vice versa.
+
+3. THE LOOP (one full cycle)
+------------------------------------------------------------------------------
+  (1) ARCHITECT frames the work + sends a GROUNDING or DESIGN-QUESTION doc.
+        Frank relays it to CC.
+  (2) CC runs the audit / verification (multi-agent fan-out, AP#58 synthesis,
+        AP#60 live grounding). Produces per-slice TXTs + a SYNTHESIS/COLLAB doc
+        with forks + labeled leans + open questions. Commits + opens a draft PR +
+        pastes the docs in chat.
+  (3) FRANK uploads CC's docs to the architect.
+  (4) ARCHITECT verifies CC's claims against live state (asking CC for any
+        specific query it wants run), rules the forks, writes a DECISION/REDESIGN
+        doc. Frank relays it back.
+  (5) CC implements the ratified decisions — but migrations + build PRs are HELD
+        for Frank's explicit GO (§5). CC writes migration/build specs as TXT for
+        architect review BEFORE applying.
+  (6) FRANK gives GO per item. CC applies via its GO-gated MCP lane, smoke-tests,
+        and reports back. Loop repeats until the phase closes (§6).
+
+4. VERIFICATION DISCIPLINE (non-negotiable, both directions)
+------------------------------------------------------------------------------
+  - AP#60 source hierarchy: live DB / deployed runtime > installed source/migration
+    file:line > docs > inference. Every claim cites the closest-to-ground source.
+  - ~50% false-positive gate: treat any "done / closed / sound / verified" claim
+    as UNVERIFIED until re-checked live. The programs re-audit found SIX such
+    claims contradicted by live state — including a "DONE" feature (rollover) that
+    had never once worked in production. This is why the architect re-verifies and
+    why CC re-verifies its own prior waves before shipping a synthesis.
+  - CC labels any unavoidable inference as inference ("I'm inferring because I
+    can't query X").
+  - When a claim is contested, the live query settles it — not the more confident
+    voice. CC runs the query and pastes the result.
+
+5. GO-GATING (what CC may NOT do without Frank's GO)
+------------------------------------------------------------------------------
+  - MIGRATIONS (any schema/RLS/grant/constraint change): the architect's lane.
+    CC writes the migration SPEC as a TXT, the architect ratifies, Frank gives GO,
+    THEN CC applies via MCP and smoke-tests. CC never applies a migration on its
+    own initiative.
+  - BUILD PRs that change app behavior: held for smoke before merge.
+  - DOCS-ONLY PRs (audits, specs, this protocol): CC may open + auto-merge per the
+    standard PR flow — they are the record, they don't change product behavior.
+  - The label `do-not-auto-merge` (or a requested reviewer) holds any PR for review.
+
+6. WHAT "PHASE CLOSED" MEANS
+------------------------------------------------------------------------------
+A build phase (e.g. "programs") is NOT closed until its open architectural forks
+are ratified via a close-out review the architect signs off on. A prior "it's
+done" without ratified forks is not a close. CC writes the close-out review (audit
+result + open forks + triage); the architect's ratification is the close. (§11.8 #4.)
+
+7. SESSION HYGIENE
+------------------------------------------------------------------------------
+  - Every session opens with the branch-divergence pre-flight (git fetch + ahead/
+    behind) and ledger reconcile.
+  - Every session that produces architect-bound work ends with a committed
+    CC_SESSION_HANDOFF_<date>.txt Frank can hand straight to the architect: what
+    shipped (PRs, one line each), what's held for GO, the decisions awaiting
+    ratification, and the next action when they land.
+  - The ledger (EMBER_PENDING_LEDGER §4) is "decisions LOCKED, not yet implemented."
+    Unratified forks do NOT go in §4 — they land there only after the architect
+    ratifies. Until then the audit/collab docs are the record.
+
+8. CURRENT STATE — PROGRAMS (as of 2026-06-08)
+------------------------------------------------------------------------------
+  - DONE: 14-agent re-audit (wave-1 A1-A6 + wave-2 B1-B8) + the architect collab
+    doc, all merged to main (PRs #850, #851).
+  - ENTRY DOC for the architect:
+      docs/audit/programs_l99_wave2/PROGRAMS_L99_ARCHITECT_COLLAB.txt
+    Evidence: docs/audit/programs_l99/ (A*) + docs/audit/programs_l99_wave2/ (B*).
+  - AWAITING ARCHITECT: ratify the retraction of the prior "no P0/P1" close; rule
+    the Tier-1/1b/2 forks; answer the 5 open questions; send the full F1-F16 catalog.
+  - NEXT CC ACTION ON GO: draft the 3 P0 migration specs (FORK-DELETE guard,
+    FORK-REG-UNIQUE constraint, FORK-ROLLOVER-RPC) as TXT for architect review,
+    then apply on GO. Programs is NOT closed until these forks are ratified.
+
+==============================================================================
+END — COLLABORATION PROTOCOL. This is the operating reference; update it when the
+lane mechanics change, not per-session.
+==============================================================================
