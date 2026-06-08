@@ -1,0 +1,104 @@
+CC SESSION HANDOFF — 2026-06-08 (aster-sports rename CLOSE + programs relay)
+Repo: LegacyHoopers/aster-sports   Branch: claude/aster-sports-migration-4yczeu
+Container dir THIS session: /home/user/aster-sports (git push proxy HEALTHY here —
+unlike the two prior 2026-06-08 sessions whose proxy 503'd post-rename).
+
+====================================================================
+SESSION OUTCOME: The aster-sports rename is now FULLY COMPLETE. The one
+genuine residual miss — not caught by either prior handoff — was found
+and fixed (PR #869). Programs stays parked on the architect's
+ratification; nothing built on the GO-gated lane this session.
+====================================================================
+
+SHIPPED THIS SESSION
+--------------------------------------------------------------------
+- #869  chore: fix AP#52 leakage hook disabled by the aster-sports rename.
+        scripts/check-parent-checkout-leakage.sh keyed the parent-vs-worktree
+        test on the repo dir basename ('skyfire-app'). The rename changed the
+        basename, so in any aster-sports checkout the guard always took the
+        worktree branch and exited silently — the anti-pattern #52 safeguard
+        was DISABLED. Fix: detect the worktree STRUCTURALLY by path shape
+        (.claude/worktrees/agent-*), name-independent, survives this rename
+        and any future one. bash -n clean; both branches behavior-verified.
+        (This handoff doc rides in the same PR.)
+
+RENAME COMPLETENESS — verified against LIVE state (not handoff text; several
+prior-handoff residual claims were already stale)
+--------------------------------------------------------------------
+  VERIFIED DONE (no action needed):
+   - constants.js APP_BASE_URL comment: already tidied by #867 (astersports.app).
+     (The programs-session handoff's "prior local commit gone / re-apply" was STALE.)
+   - docDriftGuardAudit.test.js stale-path label: already '~/aster-sports' (#866).
+     (The programs-session handoff's "still ~/skyfire-app" was STALE.)
+   - package.json name=astersports; index.html title/icon; public/manifest.webmanifest
+     name="Aster Sports"; aster-mark.svg present; design tokens fully --as-*.
+   - Live-code skyfire/ember/vela refs: ZERO (only the new #869 comment cites the
+     historical name to document the fix).
+   - Deliberately-kept legacy IDs correctly untouched: 002_skyfire_foundation +
+     app_base_url cutover migrations (immutable history); @ember ICS UID
+     (calendar dedup key); ember_live CHECK value; archive/EMBER_*/SKYFIRE_* docs.
+
+  THE ONE REAL MISS: the leakage hook above. Fixed in #869.
+
+OPERATOR-SIDE RESIDUALS (no CC tool — Frank's click)
+--------------------------------------------------------------------
+  1. GitHub repo About/description STILL reads "Repo id (skyfire-app) ... legacy
+     carve-out ...", which now contradicts the completed rename. Suggested:
+       "Aster Sports — youth sports operations platform by Olive Juice Inc.
+        Live: www.astersports.app. (Renamed from skyfire-app 2026-06-08.)"
+  2. Optional: align doc Live-URL apex (astersports.app) -> canonical www
+     (www.astersports.app); apex 308-redirects, works either way.
+  3. Optional: local clone  git remote set-url origin
+     git@github.com:LegacyHoopers/aster-sports.git (old URL auto-redirects).
+
+PROGRAMS — STATE (unchanged this session; GO-gated, awaiting architect)
+--------------------------------------------------------------------
+The 14-agent programs L99 re-audit is committed (#850 wave-1, #851 wave-2,
+#852 collab protocol, #853 gate answer). I re-derived and CONFIRMED the gate
+answer against live DB this session: 7 teams / 0 NULL team_type_id / 0 rollovers
+ever / FK confdeltype='n' (SET NULL back-door real) / seasons only active+archived
+(confirms B1 F-1: status 'planning' violates the CHECK). The only insert-WITHOUT-
+type path is the rollover team-copy (useSeasonRollover.js:42 omits team_type_id);
+TeamFormSheet->useProgramTeams always sets it (F1 guard); registration never
+inserts teams. => Direction A (team_type_id NOT NULL + FK ON DELETE RESTRICT) is
+safe IFF the rollover RPC carries team_type_id forward.
+
+NOTHING built on the programs surface this session. D-1 (1-line divisions UI gate,
+ProgramSetupPage.jsx:54 -> divisionsApplyTo) is HELD FOR SYNTHESIS — deliberately
+NOT shipped (superseded the earlier brief's "ship anytime").
+
+RELAY TO ARCHITECT (Claude.ai) — carry these; artifacts are committed:
+  Audit docs (read-ready):  docs/audit/programs_l99_wave2/B4_closure_pressure_test.txt,
+    B5_wave1_verification.txt, B6_registration_capture.txt, B7_rollover_integrity.txt,
+    B8_records_pertype.txt  (+ B1-B3 already seen; gate answer in the same dir).
+  ASKS AWAITING THE ARCHITECT:
+   (1) Ratify Direction A (team_type NOT NULL + ON DELETE RESTRICT) AND the
+       single SECURITY DEFINER rollover-RPC rebuild as the convergence point,
+       carrying all five: (a) status 'draft' not 'planning'; (b) team_type_id on
+       the team-copy [this is what makes Direction A safe]; (c) roster insert
+       WITHOUT roster_type (column doesn't exist); (d) atomic + audit-in-txn;
+       (e) activate-in-txn. Sequence: rollover RPC before/with the NOT NULL migration.
+   (2) Process B4-B8 (architect has only seen B1-B3).
+   (3) Send the full F1-F16 catalog (only F1/F3/F4/F5/F8/F14 are repo-reconstructable).
+   (4) Ratify the closeout-retraction (#788 "no P0/P1" was REFUTED — 3 live P0s).
+   (5) Rule the fork tiers (COLLABORATION_PROTOCOL_CC_ARCHITECT.txt section 6) +
+       answer the 5 open questions (section 7).
+
+THREE LIVE P0s (programs not closeable until these land; GO-gated):
+   P0-1  program delete CASCADEs financial_accounts + financial_transactions
+         unguarded (Fall 2025: 64 accts / 124 txns / ~$61k); the lone guard checks
+         registrations only (no-op).  -> FORK-DELETE guard.
+   P0-2  submit_registration TOCTOU; no UNIQUE(program_id, player_id) -> double-bill.
+         -> FORK-REG-UNIQUE.
+   P0-3  season rollover BROKEN + non-atomic (status 'planning' violates CHECK;
+         roster_type column absent; season_rollovers empty = never ran). CLAUDE.md
+         §8 "7-B DONE atomic" is FALSE.  -> the rollover RPC above.
+
+NEXT CC ACTION (on GO only — migrations are the GO-gated lane)
+--------------------------------------------------------------------
+Draft the TXT specs (architect MCP lane applies; mirrors written same turn):
+rollover RPC, FORK-DELETE guard, FORK-REG-UNIQUE, team_type NOT NULL migration
+(pre-flighted: 0 NULLs, won't fail), FORK-ANON-GRANTS. D-1 rides synthesis.
+
+ENV NOTE: git push + GitHub MCP both healthy this session. Supabase MCP SELECT-only
+used (read verification); no migrations / no DB writes / no programs code touched.
