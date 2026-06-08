@@ -1796,6 +1796,31 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   parent-inbox FILTER, with an AP#43 cross-surface invariant test locking "archived ⟹ not
   in parent inbox/Needs-you." #825 also INDEPENDENTLY re-derived F-DUAL-FINALIZE (already
   shipped this session as G5 PR 0) — convergent confirmation, no new work.
+- **OVERNIGHT AUTONOMOUS BUILD (2026-06-08, architect-directed; all HELD do-not-auto-merge
+  for Frank's smoke — see CC_SESSION_HANDOFF_2026-06-08_overnight.txt)** — per
+  ARCHITECT_CC_AUTONOMOUS_BUILD_2026-06-08: auto-build the go-live queue, nothing merges,
+  RLS/migrations are the architect's GO-gated MCP lane (not CC). **SHIPPED HELD:**
+  **FORK-D (#835)** fail-close the pilot gate across all 9 send-driving resolvers (8
+  `?? false`->`?? true` + 2 secondary branches in tournament prelim/recap + weekly_digest
+  gained the consult block; static parity lock; +4 tests; 208/1481 green). **MOAT (#836)**
+  F-PARENT-MOAT-LEAK code half — `useInboxList` inner-joins comms_messages + `.in('status',
+  ['sent','queued'])` so archived (145 live) can't reach a parent; useParentNeedsYou inherits
+  it; AP#43 lock (+3). RLS backstop is the architect's lane (NOT in the PR). **G1 (#837)**
+  CAN-SPAM physical address threaded live from organizations.mailing_address through
+  buildOrgContext.branding -> 8 footer pushes -> renderFooter (10 snapshot fixtures
+  reconciled; +2; 207/1482 green). **STOPPED (architecture fork, ruling owed):** **PR 1b
+  + G7** — the "ONE shared gated-send helper" requirement collides with this repo's
+  path-scoped edge-deploy CI (`_shared/` = "Nothing to deploy" dead branch; AP#30 mirror
+  is the established pattern). Surfaced as a fork in **CC_G5_PR1B_SHARED_HELPER_FORK.txt**
+  (#834, merged doc): OPT-B1 pure gate-kernel mirror [CC lean] / OPT-B2 _shared file
+  (hazardous) / OPT-C redrive-flag (reopens 409 contract). **NEW FLAG (architect scoping
+  owed):** family_guide + coach_roundup use a tagline-only `brand_footer` with NEITHER
+  address NOR unsubscribe — family_guide is parent-facing, so a CAN-SPAM gap broader than
+  G1's address (the audit's "unsubscribe half IS compliant" doesn't hold for it). **Architect
+  GO-gated, not yet applied:** the parent-moat RLS backstop (message_is_not_archived SECDEF
+  + parent_select_own_recipients) + Tier 0 ghost migration 20260603104534. Tomorrow: Frank
+  smokes + merges 1b->G7 then the rest; architect rules the 1b fork + brand_footer + applies
+  the GO-gated migrations.
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 

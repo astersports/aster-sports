@@ -1,0 +1,101 @@
+==============================================================================
+CC SESSION HANDOFF — overnight autonomous build (2026-06-08)
+For Frank to hand straight to the architect. Per §11.8.5.
+Execution mode: ARCHITECT_CC_AUTONOMOUS_BUILD_2026-06-08 — auto-build the
+go-live queue, NOTHING auto-merges, RLS/migrations are the architect's GO-gated
+MCP lane (not CC). Per-step gate met on every PR: lint + build + full vitest GREEN.
+==============================================================================
+
+1. WHAT SHIPPED (merged this session, before the overnight run)
+------------------------------------------------------------------------------
+  #831  G5 PR 1a — queued "Sends needing review" Radar surface (smoke-clean, merged).
+  #813  Part A2 — grouped kind picker (Recaps/Outreach/Guides) (smoke-clean, merged).
+        => Part A fully shipped (A1 #809, A3 #812, A2 #813).
+  #833  ledger fold: #825 findings (FORK D=9 resolvers; F-PARENT-MOAT-LEAK) +
+        go-live build progress (merged, doc).
+  #834  G5 PR 1b STOP doc — the shared-helper architecture fork (merged, doc).
+
+2. BUILT + HELD (do-not-auto-merge — Frank smokes + merges tomorrow)
+------------------------------------------------------------------------------
+  #835  FORK-D — fail-close the pilot gate across all 9 send-driving resolvers.
+        8 `?? false`->`?? true`; tournament prelim/recap had a 2nd fail-open branch
+        (orgId-absent) also flipped; weekly_digest (no consult before) gained the
+        sibling org_settings consult + registry anchor pass-through. Static parity
+        lock (+4). 208 files / 1481 tests green. NO live-audience change (LH column
+        true; digestSend bypasses the resolver; edge-fn gate is the live backstop).
+        Report: CC_FORKD_REPORT.txt.
+  #836  MOAT — F-PARENT-MOAT-LEAK CODE HALF. useInboxList inner-joins comms_messages
+        + .in('comms_messages.status', ['sent','queued']) so archived (145 live rows)
+        can't reach a parent. useParentNeedsYou inherits it (derives from useInboxList).
+        AP#43 cross-surface lock (+3). 208/1484 green. The RLS BACKSTOP is the
+        architect's GO-gated lane — NOT in this PR (independent defense-in-depth).
+        Report: CC_MOAT_REPORT.txt.
+  #837  G1 — CAN-SPAM physical postal address in the email footer (B2 [P0] go-live
+        blocker). organizations.mailing_address read live -> buildOrgContext.branding
+        -> 8 footer pushes -> renderFooter; omitted when null (no hardcode). 10 golden
+        snapshot fixtures reconciled. 207/1482 green. Report: CC_G1_REPORT.txt.
+
+  MERGE ORDER tomorrow: the 3 above are INDEPENDENT (any order). PR 1b -> G7 once the
+  fork is ruled (G7 stacks on 1b). Each held by the `do-not-auto-merge` label; remove
+  the label (or merge directly) after smoke.
+
+3. STOPPED — architecture/contract forks, RULING OWED (no code forced)
+------------------------------------------------------------------------------
+  PR 1b (OPT-B failed re-drive) + PR G7 (pilot-gate test) — BLOCKED.
+  WHY: §2's "extract the gated-send slice into ONE shared Deno helper that BOTH
+  send-tournament-message AND the cron call" has no deploy-safe implementation here.
+  Verified: no `_shared/` dir, zero cross-function-dir imports; the deploy CI is
+  PATH-SCOPED and treats a `_shared/`-only change as "Nothing to deploy" — so a shared
+  helper would let dependents run STALE gate code (the AP#30 failure class, on the
+  suppression + pilot gate). Fork doc: CC_G5_PR1B_SHARED_HELPER_FORK.txt (#834).
+  OPTIONS: OPT-B1 pure gate-kernel mirror + per-caller IO [CC LEAN — honors the
+  no-ungated-second-path intent + the just-ratified 409/finalize contract, and the
+  G8 classifyBatchResult precedent you already approved]; OPT-B2 single _shared file
+  (verified-hazardous); OPT-C cron invokes send-tournament-message with a redrive:true
+  409-bypass flag (truest one-mechanism but reopens the 409 contract OPT-B avoided).
+  ON YOUR RULING CC builds 1b to it + the StuckSendsRegion red escalation row
+  (redrive_count>=3) + the §2 tests, then G7 against the exposed pure gate. Both held.
+
+4. NEW FINDING (flagged, not silently expanded) — architect scoping owed
+------------------------------------------------------------------------------
+  brand_footer CAN-SPAM gap. family_guide + coach_roundup use a tagline-only
+  `brand_footer` (renderers/brandFooter.js) with NEITHER the CAN-SPAM address NOR an
+  {{UNSUBSCRIBE_URL}}. family_guide is PARENT-FACING, so this is broader than G1's
+  address scope — and the audit's "(unsubscribe half IS compliant)" does NOT hold for
+  family_guide. PROPOSED follow-up (your call): switch family_guide's footer section
+  from brand_footer to the full `footer` kind (it already routes through buildOrgContext,
+  so address + unsubscribe placeholder come for free) + verify its send path substitutes
+  {{UNSUBSCRIBE_URL}}; coach_roundup (staff audience) decided separately.
+
+5. ARCHITECT'S GO-GATED MCP LANE (NOT CC — awaiting Frank's GO to the architect)
+------------------------------------------------------------------------------
+  - Parent-moat RLS backstop: message_is_not_archived(uuid) SECURITY DEFINER +
+    parent_select_own_recipients USING gains AND message_is_not_archived(message_id).
+    Recursion-safe (SECDEF bypasses the recipients-table RLS comms_messages_read
+    references). Dormant tightening (no real parent rows live). Pairs with MOAT #836
+    (independent layers; either closes the leak, both for belt-and-suspenders).
+  - Tier 0 ghost migration 20260603104534 (narrow weekly_digest unique index dropping
+    'draft') — reconcile against the existing repo mirror first.
+
+6. DECISIONS AWAITING ARCHITECT RATIFICATION
+------------------------------------------------------------------------------
+  (a) PR 1b gated-send factoring: OPT-B1 / OPT-B2 / OPT-C (CC leans B1).
+  (b) brand_footer CAN-SPAM scope (family_guide + coach_roundup).
+  (c) GO / defer on the parent-moat RLS backstop + the Tier 0 ghost (Frank -> architect).
+
+7. NEXT ACTIONS WHEN THOSE LAND
+------------------------------------------------------------------------------
+  - Frank smokes #835/#836/#837 -> merge (any order).
+  - Architect rules (a) -> CC builds PR 1b + the escalation row + G7 (held) -> Frank
+    smokes -> merge 1b then G7.
+  - Architect rules (b) -> CC builds the family_guide footer fix (held).
+  - Architect applies (c) via MCP + writes the AP#21 mirror.
+  - Remaining go-live track after Tier 0: G2 (throttle/Resend tier), G6 (delivery
+    rollup), G3/G4 (DNS/warmup, reply-to) — Frank/provider-owned + small code.
+
+STATE: audit arc closed + signed; go-live gates G1(#837)/G5-1a(#831 merged)/FORK-D
++ MOAT built & held; G5-1b/G7 blocked on one ruling; nothing merged unwatched;
+nothing safety-critical applied. A signed plan with 3 held PRs + 1 fork + 1 flag.
+==============================================================================
+END — CC_SESSION_HANDOFF_2026-06-08_overnight
+==============================================================================
