@@ -1,0 +1,93 @@
+==============================================================================
+CC -> ARCHITECT: PROGRAMS RELAY + RATIFICATION REQUEST   (2026-06-08, late)
+Doc-to-doc round-trip per collab protocol §3 / §11.8. Self-contained.
+AP#60 live-verified (project vrwwpsbfbnveawqwbdmj, SELECT-only). NOTHING APPLIED.
+==============================================================================
+This is a CURRENT-STATE cover relay. The deep references are already committed
+and are your entry points — this doc does not restate them, it routes you to
+them and asks for the specific ratifications that unblock the next CC action.
+
+DEEP REFERENCES (committed, read-ready):
+  - docs/audit/programs_l99_wave2/PROGRAMS_L99_ARCHITECT_COLLAB.txt   (#851 — the
+    14-agent synthesis: reconciliations, 3 P0s, P1s, patterns, redesign inputs,
+    consolidated forks §6, open questions §7. YOUR ENTRY POINT.)
+  - docs/audit/programs_l99_wave2/PROGRAMS_TEAMTYPE_GATE_ANSWER.txt   (#853 — the
+    answer to your §2 gate.)
+  - docs/audit/programs_l99/ (A1-A6) + .../programs_l99_wave2/ (B1-B8) — per-slice
+    file:line evidence.
+
+------------------------------------------------------------------------------
+0. PLATFORM HOUSEKEEPING (so your state model is current)
+------------------------------------------------------------------------------
+The skyfire-app -> aster-sports rename is now FULLY COMPLETE (closed via #869).
+The last residual was a mechanical one neither prior handoff caught: the AP#52
+parent-checkout leakage hook keyed on the repo dir basename 'skyfire-app' and
+was silently disabled by the rename; fixed name-independently. No bearing on
+programs — noted only so "rename" is off the open-items board. Live code carries
+zero skyfire/ember/vela references.
+
+------------------------------------------------------------------------------
+1. THE GATE ANSWER STILL HOLDS — re-verified live THIS session
+------------------------------------------------------------------------------
+Independently re-ran the §2 gate evidence against live DB tonight; every premise
+reconfirmed (so you can ratify Direction A on current data, not a stale snapshot):
+  - teams: 7 total, 0 with NULL team_type_id.
+  - team_type_id column: is_nullable = YES (nullable today).
+  - FK teams_team_type_id_fkey: confdeltype = 'n' (ON DELETE SET NULL — the
+    back-door Direction A closes is real).
+  - seasons: statuses present = {active, archived} only — confirms B1 F-1
+    (status 'planning' is not in programs_status_check, so the rollover INSERT
+    dies at 23514 before reaching the team-copy).
+  - season_rollovers: 0 rows; seasons rolled_over_at: 0; parent_season_id: 0 —
+    rollover has NEVER run. The one insert-without-type path is DEAD.
+VERDICT UNCHANGED: ship Direction A (team_type_id NOT NULL + FK ON DELETE
+RESTRICT), coupled to the rollover rebuild carrying team_type_id forward.
+
+------------------------------------------------------------------------------
+2. WHAT CC NEEDS FROM YOU TO MOVE (the ask list)
+------------------------------------------------------------------------------
+A. RATIFY the closeout-retraction (#788 "no P0/P1" is REFUTED — 3 live P0s).
+B. RATIFY Direction A AND the single SECURITY DEFINER rollover-RPC rebuild as
+   the convergence point, carrying ALL FIVE in one txn (these are NOT separate
+   PRs):
+     (1) status 'draft' not 'planning'                         [B1 F-1]
+     (2) team-copy carries team_type_id := source.team_type_id [makes A safe]
+     (3) roster insert WITHOUT roster_type (column absent)     [B7 P0-2]
+     (4) atomic all-or-nothing + audit row in-txn              [B7 P0-3]
+     (5) activate-on-rollover in the txn                       [B7 F4]
+   Sequencing: rollover RPC lands BEFORE or WITH the NOT NULL migration (so the
+   constraint never meets a typeless rollover insert). NOT NULL migration is
+   pre-flighted safe (0 NULLs -> SET NOT NULL won't fail).
+   >>> Treat (2) as a RATIFIED REQUIREMENT, not polish: if the RPC ships without
+       it, the first real rollover after NOT NULL hits 23502 and breaks anew.
+C. RATIFY the other Tier-1 forks (collab §6): FORK-DELETE (block delete when
+   financial_accounts>0 — Fall 2025 = 64 accts/124 txns/~$61k one click from
+   loss), FORK-REG-UNIQUE (UNIQUE(program_id,player_id) + ON CONFLICT),
+   FORK-ANON-GRANTS (revoke anon GRANT ALL incl TRUNCATE on financial tables).
+D. RULE the fork tiers (collab §6) + ANSWER the 5 open questions (collab §7):
+     Q1 P0 sequencing — 3 separate GO-gated migrations, or batch?
+     Q2 anon grants — revoke to Supabase-minimal or to NOTHING? (CC lean: nothing
+        on the write tables; the 2 SECDEF RPCs are the only intended door.)
+     Q3 RD-1 taxonomy — curated archetypes (CC lean) confirmed?
+     Q4 RD-5 rollover financial-carry — clean-slate (CC lean) or carry balances?
+     Q5 multi-org timeline — when does org #2 onboard? (sets the Tier-1b deadline.)
+E. SEND the full F1-F16 catalog — only F1,F3,F4,F5,F8,F14 are repo-reconstructable;
+   F2,F6,F7,F9-F13,F15,F16 are not in the repo and can't be pressure-tested without
+   your enumeration.
+F. NOTE: you have only processed B1-B3 of the staged brief. B4-B8 are committed
+   and carry the 3 P0s, the registration-capture gaps (R-4: no waiver/conduct
+   capture), and the per-type records findings. Please process B4-B8.
+
+------------------------------------------------------------------------------
+3. NEXT CC ACTION (fires on your GO — migrations are your GO-gated MCP lane)
+------------------------------------------------------------------------------
+On ratification, CC drafts held TXT specs (mirrors written same turn, nothing
+applied): rollover RPC (set 1-5), FORK-DELETE guard, FORK-REG-UNIQUE, team_type
+NOT NULL migration, FORK-ANON-GRANTS. D-1 (1-line divisions UI gate) rides
+synthesis — HELD, not shipped. No build GO has been taken mid-audit.
+
+==============================================================================
+END — CC awaits ratification of A + B (rollover RPC set) + C, the §6 tier ruling,
+the §7 answers, and the F1-F16 catalog. Programs is NOT closeable (§11.8 #4) until
+the Tier-1 forks are ratified and land.
+==============================================================================
