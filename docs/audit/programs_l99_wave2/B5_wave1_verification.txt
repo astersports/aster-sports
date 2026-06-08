@@ -1,0 +1,355 @@
+================================================================================
+AGENT B5 — WAVE-2 SELF-VERIFICATION OF WAVE-1 PROGRAMS L99 FINDINGS
+================================================================================
+Role: the ~50% false-positive gate applied to OUR OWN wave-1, BEFORE the architect
+rules. Adversarial: each wave-1 P0/P1 was attacked to REFUTE it; a finding survives
+only if live evidence backs it.
+Date: 2026-06-08 | Mode: READ-ONLY (SELECT-only SQL + file Read) | pwd: /home/user/skyfire-app
+Project: vrwwpsbfbnveawqwbdmj | AP#60 source hierarchy throughout (live SQL = highest).
+Wave-1 docs verified: A1, A2, A3, A4, A5 (+ synthesis). A6 claims are restatements of
+A1/A3/A4 test-coverage faces (not separately re-litigated; cross-ref noted).
+
+VERDICT KEY: CONFIRMED (live evidence backs it as stated) / REFUTED (counter-evidence) /
+PARTIAL (true but narrower/wider than stated) / LATENT (true but masked single-org today).
+
+================================================================================
+(a) VERIFY TABLE — claim | live evidence | verdict
+================================================================================
+
+--------------------------------------------------------------------------------
+CLAIM 1 [P0] — Program delete CASCADEs financial_accounts + financial_transactions;
+   registrations RESTRICT guard is a no-op (0 regs). (A3 a-P0-1, synthesis P0-1)
+--------------------------------------------------------------------------------
+EVIDENCE (live pg_constraint, confdeltype):
+  financial_accounts.season_id -> programs = CASCADE ('c')   [verified]
+  financial_transactions -> financial_accounts = CASCADE (cascades via account) [verified]
+  registrations.program_id -> programs = RESTRICT ('r')      [verified]
+  coach_payouts.season_id -> programs = NO ACTION ('a')      [verified]
+  (also CASCADE: teams, divisions, tryout_sessions, season_locations, player_equipment;
+   SET NULL: events, team_achievements, programs.parent_program_id)
+EVIDENCE (live deleteProgram, useProgramAdmin.js:44-56): pre-checks ONLY registrations
+  (count-and-block, lines 50-53), then programs.delete() (line 54). NO financial_accounts
+  or coach_payouts guard. dependencySummary (programDelete.js:4-7) lists only teams/
+  players(roster row)/events — never financials/divisions/payouts.
+EVIDENCE (live data, per archived program):
+  Fall 2025 (archived): regs=0, fin_accts=64, fin_txns=124 (cascade path), $61,370.
+  Winter 2025-26 (archived): regs=0, fin_accts=40, fin_txns=57.
+  Spring 2026 (active): regs=0, fin_accts=60, fin_txns=63, coach_payouts=2, teams=5.
+  registrations = 0 ALL programs, 0 platform-wide -> guard is a no-op everywhere.
+VERDICT: **CONFIRMED** (P0 stands). The blast radius + no-op guard are exactly as stated.
+  IMPRECISION CAUGHT (does not change severity): A3 stated Fall 2025 = "181
+  financial_transactions". The actual cascade-path count is **124** (verified twice;
+  financial_transactions has NO season_id column, so the only count that matters is the
+  account_id->season_id join = 124). The $61,370 dollar figure A3 cited IS correct
+  (6,137,000 cents). So the headline ($61k one click from loss) holds; the txn ROW count
+  was over-claimed by 57. Severity unchanged — 64 accounts + 124 txns + $61k is still a
+  catastrophic unguarded CASCADE.
+
+--------------------------------------------------------------------------------
+CLAIM 2 [P0] — submit_registration TOCTOU: no UNIQUE(program_id,player_id) on
+   registrations; guard is SELECT-then-INSERT. (A1 b-P0, synthesis P0-2)
+--------------------------------------------------------------------------------
+EVIDENCE (live pg_constraint on registrations): registrations_pkey(id) + 5 FKs
+  (org_id, player_id, program_id, promoted_from_registration_id, team_id). NO unique
+  on (program_id,player_id). Indexes: pkey + 4 plain FK indexes (idx_registrations_*).
+  Confirmed ABSENT.
+EVIDENCE (RPC 20260601044918_registration_public_rpcs.sql):
+  Lines 150-154: SELECT id INTO v_reg_id FROM registrations WHERE program_id=... AND
+    player_id=... LIMIT 1; IF v_reg_id IS NOT NULL THEN ...CONTINUE; (read, no lock)
+  Lines 156-167: INSERT INTO registrations ... RETURNING id (write)
+  => non-atomic read-modify-write, no row lock, no UNIQUE backing. anon-executable RPC.
+  Two concurrent submits both read 0 -> both INSERT -> dup registration + dup
+  registration_fees (lines 169-172) -> family billed twice.
+VERDICT: **CONFIRMED** (P0 stands). Both the missing constraint AND the SELECT-then-INSERT
+  shape verified exactly as stated. The "current zero-dupe count is low-traffic luck"
+  framing is accurate (registrations=0 today). The rest of the RPC is well-built
+  (org server-derived line 75; published+window enforced lines 76-81; division->program
+  coupling line 117; server-summed fee total) — the TOCTOU is the lone defect, as A1 said.
+
+--------------------------------------------------------------------------------
+CLAIM 3 [P1] — sports_select SINGULAR current_user_org_id() vs programs PLURAL
+   current_user_org_ids(). (A1 P1, A5 P2, synthesis FORK-SPORTS)
+--------------------------------------------------------------------------------
+EVIDENCE (live pg_policy quals):
+  sports_select   USING (org_id = current_user_org_id())            <- SINGULAR
+  programs_select USING (org_id = ANY (current_user_org_ids()))     <- PLURAL
+EVIDENCE (live pg_get_functiondef):
+  current_user_org_id():  SELECT organization_id FROM user_roles WHERE user_id=auth.uid()
+    LIMIT 1  -> ONE arbitrary org.
+  current_user_org_ids(): SELECT COALESCE(ARRAY_AGG(DISTINCT organization_id), '{}')
+    FROM user_roles WHERE user_id=auth.uid()  -> all orgs.
+VERDICT: **CONFIRMED (LATENT, single-org-masked)**. The divergence is real and exactly as
+  stated. Multi-org user sees all-org programs but ONE arbitrary org's sports -> blank
+  sport label on the other orgs' programs. For single-org LH, LIMIT 1 == ANY (one row),
+  so it does NOT fire today. Severity P1 is appropriate as a pre-multi-org gate; the
+  live-firing severity today is effectively P3 (no current impact). Both A1 (P1) and A5
+  (P2) flagged it — the P1/P2 split between the two wave-1 docs is itself a minor
+  inconsistency; B5 lands on "P1-latent / P3-today."
+
+--------------------------------------------------------------------------------
+CLAIM 4 [P1] — guardians.email GLOBAL unique -> submit_registration ON CONFLICT(email)
+   cross-org overwrite. (A5 a-P1 F-1, synthesis FORK-GUARDIAN-UNIQUE)
+--------------------------------------------------------------------------------
+EVIDENCE (live pg_constraint/pg_indexes on guardians):
+  guardians_email_unique = UNIQUE (email)  [GLOBAL, btree on (email), NOT org-scoped] [verified]
+  guardians_org_email_partial_idx = (org_id,email) WHERE email IS NOT NULL — but this is
+    a PLAIN (non-unique) index, NOT a constraint. So the ONLY uniqueness is global email.
+EVIDENCE (RPC line 88-96): primary guardian INSERT ... ON CONFLICT (email) DO UPDATE SET
+  first_name=COALESCE(EXCLUDED...), last_name=..., phone=..., updated_at=now(). org_id
+  is NOT in the conflict target and NOT re-checked on the UPDATE branch. Co-guardian
+  (lines 101-104) same pattern.
+VERDICT: **CONFIRMED (LATENT, multi-org gate)**. An anon registrant in org B supplying an
+  email that exists as an org-A guardian reuses + overwrites org-A's guardian PII
+  (first/last/phone), and player_guardians (line 140) links the org-A guardian to the
+  org-B player -> cross-org identity bleed. SECURITY DEFINER = no RLS backstop. Benign
+  single-org; MUST land before a 2nd org publishes a reg page. Exactly as A5 stated.
+  NOTE: the COALESCE means a NULL EXCLUDED value won't blank an existing field, so the
+  overwrite is "fill/replace with supplied non-nulls," not "wipe" — slightly narrower than
+  a naive read of "overwrite," but still an unauthorized cross-org mutation. PARTIAL-leaning-
+  CONFIRMED on the mechanism nuance; CONFIRMED on the finding.
+
+--------------------------------------------------------------------------------
+CLAIM 5 [P1] — slug per-org precheck (checkSlugAvailable .eq org_id) vs GLOBAL
+   programs_public_slug_key. (A2 a-P1, synthesis FORK-SLUG-SCOPE)
+--------------------------------------------------------------------------------
+EVIDENCE (live pg_indexes on programs):
+  programs_public_slug_key = UNIQUE (public_slug) WHERE public_slug IS NOT NULL
+    [GLOBAL, cross-org] [verified]
+  programs_published_slug_idx = (public_slug) WHERE is_published=true [non-unique]
+EVIDENCE (programSetup.js checkSlugAvailable): filters .eq('org_id', orgId).ilike(
+  'public_slug', slug) -> PER-ORG check. Stale code comment claims "the DB has no unique
+  constraint" — FALSE (the DB has a GLOBAL unique constraint).
+VERDICT: **CONFIRMED (LATENT, multi-org-masked + stale-comment)**. Org B's per-org
+  pre-check passes for a slug org A owns -> raw global unique violation on INSERT ->
+  raw Postgres string to admin (couples with A2's raw-DB-error P1). Both the scope
+  mismatch AND the stale comment verified. Single-org LH never collides. Exactly as A2
+  stated.
+
+--------------------------------------------------------------------------------
+CLAIM 6 [P1] — tryout_attendees.evaluation_note parent-readable (tryout_attendees_select
+   org-wide, no role narrowing). (A1 d-P1, synthesis FORK-TRYOUT-PRIVACY)
+--------------------------------------------------------------------------------
+EVIDENCE (live pg_policy on tryout_attendees):
+  tryout_attendees_select  cmd=r  roles={authenticated}  USING (org_id = ANY
+    (current_user_org_ids()))  <- NO role narrowing (no admin/coach gate).
+  insert/update/delete are admin-gated (user_has_role_in_org(...,'admin')).
+EVIDENCE (information_schema.columns): evaluation_note exists, data_type=text.
+VERDICT: **CONFIRMED (LATENT until tryouts go live)**. Any authenticated parent in the org
+  can SELECT every tryout_attendees row incl. evaluation_note (coach eval text) for the
+  whole org. Real §16.7 privacy leak once tryouts run with multiple families. Today
+  tryout_attendees has ~0 rows (Fall 2026 Tryouts has no attendees yet), so no live
+  exposure — LATENT, but the policy is genuinely missing the role narrowing. As stated.
+
+--------------------------------------------------------------------------------
+CLAIM 7 [P1 #63] — registrations table EMPTY (0) while team_players=63 for Spring 2026;
+   ProgramDetail reads registrations. (A4 a-P1, synthesis PATTERN A)
+--------------------------------------------------------------------------------
+EVIDENCE (live counts, Spring 2026):
+  registrations(program) = 0 ; registrations(all orgs) = 0 ;
+  team_players rows = 63 ; team_players active rows = 63 ; distinct active = 63.
+EVIDENCE (code): ProgramDetailPage reads useProgramRegistrations (registrations table);
+  index/health read team_players. Three "people in this program" truths from three
+  sources; detail renders "Registrations · 0 · No registrations yet" for every program
+  incl. Spring 2026 (63 rostered, $70,242 billed).
+VERDICT: **CONFIRMED (live-firing)**. This one IS live today (not merely latent): every
+  program's detail page shows 0 while index/home show the roster count. The roster came
+  via LeagueApps import into team_players/financial_accounts, never through the
+  registrations pipeline. Dominant PATTERN A instance. As stated.
+
+--------------------------------------------------------------------------------
+CLAIM 8 [P1 #63] — "active" lifecycle (useActivePrograms status-only) vs running-now
+   (programGrouping date-gated); Summer Day Camp splits. (A4 b-P1, synthesis PATTERN A)
+--------------------------------------------------------------------------------
+EVIDENCE (code):
+  programGrouping.js:25 — else if (p.startDate && p.startDate > todayStr) upcoming.push
+    -> a future-dated active program is "Upcoming", NOT "Active".
+  useActivePrograms.js:26 — .eq('status','active') with NO date gate -> future-dated
+    active program IS in the active set (feeds isHomeOffSeason).
+EVIDENCE (live data): Summer Day Camp = camp, status='active', start_date='2026-07-27'
+  > today 2026-06-08. So it is status-active (counted active by useActivePrograms) but
+  renders under "Upcoming" on the index (start_date > today).
+VERDICT: **CONFIRMED (live-firing)**. Same word, two answers, and Summer Day Camp is the
+  live row that splits TODAY. Exactly as A4 stated.
+
+--------------------------------------------------------------------------------
+CLAIM 9 [P1 #63] — playerCount: useAllPrograms rows (no distinct/status) vs
+   useProgramHealthMetrics distinct-active. (A4 a-P2-latent, synthesis PATTERN A)
+--------------------------------------------------------------------------------
+EVIDENCE (code):
+  useAllPrograms.js:39 selects team_players('team_id') with NO status filter; :43-44
+    increments playerCount per ROW (no distinct).
+  useProgramHealthMetrics.js:70-74 selects team_players WHERE status='active'; :89
+    new Set(...player_id).size -> DISTINCT active.
+EVIDENCE (live): Spring 2026 team_players rows=63, active rows=63, distinct active=63
+  -> all three equal today.
+VERDICT: **CONFIRMED but LATENT (not live-firing)**. Two genuinely different definitions;
+  they agree today (no double-rostered kid, no inactive team_player). Breaks the moment a
+  kid is on two teams OR an inactive row exists. A4's own P2-latent label is the accurate
+  severity. NOTE: wave-1 was internally PRECISE here (called it latent) — no over-claim.
+
+--------------------------------------------------------------------------------
+CLAIM 10 [P1 #63] — "Program health" card season-scoped while 4 programs active.
+   (A4 b-P1, synthesis PATTERN A)
+--------------------------------------------------------------------------------
+EVIDENCE (code): AdminProgramHealth.jsx:30 useProgramHealthMetrics(orgId, season?.id);
+  the hook (useProgramHealthMetrics.js:29,43) requires seasonId and scopes every query to
+  that one season. Card title (line 49) = literal "Program health"; subtitle (line 52)
+  leads with season.name.
+EVIDENCE (live): 4 ACTIVE programs (Spring season:63, Active Roster Lab camp:32, Summer
+  Day Camp camp:0, Fall 2026 Tryouts:0). Card shows only the active season's 63.
+VERDICT: **PARTIAL / CONFIRMED-with-nuance**. The label/scope mismatch is real: "Program
+  health" implies org-wide while the source is one season. BUT the card subtitle already
+  leads with season.name (line 52), so the data is self-consistent IF the title is read as
+  "this season's health." A4 itself downgraded the related "Out vs Collected" instance to
+  RESOLVED-by-label and framed THIS one as a label/scope concern, not a data bug. B5
+  agrees: this is a label-honesty P2 (not a wrong-data P1). The "4 active programs" fact is
+  confirmed; the bug is the WORD "Program," not the number. Severity should read P2/label.
+
+--------------------------------------------------------------------------------
+CLAIM 11 — single-active 0-active window (non-atomic setActive/activate).
+   (A1 b, A3 P2, A5 F-2, synthesis PATTERN E / FORK-ACTIVATE-ATOMIC)
+--------------------------------------------------------------------------------
+EVIDENCE (code, useProgramAdmin.js:62-71 activate()):
+  stmt1 (lines 64-66): UPDATE programs SET status='archived' WHERE org_id=... AND
+    program_type=... AND status='active' AND id<>programId;  (early return on archErr)
+  stmt2 (line 69): UPDATE programs SET status='active' WHERE id=programId;
+  -> two separate awaited UPDATEs, NO transaction wrapper. (useSeasons.setActive has the
+   same two-statement shape per A1/A5.)
+EVIDENCE (live index): programs_one_active_season_per_org = UNIQUE(org_id) WHERE
+  status='active' AND program_type='season' — closes the >1-active race, NOT the
+  0-active window.
+VERDICT: **CONFIRMED (LATENT edge)**. Genuinely two non-atomic statements; stmt1-success +
+  stmt2-failure leaves the org with ZERO active seasons, and the partial-unique index can
+  now make stmt2 throw 23505 on a concurrent race. As stated by all three wave-1 agents.
+  Severity: P2 (real failure mode, low probability for single-admin LH) — matches A3/A5's
+  P2, slightly below the "P1" framing implied by listing it among the headline forks.
+
+================================================================================
+(b) DEEP-READ ADDENDUM — what wave-1 MISSED or mis-stated (caught while verifying)
+================================================================================
+
+[MISS-1 / over-claim] A3's "181 financial_transactions" for Fall 2025 is WRONG — the
+  live cascade-path count is 124 (verified twice). financial_transactions has no season_id
+  column; the only meaningful count is the account_id->season_id join = 124. The $61,370
+  figure is correct. Does NOT change the P0 verdict (64 accts + 124 txns + $61k is still
+  catastrophic), but the wave-1 evidence line was imprecise. A1's "244 transactions"
+  references CLAUDE.md §8's documented import total (platform-wide, all seasons) — that's a
+  doc citation, not a live miscount, so it's fine in context.
+
+[MISS-2 / nuance on Claim 4] The guardian ON CONFLICT uses COALESCE(EXCLUDED.x,
+  guardians.x) — so a cross-org overwrite REPLACES with supplied non-null values but does
+  NOT blank existing fields with NULLs. Wave-1 (A5) said "OVERWRITES first_name/last_name/
+  phone" which is true for any non-null supplied value but reads slightly stronger than the
+  COALESCE behavior. The cross-org write + identity-bleed (player_guardians link) is fully
+  real; the "wipe everything" reading is not. Minor precision note — finding stands.
+
+[MISS-3 / severity drift between wave-1 docs] The single-active 0-active window is filed as
+  P2 by A3 and A5 but appears in the synthesis PATTERN-E / fork list with P1-adjacent
+  prominence; sports-singular is P1 in A1 but P2 in A5. These are intra-wave-1 severity
+  inconsistencies the synthesis did not reconcile. B5's reconciled read: sports = P1-latent/
+  P3-today; 0-active = P2; Claim 10 "Program health" = P2-label (not P1). The architect
+  should treat the LATENT cluster (3,4,5,6,11) as "pre-multi-org / pre-tryout-go-live gate"
+  rather than ship-now P1s.
+
+[MISS-4 / non-unique partial index could mislead a fix] guardians has a NON-unique
+  guardians_org_email_partial_idx (org_id,email). A future fix-author chasing FORK-GUARDIAN-
+  UNIQUE might assume per-org uniqueness already exists because of this index name — it does
+  NOT (it's a plain btree for lookup, not a constraint). Flag so the migration author drops/
+  replaces it deliberately rather than assuming it backs uniqueness.
+
+[CONFIRM / wave-1 was right to be cautious] Every "LATENT, single-org-masked" qualifier in
+  wave-1 held up: claims 3,4,5,6,9,11 are all genuinely masked today (single-org, empty
+  tryouts, empty registrations, no double-roster). Wave-1 did NOT over-state any of these as
+  live-firing — its latency labels were accurate. The two genuinely LIVE-FIRING #63 instances
+  (7 reg-table-empty detail, 8 Summer-Day-Camp active-split) were correctly NOT labeled
+  latent. Good calibration on the wave-1 side.
+
+================================================================================
+(c) ANTI-PATTERN CROSS-REF + #63
+================================================================================
+  AP#63 PATTERN A — claims 7,8,9,10 are the cluster; 7+8 LIVE-firing, 9+10 latent/label.
+    Confirmed the dominant programs-surface pattern as wave-1 named it.
+  AP#26 (replay failing op) / AP#25-adjacent — claim 2 TOCTOU; the missing UNIQUE is the
+    real fix (guard alone ins-sufficient), confirmed.
+  AP#36 — adjacent to claim 1: deleteProgram's sibling refetchCounts (useProgramAdmin.js:19)
+    console-only-returns on teams error (no count reset) — verified present; reinforces the
+    delete false-safety (A3 b). Not in my 11 but corroborated while reading the file.
+  AP#16.7 (privacy) — claim 6 evaluation_note exposure, confirmed.
+  AP#37 — claim 1 deleteProgram registrations count is FK-scoped (no org_id col) — the
+    .eq('program_id',...) is the #37 exception, correct.
+  AP#39 — wave-1 forks carry committed leans; B5 does not re-settle, only verifies the
+    evidence under each lean.
+  AP#20/#23/#24/#57 — out of my 11 but spot-confirmed clean while enumerating policies
+    (tryout_attendees writes admin-gated; helpers SECURITY DEFINER search_path pinned).
+
+================================================================================
+(d) PER-ROLE NOTE
+================================================================================
+  - ADMIN is the only role with a program-management UI (claims 1,2,7,8,9,10,11 are
+    admin-surface or admin-home). Verified consistent with A5's cross-role matrix.
+  - ANON is the surface for claims 2 + 4 (submit_registration RPC): the TOCTOU double-bill
+    (2) and the cross-org guardian overwrite (4) are both anon-write reachable — the
+    highest-trust-boundary findings. Confirmed anon-executable RPC.
+  - PARENT (authenticated) is the surface for claim 6: a logged-in parent in the org can
+    SELECT tryout evaluation_note. Cross-role leak (coach-private content readable by
+    parent). Confirmed.
+  - COACH: no program UI; sports-label divergence (3) would reach coach via any program
+    sport-name render, but no such surface exists for coach today (latent on two axes:
+    multi-org AND no-coach-program-surface).
+
+================================================================================
+(e) OUT OF SCOPE (B5 did NOT re-verify)
+================================================================================
+  - A2/A3/A6 findings NOT in the 11-claim list (raw-DB-error microcopy, division-fee-drop,
+    chip tap targets, §16.14 detail redesign, dead-compute event_rsvps slice, a11y aria-
+    live, test-coverage gaps). These are wave-1's own slices; B5's remit was the P0/P1
+    self-verification list only.
+  - Migration-lane fix DESIGN (the architect's lane). B5 verified the DEFECTS exist; it did
+    not evaluate the proposed fixes (UNIQUE shape, per-org email, block-on-financials).
+  - Season rollover end-to-end atomicity (A1/A5 already out-of-scoped it).
+  - Stripe/payment math, waivers/form_fields capture (separate audit).
+
+================================================================================
+SUMMARY COUNTS
+================================================================================
+Wave-1 P0/P1 claims verified: 11 (2 P0 + 9 P1-tagged in the prompt).
+
+  CONFIRMED (live evidence, as stated):        7
+    - Claim 1 [P0] delete CASCADE / no-op guard        (live-firing risk)
+    - Claim 2 [P0] submit_registration TOCTOU          (latent-by-traffic)
+    - Claim 3 [P1] sports singular vs plural           (LATENT multi-org)
+    - Claim 6 [P1] tryout evaluation_note parent-read  (LATENT until tryouts live)
+    - Claim 7 [P1] registrations-empty detail #63      (LIVE-firing)
+    - Claim 8 [P1] active lifecycle vs running-now     (LIVE-firing, Summer Day Camp)
+    - Claim 11    setActive/activate 0-active window   (LATENT edge; P2 not P1)
+
+  CONFIRMED-with-precision-nuance (finding stands, one detail tightened): 3
+    - Claim 4 [P1] guardian global-email overwrite     (COALESCE = replace-non-null, not wipe; LATENT multi-org)
+    - Claim 5 [P1] slug per-org precheck vs global idx  (LATENT multi-org + stale comment)
+    - Claim 9 [P1] playerCount rows vs distinct-active  (wave-1 ALREADY labeled latent — precise)
+
+  PARTIAL (true but narrower than the "P1" framing): 1
+    - Claim 10 [P1] "Program health" season-scoped     (label-honesty P2, not wrong-data P1;
+                                                         card already leads with season.name)
+
+  REFUTED: 0  (no wave-1 P0/P1 collapsed under adversarial live check)
+
+NEW MISSES / OVER-CLAIMS B5 SURFACED:
+  1. A3 "181 financial_transactions" (Fall 2025) is WRONG — live = 124 (P0 verdict
+     unaffected; $61,370 correct).
+  2. Claim 4 COALESCE nuance (replace-non-null, not blanket wipe).
+  3. Intra-wave-1 severity drift unreconciled (sports P1/P2; 0-active P2-but-fork-prominent;
+     claim 10 P1-but-really-P2-label) — B5 reconciles above.
+  4. guardians_org_email_partial_idx is NON-unique — could mislead a future fix-author into
+     assuming per-org uniqueness exists. Flag for the migration author.
+
+GATE RESULT: wave-1's programs P0/P1 surface holds up — ZERO false positives among the 11.
+The expected ~50% false-positive rate did NOT materialize on this list; wave-1's latency
+labeling was well-calibrated. The only corrections are (i) one over-stated evidence count
+(124 not 181), (ii) two precision tightenings (COALESCE; claim-10 severity to P2-label),
+and (iii) severity reconciliation across the LATENT cluster. Net: 2 LIVE-firing P0s
+(1,2 — though 2 is traffic-latent), 2 LIVE-firing #63 P1s (7,8), and a LATENT cluster
+(3,4,5,6,9,11) that is the pre-multi-org / pre-tryout-go-live gate, not ship-now.
+================================================================================
+END — B5 wave-2 self-verification. Forks await architect ratification (§11.8 #4).
+================================================================================

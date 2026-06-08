@@ -1,0 +1,362 @@
+================================================================================
+AGENT B7 — L99 RE-AUDIT (architect wave) — PROGRAMS slice
+SEASON ROLLOVER + cross-program financial/event integrity
+(wave-1 deferred: rollover atomicity)
+Date: 2026-06-08  |  Project: vrwwpsbfbnveawqwbdmj  |  READ-ONLY
+Methodology: §16.15 all five (a-e). Evidence: file:line + live DB query.
+AP#60 source hierarchy: live DB (execute_sql) + installed source = ground truth.
+================================================================================
+
+pwd CONFIRMED: /home/user/skyfire-app
+
+--------------------------------------------------------------------------------
+HEADLINE VERDICT
+--------------------------------------------------------------------------------
+ATOMICITY: NOT ATOMIC. The rollover is ~5+N sequential, uncoordinated
+supabase awaits in JS (useSeasonRollover.js:16-71). No RPC, no transaction,
+no rollback. There is NO single-statement / SECURITY DEFINER function wrapping
+the multi-write sequence. §16.1 calls bulk ops "pessimistic with confirm-after-
+validate" — but the rollover has neither a server-side transaction NOR a
+validate step; it is optimistic-by-omission with silent partial-write modes.
+
+WORSE THAN NON-ATOMIC — THE WIZARD IS DEAD ON ARRIVAL (two independent P0s):
+
+  P0-A: The new-season INSERT writes status:'planning' (line 21), but the live
+        CHECK constraint programs_status_check allows ONLY
+        ('active','draft','archived'). 'planning' is rejected. The INSERT at
+        line 16-23 THROWS at line 24 (`if (sErr) throw sErr`) → catch → toast
+        "Rollover hit a snag." NOTHING is created. The wizard cannot complete.
+
+  P0-B: The roster carry INSERT passes roster_type:'roster' (line 52), but
+        roster_members has NO roster_type column (verified live). Even if P0-A
+        were fixed, every roster INSERT errors (PGRST204). Because it's a BARE
+        await with no { error } destructure (AP#36), the error is SWALLOWED:
+        playersCarried is incremented (line 54) regardless, so the audit row
+        records players_carried=N while ZERO roster_members rows were written.
+
+LIVE CORROBORATION: season_rollovers table is EMPTY (0 rows). No rollover has
+ever completed in production — fully consistent with P0-A killing it on the
+first statement. The "✅ DONE (7-B.2) 5-step rollover wizard with atomic
+execution" claim in CLAUDE.md §8 is FALSE on both counts (not atomic; not
+functional).
+
+--------------------------------------------------------------------------------
+(a) INITIAL PASS — FINDINGS (P0-P3, file:line + live evidence)
+--------------------------------------------------------------------------------
+
+P0-1  CHECK-CONSTRAINT VIOLATION ON NEW-SEASON INSERT (rollover never runs)
+  file: src/hooks/useSeasonRollover.js:21,24
+  code: status: 'planning'  (insert through seasons view → programs)
+  live: programs_status_check = CHECK (status = ANY (ARRAY['active','draft',
+        'archived']))  — 'planning' NOT allowed.
+        seasons is an auto-updatable view (is_insertable_into=YES,
+        check_option=CASCADED, NO INSTEAD OF trigger) → INSERT lands directly
+        on programs → constraint fires → PostgREST 23514 → sErr truthy →
+        `throw sErr` (line 24) → catch → no season created.
+  impact: Rollover is 100% non-functional. Hard P0.
+  fork F1 (see below): correct value is 'draft' (constraint) OR 'archived'
+        (so old+new both archived until setActive) — needs ratification.
+
+P0-2  ROSTER INSERT TARGETS NON-EXISTENT COLUMN + SILENT SWALLOW
+  file: src/hooks/useSeasonRollover.js:51-54
+  code: await supabase.from('roster_members').insert({ team_id, player_id,
+        roster_type: 'roster' });   // bare await, no { error }
+  live: roster_members columns = id, player_id, team_id, jersey_number,
+        jersey_size, shorts_size, amount_paid, amount_due, registered_at,
+        created_at, updated_at, left_at.  roster_type DOES NOT EXIST
+        (has_roster_type = false, verified).
+  impact: (post-P0-1-fix) every roster INSERT 400s; AP#36 bare await swallows
+        it; playersCarried counts up anyway → audit row LIES about carry.
+        Net: new teams created with EMPTY rosters; audit says N carried.
+  note: §11.5 ground-truth — "roster_type" is a team_players concern, NOT a
+        roster_members concern (anti-pattern #14 conflates them). This INSERT
+        wrote a column from the wrong table's mental model.
+
+P0-3  NO ATOMICITY — PARTIAL-WRITE ORPHAN MATRIX
+  file: src/hooks/useSeasonRollover.js:16-71 (entire execute())
+  shape: sequential awaits, no txn, no compensating rollback. Even with P0-1/2
+         fixed, any mid-sequence failure leaves the DB in a partial state:
+           - new season created (line 16) + old season archived (line 26),
+             then team loop throws (line 46) → ORPHAN: a new 'draft' season
+             with some teams, some empty, old season already archived, and
+             NO season_rollovers audit row (line 65 never reached). Org is now
+             mid-rollover with no record of it.
+           - season_locations insert fails → reportError only (line 37), loop
+             continues — locations silently dropped (acceptable degrade, but
+             undocumented).
+           - team created (line 42) then roster loop partially writes then
+             throws → team with partial roster; re-run duplicates teams.
+  impact: No way to resume or cleanly retry; manual DB surgery required. The
+          toast even says "Check what got created" (line 78) — an explicit
+          admission that partial state is expected and unhandled.
+
+P1-4  OLD SEASON ARCHIVED BEFORE WRITES SUCCEED (ordering)
+  file: src/hooks/useSeasonRollover.js:26
+  code: update old season status:'archived' is the 2nd statement, BEFORE any
+        team/roster/audit write. Also a BARE await (no { error } check) →
+        if archive fails it's swallowed and rollover proceeds anyway.
+  impact: org loses its active season the instant the new (draft) season is
+          created, even though the carry has not happened. Combined with P0-3,
+          an org can end up with ZERO usable active season + an empty draft.
+
+P1-5  NEW SEASON IS NEVER ACTIVATED (single-active interaction)
+  file: src/hooks/useSeasonRollover.js:21 (status:'planning' → intended new),
+        useSeasons.js:59-69 (setActive, separate hook, NOT called by rollover)
+  finding: rollover does NOT activate the new season. It archives the old (26)
+        and leaves the new one non-active. After a (hypothetically fixed)
+        rollover, the org has 0 active seasons until an admin separately runs
+        setActive via the season manager. The wizard navigates to '/' (page:49)
+        with no active season → SeasonContext picks rows[0] fallback
+        (SeasonContext.jsx:54) = newest by start_date, which may or may not be
+        the new season. Confusing post-rollover state.
+  partial-index window: BECAUSE the new season is created NON-active, the
+        rollover INSERT itself never collides with
+        programs_one_active_season_per_org (verified: UNIQUE(org_id) WHERE
+        status='active' AND program_type='season'). So the wave-1 "setActive
+        0-active/1-active window" risk is NOT triggered by rollover (rollover
+        never touches the active slot). It IS still present in useSeasons.js
+        setActive (archive-all-then-promote, two statements, lines 61-66) —
+        see P1-6.
+
+P1-6  setActive STILL NON-ATOMIC (wave-1 finding persists, separate surface)
+  file: src/hooks/useSeasons.js:59-69
+  code: stmt1 archive all-others (neq id); stmt2 activate target. Two writes,
+        no txn. Window between them = 0 active seasons (briefly). If stmt2
+        fails, org left with 0 active. The partial unique index PREVENTS
+        2-active (good) but does nothing for the 0-active gap.
+  note: comment at lines 5-9 + 55-58 openly documents this as accepted
+        app-level two-step. Wave-1 flagged it; still open. Low live risk
+        (admin-only, rare) but it is the real single-active hazard, not the
+        rollover.
+
+P2-7  FINANCIAL CONTINUITY: NONE — financial_balances_carried_cents HARDCODED 0
+  file: src/hooks/useSeasonRollover.js:69 (financial_balances_carried_cents: 0)
+  live: financial_accounts is hard season-scoped: season_id NOT NULL, FK
+        on-delete CASCADE to programs. No carry logic exists anywhere in the
+        rollover. New season starts with ZERO financial_accounts; family
+        balances do NOT carry. A family owed/credit from the old season has
+        no representation in the new season.
+  impact: PATTERN A #63 candidate (see (c)). "Does this family owe money?"
+        answered per-season; rollover creates a clean-slate season with no
+        carry-forward of outstanding balance. If that's intended (each season
+        bills fresh), it's fine — but it is UNDOCUMENTED and the audit field
+        name (financial_balances_carried_cents) implies carry was designed and
+        then stubbed to 0. Needs product ratification (fork F3).
+
+P2-8  COACH_PAYOUTS NO ACTION → DANGLING / DELETE-BLOCK
+  file: n/a (rollover doesn't touch payouts); live FK:
+        coach_payouts_season_id_fkey ON DELETE NO ACTION.
+  finding: rollover does NOT carry or reference coach_payouts (fine — payouts
+        are historical per-season). BUT: because the FK is NO ACTION (not
+        CASCADE, not SET NULL), DELETING a season/program that has payouts is
+        BLOCKED at the DB (RESTRICT semantics). season_rollovers from/to are
+        also NO ACTION → deleting either the from- or to-season after a
+        rollover is blocked while an audit row references it. No dangling refs
+        possible (NO ACTION = block), but program deletion is silently
+        un-deletable once payouts or rollover-audit rows exist. Not a rollover
+        bug; a program-lifecycle integrity note for the delete path.
+
+P3-9  AUDIT ROW WRITTEN LAST + status:'complete' UNCONDITIONALLY
+  file: src/hooks/useSeasonRollover.js:65-70
+  finding: season_rollovers row is the LAST write and is stamped
+        status:'complete', completed_at=now() with no verification that the
+        roster/team writes actually landed (they didn't — P0-2). The table
+        default status is 'in_progress' (live) — the design intent was clearly
+        to write the audit row FIRST as in_progress, then flip to complete.
+        Current code writes it once at the end as complete, so a partial
+        failure leaves NO audit trace at all (the throw happens before line 65).
+  impact: audit table cannot reflect partial/failed rollovers; counts are
+        self-reported from JS loop vars, not from actual row counts.
+
+P3-10 RE-RUN DUPLICATES TEAMS (idempotency)
+  file: src/hooks/useSeasonRollover.js:42-45
+  finding: teams INSERT has no conflict guard; re-running rollover (e.g. after
+        a partial failure) creates a SECOND set of teams in the new season.
+        roster_members UNIQUE(player_id, team_id) would dedupe within a team,
+        but duplicate TEAMS each get their own fresh roster → duplicated
+        players across two team rows. No "rollover already done for this
+        from_season" guard (season_rollovers has no unique on from_season_id —
+        verified: only PK on id).
+
+--------------------------------------------------------------------------------
+(b) DEEP-READ ADDENDUM (second pass — what the initial pass missed)
+--------------------------------------------------------------------------------
+
+DR-1  parent_season_id WRITE PATH IS VALID (verified, not a bug)
+  The view aliases programs.parent_program_id AS parent_season_id. The INSERT
+  at line 22 (parent_season_id: fromSeason.id) writes through the auto-
+  updatable view → maps to parent_program_id. FK programs_parent_program_id
+  _fkey ON DELETE SET NULL. Lineage is correctly recorded. NOT a finding —
+  confirms the new season gets a DISTINCT id and the parent link is sound
+  (scope item 3: no mis-attachment of lineage).
+
+DR-2  OLD-SEASON EVENTS/FINANCIALS STAY CORRECTLY ATTACHED (scope item 3 ✓)
+  Rollover creates a NEW program id (gen_random_uuid, line 16) and only ever
+  WRITES new rows keyed to newSeason.id. It NEVER re-points old events,
+  financial_accounts, or game data. So old-season events (events.season_id),
+  financial_accounts.season_id, team_achievements, coach_payouts all remain
+  attached to the OLD program id. NO mis-attachment risk from rollover. The
+  events.season_id SET NULL FK only matters on DELETE (orphans events to
+  null season), which rollover never triggers. VERIFIED CLEAN.
+
+DR-3  rolled_over_at COLUMN EXISTS BUT NOTHING READS IT
+  line 26 sets rolled_over_at on the old season. The seasons view exposes it.
+  Grep target for downstream: no consumer found in scope files. Cosmetic —
+  the archive flag is the rolled_over_at timestamp; harmless dead write
+  relative to the broken path above.
+
+DR-4  team_staff INSERT IS SOUND (coaches carry)
+  line 60: insert { team_id:newTeam.id, user_id, role }. team_staff live cols
+  = id, team_id, user_id, role(default assistant_coach), created_at. All
+  provided fields valid. BARE await (no { error }) → AP#36 swallow if a coach
+  user_id is stale, but structurally correct. Coaches CAN carry once P0-1 is
+  fixed (unlike roster, which is structurally broken by P0-2).
+
+DR-5  THE WIZARD READS roster VIA roster_members BUT WRITES roster_type IT
+      CAN'T STORE — round-trip mismatch
+  SeasonRolloverPage.jsx:37 reads teams(...roster_members(player_id, players(
+  ...))) — correctly the §11.5-documented historical-view exception (the
+  inline comment at lines 29-36 cites PR #124). The READ is correct. The WRITE
+  (hook line 51-54) invents roster_type. The read side never carried a
+  roster_type, so the write's roster_type:'roster' is a hardcoded literal that
+  the schema rejects. The read/write asymmetry confirms P0-2 is a coding
+  error, not a schema-drift artifact.
+
+DR-6  amount_paid / amount_due NOT CARRIED ON roster_members
+  roster_members has amount_paid/amount_due (default 0). The rollover roster
+  INSERT (line 51-53) omits them → new memberships start at 0/0 even if the
+  old membership had balances. Combined with P2-7 (no financial_accounts
+  carry), there is NO financial continuity at EITHER the roster_members level
+  OR the financial_accounts level. Double-confirms the clean-slate-per-season
+  reality (intended or not — fork F3).
+
+--------------------------------------------------------------------------------
+(c) ANTI-PATTERN CROSS-REFERENCE + PATTERN A #63
+--------------------------------------------------------------------------------
+AP#36 (destructured-default / bare-await swallow): P0-2, P1-4, DR-4 — the
+   roster/archive/coach writes are bare `await supabase...` with no { error }
+   check. PostgREST resolves (doesn't reject) on error, so failures are
+   invisible; loop counters increment regardless. This is the load-bearing
+   reason P0-2 is silent rather than loud.
+AP#14 (Futures Academy as roster_type, NOT a separate concern): P0-2 — the
+   code reaches for roster_type on the wrong table; roster_type is a
+   team_players column, never roster_members.
+AP#20 / atomicity doctrine: the whole execute() is the multi-write hazard the
+   codebase elsewhere guards with SECURITY DEFINER RPCs (e.g. assert_org_owns_*
+   AP#57). Rollover has no server-side transactional wrapper.
+AP#16.1 (bulk ops pessimistic): the rollover is bulk + cascading-admin-write
+   (the §16.1 "stay pessimistic" class) but ships neither a txn nor a
+   validate-before-commit; the ConfirmDialog (page:80) is the only "confirm"
+   and it gates intent, not data validity.
+
+PATTERN A #63 (same concept, divergent source/scope across surfaces):
+   "Does this family owe money / carry a balance across the season boundary?"
+   - financial_accounts: per-season, NOT NULL season_id, no carry (P2-7).
+   - roster_members.amount_due/paid: per-(player,team)=per-season, not carried
+     (DR-6).
+   - family_balances view (§11.5): all-seasons aggregate — would still show
+     the old-season balance after rollover because old accounts persist.
+   So post-rollover: the all-seasons family_balances view shows the old debt,
+   but the NEW season's financial_accounts shows zero → a parent's "balance"
+   reads differently depending on whether a surface is season-scoped or
+   all-seasons-scoped. Classic #63 divergence, latent until a rollover ever
+   succeeds. LABEL-the-scope discipline (per #63) applies the day this ships.
+
+--------------------------------------------------------------------------------
+(d) PER-ROLE (admin-only rollover wizard)
+--------------------------------------------------------------------------------
+- Rollover is ADMIN-ONLY by surface (SeasonRolloverPage mounted under admin;
+  reads orgId from useAuth; no coach/parent entry point). No per-role render
+  divergence to audit — single role.
+- RLS: writes go to programs/teams/roster_members/team_staff/season_locations/
+  season_rollovers as the authenticated admin. Not in B7 scope to re-audit RLS
+  policies, but note: if RLS denied any write, AP#36 bare awaits would swallow
+  it identically to P0-2 (invisible failure). The non-atomic + silent-swallow
+  combination means an RLS denial mid-sequence produces the same orphan matrix
+  as P0-3 with zero operator signal.
+- No view-as concern (admin-only). Coaches/parents never reach this path.
+
+--------------------------------------------------------------------------------
+(e) OUT OF SCOPE (explicit)
+--------------------------------------------------------------------------------
+- RLS policy bodies on programs/teams/roster_members (B-other agent / not B7).
+- registrations.program_id RESTRICT delete-path (program lifecycle, not
+  rollover) — noted only as it blocks program delete; full delete-cascade
+  audit is out of scope.
+- divisions/tryout_sessions/player_equipment CASCADE behavior (program build
+  surfaces, other agents).
+- The seasons compat-view RLS / security_invoker correctness (shared grounding
+  asserted it; not re-verified here beyond view def + check_option).
+- Edge-function / cron rollover triggers (none exist; rollover is UI-driven).
+- useActiveSeasonEnd.js / SeasonContext.jsx beyond the post-rollover active-
+  season fallback (read-only consumers; no rollover write path).
+
+--------------------------------------------------------------------------------
+ARCHITECTURAL FORKS (AP#39 — committed lean, architect/Frank ratifies)
+--------------------------------------------------------------------------------
+F1  NEW-SEASON STATUS VALUE (P0-1 fix)
+    Options: (1) 'draft' — matches the constraint, signals "being set up";
+    admin later activates via setActive. (2) 'archived' — both seasons
+    archived, no active until explicit activate. (3) widen constraint to add
+    'planning' (schema change).
+    LEAN: (1) 'draft'. It satisfies the existing constraint with no migration,
+    matches the registration-arc 'draft' program semantics, and keeps the
+    new season visible-but-inactive until the admin deliberately activates.
+    'planning' was a value the constraint never knew about — the bug is the
+    code, not the schema.
+
+F2  ATOMICITY MODEL (P0-3 fix)
+    Options: (A) wrap the entire rollover in a single SECURITY DEFINER
+    plpgsql RPC (rollover_season(plan jsonb)) that runs in one transaction —
+    all-or-nothing, audit row written in-txn, partial failure rolls back
+    cleanly. (B) keep JS-sequential but add a compensating-delete on catch +
+    write the audit row FIRST as in_progress and flip to complete.
+    LEAN: (A) single RPC. This is the §16.1 cascading-admin-write class; the
+    codebase already standardizes server-side transactional helpers (AP#57
+    assert_org_owns_*). An RPC also fixes AP#36 swallow (errors raise in-txn),
+    fixes the 0-active window if it also activates atomically, and gives a
+    real idempotency guard (unique on from_season_id). (B) is the hedge — and
+    per AP#39 the dedicated RPC is the truer position; do (A).
+
+F3  FINANCIAL CONTINUITY INTENT (P2-7 / DR-6)
+    Question for product: is each season billed fresh (clean slate, no carry)
+    or should outstanding balances/credits carry into the new season's
+    financial_accounts? The field financial_balances_carried_cents implies
+    carry was designed.
+    LEAN: clean-slate-per-season is the simpler, likely-correct youth-sports
+    model (Fall/Winter/Spring each bill independently). If so, DELETE the
+    financial_balances_carried_cents field (or keep at 0 and document
+    "no carry by design") and LABEL family-balance surfaces by scope per
+    PATTERN A #63. But this is a genuine product fork — surface it, do not
+    settle it in code.
+
+F4  NEW-SEASON ACTIVATION ON ROLLOVER (P1-5)
+    Should rollover leave the new season inactive (admin activates later) or
+    activate-on-commit (archive old + activate new atomically)?
+    LEAN: activate-on-commit, inside the F2 RPC, so the partial-index single-
+    active invariant is enforced transactionally (archive old + insert new
+    active in one txn — the partial index permits it because the old flips to
+    archived in the same statement-set). This also kills the post-rollover
+    "0 active, SeasonContext picks rows[0] fallback" ambiguity.
+
+--------------------------------------------------------------------------------
+COUNTS
+--------------------------------------------------------------------------------
+P0: 3   (P0-1 constraint violation, P0-2 missing column + swallow, P0-3 non-atomic orphan matrix)
+P1: 3   (P1-4 archive-before-writes, P1-5 new season never activated, P1-6 setActive non-atomic)
+P2: 2   (P2-7 no financial carry, P2-8 coach_payouts/rollover NO-ACTION delete-block)
+P3: 2   (P3-9 audit-row-last/complete-unconditional, P3-10 re-run duplicates teams)
+Deep-read addendum items: 6 (DR-1..DR-6; DR-1/DR-2/DR-4 are VERIFIED-CLEAN, DR-3/DR-5/DR-6 reinforce P0/P2)
+Forks: 4 (F1 status value, F2 atomicity RPC, F3 financial-carry intent, F4 activate-on-rollover)
+Live facts established: 9 queries (view def, partial index, programs cols+check,
+  FK on-delete matrix, roster_members cols+indexes, team_staff cols,
+  season_rollovers cols+0 rows, financial_accounts cols, view updatability+triggers)
+
+ATOMICITY VERDICT: NOT ATOMIC, and currently NON-FUNCTIONAL (dies at the first
+INSERT on a CHECK violation). Even after the P0-1 status fix, P0-2 (missing
+column, silently swallowed) + P0-3 (no transaction) make a successful rollover
+produce empty rosters and an unrecoverable partial state. season_rollovers
+empty in prod confirms no rollover has ever completed. Recommend F2 (single
+SECURITY DEFINER RPC) as the structural fix that subsumes P0-1, P0-2, P0-3,
+P1-4, P1-5, P3-9, P3-10, and the F4 activation in one transactional surface.
+================================================================================
