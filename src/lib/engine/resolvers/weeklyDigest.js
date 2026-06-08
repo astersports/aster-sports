@@ -57,11 +57,21 @@ function buildSlices(rpcRows, kidsByGuardian) {
     .sort((a, b) => (a.guardian_id < b.guardian_id ? -1 : a.guardian_id > b.guardian_id ? 1 : 0));
 }
 
-export async function resolveWeeklyDigest({ orgId, period, pilotOnly = false }, { supabase, now = new Date() } = {}) {
+export async function resolveWeeklyDigest({ orgId, period, pilotOnly }, { supabase, now = new Date() } = {}) {
   if (!orgId) throw new Error('Missing orgId');
   if (!period?.start || !period?.end) throw new Error('Missing period');
   if (!supabase) throw new Error('Missing supabase client (pass via options.supabase)');
   void now;
+
+  // FORK-D: weekly_digest previously had NO org-settings consult (it took a
+  // pilotOnly param defaulting false — fail-open if a caller omitted it). Mirror
+  // the 8 sibling resolvers: consult when undefined, fail CLOSED (?? true).
+  let effectivePilotOnly = pilotOnly;
+  if (effectivePilotOnly === undefined) {
+    const { data: settings, error: settingsErr } = await supabase.from('organization_settings').select('pilot_mode_enabled').eq('organization_id', orgId).maybeSingle();
+    if (settingsErr) throw settingsErr;
+    effectivePilotOnly = settings?.pilot_mode_enabled ?? true; // FORK-D fail-closed default
+  }
 
   const { startIso, endIso } = periodIsoBounds(period);
   const { data: events = [], error: eventsErr } = await supabase
@@ -87,7 +97,7 @@ export async function resolveWeeklyDigest({ orgId, period, pilotOnly = false }, 
     rsvps = data || [];
   }
 
-  const { data: rpcRows = [], error: rpcErr } = await supabase.rpc('get_digest_recipients', { p_org_id: orgId, p_pilot_only: pilotOnly });
+  const { data: rpcRows = [], error: rpcErr } = await supabase.rpc('get_digest_recipients', { p_org_id: orgId, p_pilot_only: effectivePilotOnly });
   if (rpcErr) throw rpcErr;
 
   const { data: coaches = [], error: coachesErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);

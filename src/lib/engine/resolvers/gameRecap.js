@@ -47,7 +47,7 @@ export async function resolveGameRecap({ eventId, pilotOnly }, { supabase, now =
   if (effectivePilotOnly === undefined) {
     const { data: settings, error: settingsErr } = await supabase.from('organization_settings').select('pilot_mode_enabled').eq('organization_id', orgId).maybeSingle();
     if (settingsErr) throw settingsErr;
-    effectivePilotOnly = settings?.pilot_mode_enabled ?? false;
+    effectivePilotOnly = settings?.pilot_mode_enabled ?? true; // FORK-D fail-closed default
   }
 
   const { data: gameResult, error: grErr } = await supabase.from('game_results').select('our_score, opponent_score, result, quarter_scores, player_of_game_id, coach_highlight, published_at').eq('event_id', eventId).maybeSingle();

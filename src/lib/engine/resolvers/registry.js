@@ -69,7 +69,7 @@ export const RESOLVER_REGISTRY = {
   weekly_digest: {
     resolve: resolveWeeklyDigest,
     compose: composeWeeklyDigest,
-    anchorFromState: (state) => ({ orgId: state.org_id, period: state.period, pilotOnly: state.pilot_only ?? false }),
+    anchorFromState: (state) => ({ orgId: state.org_id, period: state.period, pilotOnly: state.pilot_only }), // FORK-D: pass-through so undefined triggers the resolver's fail-closed settings consult (was ?? false)
     overridesFromState: bodyOverrides,
     sendPath: 'digestSend',
   },

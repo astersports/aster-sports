@@ -45,7 +45,7 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
     const { data: settings, error: sErr } = await supabase.from('organization_settings')
       .select('pilot_mode_enabled').eq('organization_id', parent.org_id).maybeSingle();
     if (sErr) throw sErr;
-    effectivePilotOnly = settings?.pilot_mode_enabled ?? false;
+    effectivePilotOnly = settings?.pilot_mode_enabled ?? true; // FORK-D fail-closed default
   }
   if (effectivePilotOnly && parent.org_id) {
     const { data: rpcRows = [], error: rpcErr } = await supabase.rpc('get_digest_recipients', { p_org_id: parent.org_id, p_pilot_only: true });
