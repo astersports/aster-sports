@@ -1,0 +1,60 @@
+==============================================================================
+CC PR REPORT — G5 PR 0: F-DUAL-FINALIZE   CC -> architect
+Date: 2026-06-08. Report for PR #827 (held do-not-auto-merge), the hard
+precondition the architect sequenced before the G5 recovery sweep (PR 1). Per
+§11.8 every build PR ships a committed .txt + full chat paste. NOTHING APPLIED
+beyond the PR branch. Held for Frank's smoke.
+==============================================================================
+
+0. WHY THIS IS PR 0 (gates G5, not hygiene)
+------------------------------------------------------------------------------
+Four send helpers wrote comms_messages.status='sent' after invoke, checking ONLY
+the transport error, never dispatch.data.ok:
+  digestSend.js:125 · rsvpNudgeSend.js:93 · academyCallupSend.js:91 ·
+  scheduleChangeSend.js:99.
+A partial send (edge fn returns ok:false) force-finalized the message. Then the
+alreadySent 409 guard (send-tournament-message:101, keyed on sent_at) fires on
+ANY re-invoke — 409-LOCKING the message's own recovery: G5's `failed` re-drive
+AND a human "Resend" could never process the stuck rows. A falsely-finalized
+message lies to its own recovery. G5 must sit on a floor that tells the truth.
+
+1. THE FIX (mirror the main path, composerSubmit.js:132-142)
+------------------------------------------------------------------------------
+In each of the four helpers:
+  - REMOVED the redundant client `update({status:'sent'})` — the edge fn owns the
+    terminal finalize (service role, authoritative). It already does this on the
+    main composerSubmit path.
+  - ADDED the `if (dispatch && dispatch.ok === false) throw ...` surface so a
+    partial send raises instead of reporting success (the SEND-3 fix).
+  - Captured `data: dispatch` from invoke where the helper only captured `error`.
+No edge-fn change; no schema change; behavior change is the intended one (a
+partial send now throws instead of silently reporting sent).
+
+2. TESTS
+------------------------------------------------------------------------------
+  - digestSend.integration: test 'a' assertion flipped to the new contract
+    (helper does NOT client-write status='sent'); + NEW test 'a2' — a dispatch
+    ok:false throws ("no false success"), and still no status='sent' write.
+  - scheduleChangeSend.regression: test '3' inverted (does NOT client-write
+    status='sent'; edge fn owns finalize).
+  - rsvpNudgeSend + academyCallupSend integration tests: pass unchanged (they
+    never asserted the removed write).
+  - Lint + build + full suite GREEN (206 files / 1473 tests, +1).
+
+3. VERIFICATION (honest)
+------------------------------------------------------------------------------
+Backend send-path change — verified by the suite + the architect's review (the
+architect flagged G5/PR0 for a hard look). No live send fired. The behavior-
+equivalence-with-intent: the ONLY behavioral delta is that a partial (ok:false)
+send now throws instead of stamping sent — which is the whole point.
+
+4. WHAT'S NEXT
+------------------------------------------------------------------------------
+On PR 0 merge (Frank smoke): build PR 1 — G5 Option C (the recovery sweep + the
+Radar "Sends needing review" region per the architect's render) + the
+redrive_count cap column (Frank D1 = INCLUDE). PR 1 reuses the merged G8 kernels
+(sendDispatch / classifyBatchResult), auto-re-drives ONLY safe `failed`, never
+`queued`, and carries the never-re-drive-queued regression guard.
+==============================================================================
+END — CC_G5_PR0_REPORT
+==============================================================================
