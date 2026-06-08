@@ -57,6 +57,13 @@ describe('aiDraftPrompt helpers', () => {
     expect(p).toContain('do not invent specifics');
   });
 
+  it('buildAiDraftUserPrompt: narrativeOnly scopes record/games to the recap window (no season-wrap)', () => {
+    const p = buildAiDraftUserPrompt({ kind: 'games_recap', framing: '10U Blue families', factLines: ['Games: Fri 10U Blue 22-28 vs 6th Boro (L)'], narrativeOnly: true });
+    expect(p).toContain("covers ONLY this briefing's games, not the full season");
+    expect(p).toContain('first, last, or only game');
+    expect(p).toContain("'time to breathe'");
+  });
+
   it('buildAiDraftUserPrompt: hard rules forbid fabricated game context (FLAG 1)', () => {
     const recap = buildAiDraftUserPrompt({ kind: 'game_recap', framing: '10U Blue families', factLines: ['Final: 22-28 (L)'], narrativeOnly: true });
     const free = buildAiDraftUserPrompt({ kind: 'announcement', framing: 'all families', factLines: ['What: picture day'] });

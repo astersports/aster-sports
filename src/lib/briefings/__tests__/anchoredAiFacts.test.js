@@ -27,7 +27,7 @@ describe('anchoredAiFacts', () => {
     expect(anchoredFacts('game_recap', { team: { name: '10U' }, game_result: {} })).toEqual({ Team: '10U' });
   });
 
-  it('games_recap narrative fills coach_note; extracts record + per-game lines', () => {
+  it('games_recap (multi-game): includes a SCOPE-LABELED aggregate record + per-game lines', () => {
     expect(AI_DRAFT_FIELD.games_recap).toBe('coach_note');
     const ctx = {
       summary: { record: '1-1' },
@@ -37,8 +37,20 @@ describe('anchoredAiFacts', () => {
       ],
     };
     expect(anchoredFacts('games_recap', ctx)).toEqual({
-      Record: '1-1',
+      'Record across these games': '1-1',
       Games: 'Sat 10U Blue 24-30 vs 6th Boro (L); Sun 10U Blue 40-20 vs Storm (W)',
+    });
+  });
+
+  it('games_recap (SINGLE game): omits the standalone record so the AI does not read it as a season opener', () => {
+    const ctx = {
+      summary: { record: '0-1' },
+      games: [{ day_label: 'Fri', team_name: '10U Blue', our_score: 22, opponent_score: 28, opponent: '6th Boro 4AB', result: 'L' }],
+    };
+    // No "Record" key — the game line carries the score; the misleading
+    // "0-1 RECORD" that drove "first game jitters" / "TIME TO BREATHE" is gone.
+    expect(anchoredFacts('games_recap', ctx)).toEqual({
+      Games: 'Fri 10U Blue 22-28 vs 6th Boro 4AB (L)',
     });
   });
 
