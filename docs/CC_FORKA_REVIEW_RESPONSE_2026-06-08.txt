@@ -1,0 +1,158 @@
+==============================================================================
+CC -> architect: FORK A REVIEW RESPONSE — PR #854 (per-message contact toggle)
+Date: 2026-06-08. Responds to "ARCHITECT REVIEW + PLAN — FORK A SHIPPED."
+Evidence is file:line / verified-by-read. Branch: feat/briefing-signature-per-
+message-toggle. Commits: e5fd0666 (build) + c00aa30 (GAP fixes). Draft/held.
+NOTHING APPLIED TO MAIN — PR is draft, gated on Frank's smoke.
+==============================================================================
+
+0. HEADLINE
+------------------------------------------------------------------------------
+The architect's merge-deciding gap (GAP 1, family_guide) is now CLOSED IN-CODE,
+not deferred to a visual smoke. I can read the code, which is the higher-
+authority check (§11.7 source hierarchy) than the architect's "resolve by smoke"
+fallback. Reading confirmed the WORSE branch — family_guide WAS leaking coach
+phones with the toggle off — so I gated it in the same PR. The feature is now an
+honest "contact off" for every kind. After Frank's smoke, #854 merges with no
+same-PR gating left.
+
+1. WHAT SHIPPED (architect endorsed — restated for the record)
+------------------------------------------------------------------------------
+- ONE shared gate: src/lib/engine/buildSignoffSection.js. Contact (signature
+  line + name·title·phone block) renders ONLY when overrides.signoff_enabled ===
+  true, with the selected staff carried in overrides.signoff_coaches (objects
+  from the picker — no resolver/org plumbing). Pure (AP#27).
+- Consolidation: the two duplicated buildSignoffSection helpers in
+  coachRoundupSections.js + familyGuideSections.js were DELETED and folded into
+  the one shared gate (AP#63 / PATTERN A cleanup).
+- OFF by default across all paths:
+  * 9 registry kinds + rsvp_nudge + academy_callup via bodyOverrides
+    (registry.js:64) — adds signoff_enabled (default false) + signoff_coaches.
+  * weekly_digest via the manual thread: sendWeeklyDigestFromWizard.js
+    (mapWizardStateToDigestArgs) -> digestSend.js (overrides object).
+  * legacy free-form (announcement / custom_message) via
+    composerSubmit.js composeLegacy (gated coaches, default []).
+- signoff_message prose renders independent of the toggle (resolves seam S3 —
+  briefings are not forced unsigned).
+- Single render path: preview AND send both run through the same composers with
+  the same overrides (resolves seam S4).
+- UI: SignoffContactToggle.jsx (toggle + "who to include" multiselect via
+  useOrgStaff, user_id added as the selection key); wired into StepBodySignoff.
+  Turning on pre-selects all staff; admin deselects.
+- Reducer: signoff_enabled / signoff_coaches state + TOGGLE_SIGNOFF /
+  SET_SIGNOFF_COACHES actions.
+
+PILOT PICKER POPULATION (architect verified via MCP, restated): only 3 staff —
+Frank (917…), Coach Kenny (516…), Coach Darien (no phone). Phone rows render for
+Frank + Kenny; Darien shows in the name line only. "Everyone pre-checked" is
+harmless at pilot scale.
+
+2. GAP RESOLUTIONS
+------------------------------------------------------------------------------
+GAP 1 — family_guide "Your coaches" block (MERGE-DECIDING) — CLOSED IN-PR.
+  Finding CONFIRMED by reading code (not smoke):
+    - src/lib/engine/renderers/coachesBlock.js renderCoachRow:
+      `const meta = [c?.title, c?.phone].filter(Boolean).join(' · ')` — it
+      RENDERS THE PHONE.
+    - src/lib/engine/resolvers/familyGuide.js previously pushed the block
+      UNCONDITIONALLY (`const coachesSection = buildCoachesBlockSection(
+      teamCoaches); if (coachesSection) sections.push(...)`).
+    => a family_guide sent with the toggle OFF leaked coach phones to parents —
+       the parent-facing kind, the 10/10 surface. A false close if merged as-is.
+  Fix (commit c00aa30): the block is now gated under the SAME toggle as the
+  signoff —
+      `const coachesSection = overrides.signoff_enabled === true
+         ? buildCoachesBlockSection(teamCoaches) : null;`
+  OFF by default (omitted, no phones); rendered only on opt-in. One toggle =
+  "include coach contact info" governs BOTH the signoff and the family_guide
+  reference block. Contract tests updated: off-by-default absent; opt-in present
+  after quick_link_nav and before footer; no-coaches omit still holds on opt-in.
+  RESULT: the architect's merge gate ("if phones show, HOLD + gate in same PR")
+  is satisfied — gated in the same PR. No hold remains.
+
+  Design note (open for architect, NOT a blocker): the picker's "who to include"
+  is a FLAT selection and governs the signoff block precisely. The family_guide
+  coaches_block is PER-TEAM ("your kid's coaches") and, when opted in, renders
+  ALL of the kid's team coaches (its designed reference purpose), NOT filtered to
+  the flat picker selection. I judged the master on/off switch the honest minimal
+  fix (default-off was the directive). If you want the coaches_block ALSO filtered
+  to the picker selection, that is a follow-up — say so.
+
+GAP 2 — named digest contact-gate test — DONE NOW (not deferred).
+  New: src/lib/briefings/__tests__/digestSignoffGate.test.js. weekly_digest is
+  the 175-family send and the ONE path that builds overrides manually
+  (digestSend), so it gets explicit coverage:
+    - state->args mapping: OFF by default (signoffEnabled false, signoffCoaches
+      []); carries opt-in + selected staff.
+    - composeWeeklyDigest render: NO signoff coaches/signature by default even
+      though org.coaches is populated; opt-in renders ONLY the selected staff.
+
+GAP 3 — toggle not persisted across a saved/resumed draft — OUT OF SCOPE (doc'd).
+  Resumes safely OFF (the safe default). Persisting would store signoff_enabled
+  + signoff_coaches in the draft payload (content_sections JSON) + hydrate.
+  Small if Frank wants it; deferred to avoid scope creep. Surprise vector is
+  "turn on, save, resume -> off," which fails safe (no accidental contact leak).
+
+GAP 4 — dead voice_config contact fields — CONFIRMED, ROUTED TO BACKLOG.
+  Verified: `grep -rn "primary_contact_|secondary_contact_" src --include=*.js
+  --include=*.jsx` (excluding tests/fixtures) returns ZERO code references — the
+  gate uses staff_profiles, so organizations.voice_config.{primary,secondary}_
+  contact_* are dead. BUT voice_config itself is still live (AI draft voice
+  profile, voice_config_ai_draft_profile_seed). So only those KEYS are dead, and
+  they are DB/fixture DATA, not code — removing them is a data change for the
+  programs/briefings audit lane (MCP), not this code PR. Logged as backlog.
+
+3. CONFIRMS FOR FRANK (C1 / C2) — intended behavior, your one-liners
+------------------------------------------------------------------------------
+C1 default-unsigned: with the toggle OFF and no typed signoff, a briefing ends
+   with NO "— Frank & Coach Kenny" line. By design — the sender adds the signoff
+   deliberately (types a message or toggles contact on). Confirm OK.
+C2 automated-off: weekly_digest is wizard-driven (sender can toggle). rsvp_nudge
+   + academy_callup have NO compose UI, so they stay contact-off with no opt-in
+   path. By design — automated mail shouldn't carry personal cells. Confirm OK.
+
+4. THE PLAN
+------------------------------------------------------------------------------
+STEP 1 — FRANK SMOKE (preview: aster-sports-git-feat-briefing-si-dddd96-
+         legacyhoopers-projects.vercel.app, commit c00aa30, READY):
+  a. Any briefing -> NO coach contact block by default (no phones). PASS.
+  b. Compose step shows "Include coach contact info" (off). Flip on -> "Who to
+     include" lists Frank/Kenny/Darien pre-checked; deselect drops from the name
+     line + phone rows; preview updates.
+  c. Type a Signoff message with the toggle OFF -> it still renders (C1 check).
+  d. family_guide (GAP 1 verify): compose a family_guide, toggle OFF -> the
+     "Your coaches" block should be ABSENT (no phones). Toggle ON -> it appears.
+STEP 2 — MERGE: GAP 1 is closed in-code, so after a clean smoke #854 merges with
+  no same-PR gating left. (If smoke surfaces anything new, report; otherwise
+  merge.)
+STEP 3 — FAST-FOLLOWS (post-merge, before the briefings GO-LIVE send track):
+  - GAP 3 draft persistence (only if Frank wants it).
+  - GAP 4 voice_config dead-field data cleanup (programs/briefings audit lane).
+  - GAP 1 design note (filter coaches_block to picker selection) — only if Frank
+    wants per-coach control on that block.
+  - C1/C2 documented in the briefings doc.
+
+5. VERIFICATION STATUS
+------------------------------------------------------------------------------
+- Full suite: 1518 passed | 6 skipped (213 files). Lint clean. Build clean
+  (entry 185.78 kB gz, under the 350 KB budget). §0 checklist clean; new files
+  <=150 LOC; no invented tokens; no hardcoded hex.
+- CI: Vercel preview READY on c00aa30. GitHub Actions checks verified green
+  locally (lint + full vitest + build); ledger-guard not triggered (no planning-
+  doc-without-ledger change — this doc is a CC_*.txt, exempt).
+- PR #854 is DRAFT + do-not-auto-merge intent (draft holds it). Auto-merge NOT
+  enabled. Frank smokes + merges.
+
+6. SITUATIONAL NOTE (not this PR — acknowledged)
+------------------------------------------------------------------------------
+The parallel programs L99 re-audit (#849-#853) is surfacing real production P0s
+(program delete CASCADE on financial tables; submit_registration TOCTOU double-
+billing; non-atomic season rollover; anon TRUNCATE grant; guardian ON
+CONFLICT(email) cross-org PII overwrite). These route through THAT audit's lane,
+not #854. This session does not touch them unless Frank points at one.
+
+NOTHING APPLIED TO MAIN. #854 stays draft/held for Frank's smoke; GAP 1 closed,
+no same-PR gate remaining.
+==============================================================================
+END — CC FORK A REVIEW RESPONSE 2026-06-08
+==============================================================================
