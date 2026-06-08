@@ -1,0 +1,118 @@
+==============================================================================
+CC -> architect: DESIGN SPEC — AI recap season-context (fix B) + record_pill scope
+Date: 2026-06-08. CC evidence + labeled leans; architect frames/ratifies the
+forks; Frank relays. Follows level-A guardrail (PR #859). Self-contained.
+==============================================================================
+
+0. WHY THIS DOC
+------------------------------------------------------------------------------
+Frank: "the AI should UNDERSTAND this isn't the first game played, and if [not]
+the last, 'time to breathe' isn't correct." Level A (PR #859) STOPS the AI from
+asserting season position (scope-labeled facts + a no-season-wrap rule). It does
+NOT give the AI the real position. Fix B does: feed true season-to-date context
+so the model can write accurate framing ("now 4-3 on the season", mid-season
+tone) instead of generic avoidance. This doc gives the architect the evidence +
+CC leans to ratify the forks before CC implements.
+
+1. ROOT CAUSE (grounded, file:line)
+------------------------------------------------------------------------------
+- anchoredAiFacts.js (pre-#859): games_recap handed the AI `Record: <recap
+  window>` + a one-game list, no season position -> model inferred a season
+  opener and used the season-wrap header "TIME TO BREATHE".
+- The "record" is recap-window math: gamesRecapHelpers.summarizeGames() counts
+  W/L only across the SELECTED games; the header recordPill is
+  "0–1 RECORD · <date range>" from those same games (gamesRecap.js:91).
+- game_recap (singular) pill = buildGameRecapPill() = "LOSS · JUN 5" (result
+  word + date, NO record) — so the singular kind never shows a record; the
+  "0–1 RECORD" Frank saw is the games_recap (plural) pill.
+- No season linkage in the recap resolvers: they anchor on eventIds, not season.
+
+2. EXISTING INFRA TO REUSE (AP#42 — do NOT build parallel)
+------------------------------------------------------------------------------
+- src/lib/teamRecords.js computeSummary(games) -> { record, gamesPlayed, streak,
+  last5, ppg, allowed, diff, winPct, pointsFor, pointsAgainst }. Pure, already
+  the single source for both useTeamRecords (single) and useOrgTeamRecords (org).
+  B should feed this the team's prior games and read { record, gamesPlayed }.
+- IMPORTANT NUANCE: useOrgTeamRecords is NOT season-scoped — it selects ALL
+  published game_results for the org's teams (no season/date filter). So the
+  Records page "record" today is effectively ALL-TIME, not season-to-date. That
+  makes fork F1 (what "season" means) a real decision, not an assumption.
+
+3. THE FORKS (architect decides; CC lean labeled per AP#39)
+------------------------------------------------------------------------------
+F1. WHAT DOES "SEASON-TO-DATE" MEAN?
+    (a) All published games for the team up to the recap date (matches the
+        current Records-page definition; one query, reuses the pattern).
+    (b) Games within the ACTIVE SEASON's date window (seasons table has start/
+        end, e.g. Spring 2026 Mar 23–Jun 14) up to the recap date — more
+        correct, needs a season-window lookup.
+    CC LEAN: (a) for v1. It matches what the app already calls "record"
+    everywhere else, avoids a season-window query, and is enough to kill the
+    "first game" inference. Move to (b) only if/when multi-season data makes
+    all-time misleading (LH is effectively single active season now).
+
+F2. MULTI-TEAM games_recap (gamesRecap.js:61 spans 1+ teams).
+    A single "season record" is ill-defined across teams.
+    (a) Single-team recap -> add season context; multi-team -> omit it (rely on
+        the A guardrail there).
+    (b) Multi-team -> per-team season lines ("9U 3-4 · 10U 5-2 entering today").
+    (c) Never add season context to games_recap; only to game_recap (singular).
+    CC LEAN: (a). Single-team is the common case Frank hit; multi-team weekends
+    read fine with the A guardrail and per-team season lines would bloat the
+    facts. Clean rule: add season context only when teamIds.length === 1.
+
+F3. record_pill SCOPE (the UI pill, separate from the AI facts).
+    Today: games_recap shows "0–1 RECORD · <range>" (recap window) which reads
+    like a season record on a single game.
+    (a) Keep recap-window math but RELABEL for the single-game case to match the
+        singular pill: "LOSS · JUN 5" (no "RECORD"); keep "X–Y RECORD · range"
+        for multi-game (clearly a span).
+    (b) Make the pill SEASON-to-date ("4–3 RECORD" season) — consistent with the
+        AI now knowing the season, but changes a shipped visual.
+    (c) Show both, labeled ("Today: L · Season: 4–3").
+    CC LEAN: (a) for the single-game misread (cheap, no new data), and revisit
+    (b)/(c) with the season query if you want the pill to carry season too.
+    This is the most product-flavored fork — your call.
+
+F4. WHAT EXACTLY TO FEED THE AI (facts shape).
+    Candidates (single-team only, per F2):
+      - "Season record before today: 3-4" (entering record)
+      - "Games played this season: 7" (so it knows it's not game 1)
+      - "This was game 8 of the season" (ordinal)
+    CC LEAN: feed BOTH the entering record and games-played count, e.g.
+      out['Season so far'] = '3-4 (7 games before this one)';
+    The model can then write "now 4-3" / "eight games in" accurately. Avoid the
+    is-this-the-LAST-game flag for v1 (needs the remaining-schedule lookup; the
+    A no-season-wrap rule already prevents wrongful "time to breathe").
+
+4. IMPLEMENTATION SKETCH (CC lane, once forks ratified)
+------------------------------------------------------------------------------
+- gameRecap.js / gamesRecap.js resolve: when single-team, fetch that team's
+  prior published game_results (event start_at < this recap's latest game),
+  run teamRecords.computeSummary, attach context.season_summary =
+  { record, gamesPlayed }.
+- anchoredAiFacts.js: when context.season_summary present, emit
+  out['Season so far'] = `${record} (${gamesPlayed} games before this one)`.
+- aiDraftPrompt.js + AP#30 mirror: add one line — "If a 'Season so far' fact is
+  given, you MAY reference the season position accurately; never contradict it."
+- record_pill: per F3 ruling (likely a gamesRecapHelpers tweak for the single-
+  game label, + optional season pill).
+- Tests: resolver season query (mocked), anchoredFacts season fact, prompt line,
+  AP#43 cross-surface pill invariant if F3 changes the pill.
+- Edge deploy: mirror change -> briefing-ai-draft redeploys on merge.
+
+5. OUT OF SCOPE (v1)
+------------------------------------------------------------------------------
+- is-this-the-last-game / remaining-schedule awareness (F4 defers it).
+- season-window definition (F1(b)) unless you pick it.
+- multi-team per-team season lines (F2(b)) unless you pick it.
+- tournament_recap season context (tournaments are self-contained; not asked).
+
+6. ROUTING
+------------------------------------------------------------------------------
+Architect: ratify F1–F4 (CC leans: F1a, F2a, F3a, F4 both-fields). On ratify,
+CC implements §4 in one PR (resolver + facts + prompt + pill + tests), Frank
+smokes. Until then, level A (#859) is the live mitigation.
+==============================================================================
+END — CC AI SEASON-CONTEXT DESIGN SPEC 2026-06-08
+==============================================================================
