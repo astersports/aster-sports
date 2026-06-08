@@ -6,6 +6,16 @@ the same turn as apply (AP#21). AP#60 live-verified (vrwwpsbfbnveawqwbdmj).
 Deep refs: docs/audit/programs_l99_wave2/PROGRAMS_L99_ARCHITECT_COLLAB.txt (§2,§6).
 ==============================================================================
 
+RATIFICATION STATUS (architect, 2026-06-08, live-verified independently):
+  S1 rollover RPC (5 parts) ... RATIFIED   S2 Direction A ......... RATIFIED
+  S3 FORK-REG-UNIQUE ......... RATIFIED — as PARTIAL (see S3, folded in below)
+  S4 FORK-DELETE ............. RATIFIED — FK-RESTRICT form, blast radius widened
+  S5 FORK-ANON-GRANTS ........ NOT YET RULED — audit basis provided in S5 for the
+                               architect to rule (not among the 3 P0s).
+  Apply stays GO-gated to Frank + the architect MCP lane; architect pre-flights
+  each before apply. This revision folds the architect's two scope corrections
+  (S4 blast radius, S3 partial) + the S3 status-enum read into the held specs.
+
 APPLY ORDER (dependency-correct):
   S1 rollover RPC  →  S2 team_type NOT NULL  (S2 needs S1's team_type_id carry)
   S3 FORK-REG-UNIQUE, S4 FORK-DELETE, S5 FORK-ANON-GRANTS — independent, any order.
@@ -157,20 +167,31 @@ with NO row lock + NO unique constraint, two concurrent anon submits both pass t
 SELECT and both INSERT → double registration + double registration_fees → double
 bill. Latent today (0 registrations) but anon-reachable.
 
-  -- 1. constraint (CONCURRENTLY not needed at 0 rows; plain is fine)
-  ALTER TABLE registrations
-    ADD CONSTRAINT registrations_program_player_uniq UNIQUE (program_id, player_id);
+RATIFIED AS PARTIAL (architect): a FULL unique would block a player from ever
+re-registering after a withdrawal. registration_status enum (live) =
+{pending, confirmed, waitlist, cancelled, payment_overdue}; the only TERMINAL
+(re-registerable) state is 'cancelled' (payment_overdue is still a live reg that
+must block a dup; waitlist/pending/confirmed are live). So the predicate excludes
+'cancelled' only.
+
+  -- 1. PARTIAL unique index (CONCURRENTLY not needed at 0 rows; plain is fine).
+  --    A partial unique index can serve as an ON CONFLICT arbiter via its predicate.
+  CREATE UNIQUE INDEX registrations_program_player_live_uniq
+    ON registrations (program_id, player_id)
+    WHERE status <> 'cancelled';
   -- 2. make the INSERT race-safe (edit submit_registration body): the existing
   --    INSERT INTO registrations (...) RETURNING id INTO v_reg_id  becomes
-  --    INSERT ... ON CONFLICT (program_id, player_id) DO NOTHING RETURNING id
-  --    INTO v_reg_id;  IF v_reg_id IS NULL THEN  -- lost the race
+  --    INSERT ... ON CONFLICT (program_id, player_id) WHERE status <> 'cancelled'
+  --      DO NOTHING RETURNING id INTO v_reg_id;
+  --    IF v_reg_id IS NULL THEN  -- lost the race (a live reg already exists)
   --      v_already := v_already || (v_child->'player'->>'first_name'); CONTINUE;
   --    END IF;
-  -- (keeps the soft pre-check as a fast path; the constraint is the real guard.)
+  -- (keeps the soft pre-check as a fast path; the partial index is the real guard.)
 
-VERIFY: pg_constraint contype='u' on (program_id,player_id); replay two rapid
-  submit_registration calls with the same (program,player) via execute_sql →
-  exactly one registrations row, one fee set.
+VERIFY: pg_index shows the partial unique on (program_id,player_id) WHERE
+  status<>'cancelled'; replay two rapid submit_registration calls with the same
+  (program,player) via execute_sql → exactly one live registrations row, one fee
+  set; a third call after cancelling the first SUCCEEDS (re-registration allowed).
 NOTE (B5): guardians_org_email_partial_idx(org_id,email) is NON-unique — do not
   reuse it to back any ON CONFLICT.
 
@@ -178,11 +199,17 @@ NOTE (B5): guardians_org_email_partial_idx(org_id,email) is NON-unique — do no
 S4 — FORK-DELETE  [P0-1]  stop program-delete from cascade-nuking financials
 ==============================================================================
 PROBLEM: financial_accounts.season_id → programs is ON DELETE CASCADE (live
-confdeltype='c'); financial_transactions cascade through it. deleteProgram's only
+confdeltype='c'), AND financial_transactions.account_id → financial_accounts is
+ON DELETE CASCADE (confdeltype='c') — so a program delete cascades
+program → accounts → transactions, unguarded at the DB. deleteProgram's only
 guard counts registrations (0 platform-wide → NO-OP); the confirm names only
-teams/players/events. LIVE: Fall 2025 = 64 financial_accounts / 124 transactions
-(~$61k) one click from irreversible loss. coach_payouts.season_id → programs is
-ON DELETE NO ACTION (would already block, but with a raw error).
+teams/players/events. coach_payouts.season_id → programs is ON DELETE NO ACTION
+(would already block, but with a raw error).
+BLAST RADIUS (architect correction — ALL programs with accounts, not just Fall 2025):
+    Fall 2025      archived  64 accts  124 txns   $61,370.00
+    Spring 2026    ACTIVE    60 accts   63 txns   $70,242.97   <- live season
+    Winter 2025-26 archived  40 accts   57 txns   $34,022.50
+    TOTAL                   164 accts  244 txns  $165,635.47  one click from loss.
 
 TWO-LAYER FIX:
   (a) DB defense — flip the cascade to RESTRICT so the ledger can never be
@@ -201,10 +228,20 @@ VERIFY: pg_constraint financial_accounts_season_id_fkey confdeltype='r'; attempt
   DELETE of a program with a financial_accounts row → 23503 (blocked), ledger intact.
 LEAN: block + archive (collab §6). Archived programs are never deleted, so RESTRICT
   costs nothing operationally and removes the footgun.
+ARCHITECT NOTES: FK-RESTRICT (form (a)) is the ratified shape over a BEFORE DELETE
+  trigger — declarative, subtraction-over-addition. The trigger is the alternative
+  ONLY if product wants a soft/force path. LEAVE financial_accounts.org_id →
+  organizations ON DELETE CASCADE as-is: an org-level delete legitimately cascades
+  the whole financial graph (rarer, intended, bigger operation).
 
 ==============================================================================
-S5 — FORK-ANON-GRANTS  [P1 / latent-P0 defense-in-depth]
+S5 — FORK-ANON-GRANTS  [P1 / latent-P0 defense-in-depth]  NOT YET RATIFIED
 ==============================================================================
+STATUS: the architect did NOT rule on this (it is not among the 3 P0s and the
+architect had no source for it this session). THIS SECTION IS THE AUDIT BASIS for
+the architect to rule. Live grant matrix below; ruling requested on Q2 (revoke
+depth) before this spec is finalized/applied.
+
 PROBLEM (live-verified): anon holds GRANT ALL — DELETE,INSERT,REFERENCES,SELECT,
 TRIGGER,TRUNCATE,UPDATE — on every program-graph + financial + guardian/player
 table (financial_accounts, financial_transactions, programs, teams, registrations,
