@@ -53,7 +53,7 @@ export function buildAiDraftUserPrompt({ kind, framing, factLines, gist, narrati
     + `body (the ${narrativeOnly ? 'narrative prose' : 'full briefing prose'}), card_summary (one ~10-second summary line), `
     + 'facts_used (array of {"k","v"} label/value pairs you relied on), '
     + 'warnings (array of short strings for any missing fact or caveat). '
-    + 'Hard rules: NO em dashes (use periods, commas, colons, or the middot/pipe), no corporate jargon.',
+    + 'Hard rules: use ONLY the facts provided. Do NOT assert game context you were not given, such as whether it was an opener, playoff, or first game, any within-game timeline (halftime, quarter splits, a "second half" run), or any momentum or comeback story. Stick to the given final score, result, point differential, opponent, date, venue, and record. NO em dashes (use periods, commas, colons, or the middot/pipe), no corporate jargon.',
   );
   return parts.join('\n\n');
 }
