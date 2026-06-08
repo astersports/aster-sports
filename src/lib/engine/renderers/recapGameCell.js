@@ -57,7 +57,7 @@ export default function renderRecapGameCell(section) {
     + ` style="border-collapse:collapse;margin:10px 14px;width:auto;border:1px solid ${BORDER_DEFAULT};border-radius:9px;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;">`
     + '<tr>'
     + `<td width="4" style="background-color:${escapeHtml(rail)};border-radius:9px 0 0 9px;font-size:0;line-height:0;">&nbsp;</td>`
-    + `<td valign="middle" style="padding:14px 12px 14px 14px;">${dateHtml}${matchHtml}${ctxHtml}</td>`
+    + `<td valign="middle" style="padding:14px 12px 14px 14px;min-height:80px;">${dateHtml}${matchHtml}${ctxHtml}</td>`
     + `<td valign="middle" align="right" style="padding:14px 15px 14px 8px;white-space:nowrap;">${rightHtml}</td>`
     + '</tr></table>';
 
