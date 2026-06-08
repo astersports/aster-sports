@@ -23,6 +23,7 @@ import { buildGoldSections } from './tournamentPrelimGoldSections';
 import { buildSubject, buildTeamSlices, fetchParticipantGuardiansByTeam, fetchRecipientGuardians, trim } from './tournamentPrelimHelpers';
 import { fetchTournamentWeather, weatherLocationFrom } from './tournamentWeather';
 import { buildOrgContext } from '../buildOrgContext';
+import { buildSignoffSection } from '../buildSignoffSection';
 
 export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { supabase, now = new Date(), fetchWeather = fetchTournamentWeather } = {}) {
   if (!tournamentId) throw new Error('Missing tournamentId');
@@ -132,9 +133,8 @@ export function composeTournamentPrelim(context, slice, overrides = {}) {
 
   sections.push(buildLogisticsLine(overrides));
 
-  const signoffProse = trim(overrides.signoff_message);
-  const validCoaches = (org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
-  if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
+  const signoff = buildSignoffSection({ overrides });
+  if (signoff) sections.push(signoff);
 
   const tagline = buildTaglineFooter(overrides);
   if (tagline) sections.push(tagline);

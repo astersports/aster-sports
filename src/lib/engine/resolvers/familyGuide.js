@@ -17,8 +17,9 @@
 
 import {
   buildCoachesBlockSection, buildConflictCalloutSection, buildFamilyGuideFooter,
-  buildKidColorPillSections, buildQuickLinkNav, buildSignoffSection, buildVipHeaderSection,
+  buildKidColorPillSections, buildQuickLinkNav, buildVipHeaderSection,
 } from './familyGuideSections';
+import { buildSignoffSection } from '../buildSignoffSection';
 import { detectConflicts, groupEventsByKid } from './familyGuideHelpers';
 import { fetchTeamCoaches } from './familyGuideCoaches';
 import { buildOrgContext } from '../buildOrgContext';
@@ -128,7 +129,7 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
 
 export function composeFamilyGuide(context, slice, overrides = {}) {
   if (!context || !slice) throw new Error('Missing context or slice');
-  const { parent, kidsWithEvents, conflicts, dateRange, coaches, teamCoaches, orgName, orgBranding } = context;
+  const { parent, kidsWithEvents, conflicts, dateRange, teamCoaches, orgName, orgBranding } = context;
   const sections = [buildVipHeaderSection(parent, kidsWithEvents, dateRange, conflicts)];
   const conflictSection = buildConflictCalloutSection(conflicts);
   if (conflictSection) sections.push(conflictSection);
@@ -140,7 +141,7 @@ export function composeFamilyGuide(context, slice, overrides = {}) {
   // the signoff. Omitted when no team has a coach with a phone.
   const coachesSection = buildCoachesBlockSection(teamCoaches);
   if (coachesSection) sections.push(coachesSection);
-  const signoff = buildSignoffSection(overrides, coaches);
+  const signoff = buildSignoffSection({ overrides });
   if (signoff) sections.push(signoff);
   sections.push(buildFamilyGuideFooter(orgName, orgBranding));
   return {

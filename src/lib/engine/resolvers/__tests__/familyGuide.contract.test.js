@@ -181,14 +181,16 @@ describe('composeFamilyGuide — coaches_block placement + omit', () => {
     conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], teamCoaches: [], orgName: 'LH', ...over,
   });
 
-  it('emits coaches_block after quick_link_nav and before signoff', () => {
+  it('emits coaches_block after quick_link_nav and before the footer (contact signoff off by default)', () => {
     const out = composeFamilyGuide(baseCtx({ teamCoaches: TC, coaches: TC[0].coaches }), { parent_name: 'Frank' });
     const kinds = out.content_sections.map((s) => s.kind);
     const navIdx = kinds.indexOf('quick_link_nav');
     const blockIdx = kinds.indexOf('coaches_block');
-    const signoffIdx = kinds.indexOf('signoff');
     expect(blockIdx).toBeGreaterThan(navIdx);
-    expect(signoffIdx).toBeGreaterThan(blockIdx);
+    // The per-message contact signoff is OFF by default — coaches_block (the
+    // distinct per-team reference section) still precedes the footer.
+    expect(kinds.indexOf('signoff')).toBe(-1);
+    expect(blockIdx).toBeLessThan(kinds.length - 1);
   });
 
   it('coaches_block carries per-team groups with phones', () => {

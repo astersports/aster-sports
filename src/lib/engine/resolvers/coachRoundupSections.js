@@ -12,8 +12,6 @@ import { formatDateRange, formatDayLabel, formatTime } from './coachRoundupHelpe
 
 const FALLBACK_TEAM_COLOR = '#4a8fd4';
 
-function trim(s) { return typeof s === 'string' ? s.trim() : ''; }
-
 export function buildCoachHeaderSection(coach, teamsWithEvents, dateRange) {
   const teamCount = (teamsWithEvents || []).filter((t) => (t.events || []).length).length;
   return {
@@ -51,14 +49,6 @@ export function buildTeamSections(teamsWithEvents) {
     }
   }
   return out;
-}
-
-export function buildSignoffSection(overrides, coaches) {
-  const prose = trim(overrides?.signoff_message);
-  const validCoaches = (coaches || []).filter((c) => c.display_name && c.phone)
-    .map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
-  if (!prose && !validCoaches.length) return null;
-  return { kind: 'signoff', prose, coaches: validCoaches };
 }
 
 export function buildBrandFooter(orgName) {

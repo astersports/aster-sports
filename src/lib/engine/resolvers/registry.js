@@ -62,7 +62,14 @@ export class NoRecipientsError extends Error {
 }
 
 function bodyOverrides(state) {
-  return { ...(state.body || {}), signoff_message: state.signoff_message || '' };
+  return {
+    ...(state.body || {}),
+    signoff_message: state.signoff_message || '',
+    // Per-message contact-info gate (OFF by default). signoff_coaches carries
+    // the selected staff objects from the compose-time picker.
+    signoff_enabled: state.signoff_enabled === true,
+    signoff_coaches: Array.isArray(state.signoff_coaches) ? state.signoff_coaches : [],
+  };
 }
 
 export const RESOLVER_REGISTRY = {

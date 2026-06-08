@@ -90,6 +90,8 @@ export function mapWizardStateToDigestArgs({ state, orgId, period, recipients, e
     orgId, period,
     bodyNotes: state.body?.body_notes || '',
     signoffMessage: state.signoff_message || '',
+    signoffEnabled: state.signoff_enabled === true,
+    signoffCoaches: Array.isArray(state.signoff_coaches) ? state.signoff_coaches : [],
     opsNotes: state.body?.ops_notes || '',
     recipients: sendable, events, tournaments, teams, coaches,
     rsvpCountsByEvent,

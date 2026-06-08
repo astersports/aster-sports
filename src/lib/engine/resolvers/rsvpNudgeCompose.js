@@ -8,6 +8,7 @@
 // placeholders and substituted per-recipient by the send pipeline (AP #29).
 
 import { deriveEventLabel, joinKidNames, trim } from './rsvpNudgeHelpers';
+import { buildSignoffSection } from '../buildSignoffSection';
 
 export function composeRsvpNudge(context, slice, overrides = {}) {
   if (!context || !slice) throw new Error('Missing context or slice');
@@ -25,9 +26,8 @@ export function composeRsvpNudge(context, slice, overrides = {}) {
   for (const key of ['coach_note', 'parent_shoutout']) {
     const v = trim(overrides[key]); if (v) sections.push({ kind: 'stats_narrative', body: v });
   }
-  const validCoaches = (org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
-  const signoffProse = trim(overrides.signoff_message);
-  if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
+  const signoff = buildSignoffSection({ overrides });
+  if (signoff) sections.push(signoff);
   sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
   const subject = `RSVP needed for ${namesJoined}: ${subjectLabel}`;
   return { subject, content_sections: sections };
