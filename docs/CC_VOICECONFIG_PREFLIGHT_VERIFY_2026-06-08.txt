@@ -1,0 +1,90 @@
+==============================================================================
+CC -> architect: VOICE_CONFIG PASS — CC GROUND-TRUTH VERIFICATION
+Date: 2026-06-08. Round-trip reply to ARCHITECT_VOICE_CONFIG_PASS (GO-READY).
+CC verified the pre-flight claims against installed source. NOTHING APPLIED.
+One correction + one decision back to architect/Frank.
+==============================================================================
+
+0. SUMMARY
+------------------------------------------------------------------------------
+CC concurs with the pass. Verified against the live tree:
+  - GAP 4: the 7 *_contact_* keys have ZERO code refs -> safe to strip. CONFIRM.
+  - FLAG 2: profile IS the system prompt (re-confirmed) -> alignment is right.
+  - EDIT D: KEEP it (concur) -> the few-shot is the source of the mimicry.
+ONE CORRECTION to the pre-flight: signoff_default is NOT "still live." It has
+ZERO code consumers — it is dead config too, orphaned by FORK A (#854).
+ONE DECISION back: strip signoff_default in the same atomic UPDATE (CC lean:
+yes) or retain it as an intended-but-unwired default (architect's call).
+APPLY LANE: architect should run the execute_sql (holds the byte-exact verified
+10,048-char profile); CC reconstructing it from the chat paste risks drift.
+
+1. GAP-4 DEAD KEYS — CONFIRMED (grep, this session)
+------------------------------------------------------------------------------
+  grep -rn "primary_contact\|secondary_contact" src supabase/functions
+    (excl __tests__)  -> ZERO matches.
+All 7 keys (primary_contact_{email,name,phone,role}, secondary_contact_{name,
+phone,role}) are unreferenced by application code. Safe to strip. The architect's
+"_role not _title" suffix correction is right (verified against the key list).
+
+2. FLAG 2 — profile = system prompt — RE-CONFIRMED
+------------------------------------------------------------------------------
+  briefing-ai-draft/index.ts:96  profile = org.voice_config?.ai_draft_profile
+  :97  if (!profile || profile.length < 200) return 400   (REQUIRED; 10,048 is fine)
+  :112 callClaude(apiKey, profile, userPrompt, temperature)   (profile = system)
+So aligning the profile is the correct fix for the signoff contradiction, and
+EDIT D (anti-fabrication in the profile) reaches the model's few-shot examples
+that the code-turn rule cannot rewrite.
+
+3. EDIT D — KEEP (CC concurs with the architect's recommendation)
+------------------------------------------------------------------------------
+The §9 9U Boys few-shot literally contains:
+  "Home opener at St. Pat's. The shots weren't falling but the effort was there
+   all night."
+That is the exact framing the AI copied onto the aced23b7 PLAYOFF game ("OPENING
+NIGHT", "shots weren't falling in the second half"). The code anti-fabrication
+rule (shipped #857) is in the USER turn; this misleading exemplar is in the
+SYSTEM turn. EDIT D closes the mimicry at its source. Keep it.
+
+4. CORRECTION — signoff_default IS ALSO DEAD (not "still live")
+------------------------------------------------------------------------------
+The pre-flight states signoff_default ("Frank & Coach Kenny") is "a separate key
+that is still live, so GAP 4 does not touch it." Ground truth contradicts:
+  - grep -rn "signoff_default" src supabase/functions (excl __tests__) -> ZERO.
+  - buildSignoffSection.js:28  signature = buildVoiceSignature(picked)
+       -> the signature derives from the PICKER (overrides.signoff_coaches),
+          NOT from voice_config.signoff_default.
+  - signoff_default appears ONLY in two migration SEED files
+       (20260509234517_organizations_voice_config.sql seeds 'Frankie + Kenny';
+        20260604145429_voice_config_ai_draft_profile_seed.sql updates it to
+        'Frank & Coach Kenny'). Nothing READS it.
+Conclusion: signoff_default is orphaned dead config — almost certainly stranded
+by FORK A (#854), which replaced the old org-default-signature model with the
+per-message staff picker. It is in the SAME category as the 7 contact keys.
+
+DECISION BACK (architect/Frank): include signoff_default in the strip?
+  - CC LEAN: YES. We are already doing one atomic voice_config UPDATE; strip the
+    confirmed-dead key in the same pass so it does not linger as a third cleanup.
+  - COUNTER (architect's call): KEEP it only if it is an intended default meant
+    to be wired later (e.g. to pre-populate the picker / signoff_message). There
+    is no current code path that would consume it, so "wire it later" is the only
+    rationale for retention.
+  If YES, add to the atomic UPDATE:  ... - 'signoff_default' ...
+
+5. APPLY LANE
+------------------------------------------------------------------------------
+The architect should run the execute_sql: the GO-ready doc holds the byte-exact
+verified new profile (10,048 chars, with · / | glyphs). CC reconstructing that
+string from the chat paste risks whitespace/glyph drift on a 10K-char field.
+CC's role here is the verification above; the apply stays in the design lane.
+If Frank prefers CC to apply, hand CC the profile as a committed file (exact
+bytes) and CC will run it via Supabase MCP + the §4 post-flight from the GO doc.
+
+6. NET / NEXT
+------------------------------------------------------------------------------
+Pass is verified and GO-ready, with the signoff_default decision as the only
+open item. On Frank's GO (and the signoff_default ruling), the architect applies
+the atomic UPDATE + runs the post-flight verify. That closes the AI-draft fix
+end-to-end: code rule live (#857), system prompt aligned, all dead keys gone.
+==============================================================================
+END — CC VOICE_CONFIG PRE-FLIGHT VERIFICATION 2026-06-08
+==============================================================================
