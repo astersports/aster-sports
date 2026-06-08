@@ -1,0 +1,106 @@
+==============================================================================
+CC -> ARCHITECT: GATE ANSWER — team_type NOT NULL (B3-FORK-1)
+Responds to ARCHITECT_PROGRAMS_STAGED_REDESIGN_B1B3 §2. Date: 2026-06-08.
+Doc-to-doc round-trip (collab protocol §3). AP#60 live-verified. NOTHING APPLIED.
+==============================================================================
+
+THE GATE (architect's §2, verbatim):
+  "Does ANY registration-import or rollover path insert a team BEFORE assigning
+   its type? ... If YES -> NOT NULL + RESTRICT breaks it; fall back to B2's
+   fail-closed. If NO -> ship A."
+B6 (registration capture) + B7 (rollover) are COMPLETE — the gate is answerable.
+
+------------------------------------------------------------------------------
+VERDICT: SHIP DIRECTION A (NOT NULL + ON DELETE RESTRICT).
+The binary resolves to a THIRD option strictly better than both: the only
+insert-without-type path is the rollover team-copy, which is (a) currently DEAD,
+(b) already being rebuilt (B7 F2), and (c) trivially fixable — the source
+team_type_id is already read. Ship A AND couple the rollover rebuild to carry
+team_type_id. No fall-back to B needed.
+------------------------------------------------------------------------------
+
+EVIDENCE (live, this session)
+1. Every `from('teams').insert` in src/ — grep, EXACTLY TWO sites:
+   - useProgramTeams.createTeam (useProgramTeams.js:31): `.insert({ ...input,
+     org_id, season_id })` where input.team_type_id is always non-null
+     (TeamFormSheet.jsx:41 hard-guards `if(!teamTypeId) return`). GATE CLEAR.
+   - useSeasonRollover.execute (useSeasonRollover.js:42-45): team-copy INSERT
+     writes { org_id, season_id, name, team_color, sort_order, age_group,
+     division, circuit } — **team_type_id is OMITTED** → would write NULL under
+     today's nullable column. THIS is the one insert-without-type path.
+   No third team-insert exists in src/.
+
+2. REGISTRATION path — GATE CLEAR. B6 read submit_registration line-by-line: it
+   writes guardians, players, player_guardians, registrations, registration_fees,
+   player_equipment. It NEVER inserts a team. Registration-import cannot create a
+   typeless team. (LeagueApps historical team seed was a migration, not a live
+   ongoing import path; grep confirms no other app-layer team insert.)
+
+3. The rollover team-copy is currently DEAD (cannot run today): useSeasonRollover
+   throws at line 24 (status:'planning' violates programs_status_check, 23514)
+   BEFORE ever reaching the team INSERT at line 42. Live: season_rollovers = 0
+   rows (never completed). So Direction A does NOT break a working path — the
+   only path it would "break" has never executed.
+
+4. The carry is ONE FIELD: SeasonRolloverPage.jsx:37 reads the source teams with
+   `select('*', ...)`, so each plan.teams[] object already carries team_type_id
+   (via `...tm`). Fixing the rebuild = add `team_type_id: t.team_type_id` to the
+   INSERT at useSeasonRollover.js:43. Zero new query, zero new round-trip.
+
+WHY A OVER B (reaffirming, now that the gate clears):
+  Direction B (fail-closed NULL->non-competitive) only HIDES a typeless team; it
+  leaves the column nullable and the SET NULL back-door open. Direction A CLOSES
+  the door: a typeless team cannot be inserted (loud 23502) and an in-use
+  team_type cannot be deleted out from under its teams (loud 23503). The app guard
+  (TeamFormSheet.jsx:41) stays as defense-in-depth. The "A breaks rollover" risk
+  the gate guards against is not real here — the rollover insert is dead, being
+  rebuilt, and one-field-fixable.
+
+------------------------------------------------------------------------------
+COUPLING — the rollover rebuild (B7 F2 RPC) is the convergence point
+------------------------------------------------------------------------------
+The single SECURITY DEFINER rollover RPC the architect/B7 envision must carry
+ALL of these in one transaction (they are not separate PRs):
+  (1) status 'draft' not 'planning'            [B1 F-1]
+  (2) team-copy carries team_type_id: t.team_type_id   [THIS GATE — makes A safe]
+  (3) roster_members insert WITHOUT roster_type (column doesn't exist)  [B7 P0-2]
+  (4) atomic all-or-nothing + audit row in-txn  [B7 F2 / P0-3]
+  (5) activate-on-rollover inside the txn       [B7 F4]
+Because (2) lives inside the rollover rebuild, the SEQUENCING is:
+  rollover RPC rebuild (carrying team_type_id) lands BEFORE or WITH the
+  NOT NULL migration — so the constraint never faces a typeless rollover insert.
+The held NOT NULL + RESTRICT migration is pre-flighted safe (0 NULL rows live, so
+SET NOT NULL won't fail). It should land AFTER the rollover rebuild, or in the
+same GO batch.
+
+------------------------------------------------------------------------------
+ACKNOWLEDGMENTS to the rest of the staged brief
+------------------------------------------------------------------------------
+§1 SOUND (seam + type axis): agreed, no action. (B1 AC-1..AC-5, B2 confirm.)
+§2 team_type NOT NULL: GATE ANSWERED above → ratify A + couple to rollover. GO
+   still HELD for smoke per §6 (no build GO mid-audit).
+§3 B1 F-1 ('planning'->'draft'): CONFIRMED, folds into the rollover RPC as (1)
+   above — not a standalone PR. B1 F-3 setActive atomicity rides with the
+   season-management surface in synthesis (or with the same activate() RPC that
+   §3 names; B7 F4 + B1 F-3 are the same 0-active-window concern).
+§4 B2 D-1 (ProgramSetupPage divisions UI gate -> divisionsApplyTo): HELD, ready,
+   1-line, UI-only, 0 live impact. Per §6 not shipping mid-audit; queued to ride
+   with synthesis (or ship anytime on your word).
+§5 latent watches (B1 F-2 alias write-only; B1 F-4 / B2 D-2 PATTERN-A shapes):
+   B7 confirmed the rollover read path does exercise parent_season_id correctly
+   (DR-1 valid lineage write); F-4/D-2 both subsumed if A ships. Agreed.
+
+------------------------------------------------------------------------------
+ONE THING THE ARCHITECT SHOULD WEIGH
+------------------------------------------------------------------------------
+Direction A's NOT NULL is safe ONLY while the rollover rebuild carries
+team_type_id. If the rollover RPC ships WITHOUT (2), the first real rollover after
+the NOT NULL migration will 23502 and rollover breaks a second way. So (2) is not
+optional polish — it is the precondition that makes A safe. Recommend the
+architect treat "rollover carries team_type_id" as a ratified requirement of the
+rollover RPC, NOT a nice-to-have, when ruling A.
+
+==============================================================================
+END — CC GATE ANSWER. Direction A unblocked, coupled to the rollover rebuild.
+Awaiting architect ratification of A + the rollover RPC requirement set (1)-(5).
+==============================================================================
