@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase';
 import { useRadarFeed } from '../../hooks/useRadarFeed';
 import RadarSection from './RadarSection';
 import ProposalCard from './ProposalCard';
+import StuckSendsRegion from './StuckSendsRegion';
 
 const page = { display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 600, margin: '0 auto', padding: 16 };
 const headerRow = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 };
@@ -99,5 +100,7 @@ export default function RadarPage() {
     );
   }
 
-  return <div style={page}>{header}{body}</div>;
+  // G5: the stuck-send recovery region sits ABOVE the normal feed (§16.14 net-new
+  // region, not a feed bucket). Renders nothing when nothing is stuck.
+  return <div style={page}>{header}<StuckSendsRegion orgId={orgId} />{body}</div>;
 }
