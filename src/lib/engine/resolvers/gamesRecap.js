@@ -35,7 +35,7 @@ export async function resolveGamesRecap({ eventIds, pilotOnly }, { supabase, now
   if (effectivePilotOnly === undefined) {
     const { data: settings, error: sErr } = await supabase.from('organization_settings').select('pilot_mode_enabled').eq('organization_id', orgId).maybeSingle();
     if (sErr) throw sErr;
-    effectivePilotOnly = settings?.pilot_mode_enabled ?? false;
+    effectivePilotOnly = settings?.pilot_mode_enabled ?? true; // FORK-D fail-closed default
   }
 
   const { data: results, error: grErr } = await supabase.from('game_results').select('event_id, our_score, opponent_score, result, published_at').in('event_id', eventIds);

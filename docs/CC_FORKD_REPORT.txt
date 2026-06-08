@@ -1,0 +1,60 @@
+==============================================================================
+CC -> ARCHITECT: FORK-D BUILD REPORT (overnight autonomous build, held)
+Date: 2026-06-08. PR #835. Status: HELD do-not-auto-merge for Frank's smoke.
+Per-step gate met: lint clean + build clean + full vitest suite GREEN.
+==============================================================================
+
+WHAT: Fail-close the pilot gate across all 9 send-driving resolvers (#825 §FORK-D).
+The pilot fallback was fail-OPEN: a missing/null org_settings row resolved to
+"send to ALL families" instead of "pilot only."
+
+FILES CHANGED (12):
+  src/lib/engine/resolvers/gameRecap.js          ?? false -> ?? true  (1 line)
+  src/lib/engine/resolvers/gamesRecap.js         ?? false -> ?? true  (1 line)
+  src/lib/engine/resolvers/rsvpNudge.js          ?? false -> ?? true  (1 line)
+  src/lib/engine/resolvers/scheduleChange.js     ?? false -> ?? true  (1 line)
+  src/lib/engine/resolvers/academyCallupNotice.js ?? false -> ?? true (1 line)
+  src/lib/engine/resolvers/familyGuide.js        ?? false -> ?? true  (1 line)
+  src/lib/engine/resolvers/tournamentPrelim.js   ?? false -> ?? true + secondary
+                                                 `else if ... = false` -> = true (2 lines)
+  src/lib/engine/resolvers/tournamentRecap.js    same as prelim (2 lines)
+  src/lib/engine/resolvers/weeklyDigest.js       the 9th — added the sibling
+    org_settings consult block (fail-closed ?? true), removed the
+    `pilotOnly = false` param default, RPC now uses effectivePilotOnly. 135->145 LOC.
+  src/lib/engine/resolvers/registry.js           weekly_digest anchorFromState:
+    `state.pilot_only ?? false` -> `state.pilot_only` (pass-through so undefined
+    triggers the resolver's consult; explicit true/false still honored).
+  src/lib/engine/resolvers/__tests__/familyGuide.contract.test.js  5 non-gate
+    tests (kids/events/coaches) now pass `pilotOnly: false` explicitly (matching
+    the file's own line-82 idiom) so they exercise the full-recipient path
+    deterministically instead of relying on the removed fail-open default. NOT a
+    weakened assertion — the gate is covered by the 3 dedicated gate tests
+    (lines 66-86) + the new parity lock.
+  src/lib/__tests__/pilotFailCloseParity.test.js  NEW static lock (4 tests).
+
+TWO THINGS FOUND BEYOND THE SPEC'D 8 (verify-don't-assume):
+  1. tournamentPrelim + tournamentRecap each had a SECOND fail-open default
+     (`} else if (effectivePilotOnly === undefined) effectivePilotOnly = false`
+     for the orgId-absent path). Both flipped to true — the parity test's
+     `no effectivePilotOnly = false` assertion locks this.
+  2. The live weekly_digest SEND (digestSend.js / sendWeeklyDigest) does NOT call
+     resolveWeeklyDigest — it builds its own context from caller-supplied
+     recipients (DigestComposer). So resolveWeeklyDigest is reached only via the
+     RESOLVER_REGISTRY (preview/resolve + future registry-send). => this FORK-D
+     change does NOT alter LH's live digest audience; it hardens the resolver/
+     preview layer. The live send's pilot backstop is send-tournament-message's
+     own gate (index.ts:170, already `?? true` fail-closed). Flagged so the
+     audit's "weekly_digest never consults" finding is understood as a
+     resolver-layer hole (now closed), distinct from the digestSend audience path.
+
+TEST DELTA: +4 (pilotFailCloseParity.test.js). 5 familyGuide tests adjusted
+  (pilotOnly:false made explicit). No assertions weakened.
+SUITE: 208 files / 1481 tests GREEN (was 1477 at #831). 6 skipped (pre-existing).
+LOC: weeklyDigest.js 145 (<=150). All others unchanged in size.
+LIVE-AUDIENCE CHANGE: none (LH pilot_mode_enabled=true; siblings already
+  resolved pilot-on; the `?? false` only mattered for a missing settings row).
+HELD: do-not-auto-merge label applied. Merge tomorrow on smoke. Independent of
+  the PR 1b fork (#834) and of MOAT/G1.
+==============================================================================
+END — CC_FORKD_REPORT
+==============================================================================

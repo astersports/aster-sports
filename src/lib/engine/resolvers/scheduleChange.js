@@ -60,7 +60,7 @@ export async function resolveScheduleChange({ eventId, pilotOnly }, { supabase, 
   if (effectivePilotOnly === undefined) {
     const { data: settings, error: settingsErr } = await supabase.from('organization_settings').select('pilot_mode_enabled').eq('organization_id', orgId).maybeSingle();
     if (settingsErr) throw settingsErr;
-    effectivePilotOnly = settings?.pilot_mode_enabled ?? false;
+    effectivePilotOnly = settings?.pilot_mode_enabled ?? true; // FORK-D fail-closed default
   }
 
   // Beta B6 audit — anti-pattern #36.

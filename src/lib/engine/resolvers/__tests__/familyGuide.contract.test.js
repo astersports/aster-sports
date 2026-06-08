@@ -47,7 +47,7 @@ describe('resolveFamilyGuide', () => {
   });
   it('returns slice with kind=single_recipient + parent email + guardian_id (A.1.a fix — PR 5 actor send unblock)', async () => {
     const r = await resolveFamilyGuide(
-      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' }, pilotOnly: false },
       { supabase: mockSb({ parent: PARENT }) },
     );
     expect(r.slices).toHaveLength(1);
@@ -87,7 +87,7 @@ describe('resolveFamilyGuide', () => {
 
   it('aggregates events per kid×team', async () => {
     const r = await resolveFamilyGuide(
-      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' }, pilotOnly: false },
       { supabase: mockSb({
         parent: PARENT,
         pgRows: [KID('p-1', 'Charlie'), KID('p-2', 'Milo')],
@@ -110,7 +110,7 @@ describe('resolveFamilyGuide — coaches block (team-grouped, deduped)', () => {
 
   it('a parent with kids on 9U + 10U gets both teams’ coaches, grouped + phones rendered', async () => {
     const r = await resolveFamilyGuide(
-      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' }, pilotOnly: false },
       { supabase: mockSb({
         parent: PARENT,
         pgRows: [KID('p-1', 'Charlie'), KID('p-2', 'Milo')],
@@ -129,7 +129,7 @@ describe('resolveFamilyGuide — coaches block (team-grouped, deduped)', () => {
 
   it('two kids on the SAME team → that team’s coaches appear once (deduped across kids)', async () => {
     const r = await resolveFamilyGuide(
-      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' }, pilotOnly: false },
       { supabase: mockSb({
         parent: PARENT,
         pgRows: [KID('p-1', 'A'), KID('p-2', 'B')],
@@ -146,7 +146,7 @@ describe('resolveFamilyGuide — coaches block (team-grouped, deduped)', () => {
 
   it('coaches with no phone (or no staff_profile) are dropped — no fabrication (AP #27)', async () => {
     const r = await resolveFamilyGuide(
-      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' } },
+      { parentUserId: 'u1', dateRange: { start: '2026-05-18', end: '2026-05-24' }, pilotOnly: false },
       { supabase: mockSb({
         parent: PARENT,
         pgRows: [KID('p-1', 'A')],

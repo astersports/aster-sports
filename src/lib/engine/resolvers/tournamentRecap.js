@@ -58,8 +58,8 @@ export async function resolveTournamentRecap({ tournamentId, pilotOnly }, { supa
   if (effectivePilotOnly === undefined && orgId) {
     const { data: settings, error: settingsErr } = await supabase.from('organization_settings').select('pilot_mode_enabled').eq('organization_id', orgId).maybeSingle();
     if (settingsErr) throw settingsErr;
-    effectivePilotOnly = settings?.pilot_mode_enabled ?? false;
-  } else if (effectivePilotOnly === undefined) effectivePilotOnly = false;
+    effectivePilotOnly = settings?.pilot_mode_enabled ?? true; // FORK-D fail-closed default
+  } else if (effectivePilotOnly === undefined) effectivePilotOnly = true; // FORK-D fail-closed (no orgId)
 
   const teamIds = tournament_teams.map((t) => t.team_id);
   // Beta B6 audit — anti-pattern #36.
