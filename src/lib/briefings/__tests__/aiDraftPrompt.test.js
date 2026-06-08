@@ -57,6 +57,17 @@ describe('aiDraftPrompt helpers', () => {
     expect(p).toContain('do not invent specifics');
   });
 
+  it('buildAiDraftUserPrompt: hard rules forbid fabricated game context (FLAG 1)', () => {
+    const recap = buildAiDraftUserPrompt({ kind: 'game_recap', framing: '10U Blue families', factLines: ['Final: 22-28 (L)'], narrativeOnly: true });
+    const free = buildAiDraftUserPrompt({ kind: 'announcement', framing: 'all families', factLines: ['What: picture day'] });
+    // Applies on BOTH paths (shared hard-rules tail).
+    for (const p of [recap, free]) {
+      expect(p).toContain('Do NOT assert game context you were not given');
+      expect(p).toContain('opener, playoff, or first game');
+      expect(p).toContain('within-game timeline');
+    }
+  });
+
   it('stripFences: removes ```json fences', () => {
     expect(stripFences('```json\n{"a":1}\n```')).toBe('{"a":1}');
     expect(stripFences('{"a":1}')).toBe('{"a":1}');

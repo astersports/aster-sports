@@ -1,0 +1,93 @@
+==============================================================================
+CC -> architect: RESPONSE to §4 RATIFICATION (FLAG 1 shipped, FLAG 2 answered)
+Date: 2026-06-08. Round-trip reply to ARCHITECT_RATIFICATION (CC §4 AI-draft fix).
+Verified against installed source (file:line). Self-contained.
+==============================================================================
+
+0. SUMMARY
+------------------------------------------------------------------------------
+- FLAG 2 injection question: ANSWERED — YES, the DB voice profile IS injected as
+  the system prompt. So your "if yes -> align the profile" branch is the live one.
+  Evidence in §1. The profile alignment is genuinely needed (not dead config).
+- FLAG 1 (anti-fabrication): SHIPPED in code (this PR). aiDraftPrompt.js + the
+  AP#30 Deno mirror now forbid asserting un-given game context. Detail in §2.
+- MINOR (record_pill scope): product question, routed to you in §3. Not touched.
+- Thanks for the aced23b7 self-correction — noted; my merge-close didn't depend
+  on the event mapping, so no downstream doc needs editing.
+
+1. FLAG 2 — DOES aiDraftPrompt.js INJECT voice_config.ai_draft_profile? -> YES
+------------------------------------------------------------------------------
+The prompt builder (aiDraftPrompt.js) is the USER turn only; it takes no profile.
+The SYSTEM turn is the DB profile, injected by the edge function:
+  supabase/functions/briefing-ai-draft/index.ts:94  SELECT voice_config FROM organizations
+  :96  const profile = org.voice_config?.ai_draft_profile
+  :97  if (!profile || profile.length < 200) return 400  // profile is REQUIRED
+  :106 const userPrompt = buildAiDraftUserPrompt({...})  // user turn (CC code)
+  :112 callClaude(apiKey, profile, userPrompt, temperature)  // profile = SYSTEM prompt
+  (:110 temperature = redraft ? 0.9 : 0.7)
+
+Consequence (confirms your FLAG 2): every draft sends BOTH
+  - system prompt = the DB ai_draft_profile, which still says §3 "sign off by
+    name", ends every §5 template with "-> signoff", and ends every §9 few-shot
+    with the literal signature; AND
+  - user prompt = CC's new "Do NOT sign off by name."
+These contradict. The post-fix send didn't sign off (user instruction won this
+time), but the few-shot signatures can re-surface the signature by mimicry,
+most likely on REDRAFT (temp 0.9). This is a real AP#63/PATTERN A two-source
+divergence, not dead config.
+
+RECOMMENDATION (your lane, GO-gated MCP — bundle with GAP 4):
+  Align organizations.voice_config.ai_draft_profile so it stops instructing the
+  in-body signature, since the signature is now the separate gated signoff block:
+   - strip the §3 "SIGN OFF by name: Frank & Coach Kenny" bullet,
+   - drop the "-> signoff" tail from each §5 template,
+   - remove the trailing signature line from each §9 few-shot example
+     (keep the examples; just end them at the body's last sentence).
+  Optional but recommended in the same pass: bake the FLAG-1 anti-fabrication
+  constraint into the profile too (belt-and-suspenders with the code rule), so
+  the few-shot examples don't model "opening night"-style invented context.
+  I can hand you exact OLD/NEW blocks for the profile string on your GO, or you
+  drive it from your copy of the profile — your call.
+
+2. FLAG 1 — ANTI-FABRICATION (shipped in this PR)
+------------------------------------------------------------------------------
+Added to the shared hard-rules tail in buildAiDraftUserPrompt (applies to BOTH
+the narrativeOnly recap path AND the free-form path), in aiDraftPrompt.js AND
+the AP#30 mirror briefing-ai-draft/_helpers.ts (same commit):
+
+  "Hard rules: use ONLY the facts provided. Do NOT assert game context you were
+   not given, such as whether it was an opener, playoff, or first game, any
+   within-game timeline (halftime, quarter splits, a 'second half' run), or any
+   momentum or comeback story. Stick to the given final score, result, point
+   differential, opponent, date, venue, and record. NO em dashes..., no
+   corporate jargon."
+
+This directly targets your two live examples: "OPENING NIGHT / first game
+jitters" (playoff mislabeled as opener) and "shots weren't falling in the second
+half" (invented within-game timeline; quarter_scores is NULL).
+Test: aiDraftPrompt.test.js asserts the clause on both paths. AP#30 mirror audit
+green. Full suite + lint + build clean.
+CAVEAT: the system-profile few-shot examples still model narrative color; the
+code hard-rule is a strong mitigation, but the FLAG-2 profile alignment is what
+fully closes it. Recommend landing both.
+
+3. MINOR — record_pill scope (your call, product question)
+------------------------------------------------------------------------------
+record_pill rendering "0-1 RECORD" scoped to the single recap game (vs season-to-
+date) is a recap-composer/resolver concern, not the AI prompt. Pre-existing.
+Routed to you as a briefings-redesign question: should record_pill be recap-window
+or season-to-date? If you want it changed, it's a composer/resolver edit (CC
+lane) once the intent is decided. Not in this PR.
+
+4. STATE / NEXT
+------------------------------------------------------------------------------
+- This PR: FLAG 1 code fix + this response doc. Auto-merges on green; the merge
+  redeploys briefing-ai-draft (path-scoped), so the anti-fabrication rule goes
+  live then. Frank can re-smoke a recap after.
+- Owed to you (GO-gated, design lane): FLAG 2 profile alignment + GAP 4 dead-key
+  cleanup, one voice_config pass. Say the word (to Frank) and I'll hand exact
+  OLD/NEW blocks, or you drive it.
+- §4 itself: RATIFIED, no further action.
+==============================================================================
+END — CC RESPONSE to §4 RATIFICATION 2026-06-08
+==============================================================================
