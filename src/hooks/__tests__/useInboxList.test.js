@@ -18,6 +18,7 @@ function buildQuery() {
   const q = {
     select: () => q,
     eq: () => q,
+    in: () => q, // F-PARENT-MOAT-LEAK status gate (.in('comms_messages.status', ...))
     order: () => q,
     // terminal: limit() resolves the query
     limit: () => Promise.resolve({ data: queryRows, error: null }),

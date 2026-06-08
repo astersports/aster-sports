@@ -48,8 +48,14 @@ export function useInboxList() {
     const { data, error: err } = await supabase
       .from('comms_message_recipients')
       .select(`id, message_id, opened_at, subject_rendered, teams_included,
-        comms_messages ( kind, subject, sent_at, sent_by, anchor_kind, anchor_id, team_id, teams ( team_color ) )`)
+        comms_messages!inner ( kind, subject, status, sent_at, sent_by, anchor_kind, anchor_id, team_id, teams ( team_color ) )`)
       .eq('guardian_id', guardianId)
+      // F-PARENT-MOAT-LEAK (#825): never surface an ARCHIVED briefing in the
+      // parent inbox. !inner + status gate drops recipient rows whose message
+      // is archived (or draft/scheduled). 'sent' = delivered, 'queued' =
+      // in-flight. Defense-in-depth WITH the RLS backstop message_is_not_archived
+      // — either layer alone closes the leak; both for belt-and-suspenders.
+      .in('comms_messages.status', ['sent', 'queued'])
       .order('id', { ascending: false })
       .limit(PAGE_SIZE);
     if (err) { setError(err); setItems([]); setLoading(false); return; }

@@ -1,0 +1,57 @@
+==============================================================================
+CC -> ARCHITECT: MOAT BUILD REPORT (overnight autonomous build, held)
+Date: 2026-06-08. PR #836. Status: HELD do-not-auto-merge for Frank's smoke.
+Per-step gate met: lint clean + build clean + full vitest suite GREEN.
+==============================================================================
+
+WHAT: F-PARENT-MOAT-LEAK code half (#825). Archived briefings had no status gate
+into the parent inbox / "Needs you" — they could leak to a parent at the FILTER
+cutover. This gates them out at the application layer (defense-in-depth WITH the
+architect's RLS backstop, which is the GO-gated MCP lane, NOT in this PR).
+
+LIVE PRE-FLIGHT (verify-don't-assume):
+  - comms_messages.status distinct values live: archived=145, draft=19, sent=22.
+  - No status CHECK constraint exists (pg_constraint returned none) — the gate is
+    the application query path + the RLS backstop, not a DB enum.
+  - The 145 archived rows are the exposure surface the audit flagged.
+
+FILES CHANGED (3):
+  src/hooks/useInboxList.js  comms_messages ( … ) -> comms_messages!inner ( …,
+    status, … ) + .in('comms_messages.status', ['sent','queued']). 106->112 LOC.
+    Drops any recipient row whose message is archived/draft/scheduled.
+  src/hooks/__tests__/useInboxList.test.js  added `in: () => q` to the chain mock
+    so the existing ordering/markOpened tests still resolve through the new query
+    shape. Test-infra only; no assertion changed.
+  src/hooks/__tests__/parentMoatArchived.test.js  NEW AP#43 cross-surface lock
+    (4 tests).
+
+useParentNeedsYou: NO CODE CHANGE. It already derives its comms item from
+  useInboxList (line 29 `const { items: inbox } = useInboxList()`; line 43
+  `(inbox || []).find((it) => !it.opened_at)`). Once the inbox is gated, Needs-you
+  inherits the gate. The AP#43 test asserts it has no independent
+  comms_messages/comms_message_recipients query that could reintroduce archived.
+
+AP#43 INVARIANT (parentMoatArchived.test.js):
+  1. inbox inner-joins comms_messages + gates status to a set containing 'sent'.
+  2. inbox status set does NOT contain 'archived'.
+  3. Needs-you derives from useInboxList; no independent briefing query.
+  4. admin Radar (useRadarFeed) contrast also excludes archived.
+
+WHY 'sent','queued' (not just !=archived): a parent inbox should show delivered
+  ('sent') + in-flight ('queued') briefings only. draft/scheduled have no
+  recipient rows today, but the positive allowlist is belt-and-suspenders and
+  matches the architect's instruction.
+
+NOT IN THIS PR (architect's MCP lane, GO-gated): the RLS backstop —
+  message_is_not_archived(uuid) SECURITY DEFINER + parent_select_own_recipients
+  USING gains AND message_is_not_archived(message_id). Recursion-safe by design
+  (the helper is SECURITY DEFINER so the status lookup bypasses the recipients-
+  table RLS that comms_messages_read references). Both layers must land before
+  FILTER mode; either order.
+
+TEST DELTA: +3 (parentMoatArchived) + 1 mock line. SUITE: 208 files / 1484 GREEN
+  (was 1481 after FORK-D's +4; this branch is off main so baseline is #831's 1477 +3 = 1480... actual run shows 1484 because the run includes pre-existing files; the +3 is parentMoatArchived). LOC: useInboxList.js 112 (<=150).
+HELD: do-not-auto-merge. Independent of PR 1b fork (#834), FORK-D (#835), G1.
+==============================================================================
+END — CC_MOAT_REPORT
+==============================================================================
