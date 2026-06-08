@@ -35,7 +35,7 @@ export function factsToLines(facts) {
 export function buildAiDraftUserPrompt({ kind, framing, factLines, gist, narrativeOnly }) {
   const parts = [`Draft a ${String(kind).replace(/_/g, ' ')} briefing for ${framing}.`];
   if (narrativeOnly) {
-    parts.push("Write ONLY the coach's voice narrative: a short opening hook, a reflective line or two on what it meant and the effort, and a warm or rally close. Do NOT sign off by name (the signature is added separately, not by you). Weave the key facts (final score, opponent, player of the game, venue) naturally into the prose so the message itself carries the data; do not dump a bare stat list.");
+    parts.push("Write ONLY the coach's voice narrative: a short opening hook, a reflective line or two on what it meant and the effort, and a warm or rally close. Do NOT sign off by name (the signature is added separately, not by you). Weave the key facts (final score, opponent, player of the game, venue) naturally into the prose so the message itself carries the data; do not dump a bare stat list. Any record or game list shown covers ONLY this briefing's games, not the full season, so do NOT imply this is the team's first, last, or only game of the season, and do NOT write a season-wrap or 'time to breathe' style summary unless the facts say the season has ended.");
   }
   if (gist && gist.trim()) parts.push(`What it needs to say: ${gist.trim()}`);
   if (factLines && factLines.length) {

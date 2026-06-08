@@ -36,8 +36,13 @@ const EXTRACT = {
   },
   games_recap: (ctx) => {
     const out = {};
-    if (ctx.summary?.record) out.Record = ctx.summary.record;
     const games = Array.isArray(ctx.games) ? ctx.games : [];
+    // Only surface an aggregate record when it spans MULTIPLE games, and label
+    // its scope. For a single game the "record" just restates the game line and
+    // reads like a SEASON record (the "0-1 RECORD" that made the AI infer a
+    // season opener / write a season-wrap). Single game -> let the game line
+    // carry it; the prompt scope rule keeps the AI from implying season position.
+    if (ctx.summary?.record && games.length > 1) out['Record across these games'] = ctx.summary.record;
     if (games.length) {
       out.Games = games.map((g) => {
         const opp = g.opponent ? String(g.opponent).trim() : 'opponent';
