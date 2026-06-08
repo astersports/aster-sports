@@ -1756,6 +1756,46 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   before G1 — address ships regardless); FORK A pref yes (before the FORK A PR, not
   before G1). CC build kickoff: G1 needs Frank's LH mailing-address value + the
   additive migration; G8 starts in parallel (unblocked; the gate G5 depends on).
+- **GO-LIVE BUILD PROGRESS (2026-06-07/08 PM, this session)** — building the
+  architect-signed track. **G8 (idempotency) SHIPPED + report** (`CC_G8_SEND_IDEMPOTENCY_REPORT.txt`,
+  `CC_G8_REVIEW_RESPONSE.txt`): pure dispatch kernels `alreadySent` + `classifyBatchResult`
+  in the AP#30 mirror pair `src/lib/briefings/sendDispatch.js` ↔
+  `supabase/functions/send-tournament-message/_dispatch.ts` (baseline 4, registered in
+  edgeFunctionMirrorAudit) + static lock `sendIdempotencyInvariant.test.js`. Claim
+  NARROWED per architect G8 review: idempotency proven = **finalized + clean-queued only**;
+  the crash-after-dispatch window (emailed-but-not-marked-'sent', still reads 'queued')
+  is NOT covered → G5 must surface ambiguous 'queued' for human review, never blind
+  auto-re-drive. **G5 PR 0 (F-DUAL-FINALIZE) MERGED** — removed the caller-side
+  `status='sent'` force-write from digestSend/rsvpNudgeSend/academyCallupSend/
+  scheduleChangeSend; edge fn now owns the terminal finalize; callers throw on
+  `dispatch.ok === false` instead of masking a partial send (which would 409-lock its own
+  recovery). **G5 PR 1a (#831, MERGED 2026-06-08)** — queued "Sends needing review"
+  Radar surface (architect D2 render): `useStuckSends` read-only hook + `StuckSendsRegion`
+  (§16.14, renders null when clean) + `StuckSendCard` (disambiguation pointer leads;
+  Resend / Mark-as-delivered both confirm-gated) + regression guard. **redrive_count
+  migration applied** (20260608002737, additive, MCP + AP#21 mirror; Frank D1 = include
+  the cap with G5). **Next: G5 PR 1b** (OPT-B failed re-drive via a shared gated-send
+  helper that re-applies suppression + the pilot fail-closed gate; redrive_count cap = 3;
+  failed-note/escalation row), held for Frank's smoke. A2 (#813) updated/merge-ready,
+  awaits Frank's re-smoke. G1 (CAN-SPAM footer) next after G5: mailing_address column
+  live (20260607231454), address "4 Byram Brook Place, Armonk, NY 10504" → wire into
+  buildOrgContext.branding + footer.js (~13 sites, no shared builder).
+- **#825 PARALLEL-SESSION 8-AGENT AUDIT — findings folded (2026-06-08, Frank: "yes on
+  all recommendations")** — a parallel session's independent 8-agent briefings audit
+  (PR #825, still OPEN, routes to architect lane — has decisions owed + likely ledger
+  conflict). Two findings folded here for the build plan; #825's own merge stays the
+  architect's call. **(1) FORK D scope widens 8 → 9 resolvers.** The v2/v3 FORK D set was
+  "8 resolvers default pilot OFF on a missing settings row" — #825 found **weekly_digest
+  is a 9th that NEVER consults org settings at all** (not even the `?? false` seam). The
+  FORK-D fix (align to fail-closed + AP#43 parity test) must cover all 9, and the parity
+  test must assert weekly_digest is included, not just the 8 with the `??`-seam. **(2)
+  NEW F-PARENT-MOAT-LEAK [P1].** Archived briefings have no status gate into the parent
+  inbox / "Needs you" surface — an archived (non-sent / scratch / abandoned) briefing can
+  leak into a parent's inbox once the FILTER go-live cutover lands. Latent today (pre-FILTER);
+  **fires at the FILTER cutover**, so it must be fixed in the same wave that ships the
+  parent-inbox FILTER, with an AP#43 cross-surface invariant test locking "archived ⟹ not
+  in parent inbox/Needs-you." #825 also INDEPENDENTLY re-derived F-DUAL-FINALIZE (already
+  shipped this session as G5 PR 0) — convergent confirmation, no new work.
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 
