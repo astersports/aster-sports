@@ -22,7 +22,7 @@ import { join } from 'path';
 // Vitest runs with cwd = repo root; sibling audit tests use relative paths.
 
 const FORBIDDEN = [
-  { re: /~\/legacy-hoopers-app/, label: 'stale local path — use ~/skyfire-app' },
+  { re: /~\/legacy-hoopers-app/, label: 'stale local path — use ~/aster-sports' },
   { re: /\b141 migration/i, label: 'hardcoded stale migration count — say "consult the directory"' },
   // Match the CALL form (the drift "Use getTournamentRecipients(...)"), not the
   // legit negation "there is no getTournamentRecipients helper".

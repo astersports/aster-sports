@@ -2,7 +2,7 @@
 
 Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, Google Sheets, email/text, and spreadsheets with one mobile-first platform.
 
-**Live:** https://skyfire-app.vercel.app
+**Live:** https://astersports.app
 **Org #1:** Legacy Hoopers LLC — Westchester, NY AAU youth basketball, grades 2–5
 
 ## Stack
@@ -17,8 +17,8 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
 ## Quickstart
 
 ```bash
-git clone git@github.com:LegacyHoopers/skyfire-app.git
-cd skyfire-app
+git clone git@github.com:LegacyHoopers/aster-sports.git
+cd aster-sports
 npm install
 cp .env.example .env   # then fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
 npm run dev            # http://localhost:5173

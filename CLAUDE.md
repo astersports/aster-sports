@@ -7,16 +7,18 @@
 > strings say "Aster Sports." Domain: `astersports.app`/`.io`/`.co` (the `.com` is a separate
 > sports-equipment co — TM check pending). Mark: constellation-arrow (gold-on-navy, palette
 > unchanged). Rebrand plan: `docs/AUDIT_VELA_REBRAND.md`. The *tenant* "Legacy Hoopers" is
-> unchanged (a customer org; AsterSports is the platform above it). **Surviving legacy identifiers
-> (deliberately NOT renamed):** the repo/deploy id `skyfire-app` (+ `skyfire-app.vercel.app`) →
-> changes only at repo rename/transfer (account migration); the immutable `002_skyfire_foundation`
+> unchanged (a customer org; AsterSports is the platform above it). **Repo/deploy id renamed
+> 2026-06-08:** the GitHub repo + Vercel deploy id `skyfire-app` → `aster-sports` (rename-in-place
+> under the LegacyHoopers account; GitHub auto-redirects the old name), and the legacy
+> `skyfire-app.vercel.app` alias was removed — production is `astersports.app`. **Surviving legacy
+> identifiers (deliberately NOT renamed):** the immutable `002_skyfire_foundation`
 > migration filename + the `ember_live` CHECK-constraint data value in migrations; the `@ember`
 > ICS `UID` suffix (`icalHelpers.js` + `team-feed`) → a calendar-dedup stable key, changing it
 > duplicates events in subscribers' calendars; the dead `--sf-*` tokens that survive only in
 > `docs/archive`; and historical `docs/` (incl. `EMBER_PENDING_LEDGER.md` + every `docs/archive/SKYFIRE_*.md` + `docs/EMBER_TENANCY_ARCHITECTURE_v3.md` + `docs/EMBER_PROGRAM_SETUP_SPEC_v2.md`) kept as-is to preserve
 > the record. **Doctrine clause:** archive docs and brand-named planning docs are NEVER retroactively renamed; the names ARE the record. Wave 3.B #29 P0-4 catalog-refresh discipline applies only to live-state claims (file paths still mounted, line counts still accurate), not to filenames or historical references. No user-facing string says Skyfire, Ember, or Vela.
 > Single source of truth for all Claude Code sessions.
-> Place at project root: `~/skyfire-app/CLAUDE.md`
+> Place at project root: `~/aster-sports/CLAUDE.md`
 > Branch: `main` (v2 retired May 11, 2026 — see `docs/archive/PRE_3_AUDIT_2026-05-11.md`)
 > Last updated: June 1, 2026
 
@@ -76,11 +78,11 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
 - Assistant coach: Darien Gonzalez (paid per session)
 
 **Live environment:**
-- App: https://skyfire-app.vercel.app
-- Repo: github.com/LegacyHoopers/skyfire-app (private)
+- App: https://astersports.app
+- Repo: github.com/LegacyHoopers/aster-sports (private)
 - Supabase project: `vrwwpsbfbnveawqwbdmj`
 - Admin: admin@legacyhoopers.org (user_id: `1e06a3d4-769b-42c0-b90b-92787410ee5a`, org_id: `e3e95e21-3571-4e9a-985a-d5d01480d4a6`)
-- Local path: `~/skyfire-app` | branch: `main`
+- Local path: `~/aster-sports` | branch: `main`
 - Deploy chain: PR against main, auto-merge per §15 once CI green (see section 12)
 
 ---
@@ -651,7 +653,7 @@ to prevent accumulation.
 
    Discipline extension: every Edit/Write tool call in a worktree-
    isolated agent MUST construct the absolute path by prepending the
-   agent's known worktree prefix (`/home/user/skyfire-app/.claude/
+   agent's known worktree prefix (`/home/user/aster-sports/.claude/
    worktrees/agent-XXX/`) to any source-tree path. The prefix must be
    computed at agent session start and applied mechanically, not
    remembered attentionally.
@@ -1126,7 +1128,7 @@ for that collaboration:
 
 ```bash
 # Resume every session
-cd ~/skyfire-app && claude
+cd ~/aster-sports && claude
 
 # Branch off main per change (never commit directly to main)
 git checkout main && git pull origin main
