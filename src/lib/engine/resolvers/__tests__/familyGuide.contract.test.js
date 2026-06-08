@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { composeFamilyGuide, resolveFamilyGuide } from '../familyGuide';
+import { renderFooter } from '../../renderers/footer';
 import { detectConflicts, formatDateRange, groupEventsByKid, summarizeEventKinds } from '../familyGuideHelpers';
 
 function mockSb({ parent = null, pgRows = [], tpRows = [], events = [], coaches = [], teamStaff = [], org = null, orgSettings = null, rpcRows = [] }) {
@@ -213,7 +214,7 @@ describe('composeFamilyGuide', () => {
     expect(() => composeFamilyGuide(null, {})).toThrow();
     expect(() => composeFamilyGuide({}, null)).toThrow();
   });
-  it('emits vip_header → kid_color_pill → quick_link_nav → brand_footer', () => {
+  it('emits vip_header → kid_color_pill → quick_link_nav → footer (Decision 2: full footer w/ unsubscribe, not brand_footer)', () => {
     const ctx = {
       parent: PARENT,
       kidsWithEvents: [{ player_id: 'p-1', first_name: 'Charlie', team_id: 't-1', team_name: '11U Girls', team_color: '#a78bfa', events: [{ start_at: '2026-05-18T15:00:00-04:00' }] }],
@@ -224,7 +225,23 @@ describe('composeFamilyGuide', () => {
     expect(kinds[0]).toBe('vip_header');
     expect(kinds).toContain('kid_color_pill');
     expect(kinds).toContain('quick_link_nav');
-    expect(kinds[kinds.length - 1]).toBe('brand_footer');
+    expect(kinds[kinds.length - 1]).toBe('footer');
+  });
+  it('family_guide footer carries an unsubscribe link (Decision 2 / CAN-SPAM — parent-facing)', () => {
+    const ctx = {
+      parent: PARENT,
+      kidsWithEvents: [{ player_id: 'p-1', first_name: 'Charlie', team_id: 't-1', team_name: '11U Girls', team_color: '#a78bfa', events: [{ start_at: '2026-05-18T15:00:00-04:00' }] }],
+      conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], orgName: 'Legacy Hoopers',
+    };
+    const out = composeFamilyGuide(ctx, { parent_name: 'Frank' });
+    const footer = out.content_sections.find((s) => s.kind === 'footer');
+    expect(footer).toBeTruthy();
+    expect(footer.contactEmail).toBeTruthy();
+    // renderFooter emits the {{UNSUBSCRIBE_URL}} block (substituted per-recipient by
+    // queueComposedMessages.applyUnsubscribeUrls) — the brand_footer it replaced did not.
+    const rendered = renderFooter(footer);
+    expect(rendered.html).toContain('{{UNSUBSCRIBE_URL}}');
+    expect(rendered.html).toContain('Unsubscribe');
   });
   it('emits conflict_callout immediately after vip_header when conflicts exist (PR 5b-3)', () => {
     const ctx = {
@@ -288,7 +305,7 @@ describe('composeFamilyGuide', () => {
     };
     const out = composeFamilyGuide(ctx, { parent_name: 'Frank' });
     const kinds = out.content_sections.map((s) => s.kind);
-    // Expected order: vip_header, kid_color_pill (Charlie), 2 rows, kid_color_pill (Milo), 1 row, quick_link_nav, brand_footer
+    // Expected order: vip_header, kid_color_pill (Charlie), 2 rows, kid_color_pill (Milo), 1 row, quick_link_nav, footer
     expect(kinds.filter((k) => k === 'color_striped_row')).toHaveLength(3);
     const charlieIdx = kinds.indexOf('kid_color_pill');
     expect(kinds[charlieIdx + 1]).toBe('color_striped_row');

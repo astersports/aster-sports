@@ -16,7 +16,7 @@
 // before using data.
 
 import {
-  buildBrandFooter, buildCoachesBlockSection, buildConflictCalloutSection,
+  buildCoachesBlockSection, buildConflictCalloutSection, buildFamilyGuideFooter,
   buildKidColorPillSections, buildQuickLinkNav, buildSignoffSection, buildVipHeaderSection,
 } from './familyGuideSections';
 import { detectConflicts, groupEventsByKid } from './familyGuideHelpers';
@@ -118,17 +118,17 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
   }
   // AP #63 — route the org-name through the shared builder so the
   // display_name||name||default precedence is identical to every other kind.
-  const orgName = buildOrgContext({ orgId: parent.org_id, org: orgRow, coaches }).name;
+  const orgCtx = buildOrgContext({ orgId: parent.org_id, org: orgRow, coaches });
 
   return {
-    context: { parent, kidsWithEvents, conflicts, dateRange, coaches, teamCoaches, orgName },
+    context: { parent, kidsWithEvents, conflicts, dateRange, coaches, teamCoaches, orgName: orgCtx.name, orgBranding: orgCtx.branding },
     slices: [{ kind: 'single_recipient', guardian_id: parent.id, email: parent.email, parent_name: parent.first_name }],
   };
 }
 
 export function composeFamilyGuide(context, slice, overrides = {}) {
   if (!context || !slice) throw new Error('Missing context or slice');
-  const { parent, kidsWithEvents, conflicts, dateRange, coaches, teamCoaches, orgName } = context;
+  const { parent, kidsWithEvents, conflicts, dateRange, coaches, teamCoaches, orgName, orgBranding } = context;
   const sections = [buildVipHeaderSection(parent, kidsWithEvents, dateRange, conflicts)];
   const conflictSection = buildConflictCalloutSection(conflicts);
   if (conflictSection) sections.push(conflictSection);
@@ -142,7 +142,7 @@ export function composeFamilyGuide(context, slice, overrides = {}) {
   if (coachesSection) sections.push(coachesSection);
   const signoff = buildSignoffSection(overrides, coaches);
   if (signoff) sections.push(signoff);
-  sections.push(buildBrandFooter(orgName));
+  sections.push(buildFamilyGuideFooter(orgName, orgBranding));
   return {
     subject: `Your family guide: ${slice.parent_name || parent?.first_name || 'Family'}`,
     content_sections: sections,

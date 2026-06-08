@@ -14,7 +14,7 @@
 // wires the quick_link_nav URLs to the team detail page.
 
 import { formatDateRange, formatDayLabel, formatTime, summarizeEventKinds } from './familyGuideHelpers';
-import { APP_BASE_URL } from '../../constants';
+import { APP_BASE_URL, ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 
 const FALLBACK_TEAM_COLOR = '#4a8fd4';
 
@@ -124,6 +124,18 @@ export function buildSignoffSection(overrides, coaches) {
   return { kind: 'signoff', prose, coaches: validCoaches };
 }
 
-export function buildBrandFooter(orgName) {
-  return { kind: 'brand_footer', org_name: (orgName || 'Legacy Hoopers').toUpperCase(), tagline: 'GROW YOUR GAME · LEAVE YOUR LEGACY' };
+// Decision 2 (architect, 2026-06-08): family_guide is parent-facing bulk email,
+// so it carries the SAME compliant footer as the other guardian-facing kinds —
+// the full `footer` kind (logo + contact + the {{UNSUBSCRIBE_URL}} block that
+// renderFooter emits and queueComposedMessages substitutes per-recipient), NOT
+// the tagline-only brand_footer which had no unsubscribe link. No physical
+// address (operator directive: the org address is internal-only / tax).
+export function buildFamilyGuideFooter(orgName, branding = {}) {
+  return {
+    kind: 'footer',
+    logoUrl: branding.logoUrl || ORG_LOGO_DEFAULT,
+    orgName: orgName || 'Legacy Hoopers',
+    websiteUrl: branding.eyebrowLink || ORG_WEBSITE_DEFAULT,
+    contactEmail: branding.contactEmail || ORG_CONTACT_DEFAULT,
+  };
 }
