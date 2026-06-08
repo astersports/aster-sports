@@ -1,0 +1,127 @@
+==============================================================================
+CC -> ARCHITECT: DECISIONS OWED + OVERNIGHT BUILD STATE  (2026-06-08)
+Relay artifact (Frank -> architect). Self-contained: read only this doc.
+Companion source docs in repo: CC_G5_PR1B_SHARED_HELPER_FORK.txt,
+CC_FORKD_REPORT.txt, CC_MOAT_REPORT.txt, CC_G1_REPORT.txt,
+CC_SESSION_HANDOFF_2026-06-08_overnight.txt.
+Execution mode honored: auto-build the go-live queue, NOTHING auto-merges,
+RLS/migrations stayed in your GO-gated MCP lane. Per-PR gate met: lint + build
++ full vitest GREEN. Three decisions are owed before the next code lands.
+==============================================================================
+
+QUICK MAP — what's where
+------------------------------------------------------------------------------
+  Merged (docs):    #833 ledger fold · #834 1b fork doc · #838 handoff+ledger.
+  HELD for smoke:   #835 FORK-D · #836 MOAT · #837 G1  (do-not-auto-merge; green).
+  STOPPED:          PR 1b + G7 (decision #1 below).
+  Your MCP lane:    parent-moat RLS backstop + Tier 0 ghost (decision #3 below).
+
+==============================================================================
+DECISION 1 — PR 1b gated-send factoring  (BLOCKS 1b + G7)
+==============================================================================
+QUESTION: how do send-tournament-message AND the cron re-drive share ONE pilot+
+suppression gate, given this repo's deploy model?
+
+EVIDENCE (verified tonight, file:line):
+  - Your instruction: "extract the gated-send slice into ONE shared Deno helper
+    that BOTH call ... do not build a second ungated send path."
+  - There is NO supabase/functions/_shared/ dir and ZERO cross-function-directory
+    imports in the repo. The established pattern is AP#30 MIRROR (e.g.
+    briefing-auto-draft-tick/_reminderSend.ts:31 keeps a LOCAL copy of
+    mintUnsubscribeUrl "because Edge deploys bundle the function directory only").
+  - .github/workflows/deploy-edge-functions.yml is PATH-SCOPED. Lines 76-82: a
+    push touching supabase/functions/** that matches no individual function dir
+    (i.e. a _shared/-only change) prints "Nothing to deploy" and deploys nothing.
+  - CONSEQUENCE: a single _shared/gatedSend.ts bundles on the FIRST deploy, but any
+    later _shared-only edit silently fails to redeploy either dependent -> they run
+    STALE gate code. AP#30 failure class, aimed at the suppression + pilot gate.
+
+OPTIONS:
+  OPT-B1 (CC LEAN) — pure gate-DECISION kernels in the existing G8 mirror pair
+    (sendDispatch.js <-> _dispatch.ts): decideSuppression(recipients, prefs) +
+    decidePilotGate(guardians, pilotMode). send-tournament-message refactors its
+    inline suppression/pilot (index.ts:133-196) to call them; the cron calls the
+    SAME decisions via a Deno copy (register a 2nd row in edgeFunctionMirrorAudit so
+    the 3 copies are byte-locked). IO (queries + Resend + writeback) stays per-caller.
+    + No second UNGATED path (both run the identical unit-tested decision); keeps the
+      just-ratified 409/finalize contract untouched; extends the classifyBatchResult
+      precedent you approved in G8; gives G7 a clean pure helper to test; survives the
+      path-scoped CI (each fn redeploys on its own dir; mirror audit fails loud on drift).
+    - Two IO bodies (gated identically); 3-way mirror instead of 2-way.
+  OPT-B2 — single supabase/functions/_shared/gatedSend.ts imported by both.
+    + Literally "one file."  - VERIFIED HAZARD above; would need a CI change to
+      redeploy _shared importers (first-of-its-kind, on the deploy path).
+  OPT-C — cron invokes send-tournament-message with body { redrive:true }; the guard
+    becomes `if (alreadySent(message) && !body.redrive) 409`, and the redrive branch
+    re-selects ONLY delivery_status='failed' rows (never 'queued') through the
+    function's existing gate. + truest one-mechanism, zero duplication, no deploy-
+    model problem.  - adds a 409-bypass to the idempotency contract OPT-B was chosen
+    to AVOID touching (your redrive ruling: "no change to the 409/finalize contract").
+
+ON YOUR RULING: CC builds PR 1b to it + the StuckSendsRegion red escalation row
+  (redrive_count >= 3) + the §2 tests, then PR G7 (pilot-gate vitest) against the
+  exposed pure gate. Both held for Frank's smoke.
+
+==============================================================================
+DECISION 2 — brand_footer CAN-SPAM scope  (NEW finding from G1)
+==============================================================================
+QUESTION: family_guide + coach_roundup do NOT use the footer G1 just fixed. They
+emit a tagline-only `brand_footer` (renderers/brandFooter.js) with NEITHER the
+CAN-SPAM physical address NOR an {{UNSUBSCRIBE_URL}}.
+
+WHY IT MATTERS: family_guide is PARENT-FACING (sendPath composerSubmit -> guardian
+emails). So for family_guide the audit's "(unsubscribe half IS compliant)" does NOT
+hold — its footer has no unsubscribe at all, and now no address either. coach_roundup
+goes to STAFF (coaches), so the consumer-CAN-SPAM analysis may differ (your call).
+
+CC did NOT expand G1 to fix it (out of G1's footer.js scope; the unsubscribe half
+needs the placeholder + the family_guide send path to substitute it — a contract
+decision, not a mechanical thread).
+
+OPTIONS (your ruling):
+  (i)  switch family_guide's footer section from brand_footer to the full `footer`
+       kind — it already routes through buildOrgContext, so address + the unsubscribe
+       placeholder come for free; then verify its send path calls applyUnsubscribeUrl.
+  (ii) give brand_footer its own address + unsubscribe block (keeps the cobalt-band
+       look, more renderer work).
+  (iii) confirm family_guide is exempt (it is not, if it's a commercial send to parents).
+  coach_roundup decided separately (staff audience).
+CC LEAN: (i) for family_guide. On your ruling CC builds it held.
+
+==============================================================================
+DECISION 3 — GO / defer on your GO-gated MCP items  (Frank -> architect)
+==============================================================================
+Neither is CC's to apply; both are dormant tightenings (no real parent rows live).
+  (a) Parent-moat RLS backstop — message_is_not_archived(uuid) SECURITY DEFINER +
+      parent_select_own_recipients USING gains AND message_is_not_archived(message_id).
+      Recursion-safe (SECDEF bypasses the recipients-table RLS comms_messages_read
+      references). Pairs with MOAT #836 as independent defense-in-depth (either layer
+      alone closes the leak; both = belt-and-suspenders). Safe to apply pre-smoke.
+  (b) Tier 0 ghost migration 20260603104534 (narrow weekly_digest unique index dropping
+      'draft') — reconcile against the existing repo mirror first.
+You apply both via MCP + write the AP#21 mirror; CC built the code halves regardless.
+
+==============================================================================
+HELD-PR DETAIL (for smoke + merge — independent, any order)
+==============================================================================
+  #835 FORK-D — pilot gate fail-closed across all 9 send-driving resolvers. 8
+    `?? false`->`?? true` + 2 secondary branches (tournament prelim/recap, orgId-absent)
+    + weekly_digest gained the consult block + registry anchor pass-through. Static
+    parity lock. 208 files / 1481 tests green. NO live-audience change (LH column true;
+    digestSend bypasses resolveWeeklyDigest; edge gate is the live backstop).
+  #836 MOAT — useInboxList inner-joins comms_messages + .in('comms_messages.status',
+    ['sent','queued']); archived (145 live rows) can't reach a parent. useParentNeedsYou
+    inherits it. AP#43 cross-surface lock. 208/1484 green. RLS backstop = decision 3(a).
+  #837 G1 — CAN-SPAM address threaded live (organizations.mailing_address) through
+    buildOrgContext.branding -> 8 footer pushes -> renderFooter; omitted when null.
+    10 golden snapshot fixtures reconciled. 207/1482 green. brand_footer flagged = decision 2.
+
+  MERGE ORDER: the 3 held PRs are independent. PR 1b -> then G7 (G7 stacks on 1b),
+  after decision 1.
+
+STATE: audit arc closed + signed; go-live track G5-1a (#831 merged) + FORK-D + MOAT
++ G1 built & held; G5-1b/G7 blocked on decision 1; nothing merged unwatched; nothing
+applied. A signed plan with 3 held PRs + 3 decisions owed.
+==============================================================================
+END — CC_ARCHITECT_DECISIONS_OWED_2026-06-08
+==============================================================================
