@@ -81,16 +81,17 @@ describe('sendScheduleChange — T0d regression (no compose() throw)', () => {
     expect(supa.functions.invoke).toHaveBeenCalledWith('send-tournament-message', expect.objectContaining({ body: expect.objectContaining({ message_id: expect.any(String) }) }));
   });
 
-  it('3. flips comms_messages.status to sent after dispatch', async () => {
+  it('3. F-DUAL-FINALIZE: does NOT client-write status=sent (edge fn owns finalize)', async () => {
     RESOLVER_REGISTRY.schedule_change.resolve.mockResolvedValueOnce({ context: baseContext, slices: [slice1] });
     const supa = makeSupabase();
     await sendScheduleChange({ state: baseState(), supabase: supa, now: new Date('2026-05-11T18:00:00Z') });
-    // Find the .update({ status: 'sent' }) call across all from('comms_messages') chains.
+    // The helper no longer writes status='sent' — that's the edge fn's job. A
+    // client write would force-finalize a partial send and 409-lock recovery.
     const updateCalls = supa.from.mock.results
       .filter((r, i) => supa.from.mock.calls[i][0] === 'comms_messages')
       .flatMap((r) => r.value.update.mock.calls);
     const sentCall = updateCalls.find((c) => c[0]?.status === 'sent');
-    expect(sentCall).toBeTruthy();
+    expect(sentCall).toBeFalsy();
   });
 
   it('4. does NOT throw "No engine composer for kind" — the bug', async () => {
