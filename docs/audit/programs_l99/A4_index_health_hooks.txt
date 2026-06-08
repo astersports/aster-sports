@@ -1,0 +1,413 @@
+================================================================================
+AGENT A4 — L99 AUDIT: PROGRAM INDEX + HEALTH METRICS + PROGRAM DATA HOOKS
+AsterSports "programs" section · 6-agent audit · slice A4
+Date: 2026-06-08 · READ-ONLY · pwd confirmed /home/user/skyfire-app
+Methodology: §16.15 (a)-(e). All metrics verified live (AP#60) against
+Supabase project vrwwpsbfbnveawqwbdmj. SELECT-only.
+================================================================================
+
+SCOPE (read line-by-line):
+  src/pages/admin/AdminProgramsPage.jsx
+  src/components/admin/programs/ProgramIndexRow.jsx
+  src/components/home/AdminProgramHealth.jsx
+  src/hooks/useProgramHealthMetrics.js
+  src/hooks/useProgramRegistrations.js
+  src/hooks/usePrograms.js
+  src/hooks/useAllPrograms.js
+  src/hooks/useActivePrograms.js
+  src/lib/programGrouping.js
+  (+ cross-surface: ProgramDetailPage, ProgramTeamsSection, useSeasonFinancials,
+   useFamiliesOwingCount, AdminTail, AdminHomePage, useActivities — for #63 hunt)
+
+--------------------------------------------------------------------------------
+LIVE GROUND TRUTH (verified 2026-06-08, AP#60 — every number replayed)
+--------------------------------------------------------------------------------
+6 programs (LH org e3e95e21):
+  Summer Day Camp     camp     active   2026-07-27..07-31   teams=1  players=0
+  Fall 2026 Tryouts   tryout   active   2026-06-26          teams=0  players=0
+  Spring 2026         season   active   2026-03-23..06-14   teams=5  players=63
+  Active Roster Lab   camp     active   2026-03-23..06-08   teams=1  players=32
+  Winter 2025-26      season   archived 2025-11-15..03-04   teams=0  players=0
+  Fall 2025           season   archived 2025-09-01..12-31   teams=0  players=0
+
+KEY VERIFIED FACTS:
+  - registrations table: 0 ROWS for the entire org (and 0 all-orgs). EMPTY.
+  - teams.season_id literally holds the PROGRAM id for camps too (verified:
+    camp team season_id = camp program id). useAllPrograms' .in('season_id',ids)
+    join is therefore correct across ALL program types, not just seasons.
+  - team_players for Spring 2026: 63 rows, all status='active', 63 DISTINCT.
+    (rows == distinct today — no kid double-rostered — so the row-vs-distinct
+    bug below is LATENT, not live-firing.)
+  - financial_accounts Spring 2026: 60 accounts, billed = 7,024,297 cents
+    = $70,242 (matches CLAUDE.md §10).
+  - seasons VIEW returns 3 rows (program_type='season' only) — a legit
+    narrower scope than the 6-row programs index.
+  - Spring 2026: 162 events, 1709 event_rsvps total.
+  - Admin user (1e06a3d4) is SINGLE-org today (one user_roles row, admin).
+    Both current_user_org_id() (uuid) and current_user_org_ids() (uuid[])
+    exist. Multi-org RLS is plural; hooks pin single orgId — latent, not live.
+
+================================================================================
+(a) INITIAL LINE-BY-LINE PASS — findings P0..P3
+================================================================================
+
+[P1][AP#63] ProgramDetailPage.jsx:53 + useProgramRegistrations.js:18-22
+  "Registrations · N" derives from the `registrations` table, which is EMPTY
+  (0 rows org-wide, verified). EVERY program — including Spring 2026 with 63
+  rostered players and $70,242 billed — renders "Registrations · 0 ·
+  No registrations yet. Share the public link to get started."
+  Meanwhile the SAME program's index row says "5 teams · 63 players" and the
+  home health card says "Players 63". One program, three different
+  "people in this program" truths from three sources.
+  EVIDENCE (SQL): SELECT COUNT(*) FROM registrations
+    WHERE org_id='e3e95e21...' => 0 ;
+    team_players(Spring) => 63 ; financial_accounts(Spring) => 60.
+  This is the dominant PATTERN A instance on the programs surface (see table).
+  LEAN: the registrations table is the post-cutover signup pipeline; today's
+  roster came in via LeagueApps import → team_players/financial_accounts, never
+  through registrations. ProgramDetail is reading the wrong ground-truth table
+  for THIS org's current reality. REC below (PATTERN A section).
+
+[P2][AP#36-adjacent] useAllPrograms.js:21,28,40
+  Top-level programs query (line 16-21) correctly destructures {data,error}
+  and bails on error. BUT the teams fetch (26-30) and team_players fetch
+  (38-42) only console.error and CONTINUE with `[]`. A failure of the teams
+  query (e.g. RLS regression) silently renders every program as "0 teams /
+  0 players" with no user-visible signal — the exact AP#36 swallow class on
+  the count path. Index loses all counts silently.
+  LEAN: surface a non-fatal counts-degraded state, or at minimum return an
+  error flag the page can show ("counts unavailable"). Low risk fix.
+
+[P2][AP#63 latent] useAllPrograms.js:44 vs useProgramHealthMetrics.js:71-74,89
+  playerCount on the INDEX row counts team_players ROWS with NO status filter
+  (line 39 select 'team_id', line 44 increments per row).
+  playersCount on the HEALTH card counts DISTINCT player_id WHERE status='active'
+  (metrics line 73-74, 89 new Set()).
+  Two different "Players" definitions for the same season. Today they agree
+  (63==63, all active, none double-rostered) so it doesn't fire — but the
+  moment a kid is on two teams, OR an inactive team_player exists, the index
+  row over-counts vs the card. LATENT PATTERN A.
+  EVIDENCE (SQL): rows_all_status=63 == distinct_active=63 (today only).
+  LEAN: pick ONE definition (distinct active players) and share it; lock with
+  an AP#43 cross-surface invariant test.
+
+[P3][AP#48] useAllPrograms.js:20
+  .order('start_date',{ascending:false}) on the PARENT programs query — this
+  is a real column on the parent table (not a foreignTable order), so #48 does
+  NOT bite here. Noting it only to record it was checked and is clean.
+  Archived programs with NULL start_date would sort unpredictably; today all
+  programs have start_date, so no live issue. (No fix needed; documented.)
+
+[P2][a11y/§16.10] AdminProgramsPage.jsx:48-53
+  The index renders every program row un-virtualized. Today 6 rows — fine.
+  §16.10 mandates virtualization >30 rows. As programs accumulate across
+  seasons (rollover archives a full season's worth each cycle), the "Archived"
+  group grows unbounded. No virtualization + no pagination.
+  LEAN: defer (6 rows today, §16.13 ship-not-gate) BUT flag: archived group is
+  the unbounded one — first surface to exceed 30 will be Archived after ~5-6
+  rollovers. Add a note / collapse-archived affordance before then.
+
+[P3][§16.2] AdminProgramsPage.jsx + ProgramIndexRow.jsx
+  Index rows are NOT density-aware (no useDensity). §16.2 governs HOME cards;
+  the admin index is not a home surface, so this is arguably out of §16.2's
+  scope. Documented: if density ever extends to admin list surfaces, the row's
+  meta line (range · teams · players) is the natural verbosity toggle target.
+
+[P3][a11y] ProgramIndexRow.jsx:21
+  Row is a <Link> wrapping name+badge+meta — good (whole row tappable, native
+  anchor semantics). No aria-label needed (visible text present). Tap target:
+  padding 12px/13px + 15px text ≈ ~44px effective. Borderline-OK. No fix.
+
+[P3][tokens] All scoped files: var(--as-*) only — PASS. No hardcoded hex.
+  AdminProgramHealth uses --as-text-meta (the §0 corollary AA token) correctly.
+  ProgramIndexRow/Page chips/badges all token-sourced. Clean.
+
+================================================================================
+(b) DEEP-READ ADDENDUM — 2nd pass (catches ~40% the first pass missed)
+================================================================================
+
+[P1][AP#63] AdminProgramHealth.jsx:28-45 — "Players" KPI is SEASON-scoped but
+  the card has NO season picker and silently shows ONLY the active season.
+  useProgramHealthMetrics is called with season?.id where season = activeSeason
+  (AdminHomePage:71 → activeSeason from useSeason). So the home "Program health"
+  card shows Spring-2026 Players=63 / Collected / Events — but the org is now
+  running 4 ACTIVE programs (Spring season + 2 camps + 1 tryout, verified).
+  "Active Roster Lab" camp has 32 players and "Summer Day Camp" exists, all
+  invisible on the health card. The card SAYS "Program health" (singular org
+  health) but MEASURES one season. Multi-program reality (the whole point of
+  the programs build per useActivePrograms' "NO-REGRESSION INVARIANT" comment)
+  is not reflected. This is a concept/scope mismatch: "Program health" label
+  vs "active season only" source.
+  EVIDENCE (SQL): active programs = {Spring season:63, Active Roster Lab
+  camp:32, Summer Day Camp camp:0, Fall 2026 Tryouts tryout:0}. Card shows 63.
+  LEAN (AP#39 commit): the card title should read the active SEASON's name
+  (which it does: season.name) — so the data is self-consistent IF the label
+  is read as "this season's health." The gap is the WORD "Program" implying
+  org-wide/all-active-programs. Either (1) retitle to the season name only
+  ("Spring 2026 · Week X"), dropping "Program health" framing, OR (2) when >1
+  active program exists, surface a count ("4 active programs"). I lean (1):
+  least code, honest, and the card already leads with season.name. Decision is
+  architect's (does "Program health" mean season-health or org-health?).
+
+[P0][AP#63 — THE headline contradiction] Cross-surface "Out" / families-owing
+  AdminProgramHealth.jsx:31,45 renders "Out" = useFamiliesOwingCount(orgId)
+  = ALL-SEASONS net-owing total via family_balances. The "Collected %" KPI
+  immediately beside it = useProgramHealthMetrics → useSeasonFinancials =
+  ACTIVE-SEASON-ONLY pct. The in-file comment BUG-H1 (lines 34-40) already
+  ACKNOWLEDGES this is AP#63 and says the fix is to LABEL scope per KPI —
+  and the code DOES render a per-KPI scope sub-line ("season" / "all-time",
+  lines 42-45,63-65). So this specific instance is MITIGATED (scope labeled).
+  Downgrading from P0 to P2-RESOLVED-WITH-LABEL: the contradiction is handled
+  the AP#63-canonical way (label the scope). GOOD reference instance of the
+  correct pattern. Noted here because A4 must enumerate it; not a new bug.
+  (Severity P0 struck — left visible for the audit record as RESOLVED.)
+
+[P1][AP#63] "active" / status concept divergence across surfaces:
+  - programGrouping.js:24-26 defines "Active = not draft/archived AND
+    started on/before today"; "Upcoming = active-status but starts later."
+  - useActivePrograms.js:26 defines active purely as status='active'
+    (no date gate) — so a future-dated active camp is "active" to the home
+    off-season logic but "Upcoming" on the index. Same program, two "active"
+    answers. Verified live: "Summer Day Camp" (camp, status active, starts
+    2026-07-27 — FUTURE) is status-active → counted active by useActivePrograms
+    (feeds isHomeOffSeason at AdminHomePage:36) but renders under "Upcoming"
+    on the index (start_date > today). LATENT-but-LIVE: Summer Day Camp is the
+    live row that splits.
+  EVIDENCE (SQL): Summer Day Camp status='active', start_date='2026-07-27' >
+    today 2026-06-08.
+  LEAN: this is a legitimate scope difference (lifecycle-active vs
+  running-now), BUT it's unlabeled and the two helpers encode different rules
+  for the same word. Recommend a shared predicate (isRunningNow(program, today))
+  in programGrouping consumed by BOTH, OR document the two meanings explicitly.
+  Architect fork: is "active" lifecycle or running-now? Pick one canonical.
+
+[P2][AP#37] useProgramHealthMetrics.js:55-57 (event_rsvps query)
+  The rsvp slice filters .eq('events.teams.season_id', seasonId) with NO
+  org_id anywhere on the chain. event_rsvps is FK-scoped (no org_id column —
+  AP#37 exception), so this is technically compliant. BUT note rsvpPct is
+  COMPUTED (lines 84-86) and then NEVER RENDERED by AdminProgramHealth (the
+  card shows Players/Events/Collected/Out, not rsvpPct). rsvpPct +
+  activeTeamsCount + newRegistrationsCount are all computed and returned but
+  the only live consumer (AdminProgramHealth) uses paymentPct + playersCount.
+  => 3 of 5 computed metrics are DEAD on the only consumer. AP#51
+  dead-compute. The event_rsvps query (1709 rows for Spring) runs on every
+  admin home mount to populate a value nothing renders.
+  EVIDENCE: grep consumers of useProgramHealthMetrics => only
+  AdminProgramHealth.jsx:30 destructures {paymentPct, playersCount, loading}.
+  LEAN: drop rsvpPct/activeTeamsCount/newRegistrationsCount (+ their queries)
+  from the hook, OR wire them. The event_rsvps fetch is the heaviest query on
+  the path and feeds nothing. Strong lean: remove the dead slices (perf +
+  AP#51). Low risk — verify no other consumer first (grep confirms none).
+
+[P2][AP#36] useProgramHealthMetrics.js:76-82
+  GOOD: firstErr aggregates all 4 Promise.all errors and bails. Correct #36.
+  BUT financial slice comes from useSeasonFinancials (separate hook) whose
+  error is NOT surfaced here — paymentPct silently falls to 0 on financial
+  error (line 97: financial?.pct ?? 0). A financial query failure renders
+  "Collected 0%" indistinguishable from a genuine 0%. Minor; financial hook
+  logs its own error. Documented.
+
+[P3][AP#36] useProgramRegistrations.js:23-28 — correct #36 (pRes/rRes errors
+  checked independently before setState). Clean. The bug is upstream (table
+  empty), not the hook's error handling.
+
+[P3] usePrograms.js — NOTE: this hook is MISNAMED for this audit's mental
+  model. It reads the `teams` table (line 27), NOT `programs`. Its own comment
+  (lines 6-9) says "'Program' is the v2 UI term; the underlying table is
+  `teams`." So usePrograms = "teams in active season," a DIFFERENT concept from
+  useAllPrograms/useActivePrograms (which read the `programs` table). Three
+  hooks with "program" in the name read two different tables. Naming-drift
+  cognitive hazard; not a runtime bug. Consumers: AdminTeamsPage, TeamsPage,
+  schedule filters. LEAN: rename usePrograms → useSeasonTeams someday; defer.
+
+[P3][AP#48] useProgramRegistrations.js:21 — .order('created_at', desc) on the
+  PARENT registrations rows (not a foreignTable order) — clean, no #48 issue.
+
+[P2][a11y] AdminProgramHealth.jsx:56 — KPI aria-label is good
+  ("Players (season): 63"). BUT the visual scope sub-line (line 63-65) is
+  aria-hidden AND duplicated into the aria-label — correct, no double-read.
+  Clean. The card has no aria-live; "Out" updates async (owingLoading) without
+  announcing. Minor — values settle once, not a live-updating surface. Defer.
+
+[P3][§16.10] useAllPrograms.js — N+1 avoided correctly (two .in() batch
+  queries, not per-program). Good — no AP#4 sequential-await-in-loop. The only
+  concern is unbounded result growth as archived programs accumulate (same root
+  as the virtualization note). Counts are computed client-side over all teams/
+  team_players for the org — fine at 63 players, watch at scale.
+
+================================================================================
+(c) ANTI-PATTERN CROSS-REFERENCE (§11) + PATTERN A #63 TABLE
+================================================================================
+
+AP cross-ref summary:
+  #63 PATTERN A  — 4 live/latent instances (table below). PRIMARY finding.
+  #36 swallow    — 1 real (useAllPrograms counts path); others clean.
+  #37 org-first  — event_rsvps FK-scoped exception (compliant); noted.
+  #48 foreignTbl — checked 3 .order() calls; ALL parent-row orders, none bite.
+  #43 invariant  — NO cross-surface invariant test exists for any program
+                   count/status concept. Recommended for every #63 instance.
+  #51 dead-mount — useProgramHealthMetrics computes 3 unused metrics + a
+                   heavy event_rsvps query feeding nothing.
+
+PATTERN A #63 TABLE  (concept | surface | source | scope | agree?)
+--------------------------------------------------------------------------------
+CONCEPT: "people in this program"
+  Index row        | useAllPrograms       | team_players ROWS (all status) | season(=program) | NO
+  Health card      | useProgramHealthMetrics | team_players DISTINCT active | active season    | NO
+  Program detail   | useProgramRegistrations | registrations table (EMPTY)  | program          | NO
+  => THREE sources. Detail shows 0 while index/card show 63. P1 (detail) +
+     P2 latent (rows vs distinct-active). [verified: reg=0, tp_rows=63,
+     tp_distinct_active=63]
+
+CONCEPT: "active program"
+  Index grouping   | programGrouping      | status!=draft/archived AND started | date-gated | NO
+  Home off-season  | useActivePrograms    | status='active' (no date gate)     | status-only| NO
+  => Summer Day Camp (status active, future start) = "active" to home logic,
+     "Upcoming" on index. P1. [verified: status=active, start 2026-07-27]
+
+CONCEPT: "Collected %" vs "Out $" (families owing)
+  Health card      | useSeasonFinancials  | financial_accounts+txns | ACTIVE SEASON | (labeled)
+  Health card "Out"| useFamiliesOwingCount| family_balances view    | ALL SEASONS   | (labeled)
+  => RESOLVED the canonical AP#63 way: per-KPI scope sub-line rendered
+     ("season"/"all-time"). REFERENCE INSTANCE of correct handling. AGREE
+     (by-label). [BUG-H1 comment already documents this]
+
+CONCEPT: "Program health" (the card's own framing)
+  Card title       | AdminProgramHealth   | activeSeason only | one season | label overclaims
+  => Card says "Program health" (org-wide implied) but measures ONE season
+     while 4 programs are active. P1 label/scope. [verified: 4 active programs]
+
+CONCEPT: "Programs" count
+  Index            | useAllPrograms (programs table) | 6 (all types/status)
+  seasons view     | (program_type='season')         | 3
+  => Legit narrower scope; NOT a contradiction as long as nothing renders them
+     side-by-side unlabeled. No surface does today. CLEAN / watch.
+
+CONCEPT: "Players/Events" KPI scope label
+  Events KPI       | useActivities (season-scoped via activeSeason) | season | AGREE
+  => verified useActivities .eq('teams.season_id', activeSeason.id). "Events ·
+     season" label is honest. CLEAN.
+
+SINGLE-SOURCE RECOMMENDATION (§11.5 aligned):
+  - "people in a program": pick ONE source per the program's lifecycle.
+    For the CURRENT LH reality (roster via import, registrations empty), the
+    canonical roster source is team_players (DISTINCT, status='active') per
+    §11.5 "which kids are on a team right now". ProgramDetail's "Registrations"
+    should EITHER (a) read team_players/financial_accounts for imported-roster
+    programs, OR (b) clearly label "Online registrations" (a future-pipeline
+    metric that is honestly 0 today) so it doesn't read as "this program is
+    empty." LEAN (a)+label: show roster count from team_players AND a separate
+    "Online signups · 0" once that pipeline is live. Architect fork.
+  - "active": one shared isRunningNow(program, today) predicate consumed by
+    both programGrouping and useActivePrograms; OR document the two meanings.
+  - Lock each with an AP#43 cross-surface invariant test:
+    e.g. programPlayerCountInvariant.test — render index row + health card +
+    detail for the same fixture program, assert the rendered "players" integer
+    is identical (or that detail's label differs intentionally).
+
+================================================================================
+(d) PER-ROLE WIREFRAME
+================================================================================
+
+ADMIN — /admin/programs index (admin-only route):
+  ┌─────────────────────────────────────────┐
+  │ ‹ Back            Programs        [+ New] │
+  │ [All][Season][Camp][Clinic][Tryout]...   │  ← registry-derived chips (clean)
+  │ ACTIVE · RUNNING NOW                      │
+  │  ┌ Spring 2026            [Season] ────┐  │
+  │  │ Mar 23 – Jun 14 · 5 teams · 63 plyr │  │  ← players from team_players ROWS
+  │  └─────────────────────────────────────┘  │     (#63: detail will say 0)
+  │  ┌ Active Roster Lab        [Camp] ────┐  │
+  │  │ Mar 23 – Jun 8 · 1 team · 32 plyr   │  │
+  │  └─────────────────────────────────────┘  │
+  │ UPCOMING · STARTS LATER                   │
+  │  ┌ Summer Day Camp         [Camp] ─────┐  │  ← "active" status but here,
+  │  │ Jul 27 – Jul 31 · 1 team            │  │     not in "Active" group (#63)
+  │  ┌ Fall 2026 Tryouts     [Tryout] ─────┐  │
+  │ ARCHIVED                                  │  ← UNBOUNDED group, no virtualize
+  │  ┌ Winter 2025-26 / Fall 2025 ...      │  │
+  └─────────────────────────────────────────┘
+
+ADMIN-HOME — "Program health" context card (AdminTail slot 5):
+  ┌─────────────────────────────────────────┐
+  │ PROGRAM HEALTH                            │  ← label implies org-wide (#63)
+  │ Spring 2026 · Week X of Y                 │  ← but measures ONE season
+  │ ┌──────┬──────┬──────────┬──────┐         │
+  │ │  63  │ 162  │  ~100%   │ $1.3k│         │
+  │ │Players│Events│Collected │ Out  │         │
+  │ │season│season│ season   │all-time│       │  ← scope sub-line (GOOD #63 fix)
+  │ └──────┴──────┴──────────┴──────┘         │
+  └─────────────────────────────────────────┘
+
+COACH / PARENT exposure:
+  - AdminProgramsPage + AdminProgramHealth are ADMIN-ONLY (mounted in admin
+    home tail + /admin route). No coach/parent render path — verified no
+    import in CoachHomePage/ParentHomePage for these components.
+  - useActivePrograms IS role-scoped (admin=all, coach/parent=touched teams)
+    and DOES render for coach/parent (off-season logic). Its "active" status
+    semantics (#63 above) thus reach all roles via isHomeOffSeason. The
+    divergence is cross-role, satisfying the AP#43 cross-role-test mandate.
+
+================================================================================
+(e) OUT OF SCOPE (this agent did NOT audit)
+================================================================================
+  - ProgramManageZone.jsx, TeamFormSheet.jsx (manage/edit flows) — other agent.
+  - useProgramTeams.js internals (only read ProgramTeamsSection's usage).
+  - The program CREATE wizard / ProgramTypeChooser / programSetup.js — agent A?.
+  - Public registration page /r/:slug (the consumer that WOULD populate
+    registrations) — out of slice; but its emptiness is the root of BUG-H1/P1.
+  - Financial dashboard internals (useSeasonFinancials read for #63 only).
+  - divisions / tryout_sessions / tryout_attendees tables — verified existence
+    not asserted (kickoff flagged them); no scoped file reads them. Other agent.
+  - RLS policy bodies beyond confirming helper plurality + admin single-org.
+  - seasons view full DDL (confirmed it filters to program_type='season', 3 rows).
+
+================================================================================
+SEVERITY ROLLUP
+================================================================================
+  P0: 0  (one P0-candidate "Out vs Collected" downgraded — already AP#63-
+          resolved via per-KPI scope labels; left in record as RESOLVED)
+  P1: 4  — reg-table-empty detail contradiction; "active" lifecycle-vs-running
+          split (Summer Day Camp live); "Program health" label measures one
+          season while 4 active; (counts the headline #63 cluster)
+  P2: 7  — useAllPrograms counts swallow (#36); rows-vs-distinct players latent;
+          index virtualization (archived unbounded); dead-compute event_rsvps
+          slice (#51); financial-error → silent 0%; a11y no-aria-live;
+          N+1-clean-but-unbounded-growth note
+  P3: 8  — clean checks recorded (tokens, tap targets, #48 non-issues x2,
+          density-scope, usePrograms naming drift, #36 detail clean,
+          reg-detail #36 clean)
+
+TOP 3:
+  1. [P1/#63] ProgramDetailPage "Registrations · 0" for ALL programs — the
+     registrations table is empty org-wide; same program shows 63 players on
+     index/home. Detail reads the wrong ground-truth table for this org's
+     import-sourced reality. (Verified reg=0, tp=63.)
+  2. [P1/#63] "active" means two things: programGrouping (date-gated running-now)
+     vs useActivePrograms (status-only). Summer Day Camp splits LIVE — "active"
+     to home off-season logic, "Upcoming" on index. Needs one shared predicate.
+  3. [P2/#51] useProgramHealthMetrics computes rsvpPct/activeTeamsCount/
+     newRegistrationsCount + a 1709-row event_rsvps query that NO consumer
+     renders. Heaviest query on admin-home path feeds nothing.
+
+ARCHITECT FORKS (AP#39 labeled leans — CC does not settle):
+  F-A4-1: Does ProgramDetail "Registrations" mean online-signup-pipeline
+          (honestly 0 today) or program-roster? LEAN: show team_players roster
+          count AND a separate "Online signups · 0", so neither reads as "empty
+          program."
+  F-A4-2: Is "active" lifecycle-status or running-now? LEAN: introduce shared
+          isRunningNow(program, today); keep status as lifecycle; label "active"
+          consistently. (Hedge is the truer position per AP#39 — leaning toward
+          the shared predicate over documenting two meanings.)
+  F-A4-3: Does "Program health" card mean season-health or org-health (all
+          active programs)? LEAN: retitle to lead with season name only and drop
+          the org-wide "Program" implication (least code, the card already
+          leads with season.name).
+  F-A4-4: Remove the 3 dead computed metrics from useProgramHealthMetrics, or
+          wire them into the card? LEAN: remove (AP#51 + perf), pending grep
+          confirming no other consumer (grep done — none).
+
+CORRECT-PATTERN REFERENCE (keep): AdminProgramHealth's per-KPI scope sub-line
+("season"/"all-time") is the canonical AP#63 resolution and should be the
+template for the other #63 instances above.
+================================================================================
