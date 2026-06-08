@@ -1,0 +1,124 @@
+==============================================================================
+PROGRAMS-SECTION L99 MULTI-AGENT AUDIT — KICKOFF / SCOPE  (CC -> next session)
+Date: 2026-06-08. Operator-directed (Frank): close the briefings build arc,
+run the next multi-agent L99 audit on the PROGRAMS section. Frank chose to run
+it in a FRESH session for clean-context fidelity; this doc is the grounded
+hand-off so the fresh session dispatches immediately. Methodology: CLAUDE.md
+§16.15 (L99 redesign template) + AP#58 cross-batch synthesis + AP#60 live-state
+grounding. Same shape as the briefings L99 that just closed.
+==============================================================================
+
+0. WHY THIS / POSTURE
+------------------------------------------------------------------------------
+The programs section is an already-BUILT surface (prior arc closed — see
+docs/PROGRAMS_CLOSED_CC.txt + PROGRAMS_CLOSEOUT_REVIEW_CC.txt). This is a
+redesign-grade re-audit at go-live scale, NOT a greenfield build. Read severity
+the way the briefings audit did: what breaks for a real operator / a second org,
+not just what's theoretically off. Multi-program architecture is live (HOME_
+MULTIPROGRAM_ARCH_CC.txt) so cross-program + cross-role correctness is in scope.
+
+1. SURFACE MAP (verified present on main 2026-06-08 — re-grep at session open)
+------------------------------------------------------------------------------
+PAGES (3):
+  src/pages/admin/AdminProgramsPage.jsx      (program index / list)
+  src/pages/admin/ProgramSetupPage.jsx       (create/setup wizard)
+  src/pages/admin/ProgramDetailPage.jsx      (manage one program)
+COMPONENTS:
+  src/components/admin/programs/ProgramIndexRow.jsx
+  src/components/admin/program-setup/ProgramTypeChooser.jsx
+  src/components/admin/program-detail/ProgramManageZone.jsx
+  src/components/admin/program-detail/ProgramTeamsSection.jsx
+  src/components/admin/program-detail/ProgramEditSheet.jsx
+  src/components/home/AdminProgramHealth.jsx
+HOOKS (9): usePrograms, useAllPrograms, useActivePrograms, useProgramSetup,
+  useProgramAdmin, useProgramTeams, useProgramRegistrations,
+  useProgramHealthMetrics, usePublicProgram   (src/hooks/)
+LIB (4): programRegistry, programSetup, programGrouping, programDelete (src/lib/)
+  + existing tests: programRegistry.parity, programDelete, programSetup,
+    programGrouping, useActivePrograms.
+CROSS-ROLE TOUCH: AdminHomePage / CoachHomePage / ParentHomePage all read
+  programs (multi-program arch). Public program page via usePublicProgram.
+DATA / SCHEMA / RLS (migrations, for the data agent — re-list at session open):
+  20260529155321 programs_table_and_program_type_enum
+  20260529155952 sports_table_and_programs_sport_fk
+  20260529160011 backfill_programs_from_seasons
+  20260529185046 seasons_table_to_compat_view_over_programs  (seasons is now a
+    COMPAT VIEW over programs — high-value seam: anything reading `seasons`
+    actually hits the programs-backed view)
+  20260601044658 programs_public_registration_columns
+  20260506215040 path_b_stage4f2_program_transactions
+  20260607162758 program_type_add_other
+  20260607162813 programs_status_check_and_single_active_season  (status CHECK +
+    a single-active-season constraint — verify the partial-unique semantics live)
+PRIOR DOCS to read first (decisions already locked — don't re-litigate):
+  EMBER_PROGRAM_SETUP_SPEC_v2.md, PROGRAMS_CLOSEOUT_REVIEW_CC.txt,
+  HOME_MULTIPROGRAM_ARCH_CC.txt, PROGRAM_DRAFT_STATUS_SPEC_CC.txt,
+  ADMIN_PROGRAM_TEAM_CREATION_BUILD_SPEC_CC.txt.
+
+2. AGENT FAN-OUT (parallel; one layer each; AP#58 cross-batch synthesis after)
+------------------------------------------------------------------------------
+  A1 DATA/SCHEMA/RLS — programs + sports + the seasons compat-view + program
+     transactions; RLS org-scoping (AP#37), the status CHECK + single-active-
+     season constraint, the seasons-view seam. Live SQL grounding (project
+     vrwwpsbfbnveawqwbdmj) per AP#60.
+  A2 SETUP WIZARD — ProgramSetupPage + ProgramTypeChooser + useProgramSetup +
+     programSetup lib: draft-status lifecycle, validation, the program_type enum
+     (incl. 'other'), public-registration columns. Optimistic-UI + kindness
+     microcopy (§16.1/§16.3).
+  A3 DETAIL/MANAGE — ProgramDetailPage + program-detail/* + useProgramAdmin +
+     useProgramTeams + programDelete: edit sheet, teams section, delete safety
+     (cascade? guard?), the §16.14 hero+collapsible detail pattern.
+  A4 INDEX/HEALTH + HOOKS — AdminProgramsPage + ProgramIndexRow +
+     AdminProgramHealth + useAllPrograms/useActivePrograms/usePrograms/
+     useProgramHealthMetrics/useProgramRegistrations/useProgramGrouping: list
+     correctness, health metrics source/scope (AP#63 PATTERN A — same metric
+     one source), grouping.
+  A5 CROSS-ROLE + PUBLIC — programs as seen on Admin/Coach/Parent home +
+     usePublicProgram public page: per-role correctness (AP#43 cross-surface),
+     multi-program selection, the public registration surface.
+  A6 TESTS/PERF/A11Y — existing program test coverage gaps, N+1 / destructured-
+     default error-swallow (AP#36), perf budgets (§16.10), a11y (§16.4).
+  (Optional A7 AI/COMMS overlap — only if programs touches briefings/registration
+   comms; likely thin, fold into A5 unless it grows.)
+
+3. REQUIRED OUTPUTS (§16.15 — all in the audit doc BEFORE any PR A)
+------------------------------------------------------------------------------
+  (a) Initial pass — file-by-file, findings P0/P1/P2/P3 with file:line.
+  (b) Deep-read addendum — 2nd pass per category (the ~40% miss-rate guard).
+  (c) Anti-pattern cross-reference — tag every finding vs §11 (existing rule vs
+      new pattern). PATTERN A (#63 same-concept-divergent-source) is the dominant
+      platform bug class — hunt it hard on the health/registration metrics.
+  (d) Per-role wireframes for any surface that renders differently per role.
+  (e) Explicit out-of-scope list.
+  + Forks surfaced to the architect with labeled CC leans (AP#39 — commit to the
+    lean); decisions ratified before the phase closes (§11.8.4).
+
+4. GROUNDING + DISCIPLINE (carry from the briefings arc)
+------------------------------------------------------------------------------
+  - AP#60 source hierarchy: verify load-bearing claims against live SQL / file:line,
+    not memory. The briefings audit's credibility came from self-downgrades.
+  - The seasons->programs compat view is the highest-risk seam: every `from('seasons')`
+    is really the view over programs. Enumerate those callers explicitly.
+  - Build PRs HELD do-not-auto-merge for Frank's smoke; doc PRs auto-merge.
+  - Migrations/RLS are the architect's GO-gated MCP lane, NOT CC; CC builds code
+    halves + writes AP#21 mirrors when GO'd.
+  - Every architect-lane artifact = committed .txt + full chat paste (§11.8).
+
+5. OUT OF SCOPE (initial — refine in the audit doc)
+------------------------------------------------------------------------------
+  - The briefings/comms engine (just audited + arc-closed).
+  - Financials except where program_transactions intersects programs.
+  - The rebrand/token layer (locked).
+  - Registration *payment* flow internals (separate financial surface) unless a
+    program-setup field directly drives it.
+
+6. STATE AT HANDOFF
+------------------------------------------------------------------------------
+  Briefings build arc CLOSED + MERGED: FORK-D #835, MOAT #836, migrations #840,
+  G5 PR 1b #845, family_guide #847, G7 #846. G1 #837 closed (address internal-
+  only; CAN-SPAM public address -> counsel). #825 closed (audit preserved #843).
+  Non-build go-live remainder: CAN-SPAM public address (counsel) + deliverability
+  (DNS/throttle/reply-to, provider). Ledger §4 reconciled (#848).
+==============================================================================
+END — PROGRAMS_L99_AUDIT_KICKOFF_CC
+==============================================================================
