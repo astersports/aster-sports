@@ -1,0 +1,371 @@
+================================================================================
+AGENT B1 — L99 RE-AUDIT, PROGRAMS SECTION (WAVE 2)
+SLICE: seasons -> programs COMPAT-VIEW SEAM
+       write-path escape proof + parent_season_id alias integrity
+================================================================================
+Date: 2026-06-08
+Auditor: Agent B1 (8-agent architect-collaboration wave)
+Method: §16.15 (a-e), AP#60 live-verify (SELECT-only, project vrwwpsbfbnveawqwbdmj)
+Scope: READ-ONLY. No DB writes, no DDL. No real DML probe (escape blocking
+       reasoned from catalog facts per instruction).
+pwd: /home/user/skyfire-app  [confirmed]
+
+--------------------------------------------------------------------------------
+0. LIVE GROUNDING (re-verified this session, supersedes prior assumptions)
+--------------------------------------------------------------------------------
+seasons view (information_schema.views + pg_class):
+  relkind = 'v'
+  reloptions = {security_invoker=true, check_option=cascaded}
+  check_option = 'CASCADED'        <-- CORRECTED FACT CONFIRMED. The architect
+                                       grounding doc's "No WITH CHECK OPTION"
+                                       claim is WRONG. pg_get_viewdef() does NOT
+                                       render the WITH CHECK clause (stored as a
+                                       reloption, not in the SELECT text), which
+                                       is the source of the error.
+  is_updatable = YES, is_insertable_into = YES
+
+seasons view definition (pg_get_viewdef, 10 cols, no program_type projected):
+  SELECT id, org_id, name, start_date, end_date, status, created_at, updated_at,
+         parent_program_id AS parent_season_id,   <-- the alias
+         rolled_over_at
+    FROM programs
+   WHERE program_type = 'season'::program_type;
+
+programs base table (relevant cols):
+  program_type  USER-DEFINED (enum program_type)  NOT NULL  DEFAULT 'season'::program_type
+  status        text  NOT NULL  DEFAULT 'active'::text
+  parent_program_id uuid NULL
+  programs_status_check: CHECK (status = ANY (ARRAY['active','draft','archived']))
+  (NOTE: 'planning' is NOT a valid status — see P0 finding F-1.)
+
+Live data: programs WHERE program_type='season' => active:1, archived:2. Zero
+rows in any non-(active/archived) status. No stray 'planning'/'draft' rows exist
+=> the F-1 bug path has never successfully executed in production.
+
+================================================================================
+1. INITIAL PASS — EVERY READ/WRITE PATH THROUGH `seasons` IN src/
+================================================================================
+Enumerated via grep from('seasons') (14 hits) + the named hooks. R=read, W=write.
+Column set is what the chain selects/writes.
+
+R/W | file:line                          | cols                         | notes
+----|------------------------------------|------------------------------|-------------------------
+ R  | src/hooks/useSeasons.js:20         | * (all 10 view cols)         | org-scoped list refetch
+ W  | src/hooks/useSeasons.js:42 (INSERT)| {name,start_date,end_date,   | createSeason. status set
+    |   <- AdminSeasonsPage:24            |  status} + org_id            | by page (active|archived)
+ W  | src/hooks/useSeasons.js:50 (UPDATE)| form input {name,start_date, | updateSeason. NO type/parent
+    |   <- AdminSeasonsPage:23            |  end_date}                   | col in payload
+ W  | src/hooks/useSeasons.js:62 (UPDATE)| {status:'archived'}          | setActive step1 (neq id)
+ W  | src/hooks/useSeasons.js:66 (UPDATE)| {status:'active'}            | setActive step2 (eq id)
+ R  | src/context/SeasonContext.jsx:41   | id,name,start_date,end_date, | app-wide active-season ctx
+    |                                    | status                       |
+ R  | src/pages/SeasonRolloverPage.jsx:25| * (all 10)                   | reads active season (read)
+ W  | src/hooks/useSeasonRollover.js:16  | {org_id,name,start_date,     | INSERT new season. status=
+    |   (INSERT)                          |  end_date,status:'planning', | 'planning' (BUG F-1);
+    |                                    |  parent_season_id}           | parent_season_id alias write
+ W  | src/hooks/useSeasonRollover.js:26  | {status:'archived',          | archive old season (valid)
+    |   (UPDATE)                          |  rolled_over_at}             |
+ R  | src/pages/FinancialImportPage.jsx:33| id                          | active-season lookup
+ R  | src/pages/FinancialDashboardPage.jsx:32 | id,name,status          | season picker list
+ R  | src/hooks/useTournaments.js:51     | start_date,end_date          | active-season date window
+ R  | src/hooks/useActiveSeasonEnd.js:11 | end_date                     | active-season end
+ R  | src/hooks/useCreateActivity.js:47  | end_date                     | recurrence-until default
+
+COUNTS: 9 chains read, 5 chains write (createSeason INSERT, updateSeason UPDATE,
+setActive x2 UPDATE, rollover INSERT, rollover UPDATE = 6 write statements across
+3 hook methods + rollover). Distinct write FILES: 2 (useSeasons.js, useSeasonRollover.js).
+SeasonFormSheet.jsx:59 confirms the only form-driven write payload is
+{name, start_date, end_date} — NO program_type, NO parent_*.
+
+================================================================================
+2. ESCAPE PROOF — can a write through the view produce an out-of-filter row?
+================================================================================
+The view qual is `program_type = 'season'`. A "filter escape" = an INSERT/UPDATE
+through `seasons` that creates/leaves a base `programs` row with
+program_type <> 'season' (or otherwise visible-then-invisible).
+
+GUARD (a) — program_type is NOT a projected column of the view.
+  CONFIRMED live: viewdef projects 10 cols; program_type absent. PostgREST /
+  PostgreSQL cannot target a column that the auto-updatable view does not expose.
+  - INSERT through seasons: program_type is unwritable => base row gets the table
+    DEFAULT 'season'. Cannot be steered off-filter.
+  - UPDATE through seasons: program_type cannot appear in the SET list => an
+    UPDATE can never flip an existing season's type to camp/tryout/etc.
+  Code corroboration: NO src/ write payload contains program_type (grep-clean).
+
+GUARD (b) — check_option = CASCADED re-validates every written row vs the qual.
+  CONFIRMED live (reloptions + information_schema.check_option). Even in the
+  hypothetical where a column trick or a future trigger tried to mutate
+  program_type away from 'season', CASCADED forces the post-image to still
+  satisfy `program_type='season'` or the statement errors (44000 with_check_
+  violation). It also blocks an UPDATE that would move a row out of the filter
+  (e.g., setting a value that fails the qual) — reasoned from catalog facts; no
+  DML probe run per instruction.
+
+INTERACTION CHECKS (does any code path defeat (a)+(b)?):
+  - status writes ('active','archived', and the bogus 'planning'): status is NOT
+    in the view qual, so status changes never move a row across the filter. They
+    only hit programs_status_check (table-level). 'planning' fails that CHECK
+    (23514) — a HARD ERROR, not a silent escape. See F-1.
+  - No code writes program_type through seasons. No code writes a non-projected
+    column through seasons (the view rejects unknown columns; PostgREST 42703).
+  - No RPC / SECURITY DEFINER path writes seasons-as-table off-filter (grep:
+    only .from('seasons') chains, no rpc targeting it).
+
+VERDICT (ESCAPE): NO FILTER-ESCAPING WRITE IS POSSIBLE. Both guards hold and are
+mutually reinforcing; (a) alone already makes program_type unwritable, (b) is
+defense-in-depth that also covers future qual-relevant column additions. No code
+path defeats them. The seam is SOUND for filter integrity. [P3 / informational —
+this is the all-clear, recorded for the architect's ratification.]
+
+================================================================================
+3. ALIAS INTEGRITY — parent_program_id -> parent_season_id
+================================================================================
+Reads of parent_season_id: grep across src/ finds exactly ONE reference to the
+alias name — useSeasonRollover.js:22 (a WRITE). NO read path selects or filters
+on parent_season_id. NO code anywhere reads/writes `seasons.parent_program_id`
+(the base-table name) — which would be a bug since the view does not expose it.
+Grep `parent_program_id` in src/ => ZERO hits. Clean.
+
+Write: useSeasonRollover.js:22 inserts `parent_season_id: fromSeason.id` through
+the seasons view. The view maps `parent_program_id AS parent_season_id`. For an
+auto-updatable view, writes target the OUTPUT column name (`parent_season_id`),
+which PostgreSQL rewrites onto the underlying `parent_program_id`. CONFIRMED the
+mapping direction is correct: code writes the alias name (correct), NOT the base
+name. fromSeason.id is a valid programs(id) => satisfies
+programs_parent_program_id_fkey (FK to programs(id), ON DELETE SET NULL).
+
+VERDICT (ALIAS): SOUND. The single alias write uses the correct output-column
+name; zero code reads the alias (so no read-side mismatch risk today); zero code
+references the non-projected base column. [P3 / informational all-clear.]
+
+CAVEAT (latent, P2 — see F-2): because nothing READS parent_season_id, the alias
+is write-only in the app. The rollover lineage it records is never consumed in
+src/ (lineage is surfaced instead via the season_rollovers table joins). Not a
+defect, but the alias's read-side correctness is UNTESTED by any live surface —
+flagged so a future reader doesn't assume it's exercised.
+
+================================================================================
+4. EXTERNAL FK REPOINTS + DEPENDENT VIEWS (live confirm)
+================================================================================
+FKs referencing programs(id) (pg_constraint confrelid=programs, contype='f') —
+13 total. The season-semantic `season_id` repoints (the "8" in scope, actually 9
+season_id columns / 10 constraints counting season_rollovers x2):
+  teams.season_id              -> programs(id) ON DELETE CASCADE
+  events.season_id             -> programs(id) ON DELETE SET NULL
+  team_achievements.season_id  -> programs(id) ON DELETE SET NULL
+  season_rollovers.to_season_id   -> programs(id)
+  season_rollovers.from_season_id -> programs(id)
+  financial_accounts.season_id -> programs(id) ON DELETE CASCADE
+  coach_payouts.season_id      -> programs(id)
+  season_locations.season_id   -> programs(id) ON DELETE CASCADE
+  player_equipment.season_id   -> programs(id) ON DELETE CASCADE
+Plus programs-native FKs (not season repoints, noted for completeness):
+  programs.parent_program_id -> programs(id) ON DELETE SET NULL  (self-ref)
+  divisions.program_id -> programs(id) CASCADE
+  registrations.program_id -> programs(id) RESTRICT
+  tryout_sessions.program_id -> programs(id) CASCADE
+ALL season_id FKs correctly point at the programs TABLE (not the view) — FKs
+cannot target a view, so this is structurally guaranteed; confirmed live anyway.
+No consumer in src/ writes season_id expecting a `seasons`-table PK; they write
+ids that ORIGINATE from the seasons VIEW (same id values, view passes id through
+1:1), so the FK target is satisfied. [all-clear]
+
+Dependent views over `seasons`:
+  player_attendance_season  — security_invoker=true, check_option=NONE,
+                              is_updatable=NO, is_insertable_into=NO.
+                              JOINs `seasons s ON s.id=e.season_id` WHERE
+                              s.status='active'. CONSUMES THE VIEW (read-only).
+  player_rsvp_season        — same shape; JOINs seasons; read-only.
+Both are read-only aggregations; neither expects a `seasons` TABLE (they JOIN the
+view by id+status, both of which the view projects). No write surface. [all-clear]
+
+CONSUMER-EXPECTS-TABLE SCAN: grep'd the write/read set. NO src/ code or DB object
+treats `seasons` as a physical table for any column the view doesn't project, and
+no DDL in app code targets it. The two dependent views + 9 FK columns all interact
+only through projected columns (id, status). [all-clear]
+
+================================================================================
+5. SINGLE-ACTIVE PARTIAL UNIQUE INDEX vs VIEW WRITES
+================================================================================
+Index (live): programs_one_active_season_per_org
+  UNIQUE (org_id) WHERE (status='active' AND program_type='season')
+Correctly season-scoped (both predicates). Interaction with view writes:
+  - setActive (useSeasons.js:62,66): step1 archives all OTHER rows in org, step2
+    sets target 'active'. The two-statement order matters: if step2 ran first
+    while another active row existed, the partial unique index would REJECT the
+    second active row (23505). Current order (archive-others THEN activate) avoids
+    it. This is correct TODAY but FRAGILE — see F-3 (P2).
+  - createSeason (AdminSeasonsPage:24): first season -> 'active', else 'archived'.
+    Safe: never creates a 2nd active when one exists IF seasons.length is accurate.
+    Race window if two admins create simultaneously, but bounded by the index
+    (the 2nd active INSERT errors loudly rather than corrupting) => index is the
+    backstop, working as intended.
+  - rollover INSERT (useSeasonRollover.js:16): status='planning' — NOT 'active',
+    so it does NOT contend the partial index. (It fails the CHECK first anyway.)
+Writes go through the VIEW but the index lives on the BASE table and fires on the
+rewritten base-row image — fully enforced regardless of the view layer. [all-clear
+on enforcement; F-3 is an app-ordering fragility, not an index defect.]
+
+================================================================================
+(b) DEEP-READ ADDENDUM — 2nd pass across the full surface
+================================================================================
+D1. useSeasonRollover status='planning' (F-1) is reachable: SeasonRolloverPage
+    wires execute(plan) -> commit() -> navigate. The INSERT at line 16 is the
+    FIRST DB op in execute(); on the 23514 CHECK error it throws -> catch at
+    line 76 -> reportError + "Rollover hit a snag" toast -> returns null ->
+    commit() does NOT navigate. So the WHOLE rollover is dead on arrival: it can
+    never create a new season. CONFIRMED no successful rollover row could exist
+    with status 'planning' (live data shows zero non-active/archived seasons).
+    This is a TOTAL FUNCTIONAL BREAK of season rollover, masked by a generic
+    error toast. ELEVATES F-1 to P0. (The seam did not cause it — the base
+    CHECK only allows active/draft/archived; 'planning' predates / ignores it —
+    but it surfaces THROUGH the view write path, which is this slice.)
+
+D2. setActive step-ordering (F-3): re-read confirms step1 uses .neq('id', id)
+    so it archives every OTHER row, then step2 activates target. If step1
+    succeeds and step2 fails transiently, the org is left with ZERO active
+    seasons (all archived) — a soft outage for every active-season reader
+    (SeasonContext, FinancialDashboard, useTournaments, useCreateActivity,
+    both dependent views which gate on status='active'). Not atomic. P2.
+
+D3. createSeason archived-default (D-obs): AdminSeasonsPage:24 sets a non-first
+    season to 'archived' on create. A brand-new season the admin just made is
+    immediately invisible to every status='active'-gated surface until they hit
+    setActive. Arguably correct (explicit promote), but worth an architect note —
+    no 'draft' status is ever written by the app despite the CHECK allowing it.
+    P3 / design observation.
+
+D4. Alias write-only confirmed (F-2 corroboration): second grep pass for any
+    selectstring containing 'parent' across src/ — only the rollover INSERT. The
+    parent_season_id lineage is genuinely never read by a live surface.
+
+D5. No optimistic-UI / no .select() echo on the seasons writes in useSeasons.js
+    (createSeason/updateSeason/setActive all refetch instead). So none of them
+    rely on reading back a view column post-write — removes a class of alias
+    read-after-write mismatch risk. [all-clear, positive finding.]
+
+D6. check_option=CASCADED + security_invoker interplay: CASCADED means if a
+    FUTURE underlying view were layered, its quals would also be enforced. Today
+    seasons sits directly on the base table, so CASCADED == LOCAL in effect. No
+    issue; noted so the architect knows the stronger option is already in place
+    (good — covers future view layering). [all-clear.]
+
+================================================================================
+(c) ANTI-PATTERN CROSS-REFERENCE (§11) + PATTERN A #63 WATCH
+================================================================================
+- AP #36 (destructured-default swallow): useSeasons.js writes check `error: e`
+  and gate refetch on !e — COMPLIANT. useSeasonRollover throws on sErr —
+  COMPLIANT. No `data = []` default-swallow on these chains. [clean]
+- AP #37 (org_id-first on org-scoped tables): seasons read chains lead with
+  .eq('org_id', orgId) (useSeasons:22, SeasonContext:43, RolloverPage:25,
+  FinancialImport:33, FinancialDashboard, useTournaments:52, useActiveSeasonEnd).
+  COMPLIANT. (seasons IS org-scoped — has org_id column, projected.)
+- AP #20 / write-policy WITH CHECK: out of slice (RLS is agent's-other-slice),
+  but the CASCADED view check_option is the view-layer analog and is PRESENT.
+- AP #25 (onConflict needs matching unique): no upsert on seasons. N/A.
+- PATTERN A #63 WATCH (same concept, divergent source/scope): "which season is
+  active?" is derived independently by SeasonContext (rows.find status==='active',
+  else rows[0]) AND by maybeSingle() status='active' filters in RolloverPage /
+  FinancialImport / useTournaments / useActiveSeasonEnd. If two active rows ever
+  existed, SeasonContext picks the first by start_date DESC while the maybeSingle
+  callers would ERROR (multiple rows) — divergent behavior for the same concept.
+  The partial unique index PREVENTS two active rows, so today they agree. This is
+  a #63-adjacent latent divergence GUARDED ONLY by the DB index. Flag P3 —
+  document that "active season" single-source is the index, not the app. Not a
+  live bug. [watch-item, no fix needed this wave]
+
+================================================================================
+(d) PER-ROLE NOTE — who writes through the view?
+================================================================================
+ADMIN ONLY. All write surfaces are admin routes:
+  - AdminSeasonsPage (createSeason/updateSeason/setActive) — admin season mgr.
+  - SeasonRolloverPage / useSeasonRollover — admin rollover wizard.
+No coach or parent code path writes (or reads off-filter columns of) seasons.
+RLS enforcement of "admin only" is a separate slice (not B1); at the app layer,
+the only mount points for these hooks are admin pages. Parents/coaches only ever
+hit the READ chains transitively (SeasonContext active-season, dependent views).
+No role can write program_type or parent_* regardless (guard (a) is role-agnostic).
+
+================================================================================
+(e) OUT-OF-SCOPE (this slice did NOT examine)
+================================================================================
+- RLS policies on programs / seasons (who is ALLOWED to write) — other agent.
+- The status='planning' fix itself (migration to add 'planning' to the CHECK, OR
+  code change to a valid status) — architect's GO-gated migration lane; B1 only
+  reports the defect.
+- divisions / registrations / tryout_sessions / public_slug / is_published /
+  reg_opens_at columns of programs (non-season program_type surfaces) — other
+  agents (these are the camp/tryout/clinic program lanes, not the seasons compat
+  view).
+- Tournament/comms kind seams.
+- Bundle/perf, a11y of the season form UI.
+
+================================================================================
+FINDINGS LEDGER (severity / file:line / evidence)
+================================================================================
+F-1  P0  useSeasonRollover.js:16,21 — INSERT through `seasons` sets
+         status:'planning', which VIOLATES programs_status_check
+         (active|draft|archived only; verified live). Season rollover is
+         TOTALLY BROKEN: the insert errors 23514, the catch shows a generic
+         "Rollover hit a snag" toast, and no new season is ever created. Live
+         data confirms zero seasons in any status other than active/archived
+         (the path has never succeeded). FORK: fix is either (i) code -> use a
+         valid status, or (ii) migration -> add 'planning' to the CHECK.
+         LEAN (AP#39): (i) change the code to status:'draft' (or 'active' if the
+         new season should become current immediately). Rationale — the CHECK
+         is the platform's locked status vocabulary (3 values) referenced widely;
+         widening the enum for one caller is the bigger blast radius. 'draft'
+         matches the "planning, not yet active" intent and is already a legal
+         value the app never otherwise writes (ties off D3). Architect/Frank to
+         ratify; this is a one-line code fix in the GO-gated lane.
+F-2  P2  useSeasonRollover.js:22 — parent_season_id is WRITE-ONLY in the app;
+         no src/ surface reads it (lineage surfaced via season_rollovers joins
+         instead). Alias read-side correctness is unexercised by any live
+         surface. Not a defect; flag so the alias isn't assumed-tested.
+F-3  P2  useSeasons.js:59-69 — setActive is a non-atomic two-statement
+         archive-then-activate. step1 success + step2 failure leaves the org
+         with ZERO active seasons, soft-outaging every status='active' reader
+         (SeasonContext, dashboards, both dependent views). Recommend an RPC /
+         single transaction (or reverse-order + DB single-active enforcement).
+F-4  P3  PATTERN A #63 watch — "active season" is derived two ways (SeasonContext
+         first-of-DESC vs maybeSingle status filters); they agree ONLY because
+         the partial unique index forbids two active rows. Single-source of
+         "active season" truth is the DB index, not the app. Document.
+F-5  P3  Design obs — app never writes status='draft' despite the CHECK allowing
+         it; new non-first seasons go straight to 'archived' (invisible until
+         setActive). Ties to F-1 lean (use 'draft').
+
+ALL-CLEARS (recorded for architect ratification of the close):
+  AC-1  ESCAPE: impossible. Guard (a) program_type non-projected (unwritable) +
+        Guard (b) check_option=CASCADED both CONFIRMED live; no code defeats them.
+  AC-2  ALIAS: sound. Single alias write uses correct output-col name; zero reads
+        of the base name; zero reads of a non-projected col.
+  AC-3  FKs: all 9 season_id repoints + 4 native program FKs target programs(id)
+        TABLE correctly. No consumer expects a `seasons` table.
+  AC-4  DEPENDENT VIEWS: player_attendance_season + player_rsvp_season are
+        read-only (check_option=NONE, not insertable/updatable), consume the
+        view by id+status only.
+  AC-5  PARTIAL UNIQUE INDEX: correctly season-scoped; enforced on base-row image
+        regardless of the view layer.
+
+================================================================================
+SUMMARY VERDICT
+================================================================================
+ESCAPE VERDICT: NO filter-escaping write is possible. The architect grounding
+doc's "No WITH CHECK OPTION" claim is FALSE — check_option=CASCADED is present
+(verified live; pg_get_viewdef just doesn't render it). Even without it, guard
+(a) (program_type non-projected) alone makes the escape impossible. Seam is SOUND.
+
+ALIAS VERDICT: SOUND. parent_program_id->parent_season_id maps correctly; the one
+write uses the alias output name; nothing reads the base name or a non-projected
+column.
+
+COUNTS: 9 read chains, 6 write statements (3 hook methods + rollover) across 2
+write files; 13 FKs to programs (9 season_id repoints); 2 dependent views (both
+read-only); 1 season-scoped partial unique index.
+
+FORKS NEEDING RATIFICATION:
+  - F-1 fix route (code status:'draft' [lean] vs migration widen CHECK).
+  - F-3 atomicity remediation (RPC vs reorder) — defer-or-fix routing.
+================================================================================
