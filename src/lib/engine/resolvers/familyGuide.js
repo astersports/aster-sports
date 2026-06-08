@@ -136,10 +136,12 @@ export function composeFamilyGuide(context, slice, overrides = {}) {
   sections.push(...buildKidColorPillSections(kidsWithEvents));
   const navSection = buildQuickLinkNav(kidsWithEvents);
   if (navSection) sections.push(navSection);
-  // "Your coaches" reference block — per-team coach contact rows. Placed
-  // after the schedule + quick links (VIP-reference reading flow), before
-  // the signoff. Omitted when no team has a coach with a phone.
-  const coachesSection = buildCoachesBlockSection(teamCoaches);
+  // "Your coaches" reference block — per-team coach contact rows (name · title
+  // · phone). This is coach CONTACT data through a different section, so it is
+  // gated by the SAME per-message contact toggle as the signoff: OFF by default
+  // (omitted), rendered only when the admin opts in (overrides.signoff_enabled).
+  // Otherwise a family_guide sent with contact "off" would still leak phones.
+  const coachesSection = overrides.signoff_enabled === true ? buildCoachesBlockSection(teamCoaches) : null;
   if (coachesSection) sections.push(coachesSection);
   const signoff = buildSignoffSection({ overrides });
   if (signoff) sections.push(signoff);

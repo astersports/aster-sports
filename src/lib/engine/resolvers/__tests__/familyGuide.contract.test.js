@@ -181,27 +181,30 @@ describe('composeFamilyGuide — coaches_block placement + omit', () => {
     conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], teamCoaches: [], orgName: 'LH', ...over,
   });
 
-  it('emits coaches_block after quick_link_nav and before the footer (contact signoff off by default)', () => {
-    const out = composeFamilyGuide(baseCtx({ teamCoaches: TC, coaches: TC[0].coaches }), { parent_name: 'Frank' });
-    const kinds = out.content_sections.map((s) => s.kind);
+  it('coaches_block is OFF by default and renders (after nav, before footer) only on contact opt-in', () => {
+    // Default: contact toggle off → no coaches_block (no coach phones leak).
+    const off = composeFamilyGuide(baseCtx({ teamCoaches: TC, coaches: TC[0].coaches }), { parent_name: 'Frank' });
+    const offKinds = off.content_sections.map((s) => s.kind);
+    expect(offKinds.indexOf('coaches_block')).toBe(-1);
+    expect(offKinds.indexOf('signoff')).toBe(-1);
+    // Opt-in: coaches_block appears after quick_link_nav and before the footer.
+    const on = composeFamilyGuide(baseCtx({ teamCoaches: TC, coaches: TC[0].coaches }), { parent_name: 'Frank' }, { signoff_enabled: true });
+    const kinds = on.content_sections.map((s) => s.kind);
     const navIdx = kinds.indexOf('quick_link_nav');
     const blockIdx = kinds.indexOf('coaches_block');
     expect(blockIdx).toBeGreaterThan(navIdx);
-    // The per-message contact signoff is OFF by default — coaches_block (the
-    // distinct per-team reference section) still precedes the footer.
-    expect(kinds.indexOf('signoff')).toBe(-1);
     expect(blockIdx).toBeLessThan(kinds.length - 1);
   });
 
-  it('coaches_block carries per-team groups with phones', () => {
-    const out = composeFamilyGuide(baseCtx({ teamCoaches: TC, coaches: TC[0].coaches }), { parent_name: 'Frank' });
+  it('coaches_block carries per-team groups with phones (on opt-in)', () => {
+    const out = composeFamilyGuide(baseCtx({ teamCoaches: TC, coaches: TC[0].coaches }), { parent_name: 'Frank' }, { signoff_enabled: true });
     const block = out.content_sections.find((s) => s.kind === 'coaches_block');
     expect(block.teams.map((t) => t.team_name)).toEqual(['10U Black', '9U Boys']);
     expect(block.teams[0].coaches[0].phone).toBe('(516) 644-0208');
   });
 
-  it('omits coaches_block when no team has coaches (graceful, AP #27)', () => {
-    const out = composeFamilyGuide(baseCtx({ teamCoaches: [] }), { parent_name: 'Frank' });
+  it('omits coaches_block when no team has coaches (graceful, AP #27), even on opt-in', () => {
+    const out = composeFamilyGuide(baseCtx({ teamCoaches: [] }), { parent_name: 'Frank' }, { signoff_enabled: true });
     expect(out.content_sections.some((s) => s.kind === 'coaches_block')).toBe(false);
   });
 
