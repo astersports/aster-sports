@@ -3,7 +3,7 @@
 
 **Stack:** React 18 + Tailwind CSS + Vite · Supabase (vrwwpsbfbnveawqwbdmj) · Vercel  
 **Auth:** Supabase role-based auth — Admin / Coach / Parent tiers (RLS-scoped per org)  
-**Resume:** `cd ~/skyfire-app && claude`  
+**Resume:** `cd ~/aster-sports && claude`  
 **Brand:** LH cobalt accent `#4a8fd4` (header + accent, applied at runtime via AuthContext org overrides). The platform ("Ember") ships a cool-gray surface palette with `--em-*` CSS tokens — there is NO `--lh-*` namespace and no warm/navy default. See §0.
 
 ---
@@ -1283,8 +1283,8 @@ If OS notifications disabled: show inline red banner on any notification-depende
 
 ## 8. Files to Reference
 
-- **Live app:** https://skyfire-app.vercel.app
-- **Repo:** github.com/LegacyHoopers/skyfire-app (private), branch `main`
+- **Live app:** https://astersports.app
+- **Repo:** github.com/LegacyHoopers/aster-sports (private), branch `main`
 - **Supabase project:** `vrwwpsbfbnveawqwbdmj` · org_id `e3e95e21-3571-4e9a-985a-d5d01480d4a6`
 - **Project doctrine (source of truth):** `CLAUDE.md` (§3 tokens, §5 schema, §10 LH
   reference, §11.5 ground-truth tables, §16 elite design principles)
@@ -1293,7 +1293,7 @@ If OS notifications disabled: show inline red banner on any notification-depende
 - **Schedule + financial source data** was imported from LeagueApps (Fall 2025 +
   Winter 2025-26 + Spring 2026) — historical xlsx workbooks are no longer the
   live reference; production DB is canonical.
-- **Local path:** `~/skyfire-app` · **Vercel:** linked to that path
+- **Local path:** `~/aster-sports` · **Vercel:** linked to that path
 
 ---
 
@@ -1309,12 +1309,12 @@ If OS notifications disabled: show inline red banner on any notification-depende
 
 ## 9b. Claude Code Session Notes
 
-**Resume command:** `cd ~/skyfire-app && claude`
+**Resume command:** `cd ~/aster-sports && claude`
 
 **Environment:** HP Chromebook · ChromeOS Crostini (Linux) · Node.js · Claude Code
 
 **Auth user:** admin@legacyhoopers.org (Admin role)
 
-**App ran locally at:** localhost:5173 · **Production:** https://skyfire-app.vercel.app
+**App ran locally at:** localhost:5173 · **Production:** https://astersports.app
 
 **Deliver:** Complete revised files, not partial patches. Flag clearly when something is wrong. No padding.

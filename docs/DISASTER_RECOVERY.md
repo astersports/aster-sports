@@ -15,7 +15,7 @@
 | Parent company | Olive Juice Inc. |
 | Vercel project | `aster-sports` (org `legacyhoopers-projects`) |
 | Live domains | `astersports.app` (primary), `.io` / `.co` (redirects pending Step 6) |
-| Repo | `github.com/LegacyHoopers/skyfire-app` (legacy identifier preserved per CLAUDE.md doctrine until repo rename) |
+| Repo | `github.com/LegacyHoopers/aster-sports` (renamed from `skyfire-app` 2026-06-08; GitHub redirects the old name) |
 | Supabase project | `vrwwpsbfbnveawqwbdmj` (project ref) |
 | Supabase tier | Pro (daily backups + PITR enabled) |
 | First tenant | Legacy Hoopers (`org_id` in `organizations` table) |
@@ -131,7 +131,7 @@ UPDATE public.app_secrets
 1. Vercel dashboard → Project → Settings → Domains. Confirm `astersports.app` is bound to the current production deployment.
 2. If the cert is invalid/expired: Vercel re-issues automatically; force via "Renew" button.
 3. If the DNS is wrong: check the apex `A` record + `CNAME` in your DNS provider (Vercel-hosted DNS as of cutover; if you moved DNS elsewhere, check there).
-4. Fallback URL (during incident only): the legacy Vercel deploy host `skyfire-app.vercel.app` still resolves and serves the same app — use it to confirm the app itself is up.
+4. Fallback URL (during incident only): the Vercel project's branch alias `aster-sports-git-main-legacyhoopers-projects.vercel.app` serves the current `main` deploy — use it to confirm the app itself is up if the custom domain is the thing that's down. (The legacy `skyfire-app.vercel.app` alias was removed in the 2026-06-08 rename.)
 
 **Verify:** `dig astersports.app` returns Vercel IPs; HTTPS handshake works.
 
@@ -166,7 +166,7 @@ UPDATE public.app_secrets
 
 This is the catastrophic worst case. Today's posture: low-probability, high-impact, no automated recovery.
 
-1. **Vercel:** if account locked, contact Vercel support; backup deploy artifacts are not retained outside Vercel. The repo at `github.com/LegacyHoopers/skyfire-app` is the source of truth — clone + redeploy from there to a new Vercel project.
+1. **Vercel:** if account locked, contact Vercel support; backup deploy artifacts are not retained outside Vercel. The repo at `github.com/LegacyHoopers/aster-sports` is the source of truth — clone + redeploy from there to a new Vercel project.
 2. **Supabase:** if project deleted, daily backups are NOT retained after project deletion (per Supabase docs). The only protection is the migrations directory in the repo — provisioning a new project + running all migrations reproduces the schema (data is lost). Owner action: periodically `pg_dump` to off-platform storage (NOT IMPLEMENTED today; flagged as 3B.25.P1).
 3. **GitHub:** if repo lost, the local clone on Frank's machine is the only copy. Push to a fresh GitHub repo immediately.
 
