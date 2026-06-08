@@ -1,0 +1,70 @@
+==============================================================================
+CC -> ARCHITECT: G1 BUILD REPORT (overnight autonomous build, held)
+Date: 2026-06-08. PR #837. Status: HELD do-not-auto-merge for Frank's smoke.
+Per-step gate met: lint clean + build clean + full vitest suite GREEN.
+==============================================================================
+
+WHAT: G1 / B2 CAN-SPAM — render the org's physical postal address in the briefing
+email footer. The audit's B2 [P0] go-live blocker ("no physical postal address in
+any briefing email" — legal blocker for the 175-family send).
+
+LIVE PRE-FLIGHT:
+  - organizations.mailing_address column LIVE (mig 20260607231454; mirror present
+    in repo, confirmed). Value for e3e95e21 = "4 Byram Brook Place, Armonk, NY 10504".
+  - Read the column live; NOT hardcoded. Null -> footer omits the line.
+
+THREADING (org SELECT -> buildOrgContext.branding -> footer-section push -> renderer):
+  src/lib/engine/buildOrgContext.js   branding.mailingAddress = org?.mailing_address || null
+  8 resolver org SELECTs widened with `, mailing_address`:
+    gameRecap, gamesRecap, scheduleChange, tournamentPrelim, tournamentRecap,
+    rsvpNudge, weeklyDigest, academyCallupNotice
+  8 footer-section pushes forward `mailingAddress: <org|context.org>.branding.mailingAddress`:
+    gameRecap, gamesRecap, scheduleChange, tournamentPrelim, academyCallupNotice,
+    rsvpNudgeCompose, tournamentRecapHelpers, composeWeeklyDigest
+  src/lib/engine/renderers/footer.js   destructure mailingAddress; new addressHtml
+    const (12px TEXT_SLATE_DARK, escapeHtml); inserted between emailHtml and the
+    unsubscribe block; plainText gets the address after the Contact line.
+
+TESTS:
+  src/lib/engine/renderers/__tests__/footer.test.js  +1 describe / +2 it (address
+    renders when present in html+plainText; omitted when absent).
+  10 golden snapshot fixtures (expected_content_sections*.json) reconciled with the
+    new footer field — each got the minimal `"mailingAddress": null` insertion
+    (the footer section's only delta). Necessary: these are resolver-snapshot golden
+    files; leaving them stale fails vitest + CI. No other fixture content changed.
+
+VERIFICATION (CC-run, AP#22 — not trusting the agent's self-report):
+  lint clean; FULL vitest 207 files / 1482 tests passed, 6 skipped; build clean.
+  git diff: 24 files, +58/-28. brand_footer files NOT touched (confirmed by grep).
+
+COVERS: the 8 'footer'-kind kinds. NOT family_guide / coach_roundup (see FLAG).
+
+================================ FLAG (architect scoping owed) ================
+brand_footer CAN-SPAM gap — BROADER THAN THE ADDRESS.
+  family_guide + coach_roundup do NOT use the `footer` renderer. They emit a
+  separate `brand_footer` section (familyGuideSections.js:128,
+  coachRoundupSections.js:65) rendered by renderers/brandFooter.js — which is
+  TAGLINE-ONLY: org name + "GROW YOUR GAME · LEAVE YOUR LEGACY", with NO address,
+  NO contact, and NO {{UNSUBSCRIBE_URL}}.
+  - family_guide is PARENT-FACING (sendPath composerSubmit -> guardian emails), so
+    it needs BOTH the CAN-SPAM address AND an unsubscribe link. Today it has neither.
+  - This means the audit's B2 note "(unsubscribe half IS compliant)" does NOT hold
+    for family_guide — its footer has no unsubscribe at all.
+  - coach_roundup goes to STAFF (coaches), so the CAN-SPAM consumer-email analysis
+    may differ — operator/counsel call.
+  Why I did NOT expand G1 to fix it: (a) out of G1's stated footer.js scope; (b) the
+  unsubscribe half needs the {{UNSUBSCRIBE_URL}} placeholder AND the family_guide
+  send path to call applyUnsubscribeUrl — a meatier change than threading an address;
+  (c) it's a contract/scoping decision (give brand_footer the address+unsubscribe, OR
+  switch family_guide to the full `footer`, OR confirm family_guide is exempt). Per the
+  STOP/scope rule I flag rather than silently expand.
+  PROPOSED (architect to rule): a small follow-up PR — switch family_guide's footer
+  section from brand_footer to the full `footer` kind (it already routes through
+  buildOrgContext, so mailingAddress + the unsubscribe placeholder come for free), and
+  verify its send path substitutes {{UNSUBSCRIBE_URL}}. coach_roundup decided separately.
+==============================================================================
+
+HELD: do-not-auto-merge. Independent of PR 1b fork (#834), FORK-D (#835), MOAT (#836).
+==============================================================================
+END — CC_G1_REPORT
+==============================================================================
