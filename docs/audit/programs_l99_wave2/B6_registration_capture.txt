@@ -1,0 +1,313 @@
+================================================================================
+AGENT B6 — L99 RE-AUDIT (architect wave 2) — REGISTRATION CAPTURE DEEP DIVE
+Slice: divisions / fees / tryouts / waivers+form capture / submit_registration RPC body
+Project: vrwwpsbfbnveawqwbdmj   pwd: /home/user/skyfire-app   READ-ONLY
+Date: 2026-06-08   Methodology: §16.15 (a)-(e) line-by-line + deep-read addendum
+Live evidence via mcp execute_sql (SELECT-only). Wave-1 deferred the RPC body; this
+audit reads it line-by-line and extends (does not just repeat) the wave-1 flags.
+================================================================================
+
+LIVE-STATE GROUNDING (verified, not inferred):
+- registrations rows live: 0   (no production registration has run through the RPC yet)
+- division_fees rows live: 0    (NO fee templates exist for any division)
+- organizations.family_cap_policy set: 0  (null for LH — discount path is dormant)
+- Tables that DO NOT EXIST live: waivers, waiver_signatures, form_fields,
+  form_responses. (CLAUDE.md §5 migration-003 lists them; that listing is STALE —
+  they were never created. Verified via information_schema.tables.)
+- divisions.gender CHECK = M/F (nullable). division_fee_type enum = base, add_on,
+  discount, early_bird, prorated, family_discount (all 6 present).
+- guardians.email UNIQUE (global, no org scope) — confirmed live.
+- tryout_attendees UNIQUE(registration_id, session_id) — PRESENT (wave-1 win holds).
+- registrations: NO UNIQUE(program_id, player_id) — CONFIRMED ABSENT (TOCTOU live).
+
+================================================================================
+(a) INITIAL PASS — surface inventory
+================================================================================
+Write path (anon): submit_registration(jsonb) SECDEF — migration 20260601044918,
+  reads programs/divisions/division_fees/organizations; writes guardians, players,
+  player_guardians, registrations, registration_fees, player_equipment.
+Read path (anon): get_public_program(slug) SECDEF — same migration.
+Client: RegisterFlowPage.jsx (useReducer wizard) → StepDivision/Player/Guardian/
+  Details/Review/Confirm; estimateCart.js (pure); useSubmitRegistration.js (RPC).
+Tryouts: tryout_sessions + tryout_attendees tables only. NO tryout UI exists
+  (grep: zero src references to tryout_sessions/tryout_attendees). SCHEMA-ONLY.
+
+================================================================================
+(b) DEEP-READ ADDENDUM — what a single pass misses
+================================================================================
+DR-1  The audit doc's central security claim is FALSE in live state. AUDIT_
+      REGISTRATION_CAPTURE_L99.md §2 G1 + the RPC migration header (lines 2-4)
+      both assert "anon gets EXECUTE on exactly [these] functions, zero table
+      grants." LIVE: anon holds SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,
+      TRIGGER on ALL 10 graph tables (registrations, registration_fees, players,
+      guardians, player_guardians, player_equipment, divisions, division_fees,
+      tryout_sessions, tryout_attendees). Source: migrations 6/7 + the divisions/
+      tryouts migrations each end with `GRANT ... TO anon, authenticated,
+      service_role`. The "zero table grants" story is aspirational, not real.
+DR-2  RLS *currently* saves the day for INSERT/UPDATE/DELETE: every write policy's
+      check_expr requires user_has_role_in_org(...,'admin') which anon fails. So
+      anon cannot INSERT/UPDATE/DELETE through PostgREST despite the grant. BUT:
+      (i) TRUNCATE is NOT subject to RLS at all — the anon TRUNCATE grant is a
+      latent data-loss primitive the moment any path can issue it; (ii) the grant
+      is the only thing standing if any future RLS policy ships permissive/
+      fail-open (the platform's dominant historical bug class — see §0 grep #20
+      WITH CHECK, AP #20). Defense-in-depth is inverted here.
+DR-3  conduct_acknowledged_at is NEVER written. The column exists on registrations
+      (line 36 of mig 6) but the RPC INSERT column list (lines 156-159) omits it,
+      and the client payload (RegisterFlowPage handleSubmit, lines 67-72) has no
+      conduct/waiver field. Every registration lands with conduct_acknowledged_at
+      = NULL. No code path ever sets it.
+DR-4  Player gender is never captured and never validated against division.gender.
+      divisions carry an M/F CHECK; players has no gender in the payload; the RPC
+      grade-band check (lines 121-124) checks grade only. A player can be written
+      into a gender-mismatched division with zero server objection.
+DR-5  early_bird / prorated / discount fee types are dead in the capture path. The
+      RPC only ever copies fee_type IN ('base','add_on') (lines 169-171) and emits
+      family_discount (line 192). A division with an early_bird template would have
+      that fee SILENTLY DROPPED at registration — the wave-1 "unnamed-division fee
+      silently dropped" flag generalizes: any non-base/add_on template is dropped.
+DR-6  authoritative_total reconciliation contract is unbuilt. Audit §2 G2 promised
+      "client estimate and server total must reconcile — if they differ, server
+      wins and the UI re-renders." RegisterConfirm.jsx never reads
+      authoritative_total_cents; StepReview shows the CLIENT estimate only. The
+      server value is returned and discarded. (Dormant today because LH policy is
+      null + fees come from the same division_fees the client fetched, so the two
+      are equal — but the divergence guard PATTERN A #63 demanded does not exist.)
+
+================================================================================
+1. submit_registration RPC — LINE-BY-LINE INTEGRITY AUDIT
+   (file: supabase/migrations/20260601044918_registration_public_rpcs.sql)
+================================================================================
+GOOD (verified correct):
++ org_id is SERVER-DERIVED from programs.org_id (lines 75-80), never read from
+  client payload. No org spoof. (Closes a class wave-1 worried about.)
++ Program gate: published + inside reg window (lines 76-79); else
+  'registration_closed'. Correct.
++ Division-belongs-to-program: WHERE program_id = v_program_id (line 117); else
+  'invalid_division'. Correct — a foreign division id is rejected.
++ Player dedupe scoped to org (lines 127-132): org_id + lower(name) + dob. Org-
+  scoped (good — not global like guardian email).
++ player_guardians ON CONFLICT(player_id,guardian_id) DO NOTHING (lines 142,146):
+  idempotent, correct.
++ Fee total summed SERVER-SIDE from registration_fees after insert (line 172),
+  returned as authoritative_total_cents. The server is the source of "what's owed."
++ Children array bounds: array-typed + length 1..10 (lines 83-85). Good input guard.
+
+FINDINGS:
+P0-1  TOCTOU double-register / no UNIQUE(program_id, player_id).  [EXTENDS wave-1]
+      RPC lines 150-154 do SELECT ... FROM registrations WHERE program_id=? AND
+      player_id=? then conditionally INSERT. There is NO unique constraint backing
+      this (verified: pg_constraint has none). Two concurrent submits for the same
+      child both pass the SELECT (each sees zero rows) and both INSERT → duplicate
+      registrations + duplicate fee rows + double billing. The dedupe is advisory,
+      not enforced. Live evidence: constraint query returned only the gender/
+      member_type/email/tryout uniques — no registrations composite unique.
+      file:line submit_registration:150-154.
+      FIX LEAN (AP#39): add UNIQUE(program_id, player_id) on registrations + change
+      the body to INSERT ... ON CONFLICT (program_id,player_id) DO NOTHING RETURNING,
+      treating "no row returned" as already_registered. One migration, removes the
+      race. (The truer fix; the read-then-write guard is the hedge — drop it.)
+
+P0-2  anon TRUNCATE/DELETE/UPDATE grants on the entire registration graph.  [NEW]
+      See DR-1/DR-2. anon should hold ZERO table grants; the only anon surface is
+      the two SECDEF RPCs. file: migrations 6/7 trailer GRANT lines + divisions/
+      division_fees/tryouts migration trailers.
+      FIX LEAN (AP#39): REVOKE ALL ON <10 tables> FROM anon (+ PUBLIC per AP#23/#57),
+      keep only GRANT EXECUTE on the two RPCs. The RPC is SECDEF and runs as owner,
+      so revoking anon table grants does NOT break the flow. This is the truer
+      contract the audit *claimed* shipped; the live grant is the drift.
+
+P1-1  conduct_acknowledged_at never set + no waiver capture.  [NEW — liability]
+      See §2 below. A registration with no signed waiver / no conduct acceptance is
+      a youth-sports liability gap. file: submit_registration:156-159 (omitted col)
+      + RegisterFlowPage:67-72 (payload omits it) + StepDetails (no checkbox).
+
+P1-2  Non-base/add_on fee templates silently dropped.  [EXTENDS wave-1 fee flag]
+      DR-5. early_bird/prorated/discount division_fees never copied to
+      registration_fees. If an org configures an early-bird discount, the registrant
+      is billed full freight with no error. file: submit_registration:169-171.
+      FIX LEAN: either (a) widen the copy to all non-family_discount fee_types with
+      explicit auto_apply_rule evaluation (division_fees.auto_apply_rule jsonb exists
+      live but is unread), or (b) if early_bird/prorated are genuinely out of MVP
+      scope, add a CHECK or a comment + reject divisions carrying them. Lean: (a) —
+      the auto_apply_rule column was built for exactly this and is dead.
+
+P1-3  Player gender not captured / not validated vs division.gender.  [NEW]
+      DR-4. file: submit_registration:121-124 (grade-only band check),
+      RegisterFlowPage emptyPlayer (no gender). FIX LEAN: capture player gender in
+      Step 1, add server check `IF v_div.gender IS NOT NULL AND player.gender <>
+      v_div.gender THEN RAISE 'gender_mismatch'`. (Hedge: skip if LH divisions are
+      single-gender-by-grade-anyway — but the M/F CHECK exists for a reason; the
+      validation is the truer position per AP#39.)
+
+P2-1  guardian dedupe by GLOBAL email (no org scope).  [EXTENDS wave-1]
+      Line 91 ON CONFLICT(email) — guardians_email_unique is global (verified).
+      In single-org LH this is benign, but cross-org (St Pat's 2027) a guardian
+      registering in two orgs collides → the second org's INSERT routes to UPDATE
+      on the FIRST org's guardian row (org_id is set only on INSERT, not updated),
+      so the guardian stays attached to the wrong org_id while player_guardians
+      links across orgs. file: submit_registration:88-96 + guardians_email_unique.
+      FIX LEAN: make the uniqueness (org_id, lower(email)) before multi-org; the
+      RPC already has v_org_id. Defer is acceptable ONLY while org_count=1.
+
+P2-2  registration_tier hardcoded 'full_roster'; waitlist_state hardcoded 'none';
+      status hardcoded 'pending'.  [NEW — observation]
+      Lines 156-160. The RPC cannot produce a practice_roster/practice_player
+      registration nor a waitlist row — the tier/waitlist enums (built in mig 6)
+      are unreachable from the only write path. Not a bug for the season-MVP, but
+      the tier selection promised by registration_tier enum has no capture surface.
+      file: submit_registration:160.
+
+P2-3  family_discount attached to v_reg_ids[1] only (lines 191-192). The whole
+      family discount lands as a single negative line on the FIRST child's
+      registration_fees. If that child's registration is later cancelled/deleted
+      (CASCADE), the discount row vanishes and the OTHER children's net owed
+      silently increases. file: submit_registration:191-192. Dormant (policy null).
+
+P3-1  jsonb_array_length>10 → 'too_many_children' (line 85) is a raw error code with
+      no kindness-microcopy mapping client-side; same for grade_below_band etc. The
+      client (StepReview:21) collapses ALL errors to "Looks like that didn't go
+      through." So grade/gender/closed all read identically — no actionable message
+      (§16.3 violation). file: StepReview:21.
+
+================================================================================
+2. WAIVERS / FORM CAPTURE — VERDICT: NOT CAPTURED (liability gap)
+================================================================================
+- waivers / waiver_signatures / form_fields / form_responses tables DO NOT EXIST
+  live (verified). The CLAUDE.md §5 migration-003 row that lists them is stale.
+- The public flow captures NO waiver and NO conduct/code-of-conduct acknowledgment.
+  StepDetails.jsx (the only "details" surface) has jersey/shorts/emergency/medical
+  inputs only — no checkbox, no waiver text, no e-signature.
+- registrations.conduct_acknowledged_at exists but is dead (DR-3).
+- registrations.custom_responses (jsonb) IS persisted by the RPC (lines 165-166)
+  IF the payload carries details.custom_responses — but the client NEVER populates
+  it (RegisterFlowPage payload has no custom_responses; StepDetails has no custom
+  question UI). So the per-program form-capture column is plumbed end-of-line but
+  has no input surface. Capture = 0% of custom/waiver/conduct.
+VERDICT: A parent can fully register a child without signing or acknowledging
+anything. For youth sports this is a P1 liability gap. Minimum fix: a required
+conduct/waiver acceptance checkbox in Step 4 → write conduct_acknowledged_at =
+now() in the RPC. Full fix (deferred-OK): a form_fields/form_responses table pair
+or lean into custom_responses jsonb with a per-program waiver template.
+
+================================================================================
+3. DIVISIONS + FEES INTEGRITY
+================================================================================
+- divisions.gender CHECK M/F present; nullable (mixed divisions = NULL). OK.
+- division_fees: fee_type NOT NULL, amount_cents NOT NULL, name NOT NULL,
+  auto_apply_rule jsonb (UNREAD by RPC — dead column, see P1-2), sort_order NOT NULL.
+- Fee-attach on CREATE: not in scope of the RPC (admin-side); but note the public
+  read get_public_program (lines 27-31) sums fee_type='base' for base_fee_cents and
+  lists base+add_on in 'fees'. early_bird/prorated/discount are invisible to the
+  public read too — consistent dead-fee-type story across read AND write.
+- estimateCart.js (client) vs server: divisionFeeCents sums base+add_on (line 13),
+  EXACTLY mirroring the RPC's fee copy (line 171). They agree BY CONSTRUCTION today,
+  so no live divergence — but neither honors early_bird/prorated, and the
+  reconciliation guard (DR-6) that would catch a future divergence is absent.
+  PATTERN A #63: "what's owed" has ONE source (the RPC) but the client total is
+  never replaced by the server total on screen — the contract is half-built.
+- WAVE-1 "fee-by-name-match fragility": the RPC attaches fees by division_id
+  (line 171), NOT by name — so that specific wave-1 fragility is NOT present in the
+  submit path. (Likely lived in the admin create path, which is out of this slice.)
+
+================================================================================
+4. TRYOUTS
+================================================================================
+- Model: tryout_sessions (program_id, starts_at, capacity, location_id, notes) +
+  tryout_attendees (registration_id, session_id, evaluation_note). FK both to
+  tryouts/registrations.
+- UI: NONE. Zero src references to tryout_sessions/tryout_attendees (grep clean).
+  submit_registration never touches tryouts. There is no tryout registration or
+  attendance capture surface. SCHEMA-ONLY — the entire tryout feature is unbuilt.
+- UNIQUE(registration_id, session_id): PRESENT (tryout_attendees_registration_
+  session_uniq). Wave-1 concern resolved.
+- evaluation_note PRIVACY [P1, EXTENDS wave-1]: tryout_attendees_select RLS =
+  `org_id = ANY(current_user_org_ids())` for authenticated — i.e. ANY org member,
+  including PARENTS, can SELECT evaluation_note (a coach's candid eval of a child)
+  once a parent UI exposes the table. No coach/admin-only gate, no column mask.
+  file: tryout_attendees_select policy. FIX LEAN: restrict select to
+  user_has_role_in_org(org_id, ARRAY['admin','coach']) like guardians_select_staff,
+  OR move evaluation_note to a coach-only column/table. (Latent until a parent-
+  facing tryout UI ships — flag now so it's fixed BEFORE that UI, not after.)
+
+================================================================================
+5. OPTIMISTIC / PESSIMISTIC (§16.1)
+================================================================================
+VERDICT: CORRECT. The submit is a bulk multi-table write executed pessimistically:
+useSubmitRegistration sets submitting=true, awaits the RPC, and only on r.ok
+dispatches SUBMITTED (RegisterFlowPage:73). No optimistic row insertion; the UI
+waits for the server-authoritative result (confirm-after-validate). Matches §16.1
+"bulk operations stay pessimistic." StepReview disables the button while
+submitting. This is the one part of the flow that fully meets its contract.
+
+================================================================================
+(c) ANTI-PATTERN CROSS-REF + PATTERN A #63
+================================================================================
+AP#20  (ALL/UPDATE needs WITH CHECK): player_guardians_write_admin is cmd='*'
+       (ALL) WITH a check_expr present — OK. All other write policies explicit. OK.
+AP#23/#57 (REVOKE PUBLIC + anon): VIOLATED for tables — anon retains full table
+       grants (P0-2). The RPCs themselves correctly REVOKE PUBLIC + GRANT anon.
+AP#36  (destructured-default swallows error): useSubmitRegistration destructures
+       {data, error:rpcErr} and surfaces error — OK. usePublicProgram: verify
+       separately (out of deep scope, spot-OK).
+AP#37  (org_id first): N/A inside SECDEF RPC (org derived server-side) — OK.
+AP#63  PATTERN A — "what's owed": ONE source (server RPC total) but the client
+       never RENDERS the server total back (DR-6). Same-concept/divergent-surface
+       risk is dormant only because estimate==server by construction. The guard
+       that PATTERN A demands (label/render server scope) is missing. Half-locked.
+AP#39  Position+hedge: applied to each fix lean above (committed to the truer
+       position, named the hedge).
+
+================================================================================
+(d) PER-ROLE WIREFRAME (capture-relevant)
+================================================================================
+ANON REGISTRANT:  /r/:slug (StepDivision) -> Player -> Guardian -> Details ->
+  Review(client estimate) -> [Reserve] -> RPC -> Confirm(checkmark, NO total shown).
+  Gaps surfaced on this path: no waiver/conduct checkbox; no gender field; one
+  generic error string for all server raises; server total discarded on confirm.
+ADMIN VIEW OF REGISTRATIONS:  registrations_select RLS = org-scoped authenticated;
+  reg_count=0 live. Admin detail/list UI is a SEPARATE slice (PR G) — out of scope
+  here; flagged that evaluation_note (tryouts) would leak to parents if a parent
+  tryout UI lands before the RLS tightening (§4 P1).
+
+================================================================================
+(e) OUT-OF-SCOPE (this slice did NOT audit)
+================================================================================
+- Admin program/division/fee CREATE path (ProgramSetupPage / useProgramSetup) —
+  the wave-1 "fee-by-name-match" + "unnamed-division fee dropped" flags likely live
+  THERE, not in submit_registration. Re-audit needed on the create side.
+- get_public_program full read-side PII audit (spot-checked: no PII; sums base).
+- usePublicProgram hook internals / RegisterEntryPage / StepDivision rendering.
+- Account-claim / magic-link (G3, Q-1) — deferred per audit doc, not built.
+- Stripe / payment lifecycle — deferred.
+
+================================================================================
+FORKS FOR ARCHITECT (AP#39 leans)
+================================================================================
+FORK-1 (P0-2 anon grants): REVOKE ALL on the 10 graph tables from anon now, vs
+        accept-as-is because RLS blocks writes today. LEAN: REVOKE now — RLS is the
+        platform's dominant fail-open bug class; the SECDEF RPC does not need the
+        grants. Cheap, removes the TRUNCATE primitive. (architect/Frank ratify)
+FORK-2 (P0-1 TOCTOU): add UNIQUE(program_id,player_id) + ON CONFLICT, vs leave the
+        advisory read-guard. LEAN: add the constraint — double-billing is the worst
+        failure class and reg_count=0 means zero migration risk today.
+FORK-3 (P1-1 waiver): required conduct checkbox -> conduct_acknowledged_at (minimal),
+        vs full form_fields/form_responses build. LEAN: ship the minimal conduct
+        checkbox NOW (liability), schedule the form-template build as its own phase.
+FORK-4 (P1-2 dead fee types + auto_apply_rule): wire early_bird/prorated via the
+        existing auto_apply_rule jsonb, vs declare them out-of-MVP and guard. LEAN:
+        wire them — the column was built for this and is currently dead weight.
+FORK-5 (P1-3 gender validation): capture+validate player gender vs rely on grade
+        bands. LEAN: validate — the M/F CHECK exists; a mismatched division is a
+        real data-integrity hole.
+
+================================================================================
+COUNTS
+================================================================================
+Findings: P0 x2, P1 x3 (P1-1,P1-2,P1-3) + P1 tryout-eval-privacy = 4 P1,
+          P2 x3, P3 x1.  Forks: 5.
+Verdicts: WAIVER CAPTURE = NOT CAPTURED (P1 liability). RPC INTEGRITY = sound on
+          org-derivation/division-belongs/grade-band/server-total, BUT TOCTOU (P0),
+          anon over-grants (P0), dead fee types (P1), no gender check (P1), no
+          conduct/waiver write (P1). Optimistic scoping = CORRECT (pessimistic).
+================================================================================

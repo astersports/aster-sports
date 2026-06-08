@@ -1,0 +1,259 @@
+================================================================================
+AGENT B2 — L99 RE-AUDIT (architect wave) — TYPE AXIS
+program_type (ENUM, program-level) vs team_types.slug (team-level)
+Slice: PATTERN-A-adjacent (one "type" concept split across two layers)
+Date: 2026-06-08  |  Project: vrwwpsbfbnveawqwbdmj  |  READ-ONLY
+pwd confirmed: /home/user/skyfire-app
+================================================================================
+
+VERDICT (headline)
+--------------------------------------------------------------------------------
+The type axis is CLEAN and well-architected. The two layers are deliberately and
+correctly separated:
+  - program_type (ENUM, program-level)  → declarative rules in programRegistry.js
+  - team_types.slug (team-level)        → competitive-exclusion in teamTypes.js
+The bridge (programRule(type).defaultTeamType) is a SMART DEFAULT only; the actual
+records/standings/bracket exclusion stays team-level via isCompetitiveTeam(team).
+This separation is documented in-code (programRegistry.js:14-17) and guarded by a
+CI parity test. Single-source discipline holds on every label/noun/badge surface
+audited. ONE genuine (low-severity) single-source bypass found: a UI render gate
+on ProgramSetupPage hardcodes `program_type === 'season'` instead of the existing
+divisionsApplyTo() helper (the WRITE path uses the helper correctly, so data is
+right — only the UI could diverge for a future archetype). NO phantom-competitive
+teams live (0 NULL team_type_id). NO program-type/team-type conflation found.
+
+  P0: 0   P1: 0   P2: 1   P3: 1   Forks: 1
+
+================================================================================
+(a) INITIAL PASS — THE FULL MAP + DRIFT TABLE
+================================================================================
+
+THE ENUM → DEFAULTTEAMTYPE → COMPETITIVE MAP
+--------------------------------------------------------------------------------
+Live program_type enum (pg_enum, verified):
+  season, tryout, camp, clinic, interest_list, evaluation, other  (7 values)
+programRegistry.PROGRAM_TYPE_KEYS (programRegistry.js:30-32):
+  season, camp, clinic, tryout, evaluation, interest_list, other  (7 values)
+  => SAME SET (order differs, irrelevant). MATCH. ✓
+
+Live team_types.slug rows (verified, 6 rows, org e3e95e21):
+  game_team, tournament_team, hybrid_team, academy, training_only, clinic_camp
+teamTypes.TEAM_TYPE_OPTIONS (teamTypes.js:31-38):
+  game_team, tournament_team, hybrid_team, academy, training_only, clinic_camp
+  => SAME SET. MATCH. ✓
+
+FULL MAP (program_type → programRule().defaultTeamType → valid live slug? → competitive?):
+  program_type   | defaultTeamType | valid live slug? | registry.competitive | isCompetitiveSlug(default) | agree?
+  ---------------|-----------------|------------------|----------------------|----------------------------|-------
+  season         | game_team       | YES              | true                 | true                       | ✓
+  camp           | clinic_camp     | YES              | false                | false                      | ✓
+  clinic         | clinic_camp     | YES              | false                | false                      | ✓
+  tryout         | game_team       | YES              | true                 | true                       | ✓
+  evaluation     | game_team       | YES              | true                 | true                       | ✓
+  interest_list  | game_team       | YES              | true                 | true                       | ✓
+  other          | training_only   | YES              | false                | false                      | ✓
+
+  ALL 7 registry entries present. NO entry missing. NO defaultTeamType points to
+  an invalid (non-live) slug. registry.competitive === isCompetitiveSlug(defaultTeamType)
+  for all 7 (this is ALSO asserted by programRegistry.parity.test.js:36-40 in CI).
+
+IMPORTANT SCHEMA FINDING (correction to shared grounding):
+  team_types has NO `is_competitive` column. Verified via information_schema —
+  columns are: id, org_id, slug, display_name, description, default_briefing_kinds,
+  default_audience_rules, active, sort_order, created_at, updated_at.
+  "competitive" is a CODE-ONLY concept: COMPETITIVE_TEAM_SLUGS allowlist in
+  teamTypes.js:14. The DB does NOT store competitiveness. Any future reasoning
+  that assumes a DB is_competitive column is wrong.
+
+LIVE TEAMS — team_type assignment (7 teams, verified):
+  team               | team_type_slug | season_name        | program_type
+  -------------------|----------------|--------------------|-------------
+  Summer Day Camp    | clinic_camp    | Summer Day Camp    | camp
+  10U Blue           | game_team      | Spring 2026        | season
+  9U Boys            | game_team      | Spring 2026        | season
+  11U Girls          | hybrid_team    | Spring 2026        | season
+  8U Boys            | tournament_team| Spring 2026        | season
+  10U Black          | tournament_team| Spring 2026        | season
+  Active Roster Lab  | training_only  | Active Roster Lab  | camp
+
+  NOTE (not a drift, an override observation): "Active Roster Lab" is a `camp`
+  program whose team is `training_only`, NOT the registry default `clinic_camp`
+  for camp. This is a LEGITIMATE admin override (TeamFormSheet allows it; both
+  slugs are non-competitive so exclusion behavior is identical). Confirms
+  defaultTeamType is a default, not a constraint. Both camp-program teams are
+  correctly non-competitive → correctly excluded from standings.
+
+DRIFT-STRING TABLE ('training_only' / 'clinic_camp')
+--------------------------------------------------------------------------------
+  occurrence (non-test)                         | layer it means | correct?
+  ----------------------------------------------|----------------|---------
+  teamTypes.js:36-37 (TEAM_TYPE_OPTIONS)        | team-level     | ✓ slug
+  programRegistry.js:48 camp.defaultTeamType    | team-level ref | ✓ slug (bridge)
+  programRegistry.js:54 clinic.defaultTeamType  | team-level ref | ✓ slug (bridge)
+  programRegistry.js:78 other.defaultTeamType   | team-level ref | ✓ slug (bridge)
+
+  CONFIRMED: 'training_only' and 'clinic_camp' are team_types.slug values
+  (team-LEVEL) and are NEVER used as program_type enum values (they are not in
+  the enum — verified live). NO surface treats them as program_type. NO
+  conflation. The only places they appear are (1) the team-type catalog and
+  (2) the registry's defaultTeamType bridge field — both correct uses.
+
+================================================================================
+(b) DEEP-READ ADDENDUM (second pass — what the initial pass missed)
+================================================================================
+
+Second pass across the full mount tree for any place that:
+  - compares a program_type value to a team-type slug (conflation), OR
+  - hardcodes a per-type rule instead of reading programRule()/divisionsApplyTo().
+
+FINDING D-1 (P2) — UI render gate bypasses single-source divisions rule
+  File: src/pages/admin/ProgramSetupPage.jsx:54
+    {form.program_type === 'season' && ( <Divisions/> )}
+  The Divisions UI section is gated on a HARDCODED `program_type === 'season'`
+  rather than the existing helper divisionsApplyTo(type) (== programRule(type)
+  .hasDivisions). divisionsApplyTo is defined in programSetup.js:21-23 and is
+  ALREADY imported + re-exported by the page's own hook (useProgramSetup.js:4,8)
+  but the page does not import or use it.
+  Mitigation (downgrades from P1→P2): the WRITE path is correct —
+  useProgramSetup.js:40 uses `divisionsApplyTo(programType)` to decide whether
+  to persist divisions. So data integrity is fine TODAY. Only the UI render
+  could diverge from the data rule if a future archetype is given
+  hasDivisions:true — the section would silently not render while the write
+  path still expects divisions. This is exactly the single-source-bypass class
+  the registry was built to eliminate (programRegistry.js:1-6 names this page's
+  switches as the thing it replaced).
+  Fix (1 line): import divisionsApplyTo and replace the gate with
+    {divisionsApplyTo(form.program_type) && ( ... )}
+
+FINDING D-2 (P3) — embed-presence is load-bearing but only test-locked, not type-locked
+  isCompetitiveTeam(team) reads team.team_types.slug; a team object WITHOUT the
+  team_types(slug) embed yields slug=undefined → returns TRUE (competitive
+  default) → phantom standings inclusion. All 3 competitive-filter surfaces DO
+  embed the slug today (verified): useTeams.js:24, useProgramTeams.js:19,
+  TeamMultiSelect.jsx:17. But the dependency is implicit — a new surface that
+  filters by isCompetitiveTeam off a teams query that forgets the embed would
+  silently include every team. The teamTypes.test.js cases (lines 27-29) lock
+  the DEFAULT-true behavior intentionally (no-regression), so a missing embed
+  would NOT fail any test. P3 because no live instance; it is a latent
+  foot-gun in the "NULL slug → competitive" design choice.
+
+No other conflation or parallel-rule sites found on the second pass. The
+program_type === 'season' check at TeamDetailPage.jsx:66/138 and
+pulseRange 'season' are unrelated (a UI date-range toggle literal, not the
+program-type enum). PlayerProfilePage academy badge reads roster_type, not
+program/team type (out of this slice's axis).
+
+================================================================================
+(c) ANTI-PATTERN CROSS-REFERENCE + PATTERN A #63 TABLE
+================================================================================
+
+PATTERN A #63 (same concept, different source/scope across surfaces):
+  concept                | surface                          | layer        | source                          | agree?
+  -----------------------|----------------------------------|--------------|---------------------------------|------
+  program type LABEL     | AdminProgramsPage filters        | program      | programRule(key).label          | ✓
+  program type LABEL     | ProgramTypeChooser chips         | program      | programRule(key).label          | ✓
+  program type BADGE     | ProgramIndexRow                  | program      | programBadge→programRule        | ✓
+  program type NOUN      | coachHomeData group label        | program      | programRule(type).noun          | ✓
+  program default status | create (status)                  | program      | statusForProgramType→programRule| ✓
+  program divisions rule | useProgramSetup WRITE            | program      | divisionsApplyTo→programRule    | ✓
+  program divisions rule | ProgramSetupPage UI gate         | program      | HARDCODED 'season'  (D-1)       | ✗ (bypass)
+  team type LABEL        | TeamFormSheet chips (TEAM_TYPES) | team         | TEAM_TYPE_OPTIONS (teamTypes)   | ✓
+  team type LABEL        | ProgramTeamsSection TYPE_LABEL   | team         | TEAM_TYPE_OPTIONS (teamTypes)   | ✓
+  team competitive?      | RecordsPage                      | team         | isCompetitiveTeam (slug)        | ✓
+  team competitive?      | GamesView                        | team         | isCompetitiveTeam (slug)        | ✓
+  team competitive?      | TeamMultiSelect (bracket)        | team         | isCompetitiveTeam (slug)        | ✓
+  program defaults comp? | TeamFormSheet warning            | program→team | programDefaultsCompetitive      | ✓
+
+  Single-source for the TYPE concept holds on EVERY surface except the one
+  D-1 UI gate. The program-layer and team-layer "type" are deliberately distinct
+  concepts (not a #63 contradiction) bridged only by defaultTeamType. That bridge
+  is asserted consistent by the parity test. So this slice is largely a
+  #63-CLEAN result, which is itself the notable finding for a PATTERN-A re-audit.
+
+AP cross-refs:
+  - AP#63: only the D-1 UI gate is a single-source bypass; data path is clean.
+  - AP#36 (destructured-default swallow): useTeamTypes.js:20-22 destructures
+    {data,error} and logs error (does not silently swallow) — OK. TeamMultiSelect
+    .jsx:22 destructures `{ data }` only (no error capture) on the teams fetch
+    feeding the bracket picker — minor AP#36 instance, but out of this slice's
+    TYPE-axis scope (flagged for the AP#36-owning agent, not scored here).
+  - AP#34/#38 (registry/renderer parity): programRegistry.parity.test.js gives
+    full key+field+enum parity coverage. Strong. The "every type carries the full
+    field set" test (lines 42-47) is the AP#38-style emit-parity guard.
+
+================================================================================
+(d) PER-ROLE NOTE
+================================================================================
+  - ADMIN: sees all type surfaces — program chooser, badges, filters, team-form
+    type chips + competitive warning. All single-sourced (except D-1 UI gate).
+    Admin is the only role that can SET either type (program_type at create,
+    immutable after — ProgramEditSheet.jsx:8-9; team_type via TeamFormSheet,
+    NULL-guarded at line 41).
+  - COACH: coachHomeData groups teams under program headers using
+    programRule(type).noun (single source). No type-EDIT surface. Reads only.
+  - PARENT: no program_type / team_type surface in this slice. Competitive
+    exclusion (Records/Games/brackets) is admin/coach-facing standings; parent
+    impact is indirect (a camp team correctly never shows a 0-0 record).
+  Cross-role invariant: the competitive-exclusion result is computed from ONE
+  function (isCompetitiveTeam) for every role/surface — no per-role divergence.
+
+================================================================================
+(e) OUT-OF-SCOPE (this audit did NOT touch)
+================================================================================
+  - The STATUS axis (draft/active/archived lifecycle) — sibling agent.
+  - The WINDOWS axis (reg_opens_at/closes_at) — sibling agent.
+  - parent_program_id program nesting / rollover lineage — sibling agent.
+  - team_types.default_briefing_kinds / default_audience_rules (messaging axis).
+  - AP#36 hardening of TeamMultiSelect.jsx:22 (noted, not scored — AP#36 agent).
+  - Divisions/division_fees content correctness (only the gate rule examined).
+  - roster_type / member_type (Academy-as-roster) — different "type" concept,
+    PATTERN-A but a separate slice (PlayerProfilePage academy badge etc.).
+
+================================================================================
+FORKS (AP#39 leans)
+================================================================================
+FORK F-1 — Should "NULL team_type → competitive default" be inverted to fail-closed?
+  Context: isCompetitiveTeam returns TRUE for a team with no joined type
+  (teamTypes.js:22-24). Today 0 teams are NULL (F1 NULL-guard in TeamFormSheet
+  prevents new NULLs), so it never fires. The design choice was no-regression
+  for legacy pre-team_types rows.
+  Option A (keep TRUE default): no-regression preserved; matches current tests
+    (teamTypes.test.js:27-29 lock TRUE). Phantom risk only if a future surface
+    filters without embedding the slug (D-2).
+  Option B (flip to FALSE / fail-closed): a team that loses its type embed gets
+    EXCLUDED from standings rather than phantom-INCLUDED with a meaningless 0-0.
+    Excluding a real game team from standings is more visible (coach notices a
+    missing team) than silently including a camp team — arguably the safer
+    failure for a youth-sports standings surface.
+  LEAN: Option A for now (zero live NULLs, no-regression intent is sound, and
+  the real fix for D-2 is an embed-presence lint/test, not flipping the default).
+  Per AP#39 the hedge (Option B) is worth surfacing: if the architect wants
+  fail-closed semantics platform-wide, B is defensible — but I commit to A
+  pending a concrete NULL-team scenario. Decision belongs to architect/Frank.
+
+================================================================================
+SEVERITY SUMMARY (file:line + live evidence)
+================================================================================
+  P2  D-1  src/pages/admin/ProgramSetupPage.jsx:54 — Divisions UI gate hardcodes
+           `program_type === 'season'` instead of divisionsApplyTo(type).
+           Evidence: WRITE path (useProgramSetup.js:40) uses the helper; UI does
+           not. Single-source bypass; data correct today, UI could diverge for a
+           future hasDivisions archetype. 1-line fix.
+  P3  D-2  isCompetitiveTeam NULL-slug→TRUE default (teamTypes.js:22) is a latent
+           phantom-inclusion foot-gun for any future surface that filters without
+           embedding team_types(slug). 0 live instances. All 3 current filter
+           surfaces embed correctly (useTeams.js:24, useProgramTeams.js:19,
+           TeamMultiSelect.jsx:17). Suggest an embed-presence test/lint.
+
+LIVE EVIDENCE COUNTS
+  program_type enum values: 7 (match registry 7)            ✓
+  team_types.slug rows: 6 (match TEAM_TYPE_OPTIONS 6)       ✓
+  teams total: 7 | NULL team_type_id: 0 (no phantom)        ✓
+  registry entries missing: 0                               ✓
+  defaultTeamType pointing to invalid slug: 0               ✓
+  program-type↔team-type conflation sites: 0                ✓
+  single-source label/noun/badge bypasses: 1 (D-1, UI only)
+  competitive-filter surfaces, all slug-embedded: 3/3       ✓
+================================================================================
+END B2_type_axis.txt
+================================================================================

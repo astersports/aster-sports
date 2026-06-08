@@ -1,0 +1,402 @@
+================================================================================
+AGENT B8 — L99 RE-AUDIT WAVE 2 (architect wave) — PROGRAMS slice
+SCOPE: per-type behavior (records/standings exclusion) + index column set +
+       filter-chip completeness + PROGRAM_NOUN/grouping + §16.12 stats leak
+DATE: 2026-06-08   pwd: /home/user/skyfire-app   READ-ONLY
+Project: vrwwpsbfbnveawqwbdmj   Org: e3e95e21-3571-4e9a-985a-d5d01480d4a6
+================================================================================
+
+EXECUTIVE SUMMARY
+-----------------
+STANDINGS-EXCLUSION VERDICT: CORRECT by design. All three AAU-semantics
+surfaces (Records standings, Games standings, tournament team picker) exclude
+non-competitive teams by keying off team_types.slug via isCompetitiveTeam()
+(teamTypes.js:21) — NOT off program_type. This matches the locked doctrine
+(CLAUDE.md §16.12 + teamTypes.js:12-17 + programRegistry.js:15-17: "records
+exclusion stays team-level"). The team LIST is filtered correctly everywhere.
+
+BUT two AGGREGATE COUNTERS bypass the exclusion (P2, latent today): the
+org-wide game-count totals in RecordsPage and GamesView count published
+game_results from ALL teams including non-competitive ones. Zero leak today
+(live: 0 published game_results on non-competitive teams) but the structural
+gap is a PATTERN A #63 contradiction waiting for the first clinic-team game.
+
+INDEX-REDESIGN INPUT: index shows range·teams·players; no financial columns.
+Financial data IS per-program linkable (financial_accounts.season_id == program
+id) but ONLY meaningful for season-type programs (live: 164 accounts across 3
+seasons; camp/tryout/clinic have $0). Lean: add per-type-conditional financial
+columns to the index, but only render them for types that carry financials.
+
+E3 (filter chips OMIT evaluation+interest_list): **ALREADY CLOSED.** Chips are
+now registry-derived (AdminProgramsPage.jsx:16 maps PROGRAM_TYPE_KEYS) — all 7
+types have a chip. The closeout-deferral note in the grounding is STALE.
+
+E4 (player count = team_players ROWS not distinct): **STILL OPEN** but latent
+(live: 0 kids on >1 team within one program). Confirmed useAllPrograms.js:44.
+
+================================================================================
+METHODOLOGY §16.15 — (a) initial pass
+================================================================================
+
+FILES READ (full):
+- src/pages/admin/AdminProgramsPage.jsx (index spine)
+- src/components/admin/programs/ProgramIndexRow.jsx (row render)
+- src/lib/programGrouping.js (grouping + badge)
+- src/lib/programRegistry.js (PROGRAM_TYPE_REGISTRY single source)
+- src/hooks/useAllPrograms.js (index data + counts)
+- src/lib/teamTypes.js (isCompetitiveTeam — the exclusion key)
+- src/hooks/useOrgTeamRecords.js + useTeamRecords.js (records data)
+- src/pages/RecordsPage.jsx (Records standings surface)
+- src/components/schedule/GamesView.jsx (Games standings surface)
+- src/components/tournament/TeamMultiSelect.jsx (tournament bracket picker)
+- src/hooks/useTeams.js (team list + team_types(slug) embed)
+- src/pages/admin/ProgramDetailPage.jsx (detail — registrations count)
+
+--------------------------------------------------------------------------------
+SCOPE 1 — RECORDS/STANDINGS PER-TYPE EXCLUSION
+--------------------------------------------------------------------------------
+EXCLUSION KEY: team_types.slug (CORRECT). isCompetitiveTeam(team) reads
+team.team_types.slug; COMPETITIVE_TEAM_SLUGS = [game_team, tournament_team,
+hybrid_team]. NULL slug -> TRUE (no-regression default for legacy rows)
+(teamTypes.js:14-25). It does NOT key off program_type anywhere — matches the
+doctrine that program.competitive is a team-type DEFAULT driver only, not the
+records gate (programRegistry.js:15-17, 89-94).
+
+THE THREE AAU SURFACES — all filter the team LIST correctly:
+  1. RecordsPage.jsx:20  teams = allTeams.filter(isCompetitiveTeam)
+  2. GamesView.jsx:39     allTeams = orgTeams.filter(isCompetitiveTeam)
+  3. TeamMultiSelect.jsx:22 .filter(isCompetitiveTeam) on the bracket picker
+All three rely on the team_types(slug) embed, which useTeams.js:24 + the inline
+selects in GamesView/TeamMultiSelect include. Embed present -> filter live.
+
+LIVE VERIFICATION (execute_sql):
+  Teams by slug (org): game_team=2, tournament_team=2, hybrid_team=1 (competitive)
+                       clinic_camp=1, training_only=1 (NON-competitive)
+  => org now HAS 2 non-competitive teams. The exclusion is no longer a no-op;
+     it is actively filtering 2 teams out of standings/picker. Good — the guard
+     is doing real work, and it works.
+
+  Published game_results by team-type slug (org):
+     tournament_team=27, game_team=17, hybrid_team=16
+     clinic_camp = (absent), training_only = (absent)
+  => ZERO published game_results tied to non-competitive teams TODAY. No actual
+     data leak into records today.
+
+LEAK PATH FOUND (structural, P2, latent today) — PATTERN A #63:
+  The standings TABLE excludes non-competitive teams, but the org-wide GAME
+  COUNT aggregates do NOT:
+    * RecordsPage.jsx:41-45 — totalGames query counts ALL published
+      game_results for the org (events!inner->teams!inner->org_id), with NO
+      team_type filter. Rendered as "{totalGames} Games" (line 68) and feeds
+      no per-team gating.
+    * GamesView.jsx:71-75 — totalGames sums gamesPlayed across recordsByTeamId,
+      which comes from useOrgTeamRecords (un-filtered, see below). But note:
+      GamesView passes `allTeams` (competitive-filtered) to StandingsTable while
+      totalGames sums the UN-filtered recordsByTeamId — same split.
+    * useOrgTeamRecords.js:29-33 — fetches every published game_result for the
+      org's teams with NO competitive filter; returns byTeamId for ALL teams.
+      RecordsPage/GamesView only LOOK UP competitive teams in that map, so the
+      table is safe, but any AGGREGATE over the whole map leaks.
+  CONSEQUENCE: the day a clinic_camp/training_only team gets a published
+  game_result, "{N} Games" / "Active Teams" counter will include it while the
+  team itself is absent from the standings list — a same-surface contradiction
+  (team count says "excluded", game count says "included"). Classic PATTERN A:
+  one concept ("how many games this org played competitively"), two scopes.
+  FIX LEAN (AP#39): filter useOrgTeamRecords at the query/group layer by the
+  same competitive slug set, OR have RecordsPage/GamesView restrict the
+  totalGames aggregate to the competitive-team id set. Prefer filtering in
+  useOrgTeamRecords so every consumer inherits the correct scope (single
+  source) — the embed cost is one more join on team_types(slug). This is the
+  truer position (the hedge "filter at the surface" duplicates the rule across
+  2 surfaces and re-opens drift). [FORK B8-1, see below]
+
+--------------------------------------------------------------------------------
+SCOPE 2 — INDEX FILTER-CHIP COMPLETENESS (E3)
+--------------------------------------------------------------------------------
+VERDICT: E3 deferral is ALREADY CLOSED. The grounding's "E3 chips OMIT
+evaluation+interest_list" is STALE relative to current code.
+
+EVIDENCE: AdminProgramsPage.jsx:16
+  const FILTERS = [{ key:'all', label:'All' },
+    ...PROGRAM_TYPE_KEYS.map((key) => ({ key, label: programRule(key).label }))];
+PROGRAM_TYPE_KEYS (programRegistry.js:30-32) = all 7:
+  season, camp, clinic, tryout, evaluation, interest_list, other.
+=> every type, including evaluation + interest_list + other, gets a chip. The
+   chips are registry-derived so they "can't drift" (file comment line 13-15).
+   No discoverability gap remains. NO ACTION. (P3 — note only, to reconcile the
+   stale deferral ledger entry.)
+
+--------------------------------------------------------------------------------
+SCOPE 3 — INDEX COLUMN SET vs LeagueApps REFERENCE (REDESIGN INPUT)
+--------------------------------------------------------------------------------
+CURRENT INDEX ROW (ProgramIndexRow.jsx:13-18): name + badge, then meta line =
+  range · "{N} teams" · "{N} players". No financial columns.
+
+LeagueApps reference (architect-supplied): Activity Start · Invoiced · Paid ·
+  Outstanding · Players · Staff, grouped Live/Upcoming/Unpublished/Completed.
+
+GAP: we show teams+players; we DON'T show Invoiced/Paid/Outstanding or Staff.
+For an admin running the org's money, per-program financial roll-up at the index
+level is the single highest-value missing column set.
+
+FEASIBILITY (live): financial_accounts is season_id-scoped, and season_id == the
+program id for season-type programs (financial_accounts cols: season_id,
+season_fee_cents, discount_cents...). So Invoiced/Paid/Outstanding per program
+IS computable today by joining financial_accounts + financial_transactions on
+season_id = program.id. The family_balances view already nets payment/refund/
+adjustment/fee per the §11.5 ground-truth (use it as the single source, NOT a
+re-derivation — PATTERN A #63 / HOME-4 precedent).
+
+LIVE: financial_accounts by program type:
+  season => 164 accounts across 3 seasons. camp/tryout/clinic => 0 accounts.
+=> financial columns are MEANINGFUL ONLY for season-type programs today. A
+   tryout/camp/clinic/evaluation/interest_list has no invoiced/paid concept
+   (flat-fee camps could later, but no financial_accounts wired today).
+
+LEAN (AP#39) — per-type-conditional column set, NOT a uniform financial row:
+  * season: range · teams · players · Invoiced · Paid · Outstanding
+            (Outstanding is the action signal — net owed from family_balances)
+  * camp/clinic: range · players · (registrations) — flat-fee, no per-season
+            invoice ledger today; show registration count not "teams"
+  * tryout/evaluation/interest_list: range · registrations/signups — no teams,
+            no money; "X players" is misleading (these have no roster yet)
+  * other: range · whatever is populated
+  The truer position (hedge-check): do NOT bolt a uniform Invoiced/Paid/
+  Outstanding onto every row — for 4 of 7 types it renders $0/blank and reads
+  as "this program collected nothing" rather than "this program has no fee
+  ledger". The registry already declares per-type semantics (noun, hasDivisions,
+  competitive); ADD a per-type `indexColumns` (or `showsFinancials` flag) to
+  PROGRAM_TYPE_REGISTRY so the row renders the right columns per type from one
+  source. [FORK B8-2 — architect decision: which columns per type]
+
+  Scope label REQUIREMENT (PATTERN A #63): if both index "players" and detail
+  "Registrations" survive, LABEL them distinctly (rostered vs registered) —
+  they are different concepts and currently both read as "people in program".
+
+--------------------------------------------------------------------------------
+SCOPE 4 — PROGRAM_NOUN / GROUPING PER TYPE + E4
+--------------------------------------------------------------------------------
+NOUN/BADGE: each type has a sensible noun + badge variant in
+PROGRAM_TYPE_REGISTRY (programRegistry.js:38-81):
+  season->'teams'/info, camp->'camp'/academy, clinic->'clinic'/academy,
+  tryout->'tryout'/academy, evaluation->'evaluation'/academy,
+  interest_list->'interest list'/academy, other->'program'/neutral.
+  Single source, consumed via programBadge() — OK. (Minor P3 cosmetic: 5 of 7
+  types share the 'academy' purple badge variant, so camp/clinic/tryout/
+  evaluation/interest_list are visually indistinguishable at a glance except by
+  text label. Not a bug; flag for the architect if per-type color is desired.)
+
+  NOTE: ProgramIndexRow does NOT use the per-type `noun` field — it hardcodes
+  "teams"/"players" (lines 15-16) regardless of type. So a tryout shows "3
+  players" even though the registry noun for tryout context is different, and a
+  camp shows "teams" when camps have no division/team semantics. The registry
+  noun exists but the index row ignores it (P2 — feeds the Scope-3 redesign).
+
+GROUPING (programGrouping.js:19-34): Active/Upcoming/Draft/Archived computed
+from status + startDate. Handles non-season types correctly in MECHANICS — a
+camp (defaultStatus active) lands in Active if started, Upcoming if future-
+dated; no "season" semantics are assumed. The grouping is type-agnostic and
+robust. LIVE: programs = season(active1/archived2) + tryout(active1) +
+camp(active2) — all group cleanly. OK.
+  Caveat (P3): an interest_list or evaluation born `draft` (registry default)
+  sits in the "Draft · not launched" group, which reads oddly for an
+  interest-list that is intentionally collecting signups while "draft". Cosmetic
+  label mismatch, not a bug. Architect note.
+
+E4 — DISTINCT vs ROWS player count: CONFIRMED STILL OPEN.
+  useAllPrograms.js:43-44: playerCount[pid] = (playerCount[pid]||0)+1 per
+  team_players ROW. A kid rostered on 2 teams in the same program double-counts.
+  LIVE: 0 kids on >1 team within one program today => latent, 0 wrong counts
+  now. FIX LEAN: count DISTINCT player_id per program (Set per pid), trivial.
+  Cross-surface (PATTERN A #63): index "players" (rows) vs detail "Registrations"
+  (registration rows) vs any roster-page distinct count — three sources for
+  "kids in program". Reconcile to distinct player_id and label scope. P2.
+
+--------------------------------------------------------------------------------
+SCOPE 5 — §16.12 PER-PLAYER GAME STATS LEAK
+--------------------------------------------------------------------------------
+VERDICT: NO per-player game-stats leak in the program/records/index surfaces.
+  - useOrgTeamRecords / useTeamRecords aggregate to TEAM level (computeSummary
+    over game_results.result/our_score/opponent_score) — no per-player rows.
+  - RecordsPage renders TeamAccordion (team W-L), StatHeroBar (org totals),
+    TournamentCard (team placement). No PlayerStatsTable / per-player points.
+  - ProgramIndexRow + ProgramDetailPage show counts + registration status only;
+    ProgramDetailPage:64-65 shows player NAME + fee (engagement/financial, not
+    game stats — allowed per §16.12 engagement column).
+  Consistent with §51 historical removal of TeamPlayerStats/PlayerStatsTable.
+  CLEAN.
+
+================================================================================
+METHODOLOGY §16.15 — (b) DEEP-READ ADDENDUM (second pass, label)
+================================================================================
+Second pass caught what the initial pass missed:
+
+D1 [P2] useOrgTeamRecords is the SHARED records source for BOTH RecordsPage AND
+   GamesView, and it is un-filtered by competitive. Initial pass flagged the two
+   surface-level totalGames counters separately; the deep read shows they share
+   ONE leaky hook — so the fix belongs in the hook (one place), reinforcing
+   FORK B8-1's "filter in the hook" lean over per-surface patches.
+
+D2 [P3] StatHeroBar "Active Teams" (RecordsPage:77) uses teams.length which IS
+   the competitive-filtered count (line 20) — so the HERO team count is
+   correct/filtered, but the same-page "{totalGames} Games" tag (line 68) is
+   un-filtered. So within ONE hero block, team count is competitive-scoped and
+   game count is org-scoped: an in-surface PATTERN A split, not just cross-
+   surface. Strengthens the P2 severity of the aggregate leak.
+
+D3 [P2] ProgramIndexRow ignores the registry `noun` field entirely (hardcodes
+   "teams"/"players"). The single-source registry exists precisely to prevent
+   this; the index row is a consumer that bypasses it. Missed on first read
+   because the row "looks correct" for the season case (the only populated case
+   pre-camp). Now that camps/tryouts exist live, the hardcoded nouns are wrong
+   for those rows.
+
+D4 [P3] AdminProgramsPage comment (line 12-15) says groups are "Draft / Active /
+   Upcoming / Archived" but groupPrograms ORDER is Active, Upcoming, Draft,
+   Archived (programGrouping.js:28-33). Comment-vs-code order mismatch, cosmetic
+   doc drift only.
+
+================================================================================
+METHODOLOGY §16.15 — (c) ANTI-PATTERN CROSS-REF + PATTERN A #63
+================================================================================
+PATTERN A #63 (same concept, divergent source/scope) — DOMINANT here:
+  PA-1 [P2] "games this org played": standings table (competitive-only) vs
+        totalGames counter (all teams). RecordsPage + GamesView. Latent leak.
+  PA-2 [P2] "kids in this program": index "X players" (team_players rows,
+        non-distinct) vs detail "Registrations · N" (registrations rows) vs
+        any roster distinct count. 3 sources, no scope labels.
+  PA-3 [P3] "active teams" hero stat (filtered) vs "games" tag (unfiltered) in
+        the SAME StatHeroBar region — in-surface split.
+  Discipline per #63: name single source + scope, prefer shared hook/view,
+  LABEL when scope legitimately differs, lock with AP#43 cross-surface test.
+
+AP#36 (destructured-default swallow): useAllPrograms correctly destructures
+  {data, error} and surfaces errors (lines 21,28,40). useOrgTeamRecords +
+  useTeamRecords destructure error + bail. CLEAN — no #36 violations in scope.
+
+AP#37 (org_id-first on org-scoped tables): useAllPrograms.js:18 .eq('org_id')
+  first on programs (org-scoped) — OK. teams query line 27 .eq('org_id') first
+  — OK. team_players (FK-scoped via team_id, no org_id col) — correctly NOT
+  org-filtered (line 39), matches §37 FK-scoped exception. CLEAN.
+
+AP#48 (foreignTable .order on parent rows): both records hooks already removed
+  the dead .order foreignTable hint and sort JS-side (documented at
+  useOrgTeamRecords.js:34-38, useTeamRecords.js:35-37). Already fixed. CLEAN.
+
+AP#43 (cross-surface invariant test): the records/standings competitive
+  exclusion is NOT locked by a cross-surface invariant test today (only
+  teamTypes.test.js unit-tests isCompetitiveTeam). FORK B8-1 fix should ship
+  with an AP#43 test asserting the same competitive scope across table AND
+  aggregate counters.
+
+================================================================================
+METHODOLOGY §16.15 — (d) PER-ROLE WIREFRAME + REDESIGN SKETCH
+================================================================================
+ADMIN /admin/programs INDEX — current (admin-only surface; no parent/coach view):
+
+  [ Programs                                    [+ New] ]
+  [ All ][Season][Camp][Clinic][Tryout][Evaluation][Interest list][Other]
+  ACTIVE · RUNNING NOW
+   ┌──────────────────────────────────────────────┐
+   │ Spring 2026 Travel                  [Season]  │
+   │ Mar 23 – Jun 14 · 5 teams · 60 players        │   <- season: teams+players
+   └──────────────────────────────────────────────┘
+   ┌──────────────────────────────────────────────┐
+   │ June Skills Camp                    [Camp]    │
+   │ Jun 20 – Jun 24 · 1 team · 12 players         │   <- BUG: "team" noun wrong
+   └──────────────────────────────────────────────┘
+
+PROPOSED RICHER COLUMN SET (redesign sketch, per-type-conditional):
+
+  ACTIVE · RUNNING NOW
+   ┌──────────────────────────────────────────────────────────┐
+   │ Spring 2026 Travel                              [Season]  │
+   │ Mar 23 – Jun 14 · 5 teams · 60 players                    │
+   │ Invoiced $70,242 · Paid $69,100 · Outstanding $1,142  ◀── │  season only
+   └──────────────────────────────────────────────────────────┘
+   ┌──────────────────────────────────────────────────────────┐
+   │ June Skills Camp                                [Camp]    │
+   │ Jun 20 – Jun 24 · 12 registered                          │  camp: no teams,
+   │ (flat fee — no invoice ledger)                            │  registrations
+   └──────────────────────────────────────────────────────────┘
+   ┌──────────────────────────────────────────────────────────┐
+   │ Fall Tryout                                     [Tryout]  │
+   │ Aug 15 · 8 signups                                       │  tryout: signups
+   └──────────────────────────────────────────────────────────┘
+
+  Driven by a per-type registry field (e.g. indexColumns / showsFinancials), so
+  the row renders the correct columns per type from ONE source (no per-row
+  switch in ProgramIndexRow). Outstanding sources from family_balances (§11.5),
+  not a re-derivation. Player counts DISTINCT player_id (E4 fix).
+
+================================================================================
+METHODOLOGY §16.15 — (e) OUT OF SCOPE (this audit does NOT touch)
+================================================================================
+- Registration flow internals (useProgramRegistrations, public /r/ slug pages).
+- ProgramSetupPage / ProgramEditSheet / ProgramManageZone lifecycle (activate/
+  archive) — other agents' slices.
+- team_types catalog DDL / RLS (A1 covered).
+- The financial dashboard itself (/admin/financials) beyond confirming
+  season_id linkage feasibility for the index redesign.
+- StandingsTable internal render / TeamAccordion (records render detail).
+- Tournament bracket scoring (only the team-PICKER exclusion was in scope).
+- Coach/parent views of records (read-only public; competitive filter is shared
+  via the same hooks, so the exclusion verdict carries — but per-role render
+  audit is out of scope here).
+
+================================================================================
+FORKS (architect decision — AP#39 leans)
+================================================================================
+FORK B8-1 [P2] — Where to fix the aggregate game-count leak?
+  Option A (LEAN/truer): filter useOrgTeamRecords at the query/group layer by
+    competitive team_types.slug so every consumer (RecordsPage totalGames,
+    GamesView totalGames, any future aggregate) inherits the correct scope from
+    ONE source. Ships with an AP#43 cross-surface invariant test.
+  Option B (hedge — reject): patch totalGames at each surface. Duplicates the
+    rule across 2 surfaces, re-opens drift. Per AP#39 the hedge is NOT the
+    truer position.
+  LEAN: Option A. Latent today (0 leak) but the guard should be correct before
+  the first non-competitive game lands.
+
+FORK B8-2 [P2/redesign] — Index column set per type (LeagueApps gap).
+  Question for architect: which columns per type? Lean:
+    season -> range·teams·players·Invoiced·Paid·Outstanding (from family_balances)
+    camp/clinic -> range·registered (flat fee, no invoice ledger today)
+    tryout/evaluation/interest_list -> range·signups (no teams, no money)
+    other -> range + whatever populated
+  Implement via a per-type registry field; ProgramIndexRow reads it (don't
+  hardcode). Folds in E4 (distinct players) + D3 (use registry noun).
+
+FORK B8-3 [P3] — Badge color collision: 5 of 7 types share 'academy' purple.
+  Architect call on whether per-type badge color is wanted (cosmetic).
+
+LEDGER RECONCILE NOTE (AP#45): the grounding's closeout-deferral list is STALE
+on E3 — filter chips are now registry-complete (all 7 types). E4 remains open
+(latent). Recommend updating EMBER_PENDING_LEDGER §4 to mark E3 closed.
+
+================================================================================
+SEVERITY INDEX (file:line + live evidence)
+================================================================================
+P2  useOrgTeamRecords.js:29-33 — records hook un-filtered by competitive; shared
+    by RecordsPage + GamesView aggregate counters (FORK B8-1). LIVE: 2 non-comp
+    teams exist, 0 published game_results on them today => latent leak.
+P2  RecordsPage.jsx:41-45,68 — totalGames counts all org game_results, no
+    team-type filter (PATTERN A vs filtered teams list line 20).
+P2  GamesView.jsx:71-75 — totalGames sums un-filtered recordsByTeamId while
+    StandingsTable gets competitive-filtered allTeams (line 39).
+P2  ProgramIndexRow.jsx:15-16 — hardcodes "teams"/"players", ignores registry
+    `noun`; wrong for camp/tryout rows (LIVE: camp+tryout programs exist).
+P2  useAllPrograms.js:43-44 — playerCount counts team_players ROWS not DISTINCT
+    player_id (E4). LIVE: 0 multi-team kids in one program today => latent.
+P3  AdminProgramsPage.jsx:16 — E3 ALREADY CLOSED (chips registry-derived, all 7
+    types). Note only — reconcile stale ledger deferral.
+P3  programRegistry.js:46-73 — 5 of 7 types share 'academy' badge variant
+    (cosmetic, FORK B8-3).
+P3  programGrouping.js:28-33 vs AdminProgramsPage.jsx:12 — group-order comment
+    mismatch (doc drift).
+CLEAN  §16.12 — no per-player game-stats leak anywhere in scope.
+CLEAN  Standings-exclusion correctly keys off team_types.slug (not program_type).
+
+================================================================================
+END B8
+================================================================================

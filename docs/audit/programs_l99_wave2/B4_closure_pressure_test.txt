@@ -1,0 +1,325 @@
+================================================================================
+AGENT B4 — PROGRAMS L99 WAVE-2 — CLOSURE PRESSURE-TEST
+================================================================================
+Slice: pressure-test the 2026-06-07 PROGRAMS_CLOSEOUT_REVIEW_CC.txt "no P0/P1"
+verdict against live state. Apply the ~50% false-positive gate to BOTH the prior
+close AND wave-1's contradicting P0s. Verify every claim live myself (AP#60).
+Date: 2026-06-08 · pwd: /home/user/skyfire-app · project vrwwpsbfbnveawqwbdmj
+Method: §16.15 (a)-(e). READ-ONLY (SELECT-only SQL + file Read). No DB/code change.
+Grounding: every schema/FK/constraint/RPC claim re-run live by me, not inherited.
+
+================================================================================
+HEADLINE VERDICT
+================================================================================
+The prior close (PROGRAMS_CLOSEOUT_REVIEW_CC.txt §1, PR #788, 2026-06-07) DID
+MISS BOTH P0s. Its "VERDICT: no P0/P1 bugs; ... cascades verified" is REFUTED by
+live state. Both wave-1 P0s reproduce exactly as wave-1 described, verified by me
+independently:
+
+  P0-1 (delete CASCADE blast radius) — CONFIRMED live. financial_accounts.season_id
+       -> programs is ON DELETE CASCADE; the only delete guard checks registrations
+       (RESTRICT), which is a NO-OP because 0 registrations exist platform-wide.
+  P0-2 (submit_registration TOCTOU) — CONFIRMED live. No UNIQUE(program_id,player_id);
+       the RPC guard is a bare SELECT-then-INSERT with no lock and no ON CONFLICT.
+
+These are NOT "new framing of something the closeout knew about." They are genuine
+misses. WHY the closeout missed them (root cause, both are the same failure):
+  - The closeout's pre-close audit (§1) traced the delete cascade only as far as
+    teams->{team_players,roster_members,events} (see the literal code comment it
+    trusted: useProgramAdmin.js:7-10 and programDelete.js:1-3 BOTH assert the
+    cascade is "clean"/"verified ON DELETE CASCADE"). It never queried pg_constraint
+    for ALL FKs INTO programs(id) — so financial_accounts (CASCADE) and coach_payouts
+    (NO ACTION) were never in view. It read the code's self-assessment as ground
+    truth instead of querying the FK graph (an AP#60 source-hierarchy inversion:
+    trusted a code comment over live schema).
+  - For the TOCTOU, the closeout reasoned about the app/UI flow ("create -> index
+    -> detail -> teams -> edit/delete is correct end-to-end") and never modeled the
+    anon submit_registration RPC under concurrency, nor checked pg_constraint for a
+    backing UNIQUE. The RPC's SELECT-guard "looks correct" line-by-line; only a
+    concurrency model OR a constraint check surfaces the race.
+
+So: the closeout's audit was a code-reading + happy-path audit. Wave-1's audit was
+a live-schema + adversarial-concurrency audit. The delta is exactly the two P0s.
+The ~50% false-positive gate does NOT knock either P0 down — both survive
+independent live replay. They are TRUE.
+
+================================================================================
+(a) INITIAL PASS — CLAIM-BY-CLAIM VERIFY TABLE
+================================================================================
+Legend: CONFIRMED = live evidence matches the claim; REFUTED = claim is false /
+stale; PARTIAL = claim true in part.
+
+CLAIM (source)                          | LIVE STATE (my SQL / file:line)                                   | VERDICT
+----------------------------------------|-------------------------------------------------------------------|--------
+Closeout: "no P0/P1 bugs ... cascades   | financial_accounts.season_id->programs = CASCADE (pg_constraint).  | REFUTED
+verified" (CLOSEOUT §1)                  | Fall 2025 archived: 0 regs, 64 fin_accts, 124 fin_txns. The lone   | (2 P0s
+                                        | guard (registrations RESTRICT) is a no-op (0 regs platform-wide).  | exist)
+----------------------------------------|-------------------------------------------------------------------|--------
+Wave-1 P0-1: delete CASCADEs            | CONFIRMED. FK map live: financial_accounts CASCADE, divisions      | CONFIRMED
+financial_accounts unguarded; regs      | CASCADE, tryout_sessions CASCADE, season_locations CASCADE,        |
+RESTRICT guard is a no-op (A3/SYNTH)    | player_equipment CASCADE, teams CASCADE; coach_payouts NO ACTION;  |
+                                        | events SET NULL; registrations RESTRICT. deleteProgram (use-       |
+                                        | ProgramAdmin.js:50-53) counts ONLY registrations. dependency-      |
+                                        | Summary (programDelete.js:4-6) names only teams/players/events.    |
+----------------------------------------|-------------------------------------------------------------------|--------
+Wave-1 P0-2: submit_registration TOCTOU,| CONFIRMED. registrations constraints = registrations_pkey(id)      | CONFIRMED
+no UNIQUE(program_id,player_id),        | ONLY (pg_constraint; no unique index either). RPC body (live       |
+double-bill (A1/SYNTH)                  | pg_get_functiondef): "SELECT id INTO v_reg_id FROM registrations   |
+                                        | WHERE program_id=.. AND player_id=.. LIMIT 1; IF v_reg_id IS NOT   |
+                                        | NULL THEN .. CONTINUE; END IF;" then plain INSERT. No lock, no ON  |
+                                        | CONFLICT, READ COMMITTED + SECURITY DEFINER. Two concurrent anon   |
+                                        | submits both read 0 -> both INSERT reg + registration_fees.        |
+----------------------------------------|-------------------------------------------------------------------|--------
+F3: programs_public_slug_key            | CONFIRMED live: CREATE UNIQUE INDEX programs_public_slug_key ON    | CONFIRMED
+UNIQUE(public_slug) WHERE NOT NULL      | programs (public_slug) WHERE public_slug IS NOT NULL.              |
+----------------------------------------|-------------------------------------------------------------------|--------
+F4: programs_one_active_season_per_org  | CONFIRMED live: UNIQUE(org_id) WHERE status='active' AND           | CONFIRMED
+UNIQUE(org_id) WHERE active+season      | program_type='season'. SEASON-SCOPED exactly as claimed. A camp/   |
+(SEASON-SCOPED)                         | tryout being 'active' does NOT collide (2 camps active now, fine). |
+----------------------------------------|-------------------------------------------------------------------|--------
+F8: program_type enum covers 7 incl     | CONFIRMED live: {season,tryout,camp,clinic,interest_list,          | CONFIRMED
+'other'                                 | evaluation,other} (pg_enum). 'other' added 20260607162758.        |
+----------------------------------------|-------------------------------------------------------------------|--------
+F14: program Edit + Delete on detail    | CONFIRMED. PR #788 merged (commit b151f63). ProgramManageZone.jsx  | CONFIRMED
+page (#788)                             | renders Edit (:46) + Delete (:47); ProgramEditSheet present;       |
+                                        | updateProgram/deleteProgram in useProgramAdmin.                    |
+----------------------------------------|-------------------------------------------------------------------|--------
+#788 B1: delete-confirm count refetched | PARTIAL. ManageZone.jsx:47 onClick={() => { refetchCounts();       | PARTIAL
+when confirm opens (not stale on mount) | setConfirmDel(true); }}. refetchCounts() is async + NOT awaited;   |
+                                        | setConfirmDel(true) fires synchronously the same tick. The dialog |
+                                        | FIRST-PAINTS with the prior `counts` value; it self-corrects on    |
+                                        | the next render when the fetch resolves. The stale-count race      |
+                                        | wave-1 A3(b) flagged is NOT closed — only narrowed. (Mooted for    |
+                                        | the P0 anyway: counts never include financials.)                   |
+----------------------------------------|-------------------------------------------------------------------|--------
+#788 E1: Edit slug uniqueness via       | CONFIRMED. checkSlugAvailable(client,orgId,slug,excludeId=null)    | CONFIRMED
+excludeId (excludes self)               | (programSetup.js:31-38) applies .neq('id', excludeId). update-     | (but see
+                                        | Program (useProgramAdmin.js:36-39) passes programId. Self-exclude  | PATTERN B
+                                        | works.                                                            | note)
+----------------------------------------|-------------------------------------------------------------------|--------
+#788 E2: count queries log errors, not  | PARTIAL. refetchCounts (useProgramAdmin.js:19,26-27) console.error |  PARTIAL
+silent-0                                | on each query error -> "logs not silent-0" literally satisfied.    |
+                                        | BUT line 19 returns WITHOUT resetting counts -> stale counts       |
+                                        | persist (AP#36 swallow still present, just now logged). The fix    |
+                                        | addressed visibility, not the swallow-with-stale-state class.      |
+----------------------------------------|-------------------------------------------------------------------|--------
+E3: index filter chips omit evaluation  | REFUTED (now fixed/stale). AdminProgramsPage.jsx:16 FILTERS =      | REFUTED
++ interest_list                         | [{all}, ...PROGRAM_TYPE_KEYS.map(...)] — registry-derived, all 7   | (resolved)
+                                        | types present incl evaluation + interest_list. Code comment :13-15 |
+                                        | "registry-derived ... can't drift." Closeout finding is STALE.     |
+----------------------------------------|-------------------------------------------------------------------|--------
+E4: index "X players" counts            | CONFIRMED still true. useAllPrograms.js:38-44 selects team_players |  CONFIRMED
+team_players ROWS not distinct people   | by team_id and increments playerCount per ROW. No DISTINCT player. | (latent)
+                                        | A kid on two teams double-counts. Latent for LH (1 team/kid).     |
+----------------------------------------|-------------------------------------------------------------------|--------
+E5: ProgramDetailPage binary status     | REFUTED (now fixed). ProgramDetailPage.jsx:44 renders a 3-way:     | REFUTED
+mislabels draft as Active               | status==='draft'?'Draft':status==='archived'?'Archived':'Active'.  | (resolved)
+                                        | Draft now labels correctly. Closeout said "RESOLVED BY draft build"|
+                                        | — it IS resolved live.                                            |
+----------------------------------------|-------------------------------------------------------------------|--------
+E6: /admin/teams "no active season"     | PARTIAL. AdminTeamsPage.jsx:45 gate is now (!activeSeason &&       |  PARTIAL
+empty-state walls a camp-only org       | !loading && programs.length===0) — the hard wall only fires with   |
+                                        | ZERO programs. A camp-only org WITH camp teams renders the list.   |
+                                        | But the copy (:51-52 "Create and activate a season") is still      |
+                                        | season-centric; a camp-only org with an active camp but no teams   |
+                                        | yet (activeSeason null) still sees season-framed wall copy.        |
+                                        | Softened, not eliminated. LH unaffected (camps have teams).       |
+----------------------------------------|-------------------------------------------------------------------|--------
+§4.S: teams-section age groups          | NOT RE-VERIFIED in depth (its own arc per closeout §4). AdminTeams |  DEFER
+hardcoded 8U-12U+Mixed                  | Page renders p.age_group from DB (:104 <Badge>{p.age_group}</>),   |
+                                        | the hardcode is in the team FORM (TeamFormSheet, out of B4 scope). |  (out of
+                                        | Confirmed it is NOT a programs-section bug; defer to teams arc.    |  scope)
+
+================================================================================
+(b) DEEP-READ ADDENDUM (2nd pass — what (a) skimmed)
+================================================================================
+
+[DEEP-1] The closeout's own evidence chain INVERTED the FK reality and didn't
+  catch it. Closeout §1 trusts useProgramAdmin.js:7-10 ("the FK chain cascades
+  teams -> {team_players, roster_members, events} so the delete itself is clean
+  (verified ON DELETE CASCADE)") and programDelete.js:1-3 (same claim). These code
+  comments are LITERALLY TRUE for the tables they name and DANGEROUSLY INCOMPLETE
+  for the ones they omit (financial_accounts, divisions, tryout_sessions,
+  season_locations, player_equipment all CASCADE; coach_payouts NO ACTION). The
+  comment says the cascade is "clean" — it cascades financial records to /dev/null.
+  This is the textbook AP#60 failure: a plausible in-code assertion accepted as
+  ground truth without querying the closest source (pg_constraint). The wave-1
+  audit queried it; the closeout did not. The pressure-test CONFIRMS wave-1 is
+  right and the closeout's "verified" was a code-comment read, not a schema query.
+
+[DEEP-2] PATTERN B latent bug rides UNDER the E1 "fix" — the E1 fix is correct
+  but pre-checks the WRONG SCOPE vs the live constraint. checkSlugAvailable filters
+  .eq('org_id', orgId) (per-org), but programs_public_slug_key is GLOBAL UNIQUE
+  (no org_id column in the index). So org B passes the per-org pre-check for a slug
+  org A owns, then hits a raw 23505 global-unique violation on UPDATE/INSERT. E1
+  made the self-exclusion correct; it did NOT align the pre-check scope to the DB
+  contract. Single-org-benign today; multi-org gate. Matches wave-1 A2 FORK-SLUG-
+  SCOPE. The closeout never flagged this (it predates the multi-org lens being
+  applied to the slug path). NEW corroboration: the E1 fix and the slug-scope bug
+  coexist in the same 4 lines.
+
+[DEEP-3] The B1 "refetch on open" intent is real but mechanically a no-op for the
+  first paint (fire-and-forget async). This is the SAME shape as AP#44 ("trace the
+  full state pipeline before ruling out a regression at the gate") — the gate
+  (refetchCounts before open) is structurally present but the async ordering means
+  the dialog renders against pre-fetch state. For the P0 it doesn't matter (counts
+  never carry financials), but it means the closeout's "B1 fixed the stale count"
+  claim is OPTIMISTIC: the race is narrowed (self-corrects within a render), not
+  closed. To truly close: await the count and gate the dialog open on the fresh
+  value, or render a loading state in the confirm.
+
+[DEEP-4] coach_payouts NO ACTION raw 23503 (wave-1 A3 P1) is ALSO live + unfixed:
+  Spring 2026 has 2 coach_payouts and season_id FK is NO ACTION. An admin who tried
+  to delete Spring 2026 (0 regs, passes the guard) would get a raw Postgres 23503
+  to a Toast (§16.3 violation) — assuming they got past the (unguarded) financial
+  cascade. The closeout did not surface this either. Confirms wave-1.
+
+[DEEP-5] PATTERN D / AP#36 on the primary load path is live: useAllPrograms.js:21
+  on PRIMARY query error does setPrograms([]) + console.error -> the index renders
+  "No programs yet" EmptyState on a transient DB error, indistinguishable from a
+  genuinely empty org. Matches wave-1 A4/A6. Not a P0, but it's a "no P1" counter-
+  example the closeout's verdict glossed.
+
+================================================================================
+(c) ANTI-PATTERN CROSS-REFERENCE + PATTERN A #63
+================================================================================
+  AP#60 (fact-grounding; verify against closest source) ... THE ROOT CAUSE of both
+     closeout misses. The closeout trusted in-code "verified ON DELETE CASCADE"
+     comments over pg_constraint. The lesson is exactly §11.7's source hierarchy:
+     live schema (1) outranks installed-source comments (3). The closeout inverted
+     it.
+  AP#26 (replay the failing op with prod payload) ... would have caught P0-2: one
+     concurrent-replay or one pg_constraint check for a backing UNIQUE surfaces the
+     TOCTOU instantly. The closeout reasoned about the flow, never replayed.
+  AP#36 (destructured-default / swallow) ... LIVE in useProgramAdmin.refetchCounts
+     (:19 return-without-reset) and useAllPrograms (:21 setPrograms([])). E2 logged
+     it but didn't close it.
+  AP#44 (trace full pipeline before ruling out at the gate) ... the B1 refetch gate
+     is present but upstream async ordering defeats it on first paint (DEEP-3).
+  AP#43 (cross-surface invariant test) ... E4 player-count (rows vs distinct) has NO
+     invariant test locking index-row vs health-card; latent divergence.
+  AP#20/#23/#24/#57 (RLS hygiene) ... not re-audited here; wave-1 A1 found clean. No
+     reason to dispute.
+
+  PATTERN A #63 (same concept, divergent source/scope):
+    - "people in a program": E4 (team_players ROWS) vs detail "Registrations · 0"
+      (registrations table, empty) vs health card. Three truths for one concept.
+      The closeout's E4 is one face of the #63 cluster wave-1 A4 expanded. CONFIRMED
+      the divergence is live (regs=0 everywhere; team_players nonzero).
+    - "slug uniqueness scope": per-org pre-check (E1 path) vs global DB index (F3) —
+      a #63 of the CONSTRAINT vs the CHECK. DEEP-2.
+
+================================================================================
+(d) PER-ROLE NOTE
+================================================================================
+All pressure-tested surfaces are ADMIN-ONLY (programs management is admin-gated;
+wave-1 A5 verified coach/parent have no program UI). EXCEPTION: P0-2 (submit_
+registration) is the ANON path — /r/:slug -> submit_registration is the ONLY
+unauthenticated write in this graph, which is precisely why the closeout (an admin-
+UI-flow audit) didn't model it. The double-billing victim is an anonymous parent
+registering on a phone, double-tapping submit. Cross-role severity: P0-1 is admin-
+triggered (one admin click), P0-2 is anon-triggered (parent concurrency). Neither
+reaches coach/parent authenticated surfaces. No view-as exposure.
+
+================================================================================
+(e) OUT OF SCOPE (B4 did not touch)
+================================================================================
+  - The full setup wizard / create path internals (A2 owns).
+  - The PATTERN A #63 cluster beyond E4 (A4 owns the full enumeration).
+  - FORK-GUARDIAN-UNIQUE (guardians global ON CONFLICT(email)) — I SAW it live in
+    the RPC body (guardians ON CONFLICT(email) DO UPDATE, org-agnostic) and confirm
+    wave-1 A5's PATTERN B finding is real, but the full triage is A5's lane.
+  - tryout_attendees privacy, dead-metrics, detail-redesign — wave-1 owns.
+  - §4.S teams-section age-group redesign (TeamFormSheet; its own arc).
+  - RLS re-enumeration (wave-1 A1 verified clean; not re-run).
+
+================================================================================
+F-CATALOG COVERAGE NOTE (architect coordination — REQUIRED READ)
+================================================================================
+The architect references an F1-F16 failure catalog. The FULL F1-F16 enumeration is
+NOT in the repo. I grepped: only F3, F4, F5, F8, F14 appear as scattered code
+comments / doc refs; the master list (F1, F2, F6, F7, F9-F13, F15, F16) is NOT
+recoverable from src/ or docs/. COVERAGE GAP — flag to the architect:
+
+  F-number | What I could verify live          | VERDICT
+  ---------|-----------------------------------|----------
+  F3       | programs_public_slug_key UNIQUE   | CONFIRMED live (+ DEEP-2 scope caveat)
+  F4       | one_active_season_per_org (season)| CONFIRMED live, season-scoped
+  F5       | /admin/programs index = nav spine | CONFIRMED present (AdminProgramsPage.jsx, comment :12)
+  F8       | program_type enum 7 incl 'other'  | CONFIRMED live
+  F14      | program Edit + Delete (#788)       | CONFIRMED live (merged b151f63)
+  ---------|-----------------------------------|----------
+  F1,F2,F6,F7,F9,F10,F11,F12,F13,F15,F16     | NOT ENUMERATED in repo — CANNOT verify
+
+  => The full F1-F16 list MUST come from the architect side. CC cannot pressure-test
+     F-claims it has no definition for. Request: architect provides the F1-F16
+     enumeration so wave-3 (or this wave's close) can verify the remaining 11.
+
+================================================================================
+FORKS (AP#39 labeled leans) — for architect ratification
+================================================================================
+FORK-CLOSEOUT-VERDICT-RETRACT [meta]: the 2026-06-07 closeout's "no P0/P1" verdict
+  must be formally RETRACTED in the close-out record; programs is NOT closeable until
+  the two P0s are fixed (FORK-DELETE + FORK-REG-UNIQUE, both migration-lane).
+  LEAN: retract + re-open. Evidence is unambiguous live. The close was premature.
+
+FORK-DELETE [P0, migration-lane] (re-affirm wave-1): block program delete when
+  financial_accounts > 0 (and add coach_payouts to the count-and-block); the confirm
+  must surface the FULL cascade. LEAN: block-on-financials ("archive instead";
+  archived seasons ARE the financial record). Mirror the registrations guard onto
+  financial_accounts + coach_payouts. Also fix the misleading code comments
+  (useProgramAdmin.js:7-10, programDelete.js:1-3) that assert the cascade is "clean".
+
+FORK-REG-UNIQUE [P0, migration-lane] (re-affirm wave-1): add UNIQUE(program_id,
+  player_id) + change the RPC guard to INSERT ... ON CONFLICT DO NOTHING RETURNING
+  id. The constraint is the only real fix; the SELECT-guard cannot be made safe
+  without it. LEAN: plain UNIQUE (partial on status<>'cancelled' ONLY if re-register-
+  after-cancel is a product requirement — architect to confirm).
+
+FORK-B1-RACE [P1, app-layer] (new framing): the #788 B1 fix narrowed but did not
+  close the stale-count race (async refetch not awaited; dialog first-paints stale).
+  LEAN: gate the confirm open on a fresh awaited count, or show a loading state in
+  the dialog until counts resolve. Low effort; ships this phase.
+
+FORK-E2-SWALLOW [P1, app-layer]: E2 logged the count error but left the stale-state
+  swallow (return without reset). LEAN: on count error, surface to the user / disable
+  Delete / set a counts-failed flag — don't render a falsely-empty summary.
+
+(Inherited, re-affirmed live, not re-leaned here: FORK-SLUG-SCOPE [DEEP-2],
+ FORK-PLAYERCOUNT-CANON [E4], FORK-GUARDIAN-UNIQUE [seen live in RPC]. These are
+ wave-1's leans; B4 confirms they are live, not stale.)
+
+================================================================================
+SEVERITY ROLLUP (B4)
+================================================================================
+  P0: 2  (both wave-1 P0s CONFIRMED live; closeout MISSED both)
+          - delete CASCADE -> financial_accounts unguarded (useProgramAdmin.js:50-53,
+            programDelete.js:4-6; FK financial_accounts_season_id_fkey = CASCADE)
+          - submit_registration TOCTOU, no UNIQUE(program_id,player_id)
+            (registration_public_rpcs RPC; pg_constraint shows pkey only)
+  P1: 4  (B1 race not closed [ManageZone.jsx:47]; E2 stale-swallow [useProgramAdmin
+          .js:19]; coach_payouts raw 23503 [NO ACTION FK + Spring 2026 has 2];
+          PATTERN D primary-load swallow [useAllPrograms.js:21])
+  P2: 2  (E4 player-count rows-vs-distinct latent [useAllPrograms.js:38-44];
+          DEEP-2 slug pre-check scope vs global index [programSetup.js:33])
+  P3: 2  (chip tap target 30px<44 [AdminProgramsPage.jsx:65]; E6 season-centric
+          empty-state copy for camp-only org [AdminTeamsPage.jsx:51-52])
+  RESOLVED-since-closeout (closeout findings now STALE/fixed live):
+          E3 (chips registry-derived), E5 (3-way draft status render).
+
+================================================================================
+BOTTOM LINE
+================================================================================
+The prior close MISSED the P0s — verified, not a framing dispute. The ~50% false-
+positive gate does not knock either P0 down; both reproduce on independent live
+replay. Root cause of the miss: the closeout was a code-reading + happy-path audit
+that trusted in-code "cascade verified" comments instead of querying pg_constraint
+(AP#60 inversion), and never modeled the anon submit_registration RPC under
+concurrency (AP#26 not applied). Of the closeout's deferred items: E3 + E5 are now
+FIXED (stale findings), E4 + E6 partially persist, and the #788 B1/E2 "audit fixes"
+are PARTIAL (visibility improved, underlying races/swallows survive). F3/F4/F8/F14
+all CONFIRMED live and correct. The full F1-F16 catalog must come from the architect.
+Programs is NOT closeable until FORK-DELETE + FORK-REG-UNIQUE land.
+================================================================================
+END — B4_closure_pressure_test
+================================================================================
