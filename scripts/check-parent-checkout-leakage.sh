@@ -22,15 +22,19 @@
 # Resolve the git toplevel (the checkout this commit is happening in)
 GIT_TOPLEVEL="$(git rev-parse --show-toplevel)"
 
-# Only fire when committing IN THE PARENT CHECKOUT (not in a worktree).
-# Detect by basename so the script works regardless of where the repo is
-# cloned (was hardcoded /home/user/skyfire-app; broke silently on machines
-# with a different prefix). Worktrees live under .claude/worktrees/agent-*
-# so their basename starts with "agent-".
-if [ "$(basename "$GIT_TOPLEVEL")" != "skyfire-app" ]; then
-  # Worktree commit — normal agent activity, exit silently
-  exit 0
-fi
+# Only fire when committing IN THE PARENT (main) checkout, not in a linked
+# worktree. Detect STRUCTURALLY (by path shape, not repo name) so this
+# survives repo renames and different clone prefixes — the prior basename
+# check hardcoded "skyfire-app" and broke silently on the aster-sports
+# rename (2026-06-08), which had silently disabled this whole safeguard.
+# Worktrees live under .claude/worktrees/agent-*; the main checkout's
+# toplevel does not contain that path segment.
+case "$GIT_TOPLEVEL" in
+  */.claude/worktrees/agent-*)
+    # Worktree commit — normal agent activity, exit silently
+    exit 0
+    ;;
+esac
 
 # Count active agent worktrees
 WORKTREE_COUNT=$(git worktree list | grep -c '/.claude/worktrees/agent-' || true)
