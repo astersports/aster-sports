@@ -1839,6 +1839,21 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   needs a PUBLIC physical address (e.g. a USPS PO box), not the tax address — counsel provides
   the value + the call before the 175-family send. This also moots the address half of the
   brand_footer flag; the family_guide unsubscribe-switch (Decision 2) stands.
+- **BRIEFINGS BUILD ARC COMPLETE — all held for Frank's smoke (2026-06-08)** — the
+  architect-ruled tail built + held do-not-auto-merge: **PR 1b #845** (G5 OPT-B1 cron
+  failed-redrive via shared decideSuppression/decidePilotGate kernels, 3-way byte-locked;
+  index.ts refactor behavior-identical; _redrive.ts re-applies the gate, sends direct via
+  Resend, escalates at redrive_count>=3; StuckSendsRegion red escalation surface;
+  redrive_count mirror 20260608002737 backfilled). **G7 #846** (decidePilotGate fail-closed
+  coverage — stacks on #845; merge 1b then G7). **family_guide footer #847** (Decision 2:
+  brand_footer -> full `footer` so parent guides carry {{UNSUBSCRIBE_URL}}; coach_roundup
+  unchanged, staff-CAN-SPAM is the counsel question). All three CC-verified green (full
+  suite ~1499 tests). Merged earlier this arc: FORK-D #835, MOAT #836, migrations #840
+  (+ ghost retired). Closed: G1 #837 (address internal-only), #825 (superseded, audit
+  preserved #843). **Remaining go-live items are NON-BUILD:** CAN-SPAM public address
+  (counsel), B1 throttle/Resend tier + DNS/SPF/DKIM/DMARC + reply-to (provider/Frank).
+  Reports: CC_G5_PR1B_REPORT, CC_FORKD_REPORT, CC_MOAT_REPORT (+ G1 closed). NEXT ARC:
+  programs-section multi-agent L99 audit (operator-directed 2026-06-08).
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 
