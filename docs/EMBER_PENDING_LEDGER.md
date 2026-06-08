@@ -1631,21 +1631,131 @@ file:line/query/PR-backed. Per-section verdict + the actionable queue this opene
   send action); optional weekly_digest send-path unification. Awaiting architect
   confirm of the three scoping calls (academy preserve / tournament density defer /
   weekly_digest unify-now-or-later) before A1–A3 code.
-- **Part A SHIPPING (architect ruled 2026-06-07 PM, `ARCHITECT_RULING_PART_A_A2_A3.txt`):**
-  #1 grouping = Option B (Recaps/Outreach/Guides); #2 usage-rank = STATIC for pilot;
-  #3 single-item header = KEEP; #4 order = A3-then-A2. A1 MERGED (#809, 2df3477).
-  A3 MERGED (#812, 29c2c68 — test_only toggle relocated to the send action). A2
-  (grouped picker, Option B, static order, KIND_GROUPS in lib, picker invariant
-  test AP#43) in flight.
-- **POST-PILOT TICKET (deferred, NOT decided-against — usage-rank data-driven):**
-  A2 ships STATIC kind order (KIND_GROUPS in `composeKinds.js`). The data-driven
-  version — order kinds within each picker group by the org's send count
-  (`comms_messages` GROUP BY kind) — is the eventual answer, deferred because pilot
-  send volume is too sparse to rank meaningfully. Revisit when real send volume
-  exists post-pilot. Ticketed here so "static" doesn't silently become permanent
-  (the deferred-item drift guard, PC-12 / architect ruling §2).
-
----
+- **Part A SHIPPING:** A1 MERGED (#809, retire wizard machinery). A3 MERGED (#812,
+  test_only toggle → send action). A2 (#813, grouped picker Recaps/Outreach/Guides,
+  static order, AP#43 invariant) HELD for Frank's smoke. Architect ruled all 4
+  (Option B grouping / static rank / keep single-item header / A3-first). Post-pilot
+  ticket: data-driven usage-rank (deferred, not decided-against).
+- **BRIEFINGS L99 AUDIT (full surface) 2026-06-07 PM** (`docs/BRIEFINGS_L99_AUDIT_CC.txt`).
+  Operator-directed redesign-grade pass over the ENTIRE briefings build (screens,
+  entry/exit, AI, per-role coach/admin/parent) with renders. Engine strong (pure
+  resolve/compose, single render path email==in-app, AI honest-by-design, secrets
+  in app_secrets); gaps at the edges. 9 findings, 3 architect FORKS: **FORK A**
+  signature/contact blocks default-on — staff cell phones to every guardian, no
+  opt-in (F1 + F4 family_guide-double + F5 org-vs-team scope mismatch; Frank wants
+  clean default + opt-in signatures; CC lean A3 signature-stays/phones-opt-in + A1
+  per-send control). **FORK B** coach recap-compose dead-ends via event-hero
+  "Request recap" (admin-only route) while the header modal works — two staff paths
+  disagree (F2 + F8 dual-mount; CC lean B3 coach-requests/admin-sends). **FORK C**
+  no forfeit concept → 20-0 forfeit renders as a real WIN (F3; upstream score-entry,
+  likely its own small phase). Cleanups: F6 Cancel doesn't discard (scratch drafts
+  in Radar), F7 useNeedsBriefing orphan (PC-6), F9 stale docs. Awaiting architect
+  ruling on A/B/C before fix PRs.
+- **BRIEFINGS L99 AUDIT v2 (deep-read addendum) 2026-06-07 PM** — expanded the
+  above to the complete CC-recommendation set before architect handoff (v1 read
+  was incomplete; the addendum covered Radar/History+delivery/scheduling/audience/
+  templates/states/a11y/pilot-safety + ran the §16.13 elite-stack gate). 18
+  findings; NEW criticals: **F-PILOT [P0]** 8 resolvers default pilot OFF on a
+  missing settings row (`?? false`) while useOrgSettings fails closed (`?? true`)
+  — latent for LH, fail-open seam for a new org → could send to all real families
+  (FORK D: align to `?? true` + parity test, ship FIRST). **F-SCHED [P1]** no
+  cancel/edit UI for a scheduled send (archive races cron). **F-DELIV [P1]**
+  bounce/fail invisible except one-click-deep; queued/failed rows in neither Radar
+  nor History (ties DEF-11). **F-RECIPCHIP [P1]** recipient preview "Will send to
+  N families" ≠ §13.7 "Active/Futures/guardians". **F-INBOX-A11Y [P1]** parent
+  InboxDetail iframe = AT trap + non-visualViewport (AP#18). Elite-stack gate
+  FAILS items 4 (a11y), 6 (translation G-TRANSLATE, no EN↔ES path), 7 (privacy,
+  F-SIG). New forks D (fail-closed) + E (operational visibility: scheduled-cancel
+  + failed lane). CC-proposed tier sequence: Tier0 F-PILOT → Tier1 parent-moat
+  (FORK A + inbox a11y + recipient chip) → Tier2 coach (FORK B) → Tier3 visibility
+  → Tier4 cleanups. Awaiting Frank read → architect additions → CC final rewrite.
+- **BRIEFINGS L99 AUDIT v3 (100% coverage) 2026-06-07 PM** — four-agent sweep of
+  the NON-UI stack (data/schema/RLS · edge/send/delivery · per-kind resolver
+  correctness · tests/integration/perf), 5 agents total, all load-bearing finds
+  CC-verified (live SQL + send-path trace). Verdict: build is genuinely
+  well-engineered (clean resolve/compose all 12 kinds, solid RLS w/ AP#20 + zero
+  initplan, verify_jwt+app_secrets, fail-CLOSED send gate, single render path,
+  real parity tests, indexed, lazy, no N+1). **CORRECTION (AP#60):** v2's F-PILOT
+  "P0 send-to-all" is FALSE — all 5 send paths route through send-tournament-
+  message's fail-CLOSED pilot gate (`?? true`, 403 on non-pilot), so F-PILOT
+  DOWNGRADED to P2 (widens recipient set/preview only). True P0 = **DEF-11** (no
+  rate cap in code; full-family send overflows to `failed`/silently-dropped —
+  provider/account fix). NEW P1s: **GHOST** migration 20260603104534 unapplied →
+  weekly_digest unique index still includes `draft` LIVE → 23505 collision
+  reachable + stale digestSend comments (quick chat-CC MCP fix); **F-PATTERNA**
+  AlertZone vs Needs-You disagree on drafted-recap-handled (AP#63, no AP#43 test);
+  **SEND-4** Stream A reminders silently undelivered-but-marked-done. P2s: SEND-3
+  digest no ok-check, PC-1 delivery_method no CHECK, RLS-1/RLS-2 defense-in-depth,
+  PC-7 digest audience asymmetry. Tier 0 (ship first): GHOST + FORK D + SEND fixes.
+  v3 doc is the complete CC set; awaiting Frank read → architect additions → final
+  rewrite → build Tier 0.
+- **BRIEFINGS L99 AUDIT v4 (FINAL, 100% agent-reachable) 2026-06-07 PM** — three
+  more agents (AI quality · delivery-channels+compliance · lifecycle/retention), 8
+  agent-passes total, all load-bearing finds CC-verified (footer read + failed-grep
+  + send-trace + live SQL). The build is well-engineered everywhere an agent
+  reached. Findings now split into TWO GO-LIVE BLOCKERS (not redesign) + redesign
+  tiers. **B1 DEF-11 [P0]** no rate cap + new-domain SPF/DKIM/DMARC unproven + no
+  warmup + personal-Gmail reply-to. **B2 CAN-SPAM [P0]** no physical postal address
+  in any briefing email [CC-verified footer.js] — legal blocker for 175-family send
+  (unsubscribe half IS compliant). v4 CORRECTION: F-CANCEL downgraded P2→P3 (expiry
+  sweep auto-cleans abandoned drafts — verified healthy). NEW: AI is substantive+
+  safe (voice-profile prompt + structural anchored hallucination guard + cron-no-
+  LLM) w/ AI-FREEFORM [P2] caveat (free-form no-invent is instruction-only); two
+  lifecycle P1s (failed = terminal dead-end no-reader [CC-verified] · queued orphan
+  if edge fn dies — both need a recovery sweep, fold FORK E); HISTORY-BACKFILL [P1]
+  17 delivered msgs stuck archived/no-history; SCHED-ANCHOR [P1 latent] scheduled
+  send not invalidated on anchor delete (no FK, 6 orphans); RETENTION [P1] no
+  cap/purge. Delivery CLEAN: RFC-8058 one-click unsub + suppression every path.
+  NEW FORK F = go-live deliverability+compliance gate (B1+B2+domain+reply-to;
+  Frank/provider-owned + small code). §8 OWED (agent-can't-reach, human/browser):
+  cross-client email render, axe-core a11y pass, content/voice taste, real-device,
+  D-G live send. v4 is the final agent-reachable audit; awaiting Frank read →
+  architect additions → CC final rewrite → build Tier 0 + B2 code.
+- **BRIEFINGS L99 AUDIT — FINAL (post-architect-review) 2026-06-07 PM** — rewritten
+  per ARCHITECT_REVIEW_BRIEFINGS_L99_AUDIT. Architect endorsed the audit as strong/
+  trustworthy (the two self-downgrades = the reliability signal), accepted it as the
+  redesign basis, and added the key REFRAME: the honest go-live gate is FOUR things
+  — SEND(B1)+LEGAL(B2)+SEE(min delivery rollup)+RECOVER(failed/queued sweep) — so
+  the recovery sweep + minimum rollup MOVE to the go-live track (NOT Tier 3). CC
+  absorbed all §10 must-changes: lifecycle-failed/queued RE-RATED P0-for-go-live;
+  B2 annotated classification-dependent (M-1 counsel one-liner owed); IC-1 F-PATTERNA
+  →Tier 1 only; IC-2 PC-7 finding-deferred-to-ticket; IC-3 recovery sweep→go-live
+  only; M-1..M-7 folded; regression-guard line on every Tier-1 PR. CC-VERIFIED the
+  seam checks: SEAM-1 pilot fail-closed gate UNTESTED (→go-live gate), SEAM-2 webhook
+  rollup events COMPLETE (→green), SEAM-3 sent_at 409 idempotency UNTESTED (→go-live
+  gate, BLOCKS the recovery sweep — the sharpest dependency: a sweep on unproven
+  idempotency could double-send 175 families), M-4 no parent-visible granular toggle
+  (→UNSUB-GRANULAR stays P2). FORK C cheapest interim forfeit guard scoped (minimal
+  is_forfeit boolean + render branch). Build order: GO-LIVE track + Tier 0 first,
+  B2 address+footer the FIRST PR, G8 idempotency test BEFORE G5 sweep. Open Frank Qs:
+  CAN-SPAM classification, Spanish-primary fraction (M-2, decides translation tier),
+  scheduled-sends-at-launch (decides SCHED-ANCHOR tier), FORK A confirm.
+  **Frank answered 3 of 4 (2026-06-07):** launch is SEND-NOW-ONLY → SCHED-ANCHOR =
+  Tier 3 (not go-live); Spanish-primary ~near-zero → G-TRANSLATE stays a later
+  phase; build STARTS on architect sign-off (B2 address+footer first PR, each held
+  for Frank's smoke). Still open: CAN-SPAM counsel one-liner (M-1; address ships
+  regardless) + FORK A confirm (expected yes). Next: architect §10-item-1 sign-off
+  → CC builds go-live track + Tier 0, B2 first, G8 idempotency test before G5 sweep.
+- **BRIEFINGS AUDIT ARC — SIGNED + BUILD GREEN-LIT (architect, 2026-06-07 PM)**
+  (`ARCHITECT_SIGNOFF_BRIEFINGS_L99_FINAL.txt`). §10-item-1 SIGNED — all 7 checklist
+  items pass against the body (recovery sweep in go-live only, verified in 3 places).
+  Honest status: "audit arc closed, build green-lit, go-live gates (G1-G8) OPEN, D-4
+  uncrossed" — a signed audit is a signed plan, not a shipped system. Build order
+  per §5: G1 (B2 address+footer, FIRST) → G8 (idempotency+writeback test) → G5
+  (recovery sweep, gated on G8) → G2 (B1 throttle; Frank: Resend tier) → G6 (rollup)
+  → G7 (pilot-gate test) → G3/G4 (Frank: DNS+warmup, reply-to) → Tier 0 (GHOST apply
+  GO-gated; FORK D; SEND-4/SEND-3). Two FORWARD FLAGS carried:
+  **FF-1** FORK C interim guard = migration (is_forfeit boolean) + score-entry
+  checkbox + render branch (3 things, not a one-liner); migration runs GO-gated MCP
+  discipline (not a CC-written file); guard fires only if the result-enterer CHECKS
+  the box (human-entered fact, no auto-detection — inherent, named).
+  **FF-2** G-TRANSLATE deferral is PILOT-correct not FOREVER — it's a per-org concern;
+  tag "deferred for LH pilot on demographic evidence; RE-EVALUATE at each new-org
+  onboard" and ride it on the G-MULTITENANT pre-2nd-org scan (deferred-with-reason-
+  AND-trigger). Opens: CAN-SPAM counsel one-liner (before promoting anything, NOT
+  before G1 — address ships regardless); FORK A pref yes (before the FORK A PR, not
+  before G1). CC build kickoff: G1 needs Frank's LH mailing-address value + the
+  additive migration; G8 starts in parallel (unblocked; the gate G5 depends on).
 
 ## 5. UX PATTERNS NEEDING CROSS-SURFACE PROPAGATION
 

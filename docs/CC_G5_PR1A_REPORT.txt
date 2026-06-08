@@ -1,0 +1,70 @@
+==============================================================================
+CC PR REPORT — G5 PR 1a: QUEUED "SENDS NEEDING REVIEW" SURFACE   CC -> architect
+Date: 2026-06-08. Report for PR #831 (held do-not-auto-merge). The ambiguous-
+queued half of G5 Option C, built to the render reference + your D2 ruling. Per
+§11.8: committed .txt + chat paste, same turn as the PR. Held for Frank's smoke.
+PR 1b (OPT-B failed re-drive + shared gated-send helper) follows.
+==============================================================================
+
+0. WHAT SHIPPED IN PR 1a
+------------------------------------------------------------------------------
+The queued-recovery surface. A recipient still delivery_status='queued' on a
+DISPATCHED message (status not draft/archived) is surfaced for a HUMAN decision
+and NEVER auto-re-driven (the crash-window hold). Three new files + the mount:
+  - src/hooks/useStuckSends.js (64 LOC) — read-only hook; direct fetches (no
+    embedded join, §4b); org-scoped (AP#37); groups stuck 'queued' rows per
+    message with team name/color. Returns { groups, count, loading, error, refetch }.
+  - src/components/radar/StuckSendsRegion.jsx (97) — §16.14 hero + cards at the
+    TOP of the admin Radar; renders NOTHING when count 0 OR loading (the live
+    state today -> region absent, clean feed); both actions behind a BottomSheet
+    confirm; org-scoped via the hook; admin-only (route already admin-guarded).
+  - src/components/radar/StuckSendCard.jsx (60) — per-message card: disambiguation
+    pointer leads ("Check Resend to confirm delivery before resolving"), then TWO
+    equal-weight confirm-gated actions per your D2 — "Resend to these N" first
+    (moat-leaning), "Mark as delivered" second. Collapsible recipient detail.
+  - RadarPage.jsx — mounts <StuckSendsRegion> ABOVE the normal feed.
+
+1. THE TWO ACTIONS (both human-confirmed; neither auto)
+------------------------------------------------------------------------------
+- RESEND: re-invokes send-tournament-message for the message. SAFE without a 409
+  because a 'queued' row implies the message never finalized (crash before the
+  finalize line) -> sent_at NULL -> alreadySent false. (This is the asymmetry from
+  the redrive decision doc; the failed-path 409 blocker is PR 1b's concern, not
+  here.) Confirm copy warns of a possible duplicate.
+- MARK AS DELIVERED: sets the rows' delivery_status='sent' (clears them) WITHOUT a
+  send. 'sent' is the least-bad terminal value — no fabricated 'delivered' webhook
+  state implying a provider confirmation that didn't happen. Confirm copy makes
+  clear it asserts delivery, doesn't cause it.
+
+2. REGRESSION GUARD (architect requirement; mirrors sendIdempotencyInvariant)
+------------------------------------------------------------------------------
+src/components/radar/__tests__/stuckSendsGuard.test.jsx locks the never-auto-
+re-drive-queued property:
+  - the data hook is READ-ONLY: static-asserts no functions.invoke + no .update()
+    (the automatic layer can never send).
+  - the Region's only send sits behind the confirm (functions.invoke present, but
+    gated by setConfirm) + the queued=>non-finalized safety rationale present.
+  - the Region renders null when count 0 AND while loading (no flash).
+
+3. VERIFICATION
+------------------------------------------------------------------------------
+lint + build clean; full suite GREEN (207 files / 1477 tests, +4). All 3 new
+files <= 150 LOC (64/60/97). --as-* tokens throughout (NOT the dead --sf-*); the
+render's values (cobalt, 12px radius, Inter, 44px taps, rgba(0,0,0,.3) sheet
+scrim via BottomSheet) preserved. Live state = 0 stuck rows, so the region is
+absent today — the populated state matches the render reference.
+  Frank smoke: Admin -> Briefings/Radar shows the normal feed with NO extra
+  region (clean). (No way to exercise the populated state without a stuck row;
+  the guard test + render reference cover it.)
+
+4. WHAT'S NEXT — PR 1b (held)
+------------------------------------------------------------------------------
+OPT-B failed re-drive: a dedicated cron re-send of 'failed' (batch-rejection)
+rows, redrive_count < 3 (the shipped column), escalate at >= 3. HARD REQUIREMENT
+(your ruling): re-apply suppression + the pilot fail-closed gate via a SHARED
+Deno helper that both send-tournament-message and the cron call — not a new
+ungated path. CC owns the factoring; the gates must be re-applied + shared. Plus
+the failed-auto-retry note + the red escalation row in this same region.
+==============================================================================
+END — CC_G5_PR1A_REPORT
+==============================================================================

@@ -34,6 +34,7 @@ const PAIRS = [
   { ts: 'supabase/functions/suggest-briefing-closer/_helpers.ts', js: 'src/lib/briefings/suggestCloserPrompt.js', baseline: 2 },
   { ts: 'supabase/functions/suggest-briefing-closer/_scheduleGaps.ts', js: 'src/lib/briefings/scheduleGaps.js', baseline: 9 },
   { ts: 'supabase/functions/briefing-auto-draft-tick/_rsvpNudgeThreshold.ts', js: 'src/lib/cron/rsvpNudgeThreshold.js', baseline: 0 },
+  { ts: 'supabase/functions/send-tournament-message/_dispatch.ts', js: 'src/lib/briefings/sendDispatch.js', baseline: 4 },
 ];
 
 function stripComments(src) {

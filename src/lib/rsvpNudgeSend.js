@@ -88,9 +88,14 @@ export async function sendRsvpNudge({ state, supabase, now = new Date() }) {
   const adminSample = { slice: { kind: 'family' }, subject: sampleComposed.subject, content_sections: sampleComposed.content_sections };
   const queued = await queueComposedMessages({ messageId: msg.id, messages, testOnly: !!state.test_only, adminSample });
 
-  const { error: dispErr } = await supabase.functions.invoke('send-tournament-message', { body: { message_id: msg.id } });
+  const { data: dispatch, error: dispErr } = await supabase.functions.invoke('send-tournament-message', { body: { message_id: msg.id } });
   if (dispErr) throw dispErr;
-  await supabase.from('comms_messages').update({ status: 'sent' }).eq('id', msg.id);
+  // F-DUAL-FINALIZE (G5 PR 0): edge fn owns the terminal status='sent' write;
+  // surface ok:false instead of force-finalizing a partial send (which would
+  // 409-lock its own recovery). See composerSubmit / digestSend.
+  if (dispatch && dispatch.ok === false) {
+    throw new Error(dispatch.errors?.join('; ') || 'Dispatch reported failure.');
+  }
 
   return { messageId: msg.id, audienceCount: queued.audienceCount };
 }

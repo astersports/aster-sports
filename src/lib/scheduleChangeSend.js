@@ -92,11 +92,14 @@ export async function sendScheduleChange({ state, supabase: sb, now = new Date()
   const { error: recErr } = await db.from('comms_message_recipients').insert(stampedRows);
   if (recErr) throw recErr;
 
-  const { error: dispErr } = await db.functions.invoke('send-tournament-message', { body: { message_id: msg.id } });
+  const { data: dispatch, error: dispErr } = await db.functions.invoke('send-tournament-message', { body: { message_id: msg.id } });
   if (dispErr) throw dispErr;
-
-  // Wave 4.4-T0d: status='sent' on dispatch (mirror of rsvpNudgeSend:94, composerSubmit:124).
-  await db.from('comms_messages').update({ status: 'sent' }).eq('id', msg.id);
+  // F-DUAL-FINALIZE (G5 PR 0): edge fn owns the terminal status='sent' write;
+  // surface ok:false instead of force-finalizing a partial send (which would
+  // 409-lock its own recovery). See composerSubmit / digestSend.
+  if (dispatch && dispatch.ok === false) {
+    throw new Error(dispatch.errors?.join('; ') || 'Dispatch reported failure.');
+  }
 
   return { messageId: msg.id, audienceCount: slices.length };
 }
