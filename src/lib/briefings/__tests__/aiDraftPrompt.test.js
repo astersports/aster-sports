@@ -62,6 +62,8 @@ describe('aiDraftPrompt helpers', () => {
     expect(p).toContain("covers ONLY this briefing's games, not the full season");
     expect(p).toContain('first, last, or only game');
     expect(p).toContain("'time to breathe'");
+    // Fix B: when a season-to-date fact IS supplied, the model may use it.
+    expect(p).toContain("If a 'Season so far' fact is given");
   });
 
   it('buildAiDraftUserPrompt: hard rules forbid fabricated game context (FLAG 1)', () => {

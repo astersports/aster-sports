@@ -71,7 +71,14 @@ export function summarizeGames(games) {
   const recordPill = range
     ? `${recordDashed} RECORD · ${range.replace('–', ' – ').toUpperCase()}`
     : `${recordDashed} RECORD`;
-  return { record, label: range ? `${record} · ${range}` : record, recordPill };
+  // Multi-team / mixed-scope fallback pill (F3b): a blended cross-team tally
+  // labeled "RECORD" reads like a team record (the misread we're fixing), so
+  // multi-team recaps use a neutral window label. "4 GAMES · MAY 31 – JUN 1".
+  const n = games.length;
+  const windowPill = range
+    ? `${n} GAME${n === 1 ? '' : 'S'} · ${range.replace('–', ' – ').toUpperCase()}`
+    : `${n} GAME${n === 1 ? '' : 'S'}`;
+  return { record, label: range ? `${record} · ${range}` : record, recordPill, windowPill };
 }
 
 export function buildGamesSubject(games, record) {
