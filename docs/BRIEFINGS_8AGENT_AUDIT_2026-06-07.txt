@@ -1,0 +1,323 @@
+==============================================================================
+BRIEFINGS — 8-AGENT LINE-BY-LINE AUDIT (fresh run)   CC -> architect/Frank
+Date: 2026-06-07 PM (second briefings audit of the day). Methodology: 8 parallel
+line-by-line agents, one per engine layer, each grounded against a centrally-
+verified LIVE-STATE package (project vrwwpsbfbnveawqwbdmj) to counter the ~50%
+historical false-positive rate. Every finding carries file:line or [LIVE].
+Severity read at GO-LIVE scale (175 families), not pilot scale. NOTHING APPLIED.
+
+Relationship to the prior FINAL (docs/BRIEFINGS_L99_AUDIT_CC.txt, architect-
+signed): this is an INDEPENDENT re-run against current main, not a replacement.
+It CONFIRMS the signed FINAL's core verdict (well-engineered, go-live gate is the
+real work), SHARPENS three of its open items with file:line, and adds TWO findings
+the FINAL did not carry (DUAL-FINALIZE, PARENT-MOAT-ARCHIVED-LEAK).
+==============================================================================
+
+0. HEADLINE — the audit's P0/P1 set IS the go-live activation set
+------------------------------------------------------------------------------
+The briefings engine is clean across every layer that runs TODAY. The reason it
+looks clean is partly structural quality (real: AP#27 purity, AP#29 token chain,
+AP#36 error discipline, AP#38 renderer parity, AP#30 mirror pairs, preview==send,
+universal suppression) and partly that the platform is in PILOT REDIRECT mode,
+which masks four latent breaks behind synthetic recipient rows.
+
+The single most important synthesis result: nearly every P0/P1 below is DORMANT
+TODAY and ACTIVATES at the pilot->production transition. They are dormant only
+because: (a) all recipient rows currently have guardian_id=NULL (REDIRECT mode,
+pilot_test_recipient_email is set), (b) there are 0 'queued'/'failed' recipient
+rows live, and (c) 0 of 12 tournament-team pairs have a narrower travelers roster.
+Flip any of those three and the corresponding break goes live. This is exactly the
+architect's "read severity at go-live scale, not pilot scale" — verified concretely.
+
+THE FOUR LATENT ACTIVATIONS (each safe today, each fires at go-live):
+  - SEND-IDEMPOTENCY crash window  -> fires when real sends + a recovery re-drive coincide
+  - PARENT-MOAT archived-leak      -> fires when FILTER-mode stamps guardian_id + a msg is archived
+  - WEEKLY-DIGEST fail-open pilot  -> fires if any weekly_digest dispatch omits pilot_only=true
+  - TOURNAMENT-PRELIM count split  -> fires the first time Frank enters a travelers-only roster
+
+TWO VERIFICATION-DRIVEN DOWNGRADES (the trust signal — the audit corrected itself):
+  - event_reminder kind/enum mismatch: P0-candidate -> P3 latent landmine. Triple-
+    confirmed (agents 1,4,5): the event_reminder_due trigger routes to a Stream-A
+    DIRECT SEND (writes event_reminder_log, dispatches push/email), it NEVER inserts
+    a comms_messages row, so the 13-vs-12 enum delta is correct-by-design, not a
+    silent INSERT failure. [LIVE: event_reminder_log has 41 rows, 9 emails sent.]
+  - PARENT-MOAT-LEAK live count: agent 8 read "23 archived recipient rows, 13 unread"
+    as reaching parents; orchestrator re-verification showed all 23 have
+    guardian_id=NULL (synthetic REDIRECT rows) -> 0 reach any real parent TODAY.
+    The architectural breach is real; the live harm is zero until FILTER mode. Re-
+    rated P1-for-go-live / latent (not P1-live).
+
+1. CONSOLIDATED FINDINGS (by severity, with the originating agent + cross-refs)
+------------------------------------------------------------------------------
+
+P0 (go-live blocker; gates turning pilot OFF)
+..............................................................................
+[F-IDEMPOTENCY] SEND CRASH WINDOW IS OPEN ON MAIN.  Agent 3. PC-5/PC-7.
+  send-tournament-message/index.ts ordering: (a) resend.batch.send :209 -> emails
+  leave; (b) per-row delivery_status='sent' :218-232; (c) message sent_at/status
+  finalize :239-247. A death between (a) and (b) leaves recipients who GOT the email
+  with delivery_status='queued' and sent_at=NULL. The 409 guard (:101, keyed on
+  sent_at) fires ONLY on a finalized message, so it sails past a stuck one; a
+  re-drive re-selects the queued rows (:112-116) and DOUBLE-SENDS. This is exactly
+  the architect's G5/G8 hold condition, confirmed real on current main.
+  Escape-hatch checks (both negative):
+   - No 'sending' claim state exists. Option B is NOT a copy-the-precedent fix:
+     [LIVE] comms_messages_status_check and the recipient delivery_status CHECK have
+     NO 'sending' value, so Option B needs a schema migration on BOTH. The cited
+     precedent _changeAlertDispatch.ts:78 operates on a different table
+     (event_notifications, which DOES have 'sending') and even there its own per-
+     recipient window is unclosed.
+   - No per-recipient idempotency key is passed to Resend (buildEmailRow _lib.ts:68-83).
+  Lowest-migration real fix = Option A (set Resend idempotency_key per recipient,
+  keyed on r.id, so a re-drive's re-send is deduped at Resend). Option C (pilot floor:
+  auto-re-drive only rejection-'failed', surface ambiguous 'queued' in Radar) is safe
+  to ship now because [LIVE] there are 0 queued/failed rows today.
+  STATUS vs build plan: this IS G8/G5. The audit confirms G5 must stay HELD until the
+  window is closed; G8's claim must stay narrowed (the crash window is NOT covered by
+  the 409 guard + queued-filter alone).
+
+P1
+..............................................................................
+[F-DUAL-FINALIZE] Four send helpers client-write status='sent', masking edge-fn
+  writeback failure + racing the edge fn.  Agent 3 (P1) + Agent 5 (P3, schema view). PC-7.
+  digestSend.js:125, rsvpNudgeSend.js:93, academyCallupSend.js:91, scheduleChangeSend.js:99
+  each run .update({status:'sent'}) after invoking send-tournament-message, checking
+  only the transport error (dispErr), NEVER dispatch.data.ok. The MAIN path
+  (composerSubmit.js:132-142, fixed 2026-05-27) deliberately lets the edge fn own the
+  terminal write and checks data.ok===false. The four siblings were never brought in
+  line: a partial/failed send (edge fn returns ok:false, index.ts:248) is force-marked
+  'sent' anyway -> a broken send looks fully sent. Compounding (Agent 5): these four
+  write status='sent' WITHOUT sent_at; safe ONLY because the edge fn sets both first
+  (LIVE constraint comms_messages_status_sent_at_consistent would 23514 otherwise).
+  Fix: remove the four redundant client writes (let the edge fn own finalize, as the
+  main path does), or gate them on dispatch.data.ok && set sent_at. One fix class.
+
+[F-PARENT-MOAT-LEAK] Archived briefings have no status gate into the parent inbox /
+  parent "Needs you".  Agent 8 (verified + reconciled by orchestrator). PC-4 / PATTERN A.
+  useInboxList.js:48-54 selects comms_message_recipients by guardian_id with NO
+  comms_messages.status filter; [LIVE] the RLS policy parent_select_own_recipients
+  USING qual is guardian_id-only (no status clause, verified). useParentNeedsYou.js:42-49
+  pins the first unread inbox item as the parent's comms action card. So an archived
+  (superseded/retracted) briefing would render as a normal unread row AND as an active
+  "Needs you" action. RECONCILED SEVERITY: latent. [LIVE] all 23 archived + 29 sent
+  recipient rows currently have guardian_id=NULL (synthetic REDIRECT rows), so 0 reach
+  a real parent today. Activates the instant FILTER-mode real sends stamp guardian_id
+  and any message is later archived. Fix (defense-in-depth): status<>'archived' in the
+  parent RLS USING qual (the moat backstop) + a status IN ('sent','queued') filter in
+  useInboxList + AP#43 cross-surface invariant test. CONTRAST: admin Radar DOES exclude
+  archived correctly (useRadarFeed.js:77 .in('status',[draft,scheduled,sent])) — the
+  discipline is inconsistent across surfaces, which is the pattern.
+
+[F-WEEKLY-DIGEST-FAIL-OPEN] weekly_digest resolver never consults org pilot settings
+  and defaults pilot_only=false (fail-OPEN).  Agent 1 + reconciled with Agent 7. FORK D / PC-2.
+  weeklyDigest.js:60 (resolveWeeklyDigest({...pilotOnly=false})) and registry.js:72
+  (anchorFromState pilot_only ?? false). Every OTHER resolver has an "if effectivePilotOnly
+  === undefined { ...settings lookup... }" block (gameRecap:46-51, rsvpNudge:107-112,
+  scheduleChange:59-64, academyCallup:53-58, gamesRecap:34-39, tournamentPrelim:47-52,
+  tournamentRecap:57-62, familyGuide:43-49); weekly_digest has NONE. Why this is the
+  worst instance (Agent 7's RPC analysis): get_digest_recipients REDIRECTs to the test
+  email ONLY when p_pilot_only=TRUE; with pilot_only=false it neither redirects NOR
+  filters -> all 175 real families. weekly_digest is org-wide = highest blast radius.
+  Today's defense: the UI compose path syncs state.pilot_only from pilotModeEnabled
+  (BriefingComposer.jsx:64-70, Agent 6), so UI-initiated digests pass true. The hazard
+  is the resolver's fail-open DEFAULT — FORK D doctrine wants fail-CLOSED regardless of
+  caller. Fix: weeklyDigest.js consults settings like its siblings (or registry default
+  ?? true). OWED: confirm the wizard/digestSend path always sets pilot_only=true.
+
+[F-FORKD-8] The 8 sibling resolvers' pilot fallback is fail-OPEN (?? false) when
+  pilot_mode_enabled IS NULL.  Agent 1. FORK D.
+  gameRecap:50, rsvpNudge:111, scheduleChange:63, academyCallupNotice:57, gamesRecap:38,
+  tournamentPrelim:51, tournamentRecap:61, familyGuide:48. DOWNGRADE to P1-latent: [LIVE]
+  the column is currently true (not NULL) for the only org, so the ?? false branch isn't
+  hit today; fires only if the settings row is deleted/nulled or a new org onboards
+  without the flag. This is the architect's FORK D ("8 resolvers ?? false -> ?? true"),
+  verified. F-WEEKLY-DIGEST-FAIL-OPEN is the 9th and worst (no settings consult at all).
+  Fix: flip all 8 to ?? true (fail-closed), one line each + parity.
+
+[F-FAILCLOSED-UNTESTED] The edge-fn pilot/fail-closed gate is correct in direction but
+  has ZERO test coverage.  Agent 7. SEAM-1 / G7.
+  send-tournament-message/index.ts:163 pilotMode = orgSettings?.pilot_mode_enabled ?? true
+  (fail-closed ✓); orgErr->500 (:162) and guardian-check err->500 (:179) both fail-closed ✓.
+  But grep across all __tests__ for pilot_mode_enabled / fail-clos returns only the source.
+  Edge fns (Deno) are outside the vitest tree. Sub-hole: the gate only checks guardian_id-
+  bearing rows (:167-168 filter(Boolean)); an all-NULL-guardian_id queue (the live REDIRECT
+  state) skips the guardian check entirely — so the gate is defense-in-depth for real-family
+  rows only, and the fail-closed guarantee leans entirely on the RPC stamping guardian_id
+  correctly (it does, queueRecipients.js:25). Fix: extract gate logic to a pure helper +
+  vitest (mirror the AP#30 pattern), assert missing-settings->pilot-on, non-pilot-in-queue
+  ->403, settings-error->no-send. This is go-live gate G7, confirmed untested.
+
+P2
+..............................................................................
+[F-RSVP-EXPIRY-TRAP] rsvp_nudge drafts auto-archive at kickoff and are never re-drafted
+  -> explains LS-4 (0 sent / 72 archived).  Agent 4. Lifecycle-design gap.
+  computeExpiryForKind('rsvp_nudge', anchor) returns the event start_at VERBATIM
+  (_helpers.ts:42-43 / briefingCronHelpers.js:47-48). Every nudge draft is born with
+  expires_at == game kickoff (<=48h away). handleExpireSweep (index.ts:52-60) archives
+  any draft whose expires_at<now the instant the game starts; draftExists (_draftRow.ts:42-44)
+  counts 'archived' as already-drafted (the G-23 runaway-loop fix), so it's never
+  re-created. Net: an rsvp_nudge the admin doesn't open+send before kickoff is silently
+  lost forever; all 72 aged out. Cron-side root cause is the kickoff-tight expiry; the
+  send hand-off is UI (does the Radar surface the nudge with a reachable send within the
+  window? — partly Agent 8 scope, see below). Fix: widen rsvp_nudge expires_at to
+  start_at + grace, OR a product decision on near-kickoff auto-archive. Test gap (P3):
+  computeExpiry.test.ts:47 only covers the anchor=null fallback, never the live non-null
+  case that produced the 72-archived outcome.
+
+[F-BUGA-UNAPPLIED] weekly_digest churn fix is written but unapplied.  Agent 5. AP#21 (inverse).
+  The live unique index comms_messages_weekly_digest_unique includes 'draft' in its
+  partial predicate (migration 20260602195100, registered). A regenerate for the same
+  (org_id, period_start) 23505s -> archive-then-reinsert churn -> [LIVE] 27 archived
+  weekly_digests (this IS the FINAL's "BUG A"). The fix EXISTS as a repo mirror file
+  supabase/migrations/20260603104534_briefings_d1a_narrow_weekly_digest_unique_index.sql
+  (narrows the predicate to scheduled/queued/sent, dropping draft) but is NOT registered/
+  applied [LIVE: absent from schema_migrations]. Inverse AP#21 (file present, DB missing).
+  Harm is data-hygiene churn, not a mis-send. This is the build plan's Tier-0 "GHOST
+  migration 20260603104534" — confirmed still unapplied. Fix: chat-CC MCP apply, GO-gated,
+  + the companion digestSend.js:88-93 23505-catch is already coded.
+
+[F-TOURNEY-COUNT-SPLIT] tournament_prelim preview chip counts whole-team; send narrows
+  to tournament_rosters.  Agent 7. PC-2 / PATTERN A.
+  Preview: useResolvedAudienceCount -> resolveAudience -> recipientFilter.js:41-48 resolves
+  tournament_attendees via tournament_teams -> whole team roster guardians. Send:
+  tournamentPrelimHelpers.buildTeamSlices:120-122 narrows to tournament_rosters
+  participants only (§13.6-correct). M<=N. DORMANT: [LIVE] 0/12 tournament-team pairs have
+  a narrower roster today. Becomes P1-ACTIVE the first time Frank enters a travelers-only
+  roster (the whole purpose of tournament_rosters) — admin sees "send to 14" while 9
+  receive. Fix: resolve the preview count through tournament_rosters too + AP#43 invariant
+  test (count == buildTeamSlices total).
+
+[F-AI-FREEFORM] No "verify before send" caption on the free-form AI draft path.  Agent 6. AI-FREEFORM.
+  AiDraftFreeForm.jsx (announcement/custom_message) renders only AiDraftControls — no
+  verify caption, no AiFactsPanel. The ANCHORED path (AiDraftAnchored.jsx:77) DOES render
+  AiFactsPanel. The free-form path is the higher-risk one (model invents prose from a
+  one-line gist with no fact grounding) yet it's the one without the guard. Matches the
+  FINAL's still-open AI-FREEFORM (Tier 1, the cheap high-value fix). Fix: add the caption.
+
+[F-EMAIL-WRAPPER-DUP] The email body wrapper literal is copy-pasted in ~7 places; the
+  shared constant is imported by none.  Agent 2 (F5) + Agent 6 (widened). PC-2/PC-7 latent.
+  emailWrapper.js exports EMAIL_WRAPPER_OPEN, but the identical string is re-declared in
+  PreviewPanel.jsx:83, queueComposedMessagesBuilders.js:11, composerSubmit.js:38,
+  renderers/customMessage.js:45, renderers/announcement.js:30, renderers/tournamentPrelim.js:49.
+  Byte-identical today (preview==send holds), but a one-char edit to any single copy silently
+  breaks preview==send for that path with no cross-copy test. Fix: import the constant in all
+  sites, or add an AP#43 cross-file invariant test.
+
+P3 (cleanups / latent landmines / known phases)
+..............................................................................
+[F-DEADPATH-PRELIM]  Agent 2 (F1/F2). renderers/tournamentPrelim.js:21 composeTournamentPrelim
+  is a complete SECOND divergent compose path for tournament_prelim, NOT in KIND_COMPOSERS,
+  ZERO production callers (test-only). Its only consumer of the cta_buttons renderer is itself,
+  so cta_buttons is dead-via-dead-emitter, AND the parity test scans source literals so the
+  dead emitter masks the dead renderer (parity-test blind spot). Delete per AP#34/#51; add
+  cta_buttons to ALLOWED_DEAD_RENDERERS or delete with it.
+[F-COLOR-DRIFT]  Agent 2 (F3/F4). rsvpRequest.js:38 hardcodes maybe '#ca8a04' vs colors.js
+  RSVP_MAYBE_AMBER '#d97706' (two ambers, one concept); broad raw-hex inlining across renderers
+  where colors.js has the canonical export. §13 rule 5 / drift risk. Import from colors.js.
+[F-EVENT-REMINDER-LANDMINE]  Agents 1/4/5. briefing_triggers.briefing_kind='event_reminder'
+  is intentionally outside comms_messages_kind_check. NON-BUG today (direct-send Stream A). Add
+  a code comment at _reminders.ts:16 so a future refactor to the placeholderDraft path doesn't
+  hit the CHECK.
+[F-PHANTOM-ERRSTRING]  Agent 5. The prevent_message_body_edit trigger error string references
+  replaces_message_id, a column that does not exist [LIVE]. Cosmetic only.
+[F-INBOX-SANDBOX]  Agent 6. InboxDetail.jsx:100 uses sandbox="allow-same-origin" while its own
+  comment claims the DevicePreviewFrame pattern (sandbox=""). XSS LOW (no allow-scripts; body
+  escaped at renderer) — DOWNGRADED from P1. Tighten to "" + add a load live-region; admin
+  briefings/inbox views (HistoryView/InboxFilters/EmptyState/InboxSearch) lack ARIA.
+[F-DELIV-OVERCLAIM]  Agent 8 (F2). useAnchorBriefings.js:34 counts delivery_status='sent' as
+  "delivered" (sent = handed to provider, not confirmed). Admin delivery-rate slightly
+  overclaims. Low blast radius.
+[F-FORKC-UNBUILT]  Agent 8 (F3). FORK C forfeit is unbuilt (no is_forfeit anywhere). NOT a
+  regression: gameRecap.js throws GameRecapNotPublishedError on unpublished, so no fabricated
+  0-0 is possible; [LIVE] 0 forfeit/0-0 rows today. Build the is_forfeit + "W — Forfeit" branch
+  before any forfeit is scored.
+[F-MIRROR-NOGUARD]  Agent 4. AP#30 mirror pairs are logic-identical today but there is no CI
+  drift guard. Recommend a grep-drift CI step.
+[F-RECIPFILTER-DEAD-§13.6]  Agent 7. recipientFilter.js:41-48 scopes tournament_attendees to
+  whole team roster (§13.6-wrong) but is dead on real send paths (only announcement/custom route
+  through resolveAudience, and they don't offer tournament_attendees). Comment or fix before any
+  future kind wires tournament_attendees through resolveAudience.
+
+2. CROSS-BATCH PATTERN SYNTHESIS (AP#58)
+------------------------------------------------------------------------------
+PATTERN P-FINALIZE (terminal-status write divergence): the main send path was hardened
+  to let the edge fn own status='sent' (2026-05-27); four sibling helpers were not. Surfaced
+  independently by Agent 3 (P1, masks writeback failure) and Agent 5 (P3, consistency-CHECK
+  fragility). One fix class -> F-DUAL-FINALIZE.
+PATTERN P-COUNT (one concept, N derivations/copies): tournament_prelim chip-vs-send
+  (Agent 7) + email-wrapper 7-copy duplication (Agents 2,6). The shared-source-of-truth
+  discipline (AP#63 PATTERN A) is applied to recipient COUNTS in the main composer (clean)
+  but not to tournament-roster scope or the wrapper literal.
+PATTERN P-STATUS (archived-status handling asymmetry): admin Radar excludes archived
+  correctly (Agent 8 CLEAN); parent inbox does NOT (Agent 8 F1); useAnchorBriefings overclaims
+  sent-as-delivered (Agent 8 F2). Status-filter discipline is inconsistent surface-to-surface.
+PATTERN P-LATENT (pilot-state masking): the dominant pattern. F-IDEMPOTENCY, F-PARENT-MOAT-LEAK,
+  F-WEEKLY-DIGEST-FAIL-OPEN, F-TOURNEY-COUNT-SPLIT are all DORMANT only because of the current
+  REDIRECT/0-queued/0-narrow-roster live state. The go-live transition activates them together.
+  This is why the audit's severities are read at go-live scale.
+
+3. WHAT THE FINAL HAD RIGHT, AND WHAT THIS RUN ADDS
+------------------------------------------------------------------------------
+CONFIRMS (independent corroboration, file:line): the go-live gate is the real work;
+  AP#27/#28/#29/#30/#31/#33/#36/#37/#38 all clean; preview==send convergent; suppression
+  universal across all 5 send paths; BUG D resolved (pilot is ONE RPC mechanism, is_pilot_family
+  load-bearing, do not drop); Stream B spec-conformant (48h / floor-5 / auto-draft); coach FORK B
+  read-only correct; G8/G5 idempotency window real and open.
+SHARPENS: BUG A -> exact unapplied migration file; SEAM-1/G7 -> exact gate line + the
+  guardian_id-NULL sub-hole; FORK D -> the 8 sites + the 9th (weekly_digest, worst).
+ADDS (not in the FINAL): F-DUAL-FINALIZE (P1), F-PARENT-MOAT-LEAK (P1), F-RSVP-EXPIRY-TRAP
+  root cause (P2), F-EMAIL-WRAPPER-DUP (P2), the dead tournamentPrelim compose path (P3).
+
+4. RECOMMENDED ROUTING (CC lean; decisions stay Frank's / architect's per §11.8.2)
+------------------------------------------------------------------------------
+ADD TO GO-LIVE TRACK (these gate the parent moat / honest send at go-live):
+  - F-PARENT-MOAT-LEAK  -> new go-live item (parent-facing archived leak; ship with the moat).
+  - F-DUAL-FINALIZE     -> fold into G8's neighborhood (it masks the very writeback failure G8
+                           tests for); one PR removing the 4 redundant client writes.
+  - F-WEEKLY-DIGEST-FAIL-OPEN + F-FORKD-8 -> FORK D, extended to 9 resolvers, fail-closed.
+  - F-FAILCLOSED-UNTESTED -> G7 (extract gate + vitest).
+  - F-IDEMPOTENCY -> unchanged: G5 stays HELD, G8 claim stays narrowed; ship Option C now,
+                     Option A on the durable track.
+TIER 0 (already tracked): F-BUGA-UNAPPLIED (apply 20260603104534, GO-gated MCP).
+TIER 1: F-AI-FREEFORM (caption), F-EMAIL-WRAPPER-DUP (import constant + invariant test),
+  F-TOURNEY-COUNT-SPLIT (before any travelers roster), each with a regression-guard line.
+TIER 2/3: F-RSVP-EXPIRY-TRAP (lifecycle product call), the P3 cleanups, F-MIRROR-NOGUARD CI step.
+DECISIONS OWED to Frank/architect:
+  1. F-PARENT-MOAT-LEAK fix shape: RLS USING gate (moat backstop) + hook filter (clarity) —
+     CC leans BOTH (defense-in-depth). Ratify.
+  2. F-RSVP-EXPIRY-TRAP: widen expiry vs. accept near-kickoff auto-archive (product call).
+  3. F-IDEMPOTENCY durable fix: Option A (Resend keys) vs Option B (sending-state migration).
+     CC leans A (lowest migration; B needs CHECK changes on two tables per LS).
+
+5. THE 10/10 PER-PROFILE BAR (Agent 8 grades, orchestrator-endorsed)
+------------------------------------------------------------------------------
+PARENT 9/10 — below the HARD-10 bar by exactly one item: F-PARENT-MOAT-LEAK (archived
+  leak into inbox + Needs-you). Fabrication-free, cross-family-leak-free (guardian_id RLS +
+  app filter), iframe-sandboxed, write-failures surfaced not swallowed. Close F-PARENT-MOAT-LEAK
+  -> genuine 10/10.
+COACH 10/10 — FORK B correct. CoachTeamBriefingsPage is strictly read-only (ProposalCard
+  showActions={false}, "Your admin reviews and sends these. This view is read-only.",
+  team-scoped). Coach does not send directly.
+ADMIN MVP-to-high — Radar honestly buckets and excludes archived; send path honest (no
+  overclaim); NeedsYou breakdown consistent. Minor polish: F-DELIV-OVERCLAIM (P3).
+
+6. METHODOLOGY + OWED (what this audit could not reach)
+------------------------------------------------------------------------------
+8 agents, one per layer: (1) resolvers+registry, (2) composer+renderer parity, (3) send
+pipeline+idempotency, (4) cron+auto-draft+triggers, (5) schema+enum conformance, (6)
+preview+render+a11y, (7) pilot+recipients+scoping, (8) per-profile+hooks+pages. Each grounded
+on a centrally-verified LIVE-STATE package and instructed to downgrade-on-verification and name
+its OWED list. §16.15 line-by-line per layer; AP#58 cross-batch synthesis above.
+OWED / not reached:
+  - G8 tests (PR #821, branch fix/briefings-g8-send-idempotency-test) are NOT on main; confirm
+    merge status before relying on CI coverage of the 409 guard.
+  - Resend v4 partial-batch positional alignment (index.ts:218-219 assumes group[i] index-aligns
+    to batchData.data[i]) — unverified against the Resend contract.
+  - Whether the wizard/digestSend path ALWAYS sets weekly_digest pilot_only=true (the live
+    mitigation for F-WEEKLY-DIGEST-FAIL-OPEN) — verify before relying.
+  - Not every one of the ~60 renderer bodies was deep-read for fabrication (spot-checked + grep).
+
+NOTHING APPLIED. This is an audit; the PR sequence implements the ratified decisions.
+==============================================================================
+END — BRIEFINGS 8-AGENT AUDIT 2026-06-07
+==============================================================================
