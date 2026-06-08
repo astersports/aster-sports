@@ -55,7 +55,7 @@ export async function resolveGamesRecap({ eventIds, pilotOnly }, { supabase, now
 
   const { data: coachesData, error: cErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
   if (cErr) throw cErr;
-  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
+  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config, mailing_address').eq('id', orgId).maybeSingle();
   if (orgErr) throw orgErr;
 
   const teamIds = [...new Set(events.map((e) => e.team_id).filter(Boolean))];
@@ -104,7 +104,7 @@ export function composeGamesRecap(context, slice, overrides = {}) {
   const signoffProse = trim(overrides.signoff_message);
   if (signoffProse || signature || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, signature, coaches: validCoaches });
 
-  sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
+  sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail, mailingAddress: org.branding.mailingAddress });
   sections.push({ kind: 'frame_close' });
 
   return { subject, content_sections: sections };

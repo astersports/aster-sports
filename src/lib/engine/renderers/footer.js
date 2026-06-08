@@ -11,7 +11,7 @@ function hostFromUrl(url) {
 }
 
 export function renderFooter(section) {
-  const { logoUrl, orgName, websiteUrl, contactEmail, playerName, teamName } = section || {};
+  const { logoUrl, orgName, websiteUrl, contactEmail, mailingAddress, playerName, teamName } = section || {};
   const logoHtml = logoUrl
     ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(orgName || 'logo')}" width="120" height="120" style="display:block;border:0;width:120px;height:120px;margin:0 auto 12px auto;" />`
     : '';
@@ -27,6 +27,9 @@ export function renderFooter(section) {
     ? `<div style="font-size:13px;color:${TEXT_SLATE_DARK};line-height:1.6;">`
       + `<a href="mailto:${escapeHtml(contactEmail)}" style="color:${COBALT_DEEP};text-decoration:none;">${escapeHtml(contactEmail)}</a>`
       + '</div>'
+    : '';
+  const addressHtml = mailingAddress
+    ? `<div style="font-size:12px;color:${TEXT_SLATE_DARK};line-height:1.6;margin-top:4px;">${escapeHtml(mailingAddress)}</div>`
     : '';
   // Wave 4.1 §7 — CAN-SPAM unsubscribe block. {{UNSUBSCRIBE_URL}} is
   // substituted per-recipient by the send pipeline (digestSend,
@@ -47,12 +50,13 @@ export function renderFooter(section) {
   const html = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
     + ` style="border-collapse:collapse;margin:32px 0 0 0;background-color:${BG_PAGE};border-top:1px solid ${BORDER_DEFAULT};font-family:Inter,system-ui,sans-serif;">`
     + '<tr><td align="center" style="padding:24px 16px 24px 16px;">'
-    + logoHtml + orgHtml + websiteHtml + emailHtml + unsubscribeHtml
+    + logoHtml + orgHtml + websiteHtml + emailHtml + addressHtml + unsubscribeHtml
     + '</td></tr></table>';
   const plainParts = [
     orgName,
     websiteUrl ? hostFromUrl(websiteUrl) : '',
     contactEmail ? `Contact: ${contactEmail}` : '',
+    mailingAddress || '',
     '',
     contextLine.replace(/<[^>]+>/g, ''),
     'Unsubscribe: {{UNSUBSCRIBE_URL}}',

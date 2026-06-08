@@ -81,7 +81,7 @@ export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { sup
   const coachesRes = orgId ? await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null) : { data: [], error: null };
   if (coachesRes.error) throw coachesRes.error;
   const coaches = coachesRes.data || [];
-  const { data: org, error: orgErr } = orgId ? await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config').eq('id', orgId).maybeSingle() : { data: null, error: null };
+  const { data: org, error: orgErr } = orgId ? await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config, mailing_address').eq('id', orgId).maybeSingle() : { data: null, error: null };
   if (orgErr) throw orgErr;
   const allRecipients = orgId ? await fetchRecipientGuardians(supabase, orgId, teamIds, effectivePilotOnly) : [];
   // Q3: scope prelim to tournament-roster participants (null = no roster -> whole team).
@@ -143,7 +143,7 @@ export function composeTournamentPrelim(context, slice, overrides = {}) {
   // + CAN-SPAM {{UNSUBSCRIBE_URL}}). The brand_footer is tagline-only and
   // carries neither, so it alone is not compliant for a broadcast. Emit the
   // full footer first, then the brand band as the closing flourish.
-  sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
+  sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail, mailingAddress: org.branding.mailingAddress });
   sections.push(buildBrandFooter(org.name));
 
   return { subject: buildSubject(slice, tournament), content_sections: sections };

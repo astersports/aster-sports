@@ -93,7 +93,7 @@ export async function resolveWeeklyDigest({ orgId, period, pilotOnly = false }, 
   const { data: coaches = [], error: coachesErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
   if (coachesErr) throw coachesErr;
 
-  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
+  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config, mailing_address').eq('id', orgId).maybeSingle();
   if (orgErr) throw orgErr;
 
   const guardianIds = (rpcRows || []).map((r) => r.guardian_id);

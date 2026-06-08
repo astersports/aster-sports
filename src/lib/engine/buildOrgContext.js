@@ -30,6 +30,9 @@ export function buildOrgContext({ orgId, org, coaches, signature_coaches }) {
       eyebrowLink: ORG_WEBSITE_DEFAULT,
       contactEmail: ORG_CONTACT_DEFAULT,
       logoUrl: ORG_LOGO_DEFAULT,
+      // G1 (CAN-SPAM): physical postal address, read live from
+      // organizations.mailing_address; null -> footer omits the line.
+      mailingAddress: org?.mailing_address || null,
     },
     voice_config: org?.voice_config || null,
     brand_colors: org?.brand_colors || null,

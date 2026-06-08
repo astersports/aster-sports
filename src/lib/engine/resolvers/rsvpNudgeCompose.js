@@ -28,7 +28,7 @@ export function composeRsvpNudge(context, slice, overrides = {}) {
   const validCoaches = (org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
   const signoffProse = trim(overrides.signoff_message);
   if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
-  sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
+  sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail, mailingAddress: org.branding.mailingAddress });
   const subject = `RSVP needed for ${namesJoined}: ${subjectLabel}`;
   return { subject, content_sections: sections };
 }

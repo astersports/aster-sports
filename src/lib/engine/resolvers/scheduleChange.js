@@ -79,7 +79,7 @@ export async function resolveScheduleChange({ eventId, pilotOnly }, { supabase, 
   const { data: coachesData, error: coachesErr } = await supabase.from('staff_profiles').select('display_name, title, phone').eq('org_id', orgId).not('display_name', 'is', null);
   if (coachesErr) throw coachesErr;
   const coaches = coachesData || [];
-  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
+  const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config, mailing_address').eq('id', orgId).maybeSingle();
   if (orgErr) throw orgErr;
   const slices = await fetchSlices(supabase, orgId, event.team_id, effectivePilotOnly);
 
@@ -124,7 +124,7 @@ export function composeScheduleChange(context, slice, overrides = {}) {
   const validCoaches = (org.coaches || []).filter((c) => c.display_name && c.phone).map((c) => ({ display_name: c.display_name || '', title: c.title || '', phone: c.phone || '' }));
   const signoffProse = trim(overrides.signoff_message);
   if (signoffProse || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, coaches: validCoaches });
-  sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
+  sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail, mailingAddress: org.branding.mailingAddress });
 
   const subject = `${isCancellation ? 'Cancelled' : 'Schedule update'}: ${eventLabel}`;
   return { subject, content_sections: sections };

@@ -82,4 +82,17 @@ describe('renderer — footer (Wave 3.6 §D4)', () => {
   it('plainText surfaces unsubscribe placeholder for plain-text fallback', () => {
     expect(renderFooter(fixture).plainText).toContain('Unsubscribe: {{UNSUBSCRIBE_URL}}');
   });
+
+  // G1 (CAN-SPAM) — physical mailing address.
+  describe('mailing address (CAN-SPAM physical postal address)', () => {
+    it('renders mailingAddress in html and plainText when present', () => {
+      const out = renderFooter({ ...fixture, mailingAddress: '4 Byram Brook Place, Armonk, NY 10504' });
+      expect(out.html).toContain('4 Byram Brook Place, Armonk, NY 10504');
+      expect(out.plainText).toContain('4 Byram Brook Place, Armonk, NY 10504');
+    });
+
+    it('omits the address gracefully when absent', () => {
+      expect(renderFooter(fixture).html).not.toContain('Byram Brook');
+    });
+  });
 });

@@ -37,6 +37,6 @@ export function composeWeeklyDigest(context, slice, overrides = {}) {
   const signature = buildVoiceSignature(context.org.signature_coaches);
   const hasSignoff = (signoff_message && signoff_message.trim()) || signature || validCoaches.length;
   if (hasSignoff) sections.push({ kind: 'signoff', prose: (signoff_message || '').trim(), signature, coaches: validCoaches });
-  sections.push({ kind: 'footer', logoUrl: context.org.branding.logoUrl, orgName: context.org.name, websiteUrl: context.org.branding.eyebrowLink, contactEmail: context.org.branding.contactEmail });
+  sections.push({ kind: 'footer', logoUrl: context.org.branding.logoUrl, orgName: context.org.name, websiteUrl: context.org.branding.eyebrowLink, contactEmail: context.org.branding.contactEmail, mailingAddress: context.org.branding.mailingAddress });
   return { subject: formatSubject(context.period), content_sections: sections };
 }

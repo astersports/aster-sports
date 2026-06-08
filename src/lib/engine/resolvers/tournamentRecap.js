@@ -102,7 +102,7 @@ export async function resolveTournamentRecap({ tournamentId, pilotOnly }, { supa
     if (coachesErr) throw coachesErr;
     coaches = coachesData || [];
   }
-  const { data: org, error: orgErr } = orgId ? await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config').eq('id', orgId).maybeSingle() : { data: null, error: null };
+  const { data: org, error: orgErr } = orgId ? await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config, mailing_address').eq('id', orgId).maybeSingle() : { data: null, error: null };
   if (orgErr) throw orgErr;
   const allRecipients = orgId ? await fetchRecipientGuardians(supabase, orgId, teamIds, effectivePilotOnly) : [];
   const slices = buildTeamSlices(tournament_teams, allRecipients);

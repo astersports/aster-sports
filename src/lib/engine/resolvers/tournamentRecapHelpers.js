@@ -143,7 +143,7 @@ export function buildRecapSections(context, slice, overrides) {
   const signature = buildVoiceSignature(sigCoaches);
   const signoffProse = trim(overrides.signoff_message);
   if (signoffProse || signature || validCoaches.length) sections.push({ kind: 'signoff', prose: signoffProse, signature, coaches: validCoaches });
-  sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail });
+  sections.push({ kind: 'footer', logoUrl: org.branding.logoUrl, orgName: org.name, websiteUrl: org.branding.eyebrowLink, contactEmail: org.branding.contactEmail, mailingAddress: org.branding.mailingAddress });
   sections.push({ kind: 'frame_close' });
   return sections;
 }
