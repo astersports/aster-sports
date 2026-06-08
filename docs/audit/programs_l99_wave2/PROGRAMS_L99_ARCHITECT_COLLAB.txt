@@ -1,0 +1,254 @@
+==============================================================================
+PROGRAMS SECTION — L99 RE-AUDIT → ARCHITECT COLLABORATION + REDESIGN INPUT
+CC -> architect lane. Date: 2026-06-08. Self-contained per §11.8.
+==============================================================================
+Coverage: 14 agents across two waves — wave-1 (6: A1-A6, docs/audit/programs_l99/)
++ wave-2 (8: B1-B8, docs/audit/programs_l99_wave2/), the latter baselined on the
+architect's 2026-06-08 LIVE-STATE GROUNDING doc and tasked to (a) verify the
+architect's three axes, (b) re-verify wave-1's own claims (the ~50% false-positive
+gate), and (c) cover the surfaces wave-1 deferred. Method: §16.15 per slice +
+AP#58 synthesis. AP#60: every claim below verified against live SQL (project
+vrwwpsbfbnveawqwbdmj, SELECT-only) or file:line. NOTHING APPLIED. Migrations are
+the architect's GO-gated MCP lane; build PRs held for smoke.
+
+This doc is the architect's entry point. The 14 per-slice TXTs carry full file:line
+evidence. Forks carry CC leans (AP#39); the architect ratifies.
+
+==============================================================================
+0. HEADLINE — THE THEME IS "CLOSED-IS-EVIDENCE-GATED"
+==============================================================================
+The re-audit's dominant signal: SIX separate "done / closed / sound" claims are
+contradicted by live state. This is the ~50%-false-positive-on-audit-claims posture
+made concrete. Each is reconciled in §1. Net: programs is NOT closeable today —
+3 production P0s are live, one of them a feature claimed shipped that has never once
+worked in production.
+
+Severity tally (deduped across both waves, post B5 reconciliation):
+  P0: 3 live   ·   P1: 8   ·   P2: ~12   ·   P3: ~14
+  (wave-1 raw 3/23/31/33 + wave-2 raw; deduped + severity-reconciled here)
+
+==============================================================================
+1. RECONCILIATIONS — corrections to grounding + prior closure claims (READ FIRST)
+==============================================================================
+
+R-1 [architect grounding §1 — WRONG] "No WITH CHECK OPTION in the [seasons] def."
+  LIVE TRUTH: the seasons view HAS check_option=cascaded. Evidence:
+  information_schema.views.check_option='CASCADED' for seasons; pg_class.reloptions
+  = {security_invoker=true, check_option=cascaded}. CAUSE OF THE ERROR: pg_get_viewdef()
+  does NOT render the WITH CHECK OPTION clause (it is stored as a reloption, not in the
+  SELECT text) — inspecting only the viewdef hides it. CONSEQUENCE: the architect's
+  "sharpest edge" (a filter-escaping write) is DOUBLY blocked — (a) program_type is not
+  a projected column so no write can target it (INSERT falls to DEFAULT 'season'), AND
+  (b) cascaded re-validates every written row against program_type='season'. B1 proved
+  no src/ write path defeats either guard. SEAM VERDICT: SOUND. (A1+A5+B1 concur.)
+
+R-2 [prior closeout #788 "VERDICT: no P0/P1 bugs; cascades verified" — REFUTED]
+  Both P0s reproduce on independent live replay (B4, B5). ROOT CAUSE of the original
+  miss: the closeout was a code-reading + happy-path audit — it trusted in-code comments
+  asserting the cascade was "clean" instead of querying pg_constraint (an AP#60 source-
+  hierarchy inversion) and never modeled the anon submit_registration RPC under
+  concurrency (AP#26 not applied). The two P0s ARE the delta between a code-read and a
+  live+concurrency audit. Genuine misses, not new framing. → the "no P0/P1" verdict must
+  be RETRACTED before programs can close.
+
+R-3 [CLAUDE.md §8 "7-C / 7-B.2 rollover ✅ DONE — atomic execution" — FALSE]
+  Season rollover is NON-ATOMIC and currently NON-FUNCTIONAL. useSeasonRollover.js is
+  ~5+N sequential uncoordinated awaits, no RPC/txn/rollback, AND it throws on the first
+  statement (see P0-3). LIVE CORROBORATION: season_rollovers table = 0 rows — no rollover
+  has EVER completed in production. (B1+B7.)
+
+R-4 [CLAUDE.md §5 migration-003 lists waivers/waiver_signatures/form_fields/
+  form_responses — STALE] None of these tables exist (verified to_regclass = NULL for
+  all four). The public registration flow captures NO waiver, NO conduct acknowledgment,
+  NO custom form responses. registrations.conduct_acknowledged_at exists but is dead
+  (never written). A parent can fully register a child having signed nothing. (B6.)
+
+R-5 [wave-1 A5 "anon table grants are Supabase-default, RLS gates them, not a leak" —
+  PARTIALLY WRONG] anon holds GRANT ALL — including TRUNCATE, REFERENCES, TRIGGER — on
+  every program-graph + financial + guardian/player table (verified:
+  has_table_privilege('anon','financial_transactions','TRUNCATE')=true, and the full
+  role_table_grants dump). This is NOT the standard Supabase default (SELECT/INSERT/
+  UPDATE/DELETE). TRUNCATE is NOT RLS-gated. Practical API exploitability is bounded
+  (PostgREST exposes no TRUNCATE endpoint; DELETE is RLS-gated to zero anon rows), so CC
+  grades it P1 / latent-P0 defense-in-depth — but on the financial ledger it is a real
+  hardening gap and the platform's dominant bug class is fail-open RLS. (B6 + CC live verify.)
+
+R-6 [closeout deferral E3 "filter chips omit evaluation+interest_list" — STALE/FIXED]
+  Chips are now registry-derived from all 7 PROGRAM_TYPE_KEYS (AdminProgramsPage.jsx:16).
+  E5 (binary status mislabels draft) also FIXED (detail page now 3-way). Ledger reconcile
+  owed (AP#45). E4 (players=rows not distinct) still open-latent. E6 (camp-only org wall)
+  partial. (B4+B8.)
+
+==============================================================================
+2. THE THREE PRODUCTION P0s (all migration/code-lane → architect GO)
+==============================================================================
+
+P0-1 — PROGRAM DELETE BLAST RADIUS  [A3, B4, B5 — CONFIRMED live]
+  useProgramAdmin.js:44-56 + programDelete.js:4-7. financial_accounts.season_id→programs
+  is ON DELETE CASCADE; financial_transactions cascade through it. The only delete guard
+  pre-checks registrations (RESTRICT) — a NO-OP (0 registrations platform-wide). The
+  confirm names only teams/players/events. LIVE: Fall 2025 (archived) = 0 regs, 64
+  financial_accounts, 124 financial_transactions (~$61,370) one click from irreversible
+  loss. (B5 corrected wave-1's "181 txns" → 124; the $ figure and the verdict stand.)
+  LEAN: BLOCK delete when financial_accounts>0 (+coach_payouts); "archive instead"; fix
+  the misleading in-code "cascade clean" comments that caused R-2.
+
+P0-2 — REGISTRATION TOCTOU DOUBLE-BILLING  [A1, B4, B5, B6 — CONFIRMED live]
+  submit_registration RPC (migration 20260601044918:150-167) is SELECT-LIMIT-1-then-INSERT
+  with NO row lock and NO UNIQUE(program_id,player_id) (registrations has only
+  registrations_pkey(id), verified). Concurrent anon submits → double registration +
+  double registration_fees → double-bill. Traffic-latent today (0 registrations).
+  LEAN: add UNIQUE(program_id,player_id) + ON CONFLICT DO NOTHING RETURNING id.
+  NOTE for the migration author (B5): guardians_org_email_partial_idx (org_id,email) is
+  NON-unique — do not assume it backs a constraint.
+
+P0-3 — SEASON ROLLOVER IS BROKEN (two bugs, one dead feature)  [B1, B7 — NEW; wave-1 deferred]
+  (a) useSeasonRollover.js:16,21 INSERTs status:'planning' through the seasons view, but
+      programs_status_check allows only active/draft/archived → 23514 on the FIRST
+      statement → nothing is created.
+  (b) useSeasonRollover.js:51-54 INSERTs roster_members with roster_type:'roster', but
+      roster_members has NO roster_type column (it's a team_players concern, AP#14) → the
+      bare await (AP#36) SWALLOWS the error while playersCarried still increments → the
+      audit row would lie.
+  LIVE: season_rollovers = 0 rows (never completed). CLAUDE.md §8 "DONE atomic" is R-3.
+  LEAN: rebuild rollover as ONE SECURITY DEFINER RPC (atomic) — subsumes the status fix,
+  the roster_type fix, activate-on-rollover, and the partial-write orphan matrix (B7 P0-3).
+
+==============================================================================
+3. VERIFIED P1s
+==============================================================================
+P1-a anon GRANT ALL incl TRUNCATE on financial/graph tables (R-5). LEAN: revoke to the
+     minimal Supabase set (or to nothing for anon + rely on the 2 SECDEF RPCs); financial
+     tables first.
+P1-b waivers/conduct/custom-forms NOT captured; tables absent (R-4). LEAN: ship a minimal
+     conduct-acknowledgment checkbox now (write conduct_acknowledged_at), design the
+     waiver/custom-form capture as part of the registration redesign (§5).
+P1-c sports_select SINGULAR current_user_org_id() vs the PLURAL cohort (A1/A5/B5). Multi-org
+     user sees blank sport labels. LEAN: converge to current_user_org_ids().
+P1-d guardians.email GLOBAL unique → submit_registration ON CONFLICT(email) cross-org PII
+     write + player_guardians identity-bleed (A5/B5). Replace-non-null (not blanket wipe).
+     Multi-org gate. LEAN: UNIQUE(org_id,email) + ON CONFLICT(org_id,email).
+P1-e public_slug GLOBAL unique vs checkSlugAvailable per-org pre-check (A2/B4) → raw unique
+     violation for org B on a slug org A owns. LEAN: global pre-check now (match DB) OR
+     re-scope index to (org_id,public_slug) + make /r/:slug org-aware.
+P1-f tryout_attendees.evaluation_note (coach eval) parent-readable org-wide (A1/B5). LEAN:
+     narrow SELECT to admin+coach.
+P1-g PATTERN A #63 — "people in a program": ProgramDetail "Registrations · 0" (table empty)
+     vs index/home 63 (team_players). LIVE-firing. (A4/B5.)
+P1-h PATTERN A #63 — "active": lifecycle (useActivePrograms status-only) vs running-now
+     (programGrouping date-gated). Summer Day Camp splits LIVE. (A4/B5.)
+P1-i registration fee types early_bird/prorated/discount/family_discount silently dropped
+     (only base+add_on copied; auto_apply_rule jsonb dead); player gender never captured/
+     validated vs divisions.gender M/F CHECK. (B6.) Dormant on 0 fee rows; activates with
+     real fee templates.
+(P1→P2 reclassified by B5: "Program health" card label-scope is label-honesty P2, not
+ wrong-data P1 — the subtitle already leads with season.name.)
+
+==============================================================================
+4. AP#58 CROSS-CUTTING PATTERNS (synthesis)
+==============================================================================
+PATTERN A #63 (same concept, divergent source/scope) — the dominant platform pattern.
+  OPEN/LIVE: people-in-program (P1-g), "active" (P1-h), playerCount rows-vs-distinct
+  (latent), records aggregate-count leak in useOrgTeamRecords (B8, latent).
+  RESOLVED/REFERENCE: Collected%-vs-Out$ per-KPI scope labels; program-type label/metadata
+  single-sourced via programRegistry (B2 confirms PATTERN-A-CLEAN — the architect's §3
+  type-axis concern resolves clean: all 7 enum values map to valid team_types.slug, the
+  two layers are deliberately separated, no training_only/clinic_camp conflation).
+PATTERN B — multi-org singular/plural divergence (single-org-masked, latent): sports helper
+  (P1-c), guardian email (P1-d), slug scope (P1-e). Resolve as ONE migration before any 2nd
+  org onboards.
+PATTERN C — destructive/financial safety: P0-1, P0-2, P0-3, the anon TRUNCATE grant (P1-a).
+PATTERN D — AP#36 error-swallow on count/write paths: useAllPrograms/useActivePrograms
+  empty-state-on-error; useProgramAdmin stale-counts race (the #788 B1/E2 fixes only
+  NARROWED it — B4); the rollover roster_type swallow (P0-3b).
+PATTERN E — single-active 0-active window: setActive/activate non-atomic two-statement
+  (A1/A3/A5/B1/B7 converge). Subsumed by the activate-on-rollover RPC if unified.
+
+==============================================================================
+5. REDESIGN INPUTS (for the architect's redesign pass)
+==============================================================================
+RD-1 TAXONOMY FORK (carried from the closeout, Frank's question): freeform vs curated
+  archetype set (LeagueApps uses curated: League/Event/Tournament/Camp/Club team/Class).
+  CC lean: CURATED — freeform program types become free-text → the float-free-enum risk +
+  breaks every per-type rule (statusForProgramType, team-type default, records exclusion,
+  divisions gating, PROGRAM_NOUN). If coverage gaps appear, ADD an archetype (enum value +
+  setup flow + per-type rules), don't open freeform. A single 'other' archetype (already
+  exists, non-competitive default) is the safe middle. Codify an "add-an-archetype"
+  checklist tied to the programRegistry parity test.
+RD-2 PROGRAMS INDEX column set (B8): currently range·teams·players, no financials.
+  LEAN: per-type conditional columns driven by a registry field — season →
+  Invoiced/Paid/Outstanding (from family_balances, §11.5); camp/clinic → "registered";
+  tryout/evaluation/interest_list → "signups". Do NOT bolt uniform financial columns on all
+  rows ($0 reads as "collected nothing"). ProgramIndexRow.jsx:15-16 hardcodes "teams/
+  players" and ignores the registry noun — fix as part of this.
+RD-3 PROGRAM DETAIL page (wave-1 A3): redesign to §16.14 hero + collapsible; move the
+  destructive Delete from the bottom manage zone to a header overflow; "Registrations"
+  section should show roster (team_players) AND a separate "Online signups · N" so neither
+  reads as "empty program."
+RD-4 REGISTRATION CAPTURE (B6): design waiver + conduct-acknowledgment + custom-form capture
+  (none exist today); wire the dead fee types (early_bird/prorated/family_discount) +
+  capture/validate player gender vs divisions.gender; render the server authoritative_total
+  back to the user (the reconciliation contract is half-built).
+RD-5 ROLLOVER rebuild (B7): one atomic SECURITY DEFINER RPC; decide the financial-carry
+  intent (CC lean: clean-slate-per-season — family_balances already spans seasons) +
+  activate-on-rollover inside the txn.
+RD-6 SINGLE-ACTIVE: one activate() RPC (CASE update) to close the 0-active window.
+
+==============================================================================
+6. CONSOLIDATED FORKS + ROUTING (AP#39 leans; architect ratifies)
+==============================================================================
+TIER 1 — migration/code-lane, BEFORE programs can close / before go-live:
+  FORK-CLOSEOUT-RETRACT [meta] retract the #788 "no P0/P1" verdict.
+  FORK-DELETE [P0] block delete when financial_accounts>0 (+coach_payouts). LEAN: block.
+  FORK-REG-UNIQUE [P0] UNIQUE(program_id,player_id) + ON CONFLICT. LEAN: plain unique.
+  FORK-ROLLOVER-RPC [P0] rebuild rollover atomic (status→draft, drop roster_type, activate
+    in-txn). LEAN: single SECDEF RPC.
+  FORK-ANON-GRANTS [P1] revoke anon GRANT ALL → minimal/none. LEAN: revoke, financial first.
+TIER 1b — multi-org gate (one migration before 2nd org publishes):
+  FORK-GUARDIAN-UNIQUE (org_id,email) · FORK-SPORTS-PLURAL · FORK-SLUG-SCOPE · FORK-TRYOUT-
+  PRIVACY. LEANs as in §3.
+TIER 2 — app-layer/design (ship-this-phase after ratification):
+  FORK-CONDUCT-CHECKBOX (P1, minimal waiver stopgap) · #63 cluster (REGISTRATIONS-MEANING,
+  ACTIVE-PREDICATE shared isRunningNow, PLAYERCOUNT-CANON distinct-active, RECORDS-AGG-LEAK
+  in useOrgTeamRecords) + AP#43 invariant tests · AP#36 close the B1-race/E2-swallow ·
+  FORK-DEAD-METRICS · FORK-FEE-TYPES + gender capture · D-1 divisionsApplyTo() gate ·
+  ProgramIndexRow registry-noun.
+TIER 3 — redesign arcs (RD-1..RD-6 above) + DEFER (virtualization, NOT-NULL team_type_id
+  [B3, 0 live phantoms], detail §16.14, taxonomy product call, financial-carry product call).
+
+==============================================================================
+7. F-CATALOG COVERAGE + OPEN QUESTIONS TO THE ARCHITECT
+==============================================================================
+F-CATALOG: the architect references F1-F16. Only F1,F3,F4,F5,F8,F14 are reconstructable
+  repo-side (verdicts in B4: F3/F4/F8/F14/F5 CONFIRMED; F1 = team_type_id-NULL, B3: app-
+  guarded, DB-nullable, 0 live, P2). F2,F6,F7,F9-F13,F15,F16 are NOT in the repo — please
+  send the full F1-F16 enumeration so we can pressure-test the remainder.
+OPEN QUESTIONS:
+  Q1 P0 sequencing — ship the 3 P0 fixes as 3 separate GO-gated migrations now, or batch?
+  Q2 anon grants — revoke to Supabase-minimal (SELECT/INSERT/UPDATE/DELETE) or to NOTHING
+     (anon reaches everything via the 2 SECDEF RPCs only)? CC lean: nothing for the write
+     tables; the RPCs are the only intended door.
+  Q3 RD-1 taxonomy — curated (CC lean) confirmed? If yes, ratify the add-an-archetype checklist.
+  Q4 RD-5 financial-carry on rollover — clean-slate (CC lean) or carry balances?
+  Q5 multi-org timeline — when does org #2 onboard? That sets the Tier-1b deadline.
+
+==============================================================================
+8. WHAT IS SOLID (verified clean — do not re-audit)
+==============================================================================
+Seam SOUND (R-1) · anon READ path SOUND (single SECDEF RPC, server-enforced is_published+
+reg-window, no enumeration/cross-org leak — distinct from the anon GRANT issue) · type axis
+PATTERN-A-CLEAN (B2) · programRegistry EXEMPLARY (parity test CI-guarded, all 7 incl 'other')
+· standings exclusion CORRECT (keys off team_types.slug, B8) · §16.12 no per-player game-stats
+leak · RLS AP#20/#23/#24/#57 clean · perf indexes present · AP#48 clean · E3/E5 fixed-since-
+closeout · wave-1 self-verified at 0 false-positives in 11 (B5).
+
+==============================================================================
+9. OUT OF SCOPE (confirmed): briefings engine · financials except program_transactions/
+financial cascade reachability · rebrand/token layer · Stripe/payment internals · TeamFormSheet
+internals (Teams arc) · PublicSchedulePage · AuthContext multi-org-context as a platform question.
+==============================================================================
+END — 14-agent re-audit. The 3 P0s + the anon-grant + the multi-org batch are the
+pre-close / pre-go-live gate. Programs is NOT closed (§11.8 #4) until these forks are
+ratified. Per-slice evidence: docs/audit/programs_l99/ (A1-A6) + docs/audit/programs_l99_wave2/
+(B1-B8). CC awaits architect ratification + the full F1-F16 catalog.
+==============================================================================
