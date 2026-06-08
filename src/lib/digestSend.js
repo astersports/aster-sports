@@ -121,8 +121,14 @@ export async function sendWeeklyDigest({
   const { data: dispatch, error: dispErr } = await supabase.functions
     .invoke('send-tournament-message', { body: { message_id: msg.id } });
   if (dispErr) throw dispErr;
-
-  await supabase.from('comms_messages').update({ status: 'sent' }).eq('id', msg.id); // C2: mirror composerSubmit:124
+  // F-DUAL-FINALIZE (G5 PR 0): send-tournament-message owns the terminal
+  // status='sent' write (service role, authoritative). The old client-side
+  // status='sent' here force-finalized even a partial send (ok:false), which
+  // then 409-locked the message's own recovery (alreadySent guard). Drop the
+  // write; surface ok:false like the main path (composerSubmit).
+  if (dispatch && dispatch.ok === false) {
+    throw new Error(dispatch.errors?.join('; ') || 'Dispatch reported failure.');
+  }
 
   return { messageId: msg.id, ...(dispatch || {}), composedFamilies: renderedFamilies.length };
 }

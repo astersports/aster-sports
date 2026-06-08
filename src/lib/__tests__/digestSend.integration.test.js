@@ -57,6 +57,7 @@ vi.mock('../engine/resolvers/weeklyDigest', () => ({
 
 const { sendWeeklyDigest } = await import('../digestSend');
 const { applyUnsubscribeUrls } = await import('../unsubscribeUrl');
+const { supabase } = await import('../supabase');
 
 const period = { start: new Date('2026-05-11T00:00:00Z'), end: new Date('2026-05-17T23:59:59Z') };
 const baseEvents = [{ id: 'e-1', team_id: 't-1', title: 'Practice', start_at: '2026-05-13T19:00:00Z' }];
@@ -78,7 +79,7 @@ beforeEach(() => {
 });
 
 describe('sendWeeklyDigest — orchestration', () => {
-  it('a. happy path: insert message → recipients → dispatch → flip status=sent', async () => {
+  it('a. happy path: insert message → recipients → dispatch (edge fn owns finalize)', async () => {
     const result = await call();
     expect(inserted.messages).toHaveLength(1);
     expect(inserted.messages[0].kind).toBe('weekly_digest');
@@ -88,9 +89,18 @@ describe('sendWeeklyDigest — orchestration', () => {
     expect(inserted.recipients.find((r) => r.email_at_send === 'olivejuiceinc1@gmail.com')).toBeTruthy();
     expect(dispatchCalls[0].name).toBe('send-tournament-message');
     expect(dispatchCalls[0].opts.body.message_id).toBe('msg-1');
-    expect(updates).toContainEqual({ status: 'sent' });
+    // F-DUAL-FINALIZE: the helper no longer client-writes status='sent' — the
+    // edge fn owns the terminal finalize. A client write here would force-
+    // finalize a partial send and 409-lock its own recovery.
+    expect(updates).not.toContainEqual({ status: 'sent' });
     expect(result.messageId).toBe('msg-1');
     expect(result.composedFamilies).toBe(2);
+  });
+
+  it('a2. F-DUAL-FINALIZE: a dispatch ok:false throws (no false success)', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({ data: { ok: false, errors: ['SMTP cap'] }, error: null });
+    await expect(call()).rejects.toThrow('SMTP cap');
+    expect(updates).not.toContainEqual({ status: 'sent' });
   });
 
   it('b. UNSUBSCRIBE_URL substitutes per-recipient via applyUnsubscribeUrls', async () => {
