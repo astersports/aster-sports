@@ -4,12 +4,13 @@ import { useAuth } from '../context/AuthContext';
 import AdminBackHeader from '../components/admin/AdminBackHeader';
 import AutoNotificationSettingsForm from '../components/admin/AutoNotificationSettingsForm';
 import SenderIdentityForm from '../components/admin/SenderIdentityForm';
+import OrganizationForm from '../components/admin/OrganizationForm';
 import { useOrgAutoNotifications } from '../hooks/useOrgAutoNotifications';
 import { useOrgSettings } from '../hooks/useOrgSettings';
 
-// /admin/settings — org-level admin settings. Communications group: Automatic
-// messages (auto_notifications via RPC) + Sender identity (organization_settings
-// direct). Future groups (General, Pilot) add sections here per the REV 2 spec.
+// /admin/settings — org-level admin settings. General group (Organization) +
+// Communications group (Automatic messages via RPC, Sender identity direct).
+// Future sections (Registration, Features, Pilot) add rows per the REV 2 spec.
 
 const SECTION_LABEL = {
   fontSize: 11, fontWeight: 500, color: 'var(--as-text-tertiary)',
@@ -17,7 +18,7 @@ const SECTION_LABEL = {
 };
 const CARD = {
   backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)',
-  borderRadius: 10, boxShadow: 'var(--as-shadow-sm)', overflow: 'hidden',
+  borderRadius: 10, boxShadow: 'var(--as-shadow-sm)', overflow: 'hidden', marginBottom: 20,
 };
 const ROW = {
   display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
@@ -39,18 +40,15 @@ function Row({ title, summary, disabled, onClick }) {
 }
 
 export default function AdminSettingsPage() {
-  const { orgId } = useAuth();
+  const { orgId, org } = useAuth();
   const an = useOrgAutoNotifications();
   const os = useOrgSettings(orgId);
-  const [openForm, setOpenForm] = useState(null); // 'autonotif' | 'sender' | null
-
-  const anSummary = an.loading
-    ? 'Loading…'
-    : `Reminders ${an.remindersOn ? 'on' : 'off'} · Nudges ${an.nudgesOn ? 'on' : 'off'}`;
+  const [openForm, setOpenForm] = useState(null); // 'org' | 'autonotif' | 'sender' | null
   const s = os.settings;
-  const senderSummary = os.loading
-    ? 'Loading…'
-    : (s?.from_name && s?.from_email ? `${s.from_name} · ${s.from_email}` : 'Not set');
+
+  const orgSummary = os.loading ? 'Loading…' : `${org?.name || 'Organization'} · ${s?.season_label || 'No season set'}`;
+  const anSummary = an.loading ? 'Loading…' : `Reminders ${an.remindersOn ? 'on' : 'off'} · Nudges ${an.nudgesOn ? 'on' : 'off'}`;
+  const senderSummary = os.loading ? 'Loading…' : (s?.from_name && s?.from_email ? `${s.from_name} · ${s.from_email}` : 'Not set');
 
   return (
     <div className="px-4 py-4 as-fade-in" style={{ maxWidth: 600, margin: '0 auto' }}>
@@ -59,6 +57,11 @@ export default function AdminSettingsPage() {
         Settings
       </h1>
 
+      <p style={SECTION_LABEL}>General</p>
+      <div style={CARD}>
+        <Row title="Organization" summary={orgSummary} disabled={os.loading} onClick={() => setOpenForm('org')} />
+      </div>
+
       <p style={SECTION_LABEL}>Communications</p>
       <div style={CARD}>
         <Row title="Automatic messages" summary={anSummary} disabled={an.loading} onClick={() => setOpenForm('autonotif')} />
@@ -66,6 +69,13 @@ export default function AdminSettingsPage() {
         <Row title="Sender identity" summary={senderSummary} disabled={os.loading} onClick={() => setOpenForm('sender')} />
       </div>
 
+      <OrganizationForm
+        open={openForm === 'org'}
+        onClose={() => setOpenForm(null)}
+        initial={{ name: org?.name, mailingAddress: org?.mailing_address, seasonLabel: s?.season_label, timezone: s?.timezone }}
+        onSave={os.save}
+        saving={os.saving}
+      />
       <AutoNotificationSettingsForm
         open={openForm === 'autonotif'}
         onClose={() => setOpenForm(null)}
