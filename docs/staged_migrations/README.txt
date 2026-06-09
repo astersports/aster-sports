@@ -11,12 +11,19 @@ supabase/migrations/ with the production version-string prefix at that moment.
 SOURCE OF TRUTH for rationale/verification: docs/PROGRAMS_TIER1_FORK_SPECS_2026-06-08.txt
 RATIFICATION: docs/ (architect 2026-06-08) — S1/S2/S3/S4 ratified; S5 not yet ruled.
 
-APPLY ORDER (dependency-correct):
+APPLY STATUS (2026-06-09):
+  S3 + S4 — APPLIED to production via MCP on Frank's GO (architect pre-flighted the
+    premises live). Mirrors now live in supabase/migrations/:
+      20260609015340_registrations_program_player_partial_unique.sql
+      20260609015354_financial_accounts_season_fk_restrict.sql
+    Their staged copies were removed from this dir (they are real migrations now).
+  S1 + S2 — STILL STAGED (below). S1 wants an architect pre-flight of the FUNCTION
+    BODY (not just premises); S2 is sequencing-locked AFTER/WITH S1.
+  S5 FORK-ANON-GRANTS — not staged (awaiting the architect's Q2 ruling).
+
+REMAINING APPLY ORDER (dependency-correct):
   1. S1_rollover_season_rpc.sql   (carries team_type_id forward — must precede S2)
   2. S2_team_type_not_null.sql    (NOT NULL + FK RESTRICT)
-  3. S3_registrations_partial_unique.sql   (independent)
-  4. S4_financial_accounts_fk_restrict.sql (independent)
-  (S5 FORK-ANON-GRANTS not staged — awaiting the architect's Q2 ruling.)
 
 OPEN DECISION POINTS still gating a clean apply (architect pre-flights each):
   - S1 Q-A: the ratification names BOTH (a) new season status 'draft' AND
