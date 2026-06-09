@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Lock } from 'lucide-react';
 import FullScreenForm from '../shared/FullScreenForm';
 import Toggle from '../shared/Toggle';
 import Input from '../shared/Input';
@@ -14,6 +14,14 @@ import { reportAudit } from '../../lib/reportError';
 // confirm (architect D3 constraint — it can't scroll out of view or fire on a
 // stray tap). This form builds the control; the operator fires the cutover after
 // SEND/LEGAL/SEE/RECOVER are green.
+//
+// Operator directive 2026-06-09: REMAINING ON PILOT IS MANDATORY. The go-live
+// cutover is locked off in the app via CUTOVER_ENABLED=false — there is no UI path
+// to clear pilot_test_recipient_email, so all outbound email stays redirected. The
+// cutover machinery (the focused SEND-LIVE confirm + the E6 cutover audit) is
+// PRESERVED behind the flag; flip to true to re-enable once LEGAL is resolved (a
+// CAN-SPAM footer address). A hard server-side lock is available as architect-lane work.
+const CUTOVER_ENABLED = false;
 
 const WRAP = { display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 600, margin: '0 auto' };
 const CARD = { backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)', borderRadius: 10, boxShadow: 'var(--as-shadow-sm)', padding: '4px 12px' };
@@ -23,6 +31,8 @@ const DANGER_CARD = { border: '1px solid var(--as-danger)', backgroundColor: 'va
 const DANGER_HEAD = { display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em', color: 'var(--as-danger)' };
 const DANGER_BODY = { fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.45 };
 const DANGER_BTN = { minHeight: 44, borderRadius: 10, border: '1px solid var(--as-danger)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-danger)', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' };
+const LOCK_CARD = { border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-secondary)', borderRadius: 10, padding: 14, display: 'flex', alignItems: 'flex-start', gap: 8 };
+const LOCK_BODY = { fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.45 };
 
 export default function PilotModeForm({ open, onClose, initial, onSave, saving }) {
   return (
@@ -74,17 +84,25 @@ function Body({ initial, onSave, saving, onClose }) {
         {saving ? 'Saving…' : 'Save'}
       </button>
 
-      {!!initial.testRecipientEmail && (
-        <div style={DANGER_CARD}>
-          <div style={DANGER_HEAD}><AlertTriangle size={15} strokeWidth={2} aria-hidden="true" /> Go live</div>
-          <p style={DANGER_BODY}>Clearing the test address sends real email to families. Only after SEND, LEGAL, SEE, and RECOVER are green.</p>
-          <button type="button" className="as-press" style={DANGER_BTN} onClick={() => setConfirmOpen(true)}>
-            Go live to families…
-          </button>
+      {CUTOVER_ENABLED ? (
+        <>
+          {!!initial.testRecipientEmail && (
+            <div style={DANGER_CARD}>
+              <div style={DANGER_HEAD}><AlertTriangle size={15} strokeWidth={2} aria-hidden="true" /> Go live</div>
+              <p style={DANGER_BODY}>Clearing the test address sends real email to families. Only after SEND, LEGAL, SEE, and RECOVER are green.</p>
+              <button type="button" className="as-press" style={DANGER_BTN} onClick={() => setConfirmOpen(true)}>
+                Go live to families…
+              </button>
+            </div>
+          )}
+          <GoLiveConfirmSheet open={confirmOpen} onClose={() => setConfirmOpen(false)} onConfirm={goLive} saving={saving} />
+        </>
+      ) : (
+        <div style={LOCK_CARD}>
+          <Lock size={15} strokeWidth={2} aria-hidden="true" style={{ color: 'var(--as-text-tertiary)', flexShrink: 0, marginTop: 1 }} />
+          <p style={LOCK_BODY}>Pilot mode is required — going live is disabled. All outbound email stays redirected to the test address.</p>
         </div>
       )}
-
-      <GoLiveConfirmSheet open={confirmOpen} onClose={() => setConfirmOpen(false)} onConfirm={goLive} saving={saving} />
     </div>
   );
 }
