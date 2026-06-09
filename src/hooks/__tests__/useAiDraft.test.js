@@ -2,8 +2,8 @@
 //
 // useAiDraft — conformance test for the AI-draft compose client hook
 // (AIDRAFT_BUILD_SPEC §2b / P2). Mocks supabase.functions.invoke + useAuth.
-// Asserts the hook shapes the REQUEST per the §1 contract (free-form vs
-// auto-proposed), parses { body, card_summary, facts_used, warnings } into the
+// Asserts the hook shapes the REQUEST per the §1 contract (free-form gist vs
+// anchored facts), parses { body, card_summary, facts_used, warnings } into the
 // returned shape, and exercises the error + loading paths. No UI mount.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -42,14 +42,14 @@ describe('useAiDraft', () => {
     });
   });
 
-  it('b. shapes an auto-proposed request (proposalId -> proposal_id, no gist)', async () => {
+  it('b. shapes an anchored request (facts, no gist, no proposal_id)', async () => {
     invokeResult = { data: { body: 'B', card_summary: 'S', facts_used: [], warnings: [] }, error: null };
     const { result } = renderHook(() => useAiDraft());
     await act(async () => {
-      await result.current.draft({ kind: 'game_recap', mode: 'redraft', proposalId: 'p-9', audience: { team_id: 't-2' } });
+      await result.current.draft({ kind: 'game_recap', mode: 'redraft', facts: { record: '5-2' }, audience: { team_id: 't-2' } });
     });
     expect(invokeFn).toHaveBeenCalledWith(AI_DRAFT_FN_SLUG, {
-      body: { org_id: 'org-1', kind: 'game_recap', mode: 'redraft', audience: { team_id: 't-2' }, proposal_id: 'p-9' },
+      body: { org_id: 'org-1', kind: 'game_recap', mode: 'redraft', audience: { team_id: 't-2' }, facts: { record: '5-2' } },
     });
   });
 
@@ -57,7 +57,7 @@ describe('useAiDraft', () => {
     invokeResult = { data: { body: 'Game 3. Go get it.', card_summary: '10-sec summary', facts_used: [{ k: 'record', v: '5-2' }], warnings: ['venue missing'] }, error: null };
     const { result } = renderHook(() => useAiDraft());
     let returned;
-    await act(async () => { returned = await result.current.draft({ kind: 'game_day', mode: 'draft', proposalId: 'p-1', audience: {} }); });
+    await act(async () => { returned = await result.current.draft({ kind: 'game_day', mode: 'draft', audience: {} }); });
     expect(returned).toEqual({ body: 'Game 3. Go get it.', cardSummary: '10-sec summary', factsUsed: [{ k: 'record', v: '5-2' }], warnings: ['venue missing'] });
     expect(result.current.body).toBe('Game 3. Go get it.');
     expect(result.current.cardSummary).toBe('10-sec summary');
@@ -80,7 +80,7 @@ describe('useAiDraft', () => {
     invokeResult = { data: { error: 'kind not supported' }, error: null };
     const { result } = renderHook(() => useAiDraft());
     let returned;
-    await act(async () => { returned = await result.current.draft({ kind: 'x', mode: 'draft', proposalId: 'p', audience: {} }); });
+    await act(async () => { returned = await result.current.draft({ kind: 'x', mode: 'draft', audience: {} }); });
     expect(returned).toBe(null);
     expect(result.current.error).toBeInstanceOf(Error);
     expect(result.current.error.message).toBe('kind not supported');
@@ -90,7 +90,7 @@ describe('useAiDraft', () => {
   it('f. surfaces a transport (invoke) error', async () => {
     invokeResult = { data: null, error: new Error('FunctionsHttpError') };
     const { result } = renderHook(() => useAiDraft());
-    await act(async () => { await result.current.draft({ kind: 'game_recap', mode: 'draft', proposalId: 'p', audience: {} }); });
+    await act(async () => { await result.current.draft({ kind: 'game_recap', mode: 'draft', audience: {} }); });
     expect(result.current.error).toBeInstanceOf(Error);
   });
 
@@ -98,7 +98,7 @@ describe('useAiDraft', () => {
     orgIdValue = null;
     const { result } = renderHook(() => useAiDraft());
     let returned;
-    await act(async () => { returned = await result.current.draft({ kind: 'game_recap', mode: 'draft', proposalId: 'p', audience: {} }); });
+    await act(async () => { returned = await result.current.draft({ kind: 'game_recap', mode: 'draft', audience: {} }); });
     expect(invokeFn).not.toHaveBeenCalled();
     expect(returned).toBe(null);
     expect(result.current.error).toBeInstanceOf(Error);
@@ -110,7 +110,7 @@ describe('useAiDraft', () => {
     const { result } = renderHook(() => useAiDraft());
     expect(result.current.loading).toBe(false);
     let pending;
-    act(() => { pending = result.current.draft({ kind: 'game_recap', mode: 'draft', proposalId: 'p', audience: {} }); });
+    act(() => { pending = result.current.draft({ kind: 'game_recap', mode: 'draft', audience: {} }); });
     await waitFor(() => expect(result.current.loading).toBe(true));
     await act(async () => {
       resolveInvoke({ data: { body: 'B', card_summary: '', facts_used: [], warnings: [] }, error: null });
@@ -123,7 +123,7 @@ describe('useAiDraft', () => {
   it('i. reset clears the result and error', async () => {
     invokeResult = { data: { error: 'boom' }, error: null };
     const { result } = renderHook(() => useAiDraft());
-    await act(async () => { await result.current.draft({ kind: 'x', mode: 'draft', proposalId: 'p', audience: {} }); });
+    await act(async () => { await result.current.draft({ kind: 'x', mode: 'draft', audience: {} }); });
     expect(result.current.error).toBeInstanceOf(Error);
     act(() => { result.current.reset(); });
     expect(result.current.error).toBe(null);
