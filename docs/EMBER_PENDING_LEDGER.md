@@ -456,16 +456,23 @@ grep + MCP query on 2026-05-27. Read this before trusting the detailed
 arc bodies.
 
 **§4 FORK E punch list (architect deploy-review ruling 2026-06-09; one PR each).**
-E1 [GATE] family_guide footer mailing address — BLOCKED on Frank's address pick
-(use LH business addr / private→P.O. box / keep-out). LEGAL stays open until picked.
-E2 RECOVER seam → webhook — DONE: verified resend-webhook-receiver advances
-delivery_status from 'queued' (rank-based transition, queued rank 0 → any higher),
-so the #907 client-side H1 reconcile was redundant; reverted useStuckSends to
-read-only + deleted reconcileDelivery.js + restored the strict no-write guard. The
-webhook is the reconcile seam (server-side, immediate, idempotent). E3 SEE counting
-fixes (Recipients label / bounced_at not bounce_reason-phantom / add Complained) +
-fix the pre-existing broken recipient SELECT. E4 SEE counting test. E5 mark-failed →
-bounded-retry action (close the review loop). E6 cutover actor+timestamp audit.
+E1 [GATE] family_guide footer mailing address — RULED by Frank: KEEP IT OUT (option 3).
+LEGAL stays OPEN; no footer change shipped. CAVEAT recorded: the cutover flag
+(pilot_test_recipient_email) is GLOBAL, so "restrict the cutover to non-promotional
+kinds" is not mechanically achievable — keep-out is safe only by operator discipline
+(send relationship kinds only post-cutover); a promotional family_guide without a
+footer address is the CAN-SPAM exposure. Enforcing in code later = add address (1/2)
+or a per-kind send gate (new work).
+E2 RECOVER seam → webhook — DONE (#910): verified resend-webhook-receiver advances
+delivery_status from 'queued' (rank-based, queued rank 0 → any higher); reverted the
+#907 client reconcile to read-only + deleted reconcileDelivery.js + restored the
+strict no-write guard. The webhook is the reconcile seam.
+E3+E4 SEE — DONE: fixed the pre-existing broken recipient SELECT (phantom bounce_reason
+column → PostgREST 400 → recipients silently always-empty; AP#36 swallow), extracted
+deliveryRollup() (Recipients label / bounced_at / +Complained), + the counting test
+that guards the bounce fix.
+E5 mark-failed → bounded-retry action (close the review loop). E6 cutover
+actor+timestamp audit. (E1 ships no code.)
 
 **§4 reconciliation 2026-06-09 (settings-page arc — architect D6 ruling).** The
 `/admin/settings` arc shipped this session and is recorded SHIPPED here. It

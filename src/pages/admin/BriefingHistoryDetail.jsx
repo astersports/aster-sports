@@ -9,6 +9,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { KIND_METADATA } from '../../lib/briefings/kindMetadata';
+import { deliveryRollup } from '../../lib/deliveryRollup';
+import { reportError } from '../../lib/reportError';
 
 const wrap = { backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' };
 const inner = { maxWidth: 760, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 };
@@ -43,15 +45,7 @@ export default function BriefingHistoryDetail() {
   const [msg, setMsg] = useState(null);
   const [recipients, setRecipients] = useState([]);
   const [previewIdx, setPreviewIdx] = useState(0);
-  const stats = useMemo(() => {
-    let delivered = 0, opened = 0, bounced = 0;
-    for (const r of recipients) {
-      if (r.delivered_at) delivered += 1;
-      if (r.opened_at) opened += 1;
-      if (r.delivery_status === 'bounced' || r.bounce_reason) bounced += 1;
-    }
-    return { total: recipients.length, delivered, opened, bounced };
-  }, [recipients]);
+  const stats = useMemo(() => deliveryRollup(recipients), [recipients]);
 
   useEffect(() => {
     if (!orgId) return;
@@ -62,7 +56,8 @@ export default function BriefingHistoryDetail() {
       if (mErr) throw mErr;
       if (cancelled) return;
       setMsg(m);
-      const { data: rec } = await supabase.from('comms_message_recipients').select('id,email_at_send,delivery_status,delivered_at,opened_at,bounce_reason,body_html_rendered,body_plain_rendered').eq('message_id', id).order('email_at_send');
+      const { data: rec, error: recErr } = await supabase.from('comms_message_recipients').select('id,email_at_send,delivery_status,delivered_at,opened_at,bounced_at,complained_at,body_html_rendered,body_plain_rendered').eq('message_id', id).order('email_at_send');
+      if (recErr) reportError(recErr, { surface: 'BriefingHistoryDetail.recipients', messageId: id });
       if (cancelled) return;
       setRecipients(rec || []);
     });
@@ -107,10 +102,11 @@ export default function BriefingHistoryDetail() {
           <div style={{ ...labelStyle, marginBottom: 8 }}>Delivery</div>
           {recipients.length > 0 && (
             <div style={rollup}>
-              <Stat label="Sent" value={stats.total} />
+              <Stat label="Recipients" value={stats.total} />
               <Stat label="Delivered" value={stats.delivered} />
               <Stat label="Opened" value={stats.opened} />
               <Stat label="Bounced" value={stats.bounced} danger />
+              <Stat label="Complained" value={stats.complained} danger />
             </div>
           )}
           <table style={tableStyle}>
