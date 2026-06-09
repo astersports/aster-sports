@@ -12,6 +12,7 @@ const btn = (on) => ({ minHeight: 44, padding: '0 14px', borderRadius: 10, borde
 const warnBox = { margin: 0, padding: '8px 12px', borderRadius: 8, fontSize: 12, lineHeight: 1.4, listStyle: 'none', backgroundColor: 'var(--as-warning-soft)', color: 'var(--as-warning)' };
 const errBox = { margin: 0, padding: '8px 12px', borderRadius: 8, fontSize: 12, lineHeight: 1.4, backgroundColor: 'var(--as-danger-soft)', color: 'var(--as-danger)' };
 const wrap = { display: 'flex', flexDirection: 'column', gap: 8, padding: 12, borderRadius: 10, border: '1px dashed var(--as-border-default)', backgroundColor: 'var(--as-bg-secondary)' };
+const hint = { fontSize: 12, color: 'var(--as-text-tertiary)', margin: 0, lineHeight: 1.4 };
 
 export default function AiDraftControls({ gist, onGistChange, onDraft, loading, warnings, error, hasDrafted }) {
   const canDraft = gist.trim().length > 0 && !loading;
@@ -31,6 +32,7 @@ export default function AiDraftControls({ gist, onGistChange, onDraft, loading, 
         <Sparkles size={16} strokeWidth={1.75} />
         {loading ? 'Drafting...' : (hasDrafted ? 'Redraft' : 'Draft with AI')}
       </button>
+      {!gist.trim() && !loading && <p style={hint}>Add a quick note above, then tap Draft with AI.</p>}
       {error && <p style={errBox} role="alert" aria-live="assertive">{error.message || "Couldn't draft that. Try again in a moment."}</p>}
       {warnings?.length > 0 && (
         <ul style={warnBox} aria-live="polite">
