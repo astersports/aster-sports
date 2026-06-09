@@ -418,7 +418,7 @@ as-pulse, as-fade-in, as-pulse-dot, as-bounce-tap, as-fill-grow, card-expand, sh
 #### Financial data loaded (May 5–6, 2026)
 LeagueApps import across two waves: May-5 initial import (100 accounts), May-6 retrospective Fall 2025 top-up for families who joined Spring 2026 first (64 additional accounts). Current state: 164 accounts across 3 seasons (Fall 2025 + Winter 2025-26 + Spring 2026), 244 transactions, $166,910 billed, $165,635 gross / $160,244 net to bank. Email-first dedup. DeMasi: 2 legitimate co-guardian rows (no merge needed). KHOJASTEH: family correctly modeled with both parents linked to Aubtin via player_guardians; financial_accounts attached to mom (Anjella Teimoori).
 
-⬅ Status (reconciled 2026-06-02 — see EMBER_PENDING_LEDGER §4.0 + §4.BV for the verified index): in-app QR **SHIPPED** (`qrcode.react` dep + `ShareScheduleButton.jsx`) — the 3-B/6-A QR arc is no longer unbuilt. Already DONE since this list was written: 2-B weather (Open-Meteo, wired), 3-A location mgr UI (`/admin/locations`), schedule-change notifications, coach_roundup briefing, QR, **4-B auto-notifications** (settings sheet + Stream A handler now gates on `organizations.auto_notifications.reminders_enabled` per Wave 3.A #19 P0-3 closure, PR #643). BLOCKED: 5-C player stats/box score — §16.12 forbids per-player game stats in 2026 (do not build).
+⬅ Status (reconciled 2026-06-02 — see EMBER_PENDING_LEDGER §4.0 + §4.BV for the verified index): in-app QR **SHIPPED** (`qrcode.react` dep + `ShareScheduleButton.jsx`) — the 3-B/6-A QR arc is no longer unbuilt. Already DONE since this list was written: 2-B weather (Open-Meteo, wired), 3-A location mgr UI (`/admin/locations`), schedule-change notifications, coach_roundup briefing, QR, **4-B auto-notifications** (Stream A handler gates on `organizations.auto_notifications.reminders_enabled` per Wave 3.A #19 P0-3 closure, PR #643; the operator settings UI — `AutoNotificationSettingsForm` at `/admin/settings` → Communications — shipped 2026-06-09 with the admin-gated `set_org_auto_notifications` RPC). BLOCKED: 5-C player stats/box score — §16.12 forbids per-player game stats in 2026 (do not build).
 
 ---
 
@@ -1290,7 +1290,10 @@ ELITE-28 ships CONTINUOUSLY — not a Phase 1.5 step.
   `supabase/functions/briefing-auto-draft-tick/_rsvpNudgeThreshold.ts`; the IO
   handler is `briefing-auto-draft-tick/_handlers.ts:handleRsvpLowGoing` (the DB
   trigger_event value stays `rsvp_low_24h_before`). Operator control surfaces in
-  `AutoNotificationSettingsSheet` (Stream B → "Minimum confirmed going").
+  `AutoNotificationSettingsForm` (a 3-control FullScreenForm at `/admin/settings`
+  → Communications; Stream B → "Minimum confirmed going"). Named `…Form` not
+  `…Sheet` per the 2026-06-09 A2 sign-off — AP#15 reserves "Sheet" for 1-2 control
+  dialogs, and a 3-control FullScreenForm would contradict that vocabulary.
 
 Both streams run independently. Both are admin-configurable.
 
