@@ -4,6 +4,7 @@ import {
   RSVP_MIN_GOING_DEFAULT,
   RSVP_NUDGE_WINDOW_HOURS,
   rsvpMinGoingThreshold,
+  rsvpNudgesEnabled,
   shouldNudgeLowGoing,
 } from '../rsvpNudgeThreshold.js';
 
@@ -31,6 +32,27 @@ describe('rsvpMinGoingThreshold', () => {
     expect(rsvpMinGoingThreshold({ rsvp_min_going: 4.5 })).toBe(5);
     expect(rsvpMinGoingThreshold({ rsvp_min_going: '5' })).toBe(5);
     expect(rsvpMinGoingThreshold({ rsvp_min_going: null })).toBe(5);
+  });
+});
+
+// Stream B master switch (FORK A, 2026-06-09) — default OFF. Inverted from
+// Stream A's default-ON reminders gate: a nudge stream needs explicit opt-in.
+describe('rsvpNudgesEnabled (Stream B default-OFF gate)', () => {
+  it('is OFF when auto_notifications is unset / empty / read-miss', () => {
+    expect(rsvpNudgesEnabled(undefined)).toBe(false);
+    expect(rsvpNudgesEnabled(null)).toBe(false);
+    expect(rsvpNudgesEnabled({})).toBe(false);
+  });
+
+  it('is OFF for any non-true value (false, truthy non-boolean, only other keys set)', () => {
+    expect(rsvpNudgesEnabled({ rsvp_nudges_enabled: false })).toBe(false);
+    expect(rsvpNudgesEnabled({ rsvp_nudges_enabled: 'true' })).toBe(false);
+    expect(rsvpNudgesEnabled({ rsvp_nudges_enabled: 1 })).toBe(false);
+    expect(rsvpNudgesEnabled({ rsvp_min_going: 5, reminders_enabled: true })).toBe(false);
+  });
+
+  it('is ON only when explicitly enabled (=== true)', () => {
+    expect(rsvpNudgesEnabled({ rsvp_nudges_enabled: true })).toBe(true);
   });
 });
 

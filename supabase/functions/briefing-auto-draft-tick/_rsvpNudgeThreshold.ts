@@ -30,6 +30,16 @@ export function rsvpMinGoingThreshold(autoNotifications) {
   return Number.isInteger(raw) && raw > 0 ? raw : RSVP_MIN_GOING_DEFAULT;
 }
 
+// Stream B master on/off switch. UNLIKE Stream A reminders (which fail-OPEN /
+// default-ON via `reminders_enabled !== false`), Stream B nudges default OFF:
+// they draft ONLY when an admin has explicitly opted in via
+// auto_notifications.rsvp_nudges_enabled === true. Operator-ratified 2026-06-09
+// (FORK A): an auto-draft nudge stream needs an explicit operator opt-in, so
+// an empty {} / unset / read-miss org config means OFF (fail-closed).
+export function rsvpNudgesEnabled(autoNotifications) {
+  return autoNotifications?.rsvp_nudges_enabled === true;
+}
+
 // The draft decision: nudge when fewer than `threshold` players have confirmed
 // going. A game with exactly `threshold` going does NOT nudge.
 export function shouldNudgeLowGoing(goingCount, threshold) {
