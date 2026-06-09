@@ -1,0 +1,179 @@
+CC SESSION HANDOFF — 2026-06-09
+Briefings/comms: pilot-redirect P0 + second multi-agent audit (auto-execution)
+=============================================================================
+
+Branch: claude/aster-sports-migration-4yczeu (reset to main between each PR)
+Base at session start: 266e724 (PR4 #888 merged)
+Base at handoff:       d470ae4 (PR #891 merged)
+
+This handoff is the architect relay artifact (§11.8 rule 5). It states what
+shipped, what was verified clean, and the open architectural forks awaiting
+ratification — those are decisions, not bugs, and were NOT settled unilaterally.
+
+
+1. WHAT SHIPPED (all merged to main)
+------------------------------------
+
+PR #889 — fix(briefings): per-player kinds resolve in pilot REDIRECT mode [P0]
+  family_guide / rsvp_nudge / academy_callup_notice built their pilot allowlist
+  ONLY from get_digest_recipients(org, true). In REDIRECT mode that RPC returns
+  synthetic per-team rows (guardian_id NULL, email=pilot_test_recipient_email)
+  and NO real-guardian rows, so the allowlist was empty by construction → every
+  recipient dropped → NoRecipientsError surfaced to Frank as "No recipients for
+  this anchor". The 8 digest-style kinds dodge this because they build slices
+  straight from the synthetic rows.
+  Fix: detect REDIRECT mode (rpcRows.some(r => r.guardian_id == null && r.email))
+  and skip the allowlist gate so the resolver still builds real sample slices.
+  - TEST send (admin@ only) now delivers the real render to the pilot inbox
+    (buildFanoutRows returns [] on testOnly → only the admin-BCC row queues).
+  - REAL send stays gated downstream by decidePilotGate (any real non-pilot
+    guardian_id aborts the whole send — no leak).
+  - FILTER mode (post-cutover real pilot families) unchanged: redirectMode false
+    → the narrow allowlist still applies.
+  Locked with rsvpNudge.contract.test.js test 5b. Verified prod state via MCP:
+  org e3e95e21 is in REDIRECT mode (pilot_test_recipient_email =
+  olivejuiceinc1@gmail.com); the only is_pilot_family guardian is Frank
+  (fsamaritano@gmail.com), who has active kids (Milo 8U Boys futures, Charlie
+  11U Girls) → FILTER mode is viable whenever the operator clears the redirect.
+
+PR #890 — fix(comms): Stream B scope + suppressed-send finalize + ET [2xP2 2xP3]
+  From the second multi-agent audit (3 read-only agents). Edge-function fixes;
+  path-scoped deploy redeployed only the 3 touched functions on merge.
+  - SEND/CRON F1+F2 (P2): briefing-auto-draft-tick/_handlers.ts handleRsvpLowGoing
+    had NO event_type / status / publish_status filter, so Stream B auto-drafted
+    spurious "QUICK RSVP" nudges for practices (§16.5 scopes Stream B to "an
+    upcoming game") and for cancelled/unpublished events (which trivially trip
+    the going-floor at ~0 confirmed). Now scoped to
+    event_type IN (game,tournament) + status=scheduled + publish_status=published
+    — identical to the Stream A reminder handler (_reminders.ts:44).
+  - SEND/CRON F3 (P3): send-tournament-message/index.ts — a send where every
+    recipient is unsubscribed hit the early ok:true return BEFORE the finalize
+    block, stranding the message at draft/queued (client saw success; row looked
+    permanently unsent; could not be re-driven → 400). Now finalizes
+    (status=sent, sent_at, recipient_count=0) before returning.
+  - TOKEN F2 (P3): callup-token-handler/index.ts confirmation event time was
+    formatted without timeZone:"America/New_York" (rsvp + unsubscribe handlers
+    pin ET; this one drifted to UTC). Pinned ET.
+  Also committed the 3 agent findings docs: docs/AUDIT_SEND_CRON_2026-06-09.txt,
+  docs/AUDIT_TOKENS_AI_2026-06-09.txt, docs/AUDIT_COMPOSER_PARITY_2026-06-09.txt.
+
+PR #891 — chore(briefings): retire dead game_log renderer + drop proposalId [2xP3]
+  - §51 sweep: deleted renderers/gameLog.js + its SECTION_RENDERERS entry + the
+    ALLOWED_DEAD_RENDERERS allowlist entry, together per the AP#34 note left at
+    its 2026-06-05 retirement. No resolver emits kind:'game_log'.
+  - Dead proposalId removed from useAiDraft (no production caller; edge fn
+    rejects it). Follow-up commit fixed the one test caller the audit's grep
+    missed (AP#34 lesson — migrate every caller, incl. tests, in the same change).
+
+
+2. AUDIT VERDICT — VERIFIED CLEAN (no action)
+---------------------------------------------
+Second audit ran 3 agents (send/cron dispatch, token+AI, composer parity).
+NO P0; every P1-class invariant verified:
+  - AP#30 mirror pairs in sync (sendDispatch↔_dispatch,
+    rsvpNudgeThreshold↔_rsvpNudgeThreshold).
+  - Zero AP#36 { data = [] } error-swallow in scope.
+  - AP#31/#33: config.toml verify_jwt entries present; app_secrets populated for
+    all secrets (rsvp/callup/unsubscribe/cron/jwt/anthropic/resend/vapid) —
+    verified via MCP.
+  - AP#38 renderer parity: 41 emitted section kinds, ZERO orphan emits.
+  - Token chain: mint→wrap-handler-URL→substitute fail-loud; field-name split
+    (placeholders vs urls) with no in-place mutation; admin BCC pinned to
+    placeholder sample (no token-URL leak).
+  - DB authz (verified via MCP): mint_rsvp_token / mint_callup_token are SECDEF
+    with the live staff-only guard (RAISE EXCEPTION unless service_role or org
+    staff via user_roles); NO anon/public EXECUTE on any mint_*/verify_* RPC.
+  - Terminal status='sent' owned by the edge fn; all 3 client paths surface
+    ok:false (no double-finalize).
+  - Signoff/contact-leak fully closed (toggle OFF by default; family_guide
+    coaches_block gated by the same toggle).
+
+
+3. OPEN FORKS — AWAITING ARCHITECT RATIFICATION (not fixed unilaterally)
+-----------------------------------------------------------------------
+
+FORK A — Stream B has no org enable-gate, and AutoNotificationSettingsSheet
+  does not exist in the repo. [SEND/CRON F4]
+  handleRsvpLowGoing has no Stream-B on/off check (Stream A honors
+  reminders_enabled). And the AutoNotificationSettingsSheet that CLAUDE.md
+  §16.5/§8 says owns rsvp_min_going + reminders_enabled DOES NOT EXIST anywhere
+  in src/ — those keys are referenced only by the threshold module + its test,
+  and prod organizations.auto_notifications is {} for the live org.
+  => The documented operator controls are not shippable today. This is
+     spec-vs-impl drift. Decision needed: (a) build the settings sheet + wire a
+     Stream-B enable-gate, or (b) amend the doctrine to match impl (Stream B
+     always-on, threshold-only). CC lean: (a) — the doctrine treats these as
+     shipped operator controls; impl should catch up rather than the doctrine
+     retreating. Architect call.
+
+FORK B — AI-draft advertised for weekly_digest + tournament_prelim but unwired.
+  [TOKEN F1]
+  aiDraftPrompt.ANCHORED_KINDS lists 5 anchored kinds; anchoredAiFacts.
+  AI_DRAFT_FIELD wires only 3 (game_recap, games_recap, tournament_recap). For
+  tournament_prelim (reachable in the main composer) AiDraftAnchored renders
+  nothing; weekly_digest composes via DigestComposer (separate path).
+  => Product decision: should weekly_digest / tournament_prelim support an
+     interactive AI-draft control? If yes → wire AI_DRAFT_FIELD + EXTRACT for
+     both. If no → trim them from ANCHORED_KINDS (both AP#30 mirror files) so
+     the advertised set matches the wired set. CC lean: trim — a prelim is
+     structured schedule data and the digest auto-drafts via cron; neither
+     obviously needs a hand-authored narrative. Architect call.
+
+FORK C — Dead signature_coaches per-send IO. [COMPOSER #1]
+  gameRecap / gamesRecap / weeklyDigest / tournamentRecap each call
+  fetchSignatureCoaches and pass the result into buildOrgContext
+  (org.signature_coaches). Confirmed end-to-end: NO composer/renderer reads
+  org.signature_coaches — it is computed and stored but never consumed (one
+  wasted query per recap send). BUT removal retires a dedicated voiceSignature
+  test subsystem (voiceSignature.test.js, voiceSignatureCrossSurface.test.js,
+  the mockSupabase byUserId infra, teamStaffEmbedAudit, digestSignoffGate).
+  => This is retire-the-subsystem vs. wire-a-future-consumer — an architecture
+     call, not a mechanical delete. The existence of a dedicated test suite
+     signals the infra may have been deliberately kept pending a consumer. CC
+     did NOT remove it. Architect call: confirm the team-aware voice signature
+     is truly abandoned (post toggle-model) → then delete fetch + buildOrgContext
+     param + signatureCoaches.js + the 5 test files in one PR.
+
+FORK D — coach_roundup / family_guide send-gate hole. [COMPOSER #2]
+  countByAudienceType returns a hard 1 regardless of whether
+  audience_filter.coach_user_id / parent_user_id is set; only games_recap
+  hard-gates an empty selection in StepSendConfirm. Well-mitigated today (the
+  resolver throws → translateBriefingError → friendly toast), so no broken send
+  reaches a family — but it is a gate-pattern inconsistency vs. games_recap.
+  => Small product call: add a parity gate (disable Send + reason note when the
+     coach/parent isn't picked) to match the games_recap pattern, or accept the
+     resolver-throw mitigation as sufficient. CC lean: add the gate (cheap,
+     matches the established §16.13 send-gate discipline). Architect call.
+
+FORK E — PR5 follow-up: real-send delivery to pilot inbox for per-player kinds.
+  PR #889 makes TEST sends work for per-player kinds in REDIRECT mode. A REAL
+  (non-test) send still aborts at decidePilotGate (safe — no leak). Making a
+  real send actually DELIVER to the pilot inbox for these kinds requires
+  decoupling the token-mint guardian_id (needed for a valid per-family token)
+  from the delivery-row guardian_id (must be NULL so the gate doesn't abort and
+  delivery routes to the redirect email). That is a slice-contract fork with
+  per-family token write semantics (a redirected real token, clicked in the
+  pilot inbox, would mutate a real family's RSVP).
+  => CC lean: the cleaner path is the operator clearing pilot_test_recipient_email
+     to enter FILTER mode — then ALL 12 kinds deliver to the real pilot family
+     (Frank) with valid tokens and the gate passes (is_pilot_family). No code
+     fork needed. Recommend ratifying FILTER-mode cutover over the
+     guardian_id-decoupling fork. Architect call.
+
+
+4. NEXT ACTION WHEN FORKS LAND
+------------------------------
+  - FORK A ratified (a): build AutoNotificationSettingsSheet + Stream-B
+    enable-gate in handleRsvpLowGoing.
+  - FORK B ratified: wire-or-trim AI_DRAFT_FIELD / ANCHORED_KINDS to match.
+  - FORK C ratified-retire: one PR deleting the signature_coaches subsystem +
+    its 5 test files.
+  - FORK D ratified: add the coach_roundup/family_guide send-gate.
+  - FORK E ratified FILTER-mode: operator clears pilot_test_recipient_email;
+    CC verifies all 12 kinds resolve >0 recipients for the pilot family via
+    resolver replay.
+
+Verification discipline used this session: AP#26 replay (RPC + function-body via
+MCP execute_sql), AP#34 (the proposalId test-caller catch), AP#47 (reset-to-main
+between PRs), §11.7 verify-before-stack (git merge-waiter between PRs), §11.8
+(forks surfaced, not settled).
