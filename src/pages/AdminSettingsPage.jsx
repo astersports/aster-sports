@@ -5,6 +5,9 @@ import AdminBackHeader from '../components/admin/AdminBackHeader';
 import AutoNotificationSettingsForm from '../components/admin/AutoNotificationSettingsForm';
 import SenderIdentityForm from '../components/admin/SenderIdentityForm';
 import OrganizationForm from '../components/admin/OrganizationForm';
+import RegistrationForm from '../components/admin/RegistrationForm';
+import FeaturesForm from '../components/admin/FeaturesForm';
+import CustomDomainForm from '../components/admin/CustomDomainForm';
 import { useOrgAutoNotifications } from '../hooks/useOrgAutoNotifications';
 import { useOrgSettings } from '../hooks/useOrgSettings';
 
@@ -47,6 +50,10 @@ export default function AdminSettingsPage() {
   const s = os.settings;
 
   const orgSummary = os.loading ? 'Loading…' : `${org?.name || 'Organization'} · ${s?.season_label || 'No season set'}`;
+  const regSummary = os.loading ? 'Loading…' : (s?.registration_open ? 'Open' : 'Closed');
+  const features = [s?.futures_academy_enabled && 'Futures Academy', s?.carpool_enabled && 'Carpool'].filter(Boolean);
+  const featuresSummary = os.loading ? 'Loading…' : (features.length ? features.join(', ') : 'None enabled');
+  const domainSummary = os.loading ? 'Loading…' : (s?.custom_domain || 'Not set');
   const anSummary = an.loading ? 'Loading…' : `Reminders ${an.remindersOn ? 'on' : 'off'} · Nudges ${an.nudgesOn ? 'on' : 'off'}`;
   const senderSummary = os.loading ? 'Loading…' : (s?.from_name && s?.from_email ? `${s.from_name} · ${s.from_email}` : 'Not set');
 
@@ -60,6 +67,12 @@ export default function AdminSettingsPage() {
       <p style={SECTION_LABEL}>General</p>
       <div style={CARD}>
         <Row title="Organization" summary={orgSummary} disabled={os.loading} onClick={() => setOpenForm('org')} />
+        <div style={DIVIDER} />
+        <Row title="Registration" summary={regSummary} disabled={os.loading} onClick={() => setOpenForm('registration')} />
+        <div style={DIVIDER} />
+        <Row title="Features" summary={featuresSummary} disabled={os.loading} onClick={() => setOpenForm('features')} />
+        <div style={DIVIDER} />
+        <Row title="Custom domain" summary={domainSummary} disabled={os.loading} onClick={() => setOpenForm('domain')} />
       </div>
 
       <p style={SECTION_LABEL}>Communications</p>
@@ -73,6 +86,27 @@ export default function AdminSettingsPage() {
         open={openForm === 'org'}
         onClose={() => setOpenForm(null)}
         initial={{ name: org?.name, mailingAddress: org?.mailing_address, seasonLabel: s?.season_label, timezone: s?.timezone }}
+        onSave={os.save}
+        saving={os.saving}
+      />
+      <RegistrationForm
+        open={openForm === 'registration'}
+        onClose={() => setOpenForm(null)}
+        initial={{ registrationOpen: s?.registration_open }}
+        onSave={os.save}
+        saving={os.saving}
+      />
+      <FeaturesForm
+        open={openForm === 'features'}
+        onClose={() => setOpenForm(null)}
+        initial={{ futuresEnabled: s?.futures_academy_enabled, carpoolEnabled: s?.carpool_enabled }}
+        onSave={os.save}
+        saving={os.saving}
+      />
+      <CustomDomainForm
+        open={openForm === 'domain'}
+        onClose={() => setOpenForm(null)}
+        initial={{ customDomain: s?.custom_domain }}
         onSave={os.save}
         saving={os.saving}
       />
