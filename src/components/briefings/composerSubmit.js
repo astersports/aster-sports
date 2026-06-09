@@ -34,6 +34,7 @@ import { queueRecipients } from '../../lib/briefings/queueRecipients';
 import { queueComposedMessages } from '../../lib/briefings/queueComposedMessages';
 import { getDispatchSendPath, NoRecipientsError, RESOLVER_REGISTRY } from '../../lib/engine/resolvers/registry';
 import { resolveBodyTokenUrls, substituteAndRenderLegacy } from '../../lib/briefings/bodyTokenUrls';
+import { selectSignoffCoaches } from '../../lib/briefings/signoffCoaches';
 
 const HTML_OPEN = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">';
 const HTML_CLOSE = '</div>';
@@ -67,14 +68,12 @@ async function resolveAndComposePerSlice(state) {
   return { messages, sample };
 }
 
-async function composeLegacy(state, coaches) {
+async function composeLegacy(state, _coaches) {
   const tourneyUrl = await resolveTourneyUrl(state);
-  // Contact block is OFF by default; it renders only when the per-message
-  // toggle is on, carrying the selected staff (or the passed roster as a
-  // fallback when the toggle is on but nobody was explicitly picked).
-  const signoffCoaches = state.signoff_enabled === true
-    ? (Array.isArray(state.signoff_coaches) && state.signoff_coaches.length ? state.signoff_coaches : (coaches || []))
-    : [];
+  // Contact block is OFF by default and renders only the staff the admin
+  // explicitly picked (no all-staff fallback). Shared helper — preview uses the
+  // same selection so the two never diverge.
+  const signoffCoaches = selectSignoffCoaches(state);
   const composed = compose({ kind: state.kind, data: { ...state.body, tourney_url: tourneyUrl, signoff_message: state.signoff_message, coaches: signoffCoaches } });
   const hasTokens = (composed.sections || []).some((s) => Array.isArray(s.body_token_placeholders));
   if (!hasTokens) return composed;
