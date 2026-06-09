@@ -12,7 +12,6 @@
 
 import { lazy, Suspense, useState } from 'react';
 import { labelStyle, textareaStyle } from './bodies/_styles';
-import TemplatePicker from './TemplatePicker';
 import SignoffContactToggle from './SignoffContactToggle';
 import AiDraftAnchored from './AiDraftAnchored';
 import AiDraftFreeForm from './AiDraftFreeForm';
@@ -76,14 +75,6 @@ export default function StepBodySignoff({ state, dispatch, audience, hasParentTo
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <TemplatePicker
-        kind={state.kind}
-        currentTemplateId={state.activeTemplateId}
-        onSelect={(template) => {
-          dispatch({ type: 'SET_ACTIVE_TEMPLATE', payload: { templateId: template?.id || null } });
-          if (template) dispatch({ type: 'UPDATE_BODY', patch: template.body });
-        }}
-      />
       <AiDraftAnchored state={state} dispatch={dispatch} />
       <AiDraftFreeForm state={state} dispatch={dispatch} />
       <Suspense fallback={<div style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>Loading editor…</div>}>

@@ -35,7 +35,7 @@ import { buildInitial, fmtSchedule, hasAuthoredContent } from './briefingCompose
 export default function BriefingComposer({ onClose, initialKind, initialAnchorKind, initialAnchorId, initialDraftId, initialKindFilter }) {
   const { orgId } = useAuth();
   const { showToast } = useToast();
-  const { pilotModeEnabled, pilotTestRecipientEmail } = useOrgSettings(orgId);
+  const { pilotModeEnabled } = useOrgSettings(orgId);
   const { recipients, loading: recipientsLoading } = useDigestRecipients({ orgId, pilotOnly: pilotModeEnabled });
   const { recipients: recipientsTotal } = useDigestRecipients({ orgId, pilotOnly: false });
   const { staff: coaches } = useOrgStaff(orgId);
@@ -138,7 +138,7 @@ export default function BriefingComposer({ onClose, initialKind, initialAnchorKi
           <ComposerSections
             state={state} dispatch={dispatch} audience={audience}
             recipients={recipients} recipientsLoading={recipientsLoading} coaches={coaches}
-            pilotTestRecipientEmail={pilotTestRecipientEmail} pilotModeEnabled={pilotModeEnabled}
+            pilotModeEnabled={pilotModeEnabled}
             hasParentTournament={hasParentTournament} blocked={wizardBlocked}
             audienceResolving={audienceResolving} onSend={onSend} sending={busy}
             onSaveDraft={() => { showToast('Draft saved.', 'success'); onClose?.(); }} onCancel={onClose}

@@ -16,18 +16,15 @@
 
 import AnchorPicker from './AnchorPicker';
 import LockedAnchorChip from './LockedAnchorChip';
-import PilotTestScopePicker from './PilotTestScopePicker';
 import AudienceControl from './audience/AudienceControl';
 import { ANCHOR_KINDS_REQUIRING_ID } from './composerReducer';
-import { useOrgTeams } from '../../hooks/useOrgTeams';
 
 const labelStyle = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', display: 'block', marginBottom: 8 };
 const helperStyle = { fontSize: 13, color: 'var(--as-warning)', marginTop: 8, lineHeight: 1.4 };
 
 const ANCHOR_NOUN = { event: 'event', tournament: 'tournament', team: 'team' };
 
-export default function StepAnchorAudience({ state, dispatch, audience, recipientsLoading, pilotTestRecipientEmail }) {
-  const { teams } = useOrgTeams();
+export default function StepAnchorAudience({ state, dispatch, audience, recipientsLoading }) {
   const needsId = ANCHOR_KINDS_REQUIRING_ID.has(state.anchor_kind) && !state.anchor_id;
   const noun = ANCHOR_NOUN[state.anchor_kind] || 'anchor';
 
@@ -51,10 +48,6 @@ export default function StepAnchorAudience({ state, dispatch, audience, recipien
           audience={audience} recipientsLoading={recipientsLoading}
           onPick={(audience_type, audience_filter) => dispatch({ type: 'SET_AUDIENCE', audience_type, audience_filter })} />
       </section>
-      <PilotTestScopePicker
-        teams={teams} pilotTestRecipientEmail={pilotTestRecipientEmail}
-        value={state.pilot_test_scope_team_id}
-        onChange={(value) => dispatch({ type: 'SET_PILOT_TEST_SCOPE', value })} />
     </div>
   );
 }

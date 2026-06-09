@@ -15,7 +15,7 @@ import ScheduleForLaterPicker from './ScheduleForLaterPicker';
 
 export default function ComposerSections({
   state, dispatch, audience, recipients, recipientsLoading, coaches,
-  pilotTestRecipientEmail, pilotModeEnabled, hasParentTournament, blocked,
+  pilotModeEnabled, hasParentTournament, blocked,
   audienceResolving = false, onSend, sending, onSaveDraft, onCancel,
 }) {
   const body = (
@@ -30,7 +30,7 @@ export default function ComposerSections({
     <>
       <StepAnchorAudience
         state={state} dispatch={dispatch} audience={audience}
-        recipientsLoading={recipientsLoading} pilotTestRecipientEmail={pilotTestRecipientEmail}
+        recipientsLoading={recipientsLoading}
       />
       {body}
       <ScheduleForLaterPicker

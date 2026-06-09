@@ -38,18 +38,9 @@ function resolveWeeklyDigestAudienceTeamIds({ audienceType, audienceFilter, anch
   return null;
 }
 
-function filterSendable(recipients, eventsByTeam, audienceTeamIds = null, pilotTestScopeTeamId = null) {
+function filterSendable(recipients, eventsByTeam, audienceTeamIds = null) {
   const audienceSet = Array.isArray(audienceTeamIds) && audienceTeamIds.length ? new Set(audienceTeamIds) : null;
   return (recipients || [])
-    // Wave 4.3-K Item 3: pilot test scope picker. Synthetic rows have
-    // guardian_id=null and team_ids=[single team]; the wizard picker
-    // narrows the test send to just the selected team. Real guardians
-    // are untouched by this filter.
-    .filter((r) => {
-      if (!pilotTestScopeTeamId) return true;
-      if (r.guardian_id != null) return true; // never filter real guardians
-      return (r.team_ids || []).includes(pilotTestScopeTeamId);
-    })
     .map((r) => {
       const seen = new Set();
       const evs = [];
@@ -85,7 +76,7 @@ export function mapWizardStateToDigestArgs({ state, orgId, period, recipients, e
     audienceFilter: state.audience_filter,
     anchorId: state.anchor_id,
   });
-  const sendable = filterSendable(recipients, buildEventsByTeam(events), audienceTeamIds, state.pilot_test_scope_team_id || null);
+  const sendable = filterSendable(recipients, buildEventsByTeam(events), audienceTeamIds);
   return {
     orgId, period,
     bodyNotes: state.body?.body_notes || '',
