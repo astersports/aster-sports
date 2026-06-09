@@ -1,0 +1,207 @@
+==============================================================================
+AUDIT — BRIEFINGS TOKEN SYSTEM + AI-DRAFT PIPELINE
+Date: 2026-06-09
+Scope: per-recipient signed token URLs (RSVP / academy call-up / unsubscribe /
+       body tokens) + AI-draft prose pipeline. READ-ONLY audit; no edits.
+Auditor: CC (line-by-line per §11.7 / AP#60 source hierarchy)
+==============================================================================
+
+VERDICT: The token mint -> wrap-handler-URL -> substitute -> render -> fan-out
+chain is structurally SOUND for rsvp_nudge, academy_callup_notice, and body
+tokens. AP#29 two-field-name split is correctly implemented everywhere
+(placeholders -> urls, new object, no in-place mutation, renderer reads ONLY
+_urls with fail-loud literal fallback). AP#31/#32/#33 (verify_jwt / app_secrets /
+gateway) hold. Token mint keys are correct. No P0/P1 token bugs found.
+
+Findings below are P2/P3 (one consistency gap, two minor robustness/parity
+items) plus DB-verification flags for the SQL layer (which I cannot confirm from
+files alone).
+
+==============================================================================
+FINDING 1 — AI-draft advertised for weekly_digest + tournament_prelim but
+            client has NO surface to invoke it (draft hidden, no hint)
+SEVERITY: P2
+==============================================================================
+FILES:
+  src/lib/briefings/anchoredAiFacts.js:10-14   (AI_DRAFT_FIELD: only 3 kinds)
+  src/lib/briefings/anchoredAiFacts.js:36-76   (EXTRACT: only 3 kinds)
+  src/lib/briefings/aiDraftPrompt.js:13         (ANCHORED_KINDS: 5 kinds)
+  supabase/functions/briefing-ai-draft/_helpers.ts:7  (mirror: 5 kinds)
+  src/components/briefings/AiDraftAnchored.jsx:28,33   (field lookup -> null)
+  src/components/briefings/StepBodySignoff.jsx:78-79   (mount point)
+
+WHAT'S WRONG:
+  ANCHORED_KINDS (and AI_DRAFT_KINDS) advertise 5 AI-draftable anchored kinds:
+  game_recap, games_recap, weekly_digest, tournament_recap, tournament_prelim.
+  The edge fn (briefing-ai-draft) accepts all 5 and the AIDRAFT build spec
+  (docs/AIDRAFT_COMPOSE_FN_BUILD_SPEC §8/§4d) lists weekly_digest +
+  tournament_prelim as supported.
+
+  But the CLIENT only wires 3 of them. AI_DRAFT_FIELD and the EXTRACT map in
+  anchoredAiFacts.js cover ONLY game_recap, games_recap, tournament_recap.
+
+  AiDraftAnchored.jsx:33 does `if (!entry || !field) return null;`. For
+  weekly_digest and tournament_prelim, `field = AI_DRAFT_FIELD[kind]` is
+  undefined, so the component renders NOTHING — no draft button, and critically
+  no "AI draft not available for this kind" hint. AiDraftFreeForm also returns
+  null (not a free-form kind). Net result: for these two reachable composer
+  kinds the AI-draft capability is silently absent. This is exactly the
+  "draft button hidden/disabled with no hint" UX class the audit targets.
+
+  (tournament_prelim does get the SEPARATE suggest-briefing-closer button via
+  SUGGEST_CLOSER_KINDS in StepBodySignoff:48 — that is a closer-line feature,
+  not the full-narrative AI draft. weekly_digest gets no AI assist at all.)
+
+  Note: weekly_digest's anchorFromState (registry.js:79) returns
+  {orgId, period, pilotOnly} with no eventId/tournamentId/eventIds, so even if
+  AI_DRAFT_FIELD had an entry, AiDraftAnchored's anchorReady gate (line 32)
+  would also need widening. Two-layer gap.
+
+PROPOSED FIX (pick one, operator/architect call):
+  (a) If weekly_digest + tournament_prelim AI draft is in-scope: add their
+      AI_DRAFT_FIELD entries + EXTRACT fact builders in anchoredAiFacts.js, and
+      widen AiDraftAnchored anchorReady to accept the weekly_digest period
+      anchor. (Matches the file's own "Add an anchored kind by..." header.)
+  (b) If out-of-scope for v1: remove weekly_digest + tournament_prelim from
+      ANCHORED_KINDS in BOTH aiDraftPrompt.js AND _helpers.ts (AP#30 mirror,
+      same commit) so the advertised set matches the wired set, AND/OR render a
+      one-line "AI draft isn't available for this briefing type" hint in
+      AiDraftAnchored instead of returning null for a supported-but-unwired kind.
+  Lowest-risk immediate fix: (b)'s hint, so the surface never silently vanishes.
+
+==============================================================================
+FINDING 2 — callup-token-handler confirmation timestamp not timezone-pinned
+            (parity drift vs rsvp-token-handler)
+SEVERITY: P3
+==============================================================================
+FILE:
+  supabase/functions/callup-token-handler/index.ts:131
+
+WHAT'S WRONG:
+  The callup confirmation page formats the event time with
+  `new Date(ctx.start_at).toLocaleString("en-US", {... no timeZone ...})`.
+  The rsvp-token-handler equivalent (index.ts:117) pins
+  `timeZone: "America/New_York"`. Deno edge runtime defaults to UTC, so the
+  callup confirmation page shows the event start in UTC (e.g. a 6pm ET game
+  reads as 10pm/11pm). The unsubscribe-handler:92 correctly pins ET.
+  This is an AP#43 cross-surface invariant drift (same "format an event time"
+  concept rendered with divergent timezone handling across the 3 handlers).
+
+PROPOSED FIX:
+  Add `timeZone: "America/New_York"` to the toLocaleString options at
+  callup-token-handler/index.ts:131 to match rsvp-token-handler:117.
+
+==============================================================================
+FINDING 3 — useAiDraft still ships proposal_id path that the edge fn hard-
+            rejects (dead defensive code, no live bug)
+SEVERITY: P3 (informational / cleanup)
+==============================================================================
+FILES:
+  src/hooks/useAiDraft.js:28,36          (accepts + forwards proposalId)
+  supabase/functions/briefing-ai-draft/index.ts:79-81  (400-rejects proposal_id)
+
+WHAT'S WRONG:
+  useAiDraft.draft() accepts a proposalId and forwards it as body.proposal_id.
+  The edge fn explicitly returns 400 "Pass resolved facts instead of
+  proposal_id..." for any proposal_id. No live caller passes proposalId
+  (AiDraftAnchored + AiDraftFreeForm both pass facts/gist only), so this is
+  dead-but-harmless. Flagged only because if a future caller wired proposalId
+  expecting server-side resolution, it would silently 400 with a confusing
+  message. Not a current bug.
+
+PROPOSED FIX (optional):
+  Drop the proposalId param from useAiDraft, or leave a code comment that the
+  server-side proposal path is intentionally unwired (design seam 4b). No action
+  required for correctness today.
+
+==============================================================================
+ITEMS REQUIRING DB VERIFICATION (cannot confirm from files; flag for SQL check
+via Supabase MCP execute_sql against project vrwwpsbfbnveawqwbdmj)
+==============================================================================
+
+DB-1 (recommend verify) — mint authz guard actually applied in production.
+  Migration 20260605145838_mint_token_authz_guard_staff_only.sql adds an
+  in-function staff-only guard to mint_rsvp_token + mint_callup_token (prevents
+  a logged-in parent minting a token for another family — was a real P1/P2). The
+  repo file is correct. VERIFY the live function bodies contain the guard:
+    SELECT pg_get_functiondef('public.mint_rsvp_token(uuid,uuid,uuid,text)'::regprocedure);
+    SELECT pg_get_functiondef('public.mint_callup_token(uuid,uuid,uuid,text)'::regprocedure);
+  Confirm the `auth.role() <> 'service_role' AND NOT EXISTS (... user_roles ...)`
+  block is present in both, and that the guard's auth.uid() is subselect-wrapped
+  (it is in the file: `(SELECT auth.uid())` — good per the §5 initplan rule).
+
+DB-2 (recommend verify) — EXECUTE grant chain on the mint RPCs.
+  Per AP#23 + AP#57 (Supabase auto-grants EXECUTE to anon despite REVOKE FROM
+  PUBLIC). The callup migration does REVOKE FROM PUBLIC + REVOKE FROM anon +
+  GRANT to authenticated, service_role (lines 90-92). VERIFY no residual anon
+  EXECUTE on mint_rsvp_token / mint_callup_token / mint_unsubscribe_token:
+    SELECT routine_name, grantee, privilege_type FROM information_schema.routine_privileges
+    WHERE routine_name IN ('mint_rsvp_token','mint_callup_token','mint_unsubscribe_token','verify_rsvp_token','verify_callup_token','verify_unsubscribe_token');
+  verify_* should be service_role-only (handlers call them service-role); anon
+  must NOT have EXECUTE on verify_* (that would let anyone decode/replay tokens).
+
+DB-3 (recommend verify) — app_secrets populated for the token + AI secrets.
+  Handlers read rsvp_token_secret / callup_token_secret / unsubscribe secret via
+  the verify_* SECDEF RPCs, and briefing-ai-draft reads anthropic_api_key. VERIFY:
+    SELECT name, (value IS NOT NULL AND value <> '') AS populated FROM app_secrets
+    WHERE name IN ('rsvp_token_secret','callup_token_secret','anthropic_api_key');
+  (unsubscribe secret name per its mint/verify migration — confirm exact key.)
+
+DB-4 (informational) — onConflict targets have matching unique constraints
+  (AP#25). Handlers upsert event_rsvps onConflict 'event_id,player_id' and
+  guardian_email_preferences onConflict 'guardian_id'. callup/rsvp_token_uses
+  insert keys on nonce (single-use lock). These look correct but confirm the
+  constraints exist if a 42P10 ever surfaces.
+
+==============================================================================
+WHAT WAS VERIFIED CLEAN (no action)
+==============================================================================
+- AP#29 two-field split: substituteRsvpTokens / substituteCallupTokens /
+  substituteBodyTokens all emit a NEW object, delete the *_placeholders field,
+  write a different *_urls field, no in-place mutation. (rsvpTokens.js:35-37,
+  callupTokens.js:38-40, bodyTokens.js:69-71, bodyTokenUrls.js:57-59.)
+- Renderers read ONLY *_urls and fail-loud to literal {{...}} when absent:
+  rsvpRequest.js:42, callupResponse.js:34, statsNarrative.js:22-24/29. The
+  literal-placeholder fallback is the intended smoke-test signal.
+- Handler-URL wrap is in the SEND HELPER, not the renderer/substitute (AP#29):
+  rsvpNudgeSend.js:36 and academyCallupSend.js:36 both wrap raw mint output as
+  ${HANDLER_BASE}?t=<token>&action=<resp>. mintRsvpToken comment explicitly
+  notes the 8b-b latent-bug (wrap dropped) was fixed.
+- Mint keys correct: rsvp = (eventId, kid.player_id, slice.guardian_id, response)
+  x3 responses (rsvpNudgeSend.js:42-46); callup = (eventId, slice.player_id,
+  slice.guardian_id, accept|decline) (academyCallupSend.js:42-45). RPC sigs
+  match (mint_callup_token migration lines 49-50). section.player_id ==
+  slice.player_id in both resolvers (rsvpNudgeCompose.js:23,
+  academyCallupNotice.js:102 + Data.js:58).
+- Per-recipient bodies render from each row's OWN substituted content_sections
+  (queueComposedMessagesBuilders.js:61 renderBody per message); admin BCC pins
+  to the UN-substituted placeholder sample (queueComposedMessages.js:47,
+  buildAdminRow:91) — no leak of family token URLs into admin BCC.
+- comms_messages canonical row stores the placeholder (un-substituted) sample
+  body + content_sections (rsvpNudgeSend.js:80-81). Intended: families receive
+  comms_message_recipients.body_html_rendered, never the canonical row.
+- Unsubscribe substitution applied per-recipient before INSERT
+  (queueComposedMessages.js:55 applyUnsubscribeUrls; admin/no-guardian rows get
+  the org-website no-op URL, unsubscribeUrl.js:25).
+- config.toml verify_jwt=false present for rsvp-token-handler,
+  callup-token-handler, unsubscribe-handler, feedback-token-handler,
+  briefing-auto-draft-tick, briefing-cron-dispatch (lines 39-67). briefing-ai-
+  draft correctly OMITS the entry (verify_jwt:true) and does its own
+  auth.getUser + admin user_roles authz (index.ts:62-90).
+- briefing-ai-draft reads anthropic_api_key from app_secrets (index.ts:34-39,93),
+  AP#33-compliant. voice_config.ai_draft_profile read + length-gated (>=200,
+  index.ts:96-97). AP#30 mirror aiDraftPrompt.js <-> _helpers.ts is in sync
+  (logic byte-near-identical).
+- Free-form (announcement, custom_message) -> AiDraftFreeForm; anchored recap
+  kinds -> AiDraftAnchored; both self-gate by kind, both reach the fn with
+  grounding facts (free-form: gist + headline/subject as facts; anchored:
+  client-resolved EXTRACT facts). Disabled-state hints present:
+  AiDraftControls.jsx:35 (free-form), AiDraftAnchored.jsx:36-45 (anchor-not-
+  picked hint). The only "no hint" gap is FINDING 1.
+- Substitution unit tests assert field-split, no-mutation, fail-loud throws
+  (rsvpTokens.test.js:15-16,21-22,42-49). bodyTokens + callupTokens tests
+  present.
+
+==============================================================================
+END
+==============================================================================

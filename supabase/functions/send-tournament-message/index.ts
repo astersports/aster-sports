@@ -149,7 +149,17 @@ Deno.serve(async (req) => {
           .in("id", suppressedIds);
         suppressed = suppressedIds.length;
         // Drop suppressed rows from the in-memory list so the send loop skips them.
-        if (stillQueued.length === 0) return json({ ok: true, sent: 0, failed: 0, suppressed, errors: [] });
+        if (stillQueued.length === 0) {
+          // Everyone unsubscribed — there is nothing to send, but the message
+          // must still be FINALIZED (status='sent', sent_at) so it isn't
+          // stranded at 'draft'/'queued' forever. Leaving it unfinalized made
+          // the client report success while the row looked permanently unsent
+          // and could not be re-driven (0 'queued' rows → 400 on re-invoke).
+          const { error: finErr } = await sb.from("comms_messages")
+            .update({ status: "sent", sent_at: new Date().toISOString(), sent_by: user.id, recipient_count: 0, delivery_method: "resend_api" })
+            .eq("id", body.message_id);
+          return json({ ok: !finErr, sent: 0, failed: 0, suppressed, errors: finErr ? [`Finalize failed: ${finErr.message}`] : [] });
+        }
         recipients.length = 0;
         recipients.push(...stillQueued);
       }
