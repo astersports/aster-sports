@@ -1,0 +1,113 @@
+CC -> ARCHITECT : CURRENT SETTINGS-UI COVERAGE REPORT
+Date: 2026-06-09  ·  Relay artifact (CLAUDE.md §11.8)  ·  the §H deliverable for the full-settings discovery
+Method: read-only repo map (file:line) + live MCP re-verification of the substrate.
+
+================================================================================
+HEADLINE
+================================================================================
+~30% of the §B substrate is already surfaced: the 11 organization_settings core
+fields (the /admin/settings page CC just shipped) + auto_notifications, PLUS a set
+of self-service prefs already living OUTSIDE /admin/settings (notification channels,
+quiet hours, density, briefing inbox filters, the view-as role switch). Everything
+else — all 6 JSONB rule blocks, org identity/brand/billing, theme, guardian digest
+prefs, and ALL feature-config — is greenfield (0% UI). The build is the DELTA below.
+
+SUBSTRATE RE-VERIFIED (live MCP, this session): the architect §B is correct — ALL
+named tables/columns exist (alert_configurations, dashboard_section_visibility,
+quick_actions_config, division_fees, circuit_rules, team_types.default_briefing_kinds
+/default_audience_rules, tournaments.rules, and the 6 org_settings jsonb blocks
+note_rules/notification_channels/nudge_rules/reminder_cadence/roster_rules/
+rsvp_deadlines). (A sub-agent code-search had inferred a few "no such table" — that
+was a no-UI-reference artifact, NOT a missing table. Corrected here; the architect's
+MCP verification stands.)
+
+================================================================================
+TIER 1 — organization_settings (admin)  : 11/17 core surfaced, 6 jsonb greenfield
+================================================================================
+SURFACED + editable, all at /admin/settings (CC #897-#905):
+  timezone, season_label        -> OrganizationForm.jsx (Organization)
+  registration_open             -> RegistrationForm.jsx (Registration)
+  futures_academy_enabled, carpool_enabled -> FeaturesForm.jsx (Features)
+  custom_domain                 -> CustomDomainForm.jsx (Custom domain)
+  from_name, from_email, reply_to_email -> SenderIdentityForm.jsx (Sender identity)
+  pilot_mode_enabled, pilot_test_recipient_email -> PilotModeForm.jsx (Pilot mode)
+NOT SURFACED (jsonb rule blocks — greenfield, the "power config"):
+  reminder_cadence, rsvp_deadlines, note_rules, nudge_rules, roster_rules,
+  notification_channels (full matrix)
+PARTIAL: organizations.auto_notifications {reminders_enabled, rsvp_nudges_enabled,
+  rsvp_min_going} -> AutoNotificationSettingsForm.jsx (Automatic messages). This is a
+  SUBSET of the notification_channels concern, not the full matrix.
+
+================================================================================
+TIER 1 — organizations (identity/brand/billing)  : name/address read-only, rest greenfield
+================================================================================
+SURFACED read-only: name, mailing_address -> OrganizationForm.jsx (Organization).
+NOT SURFACED: brand_colors, voice_config, logo_url, display_name, tagline, slug,
+  sport, public_listing_enabled, family_cap_policy, acceptable_age_range,
+  subscription_plan/status, stripe_account_id. (brand_colors/logo/display_name are
+  READ at runtime — AuthContext.jsx:56 / Header.jsx — but have no editor.)
+
+================================================================================
+TIER 2 — user_preferences (self, any role)  : mostly surfaced, in scattered places
+================================================================================
+SURFACED:
+  card_density       -> useDensity.js + DensityToggle.jsx, on /schedule + /admin/locations
+                        (titleAction chip "Compact"⇄"Detailed"). NOT on a settings page.
+  notification_preferences (per-category) -> account/NotificationPrefs.jsx at /account
+  quiet_hours (weekday/weekend)           -> account/QuietHoursCard.jsx at /account
+  role_preferences (view-as)              -> useHomeRole.js + RoleSwitcherSheet.jsx,
+                                             Header Eye icon (admin "view as coach/parent")
+NOT SURFACED: theme (column exists, NO toggle anywhere), user-level timezone, locale,
+  favorite_audiences.
+NOTE: these self prefs are TODAY spread across /account + per-page chips + the header —
+  NOT under a unified "My preferences" settings group. The discovery's "one shell,
+  role decides groups" would consolidate them.
+
+================================================================================
+TIER 2 — briefing_inbox_preferences (self, admin)
+================================================================================
+SURFACED: default_kind_filter, default_team_filter, default_date_filter
+  -> useBriefingFilters.js + briefings/inbox/InboxFilters.jsx (admin Inbox/History;
+     auto-persist on change). NOT in /admin/settings.
+NOT SURFACED: active_tab_default, saved_filters.
+
+================================================================================
+TIER 3 — guardian_notification_prefs (parent self)  : 0% surfaced
+================================================================================
+NOT SURFACED: receive_weekly_digest, receive_tournament_briefings, receive_game_recaps,
+  receive_org_announcements. Table exists + read by send-side SQL, but NO parent UI
+  anywhere (not on /account). Greenfield — the render's Parent "Family notifications"
+  group is entirely to-build.
+
+================================================================================
+FEATURE-CONFIG (admin)  : 0% surfaced (all tables exist)
+================================================================================
+NOT SURFACED (no editor): circuit_rules (Records standings), dashboard_section_visibility
+  + quick_actions_config (Home layout — QuickActions.jsx renders FIXED tiles, no config),
+  team_types.default_briefing_kinds/default_audience_rules (Briefings defaults),
+  tournaments.rules (Schedule per-tournament), alert_configurations (alert thresholds —
+  AlertZone/useAlertEvaluator evaluate, but thresholds are not config-driven UI),
+  division_fees.auto_apply_rule (Programs).
+
+================================================================================
+DELTA SUMMARY (what to build vs reuse)
+================================================================================
+REUSE / DO NOT RE-SPEC (already shipped): the 11 org_settings core + auto_notifications
+  (/admin/settings); notification_preferences + quiet_hours (/account); card_density
+  (page chips); briefing inbox filters (Inbox); role view-as (Header).
+CONSOLIDATION CANDIDATE (exists but scattered): the Tier-2 self prefs above — the
+  discovery's unified "My preferences" group would gather density/theme/quiet-hours/
+  notifications/inbox-filters into the one shell. Decide whether to MOVE or MIRROR them
+  (moving touches /account + page chips; mirroring duplicates — AP#42 watch).
+GREENFIELD (build new): 6 org jsonb rule blocks; org identity/brand/billing editors;
+  theme toggle; guardian_notification_prefs (parent group); all feature-config.
+
+CROSS-REFERENCE for the four rulings: D-1 (jsonb depth) applies to the 6 greenfield
+rule blocks. D-2 (permissions) — feature-config tables' real gate is in the policy
+body; architect verifies each USING clause at build (CC can run those checks via MCP
+on request). D-3 (scope) — billing/public-listing/identity-edit are the deferred set,
+all 0% surfaced today so deferring them strands nothing. The view-as + /account prefs
+existing already is the main "don't duplicate" signal for the My-Preferences pass.
+================================================================================
+END COVERAGE REPORT.
+================================================================================

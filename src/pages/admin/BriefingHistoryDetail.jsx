@@ -4,7 +4,7 @@
 // follow-up; placeholder buttons surface the intent.
 
 import { ArrowLeft } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -19,6 +19,21 @@ const backBtn = { display: 'inline-flex', alignItems: 'center', gap: 6, padding:
 const tableStyle = { width: '100%', fontSize: 13, borderCollapse: 'collapse' };
 const cellStyle = { padding: '8px 6px', borderBottom: '1px solid var(--as-border-subtle)', textAlign: 'left' };
 const iframeStyle = { width: '100%', minHeight: 400, border: '1px solid var(--as-border-default)', borderRadius: 10, backgroundColor: 'var(--as-bg-card)' };
+const rollup = { display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 };
+const stat = { flex: '1 1 0', minWidth: 64, padding: '8px 10px', borderRadius: 8, background: 'var(--as-bg-secondary)', textAlign: 'center' };
+const statLbl = { fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', marginTop: 1 };
+
+// SEE — minimum delivery rollup (architect FORK E gate). Aggregates the
+// already-fetched per-recipient rows by provider signal; reflects H1-reconciled
+// statuses (#907). No new query, no migration.
+function Stat({ label, value, danger }) {
+  return (
+    <div style={stat}>
+      <div style={{ fontSize: 18, fontWeight: 700, color: danger && value ? 'var(--as-danger)' : 'var(--as-text-primary)' }}>{value}</div>
+      <div style={statLbl}>{label}</div>
+    </div>
+  );
+}
 
 export default function BriefingHistoryDetail() {
   const { id } = useParams();
@@ -28,6 +43,15 @@ export default function BriefingHistoryDetail() {
   const [msg, setMsg] = useState(null);
   const [recipients, setRecipients] = useState([]);
   const [previewIdx, setPreviewIdx] = useState(0);
+  const stats = useMemo(() => {
+    let delivered = 0, opened = 0, bounced = 0;
+    for (const r of recipients) {
+      if (r.delivered_at) delivered += 1;
+      if (r.opened_at) opened += 1;
+      if (r.delivery_status === 'bounced' || r.bounce_reason) bounced += 1;
+    }
+    return { total: recipients.length, delivered, opened, bounced };
+  }, [recipients]);
 
   useEffect(() => {
     if (!orgId) return;
@@ -81,6 +105,14 @@ export default function BriefingHistoryDetail() {
         </div>
         <div style={card}>
           <div style={{ ...labelStyle, marginBottom: 8 }}>Delivery</div>
+          {recipients.length > 0 && (
+            <div style={rollup}>
+              <Stat label="Sent" value={stats.total} />
+              <Stat label="Delivered" value={stats.delivered} />
+              <Stat label="Opened" value={stats.opened} />
+              <Stat label="Bounced" value={stats.bounced} danger />
+            </div>
+          )}
           <table style={tableStyle}>
             <thead><tr><th style={cellStyle}>Email</th><th style={cellStyle}>Status</th><th style={cellStyle}>Delivered</th><th style={cellStyle}>Opened</th></tr></thead>
             <tbody>
