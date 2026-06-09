@@ -42,7 +42,6 @@ import colorStripedRow from './renderers/colorStripedRow';
 import eventCard from './renderers/eventCard';
 import callupCard from './renderers/callupCard';
 import placementBlock from './renderers/placementBlock';
-import gameLog from './renderers/gameLog';
 import standoutMoments from './renderers/standoutMoments';
 import coachReflection from './renderers/coachReflection';
 import vipHeader from './renderers/vipHeader';
@@ -85,7 +84,6 @@ export const SECTION_RENDERERS = {
   event_card: eventCard,
   callup_card: callupCard,
   placement_block: placementBlock,
-  game_log: gameLog,
   standout_moments: standoutMoments,
   coach_reflection: coachReflection,
   vip_header: vipHeader,

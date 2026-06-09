@@ -1,7 +1,7 @@
 // AI-draft compose — the single client of the AI-draft compose edge function.
 // Pre-written per AIDRAFT_BUILD_SPEC §2b as tested infra (no UI mount yet, so
 // no AP #51 dead-mount breach — the mount lands in AI-1 once the edge fn is
-// live). draft({ kind, mode, proposalId?, facts?, gist?, audience }) shapes the
+// live). draft({ kind, mode, facts?, gist?, audience }) shapes the
 // REQUEST per the §1 contract and parses the { body, card_summary, facts_used,
 // warnings } RESPONSE. Parse / fence-strip / retry are SERVER-side; this hook
 // consumes the JSON shape as-is and surfaces warnings (missing-fact blanks) to
@@ -25,15 +25,14 @@ export function useAiDraft() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const draft = useCallback(async ({ kind, mode, proposalId, facts, gist, audience }) => {
+  const draft = useCallback(async ({ kind, mode, facts, gist, audience }) => {
     setLoading(true);
     setError(null);
     try {
       if (!orgId) throw new Error('No organization in context.');
-      // Contract §1: org_id + kind + mode + audience always; then proposal_id
-      // (auto-proposed) OR facts (free-form/explicit) + gist (free-form only).
+      // Contract §1: org_id + kind + mode + audience always; then facts
+      // (free-form/explicit) + gist (free-form only).
       const body = { org_id: orgId, kind, mode, audience };
-      if (proposalId != null) body.proposal_id = proposalId;
       if (facts != null) body.facts = facts;
       if (gist != null) body.gist = gist;
 
