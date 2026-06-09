@@ -1,0 +1,106 @@
+CC SESSION HANDOFF — 2026-06-09 (Settings page + A2 + comms forks)
+Branch worked: claude/aster-sports-migration-4yczeu  ·  All PRs merged to main.
+Relay artifact per CLAUDE.md §11.8 rule #5. Hand straight to the architect.
+Companion to CC_SESSION_HANDOFF_2026-06-09.txt (earlier briefings/comms arc, #889-891).
+
+================================================================================
+1. WHAT SHIPPED (all merged, CI green, auto-merged)
+================================================================================
+Comms / AI-draft forks (from the architect's FORK sign-off earlier this session):
+  #893  FORK A1 — Stream-B nudges enable-gate, default OFF (rsvpNudgesEnabled).
+  #894  FORK D  — hard-gate empty coach/parent picker.
+  #895  FORK B  — trim AI-draft ANCHORED_KINDS 5->3 to the wired set.
+
+Settings page (REV 2 spec/handoff/render — the main arc this session):
+  #896  A2 design proposal doc (await-sign-off record).
+  #897  A2 — AutoNotificationSettingsForm + /admin/settings page shell + route +
+        QuickActions "Settings" tile + set_org_auto_notifications RPC (mirrors).
+  #898  Migration-collision mirror (165333) — AP#21 history parity (see §3).
+  #899  Step 1 — Sender identity form (Communications). useOrgSettings EXTENDED.
+  #900  Step 2 — Organization form (General). name/mailing_address read-only;
+        season_label + timezone editable. mailing_address added to AuthContext select.
+  #901  Step 3 — Registration + Features + Custom domain (General).
+  #902  Step 4 — Pilot mode (GUARDED). Built the control + the SEND-LIVE cutover
+        gate; did NOT perform the cutover (see §4).
+  #903  Step 5 — decompose AdminSettingsPage 146->92 (SettingsSheets.jsx) + a11y
+        (group <h2> hierarchy; mobile contract verified).
+
+Net: /admin/settings is live, admin-only, 3 groups / 7 sections, all saving.
+61 settings/admin tests green. Lint + build clean throughout (entry 104.96 KB gz,
+unchanged). Every file <=150 lines.
+
+================================================================================
+2. DECISIONS AWAITING ARCHITECT RATIFICATION (CC made a labeled call; flag if wrong)
+================================================================================
+D1  HOOK REUSE (AP#42). Handoff said "new useOrgSettings() hook"; one already
+    existed (read pilot fields). CC EXTENDED it (added bucket-A field select +
+    admin merged-write save) instead of building a parallel hook. All 4 prior
+    callers destructure only {pilotModeEnabled} — verified unaffected.
+D2  LABEL RENAME. Shipped A2 row/title "Auto-notifications" -> "Automatic messages"
+    to match the REV 2 render. Component name AutoNotificationSettingsForm unchanged.
+D3  INLINE SAVE (operator-ratified in-session). REV 2 render shows a STICKY footer
+    Save; every shipped form + SeasonFormSheet/TeamFormSheet precedent use INLINE
+    Save. Frank chose KEEP INLINE (short forms don't scroll). Render divergence
+    noted, not adopted. If the architect wants sticky for the tall Pilot form
+    specifically, that's a scoped follow-up.
+D4  ORG NAME/ADDRESS READ-ONLY. organizations has no UPDATE policy; full edit needs
+    a future set_org_profile RPC. CC rendered name + mailing_address as read-only
+    rows and did NOT build that RPC (architect-lane / multi-tenant onboarding, per
+    the handoff hard-stop). mailing_address shown because it feeds the CAN-SPAM footer.
+D5  AuthContext org select gained one column (mailing_address) so the read-only rows
+    source it from useAuth().org without a new fetch. Additive; consumers unaffected.
+D6  BUILD-QUEUE STALE REFERENCE. Handoff said "SKYFIRE_BUILD_QUEUE_v2.md entry per
+    step." That doc lives in docs/archive/ (frozen per CLAUDE.md archive doctrine).
+    CC did NOT write to it. Live pending-work tracker is EMBER_PENDING_LEDGER.md §4.
+    Needs an architect/operator call on whether to reconcile the ledger for this build.
+
+================================================================================
+3. THE TWO-LANE MIGRATION COLLISION (owned + reconciled)
+================================================================================
+On the operator GO for the A2 prereq writer, set_org_auto_notifications was applied
+in BOTH lanes:
+  20260609164118  add_set_org_auto_notifications_rpc      (CC — original writer)
+  20260609164149  revoke_anon_set_org_auto_notifications  (CC — AP#57 anon-revoke)
+  20260609165333  add_set_org_auto_notifications_rpc      (architect — redundant,
+                  body-equivalent CREATE OR REPLACE re-assert)
+No harm: idempotent, body matches, live grant chain verified anon-excluded
+(authenticated/postgres/service_role only). All three mirrors are committed (the
+165333 mirror carries a collision header). LANE LESSON (REV 2, locked): schema
+changes stay architect-lane only; the architect re-checks function existence
+immediately before any apply. CC will not author/apply migrations going forward.
+
+================================================================================
+4. OPEN / HELD (next actions when they land)
+================================================================================
+FORK E — real-send FILTER-mode cutover (the only strategic gate). GATED on:
+   (a) the architect's RECOVER idempotency seam, and
+   (b) the operator flipping pilot_test_recipient_email -> NULL.
+   (b) is now an in-app control: /admin/settings -> Pilot -> Pilot mode, behind the
+   typed "SEND LIVE" confirm. CC did NOT clear LH's live value
+   (olivejuiceinc1@gmail.com stays set). Operator fires only after SEND/LEGAL/SEE/
+   RECOVER are green.
+FORK C — signature_coaches subsystem. HELD per architect (revisit post-pilot).
+set_org_profile RPC — deferred (D4); architect-lane, multi-tenant onboarding phase.
+
+================================================================================
+5. OPERATOR SMOKE CHECKLIST (Frank — on the merged preview)
+================================================================================
+1. Log in as admin -> Home -> OPERATE -> Settings (or /admin/settings).
+2. General: Organization (name+address read-only; edit season/timezone -> Save).
+   Registration (toggle). Features (2 toggles). Custom domain (text; blank->Not set).
+3. Communications: Automatic messages (reminders/nudges/floor). Sender identity
+   (from name/email/reply-to).
+4. Pilot: Pilot mode shows On + redirect address. Clearing it triggers the
+   SEND-LIVE caution + typed confirm. DO NOT cut over yet (FORK E gates).
+5. Log in as coach/parent -> /admin/settings redirects to /unauthorized.
+
+================================================================================
+6. NEXT ACTION
+================================================================================
+Architect: ratify §2 D1-D6 (or flag), and resolve §2 D6 (ledger reconcile?).
+Operator: run §5 smoke on the preview.
+Strategic: FORK E remains the only gate — RECOVER seam (architect) + the operator
+pilot-cutover flip (now exposed in the Pilot form). Nothing else is blocked.
+================================================================================
+END HANDOFF 2026-06-09 (settings).
+================================================================================
