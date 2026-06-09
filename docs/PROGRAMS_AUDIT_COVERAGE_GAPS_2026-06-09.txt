@@ -1,0 +1,261 @@
+==============================================================================
+CC -> ARCHITECT: PROGRAMS AUDIT — COVERAGE-GAP SWEEP (wave-3 supplemental)
+Date: 2026-06-09. Self-contained per §11.8. AP#60 live-verified
+(project vrwwpsbfbnveawqwbdmj, SELECT-only). NOTHING APPLIED here.
+==============================================================================
+WHY: Frank asked "are there gaps in the audit?" The 14-agent wave-1/2 audit
+verified the P0/P1 DEFECT surface well (B5: 0 false positives in 11), but had
+explicit BREADTH holes: the admin create/fee path (B6 punted it), the public
+registration CLIENT (only the server RPC was read), a live RLS re-enumeration
+(leaned on wave-1 A1), the cross-section SEAMS (programs-only audit), and any
+runtime/a11y/visual/perf pass (all-static audit). CC dispatched 5 read-only
+agents on exactly those holes. This doc is the AP#58 synthesis. The single
+biggest remaining hole is NOT closed here: the F1-F16 catalog — 10 of 16 items
+(F2,F6,F7,F9-F13,F15,F16) are undefined repo-side; the architect must supply them.
+
+==============================================================================
+0. THE HEADLINE — THREE MIGRATION-COMPANION GAPS (the new constraints made
+   latent seams REACHABLE; each applied/staged migration needs an app guard)
+==============================================================================
+This is the most actionable cluster. The three Tier-1 migrations (2 applied
+this session, 1 staged) each have an app-layer companion that is now load-bearing:
+
+C-1 [BREAKS NOW] S4 (financial_accounts FK CASCADE->RESTRICT, APPLIED) makes
+    program-delete throw a RAW 23503 to the toast.
+    useProgramAdmin.js:44-56 deleteProgram() count-and-blocks on `registrations`
+    ONLY; it never counts financial_accounts. Post-RESTRICT, a program with
+    financial_accounts but 0 registrations passes the guard, hits .delete(), and
+    Postgres raises `update or delete on table "programs" violates FK constraint`
+    straight to the user (error.message passthrough). The stale comment at :47-49
+    still claims "the cascade is clean" — false since S4. The ledger is SAFE
+    (blocked, not nuked — S4's whole point), but the UX is a raw error.
+    FIX: add a financial_accounts (+coach_payouts) count-and-block sibling to the
+    existing registrations pre-check, with the §16.3 "...has financial records.
+    Archive it instead." message. >>> Recommend shipping this companion NOW.
+
+C-2 [BREAKS WHEN S2 LANDS — highest-risk pairing] the CLIENT rollover team-copy
+    (useSeasonRollover.js:42-45) omits team_type_id. The moment S2 (teams.
+    team_type_id NOT NULL) lands, every rollover team-copy 23502s mid-loop, and
+    because the rollover is NON-ATOMIC (C-3) it strands a half-rolled season.
+    The staged S1 rollover RPC already carries team_type_id forward — so the fix
+    is to land S1 + switch the client to the RPC BEFORE S2's DDL. Sequencing is
+    correctness-load-bearing (the architect already locked S1-before/with-S2; this
+    is the concrete reason).
+
+C-3 [latent, compounds C-2] rollover is non-atomic (useSeasonRollover.js:16-71):
+    new-season insert -> OLD-season archive -> team/roster loop -> audit row, no
+    txn. A mid-loop throw (C-2, or any transient) leaves the new season created
+    AND the old one already archived; re-running creates a SECOND season. S1's
+    single-RPC rebuild closes this. (CLAUDE.md §8's "7-B atomic execution" claim
+    is false — already in the retraction.)
+
+C-4 [edge] S3 (registrations partial-unique, APPLIED) raises a raw 23505 on a
+    genuinely-concurrent double-submit (two tabs) that beats the RPC's soft
+    SELECT-dedupe. The companion submit_registration ON CONFLICT (program_id,
+    player_id) WHERE status<>'cancelled' DO NOTHING closes it; until then the
+    client maps no 23505 -> generic "didn't go through". (useSubmitRegistration.js)
+
+==============================================================================
+1. AP#58 CROSS-CUTTING PATTERNS (synthesis across all 5 agents)
+==============================================================================
+PATTERN A #63 (same concept, divergent source/scope) — STILL DOMINANT, now
+  extended into the registration MONEY path:
+  - "what this family owes": client estimateCart (base+add_on) vs server
+    authoritative_total_cents vs entry-card price (base only) = THREE price
+    surfaces; the server authoritative number is fetched then DISCARDED, never
+    shown (G-2.1). RD-4 "reconciliation contract half-built" is literal.
+  - "is registration open": server registration_open boolean (ignored) vs client
+    reg-window recompute vs the RPC's submit-time recheck = three window truths
+    (G-2.4).
+  - "slug uniqueness scope": app per-org checkSlugAvailable vs DB GLOBAL
+    programs_public_slug_key index (G-1.1); stale comment claims "no unique
+    constraint".
+  - "is this program active": 4 definitions (useActivePrograms status-only /
+    programGrouping date-gated / SeasonContext seasons-view / the partial index)
+    — Summer Day Camp (active + future start) splits across all three (G-4.6).
+  Discipline: every cross-surface metric must name ONE source+scope; label scope
+  where it legitimately differs; lock with an AP#43 invariant test.
+
+PATTERN B (multi-org singular/plural, single-org-masked) — close in ONE migration
+  before org #2 publishes:
+  - teams_select RLS uses SINGULAR current_user_org_id() — the ONLY table in the
+    whole programs graph still on the singular helper (G-3.1).
+  - slug scope global (G-1.1); guardians.email global ON CONFLICT (prior B5 C-4).
+  Live: 0 multi-org users today, so all latent.
+
+AP#36 (error-swallow / falsely-empty) — useAllPrograms + useProgramAdmin count
+  sub-queries console.error-and-continue -> "0 teams / 0 players" rendered as
+  truth; the delete-confirm undercount is the riskier face (G-5.5).
+
+CAPTURED-BUT-UNENFORCED DATA — divisions.gender collected on create but players
+  has no gender column and submit_registration never checks it (G-1.2); the
+  early_bird/prorated/discount/add_on fee types + auto_apply_rule jsonb are
+  schema-present but NO UI writes them (G-1.5) — AP#51 dead-surface candidates.
+
+A11Y-BELOW-BAR on the two newest surfaces (the only anon-facing form + the
+  programs index): no aria-live on step/filter changes, no role=alert on errors,
+  sub-44px tap targets (G-2.5, G-5.1, G-5.2).
+
+==============================================================================
+2. FINDINGS BY AREA (deduped; [SEV] file:line — lean)
+==============================================================================
+--- A. CREATE / FEE PATH (the B6 punt — now audited) ---
+G-1.1 [P1] slug app-per-org vs DB-global index; stale "no unique constraint"
+  comment (programSetup.js:26,33). LEAN: re-scope index to (org_id,public_slug)
+  to match the app + make /r/:slug org-aware; translate 23505.
+G-1.2 [P1] gender captured (divisions.gender CHECK + DivisionRows) but players has
+  NO gender column and submit_registration does NO gender check — decorative.
+  LEAN: finish the contract (add player gender + RPC check) rather than amputate.
+G-1.3 [P2] fee-by-NAME match breaks on duplicate division names
+  (useProgramSetup.js:53-54; divisions has no UNIQUE(program_id,name)). LEAN:
+  index-pair divInput[i]<->divs[i], drop the name lookup.
+G-1.4 [P2] unnamed-division fee silently dropped (useProgramSetup.js:41 filters
+  blank-name rows incl. their fees). LEAN: validate "division N needs a name".
+G-1.5 [P2] early_bird/prorated/discount/add_on never written by any UI; only
+  'base' (create) + 'family_discount' (RPC). auto_apply_rule jsonb fully dead.
+  LEAN: keep enum (forward-compat); flag auto_apply_rule AP#51 dead.
+G-1.6 [P2] NO division/fee EDIT after create — a create-time fee/name mistake is
+  unrecoverable through UI (delete RESTRICTs once regs/accounts exist). LEAN:
+  division-edit sheet is the next programs build item.
+G-1.7 [P3] raw DB error strings leak on create/edit (no §16.3). + grade_min>
+  grade_max not guarded (would reject every registrant); team_color never captured.
+
+--- B. PUBLIC REGISTRATION CLIENT (only the server RPC was audited before) ---
+G-2.1 [P1] server authoritative_total_cents NEVER displayed — RegisterConfirm
+  reads only already_registered + count; the money is fetched (useSubmitReg:20)
+  and thrown away. LEAN: render it on confirm + diff vs the pre-submit estimate.
+G-2.2 [P1] client fee-sum (estimateCart) vs server sum can diverge silently over
+  a mutable division_fees between page-load and submit; entry card shows base-
+  only, review base+add_on -> unexplained price jump. LEAN: show server total
+  post-submit; label entry card "from $X" when add_ons exist.
+G-2.3 [P2] RPC RAISE codes (registration_closed, grade bands, invalid_division —
+  all reachable) render as one generic "didn't go through"; grade bands are only
+  soft-warned client-side and don't block onNext. LEAN: map to §16.3 microcopy.
+G-2.4 [P2] no concurrent double-submit guard beyond `submitting` opacity; the new
+  partial-unique raises a raw 23505 the client doesn't map (C-4). LEAN: catch
+  23505 -> already_registered copy.
+G-2.5 [P2] wizard is a plain routed page (not FullScreenForm) with thin a11y: zero
+  aria-live/role=alert in src/components/register/; step-title changes + error/warn
+  banners are silent to AT. Inputs DO have labels + 44px (good). LEAN: add aria-live
+  to the step region, role=alert to errors, move focus to the step heading on Next.
+G-2.6 [P3] family-cap discount can NEVER fire via this client: it submits ONE child
+  per RPC call, so server v_paid is always 1 (discount needs paid>1). Dead on both
+  sides under per-child submit. Moot for LH (null policy); latent for a cap tenant.
+G-2.7 [P3] client ignores server registration_open boolean, recomputes window from
+  client clock (3rd truth, Pattern A). LEAN: gate the Reserve button on the server
+  boolean; keep client recompute for the label only.
+
+--- C. RLS / SECURITY RE-ENUMERATION (live, not inherited) ---
+G-3.1 [P1] teams_select uses SINGULAR current_user_org_id(); every other graph
+  table uses plural current_user_org_ids(). Pattern B, the last singular holdout.
+  LEAN: one-line swap to plural (superset for single-org; closes the multi-org bug).
+G-3.2 [P2] tryout_attendees_select is org-wide to ALL authenticated -> any parent
+  can read evaluation_note (coach scouting text) for every attendee. guardians/
+  players narrow to staff; this doesn't. LEAN: staff-scope it; add a separate
+  parent-own-child policy that omits evaluation_note if parents need placement.
+G-3.3 [P2 / FORK-ANON-GRANTS — the S5 audit basis, now RULED safe] anon holds
+  GRANT ALL (incl INSERT/UPDATE/DELETE/TRUNCATE) on all 16 graph tables. Verified
+  via function bodies: 100% of the anon /r/:slug flow goes through SECDEF RPCs
+  (get_public_program, submit_registration) that run as owner and need ZERO direct
+  anon table grants; the only by-design anon SELECT is teams_select_public. LEAN
+  (definitive): REVOKE anon write privileges on every graph table; keep anon SELECT
+  only where a policy serves an anon read. Provably zero functional risk. Do NOT
+  blanket-revoke `authenticated` (those writes are RLS-gated + load-bearing).
+G-3.4 [P3/FORK] the SECDEF RPCs write base `programs`, not the seasons view, so the
+  view's check_option=cascaded is DECORATIVE on the write paths — security rests
+  entirely on the in-function checks (correct, but document the view as a READ-only
+  shim so nobody assumes its cascade guards writes).
+PASS (now verified live, prior audit had only asserted): AP#20 no with_check-NULL
+  write holes anywhere in the graph; seasons view security_invoker=true +
+  check_option=cascaded; AP#23/#57 SECDEF EXECUTE grants clean (PUBLIC revoked,
+  anon correctly present only on the 2 public RPCs, search_path pinned on all).
+
+--- D. CROSS-SECTION SEAMS ---
+G-4.1 [P1, BREAKS NOW] = C-1 (program delete raw 23503 post-RESTRICT).
+G-4.2 [P0-when-S2] = C-2 (rollover omits team_type_id).
+G-4.3 [P2] = C-3 (rollover non-atomic).
+G-4.4 [P1] useCreateActivity reads the seasons VIEW by team.season_id with
+  .single() (useCreateActivity.js:43-50) -> for a team under a camp/tryout/clinic
+  program, team.season_id is a valid programs.id NOT in the seasons view -> PGRST116
+  aborts ALL event creation. Reachable the moment a camp gets a team + a recurring
+  event. LEAN: query base `programs` with .maybeSingle(); degrade gracefully.
+G-4.5 [P2] useActiveSeasonEnd .limit(1) with no .order()/.maybeSingle() — safe only
+  while the single-active index holds. LEAN: harmonize to .maybeSingle().
+G-4.6 [P2] = Pattern A "active" (4 definitions; Summer Day Camp splits). LEAN: label
+  scope per surface; document canonical source per question.
+G-4.7 [P3] FinancialDashboard joins family_balances by season_id over the full
+  programs id-space; a camp with accounts wouldn't surface in the season picker.
+
+--- E. RUNTIME / A11Y / VISUAL / PERF (AP#46 + a11y, never done before) ---
+G-5.1 [P1] filter chips 30px + "New" CTA 34px < 44px floor (AdminProgramsPage.jsx:
+  60,64). LEAN: 44px hit-area.
+G-5.2 [P1] filter chips no aria-pressed + list no aria-live (AdminProgramsPage.jsx:
+  36-39) — SR can't tell active filter; silent content swap. LEAN: mirror
+  ProgramTypeChooser's aria-pressed; wrap list in aria-live.
+G-5.3 [P2] ProgramDetailPage violates §16.14: floating Delete mid-page (should be
+  header overflow), no hero/collapsibles, UNVIRTUALIZED registrations list (60+
+  rows, §16.10). LEAN: move Delete to overflow; collapse + virtualize the list.
+G-5.4 [P2] AP#46 row-rhythm: ProgramIndexRow renders 1-line (draft, no meta) vs
+  2-line (active) in the same grouped list (:26). LEAN: reserve the meta line +
+  add a rhythm invariant test.
+G-5.5 [P2] AP#36 swallow on useAllPrograms/useProgramAdmin count sub-queries ->
+  falsely "0 teams · 0 players"; delete-confirm undercount is the risky face.
+G-5.6 [P2] useProgramHealthMetrics over-fetches 4 queries (heavy event_rsvps join)
+  on the admin-home critical path; the card consumes only playersCount+paymentPct.
+  LEAN: drop/gate the unused queries (FCP/TTI budget §16.10).
+G-5.7 [P3] raw "Loading…"/error text on detail (skip the SectionSkeleton/§16.3
+  pattern the index uses); no density-awareness; "$0.00" fee ambiguity.
+PASS: ProgramSetupPage/EditSheet form compliance (AP#15), ConfirmDialog a11y +
+  rgba(0,0,0,0.3) backdrop, UTC date pinning, ProgramManageZone 44px buttons.
+
+==============================================================================
+3. UPDATED COVERAGE MAP (what this sweep closed vs what's STILL open)
+==============================================================================
+NOW COVERED (were gaps): create/fee path; public registration client; live RLS
+  re-enumeration (incl. the FORK-ANON-GRANTS "safe to revoke" ruling — clears the
+  architect's S5 Q2 block); cross-section seams; runtime/a11y/perf.
+STILL OPEN (genuine remaining holes):
+  (1) F1-F16 CATALOG — 10/16 undefined repo-side. The architect must supply
+      F2,F6,F7,F9-F13,F15,F16 before the audit can claim completeness. BIGGEST HOLE.
+  (2) BEHAVIORAL confidence — registrations=0, division_fees=0, season_rollovers=0.
+      All flows are structurally verified but have NEVER run with real data. The fee
+      engine especially is entirely untested.
+  (3) Live RLS BEHAVIOR under an impersonated anon/parent JWT (G-3.2 is grounded in
+      policy qual + column inventory, not a SET ROLE replay).
+  (4) E2E/Playwright coverage of the anon registration flow (none checked).
+  (5) Magic-link claim flow; Stripe/payment lifecycle (deferred, partly unbuilt).
+  (6) Bundle/perf RUM for the /r/:slug chunks + the admin-home over-fetch (structural,
+      not measured).
+
+==============================================================================
+4. FORKS / ROUTING (AP#39 leans; architect ratifies)
+==============================================================================
+TIER 1 (ship with / right after the Tier-1 migrations — the companion cluster):
+  C-1 deleteProgram financial_accounts guard [BREAKS NOW] — recommend ship now.
+  C-2 rollover carry team_type_id BEFORE S2 DDL (via the S1 RPC + client switch).
+  C-4 submit_registration ON CONFLICT + client 23505 map.
+  G-3.3 FORK-ANON-GRANTS revoke anon writes [now ruled safe] — specable as S5.
+TIER 1b (multi-org, one migration before org #2): G-3.1 teams_select plural +
+  G-1.1 slug (org_id,public_slug) + (prior) guardian-email (org_id,email).
+TIER 2 (app-layer, ship-this-phase): G-2.1/G-2.2 money reconciliation render;
+  G-2.3 reg error microcopy; G-3.2 tryout evaluation_note staff-scope; G-1.3/G-1.4
+  fee index-pair + unnamed-division validation; G-5.1/G-5.2 a11y; G-4.4 useCreate
+  Activity base-programs read; G-5.5 AP#36 closes; G-5.3 detail §16.14.
+TIER 3 (redesign/defer): G-1.6 division-edit sheet; G-1.2 gender enforcement
+  (product call); G-2.6 family-cap-vs-per-child-submit (product call); G-1.5
+  dead fee-types/auto_apply_rule (AP#51); G-5.6 over-fetch; the "active" labeling.
+
+QUESTIONS FOR THE ARCHITECT:
+  Q-G1: ship C-1 (delete guard) as an immediate hotfix, or batch with the other
+        companions? (CC lean: hotfix — it's a live raw-error regression from S4.)
+  Q-G2: gender (G-1.2) — enforce or remove from the create UI? (product call)
+  Q-G3: slug scope (G-1.1) — re-scope the index per-org, or keep global + translate?
+  Q-G4: FORK-ANON-GRANTS (G-3.3) — ratify the revoke-anon-writes spec (S5)?
+  Q-G5: F1-F16 catalog — please send the 10 undefined items.
+
+==============================================================================
+END — wave-3 coverage sweep. The P0/P1 defect surface holds; the new findings are
+breadth (create-path + client + seams) + the migration-companion cluster (§0) +
+the still-open F-catalog/behavioral holes (§3). Per-agent raw findings available
+on request. NOTHING APPLIED.
+==============================================================================
