@@ -1,0 +1,112 @@
+CC -> ARCHITECT : RECOVER SEAM V1-V4 VERIFICATION (FORK E)
+Date: 2026-06-09  ·  Relay artifact (CLAUDE.md §11.8)  ·  evidence-grounded, decision NOT settled by CC
+Responds to: ARCHITECT_SETTINGS_RATIFY_AND_RECOVER_2026-06-09.txt §3 (CC verification V1-V4)
+Method: read-only Explore over the send/dispatch tree (file:line below). AP#60 source hierarchy:
+        installed source (1) over inference.
+
+================================================================================
+HEADLINE
+================================================================================
+The proposed R1-R4 idempotency-sweep contract is NOT met by current code (V1 no, V2 no,
+V3 no, V4 partial). BUT the codebase already ships a MORE CONSERVATIVE recovery design
+(the "G5" arc) that sidesteps provider idempotency entirely and is arguably already
+RECOVER-complete. The architect's sweep would AUTO-replay the ambiguous crash-window
+batches — which is exactly the operation the existing design deliberately refuses. So
+the real decision is a FORK (see DECISION), not a build-the-sweep task. CC surfaces
+evidence + a lean; architect rules.
+
+================================================================================
+PER-QUESTION VERDICTS (with evidence)
+================================================================================
+V1 IDEMPOTENCY KEY — NO. No Idempotency-Key header is set anywhere. Three send sites all
+   call the SDK bare:
+     supabase/functions/send-tournament-message/index.ts:221  resend.batch.send(batch)
+     supabase/functions/briefing-auto-draft-tick/_reminderSend.ts:145  resend.batch.send(batch)
+     supabase/functions/briefing-auto-draft-tick/_redrive.ts:92  resend.batch.send(rows)
+   => R1 (deterministic, DB-reconstructable key) is unmet because there is NO key at all.
+
+V2 PAYLOAD DETERMINISM — NO (core deterministic, but tokens are minted-not-persisted).
+   Deterministic + persisted: recipients (comms_message_recipients, delivery_status='queued'),
+   subject/body (comms_messages.body_html/body_plain + per-recipient *_rendered cols),
+   from/reply_to (organization_settings at send).
+   VOLATILE at send time, NOT persisted:
+     - unsubscribe URL minted per send: send-tournament-message/index.ts:219
+       mintUnsubscribeUrl -> RPC mint_unsubscribe_token returns a fresh UUID each call.
+     - rsvp/callup per-recipient tokens minted inline: src/lib/rsvpNudgeSend.js:28-49
+       mintTokensForSlice + substituteRsvpTokens; no token columns on
+       comms_message_recipients.
+   => A replay RE-MINTS different tokens -> different payload -> Resend 409
+      (same key + different payload) if a key were ever added. R2 unmet.
+
+V3 RECOVERY UNIT = BATCH UNIT — NO. Writeback is PER-RECIPIENT, not per-batch:
+     send-tournament-message/index.ts:231-241 updates delivery_status on
+     comms_message_recipients .in('id', sentIds|failedIds). There is NO batch-id /
+     dispatch_email_id column on comms_messages (checked migrations 011 +
+     20260509161303 + 20260511182333 + 20260608002737). No row represents "this exact
+     Resend batch", so a whole-batch atomic replay unit does not exist. R3 unmet.
+
+V4 DISPATCH TIMESTAMP — PARTIAL (message-level only, no TTL gate).
+   YES: comms_messages.sent_at persisted (011_tournaments.sql:216; set at index.ts:251);
+        alreadySent() (send-tournament-message/_dispatch.ts:35) 409s a finalized message
+        re-invoke (index.ts:102).
+   NO:  no per-recipient dispatch timestamp; the _redrive sweep
+        (briefing-auto-draft-tick/_redrive.ts:118-150) has NO 24h time gate. R4 partially
+        met (message grain), insufficient for a per-batch 24h replay guard.
+
+================================================================================
+THE EXISTING RECOVERY DESIGN (the load-bearing finding)
+================================================================================
+The crash-after-dispatch window is ALREADY handled, conservatively, and the limit is
+documented in-code:
+  send-tournament-message/_dispatch.ts:13-21 (architect G8 review, 2026-06-07):
+    "...does NOT cover the crash-after-dispatch window — if the fn dies AFTER Resend
+     accepts a batch but BEFORE rows are marked 'sent'... a blind re-drive of 'queued'
+     would double-send them. So G5 must NOT auto-re-drive ambiguous 'queued' rows..."
+Two-pronged design:
+  (a) AUTO re-drive ONLY delivery_status='failed' rows (certain NO send occurred), bounded
+      by redrive_count<3 then escalate: briefing-auto-draft-tick/_redrive.ts:118-150,129.
+  (b) Ambiguous 'queued' rows (the crash window) -> HUMAN REVIEW, not auto-replay:
+      src/components/radar/StuckSendsRegion.jsx + src/hooks/useStuckSends.js (resend or
+      mark-delivered, operator decides).
+Locked by a static invariant test: src/lib/__tests__/sendIdempotencyInvariant.test.js
+  asserts the send only processes delivery_status='queued' rows.
+
+Why this is safe WITHOUT provider idempotency: failed rows never reached Resend, so
+re-driving them cannot double-send (idempotency is irrelevant); queued rows are
+ambiguous, so they are NOT auto-replayed at all. The design trades a small amount of
+automation (human taps "resend"/"mark delivered" on the rare stuck batch) for a hard
+no-double-send guarantee.
+
+================================================================================
+DECISION FOR THE ARCHITECT (CC lean labeled per AP#39; CC does NOT settle)
+================================================================================
+Option A (CC LEAN): treat RECOVER as already SATISFIED by the existing G5 design. The
+  auto-sweep the ratify doc specified would auto-replay the ambiguous queued window,
+  which is the one operation that can double-send real family email and which the
+  current design intentionally routes to human review. Marginal automation gain, real
+  double-send risk. Net-new build to enable it (idempotency keys + token persistence +
+  a batch-unit record + a 24h gate) is large and buys a riskier behavior than what
+  ships today. Recommend: declare RECOVER green on the human-review design; optionally
+  add a tiny hardening (a dispatched_at on the batch + surfacing age in StuckSendsRegion)
+  if you want the 24h signal for the human reviewer — but NOT auto-replay.
+
+Option B: build the full idempotency stack to enable safe auto-replay — persist a
+  deterministic batch idempotency key (R1), persist the minted tokens so the replay
+  payload is byte-identical (R2), add a batch-unit record so writeback is all-or-nothing
+  (R3), and a 24h dispatched_at gate (R4). Only after ALL FOUR can the auto-sweep ship
+  per your spec. This is a multi-PR arc, schema-touching (architect lane).
+
+The four R-constraints in your ratify doc are correct; the finding is that meeting them
+is a large build, and the existing design already closes the gate a safer way.
+
+================================================================================
+NEXT
+================================================================================
+Architect: rule Option A vs B. If A, RECOVER is green and the FORK E gate reduces to
+  LEGAL + SEE confirmation + the operator's SEND-LIVE flip (now a focused-confirm control,
+  PR #905). If B, the architect-lane schema arc is the path; CC implements the app layer
+  once the seam is specified.
+Operator: smoke the settings preview (handoff §5); do NOT cut over.
+================================================================================
+END.
+================================================================================
