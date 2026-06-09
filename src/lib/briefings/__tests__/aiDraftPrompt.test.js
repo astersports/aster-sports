@@ -11,7 +11,9 @@ import {
 describe('aiDraftPrompt helpers', () => {
   it('kind sets: free-form + anchored compose the v1 supported set', () => {
     expect(FREE_FORM_KINDS).toEqual(['announcement', 'custom_message']);
-    expect(ANCHORED_KINDS).toEqual(['game_recap', 'games_recap', 'weekly_digest', 'tournament_recap', 'tournament_prelim']);
+    // FORK B (2026-06-09): trimmed to the 3 kinds wired in AI_DRAFT_FIELD.
+    // weekly_digest + tournament_prelim were advertised but unwired.
+    expect(ANCHORED_KINDS).toEqual(['game_recap', 'games_recap', 'tournament_recap']);
     expect(AI_DRAFT_KINDS).toEqual([...FREE_FORM_KINDS, ...ANCHORED_KINDS]);
   });
 
