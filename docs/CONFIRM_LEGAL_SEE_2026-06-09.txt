@@ -1,0 +1,71 @@
+CC -> ARCHITECT : LEGAL + SEE CONFIRMATION (FORK E)
+Date: 2026-06-09  ·  Relay artifact (CLAUDE.md §11.8)  ·  evidence-grounded
+Responds to: ARCHITECT_RECOVER_RULING_2026-06-09.txt §LEGAL + §SEE + NEXT ACTIONS
+
+================================================================================
+SEE — DELIVERY ROLLUP : built (was absent)
+================================================================================
+The ruling asked CC to "confirm the minimum delivery rollup surfaces delivered/
+bounced/opened counts." It did NOT exist — BriefingHistoryDetail.jsx had only a
+PER-RECIPIENT table (email/status/delivered/opened per row), no aggregate counts;
+BriefingsHistoryPage had none. So CC BUILT the minimum rollup:
+  - src/pages/admin/BriefingHistoryDetail.jsx — a Sent / Delivered / Opened /
+    Bounced stat row above the existing per-recipient table, aggregated (useMemo)
+    from the already-fetched recipient rows (delivered_at / opened_at /
+    delivery_status='bounced' or bounce_reason). No new query, no migration. It
+    reflects the H1-reconciled statuses (#907), so post-reconcile a sent message
+    shows real delivered/opened/bounced counts.
+SEE PROOF: the architect's "one-send rollup proof suffices" — on the operator's
+first real send (the cutover), /admin/briefings/history → the message → Delivery
+shows the live counts. Until then it renders against the pilot-redirected sends.
+SEE: GREEN (rollup present; live-count proof at first real send).
+
+================================================================================
+LEGAL — family_guide footer : UNSUBSCRIBE present, MAILING ADDRESS ABSENT (gap)
+================================================================================
+This contradicts the ruling's "(4 Byram Brook Place... verified present)". Verified
+in code:
+  - UNSUBSCRIBE: PRESENT + working. family_guide uses the full `footer` kind
+    (src/lib/engine/resolvers/familyGuideSections.js:123-131 buildFamilyGuideFooter),
+    and src/lib/engine/renderers/footer.js:41-46 emits the {{UNSUBSCRIBE_URL}}
+    block substituted per-recipient by the send pipeline. Good.
+  - PHYSICAL MAILING ADDRESS: ABSENT from the family_guide footer, by a DELIBERATE
+    logged decision. familyGuideSections.js:123-128 comment: "Decision 2 (architect,
+    2026-06-08): ... No physical address (operator directive: the org address is
+    internal-only / tax)." buildFamilyGuideFooter passes logoUrl/orgName/websiteUrl/
+    contactEmail only — NO mailing_address. footer.js renders no address field.
+  The organizations.mailing_address column EXISTS and is correct (4 Byram Brook
+  Place, Armonk NY 10504) — it is simply not rendered into the family-facing footer.
+
+WHY THIS IS A GAP (CC lean, AP#39; architect is the LEGAL authority):
+  family_guide is parent-facing BULK COMMERCIAL email (the same comment calls it
+  "parent-facing bulk email ... the SAME compliant footer"). CAN-SPAM (15 U.S.C.
+  §7704(a)(5)) requires a valid PHYSICAL POSTAL ADDRESS in such email. Unsubscribe
+  alone is NOT sufficient. So the current footer is a CAN-SPAM compliance gap on the
+  exact path the cutover lights up. The 2026-06-08 "internal-only/tax" directive
+  conflicts with that requirement for the family-facing kinds specifically.
+  LEAN: add mailing_address to the family-facing footer (family_guide + any other
+  guardian-facing bulk kind) BEFORE the cutover. This is a small renderer change
+  (pass org.mailing_address into buildFamilyGuideFooter → footer.js emits an address
+  line). CC did NOT make it — it reverses a logged architect directive and is a legal
+  call. Surfaced for the architect/operator to rule.
+
+LEGAL: NOT green. Blocker on the family cutover until the address question is ruled.
+  (coach_roundup staff footer is off the family path per the ruling — not in scope.)
+
+================================================================================
+NET
+================================================================================
+FORK E gate status after this report:
+  SEND     green (#889).
+  RECOVER  green (Option A + H1-H3 hardening #907).
+  SEE      green (rollup built this PR; live-count proof at first send).
+  LEGAL    BLOCKED — family_guide footer needs the physical mailing address for
+           CAN-SPAM. One small renderer change once the architect rules to add it.
+  FLIP     operator-only, after LEGAL clears (focused SEND-LIVE confirm, #905).
+NEXT: architect rules the LEGAL address question. If "add it," CC ships the footer
+change (app-layer renderer, no migration). Then LEGAL → green and the cutover is the
+operator's single SEND-LIVE flip.
+================================================================================
+END.
+================================================================================
