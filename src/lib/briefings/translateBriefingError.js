@@ -64,6 +64,29 @@ export function translateBriefingError(err) {
     return "Save failed. Try again, or contact support if this keeps happening.";
   }
 
+  // Resolver content-gap throws (plain Errors, no Postgres code) — these are
+  // internal "the anchor has no usable data" signals that were leaking verbatim
+  // to the admin toast ("Missing eventIds", "Tournament X not found", etc.).
+  // Map the known ones to actionable §16.3 microcopy; unknown messages still
+  // pass through below so we don't mask network/unexpected errors.
+  if (!code) {
+    if (/Missing eventIds|No events found|No published results/i.test(message)) {
+      return 'Pick at least one game with a published result to recap.';
+    }
+    if (/not found in guardians/i.test(message)) {
+      return "We couldn't find that family — make sure the parent has claimed their account, then try again.";
+    }
+    if (/Tournament .* not found|EventHasNoTeam|EventAlreadyStarted/i.test(message)) {
+      return "Couldn't load that anchor — re-pick the event or tournament and try again.";
+    }
+    if (/mint_(rsvp|callup)_token failed/i.test(message)) {
+      return "Couldn't prepare the secure links for this message. Try again in a moment.";
+    }
+    if (/No families on this team/i.test(message)) {
+      return 'No families to notify for this team yet.';
+    }
+  }
+
   // Non-Postgres errors: preserve the message (network errors, etc.)
   // but fall back to the friendly default if the message is empty.
   return message || "Looks like that didn't go through. Try again?";

@@ -51,7 +51,10 @@ export default function StepSendConfirm({ state, dispatch, audience, onSend, sen
   // (or while it's still resolving) for a non-test send. test_only sends BCC
   // admin@ regardless of audience, so they stay enabled.
   const audienceUnknown = a.filtered == null && !state.test_only;
-  const disabled = sending || scheduleInvalid || pilotZeroBlock || recipientCountBlock || audienceUnknown;
+  // games_recap resolves its content from audience_filter.event_ids; an empty
+  // selection throws "Missing eventIds" at send. Gate it with an actionable reason.
+  const gamesRecapEmpty = state.kind === 'games_recap' && !(state.audience_filter?.event_ids?.length);
+  const disabled = sending || scheduleInvalid || pilotZeroBlock || recipientCountBlock || audienceUnknown || gamesRecapEmpty;
 
   return (
     <div style={wrap}>
@@ -77,6 +80,11 @@ export default function StepSendConfirm({ state, dispatch, audience, onSend, sen
       {audienceUnknown && (
         <p role="status" data-testid="audience-unknown-note" style={{ margin: 0, fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.4 }}>
           {audienceResolving ? 'Confirming who will receive this…' : "Couldn't confirm recipients — check the audience above before sending."}
+        </p>
+      )}
+      {gamesRecapEmpty && (
+        <p role="status" data-testid="games-recap-empty-note" style={{ margin: 0, fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.4 }}>
+          Pick at least one game above before sending.
         </p>
       )}
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--as-text-secondary)' }}>

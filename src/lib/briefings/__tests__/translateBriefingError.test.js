@@ -51,4 +51,14 @@ describe('translateBriefingError (Phase 3 Meta / §16.3 microcopy)', () => {
   it('falls back to friendly default when non-Postgres error message is empty', () => {
     expect(translateBriefingError(new Error(''))).toMatch(/Try again/);
   });
+
+  // Resolver content-gap throws must not leak their internal message verbatim.
+  it('maps resolver content-gap throws to kind microcopy (not the raw throw)', () => {
+    expect(translateBriefingError(new Error('Missing eventIds'))).toMatch(/Pick at least one game/);
+    expect(translateBriefingError(new Error('No published results among selected games'))).toMatch(/Pick at least one game/);
+    expect(translateBriefingError(new Error('Parent abc-123 not found in guardians'))).toMatch(/couldn't find that family/);
+    expect(translateBriefingError(new Error('Tournament xyz not found'))).toMatch(/Couldn't load that anchor/);
+    expect(translateBriefingError(new Error('mint_rsvp_token failed: boom'))).toMatch(/secure links/);
+    expect(translateBriefingError(new Error('Missing eventIds'))).not.toMatch(/eventIds/);
+  });
 });
