@@ -4,7 +4,14 @@
 // only (no Deno/Node APIs) so the two files stay byte-near-identical.
 
 export const FREE_FORM_KINDS = ["announcement", "custom_message"];
-export const ANCHORED_KINDS = ["game_recap", "games_recap", "weekly_digest", "tournament_recap", "tournament_prelim"];
+// FORK B (2026-06-09): trimmed from 5 -> 3 to match the kinds actually wired
+// for interactive AI draft (anchoredAiFacts.AI_DRAFT_FIELD). weekly_digest +
+// tournament_prelim were advertised here but had no AI_DRAFT_FIELD entry, so
+// AiDraftAnchored rendered an empty box for them (a latent UX bug) and no
+// caller ever drafts those two via briefing-ai-draft (weekly_digest auto-drafts
+// via cron; tournament_prelim offers the separate "Suggest closer" fn). Keeping
+// AI_DRAFT_KINDS = the wired set means the edge fn correctly 400s an unwired kind.
+export const ANCHORED_KINDS = ["game_recap", "games_recap", "tournament_recap"];
 export const AI_DRAFT_KINDS = [...FREE_FORM_KINDS, ...ANCHORED_KINDS];
 
 export function audienceFraming(teamName: string | null): string {

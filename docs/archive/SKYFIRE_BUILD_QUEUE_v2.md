@@ -3436,3 +3436,13 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
 - Evidence: Architect ratification 2026-06-09 FORK D. Defect at audience.js:38 (hard 1 for coach_self/family_specific regardless of selection) + StepSendConfirm.jsx:56 (only games_recap hard-gated empty selection). Send enabled with empty picker -> resolver threw Missing coachUserId/parentUserId at send (caught -> toast, but a gate hole vs games_recap / §16.13).
 - Fix: countByAudienceType returns 1 only when coach_user_id / parent_user_id present, else null (audienceUnknown gate + kind-specific note hold Send). StepSendConfirm adds coachRoundupEmpty/familyGuideEmpty gates with actionable notes mirroring gamesRecapEmpty; generic unknown-audience note suppressed in their favor.
 - Gates: 29/29 across the two affected test files. Lint + build clean. App-only — no migration, no RLS.
+
+### FORK B — trim AI-draft ANCHORED_KINDS 5->3 to the wired set — PR #895
+- Date: 2026-06-09
+- Files:
+  - src/lib/briefings/aiDraftPrompt.js (ANCHORED_KINDS 5 -> 3)
+  - supabase/functions/briefing-ai-draft/_helpers.ts (AP#30 mirror, moved together)
+  - src/lib/briefings/__tests__/aiDraftPrompt.test.js (AP#34: assertion updated)
+- Evidence: Architect ratification 2026-06-09 FORK B (trim, not wire). ANCHORED_KINDS listed 5 but only 3 wired in AI_DRAFT_FIELD (anchoredAiFacts.js); weekly_digest + tournament_prelim advertised-but-unwired -> AiDraftAnchored rendered an empty box. Verified no caller drafts the two trimmed kinds via briefing-ai-draft (3 ai.draft callsites gate on AI_DRAFT_FIELD; weekly_digest auto-drafts via cron; tournament_prelim uses suggest-briefing-closer).
+- Fix: trim to game_recap/games_recap/tournament_recap in both mirrors; AI_DRAFT_KINDS narrows with it so the edge fn 400s an unwired kind (defense-in-depth). Only ANCHORED_KINDS consumer is the edge fn narrativeOnly/validation.
+- Gates: 15/15 aiDraftPrompt.test.js. Lint + build clean. App/edge code only — no migration, no RLS. Path-scoped deploy: briefing-ai-draft.
