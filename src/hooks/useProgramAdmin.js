@@ -42,17 +42,26 @@ export function useProgramAdmin(programId) {
   }, [orgId, programId]);
 
   const deleteProgram = useCallback(async () => {
-    // Pre-check: registrations.program_id is ON DELETE RESTRICT (registration /
-    // financial records must never be cascade-nuked by a program delete). Count
-    // FIRST and BLOCK before attempting the delete — never let Postgres throw a
-    // raw 23502/23503 (count-and-block, NOT catch-and-translate, which would
-    // still attempt the delete).
-    const { count, error: cErr } = await supabase
-      .from('registrations').select('id', { count: 'exact', head: true }).eq('program_id', programId);
-    if (cErr) return { error: cErr.message };
-    if (count) return { error: `This program can't be deleted — ${count} famil${count === 1 ? 'y has' : 'ies have'} registered. Archive it instead.` };
+    // Records that must NEVER be lost to a program delete. registrations.program_id
+    // and financial_accounts.season_id (S4) are ON DELETE RESTRICT; coach_payouts.
+    // season_id is NO ACTION. Count FIRST and BLOCK with kind "archive instead"
+    // microcopy; the 23503 catch below backstops any other RESTRICT FK (e.g.
+    // teams.season_id once H-4 flips it from CASCADE to RESTRICT). Teams/roster/
+    // events still ON DELETE CASCADE today — those counts show in the confirm summary.
+    const [regRes, finRes, payRes] = await Promise.all([
+      supabase.from('registrations').select('id', { count: 'exact', head: true }).eq('program_id', programId),
+      supabase.from('financial_accounts').select('id', { count: 'exact', head: true }).eq('season_id', programId),
+      supabase.from('coach_payouts').select('id', { count: 'exact', head: true }).eq('season_id', programId),
+    ]);
+    for (const r of [regRes, finRes, payRes]) if (r.error) return { error: r.error.message };
+    if (regRes.count) return { error: `This program can't be deleted — ${regRes.count} famil${regRes.count === 1 ? 'y has' : 'ies have'} registered. Archive it instead.` };
+    if ((finRes.count || 0) + (payRes.count || 0) > 0) return { error: "This program can't be deleted — it has financial records. Archive it instead." };
     const { error } = await supabase.from('programs').delete().eq('id', programId);
-    return { error: error?.message };
+    if (error) {
+      if (error.code === '23503') return { error: "This program can't be deleted — it has linked records. Archive it instead." };
+      return { error: error.message };
+    }
+    return { error: null };
   }, [programId]);
 
   // Unified activate() parametrized by registry.singleActive (Fork 3): one
