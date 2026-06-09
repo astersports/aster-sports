@@ -474,9 +474,12 @@ that guards the bounce fix.
 E5 mark-failed → bounded-retry action — DONE: StuckSendCard/StuckSendsRegion gain a
 third confirm-gated action that sets delivery_status='failed' so _redrive picks the
 residue up (failed + redrive_count<3); guard test locks it. E6 cutover actor+timestamp
-audit — next: pii_audit_log exists but is RLS-on/no-policy (not client-writable), so a
-proper DB audit needs an architect-lane insert path; app-layer interim = durable Sentry
-audit message + console on SEND-LIVE (no migration). (E1 ships no code.)
+audit — DONE (interim): reportAudit('pilot_cutover', {actorId, orgId, clearedAddress})
+fires from PilotModeForm.goLive on a successful cutover → console + an info-level Sentry
+message (tag audit) via the new captureAuditToSentry; test asserts the cutover is
+audited. ARCHITECT-LANE FOLLOW-UP for 10/10: a durable DB audit row on pii_audit_log
+(needs an insert RLS policy or a SECDEF RPC — the table is RLS-on/no-policy today).
+(E1 ships no code.) PUNCH LIST COMPLETE: E2-E6 shipped, E1 ruled keep-out.
 
 **§4 reconciliation 2026-06-09 (settings-page arc — architect D6 ruling).** The
 `/admin/settings` arc shipped this session and is recorded SHIPPED here. It
