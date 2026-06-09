@@ -20,29 +20,31 @@ describe('PilotModeForm', () => {
     expect(screen.getByRole('textbox', { name: /test recipient email/i })).toHaveValue('redirect@test.com');
   });
 
-  it('saves normally when the test address is unchanged (no guard)', async () => {
+  it('normal Save persists the toggle + address and closes (no cutover)', async () => {
     const { onSave, onClose } = setup();
-    expect(screen.queryByText(/go-live cutover/i)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /^save$/i }));
     expect(onSave).toHaveBeenCalledWith({ pilot_mode_enabled: true, pilot_test_recipient_email: 'redirect@test.com' });
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('GUARD: clearing a set test address requires typing SEND LIVE before it can go live', async () => {
-    const { onSave, onClose } = setup();
+  it('normal Save is disabled when the address is cleared (clearing is NOT a normal save)', async () => {
+    setup();
     await userEvent.clear(screen.getByRole('textbox', { name: /test recipient email/i }));
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled();
+  });
 
-    // caution surfaces; the action becomes "Send live" and is disabled
-    expect(screen.getByText(/go-live cutover/i)).toBeInTheDocument();
-    const sendBtn = screen.getByRole('button', { name: /send live/i });
+  it('the cutover lives behind a focused SEND-LIVE confirm, not an inline button', async () => {
+    const { onSave, onClose } = setup();
+    // no confirm action present until the Go-live button is tapped
+    expect(screen.queryByRole('button', { name: /^send live$/i })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /go live to families/i }));
+
+    // focused confirm appears; Send live disabled until the exact phrase is typed
+    const sendBtn = screen.getByRole('button', { name: /^send live$/i });
     expect(sendBtn).toBeDisabled();
-
-    // wrong phrase keeps it disabled
     const confirm = screen.getByRole('textbox', { name: /to confirm/i });
-    await userEvent.type(confirm, 'send live');
+    await userEvent.type(confirm, 'send live'); // wrong case
     expect(sendBtn).toBeDisabled();
-
-    // exact phrase unlocks the cutover
     await userEvent.clear(confirm);
     await userEvent.type(confirm, 'SEND LIVE');
     expect(sendBtn).toBeEnabled();
@@ -51,10 +53,8 @@ describe('PilotModeForm', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('no guard when there was no test address to clear', async () => {
-    const { onSave } = setup({ initial: { pilotEnabled: false, testRecipientEmail: '' } });
-    expect(screen.queryByText(/go-live cutover/i)).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /^save$/i }));
-    expect(onSave).toHaveBeenCalledWith({ pilot_mode_enabled: false, pilot_test_recipient_email: null });
+  it('no Go-live control when there is no test address to clear', () => {
+    setup({ initial: { pilotEnabled: false, testRecipientEmail: '' } });
+    expect(screen.queryByRole('button', { name: /go live to families/i })).not.toBeInTheDocument();
   });
 });
