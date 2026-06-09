@@ -52,7 +52,7 @@ function Body({ onClose }) {
         <select id={tzId} value={timezone} onChange={(e) => setTimezone(e.target.value)} style={SELECT}>
           {US_TIMEZONES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
-        <p style={HELP}>Used to show event times in your local zone.</p>
+        <p style={HELP}>Your time zone. Event times currently follow the program&rsquo;s zone.</p>
       </div>
       <div>
         <label style={LABEL} htmlFor={locId}>Language</label>

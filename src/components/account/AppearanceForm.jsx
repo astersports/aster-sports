@@ -4,19 +4,13 @@ import SegmentedControl from '../shared/SegmentedControl';
 import { usePreferences } from '../../hooks/usePreferences';
 import { useToast } from '../../context/useToast';
 
-// Settings S1 (My Preferences). Writes user_preferences (self-RLS) via the shared
-// usePreferences store. THEME: the column allows system/light/dark, but the app has
-// NO dark stylesheet / theme actuation yet (verified) — the choice is PERSISTED for
-// when dark wiring lands; system + light render the same (light) today. DENSITY is
-// 2-STATE (minimal | maximum) per useDensity + CLAUDE.md §16.2 — NOT the render's
-// 3-level; 'medium' would throw in useDensity.setDensity. The form writes
-// card_density.default (merged) — the per-page chip writes its own section key, so
-// the two scopes never collide.
-const THEME_OPTS = [
-  { value: 'system', label: 'System' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-];
+// Settings S1 (My Preferences). Writes user_preferences (self-RLS) via usePreferences.
+// THEME SEGMENT HIDDEN per architect DR-1 ruling (2026-06-09): with no dark stylesheet/
+// actuation, a live System/Light/Dark control is a no-op that lies (all render the same).
+// The column + the persist path stay DORMANT (no schema change) so the future dark-mode
+// arc can light it up. DENSITY stays — it is real, 2-STATE (minimal | maximum) per
+// useDensity + §16.2 (a 'medium' write throws). card_density.default is a MERGED write —
+// the per-page chip writes its own section key, so the two scopes never collide.
 const DENSITY_OPTS = [
   { value: 'minimal', label: 'Minimal' },
   { value: 'maximum', label: 'Maximum' },
@@ -37,17 +31,15 @@ export default function AppearanceForm({ open, onClose }) {
 }
 
 function Body({ onClose }) {
-  const { preferences, updatePreference, mergePreferenceJson } = usePreferences();
+  const { preferences, mergePreferenceJson } = usePreferences();
   const { showToast } = useToast();
   const storedDensity = preferences?.card_density?.default;
-  const [theme, setTheme] = useState(preferences?.theme || 'system');
   const [density, setDensity] = useState(VALID_DENSITY.includes(storedDensity) ? storedDensity : 'minimal');
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
     setSaving(true);
     try {
-      await updatePreference('theme', theme);
       await mergePreferenceJson('card_density', { default: density });
       onClose();
     } catch {
@@ -57,11 +49,6 @@ function Body({ onClose }) {
 
   return (
     <div style={WRAP}>
-      <div>
-        <p style={LABEL}>Theme</p>
-        <SegmentedControl label="Theme" value={theme} onChange={setTheme} options={THEME_OPTS} />
-        <p style={HELP}>System follows your device. Saved to your account on every device. Dark styling isn&rsquo;t wired yet — your choice is saved for when it lands.</p>
-      </div>
       <div>
         <p style={LABEL}>Default card density</p>
         <SegmentedControl label="Default card density" value={density} onChange={setDensity} options={DENSITY_OPTS} />

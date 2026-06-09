@@ -1,0 +1,62 @@
+ARCHITECT DECISION REQUEST — S3 HOME LAYOUT (Step 0 finding)
+2026-06-09 · CC → architect (via Frank) · §11.8 rule 6 (decisions-as-a-doc)
+Blocks: S3 PR-a (the consumer). S4 can proceed independently.
+
+==============================================================================
+STEP 0 RESULT (the architect asked CC to report the PR count first)
+==============================================================================
+The Home page consumes NEITHER config table. ZERO references to
+`dashboard_section_visibility` or `quick_actions_config` anywhere in src/ (verified
+grep). QuickActions.jsx renders a hardcoded GROUPS array. So per the S3 hard stop,
+S3 is NOT 1 PR — it needs a consumer first. BUT Step 0 also surfaced a blocker the
+spec assumed away (clean "map fixed tiles to rows"): the config SEED does not match
+the shipped Home.
+
+==============================================================================
+DR-S3 — RECONCILE THE STALE/MISMATCHED CONFIG WITH THE SHIPPED HOME
+==============================================================================
+REQUEST: how should PR-a reconcile the config tables (stale + structurally narrower)
+with the shipped Home before any consumer/editor ships?
+
+EVIDENCE (file:line):
+  quick_actions_config SEED (6, flat) vs shipped QuickActions.jsx:38-62 (9, in 3 buckets):
+    - MISSING from the seed: Programs (/admin/programs), Import Schedule
+      (/admin/import-schedule), Settings (/admin/settings).
+    - STALE rows: add_player "+ Player" /teams  — shipped is "+ Member" /admin/members
+      (predates the +Player→+Member rename, PR #309-era); add_event /schedule —
+      shipped is /schedule?wizard=1.
+    - NO GROUP COLUMN: quick_actions_config has no bucket field, so it CANNOT represent
+      the shipped CREATE / COMMUNICATE / OPERATE grouping.
+  => Wiring QuickActions to the seed AS-IS would: drop 3 tiles, render a broken
+     "+ Player → /teams" link, and flatten the 3 buckets. That is a Home REGRESSION.
+  dashboard_section_visibility SEED (7 keys: key_metrics, next_event, admin_shortcuts,
+    teams, active_season, next_7_days, recent_notifications) — the Home renders via
+    HARDCODED zones, not these keys; the 7→zone mapping is unverified and may not be 1:1.
+
+OPTIONS + REQUIREMENTS:
+  (a) DESCOPE S3 for the pilot (CC LEAN). The Home layout works fine hardcoded; the
+      config tables are aspirational/stale; "config-driven Home" is really a MULTI-TENANT
+      feature (different orgs customizing their home), low-value + high-risk for the
+      single-org pilot. Skip S3 → go to S4 (Records). The dead config tables stay unused
+      (no regression). Revisit at multi-tenant onboarding. No CC code, no migration.
+  (b) KEEP S3, architect reseeds first. Architect-lane migration: reseed
+      quick_actions_config to the live 9 tiles (correct labels/routes) + ADD a
+      group/bucket column; confirm the 7 section keys → home zones map. THEN CC builds
+      PR-a (QuickActions + sections consume the corrected config: enabled + sort_order +
+      group) and PR-b (the editor). This is the faithful path but it is a real Home
+      refactor + a schema change + a reseed — the largest surface so far.
+  (c) SECTIONS-ONLY S3. Defer quick_actions_config (the hard mismatch); if the 7 section
+      keys map cleanly to home sections, wire + edit just section visibility/order. Half
+      the surface; still needs the section→zone mapping verified first.
+
+CC LEAN: (a) DESCOPE. For the pilot it's the right subtraction — Home is fine, the
+  config is stale, and wiring a stale config regresses a working surface to enable an
+  editor no one needs yet. If you want config-driven Home (option b), it's an
+  architect-lane reseed + schema (group column) BEFORE CC touches Home — CC will not ship
+  a consumer that regresses the live Home or an editor for config nothing reads.
+
+NEEDED BACK: ruling (a) / (b) / (c). If (a), CC moves to S4. If (b), the reseed +
+group-column migration + the section→zone mapping land first, then CC builds PR-a/PR-b.
+==============================================================================
+END S3 DECISION REQUEST.
+==============================================================================

@@ -513,10 +513,22 @@ hook reads guardian_notification_prefs (greenfield → all-ON defaults) + saves 
 by guardian_id (UNIQUE(guardian_id) verified — AP#25 safe; no migration).
 FamilyNotificationsForm = 4 toggles (weekly_digest/tournament_briefings/game_recaps/
 org_announcements) + a players context line. GUARDIAN-LEVEL (covers all the parent's
-players, not per-child). Distinct from S1's notification CHANNELS — kept separate. Next:
-S3 Home Layout (architect spec/render pending) — first D-2 verify-at-build gate
-(dashboard_section_visibility + quick_actions_config admin-gate policy bodies read before
-any write UI).
+players, not per-child). Distinct from S1's notification CHANNELS — kept separate.
+S1 FOLLOW-UP (DR-1 + DR-3) — DONE. Per the architect DR ruling: HID the theme segment in
+AppearanceForm (no dark stylesheet → a live System/Light/Dark control lies; column +
+persist path kept dormant for the future dark arc); AppearanceForm is now density-only.
+Softened the TimeLanguageForm tz copy ("Used to show event times in your local zone" →
+"Your time zone. Event times currently follow the program's zone") since user-level tz
+actuation is deferred. DR-2/4/5 = architect-side spec/checklist/model corrections (DR-5:
+trg_guard_pilot_cutover was already shipped last session — CC's premise was stale).
+S3 HOME LAYOUT — Step 0 BLOCKED → decision pending (ARCHITECT_DECISION_REQUEST_S3). The
+D-2 gate PASSED (architect-verified admin-gated writes), but the Home page consumes
+NEITHER config table (0 src refs; QuickActions is a hardcoded GROUPS array) AND the
+quick_actions_config seed is STALE/narrower than the shipped Home (6 flat actions vs 9 in
+3 buckets; +Player/teams vs +Member/admin/members; no group column). Wiring it as-is
+regresses Home. CC lean: DESCOPE S3 for the pilot (config-driven Home is a multi-tenant
+feature) → go to S4. Awaiting architect ruling (a descope / b reseed+schema first / c
+sections-only).
 
 **§4 reconciliation 2026-06-09 (settings-page arc — architect D6 ruling).** The
 `/admin/settings` arc shipped this session and is recorded SHIPPED here. It
