@@ -89,6 +89,30 @@ describe('StepSendConfirm', () => {
     expect(screen.getByTestId('send-button')).not.toBeDisabled();
   });
 
+  // FORK D (2026-06-09): coach_roundup / family_guide hard-gate an empty picker
+  // with a kind-specific note, mirroring games_recap — not the generic
+  // "Couldn't confirm recipients" note (which would also fire since the count is
+  // null when unpicked).
+  it('k. coach_roundup with no coach picked: Send disabled + "Pick a coach" note', () => {
+    setup({ state: { ...BASE_STATE, kind: 'coach_roundup', audience_type: 'coach_self', audience_filter: {} }, audience: { filtered: null, mode: 'standard' } });
+    expect(screen.getByTestId('send-button')).toBeDisabled();
+    expect(screen.getByTestId('anchor-pick-empty-note').textContent).toMatch(/Pick a coach above/);
+    // the generic unknown-audience note is suppressed in favor of the specific one
+    expect(screen.queryByTestId('audience-unknown-note')).not.toBeInTheDocument();
+  });
+
+  it('l. family_guide with no parent picked: Send disabled + "Pick a parent" note', () => {
+    setup({ state: { ...BASE_STATE, kind: 'family_guide', audience_type: 'family_specific', audience_filter: {} }, audience: { filtered: null, mode: 'standard' } });
+    expect(screen.getByTestId('send-button')).toBeDisabled();
+    expect(screen.getByTestId('anchor-pick-empty-note').textContent).toMatch(/Pick a parent above/);
+  });
+
+  it('m. coach_roundup with a coach picked: gate clears, Send enabled', () => {
+    setup({ state: { ...BASE_STATE, kind: 'coach_roundup', audience_type: 'coach_self', audience_filter: { coach_user_id: 'u-1' } }, audience: { filtered: 1, total: 1, mode: 'standard' } });
+    expect(screen.getByTestId('send-button')).not.toBeDisabled();
+    expect(screen.queryByTestId('anchor-pick-empty-note')).not.toBeInTheDocument();
+  });
+
   // A3: test_only toggle relocated from the body to the send action. It renders
   // in the send section, reflects state.test_only, and flips it via dispatch.
   it('j. test-only toggle renders here and flips test_only via dispatch', async () => {

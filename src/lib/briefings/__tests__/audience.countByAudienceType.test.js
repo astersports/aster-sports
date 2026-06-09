@@ -32,14 +32,23 @@ describe('countByAudienceType', () => {
     expect(countByAudienceType({ recipients: FULL_RECIPIENTS, audienceType: 'team', audienceFilter: { team_ids: [team10UBlack], team_id: team10UBlue } })).toBe(1);
   });
 
-  // COMPOSE-FRONT P1: previously returned null forever → "Computing audience…"
-  // never cleared and the send gate couldn't fire. coach_self / family_specific
-  // resolve to a single recipient/family synchronously.
-  it('coach_self resolves to 1 (the composing coach)', () => {
-    expect(countByAudienceType({ recipients: FULL_RECIPIENTS, audienceType: 'coach_self' })).toBe(1);
+  // COMPOSE-FRONT P1 + FORK D (2026-06-09): coach_self / family_specific resolve
+  // to a single recipient/family — but ONLY once the picker is set. A hard 1
+  // regardless of selection let Send enable with an empty picker (resolver then
+  // threw at send). Now: 1 when the id is present, null (defer to gate) when not.
+  it('coach_self resolves to 1 when coach_user_id is picked', () => {
+    expect(countByAudienceType({ recipients: FULL_RECIPIENTS, audienceType: 'coach_self', audienceFilter: { coach_user_id: 'u-1' } })).toBe(1);
   });
-  it('family_specific resolves to 1 family', () => {
-    expect(countByAudienceType({ recipients: FULL_RECIPIENTS, audienceType: 'family_specific' })).toBe(1);
+  it('coach_self returns null when no coach is picked (gate holds Send)', () => {
+    expect(countByAudienceType({ recipients: FULL_RECIPIENTS, audienceType: 'coach_self' })).toBe(null);
+    expect(countByAudienceType({ recipients: FULL_RECIPIENTS, audienceType: 'coach_self', audienceFilter: {} })).toBe(null);
+  });
+  it('family_specific resolves to 1 family when parent_user_id is picked', () => {
+    expect(countByAudienceType({ recipients: FULL_RECIPIENTS, audienceType: 'family_specific', audienceFilter: { parent_user_id: 'u-2' } })).toBe(1);
+  });
+  it('family_specific returns null when no parent is picked (gate holds Send)', () => {
+    expect(countByAudienceType({ recipients: FULL_RECIPIENTS, audienceType: 'family_specific' })).toBe(null);
+    expect(countByAudienceType({ recipients: FULL_RECIPIENTS, audienceType: 'family_specific', audienceFilter: {} })).toBe(null);
   });
 
   // The 4 anchor/player types remain null here — they need the async
