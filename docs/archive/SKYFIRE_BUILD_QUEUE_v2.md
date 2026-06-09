@@ -3413,3 +3413,15 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
   - AcademyActivationPanel + AcademyCallupPicker naming/concept merge
   - useRoster.js `payment_status` → `financial_accounts` migration
   - Wave 4.9 TODO: refactor `formatCountdown(startAt, now)` so the time-tick dep is lexically visible to lint (removes the NextUpCard disables)
+
+### FORK A1 — Stream B nudge enable-gate (default OFF) — PR #893
+- Date: 2026-06-09
+- Files:
+  - src/lib/cron/rsvpNudgeThreshold.js (+ rsvpNudgesEnabled helper)
+  - supabase/functions/briefing-auto-draft-tick/_rsvpNudgeThreshold.ts (AP#30 mirror, moved together)
+  - supabase/functions/briefing-auto-draft-tick/_handlers.ts (gate handleRsvpLowGoing)
+  - src/lib/cron/__tests__/rsvpNudgeThreshold.test.js (+3 cases)
+- Evidence: Architect ratification 2026-06-09 FORK A (option a). Defect at _handlers.ts:142-145 — Stream B read auto_notifications only for rsvp_min_going, no on/off switch (Stream A honors reminders_enabled at _reminders.ts:37). Prod organizations.auto_notifications = {} (MCP-verified).
+- Fix: rsvpNudgesEnabled(cfg) returns true ONLY when rsvp_nudges_enabled === true — INVERTED default vs Stream A (Stream B is opt-in / default-OFF; empty {}/unset/read-miss => OFF, fail-closed). handleRsvpLowGoing early-skips ("nudges_disabled_by_admin") before the events query.
+- Gates: 13/13 threshold tests (10 -> 13). Lint + build clean. Mirror pair byte-identical (logic). App/edge code only — no migration, no RLS. Path-scoped deploy: briefing-auto-draft-tick only.
+- Sequencing: A1 is the gate that precedes any FORK E real-send cutover. A2 (AutoNotificationSettingsSheet that writes rsvp_nudges_enabled + rsvp_min_going) is queued.
