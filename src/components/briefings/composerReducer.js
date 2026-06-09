@@ -40,16 +40,10 @@ export const INITIAL_STATE = {
   scheduled_for: null,
   draft_id: null,
   preview_family_id: null,
-  activeTemplateId: null,   // wave 3.16: tracks which starter template is applied
   // Wave 4.3-H: pilot_only is org-level, not draft-level. Synced from
   // useOrgSettings.pilotModeEnabled via effect in BriefingComposer; read
   // by RESOLVER_REGISTRY.anchorFromState to scope preview recipients.
   pilot_only: false,
-  // Wave 4.3-K Item 3: pilot test scope picker. When non-null, narrows
-  // the per-team synthetic test recipients to a single team's row so the
-  // admin@ inbox only gets one email instead of N. UI surface in
-  // BriefingComposer gates on org.pilot_test_recipient_email !== null.
-  pilot_test_scope_team_id: null,
 };
 
 export function composerReducer(state, action) {
@@ -78,8 +72,6 @@ export function composerReducer(state, action) {
       return { ...state, anchor_kind: null, anchor_id: null };
     case 'SET_KIND_FILTER':
       return { ...state, kindFilter: action.payload || null };
-    case 'SET_ACTIVE_TEMPLATE':
-      return { ...state, activeTemplateId: action.payload?.templateId ?? null };
     case 'SET_SCHEDULE':
       // Wave 3.17: schedule mode + ISO timestamp. mode=='send_now' clears
       // scheduledFor so submit path stays consistent.
@@ -104,8 +96,6 @@ export function composerReducer(state, action) {
       return { ...state, draft_id: action.id };
     case 'SET_PILOT_ONLY':
       return { ...state, pilot_only: !!action.value };
-    case 'SET_PILOT_TEST_SCOPE':
-      return { ...state, pilot_test_scope_team_id: action.value || null };
     case 'SET_PREVIEW_FAMILY':
       return { ...state, preview_family_id: action.id };
     case 'HYDRATE_DRAFT':
