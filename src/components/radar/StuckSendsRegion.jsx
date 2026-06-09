@@ -1,9 +1,9 @@
 // G5 PR 1a — the "Sends needing review" region (§16.14 hero + collapsible
 // cards) at the top of the admin Radar. Surfaces ambiguous 'queued' sends for a
 // HUMAN decision; it NEVER auto-re-drives queued (Option C / the crash-window
-// hold). Renders nothing when nothing is stuck (the live state today). Both
-// actions are gated behind a BottomSheet confirm. Admin-only (route-guarded),
-// org-scoped via the hook.
+// hold). Renders nothing when nothing is stuck (the live state today). All three
+// actions (resend / mark delivered / mark failed→retry) are gated behind a
+// BottomSheet confirm. Admin-only (route-guarded), org-scoped via the hook.
 
 import { useState } from 'react';
 import { AlertTriangle, XCircle } from 'lucide-react';
@@ -25,6 +25,7 @@ const sbtn = { minHeight: 46, borderRadius: 9, fontSize: 13, fontWeight: 700, fo
 const goBtn = { ...sbtn, background: 'var(--as-accent)', border: '1.5px solid var(--as-accent)', color: 'var(--as-text-inverse)' };
 const darkBtn = { ...sbtn, background: 'var(--as-text-primary)', border: '1.5px solid var(--as-text-primary)', color: 'var(--as-text-inverse)' };
 const cancelBtn = { ...sbtn, background: 'var(--as-bg-card)', border: '1.5px solid var(--as-border-default)', color: 'var(--as-text-secondary)' };
+const failBtn = { ...sbtn, background: 'var(--as-warning)', border: '1.5px solid var(--as-warning)', color: 'var(--as-text-inverse)' };
 // Escalation section (red): auto-retry exhausted, surface-only (no actions).
 const escWrap = { borderTop: '1px solid var(--as-danger)', background: 'var(--as-danger-soft)' };
 const escHead = { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 13px', color: 'var(--as-danger)' };
@@ -37,13 +38,14 @@ const escCnt = { fontSize: 11, fontWeight: 700, color: 'var(--as-danger)' };
 export default function StuckSendsRegion({ orgId }) {
   const { groups, escalations = [], count, loading, refetch } = useStuckSends({ orgId });
   const { showToast } = useToast();
-  const [confirm, setConfirm] = useState(null); // { action: 'resend'|'mark', group }
+  const [confirm, setConfirm] = useState(null); // { action: 'resend'|'mark'|'fail', group }
   const [busy, setBusy] = useState(false);
 
   if (loading || (count === 0 && escalations.length === 0)) return null; // nothing stuck/escalated (or loading) -> region absent
 
   const run = async () => {
     const { action, group } = confirm;
+    const ids = group.recipients.map((r) => r.id);
     setBusy(true);
     try {
       if (action === 'resend') {
@@ -51,12 +53,20 @@ export default function StuckSendsRegion({ orgId }) {
         // never finalized (crash before finalize) -> sent_at NULL -> alreadySent false.
         const { error } = await supabase.functions.invoke('send-tournament-message', { body: { message_id: group.messageId } });
         if (error) throw error;
-        showToast(`Resent to ${group.recipients.length}.`, 'success');
+        showToast(`Resent to ${ids.length}.`, 'success');
+      } else if (action === 'fail') {
+        // E5 (architect): route the no-signal residue into the bounded auto-retry
+        // path. Setting 'failed' lets briefing-auto-draft-tick's _redrive sweep pick
+        // them up (failed + redrive_count<3). No send happens now.
+        const { error } = await supabase.from('comms_message_recipients')
+          .update({ delivery_status: 'failed' }).in('id', ids);
+        if (error) throw error;
+        showToast('Sent back to auto-retry.', 'success');
       } else {
         // Mark-as-delivered: assert delivery without sending. 'sent' is the
         // least-bad terminal value (no 'delivered' webhook state is fabricated).
         const { error } = await supabase.from('comms_message_recipients')
-          .update({ delivery_status: 'sent' }).in('id', group.recipients.map((r) => r.id));
+          .update({ delivery_status: 'sent' }).in('id', ids);
         if (error) throw error;
         showToast('Marked as delivered.', 'success');
       }
@@ -67,8 +77,13 @@ export default function StuckSendsRegion({ orgId }) {
     } finally { setBusy(false); }
   };
 
-  const isResend = confirm?.action === 'resend';
   const n = confirm?.group?.recipients.length ?? 0;
+  const SHEET = {
+    resend: { title: `Resend to ${n} recipient${n === 1 ? '' : 's'}?`, body: 'Anyone who already received this briefing will get a duplicate. This cannot be undone.', label: `Resend to ${n}`, style: goBtn },
+    mark: { title: `Mark ${n} as delivered?`, body: "Use this only if you've confirmed in Resend that these recipients received the email. This clears the alert without sending anything.", label: 'Mark delivered', style: darkBtn },
+    fail: { title: `Send ${n} back to auto-retry?`, body: 'These re-enter the automatic retry queue (up to 3 attempts). Use this when Resend shows no delivery — nothing is sent right now.', label: 'Mark failed → retry', style: failBtn },
+  };
+  const sc = confirm ? SHEET[confirm.action] : null;
 
   const borderColor = count > 0 ? 'var(--as-warning)' : 'var(--as-danger)';
   return (
@@ -86,7 +101,8 @@ export default function StuckSendsRegion({ orgId }) {
       {groups.map((g) => (
         <StuckSendCard key={g.messageId} group={g}
           onResend={() => setConfirm({ action: 'resend', group: g })}
-          onMark={() => setConfirm({ action: 'mark', group: g })} />
+          onMark={() => setConfirm({ action: 'mark', group: g })}
+          onFail={() => setConfirm({ action: 'fail', group: g })} />
       ))}
       {escalations.length > 0 && (
         <div style={escWrap}>
@@ -111,17 +127,9 @@ export default function StuckSendsRegion({ orgId }) {
       )}
       <BottomSheet open={!!confirm} onClose={() => { if (!busy) setConfirm(null); }}>
         <div style={sheet}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-text-primary)' }}>
-            {isResend ? `Resend to ${n} recipient${n === 1 ? '' : 's'}?` : `Mark ${n} as delivered?`}
-          </h3>
-          <p style={sheetP}>
-            {isResend
-              ? 'Anyone who already received this briefing will get a duplicate. This cannot be undone.'
-              : "Use this only if you've confirmed in Resend that these recipients received the email. This clears the alert without sending anything."}
-          </p>
-          <button type="button" className="as-press" style={isResend ? goBtn : darkBtn} disabled={busy} onClick={run}>
-            {isResend ? `Resend to ${n}` : 'Mark delivered'}
-          </button>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-text-primary)' }}>{sc?.title}</h3>
+          <p style={sheetP}>{sc?.body}</p>
+          <button type="button" className="as-press" style={sc?.style} disabled={busy} onClick={run}>{sc?.label}</button>
           <button type="button" className="as-press" style={cancelBtn} disabled={busy} onClick={() => setConfirm(null)}>Cancel</button>
         </div>
       </BottomSheet>

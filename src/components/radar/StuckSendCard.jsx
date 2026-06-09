@@ -1,7 +1,9 @@
 // G5 PR 1a — one interrupted message's ambiguous-queued card (§16.14 detail).
-// Leads with the disambiguation pointer, then TWO equal-weight actions both
+// Leads with the disambiguation pointer, then two equal-weight actions both
 // gated behind a confirm (architect D2): "Resend to these N" first (moat-leaning
-// — a duplicate beats a silent miss), "Mark as delivered" second. --as-* tokens.
+// — a duplicate beats a silent miss), "Mark as delivered" second, plus a tertiary
+// "Mark failed → auto-retry" (E5) that routes the residue back into the bounded
+// retry path. --as-* tokens.
 
 import { useState } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
@@ -18,11 +20,12 @@ const acts = { display: 'flex', gap: 7, marginTop: 9 };
 const btnBase = { flex: 1, minHeight: 44, borderRadius: 8, fontSize: 12, fontWeight: 700, fontFamily: 'inherit', background: 'var(--as-bg-card)', cursor: 'pointer' };
 const btn = { ...btnBase, border: '1.5px solid var(--as-border-default)', color: 'var(--as-text-primary)' };
 const btnLead = { ...btnBase, border: '1.5px solid var(--as-accent)', color: 'var(--as-accent)' };
+const btnFail = { ...btnBase, width: '100%', border: '1.5px dashed var(--as-border-default)', color: 'var(--as-text-secondary)', marginTop: 7 };
 const tog = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', minHeight: 36, fontSize: 11, fontWeight: 600, color: 'var(--as-text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', marginTop: 6 };
 const detail = { marginTop: 8, borderTop: '1px dashed var(--as-border-default)', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 5 };
 const rcp = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, background: 'var(--as-bg-secondary)', borderRadius: 7, padding: '7px 9px', color: 'var(--as-text-secondary)' };
 
-export default function StuckSendCard({ group, onResend, onMark }) {
+export default function StuckSendCard({ group, onResend, onMark, onFail }) {
   const [open, setOpen] = useState(false);
   const n = group.recipients.length;
   const label = KIND_METADATA[group.kind]?.label || group.kind;
@@ -43,6 +46,7 @@ export default function StuckSendCard({ group, onResend, onMark }) {
         <button type="button" className="as-press" style={btnLead} onClick={onResend}>Resend to these {n}</button>
         <button type="button" className="as-press" style={btn} onClick={onMark}>Mark as delivered</button>
       </div>
+      <button type="button" className="as-press" style={btnFail} onClick={onFail}>Mark failed — let auto-retry handle it</button>
       <button type="button" style={tog} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         <ChevronDown size={13} strokeWidth={1.75} style={{ transform: open ? 'rotate(180deg)' : 'none' }} aria-hidden="true" />
         {open ? 'Hide recipients' : `Show the ${n} recipient${n === 1 ? '' : 's'}`}
