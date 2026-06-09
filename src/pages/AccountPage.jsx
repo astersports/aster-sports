@@ -11,6 +11,7 @@ import NotificationPrefs from '../components/account/NotificationPrefs';
 import PushEnableToggle from '../components/account/PushEnableToggle';
 import QuietHoursCard from '../components/account/QuietHoursCard';
 import MyPreferencesSection from '../components/account/MyPreferencesSection';
+import FamilyNotificationsSection from '../components/account/FamilyNotificationsSection';
 import StaffProfileCard from '../components/account/StaffProfileCard';
 import DeleteAccountSection from '../components/account/DeleteAccountSection';
 
@@ -83,6 +84,8 @@ export default function AccountPage() {
       )}
 
       <MyPreferencesSection />
+
+      <FamilyNotificationsSection />
 
       <section style={{ marginBottom: 16 }}>
         <Label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Bell size={12} strokeWidth={2} /> Notifications</Label>
