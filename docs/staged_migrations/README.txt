@@ -12,18 +12,23 @@ SOURCE OF TRUTH for rationale/verification: docs/PROGRAMS_TIER1_FORK_SPECS_2026-
 RATIFICATION: docs/ (architect 2026-06-08) — S1/S2/S3/S4 ratified; S5 not yet ruled.
 
 APPLY STATUS (2026-06-09):
-  S3 + S4 — APPLIED to production via MCP on Frank's GO (architect pre-flighted the
-    premises live). Mirrors now live in supabase/migrations/:
+  S3 + S4 — APPLIED via MCP. Mirrors live in supabase/migrations/:
       20260609015340_registrations_program_player_partial_unique.sql
       20260609015354_financial_accounts_season_fk_restrict.sql
-    Their staged copies were removed from this dir (they are real migrations now).
-  S1 + S2 — STILL STAGED (below). S1 wants an architect pre-flight of the FUNCTION
-    BODY (not just premises); S2 is sequencing-locked AFTER/WITH S1.
-  S5 FORK-ANON-GRANTS — not staged (awaiting the architect's Q2 ruling).
+  S1 — SUPERSEDED + APPLIED. The architect authored the canonical rollover RPC
+    (Rule 7) from this staged reference + live schema and applied it as
+      20260609031536_rollover_season_rpc_atomic.sql  (= H-2)
+    The staged S1_rollover_season_rpc.sql was removed (superseded). Next: CC ships
+    B-PR3 (switch useSeasonRollover to .rpc('rollover_season', ...) + src_team_id),
+    GO before push; then H-3 (= S2) lands AFTER B-PR3.
+  S2 — STILL STAGED (below) = H-3. Sequencing-locked AFTER B-PR3 (the client switch
+    is the gate; NOT NULL before it would 23502 any team writer that omits the type).
+  S5 FORK-ANON-GRANTS — not staged (architect ruled it defense-in-depth, deferred).
 
 REMAINING APPLY ORDER (dependency-correct):
-  1. S1_rollover_season_rpc.sql   (carries team_type_id forward — must precede S2)
-  2. S2_team_type_not_null.sql    (NOT NULL + FK RESTRICT)
+  1. (done) rollover RPC = 20260609031536 (H-2)
+  2. CC B-PR3 client switch (GO before push)
+  3. S2_team_type_not_null.sql = H-3 (NOT NULL + FK RESTRICT), AFTER B-PR3
 
 OPEN DECISION POINTS still gating a clean apply (architect pre-flights each):
   - S1 Q-A: the ratification names BOTH (a) new season status 'draft' AND
