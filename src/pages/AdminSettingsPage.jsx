@@ -8,6 +8,7 @@ import OrganizationForm from '../components/admin/OrganizationForm';
 import RegistrationForm from '../components/admin/RegistrationForm';
 import FeaturesForm from '../components/admin/FeaturesForm';
 import CustomDomainForm from '../components/admin/CustomDomainForm';
+import PilotModeForm from '../components/admin/PilotModeForm';
 import { useOrgAutoNotifications } from '../hooks/useOrgAutoNotifications';
 import { useOrgSettings } from '../hooks/useOrgSettings';
 
@@ -56,6 +57,7 @@ export default function AdminSettingsPage() {
   const domainSummary = os.loading ? 'Loading…' : (s?.custom_domain || 'Not set');
   const anSummary = an.loading ? 'Loading…' : `Reminders ${an.remindersOn ? 'on' : 'off'} · Nudges ${an.nudgesOn ? 'on' : 'off'}`;
   const senderSummary = os.loading ? 'Loading…' : (s?.from_name && s?.from_email ? `${s.from_name} · ${s.from_email}` : 'Not set');
+  const pilotSummary = os.loading ? 'Loading…' : (s?.pilot_test_recipient_email ? `Redirecting to ${s.pilot_test_recipient_email}` : 'Live — sending to families');
 
   return (
     <div className="px-4 py-4 as-fade-in" style={{ maxWidth: 600, margin: '0 auto' }}>
@@ -81,6 +83,14 @@ export default function AdminSettingsPage() {
         <div style={DIVIDER} />
         <Row title="Sender identity" summary={senderSummary} disabled={os.loading} onClick={() => setOpenForm('sender')} />
       </div>
+
+      <p style={SECTION_LABEL}>Pilot</p>
+      <div style={CARD}>
+        <Row title="Pilot mode" summary={pilotSummary} disabled={os.loading} onClick={() => setOpenForm('pilot')} />
+      </div>
+      <p style={{ fontSize: 12, color: 'var(--as-warning)', lineHeight: 1.4, margin: '0 4px 20px' }}>
+        Clearing the test address sends real email to families — the go-live cutover.
+      </p>
 
       <OrganizationForm
         open={openForm === 'org'}
@@ -121,6 +131,13 @@ export default function AdminSettingsPage() {
         open={openForm === 'sender'}
         onClose={() => setOpenForm(null)}
         initial={{ fromName: s?.from_name, fromEmail: s?.from_email, replyTo: s?.reply_to_email }}
+        onSave={os.save}
+        saving={os.saving}
+      />
+      <PilotModeForm
+        open={openForm === 'pilot'}
+        onClose={() => setOpenForm(null)}
+        initial={{ pilotEnabled: s?.pilot_mode_enabled, testRecipientEmail: s?.pilot_test_recipient_email }}
         onSave={os.save}
         saving={os.saving}
       />
