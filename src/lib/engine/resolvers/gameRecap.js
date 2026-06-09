@@ -118,13 +118,18 @@ export function composeGameRecap(context, slice, overrides = {}) {
   sections.push({ kind: 'section_bar', label: 'The Game' });
   sections.push(buildGameRecapCard(team, event, location, gr));
 
-  sections.push({ kind: 'section_bar', label: 'From the Sideline' });
-  if (pog?.first_name) sections.push({ kind: 'stats_narrative', body: `Player of the game: ${pog.first_name}` });
-  if (trim(gr.coach_highlight)) sections.push({ kind: 'stats_narrative', body: trim(gr.coach_highlight) });
-
+  // Guard the "From the Sideline" bar behind real content — a lone empty bar
+  // (no POG / highlight / overrides) reads flat. Mirrors tournament_recap.
+  const sideline = [];
+  if (pog?.first_name) sideline.push(`Player of the game: ${pog.first_name}`);
+  if (trim(gr.coach_highlight)) sideline.push(trim(gr.coach_highlight));
   for (const key of ['our_highlights', 'opp_highlights', 'coach_note', 'parent_shoutout']) {
     const v = trim(overrides[key]);
-    if (v) sections.push({ kind: 'stats_narrative', body: v });
+    if (v) sideline.push(v);
+  }
+  if (sideline.length) {
+    sections.push({ kind: 'section_bar', label: 'From the Sideline' });
+    for (const body of sideline) sections.push({ kind: 'stats_narrative', body });
   }
 
   const signoff = buildSignoffSection({ overrides });
