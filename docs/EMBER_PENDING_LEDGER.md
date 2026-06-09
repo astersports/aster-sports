@@ -5,7 +5,7 @@
 > re-discovery. Updated per session and per PR.
 >
 > Created: 2026-05-18 (Italy CEST) from L99 cross-role audit consolidation
-> Last updated: 2026-05-27 (§4.AJ reconciliation — 5-day gap close against PRs #486-#513; records the cutover-gate feedback REVERT #509, Option C arc ship #503-#508, and current-surface PRs #512/#513)
+> Last updated: 2026-06-09 (§4 reconciliation — settings-page arc SHIPPED per architect D6 ruling, PRs #897–#905; see the §4.0 reconciliation note). Prior: 2026-05-27 (§4.AJ — 5-day gap close against PRs #486-#513; cutover-gate REVERT #509, Option C arc #503-#508, current-surface #512/#513).
 
 This doc complements (not replaces):
 - `docs/archive/SKYFIRE_BUILD_QUEUE_v2.md` — shipped-log roadmap, forward-only
@@ -454,6 +454,20 @@ The arcs below trail the codebase badly (anti-pattern #45 staleness).
 This index is the **trustworthy top-level "what's next"** — verified by
 grep + MCP query on 2026-05-27. Read this before trusting the detailed
 arc bodies.
+
+**§4 reconciliation 2026-06-09 (settings-page arc — architect D6 ruling).** The
+`/admin/settings` arc shipped this session and is recorded SHIPPED here. It
+post-dates the 2026-05-27 index, so it was never a tracked §4 row. The build queue
+`docs/archive/SKYFIRE_BUILD_QUEUE_v2.md` is confirmed archived/frozen (NOT written);
+this ledger is the live tracker (the prior "per-step build-queue entry" reference is
+retired — architect self-corrected). Arc: A2 #897 (AutoNotificationSettingsForm +
+`/admin/settings` shell + route + `set_org_auto_notifications` RPC) + migration-collision
+mirror #898 + Step 1 Sender identity #899 + Step 2 Organization #900 + Step 3
+Registration/Features/Domain #901 + Step 4 Pilot (guarded) #902 + Step 5 decompose+a11y
+#903 + D3 Pilot focused-confirm #905. Result: `/admin/settings` admin-only, 3 groups /
+7 sections, all saving; 61 admin tests; every file ≤150. Decisions D1–D6 ratified
+(`docs/CC_SESSION_HANDOFF_2026-06-09_settings.txt`). Open strategic item: FORK E RECOVER
+seam (`docs/RECOVER_V1V4_FINDINGS_2026-06-09.txt` — architect ruling pending).
 
 | Arc / item | Verified status | Evidence |
 |---|---|---|
