@@ -18,16 +18,9 @@ const REGION = readFileSync('src/components/radar/StuckSendsRegion.jsx', 'utf8')
 afterEach(cleanup);
 
 describe('G5 queued surface — never auto-re-drives queued', () => {
-  it('the queued data hook never SENDS (the H1 status reconcile is allowed)', () => {
-    // RECOVER Option A (architect 2026-06-09): the hook runs the H1 reconcile —
-    // a delivery_status UPDATE synced from provider webhook signals. That is a
-    // STATUS write, never a send. The load-bearing invariant is UNCHANGED: the
-    // automatic layer must never SEND, and its only write is a status reconcile
-    // (no insert/delete, no invoke).
+  it('the queued data hook is read-only: no send/invoke, no status write', () => {
     expect(HOOK).not.toMatch(/functions\.invoke/);
-    expect(HOOK).not.toMatch(/send-tournament-message/);
-    expect(HOOK).toMatch(/\.update\(\{\s*delivery_status:/);
-    expect(HOOK).not.toMatch(/\.insert\(|\.delete\(/);
+    expect(HOOK).not.toMatch(/\.update\(/);
   });
 
   it('the Region sends only behind the human confirm (no auto path)', () => {
@@ -43,9 +36,6 @@ describe('G5 queued surface — never auto-re-drives queued', () => {
 
 vi.mock('../../../hooks/useStuckSends', () => ({ useStuckSends: vi.fn() }));
 vi.mock('../../../context/useToast', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
-// Mock the supabase client so importing StuckSendsRegion doesn't throw on missing
-// VITE_SUPABASE_* env vars (AP#27); the clean-state renders never call it.
-vi.mock('../../../lib/supabase', () => ({ supabase: {} }));
 const { useStuckSends } = await import('../../../hooks/useStuckSends');
 const StuckSendsRegion = (await import('../StuckSendsRegion')).default;
 
