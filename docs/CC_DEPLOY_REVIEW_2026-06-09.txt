@@ -1,0 +1,115 @@
+CC -> ARCHITECT : DEPLOY REVIEW — FORK E HARDENING ARC (PRs #905-#908)
+Date: 2026-06-09  ·  Relay artifact (CLAUDE.md §11.8)  ·  for correctness review + feedback
+Status: ALL FOUR PRs MERGED to main (live on Vercel). This doc is so the architect can
+verify the implementation matches the rulings and flag any update before the cutover.
+
+================================================================================
+0. WHAT SHIPPED (all merged, CI green)
+================================================================================
+#905  fix: Pilot cutover behind a focused SEND-LIVE confirm (architect D3)
+#906  docs: RECOVER V1-V4 findings + ledger reconcile (settings SHIPPED, D6)
+#907  feat: H1-H3 reconcile-from-provider recovery hardening (Option A)
+#908  feat+docs: delivery rollup (SEE) + LEGAL/SEE confirm + settings UI coverage
+Pre-arc context (already merged earlier this session): settings page A2 + Steps 1-5
+(#897-#903), migration-collision mirror (#898).
+
+================================================================================
+1. #905 — PILOT SEND-LIVE FOCUSED CONFIRM (verify: D3 satisfied)
+================================================================================
+WHAT: the go-live cutover (clearing pilot_test_recipient_email -> real family email)
+is now reachable ONLY through a focused bottom-sheet confirm, not an inline button.
+  - GoLiveConfirmSheet.jsx — BottomSheet (role=dialog, aria-modal, focus trap, Esc,
+    rgba(0,0,0,0.3) scrim) + typed "SEND LIVE" confirm + Cancel / danger Send-live.
+  - PilotModeForm.jsx — normal Save edits the toggle / a NON-EMPTY address only;
+    clearing is disallowed on normal Save; the cutover is a separate "Go live to
+    families..." danger button -> the focused sheet.
+VERIFY: (a) the confirm cannot scroll out of view / fire on a stray tap (D3 intent);
+(b) the only path to clear the address is the typed-confirm sheet. CC did NOT fire
+the cutover; LH's redirect (olivejuiceinc1@gmail.com) is still set.
+JUDGMENT TO RATIFY: I kept the existing "Mark delivered" semantics and used a
+BottomSheet (anti-pattern #15: 1-field confirm dialog is BottomSheet-eligible). OK?
+
+================================================================================
+2. #907 — RECOVER H1-H3 HARDENING (verify: the reconcile logic + the guard change)
+================================================================================
+WHAT (app-layer, NO migration, sends nothing):
+  - reconcileDelivery.js (pure):
+      H1 terminalStatusFromSignals(row) priority:
+        complained > bounced > clicked > opened > delivered ; null when no signal.
+      H2 isPastGrace: STUCK_GRACE_MINUTES = 15, created_at age proxy (no dispatched_at
+         column added, per your ruling).
+  - useStuckSends.js — H1: before surfacing, any 'queued' row carrying a provider
+    signal is reconciled to its terminal delivery_status via a STATUS-ONLY UPDATE
+    (cmr_update admin RLS; best-effort; NEVER invokes the send path). H2: the human
+    queue now shows only the no-signal residue past the 15-min grace window.
+  - StuckSendsRegion.jsx — H3: a guidance line states the decision rule (signal-bearing
+    sends auto-cleared; these have no signal -> Resend may duplicate, only mark
+    delivered if Resend confirms).
+JUDGMENTS TO RATIFY (these are the review-critical ones):
+  R-a  PLACEMENT: H1 runs CLIENT-SIDE in useStuckSends (write-on-load), not in the
+       edge-function sweep. Rationale: "app-layer, no migration, one PR"; cmr_update
+       RLS already permits the admin write; reconcile happens exactly when the admin
+       views the queue. Trade-off: rows only reconcile when an admin opens the Radar
+       (fine for the pilot; a signal-bearing row self-reconciles next view). If you
+       prefer an always-on edge-function reconcile sweep, that's a different build.
+  R-b  GUARD RELAXATION: the architect-required stuckSendsGuard.test.jsx previously
+       asserted the hook has NO .update at all ("read-only"). H1 adds a status UPDATE,
+       so I CHANGED the guard to assert the load-bearing invariant — the automatic
+       layer never SENDS (no functions.invoke / send-tournament-message) and its only
+       write is a status-only delivery_status update (no insert/delete). Confirm this
+       is the correct evolution of the invariant, not a weakening.
+  R-c  PRIORITY ORDER: complained > bounced > clicked > opened > delivered. Confirm
+       (esp. that bounced/complained outrank a delivered/opened signal — "it sent,
+       deliverability issue" per your H3 rule).
+  R-d  GRACE = 15 min. Confirm the value (webhook-in-flight window for the pilot).
+  R-e  DEFERRED: I did NOT add the "Mark failed -> bounded auto-retry" action your H3
+       rule mentioned as the option for no-signal residue (kept the PR focused). Want
+       it as a follow-up?
+TESTS: reconcileDelivery.test.js (mapping + priority + grace boundary + the invariant
+that the hook never calls the send path) + the updated guard. 19 radar/lib tests green.
+
+================================================================================
+3. #908 — SEE ROLLUP (verify: the aggregation is right)
+================================================================================
+WHAT: BriefingHistoryDetail.jsx gains a Sent / Delivered / Opened / Bounced stat row,
+useMemo-aggregated from the already-fetched recipients (no new query, no migration).
+JUDGMENT TO RATIFY:
+  S-a  Counting: delivered = count(delivered_at != null); opened = count(opened_at
+       != null); bounced = count(delivery_status='bounced' OR bounce_reason present);
+       Sent = total recipients. Reflects the H1-reconciled statuses. Is "Sent" the
+       right top-line label (vs "Recipients"), and is the bounce definition right?
+  S-b  No unit test (trivial counting; your "one-send rollup proof suffices" is the
+       intended proof). Acceptable, or want a test?
+
+================================================================================
+4. THE ONE BLOCKER — LEGAL (needs your ruling before the cutover)
+================================================================================
+family_guide footer: unsubscribe PRESENT + working; PHYSICAL MAILING ADDRESS ABSENT
+by the logged 2026-06-08 "internal-only/tax" directive (familyGuideSections.js:123-128).
+CC lean: CAN-SPAM §7704(a)(5) requires a physical postal address in parent-facing bulk
+commercial email; the directive conflicts for the family-facing kinds. Add the address
+to the family footer before the cutover (small renderer change: pass org.mailing_address
+into buildFamilyGuideFooter -> footer.js emits an address line). CC did NOT make the
+change (reverses your logged directive + is a legal call). RULE: add it (CC ships the
+footer change, app-layer, no migration) or keep it out (LEGAL stays open with rationale).
+
+================================================================================
+5. COVERAGE REPORT (verify: nothing mis-mapped)
+================================================================================
+docs/SETTINGS_UI_COVERAGE_2026-06-09.txt — ~30% of the 57 §B knobs surfaced. Substrate
+re-verified via MCP (all tables/columns exist; corrected a sub-agent's "no such table"
+artifacts). Flag any knob I mapped wrong (esp. the scattered Tier-2 self prefs:
+density on /schedule+/admin/locations, notification_prefs+quiet_hours on /account,
+view-as in the Header, inbox filters in the Inbox — these are the "don't duplicate"
+set for the My-Preferences pass).
+
+================================================================================
+6. WHAT I NEED BACK
+================================================================================
+Ratify or update: R-a..R-e (#907), S-a/S-b (#908), the #905 judgment, and the
+coverage mapping. RULE the LEGAL address question (§4) — it's the cutover gate.
+Everything else in FORK E is green: SEND, RECOVER, SEE. On your LEGAL ruling + Frank's
+settings-expansion rulings (D-1..D-5), CC proceeds.
+================================================================================
+END DEPLOY REVIEW.
+================================================================================
