@@ -1,0 +1,311 @@
+==============================================================================
+CC -> ARCHITECT: PROGRAMS AUDIT — MASTER FINDINGS (waves 1-4 consolidated)
+Date: 2026-06-09. Self-contained per §11.8. AP#60 live-verified
+(project vrwwpsbfbnveawqwbdmj, SELECT-only + ROLLBACK-only RLS replays).
+NOTHING APPLIED here except the two migrations noted as ALREADY APPLIED (S3,S4).
+==============================================================================
+COVERAGE: 24 agents across 4 waves.
+  Wave-1 (A1-A6) + Wave-2 (B1-B8): docs/audit/programs_l99* — the P0/P1 DEFECT
+    surface (B5 self-verified: 0 false positives in 11).
+  Wave-3 (5 agents): docs/PROGRAMS_AUDIT_COVERAGE_GAPS_2026-06-09.txt — breadth
+    holes (create/fee path, public-reg client, RLS re-enum, seams, runtime/a11y).
+  Wave-4 (5 agents, THIS doc): RLS impersonated-JWT REPLAY (empirical),
+    edge/cron/briefing seam, test-coverage + DB orphan/FK sweep, onboarding/
+    claim seam, lifecycle/public-listing/rollover-UI.
+This doc is the single architect review surface. Per-wave docs hold full evidence.
+
+THE BIG REMAINING HOLE IS NOT CLOSED HERE: the F1-F16 catalog — 10 of 16 items
+(F2,F6,F7,F9-F13,F15,F16) are undefined repo-side; the architect must supply them
+before the audit can claim completeness against its own framework.
+
+==============================================================================
+0. MASTER VERDICT
+==============================================================================
+Programs is NOT closeable. The P0/P1 DEFECT surface held up under adversarial
+re-verification (0 false positives), and wave-4 added TWO new live/near-live P0s
+the prior waves missed (both in surfaces prior waves declared out-of-scope):
+  * the ONBOARDING pipeline is severed in production (LIVE);
+  * a published draft/archived program is anon-registerable (latent, one checkbox).
+Plus the migration-companion cluster (§2) is now load-bearing on the 2 applied +
+1 staged migrations. The empirical RLS replay (§3) is the strongest new evidence:
+it REFUTED the "anon write hole" worry (RLS holds) and CONFIRMED the parent
+cross-family read leak (latent). Net new severity from wave-4: 2 P0, ~7 P1.
+
+==============================================================================
+1. NEW P0s FROM WAVE-4 (surfaces no prior wave audited)
+==============================================================================
+P0-NEW-1 [LIVE] ONBOARDING PIPELINE SEVERED — registered families cannot get an
+  app account via self-service.
+  Live: guardians = 175 rows, 173 with user_id IS NULL (only 2 linked, both
+  out-of-band by admin/SQL). The self-claim path autoLinkGuardian.js:15-27
+  (email-match a guardian row, set user_id) is DEAD under RLS: an unlinked row
+  (user_id NULL) is invisible/unupdatable to a fresh parent because
+  guardians_select_own / guardians_update_own both require user_id = auth.uid().
+  EMPIRICALLY REPRODUCED (SET ROLE authenticated, fresh sub, real unlinked row):
+  0 rows visible, 0 updatable -> autoLinkGuardian returns null before the update.
+  The invite path is ALSO broken for linking: claim_invite() writes only
+  user_roles, never sets guardians.user_id, so a claimed parent lands childless
+  (parent_context_v filters WHERE g.user_id IS NOT NULL). No SECDEF guardian-claim
+  helper exists (pg_proc verified). PILOT-masked (no family has self-claimed yet),
+  but the onboarding path does not work today.
+  LEAN: ship a SECDEF claim_guardian_by_email() (email-confirmed-gated; sets
+  guardians.user_id = auth.uid() WHERE lower(email)=auth.email() AND user_id IS
+  NULL), invoked from resolveNewUserContext. Safer than a broad unlinked-row
+  UPDATE policy. (wave-4 onboarding)
+
+P0-NEW-2 [latent — one checkbox] PUBLISHED DRAFT/ARCHIVED PROGRAM IS
+  ANON-REGISTERABLE. submit_registration + get_public_program gate on
+  is_published + reg-window ONLY, never status (verified live via
+  pg_get_functiondef). is_published and status are orthogonal in the UI
+  (ProgramEditSheet exposes is_published as a standalone checkbox; a season is
+  born status='draft'). So is_published=true + status='draft' -> anon registers
+  into a draft; and there is NO archive-forces-unpublish coupling, so an archived
+  published program stays registerable into its open window. Today safe (all
+  draft/archived programs have is_published=false; rpc_would_accept=false verified)
+  -> latent. LEAN: add AND status='active' to both RPC WHERE clauses. (wave-4
+  lifecycle)
+
+(P0-3 SEASON ROLLOVER BROKEN — re-confirmed, with a correction: the rollover dies
+  at statement 1 on status:'planning' (23514). The roster_type insert is 42703
+  undefined_column, NOT the 23502 earlier assumed — does not change the S1 RPC fix
+  which omits the column. Rollover is also non-atomic. season_rollovers=0, never
+  ran. Staged S1 RPC fixes all of it; apply S1 + switch client before S2.)
+
+==============================================================================
+2. MIGRATION-COMPANION CLUSTER (the 2 applied + 1 staged migrations each need an
+   app/DDL companion; refined by wave-4)
+==============================================================================
+C-1 [BREAKS NOW] S4 (financial_accounts FK->RESTRICT, APPLIED) -> deleteProgram
+  (useProgramAdmin.js:44-56) pre-checks only registrations, never
+  financial_accounts -> raw 23503 to the toast. Ledger SAFE; UX raw. FIX: add a
+  financial_accounts(+coach_payouts) count-and-block + §16.3 "archive instead."
+C-2 [BREAKS WHEN S2 LANDS] client rollover (useSeasonRollover.js:42-45) omits
+  team_type_id -> 23502 when teams.team_type_id NOT NULL lands. Land staged S1 RPC
+  (carries it) + switch the client BEFORE S2's DDL. Highest-risk sequencing item.
+C-3 rollover non-atomic (compounds C-2): mid-loop throw leaves new season created +
+  old already archived; re-run dupes. S1 single-RPC rebuild closes it.
+C-4 [REFINED by wave-4] S3 (registrations partial-unique, APPLIED) needs the
+  submit_registration body changed in TWO places, not one:
+    (a) the dedupe SELECT at migration :150-151 has NO status filter -> a CANCELLED
+        player who re-registers is silently skipped as "already_registered" (not
+        billed), CONTRADICTING the partial index's "cancelled is re-registerable"
+        intent. Add AND status <> 'cancelled' to the dedupe SELECT.
+    (b) the INSERT needs ON CONFLICT (program_id,player_id) WHERE status<>'cancelled'
+        DO NOTHING so a concurrent double-submit maps gracefully (today: raw 23505).
+C-5 [NEW] S4 left financial_accounts.season_id UNINDEXED, and it is now the
+  RESTRICT-enforcement column (every program-delete seq-scans it; perf advisor
+  flags it). Add a covering index — cheap follow-on DDL.
+
+==============================================================================
+3. RLS — EMPIRICALLY REPLAYED (wave-4 impersonated anon/parent/coach, ROLLBACK-only)
+==============================================================================
+CONFIRMED SAFE (refutes the "anon write hole" worry):
+  - anon SELECT on every graph table = 0 rows; anon INSERT/UPDATE/DELETE on
+    financial_*/guardians/players/registrations = 42501 / 0 rows. RLS HOLDS.
+    => FORK-ANON-GRANTS (revoke anon writes) is DEFENSE-IN-DEPTH, not closing a
+       live hole. Still recommended; not urgent.
+  - Financial data is correctly FAMILY-scoped: a parent sees only their own
+    financial_accounts/transactions (guardian.user_id=auth.uid()); coach sees 0.
+    No cross-family financial leak.
+CONFIRMED LEAK (latent — tables empty today):
+  - [P1] A parent reads ORG-WIDE registrations AND tryout_attendees.evaluation_note
+    (both quals = org_id = ANY(current_user_org_ids()), NOT family-scoped). PROVEN:
+    inserted a registration for a non-child player, read it AS the parent ->
+    visible=1. Family-scope is the privacy intent (contrast financial tables which
+    DO scope to the guardian). LEAN: narrow registrations_select + tryout_attendees_
+    select to family/staff scope; evaluation_note especially is coach-private.
+NEW RLS FINDINGS:
+  - [P2] {public}-role write policies (registrations/tryout_attendees/programs/teams)
+    block anon only via "permission denied for function user_has_role_in_org" — a
+    function-grant artifact, not a clean RLS false-eval. Fragile per AP#23/#57
+    (Supabase auto-grants EXECUTE to anon on new functions). LEAN: scope these write
+    policies to role {authenticated} so anon is excluded structurally.
+  - [P2] teams_select_public is SELF-DEFEATING: qual = org_id IN (SELECT id FROM
+    organizations WHERE public_listing_enabled=true), but anon cannot read
+    organizations (0 rows) -> 0 teams. The public anon schedule (§8 3-B) is BROKEN
+    at the RLS layer (security-safe, fails closed). LEAN: add organizations_select_
+    public, or rewrite the qual via a SECDEF helper.
+  - [P2] teams_select uses SINGULAR current_user_org_id() — the only graph table on
+    the singular helper (Pattern B). Multi-org user count = 0 (latent).
+  - [P3] coach reads ALL org players/teams/programs (design-as-written staff
+    org-scope, no team-scoping) — flag if team-scoped coach visibility was intended.
+  - [P3] financial_transactions has no UPDATE/DELETE policy (append-only ledger) —
+    intentional but undocumented.
+VERIFIED CLEAN (wave-3 static, now empirically/live-confirmed): AP#20 no
+  with_check-NULL write holes; seasons view security_invoker=true+check_option=
+  cascaded; AP#23/#57 SECDEF grants (PUBLIC revoked, anon only on the 2 public RPCs,
+  search_path pinned). NOTE the SECDEF RPCs write base `programs` not the view, so
+  the view's cascaded check is DECORATIVE on writes — document the view as read-only.
+
+==============================================================================
+4. BRIEFING <-> PROGRAM SEAM (wave-4 edge/cron — entirely new coverage)
+==============================================================================
+Negative confirm: the WHOLE edge layer is program-graph-blind (grep of
+supabase/functions/** for programs|seasons|registrations|... = 0 hits) -> S4 FK-
+RESTRICT + pending NOT-NULL cannot break any edge function. But the recipient/
+queue layer scopes by org only:
+  - [P1] BRIEF-1 get_digest_recipients is org-scoped, NOT season/program-scoped ->
+    the "Active Roster Lab" CAMP (32 players / 55 guardians, LIVE) leaks into the
+    weekly_digest alongside league families (Pattern A #63). LEAN: filter to active-
+    season teams (join programs ON p.id=t.season_id AND program_type='season' AND
+    status='active'), or accept p_season_id. Lock with AP#43 test.
+  - [P1] BRIEF-2 briefing_active_queue (Radar) + handleGameCompleted/
+    handleRsvpLowGoing/handleEventReminder never scope to season -> camp games draft
+    game_recap/rsvp_nudge indiscriminately. handleRsvpLowGoing finds short-rostered
+    games across ALL program types.
+  - [P1] BRIEF-3 the RSVP-NUDGE pilot issue is HALF of a pair. rsvp_nudge drops
+    get_digest_recipients synthetic (guardian_id=null) rows in pilot REDIRECT mode
+    -> 0 recipients. academy_callup_notice is WORSE: it resolves from player_guardians
+    directly, never calls the redirect RPC, so in pilot mode it emails a REAL family
+    or 403-ABORTS the whole send. FIX (both): a shared per-player REDIRECT helper —
+    when pilot is on, substitute pilot_test_recipient_email as email_at_send while
+    preserving the real guardian_id/player_id for token minting (tokens key on
+    player/guardian, not email). This is the fix for Frank's reported nudge error.
+  - [P2] BRIEF-4 briefing_triggers.team_type_id is dead weight AND the auto-draft
+    collapse key is ${org}:${trigger_event} (ignores team_type_id) -> the moment a
+    2nd per-program trigger row exists, the collapse silently drops it (AP#42). LEAN:
+    collapse on ${org}:${team_type_id}:${trigger_event} + scope handlers, or drop col.
+  - [P3] BRIEF-5 doc-drift: a _handlers.ts comment claims a briefing_triggers CHECK
+    that doesn't exist. [P3] BRIEF-6 no program-lifecycle briefing triggers
+    (rollover/reg-open/tryout-result) — defer (admin moments, not family comms).
+
+==============================================================================
+5. AP#58 CROSS-CUTTING PATTERNS (synthesis across all 24 agents)
+==============================================================================
+PATTERN A #63 (same concept, divergent source/scope) — THE dominant platform
+  pattern, now spanning EIGHT instances across the program surface:
+  money ("what they owe": client estimate vs server authoritative_total never shown
+  vs entry-card base-only); audience ("who's in this org": org-scope digest vs
+  season-scope surfaces -> camp leak); "active" (4 defs); "registration open" (3
+  window truths); "is this family an account" (guardians.user_id vs auth.last_sign_in
+  vs user_roles — the onboarding contradiction); slug scope (app per-org vs DB
+  global); playercount (rows vs distinct); pilot-redirect (rsvp vs callup divergent).
+  DISCIPLINE: name ONE source+scope per metric; label scope where it differs; lock
+  with AP#43 invariant tests.
+PATTERN B (multi-org singular/plural) — teams_select singular; slug global;
+  guardians.email global. 0 multi-org users (latent). One migration before org #2.
+PATTERN C (the migration-companion cluster, §2) — every Tier-1 migration made a
+  latent seam reachable and needs an app/DDL companion. NEW class this audit.
+AP#36 (error-swallow) — useAllPrograms/useProgramAdmin counts -> falsely "0".
+CAPTURED-BUT-UNENFORCED — gender collected, never checked; 4 fee types +
+  auto_apply_rule dead; briefing_triggers.team_type_id dead. AP#51 candidates.
+A11Y-BELOW-BAR — registration wizard (no aria-live/role=alert) + programs index
+  (30px chips, no aria-pressed).
+
+==============================================================================
+6. TEST COVERAGE + DB INTEGRITY (wave-4)
+==============================================================================
+TEST COVERAGE: the program DECISION helpers are tested (programSetup, registry
+  parity, estimateCart, programDelete pluralizer, DivisionCard, ProgramIndexRow,
+  useActivePrograms, programGrouping). UNTESTED (the load-bearing paths): the
+  submit_registration MONEY path; get_public_program; the whole public /r/:slug
+  flow; season ROLLOVER atomicity; the program-graph RLS; the S3/S4 migrations
+  (only their in-SQL DO-block verify). §11.6 convention CLEAN. LEAN: the
+  programRegistry.parity.test.js pattern (reads migration mirrors) can lock S3/S4
+  in CI; the money path + anon flow need at least an integration test before go-live.
+DB INTEGRITY: orphans CLEAN (0 across 19 parent->child relationships). FK map:
+  teams.season_id -> programs is still CASCADE [P1] (program delete nukes teams +
+  rosters; S4 only protected the ledger); coach_payouts.season_id + season_rollovers
+  FKs are NO ACTION [P2] (raw 23503 on delete). Unindexed FKs: financial_accounts.
+  season_id (=C-5), coach_payouts.season_id, +4 minor. Constraint gaps mostly clean;
+  registration_fees.fee_type nullable while division_fees.fee_type NOT NULL [P3].
+
+==============================================================================
+7. CONSOLIDATED FINDINGS REGISTER (deduped, severity-ranked; see per-wave docs
+   for full file:line/SQL evidence)
+==============================================================================
+P0:
+  - Onboarding severed [LIVE] (§1 P0-NEW-1)
+  - Published draft/archived anon-registerable [latent] (§1 P0-NEW-2)
+  - Rollover broken + non-atomic [staged S1] (§1; C-2/C-3)
+  - Program-delete blast radius [S4 applied; C-1 companion needed; teams CASCADE
+    still open]
+  - Registration TOCTOU [S3 applied; C-4 dedupe+ON CONFLICT companion needed]
+P1:
+  - Parent reads org-wide registrations + tryout evaluation_note [RLS, confirmed]
+  - Briefing recipients/queue/handlers org-scoped not season-scoped (camp leak) +
+    per-player pilot redirect broken (BRIEF-1/2/3) [BRIEF-1 LIVE]
+  - teams_select singular-org RLS (Pattern B)
+  - guardians.email global UNIQUE -> cross-org claim/merge hijack
+  - slug app-per-org vs DB-global index
+  - gender captured but unenforced
+  - authoritative_total never shown / client-server money divergence
+  - setActive/activate 0-active window (non-atomic)
+  - useCreateActivity .single() on seasons view aborts for a camp team
+  - financial_accounts.season_id unindexed (C-5)
+  - teams.season_id CASCADE nukes rosters on program delete
+  - filter chips <44px + no aria-pressed/aria-live
+P2 (selected): fee-by-name match; unnamed-division fee dropped; no division/fee
+  edit post-create; {public}-role write-policy fragility; teams_select_public
+  self-defeating (public schedule broken); coach org-wide read (design-as-written);
+  AdminSeasonsPage divergent status-create (+ programs.status default 'active');
+  non-season lifecycle vestigial (no UI archive); briefing_triggers.team_type_id
+  dead/pre-broken; AP#36 count swallows; useProgramHealthMetrics over-fetch;
+  ProgramDetailPage §16.14 (floating delete, unvirtualized 60+ list); ProgramIndexRow
+  AP#46 row-rhythm; reg error microcopy; concurrent-submit 23505; coach_payouts/
+  season_rollovers NO ACTION raw error.
+P3 (selected): raw DB error strings; family-cap discount dead under per-child submit;
+  client ignores server registration_open; no density-awareness; "$0.00" ambiguity;
+  dead fee-types/auto_apply_rule; doc-drift CHECK comment; financial_transactions
+  append-only undocumented; registration_fees.fee_type nullable; no program-lifecycle
+  briefing triggers (defer).
+
+==============================================================================
+8. COVERAGE MAP — what is now covered vs the irreducible holes
+==============================================================================
+NOW COVERED (was a gap, closed by waves 3-4): create/fee path; public-reg client;
+  RLS static re-enum AND empirical impersonated replay; cross-section seams;
+  runtime/a11y/perf; edge/cron/briefing seam; onboarding/claim; test-coverage map;
+  DB orphan/FK/constraint sweep; lifecycle state machine; public listing/discovery.
+IRREDUCIBLE OPEN HOLES:
+  (1) F1-F16 catalog — 10/16 undefined repo-side. ARCHITECT MUST SUPPLY. Biggest.
+  (2) BEHAVIORAL confidence — registrations=0, division_fees=0, season_rollovers=0.
+      Everything is structurally verified; nothing has RUN with real data. The fee
+      engine + the money path are wholly untested-in-anger. First real family is the
+      first execution.
+  (3) E2E coverage of the anon flow (only login-smoke exists).
+  (4) magic-link/Stripe lifecycle (deferred/partly unbuilt).
+  (5) bundle/perf RUM (structural, not measured).
+
+==============================================================================
+9. FORKS / ROUTING (AP#39 leans; architect ratifies) + QUESTIONS
+==============================================================================
+TIER 0 — NEW, pre-go-live blockers from wave-4:
+  F-ONBOARDING: SECDEF claim_guardian_by_email() (P0-NEW-1). LEAN: ship — onboarding
+    is non-functional. Decide before any family is asked to claim.
+  F-REG-STATUS-GATE: add status='active' to submit_registration + get_public_program
+    (P0-NEW-2). LEAN: ship — correct contract, zero happy-path cost.
+TIER 1 — migration-companion cluster (§2): C-1 delete guard [BREAKS NOW]; C-2/C-3
+  rollover via S1+client before S2; C-4 dedupe+ON CONFLICT; C-5 index
+  financial_accounts.season_id. Plus FORK-ANON-GRANTS (now ruled defense-in-depth).
+TIER 1b — multi-org one migration before org #2: teams_select plural; slug
+  (org_id,public_slug); guardians (org_id,email).
+TIER 2 — app/design this phase: parent-read RLS narrowing (registrations +
+  evaluation_note); BRIEF-1/2/3 season-scope + per-player pilot redirect helper
+  (this fixes Frank's nudge); money-reconciliation render; teams_select_public fix
+  (public schedule); {public}->{authenticated} write-policy tighten; useCreateActivity
+  base-programs read; fee index-pair + unnamed-division validation; a11y; §16.14
+  detail; AP#36 closes.
+TIER 3 — redesign/defer: division-edit sheet; gender enforcement (product); family-
+  cap vs per-child submit (product); non-season lifecycle; teams.season_id CASCADE
+  (product: should a program delete take its teams?); dead schema (AP#51); over-fetch.
+
+QUESTIONS FOR THE ARCHITECT:
+  Q1: ratify F-ONBOARDING (claim_guardian_by_email) — it's a LIVE non-functional
+      onboarding path. Hotfix?
+  Q2: ratify F-REG-STATUS-GATE (status='active' in the 2 RPCs)?
+  Q3: C-1 delete guard — hotfix now or batch? (CC lean: hotfix — live raw-error.)
+  Q4: parent-read scope — narrow registrations + evaluation_note to family/staff?
+  Q5: briefing season-scope (BRIEF-1/2) — filter digests/queue to active season?
+  Q6: per-player pilot redirect helper (BRIEF-3) — ratify the shared-helper shape?
+  Q7: gender (enforce/remove); slug (per-org/global); teams.season_id CASCADE
+      (keep/RESTRICT) — product calls.
+  Q8: SEND THE 10 UNDEFINED F-ITEMS (F2,F6,F7,F9-F13,F15,F16).
+
+==============================================================================
+END — MASTER FINDINGS (waves 1-4). The defect surface holds; wave-4 adds 2 P0s
+(onboarding LIVE, reg-status-gate latent), the empirical RLS verdicts, the briefing
+seam, and the migration-companion refinements. Programs is NOT closeable until the
+Tier-0/Tier-1 forks are ratified + land, and the F1-F16 catalog is reconciled.
+NOTHING APPLIED (beyond S3/S4 already live). Per-agent raw findings on request.
+==============================================================================
