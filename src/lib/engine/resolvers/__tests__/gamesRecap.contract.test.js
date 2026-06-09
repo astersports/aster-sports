@@ -37,13 +37,15 @@ describe('buildGamesSubject', () => {
 describe('composeGamesRecap', () => {
   const context = { org: ORG, games: GAMES, summary: summarizeGames(GAMES), subject: 'Games recap: 2 games (1-1)' };
 
-  it('emits the framed structure: frame + cobalt band + section bars + one recap_game_cell per game + footer (signoff off by default)', () => {
+  it('emits the framed structure: frame + cobalt band + section bar + one recap_game_cell per game + footer (no empty "From the Sideline" bar when there is no narrative)', () => {
     const { subject, content_sections } = composeGamesRecap(context, { kind: 'family' }, {});
     expect(subject).toBe('Games recap: 2 games (1-1)');
     const kinds = content_sections.map((s) => s.kind);
+    // No overrides + signoff off -> the "From the Sideline" bar is guarded out
+    // (a lone empty bar reads flat — Frank 2026-06-09).
     expect(kinds).toEqual([
       'frame_open', 'header', 'section_bar', 'recap_game_cell', 'recap_game_cell',
-      'section_bar', 'footer', 'frame_close',
+      'footer', 'frame_close',
     ]);
     // Header band carries the record pill (cobalt_band variant)
     const header = content_sections[0 + 1];
@@ -53,7 +55,7 @@ describe('composeGamesRecap', () => {
     expect(header.record_pill).toBe('2 GAMES · MAY 3 – MAY 9');
     // Section bars frame the results and the narrative
     const bars = content_sections.filter((s) => s.kind === 'section_bar').map((s) => s.label);
-    expect(bars).toEqual(['The Weekend', 'From the Sideline']);
+    expect(bars).toEqual(['The Weekend']);
   });
 
   it('F3b pill invariant: single-team+single-scope -> season pill; multi-team -> window pill, never blended RECORD', () => {

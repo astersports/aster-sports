@@ -115,10 +115,15 @@ export function composeGamesRecap(context, slice, overrides = {}) {
   sections.push({ kind: 'section_bar', label: 'The Weekend' });
   for (const g of games) sections.push(buildGameCell(g));
 
-  sections.push({ kind: 'section_bar', label: 'From the Sideline' });
+  // Guard the "From the Sideline" bar behind real content (no empty bar).
+  const sideline = [];
   for (const key of ['our_highlights', 'coach_note', 'parent_shoutout']) {
     const v = trim(overrides[key]);
-    if (v) sections.push({ kind: 'stats_narrative', body: v });
+    if (v) sideline.push(v);
+  }
+  if (sideline.length) {
+    sections.push({ kind: 'section_bar', label: 'From the Sideline' });
+    for (const body of sideline) sections.push({ kind: 'stats_narrative', body });
   }
 
   const signoff = buildSignoffSection({ overrides });

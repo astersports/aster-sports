@@ -21,4 +21,19 @@ describe('renderRecapGameCell', () => {
     expect(html).toContain('8');
     expect(html).toContain('30');
   });
+
+  // AP#46 width invariant (Frank-reported 2026-06-09: "email boxes vary in width
+  // for different games"). The cell must span a fixed width (100%, not shrink-wrap)
+  // so every game's box is the same width regardless of opponent-name / score length.
+  it('cell table is full-width (width:100%, never width:auto) so boxes do not vary per game', () => {
+    const a = render(ONE_LINE).html;
+    const b = render({ ...TWO_LINE, matchup: '8U Boys vs A Very Long Opponent Name Academy 2AB', context: 'Westchester Community Center' }).html;
+    for (const html of [a, b]) {
+      expect(html).toContain('width:100%');
+      expect(html).not.toContain('width:auto');
+    }
+    // both cells carry the identical table style → identical rendered width
+    const tableStyle = (html) => html.match(/<table[^>]*style="([^"]*)"/)[1];
+    expect(tableStyle(a)).toBe(tableStyle(b));
+  });
 });
