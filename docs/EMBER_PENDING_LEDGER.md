@@ -481,6 +481,18 @@ audited. ARCHITECT-LANE FOLLOW-UP for 10/10: a durable DB audit row on pii_audit
 (needs an insert RLS policy or a SECDEF RPC — the table is RLS-on/no-policy today).
 (E1 ships no code.) PUNCH LIST COMPLETE: E2-E6 shipped, E1 ruled keep-out.
 
+**OPERATOR DIRECTIVE 2026-06-09 — REMAINING ON PILOT IS MANDATORY (Frank).** The
+FORK E FLIP/cutover is now LOCKED OFF in the app: PilotModeForm gates the go-live
+control behind `CUTOVER_ENABLED=false`, replacing it with a "Pilot mode is required —
+going live is disabled" note. There is NO UI path to clear pilot_test_recipient_email,
+so all outbound email stays redirected (the redirect is unchanged + still set). The
+cutover machinery (D3 SEND-LIVE confirm + E6 audit) is PRESERVED behind the flag —
+re-enable = flip to true once LEGAL is resolved (a CAN-SPAM footer address). FORK E
+gate now reads SEND ✅ / RECOVER ✅ / SEE ✅ / LEGAL open / FLIP **locked by directive**.
+Architect-lane option if a hard guarantee is wanted: a server-side lock (constraint/
+trigger preventing pilot_test_recipient_email→NULL). Flagged for the architect: this
+changes the FORK E FLIP they designed.
+
 **§4 reconciliation 2026-06-09 (settings-page arc — architect D6 ruling).** The
 `/admin/settings` arc shipped this session and is recorded SHIPPED here. It
 post-dates the 2026-05-27 index, so it was never a tracked §4 row. The build queue
