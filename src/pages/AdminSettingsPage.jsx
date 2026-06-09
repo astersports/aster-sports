@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import AdminBackHeader from '../components/admin/AdminBackHeader';
 import AutoNotificationSettingsForm from '../components/admin/AutoNotificationSettingsForm';
+import SenderIdentityForm from '../components/admin/SenderIdentityForm';
 import { useOrgAutoNotifications } from '../hooks/useOrgAutoNotifications';
+import { useOrgSettings } from '../hooks/useOrgSettings';
 
-// /admin/settings — org-level admin settings. First section: Communications
-// (the auto-notifications control surface that writes organizations.
-// auto_notifications via the admin-gated RPC). Built as a real page per the
-// 2026-06-09 mount sign-off; future org settings (e.g. pilot mode) get
-// sections here.
+// /admin/settings — org-level admin settings. Communications group: Automatic
+// messages (auto_notifications via RPC) + Sender identity (organization_settings
+// direct). Future groups (General, Pilot) add sections here per the REV 2 spec.
 
 const SECTION_LABEL = {
   fontSize: 11, fontWeight: 500, color: 'var(--as-text-tertiary)',
@@ -23,14 +24,33 @@ const ROW = {
   width: '100%', minHeight: 56, padding: '0 16px', textAlign: 'left',
   background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
 };
+const DIVIDER = { height: 1, backgroundColor: 'var(--as-border-subtle)', margin: '0 16px' };
+
+function Row({ title, summary, disabled, onClick }) {
+  return (
+    <button type="button" className="as-press" style={ROW} disabled={disabled} onClick={onClick}>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 15, color: 'var(--as-text-primary)', display: 'block' }}>{title}</span>
+        <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)', display: 'block', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary}</span>
+      </span>
+      <ChevronRight size={20} strokeWidth={1.75} aria-hidden="true" style={{ color: 'var(--as-text-tertiary)', flexShrink: 0 }} />
+    </button>
+  );
+}
 
 export default function AdminSettingsPage() {
-  const { remindersOn, nudgesOn, minGoing, loading, saving, save } = useOrgAutoNotifications();
-  const [open, setOpen] = useState(false);
+  const { orgId } = useAuth();
+  const an = useOrgAutoNotifications();
+  const os = useOrgSettings(orgId);
+  const [openForm, setOpenForm] = useState(null); // 'autonotif' | 'sender' | null
 
-  const summary = loading
+  const anSummary = an.loading
     ? 'Loading…'
-    : `Reminders ${remindersOn ? 'on' : 'off'} · Nudges ${nudgesOn ? 'on' : 'off'}`;
+    : `Reminders ${an.remindersOn ? 'on' : 'off'} · Nudges ${an.nudgesOn ? 'on' : 'off'}`;
+  const s = os.settings;
+  const senderSummary = os.loading
+    ? 'Loading…'
+    : (s?.from_name && s?.from_email ? `${s.from_name} · ${s.from_email}` : 'Not set');
 
   return (
     <div className="px-4 py-4 as-fade-in" style={{ maxWidth: 600, margin: '0 auto' }}>
@@ -41,21 +61,24 @@ export default function AdminSettingsPage() {
 
       <p style={SECTION_LABEL}>Communications</p>
       <div style={CARD}>
-        <button type="button" className="as-press" style={ROW} disabled={loading} onClick={() => setOpen(true)}>
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: 15, color: 'var(--as-text-primary)', display: 'block' }}>Auto-notifications</span>
-            <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)', display: 'block', marginTop: 2 }}>{summary}</span>
-          </span>
-          <ChevronRight size={20} strokeWidth={1.75} aria-hidden="true" style={{ color: 'var(--as-text-tertiary)', flexShrink: 0 }} />
-        </button>
+        <Row title="Automatic messages" summary={anSummary} disabled={an.loading} onClick={() => setOpenForm('autonotif')} />
+        <div style={DIVIDER} />
+        <Row title="Sender identity" summary={senderSummary} disabled={os.loading} onClick={() => setOpenForm('sender')} />
       </div>
 
       <AutoNotificationSettingsForm
-        open={open}
-        onClose={() => setOpen(false)}
-        initial={{ remindersOn, nudgesOn, minGoing }}
-        onSave={save}
-        saving={saving}
+        open={openForm === 'autonotif'}
+        onClose={() => setOpenForm(null)}
+        initial={{ remindersOn: an.remindersOn, nudgesOn: an.nudgesOn, minGoing: an.minGoing }}
+        onSave={an.save}
+        saving={an.saving}
+      />
+      <SenderIdentityForm
+        open={openForm === 'sender'}
+        onClose={() => setOpenForm(null)}
+        initial={{ fromName: s?.from_name, fromEmail: s?.from_email, replyTo: s?.reply_to_email }}
+        onSave={os.save}
+        saving={os.saving}
       />
     </div>
   );
