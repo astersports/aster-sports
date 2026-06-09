@@ -30,7 +30,19 @@ export default function AiDraftAnchored({ state, dispatch }) {
   // Anchor readiness is kind-shaped: game_recap -> eventId, tournament_* ->
   // tournamentId, games_recap -> eventIds. Hide until the anchor is selected.
   const anchorReady = !!(anchor && (anchor.eventId || anchor.tournamentId || anchor.eventIds?.length));
-  if (!entry || !field || !anchorReady) return null;
+  if (!entry || !field) return null;
+  // Kind supports AI draft but the anchor isn't picked yet — show a hint
+  // instead of rendering nothing (so it doesn't read as "AI draft missing").
+  if (!anchorReady) {
+    const what = state.kind === 'games_recap' ? 'one or more games'
+      : state.kind === 'tournament_recap' ? 'a tournament' : 'a game';
+    return (
+      <div style={wrap}>
+        <span style={label}>Draft with AI</span>
+        <p style={note}>Pick {what} above — then Draft with AI writes the coach narrative in your voice.</p>
+      </div>
+    );
+  }
 
   const onDraft = async (mode) => {
     setResolveErr(null);

@@ -18,7 +18,13 @@ export default function AiDraftFreeForm({ state, dispatch }) {
 
   const onDraft = async (mode) => {
     const teamId = state.audience_filter?.team_ids?.[0];
-    const facts = state.body?.headline ? { headline: state.body.headline } : undefined;
+    // Pass the typed subject/headline as a grounding fact: announcement carries
+    // `headline`, custom_message carries `subject` (previously dropped).
+    const factObj = {
+      ...(state.body?.headline ? { headline: state.body.headline } : {}),
+      ...(state.body?.subject ? { subject: state.body.subject } : {}),
+    };
+    const facts = Object.keys(factObj).length ? factObj : undefined;
     const r = await ai.draft({ kind: state.kind, mode, gist, facts, audience: teamId ? { team_id: teamId } : {} });
     if (r) { dispatch({ type: 'UPDATE_BODY', patch: { body_text: r.body } }); setHasDrafted(true); }
   };
