@@ -54,7 +54,16 @@ export default function StepSendConfirm({ state, dispatch, audience, onSend, sen
   // games_recap resolves its content from audience_filter.event_ids; an empty
   // selection throws "Missing eventIds" at send. Gate it with an actionable reason.
   const gamesRecapEmpty = state.kind === 'games_recap' && !(state.audience_filter?.event_ids?.length);
-  const disabled = sending || scheduleInvalid || pilotZeroBlock || recipientCountBlock || audienceUnknown || gamesRecapEmpty;
+  // FORK D (2026-06-09): coach_roundup / family_guide resolve from a single
+  // picked coach / parent. An empty picker throws "Missing coachUserId/
+  // parentUserId" at send. Mirror the games_recap gate so Send is disabled with
+  // a kind-specific actionable note instead of relying on the resolver-throw ->
+  // toast catch (and instead of the generic "Couldn't confirm recipients" note,
+  // which also fires here because countByAudienceType returns null when unpicked).
+  const coachRoundupEmpty = state.kind === 'coach_roundup' && !state.audience_filter?.coach_user_id;
+  const familyGuideEmpty = state.kind === 'family_guide' && !state.audience_filter?.parent_user_id;
+  const anchorPickEmpty = coachRoundupEmpty || familyGuideEmpty;
+  const disabled = sending || scheduleInvalid || pilotZeroBlock || recipientCountBlock || audienceUnknown || gamesRecapEmpty || anchorPickEmpty;
 
   return (
     <div style={wrap}>
@@ -77,7 +86,7 @@ export default function StepSendConfirm({ state, dispatch, audience, onSend, sen
           <span>Pilot mode is on. Only flagged pilot families (or the admin BCC) will receive this send.</span>
         </div>
       )}
-      {audienceUnknown && (
+      {audienceUnknown && !anchorPickEmpty && (
         <p role="status" data-testid="audience-unknown-note" style={{ margin: 0, fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.4 }}>
           {audienceResolving ? 'Confirming who will receive this…' : "Couldn't confirm recipients — check the audience above before sending."}
         </p>
@@ -85,6 +94,11 @@ export default function StepSendConfirm({ state, dispatch, audience, onSend, sen
       {gamesRecapEmpty && (
         <p role="status" data-testid="games-recap-empty-note" style={{ margin: 0, fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.4 }}>
           Pick at least one game above before sending.
+        </p>
+      )}
+      {anchorPickEmpty && (
+        <p role="status" data-testid="anchor-pick-empty-note" style={{ margin: 0, fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.4 }}>
+          {coachRoundupEmpty ? 'Pick a coach above before sending.' : 'Pick a parent above before sending.'}
         </p>
       )}
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--as-text-secondary)' }}>

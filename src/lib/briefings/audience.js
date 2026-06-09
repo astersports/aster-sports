@@ -33,9 +33,14 @@ export function countByAudienceType({ recipients, audienceType, audienceFilter, 
   if (!audienceType) return null;
   if (audienceType === 'org_all') return recipients.length;
   // COMPOSE-FRONT P1: coach_self = the single composing coach; family_specific
-  // = one family (family_guide aggregates per parent_user_id). Both resolve to
-  // 1, so the count line + send gate stop reading "Computing audience…" forever.
-  if (audienceType === 'coach_self' || audienceType === 'family_specific') return 1;
+  // = one family (family_guide aggregates per parent_user_id). Each resolves to
+  // 1 — but ONLY once its target is actually picked. FORK D (2026-06-09): a hard
+  // 1 regardless of selection let the send gate read "1 family" and ENABLE Send
+  // with an empty picker (the resolver then threw "Missing coachUserId/
+  // parentUserId" at send). Return null until the id is set so the
+  // audienceUnknown gate + the kind-specific StepSendConfirm note hold Send.
+  if (audienceType === 'coach_self') return audienceFilter?.coach_user_id ? 1 : null;
+  if (audienceType === 'family_specific') return audienceFilter?.parent_user_id ? 1 : null;
   if (TEAM_AUDIENCE_TYPES.has(audienceType)) {
     // 5d-b-1: prefer audience_filter.team_ids[] (new shape from
     // TeamGroupedPicker). Fall back to legacy audience_filter.team_id

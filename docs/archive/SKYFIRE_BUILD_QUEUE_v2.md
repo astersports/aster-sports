@@ -3425,3 +3425,14 @@ Only academy_callup_notice remains on the blocked path (→ 4.2-A-8c, gated on w
 - Fix: rsvpNudgesEnabled(cfg) returns true ONLY when rsvp_nudges_enabled === true — INVERTED default vs Stream A (Stream B is opt-in / default-OFF; empty {}/unset/read-miss => OFF, fail-closed). handleRsvpLowGoing early-skips ("nudges_disabled_by_admin") before the events query.
 - Gates: 13/13 threshold tests (10 -> 13). Lint + build clean. Mirror pair byte-identical (logic). App/edge code only — no migration, no RLS. Path-scoped deploy: briefing-auto-draft-tick only.
 - Sequencing: A1 is the gate that precedes any FORK E real-send cutover. A2 (AutoNotificationSettingsSheet that writes rsvp_nudges_enabled + rsvp_min_going) is queued.
+
+### FORK D — coach_roundup / family_guide send-gate parity — PR #894
+- Date: 2026-06-09
+- Files:
+  - src/lib/briefings/audience.js (countByAudienceType: 1 only when picked, else null)
+  - src/components/briefings/StepSendConfirm.jsx (coachRoundupEmpty / familyGuideEmpty gates + notes)
+  - src/lib/briefings/__tests__/audience.countByAudienceType.test.js (AP#34: updated 2 hard-1 cases + null-when-unpicked)
+  - src/components/briefings/__tests__/StepSendConfirm.test.jsx (+3 gate cases)
+- Evidence: Architect ratification 2026-06-09 FORK D. Defect at audience.js:38 (hard 1 for coach_self/family_specific regardless of selection) + StepSendConfirm.jsx:56 (only games_recap hard-gated empty selection). Send enabled with empty picker -> resolver threw Missing coachUserId/parentUserId at send (caught -> toast, but a gate hole vs games_recap / §16.13).
+- Fix: countByAudienceType returns 1 only when coach_user_id / parent_user_id present, else null (audienceUnknown gate + kind-specific note hold Send). StepSendConfirm adds coachRoundupEmpty/familyGuideEmpty gates with actionable notes mirroring gamesRecapEmpty; generic unknown-audience note suppressed in their favor.
+- Gates: 29/29 across the two affected test files. Lint + build clean. App-only — no migration, no RLS.
