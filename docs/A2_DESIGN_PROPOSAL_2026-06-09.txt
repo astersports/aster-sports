@@ -1,0 +1,86 @@
+A2 DESIGN PROPOSAL — AutoNotificationSettingsSheet
+Date: 2026-06-09  ·  CC lane -> architect/Frank for sign-off  ·  §11.8 doc-to-doc
+Follows: ARCHITECT RATIFICATION 2026-06-09 (FORK A, option a). A1 shipped (PR #893);
+this is the A2 control surface.
+
+==============================================================================
+PURPOSE
+==============================================================================
+The operator control surface that writes organizations.auto_notifications JSONB
+— the only comms config that currently has NO UI (set via raw SQL today). Makes
+operator-settable:
+  - the A1 Stream-B enable flag (rsvp_nudges_enabled),
+  - the Stream-A reminders toggle (reminders_enabled),
+  - the going-floor (rsvp_min_going).
+CLAUDE.md §16.5 names it "AutoNotificationSettingsSheet (Stream B -> 'Minimum
+confirmed going')"; §8 says Stream A's reminders_enabled gates from it.
+
+==============================================================================
+LOCKED
+==============================================================================
+- Component = FullScreenForm (Frank, 2026-06-09; AP#15 — 3 controls trips the
+  3-field threshold). Proposal KEEPS the CLAUDE.md name
+  AutoNotificationSettingsSheet to avoid §16.5/§8 doc drift, implemented via
+  FullScreenForm. (Name/implementation mismatch flagged; alternative is renaming
+  to ...Form + updating the two doc refs. LEAN: keep the doctrine name.)
+
+==============================================================================
+PROPOSED CONTROLS  (all under auto_notifications, MERGED-write so sibling keys survive)
+==============================================================================
+1. Event reminders (Stream A) — toggle reminders_enabled, DEFAULT ON (!== false).
+   Helper: "Families get a reminder 3 days, 1 day, and 4 hours before each game."
+2. Short-roster RSVP nudges (Stream B) — toggle rsvp_nudges_enabled, DEFAULT OFF
+   (=== true).
+   Helper: "When a game is within 48 hours and fewer than [N] players have
+   confirmed, we'll draft a nudge to your Radar to review and send. Nothing sends
+   to families automatically."
+3. Minimum confirmed going — stepper rsvp_min_going, default 5, range 1–15.
+   DISABLED (greyed, not hidden) when #2 is off, so the operator sees the value
+   they'll get when they enable it.
+   Helper: "You need this many confirmed to field a game."
+
+==============================================================================
+CROSS-SURFACE INVARIANT  (AP#43 / AP#63 — the key design point)
+==============================================================================
+The form READS via the SAME helpers the cron handler uses — rsvpNudgesEnabled()
++ rsvpMinGoingThreshold() from the AP#30 threshold module
+(src/lib/cron/rsvpNudgeThreshold.js) — so the UI's notion of on/off + floor can
+never drift from what briefing-auto-draft-tick actually does. Reminders default
+reuses the reminders_enabled !== false rule. New useOrgAutoNotifications() hook
+wraps those for read + a merged save(patch) writer (read current JSONB, spread,
+set the touched keys — never clobber other auto_notifications keys).
+
+==============================================================================
+OPEN POINTS FOR SIGN-OFF
+==============================================================================
+- MOUNT: a row "Auto-notifications" in Org Settings -> Communications that opens
+  the FullScreenForm. (Exact settings file confirmed at build time.)  OK?
+- SAVE: pessimistic Save-and-close (spinner -> close on success, error toast on
+  failure), per the §16.1 carve-out for non-per-row writes.  LEAN: pessimistic.
+  vs optimistic?
+- ACCESS: admin-only mount.  Confirm.
+- NAME: keep AutoNotificationSettingsSheet (doctrine) vs rename to ...Form.
+  LEAN: keep.
+
+==============================================================================
+BUILD ON RATIFICATION  (one PR, app-only, NO migration — auto_notifications JSONB
+already exists and is read by both handlers)
+==============================================================================
+- src/components/.../AutoNotificationSettingsSheet.jsx (FullScreenForm; 2 toggles
+  + 1 stepper; disabled-stepper-when-off; pessimistic Save).
+- src/hooks/useOrgAutoNotifications.js (helper-backed read + merged-write).
+- mount row in Org Settings -> Communications (admin-only).
+- component test (renders 3 controls, default reflection, disabled-stepper-when-
+  off, merged-save payload) + AP#43 invariant test asserting the UI read matches
+  the cron helpers (rsvpNudgesEnabled / rsvpMinGoingThreshold).
+
+==============================================================================
+STATUS OF THE REST OF THE FORK SET (for the record)
+==============================================================================
+- A1 (Stream-B enable-gate, default OFF) — SHIPPED PR #893.
+- D (coach/parent send-gate parity) — SHIPPED PR #894.
+- B (trim ANCHORED_KINDS 5->3) — SHIPPED PR #895.
+- A2 — THIS PROPOSAL; build held pending sign-off on the 4 points above.
+- C (signature_coaches subsystem) — HOLD per architect (revisit post-pilot).
+- E (real-send FILTER-mode cutover) — GATED on the architect's RECOVER
+  idempotency seam + operator flip of pilot_test_recipient_email -> NULL.
