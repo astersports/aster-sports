@@ -27,6 +27,18 @@ export async function claimInvite(user) {
 // no user_roles rows. Tries the invite-metadata claim first (covers staff
 // + new parents); falls back to the email-match auto-link.
 export async function resolveNewUserContext(user) {
+  // Link any anonymously-created guardian row (submit_registration leaves
+  // user_id NULL) to this account by confirmed email, via the SECDEF
+  // claim_guardian_by_email() RPC — the client can't (guardians_select_own/
+  // update_own require user_id = auth.uid(), so an unlinked row is invisible).
+  // Run it BEFORE the claimInvite short-circuit so it also covers an invited
+  // parent's first login: claim_invite writes user_roles but never sets
+  // guardians.user_id, which parent_context_v requires. Idempotent + safe for
+  // staff (no matching guardian -> no-op). The RPC carries the email-confirmed gate.
+  if (user?.id) {
+    const { error: claimErr } = await supabase.rpc('claim_guardian_by_email');
+    if (claimErr) console.error('claim_guardian_by_email:', claimErr.message);
+  }
   const claimed = await claimInvite(user);
   if (claimed) return claimed;
   return await autoLinkGuardian(user);
