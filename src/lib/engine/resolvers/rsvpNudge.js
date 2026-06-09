@@ -54,6 +54,7 @@ async function fetchUnrespondedSlices(supabase, event, now, pilotOnly) {
   // verification-mode sample renders for per-player kinds are out of
   // D-5 scope and tracked separately.
   let allowedGuardianIds = null;
+  let redirectMode = false;
   if (pilotOnly) {
     const orgId = event.teams?.org_id || null;
     if (orgId) {
@@ -62,6 +63,13 @@ async function fetchUnrespondedSlices(supabase, event, now, pilotOnly) {
       // recipient and look like a normal 0-recipient result).
       const { data: rpcRows = [], error: rpcErr } = await supabase.rpc('get_digest_recipients', { p_org_id: orgId, p_pilot_only: true });
       if (rpcErr) throw rpcErr;
+      // REDIRECT mode: synthetic per-team rows (guardian_id null) and no real
+      // guardians → empty allowlist by construction. Skipping the per-guardian
+      // filter below lets the resolver still build a real sample (the
+      // "No recipients" bug otherwise). TEST send delivers it to the pilot
+      // inbox; a real send stays gated by decidePilotGate. FILTER mode keeps
+      // the narrow allowlist behavior (redirectMode false).
+      redirectMode = (rpcRows || []).some((r) => r.guardian_id == null && r.email);
       allowedGuardianIds = new Set((rpcRows || []).filter((r) => r.guardian_id).map((r) => r.guardian_id));
     } else {
       allowedGuardianIds = new Set();
@@ -80,7 +88,7 @@ async function fetchUnrespondedSlices(supabase, event, now, pilotOnly) {
   for (const row of pgRows) {
     const g = row.guardians;
     if (!g?.id || !g.email) continue;
-    if (pilotOnly && !allowedGuardianIds.has(g.id)) continue;
+    if (pilotOnly && !redirectMode && !allowedGuardianIds.has(g.id)) continue;
     if (!playerNameById.has(row.player_id)) continue;
     if (!slicesMap.has(g.id)) slicesMap.set(g.id, { kind: 'family', guardian_id: g.id, email: g.email, team_id: event.team_id, _kids: new Map() });
     const s = slicesMap.get(g.id);

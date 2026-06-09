@@ -52,7 +52,17 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
     const { data: rpcRows = [], error: rpcErr } = await supabase.rpc('get_digest_recipients', { p_org_id: parent.org_id, p_pilot_only: true });
     if (rpcErr) throw rpcErr;
     const allowed = new Set((rpcRows || []).filter((r) => r.guardian_id).map((r) => r.guardian_id));
-    if (!allowed.has(parent.id)) {
+    // REDIRECT mode: the RPC returns synthetic per-team rows (guardian_id null,
+    // email=pilot_test_recipient_email) and NO real-guardian rows, so the
+    // allowlist is empty by construction. Dropping to empty slices here is the
+    // bug Frank saw as "No recipients for this anchor" on every per-player kind.
+    // Detect redirect mode and SKIP the allowlist gate so the resolver still
+    // produces a real sample render — a TEST send (admin@ only) then delivers it
+    // to the pilot inbox; a real send stays gated downstream by decidePilotGate.
+    // In FILTER mode (post-cutover, real pilot families) redirectMode is false
+    // and the allowlist gate keeps its correct narrow-to-pilot-family behavior.
+    const redirectMode = (rpcRows || []).some((r) => r.guardian_id == null && r.email);
+    if (!redirectMode && !allowed.has(parent.id)) {
       return { context: { parent, kidsWithEvents: [], conflicts: [], dateRange, coaches: [], teamCoaches: [], orgName: 'Legacy Hoopers' }, slices: [] };
     }
   }
