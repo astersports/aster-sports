@@ -1,0 +1,90 @@
+ARCHITECT DECISION REQUEST — 2026-06-09
+CC → architect (via Frank) · Relay artifact (CLAUDE.md §11.8 rule 6, decisions-as-a-doc)
+Format per decision: REQUEST · EVIDENCE · OPTIONS+REQUIREMENTS · CC LEAN (AP#39).
+None of these block the by-surface settings build; they are open calls the architect owns.
+
+==============================================================================
+DR-1 — THEME ACTUATION  (surfaced by S1 My Preferences, #915)
+==============================================================================
+REQUEST: theme is shipped as a control but is a DEAD COLUMN — decide whether to wire
+  real dark mode or leave it stored-not-actuated.
+EVIDENCE: verified — no dark stylesheet, no `@media (prefers-color-scheme)`, no
+  `data-theme`/ThemeProvider, and user_preferences.theme is never READ anywhere in src/.
+  Writing 'dark' has zero visual effect today. S1 persists the pref + says so in the
+  Appearance help copy.
+OPTIONS + REQUIREMENTS:
+  (a) Leave stored-not-actuated. No further work; the pref is ready for a future track.
+  (b) Wire dark mode. Requires: a full `--as-*` dark token set (a dark value for every
+      §3 token), a theme actuator (apply data-theme/class on <html> from
+      user_preferences.theme + a `system` media listener at app root), and a per-surface
+      contrast/design pass. This is its OWN multi-PR arc + design lane — not part of the
+      by-surface settings build.
+CC LEAN: (a) for now. Dark mode is a deliberate design arc, not a settings byproduct;
+  the control already persists intent for when you schedule (b).
+
+==============================================================================
+DR-2 — DENSITY LEVELS (master-spec correction)  (surfaced by S1, #915)
+==============================================================================
+REQUEST: the render + master spec show 3-level density (Minimal/Medium/Maximum), but the
+  shipped code is 2-state. Confirm 2-state (correct the spec) or restore 3-level.
+EVIDENCE: useDensity.js: `VALID = ['minimal','maximum']`, per CLAUDE.md §16.2 (ratified
+  2026-06-05, the 3→2 collapse). useDensity.setDensity THROWS on 'medium'. The DB default
+  {"default":"medium"} is stale (useDensity ignores it → falls to 'minimal'). S1 built
+  2-state and validates a stored 'medium' → 'minimal' on read.
+OPTIONS + REQUIREMENTS:
+  (a) Confirm 2-state; drop "Medium" from the master spec/render. No code change.
+  (b) Restore 3-level. Requires reverting §16.2's collapse: re-add 'medium' to
+      useDensity.VALID + NEXT_IN_CYCLE, re-audit every density consumer, and amend §16.2.
+      Reopens a closed operator-ratified decision.
+CC LEAN: (a) — matches shipped code + doctrine. Worth correcting the master spec so later
+  density-touching surfaces don't re-assume 3-level.
+
+==============================================================================
+DR-3 — USER-LEVEL TZ / LOCALE ACTUATION  (surfaced by S1, #915)
+==============================================================================
+REQUEST: S1 stores user_preferences.timezone/locale, but actuation is partial — confirm
+  defer, or schedule wiring.
+EVIDENCE: event times currently follow organization_settings.timezone (not the user
+  pref); i18n (locale) is Phase 3 (§16.6). So S1's tz/locale are stored-not-fully-actuated
+  (same class as DR-1, smaller).
+OPTIONS + REQUIREMENTS:
+  (a) Defer actuation; S1's UI just stores the prefs. No further work now.
+  (b) Wire user-level tz override into event rendering now — a cross-surface change
+      (every event-time render reads the user tz with org fallback); its own arc.
+CC LEAN: (a) — confirm. Actuation is a separate cross-surface concern from the pref UI.
+
+==============================================================================
+DR-4 — FORK E E6 DURABLE DB AUDIT  (architect-lane seam)
+==============================================================================
+REQUEST: E6 shipped an app-layer Sentry/console cutover audit. The 10/10 form is a DB
+  row on pii_audit_log. Decide build-now vs defer, and the seam shape.
+EVIDENCE: pii_audit_log exists (actor_user_id, target_table, field_changed, old/new_value,
+  ts, org_id) but is RLS-on/NO-policy → not client-writable. A durable DB audit needs an
+  architect-lane write path.
+OPTIONS + REQUIREMENTS:
+  (a) Defer; the Sentry/console interim stands (cutover is rare + currently locked).
+  (b) Build it. Requires an architect-lane migration: either an INSERT RLS policy on
+      pii_audit_log scoped to admin, OR a SECDEF log_pii_audit(...) RPC. Then CC writes
+      the audit row from the cutover path (app layer) in the same/next PR.
+CC LEAN: (a) for now — the cutover is app-locked (remaining on pilot is mandatory), so the
+  audit isn't exercised; revisit if/when the cutover is re-enabled.
+
+==============================================================================
+DR-5 — FORK E SERVER-SIDE CUTOVER LOCK  (optional hardening)
+==============================================================================
+REQUEST: the pilot cutover is app-locked (CUTOVER_ENABLED=false). Decide whether to add a
+  hard server-side guarantee.
+EVIDENCE: the app lock removes the only UI path to clear pilot_test_recipient_email, but a
+  raw SQL/MCP write could still null it out-of-band.
+OPTIONS + REQUIREMENTS:
+  (a) App lock is sufficient for the pilot. No further work.
+  (b) Add an architect-lane constraint/trigger rejecting pilot_test_recipient_email→NULL
+      while a "pilot_required" flag is set (gate on a flag, NOT absolute, so a legitimate
+      future cutover stays possible — flip the flag, then cut over).
+CC LEAN: (a) for the pilot — the app lock + operator discipline covers it; (b) is cheap
+  insurance if you want belt-and-suspenders, but it's net-new schema (architect-lane).
+
+==============================================================================
+NEEDED BACK: a ruling per DR (a/b). CC proceeds on the leans for any you don't override.
+The settings build (S1, S2 done; S3 next) does not wait on these.
+==============================================================================

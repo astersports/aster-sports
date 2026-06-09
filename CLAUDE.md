@@ -1122,6 +1122,20 @@ for that collaboration:
    the handoff is the relay artifact, so "the session happened" without it is
    not a complete handoff. (Operator-directed 2026-06-07.)
 
+6. **Whenever CC needs an architect DECISION, produce a committed `.txt`
+   decision-request doc — never a scattered chat flag.** The doc states, per
+   decision: the REQUEST (what is being decided, one line), the CONTEXT/EVIDENCE
+   (file:line or query result grounding it), the OPTIONS each with its
+   REQUIREMENTS (what that choice entails to build), and CC's labeled LEAN
+   (AP#39 — commit to it; the architect/Frank decide). Multiple open decisions
+   batch into one `docs/ARCHITECT_DECISION_REQUEST_<date>.txt`. Same delivery as
+   the rest of §11.8: committed file + full chat paste + delivered as a file.
+   This is the decision-specific restatement of §11.8 rule 1 — it applies to
+   DECISIONS the architect must make (forks, rulings, build-or-defer calls), NOT
+   to pure verification asks or status recaps (those stay as-is). The point: a
+   decision the architect must make is a durable artifact, not a line in chat
+   that scrolls away. (Operator-directed 2026-06-09.)
+
 ---
 
 ## 12. DEVELOPMENT WORKFLOW
