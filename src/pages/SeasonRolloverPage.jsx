@@ -36,7 +36,7 @@ export default function SeasonRolloverPage() {
        // this caller to the §11.5 documented-callers list.
       const { data: t } = await supabase.from('teams').select('*, roster_members(player_id, players(id, first_name, last_name, jersey_number, grad_year)), team_staff(user_id, role)').eq('org_id', orgId).eq('season_id', s.id).order('sort_order');
       const mapped = (t || []).map((tm) => ({
-        ...tm, players: (tm.roster_members || []).filter((r) => r.players).map((r) => ({ ...r.players, action: 'keep' })),
+        ...tm, src_team_id: tm.id, players: (tm.roster_members || []).filter((r) => r.players).map((r) => ({ ...r.players, action: 'keep' })),
         coaches: (tm.team_staff || []).map((s) => ({ ...s, keep: true })),
       }));
       setTeams(mapped);
