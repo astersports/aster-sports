@@ -17,7 +17,7 @@
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { computeExpiryForKind } from "./_helpers.ts";
-import { nudgeWindowEndIso, rsvpMinGoingThreshold, shouldNudgeLowGoing } from "./_rsvpNudgeThreshold.ts";
+import { nudgeWindowEndIso, rsvpMinGoingThreshold, rsvpNudgesEnabled, shouldNudgeLowGoing } from "./_rsvpNudgeThreshold.ts";
 import { draftExists, HandlerResult, placeholderDraft, Trigger, tryInsert } from "./_draftRow.ts";
 
 export async function handleGameCompleted(sb: SupabaseClient, trigger: Trigger, now: Date): Promise<HandlerResult[]> {
@@ -141,7 +141,14 @@ export async function handleRsvpLowGoing(sb: SupabaseClient, trigger: Trigger, n
   // AP #36 — destructure error; a read miss falls back to the default floor.
   const { data: org, error: orgErr } = await sb.from("organizations")
     .select("auto_notifications").eq("id", trigger.org_id).maybeSingle();
-  const autoCfg = (orgErr ? {} : (org?.auto_notifications as Record<string, unknown> | null) ?? {}) as { rsvp_min_going?: unknown };
+  const autoCfg = (orgErr ? {} : (org?.auto_notifications as Record<string, unknown> | null) ?? {}) as { rsvp_min_going?: unknown; rsvp_nudges_enabled?: boolean };
+  // FORK A (operator-ratified 2026-06-09): Stream B is OFF unless the admin has
+  // explicitly enabled it. Empty {} / unset / read-miss => OFF (fail-closed).
+  // Mirrors the Stream A reminders_enabled gate in _reminders.ts, but inverted
+  // default (Stream A is opt-out / default-ON; Stream B is opt-in / default-OFF).
+  if (!rsvpNudgesEnabled(autoCfg)) {
+    return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "rsvp_nudge", skipped: "nudges_disabled_by_admin" }];
+  }
   const threshold = rsvpMinGoingThreshold(autoCfg);
   // Scope to real GAMES that are live on the schedule — matches the Stream A
   // reminder handler (_reminders.ts). Without these filters Stream B drafted
