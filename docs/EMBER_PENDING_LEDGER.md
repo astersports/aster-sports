@@ -506,7 +506,17 @@ master-spec showed 3-level (Minimal/Medium/Maximum); built 2-state to match the 
 'medium' write throws in useDensity.setDensity); the stale DB default 'medium' validates
 to 'minimal' on read. Also: user-level timezone/locale actuation is partial (event times
 follow org tz; i18n is Phase 3) — S1 ships the pref UI + storage; actuation sequenced
-separately. Next: S2 Family Notifications (architect spec/render pending).
+separately.
+S2 Family Notifications — DONE (one PR). Parent-only "Family notifications" group on
+/account (self-gated on useAuth().guardianId; RLS backstop). useGuardianNotificationPrefs
+hook reads guardian_notification_prefs (greenfield → all-ON defaults) + saves via UPSERT
+by guardian_id (UNIQUE(guardian_id) verified — AP#25 safe; no migration).
+FamilyNotificationsForm = 4 toggles (weekly_digest/tournament_briefings/game_recaps/
+org_announcements) + a players context line. GUARDIAN-LEVEL (covers all the parent's
+players, not per-child). Distinct from S1's notification CHANNELS — kept separate. Next:
+S3 Home Layout (architect spec/render pending) — first D-2 verify-at-build gate
+(dashboard_section_visibility + quick_actions_config admin-gate policy bodies read before
+any write UI).
 
 **§4 reconciliation 2026-06-09 (settings-page arc — architect D6 ruling).** The
 `/admin/settings` arc shipped this session and is recorded SHIPPED here. It
