@@ -31,7 +31,6 @@ export default function MyPreferencesSection() {
   const { preferences } = usePreferences();
   const [openForm, setOpenForm] = useState(null);
 
-  const theme = preferences?.theme || 'system';
   const density = ['minimal', 'maximum'].includes(preferences?.card_density?.default) ? preferences.card_density.default : 'minimal';
   const tzLabel = US_TIMEZONES.find(([v]) => v === preferences?.timezone)?.[1]?.split(' (')[0] || 'Eastern';
   const locale = preferences?.locale === 'es-US' ? 'Español' : 'English';
@@ -40,7 +39,7 @@ export default function MyPreferencesSection() {
     <section style={{ marginBottom: 16 }}>
       <Label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><SlidersHorizontal size={12} strokeWidth={2} /> Preferences</Label>
       <div style={CARD}>
-        <Row title="Appearance" sub={`${cap(theme)} theme · ${cap(density)} density`} onClick={() => setOpenForm('appearance')} />
+        <Row title="Appearance" sub={`${cap(density)} density`} onClick={() => setOpenForm('appearance')} />
         <div style={DIVIDER} />
         <Row title="Time & language" sub={`${tzLabel} · ${locale}`} onClick={() => setOpenForm('time')} />
       </div>
