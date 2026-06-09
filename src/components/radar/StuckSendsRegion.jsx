@@ -19,6 +19,7 @@ const head = { display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13
 const rc = { width: 28, height: 28, borderRadius: 7, display: 'grid', placeItems: 'center', flexShrink: 0, background: 'var(--as-bg-card)', border: '1px solid var(--as-warning)', color: 'var(--as-warning)' };
 const rt = { flex: 1, minWidth: 0 };
 const cnt = { fontSize: 11, fontWeight: 700, color: 'var(--as-text-inverse)', background: 'var(--as-warning)', borderRadius: 9999, minWidth: 20, height: 20, padding: '0 7px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' };
+const guide = { fontSize: 11, color: 'var(--as-text-secondary)', lineHeight: 1.45, padding: '8px 13px', borderTop: '1px solid var(--as-border-subtle)', background: 'var(--as-bg-secondary)' };
 const sheet = { padding: '4px 4px 8px', display: 'flex', flexDirection: 'column', gap: 8 };
 const sheetP = { fontSize: 13, color: 'var(--as-text-secondary)', lineHeight: 1.5 };
 const sbtn = { minHeight: 46, borderRadius: 9, fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' };
@@ -82,6 +83,11 @@ export default function StuckSendsRegion({ orgId }) {
           </div>
           <span style={cnt}>{count}</span>
         </div>
+      )}
+      {count > 0 && (
+        <p style={guide}>
+          Sends that reached families are cleared automatically. These have no delivery signal yet — <strong>Resend</strong> may send a duplicate; only <strong>Mark delivered</strong> if Resend confirms receipt.
+        </p>
       )}
       {groups.map((g) => (
         <StuckSendCard key={g.messageId} group={g}
