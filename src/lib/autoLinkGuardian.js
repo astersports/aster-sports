@@ -1,30 +1,25 @@
 import { supabase } from './supabase';
 
-// First-login hook for parent accounts. If a guardians row has a matching
-// email and no linked user_id, claim it for the authed user and insert the
-// matching user_roles row so subsequent logins use the normal membership
-// path. Returns { role, organization } when linked, otherwise null.
+// First-login hook for self-claim parent accounts (no invite). The email-match
+// link of an anonymously-created guardian row (submit_registration leaves
+// user_id NULL) is performed by the SECDEF claim_guardian_by_email() RPC in
+// resolveNewUserContext — the client CANNOT do it directly: guardians_select_own
+// / guardians_update_own require user_id = auth.uid(), so an unlinked row is
+// invisible/unupdatable to a fresh parent (the onboarding-pipeline P0). Here we
+// read the now-linked guardian, seed the parent's user_roles membership, and
+// return the org context. Returns { role, organization } when a guardian is
+// linked to this account, otherwise null. (The email-confirmation gate lives in
+// the RPC — an unconfirmed email links nothing, so the read below finds nothing.)
 export async function autoLinkGuardian(user) {
-  const email = user?.email?.trim().toLowerCase();
-  if (!email || !user?.id) return null;
-  // Refuse to claim a guardian row for an unverified email — prevents
-  // a hostile signup from hijacking another family's account by registering
-  // an auth user with their email before they confirm.
-  if (!user.email_confirmed_at) return null;
+  if (!user?.id) return null;
 
   const { data: guardian, error: gErr } = await supabase
     .from('guardians')
-    .select('id, org_id')
-    .ilike('email', email)
-    .is('user_id', null)
+    .select('org_id')
+    .eq('user_id', user.id)
     .maybeSingle();
-  if (gErr || !guardian) return null;
-
-  const { error: updErr } = await supabase
-    .from('guardians')
-    .update({ user_id: user.id })
-    .eq('id', guardian.id);
-  if (updErr) { console.error('autoLinkGuardian update:', updErr.message); return null; }
+  if (gErr) { console.error('autoLinkGuardian read:', gErr.message); return null; }
+  if (!guardian) return null; // no guardian linked to this account by the RPC
 
   const { error: insErr } = await supabase
     .from('user_roles')
