@@ -2,19 +2,13 @@ import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AdminBackHeader from '../components/admin/AdminBackHeader';
-import AutoNotificationSettingsForm from '../components/admin/AutoNotificationSettingsForm';
-import SenderIdentityForm from '../components/admin/SenderIdentityForm';
-import OrganizationForm from '../components/admin/OrganizationForm';
-import RegistrationForm from '../components/admin/RegistrationForm';
-import FeaturesForm from '../components/admin/FeaturesForm';
-import CustomDomainForm from '../components/admin/CustomDomainForm';
-import PilotModeForm from '../components/admin/PilotModeForm';
+import SettingsSheets from '../components/admin/SettingsSheets';
 import { useOrgAutoNotifications } from '../hooks/useOrgAutoNotifications';
 import { useOrgSettings } from '../hooks/useOrgSettings';
 
-// /admin/settings — org-level admin settings. General group (Organization) +
-// Communications group (Automatic messages via RPC, Sender identity direct).
-// Future sections (Registration, Features, Pilot) add rows per the REV 2 spec.
+// /admin/settings — org-level admin settings (admin-only route). Thin row-list:
+// each row opens a FullScreenForm from SettingsSheets. General + Communications +
+// Pilot groups per the REV 2 spec. Decomposed at the Step-4 cap-pressure trigger.
 
 const SECTION_LABEL = {
   fontSize: 11, fontWeight: 500, color: 'var(--as-text-tertiary)',
@@ -47,7 +41,7 @@ export default function AdminSettingsPage() {
   const { orgId, org } = useAuth();
   const an = useOrgAutoNotifications();
   const os = useOrgSettings(orgId);
-  const [openForm, setOpenForm] = useState(null); // 'org' | 'autonotif' | 'sender' | null
+  const [openForm, setOpenForm] = useState(null);
   const s = os.settings;
 
   const orgSummary = os.loading ? 'Loading…' : `${org?.name || 'Organization'} · ${s?.season_label || 'No season set'}`;
@@ -66,7 +60,7 @@ export default function AdminSettingsPage() {
         Settings
       </h1>
 
-      <p style={SECTION_LABEL}>General</p>
+      <h2 style={SECTION_LABEL}>General</h2>
       <div style={CARD}>
         <Row title="Organization" summary={orgSummary} disabled={os.loading} onClick={() => setOpenForm('org')} />
         <div style={DIVIDER} />
@@ -77,14 +71,14 @@ export default function AdminSettingsPage() {
         <Row title="Custom domain" summary={domainSummary} disabled={os.loading} onClick={() => setOpenForm('domain')} />
       </div>
 
-      <p style={SECTION_LABEL}>Communications</p>
+      <h2 style={SECTION_LABEL}>Communications</h2>
       <div style={CARD}>
         <Row title="Automatic messages" summary={anSummary} disabled={an.loading} onClick={() => setOpenForm('autonotif')} />
         <div style={DIVIDER} />
         <Row title="Sender identity" summary={senderSummary} disabled={os.loading} onClick={() => setOpenForm('sender')} />
       </div>
 
-      <p style={SECTION_LABEL}>Pilot</p>
+      <h2 style={SECTION_LABEL}>Pilot</h2>
       <div style={CARD}>
         <Row title="Pilot mode" summary={pilotSummary} disabled={os.loading} onClick={() => setOpenForm('pilot')} />
       </div>
@@ -92,55 +86,7 @@ export default function AdminSettingsPage() {
         Clearing the test address sends real email to families — the go-live cutover.
       </p>
 
-      <OrganizationForm
-        open={openForm === 'org'}
-        onClose={() => setOpenForm(null)}
-        initial={{ name: org?.name, mailingAddress: org?.mailing_address, seasonLabel: s?.season_label, timezone: s?.timezone }}
-        onSave={os.save}
-        saving={os.saving}
-      />
-      <RegistrationForm
-        open={openForm === 'registration'}
-        onClose={() => setOpenForm(null)}
-        initial={{ registrationOpen: s?.registration_open }}
-        onSave={os.save}
-        saving={os.saving}
-      />
-      <FeaturesForm
-        open={openForm === 'features'}
-        onClose={() => setOpenForm(null)}
-        initial={{ futuresEnabled: s?.futures_academy_enabled, carpoolEnabled: s?.carpool_enabled }}
-        onSave={os.save}
-        saving={os.saving}
-      />
-      <CustomDomainForm
-        open={openForm === 'domain'}
-        onClose={() => setOpenForm(null)}
-        initial={{ customDomain: s?.custom_domain }}
-        onSave={os.save}
-        saving={os.saving}
-      />
-      <AutoNotificationSettingsForm
-        open={openForm === 'autonotif'}
-        onClose={() => setOpenForm(null)}
-        initial={{ remindersOn: an.remindersOn, nudgesOn: an.nudgesOn, minGoing: an.minGoing }}
-        onSave={an.save}
-        saving={an.saving}
-      />
-      <SenderIdentityForm
-        open={openForm === 'sender'}
-        onClose={() => setOpenForm(null)}
-        initial={{ fromName: s?.from_name, fromEmail: s?.from_email, replyTo: s?.reply_to_email }}
-        onSave={os.save}
-        saving={os.saving}
-      />
-      <PilotModeForm
-        open={openForm === 'pilot'}
-        onClose={() => setOpenForm(null)}
-        initial={{ pilotEnabled: s?.pilot_mode_enabled, testRecipientEmail: s?.pilot_test_recipient_email }}
-        onSave={os.save}
-        saving={os.saving}
-      />
+      <SettingsSheets openForm={openForm} setOpenForm={setOpenForm} an={an} os={os} org={org} />
     </div>
   );
 }
