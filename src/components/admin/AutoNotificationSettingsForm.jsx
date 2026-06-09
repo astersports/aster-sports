@@ -21,7 +21,7 @@ const CARD = {
 
 export default function AutoNotificationSettingsForm({ open, onClose, initial, onSave, saving }) {
   return (
-    <FullScreenForm open={open} onClose={onClose} title="Auto-notifications">
+    <FullScreenForm open={open} onClose={onClose} title="Automatic messages">
       <Body initial={initial} onSave={onSave} saving={saving} onClose={onClose} />
     </FullScreenForm>
   );
