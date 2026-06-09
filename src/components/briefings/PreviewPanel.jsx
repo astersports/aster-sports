@@ -19,6 +19,7 @@ import { RESOLVER_REGISTRY } from '../../lib/engine/resolvers/registry';
 import { useResolverPreview } from '../../lib/engine/useResolverPreview';
 import { APP_BASE_URL } from '../../lib/constants';
 import DevicePreviewFrame from '../shared/DevicePreviewFrame';
+import { selectSignoffCoaches } from '../../lib/briefings/signoffCoaches';
 
 const wrap = { display: 'flex', flexDirection: 'column', gap: 8, height: '100%' };
 const topBar = { fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' };
@@ -48,8 +49,11 @@ function safeLegacyCompose(kind, data) {
   } catch (e) { return errorRender(`Preview error: ${e.message}`); }
 }
 
-function buildLegacyData(state, coaches, families, eventTitle, before, after, period) {
-  const base = { ...state.body, signoff_message: state.signoff_message, coaches };
+function buildLegacyData(state, _coaches, families, eventTitle, before, after, period) {
+  // Gate the contact block on the toggle, identically to the send path — the
+  // preview previously spread all org staff unconditionally, so announcements
+  // showed the signature (Frank+Kenny) even with the toggle OFF.
+  const base = { ...state.body, signoff_message: state.signoff_message, coaches: selectSignoffCoaches(state) };
   if (state.kind === 'schedule_change') {
     return { ...base, before: before || state.body?.before, after: after || state.body?.after, eventTitle: eventTitle || state.body?.eventTitle };
   }

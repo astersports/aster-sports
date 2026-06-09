@@ -17,12 +17,10 @@ export default function SignoffContactToggle({ state, dispatch, orgId }) {
   const isPicked = (s) => selected.some((c) => c.user_id === s.user_id);
 
   const onToggle = (e) => {
-    const on = e.target.checked;
-    dispatch({ type: 'TOGGLE_SIGNOFF', value: on });
-    // Turning on with nobody chosen yet → pre-select everyone (admin deselects).
-    if (on && selected.length === 0) {
-      dispatch({ type: 'SET_SIGNOFF_COACHES', value: staff.map((s) => ({ user_id: s.user_id, display_name: s.display_name, title: s.title, phone: s.phone })) });
-    }
+    // Explicit-pick model: enabling does NOT pre-select staff — the admin checks
+    // who to include (default = nobody → no signature). Off by default; compose
+    // has no all-staff fallback either (see lib/briefings/signoffCoaches).
+    dispatch({ type: 'TOGGLE_SIGNOFF', value: e.target.checked });
   };
 
   const onPick = (s) => {
