@@ -61,6 +61,19 @@ describe('rsvp_nudge resolver — contract', () => {
     expect(slices).toEqual([]);
   });
 
+  it('5b. REDIRECT mode (synthetic rows): pilotOnly=true builds real slices, not [] (no "No recipients" bug)', async () => {
+    // Pre-cutover pilot REDIRECT: get_digest_recipients returns synthetic
+    // per-team rows (guardian_id null, email=pilot_test_recipient_email) and
+    // NO real-guardian rows. The per-player kind must NOT drop to empty (that
+    // was the "No recipients for this anchor" bug) — it builds the real slices
+    // so a TEST send can deliver the sample to the pilot inbox.
+    const redirectRecipients = [{ guardian_id: null, email: 'olivejuiceinc1@gmail.com', is_pilot_family: true, team_ids: [] }];
+    const open = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient(FIXTURES), now: NOW });
+    const redirect = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: true }, { supabase: mockClient({ ...FIXTURES, recipients: redirectRecipients }), now: NOW });
+    expect(open.slices.length).toBeGreaterThan(0);
+    expect(redirect.slices.length).toBe(open.slices.length);
+  });
+
   it('6. all responded -> empty slices', async () => {
     const allResponded = team_players.map((tp) => ({ event_id: EVENT_ID, player_id: tp.player_id, response: 'going' }));
     const { slices, context } = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient({ ...FIXTURES, event_rsvps: allResponded }), now: NOW });
