@@ -3,6 +3,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import SettingsSheets from '../SettingsSheets';
 
+// PilotModeForm (one of the mounted sheets) reads useAuth for the E6 cutover
+// audit; provide it so the 'pilot' render doesn't throw outside an AuthProvider.
+vi.mock('../../../context/AuthContext', () => ({ useAuth: () => ({ user: { id: 'admin-1' }, orgId: 'org-1' }) }));
+
 afterEach(() => cleanup());
 
 const an = { remindersOn: true, nudgesOn: false, minGoing: 5, save: vi.fn(), saving: false };

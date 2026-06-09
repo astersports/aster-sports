@@ -18,9 +18,21 @@
 
 export function reportError(err, ctx = {}) {
   const { surface = 'unknown', ...extra } = ctx;
-   
+
   console.error(`[${surface}]`, err);
   import('./sentry')
     .then((m) => m.captureErrorToSentry?.(err, surface, extra))
+    .catch(() => { /* swallow — sentry chunk unreachable, capture is best-effort */ });
+}
+
+// reportAudit — durable trail for high-consequence operator actions (not errors).
+// Same lazy-Sentry pattern as reportError: a synchronous console line + an
+// info-level Sentry message (tag `audit`). Used for the FORK E pilot cutover (E6) —
+// the single most consequential action in the app — until a proper DB audit lands
+// (pii_audit_log needs an architect-lane insert path).
+export function reportAudit(action, ctx = {}) {
+  console.warn(`[audit:${action}]`, { ts: new Date().toISOString(), ...ctx });
+  import('./sentry')
+    .then((m) => m.captureAuditToSentry?.(`audit:${action}`, { action, ...ctx }))
     .catch(() => { /* swallow — sentry chunk unreachable, capture is best-effort */ });
 }

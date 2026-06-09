@@ -4,7 +4,11 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PilotModeForm from '../PilotModeForm';
 
-afterEach(() => cleanup());
+vi.mock('../../../context/AuthContext', () => ({ useAuth: () => ({ user: { id: 'admin-1' }, orgId: 'org-1' }) }));
+vi.mock('../../../lib/reportError', () => ({ reportAudit: vi.fn() }));
+import { reportAudit } from '../../../lib/reportError';
+
+afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 function setup(overrides = {}) {
   const onSave = overrides.onSave ?? vi.fn(async () => ({ ok: true }));
@@ -51,6 +55,10 @@ describe('PilotModeForm', () => {
     await userEvent.click(sendBtn);
     expect(onSave).toHaveBeenCalledWith({ pilot_mode_enabled: true, pilot_test_recipient_email: null });
     expect(onClose).toHaveBeenCalled();
+    // E6: the cutover is audited with actor + cleared address.
+    expect(reportAudit).toHaveBeenCalledWith('pilot_cutover', expect.objectContaining({
+      actorId: 'admin-1', orgId: 'org-1', clearedAddress: 'redirect@test.com',
+    }));
   });
 
   it('no Go-live control when there is no test address to clear', () => {

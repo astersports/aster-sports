@@ -4,6 +4,8 @@ import FullScreenForm from '../shared/FullScreenForm';
 import Toggle from '../shared/Toggle';
 import Input from '../shared/Input';
 import GoLiveConfirmSheet from './GoLiveConfirmSheet';
+import { useAuth } from '../../context/AuthContext';
+import { reportAudit } from '../../lib/reportError';
 
 // Settings → Pilot → Pilot mode. pilot_mode_enabled + test recipient are bucket-A.
 // Normal Save edits the toggle / a non-empty test address. The go-live CUTOVER
@@ -31,6 +33,7 @@ export default function PilotModeForm({ open, onClose, initial, onSave, saving }
 }
 
 function Body({ initial, onSave, saving, onClose }) {
+  const { user, orgId } = useAuth();
   const [pilotEnabled, setPilotEnabled] = useState(initial.pilotEnabled !== false);
   const [email, setEmail] = useState(initial.testRecipientEmail || '');
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -43,7 +46,14 @@ function Body({ initial, onSave, saving, onClose }) {
   };
   const goLive = async () => {
     const res = await onSave({ pilot_mode_enabled: pilotEnabled, pilot_test_recipient_email: null });
-    if (res?.ok) { setConfirmOpen(false); onClose(); }
+    if (res?.ok) {
+      // E6 (architect): durable actor+timestamp trail for the cutover — the single
+      // most consequential action in the app. (Interim: Sentry/console; a proper DB
+      // audit on pii_audit_log needs an architect-lane insert path.)
+      reportAudit('pilot_cutover', { actorId: user?.id ?? null, orgId: orgId ?? null, clearedAddress: initial.testRecipientEmail ?? null });
+      setConfirmOpen(false);
+      onClose();
+    }
   };
 
   return (

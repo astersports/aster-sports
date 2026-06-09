@@ -55,3 +55,11 @@ export function captureErrorToSentry(err, surface, extra) {
   if (!DSN) return;
   Sentry.captureException(err, { tags: { surface }, extra });
 }
+
+// Durable audit trail for high-consequence operator actions (NOT errors).
+// Emitted as an info-level Sentry message tagged `audit` so it's queryable
+// independently of error noise. Used by reportAudit (src/lib/reportError.js).
+export function captureAuditToSentry(message, extra) {
+  if (!DSN) return;
+  Sentry.captureMessage(message, { level: 'info', tags: { audit: 'true' }, extra });
+}
