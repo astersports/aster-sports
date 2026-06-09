@@ -32,6 +32,13 @@ describe('G5 queued surface — never auto-re-drives queued', () => {
     // and the resend is explicitly justified as safe (queued => non-finalized).
     expect(REGION).toMatch(/queued.*never finalized|never finalized|no 409/);
   });
+
+  it('E5: the mark-failed action routes to the bounded retry path, behind the confirm', () => {
+    // 'failed' (not a send) sets up briefing-auto-draft-tick/_redrive to pick the
+    // rows up. It must be a confirm action ('fail'), never an auto path.
+    expect(REGION).toMatch(/delivery_status:\s*['"]failed['"]/);
+    expect(REGION).toMatch(/action:\s*['"]fail['"]/);
+  });
 });
 
 vi.mock('../../../hooks/useStuckSends', () => ({ useStuckSends: vi.fn() }));

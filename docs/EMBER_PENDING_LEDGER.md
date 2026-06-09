@@ -471,8 +471,12 @@ E3+E4 SEE — DONE: fixed the pre-existing broken recipient SELECT (phantom boun
 column → PostgREST 400 → recipients silently always-empty; AP#36 swallow), extracted
 deliveryRollup() (Recipients label / bounced_at / +Complained), + the counting test
 that guards the bounce fix.
-E5 mark-failed → bounded-retry action (close the review loop). E6 cutover
-actor+timestamp audit. (E1 ships no code.)
+E5 mark-failed → bounded-retry action — DONE: StuckSendCard/StuckSendsRegion gain a
+third confirm-gated action that sets delivery_status='failed' so _redrive picks the
+residue up (failed + redrive_count<3); guard test locks it. E6 cutover actor+timestamp
+audit — next: pii_audit_log exists but is RLS-on/no-policy (not client-writable), so a
+proper DB audit needs an architect-lane insert path; app-layer interim = durable Sentry
+audit message + console on SEND-LIVE (no migration). (E1 ships no code.)
 
 **§4 reconciliation 2026-06-09 (settings-page arc — architect D6 ruling).** The
 `/admin/settings` arc shipped this session and is recorded SHIPPED here. It
