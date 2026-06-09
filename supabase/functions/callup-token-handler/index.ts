@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
 
   const playerName = player?.first_name || "Your player";
   const verbPhrase = payload.r === "accept" ? "is in" : "is out";
-  const eventLine = ctx ? `${ctx.title || "Event"} · ${new Date(ctx.start_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}${ctx.location ? " · " + escape(ctx.location) : ""}` : "";
+  const eventLine = ctx ? `${ctx.title || "Event"} · ${new Date(ctx.start_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })}${ctx.location ? " · " + escape(ctx.location) : ""}` : "";
   return htmlPage(
     `Got it — ${escape(playerName)} ${verbPhrase}`,
     eventLine,

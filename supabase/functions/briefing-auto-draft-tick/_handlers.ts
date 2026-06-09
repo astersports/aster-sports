@@ -143,8 +143,16 @@ export async function handleRsvpLowGoing(sb: SupabaseClient, trigger: Trigger, n
     .select("auto_notifications").eq("id", trigger.org_id).maybeSingle();
   const autoCfg = (orgErr ? {} : (org?.auto_notifications as Record<string, unknown> | null) ?? {}) as { rsvp_min_going?: unknown };
   const threshold = rsvpMinGoingThreshold(autoCfg);
+  // Scope to real GAMES that are live on the schedule — matches the Stream A
+  // reminder handler (_reminders.ts). Without these filters Stream B drafted
+  // spurious "QUICK RSVP" nudges for practices (§16.5 scopes Stream B to "an
+  // upcoming game") and for cancelled/unpublished events (which trivially trip
+  // the going-floor at ~0 confirmed). event_type game|tournament + status
+  // scheduled + publish_status published.
   const { data: eventsData, error } = await sb.from("events")
-    .select("id, team_id, start_at, teams!inner(org_id)").gt("start_at", nowIso).lte("start_at", windowEnd);
+    .select("id, team_id, start_at, teams!inner(org_id)")
+    .in("event_type", ["game", "tournament"]).eq("status", "scheduled").eq("publish_status", "published")
+    .gt("start_at", nowIso).lte("start_at", windowEnd);
   if (error) return [{ trigger_id: trigger.id, org_id: trigger.org_id, kind: "rsvp_nudge", error: error.message }];
   const events = eventsData || [];
   const orgEvents = events.filter((e: any) => e.teams?.org_id === trigger.org_id);

@@ -1,0 +1,164 @@
+AUDIT — AsterSports briefings/comms SEND + CRON pipeline
+Date: 2026-06-09
+Auditor: Claude Code (read-only audit; no files edited, no commits)
+Scope: sendDispatch + _dispatch mirror; send-tournament-message (index/_lib);
+       briefing-cron-dispatch; briefing-auto-draft-tick (+ handlers, reminders,
+       redrive, change-alert, threshold mirror); queueComposedMessages(+Builders);
+       rsvpNudgeSend; academyCallupSend; digestSend(+Helpers); briefingCronHelpers.
+
+Method: line-by-line read of every file in scope + production cross-checks via
+Supabase MCP (event_type/status distribution, event_notifications rows,
+comms_messages column defaults, organizations.auto_notifications) + AP#30 mirror
+diffs (quote/type-annotation normalized).
+
+========================================================================
+SUMMARY OF VERIFIED-CLEAN AREAS
+========================================================================
+- AP#30 mirror pairs ALL in sync (logic byte-identical apart from TS
+  annotations + quote style):
+    sendDispatch.js  <->  send-tournament-message/_dispatch.ts          IDENTICAL
+    rsvpNudgeThreshold.js <-> briefing-auto-draft-tick/_rsvpNudgeThreshold.ts IDENTICAL
+    cron/eventReminders.js <-> _reminderLogic.ts                        IDENTICAL
+    cron/eventChangeAlerts.js <-> _changeAlertLogic.ts                  IDENTICAL
+- AP#36: NO destructured-default `{ data = [] }` swallow patterns in any scoped
+  file. Every .from()/.rpc()/.functions.invoke() in the send/cron paths
+  destructures `error` and checks it (or fails-open/closed by explicit, commented
+  design). grep over the scope returned zero matches.
+- AP#31/#33: config.toml declares verify_jwt=false for both cron functions
+  (briefing-cron-dispatch, briefing-auto-draft-tick) and send-push; send-tournament-
+  message is correctly OMITTED (needs user JWT). Shared AUTH secrets (cron_secret,
+  supabase_jwt_secret) are read from app_secrets; only SUPABASE_* platform keys and
+  RESEND_API_KEY (app_secrets-preferred, env fallback during documented rollout)
+  come from Deno.env. No AP#33 violation.
+- Terminal status='sent' ownership (scope item #4): edge fn (service role) owns the
+  finalize write. All three client send paths (digestSend, rsvpNudgeSend,
+  academyCallupSend) correctly DROP the client-side finalize and surface ok:false
+  instead of force-finalizing. No double-finalize path found.
+- Stream B threshold values match CLAUDE.md §16.5: RSVP_MIN_GOING_DEFAULT=5,
+  RSVP_NUDGE_WINDOW_HOURS=48, shouldNudgeLowGoing uses strict `<` (exactly N does
+  not nudge). All correct.
+- event_notifications dispatcher: recipient_id-as-team_id is consistent with prod
+  (all rows recipient_type='team'); the 2 'cancelled' urgent cancellation rows are
+  the intentional pre-dispatcher backlog (migration 20260529015507), not a live bug.
+
+========================================================================
+FINDING 1 — rsvp_nudge auto-draft fires for PRACTICES (no event_type filter)
+========================================================================
+file: supabase/functions/briefing-auto-draft-tick/_handlers.ts:146-147
+severity: P2
+what's wrong:
+  handleRsvpLowGoing selects upcoming events with only `.gt("start_at", nowIso)
+  .lte("start_at", windowEnd)` and an org filter. There is NO event_type filter.
+  CLAUDE.md §16.5 scopes Stream B explicitly to "an upcoming GAME" ("you need 5 to
+  field a game"). Production has 90 'practice' events. A practice within the 48h
+  window with fewer than 5 confirmed "going" RSVPs will draft an rsvp_nudge — which
+  is semantically wrong (a practice does not need 5 players to "field a game") and
+  floods the Radar with spurious nudge proposals an admin can actually send.
+  Contrast the sibling Stream A handler (_reminders.ts:43-45) which correctly does
+  `.in("event_type", ["game", "tournament"])`. The downstream rsvp_nudge resolver
+  (src/lib/engine/resolvers/rsvpNudge.js) does NOT re-validate event_type either, so
+  the spurious draft resolves into a real, sendable nudge.
+proposed fix:
+  Add `.in("event_type", ["game", "tournament"])` to the events query in
+  handleRsvpLowGoing (mirror _reminders.ts). If practice-RSVP nudges are actually
+  desired, update §16.5 + the handler comment to say so explicitly; current spec
+  language ("game"/"field a game") says games only.
+
+========================================================================
+FINDING 2 — rsvp_nudge auto-draft fires for CANCELLED / unpublished events
+========================================================================
+file: supabase/functions/briefing-auto-draft-tick/_handlers.ts:146-147
+severity: P2
+what's wrong:
+  Same events query has no `status='scheduled'` and no `publish_status='published'`
+  filter. Production has 4 'cancelled' events. A cancelled game in the 48h window
+  will essentially ALWAYS trigger a nudge (cancelled events have ~0 "going" RSVPs,
+  so goingCount < threshold is trivially true), drafting "QUICK RSVP" proposals for
+  events that no longer exist. Draft events (publish_status != 'published') would
+  also draft nudges for events families can't even see. The Stream A reminder
+  handler (_reminders.ts:44) correctly gates on `.eq("status","scheduled")
+  .eq("publish_status","published")`; the rsvp-nudge handler gates on neither.
+  The resolver reads event.status into context but never rejects a cancelled event
+  (rsvpNudge.js:140 — status passed through, only team_id-null and start<=now guard).
+proposed fix:
+  Add `.eq("status", "scheduled").eq("publish_status", "published")` to the events
+  query in handleRsvpLowGoing. Ideally fold Findings 1+2 into one filter set
+  matching _reminders.ts. (Belt-and-suspenders: have the rsvpNudge resolver throw on
+  status='cancelled' too, but the handler filter is the primary fix.)
+
+========================================================================
+FINDING 3 — Fully-suppressed send strands comms_messages at status='draft'
+========================================================================
+file: supabase/functions/send-tournament-message/index.ts:152
+severity: P3
+what's wrong:
+  When every queued recipient is suppressed (all guardians unsubscribed),
+  decideSuppression yields stillQueued.length===0 and the function early-returns
+  `{ ok: true, sent: 0, failed: 0, suppressed, errors: [] }` at line 152 BEFORE the
+  message-finalize block (lines 238-247). The message row is therefore never moved
+  to status='sent' / sent_at — it stays at status='draft'. Because ok:true, the
+  client send paths do NOT throw, so they report success, yet the row remains an
+  apparent "unsent draft" in the Radar/inbox forever. A manual re-invoke can't
+  recover it: alreadySent() passes (sent_at null) but the recipient re-query now
+  finds 0 'queued' rows (all flipped to 'unsubscribed') and returns
+  "No queued recipients" 400. Net: status-consistency hole — a completed-by-
+  suppression send looks unsent.
+proposed fix:
+  Before the line-152 early return, finalize the message the same way the main path
+  does: UPDATE comms_messages SET status='sent', sent_at=now(), sent_by=user.id,
+  recipient_count=0, delivery_method='resend_api' WHERE id=message_id. (Or set a
+  dedicated terminal state like 'sent' with recipient_count=suppressed so the audit
+  trail reflects "nothing delivered, all unsubscribed.")
+
+========================================================================
+FINDING 4 — Stream B has no org enable-gate; AutoNotificationSettingsSheet absent
+========================================================================
+file: supabase/functions/briefing-auto-draft-tick/_handlers.ts:130-145 (handler)
+      + CLAUDE.md §16.5 vs repo (missing UI)
+severity: P3 (documentation/feature-gap, not a send-pipeline logic bug)
+what's wrong:
+  (a) handleRsvpLowGoing reads organizations.auto_notifications only for
+  rsvp_min_going; unlike the Stream A reminder handler (which honors
+  auto_notifications.reminders_enabled===false to skip), there is no per-org
+  on/off switch for Stream B nudges. If §16.5's intent is that Stream B is
+  org-configurable ("Both streams are admin-configurable"), the enable check is
+  missing.
+  (b) CLAUDE.md §16.5 states the operator controls live in
+  "AutoNotificationSettingsSheet (Stream B -> Minimum confirmed going)" and
+  §8 claims Stream A gates on auto_notifications.reminders_enabled "per PR #643".
+  No `AutoNotificationSettingsSheet` component exists anywhere in the repo, and
+  `rsvp_min_going` / `reminders_enabled` are referenced ONLY in
+  src/lib/cron/rsvpNudgeThreshold.js + its test — there is NO UI that writes
+  organizations.auto_notifications. Production org has auto_notifications = {}.
+  So the documented operator controls are not actually shippable today; the
+  threshold + enable values are only changeable via raw SQL.
+proposed fix:
+  Either (1) build the AutoNotificationSettingsSheet that writes
+  organizations.auto_notifications.{rsvp_min_going, reminders_enabled} and add a
+  Stream-B enable check to handleRsvpLowGoing, OR (2) reconcile CLAUDE.md §16.5/§8
+  to reflect that the control surface is not yet built. Surface to architect — this
+  is a spec-vs-impl drift call, not a unilateral fix.
+
+========================================================================
+NON-FINDINGS / considered-and-cleared
+========================================================================
+- index.ts:243 recipient_count uses the post-suppression mutated `recipients`
+  array. Semantically this is "count actually attempted" (suppressed excluded);
+  acceptable, not a bug.
+- cron-dispatch sets status='failed' on HTTP-non-2xx from send-tournament-message.
+  send-tournament-message returns HTTP 200 even on partial failure (ok:false), so
+  cron never overwrites a row the edge fn already finalized to 'sent'. No
+  double-finalize / status race. The crash-after-dispatch 'queued' ambiguity is the
+  documented G8 scope-limit (human-review only), not a regression.
+- redrive sweep only re-drives delivery_status='failed' rows (never ambiguous
+  'queued'), re-applies pilot+suppression via the shared kernels, caps at
+  redrive_count<3. Correct per the G5 OPT-B contract.
+- _reminders.ts claims the offset bucket BEFORE send (intentional double-fire
+  guard); a post-claim send failure leaves the bucket claimed (won't retry) — this
+  is the documented "claim-before-send" tradeoff, acceptable.
+- sendReminderEmail (_reminderSend.ts:145-146) ignores a resend batch error
+  (only increments `sent` on !error). For direct-send Stream A this degrades to a
+  lower email_sent count rather than a crash; borderline but not a swallow of a DB
+  error and not in the AP#36 class. Left as a note, not a finding.
+- queueComposedMessages dedup keys guardian_id globally (first slice wins for
+  multi-team families) — documented multi-team dedup behavior, correct.

@@ -1,0 +1,217 @@
+AUDIT — BRIEFINGS COMPOSER UI + RESOLVER/COMPOSE/RENDER PARITY
+Date: 2026-06-09
+Scope: src/components/briefings/**, src/lib/engine/resolvers/**,
+       src/lib/engine/composer.js + sectionRenderers.js,
+       src/lib/briefings/{kindMetadata,audienceLabels,signoffCoaches,...}.js,
+       src/lib/engine/buildSignoffSection.js
+Method: READ-ONLY line-by-line per the prompt's five focus areas. The
+        AP#38 emit-vs-register diff was computed mechanically (grep of
+        every `kind: '<x>'` section emit across resolvers/renderers vs.
+        the SECTION_RENDERERS map keys).
+Verdict: NO P0 / NO P1. The headline parity result is CLEAN. Three
+        low-severity findings (1×P2-leaning-P3 dead IO, 2×P3).
+
+================================================================
+HEADLINE RESULT — AP#38 EMIT-vs-REGISTER DIFF (the requested output)
+================================================================
+
+ORPHAN EMITS (section kind emitted by a resolver but with NO renderer
+in SECTION_RENDERERS — the silent-empty-section bug class): ZERO.
+
+Every one of the 41 distinct section kinds emitted across
+src/lib/engine/resolvers/*.js + the 3 legacy renderers
+(announcement.js, customMessage.js, renderers/tournamentPrelim.js)
+has a matching SECTION_RENDERERS handler in
+src/lib/engine/sectionRenderers.js.
+
+Emitted section kinds (41), all registered:
+  bracket_callout, brand_footer, callup_card, callup_response,
+  cancellation_card, coach_header, coach_reflection, coaches_block,
+  color_striped_row, conflict_callout, cta_buttons, day_header,
+  event_card, footer, frame_close, frame_open, game_card, header,
+  hotel_block, kid_color_pill, logistics_line, ops_notes,
+  placement_block, pool_standings, quick_link_nav, recap_game_cell,
+  rsvp_callout, rsvp_request, rules, schedule_change_diff,
+  section_bar, signoff, standout_moments, stats_narrative,
+  tagline_footer, team_color_pill, venue_list, venue_notes,
+  vip_header, weather, weekly_schedule
+
+(Slice/recipient kinds `family`, `single_recipient`, `team` were
+excluded — they are audience-resolution markers, not content sections,
+and never reach renderSections.)
+
+REGISTERED-BUT-NEVER-EMITTED (dead renderer, NOT an AP#38 violation —
+AP#38 only guards emit-without-renderer):
+  game_log  → retired 2026-06-05 (tournamentRecapHelpers.js:2 comment
+              confirms the flat game_log list was replaced by full-
+              depth render). The renderer + its import remain in
+              sectionRenderers.js. Harmless; see FINDING 3.
+
+SECTION_RENDERERS map size: 42 keys (41 live + game_log dead).
+
+================================================================
+SIGNOFF / CONTACT-LEAK SURFACE — FULLY CLOSED (verified end-to-end)
+================================================================
+This was the prompt's #3 concern. The 2026-06-09 (today) fix
+(signoffCoaches.js header credits Frank's same-day report) is correct
+and complete across every path:
+
+- composerReducer.js initial state: signoff_enabled=false,
+  signoff_coaches=[] (OFF by default). ✓
+- SignoffContactToggle.jsx onToggle: enabling does NOT pre-select staff
+  (explicit-pick model, default = nobody). ✓
+- buildSignoffSection.js: signature + contact block render ONLY when
+  overrides.signoff_enabled===true AND staff explicitly picked;
+  buildVoiceSignature([]) === '' so no signature leaks. ✓
+- Legacy path (composerSubmit.composeLegacy): uses selectSignoffCoaches
+  (toggle-gated), NOT the org-staff `coaches` arg (which is the unused
+  `_coaches` param). ✓
+- Preview (PreviewPanel.buildLegacyData + registry path): uses the SAME
+  selectSignoffCoaches so preview can't diverge from send. ✓
+- Weekly digest (sendWeeklyDigestFromWizard → digestSend.js:45):
+  signoffEnabled → overrides.signoff_enabled. ✓
+- family_guide "Your coaches" reference block (coaches_block, carries
+  phones) is gated by the SAME toggle at familyGuide.js:154
+  (overrides.signoff_enabled===true) — the one other place phones could
+  leak. ✓
+
+No leak found.
+
+================================================================
+AI-DRAFT CONTROL COVERAGE (prompt concern #2) — CORRECT
+================================================================
+- AiDraftAnchored gates on AI_DRAFT_FIELD[kind] = {game_recap,
+  games_recap, tournament_recap}; returns null for other kinds.
+- When the kind supports anchored AI draft but the anchor isn't picked,
+  it renders a HINT card ("Pick a game/tournament above — then Draft
+  with AI…"), not nothing. ✓ (AiDraftAnchored.jsx:36-45)
+- AiDraftFreeForm gates on FREE_FORM_KINDS = {announcement,
+  custom_message}; returns null otherwise. ✓
+- Both self-gate by kind and mount together in StepBodySignoff. No kind
+  double-renders or renders an empty AI control.
+
+================================================================
+SEND-GATE COMPLETENESS (prompt concern #4) — CORRECT
+================================================================
+StepSendConfirm.jsx disabled-gate covers every requested case:
+- games_recap empty event_ids → gamesRecapEmpty (kind-specific, with an
+  actionable note). ✓
+- unknown audience count (null ≠ 0) → audienceUnknown (a.filtered==null
+  && !test_only). ✓
+- recipient count 0 → recipientCountBlock (a.filtered===0). ✓
+- pilot-zero → pilotZeroBlock. ✓
+- scheduleInvalid → <5min-out or missing scheduled_for. ✓
+test_only sends bypass audience gates by design (BCC admin@). ✓
+
+================================================================
+KIND_METADATA WIRING (prompt concern #5) — CORRECT
+================================================================
+All 12 canonical kinds present in KIND_METADATA + KIND_ORDER, each with
+label + bodyModule. All 12 body modules exist in bodies/ and are mapped
+in StepBodySignoff.BODY_LAZY. academy_callup_notice is wizardSupported:
+false and ComposerSections short-circuits to the redirect-card body
+(no audience/send) so it can never reach resolve and throw
+PlayerNotCalledUpError from the wizard. RESOLVER_REGISTRY covers all 11
+non-legacy kinds; announcement + custom_message route 'legacy' via
+getDispatchSendPath → compose() (KIND_COMPOSERS). No reachable kind
+throws at resolve.
+
+================================================================
+FINDINGS (low severity)
+================================================================
+
+FINDING 1 — Dead per-send DB IO: fetchSignatureCoaches result is
+            computed then discarded in 4 resolvers.
+Severity: P3 (correctness OK — no leak; cost is wasted IO + stale,
+          misleading comments).
+Files:
+  src/lib/engine/resolvers/gameRecap.js:76,94
+  src/lib/engine/resolvers/gamesRecap.js:68,89
+  src/lib/engine/resolvers/weeklyDigest.js:130,134
+  src/lib/engine/resolvers/tournamentRecap.js:114-124
+  (consumed via src/lib/engine/buildOrgContext.js:37 → org.signature_coaches)
+What's wrong: These 4 resolvers call fetchSignatureCoaches(...) and pass
+  the result into buildOrgContext as `signature_coaches`, which lands on
+  context.org.signature_coaches. But NO compose function reads
+  org.signature_coaches — every signoff/signature now flows through
+  buildSignoffSection({ overrides }) which reads ONLY the admin-picked
+  overrides.signoff_coaches (the toggle). Grep confirms zero live readers
+  of org.signature_coaches (only tournamentRecap.js builds a
+  signature_coaches_by_team that is likewise never read by its compose).
+  So each game_recap / games_recap / weekly_digest / tournament_recap
+  send fires an extra staff_profiles+team_staff query whose result is
+  thrown away. The resolver comments ("The voice signature is the UNION
+  …", "org Program Director + team coaches") are now stale — they
+  describe the pre-toggle auto-signature model that the 2026-06-09
+  explicit-pick model replaced.
+Proposed fix: Remove the fetchSignatureCoaches calls + the
+  signature_coaches plumbing from buildOrgContext (and the dead
+  signature_coaches_by_team in tournamentRecap.js), OR, if a future
+  auto-signature default is intended, wire org.signature_coaches into
+  buildSignoffSection behind the toggle. Until then it is dead IO. Also
+  delete signatureCoaches.js + voiceSignature's team-aware comments if
+  the plumbing goes. Ship with the AP#27-pure compose tests unchanged
+  (they don't read the field, so removal is safe). NOTE: confirm no
+  test asserts org.signature_coaches before removing.
+
+FINDING 2 — coach_roundup / family_guide send-gate relies on body
+            auto-select; the per-body validate() is not enforced at the
+            send gate, and countByAudienceType returns 1 unconditionally.
+Severity: P3 (well-mitigated; worst case is a caught friendly-error
+          toast, never a silent bad send).
+Files:
+  src/lib/briefings/audience.js:38 (coach_self/family_specific → 1)
+  src/components/briefings/StepSendConfirm.jsx:56 (only games_recap has a
+    kind-specific empty-selection gate)
+  src/components/briefings/bodies/CoachRoundupBody.jsx:23-29 (validate exported, unused by gate)
+  src/components/briefings/bodies/FamilyGuideBody.jsx:24-30 (validate exported, unused by gate)
+What's wrong: For coach_roundup and family_guide, countByAudienceType
+  returns a hard 1 regardless of whether audience_filter.coach_user_id /
+  parent_user_id is actually set. The send gate therefore shows "1
+  family" and ENABLES Send even if the picker is empty. The bodies
+  auto-select (current user or first staff / first guardian) on mount,
+  so in practice the id is set; but if staff/guardian load fails or the
+  admin clears the select, Send is enabled and the resolver throws
+  ("Missing coachUserId" / "Missing parentUserId") at send time. That
+  error is caught and shown via translateBriefingError, so it's a
+  friendly failure — but it's a gate hole vs. the games_recap pattern,
+  which DOES hard-gate its empty selection.
+Proposed fix: Mirror the gamesRecapEmpty pattern in StepSendConfirm —
+  add `coachRoundupEmpty = state.kind==='coach_roundup' &&
+  !state.audience_filter?.coach_user_id` and the family_guide
+  equivalent, with actionable notes ("Pick a coach/parent above before
+  sending."), folded into `disabled`. (Optional, lower priority since
+  resolver-throw + toast already prevents a bad send.)
+
+FINDING 3 — Dead renderer + import: game_log registered in
+            SECTION_RENDERERS but never emitted.
+Severity: P3 (dead code only; not an AP#38 violation, no runtime bug).
+Files:
+  src/lib/engine/sectionRenderers.js:45 (import gameLog), :88 (game_log: gameLog)
+  src/lib/engine/renderers/gameLog.js (the renderer file)
+What's wrong: game_log was retired 2026-06-05 when tournament recap moved
+  to full-depth render (tournamentRecapHelpers.js:2 documents the retire).
+  No resolver emits kind:'game_log' anymore (verified via grep). The
+  renderer + its import linger.
+Proposed fix: If gameLog has no other consumer (verify
+  renderers/gameLog.js isn't imported elsewhere), drop the import + map
+  entry from sectionRenderers.js and delete renderers/gameLog.js per the
+  §51 dead-feature-mount retirement doctrine. Mechanical, low risk.
+
+================================================================
+OBSERVATIONS (not findings — verified clean, noted for the record)
+================================================================
+- aiDraftPrompt.js ANCHORED_KINDS lists 5 kinds (adds weekly_digest +
+  tournament_prelim) but AI_DRAFT_FIELD lists only 3. This is NOT a bug:
+  the UI gate is AI_DRAFT_FIELD (anchoredAiFacts.js), so weekly_digest
+  and tournament_prelim correctly show NO anchored "Draft with AI"
+  button (tournament_prelim instead offers "Suggest closer"; weekly
+  digest has its own flow). ANCHORED_KINDS is the edge-function prompt
+  classifier, a separate concern.
+- The legacy renderers/tournamentPrelim.js composer is dead (only its own
+  tests reference it; tournament_prelim routes through RESOLVER_REGISTRY →
+  resolvers/tournamentPrelim.js). Candidate for §51 retirement but out of
+  this audit's bug scope; flagged here only so it isn't mistaken for the
+  live path.
+- All 13 dispatch paths (11 registry kinds + 2 legacy) route signoff
+  through the toggle-gated path. No path bypasses the contact gate.
