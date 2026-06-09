@@ -1,21 +1,12 @@
 import { useId, useState } from 'react';
 import FullScreenForm from '../shared/FullScreenForm';
 import Input from '../shared/Input';
+import { US_TIMEZONES } from '../../lib/timezones';
 
 // Settings → General → Organization. Name + mailing address are READ-ONLY
 // (organizations table, no UPDATE policy — full edit needs a future set_org_profile
 // RPC, deferred to multi-tenant onboarding). season_label + timezone are bucket-A
 // (organization_settings) and save via useOrgSettings. Pessimistic save-and-close.
-
-const TIMEZONES = [
-  ['America/New_York', 'Eastern (New York)'],
-  ['America/Chicago', 'Central (Chicago)'],
-  ['America/Denver', 'Mountain (Denver)'],
-  ['America/Phoenix', 'Mountain — no DST (Phoenix)'],
-  ['America/Los_Angeles', 'Pacific (Los Angeles)'],
-  ['America/Anchorage', 'Alaska (Anchorage)'],
-  ['Pacific/Honolulu', 'Hawaii (Honolulu)'],
-];
 
 const LABEL = { display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--as-text-secondary)', marginBottom: 4 };
 const HELP = { fontSize: 13, color: 'var(--as-text-tertiary)', lineHeight: 1.4, margin: '0 4px' };
@@ -63,7 +54,7 @@ function Body({ initial, onSave, saving, onClose }) {
       <div>
         <label style={LABEL} htmlFor={tzId}>Time zone</label>
         <select id={tzId} value={timezone} onChange={(e) => setTimezone(e.target.value)} style={SELECT_STYLE}>
-          {TIMEZONES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          {US_TIMEZONES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
       </div>
       <button

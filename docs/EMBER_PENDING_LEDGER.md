@@ -493,6 +493,21 @@ Architect-lane option if a hard guarantee is wanted: a server-side lock (constra
 trigger preventing pilot_test_recipient_email→NULL). Flagged for the architect: this
 changes the FORK E FLIP they designed.
 
+**SETTINGS BUILD (9-surface, by-surface smallest-first; ASTERSPORTS_SETTINGS_MASTER_SPEC).**
+S1 My Preferences — DONE (one PR). Extended /account (NOT rebuilt) with a Preferences
+group: AppearanceForm (theme + default density) + TimeLanguageForm (timezone + locale),
+new SegmentedControl primitive, shared src/lib/timezones.js (de-duped OrganizationForm's
+inline list, AP#7). Writes user_preferences via the shared usePreferences store
+(self-RLS, no migration). TWO FLAGS for the architect: (1) THEME is a DEAD COLUMN —
+verified no dark stylesheet / no theme actuation; the pref is persisted + system/light
+render the same (light) today; dark-wiring is a follow-on (baked into the help copy).
+(2) DENSITY is 2-STATE (minimal|maximum) per useDensity + CLAUDE.md §16.2 — the render/
+master-spec showed 3-level (Minimal/Medium/Maximum); built 2-state to match the code (a
+'medium' write throws in useDensity.setDensity); the stale DB default 'medium' validates
+to 'minimal' on read. Also: user-level timezone/locale actuation is partial (event times
+follow org tz; i18n is Phase 3) — S1 ships the pref UI + storage; actuation sequenced
+separately. Next: S2 Family Notifications (architect spec/render pending).
+
 **§4 reconciliation 2026-06-09 (settings-page arc — architect D6 ruling).** The
 `/admin/settings` arc shipped this session and is recorded SHIPPED here. It
 post-dates the 2026-05-27 index, so it was never a tracked §4 row. The build queue
