@@ -1,0 +1,152 @@
+==============================================================================
+SETTINGS CONSUMPTION AUDIT  (batch Step-0 map for the whole settings build)
+Date: 2026-06-09  ·  CC -> architect (via Frank)  ·  Relay artifact (§11.8 rule 1)
+Method: grep src/ AND supabase/functions/ for every feature-config table + every
+        organization_settings jsonb key the settings master spec touches, then
+        report which SHIPPED surface (app hook/page OR edge function) READS each.
+Premise (architect's pillar 1): consumption is the gating fact, not the schema
+        inventory. A populated table is not a wired table.
+==============================================================================
+
+LEGEND
+  WIRED      = a shipped surface reads it today -> an editor is meaningful (build).
+  SHIPPED    = already has an editor in /admin/settings -> nothing to build.
+  ORPHAN     = nothing reads it (S3-class) -> do NOT build an editor; descope/park.
+  MISMATCH   = the named substrate is orphaned; the app reads the SAME concept from
+               a DIFFERENT relation -> re-spec against the consumed source, or park.
+
+==============================================================================
+THE MAP
+==============================================================================
+
+-- FEATURE-CONFIG TABLES --------------------------------------------------------
+
+circuit_rules                         (S4 Records)            -> ORPHAN  [STOP]
+  Reads in src/:        ZERO.
+  Reads in functions/:  ZERO.
+  Live standings path:  useTeamRecords.js reads point_differential from
+                        game_results, NOT circuit_rules. The tiebreaker copy on
+                        Records comes from a STATIC engine template
+                        (lib/engine/renderers tiebreakerExplainer, template T3 —
+                        hardcoded snapshot), not from circuit_rules.
+  Verdict: S4's editor would write rules nothing reads. This is the exact S3
+           pattern. Per the S4 spec's own HARD STOP -> STOP, report, do not ship.
+
+division_fees                         (S5 Programs)           -> MISMATCH [STOP]
+  Reads in src/:        ZERO.   Reads in functions/: ZERO.
+  Writes:               useProgramSetup.js:59 INSERTs fee rows at program creation.
+  Live fee path (the consumed source for the SAME concept):
+      - ProgramDetailPage.jsx:23 reads `registration_fees` (r.registration_fees).
+      - estimateCart.js reads division.base_fee_cents + division.fees[].amount_cents.
+  Verdict: the app computes/display fees from registration_fees + division embeds,
+           NOT division_fees. S5 is specced against an orphan table. Re-spec
+           against the consumed source, or park S5. Do not build against
+           division_fees.
+
+alert_configurations                  (S9 Alerts)             -> WIRED  [BUILD]
+  Read:  useAlertEvaluator.js:64 loads alert_configurations on mount + orgId change
+         and drives the home AlertZone. Real consumption.
+  Verdict: an editor here is meaningful. S9 (alerts) is the one remaining surface
+           with clean live consumption to build against.
+
+dashboard_section_visibility          (S3 Home Layout)        -> ORPHAN  [DESCOPED]
+quick_actions_config                  (S3 Home Layout)        -> ORPHAN  [DESCOPED]
+  Reads anywhere: ZERO. QuickActions.jsx renders a hardcoded GROUPS array; the Home
+  is the 4-slot shell-contract-v2 (greeting/needsYou/comingUp/tail). Already ruled
+  DESCOPE (ARCHITECT_RULING_DR-S3). Listed here for completeness / the relic tag.
+
+-- organization_settings JSONB / COLUMN KEYS -----------------------------------
+
+organization_settings (scalar cols)   (shipped settings)      -> SHIPPED
+  Cols: pilot_mode_enabled, pilot_test_recipient_email, from_name, from_email,
+        reply_to_email, season_label, timezone, registration_open,
+        futures_academy_enabled, carpool_enabled, custom_domain.
+  Read+write: useOrgSettings.js + 5 shipped admin forms (SenderIdentity,
+        Registration, Features, Organization, CustomDomain) + pilot resolvers.
+  Verdict: live + already edited. No new surface.
+
+organizations.auto_notifications      (S7 Briefings-adjacent) -> SHIPPED
+  Read: useOrgAutoNotifications.js + lib/cron/rsvpNudgeThreshold.js (Stream A/B).
+  Editor: AutoNotificationSettingsForm.jsx ALREADY SHIPPED at /admin/settings ->
+        Communications (reminders_enabled, rsvp_nudges_enabled, rsvp_min_going).
+  Verdict: S7's operational config already has its editor. Confirm scope vs the S7
+           spec when it arrives; likely DONE or thin.
+
+organization_settings.notification_channels (S9 Notifications)-> WIRED  [BUILD]
+  Read: supabase/functions/briefing-auto-draft-tick/_changeAlertDispatch.ts:36-39
+        reads notification_channels off organization_settings and branches dispatch
+        on it (e.g. emergency_override_bypasses_quiet_hours). Server-side, real.
+  Verdict: an editor is meaningful (it controls live change-alert dispatch). Pairs
+           with alert_configurations under S9.
+
+organization_settings.roster_rules    (S6 Roster Rules)       -> ORPHAN  [STOP]
+  References anywhere: ZERO. Not in useOrgSettings FIELDS; no reader in src/ or
+  functions/. Verdict: nothing reads roster_rules. S3-class -> do not build; park.
+
+organization_settings reminder/rsvp/note keys (S8 Schedule)   -> ORPHAN  [STOP]
+  References anywhere: ZERO (the only `*rsvp_lock*` hit is `tournament_rsvp_lock`,
+  a comms_messages briefing-KIND label in constants.js / MessagesTab — unrelated
+  to a schedule-reminder setting). Verdict: the S8 reminder/rsvp/note keys are not
+  consumed. S3-class -> do not build; park.
+
+==============================================================================
+TRIAGE (what the map means for S4..S9)
+==============================================================================
+
+BUILDABLE NOW (read-now bucket — a shipped surface consumes it):
+  S9  alert_configurations          -> editor meaningful (drives home AlertZone).
+  S9  notification_channels (jsonb) -> editor meaningful (drives change-alert
+                                       dispatch in briefing-auto-draft-tick).
+  => S9 is the one remaining surface with clean live consumption. Build S9.
+
+ALREADY SHIPPED (no new surface):
+  S7  auto_notifications            -> AutoNotificationSettingsForm live at
+                                       /admin/settings -> Communications.
+  (org_settings scalar fields       -> 5 admin forms live.)
+
+S3-CLASS / PARK TO PHASE 4 (specced against unconsumed or mismatched substrate —
+do NOT build an editor for config nothing reads; per DR-1 + DR-S3 doctrine):
+  S4  circuit_rules                 -> ORPHAN. Standings use game_results; tiebreaker
+                                       copy is a static template. STOP.
+  S5  division_fees                 -> MISMATCH. App reads fees from
+                                       registration_fees + division embeds. Re-spec
+                                       or park. STOP.
+  S6  roster_rules (jsonb)          -> ORPHAN. STOP.
+  S8  reminder/rsvp/note (jsonb)    -> ORPHAN. STOP.
+
+NET: of S4..S9, only S9 is buildable against live consumption. S7 already shipped.
+S4, S5, S6, S8 are all specced against config the app does not read — the same
+substrate-vs-wired gap that produced the S3 spend, now caught in ONE round-trip
+instead of four surprises.
+
+==============================================================================
+FLAGS WORTH THE ARCHITECT'S EYE
+==============================================================================
+  1. tiebreakerExplainer (engine template T3) HARDCODES the tiebreaker copy that
+     circuit_rules is meant to drive. That's a latent divergence: editing
+     circuit_rules would never change the rendered explainer. If "operator edits
+     standings rules and Records reflects it" is a real Phase-4 goal, the consumer
+     work is "make tiebreakerExplainer read circuit_rules", not "build an editor".
+  2. division_fees vs registration_fees: two tables for the same concept (fees).
+     Worth a ground-truth-table entry (§11.5) naming the canonical one before any
+     S5 work, so the next session doesn't re-spec against the orphan.
+  3. roster_rules / S8 schedule keys don't exist as consumed keys at all — they are
+     aspirational master-spec rows, not dormant-but-real config. Park, don't tag a
+     table (there's no table — they'd be jsonb keys on organization_settings).
+
+==============================================================================
+RECOMMENDED ROUTING (CC lean — architect/Frank decide; §11.8 rule 6)
+==============================================================================
+  - Proceed to S9 (alerts + notification_channels) as the next and likely LAST
+    pilot settings build; it has live consumption on both halves.
+  - Park S4/S5/S6/S8 to Phase 4 (multi-tenant), same as S3. Amend the master spec:
+    active pilot settings surfaces collapse to S1, S2, S7(done), S9.
+  - Adopt the two-bucket config doctrine (build an editor only when a shipped
+    surface reads the value today, or multi-tenant onboarding needs it) into
+    CLAUDE.md so this gate is permanent, not per-session memory.
+  - Relic tagging (deprecation COMMENTs) is GO-gated; covers dashboard_section_
+    visibility, quick_actions_config, circuit_rules, division_fees as
+    pre-wired/pre-redesign relics so grep/discovery surfaces the warning.
+==============================================================================
+END SETTINGS CONSUMPTION AUDIT.
+==============================================================================
