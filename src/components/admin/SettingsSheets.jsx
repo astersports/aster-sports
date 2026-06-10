@@ -3,9 +3,6 @@ import ChannelMatrixForm from './ChannelMatrixForm';
 import AlertSettingsForm from './AlertSettingsForm';
 import SenderIdentityForm from './SenderIdentityForm';
 import OrganizationForm from './OrganizationForm';
-import RegistrationForm from './RegistrationForm';
-import FeaturesForm from './FeaturesForm';
-import CustomDomainForm from './CustomDomainForm';
 import PilotModeForm from './PilotModeForm';
 
 // All /admin/settings FullScreenForm mounts in one place, keyed off `openForm`,
@@ -21,21 +18,6 @@ export default function SettingsSheets({ openForm, setOpenForm, an, os, al, org 
       <OrganizationForm
         open={openForm === 'org'} onClose={close}
         initial={{ name: org?.name, mailingAddress: org?.mailing_address, seasonLabel: s?.season_label, timezone: s?.timezone }}
-        onSave={os.save} saving={os.saving}
-      />
-      <RegistrationForm
-        open={openForm === 'registration'} onClose={close}
-        initial={{ registrationOpen: s?.registration_open }}
-        onSave={os.save} saving={os.saving}
-      />
-      <FeaturesForm
-        open={openForm === 'features'} onClose={close}
-        initial={{ futuresEnabled: s?.futures_academy_enabled, carpoolEnabled: s?.carpool_enabled }}
-        onSave={os.save} saving={os.saving}
-      />
-      <CustomDomainForm
-        open={openForm === 'domain'} onClose={close}
-        initial={{ customDomain: s?.custom_domain }}
         onSave={os.save} saving={os.saving}
       />
       <AutoNotificationSettingsForm
