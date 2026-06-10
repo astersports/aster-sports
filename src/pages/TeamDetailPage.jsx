@@ -4,7 +4,7 @@ import { ChevronLeft, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useHomeRole } from '../hooks/useHomeRole';
 import { isStaff } from '../lib/permissions';
-import { usePrograms } from '../hooks/usePrograms';
+import { useActiveSeasonTeams } from '../hooks/useActiveSeasonTeams';
 import { useRoster } from '../hooks/useRoster';
 import { useFilteredRoster } from '../hooks/useFilteredRoster';
 import { useAttendanceData } from '../hooks/useAttendanceData';
@@ -35,8 +35,8 @@ export default function TeamDetailPage() {
   const { myTeamIds, myChildren } = useAuth();
   const { activeRole } = useHomeRole();
   const role = activeRole;
-  const { programs, loading: teamsLoading } = usePrograms();
-  const switcherPrograms = role === 'parent' ? programs.filter((p) => (myTeamIds || []).includes(p.id)) : programs;
+  const { teams, loading: teamsLoading } = useActiveSeasonTeams();
+  const switcherPrograms = role === 'parent' ? teams.filter((p) => (myTeamIds || []).includes(p.id)) : teams;
   const { players, loading: rosterLoading, refetch: rosterRefetch } = useRoster(teamId);
   useRefetchOnVisible(rosterRefetch);
   // 2026-05-21 (Teams PR C / Q13) — track last roster fetch for the
@@ -75,7 +75,7 @@ export default function TeamDetailPage() {
     });
   }, [players, grid]);
   const sortedPlayers = useFilteredRoster(enrichedPlayers, search, sortOrder);
-  const team = programs.find((p) => p.id === teamId);
+  const team = teams.find((p) => p.id === teamId);
   // 2026-05-21 (Teams PR C / Q14 (c)) — sync document.title for tab/back
   // affordances + assistive tech. Restored on unmount.
   useEffect(() => {

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, ChevronLeft, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { usePrograms } from '../hooks/usePrograms';
+import { useActiveSeasonTeams } from '../hooks/useActiveSeasonTeams';
 import { useToast } from '../context/useToast';
 import { ASTER_DISPLAY_NAME } from '../lib/asterDefaults';
 import Label from '../components/shared/Label';
@@ -20,7 +20,7 @@ export default function AccountPage() {
   const navigate = useNavigate();
   const { user, role, orgName, orgId, myChildren, guardianFirstName, signOut } = useAuth();
   const { showToast } = useToast();
-  const { programs } = usePrograms();
+  const { teams } = useActiveSeasonTeams();
   const [lastName, setLastName] = useState(null);
   const [resetting, setResetting] = useState(false);
 
@@ -35,7 +35,7 @@ export default function AccountPage() {
 
   const parentName = [guardianFirstName, lastName].filter(Boolean).join(' ').trim();
   const displayName = (role === 'parent' && parentName) || user?.user_metadata?.full_name || user?.email || 'User';
-  const teamName = (teamId) => programs.find((p) => p.id === teamId)?.name || '—';
+  const teamName = (teamId) => teams.find((p) => p.id === teamId)?.name || '—';
 
   const sendPasswordReset = async () => {
     setResetting(true);

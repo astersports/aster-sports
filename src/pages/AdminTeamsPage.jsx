@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Users } from 'lucide-react';
-import { usePrograms } from '../hooks/usePrograms';
+import { useActiveSeasonTeams } from '../hooks/useActiveSeasonTeams';
 import { useSeason } from '../context/SeasonContext';
 import AdminBackHeader from '../components/admin/AdminBackHeader';
 import TeamFormSheet from '../components/admin/TeamFormSheet';
@@ -15,7 +15,7 @@ const DAY_LABELS = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri',
 
 export default function AdminTeamsPage() {
   const { activeSeason } = useSeason();
-  const { programs, loading, createProgram, updateProgram, deleteProgram } = usePrograms();
+  const { teams, loading, createTeam, updateTeam, deleteTeam } = useActiveSeasonTeams();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [toast, setToast] = useState(null);
@@ -24,8 +24,8 @@ export default function AdminTeamsPage() {
 
   const save = async (payload) => {
     const { error } = editing
-      ? await updateProgram(editing.id, payload)
-      : await createProgram(payload);
+      ? await updateTeam(editing.id, payload)
+      : await createTeam(payload);
     if (error) setToast({ message: error, variant: 'error' });
     else {
       setToast({ message: editing ? 'Team updated' : 'Team created', variant: 'success' });
@@ -34,7 +34,7 @@ export default function AdminTeamsPage() {
   };
 
   const remove = async (id) => {
-    const { error } = await deleteProgram(id);
+    const { error } = await deleteTeam(id);
     if (error) setToast({ message: error, variant: 'error' });
     else {
       setToast({ message: 'Team deleted', variant: 'success' });
@@ -42,7 +42,7 @@ export default function AdminTeamsPage() {
     }
   };
 
-  if (!activeSeason && !loading && programs.length === 0) {
+  if (!activeSeason && !loading && teams.length === 0) {
     return (
       <div className="px-4 py-4">
         <AdminBackHeader />
@@ -74,7 +74,7 @@ export default function AdminTeamsPage() {
 
       {loading ? (
         <LoadingSkeleton variant="card" count={4} />
-      ) : programs.length === 0 ? (
+      ) : teams.length === 0 ? (
         <EmptyState
           icon={Users}
           title="No teams yet"
@@ -82,7 +82,7 @@ export default function AdminTeamsPage() {
         />
       ) : (
         <ul className="flex flex-col gap-2">
-          {programs.map((p) => (
+          {teams.map((p) => (
             <li key={p.id}>
               <button
                 type="button"

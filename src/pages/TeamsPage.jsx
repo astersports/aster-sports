@@ -1,5 +1,5 @@
 import { Users } from 'lucide-react';
-import { usePrograms } from '../hooks/usePrograms';
+import { useActiveSeasonTeams } from '../hooks/useActiveSeasonTeams';
 import { useSeason } from '../context/SeasonContext';
 import { useAuth } from '../context/AuthContext';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
@@ -10,21 +10,21 @@ import TeamRow from '../components/teams/TeamRow';
 
 // Public teams list. Every signed-in user — admin, coach, parent — sees
 // all teams in the active season, sorted oldest-to-youngest via the
-// usePrograms() sort_order query. Tapping a card routes to
+// useActiveSeasonTeams() sort_order query. Tapping a card routes to
 // /teams/:teamId where the roster lives.
 export default function TeamsPage() {
   const { activeSeason } = useSeason();
   const { role, myTeamIds, orgId } = useAuth();
-  const { programs, loading, refetch } = usePrograms();
+  const { teams, loading, refetch } = useActiveSeasonTeams();
   const { byTeamId, refetch: refetchRecords } = useOrgTeamRecords(orgId);
   const { refreshing, onTouchStart, onTouchEnd } = usePullToRefresh(() => Promise.all([refetch?.(), refetchRecords?.()]));
-  const visiblePrograms = role === 'parent' ? programs.filter((t) => (myTeamIds || []).includes(t.id)) : programs;
+  const visibleTeams = role === 'parent' ? teams.filter((t) => (myTeamIds || []).includes(t.id)) : teams;
 
   return (
     <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="px-4 py-4 as-fade-in overflow-x-hidden" style={{ maxWidth: '100%' }}>
       <div style={{ marginBottom: 4 }}>
         <h1 className="font-bold" style={{ color: 'var(--as-text-primary)', fontSize: 20, letterSpacing: '-0.025em' }}>
-          Teams <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--as-text-tertiary)' }}>{activeSeason?.name || ''} · {visiblePrograms.length}</span>
+          Teams <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--as-text-tertiary)' }}>{activeSeason?.name || ''} · {visibleTeams.length}</span>
         </h1>
         <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: 'var(--as-accent)', marginTop: 6 }} />
       </div>
@@ -42,7 +42,7 @@ export default function TeamsPage() {
 
       {loading ? (
         <LoadingSkeleton variant="card" count={5} />
-      ) : visiblePrograms.length === 0 ? (
+      ) : visibleTeams.length === 0 ? (
         <EmptyState
           icon={Users}
           title="No teams yet"
@@ -50,7 +50,7 @@ export default function TeamsPage() {
         />
       ) : (
         <div className="flex flex-col gap-3">
-          {visiblePrograms.map((team, i) => (
+          {visibleTeams.map((team, i) => (
             <TeamRow key={team.id} team={team} idx={i} summary={byTeamId[team.id]} />
           ))}
         </div>
