@@ -1,0 +1,118 @@
+==============================================================================
+SETTINGS CLOSE-OUT ASSESSMENT — both surfaces (gear /account + quick-link /admin/settings)
+Date: 2026-06-10  ·  CC -> Frank/architect  ·  Question: are we wrapped, or is there
+work to finish before the programs redesign?
+Method: control-by-control, each verdict grounded in what actually READS the value
+(src/ + supabase/functions/ greps + live pg_get_functiondef checks). Same lens that
+caught the NotificationPrefs duplicate.
+==============================================================================
+
+LEGEND  WIRED = a shipped surface/send-path reads it (drives real behavior).
+        WRITE-ONLY = the UI saves it but nothing reads it (a "control that lies").
+        PARTIAL = some of its values are read, others aren't.
+        DEFERRED = intentionally not actuated yet, with honest copy (not a lie).
+
+==============================================================================
+SURFACE 1 — GEAR (⚙) -> /account   (personal; parent / coach / admin)
+==============================================================================
+Profile card / My Children / Staff contact card   display / write-through      OK
+Appearance · density (S1)            user_preferences.card_density      WIRED (useDensity)
+Appearance · theme                   (hidden per DR-1)                  correctly hidden
+Time & language (S1)                 user_preferences.timezone/locale   DEFERRED (DR-3; org
+                                       zone is source today; copy is honest)
+Family notifications (S2)            guardian_notification_prefs        PARTIAL ⚠
+   - receive_tournament_briefings    -> get_tournament_recipients reads it      WIRED
+   - receive_weekly_digest           -> get_digest_recipients does NOT read it  WRITE-ONLY
+   - receive_game_recaps / _org_announcements -> not read by the digest path    WRITE-ONLY
+Notifications · "Push on this device" push_subscriptions                WIRED (real subscribe)
+Quiet Hours                          user_preferences.quiet_hours       WRITE-ONLY ⚠
+   - the reminder path calls isQuietHoursET(now) — a FIXED ET window, NOT the
+     user's saved quiet_hours. The card saves a setting nothing reads.
+Security (password reset) / Sign out / Delete account                   WIRED
+
+==============================================================================
+SURFACE 2 — QUICK-LINK -> /admin/settings   (org; admin only)
+==============================================================================
+GENERAL
+  Organization (name / season / timezone)   organization_settings       WIRED (used widely)
+  Registration (registration_open)          organization_settings       WRITE-ONLY ⚠
+     - CORRECTED: the org toggle is referenced NOWHERE. (An earlier check false-
+       positived on a string match — get_public_program's `registration_open` is an
+       OUTPUT KEY computed PER-PROGRAM from programs.reg_opens_at/reg_closes_at, gated
+       by programs.status='active' AND is_published. The org-level toggle does NOT shut
+       down or activate registration.) Registration is already 100% per-program — see
+       the REGISTRATION note below. This row is misleading and should be removed.
+  Features (futures_academy_enabled, carpool_enabled)                    WRITE-ONLY ⚠
+     - zero consumers in src/ or functions/. Futures Academy is roster_type-driven
+       and the ride board renders regardless — these toggles drive nothing.
+  Custom domain (custom_domain)             organization_settings        WRITE-ONLY ⚠
+     - zero consumers; email links use app_config base url.
+NOTIFICATIONS  (this stage's headline build)
+  Automatic messages (auto_notifications)   organizations               WIRED (reminders + nudges)
+  Channels (notification_channels)          organization_settings       WIRED (change-alert dispatch)
+  Alerts (alert_configurations)             alert_configurations        WIRED (home AlertZone + dispatch)
+COMMUNICATIONS
+  Sender identity (from_name/email/reply_to) organization_settings      WIRED (email sends)
+PILOT
+  Pilot mode (pilot_mode_enabled/test_email) organization_settings      WIRED (+ DB-locked)
+
+==============================================================================
+VERDICT
+==============================================================================
+THE STAGE GOAL IS DONE. The headline build — the admin notification-policy surface
+(S9 Channels + Alerts + Automatic messages) plus S1/S2 self-settings — is shipped and
+its HIGH-VALUE controls are WIRED. The NotificationPrefs duplicate is removed; Channels
+is the single source.
+
+BUT a close-out audit surfaces a WRITE-ONLY TAIL — the platform's known "data plumbing
+terminates in admin UI blindness" pattern (pre-existing; NOT introduced this stage). On
+the settings surfaces specifically, 5 controls:
+
+  PARENT-FACING (silent broken promises — higher stakes):
+    1. Quiet Hours — a parent sets quiet hours; the send path ignores them (fixed ET).
+    2. Weekly-digest opt-out — a parent turns off the weekly digest; it still sends.
+       (Game-recap / org-announcement opt-outs: same — digest path doesn't filter them.
+        Tournament-briefing opt-out DOES work.)
+  ADMIN-ONLY (cosmetic — lower stakes, no parent harm):
+    3. Registration (org registration_open) — drives nothing; registration is
+       per-program (see REGISTRATION note). MISLEADING — implies an org-wide on/off
+       that does not exist.
+    4. Features toggles (Futures Academy / Carpool) — drive nothing.
+    5. Custom domain — drives nothing.
+
+REGISTRATION — the model (answers Frank's question, ties to the programs redesign)
+  Registration open/close is PER-PROGRAM and already correct in the schema:
+  programs.reg_opens_at / reg_closes_at (the window) + status ('active' gates public
+  visibility) + is_published + public_slug. get_public_program enforces all of it per
+  program. There is NO working org-wide registration shutdown — and there shouldn't be
+  one; each program activates/closes on its own window. So the org Settings → Registration
+  row is not just dead, it contradicts the right model. In the programs redesign,
+  registration belongs on the PROGRAM (open/close window + status), and the org-level
+  Settings row should be removed. (If a true "freeze ALL registration org-wide" kill-switch
+  is ever wanted, that's a deliberate new feature — get_public_program would AND it in —
+  not the current vestigial toggle.)
+
+==============================================================================
+RECOMMENDATION (CC lean — your call; §11.8)
+==============================================================================
+The two PARENT-FACING ones are real broken promises and worth closing before we call
+the comms/settings area "done": either WIRE them (quiet_hours + the digest opt-outs into
+get_digest_recipients / the reminder quiet-hours check) or, if per-user control isn't
+wanted for the pilot, REMOVE them (same subtraction we just did for NotificationPrefs) so
+the UI doesn't promise something it doesn't deliver. Small: ~1 PR.
+
+The two ADMIN-ONLY cosmetic ones (Features / Custom domain) are low-stakes — TAG per
+§16.16 and move on, or remove the rows. They don't block anything.
+
+CC LEAN: one short "settings honesty" PR that resolves the 2 parent-facing controls
+(my preference: WIRE the digest opt-outs — it's a brand-value promise — and either wire
+or remove Quiet Hours), tag the 2 admin cosmetic ones, THEN start the programs redesign
+with a clean comms/settings area behind us. If you'd rather not spend on it now, we can
+park the whole tail as tracked findings and go straight to programs — the stage's actual
+deliverable (the admin notification policy) is complete and wired either way.
+
+NEEDED BACK: (A) one honesty-cleanup PR now, then programs  ·  (B) park the tail, go
+straight to programs  ·  (C) wire ALL of it (bigger).
+==============================================================================
+END ASSESSMENT.
+==============================================================================
