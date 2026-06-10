@@ -9,7 +9,7 @@
 // win across the three new admin manager pages; future override prop
 // can land if a real custom-header need surfaces.
 //
-// NOT in scope: pulling AdminSeasonsPage / AdminTeamsPage into this
+// NOT in scope: pulling AdminTeamsPage into this
 // wrapper. Sample-of-two is not precedent; old code stays as-is until
 // an independent refactor reason emerges (anti-pattern #42).
 
