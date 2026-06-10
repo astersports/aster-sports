@@ -1,8 +1,9 @@
 // Wave C PR B — device-level "push notifications on this device" toggle.
 // Does the real OS permission + pushManager.subscribe + push_subscriptions
-// row (the category switches in NotificationPrefs only store which kinds to
-// push). Dormant/unsupported states render an explanatory caption rather
-// than a dead switch. iOS web push requires an installed PWA — surfaced.
+// row. Per-category notification control is org-level (the admin Channels
+// matrix on /admin/settings is the single source — the per-user category
+// toggles were retired). Dormant/unsupported states render an explanatory
+// caption rather than a dead switch. iOS web push requires an installed PWA.
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';

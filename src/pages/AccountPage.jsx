@@ -7,7 +7,6 @@ import { usePrograms } from '../hooks/usePrograms';
 import { useToast } from '../context/useToast';
 import { ASTER_DISPLAY_NAME } from '../lib/asterDefaults';
 import Label from '../components/shared/Label';
-import NotificationPrefs from '../components/account/NotificationPrefs';
 import PushEnableToggle from '../components/account/PushEnableToggle';
 import QuietHoursCard from '../components/account/QuietHoursCard';
 import MyPreferencesSection from '../components/account/MyPreferencesSection';
@@ -90,7 +89,6 @@ export default function AccountPage() {
       <section style={{ marginBottom: 16 }}>
         <Label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Bell size={12} strokeWidth={2} /> Notifications</Label>
         <PushEnableToggle userId={user?.id} orgId={orgId} />
-        <NotificationPrefs userId={user?.id} orgId={orgId} />
       </section>
 
       <section style={{ marginBottom: 16 }}>
