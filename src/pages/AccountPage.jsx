@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, ChevronLeft, Lock, Moon } from 'lucide-react';
+import { Bell, ChevronLeft, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { usePrograms } from '../hooks/usePrograms';
@@ -8,7 +8,6 @@ import { useToast } from '../context/useToast';
 import { ASTER_DISPLAY_NAME } from '../lib/asterDefaults';
 import Label from '../components/shared/Label';
 import PushEnableToggle from '../components/account/PushEnableToggle';
-import QuietHoursCard from '../components/account/QuietHoursCard';
 import MyPreferencesSection from '../components/account/MyPreferencesSection';
 import FamilyNotificationsSection from '../components/account/FamilyNotificationsSection';
 import StaffProfileCard from '../components/account/StaffProfileCard';
@@ -89,11 +88,6 @@ export default function AccountPage() {
       <section style={{ marginBottom: 16 }}>
         <Label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Bell size={12} strokeWidth={2} /> Notifications</Label>
         <PushEnableToggle userId={user?.id} orgId={orgId} />
-      </section>
-
-      <section style={{ marginBottom: 16 }}>
-        <Label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Moon size={12} strokeWidth={2} /> Quiet Hours</Label>
-        <QuietHoursCard userId={user?.id} orgId={orgId} />
       </section>
 
       <section style={{ marginBottom: 16 }}>

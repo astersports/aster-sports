@@ -47,10 +47,6 @@ export default function AdminSettingsPage() {
   const s = os.settings;
 
   const orgSummary = os.loading ? 'Loading…' : `${org?.name || 'Organization'} · ${s?.season_label || 'No season set'}`;
-  const regSummary = os.loading ? 'Loading…' : (s?.registration_open ? 'Open' : 'Closed');
-  const features = [s?.futures_academy_enabled && 'Futures Academy', s?.carpool_enabled && 'Carpool'].filter(Boolean);
-  const featuresSummary = os.loading ? 'Loading…' : (features.length ? features.join(', ') : 'None enabled');
-  const domainSummary = os.loading ? 'Loading…' : (s?.custom_domain || 'Not set');
   const anSummary = an.loading ? 'Loading…' : `Reminders ${an.remindersOn ? 'on' : 'off'} · Nudges ${an.nudgesOn ? 'on' : 'off'}`;
   const senderSummary = os.loading ? 'Loading…' : (s?.from_name && s?.from_email ? `${s.from_name} · ${s.from_email}` : 'Not set');
   const channelsSummary = os.loading ? 'Loading…' : 'Push & email per category';
@@ -67,12 +63,6 @@ export default function AdminSettingsPage() {
       <h2 style={SECTION_LABEL}>General</h2>
       <div style={CARD}>
         <Row title="Organization" summary={orgSummary} disabled={os.loading} onClick={() => setOpenForm('org')} />
-        <div style={DIVIDER} />
-        <Row title="Registration" summary={regSummary} disabled={os.loading} onClick={() => setOpenForm('registration')} />
-        <div style={DIVIDER} />
-        <Row title="Features" summary={featuresSummary} disabled={os.loading} onClick={() => setOpenForm('features')} />
-        <div style={DIVIDER} />
-        <Row title="Custom domain" summary={domainSummary} disabled={os.loading} onClick={() => setOpenForm('domain')} />
       </div>
 
       <h2 style={SECTION_LABEL}>Notifications</h2>

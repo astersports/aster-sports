@@ -41,9 +41,6 @@ describe('SettingsSheets — openForm routing', () => {
 
   it.each([
     ['org', /organization/i],
-    ['registration', /registration/i],
-    ['features', /features/i],
-    ['domain', /custom domain/i],
     ['autonotif', /automatic messages/i],
     ['channels', /channels/i],
     ['alerts', /alerts/i],
