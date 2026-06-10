@@ -22,8 +22,8 @@ describe('REDIRECT_ALLOWLIST — admin route expansion', () => {
 });
 
 describe('isAllowedRedirect — admin routes', () => {
-  it('allows /admin/seasons', () => {
-    expect(isAllowedRedirect('/admin/seasons')).toBe(true);
+  it('allows /admin/programs', () => {
+    expect(isAllowedRedirect('/admin/programs')).toBe(true);
   });
 
   it('allows /admin/financials', () => {
@@ -39,7 +39,7 @@ describe('isAllowedRedirect — admin routes', () => {
   });
 
   it('allows nested admin subpaths', () => {
-    expect(isAllowedRedirect('/admin/seasons/spring-2026/edit')).toBe(true);
+    expect(isAllowedRedirect('/admin/programs/spring-2026/edit')).toBe(true);
   });
 });
 
@@ -96,7 +96,7 @@ describe('isAllowedRedirect — blocked / invalid inputs', () => {
   });
 
   it('blocks paths that do not start with an allowed prefix', () => {
-    expect(isAllowedRedirect('foo/admin/seasons')).toBe(false);
+    expect(isAllowedRedirect('foo/admin/programs')).toBe(false);
     // Trailing slash on '/admin/' prevents '/adminx/...' from matching —
     // confirms the prefix is path-segment safe, not just string-prefix loose.
     expect(isAllowedRedirect('/adminx/seasons')).toBe(false);
@@ -105,7 +105,7 @@ describe('isAllowedRedirect — blocked / invalid inputs', () => {
 
 describe('resolveLoginRedirect — full integration contract', () => {
   it('returns the intended path when allowlisted (admin)', () => {
-    expect(resolveLoginRedirect('/admin/seasons')).toBe('/admin/seasons');
+    expect(resolveLoginRedirect('/admin/programs')).toBe('/admin/programs');
   });
 
   it('returns the intended path when allowlisted (event)', () => {

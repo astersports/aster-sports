@@ -21,7 +21,6 @@ const TournamentDetailPage = lazy(() => import('./pages/TournamentDetailPage'));
 const RecordsPage = lazy(() => import('./pages/RecordsPage'));
 const LiveScorePage = lazy(() => import('./pages/LiveScorePage'));
 const PlayerProfilePage = lazy(() => import('./pages/PlayerProfilePage'));
-const AdminSeasonsPage = lazy(() => import('./pages/AdminSeasonsPage'));
 const AdminTeamsPage = lazy(() => import('./pages/AdminTeamsPage'));
 const AdminMembersPage = lazy(() => import('./pages/AdminMembersPage'));
 const AdminOpponentsPage = lazy(() => import('./pages/AdminOpponentsPage'));
@@ -101,8 +100,9 @@ export default function App() {
       <Route path="/events/:id" element={<RequireAuth><EventDetailPage /></RequireAuth>} />
       <Route path="/events/:id/live" element={<RequireAuth allowedRoles={['admin', 'coach']}><LiveScorePage /></RequireAuth>} />
 
-      {/* Admin-only management routes */}
-      <Route path="/admin/seasons" element={<Protected allowedRoles={['admin']}><AdminSeasonsPage /></Protected>} />
+      {/* Admin-only management routes. /admin/seasons retired (PR-A1) —
+          /admin/programs is the single door; the `seasons` VIEW remains a
+          read-alias for migrations/edge functions only. */}
       <Route path="/admin/programs" element={<Protected allowedRoles={['admin']}><AdminProgramsPage /></Protected>} />
       <Route path="/admin/programs/new" element={<Protected allowedRoles={['admin']}><ProgramSetupPage /></Protected>} />
       <Route path="/admin/programs/:id" element={<Protected allowedRoles={['admin']}><ProgramDetailPage /></Protected>} />

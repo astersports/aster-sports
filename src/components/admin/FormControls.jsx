@@ -1,6 +1,6 @@
 // Tiny building blocks for the admin CRUD sheets. Kept separate so the
-// TeamFormSheet and SeasonFormSheet don't each reinvent the same input
-// styles — everything that writes to --as-* tokens lives here.
+// admin form sheets don't each reinvent the same input styles —
+// everything that writes to --as-* tokens lives here.
 
 export function Field({ label, children, required }) {
   return (
