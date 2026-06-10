@@ -1,4 +1,5 @@
 import { formatCurrency } from '../../lib/formatters';
+import { registrationErrorInfo } from '../../lib/registrationErrors';
 import { ghostBtn, primaryBtn } from './registerStyles';
 
 // Step 4 (lean capture variant) — review + submit. NO Stripe: "Reserve" creates a pending
@@ -18,7 +19,7 @@ export default function StepReview({ player, division, cart, submitting, error, 
         </div>
       </div>
       <p style={reassure}>One confirmation · we’ll email you a link to track payment.</p>
-      {error && <div style={errStyle}>Looks like that didn’t go through. Try again?</div>}
+      {error && <div role="alert" style={errStyle}>{registrationErrorInfo(error).message}</div>}
       <div style={btnRow}>
         <button type="button" style={ghostBtn} onClick={onBack} disabled={submitting}>Back</button>
         <button type="button" className="as-press" style={{ ...primaryBtn, flex: 1, opacity: submitting ? 0.6 : 1 }} disabled={submitting} onClick={onSubmit}>
