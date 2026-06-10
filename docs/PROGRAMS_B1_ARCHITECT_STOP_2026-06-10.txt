@@ -1,0 +1,105 @@
+==============================================================================
+CC -> ARCHITECT : PR-B1 (PARENT MY FAMILY) — PROCEED LOG + THE ONE ARCHITECT-STOP
+Date 2026-06-10. Frank: "proceed and detail the steps required once you can't
+proceed and need the architect." This is that detail. AP#60 live-verified.
+NOTHING APPLIED. B0 is live + proven (G4_PASS_POSTB0).
+==============================================================================
+
+WHERE CC IS PROCEEDING (no architect needed — building now)
+  - B1 read surface verified live, parent-readable end to end EXCEPT the one wall
+    below: programs/divisions SELECT org-wide (parent ok); roster_members
+    parent-own-child; registrations parent-own (PR-0b); family_balances parent-own
+    via the REGISTERING guardian (fin_accounts_parent_read + security_invoker view).
+  - Building: useFamilyPrograms.js (parent-scoped enrollments + per-program
+    family_balances, resolved CHILD-based so it's co-guardian-ready) + the My
+    Family UI (FamilyProgramsPage + ChildProgramCard) to parent-surface.html /
+    money-reconciliation render + route + entry. Single-guardian + registering-
+    guardian families work today; the co-guardian balance is the wall.
+  - DECISIONS CC IS MAKING ITSELF (not stops; flagged for transparency, override
+    if you disagree):
+      * Placement: a pushed /family route + an entry from parent Home and Account
+        (not only an Account tail card) — the render is a full page.
+      * Discoverable-open eligibility: show open published programs (window open)
+        the family isn't enrolled in; name the eligible child(ren) by GRADE-band
+        match where the program has divisions, else name all children. (If you
+        want strict grade-eligibility only, say so.)
+      * Imported-enrollment rows: a child on a team with registrations=0 shows
+        program + team from roster_members, no lifecycle badge (per the spec).
+
+------------------------------------------------------------------------------
+THE ONE ARCHITECT-STOP — CO-GUARDIAN MONEY-READ RLS WIDENING (needs your GO)
+------------------------------------------------------------------------------
+WHY IT'S A STOP: B1's balance must resolve via the CHILD (your note), so a
+  co-guardian sees their child's program balance even though the financial_account
+  is keyed on the OTHER (registering) guardian. The live policy only lets the
+  account-holding guardian read it:
+     fin_accounts_parent_read  USING (guardian_id IN (my guardian))
+     fin_tx_parent_read        USING (account_id IN (accounts of my guardian))
+  So a co-guardian reads 0 balance for their own child. Closing that means ADDING a
+  read path = WIDENING money visibility. Widening money RLS is security-sensitive
+  (the opposite direction from PR-0b's narrowing + F-RLS-1's admin-only money
+  posture), so CC will NOT apply it without your explicit GO. This is the only
+  thing between B1 and full correctness for the 2-guardian families (KHOJASTEH,
+  DeMasi, etc.).
+
+CC CANDIDATE (per your given predicate "a parent sees an account whose program
+  enrolls one of their children") — for your ratification before CC applies:
+    -- financial_accounts: add a co-parent read path via the child's enrollment.
+    CREATE POLICY fin_accounts_parent_read_via_child ON public.financial_accounts
+      FOR SELECT TO authenticated
+      USING (season_id IN (
+        SELECT t.season_id FROM team_players tp JOIN teams t ON t.id = tp.team_id
+        WHERE tp.player_id = ANY (public.current_user_player_ids())));
+    -- financial_transactions: mirror, via the account.
+    CREATE POLICY fin_tx_parent_read_via_child ON public.financial_transactions
+      FOR SELECT TO authenticated
+      USING (account_id IN (
+        SELECT fa.id FROM financial_accounts fa
+        WHERE fa.season_id IN (
+          SELECT t.season_id FROM team_players tp JOIN teams t ON t.id = tp.team_id
+          WHERE tp.player_id = ANY (public.current_user_player_ids()))));
+  SCOPE CHECK CC FLAGS for your ruling (the reason this is a STOP, not a
+  CC-decides): this predicate is "any account for a PROGRAM my child is enrolled
+  in." If a program has MULTIPLE families, an account is one family's — but the
+  predicate keys on season_id (program), not on the account's family. So as
+  written it could let a parent read OTHER families' accounts for the SAME program
+  (every family in Spring 2026 shares the season_id). THAT IS A LEAK. The correct
+  predicate must tie the account to the CHILD'S family, e.g. the account's
+  guardian_id is a co-guardian of one of my children:
+    USING (guardian_id IN (
+      SELECT pg.guardian_id FROM player_guardians pg
+      WHERE pg.player_id = ANY (public.current_user_player_ids())))
+  CC LEAN: the guardian_id-via-player_guardians form (my children's guardians'
+  accounts), NOT the season_id form (which leaks the whole program). This keeps it
+  family-scoped: a co-guardian reads accounts held by ANY guardian of their child.
+  But this is exactly the kind of money-RLS predicate you should rule explicitly,
+  hence the stop. CC will replay it under an impersonated co-guardian JWT (prove a
+  co-guardian sees ONLY their child's family account, and a same-program stranger
+  sees 0) before/after apply, same as PR-0b.
+
+------------------------------------------------------------------------------
+RESUME STEPS (exactly what unblocks B1 to full correctness)
+------------------------------------------------------------------------------
+  1. ARCHITECT: rule the co-guardian predicate (CC lean: guardian_id-via-
+     player_guardians, NOT season_id) + GO to apply (it widens money read).
+  2. CC: apply the two policies via MCP (new lane) + write the mirror; replay under
+     an impersonated co-guardian JWT — assert a co-guardian sees their child's
+     family account balance AND a same-program non-family guardian sees 0; report.
+  3. CC: B1's child-based balance read then returns rows for co-guardians; B1
+     ships fully correct. (Until step 1-2, B1 is correct for single-guardian +
+     registering-guardian families; co-guardian balance shows blank — a visibility
+     gap for ~a few families, not a leak.)
+  SEQUENCING CALL FOR YOU: ship B1 now for single/registering-guardian families
+  (co-guardian balance follows in steps 1-3), OR hold B1 until the co-guardian RLS
+  lands so it ships fully correct. CC lean: land the RLS first (it's one small
+  ruling + apply) so B1 ships correct for everyone — but it's your call.
+
+------------------------------------------------------------------------------
+STILL PARKED WITH FRANK (unchanged, neither blocks B1)
+------------------------------------------------------------------------------
+  - GO on M3 (CC applies under the new lane + mirrors).
+  - BRIEF-3 (the rsvp/callup nudge bug) — in as its own PR, or out.
+==============================================================================
+END B1 ARCHITECT-STOP. CC proceeds on B1 app code; pauses ONLY at the co-guardian
+money-read RLS widening, which needs your predicate ruling + GO before apply.
+==============================================================================
