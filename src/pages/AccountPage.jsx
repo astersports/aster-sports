@@ -78,6 +78,11 @@ export default function AccountPage() {
               </div>
             ))}
           </div>
+          <button type="button" onClick={() => navigate('/family')} className="as-press"
+            style={{ width: '100%', minHeight: 44, marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: 10, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', fontSize: 15, fontWeight: 500, padding: '0 14px' }}>
+            My Family · registrations & balance
+            <span style={{ color: 'var(--as-accent)', fontWeight: 600 }}>Open ›</span>
+          </button>
         </section>
       )}
 

@@ -27,7 +27,7 @@ const LINK_BTN = {
   fontSize: 12, color: 'var(--as-text-secondary)',
 };
 
-export default function ParentTail({ achievement, seasonLabel, progressLabel, onViewRecords, offSeason }) {
+export default function ParentTail({ achievement, seasonLabel, progressLabel, onViewRecords, onMyFamily, offSeason }) {
   return (
     <section className="min-w-0" aria-label="Your season">
       <div style={LABEL}>Your season</div>
@@ -77,6 +77,13 @@ export default function ParentTail({ achievement, seasonLabel, progressLabel, on
           </span>
           <span style={{ color: 'var(--as-accent)', fontWeight: 600, flexShrink: 0 }}>View records ›</span>
         </button>
+
+        {onMyFamily && (
+          <button type="button" onClick={onMyFamily} className="as-press" style={LINK_BTN} aria-label="My Family — registrations and balance">
+            <span>My Family · registrations &amp; balance</span>
+            <span style={{ color: 'var(--as-accent)', fontWeight: 600, flexShrink: 0 }}>Open ›</span>
+          </button>
+        )}
       </div>
     </section>
   );
