@@ -1,0 +1,160 @@
+================================================================================
+ARCHITECT DECISION REQUEST — PROGRAMS REDESIGN
+Date: 2026-06-10   From: CC (implementation lane)   To: Architect (via Frank)
+Companion: docs/PROGRAMS_AUDIT_AND_PLAN_2026-06-10.txt (full L99 audit, merged #946)
+Format: §11.8 r6 — per decision: REQUEST · EVIDENCE · OPTIONS(+requirements) · CC LEAN
+NOTHING APPLIED. CC builds/applies on ratification. Decisions D1-D7 below.
+================================================================================
+
+CONTEXT IN ONE PARAGRAPH
+  A 4-agent L99 audit (+ CC live-DB grounding) found the programs section healthy:
+  no P0/P1 correctness bugs in shipped code, money/#63 single-source CLOSED, DB
+  layer sound. Shipped this session: BRIEF-3 (#942), M1 gender substrate (#943),
+  B2 magic-link claim (#944), B3 error microcopy + hard grade block (#945). The
+  decisions below are what CC needs ratified before the next build PRs — including
+  two no-render items (D2, D3) Frank asked be folded in here rather than applied
+  unilaterally.
+
+--------------------------------------------------------------------------------
+D1 — NON-SEASON (tryout/camp/clinic) REGISTRATION PATH   [HEADLINE / BLOCKER]
+--------------------------------------------------------------------------------
+REQUEST: How does a parent register for a program type that has no divisions?
+EVIDENCE (live + code):
+  • The ONE live, published, registration-OPEN program is "Fall 2026 Tryouts"
+    (slug fall-2026-tryouts, window 06-07 → 06-26, OPEN now), program_type=TRYOUT.
+  • Divisions are SEASON-ONLY by design (programRegistry hasDivisions=false for
+    tryout/camp/clinic) → this program has 0 divisions / 0 fees (verified live).
+  • The funnel REQUIRES a division: RegisterFlowPage firstChild && !division →
+    "This registration isn't available." NET: a parent who opens the live link
+    today CANNOT register. The division-gated funnel can't serve non-season types.
+  • The b3-funnel render already shows a tryout with a FLAT per-child fee
+    ("Charlie · Fall 2026 Tryouts $45") and NO division picker — the intended UX
+    already implies a flat-fee path.
+OPTIONS:
+  (A) Implicit flat-fee unit. Auto-create ONE "default division" per non-season
+      program at create-time (gender=coed, no grade band, one base fee). Funnel
+      works UNCHANGED; fees reuse division_fees. REQUIRES: a fee field on the
+      non-season create path + funnel skips the visible division picker when there
+      is exactly one implicit unit. Smallest delta; one funnel, one fee source.
+  (B) Separate flat-fee path. Program-level fee + a register flow that skips the
+      division step for non-season types. REQUIRES: new flow surface + a new
+      program-level fee source + a second money path to reconcile against #63.
+  (C) tryout_sessions/attendees. Parent picks a tryout session. REQUIRES: a
+      different flow; tryout_sessions exist but are empty; does NOT match the
+      b3-funnel render.
+CC LEAN: (A). Makes the live program registrable with the least new surface,
+  keeps ONE funnel + ONE fee source (preserves #63), matches the existing render.
+RENDER NEEDED if A: non-season register flow (flat fee, no visible division pick)
+  + the admin "tryout/camp fee" capture field. (= render G1.)
+
+--------------------------------------------------------------------------------
+D2 — pr1b RLS NARROWING (registration_fees + player_equipment)   [SECURITY, no render]
+--------------------------------------------------------------------------------
+REQUEST: Apply the parent-read narrowing now, or hold?
+EVIDENCE:
+  • registration_fees + player_equipment have ORG-WIDE parent SELECT
+    (org_id = ANY current_user_org_ids()). Documented authorized deviation
+    (Frank GO 2026-05-31) whose safety condition was "not exploitable — no
+    parent-facing UI yet."
+  • That precondition EXPIRED THIS SESSION: B2 (#944) + B1 (/family) shipped, so
+    parents can now authenticate into the org. Any authed parent can read every
+    family's per-registration fee amounts + equipment rows via a crafted query.
+  • Revert path already written: migration 20260531222056 carries the exact
+    replacement (admin OR player_id = ANY current_user_player_ids()).
+OPTIONS:
+  (A) Apply now. One migration; narrow both SELECTs to admin-OR-own-child. CC can
+      apply under the lane (MCP + mirror, AP#21) immediately on GO.
+  (B) Hold until funnel registration actually opens to parents.
+CC LEAN: (A) apply now. The leak is live the moment a parent can authenticate —
+  which is today. Cheap, reversible, defense-in-depth.
+
+--------------------------------------------------------------------------------
+D3 — REG-OPEN GATE CONSUMPTION (RegisterEntryPage)   [CORRECTNESS, no render]
+--------------------------------------------------------------------------------
+REQUEST: Switch the entry gate to the server registration_open boolean?
+EVIDENCE:
+  • get_public_program ALREADY returns a server registration_open boolean.
+  • RegisterEntryPage.jsx:14-21 IGNORES it and recomputes the window from
+    Date.now() → client-clock skew can show "open", then the server raises
+    'registration_closed' on submit (an error the parent can't fix).
+OPTIONS:
+  (A) Consume the server boolean for the interactivity gate; keep Date.now() only
+      for the cosmetic "OPENS <date>" label. Small client-only change.
+  (B) Leave as-is (accept clock-skew edge).
+CC LEAN: (A). Tiny, removes a real edge case, no render needed. Ship alongside D2
+  as the two no-render items.
+
+--------------------------------------------------------------------------------
+D4 — #63 PRICE-DISPLAY LOCK
+--------------------------------------------------------------------------------
+REQUEST: Lock estimate↔authoritative parity with a test + keep "from $X"?
+EVIDENCE:
+  • Three render sources for "price": DivisionCard "from $X" (base only), StepReview
+    estimate (base+add_on via estimateCart), RegisterConfirm authoritative
+    (result.authoritative_total_cents). No truth divergence TODAY (estimate math ==
+    RPC math), but the parity is UNFENCED (no AP#43 test) — fragile once R1's
+    multi-child + family-cap math lands.
+OPTIONS:
+  (A) Add an AP#43 test asserting estimateCart total == RPC authoritative for the
+      multi-child + family-cap case (ships WITH R1), and keep "from $X" (honest;
+      the review clarifies the full total).
+  (B) Also change "from $X" to show the full price on the card.
+CC LEAN: (A). Fences the parity before R1; "from $X" is honest and the review
+  clarifies. Confirm you're OK keeping the "from $X" phrasing.
+
+--------------------------------------------------------------------------------
+D5 — REMAINING B3 BUILD ORDER
+--------------------------------------------------------------------------------
+REQUEST: Confirm the sequence for the remaining B3 tail (+ M2).
+EVIDENCE: remaining items — R1 multi-child one-submit (P0), R2 gender capture +
+  client mismatch block (P0, M1 ready), R3 error.routeTo nav wiring (P1), R4 step
+  a11y (P1), R5 reg-open (=D3), R6 RLS (=D2), R7 M2 server gender enforcement.
+CC PROPOSED ORDER:
+  1. D3 (reg-open) + D2 (RLS) — two small no-render PRs.
+  2. D1 ruling → if (A), the non-season flat-fee unit + funnel skip-picker PR (G1).
+  3. R1 multi-child one-submit + D4 parity test (the headline). Biggest PR. (G2.)
+  4. R4 step a11y (aria-live, focus-to-heading, 16px inputs, role=alert). (G3.)
+  5. R2 gender capture + client mismatch block (b3-funnel render exists).
+  6. R7 M2 server gender_mismatch enforcement (after R2).
+  7. Admin fast-follows (see D6) as roadmapped.
+CC LEAN: this order. Any reordering?
+
+--------------------------------------------------------------------------------
+D6 — ADMIN FAST-FOLLOWS — in-scope for pilot or deferred?
+--------------------------------------------------------------------------------
+REQUEST: Which admin gaps are pilot-scope vs explicitly deferred?
+EVIDENCE (no bugs — missing UI):
+  A1 Mark registration confirmed (pending→confirmed) — today only implied via
+     recording a payment in Financials.
+  A2 Add-on fee editor — schema supports fee_type='add_on'; no admin UI.
+  A3 Division edit/delete — divisions are create-only.
+CC LEAN: For the LH pilot, DEFER A2 + A3 (single-org, fees set once at create; no
+  recurring need — §16.16 "consumption is the gate"). A1 is the one with real
+  pilot value (an admin wants to mark a tryout registrant confirmed without a
+  payment row) — recommend building A1, deferring A2/A3. Your call.
+RENDER NEEDED only for whatever is pulled in-scope (= render G4).
+
+--------------------------------------------------------------------------------
+D7 — RENDERS THE ARCHITECT NEEDS TO PRODUCE / CONFIRM
+--------------------------------------------------------------------------------
+  Existing + sufficient: b2-confirmation-bridge, brief3-pilot-redirect,
+    b3-funnel (multi-child review END-state + gender control + error).
+  NEEDED:
+   G1 Non-season (tryout/camp) register flow — flat fee, no visible division pick
+      (gated on D1=A). + admin tryout/camp fee capture.
+   G2 Multi-child ACCUMULATION flow — the "add another child → review all" path
+      BETWEEN children (b3-funnel shows only the review END-state).
+   G3 Step a11y states — focus-to-heading target, aria-live announcement copy,
+      16px input spec, 3-step labeling.
+   G4 Any admin fast-follow pulled in-scope by D6 (A1 confirm-marking most likely).
+  CONFIRM still matches the build: b3-funnel review math (server total + family
+  discount) + gender control copy ("division group" Boys/Girls/Coed).
+
+================================================================================
+SUMMARY OF CC LEANS (for fast ratification)
+  D1 → (A) implicit flat-fee unit          D5 → proposed order as written
+  D2 → apply pr1b now                       D6 → build A1, defer A2/A3
+  D3 → consume server reg-open boolean      D7 → need renders G1, G2, G3 (+G4 if A1)
+  D4 → AP#43 parity test + keep "from $X"
+ON GO: CC ships D2 + D3 first (no render), then proceeds down D5 as D1/D4/D6 land.
+================================================================================
