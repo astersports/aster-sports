@@ -1,0 +1,102 @@
+================================================================================
+CC SESSION HANDOFF + PROGRAMS PHASE CLOSE-OUT — 2026-06-10
+From: CC (implementation lane)   To: Architect (via Frank)
+§11.8 r4 (phase close-out) + r5 (session handoff). Plain text; full chat paste +
+delivered as a file. NOTHING PENDING APPLICATION — everything below is shipped.
+================================================================================
+
+ONE-LINE STATE
+  The programs redesign is BUILT end-to-end. The full architect-ratified order
+  (D1-D7 + R1-R7 + A1) shipped this session. The parent funnel is feature-complete
+  + accessible; the live Fall 2026 Tryouts becomes registrable the moment an admin
+  sets its fee. No open architectural forks; no decisions awaiting ratification.
+
+--------------------------------------------------------------------------------
+WHAT SHIPPED THIS SESSION (PRs, one line each — all merged or auto-merging)
+--------------------------------------------------------------------------------
+  #942  BRIEF-3 pilot-redirect row shape (mint real ids, queue pilot shape; AP#43)
+  #943  M1 — players.gender + divisions.gender reconcile + backfill (63/115, 0 conflicts)
+  #944  B2 — magic-link account-claim bridge (reuses claim_guardian_by_email; AP#42)
+  #945  B3 — registration error microcopy (9-code map) + hard grade-band block
+  #946  docs — programs L99 multi-agent audit + build plan
+  #947  docs — architect decision request D1-D7
+  #948  docs — architect rulings D1-D7 + G1/G2/G4 renders
+  #949  D2 — pr1b RLS narrowing (registration_fees + player_equipment → own-child) [SECURITY]
+  #950  D3 — consume server registration_open gate (kills clock-skew edge)
+  #951  D1 — non-season implicit flat-fee unit (UNBLOCKS the live tryout)
+  #952  R1 — multi-child one-submit + D4 estimate↔authoritative parity (AP#43)
+  #953  R4 — registration step a11y (focus-to-heading, aria-live, 16px inputs)
+  #954  R2 — gender capture + store + client mismatch block
+  #955  R7/M2 — server gender_mismatch enforcement (the 9th code)
+  #956  A1 — admin mark-confirmed (lifecycle-only; this handoff rides here)
+
+  Migrations applied (MCP + AP#21 mirrors): 20260610214415 (M1),
+  20260610223225 (D2/pr1b), 20260610231635 (R2 gender store),
+  20260610232634 (R7/M2 gender enforce). All verified live (impersonated-JWT
+  replay for RLS; rollback-txn replays for the RPC changes).
+
+--------------------------------------------------------------------------------
+PROGRAMS PHASE CLOSE-OUT (§11.8 r4) — every fork ratified + built
+--------------------------------------------------------------------------------
+  D1 non-season path = (A) implicit flat-fee unit ............ BUILT (#951)
+  D2 pr1b RLS narrowing = apply now (Frank GO) .............. BUILT + verified (#949)
+  D3 reg-open gate = consume server boolean ................. BUILT (#950)
+  D4 price-display lock = AP#43 parity test + "from $X" ...... BUILT (in #952)
+  D5 build order ............................................ FOLLOWED exactly
+  D6 admin fast-follows = build A1; defer A2/A3 ............. A1 BUILT (#956); A2/A3 deferred
+  D7 renders G1/G2/G4 + G3 a11y spec ........................ committed (#948); built to
+  R1 multi-child one-submit ................................. BUILT (#952)
+  R2 gender capture + store + client block .................. BUILT (#954)
+  R4 step a11y .............................................. BUILT (#953)
+  R7 M2 server enforcement .................................. BUILT (#955)
+
+  Audit headline (PROGRAMS_AUDIT_AND_PLAN, #946) fully resolved:
+   - "the live tryout can't be registered" → D1 fixes it (admin sets the fee).
+   - "registration_fees/player_equipment org-wide leak" → D2 narrowed + verified.
+   - money/#63 was already CLOSED; DB sound; no P0/P1 defects in shipped code.
+
+--------------------------------------------------------------------------------
+HELD / DEFERRED (with cause — not gaps)
+--------------------------------------------------------------------------------
+  A2 add-on fee editor — DEFERRED (D6, §16.16: no pilot consumer; the RPC reads
+     add_on fees when present, but nothing creates one yet).
+  A3 full division edit/delete — DEFERRED (D6); the narrow slice D1 needs (the
+     non-season flat fee being editable) IS built.
+  R2/R7 gender — DORMANT for the LH pilot (the live program is a coed tryout, which
+     skips gender). Activates automatically when a gendered season opens
+     registration. No action needed.
+  Running-total discount preview for policy-orgs — the funnel passes policy=null
+     (get_public_program doesn't return family_cap_policy), so the preview shows no
+     discount line for a policy-org until the server-authoritative confirmation.
+     LH has a null policy so this is a no-op for the pilot; flagged for the day a
+     family-cap org onboards (would need family_cap_policy added to
+     get_public_program). NOT a #63 issue — the confirmation total is authoritative.
+
+--------------------------------------------------------------------------------
+DECISIONS AWAITING RATIFICATION
+--------------------------------------------------------------------------------
+  NONE. All D1-D7 forks ratified (PROGRAMS_RULINGS_D1D7, #948) and built.
+
+--------------------------------------------------------------------------------
+NEXT ACTION (operator)
+--------------------------------------------------------------------------------
+  1. Make the live link work: Admin → Programs → Fall 2026 Tryouts → set the
+     "Tryout fee" (e.g. 45.00) → Save. /r/fall-2026-tryouts then shows the flat-fee
+     hero and takes registrations.
+  2. Device smoke (per the PR manual-verification checklists): register one child,
+     then two (the roster + one submit + one confirmation), confirm the
+     authoritative total, then admin "Mark confirmed".
+  3. When a gendered season opens registration, R2/R7 light up automatically — no
+     build needed; just verify the Boys/Girls control + the mismatch block on a
+     gendered division.
+
+--------------------------------------------------------------------------------
+ARCHITECT CLOSE
+--------------------------------------------------------------------------------
+  This doc IS the §11.8 r4 close-out. All forks are ratified and built; the audit's
+  headline risks are resolved; the deferrals carry cause. The programs phase is
+  closed pending the operator device-smoke. Recommend the architect ratify the
+  close (or flag any surface for a follow-up audit).
+================================================================================
+END HANDOFF.
+================================================================================
