@@ -41,8 +41,10 @@ export default function RegisterConfirm({ result, program, guardianEmail, onAddA
 
       {reserved && <RegisterClaimAccount email={guardianEmail} />}
 
-      <button type="button" className="as-press" style={{ ...primaryBtn, marginTop: 24 }} onClick={onAddAnother}>+ Register another child</button>
-      <button type="button" style={{ ...ghostBtn, width: '100%', marginTop: 8 }} onClick={onDone}>Done</button>
+      {onAddAnother && (
+        <button type="button" className="as-press" style={{ ...primaryBtn, marginTop: 24 }} onClick={onAddAnother}>+ Register another child</button>
+      )}
+      <button type="button" style={{ ...ghostBtn, width: '100%', marginTop: onAddAnother ? 8 : 24 }} onClick={onDone}>Done</button>
     </div>
   );
 }
