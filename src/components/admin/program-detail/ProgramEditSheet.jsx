@@ -3,6 +3,7 @@ import FullScreenForm from '../../shared/FullScreenForm';
 import { Field, TextInput } from '../../register/fields';
 import { primaryBtn } from '../../register/registerStyles';
 import { dayBoundaryTs, slugify, validateProgramDates } from '../../../lib/programSetup';
+import SeasonPresetPicker from '../program-setup/SeasonPresetPicker';
 
 // Edit a program's name / dates / public link / publish state (PR-3 F14).
 // 3+ fields → FullScreenForm (anti-pattern #15). program_type is intentionally
@@ -44,6 +45,9 @@ function Body({ program, onSave }) {
 
   return (
     <div>
+      {program?.program_type === 'season' && (
+        <SeasonPresetPicker onApply={(p) => setForm((f) => ({ ...f, name: p.name, start_date: p.start_date, end_date: p.end_date }))} />
+      )}
       <Field label="Program name" htmlFor="ep-name"><TextInput id="ep-name" value={form.name} onChange={(v) => set('name', v)} /></Field>
       <div style={{ display: 'flex', gap: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}><Field label="Start date" htmlFor="ep-sd"><TextInput id="ep-sd" type="date" value={form.start_date} onChange={(v) => set('start_date', v)} /></Field></div>
