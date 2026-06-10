@@ -1,0 +1,139 @@
+==============================================================================
+CC -> ARCHITECT : PROGRAMS REDESIGN — SESSION KICKOFF HANDOFF
+Date: 2026-06-10  ·  Collaboration mode (§11.8)  ·  Relay artifact (copy/paste to architect)
+Live-verified (project vrwwpsbfbnveawqwbdmj, file:line + routes confirmed this session).
+==============================================================================
+
+GOAL (Frank, verbatim intent)
+  Redesign PROGRAMS for SIMPLIFICATION + EASE OF USE. Target = a 10/10 experience and
+  100% experience-level for ALL THREE roles — parent, coach, admin. Methodology = L99
+  (§16.15): full-mount audit -> deep-read addendum -> anti-pattern cross-ref -> per-role
+  wireframes -> explicit out-of-scope, BEFORE any PR-A code lands.
+
+COLLABORATION MODE (§11.8 — how we work)
+  - CC (me): implementation + live verification. Grounds every claim in file:line / MCP
+    query / deployed state (the §11.7 source hierarchy). Produces the artifacts.
+  - ARCHITECT (Claude AI, this chat): design, decisions, fork ratification. Cannot read
+    the repo — receives committed .txt docs + Frank's pastes. Frames the forks.
+  - FRANK: operator. Ratifies + relays between lanes.
+  - Round-trip is DOC-TO-DOC. CC surfaces evidence + a labeled lean (AP#39); the
+    architect/Frank decide. CC does not settle architectural forks unilaterally.
+
+WHERE WE JUST CAME FROM (context the redesign inherits)
+  The SETTINGS stage just shipped + closed: S1 My Preferences, S2 Family Notifications,
+  S9 Notifications (admin Channels matrix + Alerts); Channels made the single source for
+  notification categories; a write-only "honesty cleanup" retired every settings control
+  nothing reads. PROGRAMS-RELEVANT finding from that close-out:
+    * REGISTRATION IS PER-PROGRAM — programs.reg_opens_at / reg_closes_at (the window) +
+      status='active' + is_published; get_public_program enforces it per program. The
+      vestigial ORG-LEVEL registration toggle was REMOVED (it drove nothing). The programs
+      redesign OWNS the registration model — there is no org-wide registration switch.
+
+==============================================================================
+CURRENT STATE — PROGRAMS SURFACES (live, file:line)
+==============================================================================
+ROUTES (src/App.jsx)
+  ADMIN-only (Protected allowedRoles=['admin']):
+    /admin/programs        -> AdminProgramsPage   (index/list)
+    /admin/programs/new    -> ProgramSetupPage    (create wizard)
+    /admin/programs/:id    -> ProgramDetailPage    (edit / teams / manage / delete)
+    /admin/seasons         -> AdminSeasonsPage     (legacy season view; programs.program_type='season')
+  PUBLIC anon (unauthenticated):
+    /r/:slug               -> RegisterEntryPage    (public program landing)
+    /r/:slug/apply         -> RegisterFlowPage     (the registration wizard: StepDivision, etc.)
+
+PER-ROLE TODAY (the starting point the redesign must lift to 10/10)
+  ADMIN: the whole surface — list + create wizard + detail (edit sheet, teams section,
+    manage zone, delete) + the seasons view. Admin-centric, CRUD-shaped.
+  PARENT: NO in-app programs surface. A parent registers ONLY through the public anon
+    /r/:slug funnel (pre-account). After registering, the parent sees kids/teams/schedule
+    — never a "programs" or "my registrations" view.
+  COACH: NO programs surface at all.
+  => "100% for all three roles" is itself the first design question: what IS Programs for
+     a parent (register + see my registration/payment status?) and for a coach (their
+     program/division roster?). Today it is admin-only + a one-way public reg funnel.
+
+COMPONENT / HOOK INVENTORY (the mount tree CC will read file-by-file in the L99 audit)
+  Pages:    AdminProgramsPage, ProgramSetupPage, ProgramDetailPage  (+ AdminSeasonsPage)
+  Admin cmp: program-detail/{ProgramEditSheet, ProgramManageZone, ProgramTeamsSection},
+             program-setup/{DivisionRows, ProgramTypeChooser}, programs/ProgramIndexRow
+  Public cmp: register/{DivisionCard, StepDivision} (the /r/:slug flow), RegisterEntryPage,
+             RegisterFlowPage
+  Home:     home/AdminProgramHealth (the PROGRAM HEALTH card on admin Home)
+  Hooks:    usePrograms, useActivePrograms, useAllPrograms, useProgramAdmin,
+             useProgramSetup, useProgramTeams, useProgramRegistrations,
+             useProgramHealthMetrics, usePublicProgram, useSubmitRegistration
+  Lib:      programSetup, programGrouping, programRegistry, programDelete, estimateCart
+  Schema:   programs (program_type, status, is_published, public_slug, reg_opens_at,
+             reg_closes_at, start/end_date), divisions (grade/gender/team_color/fees),
+             division_fees (fee_type base|add_on, amount_cents, auto_apply_rule),
+             registrations (program_id, player_id, status), registration_fees, teams
+             (season_id -> programs), tryout_sessions/tryout_attendees, financial_accounts
+             (season_id), coach_payouts.
+
+==============================================================================
+THE DEFECT SUBSTRATE — ALREADY AUDITED (fold in; do NOT re-run)
+==============================================================================
+docs/PROGRAMS_AUDIT_MASTER_FINDINGS.txt (2026-06-09, 24 agents across 4 waves) is the
+authoritative ENGINEERING/defect surface. The redesign must SEQUENCE around its blockers
+rather than re-discover them. Headlines:
+  P0 (pre-go-live):
+    - ONBOARDING SEVERED [LIVE]: registered families can't self-claim an app account
+      (173/175 guardians user_id NULL; needs SECDEF claim_guardian_by_email).
+    - Published DRAFT/ARCHIVED program anon-registerable [latent]: add status='active'
+      to submit_registration + get_public_program.
+    - Season ROLLOVER broken + non-atomic [staged S1 RPC].
+    - Program-DELETE blast radius (teams.season_id still CASCADE; financial_accounts FK
+      RESTRICT now raw-errors) + registration TOCTOU dedupe.
+  DOMINANT PATTERN — PATTERN A (#63): "same concept, divergent source/scope," 8 instances
+    on the program surface (money: client estimate vs server authoritative_total; audience:
+    org-scope digest leaks the camp into league families; "active" has 4 defs;
+    "registration open" has 3 window truths; "is this family an account" has 3 sources).
+    The redesign's job is partly to COLLAPSE these to one source+scope each (AP#43 tests).
+  OPEN, ARCHITECT-OWNED: the F1-F16 framework — 10/16 items (F2,F6,F7,F9-F13,F15,F16) are
+    undefined repo-side. The architect must supply them for the audit to claim completeness.
+
+==============================================================================
+REDESIGN-SPECIFIC OPEN QUESTIONS (for the architect — distinct from the audit's Q1-Q8)
+==============================================================================
+  RQ1  PER-ROLE VISION: what is Programs FOR each role? Parent (register + a "my
+       registrations / payment status" view?); Coach (their program/division roster +
+       readiness?); Admin (the CRUD, simplified). This defines the per-role wireframes.
+  RQ2  THE REGISTRATION FUNNEL: keep public anon /r/:slug, add in-app re-registration,
+       or both? Simplification target for the apply wizard (StepDivision + fees).
+  RQ3  CREATE/SETUP SIMPLIFICATION: ProgramSetupPage + DivisionRows + fee entry is the
+       densest admin surface. What's the 10/10 create flow?
+  RQ4  VOCABULARY / MENTAL MODEL: program vs season vs division vs team is currently
+       overloaded (programs.program_type='season'; teams.season_id -> programs;
+       AdminSeasonsPage is a parallel view). Collapse the vocabulary?
+  RQ5  SCOPE OF THIS REDESIGN: does it ALSO land the Tier-0/1 defect fixes (onboarding,
+       reg-status-gate, rollover, delete-guard), or is it UX-only with defects sequenced
+       separately? CC LEAN: fold the P0s in as PR-0 hotfixes FIRST (they're pre-go-live
+       blockers and the redesign rests on a correct data layer), THEN the UX redesign.
+
+==============================================================================
+CC'S FIRST ACTION ON "GO"
+==============================================================================
+Produce the L99 redesign AUDIT DOC (§16.15, all five elements) for Programs:
+  (a) file-by-file current-state read of the full programs mount tree (admin + public +
+      the per-role entry points), severity-tagged;
+  (b) deep-read addendum (second pass — the ~40% the first pass misses);
+  (c) anti-pattern cross-reference (§11) — esp. PATTERN A #63 collapse targets;
+  (d) per-role wireframes — parent / coach / admin variants of every redesigned surface;
+  (e) explicit out-of-scope list.
+It will reference PROGRAMS_AUDIT_MASTER_FINDINGS.txt for the defect surface (not re-audit
+it) and sequence the Tier-0/1 blockers. That audit doc is the canonical artifact the
+architect reviews BEFORE any PR-A code.
+
+WHAT WOULD HELP THE ARCHITECT SEND BACK TO START THE LOOP
+  1. The redesign goal refined — any constraints beyond "10/10, simple, all 3 roles."
+  2. The F1-F16 catalog (the 10 undefined items) insofar as it scopes Programs.
+  3. A steer on RQ1-RQ5 — OR simply "CC, produce the L99 audit first, then we decide."
+
+Standing platform invariants the design lives inside (so wireframes are buildable):
+  files ≤150 lines; --as-* tokens only; FullScreenForm for 3+ field forms / BottomSheet
+  for 1-2; 44px tap targets; per-role coverage + AP#43 cross-surface invariant tests;
+  optimistic per-row / pessimistic bulk; kindness microcopy; a11y non-negotiable.
+==============================================================================
+END KICKOFF HANDOFF. CC is ready to produce the L99 programs audit on "go."
+==============================================================================
