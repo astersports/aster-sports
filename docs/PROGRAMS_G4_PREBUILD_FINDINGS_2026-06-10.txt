@@ -1,0 +1,125 @@
+==============================================================================
+CC -> ARCHITECT : G4 PRE-BUILD FINDINGS — two gaps in the ratified contract
+Date 2026-06-10. §11.8 r2 — CC surfaces evidence + labeled lean before building;
+the architect rules. AP#60 live-verified (project vrwwpsbfbnveawqwbdmj, SELECT-
+only). NOTHING APPLIED, NOTHING BUILT against the flawed contract. Responds to
+PROGRAMS_DECISION_RULINGS_2026-06-10 (D-G4 ratified, Track B next).
+==============================================================================
+
+Caught the same way as the useTeams collision + the gender-vocab trap: verified
+the mechanism + the schema BEFORE building. Two findings; the second is material
+to Track B, not just to the test.
+
+------------------------------------------------------------------------------
+FINDING 1 — F-G4-MECH: "vitest hitting live RPCs in a rollback txn" can't run here
+------------------------------------------------------------------------------
+EVIDENCE (live this turn):
+  - .github/workflows/ci.yml test job env: VITE_SUPABASE_URL=https://ci-dummy.
+    supabase.co, VITE_SUPABASE_ANON_KEY=ci-dummy-anon-key. CI has NO real DB.
+    (This is why the 3 "Missing VITE_SUPABASE_URL"... wait — they're set to dummy;
+    the 3 failing files import the client at module load and the dummy URL doesn't
+    resolve to a real DB. Either way: no live RPC is reachable from CI.)
+  - package.json: only @supabase/supabase-js; NO `pg`/`postgres`. supabase-js
+    issues one HTTP request per .rpc() — there is NO client-side BEGIN/ROLLBACK,
+    so "wrap the RPC calls in a rollback transaction" is not expressible in the JS
+    client. Rollback must be server-side (a SQL txn).
+  - No existing test creates a service-role client, a pg Pool, or hits a live DB.
+    The repo's "integration" tests are static/source-based (parity, audits).
+SO: the ratified tooling (vitest-integration hitting live RPCs, rollback-only) is
+  not buildable in this CI as stated. The INTENT — prove the server money path
+  with real execution, rollback-only, before PR-B1 — is fully achievable a
+  different way.
+OPTIONS:
+  (A) MCP-executed gate (the PR-0b pattern, already accepted + proven): CC runs
+      the whole G4 contract as one server-side txn via execute_sql — seed program
+      +division+fees, call the RPCs, ASSERT, RAISE-to-rollback (nothing persists).
+      Persist it as a committed, re-runnable SQL fixture
+      (supabase/tests/g4_money_path.sql) + a results note. Clears G1's sibling
+      gate immediately. NOT a per-PR CI gate (runs on demand / pre-B1).
+  (B) Real CI integration: add `pg` + a DATABASE_URL/service-role secret to CI +
+      a node test that BEGIN/calls/ROLLBACKs against a Supabase branch DB. Heavier
+      — needs Frank to provision CI secrets + a branch-DB harness. Automatable
+      (runs every PR) but a real infra lift.
+  (C) Pure-logic vitest only (estimateCart math) — REJECT: the architect ruled
+      estimateCart is never the assertion; pure logic doesn't touch the server
+      money path, so it doesn't satisfy G4's purpose.
+CC LEAN: (A) now — MCP-executed against live, committed as a SQL fixture; it's the
+  exact rollback-only RPC-level proof the contract wants and the PR-0b precedent
+  is clean. Offer (B) as a follow-up if you want G4 automated in CI (separate
+  infra PR, Frank provisions secrets). I do NOT build a vitest that silently
+  can't reach a DB.
+
+------------------------------------------------------------------------------
+FINDING 2 — F-B1-MONEY: registration_fees and family_balances are DISCONNECTED
+   (the RD-4 reconciliation is unbuilt — material to T1 AND to PR-B1)
+------------------------------------------------------------------------------
+EVIDENCE (live this turn):
+  - family_balances viewdef reads ONLY financial_accounts (season_fee_cents,
+    discount_cents) + financial_transactions (payment/refund/adjustment/fee).
+    It has ZERO reference to registration_fees.
+  - submit_registration writes guardians, players, player_guardians, registrations,
+    registration_fees, player_equipment — and NOT financial_accounts /
+    financial_transactions (verified function body).
+  - triggers on registrations/registration_fees: only set_updated_at. No
+    reconciliation to financial_accounts.
+  => a NEW funnel registration creates a registration_fees row but ZERO
+     family_balances delta. The two money systems are disconnected (RD-4 "half-
+     built reconciliation", confirmed live).
+  - LH pilot today: imported families HAVE financial_accounts (family_balances
+     works for them); registrations=0, so no funnel family exists yet. The gap is
+     LATENT until the first funnel registration — which is exactly what Track B
+     turns on.
+
+IMPACT ON THE RATIFIED CONTRACT:
+  - D-G4 T1: "authoritative_total_cents == family_balances delta for that account"
+    is UNPROVABLE — a registration produces no family_balances delta. The provable,
+    correct assertion is: authoritative_total_cents == sum(registration_fees) for
+    the new registration(s). The family_balances clause should be DROPPED from T1
+    (or replaced by an assertion that family_balances is UNCHANGED, documenting the
+    disconnect).
+  - PR-B1: the spec has the parent's "what you owe" come from family_balances
+    (and RD-3 A4 has the admin detail read family_balances too). For a funnel-
+    registered family that's $0/absent — so B1 would show a family that just
+    registered (and owes the fee) as owing NOTHING, while their registration_fees
+    say otherwise. That is PATTERN A #63 re-introduced: two sources for "what this
+    family owes" (registration_fees vs family_balances), the precise bug the
+    redesign exists to kill.
+
+THE FORK (architect ruling needed before PR-B1):
+  (1) BUILD THE RECONCILIATION (architect-lane, the clean #63-collapse): on a
+      registration, create/update the family's financial_accounts row (e.g.
+      season_fee_cents += the registration total, or post a 'fee'
+      financial_transaction) so family_balances becomes the ONE source of "owes"
+      for funnel AND imported families. This is the RD-4 contract finally built.
+      Likely a small SECDEF step inside (or after) submit_registration + a
+      migration. CC LEAN — it makes family_balances the single money source the
+      whole redesign assumes, and unblocks B1's balance display honestly.
+  (2) B1 reads registration_fees for funnel families, family_balances for imported
+      — REJECT: two sources = the #63 regression; contradicts RD-3 A4.
+  (3) DEFER funnel-family balance: B1 shows registration STATUS only (no $ owed)
+      for funnel families until the reconciliation lands; imported families still
+      show family_balances. Interim, but "what you owe" is a headline B1 goal, so
+      this ships B1 half-built.
+  CC LEAN: (1). It's architect-lane (migration + maybe an RPC step). If (1) is
+  in, it likely becomes PR-B0 (reconciliation) BEFORE PR-B1, and the G4 test then
+  CAN assert the family_balances delta (closing the loop the contract wanted).
+
+------------------------------------------------------------------------------
+WHAT CC PROPOSES TO DO NEXT (on your rulings)
+------------------------------------------------------------------------------
+  - F-G4-MECH: ratify (A) -> CC builds the G4 contract as a committed server-side
+    rollback SQL fixture + runs it live now, reports T1/T1b/T1c/T2/T2b/T3/T3b
+    results. (B) deferred unless you want CI automation.
+  - F-B1-MONEY: rule the fork. If (1), CC specs PR-B0 reconciliation for your
+    ratification (migration is your apply-lane; CC drafts + mirrors), and T1
+    regains its family_balances assertion. If (3), CC builds B1 status-only and
+    flags the deferred balance.
+  - Until ruled, CC does NOT build B1 (it rests on the money source) and does NOT
+    assert a family_balances delta that can't exist.
+
+ASKS: (1) F-G4-MECH — ratify (A) MCP-fixture now? (2) F-B1-MONEY — rule the
+reconciliation fork (CC lean: build it as PR-B0). T1's family_balances clause
+hinges on (2).
+==============================================================================
+END G4 PRE-BUILD FINDINGS.
+==============================================================================
