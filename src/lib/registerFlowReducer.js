@@ -5,7 +5,7 @@
 // output, no IO. Phases: 'entry' (filling one child) ↔ 'roster' (the multi-child
 // hub) → submit → confirmation.
 
-export const emptyPlayer = () => ({ first_name: '', last_name: '', dob: '', grade: '' });
+export const emptyPlayer = () => ({ first_name: '', last_name: '', dob: '', grade: '', gender: '' });
 export const emptyDetails = () => ({ jersey_size: '', shorts_size: '', emergency_contact_name: '', emergency_contact_phone: '', medical_notes: '' });
 export const emptyGuardian = () => ({ first_name: '', last_name: '', email: '', phone: '', relationship: 'parent', sms_opt_in: false });
 const emptyDraft = (divisionId) => ({ divisionId: divisionId || '', player: emptyPlayer(), details: emptyDetails() });
