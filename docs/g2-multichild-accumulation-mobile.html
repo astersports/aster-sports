@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>G2 multi-child accumulation (mobile)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--as-navy:#1a1a2e;--as-cobalt:#4a8fd4;--as-cobalt-dark:#3070b0;--as-green:#1f9d57;--as-red:#c0392b;
+    --as-surface:#eef1f6;--as-border:#e2e8f0;--as-border-2:#eef1f5;--as-text:#151924;--as-text-2:#475467;--as-muted:#5b6676;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--as-surface);color:var(--as-text);-webkit-font-smoothing:antialiased;line-height:1.45}
+  .wrap{width:100%;max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+  .statusbar{background:var(--as-navy);color:#fff;padding:max(12px,env(safe-area-inset-top)) 20px 7px;display:flex;justify-content:space-between;font:600 13px Inter}
+  .appbar{background:var(--as-navy);color:#fff;display:flex;align-items:center;gap:10px;padding:4px 14px 11px}
+  .appbar .back{width:34px;height:34px;display:grid;place-items:center;margin-left:-4px}
+  .appbar .back svg{width:22px;height:22px;stroke:#fff;stroke-width:2;fill:none}
+  .appbar h1{font-size:17px;font-weight:700;flex:1}
+  .steps{background:var(--as-navy);padding:0 16px 12px;display:flex;gap:6px}
+  .steps i{flex:1;height:4px;border-radius:2px;background:#34384e}.steps i.on{background:var(--as-cobalt)}
+  .body{padding:14px 16px calc(96px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:13px}
+  .h2{font-size:18px;font-weight:700;color:var(--as-navy)}
+  .sub{font-size:13px;color:var(--as-text-2);margin-top:-6px}
+
+  .kidrow{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--as-border);border-radius:13px;padding:13px 15px}
+  .kidrow .av{width:38px;height:38px;border-radius:50%;background:#eef5fc;display:grid;place-items:center;font:700 14px Inter;color:var(--as-cobalt-dark);flex:none}
+  .kidrow .info{flex:1;min-width:0}
+  .kidrow .nm{font-size:15px;font-weight:700;color:var(--as-navy)}
+  .kidrow .meta{font-size:11.5px;color:var(--as-text-2);margin-top:1px}
+  .kidrow .ok{width:22px;height:22px;stroke:var(--as-green);stroke-width:2.4;fill:none;flex:none}
+  .kidrow .edit{font:600 12px Inter;color:var(--as-cobalt-dark)}
+
+  .addbtn{display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1.5px dashed var(--as-cobalt);color:var(--as-cobalt-dark);border-radius:13px;min-height:52px;font:700 14px Inter;cursor:pointer}
+  .addbtn svg{width:18px;height:18px;stroke:var(--as-cobalt-dark);stroke-width:2.3;fill:none}
+
+  .running{background:#f3f8fe;border:1px solid #cfe0f5;border-radius:13px;padding:14px 15px}
+  .running .lr{display:flex;justify-content:space-between;font-size:13px;color:var(--as-text-2);margin-bottom:6px}
+  .running .lr b{font-variant-numeric:tabular-nums}
+  .running .lr.disc b{color:var(--as-green)}
+  .running .lr.big{margin:8px 0 0;padding-top:9px;border-top:1px solid #cfe0f5;font-size:16px;color:var(--as-navy);font-weight:700}
+
+  .note{font-size:11.5px;color:var(--as-muted);text-align:center}
+  .ex{background:#fff;border:1px solid var(--as-border);border-radius:12px;padding:14px 15px}
+  .ex h3{font:700 11.5px Inter;letter-spacing:.04em;text-transform:uppercase;color:var(--as-cobalt-dark);margin-bottom:8px}
+  .ex p{font-size:12.5px;color:var(--as-text-2);margin-bottom:6px}
+  .ex p b{color:var(--as-text);font-weight:600}
+  .bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--as-border);padding:12px 16px calc(12px + env(safe-area-inset-bottom));max-width:430px;margin:0 auto}
+  .submit{width:100%;min-height:50px;background:var(--as-cobalt);color:#fff;border:none;border-radius:11px;font:700 15px Inter;cursor:pointer}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679;&#9679;&#9679;</span></div>
+  <div class="appbar"><span class="back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></span><h1>Who&rsquo;s registering?</h1></div>
+  <div class="steps"><i class="on"></i><i class="on"></i><i></i></div>
+
+  <div class="body">
+    <div class="h2">Your children</div>
+    <div class="sub">Add each child, then review and submit once.</div>
+
+    <div class="kidrow">
+      <span class="av">C</span>
+      <div class="info"><div class="nm">Charlie</div><div class="meta">Grade 5 &middot; Fall 2026 Tryouts</div></div>
+      <span class="edit">Edit</span>
+      <svg class="ok" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+
+    <div class="kidrow">
+      <span class="av">M</span>
+      <div class="info"><div class="nm">Milo</div><div class="meta">Grade 2 &middot; Fall 2026 Tryouts</div></div>
+      <span class="edit">Edit</span>
+      <svg class="ok" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+
+    <div class="addbtn"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add another child</div>
+
+    <div class="running">
+      <div class="lr">2 children <b>$90.00</b></div>
+      <div class="lr disc">Family discount <b>&minus;$10.00</b></div>
+      <div class="lr big">Running total <b>$80.00</b></div>
+    </div>
+
+    <div class="note">G2 accumulation &middot; the add-another loop the review end-state doesn&rsquo;t show</div>
+
+    <div class="ex">
+      <h3>One array, one submit</h3>
+      <p>Each "add another child" appends to a client <code style="font-family:ui-monospace,monospace;font-size:11px;background:var(--as-surface);padding:1px 4px;border-radius:4px">children[]</code> array. The running total previews the family discount, but it&rsquo;s a <b>preview</b>; the authoritative number comes from the single <code style="font-family:ui-monospace,monospace;font-size:11px;background:var(--as-surface);padding:1px 4px;border-radius:4px">submit_registration</code> on Review. The discount fires only because all children go in <b>one</b> submit (G4 T1b proved it).</p>
+    </div>
+  </div>
+
+  <div class="bar"><button class="submit">Review 2 children</button></div>
+</div>
+</body>
+</html>

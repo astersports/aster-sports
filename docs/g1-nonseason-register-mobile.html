@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>G1 non-season register (mobile)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--as-navy:#1a1a2e;--as-cobalt:#4a8fd4;--as-cobalt-dark:#3070b0;--as-green:#1f9d57;--as-amber:#c2700a;
+    --as-surface:#eef1f6;--as-border:#e2e8f0;--as-border-2:#eef1f5;--as-text:#151924;--as-text-2:#475467;--as-muted:#5b6676;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--as-surface);color:var(--as-text);-webkit-font-smoothing:antialiased;line-height:1.45}
+  .wrap{width:100%;max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+  .statusbar{background:var(--as-navy);color:#fff;padding:max(12px,env(safe-area-inset-top)) 20px 7px;display:flex;justify-content:space-between;font:600 13px Inter}
+  .appbar{background:var(--as-navy);color:#fff;display:flex;align-items:center;gap:10px;padding:4px 14px 13px}
+  .appbar .back{width:34px;height:34px;display:grid;place-items:center;margin-left:-4px}
+  .appbar .back svg{width:22px;height:22px;stroke:#fff;stroke-width:2;fill:none}
+  .appbar h1{font-size:17px;font-weight:700;flex:1}
+  .appbar .tag{font:700 9px Inter;letter-spacing:.05em;text-transform:uppercase;color:#aeb8cf;border:1px solid #34384e;padding:3px 7px;border-radius:6px}
+  .body{padding:14px 16px calc(96px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:13px}
+
+  .hero{background:#fff;border:1px solid var(--as-border);border-radius:13px;padding:16px}
+  .hero .ttag{font:700 10px Inter;letter-spacing:.05em;text-transform:uppercase;color:var(--as-amber);background:#fbe6cf;padding:3px 8px;border-radius:5px;display:inline-block}
+  .hero h2{font-size:20px;font-weight:700;color:var(--as-navy);margin-top:9px}
+  .hero .ow{font:700 12.5px Inter;color:var(--as-green);display:inline-flex;align-items:center;gap:5px;margin-top:6px}
+  .hero .ow svg{width:14px;height:14px;stroke:var(--as-green);stroke-width:2.2;fill:none}
+  .hero .fee{margin-top:13px;padding-top:13px;border-top:1px solid var(--as-border-2);display:flex;align-items:baseline;justify-content:space-between}
+  .hero .fee .l{font-size:13px;color:var(--as-text-2);font-weight:600}
+  .hero .fee .v{font:700 20px Inter;color:var(--as-navy);font-variant-numeric:tabular-nums}
+  .hero .fee .v small{font-size:12px;color:var(--as-muted);font-weight:500}
+
+  .label{font:700 9px Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--as-muted);background:#fff;border:1px solid var(--as-border);padding:3px 8px;border-radius:5px;display:inline-block}
+  .field{background:#fff;border:1px solid var(--as-border);border-radius:13px;padding:14px 15px}
+  .field .q{font-size:14px;font-weight:600;color:var(--as-navy);margin-bottom:5px}
+  .field .hint{font-size:11.5px;color:var(--as-muted);margin-bottom:11px}
+  .inp{width:100%;min-height:48px;border:1px solid var(--as-border);border-radius:10px;padding:0 14px;font:600 16px Inter;color:var(--as-text);display:flex;align-items:center;gap:6px}
+  .inp .cur{color:var(--as-muted);font-weight:500}
+  .ex{background:#fff;border:1px solid var(--as-border);border-radius:12px;padding:14px 15px}
+  .ex h3{font:700 11.5px Inter;letter-spacing:.04em;text-transform:uppercase;color:var(--as-cobalt-dark);margin-bottom:8px}
+  .ex p{font-size:12.5px;color:var(--as-text-2);margin-bottom:6px}
+  .ex p b{color:var(--as-text);font-weight:600}
+  .note{font-size:11.5px;color:var(--as-muted);text-align:center}
+  code{font-family:ui-monospace,monospace;font-size:11px;background:var(--as-surface);padding:1px 5px;border-radius:4px;color:var(--as-text-2)}
+  .bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--as-border);padding:12px 16px calc(12px + env(safe-area-inset-bottom));max-width:430px;margin:0 auto}
+  .submit{width:100%;min-height:50px;background:var(--as-cobalt);color:#fff;border:none;border-radius:11px;font:700 15px Inter;cursor:pointer}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679;&#9679;&#9679;</span></div>
+  <div class="appbar"><span class="back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></span><h1>Register</h1><span class="tag">G1</span></div>
+  <div class="body">
+
+    <!-- PARENT: flat-fee tryout, NO division grid -->
+    <div class="hero">
+      <span class="ttag">Tryout</span>
+      <h2>Fall 2026 Tryouts</h2>
+      <div class="ow"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>Open &middot; closes Jun 26</div>
+      <div class="fee"><span class="l">Per child</span><span class="v">$45.00</span></div>
+    </div>
+
+    <div class="note">No division to choose, one flat fee. The funnel skips the picker because <code>hasDivisions=false</code>.</div>
+
+    <div class="ex">
+      <h3>What changed (D1 = A)</h3>
+      <p>A non-season program stores its flat fee as <b>one implicit unit</b> (coed, no grade band). The parent never sees the word "division", they go straight from the link to player details. <b>One funnel, one fee source.</b></p>
+      <p>The grade gate skips on a null band; gender skips on coed, so a tryout never false-blocks.</p>
+    </div>
+
+    <!-- ADMIN: the fee capture that makes it registrable -->
+    <span class="label">Admin &middot; program detail</span>
+    <div class="field">
+      <div class="q">Tryout fee</div>
+      <div class="hint">Sets this program&rsquo;s flat per-child fee. Editable anytime.</div>
+      <div class="inp"><span class="cur">$</span>45.00</div>
+    </div>
+    <div class="ex">
+      <h3>Why this unblocks the live program</h3>
+      <p>Fall 2026 Tryouts exists with <b>0 fees</b> today, so the link dead-ends. The moment an admin sets this fee, the implicit unit + its base fee are written and the program becomes registrable. No new flow, no second fee source.</p>
+    </div>
+
+  </div>
+  <div class="bar"><button class="submit">Continue &middot; $45.00</button></div>
+</div>
+</body>
+</html>
