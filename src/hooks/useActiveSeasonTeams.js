@@ -3,22 +3,24 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useSeason } from '../context/SeasonContext';
 
-// Fetches programs (teams) for the active season, sorted by sort_order so
-// the UI always renders oldest-to-youngest (11U → 8U). "Program" is the
-// v2 UI term; the underlying table is `teams` — the two are 1:1 for now.
-// Used by AdminTeamsPage, schedule filters, and the roster module.
-export function usePrograms() {
+// Teams for the ACTIVE season (no season argument — reads the active season from
+// SeasonContext), sorted by sort_order so the UI renders oldest-to-youngest
+// (11U → 8U), with CRUD. Consumed by AdminTeamsPage, TeamsPage, TeamDetailPage,
+// AccountPage. (Renamed from usePrograms per D-Q9 — "program" now means the
+// programs entity only; this hook reads the `teams` table. Distinct from
+// useTeams(orgId), which is the org-wide read-only team list.)
+export function useActiveSeasonTeams() {
   const { orgId } = useAuth();
   const { activeSeason } = useSeason();
   const seasonId = activeSeason?.id ?? null;
 
-  const [programs, setPrograms] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const refetch = useCallback(async () => {
     if (!orgId || !seasonId) {
-      setPrograms([]);
+      setTeams([]);
       setLoading(false);
       return;
     }
@@ -30,12 +32,12 @@ export function usePrograms() {
       .eq('season_id', seasonId)
       .order('sort_order', { ascending: true });
     if (e) {
-      console.error('usePrograms fetch:', e.message);
+      console.error('useActiveSeasonTeams fetch:', e.message);
       setError(e.message);
-      setPrograms([]);
+      setTeams([]);
     } else {
       setError(null);
-      setPrograms(data ?? []);
+      setTeams(data ?? []);
     }
     setLoading(false);
   }, [orgId, seasonId]);
@@ -44,7 +46,7 @@ export function usePrograms() {
   // refetch() out of the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => { Promise.resolve().then(refetch); }, [refetch]);
 
-  const createProgram = useCallback(async (input) => {
+  const createTeam = useCallback(async (input) => {
     if (!orgId || !seasonId) return { error: 'No active season' };
     const { error: e } = await supabase
       .from('teams')
@@ -53,17 +55,17 @@ export function usePrograms() {
     return { error: e?.message };
   }, [orgId, seasonId, refetch]);
 
-  const updateProgram = useCallback(async (id, input) => {
+  const updateTeam = useCallback(async (id, input) => {
     const { error: e } = await supabase.from('teams').update(input).eq('id', id);
     if (!e) await refetch();
     return { error: e?.message };
   }, [refetch]);
 
-  const deleteProgram = useCallback(async (id) => {
+  const deleteTeam = useCallback(async (id) => {
     const { error: e } = await supabase.from('teams').delete().eq('id', id);
     if (!e) await refetch();
     return { error: e?.message };
   }, [refetch]);
 
-  return { programs, loading, error, refetch, createProgram, updateProgram, deleteProgram };
+  return { teams, loading, error, refetch, createTeam, updateTeam, deleteTeam };
 }
