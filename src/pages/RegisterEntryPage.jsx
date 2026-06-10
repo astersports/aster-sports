@@ -11,13 +11,17 @@ function shortDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' });
 }
 
-function resolveRegState(program) {
+// D3 — the server registration_open boolean (get_public_program, computed once
+// server-side) is the AUTHORITATIVE interactivity gate. Date.now() is used ONLY
+// to pick the cosmetic upcoming-vs-closed LABEL when registration is not open.
+// This kills the client-clock-skew "card shows open → submit server-rejects with
+// registration_closed" edge: the gate and the submit now read the same clock.
+function resolveRegState(program, registrationOpen) {
+  if (registrationOpen) return 'open';
   const now = Date.now();
   const opensAt = program.reg_opens_at ? new Date(program.reg_opens_at).getTime() : null;
-  const closesAt = program.reg_closes_at ? new Date(program.reg_closes_at).getTime() : null;
   if (opensAt && now < opensAt) return 'upcoming';
-  if (closesAt && now >= closesAt) return 'closed';
-  return 'open';
+  return 'closed';
 }
 
 const centered = { padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' };
@@ -44,7 +48,7 @@ export default function RegisterEntryPage() {
     );
   }
 
-  const regState = resolveRegState(program);
+  const regState = resolveRegState(program, data.registration_open);
   const opensLabel = shortDate(program.reg_opens_at);
   const divisions = data.divisions || [];
 
