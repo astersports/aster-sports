@@ -5,6 +5,7 @@ import AdminBackHeader from '../components/admin/AdminBackHeader';
 import SettingsSheets from '../components/admin/SettingsSheets';
 import { useOrgAutoNotifications } from '../hooks/useOrgAutoNotifications';
 import { useOrgSettings } from '../hooks/useOrgSettings';
+import { useAlertConfigs } from '../hooks/useAlertConfigs';
 
 // /admin/settings — org-level admin settings (admin-only route). Thin row-list:
 // each row opens a FullScreenForm from SettingsSheets. General + Communications +
@@ -41,6 +42,7 @@ export default function AdminSettingsPage() {
   const { orgId, org } = useAuth();
   const an = useOrgAutoNotifications();
   const os = useOrgSettings(orgId);
+  const al = useAlertConfigs();
   const [openForm, setOpenForm] = useState(null);
   const s = os.settings;
 
@@ -51,6 +53,8 @@ export default function AdminSettingsPage() {
   const domainSummary = os.loading ? 'Loading…' : (s?.custom_domain || 'Not set');
   const anSummary = an.loading ? 'Loading…' : `Reminders ${an.remindersOn ? 'on' : 'off'} · Nudges ${an.nudgesOn ? 'on' : 'off'}`;
   const senderSummary = os.loading ? 'Loading…' : (s?.from_name && s?.from_email ? `${s.from_name} · ${s.from_email}` : 'Not set');
+  const channelsSummary = os.loading ? 'Loading…' : 'Push & email per category';
+  const alertsSummary = al.loading ? 'Loading…' : `${al.configs.filter((c) => c.enabled).length} active · RSVP, briefings, data`;
   const pilotSummary = os.loading ? 'Loading…' : (s?.pilot_test_recipient_email ? `Redirecting to ${s.pilot_test_recipient_email}` : 'Live — sending to families');
 
   return (
@@ -71,10 +75,17 @@ export default function AdminSettingsPage() {
         <Row title="Custom domain" summary={domainSummary} disabled={os.loading} onClick={() => setOpenForm('domain')} />
       </div>
 
-      <h2 style={SECTION_LABEL}>Communications</h2>
+      <h2 style={SECTION_LABEL}>Notifications</h2>
       <div style={CARD}>
         <Row title="Automatic messages" summary={anSummary} disabled={an.loading} onClick={() => setOpenForm('autonotif')} />
         <div style={DIVIDER} />
+        <Row title="Channels" summary={channelsSummary} disabled={os.loading} onClick={() => setOpenForm('channels')} />
+        <div style={DIVIDER} />
+        <Row title="Alerts" summary={alertsSummary} disabled={al.loading} onClick={() => setOpenForm('alerts')} />
+      </div>
+
+      <h2 style={SECTION_LABEL}>Communications</h2>
+      <div style={CARD}>
         <Row title="Sender identity" summary={senderSummary} disabled={os.loading} onClick={() => setOpenForm('sender')} />
       </div>
 
@@ -86,7 +97,7 @@ export default function AdminSettingsPage() {
         Clearing the test address sends real email to families — the go-live cutover.
       </p>
 
-      <SettingsSheets openForm={openForm} setOpenForm={setOpenForm} an={an} os={os} org={org} />
+      <SettingsSheets openForm={openForm} setOpenForm={setOpenForm} an={an} os={os} al={al} org={org} />
     </div>
   );
 }
