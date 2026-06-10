@@ -53,4 +53,16 @@ describe('DivisionCard invariants (anti-pattern #46/#43)', () => {
     const { getByRole } = render(<DivisionCard division={DIV} regState="open" />);
     expect(getByRole('button').disabled).toBe(true);
   });
+
+  it('labels "from $X" when the division has add_on fees (#63-money entry honesty)', () => {
+    const withAddOn = { ...DIV, fees: [{ fee_type: 'base', amount_cents: 80000 }, { fee_type: 'add_on', amount_cents: 2000 }] };
+    const { getByText } = render(<DivisionCard division={withAddOn} regState="open" onSelect={() => {}} />);
+    expect(getByText(/from \$800\.00/)).toBeTruthy();
+  });
+
+  it('shows the bare base fee (no "from") when there are no add_on fees', () => {
+    const { getByText, queryByText } = render(<DivisionCard division={DIV} regState="open" onSelect={() => {}} />);
+    expect(getByText(/\$800\.00/)).toBeTruthy();
+    expect(queryByText(/from/)).toBeNull();
+  });
 });

@@ -21,6 +21,10 @@ export default function DivisionCard({ division, regState, opensLabel, onSelect 
   const pillLabel = regState === 'upcoming' ? `OPENS ${opensLabel}` : pill.label;
   const grades = gradeLabel(division.grade_min, division.grade_max);
   const interactive = regState === 'open' && typeof onSelect === 'function';
+  // "from $X" when add-on fees exist — the base alone understates the total the
+  // review/confirm shows (#63-money entry-card honesty).
+  const hasAddOn = (division.fees || []).some((f) => f.fee_type === 'add_on');
+  const priceLabel = `${hasAddOn ? 'from ' : ''}${formatCurrency(division.base_fee_cents)}`;
 
   return (
     <button
@@ -49,7 +53,7 @@ export default function DivisionCard({ division, regState, opensLabel, onSelect 
           )}
         </div>
         <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 2 }}>
-          {[grades, formatCurrency(division.base_fee_cents)].filter(Boolean).join(' · ')}
+          {[grades, priceLabel].filter(Boolean).join(' · ')}
         </div>
       </div>
     </button>
