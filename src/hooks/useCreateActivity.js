@@ -44,7 +44,13 @@ export function useCreateActivity() {
         if (teamErr) throw teamErr;
         let season = null;
         if (team?.season_id) {
-          const { data: seasonRow, error: seasonErr } = await supabase.from('seasons').select('end_date').eq('id', team.season_id).single();
+          // Read base `programs` (every program_type), not the `seasons` VIEW
+          // (programs WHERE program_type='season'). A team under a camp/clinic/
+          // tryout program has season_id → a non-season programs.id absent from
+          // the view; .single() there throws PGRST116 and aborts ALL event
+          // creation for that team. .maybeSingle() degrades to no-end-date
+          // (computeDefaultUntil falls back to its iteration cap).
+          const { data: seasonRow, error: seasonErr } = await supabase.from('programs').select('end_date').eq('id', team.season_id).maybeSingle();
           if (seasonErr) throw seasonErr;
           season = seasonRow;
         }
