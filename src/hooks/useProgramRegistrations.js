@@ -32,5 +32,16 @@ export function useProgramRegistrations(programId) {
   // Microtask wrap keeps the synchronous setLoading(true) out of the effect body.
   useEffect(() => { Promise.resolve().then(refetch); }, [refetch]);
 
-  return { program, registrations, loading, error, refetch };
+  // A1 — mark a registration confirmed (lifecycle only: registrations.status
+  // pending → confirmed). Payment truth stays in family_balances/Financials; this
+  // NEVER writes a payment, so "confirmed" can't read as "paid". Admin-only via the
+  // registrations_update RLS policy (#36: error surfaced).
+  const markConfirmed = useCallback(async (regId) => {
+    const { error: e } = await supabase.from('registrations').update({ status: 'confirmed' }).eq('id', regId);
+    if (e) return { ok: false, error: e.message };
+    await refetch();
+    return { ok: true };
+  }, [refetch]);
+
+  return { program, registrations, loading, error, refetch, markConfirmed };
 }
