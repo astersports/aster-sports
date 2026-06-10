@@ -1,0 +1,122 @@
+==============================================================================
+PR-0b PARENT-READ RLS NARROWING — PRE-FLIGHT (read-only, NOTHING APPLIED)
+CC -> ARCHITECT + FRANK · 2026-06-10 · §11.8 r2 evidence + labeled lean.
+The hard gate (G1) for Track B (parent surface). Run on Frank's GO. AP#60
+live-verified (project vrwwpsbfbnveawqwbdmj). The migration below is HELD —
+it applies only on architect ratification of the one open fork + Frank's GO,
+mirror .sql written the same turn as apply (AP#21).
+==============================================================================
+
+WHY: Track B's "My Family" surface makes a logged-in parent read registrations
+(their child's enrollment + status). The live registrations_select +
+tryout_attendees_select policies are ORG-WIDE — a parent would read EVERY
+family's registrations and every tryout attendee's coach-private evaluation_note.
+This pre-flight enumerates the live state, proposes the narrowing (mirroring the
+canonical players split-policy), and PROVES it under an impersonated parent JWT.
+
+==============================================================================
+1. LIVE STATE (verified this session)
+==============================================================================
+registrations:
+  registrations_select  cmd=SELECT  role={authenticated}
+    USING (org_id = ANY (current_user_org_ids()))            <- ORG-WIDE (leak)
+  insert/update/delete   admin-only via user_has_role_in_org(org_id,{admin})  [OK]
+tryout_attendees:
+  tryout_attendees_select  cmd=SELECT  role={authenticated}
+    USING (org_id = ANY (current_user_org_ids()))            <- ORG-WIDE (leak;
+                                                                evaluation_note coach-private)
+  insert/update/delete   admin-only  [OK]
+
+Only the two SELECT policies are in scope. Writes are already admin-gated — DO
+NOT touch them.
+
+LEAK (certain by inspection + wave-4 empirical replay): current_user_org_ids()
+for a parent returns their org; the org-wide qual therefore matches every row in
+the org. Live magnitude: a LH parent can currently read registrations across all
+115 org players' families (verified count this session).
+
+==============================================================================
+2. CANONICAL PATTERN TO MIRROR (already shipped on players)
+==============================================================================
+players_select_parent  USING (id = ANY(current_user_player_ids()))      -- own kids
+players_select_staff   USING (user_has_role_in_org(org_id,{admin,coach}))-- staff org-wide
+(players also has players_select_parent_team via current_user_teammate_player_ids
+for roster visibility — NOT applied to registrations: a parent must NOT see
+teammates' registrations, which carry medical/emergency/financial fields.)
+
+Helper bodies confirmed:
+  current_user_player_ids()  SECDEF STABLE = the auth.uid() guardian's children
+    (player_guardians JOIN guardians WHERE user_id=auth.uid()).
+  user_has_role_in_org(org,roles[])  SECDEF.
+
+==============================================================================
+3. REPLAY PROOF (impersonated JWT claim, read-only, NOTHING WRITTEN/APPLIED)
+==============================================================================
+PARENT impersonation (Frank's family: guardian 9659f2bb, user 0b81b465):
+  resolved auth.uid()                = 0b81b465  (claim resolved correctly)
+  current_user_guardian_id()         = 9659f2bb
+  current_user_player_ids()          = [Charlie 8bc887ce, Milo 67690d8a]
+  candidate child visible (8bc887ce ∈ player_ids)        = TRUE
+  candidate ANY non-child visible (other 113 org players)= FALSE
+  => under the candidate parent predicate, the parent sees ONLY their 2 children's
+     registrations (vs all 115 org players' families under the live org-wide qual).
+ADMIN impersonation (Frank admin, user 1e06a3d4):
+  candidate staff predicate user_has_role_in_org(org,{admin,coach}) = TRUE
+  => admin/coach retain org-wide read.
+
+VERDICT: the candidate narrows parents to own-children and preserves staff
+org-wide — proven without applying anything.
+
+==============================================================================
+4. HELD CANDIDATE MIGRATION (NOT APPLIED — awaits the §5 fork + Frank GO)
+==============================================================================
+  -- registrations: org-wide SELECT -> split parent-own + staff
+  DROP POLICY IF EXISTS registrations_select ON public.registrations;
+  CREATE POLICY registrations_select_parent ON public.registrations
+    FOR SELECT TO authenticated
+    USING (player_id = ANY (public.current_user_player_ids()));
+  CREATE POLICY registrations_select_staff ON public.registrations
+    FOR SELECT TO authenticated
+    USING (public.user_has_role_in_org(org_id, ARRAY['admin','coach']));
+    -- ^ COACH FORK (§5): admin-only vs admin+coach. Mirrors players_select_staff
+    --   (admin+coach) as the default lean.
+
+  -- tryout_attendees: staff-only SELECT (evaluation_note is coach-private).
+  -- No parent policy — fully closes the evaluation_note leak. B1 does not read
+  -- tryout_attendees, so parents lose nothing.
+  DROP POLICY IF EXISTS tryout_attendees_select ON public.tryout_attendees;
+  CREATE POLICY tryout_attendees_select_staff ON public.tryout_attendees
+    FOR SELECT TO authenticated
+    USING (public.user_has_role_in_org(org_id, ARRAY['admin','coach']));
+
+  -- (SELECT policies take no with_check — AP#20 N/A. Index support: registrations
+  --  has idx_registrations_player_id for the parent predicate.)
+
+POST-APPLY VERIFY (in the migration DO block, on apply): re-run the §3 parent +
+admin impersonations and assert parent sees only own-children rows, admin org-wide.
+
+==============================================================================
+5. OPEN FORK FOR THE ARCHITECT (one decision; CC lean labeled)
+==============================================================================
+F-RLS-1  registrations_select_staff scope: ADMIN-ONLY or ADMIN+COACH?
+  - registrations carry medical_notes, emergency contacts, custom_responses.
+  - admin+coach mirrors the canonical players_select_staff and lets a coach see
+    who's registered for their program. CC LEAN: admin+coach (consistency), UNLESS
+    the medical/emergency fields should be admin-only — in which case admin-only
+    and coaches read roster (already team-scoped) instead.
+  tryout_attendees: CC lean = staff-only (no parent policy) for v1; if parents
+  later need placement, a column-limited view omitting evaluation_note (separate
+  build). Confirm.
+
+==============================================================================
+6. GATES / SEQUENCE
+==============================================================================
+  - This is PR-0b, the HARD GATE before Track B PR-B1 reads registrations.
+  - On architect ratification of F-RLS-1 + Frank's GO: CC applies via MCP +
+    writes the mirror .sql the same turn (AP#21), runs the post-apply verify, and
+    re-replays under the impersonated parent JWT to confirm in-prod.
+  - Pairs with (not blocked by): teams_select singular->plural (PR-0.3, latent
+    multi-org) — separate.
+==============================================================================
+END PR-0b PRE-FLIGHT. Candidate proven, NOTHING APPLIED. Awaiting F-RLS-1 + GO.
+==============================================================================
