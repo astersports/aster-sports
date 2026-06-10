@@ -1,0 +1,112 @@
+==============================================================================
+CC -> ARCHITECT : BRIEF-3 (pilot-redirect nudge bug) — DIAGNOSIS + FIX DESIGN
+Date 2026-06-10. Frank GO'd BRIEF-3. CC traced it to live ground truth (AP#60).
+The 06-09 audit finding is PARTLY STALE; the real remaining bug + a concrete fix
+are below. One design fork needs the architect's nod (it touches a shared
+queue-builder contract + the pilot-gate semantics) before CC builds. NOTHING
+APPLIED.
+==============================================================================
+
+GROUND-TRUTH CORRECTION (the audit finding moved, like the Tier-0/1 cluster):
+  Audit said "academy_callup_notice resolves from player_guardians directly,
+  NEVER calls the redirect RPC." FALSE now — academyCallupNoticeData.js:35 AND
+  rsvpNudge.js:64 BOTH call get_digest_recipients(p_pilot_only:true) and compute
+  `redirectMode` (the D-5(a) work landed). So the "never calls the RPC" half is
+  fixed. The bug that REMAINS is narrower + precise (below).
+
+------------------------------------------------------------------------------
+THE REAL REMAINING BUG (live-verified)
+------------------------------------------------------------------------------
+The pilot model has TWO recipient shapes:
+  - DIGEST kinds (weekly_digest, etc.): get_digest_recipients returns SYNTHETIC
+    rows: guardian_id = NULL, email = pilot_test_recipient_email. So the queued
+    recipient has email_at_send = pilot email + guardian_id = NULL. The edge gate
+    (send-tournament-message decidePilotGate) only checks recipients WITH a
+    guardian_id, so the synthetic rows pass → delivered to the pilot inbox. ✓
+  - PER-PLAYER kinds (rsvp_nudge, academy_callup_notice): the resolver, in
+    redirectMode, SKIPS the allowlist filter (rsvpNudge.js:91 / academyCallup…:55)
+    and builds slices straight from player_guardians — i.e. with the REAL
+    guardian_id AND the REAL family email. It does NOT swap in the pilot email.
+
+CONSEQUENCE at send time (send-tournament-message index.ts:179-200): pilot mode
+ON, the queue now contains recipients with REAL guardian_id. decidePilotGate
+checks each: is the real guardian is_pilot_family?
+  - If NO → the WHOLE send 403-ABORTS  ← THIS IS FRANK'S REPORTED NUDGE ERROR.
+  - If YES → it emails the REAL family (not the pilot inbox).
+Either way the per-player kinds are broken in pilot redirect mode: the resolver
+builds a real-guardian recipient where the digest builds a synthetic pilot one.
+The redirectMode skip "fixes the No-recipients empty" but leaves the recipient
+pointed at the real family/gate. The audit's prescribed fix ("substitute
+pilot_test_recipient_email as email_at_send, preserve real guardian_id/player_id
+for token minting") is exactly right and NOT yet implemented.
+
+------------------------------------------------------------------------------
+FIX DESIGN (CC proposed; the fork is WHERE the substitution lives)
+------------------------------------------------------------------------------
+The contract the fix must satisfy (subtle — this is why it's an architect nod):
+  (a) TOKEN MINTING must use the REAL guardian_id + player_id (mint_rsvp_token /
+      mint_callup_token key on the real (event, player, guardian) — the pilot
+      tester clicks the link and it RSVPs as the real family; that's the point of
+      redirect verification).  Minting happens in the send helper BEFORE queueing.
+  (b) The QUEUED RECIPIENT ROW must have email_at_send = pilot_test_recipient_email
+      AND guardian_id = NULL — so it (i) delivers to the pilot inbox and (ii) is
+      SKIPPED by decidePilotGate (same shape the digest synthetic rows already
+      use). guardian_id real here = the 403/real-email bug.
+
+So minting (real ids) and the recipient row (pilot email, null guardian) must
+diverge. Touch points either way:
+  1. SHARED helper for the RPC call + extraction — return
+     { allowedGuardianIds, redirectMode, redirectEmail }, where
+     redirectEmail = rpcRows.find(r => !r.guardian_id && r.email)?.email.
+     Both resolvers already duplicate this block verbatim — DRY it (the audit's
+     "shared per-player redirect helper").
+  2. Surface redirectMode + redirectEmail OUT of the resolver (today computed
+     internally, discarded) so the send helper can act on it.
+  3. Apply the redirect when building the recipient rows: email_at_send :=
+     redirectEmail, guardian_id := NULL — while the slice keeps real guardian_id
+     for (a).
+
+  FORK — where step 3 lives:
+   OPTION A (CC LEAN): pass `redirect: { email: redirectEmail }` into
+     queueComposedMessages; buildFanoutRows nulls guardian_id + sets the pilot
+     email on each family row when redirect is present. Pro: one substitution
+     point, symmetric with how the digest already produces null-guardian/pilot
+     rows; the per-player send helpers (sendRsvpNudge / academy callup) just pass
+     the flag. Con: adds a (small, opt-in, default-off) branch to the SHARED
+     queueComposedMessages/buildFanoutRows used by the 4 calendar kinds too —
+     needs a test that the non-redirect path is byte-unchanged (AP#43).
+   OPTION B: a dedicated per-player redirect step in the send helpers that
+     rewrites the message rows (email→pilot, guardian→null) AFTER mint, BEFORE
+     queue, leaving the shared builder untouched. Pro: zero blast radius on the
+     shared builder. Con: a second place that knows the recipient-row shape (mild
+     duplication of buildFanoutRows' email/guardian assignment).
+  CC LEAN: A — one redirect substitution point, opt-in flag, locked with an AP#43
+  test proving (i) redirect rows = {pilot email, null guardian} and (ii) the
+  non-redirect calendar-kind path is unchanged. But A touches a shared,
+  heavily-tested builder, so I want your nod before I edit it.
+
+------------------------------------------------------------------------------
+SCOPE + TESTS
+------------------------------------------------------------------------------
+  Files: a new shared redirect helper (extract from the two resolvers); rsvpNudge.js
+  + academyCallupNoticeData.js (use it + surface redirectEmail); the send helpers
+  rsvpNudgeSend.js + the academy callup send; queueComposedMessages(+builders) IF
+  Option A. Edge function UNCHANGED (the gate stays fail-closed — correct).
+  Tests: extend rsvpNudge.contract / academyCallupNotice.contract for redirect
+  mode (slice/recipient = pilot email + null guardian, tokens minted with real
+  ids); a queueComposedMessages test that redirect rows null the guardian + the
+  non-redirect path is unchanged. (The two contract tests already exist.)
+  Pilot pre-flight: confirm get_digest_recipients returns email=pilot_test_
+  recipient_email on the synthetic rows for this org (migration
+  20260511115858_wave_4_3_i_pilot_test_recipient_email) before relying on
+  redirectEmail — CC will verify live.
+
+------------------------------------------------------------------------------
+ASK
+------------------------------------------------------------------------------
+  Ratify the fix shape + the fork (CC lean A: redirect substitution in
+  queueComposedMessages via an opt-in flag, AP#43-locked). On your nod CC builds +
+  tests + (this is app/edge code, no migration) ships it as its own PR.
+==============================================================================
+END BRIEF-3 DIAGNOSIS + FIX DESIGN.
+==============================================================================
