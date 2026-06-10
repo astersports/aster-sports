@@ -2,9 +2,11 @@ import { Link, useParams } from 'react-router-dom';
 import { useProgramRegistrations } from '../../hooks/useProgramRegistrations';
 import { formatCurrency } from '../../lib/formatters';
 import { programBadge } from '../../lib/programGrouping';
+import { divisionsApplyTo } from '../../lib/programSetup';
 import AdminBackHeader from '../../components/admin/AdminBackHeader';
 import Badge from '../../components/shared/Badge';
 import ProgramTeamsSection from '../../components/admin/program-detail/ProgramTeamsSection';
+import ProgramFlatFeeEditor from '../../components/admin/program-detail/ProgramFlatFeeEditor';
 import ProgramManageZone from '../../components/admin/program-detail/ProgramManageZone';
 
 // Date-only columns: parse + display UTC so the day never shifts (date-only
@@ -49,6 +51,8 @@ export default function ProgramDetailPage() {
       </div>
 
       <ProgramTeamsSection programId={id} programType={program.program_type} />
+
+      {!divisionsApplyTo(program.program_type) && <ProgramFlatFeeEditor program={program} />}
 
       <div style={secLabel}>Registrations · {registrations.length}{pending > 0 ? ` · ${pending} pending` : ''}</div>
 

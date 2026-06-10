@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { checkSlugAvailable, dayBoundaryTs, divisionsApplyTo, slugify, statusForProgramType, validateProgramDates } from '../lib/programSetup';
+import { upsertImplicitFee } from '../lib/implicitDivision';
 
 // Re-exported so existing callers keep their import path (ProgramSetupPage
 // imports slugify from here); the pure logic lives in lib/programSetup (AP#27).
@@ -58,6 +59,17 @@ export function useProgramSetup() {
       if (feeRows.length) {
         const { error: e3 } = await supabase.from('division_fees').insert(feeRows);
         if (e3) { setError(e3.message); setSaving(false); return { ok: false, error: e3.message }; }
+      }
+    } else {
+      // D1 — non-season programs (tryout/camp/clinic/…) carry a single flat fee as
+      // ONE implicit division (coed, no grade band). The funnel skips the picker;
+      // the word "division" never surfaces. Setting it on create makes the program
+      // registrable immediately.
+      const cents = Math.round(parseFloat(form.flat_fee || 0) * 100);
+      if (cents > 0) {
+        try {
+          await upsertImplicitFee(supabase, { orgId, programId: prog.id, programName: form.name.trim(), amountCents: cents });
+        } catch (e) { setError(e.message); setSaving(false); return { ok: false, error: e.message }; }
       }
     }
 
