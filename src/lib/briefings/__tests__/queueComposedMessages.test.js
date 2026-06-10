@@ -142,6 +142,47 @@ describe('queueComposedMessages — pure builders', () => {
   });
 });
 
+describe('queueComposedMessages — BRIEF-3 pilot redirect (Option A, AP#43 lock)', () => {
+  // CONTRACT: in pilot REDIRECT mode the per-player send helpers pass
+  // redirect:{ email }. buildFanoutRows rewrites EACH family row to the pilot
+  // shape (guardian_id null + pilot email) — identical to the digest synthetic
+  // rows, passing decidePilotGate. The NON-redirect path (the 4 calendar kinds)
+  // stays byte-unchanged. Minting (real ids) happens upstream in the send
+  // helper, never here.
+
+  it('redirect rewrites every family row to {pilot email, NULL guardian}', () => {
+    const messages = [familyMessage('g1', 'real1@x', 't-1'), familyMessage('g2', 'real2@x', 't-1')];
+    const rows = buildFanoutRows({ messageId: 'm-1', messages, testOnly: false, redirect: { email: 'pilot@x' } });
+    expect(rows).toHaveLength(2);
+    expect(rows.every((r) => r.guardian_id === null)).toBe(true);
+    expect(rows.every((r) => r.email_at_send === 'pilot@x')).toBe(true);
+  });
+
+  it('redirect keeps each real family as its own row (distinct bodies survive dedup)', () => {
+    // Two families on the SAME team → both reach the pilot inbox as distinct
+    // rows (distinct subjects), not collapsed. Dedup runs on the real
+    // guardian_id BEFORE the pilot rewrite, so the per-family bodies survive.
+    const messages = [familyMessage('g1', 'real1@x', 't-1'), familyMessage('g2', 'real2@x', 't-1')];
+    const rows = buildFanoutRows({ messageId: 'm-1', messages, testOnly: false, redirect: { email: 'pilot@x' } });
+    expect(rows.map((r) => r.subject_rendered).sort()).toEqual(['Subj g1', 'Subj g2']);
+  });
+
+  it('non-redirect path is BYTE-UNCHANGED (calendar kinds): real guardian + email preserved', () => {
+    const messages = [familyMessage('g1', 'real1@x', 't-1'), familyMessage('g2', 'real2@x', 't-1')];
+    const withoutParam = buildFanoutRows({ messageId: 'm-1', messages, testOnly: false });
+    const withUndefined = buildFanoutRows({ messageId: 'm-1', messages, testOnly: false, redirect: undefined });
+    expect(withUndefined).toEqual(withoutParam);
+    expect(withoutParam.map((r) => r.guardian_id)).toEqual(['g1', 'g2']);
+    expect(withoutParam.map((r) => r.email_at_send)).toEqual(['real1@x', 'real2@x']);
+  });
+
+  it('redirect with team slices also rewrites to pilot shape (no real guardian leaks)', () => {
+    const guardians = [{ guardian_id: 'g1', email: 'g1@x' }, { guardian_id: 'g2', email: 'g2@x' }];
+    const rows = buildFanoutRows({ messageId: 'm-1', messages: [teamMessage('t-1', guardians)], testOnly: false, redirect: { email: 'pilot@x' } });
+    expect(rows.every((r) => r.guardian_id === null && r.email_at_send === 'pilot@x')).toBe(true);
+  });
+});
+
 describe('queueComposedMessages — perRecipientSubstitutor signature (Cutover PR 7b-2)', () => {
   // Pure-builder test only — the perRecipientSubstitutor application
   // is exercised inside queueComposedMessages itself (DB round-trip

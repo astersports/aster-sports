@@ -23,6 +23,7 @@
 
 import { buildOrgContext } from '../buildOrgContext';
 import { computeUrgency, EventAlreadyStartedError, EventHasNoTeamError } from './rsvpNudgeHelpers';
+import { resolvePilotRedirect } from './pilotRedirect';
 
 
 const EVENT_SELECT = 'id, title, team_id, event_type, start_at, end_at, location, location_id, opponent, status, publish_status, teams ( id, name, team_color, sort_order, org_id )';
@@ -45,36 +46,15 @@ async function fetchUnrespondedSlices(supabase, event, now, pilotOnly) {
   const unresponded = active.filter((r) => !respondedSet.has(r.player_id));
   const playerNameById = new Map(unresponded.map((r) => [r.player_id, r.players?.first_name || '']));
 
-  // D-5(a) — pilot mode: use get_digest_recipients RPC for the pilot
-  // gate instead of the bare is_pilot_family field. Aligns this resolver
-  // with tournamentPrelimHelpers.js Wave 4.3-I pattern. Post-cutover
-  // (D-4 a) this picks up real pilot families (RPC FILTER branch). In
-  // pre-cutover REDIRECT verification mode, synthetic rows (guardian_id
-  // null) are dropped by the player_guardians intersection by design —
-  // verification-mode sample renders for per-player kinds are out of
-  // D-5 scope and tracked separately.
-  let allowedGuardianIds = null;
-  let redirectMode = false;
-  if (pilotOnly) {
-    const orgId = event.teams?.org_id || null;
-    if (orgId) {
-      // AP #36 — destructure error alongside data so a failed RPC doesn't
-      // silently produce a false-empty allowlist (which would drop every
-      // recipient and look like a normal 0-recipient result).
-      const { data: rpcRows = [], error: rpcErr } = await supabase.rpc('get_digest_recipients', { p_org_id: orgId, p_pilot_only: true });
-      if (rpcErr) throw rpcErr;
-      // REDIRECT mode: synthetic per-team rows (guardian_id null) and no real
-      // guardians → empty allowlist by construction. Skipping the per-guardian
-      // filter below lets the resolver still build a real sample (the
-      // "No recipients" bug otherwise). TEST send delivers it to the pilot
-      // inbox; a real send stays gated by decidePilotGate. FILTER mode keeps
-      // the narrow allowlist behavior (redirectMode false).
-      redirectMode = (rpcRows || []).some((r) => r.guardian_id == null && r.email);
-      allowedGuardianIds = new Set((rpcRows || []).filter((r) => r.guardian_id).map((r) => r.guardian_id));
-    } else {
-      allowedGuardianIds = new Set();
-    }
-  }
+  // D-5(a) / BRIEF-3 — pilot gate via the shared resolvePilotRedirect helper
+  // (get_digest_recipients RPC, called once). FILTER mode narrows to the real
+  // pilot-family allowlist; REDIRECT mode (synthetic null-guardian rows) skips
+  // the per-guardian filter so the resolver still builds the REAL slices and
+  // surfaces redirectEmail — the send pipeline then queues the pilot row shape
+  // (null guardian + pilot email) while minting keeps the real ids. AP #36:
+  // the helper surfaces RPC errors (no false-empty allowlist).
+  const orgId = event.teams?.org_id || null;
+  const { allowedGuardianIds, redirectMode, redirectEmail } = await resolvePilotRedirect(supabase, orgId, pilotOnly);
 
   let pgRows = [];
   if (unresponded.length) {
@@ -97,7 +77,7 @@ async function fetchUnrespondedSlices(supabase, event, now, pilotOnly) {
   }
   const slices = Array.from(slicesMap.values()).map((s) => ({ kind: s.kind, guardian_id: s.guardian_id, email: s.email, team_id: s.team_id, unresponded_kids: Array.from(s._kids.values()).sort((a, b) => (a.first_name < b.first_name ? -1 : a.first_name > b.first_name ? 1 : 0)) })).sort((a, b) => (a.guardian_id < b.guardian_id ? -1 : a.guardian_id > b.guardian_id ? 1 : 0));
 
-  return { slices, totalRoster, respondedCount: respondedSet.size, unrespondedCount: unresponded.length };
+  return { slices, totalRoster, respondedCount: respondedSet.size, unrespondedCount: unresponded.length, redirectMode, redirectEmail };
 }
 
 export async function resolveRsvpNudge({ eventId, pilotOnly }, { supabase, now = new Date() } = {}) {
@@ -119,7 +99,7 @@ export async function resolveRsvpNudge({ eventId, pilotOnly }, { supabase, now =
     effectivePilotOnly = settings?.pilot_mode_enabled ?? true; // FORK-D fail-closed default
   }
 
-  const { slices, totalRoster, respondedCount, unrespondedCount } = await fetchUnrespondedSlices(supabase, event, now, effectivePilotOnly);
+  const { slices, totalRoster, respondedCount, unrespondedCount, redirectMode, redirectEmail } = await fetchUnrespondedSlices(supabase, event, now, effectivePilotOnly);
 
   let location = null;
   if (event.location_id) {
@@ -142,6 +122,9 @@ export async function resolveRsvpNudge({ eventId, pilotOnly }, { supabase, now =
       location,
       urgency: computeUrgency(event.start_at, event.end_at, now),
       rsvp_summary: { total_roster: totalRoster, responded_count: respondedCount, unresponded_count: unrespondedCount },
+      // BRIEF-3 — pilot redirect signal for the send pipeline. redirectMode
+      // true ⇒ queue the pilot row shape (null guardian + redirectEmail).
+      pilot: { redirectMode: !!redirectMode, redirectEmail: redirectEmail || null },
     },
     slices,
   };

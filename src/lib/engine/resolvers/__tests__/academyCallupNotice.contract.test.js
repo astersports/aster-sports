@@ -99,6 +99,19 @@ describe('academy_callup_notice resolver — contract', () => {
     expect(slices[0].guardian_id).toBe('0896bcd1-4b11-4ccc-a9ce-f03c29eb1d03');
   });
 
+  it('11b. BRIEF-3 — REDIRECT mode surfaces context.pilot; slices keep REAL ids for minting', async () => {
+    // Synthetic null-guardian pilot rows ⇒ redirectMode. The resolver still
+    // builds the real slices (no "No recipients" bug) and surfaces redirectEmail;
+    // the slices carry the real guardian_id for callup-token minting. The pilot
+    // row shape is applied later in buildFanoutRows (mint real, queue pilot).
+    const redirectRecipients = [{ guardian_id: null, email: 'olivejuiceinc1@gmail.com', is_pilot_family: true, team_ids: [] }];
+    const { context, slices } = await resolveAcademyCallupNotice({ eventId: EVENT_ID, playerId: PLAYER_ID, pilotOnly: true }, { supabase: mockClient({ ...FIXTURES, recipients: redirectRecipients }), now: NOW });
+    expect(context.pilot.redirectMode).toBe(true);
+    expect(context.pilot.redirectEmail).toBe('olivejuiceinc1@gmail.com');
+    expect(slices.length).toBeGreaterThan(0);
+    expect(slices.every((s) => !!s.guardian_id)).toBe(true);
+  });
+
   it('12. response deadline: capped at start - 30min when now+2h is later', async () => {
     // now = event start - 1h => now+2h overshoots; deadline should be start-30min.
     const closeNow = new Date('2026-05-12T22:00:00Z');

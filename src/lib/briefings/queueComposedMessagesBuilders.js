@@ -54,7 +54,7 @@ export function expandSliceToRows(messageId, message, rendered) {
   throw new Error(`queueComposedMessages: unknown slice.kind '${slice?.kind}'`);
 }
 
-export function buildFanoutRows({ messageId, messages, testOnly }) {
+export function buildFanoutRows({ messageId, messages, testOnly, redirect }) {
   if (testOnly) return [];
   const allRows = [];
   for (const message of messages) {
@@ -76,6 +76,19 @@ export function buildFanoutRows({ messageId, messages, testOnly }) {
     if (seen.has(key)) continue;
     seen.add(key);
     deduped.push(row);
+  }
+  // BRIEF-3 (Option A) — pilot REDIRECT substitution, the ONE owner of the
+  // recipient-row shape (no second rewrite in the send helpers — the #63
+  // two-owners pattern this redesign exists to kill). Applied AFTER dedup so
+  // each real family survives as its own row keyed on its real guardian_id,
+  // then every row is rewritten to the pilot shape (guardian_id null + pilot
+  // email) — identical to the digest synthetic rows, so it passes
+  // decidePilotGate (null-guardian rows skip the gate) and lands in the pilot
+  // inbox. Minting upstream keeps the REAL (event, player, guardian) ids, so
+  // the pilot tester's click RSVPs as the real family. Off by default → the 4
+  // calendar-anchored kinds are byte-unchanged.
+  if (redirect?.email) {
+    return deduped.map((row) => ({ ...row, guardian_id: null, email_at_send: redirect.email }));
   }
   return deduped;
 }

@@ -74,7 +74,7 @@ export async function resolveAcademyCallupNotice({ eventId, playerId, pilotOnly 
   const coaches = coachesData || [];
   const { data: org, error: orgErr } = await supabase.from('organizations').select('id, name, display_name, brand_colors, voice_config').eq('id', orgId).maybeSingle();
   if (orgErr) throw orgErr;
-  const slices = await fetchSlices(supabase, orgId, playerId, player.first_name, event.team_id, effectivePilotOnly);
+  const { slices, redirectMode, redirectEmail } = await fetchSlices(supabase, orgId, playerId, player.first_name, event.team_id, effectivePilotOnly);
 
   return {
     context: {
@@ -84,6 +84,8 @@ export async function resolveAcademyCallupNotice({ eventId, playerId, pilotOnly 
       player: { id: player.id, first_name: player.first_name, last_name: player.last_name, grade: player.grade, member_type: player.member_type },
       urgency: computeUrgency(event.start_at, event.end_at, now),
       response: computeResponseWindow(event.start_at, now),
+      // BRIEF-3 — pilot redirect signal for the send pipeline.
+      pilot: { redirectMode: !!redirectMode, redirectEmail: redirectEmail || null },
     },
     slices,
   };

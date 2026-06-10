@@ -30,7 +30,7 @@ import { supabase } from '../supabase';
 
 export { buildFanoutRows } from './queueComposedMessagesBuilders';
 
-export async function queueComposedMessages({ messageId, messages, testOnly, adminSample }) {
+export async function queueComposedMessages({ messageId, messages, testOnly, adminSample, redirect }) {
   if (!messageId) throw new Error('queueComposedMessages: missing messageId.');
   if (!Array.isArray(messages)) throw new TypeError('queueComposedMessages: messages must be an array.');
   if (!messages.length) throw new Error('queueComposedMessages: empty messages array.');
@@ -38,7 +38,10 @@ export async function queueComposedMessages({ messageId, messages, testOnly, adm
     if (!m?.slice) throw new Error('queueComposedMessages: each message requires a slice.');
     if (!Array.isArray(m.content_sections)) throw new TypeError('queueComposedMessages: each message requires content_sections array.');
   }
-  const familyRows = buildFanoutRows({ messageId, messages, testOnly });
+  // redirect (BRIEF-3): when set, buildFanoutRows rewrites each family row to
+  // the pilot shape (null guardian + pilot email). Default off → calendar
+  // kinds byte-unchanged. Only the per-player send helpers pass it.
+  const familyRows = buildFanoutRows({ messageId, messages, testOnly, redirect });
   // adminSample lets the caller pin admin BCC to a different body than
   // messages[0] — used by rsvp_nudge to avoid leaking the first family's
   // signed RSVP token URLs into the admin BCC. When undefined, admin BCC

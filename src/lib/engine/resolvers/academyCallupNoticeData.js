@@ -7,6 +7,8 @@
 // (injected by the resolver, which itself receives it via
 // options.supabase). No top-level supabase import — safe under vitest.
 
+import { resolvePilotRedirect } from './pilotRedirect';
+
 export const EVENT_SELECT = 'id, title, team_id, event_type, start_at, end_at, location_id, opponent, status, publish_status, academy_callup_player_ids, teams ( id, name, team_color, sort_order, org_id )';
 
 export async function fetchHomeTeam(supabase, playerId) {
@@ -18,30 +20,13 @@ export async function fetchHomeTeam(supabase, playerId) {
 }
 
 export async function fetchSlices(supabase, orgId, playerId, kidFirstName, receivingTeamId, pilotOnly) {
-  // D-5(a) — pilot mode: use get_digest_recipients RPC for the pilot
-  // gate instead of the bare is_pilot_family field. Aligns this resolver
-  // with tournamentPrelimHelpers.js Wave 4.3-I pattern. Post-cutover
-  // (D-4 a) this picks up real pilot families (RPC FILTER branch). In
-  // pre-cutover REDIRECT verification mode, synthetic rows (guardian_id
-  // null) are dropped by the player_guardians intersection by design —
-  // verification-mode sample renders for per-player kinds are out of
-  // D-5 scope and tracked separately.
-  let allowedGuardianIds = null;
-  let redirectMode = false;
-  if (pilotOnly) {
-    // AP #36 — destructure error alongside data so a failed RPC doesn't
-    // silently produce a false-empty allowlist (which would drop every
-    // recipient and look like a normal 0-recipient result).
-    const { data: rpcRows = [], error: rpcErr } = await supabase.rpc('get_digest_recipients', { p_org_id: orgId, p_pilot_only: true });
-    if (rpcErr) throw rpcErr;
-    // REDIRECT mode: synthetic per-team rows (guardian_id null) and no real
-    // guardians → empty allowlist by construction. Skip the per-guardian filter
-    // so the resolver still builds a real sample (otherwise "No recipients").
-    // TEST send delivers it to the pilot inbox; a real send stays gated by
-    // decidePilotGate. FILTER mode keeps the narrow allowlist (redirectMode false).
-    redirectMode = (rpcRows || []).some((r) => r.guardian_id == null && r.email);
-    allowedGuardianIds = new Set((rpcRows || []).filter((r) => r.guardian_id).map((r) => r.guardian_id));
-  }
+  // D-5(a) / BRIEF-3 — pilot gate via the shared resolvePilotRedirect helper
+  // (get_digest_recipients RPC, called once). FILTER mode narrows to the real
+  // pilot-family allowlist; REDIRECT mode (synthetic null-guardian rows) skips
+  // the per-guardian filter so the resolver still builds the REAL slices and
+  // surfaces redirectEmail for the send pipeline's pilot row shape. AP #36:
+  // the helper surfaces RPC errors (no false-empty allowlist).
+  const { allowedGuardianIds, redirectMode, redirectEmail } = await resolvePilotRedirect(supabase, orgId, pilotOnly);
 
   // Beta B6 audit — anti-pattern #36.
   const { data: rows, error } = await supabase.from('player_guardians').select('guardian_id, player_id, guardians ( id, email, org_id )').eq('player_id', playerId);
@@ -57,5 +42,6 @@ export async function fetchSlices(supabase, orgId, playerId, kidFirstName, recei
     seen.add(g.id);
     out.push({ kind: 'family', guardian_id: g.id, email: g.email, player_id: playerId, kid_first_name: kidFirstName, team_id: receivingTeamId });
   }
-  return out.sort((a, b) => (a.guardian_id < b.guardian_id ? -1 : a.guardian_id > b.guardian_id ? 1 : 0));
+  const slices = out.sort((a, b) => (a.guardian_id < b.guardian_id ? -1 : a.guardian_id > b.guardian_id ? 1 : 0));
+  return { slices, redirectMode, redirectEmail };
 }

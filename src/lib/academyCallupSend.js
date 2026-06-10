@@ -84,7 +84,12 @@ export async function sendAcademyCallupNotice({ state, supabase, now = new Date(
   if (msgErr) throw msgErr;
 
   const adminSample = { slice: { kind: 'family' }, subject: sampleComposed.subject, content_sections: sampleComposed.content_sections };
-  const queued = await queueComposedMessages({ messageId: msg.id, messages, testOnly: !!state.test_only, adminSample });
+  // BRIEF-3 — in pilot REDIRECT mode the resolver surfaced redirectEmail; pass
+  // it so the queued rows take the pilot shape (null guardian + pilot email).
+  // Tokens above were minted with REAL ids, so the pilot click responds as the
+  // real family. Edge gate (decidePilotGate) stays unchanged.
+  const redirect = context.pilot?.redirectMode ? { email: context.pilot.redirectEmail } : undefined;
+  const queued = await queueComposedMessages({ messageId: msg.id, messages, testOnly: !!state.test_only, adminSample, redirect });
 
   const { data: dispatch, error: dispErr } = await supabase.functions.invoke('send-tournament-message', { body: { message_id: msg.id } });
   if (dispErr) throw dispErr;
