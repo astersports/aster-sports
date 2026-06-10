@@ -1,0 +1,136 @@
+==============================================================================
+ARCHITECT -> CC : PROGRAMS CONTINUATION , REVIEW + RULINGS D1-D7
+Date 2026-06-10. Architect lane (design + ratify; CC performs all DB/repo work). Responds to
+PROGRAMS_AUDIT_AND_PLAN + ARCHITECT_DECISION_REQUEST. Renders: g1-nonseason-register-mobile,
+g2-multichild-accumulation-mobile, g4-mark-confirmed-mobile (G3 a11y specced below). NOTHING
+APPLIED. Mobile-first per the standing rule.
+==============================================================================
+
+REVIEW SUMMARY
+  Concur with the audit: programs is healthy , no correctness defects in shipped code,
+  money/#63 single-source CLOSED, DB layer sound, B3 ~65% built. The remaining work is unbuilt
+  spec plus two real risks (D2 live leak, D3 clock-skew). Caveat (lane): this rests on CC's
+  live verification; the architect rules on the surfaced evidence. THE HEADLINE: the one live,
+  published, registration-OPEN program (Fall 2026 Tryouts) is UNREGISTRABLE (funnel needs a
+  division, tryouts have none). That is the top threat to the parent experience , D1 fixes it.
+
+------------------------------------------------------------------------------
+D1 , NON-SEASON REGISTRATION , RULED: (A) implicit flat-fee unit.
+------------------------------------------------------------------------------
+Reject B (program-level fee = a SECOND fee source + a SECOND flow = the #63 two-owners
+regression). Reject C (tryout_sessions = a different, empty model that doesn't match the funnel).
+A keeps ONE funnel + ONE fee source.
+
+MODEL: a non-season program (tryout/camp/clinic) carries its single flat fee as ONE implicit
+division (gender=coed, grade band NULL, one base fee in division_fees). The word "division"
+NEVER surfaces for non-season , not in the funnel, not in the admin detail.
+
+FUNNEL: drive the picker off the EXISTING single source programRegistry.hasDivisions(type).
+  - hasDivisions=false -> auto-select the one unit, HIDE the division grid, register straight
+    through. Removes the "firstChild && !division -> not available" dead-end for non-season.
+  - the fee shows as the program's flat per-child fee (the b3-funnel render already implies this).
+
+ADMIN: a fee field labeled by type ("Tryout fee" / "Camp fee" / "Clinic fee") on the create
+path AND editable on the detail. Writing it creates/updates the implicit division + its base
+fee. The EXISTING Fall 2026 Tryouts becomes registrable the moment its fee is set on the detail.
+
+BUILD-VERIFY (correctness, CC confirms live): submit_registration must SKIP the grade-band
+check when the division's band is NULL (a tryout has no grade gate) and SKIP gender when coed.
+Divisions already allow null bands + coed, so this likely holds , confirm it does, or the
+implicit unit would false-block. Money path UNCHANGED: registration_fees <- division_fees
+(base), B0 reconciliation identical. Render G1.
+
+------------------------------------------------------------------------------
+D2 , pr1b RLS NARROWING , RULED: APPLY NOW. Needs Frank GO (security, urgent).
+------------------------------------------------------------------------------
+The documented org-wide deviation's precondition ("no parent UI") EXPIRED this session: B1/B2
+shipped, so any authenticated parent can read every family's per-registration fee amounts +
+equipment via a crafted query. Live P1. Narrow registration_fees + player_equipment SELECT to
+admin OR own-child (player_id = ANY current_user_player_ids()), per the prepared revert
+migration 20260531222056. Staff = admin-only (money/equipment-sensitive, consistent with
+F-RLS-1; no coach surface reads these today). ON FRANK GO: CC applies via MCP, mirrors (AP#21),
+replays under an impersonated parent JWT (admin sees all, parent sees own-child only,
+cross-family = 0). Security before features , do this first.
+
+------------------------------------------------------------------------------
+D3 , REG-OPEN GATE , RULED: (A) consume the server boolean.
+------------------------------------------------------------------------------
+RegisterEntryPage consumes get_public_program.registration_open for the interactivity gate;
+Date.now() stays only for the cosmetic "OPENS <date>" label. Kills the clock-skew "open then
+server-rejects" edge (#63-regopen collapse). App-only, no migration, no render. Ship with D2.
+
+------------------------------------------------------------------------------
+D4 , PRICE-DISPLAY LOCK , RULED: (A) AP#43 parity test + keep "from $X" (conditional).
+------------------------------------------------------------------------------
+Add an AP#43 test asserting estimateCart total == RPC authoritative_total_cents for the
+multi-child + family-cap case; it ships WITH R1 so it fences the exact moment the math could
+diverge. Keep "from $X" on DivisionCard, but ONLY when the division has add_on fees; otherwise
+show "$X" (no misleading "from" when base is the whole price). The review clarifies the full
+total either way.
+
+------------------------------------------------------------------------------
+D5 , BUILD ORDER , RULED: CC order ratified, with D1 pinned.
+------------------------------------------------------------------------------
+  1. D2 (RLS, live leak) + D3 (reg-open) , two small PRs, D2 first (security).
+  2. D1 non-season flat-fee unit + funnel skip-picker (render G1). PINNED HERE: it unblocks the
+     ONLY live registrable program; do not let it slip behind R1.
+  3. R1 multi-child one-submit + D4 parity test (the headline; render G2). Biggest PR.
+  4. R4 step a11y (render/spec G3 below).
+  5. R2 gender capture + client mismatch block (M1 live; b3-funnel render exists).
+  6. R7 M2 server gender_mismatch enforcement (after R2).
+  7. A1 mark-confirmed (render G4); A2/A3 deferred (D6).
+RATIONALE for a11y BEFORE gender: consumption (§16.16). The live coed tryout funnel consumes
+a11y on every interaction but consumes NO gender enforcement (coed skips it). Gender lands
+before the next gendered season opens registration.
+
+------------------------------------------------------------------------------
+D6 , ADMIN FAST-FOLLOWS , RULED: build A1; defer A2 + A3.
+------------------------------------------------------------------------------
+A1 mark-confirmed (pending->confirmed): BUILD (lifecycle-only per D-Q8; payment truth stays in
+family_balances; do not let "confirmed" read as "paid"). Real pilot value: an admin marks a
+tryout registrant confirmed without a payment row. Render G4.
+A3 (full division edit/delete): DEFER , EXCEPT the non-season flat fee must be EDITABLE (the
+narrow slice D1 needs). Full season-division editing has no pilot consumer.
+A2 (add-on fee editor): DEFER (§16.16 , no add_on consumer in the pilot; the RPC reads add_on
+when it exists, but nothing creates one yet).
+
+------------------------------------------------------------------------------
+G3 , STEP A11Y SPEC (no separate render; build to this)
+------------------------------------------------------------------------------
+  - FOCUS-TO-HEADING: on Next, move focus to the step <h2> (tabindex="-1"; ref.focus()). The
+    screen reader announces the new step; keyboard focus starts at the top of the step.
+  - ARIA-LIVE: a polite live region announces step changes ("Step 2 of 3: Guardian") and the
+    running total when it changes ("Amount due $80.00"). One visually-hidden aria-live="polite".
+  - ROLE=ALERT per step: grade/gender/submit error banners use role="alert" on EVERY step
+    (today only Review surfaces errors). The error moves focus to itself.
+  - INPUTS >= 16px: bump fields.jsx font-size 15 -> 16 (prevents iOS auto-zoom on focus).
+  - 4 -> 3 STEPS: collapse the optional Details step into an expandable on Review; label "Step
+    N of 3". The common path is 3 taps.
+  - VISIBLE FOCUS ring on all controls; honor prefers-reduced-motion; the sticky CTA labels the
+    amount ("Register both . $80.00") and is aria-disabled until valid.
+
+------------------------------------------------------------------------------
+D7 , RENDERS
+------------------------------------------------------------------------------
+  PRODUCED THIS TURN (mobile-first): G1 non-season register (flat fee, no picker) + admin fee
+  capture; G2 multi-child accumulation (add-another -> review-all transitions, not just the
+  end-state); G4 admin mark-confirmed row. G3 a11y = the spec above (behavioral; build to it).
+  CONFIRMED still matching the build: b3-funnel review math (server total + family discount);
+  gender control copy ("division group" Boys/Girls/Coed). Both stand.
+
+------------------------------------------------------------------------------
+PATH TO 10/10 (the through-line)
+------------------------------------------------------------------------------
+  PARENT: funnel + My Family + balance built; D1 (register the live tryout) + R1 (multi-child)
+    + R4 (a11y) close the experience; gender follows for gendered seasons.
+  ADMIN: create/detail/rollover built; A1 (mark-confirmed) + the D1 fee field finish the pilot
+    surface; A2/A3 deferred with cause.
+  COACH: no page by ruling (D-Q4); the read-only program label on team context + the existing
+    team surfaces are the coach experience. No coach gaps surfaced.
+  LANE: CC ships D2 (on GO) + D3 now; then D1; then R1; CC builds + verifies, architect ratifies.
+
+HELD WITH FRANK: GO on D2 (security, recommend now); GO on M1 is DONE (#943 shipped); the B2
+auth model is magic-link (shipped #944).
+==============================================================================
+END RULINGS D1-D7.
+==============================================================================

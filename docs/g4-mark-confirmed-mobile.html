@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>G4 admin mark-confirmed (mobile)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--as-navy:#1a1a2e;--as-cobalt:#4a8fd4;--as-cobalt-dark:#3070b0;--as-green:#1f9d57;--as-red:#c0392b;--as-amber:#c2700a;
+    --as-surface:#eef1f6;--as-border:#e2e8f0;--as-border-2:#eef1f5;--as-text:#151924;--as-text-2:#475467;--as-muted:#5b6676;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--as-surface);color:var(--as-text);-webkit-font-smoothing:antialiased;line-height:1.45}
+  .wrap{width:100%;max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+  .statusbar{background:var(--as-navy);color:#fff;padding:max(12px,env(safe-area-inset-top)) 20px 7px;display:flex;justify-content:space-between;font:600 13px Inter}
+  .appbar{background:var(--as-navy);color:#fff;display:flex;align-items:center;gap:10px;padding:4px 14px 13px}
+  .appbar .back{width:34px;height:34px;display:grid;place-items:center;margin-left:-4px}
+  .appbar .back svg{width:22px;height:22px;stroke:#fff;stroke-width:2;fill:none}
+  .appbar .ttl{flex:1;min-width:0}
+  .appbar h1{font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .appbar .ctx{font-size:11px;color:#aeb8cf;margin-top:1px}
+  .body{padding:14px 16px calc(28px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:13px}
+
+  .sechd{display:flex;align-items:baseline;gap:8px;padding:2px 2px}
+  .sechd .t{font:700 13.5px Inter;color:var(--as-navy)}
+  .sechd .c{font:700 11px Inter;color:var(--as-muted)}
+  .card{background:#fff;border:1px solid var(--as-border);border-radius:13px;overflow:hidden}
+  .reg{padding:13px 15px;border-bottom:1px solid var(--as-border-2)}
+  .reg:last-child{border-bottom:none}
+  .reg .top{display:flex;align-items:center;gap:9px}
+  .reg .nm{font-size:15px;font-weight:700;color:var(--as-navy);flex:1}
+  .lc{font:700 9px Inter;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:5px}
+  .lc.pending{color:var(--as-amber);background:#fbe6cf}.lc.conf{color:var(--as-green);background:#e3f4ea}
+  .reg .row2{display:flex;align-items:center;justify-content:space-between;margin-top:9px}
+  .pay{font:600 12px Inter}.pay.due{color:var(--as-red)}.pay.paid{color:var(--as-green)}
+  .mc{min-height:38px;padding:0 13px;display:inline-flex;align-items:center;gap:6px;font:700 12px Inter;color:var(--as-cobalt-dark);border:1px solid var(--as-border);border-radius:9px;background:#fff;cursor:pointer}
+  .mc svg{width:14px;height:14px;stroke:var(--as-cobalt-dark);stroke-width:2.4;fill:none}
+  .done{font:600 11.5px Inter;color:var(--as-muted);display:inline-flex;align-items:center;gap:5px}
+  .done svg{width:14px;height:14px;stroke:var(--as-green);stroke-width:2.4;fill:none}
+
+  .ex{background:#fff;border:1px solid var(--as-border);border-radius:12px;padding:14px 15px}
+  .ex h3{font:700 11.5px Inter;letter-spacing:.04em;text-transform:uppercase;color:var(--as-cobalt-dark);margin-bottom:8px}
+  .ex p{font-size:12.5px;color:var(--as-text-2);margin-bottom:6px}
+  .ex p b{color:var(--as-text);font-weight:600}
+  .note{font-size:11.5px;color:var(--as-muted);text-align:center}
+  code{font-family:ui-monospace,monospace;font-size:11px;background:var(--as-surface);padding:1px 5px;border-radius:4px;color:var(--as-text-2)}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679;&#9679;&#9679;</span></div>
+  <div class="appbar"><span class="back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></span><span class="ttl"><h1>Fall 2026 Tryouts</h1><div class="ctx">Admin &middot; registrations</div></span></div>
+  <div class="body">
+
+    <div class="sechd"><span class="t">Registrations</span><span class="c">3 &middot; $90.00 collected</span></div>
+
+    <div class="card">
+      <div class="reg">
+        <div class="top"><span class="nm">Charlie Samaritano</span><span class="lc pending">Pending</span></div>
+        <div class="row2"><span class="pay due">$45.00 due</span><button class="mc"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Mark confirmed</button></div>
+      </div>
+      <div class="reg">
+        <div class="top"><span class="nm">Milo Samaritano</span><span class="lc pending">Pending</span></div>
+        <div class="row2"><span class="pay due">$45.00 due</span><button class="mc"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Mark confirmed</button></div>
+      </div>
+      <div class="reg">
+        <div class="top"><span class="nm">Ava Russo</span><span class="lc conf">Confirmed</span></div>
+        <div class="row2"><span class="pay paid">Paid</span><span class="done"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Confirmed by admin</span></div>
+      </div>
+    </div>
+
+    <div class="note">G4 admin mark-confirmed (D-Q8 / A1)</div>
+
+    <div class="ex">
+      <h3>Two states, never merged</h3>
+      <p>The badge is <b>lifecycle</b> (<code>registration.status</code>): pending &rarr; confirmed. The money line is <b>payment truth</b> from <code>family_balances</code>. "Mark confirmed" writes <code>status='confirmed'</code> only, it does <b>not</b> mark paid. A confirmed registrant can still owe; a pending one can already have paid.</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
