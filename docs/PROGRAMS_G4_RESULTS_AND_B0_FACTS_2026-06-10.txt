@@ -1,0 +1,118 @@
+==============================================================================
+CC -> ARCHITECT : G4 FIXTURE RESULTS + PR-B0 ENCODING FACTS
+Date 2026-06-10. Answers the two ASKS from the G4 pre-build rulings:
+(1) G4 fixture built + run (option A); (2) the two facts to rule the PR-B0 ledger
+encoding. AP#60 live-verified, rollback-only — NOTHING PERSISTED.
+==============================================================================
+
+------------------------------------------------------------------------------
+ASK 1 — G4 FIXTURE BUILT + RUN (pre-B0 form). RESULT: G4_PASS.
+------------------------------------------------------------------------------
+File: supabase/tests/g4_money_path.sql — one server-side DO block, always ends in
+a RAISE (zero persistence, re-runnable), asserts fail loud. Ran live via MCP
+against project vrwwpsbfbnveawqwbdmj; result = the success RAISE:
+  "G4_PASS T1 T1b T1c T2 T2b T3 T3b (pre-B0: family_balances unchanged)"
+Post-run state verified clean: registrations=0, divisions=0, 0 G4 programs,
+LH family_cap_policy=null (restored). Nothing left behind.
+
+Per-assertion (all green):
+  T1   single child: authoritative_total_cents=10000 == sum(registration_fees)=10000;
+       AND family_balances UNCHANGED (0 financial_accounts created) — the F-B1-MONEY
+       disconnect, asserted (pre-B0 form).
+  T1b  MULTI-CHILD FAMILY-CAP (the D-Q7 headline fix): ONE submit with 2 children +
+       an enabled cap policy -> discount_cents=1000, total=19000 (= 2x10000 - 1000).
+       Proves the cap fires on a single multi-child call — the bug PR-B3 fixes.
+  T1c  duplicate (program,player) submit -> already_registered=[1], 0 new
+       registration_ids. No double-bill (S3 partial-unique + ON CONFLICT holds).
+  T2   grade 1 into a 3-5 division -> grade_below_band, no rows.
+  T2b  closed window -> registration_closed; draft/unpublished -> registration_closed.
+  T3   get_public_program(slug) -> published program + 1 division + base_fee_cents=8000;
+       a draft/unpublished slug -> null (the status='active' gate).
+  T3b  SET LOCAL ROLE anon -> anon CAN execute get_public_program AND
+       submit_registration (no botched anon-revoke). RESET after.
+
+Seed note: test programs seeded as program_type='camp' (not 'season') — the
+programs_one_active_season_per_org partial index forbids a 2nd active SEASON
+(Spring 2026 is active). The RPCs are program_type-agnostic, so camp is a faithful
+fixture. (Flagging so the architect knows the fixture doesn't exercise the
+season-active path — irrelevant to the money/grade/window/anon contract.)
+
+POST-B0: when PR-B0 lands, T1's family_balances clause flips from "0 accounts /
+unchanged" to "family_balances balance delta for (org, guardian, program) ==
+authoritative_total_cents", and the fixture becomes B0's acceptance test.
+
+------------------------------------------------------------------------------
+ASK 2 — THE TWO FACTS FOR THE PR-B0 LEDGER ENCODING (architect rules)
+------------------------------------------------------------------------------
+FACT (i) — family_balances balance formula (exact, from the live viewdef):
+  billed_cents   = season_fee_cents - discount_cents          (per financial_account)
+  net_paid_cents = SUM over financial_transactions of:
+                     payment    -> + amount_cents
+                     refund     -> - amount_cents
+                     adjustment -> + amount_cents
+                     fee        -> - amount_cents
+  balance_cents  = billed_cents - net_paid_cents
+  => a posted 'fee' transaction of amount A: net_paid -= A, so balance += A. A 'fee'
+     INCREASES what's owed. (season_fee_cents can stay 0 and the 'fee' transaction
+     alone drives the balance — OR the charge can live in season_fee_cents. Both
+     reach the same balance; that's the encoding choice below.)
+
+FACT (ii) — financial_accounts grain + uniqueness (live):
+  UNIQUE (org_id, guardian_id, season_id)  -- ONE account per family-guardian per
+                                              program (season_id FK -> programs,
+                                              ON DELETE RESTRICT).
+  guardian_id nullable; season_fee_cents/discount_cents default 0.
+  financial_transactions: account_id FK (CASCADE), org_id, transaction_type (text),
+  amount_cents (NOT NULL), occurred_at (NOT NULL), processing_fee_cents default 0;
+  recorded_by/applied_to_player_id nullable. No uniqueness on transactions (append-
+  only ledger).
+
+------------------------------------------------------------------------------
+CC's READ + LABELED LEAN on the encoding (architect rules the final form)
+------------------------------------------------------------------------------
+The single-source principle is fixed (family_balances). Two live-grounded encoding
+choices remain for the architect:
+
+  ENCODING A (CC LEAN) — append-only 'fee' transaction, account as a pure shell:
+    On each genuinely-new registration (v_reg_id IS NOT NULL, i.e. after the ON
+    CONFLICT so a duplicate posts nothing — exactly T1c):
+      1. ensure financial_accounts (org_id, guardian_id:=primary guardian,
+         season_id:=program) via INSERT ... ON CONFLICT (org_id,guardian_id,
+         season_id) DO NOTHING; season_fee_cents stays 0.
+      2. post ONE 'fee' financial_transaction on that account, amount_cents :=
+         sum(registration_fees for THIS registration) [= base + add_on, and the
+         family_discount line (negative, on reg[1]) is already inside that sum so
+         the family nets correctly across its per-reg 'fee' transactions].
+    Why CC leans here: append-only matches the existing ledger shape (payments/
+    refunds are transactions); idempotent by construction (no new reg -> no fee);
+    keeps season_fee_cents meaning "admin-set season price" untouched for imported
+    families; registration_fees stays the itemized receipt, family_balances the owes.
+    Family-cap discount needs NO special mapping — it's already a negative
+    registration_fee line folded into the per-reg sum.
+
+  ENCODING B — charge lives in season_fee_cents/discount_cents (no 'fee' txn):
+    On registration, set account.season_fee_cents += gross fee and discount_cents
+    += family_discount. Reaches the same balance, but: it mutates the same column
+    admins edit for imported families (mixes funnel + admin intent), it's not
+    append-only (re-derivation on dup is fiddly), and the family-cap maps to
+    discount_cents (a second place discount can live). CC does NOT lean here.
+
+OPEN for the architect to RULE (the encoding, per the lane): A vs B; if A,
+  per-registration 'fee' (CC lean) vs per-fee-line 'fee' (more granular rows);
+  and confirm the account keys on the PRIMARY guardian (v_guardian_id), co-guardian
+  excluded from the account key.
+
+------------------------------------------------------------------------------
+SEQUENCE + LANE (unchanged from the rulings)
+------------------------------------------------------------------------------
+  On the encoding ruling -> CC specs PR-B0 (the exact submit_registration SECDEF
+  change + any migration), architect ratifies the spec, CC applies (new lane: CC
+  executes DB work), then proves it by flipping the G4 fixture to its POST-B0 form
+  (family_balances delta == authoritative_total) and re-running green. Then PR-B1.
+  Held with Frank (not blocking): GO on M3 (CC applies under the new lane); BRIEF-3.
+
+ASK BACK: rule the encoding (A vs B; if A, per-reg vs per-line; confirm primary-
+guardian account key). On that, CC writes the PR-B0 spec for ratification.
+==============================================================================
+END G4 RESULTS + B0 FACTS.
+==============================================================================
