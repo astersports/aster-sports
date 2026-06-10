@@ -21,15 +21,15 @@ live consumption. S3..S8 are present-but-unwired substrate → Phase 4 (multi-te
 | S4 Records / Standings | **DESCOPED** | audit: Records does not read `circuit_rules`. The S4 spec/render/handoff are retained as Phase 4 reference. → Phase 4. |
 | S5 Programs | **DESCOPED** | audit: `division_fees` not consumed (live path: `registration_fees` + division embeds). → Phase 4. |
 | S6 Roster Rules | **DESCOPED** | audit: `org_settings.roster_rules` not consumed. → Phase 4. |
-| S7 Briefings | **HELD — see CC note** | Architect inferred DESCOPED; CC verification found the S7-adjacent values (`voice_config` signoff + `signature_coaches`) **ARE consumed** by shipped briefing resolvers. S7 is wired-but-editor-deferred + FORK C held — NOT unwired like S4/S5/S6/S8. Different un-park condition. See CC VERIFICATION NOTE below. |
+| S7 Briefings | **WIRED / editor-deferred / FORK-C-held (RULED a)** | `voice_config` + `signature_coaches` are read in production briefing sends, so S7 is NOT unwired like S4/S5/S6/S8. Editor deferred for the pilot: entangled with the operator-HELD FORK C, and FORK A already ruled the pilot voice/signature default. **Un-park = FORK C sign-off (Frank)**, then S7 spec/render/handoff. NOT Phase-4-unwired, NOT "2nd org needs it". See CC VERIFICATION NOTE below. |
 | S8 Schedule | **DESCOPED** | audit: `org_settings` reminder_cadence/rsvp_deadlines/note_rules not consumed by a settings reader. → Phase 4. |
 | S9 Notifications (org) | **BUILD** | the one remaining cleanly-consumed surface: `notification_channels` (org_settings) + `alert_configurations` + "Automatic messages" (reuse, shipped). NEXT BUILD. |
 
 ## NEW BUILD ORDER (replaces §3)
 
 S1 (done) → S2 (done) → S9 (build) → production smoke (admin/coach/parent), pilot
-stays DB-locked. That is the whole pilot settings system — three surfaces (S7 pending
-the architect's ruling on the CC note below).
+stays DB-locked. That is the whole pilot settings system — three surfaces. (S7 ruled
+WIRED/editor-deferred/FORK-C-held — no pilot build; un-park = FORK C sign-off.)
 
 ## PHASE 4 PARK (un-park conditions, ref `docs/DEPRECATIONS_REGISTRY.md` + CLAUDE.md §16.16)
 
@@ -43,9 +43,15 @@ S7 is NOT in the unwired bucket — see the CC note (its values are consumed tod
 
 ---
 
-## CC VERIFICATION NOTE (2026-06-09) — S7 disposition correction
+## CC VERIFICATION NOTE (2026-06-09) — S7 disposition correction — RULED (a) 2026-06-09
 
-The architect asked CC to "confirm in one word if S7 has a consumed editor." CC cannot
+Architect ruling DR-S7: **(a) WIRED / editor-deferred / FORK-C-held.** CC's catch
+accepted; the descope inference was withdrawn. Editor deferred (not built) because the
+surface is entangled with the operator-HELD FORK C and FORK A already ruled the pilot
+voice/signature default (`voice_config` sits at `{}`, default resolver covers it).
+Un-park = FORK C sign-off. Evidence below stands as the record.
+
+The architect asked CC to "confirm in one word if S7 has a consumed editor." CC could not
 confirm a clean DESCOPED, because verification contradicts the unwired premise:
 
 - `organizations.voice_config` is **read by shipped briefing resolvers** —
