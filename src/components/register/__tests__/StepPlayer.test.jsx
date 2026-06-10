@@ -38,3 +38,43 @@ describe('StepPlayer grade-band hard block (B3)', () => {
     expect(screen.getByRole('button', { name: /next/i })).not.toBeDisabled();
   });
 });
+
+// R2 — gender capture + hard mismatch block. Shown only for a gendered division.
+const GDIV = { name: '11U Girls', gender: 'female' };
+const COED = { name: 'Fall Tryouts', gender: 'coed' };
+const p = (extra) => ({ first_name: 'Ava', last_name: 'R', dob: '2016-01-01', grade: '5', ...extra });
+
+describe('StepPlayer gender capture + mismatch block (R2)', () => {
+  it('gendered division: no group picked → Next disabled, no alert yet', () => {
+    render(<StepPlayer player={p({ gender: '' })} division={GDIV} onField={() => {}} onNext={() => {}} />);
+    expect(screen.getByRole('group', { name: /division group/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /next/i })).toBeDisabled();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('gendered division: matching group → Next enabled, no alert', () => {
+    render(<StepPlayer player={p({ gender: 'female' })} division={GDIV} onField={() => {}} onNext={() => {}} />);
+    expect(screen.getByRole('button', { name: /next/i })).not.toBeDisabled();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('gendered division: mismatched group → Next disabled + role=alert', () => {
+    render(<StepPlayer player={p({ gender: 'male' })} division={GDIV} onField={() => {}} onNext={() => {}} />);
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toMatch(/for girls/i);
+    expect(screen.getByRole('button', { name: /next/i })).toBeDisabled();
+  });
+
+  it('picking a group calls onField(gender, ...)', () => {
+    const onField = vi.fn();
+    render(<StepPlayer player={p({ gender: '' })} division={GDIV} onField={onField} onNext={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Girls' }));
+    expect(onField).toHaveBeenCalledWith('gender', 'female');
+  });
+
+  it('coed division: no group control, Next enabled without a gender', () => {
+    render(<StepPlayer player={p({ gender: '' })} division={COED} onField={() => {}} onNext={() => {}} />);
+    expect(screen.queryByRole('group', { name: /division group/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /next/i })).not.toBeDisabled();
+  });
+});
