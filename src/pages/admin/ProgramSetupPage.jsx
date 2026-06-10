@@ -4,6 +4,7 @@ import { Field, TextInput } from '../../components/register/fields';
 import { primaryBtn } from '../../components/register/registerStyles';
 import DivisionRows from '../../components/admin/program-setup/DivisionRows';
 import ProgramTypeChooser from '../../components/admin/program-setup/ProgramTypeChooser';
+import SeasonPresetPicker from '../../components/admin/program-setup/SeasonPresetPicker';
 import AdminBackHeader from '../../components/admin/AdminBackHeader';
 import { slugify, useProgramSetup } from '../../hooks/useProgramSetup';
 
@@ -35,6 +36,10 @@ export default function ProgramSetupPage() {
       <div style={{ height: 12 }} />
 
       <ProgramTypeChooser value={form.program_type} onChange={(v) => set('program_type', v)} />
+
+      {form.program_type === 'season' && (
+        <SeasonPresetPicker onApply={(p) => setForm((f) => ({ ...f, name: p.name, start_date: p.start_date, end_date: p.end_date }))} />
+      )}
 
       <Field label="Program name" htmlFor="pname"><TextInput id="pname" value={form.name} onChange={(v) => set('name', v)} placeholder="Spring 2026" /></Field>
       <div style={{ display: 'flex', gap: 8 }}>

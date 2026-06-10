@@ -6,15 +6,23 @@ import ProgramEditSheet from './ProgramEditSheet';
 import { useProgramAdmin } from '../../../hooks/useProgramAdmin';
 import { dependencySummary } from '../../../lib/programDelete';
 
-// Program manage zone on the detail page (F14 + registry build): Activate (draft
-// only) + Edit + Delete. activate() is the unified Fork-3 path (single-active
-// for seasons via the registry). Delete confirms with a dependency count.
+// Program manage zone on the detail page (F14 + registry build): Activate /
+// Make-active-season + Roll-over-season (the capabilities ported from the
+// retired /admin/seasons door, PR-A1) + Edit + Delete. activate() is the unified
+// Fork-3 path (single-active for seasons via the registry); for a season it
+// archives the same-type active program first. Delete confirms with a count.
 export default function ProgramManageZone({ program, onUpdated }) {
   const navigate = useNavigate();
   const { counts, refetchCounts, updateProgram, deleteProgram, activate } = useProgramAdmin(program.id);
   const [editOpen, setEditOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [toast, setToast] = useState(null);
+
+  // A season can be (re)activated from any non-active state (the season switch
+  // ported from useSeasons.setActive — but same-type-scoped via activate()).
+  const isSeason = program.program_type === 'season';
+  const canActivate = program.status === 'draft' || (program.status === 'archived' && isSeason);
+  const activateLabel = program.status === 'archived' ? 'Make active season' : 'Activate program';
 
   const doActivate = async () => {
     const { error } = await activate(program.program_type);
@@ -39,8 +47,11 @@ export default function ProgramManageZone({ program, onUpdated }) {
 
   return (
     <div style={zone}>
-      {program.status === 'draft' && (
-        <button type="button" onClick={doActivate} className="as-press" style={activateBtn}>Activate program</button>
+      {canActivate && (
+        <button type="button" onClick={doActivate} className="as-press" style={activateBtn}>{activateLabel}</button>
+      )}
+      {isSeason && program.status === 'active' && (
+        <button type="button" onClick={() => navigate('/admin/rollover')} className="as-press" style={rolloverBtn}>Roll over season</button>
       )}
       <div style={{ display: 'flex', gap: 8 }}>
         <button type="button" onClick={() => setEditOpen(true)} className="as-press" style={editBtn}>Edit program</button>
@@ -65,5 +76,6 @@ export default function ProgramManageZone({ program, onUpdated }) {
 
 const zone = { marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--as-border-subtle)' };
 const activateBtn = { width: '100%', minHeight: 44, borderRadius: 10, fontSize: 15, fontWeight: 600, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', cursor: 'pointer', marginBottom: 8 };
+const rolloverBtn = { width: '100%', minHeight: 44, borderRadius: 10, fontSize: 15, fontWeight: 600, border: '1px solid var(--as-accent)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-accent)', cursor: 'pointer', marginBottom: 8 };
 const editBtn = { flex: 1, minHeight: 44, borderRadius: 10, fontSize: 15, fontWeight: 600, border: '1px solid var(--as-accent)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-accent)', cursor: 'pointer' };
 const delBtn = { flex: 1, minHeight: 44, borderRadius: 10, fontSize: 15, fontWeight: 600, border: 'none', backgroundColor: 'var(--as-danger-soft)', color: 'var(--as-danger)', cursor: 'pointer' };
