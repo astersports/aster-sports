@@ -567,6 +567,31 @@ seam (`docs/RECOVER_V1V4_FINDINGS_2026-06-09.txt` — architect ruling pending).
 - **3-B public-schedule QR → SHIPPED (#531).** `qrcode.react` + `publicScheduleUrl` + `ShareScheduleButton` (QR + copy-link sheet) on TeamDetailHero (staff) and PublicSchedulePage. Encodes `/schedule/:teamId` (public route).
 - **6-A parent-invite QR → SHELVED (Frank, 2026-05-27).** Not a QR-render add: onboarding is email-only via Supabase `inviteUserByEmail` (no `team_invites`/token table, no `/join` page). A real scan-to-join needs a join-token system + public join page + account→guardian linking (email-match or admin-approval) + security hardening — a multi-PR auth-adjacent arc. The email invite already works; at ~60 families the open-join security surface isn't worth it now. Revisit only with a deliberate design pass if in-person mass onboarding becomes a need.
 
+### §4.AK — Settings build scope reconciled (2026-06-09, batch consumption audit + §16.16)
+
+Source: `docs/SETTINGS_CONSUMPTION_AUDIT_2026-06-09.txt` +
+`docs/ASTERSPORTS_SETTINGS_MASTER_SPEC_AMENDMENT_v2.md`. The batch consumption audit
+collapsed the settings build from 9 surfaces to 3.
+
+- **SHIPPED:** S1 My Preferences (#915, #918), S2 Family Notifications (#916).
+- **REMAINING (consumed):** S9 Notifications (`notification_channels` + `alert_configurations`).
+  NEXT BUILD.
+- **DESCOPED → Phase 4** (present-but-unwired; 0 consumption): S3 Home Layout, S4 Records,
+  S5 Programs, S6 Roster Rules, S8 Schedule.
+- **S7 Briefings — PENDING architect ruling** (CC verification correction): NOT unwired.
+  `voice_config` + `signature_coaches` ARE consumed by shipped briefing resolvers, so an
+  S7 voice/signoff editor satisfies bucket (a). Filed as *wired/editor-deferred + FORK-C-held*,
+  not *unwired-descope*. Architect to confirm S7 substrate (see amendment v2 CC note).
+- **Relic tags applied:** migration `20260609225312_deprecate_unwired_config_relics`
+  (`circuit_rules`, `division_fees`, `dashboard_section_visibility`, `quick_actions_config`);
+  index in `docs/DEPRECATIONS_REGISTRY.md`. Tagged, NOT dropped (Phase-4 reseed may reuse).
+- **AP#21 mirror backfill:** the 3 pilot-lock migrations (`20260609210514` / `210721` /
+  `210917`) now have repo mirrors (were live-in-prod but unmirrored).
+- **Next:** S9 spec/render/handoff → build → production smoke. Pilot stays DB-locked
+  (`trg_guard_pilot_cutover` live).
+
+---
+
 **CORRECTION 2026-05-27:** the "no unblocked feature build remains" claim
 below was WRONG — it had a narrow feature-arc lens and never tracked the
 `LH_OPS_SPEC` / `LH_BRAND_CONTENT_MODEL` / ELITE-stack / push-notification
