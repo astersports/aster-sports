@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePublicProgram } from '../hooks/usePublicProgram';
+import { divisionsApplyTo } from '../lib/programSetup';
 import DivisionCard from '../components/register/DivisionCard';
+import NonSeasonRegisterHero from '../components/register/NonSeasonRegisterHero';
 
 // Public (unauth) registration entry — spec §5.2. /r/:slug → program hero + division grid.
 // Read-only in PR B; PR C wires DivisionCard.onSelect → the registration wizard.
@@ -51,6 +53,8 @@ export default function RegisterEntryPage() {
   const regState = resolveRegState(program, data.registration_open);
   const opensLabel = shortDate(program.reg_opens_at);
   const divisions = data.divisions || [];
+  // D1 — non-season programs register through one flat fee, no division grid.
+  const nonSeason = !divisionsApplyTo(program.program_type);
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
@@ -63,21 +67,30 @@ export default function RegisterEntryPage() {
         <div style={{ width: 32, height: 3, backgroundColor: 'var(--as-accent)', borderRadius: 2, margin: '8px auto' }} />
       </div>
 
-      <h2 style={{ fontSize: 13, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--as-text-tertiary)', margin: '0 0 12px' }}>Pick a division</h2>
-
-      {divisions.length === 0 && (
-        <div style={{ ...centered, fontSize: 15 }}>Divisions are being finalized. Check back soon.</div>
-      )}
-
-      {divisions.map((d) => (
-        <DivisionCard
-          key={d.id} division={d} regState={regState} opensLabel={opensLabel}
-          onSelect={() => navigate(`/r/${slug}/apply?division=${d.id}`)}
+      {nonSeason ? (
+        <NonSeasonRegisterHero
+          program={program} division={divisions[0]} regState={regState} opensLabel={opensLabel}
+          onContinue={() => navigate(`/r/${slug}/apply?division=${divisions[0].id}`)}
         />
-      ))}
+      ) : (
+        <>
+          <h2 style={{ fontSize: 13, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--as-text-tertiary)', margin: '0 0 12px' }}>Pick a division</h2>
 
-      {regState === 'closed' && divisions.length > 0 && (
-        <div style={{ ...centered, fontSize: 13, marginTop: 4 }}>Registration for {program.name} has closed.</div>
+          {divisions.length === 0 && (
+            <div style={{ ...centered, fontSize: 15 }}>Divisions are being finalized. Check back soon.</div>
+          )}
+
+          {divisions.map((d) => (
+            <DivisionCard
+              key={d.id} division={d} regState={regState} opensLabel={opensLabel}
+              onSelect={() => navigate(`/r/${slug}/apply?division=${d.id}`)}
+            />
+          ))}
+
+          {regState === 'closed' && divisions.length > 0 && (
+            <div style={{ ...centered, fontSize: 13, marginTop: 4 }}>Registration for {program.name} has closed.</div>
+          )}
+        </>
       )}
 
       <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--as-text-tertiary)' }}>Powered by Aster Sports · <a href="/privacy" style={{ color: 'inherit', textDecoration: 'underline' }}>Privacy</a> · <a href="/terms" style={{ color: 'inherit', textDecoration: 'underline' }}>Terms</a></div>

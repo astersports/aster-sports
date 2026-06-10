@@ -6,7 +6,8 @@ import DivisionRows from '../../components/admin/program-setup/DivisionRows';
 import ProgramTypeChooser from '../../components/admin/program-setup/ProgramTypeChooser';
 import SeasonPresetPicker from '../../components/admin/program-setup/SeasonPresetPicker';
 import AdminBackHeader from '../../components/admin/AdminBackHeader';
-import { slugify, useProgramSetup } from '../../hooks/useProgramSetup';
+import { divisionsApplyTo, slugify, useProgramSetup } from '../../hooks/useProgramSetup';
+import { programBadge } from '../../lib/programGrouping';
 
 // Admin program-setup (spec §3, MVP, Season-first per Q-3). Lean single-page create form:
 // program basics + registration window + publish toggle + divisions/fees. Tryout/Camp are
@@ -17,7 +18,7 @@ export default function ProgramSetupPage() {
   const [form, setForm] = useState({
     program_type: 'season',
     name: '', start_date: '', end_date: '', public_slug: '',
-    reg_opens_at: '', reg_closes_at: '', is_published: false,
+    reg_opens_at: '', reg_closes_at: '', is_published: false, flat_fee: '',
     divisions: [{ name: '', grade_min: '', grade_max: '', gender: '', fee: '' }],
   });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -56,11 +57,17 @@ export default function ProgramSetupPage() {
         Publish now (parents can register at the public link)
       </label>
 
-      {form.program_type === 'season' && (
+      {divisionsApplyTo(form.program_type) && (
         <>
           <h2 style={h2Style}>Divisions</h2>
           <DivisionRows divisions={form.divisions} onChange={(d) => set('divisions', d)} />
         </>
+      )}
+
+      {!divisionsApplyTo(form.program_type) && (
+        <Field label={`${programBadge(form.program_type).label} fee`} htmlFor="flatfee">
+          <TextInput id="flatfee" type="number" inputMode="decimal" value={form.flat_fee} onChange={(v) => set('flat_fee', v)} placeholder="45.00" />
+        </Field>
       )}
 
       {error && <div style={errStyle}>{error}</div>}
