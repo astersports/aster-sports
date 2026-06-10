@@ -1,0 +1,122 @@
+==============================================================================
+CC -> ARCHITECT : PROGRAMS REDESIGN — DECISION REQUEST (post-foundation)
+Date 2026-06-10. §11.8 r6 decision-request. Self-contained relay artifact.
+AP#60 live-verified where noted. NOTHING blocking — the foundation shipped; this
+asks the architect to opine on routing + two contracts before the next build wave.
+==============================================================================
+
+WHERE WE ARE (shipped this session, all on main / merging — one line each)
+  #928  PR-0a  useCreateActivity reads base programs (not the seasons view) — merged
+  #929  PR-0b  parent-read RLS narrowing PRE-FLIGHT (held candidate)        — merged
+  #930  PR-0b  mirror (AP#21) of the APPLIED migration 20260610141449       — merged
+        -> applied on Frank GO; CC verified live (policy shape + migration
+           registered + in-prod enforcement replay: parent=1 own-child,
+           admin=2 org-wide, coach=0 on registrations). GATE G1 CLEARED.
+  #931  PR-Rename  usePrograms -> useActiveSeasonTeams (D-Q9)               — merged
+        -> note: literal target useTeams was TAKEN (existing org-wide hook);
+           Frank ruled useActiveSeasonTeams. "program" no longer means "team".
+  #932  PR-A1a  port season capabilities onto the programs surface          — merged
+        -> Make-active-season (same-type activate, replaces the wrong-scope
+           useSeasons.setActive) + Roll-over-season entry + quarter presets.
+  #933  PR-A1b  retire /admin/seasons (one door)                            — auto-merge armed
+        -> route + 6 orphaned files deleted; the `seasons` VIEW stays as a
+           DB read-alias (now has ZERO app readers — migrations/edge only).
+  => PR-A1 (one door) + PR-Rename + the RLS gate are DONE. Lint/build clean on
+     every PR; tests at baseline (the only failures are 3 pre-existing
+     Missing-VITE_SUPABASE_URL env-config files, green in CI).
+
+------------------------------------------------------------------------------
+DECISION 1 — D-NEXT: routing the next build wave
+------------------------------------------------------------------------------
+REQUEST: with A1 + Rename done and G1 cleared, which wave next — Track B
+  (parent surface, the north-star) or Track A depth (A2/A4/A5)?
+CONTEXT: the master sequence orders "Track B (north-star), then A2/A4/A5 depth."
+  Track B is hard-gated on G4 (see Decision 2) — the money + anon paths are
+  structurally correct but have NEVER run with real data (registrations=0,
+  division_fees=0, divisions=0, verified live). So "Track B next" really means
+  "G4 integration test FIRST, then PR-B1/B2/B3."
+OPTIONS:
+  (A) Track B now — REQUIRES landing the G4 test (Decision 2) before PR-B1, then
+      PR-B1 My Family (reads the now-narrowed registrations + family_balances) ->
+      PR-B2 confirmation bridge -> PR-B3 funnel money/multi-child/errors/a11y.
+      Delivers the 100%-for-parent win soonest; rests on the G4 safety net.
+  (B) Track A depth now — A2 (Archive + CASCADE blast-radius type-to-confirm,
+      D-Q2) -> A4 (§16.14 detail + editable divisions/fees + mark-confirmed) ->
+      A5 (create polish). No migration, no new gate; hardens the admin surface
+      while G4/D-Q5 settle. Defers the parent win.
+  (C) Interleave — G4 test + PR-B1 in parallel with A2 (A2 is independent,
+      no shared files). Fastest overall but two arcs in flight.
+CC LEAN (AP#39): (A) Track B, because the parent gap is the headline finding of
+  the whole audit and G1 (its hard prerequisite) is already cleared — the only
+  thing between us and the north-star is the G4 test, which we owe anyway. A2/A4/
+  A5 are real but they polish a surface only admins see; the parent has NOTHING
+  today. Land G4 -> PR-B1 first.
+
+------------------------------------------------------------------------------
+DECISION 2 — D-G4: ratify the G4 integration-test contract (the Track B gate)
+------------------------------------------------------------------------------
+REQUEST: G4 (master §4) requires "an integration test on the money path +
+  the anon /r/:slug flow before PR-B1." Ratify WHAT it asserts so CC builds the
+  right gate (the money path has never run with real data — the test is the
+  first execution).
+CONTEXT/EVIDENCE: submit_registration (SECDEF) computes authoritative_total_cents
+  from division_fees (base+add_on) and writes registration_fees;
+  family_balances is the §11.5 canonical "owes" view. estimateCart is the
+  client preview (must NOT be asserted as truth). Live: 0 divisions/fees, so the
+  test must SEED a program+division+fees, run the RPC, assert, and roll back.
+CC PROPOSED CONTRACT (architect ratifies/edits):
+  T1 (money path, rollback-only via execute_sql or a vitest integration):
+      seed program(active,published,window-open) + division(grade band) +
+      division_fees(base + add_on); call submit_registration with one child;
+      ASSERT registration row created (status pending), registration_fees rows =
+      base+add_on, authoritative_total_cents == sum(registration_fees) ==
+      family_balances delta for that account. Then a 2nd concurrent same-(program,
+      player) submit -> exactly one live reg (the S3 partial-unique holds).
+  T2 (grade band): a child below/above the division band -> RPC raises
+      grade_below_band / grade_above_band; no reg/fee rows written.
+  T3 (anon /r/:slug): get_public_program returns the published-active program +
+      divisions + base_fee; a draft/unpublished slug returns null (the
+      status='active' gate). (Component/e2e-light; or RPC-level if E2E deferred.)
+  OPEN sub-question: vitest-integration (mock-free, hits the live RPC via a test
+      transaction) vs an e2e/Playwright pass for the /r/:slug UI. CC lean:
+      RPC-level integration for T1/T2 now (deterministic, cheap, rollback-safe);
+      defer the /r/:slug Playwright E2E to a follow-up (master §8 hole #3).
+
+------------------------------------------------------------------------------
+DECISION 3 — D-Q5-GO: timing of the gender/fee migration set
+------------------------------------------------------------------------------
+REQUEST: M3 (drop the dead fee-type enum values) is safe NOW (division_fees +
+  registration_fees both 0 rows, verified). Ship M3 ahead of M1/M2, or batch the
+  set behind one GO?
+CONTEXT: M3 is independent + reversible-cost-low while the tables are empty (the
+  architect's own note: "later it's a costly rewrite"). M1 (players.gender +
+  vocabulary reconcile male/female/coed + backfill) and M2 (submit_registration
+  gender check) pair with the B3 StepPlayer gender capture; M2 is non-enforcing
+  until capture lands.
+APPLY LANE (working flow, confirmed on PR-0b — not re-litigating): the migration
+  was applied on Frank's GO through the MCP lane on the architect/operator side;
+  CC wrote the mirror + re-replayed. CC will do the same for M1/M2/M3 (mirror +
+  post-apply replay) whenever they're applied. CC is also equipped to apply
+  directly on an explicit Frank GO if that's preferred — either works; just name
+  which so there's no double-apply.
+CC LEAN: ship M3 now (cheap, safe, closes the dead-schema drift incl.
+  registration_fees.fee_type NOT NULL alignment); M1/M2 ride with Track B's PR-B3
+  gender capture so enforcement and capture land together.
+
+------------------------------------------------------------------------------
+NOTES / RESIDUALS (no decision needed; flagged for the record)
+------------------------------------------------------------------------------
+  - TeamSwitcher `programs` prop (TeamDetailPage) was left un-renamed in
+    PR-Rename — it's a component API, out of the hook-rename scope. A trivial
+    follow-up if you want "program" fully purged from the teams path.
+  - The `seasons` VIEW now has zero app readers (useSeasons deleted). It remains
+    by design as a migration/edge read-alias per the D-Q1 ruling — no action.
+  - D-Q2 (keep CASCADE) lands as the A2 blast-radius type-to-confirm; D-Q5
+    (enforce/drop) lands as M1/M2/M3 + B3 capture. Both already re-spec'd.
+  - Held for your word: the D-Q5 set GO (Decision 3); BRIEF-3 (Frank's nudge
+    bug) remains OUT by default unless pulled in as a separate PR.
+
+==============================================================================
+ASKS: (1) rule D-NEXT (Track B vs A depth vs interleave); (2) ratify the D-G4
+test contract; (3) GO/sequence D-Q5 (M3 now?). CC proceeds on your rulings.
+==============================================================================
