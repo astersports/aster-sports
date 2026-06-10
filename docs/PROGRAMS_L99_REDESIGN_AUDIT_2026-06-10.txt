@@ -1,0 +1,516 @@
+==============================================================================
+CC -> ARCHITECT : PROGRAMS REDESIGN — L99 AUDIT DOC (§16.15)
+Date: 2026-06-10 · Collaboration mode (§11.8) · Self-contained relay artifact.
+AP#60 live-verified (project vrwwpsbfbnveawqwbdmj, SELECT-only; file:line +
+routes + function bodies + FK/index/RLS introspection confirmed THIS session).
+NOTHING APPLIED. This is the canonical artifact the architect reviews BEFORE
+any PR-A code. No PR-A code is written until this is reviewed.
+==============================================================================
+
+GOAL (Frank): redesign PROGRAMS for SIMPLIFICATION + EASE OF USE. Target = a
+10/10 experience and 100% experience-level for ALL THREE roles (parent, coach,
+admin). This doc delivers the five §16.15 elements:
+  (a) file-by-file current-state read of the full programs mount tree
+  (b) deep-read addendum (the ~40% the first pass misses)
+  (c) anti-pattern cross-reference (esp. PATTERN A #63 collapse targets)
+  (d) per-role wireframes (parent / coach / admin) — CC leans, architect ratifies
+  (e) explicit out-of-scope
+…plus §7 sequencing of the (now much smaller) Tier-0/1 defect blockers and §8
+the open forks + RQ1–RQ5 leans for the architect.
+
+DIVISION OF LABOR (§11.8 r2): this doc is EVIDENCE + labeled leans. CC does not
+settle a design fork. The per-role wireframes in §4 are CC strawmen grounded in
+the current-state read; the architect frames + ratifies the real design.
+
+==============================================================================
+§0. HEADLINE — THE DEFECT SUBSTRATE LARGELY SHIPPED SINCE THE AUDIT DOCS
+    (the single most important correction; everything else re-sequences off it)
+==============================================================================
+PROGRAMS_AUDIT_MASTER_FINDINGS.txt (06-09) closes with: "Programs is NOT
+closeable until the Tier-0/Tier-1 forks are ratified + land." Live state has
+MOVED PAST that doc. Verified this session, every Tier-0 + Tier-1 migration-
+companion item is now LANDED in production:
+
+  [LANDED] S1 rollover — public.rollover_season(uuid,jsonb) exists, SECDEF,
+     search_path pinned. useSeasonRollover.js:35 now calls it (single atomic
+     RPC); the old ~5+N client awaits are GONE. season_rollovers=0 still (never
+     RUN), but the broken-status-23514 / roster_type-42703 / non-atomic breakers
+     are structurally fixed. (Was: "broken + non-atomic [staged S1]".)
+  [LANDED] S2 team_type — teams.team_type_id is_nullable='NO'; FK
+     teams_team_type_id_fkey confdeltype='r' (RESTRICT). (Was: staged.)
+  [LANDED] S3 registration TOCTOU — partial unique
+     registrations_program_player_live_uniq ON (program_id,player_id) WHERE
+     status<>'cancelled' exists; submit_registration body now has BOTH the
+     dedupe SELECT `status <> 'cancelled'` AND
+     `ON CONFLICT (program_id,player_id) WHERE status<>'cancelled' DO NOTHING`.
+     (Was: "companion needed in two places".)
+  [LANDED] S4 program-delete ledger guard — financial_accounts_season_id_fkey
+     confdeltype='r' (RESTRICT). useProgramAdmin.deleteProgram (:51-58) now
+     count-and-blocks on registrations + financial_accounts + coach_payouts
+     with the §16.3 "Archive it instead." microcopy, BEFORE the delete; the
+     23503 catch backstops. financial_accounts.season_id is now INDEXED (C-5
+     landed). (Was: "BREAKS NOW, raw 23503".)
+  [LANDED] P0-NEW-2 reg-status-gate — get_public_program AND submit_registration
+     both now carry `status = 'active'` in their program WHERE clause. A
+     draft/archived published program is NO LONGER anon-registerable. (Was:
+     "latent — one checkbox".)
+  [LANDED] P0-NEW-1 onboarding — claim_guardian_by_email() exists, SECDEF,
+     HARD GATE on auth.users.email_confirmed_at + WHERE user_id IS NULL.
+     resolveNewUserContext (claimInvite.js:39) calls it FIRST, then claimInvite,
+     then autoLinkGuardian reads the now-linked row. The severed self-claim
+     pipeline is wired end-to-end. (Was: "[LIVE] severed".) NOTE: still
+     pilot-unexercised — 173/175 guardians user_id IS NULL because no family has
+     logged in to trigger the claim yet, NOT because the path is broken. First
+     real parent login is the first execution (see §8 behavioral hole).
+
+CONSEQUENCE FOR THE REDESIGN: the handoff's RQ5 CC-lean ("fold the P0s in as
+PR-0 hotfixes FIRST") is now mostly MOOT — the P0s landed. The redesign rests on
+a data layer that is already correct. PR-0 shrinks from "5 P0 hotfixes" to "a
+short verification + the genuinely-still-open latent items" (§7). This frees the
+phase to be what Frank actually asked for: a UX redesign, not a defect cleanup.
+
+STILL GENUINELY OPEN (verified open this session — NOT shipped):
+  - teams_select RLS still SINGULAR current_user_org_id() (G-3.1; latent, 0
+    multi-org users). The only graph table on the singular helper.
+  - registrations_select + tryout_attendees_select quals are org-wide
+    (`org_id = ANY(current_user_org_ids())`), NOT family/staff-scoped — a parent
+    can read every family's registration + every attendee's evaluation_note.
+    Latent (both tables empty; 0 rows). (Parent-read leak.)
+  - teams.season_id FK still confdeltype='c' (CASCADE) — a program delete that
+    passes the reg/financial guard STILL cascade-nukes its teams + rosters +
+    events silently. Product call (H-4): should deleting a program take its
+    teams? The delete confirm names them but the user may not read "X roster
+    rows" as "all my kids' team history."
+  - teams_select_public qual self-defeating (subselect on organizations that
+    anon cannot read) — the public anon schedule (§8 3-B) fails closed. Separate
+    from programs redesign but in the same RLS family.
+  - guardians.email GLOBAL UNIQUE (submit_registration ON CONFLICT (email)) —
+    cross-org claim/merge risk at org #2. Latent.
+  - BRIEF-1/2/3 (digest org-scope camp leak + per-player pilot redirect / Frank's
+    nudge error) — edge/cron layer, OUT OF SCOPE for the programs UX redesign but
+    tracked in MASTER_FINDINGS §4; flag if the architect wants it in-phase.
+
+==============================================================================
+§1. (a) FILE-BY-FILE CURRENT-STATE READ — FULL PROGRAMS MOUNT TREE
+    [SEV] tags: P1 (ship this phase) / P2 / P3. Defects already in
+    MASTER_FINDINGS are tagged with their G-id; NEW-this-read are tagged [NEW].
+==============================================================================
+
+ROUTES (src/App.jsx:79-113) — all confirmed:
+  PUBLIC anon:  /r/:slug → RegisterEntryPage ; /r/:slug/apply → RegisterFlowPage
+  ADMIN only:   /admin/programs → AdminProgramsPage ; /new → ProgramSetupPage ;
+                /:id → ProgramDetailPage ; /admin/seasons → AdminSeasonsPage ;
+                /admin/rollover → SeasonRolloverPage
+  NO parent route. NO coach route. Programs is admin-CRUD + a one-way anon funnel.
+
+ENTRY POINTS (grounded):
+  admin → QuickActions.jsx:56 "Programs" tile → /admin/programs ; AdminTeamsPage
+    :70 link ; AdminSeasonsPage:43/46 "+ Program"/"Rollover". AdminProgramHealth
+    card on admin Home (read-only KPIs).
+  parent → none (registers pre-account at /r/:slug; after, sees kids/teams/
+    schedule — never a "my registrations" view).
+  coach → none.
+
+--- ADMIN PAGES ---
+
+AdminProgramsPage.jsx (73 ln) — index/list. Registry-derived type filter chips +
+  grouped Draft/Active/Upcoming/Archived via groupPrograms. Clean structure.
+  [P1 G-5.1] filter chips minHeight:30 (chip, :65) + "New" CTA minHeight:34
+    (ctaStyle, :60) — both < 44px tap floor (§7 component std). CONFIRMED.
+  [P1 G-5.2] chips have NO aria-pressed; list region has NO aria-live — SR can't
+    tell the active filter and the content swaps silently. (ProgramTypeChooser
+    already models the correct aria-pressed pattern — copy it.) CONFIRMED.
+  [P2 NEW] empty-state copy is generic; no per-type "create a camp" affordance.
+
+ProgramSetupPage.jsx (73 ln) — single-page create. program basics + reg window +
+  publish checkbox + (season-only) DivisionRows. Navigates to detail on success.
+  [P2 G-1.7] raw `{error}` string render (:61) — no §16.3 kindness mapping for DB
+    errors. grade_min>grade_max NOT guarded (would reject every registrant).
+    team_color never captured on a division here (DivisionRows has no color
+    field → DivisionCard left rail falls back to --as-accent for every division).
+  [P2 G-1.4] unnamed-division rows are filtered out WITH their fees in
+    useProgramSetup:41 — a fee typed against a blank-name row is silently
+    dropped. No "Division N needs a name" validation.
+  [P2 NEW] `valid` gate is name-only (:23) — a season with dates inverted only
+    fails at submit via validateProgramDates, not inline.
+  [P3 NEW] is_published checkbox is a standalone control here too (same orthogonal
+    is_published-vs-status seam P0-NEW-2 closed at the RPC; the create UI can
+    still publish a draft season — harmless now the RPC gates status, but the UI
+    affordance is confusing: "Publish now" on a season that's born draft).
+
+ProgramDetailPage.jsx (84 ln) — detail. Header (name + badge + range + status +
+  publish line) → ProgramTeamsSection → registrations list → "Record payments in
+  Financials →" link → ProgramManageZone.
+  [P1 G-5.3 §16.14] does NOT follow the hero+collapsible detail pattern: flat
+    always-on chrome; registrations list is UNVIRTUALIZED (§16.10 risk at 60+
+    rows); Delete is a floating button mid-zone (ProgramManageZone) not a header
+    overflow. CONFIRMED.
+  [P2 NEW] raw "Loading…" / "Couldn't load this program." text (:31-32) — skips
+    the SectionSkeleton + §16.3 pattern the index uses. No density-awareness.
+  [P2 NEW] registration rows show fee total from registration_fees but NO payment
+    status from financial truth — the "Confirmed/Overdue" badge is the
+    registration.status enum, not the family_balances payment reality (PATTERN A
+    risk if a "Confirmed" reg reads as "paid"; today 0 regs so latent).
+  [P3 NEW] no division/fee visibility on the detail page at all — an admin who
+    set a wrong fee on create cannot SEE it here, let alone edit it (G-1.6).
+
+ProgramManageZone.jsx (69 ln) — Activate (draft only) + Edit + Delete.
+  [GOOD] delete guard is current: refetchCounts then ConfirmDialog with
+    dependencySummary; deleteProgram now blocks on reg/financial/payout (S4).
+    Buttons are 44px. ConfirmDialog backdrop rgba(0,0,0,0.3).
+  [P2 NEW] dependencySummary (programDelete.js) names "X teams, Y roster rows, Z
+    events" — but those CASCADE on delete (teams.season_id still 'c'). The copy
+    "permanently removes … everything under it" is honest, but the H-4 product
+    question stands: should a program delete really take its teams' whole history?
+  [P3 NEW] Activate is the only lifecycle transition exposed — there is NO
+    UI "Archive" action (archive is the recommended alternative the delete guard
+    points families to, but the admin can't actually DO it from here). Gap.
+
+ProgramEditSheet.jsx (72 ln) — FullScreenForm (correct, AP#15) editing name/dates/
+  reg window/slug/publish. program_type intentionally not editable.
+  [GOOD] slug normalized on save (slugify); validateProgramDates; dayBoundaryTs.
+  [P3 NEW] same standalone is_published checkbox; no division/fee editing here.
+
+ProgramTeamsSection.jsx (66 ln) — teams-in-place; launches TeamFormSheet with
+  programType context; writes season_id=programId via useProgramTeams. Clean.
+  [P2 NEW] team rows are buttons (good) but the section has no empty-state CTA
+    differentiation per program type (a tryout's "teams" mean something different
+    from a season's).
+
+ProgramTypeChooser.jsx (44 ln) — registry-driven chips + helper copy. aria-pressed
+  present. [GOOD — reference pattern for the AdminProgramsPage chip fix.]
+
+DivisionRows.jsx (38 ln) — dynamic division editor (name/grade min-max/gender/fee).
+  [P2 G-1.3] fee is matched back to its division BY NAME in useProgramSetup:54
+    (divInput.find(d.name===dv.name)) — duplicate division names collide (no
+    UNIQUE(program_id,name)). Index-pair instead.
+  [P2 NEW] no team_color input → every public DivisionCard left-rail is accent.
+  [P3 NEW] gender select offers Mixed/Girls/Boys but players has no gender column
+    and submit_registration does no gender check (G-1.2 — captured-but-unenforced).
+
+ProgramIndexRow.jsx (35 ln) — index row. UTC date pin (correct).
+  [P2 G-5.4 AP#46] row renders 1-line (draft: no range/counts) vs 2-line (active:
+    meta line) in the same grouped list → row-rhythm divergence. Reserve the meta
+    line or add a rhythm invariant test.
+  [P2 NEW] playerCount/teamCount come from useAllPrograms count sub-queries that
+    console.error-and-continue (AP#36) → a transient error renders "0 teams · 0
+    players" as truth. Low blast radius on the index; the same swallow on the
+    delete-confirm path is the riskier face (G-5.5).
+
+--- PUBLIC REGISTRATION (anon /r/:slug) ---
+
+RegisterEntryPage.jsx (82 ln) — program hero + division grid. resolveRegState
+  recomputes the window CLIENT-side from Date.now() (3rd window truth; PATTERN A).
+  [P2 NEW] the server already returns registration_open (get_public_program) — the
+    page ignores it and recomputes. Gate the affordance on the server boolean;
+    keep the client recompute for the label only.
+  [P2 NEW] divisions.length===0 → "Divisions are being finalized" — which is the
+    LIVE state for the one published tryout (0 divisions org-wide). The public
+    funnel currently shows an empty division grid for the only published program.
+
+RegisterFlowPage.jsx (112 ln) — useReducer wizard (division/player/guardian/
+  details/review), multi-child loop, RegisterConfirm. No re-mount across steps.
+  [P1 G-2.1] CONFIRMED: useSubmitRegistration returns authoritative_total_cents
+    (server) — it is NEVER displayed. RegisterConfirm shows only already_registered
+    + a count. StepReview shows the CLIENT estimateCart subtotal. The
+    server-authoritative number is fetched and discarded. THREE price surfaces
+    (entry-card base-only / review client-estimate / server-authoritative-unseen).
+  [P2 G-2.5] the wizard is a plain routed page (not FullScreenForm); thin a11y in
+    src/components/register/ — no aria-live on the step region, no role=alert on
+    the error/grade-band banners, no focus move to the step heading on Next.
+    (Inputs DO have labels + 44px — partial.)
+  [P3 G-2.3] RPC RAISE codes (registration_closed, grade_below/above_band,
+    invalid_division — all reachable) collapse to one generic error; grade bands
+    are soft-warned client-side and don't block onNext.
+
+StepDivision.jsx (17 ln) / DivisionCard.jsx (57 ln) / RegisterConfirm.jsx (27 ln):
+  [P2 G-2.2] DivisionCard shows base_fee_cents only; the review step adds add_on
+    fees → an unexplained price jump entry→review. Label entry "from $X" when
+    add_ons exist.
+  [GOOD] DivisionCard left-rail uses division.team_color || accent; pill states
+    are window-only (Q-2 lock); aria-label present; disabled when not interactive.
+
+--- SEASONS / ROLLOVER (the parallel vocabulary surface) ---
+
+AdminSeasonsPage.jsx (80 ln) — a SECOND program surface: SeasonFormSheet CRUD over
+  `seasons` (the view = programs WHERE program_type='season') + setActive +
+  links to /admin/programs/new and /admin/rollover.
+  [P1 NEW / RQ4] this is the vocabulary-overload epicenter. A "season" is a
+    program; AdminSeasonsPage and AdminProgramsPage are two doors to overlapping
+    state with different mental models (a season created here is born active|
+    archived via handleSave:24, NOT the registry's draft-on-create). The two
+    create paths can DRIFT on status default. CONFIRMED divergence.
+
+SeasonRolloverPage.jsx (84 ln) — 5-step full-screen portal; loads active season +
+  teams(roster_members,team_staff) + locations; execute → rollover_season RPC.
+  [GOOD] now atomic via the RPC; pessimistic (correct per §16.1 bulk); confirm
+    dialog. 44px cancel.
+  [P2 NEW] still reads roster_members (documented §11.5 historical exception);
+    "No active season found" hard stop if no active season. Inherits the RQ4
+    season/program vocabulary.
+
+--- HOME / METRICS ---
+
+AdminProgramHealth.jsx (72 ln) — admin-home context card; 4 KPI (Players/Events/
+  Collected/Out). BUG-H1 (AP#63 scope-divergence) is ALREADY MITIGATED with
+  explicit per-KPI scope labels (season vs all-time) — acceptable per #63
+  discipline (label the scope). [GOOD, no action.]
+useProgramHealthMetrics.js (106 ln) — [P2 G-5.6] over-fetches 4 queries incl. a
+  heavy event_rsvps→events→teams join on the admin-home critical path; the card
+  consumes only playersCount + paymentPct. Drop/gate the unused rsvp +
+  newRegistrations queries (FCP/TTI budget §16.10).
+
+--- VOCABULARY COLLISION (load-bearing for RQ4) ---
+usePrograms.js (69 ln) — a THIRD meaning of "program": this hook calls the
+  `teams` table "programs" ("'Program' is the v2 UI term; the underlying table is
+  teams"). So in the codebase "program" means (1) the programs table / archetype,
+  (2) a season (AdminSeasonsPage), and (3) a team (usePrograms). RQ4 is real and
+  three-way, not two-way.
+
+==============================================================================
+§2. (b) DEEP-READ ADDENDUM — what the first pass under-weighted
+==============================================================================
+D-1 [P1] THREE-WAY "program" vocabulary (programs-archetype / season-view /
+   teams-via-usePrograms). The redesign's simplification win is as much
+   NOMENCLATURE as UI. Any wireframe that says "Program" must pin which of the
+   three it means on every surface. This is the highest-leverage simplification
+   and it's invisible in a per-file pass — it only appears across files.
+
+D-2 [P1] The PARENT has no programs surface AT ALL, yet "100% for all three
+   roles" is the goal. The parent's entire relationship to "programs" today is:
+   (1) a pre-account anon funnel they may never see again, and (2) registration/
+   payment status that lives in Financials + registration.status, surfaced
+   NOWHERE to the parent. The biggest redesign question (RQ1) is a BUILD question
+   for parent, not a polish question: there is no surface to polish.
+
+D-3 [P2] The COACH has no programs surface either, but unlike parent, a coach's
+   "program" need is already partly met elsewhere (their teams via team-scoped
+   roster/schedule). The RQ1 coach question is "is there a program-level view a
+   coach needs that team-level views don't already give?" — CC lean: minimal;
+   coaches think in teams, not programs. Surface evidence, architect decides.
+
+D-4 [P2] The registration FUNNEL and the registration ADMIN view are two halves
+   of one contract that don't talk: the anon funnel writes registrations the
+   admin detail page lists, but neither shows the server-authoritative money, and
+   the parent who submitted sees a "Spot reserved!" then nothing. RD-4
+   "reconciliation contract half-built" (MASTER §0) is literal and spans 3
+   surfaces (confirm screen, admin detail, parent post-account).
+
+D-5 [P2] divisions=0 org-wide. Every division/fee surface (DivisionRows public
+   DivisionCard, estimateCart, submit_registration fee insert) is structurally
+   built and ZERO-exercised. The redesign should treat the create→register→bill
+   money path as effectively greenfield-with-a-skeleton, not a working surface to
+   refine. (Behavioral hole §8.)
+
+D-6 [P3] AdminSeasonsPage's status-on-create (active|archived by seasons.length)
+   bypasses the registry's draft-on-create. Two create doors, two status models.
+   Collapsing AdminSeasonsPage INTO the programs surface (RQ4) also closes this.
+
+D-7 [P3] There is no "Archive" action anywhere in the UI, yet "Archive it
+   instead" is the delete guard's recommended path. The recommended safe action
+   is unreachable. Small but a real 10/10 gap.
+
+==============================================================================
+§3. (c) ANTI-PATTERN CROSS-REFERENCE (§11) — esp. PATTERN A #63 collapse targets
+==============================================================================
+PATTERN A #63 (same concept, divergent source/scope) — the dominant platform
+  pattern; the redesign's structural job is to COLLAPSE these to one source+scope
+  each (lock with AP#43 invariant tests). Live collapse targets on this surface:
+   #63-money: "what this family owes/pays" — entry-card base_fee_cents / review
+     estimateCart subtotal / server authoritative_total_cents (unseen) / future
+     family_balances. → ONE source: server authoritative_total_cents on confirm +
+     admin detail; family_balances for paid-state. Stop showing client estimate
+     as if authoritative; label the entry card "from $X".
+   #63-active: 4 definitions of "active" (useActivePrograms status-only /
+     programGrouping date-gated Active-vs-Upcoming / SeasonContext / the
+     single-active partial index). → label scope per surface; document canonical.
+   #63-regopen: 3 window truths (server registration_open / RegisterEntryPage
+     client recompute / RPC submit-time recheck). → gate on server boolean.
+   #63-program-noun: D-1 three-way vocabulary. → pin one noun per surface.
+   #63-payment-status: registration.status enum vs family_balances payment truth
+     on the admin detail rows. → read paid-state from family_balances.
+
+PATTERN B (multi-org singular/plural) — teams_select singular (G-3.1) + guardians.
+  email global unique. Latent (0 multi-org). One migration before org #2; not a
+  redesign blocker but flag it rides the same phase if the architect wants it.
+
+AP#15 (FullScreenForm for 3+ fields) — ProgramEditSheet COMPLIES. The public
+  registration wizard is a routed multi-step page (each step ≤2-3 fields) —
+  defensible as-is, but G-2.5 a11y gaps apply.
+AP#36 (error-swallow) — useAllPrograms / useProgramAdmin count sub-queries
+  console.error-and-continue → falsely "0". Close on the delete-confirm path.
+AP#46 (card/row rhythm) — ProgramIndexRow 1-line vs 2-line (G-5.4); any
+  *Card/*Row/*Tile change in the redesign ships with the §46 guard.
+AP#51 (dead-feature mounts) — early_bird/prorated/discount/add_on fee types +
+  auto_apply_rule jsonb are schema-present, NO writer; gender captured, unenforced.
+  Redesign decision: finish the contract or amputate (product calls G-1.2/G-1.5).
+AP#63 fold-in: every cross-surface metric the redesign renders names ONE
+  source+scope and ships an AP#43 invariant test.
+§16.14 (hero+collapsible detail) — ProgramDetailPage violates it (G-5.3); the
+  redesigned detail page is the canonical place to apply the pattern.
+
+==============================================================================
+§4. (d) PER-ROLE WIREFRAMES — CC STRAWMEN (architect ratifies / redraws)
+    Labeled leans per §11.8 r2. These are evidence-grounded starting points, NOT
+    a settled design. Each notes what EXISTS today vs the proposed lift.
+==============================================================================
+
+------------------------------------------------------------------ ADMIN
+TODAY: index (list+filter+groups) → detail (teams + flat reg list + manage) →
+  single-page create → parallel Seasons view → rollover portal. CRUD-shaped.
+PROPOSED 10/10 (CC lean):
+  ┌ /admin/programs (index) ──────────────────────────────┐
+  │ Programs                                  [+ New ▾]    │  ← New is a type
+  │ [All][Season][Camp][Clinic][Tryout]…  (44px, aria)    │    menu (skip the
+  │ ACTIVE · running now                                   │    type step in
+  │  ▸ Spring 2026   Season · 5 teams · 60 players  →      │    create)
+  │ UPCOMING · DRAFT · ARCHIVED (collapsible groups)       │
+  └────────────────────────────────────────────────────────┘
+  ┌ /admin/programs/:id (detail = §16.14 hero+collapsibles)┐
+  │ HERO: name · type badge · date range · STATUS pill     │
+  │       [Activate|Archive]  ⋯overflow(Edit/Delete)       │  ← Delete leaves the
+  │       reg-window + publish state at a glance           │    mid-page; Archive
+  │ ▸ Teams (n)                          summary in header │    becomes reachable
+  │ ▸ Divisions & fees (n)   ← NEW: visible + editable     │    (D-7)
+  │ ▸ Registrations (n · $X collected)  virtualized        │  ← money from server
+  │   each row: player · paid-state(family_balances) · $   │    + family_balances
+  └────────────────────────────────────────────────────────┘
+  CREATE: keep single-page (it's already lean) but (1) fix the 44px/aria, (2)
+   §16.3 errors, (3) inline date validation, (4) index-pair fees, (5) name-
+   required per division, (6) add a division team_color, (7) optional add-on fee.
+  RQ4 COLLAPSE (CC lean, architect decides): RETIRE AdminSeasonsPage as a
+   separate door; fold "set active" + "rollover" into the programs surface
+   (season-type programs get an Activate + a Rollover affordance). One door,
+   one status model. (AP#51 dead-door retirement candidate after fold.)
+
+------------------------------------------------------------------ PARENT
+TODAY: NOTHING in-app. Anon funnel pre-account; post-account sees kids/teams/
+  schedule but never "my registrations / what I owe / what's next."
+PROPOSED 10/10 (CC lean — this is a BUILD, not a polish; biggest RQ1 question):
+  ┌ Parent home / a "My family" surface ───────────────────┐
+  │ For each child:                                        │
+  │   Aria — 4th grade · 10U Blue                          │
+  │   ▸ Registration: Spring 2026 · Confirmed             │  ← from registrations
+  │   ▸ Balance: $0 due  (or "$120 due · Pay ▸")          │    + family_balances
+  │ [+ Register another season]  → /r/:slug (or in-app)    │  ← RQ2: in-app re-reg
+  └────────────────────────────────────────────────────────┘
+  The anon /r/:slug funnel stays for NEW families; an AUTHENTICATED parent gets a
+  shorter in-app re-registration (guardian known, kids known — RQ2). The "Spot
+  reserved!" dead-end (RegisterConfirm) gains a "track this in the app" bridge.
+  EVIDENCE FLAG for architect: a parent-facing registrations view needs the
+  registrations_select RLS narrowed to family-scope FIRST (it's org-wide today;
+  a parent would read every family's registrations). That latent RLS item
+  becomes load-bearing the moment a parent surface ships.
+
+------------------------------------------------------------------ COACH
+TODAY: NOTHING. Coach works in team-scoped roster/schedule.
+PROPOSED (CC lean — MINIMAL; surface evidence, architect decides):
+  Coaches think in teams, not programs. The one plausible program-level coach
+  need is "who's registered / rostered for the thing I'm running" — already met
+  by team roster. CC lean: NO dedicated coach programs surface in v1; if anything,
+  a read-only "program this team belongs to" chip on the team header. Do NOT
+  build a parallel coach programs page (AP#42 parallel-system risk).
+  EVIDENCE FLAG: tryout_attendees_select is org-wide; if a coach tryout-eval
+  surface is ever in scope, narrow that RLS + omit evaluation_note from any
+  parent-visible path first (G-3.2).
+
+==============================================================================
+§5. (e) EXPLICIT OUT-OF-SCOPE (this redesign does NOT touch)
+==============================================================================
+  - Stripe / payment lifecycle / magic-link claim beyond email-confirm (deferred;
+    partly unbuilt). The redesign renders balances from family_balances; it does
+    not build collection.
+  - BRIEF-1/2/3 briefing<->program seam (digest camp-leak, per-player pilot
+    redirect / Frank's nudge error) — edge/cron layer; tracked in MASTER §4. Flag
+    if the architect wants the nudge fix folded in; default OUT.
+  - teams_select_public / public anon schedule RLS (§8 3-B) — same RLS family but
+    a schedule concern, not a programs concern.
+  - guardians.email global-unique → (org_id,email) migration — multi-org hardening
+    (Pattern B); rides a pre-org-#2 migration, not this UX phase.
+  - The financial dashboard, season financials, coach payouts surfaces.
+  - Native / PWA / i18n of the new strings (strings must be extractable per §16.6;
+    translation itself is Phase 3).
+  - AdminSeasonsPage RETIREMENT is PROPOSED (RQ4) but its execution (route removal
+    + redirect) is a decision this doc surfaces, not a locked scope item.
+
+==============================================================================
+§6. SEQUENCING — the (now small) defect blockers vs the UX build
+==============================================================================
+PR-0 (pre-UX, verification + genuinely-open latents — NOT the old 5 P0s):
+   0.1  VERIFY the landed cluster holds (this doc did the static/DB verify;
+        add the missing CI locks: programRegistry.parity already covers S2/S3
+        enum; add a money-path + anon-flow integration test before any parent
+        surface ships — §8 behavioral hole).
+   0.2  registrations_select + tryout_attendees_select → family/staff scope.
+        LOAD-BEARING the moment a parent registrations surface ships (§4 parent).
+        Lock with an AP#43 cross-surface RLS test.
+   0.3  teams_select singular→plural (G-3.1) — one-line, superset for single-org.
+   0.4  [product call, can defer] teams.season_id CASCADE→RESTRICT (H-4) + a
+        "this also deletes N teams and their history" confirm, OR keep CASCADE
+        and make the confirm louder. Architect/Frank call.
+PR-A..n (the UX redesign per §4 wireframes), in the architect's sequence. CC
+   lean on ordering: admin detail (§16.14 + divisions/fees visible + money) →
+   create polish → AdminSeasonsPage fold (RQ4) → parent surface (gated on 0.2) →
+   coach chip (if any).
+
+==============================================================================
+§7. FORKS / DECISIONS FOR THE ARCHITECT (AP#39 leans) + RQ1–RQ5
+==============================================================================
+RQ1 per-role vision — CC leans: ADMIN = simplified CRUD + visible divisions/fees/
+   money on a §16.14 detail. PARENT = a "my family · registration + balance" view
+   (a BUILD; gated on RLS 0.2). COACH = minimal/none (a program chip at most;
+   avoid AP#42 parallel system). Architect frames the real per-role contract.
+RQ2 funnel — CC lean: KEEP anon /r/:slug for new families; ADD a shorter in-app
+   re-registration for authenticated parents (guardian+kids known). Both.
+RQ3 create simplification — CC lean: keep single-page create (already lean);
+   spend the budget on the 7 create fixes in §4-ADMIN + making divisions/fees
+   editable post-create (G-1.6), not on a multi-step wizard.
+RQ4 vocabulary — CC lean: COLLAPSE to one noun. RETIRE AdminSeasonsPage as a
+   separate door; "season" becomes a program_type, not a parallel surface;
+   rename the usePrograms (teams) hook usage out of the "program" word over time.
+   This is the single highest-leverage simplification (D-1). HIGH-impact,
+   needs architect ratification (touches routing + a live admin surface).
+RQ5 scope — CC lean: the P0 fold-in is MOSTLY MOOT (they landed, §0). PR-0
+   shrinks to verification + the 2 open RLS scopings (0.2/0.3) + the H-4 product
+   call; then the UX redesign. The redesign is UX-first on a correct data layer.
+
+DECISIONS REQUESTED (batch into the architect's ratification doc):
+  D-Q1: RQ4 — ratify retiring AdminSeasonsPage and collapsing season into the
+        programs surface? (CC lean: yes.)
+  D-Q2: H-4 — teams.season_id CASCADE: keep (louder confirm) or flip to RESTRICT
+        (force archive)? (product call.)
+  D-Q3: parent surface — build the "my family · registration + balance" view this
+        phase (requires RLS 0.2 first)? (CC lean: yes — it's the only path to
+        "100% for parent".)
+  D-Q4: coach — confirm minimal/none (a program chip), no dedicated page? (CC
+        lean: yes.)
+  D-Q5: gender (G-1.2) + dead fee-types/auto_apply_rule (G-1.5) — finish the
+        contract or amputate from the create UI? (product calls.)
+  D-Q6: the still-open F1–F16 catalog — 10/16 items (F2,F6,F7,F9-F13,F15,F16)
+        undefined repo-side. The architect must supply them for the audit to
+        claim completeness against its own framework (the one irreducible hole
+        this session could not close — it requires architect input, not a query).
+
+==============================================================================
+§8. OPEN HOLES (irreducible without architect / real-data input)
+==============================================================================
+  (1) F1–F16 CATALOG — 10/16 undefined repo-side. ARCHITECT MUST SUPPLY (D-Q6).
+      Biggest. Without it the redesign's feature framework is incomplete.
+  (2) BEHAVIORAL — registrations=0, divisions=0, division_fees=0, season_rollovers
+      =0, tryout_attendees=0 (verified live this session). The create→register→
+      bill money path and the rollover RPC are STRUCTURALLY correct and have NEVER
+      RUN with real data. First real family / first rollover is the first
+      execution. An integration test on the money path + anon flow is the cheap
+      insurance before the parent surface ships (PR-0.1).
+  (3) Live RLS BEHAVIOR under impersonated parent JWT for the NEW parent surface
+      (0.2) — must be replayed (SET ROLE / rollback) before that surface ships.
+  (4) E2E/Playwright of the anon /r/:slug flow — none exists.
+  (5) bundle/perf RUM for /r/:slug chunks + the admin-home over-fetch (G-5.6).
+
+==============================================================================
+END — L99 PROGRAMS REDESIGN AUDIT (§16.15, all five elements). Headline: the
+Tier-0/1 defect substrate the prior docs gated closure on has ALREADY SHIPPED
+(§0, live-verified) — the phase is now a true UX redesign on a correct data
+layer, with a small open-latent tail (RLS scoping + H-4) and the architect-owned
+F-catalog. NO PR-A CODE until this is reviewed. NOTHING APPLIED.
+==============================================================================
