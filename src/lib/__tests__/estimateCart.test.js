@@ -51,3 +51,32 @@ describe('estimateCart (pure — anti-pattern #27)', () => {
     expect(estimateCart([], null)).toEqual({ lineItems: [], subtotalCents: 0, discountCents: 0, totalCents: 0 });
   });
 });
+
+// D4 / AP#43 — estimate ⇄ authoritative parity. Locks that the client estimate
+// uses the SAME family-cap formula as the server RPC (submit_registration):
+//   v_discount := LEAST((v_paid - 1) * per_extra_child_cents, v_total)
+//   authoritative_total := v_total - v_discount
+// If either side drifts, the multi-child review preview and the confirmation's
+// result.authoritative_total_cents diverge (#63) — exactly the failure R1's
+// multi-child math could introduce.
+describe('estimateCart ⇄ submit_registration parity (D4 / AP#43)', () => {
+  const rpcTotal = (feeCentsList, policy) => {
+    const subtotal = feeCentsList.reduce((a, b) => a + b, 0);
+    const paid = feeCentsList.length;
+    let discount = 0;
+    if (policy?.enabled && paid > 1) discount = Math.min((paid - 1) * (policy.per_extra_child_cents || 0), subtotal);
+    return { discount, total: subtotal - discount };
+  };
+  const cases = [
+    { fees: [8000, 2000], policy: { enabled: true, per_extra_child_cents: 1000 } },
+    { fees: [80000, 80000, 80000], policy: { enabled: true, per_extra_child_cents: 20000 } },
+    { fees: [4500, 4500], policy: null },                                                // LH pilot — no policy
+    { fees: [1000, 1000], policy: { enabled: true, per_extra_child_cents: 999999 } },    // discount capped at subtotal
+  ];
+  it.each(cases)('matches the RPC family-cap formula for $fees', ({ fees, policy }) => {
+    const est = estimateCart(fees.map((c) => ({ division: { base_fee_cents: c } })), policy);
+    const rpc = rpcTotal(fees, policy);
+    expect(est.discountCents).toBe(rpc.discount);
+    expect(est.totalCents).toBe(rpc.total);
+  });
+});
