@@ -1,0 +1,264 @@
+================================================================================
+PROGRAMS REDESIGN — L99 MULTI-AGENT AUDIT + BUILD PLAN  →  ARCHITECT
+Date: 2026-06-10   Lane: CC (implementation + live verification)  Branch: main
+Method: §16.15 L99 (4 parallel agents, 2-pass each) + CC live-DB grounding (AP#60)
+Delivery: committed .txt + full chat paste (§11.8 r1 / §49). NOTHING APPLIED here.
+================================================================================
+
+PURPOSE
+  Frank called a pause-for-review before continuing the B3 build. Four read-only
+  audit agents swept the programs section (parent funnel · admin IA · money/#63 ·
+  DB layer); CC ran the live-DB grounding the agents can't. This doc consolidates:
+  (A) what is BUILT, (B) what REMAINS, (C) the BUG/RISK surface by severity,
+  (D) ARCHITECTURAL FORKS needing a ruling (labeled leans, AP#39), (E) RENDER
+  gaps the architect must spec, (F) a recommended build sequence. The headline is
+  a structural fork (E1) the renders don't yet cover.
+
+================================================================================
+0. HEADLINE — read this first
+================================================================================
+  H1 (FORK F1, structural). The ONE live, published, registration-OPEN program is
+     "Fall 2026 Tryouts" (slug fall-2026-tryouts, window 06-07 → 06-26, OPEN right
+     now). It is program_type = TRYOUT. By design, divisions are SEASON-ONLY
+     (programRegistry: hasDivisions=false for tryout/camp/clinic). It therefore
+     has 0 divisions / 0 fees (verified live). The PARENT FUNNEL REQUIRES a
+     division (RegisterFlowPage: firstChild && !division → "This registration
+     isn't available"). NET: a parent who opens the live link today CANNOT
+     register. The division-gated funnel cannot serve any non-season program type.
+     This is the biggest gap and it needs an architect ruling + a render. (§D-F1.)
+
+  H2 (RISK, severity just rose). registration_fees + player_equipment have
+     ORG-WIDE parent SELECT (org_id = ANY current_user_org_ids()). This was a
+     DOCUMENTED authorized deviation (Frank GO 2026-05-31) whose safety condition
+     was "not exploitable — no parent-facing UI exists yet." That precondition
+     EXPIRED THIS SESSION: B2 (magic-link claim, #944) + B1 (My Family, /family)
+     shipped, so parents can now authenticate into the org. Any authenticated
+     parent can now read every family's per-registration fee amounts + equipment
+     rows via a crafted PostgREST query. Now a live P1. The narrowing (pr1b) has a
+     documented REVERT PATH ready. (§D-F2.)
+
+  H3 (on-target check). The B3 spec is ~65% built. Shipped this session: BRIEF-3
+     (#942), M1 gender substrate (#943), B2 claim bridge (#944), B3 error
+     microcopy + hard grade block (#945). REMAINING B3: multi-child one-submit
+     (P0), gender capture + mismatch block (P0, M1 substrate ready), error.routeTo
+     nav wiring (P1), step a11y (P1), reg-open gate consumption (P1, small).
+     No P0/P1 correctness BUGS found in shipped code — the gaps are unbuilt spec,
+     not defects. Money/#63 path is CLOSED. DB layer is sound. (§A-C.)
+
+================================================================================
+A. WHAT IS BUILT (inventory — DONE)
+================================================================================
+  PARENT FUNNEL (src/pages/Register*, src/components/register/*)
+    • Entry /r/:slug → division grid (DivisionCard, server-gated open/upcoming/
+      closed) → /r/:slug/apply.
+    • 4-step wizard: Player → Guardian (+optional co-guardian) → Details → Review
+      → submit_registration → RegisterConfirm.
+    • Grade-band HARD BLOCK at the player step (#945): Next disabled + role=alert.
+    • 9-code error microcopy map (registrationErrors.js, #945).
+    • Authoritative total on confirmation (result.authoritative_total_cents).
+    • B2 magic-link claim bridge (RegisterClaimAccount, #944): one-tap OTP →
+      /family; claim_guardian_by_email() already wired in AuthContext.
+    • All files ≤112 LOC. #36/#27 clean. estimateCart pure.
+
+  ADMIN IA (src/components/admin/program-setup/*, src/pages/admin/*)
+    • Create program (ProgramSetupPage/useProgramSetup): type chooser + season
+      preset + divisions + base fees, atomic.
+    • Program detail (ProgramDetailPage): metadata, registrations list w/ status,
+      in-place teams (ProgramTeamsSection), edit (ProgramEditSheet: dates, slug,
+      is_published, reg_opens_at/closes_at), delete (FK-guarded), activate
+      (single-active-season enforced), season rollover (5-step atomic wizard).
+    • PROGRAM_TYPE_REGISTRY single source (parity test). Naming/sort §10 clean.
+    • Zero P0/P1 bugs. All files ≤84 LOC. #15/#36/#37 clean.
+
+  MONEY / #63 (family_balances single source — CLOSED)
+    • family_balances is the one source for "owes money" on ALL surfaces (My
+      Family, Financials dashboard, Admin Home overdue lane, roster dot).
+    • B0 reconciliation (submit_registration posts append-only 'fee' txn per new
+      reg, net of discount, idempotent) — consumed by family_balances. Verified.
+    • formatCurrency single formatter; discount sign/idempotency/cap math verified
+      (G4 T1b/T1c). #36 clean across money hooks.
+
+  DB LAYER (8 tables, 6 RPCs — sound)
+    • programs, sports, divisions, division_fees, registrations, registration_fees,
+      tryout_sessions, tryout_attendees, player_equipment, players(+gender),
+      organizations(+family_cap_policy, age_range). FK CASCADE/RESTRICT/SET NULL
+      correct; partial unique (program_id, player_id) WHERE status<>'cancelled'.
+    • RPCs: get_public_program (anon, returns registration_open bool + divisions +
+      base/add_on fees, NO PII), submit_registration (anon, atomic, grade-gated,
+      B0 ledger), claim_guardian_by_email, rollover_season, claim_invite,
+      set_org_auto_notifications. REVOKE-from-anon discipline (#23/#57) clean.
+    • M1 (this session): players.gender CHECK male/female (63/115 backfilled, 0
+      conflicts, 52 null by design); divisions.gender M/F → male/female/coed.
+    • Migration mirrors (AP#21) clean; deprecated config tagged (§16.16).
+    • RLS writes all admin-gated with with_check (#20 clean). registrations +
+      financial_accounts/transactions correctly parent-narrowed (pr0b).
+
+================================================================================
+B. WHAT REMAINS (NOT-BUILT / PARTIAL — the B3 tail + gaps)
+================================================================================
+  B3 PARENT-FUNNEL (architect-authorized "keep rolling", non-gender = no ruling)
+    R1  Multi-child ONE submit (D-Q7) — P0. Today: per-child loop, one submit each
+        (RegisterFlowPage:66-74 children:[one]); family-cap discount never fires.
+        Need: accumulate children[] client-side → ONE submit → multi-child review
+        (b3-funnel render exists) → one confirmation. RPC already supports the
+        children[] array + cap discount; this is purely the client flow + review.
+    R2  Gender capture + client mismatch block — P0 (M1 substrate now live). Add a
+        male/female control to StepPlayer; hard-block Next on mismatch vs
+        division.gender (mirrors the grade block). Then M2 server enforcement
+        (RAISE 'gender_mismatch') lands after capture.
+    R3  error.routeTo nav wiring — P1. registrationErrors returns routeTo:'player'
+        for grade/gender, but RegisterFlowPage doesn't consume it (no nav-back on a
+        server reject). Small wire-up; mostly future-proofing since grade is
+        client-blocked and gender isn't built yet.
+    R4  Step a11y — P1. No aria-live on step change; no focus-to-heading on Next;
+        inputs fontSize:15 (<16px → iOS auto-zoom); 4→3 step labeling; per-step
+        role=alert error surfaces.
+    R5  reg-open gate consumption — P1 (SMALL). get_public_program ALREADY returns
+        registration_open; RegisterEntryPage ignores it and recomputes from
+        Date.now() (client-clock skew → "open" then server 'registration_closed').
+        Just consume the server boolean for the interactivity gate; keep Date.now()
+        for the cosmetic "OPENS <date>" label only.
+
+  ADMIN IA (fast-follows, no bugs — flagged for the architect's roadmap)
+    A1  Mark registration confirmed (pending→confirmed) — no UI (today only via
+        recording payment in Financials).
+    A2  Add-on fee editor — schema supports fee_type='add_on'; no admin UI (only
+        base fees, created with divisions).
+    A3  Division edit/delete — divisions are create-only (no post-create editor).
+    A4  P3 polish: deleteProgram generic FK error message; DivisionRows no client
+        grade_min<=grade_max validation.
+
+  DB / RLS
+    R6  pr1b RLS narrowing (now P1, see H2/F2): narrow registration_fees +
+        player_equipment SELECT to admin OR own-child. REVERT PATH already written
+        in migration 20260531222056.
+    R7  M2 gender enforcement: add gender_mismatch RAISE to submit_registration
+        (after R2 capture ships).
+
+================================================================================
+C. BUG / RISK SURFACE (consolidated, by severity, file:line)
+================================================================================
+  P0  (none — no correctness defects in shipped code; the P0s are UNBUILT spec)
+      • R1 multi-child one-submit NOT built — RegisterFlowPage.jsx:66-74
+      • R2 gender capture NOT built — StepPlayer.jsx (no gender field)
+  P1
+      • H2/F2/R6 registration_fees + player_equipment org-wide parent SELECT —
+        live leak now that B1/B2 shipped. migration 20260531222056 (revert path).
+      • R3 error.routeTo not consumed — RegisterFlowPage.jsx:66-93
+      • R4 a11y: no aria-live/focus-move (RegisterFlowPage.jsx:99-102); inputs
+        15px (fields.jsx); 4→3 labeling.
+      • R5 reg-open: client Date.now() recompute ignores server boolean —
+        RegisterEntryPage.jsx:14-21.
+      • #63 money LABELING (not a divergence of truth): DivisionCard "from $X"
+        (base) vs StepReview estimate (base+add_on) vs RegisterConfirm authoritative
+        — three render sources for "price." Money agent: acceptable+labeled; funnel
+        agent: flag. CC lean: lock estimate==authoritative parity with an AP#43
+        test (F3) and keep "from $X" (honest, review clarifies).
+  P2
+      • estimateCart↔RPC discount parity unfenced (no AP#43 test) — F3.
+      • Per-step role=alert missing in Guardian/Details (errors only surface at
+        Review).
+  P3
+      • A4 admin polish (FK error text; grade min/max client validation).
+
+  VERIFIED CLEAN (high confidence): money/#63 single-source; all #36 error
+  handling; #37 org-scope ordering; #20 with_check on writes; #23/#57 anon
+  revokes; #21 mirror parity; #25 dedup unique+onConflict; FK cascade matrix;
+  formatCurrency single formatter; registrations + financials parent-narrowing;
+  B2 OTP claim flow; grade-band hard block; 9-code map.
+
+================================================================================
+D. ARCHITECTURAL FORKS — NEED A RULING (labeled leans, AP#39)
+================================================================================
+  F1 — NON-SEASON (tryout/camp/clinic) REGISTRATION PATH.  [HEADLINE]
+     REQUEST: how does a parent register for a program type that has no divisions?
+     CONTEXT: live "Fall 2026 Tryouts" is a tryout (hasDivisions=false), funnel
+       requires a division → parent cannot register today. b3-funnel render shows
+       a tryout with a flat per-child fee ("Charlie · Fall 2026 Tryouts $45") and
+       NO division picker — so the intended UX already implies a flat-fee path.
+     OPTIONS:
+       (A) Auto-create ONE implicit "default division" per non-season program at
+           create-time (a flat-fee enrollment unit, gender=coed, no grade band).
+           Funnel works UNCHANGED. Smallest code delta. Fees reuse division_fees.
+       (B) Separate flat-fee registration path for non-season types (program-level
+           fee, skip the division step). New flow + new fee source. More surface.
+       (C) Tryouts use tryout_sessions/attendees (pick a session) — different model;
+           tryout_sessions exist but are empty; doesn't match the b3-funnel render.
+     CC LEAN: (A). It makes the live program registrable with the least new
+       surface, keeps ONE funnel + ONE fee source (division_fees), and matches the
+       b3-funnel render (the "division" line is just the program's flat unit). Needs
+       a tiny admin step (a fee field for non-season programs) + the funnel to skip
+       the visible division picker when there's exactly one implicit unit.
+     RENDER NEEDED: non-season register flow (flat fee, no visible division pick) +
+       the admin "tryout/camp fee" capture.
+
+  F2 — pr1b RLS NARROWING TIMING.  [now-urgent]
+     REQUEST: narrow registration_fees + player_equipment SELECT now, or hold?
+     CONTEXT: documented deviation's precondition ("no parent UI") expired when
+       B1/B2 shipped. Revert path is written and ready.
+     OPTIONS: (A) apply pr1b now (admin OR own-child) — CC can apply under the lane.
+       (B) hold until funnel registration actually goes live for parents.
+     CC LEAN: (A) apply now. The leak is live the moment a parent can authenticate,
+       which is today. Cheap, reversible, defense-in-depth. One migration.
+
+  F3 — #63 PRICE-DISPLAY LOCK.
+     REQUEST: lock estimate↔authoritative parity + keep "from $X"?
+     CC LEAN: yes — add an AP#43 test asserting estimateCart total == RPC
+       authoritative for the multi-child + family-cap case (ships with R1), and keep
+       DivisionCard "from $X" (honest; review shows the full total). No truth
+       divergence today; this fences it before R1's multi-child math lands.
+
+  F4 — B3 BUILD ORDER / GENDER SEQUENCING.
+     REQUEST: confirm the order for the remaining B3 tail (R1-R5) + M2 (R7).
+     CC LEAN (see §F): R5 (tiny) + R6 (security) first, then R1 (multi-child, the
+       headline) + F3 test, then R4 (a11y), then R2 gender capture, then R7 M2
+       enforcement. F1 ruling gates whether a non-season path interleaves.
+
+================================================================================
+E. RENDER GAPS — what the architect needs to produce/confirm
+================================================================================
+  Existing renders cover: b3-funnel (multi-child review + gender control + error),
+  b2-confirmation-bridge, brief3-pilot-redirect. Gaps:
+   G1  NON-SEASON (tryout/camp) register flow — flat fee, no visible division pick
+       (depends on F1 ruling). NEW — not covered by b3-funnel.
+   G2  Multi-child ACCUMULATION flow (the "add another child → review all" path
+       BETWEEN children) — b3-funnel shows the review END-STATE but not the
+       add-another loop / per-child entry transitions.
+   G3  Step a11y states — focus-to-heading target, aria-live announcement copy,
+       16px input spec, 3-step labeling.
+   G4  Admin fast-follows (if roadmapped): division edit/delete, add-on fee editor,
+       registration confirm-marking.
+  Existing renders to CONFIRM still match the build: b3-funnel review math (server
+  total + family discount), gender control copy ("division group" Boys/Girls/Coed).
+
+================================================================================
+F. RECOMMENDED BUILD SEQUENCE (CC proposal — for architect/Frank ratification)
+================================================================================
+  1. R5 reg-open gate consumption (tiny, correctness) + R6/F2 pr1b RLS narrowing
+     (security, now-live) — two small PRs, no render needed.
+  2. F1 ruling → if (A), a small PR: non-season implicit flat-fee unit + funnel
+     skip-division-picker (needs G1 render).
+  3. R1 multi-child one-submit + F3 parity test (the headline; needs G2 render
+     confirm). Biggest PR.
+  4. R4 step a11y (aria-live, focus, 16px, role=alert) — needs G3 spec.
+  5. R2 gender capture + client mismatch block (M1 ready) — b3-funnel render exists.
+  6. R7 M2 server gender_mismatch enforcement (after R2).
+  7. Admin fast-follows A1-A3 as roadmapped.
+
+================================================================================
+G. QUESTIONS FOR THE ARCHITECT (batched)
+================================================================================
+  Q1 (F1) Non-season registration path: A (implicit flat-fee division), B (separate
+     flat path), or C (tryout_sessions)? CC leans A. Render G1 needed.
+  Q2 (F2) Apply pr1b RLS narrowing now? CC leans yes (precondition expired).
+  Q3 (F3) Lock estimate↔authoritative with an AP#43 test + keep "from $X"? CC: yes.
+  Q4 (F4) Confirm the §F build order; any reordering?
+  Q5 Admin fast-follows (A1 confirm-marking, A2 add-on fees, A3 division edit) —
+     in-scope for the pilot, or explicitly deferred? Affects G4 renders.
+  Q6 b3-funnel render: confirm the gender control copy + that the multi-child
+     review END-state matches; supply the G2 add-another transition + G1/G3.
+
+================================================================================
+END — CC awaits architect ruling on F1-F4 + Q1-Q6 before the next build PR.
+Nothing applied. CC will apply F2/R5/R6 immediately on GO (lane: DB + app).
+================================================================================
