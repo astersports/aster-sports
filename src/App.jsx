@@ -36,6 +36,7 @@ const BriefingsHistoryPage = lazy(() => import('./pages/BriefingsHistoryPage'));
 const BriefingHistoryDetail = lazy(() => import('./pages/admin/BriefingHistoryDetail'));
 const RegisterEntryPage = lazy(() => import('./pages/RegisterEntryPage'));
 const RegisterFlowPage = lazy(() => import('./pages/RegisterFlowPage'));
+const FamilyProgramsPage = lazy(() => import('./pages/FamilyProgramsPage'));
 const AdminSettingsPage = lazy(() => import('./pages/AdminSettingsPage'));
 const ProgramSetupPage = lazy(() => import('./pages/admin/ProgramSetupPage'));
 const ProgramDetailPage = lazy(() => import('./pages/admin/ProgramDetailPage'));
@@ -94,6 +95,7 @@ export default function App() {
       <Route path="/messages"        element={<Protected><MessagesPage /></Protected>} />
       <Route path="/inbox"           element={<Protected><InboxPage /></Protected>} />
       <Route path="/account"         element={<Protected><AccountPage /></Protected>} />
+      <Route path="/family"          element={<Protected><FamilyProgramsPage /></Protected>} />
       <Route path="/records-preview" element={<Navigate to="/records" replace />} />
 
       {/* Full-screen authenticated routes — auth guard without AppShell chrome */}

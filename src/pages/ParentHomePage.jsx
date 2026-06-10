@@ -101,6 +101,7 @@ export default function ParentHomePage() {
           seasonLabel={activeSeason?.name}
           progressLabel={offSeason ? null : progressLabel}
           onViewRecords={() => navigate('/records')}
+          onMyFamily={() => navigate('/family')}
           offSeason={offSeason ? { records: childRecords } : null}
         />
       )}
