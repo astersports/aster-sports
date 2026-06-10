@@ -76,7 +76,7 @@ export default function RegisterFlowPage() {
   if (state.submitted && result) {
     return (
       <div style={wrap}>
-        <RegisterConfirm result={result} program={program}
+        <RegisterConfirm result={result} program={program} guardianEmail={state.guardian.email}
           onAddAnother={() => dispatch({ type: 'NEXT_CHILD' })} onDone={() => navigate(`/r/${slug}`)} />
       </div>
     );

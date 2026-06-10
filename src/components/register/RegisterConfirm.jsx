@@ -1,11 +1,14 @@
 import { ghostBtn, primaryBtn } from './registerStyles';
 import { formatCurrency } from '../../lib/formatters';
+import RegisterClaimAccount from './RegisterClaimAccount';
 
 // Post-submit confirmation (spec §5.4/§5.6 voice). Shows the SERVER-authoritative
 // total (result.authoritative_total_cents — the #63-money truth; previously
 // computed and discarded), not the client estimate. "+ Register another child"
 // loops back keeping the guardian; each child is its own pending registration.
-export default function RegisterConfirm({ result, program, onAddAnother, onDone }) {
+// B2: a magic-link claim bridge (RegisterClaimAccount) renders on the reserved
+// path so the parent can claim their account at the highest-intent moment.
+export default function RegisterConfirm({ result, program, guardianEmail, onAddAnother, onDone }) {
   const already = result?.already_registered || [];
   const count = (result?.registration_ids || []).length;
   const reserved = count > 0;
@@ -35,6 +38,8 @@ export default function RegisterConfirm({ result, program, onAddAnother, onDone 
           <div style={note}>Billed at registration · no online payment yet.</div>
         </div>
       )}
+
+      {reserved && <RegisterClaimAccount email={guardianEmail} />}
 
       <button type="button" className="as-press" style={{ ...primaryBtn, marginTop: 24 }} onClick={onAddAnother}>+ Register another child</button>
       <button type="button" style={{ ...ghostBtn, width: '100%', marginTop: 8 }} onClick={onDone}>Done</button>
