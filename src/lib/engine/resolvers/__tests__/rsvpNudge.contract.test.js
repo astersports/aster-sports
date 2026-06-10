@@ -74,6 +74,27 @@ describe('rsvp_nudge resolver — contract', () => {
     expect(redirect.slices.length).toBe(open.slices.length);
   });
 
+  it('5c. BRIEF-3 — REDIRECT mode surfaces context.pilot; slices keep REAL ids for minting', async () => {
+    // The resolver surfaces { redirectMode, redirectEmail } so the send
+    // pipeline can queue the pilot row shape. The SLICES still carry the real
+    // guardian_id + email — token minting keys on them; the pilot rewrite
+    // happens later in buildFanoutRows, not here (mint real, queue pilot).
+    const redirectRecipients = [{ guardian_id: null, email: 'olivejuiceinc1@gmail.com', is_pilot_family: true, team_ids: [] }];
+    const { context, slices } = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: true }, { supabase: mockClient({ ...FIXTURES, recipients: redirectRecipients }), now: NOW });
+    expect(context.pilot.redirectMode).toBe(true);
+    expect(context.pilot.redirectEmail).toBe('olivejuiceinc1@gmail.com');
+    expect(slices.length).toBeGreaterThan(0);
+    expect(slices.every((s) => !!s.guardian_id)).toBe(true);
+    expect(slices.every((s) => s.email && s.email !== 'olivejuiceinc1@gmail.com')).toBe(true);
+  });
+
+  it('5d. FILTER mode (real pilot family) leaves context.pilot.redirectMode false', async () => {
+    const recipients = [{ guardian_id: '07ec4308-e3ab-4d13-be5e-a5796f506ce3', email: 'medelman83@me.com', is_pilot_family: true, team_ids: [] }];
+    const { context } = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: true }, { supabase: mockClient({ ...FIXTURES, recipients }), now: NOW });
+    expect(context.pilot.redirectMode).toBe(false);
+    expect(context.pilot.redirectEmail).toBeNull();
+  });
+
   it('6. all responded -> empty slices', async () => {
     const allResponded = team_players.map((tp) => ({ event_id: EVENT_ID, player_id: tp.player_id, response: 'going' }));
     const { slices, context } = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient({ ...FIXTURES, event_rsvps: allResponded }), now: NOW });
