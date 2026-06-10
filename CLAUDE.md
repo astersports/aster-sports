@@ -1526,3 +1526,39 @@ the locked decisions.
 Reference instances: L99 event detail redesign (PRs #392/#393/#394,
 2026-05-19), L99 Teams audit (PR #408, 2026-05-21), L99 platform-wide
 audit (PR #409, 2026-05-21).
+
+### 16.16 Two-bucket config doctrine — consumption is the gate, not the schema
+
+Locked 2026-06-09 from the S3 → S4/S5 settings spend. A populated config
+table is NOT a wired config table: a redesign can orphan its config
+substrate silently (the shell-contract-v2 Home retired
+`dashboard_section_visibility` + `quick_actions_config` without dropping
+them; `circuit_rules` / `division_fees` were specced for editors nothing
+reads).
+
+**The rule:** build a settings editor for a value ONLY when —
+  (a) **read-now** — a shipped surface (app hook/page OR edge function)
+      reads that value today, OR
+  (b) **multi-tenant onboarding** genuinely needs it (different orgs
+      customizing the same surface).
+Everything else stays **hardcoded and dormant**. "Config-driven" is a
+multi-tenant *feature*, not a default — it earns its keep when many orgs
+customize, not for a single-org pilot with one good hardcoded surface.
+Do NOT ship a writer for config nothing reads (repeats the DR-1
+dead-control trap).
+
+**Mandatory Step-0 before any settings surface is specced or built:** grep
+`src/` AND `supabase/functions/` for the table name / jsonb key and confirm
+a shipped surface READS it. If nothing reads it → STOP, report (S3-class),
+descope or schedule a consumer first. Prefer a one-time **batch**
+consumption audit over per-surface Step-0 checks when multiple surfaces are
+queued — one round-trip, durable artifact (the reference instance:
+`docs/SETTINGS_CONSUMPTION_AUDIT_2026-06-09.txt`, which triaged S4–S9 in a
+single pass and collapsed the active pilot settings set to S1/S2/S7/S9).
+
+**Reconcile relics in-schema, don't just leave them:** orphaned config gets
+a `COMMENT ON TABLE ... IS 'DEPRECATED: …'` tag + a row in
+`docs/DEPRECATIONS_REGISTRY.md` so discovery + grep surface the warning
+automatically. Do NOT drop a relic table without a fresh grep proving zero
+references (a Phase-4 reseed may reuse it). Reference: migration
+`20260609225312_deprecate_unwired_config_relics`.

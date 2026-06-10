@@ -1,0 +1,48 @@
+==============================================================================
+ARCHITECT RELAY (closeout) : DR-S7 folded + salvage resolved + S9 routing locked
+Date: 2026-06-09  ·  CC -> architect (via Frank)  ·  Relay artifact (§11.8 rule 1)
+Branch: claude/aster-sports-migration-4yczeu  ·  PR #920 (held)
+==============================================================================
+
+1. DR-S7 RULING (a) — FOLDED IN. DONE.
+   Amendment v2 + ledger updated to the ruled disposition:
+   "S7 Briefings — WIRED (voice_config + signature_coaches read in production),
+    EDITOR DEFERRED for the pilot, FORK-C-HELD. Un-park = FORK C sign-off (Frank),
+    then S7 spec/render/handoff. NOT Phase-4-unwired, NOT '2nd org needs it'."
+   Committed to #920 (9f41e8ac). Also fixed a ledger label collision discovered
+   while folding: the settings entry had reused §4.AK (already taken by the Wave 1
+   audit entry) -> renamed to the next free label §4.BY.
+
+2. PART 3 SALVAGE — MOOT. No action needed. CORRECTION to my earlier flag.
+   You ruled "recover 459b4157 to a salvage branch first, decide second." On
+   verify-before-act, the salvage is unnecessary: the doc IS already on main.
+     - 459b4157 touches exactly one file, docs/A2_DESIGN_PROPOSAL_2026-06-09.txt.
+     - That file already exists on origin/main, BYTE-IDENTICAL, added by commit
+       97773719 via PR #896 ("docs: A2 AutoNotificationSettingsSheet design
+       proposal (await sign-off) (#896)").
+     - So 459b4157 is a pre-squash DUPLICATE of #896 — exactly like the other
+       FORK-line commits #892-895. There is NO at-risk work.
+   MY EARLIER FLAG WAS A FALSE ALARM. I verified the COMMIT 459b4157 was on no
+   remote ref, but did NOT verify its CONTENT was already on main under a different
+   SHA. That is the verify-don't-infer lesson landing on me (AP#60). No salvage
+   branch was created/pushed; nothing to triage; #896 is the live copy.
+
+3. S9 ROUTING — LOCKED. Frank chose "doctrine review -> then S9."
+   The doctrine review is now the single unblock: it merges #920 AND frees the
+   designated branch, after which CC builds S9 as its own clean PR (the architect's
+   "S9 = one PR" shape). No bundling of S9 into the held doctrine PR.
+
+   S9 is fully specced and CC-ready (SETTINGS_S9_SPEC + RENDER + HANDOFF received).
+   Build plan on un-block: channel matrix (Push/Email only — SMS omitted per FLAG 1,
+   no SMS sender; sms keys written through untouched via read-modify-write of the
+   notification_channels jsonb) + alerts list (enable toggle + read-only thresholds
+   per FLAG 2; no blind jsonb editor) + the "Notifications" settings group reusing
+   the shipped Automatic Messages control. Files <=150 lines (split: matrix / row /
+   alert-list / alert-row / useAlertConfigs). Then full production smoke
+   (admin/coach/parent), pilot stays DB-locked.
+
+ONE ACTION OUTSTANDING (Frank): paste DOCTRINE_REVIEW_PROMPT_1616 into a fresh chat.
+  Clean pass -> drop the do-not-auto-merge label on #920 -> it merges -> CC builds S9.
+==============================================================================
+END RELAY.
+==============================================================================
