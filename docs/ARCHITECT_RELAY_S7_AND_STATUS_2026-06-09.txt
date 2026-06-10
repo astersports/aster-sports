@@ -1,0 +1,98 @@
+==============================================================================
+ARCHITECT RELAY + DECISION REQUEST : S7 disposition + court-items status
+Date: 2026-06-09  ·  CC -> architect (via Frank)  ·  Relay artifact (§11.8 rule 1/6)
+Branch: claude/aster-sports-migration-4yczeu  ·  PR #920 (held)
+==============================================================================
+
+PART 1 — STATUS OF THE THREE COURT ITEMS (all shipped to PR #920, HELD)
+------------------------------------------------------------------------------
+1. AP#21 MIRROR BACKFILL — DONE. Repo mirrors created for the 3 pilot-lock
+   migrations (20260609210514 / 210721 / 210917), byte-faithful to your
+   prod-verified end-state SQL, each headed "do not re-apply / parity only".
+   Files separate (not squashed); version strings represented.
+
+2. MASTER-SPEC AMENDMENT v2 + LEDGER — DONE. Committed
+   docs/ASTERSPORTS_SETTINGS_MASTER_SPEC_AMENDMENT_v2.md and folded the §4
+   block into docs/EMBER_PENDING_LEDGER.md as §4.AK (AP#45). Scope reconciled
+   9 -> 3: S1/S2 shipped, S9 build, S3..S8 -> Phase 4 (S7 PENDING — see Part 2).
+
+3. RELIC TAGS + DOCTRINE (pillars 2+3) — DONE (prior turn, same PR #920).
+   Migration 20260609225312 (COMMENT tags, not dropped) + DEPRECATIONS_REGISTRY.md
+   + CLAUDE.md §16.16 two-bucket doctrine.
+
+MERGE GATE on #920: it carries the CLAUDE.md §16.16 doctrine commit, so per
+§11.7 rule 7 it needs a fresh-context review pass before merge. Auto-merge OFF,
+do-not-auto-merge label applied. Your DOCTRINE_REVIEW_PROMPT_1616 is the
+mechanism — Frank pastes it into a NEW chat; clean pass -> drop the label ->
+merge. (CC cannot be the reviewer; CC implemented §16.16 this session.)
+
+PART 2 — DECISION REQUEST: DR-S7 (your "confirm in one word" could not be a
+clean yes)
+------------------------------------------------------------------------------
+REQUEST: rule S7's disposition. CC declined to confirm "DESCOPED" because
+verification contradicts the unwired premise.
+
+CONTEXT / EVIDENCE (file:line, verified this session):
+  - organizations.voice_config IS READ by shipped briefing resolvers:
+      buildOrgContext.js:34; and the org-fetch
+      .select('id, name, display_name, brand_colors, voice_config') in
+      gameRecap.js:77, gamesRecap.js:59, weeklyDigest.js:106,
+      tournamentRecap.js:105, tournamentPrelim.js:85, rsvpNudge.js:134,
+      scheduleChange.js:83, academyCallupNotice.js:75. These run in
+      production briefing sends.
+  - signature_coaches IS CONSUMED via buildOrgContext.js:37 + tournamentRecap
+      (fetchSignatureCoaches). This is the FORK C value, operator-HELD.
+  - CONTRAST: S4 circuit_rules, S5 division_fees, S6 roster_rules, S8
+      reminder/rsvp/note keys each have ZERO consumers. S7's values do not.
+  - DISAMBIGUATION CC CANNOT RESOLVE (no S7 spec substrate in hand):
+      * IF S7's editor targets voice_config / signature_coaches -> bucket (a)
+        satisfied (value read today) -> buildable, but entangled with the
+        HELD FORK C.
+      * IF S7 targets something else, e.g. briefing_triggers (0 src/ refs ->
+        unwired) -> descope holds. briefing_templates was dropped (mig
+        20260602221416).
+
+OPTIONS + REQUIREMENTS:
+  (a) S7 = voice/signoff + signature editor, KEEP HELD for the pilot under
+      FORK C. Record as "wired / editor-deferred / FORK-C-held" (NOT unwired
+      descope). Un-park = FORK C sign-off, then spec/render/handoff. No CC
+      build now. (CC LEAN.)
+  (b) S7 = voice/signoff editor, BUILD NOW. Bucket (a) is satisfied; but this
+      requires releasing FORK C (signature_coaches) from HELD first, plus the
+      S7 spec/render/handoff. Larger, and reverses an operator hold.
+  (c) S7 substrate is something other than voice_config/signature_coaches
+      (name it). If that substrate has 0 consumers -> descope holds (Phase 4).
+
+CC LEAN: (a). The values are wired, so the file is NOT "unwired -> Phase 4"
+  like S4/S5/S6/S8 — but FORK C is operator-HELD, so deferring the editor is
+  right for the pilot. The correction that matters: record S7 as wired/deferred
+  so its un-park condition (FORK C sign-off) is accurate, not "a 2nd org needs
+  it." Filed PENDING in amendment v2 (CC note) + ledger §4.AK.
+
+NEEDED BACK: ruling (a)/(b)/(c). If (a), no CC code; S7 stays held. If (b),
+  release FORK C + send S7 spec. If (c), name the substrate.
+
+PART 3 — FLAG: at-risk UNPUSHED local work (not CC's, surfaced for awareness)
+------------------------------------------------------------------------------
+While reconciling a stale local FORK-line during the backfill commit (caught
+via AP#35 — 181d3ac7 was missing from HEAD ancestry; reset to the #920 tip and
+cherry-picked cleanly, no loss), CC found a LOCAL-ONLY commit on NO remote ref:
+    459b4157  "docs: A2 AutoNotificationSettingsSheet design proposal
+               (await sign-off)"  — authored 2026-06-09 16:24, by Claude.
+The other FORK-line commits (#892-895) are already squash-merged to main (safe
+pre-squash dupes). But 459b4157 (the A2 design proposal) is unpushed and the
+container is EPHEMERAL — if that proposal is wanted, it must be pushed before
+the container is reclaimed or it is lost. CC left it untouched ("await
+sign-off" + not CC's work). Decide whether to recover/push it.
+
+PART 4 — NEXT: S9
+------------------------------------------------------------------------------
+S9 (notification_channels + alert_configurations + Automatic Messages reuse) is
+the entire remaining pilot settings build, and the deepest of the set. CC is
+ready to build on its spec/render/handoff. Suggested S9 opener (your lane):
+D-2 gate = the alert_configurations policy body + the live channel matrix +
+alert rows. Nothing for CC to build until that lands or the doctrine review
+clears #920.
+==============================================================================
+END RELAY.
+==============================================================================
