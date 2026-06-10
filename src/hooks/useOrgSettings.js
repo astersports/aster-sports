@@ -17,6 +17,7 @@ const FIELDS = [
   'from_name', 'from_email', 'reply_to_email',
   'season_label', 'timezone', 'registration_open',
   'futures_academy_enabled', 'carpool_enabled', 'custom_domain',
+  'notification_channels',
 ].join(', ');
 
 export function useOrgSettings(orgId) {

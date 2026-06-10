@@ -16,13 +16,21 @@ const os = {
     registration_open: false, futures_academy_enabled: true, carpool_enabled: true,
     custom_domain: null, from_name: 'Legacy Hoopers', from_email: 'admin@lh.org',
     reply_to_email: 'reply@lh.org', pilot_mode_enabled: true, pilot_test_recipient_email: 'r@test.com',
+    notification_channels: { defaults: { push: true, email: true, sms: false }, per_category: {}, emergency_override_bypasses_quiet_hours: true },
   },
+  save: vi.fn(), saving: false,
+};
+const al = {
+  configs: [
+    { id: 'a1', type_key: 'rsvp_shortfall', instance_key: 'friday_noon', enabled: true, threshold_config: { severity: 'warning' }, default_severity: 'warning' },
+    { id: 'a2', type_key: 'payment_overdue', instance_key: null, enabled: true, threshold_config: { severity: 'warning' }, default_severity: 'warning' },
+  ],
   save: vi.fn(), saving: false,
 };
 const org = { name: 'Legacy Hoopers LLC', mailing_address: '4 Byram Brook Place' };
 
 function renderSheets(openForm) {
-  return render(<SettingsSheets openForm={openForm} setOpenForm={() => {}} an={an} os={os} org={org} />);
+  return render(<SettingsSheets openForm={openForm} setOpenForm={() => {}} an={an} os={os} al={al} org={org} />);
 }
 
 describe('SettingsSheets — openForm routing', () => {
@@ -37,6 +45,8 @@ describe('SettingsSheets — openForm routing', () => {
     ['features', /features/i],
     ['domain', /custom domain/i],
     ['autonotif', /automatic messages/i],
+    ['channels', /channels/i],
+    ['alerts', /alerts/i],
     ['sender', /sender identity/i],
     ['pilot', /pilot mode/i],
   ])('opens exactly the %s form', (key, name) => {

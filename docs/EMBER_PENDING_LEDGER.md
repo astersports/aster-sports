@@ -573,9 +573,10 @@ Source: `docs/SETTINGS_CONSUMPTION_AUDIT_2026-06-09.txt` +
 `docs/ASTERSPORTS_SETTINGS_MASTER_SPEC_AMENDMENT_v2.md`. The batch consumption audit
 collapsed the settings build from 9 surfaces to 3.
 
-- **SHIPPED:** S1 My Preferences (#915, #918), S2 Family Notifications (#916).
-- **REMAINING (consumed):** S9 Notifications (`notification_channels` + `alert_configurations`).
-  NEXT BUILD.
+- **SHIPPED:** S1 My Preferences (#915, #918), S2 Family Notifications (#916),
+  S9 Notifications (channel matrix + alerts enable/order + Automatic Messages reuse) — the
+  FINAL pilot settings surface. SMS column omitted (no SMS sender, S9 FLAG 1); alert
+  thresholds read-only (S9 FLAG 2).
 - **DESCOPED → Phase 4** (present-but-unwired; 0 consumption): S3 Home Layout, S4 Records,
   S5 Programs, S6 Roster Rules, S8 Schedule.
 - **S7 Briefings — WIRED / editor-deferred / FORK-C-held** (RULED DR-S7 (a), 2026-06-09).
@@ -588,8 +589,8 @@ collapsed the settings build from 9 surfaces to 3.
   index in `docs/DEPRECATIONS_REGISTRY.md`. Tagged, NOT dropped (Phase-4 reseed may reuse).
 - **AP#21 mirror backfill:** the 3 pilot-lock migrations (`20260609210514` / `210721` /
   `210917`) now have repo mirrors (were live-in-prod but unmirrored).
-- **Next:** S9 spec/render/handoff → build → production smoke. Pilot stays DB-locked
-  (`trg_guard_pilot_cutover` live).
+- **Next:** production smoke (admin/coach/parent). The pilot settings build is COMPLETE
+  (S1/S2/S9 shipped; S3–S8 dispositioned). Pilot stays DB-locked (`trg_guard_pilot_cutover` live).
 
 ---
 
