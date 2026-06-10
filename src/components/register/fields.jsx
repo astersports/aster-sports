@@ -2,10 +2,13 @@
 // (CLAUDE.md §7): inputs 44px tall, var(--as-bg-tertiary) bg, 1.5px border, 10px radius,
 // accent focus ring. Keeps the step components small (≤150-line cap).
 
+// R4 a11y — fontSize 16 (not 15): iOS Safari auto-zooms on focus for inputs < 16px.
+// outline:none is safe — the global :focus-visible rule (index.css) paints the accent
+// ring on keyboard focus.
 const inputStyle = {
   width: '100%', minHeight: 44, padding: '0 12px', boxSizing: 'border-box',
   backgroundColor: 'var(--as-bg-tertiary)', border: '1.5px solid var(--as-border-default)',
-  borderRadius: 10, fontSize: 15, color: 'var(--as-text-primary)', outline: 'none',
+  borderRadius: 10, fontSize: 16, color: 'var(--as-text-primary)', outline: 'none',
 };
 const labelStyle = {
   display: 'block', fontSize: 11, fontWeight: 500, textTransform: 'uppercase',

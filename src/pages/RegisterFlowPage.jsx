@@ -1,5 +1,6 @@
-import { useReducer } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { formatCurrency } from '../lib/formatters';
 import { usePublicProgram } from '../hooks/usePublicProgram';
 import { useSubmitRegistration } from '../hooks/useSubmitRegistration';
 import { estimateCart } from '../lib/estimateCart';
@@ -23,6 +24,11 @@ export default function RegisterFlowPage() {
   const { data, loading } = usePublicProgram(slug);
   const [state, dispatch] = useReducer(reducer, sp.get('division'), init);
   const { submit, submitting, error, result } = useSubmitRegistration();
+
+  // R4 a11y — move focus to the step/section heading on every step+phase change so
+  // a screen reader announces the new step and keyboard focus starts at the top.
+  const headingRef = useRef(null);
+  useEffect(() => { headingRef.current?.focus(); }, [state.phase, state.step, state.submitted]);
 
   if (loading) return <div style={centered}>Loading…</div>;
   const program = data?.program;
@@ -74,8 +80,9 @@ export default function RegisterFlowPage() {
     return (
       <div style={wrap}>
         <button type="button" onClick={() => navigate(`/r/${slug}`)} style={linkBtn}>← Cancel</button>
-        <h1 style={h1Style}>Your children</h1>
+        <h1 ref={headingRef} tabIndex={-1} style={h1Style}>Your children</h1>
         <p style={subStyle}>Add each child, then register them together in one go.</p>
+        <p className="as-sr-only" aria-live="polite">{`${rows.length} ${rows.length === 1 ? 'child' : 'children'} added. Running total ${formatCurrency(cart.totalCents)}.`}</p>
         <StepChildrenRoster
           rows={rows} cart={cart} submitting={submitting} error={error}
           onAdd={() => dispatch({ type: 'ADD_CHILD', divisionId: onlyOneDivision ? divisions[0].id : '' })}
@@ -104,7 +111,8 @@ export default function RegisterFlowPage() {
         {hasRoster ? '← Back to list' : '← Cancel'}
       </button>
       <div style={metaStyle}>Step {state.step + 1} of {seq.length}{draftDivision && !onlyOneDivision ? ` · ${draftDivision.name}` : ''}</div>
-      <h1 style={h1Style}>{titles[current]}</h1>
+      <h1 ref={headingRef} tabIndex={-1} style={h1Style}>{titles[current]}</h1>
+      <p className="as-sr-only" aria-live="polite">{`Step ${state.step + 1} of ${seq.length}: ${titles[current]}`}</p>
       {node}
     </div>
   );
