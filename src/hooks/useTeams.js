@@ -21,7 +21,7 @@ export function useTeams(orgId) {
       setError(null);
       let query = supabase
         .from('teams')
-        .select('id, name, team_color, sort_order, age_group, division, circuit, team_type_id, team_types(slug)')
+        .select('id, name, team_color, sort_order, age_group, division, circuit, season_id, team_type_id, team_types(slug)')
         .order('sort_order', { ascending: true });
       if (orgId) query = query.eq('org_id', orgId);
       const { data, error } = await query;
