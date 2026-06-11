@@ -1,0 +1,68 @@
+==============================================================================
+CC -> ARCHITECT : FINDING + FIX , family_balances FUNNEL BILLING BUG
+Date 2026-06-11. Surfaced during H-1 (Home Registration lane) money-query
+verification — the "CC verifies the family_balances IN-sum returns the funnel
+fees" caveat the H-1 spec asked for. Frank ruled Option A (fix the view). APPLIED
++ verified (version 20260611023342). Records the decision per §11.8.
+==============================================================================
+
+WHAT THE H-1 VERIFY CAUGHT
+  The H-1 spec's Q1 money formula (collected := billed_cents - balance_cents over
+  family_balances WHERE season_id IN open_ids) returned a NEGATIVE collected for a
+  funnel registration. Root cause is not the formula — it's the view.
+
+THE BUG (family_balances, two billing models in one view)
+  - IMPORTED model (LeagueApps, the existing $166k): the fee is season_fee_cents
+    on financial_accounts; payments are 'payment' transactions. billed/net_paid/
+    balance all correct.
+  - FUNNEL model (B0, since the registration funnel shipped): submit_registration
+    posts the fee as a 'fee' financial_transaction and leaves season_fee_cents=0.
+    The old view computed billed_cents = season_fee - discount = 0, and bucketed
+    the 'fee' txn as -amount inside net_paid_cents -> net_paid went NEGATIVE.
+    Proven (rollback-txn, $90 funnel reg): billed=0, net_paid=-9000,
+    total_fees=0, balance=9000. Only balance_cents was correct.
+  BLAST RADIUS: every surface reading billed/net_paid/total_fees for a funnel
+  account, i.e. the Home Registration lane (H-1, not yet built) AND the existing
+  Financials dashboard (useSeasonFinancials reads net_paid_cents). Latent today
+  only because prod has 0 funnel registrations (the tryout fee was just set during
+  device-smoke S0; registrations=0). The first real funnel payment would have
+  shown a wrong "collected" in Financials.
+
+OPTIONS PUT TO FRANK
+  A (RULED): fix the view so 'fee' txns count as billed, net_paid = payments only.
+    One source of "collected" truth for ALL surfaces (#63-correct). Migration.
+  B: H-1 computes collected from raw 'payment' txns, view untouched. Reintroduces
+    the two-owners pattern (H-1 vs Financials compute collected differently) — the
+    exact #63 anti-pattern this redesign kills. REJECTED.
+  C: drop the Collected tile. Sidesteps; leaves Financials wrong. REJECTED.
+
+THE FIX (Option A, applied 20260611023342)
+  'fee' transactions move OUT of net_paid and INTO billed:
+    billed_cents   = (season_fee - discount) + SUM('fee' amount)
+    net_paid_cents = SUM('payment'(+), 'refund'(-), 'adjustment'(+))   -- money in
+    balance_cents  = billed - net_paid                                  -- INVARIANT
+  balance_cents is algebraically identical to before (old: (sf-d) - [P-R+A-F];
+  new: [(sf-d)+F] - [P-R+A]) — so NO "owes" number moves on any surface (My Family
+  balance, owing-count, roster dot all read balance_cents, unchanged). Imported
+  accounts have no 'fee' txns, so billed/net_paid are unchanged for them too. The
+  fix only corrects the funnel case. security_invoker preserved; billed_cents kept
+  ::integer (type-preserving).
+
+VERIFICATION (live)
+  - 164 imported accounts UNCHANGED: billed $166,910 / net_paid $165,635 /
+    due $1,275 (matches the known LH ledger). 0 negative net_paid.
+  - Funnel rollback-txn: a $90 reg reads billed $90 / net_paid $0 / balance $90;
+    after a $40 payment, billed $90 / net_paid $40 / balance $50. Correct.
+  - get_advisors: no new advisory (security_invoker view, grants preserved).
+
+IMPACT ON H-1
+  Unblocks the lane's money tiles from the ONE shared source:
+    registered := COUNT(registrations WHERE program_id = ANY(open_ids) AND status <> 'cancelled')
+    collected  := SUM(net_paid_cents)            over family_balances WHERE season_id = ANY(open_ids)
+    due        := SUM(GREATEST(balance_cents,0)) over the same set
+  No per-surface money math; Financials reads the same corrected columns. H-1
+  proceeds on this. (The H-1 spec's billed-minus-balance formula is superseded by
+  the corrected net_paid_cents source above.)
+==============================================================================
+END FINDING.
+==============================================================================
