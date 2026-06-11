@@ -23,6 +23,9 @@ function Body({ program, onSave }) {
     name: program?.name || '', start_date: program?.start_date || '', end_date: program?.end_date || '',
     reg_opens_at: (program?.reg_opens_at || '').slice(0, 10), reg_closes_at: (program?.reg_closes_at || '').slice(0, 10),
     public_slug: program?.public_slug || '', is_published: !!program?.is_published,
+    // RV-5a: 2-state. NULL persists for untouched rows -> show the by-type default
+    // so the toggle reflects the current effective state (camp/tryout off, season on).
+    roster_visibility: program?.roster_visibility != null ? program.roster_visibility : (program?.program_type === 'season'),
   });
   const [err, setErr] = useState(null);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -40,6 +43,7 @@ function Body({ program, onSave }) {
       reg_closes_at: dayBoundaryTs(form.reg_closes_at, 'close'),
       public_slug: slugify(form.public_slug || form.name) || null,
       is_published: form.is_published,
+      roster_visibility: form.roster_visibility,
     });
   };
 
@@ -64,6 +68,11 @@ function Body({ program, onSave }) {
         <input type="checkbox" checked={form.is_published} onChange={(e) => set('is_published', e.target.checked)} />
         Published (parents can register at the public link)
       </label>
+      <label style={checkRow}>
+        <input type="checkbox" checked={form.roster_visibility} onChange={(e) => set('roster_visibility', e.target.checked)} />
+        Show roster to families
+      </label>
+      <div style={helpStyle}>Tryouts and camps hide the roster by default. Turn on to let families on this program see each other’s rosters.</div>
       {err && <div style={errStyle}>{err}</div>}
       <button type="button" className="as-press" style={{ ...primaryBtn, opacity: valid ? 1 : 0.5 }} disabled={!valid} onClick={submit}>
         Save changes
@@ -72,5 +81,6 @@ function Body({ program, onSave }) {
   );
 }
 
-const checkRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--as-text-secondary)', margin: '0 0 12px' };
+const checkRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--as-text-secondary)', margin: '0 0 8px' };
+const helpStyle = { fontSize: 12, color: 'var(--as-text-tertiary)', margin: '0 0 14px', paddingLeft: 24 };
 const errStyle = { fontSize: 13, color: 'var(--as-danger)', backgroundColor: 'var(--as-danger-soft)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 };
