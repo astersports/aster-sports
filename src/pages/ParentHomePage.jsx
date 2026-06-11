@@ -15,6 +15,7 @@ import HomeShell from '../components/home/HomeShell';
 import HomeGreeting from '../components/home/HomeGreeting';
 import NeedsYouSection from '../components/home/NeedsYouSection';
 import ComingUpSection from '../components/home/ComingUpSection';
+import ParentHomeRegistration from '../components/home/ParentHomeRegistration';
 import ParentTail from '../components/home/ParentTail';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { firstNameFrom } from '../lib/greetings';
@@ -23,6 +24,7 @@ import { seasonProgress } from '../lib/seasonProgress';
 import { shapeAchievement, shapeChildRecords } from '../lib/home/parentHomeData';
 import { isHomeOffSeason } from '../lib/home/offSeason';
 import { useActivePrograms } from '../hooks/useActivePrograms';
+import { useFamilyPrograms } from '../hooks/useFamilyPrograms';
 
 // Parent home — shell-contract-v2 rewrite (home redesign Phase 1). Composes
 // HomeShell's inner slots over AppShell chrome; the data hooks own fetching
@@ -63,6 +65,7 @@ export default function ParentHomePage() {
   const achievement = useMemo(() => shapeAchievement(achievements[0], recordsByTeam), [achievements, recordsByTeam]);
   const progressLabel = useMemo(() => seasonProgress(activeSeason, now).label, [activeSeason, now]);
   const activePrograms = useActivePrograms();
+  const family = useFamilyPrograms();
   const offSeason = useMemo(() => isHomeOffSeason(activePrograms.programs, activities, now), [activePrograms.programs, activities, now]);
   const comingUpEyebrow = useMemo(() => {
     if (!comingUp?.team_id) return 'Next event';
@@ -95,6 +98,7 @@ export default function ParentHomePage() {
           onSeeSchedule={() => navigate('/schedule')}
         />
       )}
+      registration={<ParentHomeRegistration family={family.data} onNavigate={navigate} />}
       tail={(
         <ParentTail
           achievement={offSeason ? null : achievement}

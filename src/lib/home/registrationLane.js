@@ -8,3 +8,10 @@ export function laneFace({ openCount, needsFeeCount, singleProgram }) {
   if (openCount === 1) return singleProgram?.feeSet ? 'single_fee' : 'single_nofee';
   return needsFeeCount > 0 ? 'multi_mixed' : 'multi';
 }
+
+// H-2 — the parent's total amount owed across the family, from the ONE shared
+// source (family_balances, parent-own). Only positive balances count (a credit
+// isn't "due"); "managed by the other parent" rows carry no number and are skipped.
+export function familyDueCents(familyBalances = []) {
+  return familyBalances.reduce((s, b) => s + (b.managed ? 0 : Math.max(b.balance?.balance_cents || 0, 0)), 0);
+}
