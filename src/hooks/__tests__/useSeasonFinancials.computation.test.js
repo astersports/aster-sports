@@ -3,27 +3,35 @@
 // Unit tests for the computation logic in useSeasonFinancials. Pulls
 // the hook through renderHook + mocks supabase.from to return fixture
 // data, then asserts the derived { balances, stats } match expected
-// values for a controlled set of accounts + transactions.
+// values for a controlled set of family_balances view rows.
 //
-// Locks the contract between FinancialDashboardPage and AdminHomePage
-// PendingQueuesLanes — both consume from this hook, so the balance
-// math is the single source of truth per anti-pattern #42.
+// Money now sources entirely from the family_balances VIEW (F-1 /
+// MONEY_SEAM_AUDIT 2026-06-11 STEP 1) — the view reconciles BOTH
+// billing models, so the funnel fixture (a3) exercises the exact case
+// the old raw-column math got wrong (billed from a 'fee' txn, not from
+// season_fee_cents). Locks the contract between FinancialDashboardPage
+// and AdminHomePage PendingQueuesLanes — both consume this hook, so the
+// balance math is the single source of truth per anti-pattern #42.
 
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 
+// Account metadata (names) — unchanged shape, used for the family list.
 const accountsFixture = [
-  { id: 'a1', org_id: 'o', season_id: 's', season_fee_cents: 70000, discount_cents: 0, guardians: { first_name: 'A', last_name: 'One', user_id: 'u1' } },
-  { id: 'a2', org_id: 'o', season_id: 's', season_fee_cents: 70000, discount_cents: 10000, guardians: { first_name: 'B', last_name: 'Two', user_id: 'u2' } },
-  { id: 'a3', org_id: 'o', season_id: 's', season_fee_cents: 50000, discount_cents: 0, guardians: { first_name: 'C', last_name: 'Three', user_id: 'u3' } },
+  { id: 'a1', org_id: 'o', season_id: 's', guardians: { first_name: 'A', last_name: 'One', user_id: 'u1' } },
+  { id: 'a2', org_id: 'o', season_id: 's', guardians: { first_name: 'B', last_name: 'Two', user_id: 'u2' } },
+  { id: 'a3', org_id: 'o', season_id: 's', guardians: { first_name: 'C', last_name: 'Three', user_id: 'u3' } },
 ];
 
-const transactionsFixture = [
-  // a1 fully paid (70k expected, 70k paid)
-  { account_id: 'a1', transaction_type: 'payment', amount_cents: 70000, processing_fee_cents: 2000, occurred_at: '2026-05-01' },
-  // a2 partially paid (60k expected, 30k paid → 30k owing)
-  { account_id: 'a2', transaction_type: 'payment', amount_cents: 30000, processing_fee_cents: 1000, occurred_at: '2026-05-02' },
-  // a3 unpaid entirely (50k expected, 0 paid → 50k owing)
+// family_balances view rows — the canonical money source. bigint columns
+// (net_paid/total_fees/balance) arrive as numbers from supabase-js; the
+// hook coerces defensively. a1 = imported, fully paid. a2 = imported,
+// 30k owing. a3 = FUNNEL (billed via a 'fee' txn) 50k unpaid — the old
+// raw-column path would have read season_fee_cents=0 and shown billed 0.
+const balancesFixture = [
+  { account_id: 'a1', billed_cents: 70000, net_paid_cents: 70000, total_fees_cents: 2000, balance_cents: 0 },
+  { account_id: 'a2', billed_cents: 60000, net_paid_cents: 30000, total_fees_cents: 1000, balance_cents: 30000 },
+  { account_id: 'a3', billed_cents: 50000, net_paid_cents: 0, total_fees_cents: 0, balance_cents: 50000 },
 ];
 
 vi.mock('../../lib/supabase', () => {
@@ -40,7 +48,7 @@ vi.mock('../../lib/supabase', () => {
     supabase: {
       from: (table) => {
         if (table === 'financial_accounts') return buildChain(accountsFixture);
-        if (table === 'financial_transactions') return buildChain(transactionsFixture);
+        if (table === 'family_balances') return buildChain(balancesFixture);
         return buildChain([]);
       },
     },
@@ -50,18 +58,18 @@ vi.mock('../../lib/supabase', () => {
 const { useSeasonFinancials } = await import('../useSeasonFinancials');
 
 describe('useSeasonFinancials computation', () => {
-  it('computes balances, stats, and familiesOwing from accounts + transactions', async () => {
+  it('computes balances, stats, and familiesOwing from the family_balances view', async () => {
     const { result } = renderHook(() => useSeasonFinancials('o', 's'));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.balances).toEqual({ a1: 0, a2: 30000, a3: 50000 });
 
     const { stats } = result.current;
-    expect(stats.billed).toBe(70000 + 60000 + 50000); // 180000
+    expect(stats.billed).toBe(70000 + 60000 + 50000); // 180000 (incl. funnel a3)
     expect(stats.paid).toBe(70000 + 30000); // 100000
     expect(stats.fees).toBe(3000);
     expect(stats.net).toBe(97000);
-    expect(stats.outstanding).toBe(80000);
+    expect(stats.outstanding).toBe(80000); // sum of balance_cents
     expect(stats.familiesOwing).toBe(2); // a2 + a3
     expect(stats.pct).toBe(56); // 100k / 180k = 0.555... → 56
   });
