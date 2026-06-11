@@ -1,0 +1,135 @@
+==============================================================================
+CC -> ARCHITECT : SPEC + RENDER REQUEST , ROSTER VISIBILITY (FULL BUILD)
+Date 2026-06-11. Per §11.8 (architect spec/render deliverable). The RLS half is
+LIVE (#972); this requests the architect's full spec + renders for the admin-UI +
+team-override half so CC can build it. Plain text + full chat paste + delivered as a
+file. Pairs with the prior ARCHITECT_DECISION_REQUEST_ROSTER_VISIBILITY_2026-06-11
+(#971) — this supersedes its RV-2/RV-5 with grounded detail now that the RLS shipped.
+==============================================================================
+
+0. PURPOSE
+   Frank's directive: "Parents should only see their kids and only other kids on
+   their team rosters. Plus on the program and team setup we should have a setting to
+   mask or not show all roster players to other players. Tryouts no, camp maybe, team
+   yes." The RLS-enforced default is shipped; this asks the architect to spec + render
+   the ADMIN CONTROLS (program toggle + team override) and the PARENT-FACING
+   hidden-roster treatment.
+
+------------------------------------------------------------------------------
+1. WHAT ALREADY SHIPPED (RLS half, #972 — the substrate is live)
+------------------------------------------------------------------------------
+  - programs.roster_visibility (nullable boolean). NULL = default by program_type:
+    season VISIBLE, tryout HIDDEN, camp HIDDEN. Existing rows backfilled by type.
+    (Frank ratified camp default = hidden.)
+  - current_user_teammate_player_ids() now excludes teams whose program's effective
+    roster_visibility is false: COALESCE(pr.roster_visibility, pr.program_type =
+    'season', true). Only the parent teammate path (players_select_parent_team)
+    narrows; own children (players_select_parent) + staff (players_select_staff) are
+    unchanged.
+  - LIVE EVIDENCE (Frank's parent): teammate-visible players 48 -> 27. The 32-kid
+    "Active Roster Lab" (program_type=camp) roster is excluded; the 8U/11U season
+    rosters (27) remain; own kids unaffected.
+  - So: the DATA + ENFORCEMENT exist. What's missing is (a) admin controls to flip a
+    program/team off the type-default, and (b) the parent-facing treatment when a
+    roster IS hidden.
+
+------------------------------------------------------------------------------
+2. DATA MODEL (current + proposed)
+------------------------------------------------------------------------------
+  CURRENT: programs.roster_visibility (boolean, nullable; NULL => by-type default).
+  PROPOSED ADD (this build): teams.roster_visibility_override (boolean, nullable;
+    NULL = inherit the program). EFFECTIVE visibility for a team =
+      COALESCE(team.roster_visibility_override,
+               program.roster_visibility,
+               program.program_type = 'season',
+               true)
+  The teammate fn switches to read the team override first, then the program, then
+  the type default. (§16.16 two-bucket: the override column is READ by the fn AND
+  WRITTEN by the team form in the SAME build — not dead config.)
+  program_type domain (live): season | tryout | camp.
+
+------------------------------------------------------------------------------
+3. OPEN DECISIONS FOR THE ARCHITECT (CC lean per AP#39)
+------------------------------------------------------------------------------
+  RV-2  TEAM OVERRIDE shape. CC LEAN: a 3-state control on the team —
+        Inherit (default, = program) / Show / Hide — stored as
+        teams.roster_visibility_override (NULL / true / false). Inherit keeps the
+        common case zero-touch; Show/Hide is the per-team exception (e.g. one camp
+        team you DO want visible). RULE: confirm 3-state vs a 2-state "override on/off".
+
+  RV-5a PROGRAM CONTROL placement + copy. CC LEAN: a single toggle in the program
+        EDIT form (src/components/admin/program-detail/ProgramEditSheet.jsx — a
+        FullScreenForm; current fields: name, dates, reg window, public link,
+        published). Label lean: "Show roster to families", helper line naming the
+        type default ("Tryouts and camps hide the roster by default"). New programs
+        inherit the type default automatically (NULL), so the CREATE flow does not
+        strictly need the control — RULE: surface it on create too, or edit-only?
+
+  RV-5b TEAM CONTROL placement + copy. CC LEAN: the 3-state control in
+        src/components/admin/TeamFormSheet.jsx (a FullScreenForm; already receives
+        the programType prop, so it can show "Inherit (Hidden for camps)" inline).
+        Label lean: "Roster visibility" with Inherit / Show / Hide.
+
+  RV-5c PARENT-FACING hidden-roster treatment (THE render that doesn't exist yet).
+        When a team's roster is hidden, a parent on that team currently sees only
+        their own child in any roster surface (RLS returns own kid). QUESTION: what
+        should that surface SAY? Options: (a) show only the own child silently;
+        (b) show the own child + a quiet line "Rosters aren't shown for this
+        program"; (c) hide the roster section entirely for hidden programs.
+        CC LEAN: (b) — a quiet explanatory line so the parent isn't confused by a
+        one-kid roster. This needs an architect render (the Teams/roster surface for
+        a parent on a hidden program).
+
+  RV-6  WITHIN-TEAM granularity. CC LEAN: team-level all-or-nothing for v1; no
+        per-player opt-out (carry a trigger for later). RULE: confirm.
+
+------------------------------------------------------------------------------
+4. RENDERS REQUESTED (mobile-first HTML, the build targets)
+------------------------------------------------------------------------------
+  R1  PROGRAM SETUP — the "Show roster to families" toggle inside the Edit-program
+      FullScreenForm (where it sits relative to the existing fields; on/off + helper
+      copy naming the type default).
+  R2  TEAM SETUP — the 3-state "Roster visibility" control (Inherit / Show / Hide)
+      inside the team FullScreenForm, with the inherited state labeled
+      ("Inherit · Hidden for camps").
+  R3  PARENT VIEW — the Teams/roster surface for a parent whose child is on a HIDDEN
+      program (own child shown; the explanatory treatment per RV-5c). This is the
+      one with real privacy-UX weight — how a hidden roster reads to a family.
+  (Tokens: var(--as-*); 44px taps; FullScreenForm for the 3+ field forms per AP#15;
+   the two admin controls live INSIDE existing FullScreenForms, so they're a field
+   group, not a new sheet.)
+
+------------------------------------------------------------------------------
+5. WHAT CC BUILDS ON DELIVERY (acceptance)
+------------------------------------------------------------------------------
+  - Migration: teams.roster_visibility_override (nullable boolean) + update
+    current_user_teammate_player_ids() to COALESCE(team override, program, type).
+    AP#21 mirror same turn; impersonated-replay verification (a hidden team override
+    drops its roster; a show override on a camp team restores it).
+  - Program edit form: the toggle (writes programs.roster_visibility explicit
+    true/false; clearing returns to NULL/by-type if the render wants a "reset to
+    default").
+  - Team form: the 3-state control (writes teams.roster_visibility_override).
+  - Parent roster surface: the RV-5c treatment to your render.
+  - AP#43 invariant test: a parent on a hidden program sees only own child in the
+    teammate set; a show-override restores the team's roster; a season team stays
+    visible. (RLS-level assertions verified by impersonated replay; component-level
+    by the render's copy.)
+
+------------------------------------------------------------------------------
+6. NOT PART OF THIS REQUEST (status, so the architect has the whole board)
+------------------------------------------------------------------------------
+  - F-1 / F-2 / STEP-2 unify: ALL SHIPPED + live (billed=SUM('fee'), ledger holds
+    $166,910.47 / $165,635.47 / $1,275.00). The billing model is unified.
+  - F-4 (record money out) + F-5 (dashboard polish): already RULED with renders
+    delivered (f4-record-money-out-mobile.html, f5-financials-dashboard-mobile.html);
+    buildable now, no new spec needed. CC will build on Frank's go — separate from
+    this roster-visibility request.
+
+WHAT WE NEED: the architect's ruling on RV-2/RV-5a/RV-5b/RV-5c/RV-6 + the three
+renders (R1 program toggle, R2 team 3-state, R3 parent hidden-roster view). On
+delivery CC builds the migration + the two admin controls + the parent treatment +
+the AP#43 test.
+==============================================================================
+END SPEC + RENDER REQUEST.
+==============================================================================
