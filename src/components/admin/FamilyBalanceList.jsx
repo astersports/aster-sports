@@ -5,7 +5,11 @@ import Label from '../shared/Label';
 // Per anti-pattern #42: `balances` is the per-account balance map from
 // useSeasonFinancials — the canonical source. This component used to
 // recompute balance inline (anti-pattern #42 violation, PR #306 catch).
-export default function FamilyBalanceList({ accounts, balances, fmt, onRecordPayment, onNudge, initialOwing = false }) {
+// F-2 (money-seam): the per-family meta line reads billed/net_paid from
+// `byAccount` (the family_balances view, via the hook), NOT the raw
+// season_fee_cents/discount_cents columns — STEP 2 zeroes those, which
+// would otherwise flip every family's line to "$0" the instant it lands.
+export default function FamilyBalanceList({ accounts, balances, byAccount, fmt, onRecordPayment, onNudge, initialOwing = false }) {
   const [search, setSearch] = useState('');
   // ROSTER-2: an "Owing only" filter so an admin arriving from the
   // payment_overdue alert can find the owing family without a name.
@@ -13,11 +17,12 @@ export default function FamilyBalanceList({ accounts, balances, fmt, onRecordPay
 
   const families = useMemo(() => {
     return accounts.map((a) => {
-      const balance = balances?.[a.id] ?? 0;
+      const view = byAccount?.[a.id];
+      const balance = view?.balance ?? balances?.[a.id] ?? 0;
       const name = a.guardians ? `${a.guardians.first_name} ${a.guardians.last_name}` : 'Unknown';
-      return { ...a, name, balance };
+      return { ...a, name, balance, billed: view?.billed ?? 0, netPaid: view?.netPaid ?? 0 };
     });
-  }, [accounts, balances]);
+  }, [accounts, balances, byAccount]);
 
   const filtered = useMemo(() => {
     let list = owingOnly ? families.filter((f) => f.balance > 0) : families;
@@ -78,7 +83,7 @@ export default function FamilyBalanceList({ accounts, balances, fmt, onRecordPay
             <div>
               <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--as-text-primary)' }}>{f.name}</div>
               <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>
-                Fee: {fmt(f.season_fee_cents)}{f.discount_cents > 0 ? ` · Discount: ${fmt(f.discount_cents)}` : ''}
+                Billed: {fmt(f.billed)} · Paid: {fmt(f.netPaid)}
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
