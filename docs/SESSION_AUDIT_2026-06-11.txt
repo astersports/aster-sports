@@ -1,0 +1,119 @@
+==============================================================================
+CC : MULTI-AGENT SESSION AUDIT — programs / settings / new hooks / privacy / money
+Date 2026-06-11. 10 read-only audit agents across non-overlapping lanes over the 13
+PRs shipped this session (#967–#979). Triaged below. Privacy + security/migration
+lanes returned CLEAN (no leaks, no new ERROR advisors, mirror parity intact).
+==============================================================================
+
+HEADLINE
+  No data-loss, no privacy leak, no security regression. The funnel double-reg hole
+  and the parent-sees-all-kids leak are confirmed closed live (Frank's parent sees
+  27 players, not 115; non-own player_id rejected). One real broken-feature bug (the
+  program roster toggle never loads its saved value), a cluster of P1 hygiene/edge
+  bugs in the new hooks, and a batch of P2 a11y/token polish. Full triage:
+
+------------------------------------------------------------------------------
+P0 — BROKEN FEATURE (fix now)
+------------------------------------------------------------------------------
+  AUD-1  Program "Show roster to families" toggle never reflects the saved value.
+    ProgramEditSheet reads program.roster_visibility, but the program fetch feeding
+    it does NOT select that column -> always undefined -> the toggle falls back to
+    the program_type default on every open, and Save re-writes the default. The
+    team-level override + the RLS still work; only the PROGRAM-level toggle is inert.
+    FIX: add roster_visibility to the program load (the fetch behind ProgramDetailPage
+    / ProgramManageZone). Lane F.
+
+------------------------------------------------------------------------------
+P1 — REAL BUGS / EDGES (fix now)
+------------------------------------------------------------------------------
+  AUD-2  useRegisterIdentity AP#36 trio (#976). The guardians, player_guardians, and
+    Promise.all(players, registrations) reads destructure data WITHOUT checking error.
+    On ANY read error the child list silently empties -> the wizard falls back to
+    manual entry -> the parent re-types -> the exact double-reg hole this feature
+    closed. Also the open CI destructure-audit headroom. FIX: check error on all four.
+  AUD-3  useRegisterIdentity guardian-missing-email edge (#976). If the authed
+    parent's guardian row has no email (or no guardian row), AUTHED_INIT pre-fills an
+    empty guardian, the guardian step is SKIPPED (authed entrySeq), and submit fails
+    'guardian_email_required' with no way to correct. FIX: when guardian email is
+    missing, force select:false (keep the full flow incl. the guardian step). Lanes G+H.
+  AUD-4  Null-grade child wrongly shown "ineligible" (#976). SELECT_CHILDREN sets
+    grade as `p.grade ?? ''`; an empty-string grade coerces to 0 in
+    childIneligibleReason ('' < grade_min) -> a kid with no grade on file is disabled
+    on the select screen even though the RPC would accept them. FIX: `?? null` in the
+    reducer (childIneligibleReason already treats null as unknown). Lane G.
+  AUD-5  AdminTeamsPage doesn't pass programType to TeamFormSheet (#977) -> the team
+    3-state "Inherit" chip mislabels camp/tryout teams edited from that page as
+    "Visible (season)". FIX: pass programType from the active season. Lane F.
+  AUD-6  leagueAppsImport will zero-bill a future import (latent, from STEP-2 unify).
+    The import writes financial_accounts.season_fee_cents but never posts a 'fee'
+    transaction; under the unified model billed = SUM('fee'), so any future import
+    batch bills $0. Harmless today (no import pending). FIX: post a 'fee' txn per
+    imported account (as STEP-2 did for the 164). Lane D.
+
+------------------------------------------------------------------------------
+P2 — POLISH / SMALL BUGS (batch fix)
+------------------------------------------------------------------------------
+  AUD-7  RecordPaymentForm: a typed NEGATIVE amount renders a misleading "balance
+    after" preview (save is already blocked). FIX: input min="0" + clamp cents>=0.
+    Also `account.balance || 0` -> `?? 0`. Lane B.
+  AUD-8  a11y group labels: the segmented controls lack role="group"+aria-label —
+    RecordPaymentForm (mode + credit/charge), RosterVisibilityField (Inherit/Show/
+    Hide). StepSelectChildren: disabled (ineligible/already-registered) cards are
+    keyboard-unreachable so the reason can't be read; Continue has no aria-label when
+    disabled. FIX: add role="group"/aria-label; make blocked cards aria-disabled +
+    focusable. Lanes B/F/H/I.
+  AUD-9  FinancialSummaryCard: borderRadius 13 is off the locked 10px card scale
+    (copied from the render; §7 token scale wins) -> 10. "Processing fees" line has
+    no scope tag while every sibling does -> add scopeTag="season". Lane C.
+  AUD-10 useFunnelRevenue: no .order() on the open-program query -> non-deterministic
+    pick if two funnel programs are ever open at once (latent; one open today). FIX:
+    .order('reg_opens_at', desc). Also the error branches don't reset state. Lane C.
+  AUD-11 RosterSection double divider: the last PlayerRow + the privacy row both draw
+    a 1px border -> doubled line on a hidden roster for parents. FIX: verify PlayerRow
+    isLast handling; suppress the doubled border. Lane F. (verify on touch)
+  AUD-12 FamilyBalanceList `balances` prop now redundant (byAccount carries balance) —
+    drop to remove the stale-source ambiguity. Lane A.
+
+------------------------------------------------------------------------------
+P3 / NOTES — pre-existing or cosmetic (document, optional)
+------------------------------------------------------------------------------
+  - useProgramHealthMetrics season filter `.eq('events.teams.season_id', …)` is a
+    deep nested PostgREST filter that may no-op (season % diluted by historical
+    RSVPs). PRE-EXISTING, not this session — worth a separate look. Lane A.
+  - FinancialDashboardPage season-picker Promise.all swallows query errors (AP#36) —
+    PRE-EXISTING. Blank tab strip on error. Lane C.
+  - parentContext.js players read lacks org_id (AP#37 discipline; double-gated by
+    view+RLS, no leak). PRE-EXISTING. Lane E.
+  - current_user_player_ids()/current_user_guardian_id() use bare auth.uid() (AP#5);
+    low impact in SECDEF context, advisory-cosmetic. PRE-EXISTING. Lanes E/J.
+  - 154 multiple_permissive_policies WARN advisories — all PRE-EXISTING, zero from
+    this session, zero ERROR. Lane J.
+
+------------------------------------------------------------------------------
+PRODUCT DECISIONS FOR FRANK (not bugs — your call)
+------------------------------------------------------------------------------
+  D-a  Record-money form only opens for OWING families (FamilyBalanceList gates on
+    balance>0). You can't record a refund/adjustment against a paid-in-full family.
+    Intentional, or add an entry point for paid families?
+  D-b  Second existing child via "Add another child" from the roster hub drops to
+    MANUAL entry (re-type). Safe (RPC dedups -> "already registered"), but mildly
+    confusing. Worth wiring "add another" back to the select screen later (trigger).
+  D-c  StepSelectChildren dead-end: when ALL of a parent's kids are already-registered
+    or ineligible, Continue stays disabled with no message. Add an explanatory line?
+  D-d  Multi-division authed parents fall through to manual (select gated on
+    single-division). Pre-existing division-from-URL behavior; carry as a trigger.
+  D-e  PlayerProfilePage shows a teammate's age (derived from dob) to any parent on
+    the team. RLS-intended; confirm the product intent.
+  D-f  submit_registration is anon-callable BY DESIGN (the public reg funnel). The
+    advisor WARN is expected; document the intent (or REVOKE FROM anon if not).
+
+------------------------------------------------------------------------------
+PLAN
+------------------------------------------------------------------------------
+  CC ships the P0 + P1 + the cheap P2 polish as a small set of fix PRs (grouped by
+  surface: roster-visibility, funnel, financials, the import script). P3/pre-existing
+  items and the product decisions (D-a..D-f) are surfaced here for Frank/architect to
+  rule. Privacy + security need no action.
+==============================================================================
+END SESSION AUDIT.
+==============================================================================
