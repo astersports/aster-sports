@@ -4,8 +4,10 @@ import { ChevronLeft, Upload } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useSeasonFinancials } from '../hooks/useSeasonFinancials';
+import { useFunnelRevenue } from '../hooks/useFunnelRevenue';
 import { formatCurrency } from '../lib/formatters';
 import FamilyBalanceList from '../components/admin/FamilyBalanceList';
+import FinancialSummaryCard from '../components/admin/FinancialSummaryCard';
 import RecordPaymentForm from '../components/admin/RecordPaymentForm';
 import CoachPayoutsSection from '../components/admin/CoachPayoutsSection';
 
@@ -49,6 +51,7 @@ export default function FinancialDashboardPage() {
   // state across this page and admin-home's payment-overdue lane.
   // Previously inline at :57-69 here; extracted PR #303.
   const { accounts, balances, byAccount, stats, loading, refetch } = useSeasonFinancials(orgId, seasonId);
+  const funnel = useFunnelRevenue(orgId);
 
   const fmt = formatCurrency;  // shared helper (style:currency) — identical $X,XXX.00 output
   const currentSeason = seasons.find((s) => s.id === seasonId);
@@ -86,18 +89,7 @@ export default function FinancialDashboardPage() {
         <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Loading…</div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
-            <StatCard label="Outstanding" value={fmt(stats.outstanding)} sub={`${stats.familiesOwing} families`} color="var(--as-danger)" />
-            <StatCard label="Collected" value={fmt(stats.paid)} sub={`${stats.pct}% of expected`} color="var(--as-success)">
-              {stats.billed > 0 && (
-                <div style={{ marginTop: 4, height: 4, borderRadius: 2, backgroundColor: 'var(--as-bg-secondary)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${Math.min(100, Math.round((stats.paid / stats.billed) * 100))}%`, backgroundColor: 'var(--as-success)', borderRadius: 2 }} />
-                </div>
-              )}
-            </StatCard>
-            <StatCard label="Net to Bank" value={fmt(stats.net)} sub={`After ${fmt(stats.fees)} fees`} color="var(--as-text-primary)" />
-            <StatCard label="Families" value={accounts.length} sub={currentSeason?.name || ''} color="var(--as-text-primary)" />
-          </div>
+          <FinancialSummaryCard stats={stats} seasonName={currentSeason?.name} funnel={funnel} fmt={fmt} />
 
           <FamilyBalanceList accounts={accounts} balances={balances} byAccount={byAccount} fmt={fmt} initialOwing={owingParam} onRecordPayment={setPayingAccount}
             onNudge={(family) => {
@@ -112,17 +104,6 @@ export default function FinancialDashboardPage() {
       {payingAccount && (
         <RecordPaymentForm account={payingAccount} onClose={() => setPayingAccount(null)} onSaved={() => { setPayingAccount(null); refetch(); }} />
       )}
-    </div>
-  );
-}
-
-function StatCard({ label, value, sub, color, children }) {
-  return (
-    <div style={{ padding: 16, backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)', boxShadow: 'var(--as-shadow-sm)' }}>
-      <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--as-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 700, color, marginTop: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 2 }}>{sub}</div>}
-      {children}
     </div>
   );
 }
