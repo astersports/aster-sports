@@ -11,14 +11,18 @@
 // This test prevents the next developer from silently introducing a
 // sixth.
 //
+// MONEY_SEAM_AUDIT 2026-06-11 (F-1 / STEP 1): useSeasonFinancials now
+// reads the family_balances VIEW instead of re-deriving the math from
+// raw columns, so it (and its computation fixture) no longer match the
+// patterns and were removed from the allowlist — the guard now covers
+// them too. The only remaining canonical writer is the one-shot import.
+//
 // Patterns flagged (any one fires):
 //   - `season_fee_cents - discount_cents` accumulation
 //   - `transaction_type === 'payment'` or `=== 'refund'` accumulators
 //
 // Allowlist:
 //   - lib/__tests__/financialMathAudit.test.js (this file)
-//   - hooks/useSeasonFinancials.js (canonical)
-//   - hooks/__tests__/useSeasonFinancials.computation.test.js (fixture)
 //   - lib/leagueAppsImport.js (one-shot import script; legitimate
 //     INSERT path, not a render-time recomputation)
 
@@ -32,8 +36,6 @@ const __dirname = dirname(__filename);
 const SRC_ROOT = join(__dirname, '..', '..');
 const ALLOWLIST = new Set([
   'lib/__tests__/financialMathAudit.test.js',
-  'hooks/useSeasonFinancials.js',
-  'hooks/__tests__/useSeasonFinancials.computation.test.js',
   'lib/leagueAppsImport.js',
 ]);
 

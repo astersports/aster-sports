@@ -26,8 +26,13 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 
 let resolvers = [];
 const accountsForSeason = {
-  's-A': [{ id: 'a1', org_id: 'o', season_id: 's-A', season_fee_cents: 70000, discount_cents: 0, guardians: null }],
-  's-B': [{ id: 'a2', org_id: 'o', season_id: 's-B', season_fee_cents: 50000, discount_cents: 0, guardians: null }],
+  's-A': [{ id: 'a1', org_id: 'o', season_id: 's-A', guardians: null }],
+  's-B': [{ id: 'a2', org_id: 'o', season_id: 's-B', guardians: null }],
+};
+// Money sources from the family_balances view now (F-1 / STEP 1).
+const balancesForSeason = {
+  's-A': [{ account_id: 'a1', billed_cents: 70000, net_paid_cents: 0, total_fees_cents: 0, balance_cents: 70000 }],
+  's-B': [{ account_id: 'a2', billed_cents: 50000, net_paid_cents: 0, total_fees_cents: 0, balance_cents: 50000 }],
 };
 
 vi.mock('../../lib/supabase', () => {
@@ -41,9 +46,9 @@ vi.mock('../../lib/supabase', () => {
       },
       order: () => chain,
       then: (cb) => {
-        const data = table === 'financial_accounts'
-          ? (accountsForSeason[capturedSeasonId] || [])
-          : [];
+        let data = [];
+        if (table === 'financial_accounts') data = accountsForSeason[capturedSeasonId] || [];
+        else if (table === 'family_balances') data = balancesForSeason[capturedSeasonId] || [];
         // Hand control of resolution to the test: push a resolver that
         // the test can drain via act() to advance the fetch.
         return new Promise((resolve) => {
@@ -58,7 +63,7 @@ vi.mock('../../lib/supabase', () => {
 
 const drainResolvers = async () => {
   // Wait for the refetch's microtask to enqueue both queries (accounts +
-  // transactions). The refetch is scheduled via Promise.resolve().then()
+  // family_balances). The refetch is scheduled via Promise.resolve().then()
   // inside useEffect, so it lands one task tick after the render.
   await waitFor(() => expect(resolvers.length).toBeGreaterThanOrEqual(2));
   await act(async () => {

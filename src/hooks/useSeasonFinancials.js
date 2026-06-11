@@ -2,25 +2,30 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 // §4.C Sprint D — shared source of truth for season financial state.
-// Pulls accounts + transactions for an (org_id, season_id), computes
-// per-account balance map + aggregate stats. Three consumers today:
+// Pulls accounts (names/metadata) + the family_balances VIEW for an
+// (org_id, season_id), exposes a per-account balance map + aggregate
+// stats. Three consumers today:
 //   - FinancialDashboardPage (full UI: stats cards + family list)
 //   - AdminHomePage PendingQueuesLanes (count of families owing, for
 //     the third lane per HOME_DESIGN_SPEC §3.1.4)
 //   - ParentHomePage RegistrationReminderCard (parent's own balance
 //     via guardianId filter, per HOME_DESIGN_SPEC §1.1.9)
 //
-// Originally the computation lived inline at FinancialDashboardPage
-// :57-69. Extracted PR #303 per anti-pattern #42 to avoid
-// parallel-system buildup. PR #304 extended with optional guardianId
-// filter so parent home can scope to a single family's accounts
-// without re-implementing the balance math.
+// Money read path (MONEY_SEAM_AUDIT 2026-06-11, F-1 / STEP 1): all
+// billed/paid/fees/balance comes from the `family_balances` view —
+// the ONE canonical source per #63 doctrine. The view reconciles BOTH
+// billing models (imported fee-on-account + funnel fee-as-transaction),
+// so funnel families bill correctly here. Previously this hook
+// re-derived billed from the raw account fee minus discount columns
+// plus a manual payment/refund loop that skipped 'fee' and 'adjustment'
+// transactions — wrong for funnel accounts (billed=0, balance negative)
+// and the last raw-column reader on the billing seam. The view also
+// scopes by (org_id, season_id) itself, so the old org-wide
+// transactions over-fetch (P1) is gone.
 //
 // Naming note: ledger entry §4.Q used `useFamiliesOwing` as the
 // candidate name. Final hook is `useSeasonFinancials` because it
-// returns the broader state (stats + balances + accounts +
-// transactions), not just the count. The count is one field
-// (`stats.familiesOwing`); the admin-home lane reads it directly.
+// returns the broader state (stats + balances + accounts).
 //
 // Per anti-pattern #36 (data + error destructured separately) +
 // #37 (org_id filter first on the chain).
@@ -41,7 +46,7 @@ function keyFor(orgId, seasonId, guardianId) {
 
 export function useSeasonFinancials(orgId, seasonId, guardianId = null) {
   const [accounts, setAccounts] = useState([]);
-  const [transactions, setTransactions] = useState([]);
+  const [balanceRows, setBalanceRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   // fetchedKey lives in state (not a ref) so that comparing it to
@@ -56,91 +61,82 @@ export function useSeasonFinancials(orgId, seasonId, guardianId = null) {
   const refetch = useCallback(async () => {
     if (!orgId || !seasonId) {
       setAccounts([]);
-      setTransactions([]);
+      setBalanceRows([]);
       setFetchedKey(null);
       setLoading(false);
       return;
     }
     setLoading(true);
     const id = ++fetchIdRef.current;
-    // guardianId narrows the accounts query to a single family — parent
-    // home consumer. Without it (admin consumers) we fetch the full
-    // org+season slice.
+    // guardianId narrows both queries to a single family — parent home
+    // consumer. Without it (admin consumers) we fetch the full
+    // org+season slice. The view is org+season scoped itself.
     let accountsQuery = supabase
       .from('financial_accounts')
       .select('*, guardians(first_name, last_name, user_id)')
       .eq('org_id', orgId)
       .eq('season_id', seasonId);
-    if (guardianId) accountsQuery = accountsQuery.eq('guardian_id', guardianId);
-    const [aRes, tRes] = await Promise.all([
-      accountsQuery,
-      supabase
-        .from('financial_transactions')
-        .select('*')
-        .eq('org_id', orgId)
-        .order('occurred_at', { ascending: false }),
-    ]);
+    let balancesQuery = supabase
+      .from('family_balances')
+      .select('account_id, billed_cents, net_paid_cents, total_fees_cents, balance_cents')
+      .eq('org_id', orgId)
+      .eq('season_id', seasonId);
+    if (guardianId) {
+      accountsQuery = accountsQuery.eq('guardian_id', guardianId);
+      balancesQuery = balancesQuery.eq('guardian_id', guardianId);
+    }
+    const [aRes, bRes] = await Promise.all([accountsQuery, balancesQuery]);
     if (id !== fetchIdRef.current) return;
-    if (aRes.error || tRes.error) {
-      const msg = aRes.error?.message || tRes.error?.message;
+    if (aRes.error || bRes.error) {
+      const msg = aRes.error?.message || bRes.error?.message;
       console.error('useSeasonFinancials fetch:', msg);
       setError(msg);
       setAccounts([]);
-      setTransactions([]);
+      setBalanceRows([]);
       setFetchedKey(null);
       setLoading(false);
       return;
     }
-    const accts = aRes.data || [];
-    const acctIds = new Set(accts.map((a) => a.id));
     setError(null);
-    setAccounts(accts);
-    setTransactions((tRes.data || []).filter((t) => acctIds.has(t.account_id)));
+    setAccounts(aRes.data || []);
+    setBalanceRows(bRes.data || []);
     setFetchedKey(keyFor(orgId, seasonId, guardianId));
     setLoading(false);
   }, [orgId, seasonId, guardianId]);
 
   useEffect(() => { Promise.resolve().then(refetch); }, [refetch]);
 
-  // Single computation of per-account balance + aggregate stats.
-  // Memoized off accounts + transactions so consumers don't recompute
-  // on every render (PR #126 stabilization concern). When isStale,
+  // Single computation of per-account balance + aggregate stats, all
+  // sourced from the family_balances view (one read path). Memoized off
+  // balanceRows so consumers don't recompute every render. When isStale,
   // short-circuit to EMPTY_STATS so consumers don't see prior-key data.
   const { balances, stats } = useMemo(() => {
-    if (isStale || !accounts.length) return { balances: {}, stats: EMPTY_STATS };
-    let billed = 0; let paid = 0; let fees = 0;
+    if (isStale) return { balances: {}, stats: EMPTY_STATS };
+    let billed = 0; let paid = 0; let fees = 0; let outstanding = 0; let familiesOwing = 0;
     const bal = {};
-    accounts.forEach((a) => {
-      const expected = a.season_fee_cents - a.discount_cents;
-      billed += expected;
-      bal[a.id] = expected;
+    balanceRows.forEach((r) => {
+      const b = Number(r.balance_cents) || 0;
+      bal[r.account_id] = b;
+      billed += Number(r.billed_cents) || 0;
+      paid += Number(r.net_paid_cents) || 0;
+      fees += Number(r.total_fees_cents) || 0;
+      outstanding += b;
+      if (b > 0) familiesOwing += 1;
     });
-    transactions.forEach((t) => {
-      if (t.transaction_type === 'payment') {
-        paid += t.amount_cents;
-        fees += (t.processing_fee_cents || 0);
-        bal[t.account_id] = (bal[t.account_id] || 0) - t.amount_cents;
-      } else if (t.transaction_type === 'refund') {
-        paid -= t.amount_cents;
-        bal[t.account_id] = (bal[t.account_id] || 0) + t.amount_cents;
-      }
-    });
-    const familiesOwing = accounts.filter((a) => (bal[a.id] || 0) > 0).length;
     return {
       balances: bal,
       stats: {
         billed, paid, fees,
         net: paid - fees,
-        outstanding: billed - paid,
+        outstanding,
         familiesOwing,
         pct: billed > 0 ? Math.round((paid / billed) * 100) : 0,
       },
     };
-  }, [accounts, transactions, isStale]);
+  }, [balanceRows, isStale]);
 
   return {
     accounts: isStale ? [] : accounts,
-    transactions: isStale ? [] : transactions,
     balances,
     stats,
     loading: loading || isStale,
