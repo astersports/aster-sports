@@ -18,12 +18,23 @@ export function useFamilyPrograms() {
   const refetch = useCallback(async () => {
     if (!orgId) { setData(null); setLoading(false); return; }
     setLoading(true);
-    // children = my kids (players_select_parent RLS)
+    // OWN children only. `players` is NOT a safe "my kids" source: its RLS
+    // ORs in teammates (players_select_parent_team) so a parent can read
+    // their kids' teammates for roster lists — reading it unfiltered leaked
+    // the whole teammate set onto My Family + the registration lane (§11.5
+    // ground-truth class). player_guardians IS RLS-scoped to the caller's
+    // guardian (guardian_id = current_user_guardian_id()); scope players by
+    // the own-child ids it returns (works whether or not a kid is rostered).
+    const { data: links, error: e0 } = await supabase
+      .from('player_guardians').select('player_id');
+    if (e0) { setError(e0.message); setData(null); setLoading(false); return; }
+    const ownIds = [...new Set((links || []).map((l) => l.player_id))];
+    if (ownIds.length === 0) { setData({ children: [], familyBalances: [], openPrograms: [] }); setError(null); setLoading(false); return; }
     const { data: kids, error: e1 } = await supabase
-      .from('players').select('id, first_name, last_name, grade').order('first_name');
+      .from('players').select('id, first_name, last_name, grade').in('id', ownIds).order('first_name');
     if (e1) { setError(e1.message); setData(null); setLoading(false); return; }
     const kidIds = (kids || []).map((k) => k.id);
-    if (kidIds.length === 0) { setData({ children: [], openPrograms: [] }); setError(null); setLoading(false); return; }
+    if (kidIds.length === 0) { setData({ children: [], familyBalances: [], openPrograms: [] }); setError(null); setLoading(false); return; }
 
     const [rosterRes, regRes, balRes, progRes] = await Promise.all([
       supabase.from('roster_members').select('player_id, team_id').in('player_id', kidIds).is('left_at', null),
