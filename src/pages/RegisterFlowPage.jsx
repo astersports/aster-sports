@@ -10,7 +10,10 @@ import StepPlayer from '../components/register/StepPlayer';
 import StepGuardian from '../components/register/StepGuardian';
 import StepDetails from '../components/register/StepDetails';
 import StepChildrenRoster from '../components/register/StepChildrenRoster';
+import StepSelectChildren from '../components/register/StepSelectChildren';
 import RegisterConfirm from '../components/register/RegisterConfirm';
+import { centered, h1Style, linkBtn, metaStyle, subStyle, wrap } from '../components/register/registerStyles';
+import { useRegisterIdentity } from '../hooks/useRegisterIdentity';
 
 // Public registration wizard (spec §5.3/§5.4). R1: children accumulate client-side
 // into children[] and submit in ONE submit_registration (family discount fires only
@@ -24,16 +27,27 @@ export default function RegisterFlowPage() {
   const { data, loading } = usePublicProgram(slug);
   const [state, dispatch] = useReducer(reducer, sp.get('division'), init);
   const { submit, submitting, error, result } = useSubmitRegistration();
+  const identity = useRegisterIdentity(data?.program?.id);
 
   // R4 a11y — move focus to the step/section heading on every step+phase change so
   // a screen reader announces the new step and keyboard focus starts at the top.
   const headingRef = useRef(null);
   useEffect(() => { headingRef.current?.focus(); }, [state.phase, state.step, state.submitted]);
 
-  if (loading) return <div style={centered}>Loading…</div>;
-  const program = data?.program;
   const divisions = data?.divisions || [];
   const onlyOneDivision = divisions.length === 1;
+  // B3 funnel: an authed parent gets their identity pre-filled; if they have
+  // children AND the program is single-division (tryout/camp/season-with-one-unit),
+  // open on the select-your-children step. Multi-division stays per-child manual.
+  const initedRef = useRef(false);
+  useEffect(() => {
+    if (initedRef.current || identity.loading || !identity.authed) return;
+    initedRef.current = true;
+    dispatch({ type: 'AUTHED_INIT', guardian: identity.guardian || {}, select: identity.children.length > 0 && onlyOneDivision });
+  }, [identity, onlyOneDivision]);
+
+  if (loading || identity.loading) return <div style={centered}>Loading…</div>;
+  const program = data?.program;
   const divOf = (id) => divisions.find((d) => d.id === id);
   const draftDivision = divOf(state.draft.divisionId);
   const firstEntry = state.children.length === 0 && state.editIndex == null && state.phase === 'entry';
@@ -51,6 +65,23 @@ export default function RegisterFlowPage() {
     return (
       <div style={wrap}>
         <RegisterConfirm result={result} program={program} guardianEmail={state.guardian.email} onDone={() => navigate(`/r/${slug}`)} />
+      </div>
+    );
+  }
+
+  // ── B3 funnel: select-your-children (authed parent, single-division) ──
+  if (state.phase === 'select') {
+    const div = divOf(state.draft.divisionId) || divisions[0];
+    return (
+      <div style={wrap}>
+        <button type="button" onClick={() => navigate(`/r/${slug}`)} style={linkBtn}>← Cancel</button>
+        <div style={metaStyle}>Step 1 of 3</div>
+        <h1 ref={headingRef} tabIndex={-1} style={h1Style}>Who’s registering?</h1>
+        <StepSelectChildren
+          kids={identity.children} division={div}
+          onAddNew={() => dispatch({ type: 'ADD_CHILD', divisionId: div?.id || '' })}
+          onContinue={(picks) => dispatch({ type: 'SELECT_CHILDREN', picks, divisionId: div?.id || '' })}
+        />
       </div>
     );
   }
@@ -117,10 +148,3 @@ export default function RegisterFlowPage() {
     </div>
   );
 }
-
-const centered = { padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' };
-const wrap = { maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' };
-const linkBtn = { background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, cursor: 'pointer', padding: 0 };
-const metaStyle = { fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--as-text-tertiary)', margin: '8px 0 2px' };
-const h1Style = { fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', margin: '0 0 4px' };
-const subStyle = { fontSize: 13, color: 'var(--as-text-tertiary)', margin: '0 0 16px' };
