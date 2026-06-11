@@ -109,16 +109,24 @@ export async function importToFinancials(families, orgId, seasonId, userId) {
     const { data: acct, error: aErr } = await supabase
       .from('financial_accounts')
       .upsert({
-        org_id: orgId,
-        guardian_id: guardianId,
-        season_id: seasonId,
-        season_fee_cents: fam.totalFeeCents,
-        discount_cents: 0,
+        org_id: orgId, guardian_id: guardianId, season_id: seasonId,
+        season_fee_cents: 0, discount_cents: 0, // unified model: fee is a 'fee' txn (billed=SUM('fee'))
       }, { onConflict: 'org_id,guardian_id,season_id' })
       .select('id')
       .single();
 
     if (aErr) { results.errors.push(`Account for ${fam.firstName} ${fam.lastName}: ${aErr.message}`); results.skipped++; continue; }
+
+    // Post the season fee as a 'fee' txn (view bills from 'fee'); guard re-runs.
+    if (fam.totalFeeCents > 0) {
+      const { data: hasFee, error: hErr } = await supabase.from('financial_transactions')
+        .select('id').eq('account_id', acct.id).eq('transaction_type', 'fee').limit(1).maybeSingle();
+      if (hErr) results.errors.push(`Fee check ${fam.firstName}: ${hErr.message}`);
+      else if (!hasFee) {
+        const { error: fErr } = await supabase.from('financial_transactions').insert({ account_id: acct.id, org_id: orgId, transaction_type: 'fee', amount_cents: fam.totalFeeCents, occurred_at: new Date().toISOString(), recorded_by: userId });
+        if (fErr) results.errors.push(`Fee ${fam.firstName}: ${fErr.message}`);
+      }
+    }
 
     for (const pmt of fam.payments) {
       const { error: tErr } = await supabase
