@@ -14,6 +14,7 @@ export const init = (divisionId) => ({
   phase: 'entry', step: 0, submitted: false,
   guardian: emptyGuardian(), coGuardian: null,
   children: [], draft: emptyDraft(divisionId), editIndex: null,
+  authed: false,
 });
 
 export function reducer(s, a) {
@@ -25,6 +26,20 @@ export function reducer(s, a) {
     case 'DIVISION': return { ...s, draft: { ...s.draft, divisionId: a.value } };
     case 'TOGGLE_COG': return { ...s, coGuardian: s.coGuardian ? null : { first_name: '', last_name: '', email: '', phone: '', relationship: 'parent' } };
     case 'STEP': return { ...s, step: a.step };
+    // B3 funnel: an authenticated parent with children starts on the select phase,
+    // with their guardian identity pre-filled (the submit upserts by email → no dup).
+    case 'AUTHED_INIT':
+      return { ...s, authed: true, guardian: { ...emptyGuardian(), ...a.guardian }, phase: a.select ? 'select' : 'entry' };
+    // Selected existing children -> children[] carrying their real player_id (the
+    // (program, player_id) guard then dedupes), then to the roster hub for review.
+    case 'SELECT_CHILDREN': {
+      const picked = a.picks.map((p) => ({
+        division_id: a.divisionId,
+        player: { ...emptyPlayer(), player_id: p.player_id, first_name: p.first_name, last_name: p.last_name, grade: p.grade ?? '', gender: p.gender ?? '' },
+        details: emptyDetails(),
+      }));
+      return { ...s, children: [...s.children, ...picked], phase: 'roster', draft: emptyDraft(''), editIndex: null, step: 0 };
+    }
     case 'COMMIT_CHILD': {
       const child = { division_id: s.draft.divisionId, player: s.draft.player, details: s.draft.details };
       const children = s.editIndex != null ? s.children.map((c, i) => (i === s.editIndex ? child : c)) : [...s.children, child];
@@ -42,12 +57,13 @@ export function reducer(s, a) {
   }
 }
 
-// The per-child entry sub-sequence. Guardian is collected ONCE (first child only).
-// The division step appears only for a brand-new subsequent child in a MULTI-
-// division program — a single-division program (incl. every non-season implicit
+// The per-child entry sub-sequence. Guardian is collected ONCE (first child only)
+// — and SKIPPED entirely for an authenticated parent (identity pre-filled via
+// AUTHED_INIT). The division step appears only for a brand-new subsequent child in a
+// MULTI-division program — a single-division program (incl. every non-season implicit
 // unit) auto-uses the one division, so the word "division" never surfaces there.
-export function entrySeq({ children, editIndex }, onlyOneDivision) {
+export function entrySeq({ children, editIndex, authed }, onlyOneDivision) {
   if (editIndex != null) return ['player', 'details'];
-  if (children.length === 0) return ['player', 'guardian', 'details'];
+  if (children.length === 0) return authed ? ['player', 'details'] : ['player', 'guardian', 'details'];
   return onlyOneDivision ? ['player', 'details'] : ['division', 'player', 'details'];
 }

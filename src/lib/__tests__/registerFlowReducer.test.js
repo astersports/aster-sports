@@ -66,4 +66,34 @@ describe('registerFlowReducer (R1 multi-child one-submit)', () => {
   it('pure: same input → deeply-equal output', () => {
     expect(reducer(init('d'), { type: 'COMMIT_CHILD' })).toEqual(reducer(init('d'), { type: 'COMMIT_CHILD' }));
   });
+
+  // ── B3 funnel: authed select path ──
+  it('AUTHED_INIT(select) → select phase + pre-filled guardian; without select → entry', () => {
+    const g = { first_name: 'Frank', last_name: 'S', email: 'f@x.com', phone: '555' };
+    const sel = reducer(init('d'), { type: 'AUTHED_INIT', guardian: g, select: true });
+    expect(sel.phase).toBe('select');
+    expect(sel.authed).toBe(true);
+    expect(sel.guardian).toMatchObject(g);
+    const noSel = reducer(init('d'), { type: 'AUTHED_INIT', guardian: g, select: false });
+    expect(noSel.phase).toBe('entry');
+    expect(noSel.authed).toBe(true);
+  });
+
+  it('SELECT_CHILDREN commits existing players carrying player_id → roster (the dedupe fix)', () => {
+    let s = reducer(init('d'), { type: 'AUTHED_INIT', guardian: { email: 'f@x.com' }, select: true });
+    s = reducer(s, { type: 'SELECT_CHILDREN', divisionId: 'd', picks: [
+      { player_id: 'p1', first_name: 'Charlie', last_name: 'S', grade: 5, gender: 'female' },
+      { player_id: 'p2', first_name: 'Milo', last_name: 'S', grade: 2, gender: 'male' },
+    ] });
+    expect(s.phase).toBe('roster');
+    expect(s.children).toHaveLength(2);
+    expect(s.children[0]).toMatchObject({ division_id: 'd', player: { player_id: 'p1', first_name: 'Charlie', grade: 5 } });
+    // every selected child carries a real player_id → submit hits the (program,player) guard
+    expect(s.children.every((c) => !!c.player.player_id)).toBe(true);
+  });
+
+  it('entrySeq: an authed first child SKIPS the guardian step (identity pre-filled)', () => {
+    expect(entrySeq({ children: [], editIndex: null, authed: true }, true)).toEqual(['player', 'details']);
+    expect(entrySeq({ children: [], editIndex: null, authed: false }, true)).toEqual(['player', 'guardian', 'details']);
+  });
 });
