@@ -16,7 +16,7 @@ export function useProgramTeams(programId) {
     setLoading(true);
     const { data, error } = await supabase
       .from('teams')
-      .select('id, name, team_color, sort_order, age_group, circuit, circuit_name, gender, practice_day, practice_location, team_type_id, team_types(slug)')
+      .select('id, name, team_color, sort_order, age_group, circuit, circuit_name, gender, practice_day, practice_location, team_type_id, roster_visibility_override, team_types(slug)')
       .eq('org_id', orgId).eq('season_id', programId)
       .order('sort_order', { ascending: true });
     if (error) { console.error('useProgramTeams:', error.message); setTeams([]); setLoading(false); return; }

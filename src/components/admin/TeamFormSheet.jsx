@@ -2,6 +2,7 @@ import { useState } from 'react';
 import FullScreenForm from '../shared/FullScreenForm';
 import ConfirmDialog from '../shared/ConfirmDialog';
 import ColorPicker from './team-form/ColorPicker';
+import RosterVisibilityField from './team-form/RosterVisibilityField';
 import { ChipField, Field, Input } from './FormControls';
 import { useTeamTypes } from '../../hooks/useTeamTypes';
 import { defaultTeamTypeSlugForProgram, isCompetitiveSlug } from '../../lib/teamTypes';
@@ -51,6 +52,7 @@ function Body({ program, programType, onSave, onDelete }) {
       practice_day: form.practice_day || null,
       practice_location: form.practice_location || null,
       sort_order: Number(form.sort_order) || 0,
+      roster_visibility_override: form.roster_visibility_override ?? null,
     });
   };
 
@@ -91,6 +93,8 @@ function Body({ program, programType, onSave, onDelete }) {
         <Field label="Sort order">
           <Input type="number" value={String(form.sort_order ?? 0)} onChange={(v) => patch('sort_order', v)} />
         </Field>
+
+        <RosterVisibilityField value={form.roster_visibility_override} programType={programType} onChange={(v) => patch('roster_visibility_override', v)} />
 
         <div className="flex gap-2 mt-4">
           {editing && (
