@@ -1,0 +1,102 @@
+==============================================================================
+CC -> ARCHITECT : SPEC + RENDER REQUEST , REGISTER WITH EXISTING CHILDREN
+Date 2026-06-11. Per §11.8. Operator feedback (with screenshot of the public
+register Step 1): "When I register for tryouts my kids should already be onboard
+with name, gender, date of birth. If a new kid needs to be added then this screen
+[the blank Player form] makes sense." Requests the architect's render for the
+logged-in-parent pick flow + CC's data-path decision. Plain text + full chat paste
++ delivered as a file.
+==============================================================================
+
+0. THE ASK
+   A logged-in PARENT registering for a program should PICK from their existing
+   children (already carrying name / gender / DOB / grade) instead of re-typing them.
+   The blank Player form (name, last name, DOB, grade) is correct ONLY for a genuinely
+   new child.
+
+------------------------------------------------------------------------------
+1. CURRENT BEHAVIOR (grounded)
+------------------------------------------------------------------------------
+  - The register wizard (src/pages/RegisterFlowPage.jsx, /r/:slug/apply) is PUBLIC /
+    auth-AGNOSTIC: it reads usePublicProgram only, never the session. Flow per child:
+    Division -> Player (blank form, the screenshot) -> Guardian -> Details -> roster
+    hub -> ONE submit_registration. Guardian is typed fresh every time too.
+  - submit_registration (SECURITY DEFINER RPC) resolves a player by DEDUP:
+    (org_id, lower(first_name), lower(last_name), dob IS NOT DISTINCT FROM <dob>);
+    match -> link to existing player, else INSERT a new one. Guardians dedup on email.
+
+------------------------------------------------------------------------------
+2. TWO FINDINGS THAT SHAPE THE BUILD
+------------------------------------------------------------------------------
+  F-A (good): because the RPC already dedups by name+dob and links player_guardians
+      ON CONFLICT DO NOTHING, a returning family that re-types the SAME name+dob does
+      NOT duplicate — it links to the existing player. So the data model already
+      tolerates re-registration.
+  F-B (the risk): existing imported kids can have NULL dob (verified: Charlie + Milo
+      Samaritano have gender+grade but dob=NULL). If a pre-filled existing child then
+      gets a DOB typed in (the program asks for it), the name+dob dedup NO LONGER
+      MATCHES the dob-null record -> it CREATES A DUPLICATE player. Therefore a
+      pick-existing-child flow MUST bind to the existing player_id, not re-derive by
+      name+dob. This is the load-bearing data decision.
+
+------------------------------------------------------------------------------
+3. PROPOSED SHAPE (CC lean per AP#39)
+------------------------------------------------------------------------------
+  UX (architect renders): when the wizard detects a logged-in parent with children,
+    the per-child entry OPENS on a "Your children" picker — a card/chip per existing
+    kid (name + grade/gender) that, when tapped, pre-fills the child draft and jumps
+    to a confirm/review (editable) rather than the blank form; plus an "Add a new
+    child" affordance that drops to today's blank Player form. The GUARDIAN step is
+    pre-filled from the parent's account (name/email/phone) and can be collapsed to a
+    confirm. Unauth users see exactly today's flow (no change).
+  DATA (CC builds): extend submit_registration to accept an optional per-child
+    player_id. When present, the RPC SKIPS the name+dob dedup and uses that player
+    directly — GATED by a security check that the player_id belongs to the caller's
+    own guardian (current_user_guardian_id() -> player_guardians), so a logged-in
+    parent can only attach THEIR children. Anonymous/typed children keep the existing
+    name+dob path unchanged. This closes the F-B duplicate risk.
+
+------------------------------------------------------------------------------
+4. OPEN DECISIONS / RENDERS FOR THE ARCHITECT
+------------------------------------------------------------------------------
+  RG-1  The "Your children" picker render (logged-in entry to the wizard): card per
+        existing child, pre-fill-and-review vs. blank "add new". Where it sits vs the
+        Division step (pick child first, or division first?). CC lean: division first
+        (the link is division-scoped already), then the child picker.
+  RG-2  Guardian pre-fill render: a confirm-your-info treatment for a logged-in
+        parent vs the full typed form. CC lean: pre-filled + collapsible.
+  RG-3  Eligibility on a pre-filled child: if an existing kid is grade- or
+        gender-INELIGIBLE for the chosen division, show the card DISABLED with the
+        reason (the RPC already enforces grade band + gender; the UI should pre-empt
+        it). CC lean: show-but-disabled with a one-line reason.
+  RG-4  Already-registered child: if the kid already has a non-cancelled registration
+        in this program, show the card as "Already registered" (the RPC returns
+        already_registered today). CC lean: badge + non-selectable.
+  RG-5  DOB gap: pre-filled kids with NULL dob — collect dob at review if the program
+        needs it, written back to the existing player (since we bind by player_id,
+        adding the dob is safe and enriches the record). CC lean: optional dob field
+        on review, persisted to the existing player.
+
+------------------------------------------------------------------------------
+5. WHAT CC BUILDS ON DELIVERY
+------------------------------------------------------------------------------
+  - submit_registration: optional per-child player_id with the own-guardian security
+    gate (+ writes dob/gender back to the existing player when provided and missing);
+    AP#21 mirror; impersonated-replay tests (own child links; a non-owned player_id
+    is rejected; typed new child path unchanged).
+  - RegisterFlowPage: auth-aware entry — load the parent's children
+    (parent_context_v / player_guardians) when a session exists; the picker + review;
+    guardian pre-fill. Unauth flow byte-unchanged.
+  - AP#43 invariant test: a logged-in parent registering an existing child creates
+    NO new player (links by id); a brand-new child still inserts; cross-checks the
+    "already registered" + ineligible states.
+  NOTE: no fast-track here — the F-B duplicate risk means the RPC player_id path must
+  land WITH the pre-fill UX; shipping client-only pre-fill first could create
+  duplicate players the moment a parent adds a DOB.
+
+WHAT WE NEED: the architect's renders for RG-1 (child picker) + RG-2 (guardian
+confirm), and rulings on RG-3/RG-4/RG-5. On delivery CC builds the RPC player_id
+path + the auth-aware wizard + the tests.
+==============================================================================
+END SPEC + RENDER REQUEST.
+==============================================================================
