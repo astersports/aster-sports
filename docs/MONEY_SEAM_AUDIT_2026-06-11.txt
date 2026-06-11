@@ -1,0 +1,133 @@
+==============================================================================
+CC -> ARCHITECT : MONEY-SEAM AUDIT (§16.15) , FINANCIALS PHASE FRONT-END
+Date 2026-06-11. 4 read-only agents (lanes A-D) + CC live-DB (lanes E + F evidence),
+synthesized. Returns the deciding evidence for the MODEL fork (lane F) + the bug
+surface for the Financials redesign. Architect rules model + redesign + renders;
+CC builds. Plain text + full chat paste + delivered as a file.
+==============================================================================
+
+0. HEADLINE
+   The architect's bet held: #958 was NOT alone. ONE consumer re-derives money from
+   RAW columns and mis-buckets funnel families exactly as the view did pre-#958 —
+   useSeasonFinancials (the Financials dashboard hook). Everything else is clean:
+   the fixed view, the 8 other money consumers (incl. the new Home lanes), import,
+   funnel B0, rollover, RLS, idempotency. The fix is the architect's own doctrine —
+   ONE read path (family_balances), never raw columns. And the MODEL evidence is
+   decisive: 164 imported / 0 funnel accounts live, and a UNIFY backfill is
+   balance-preserving + rollback-proven — unify is safe and at its CHEAPEST now.
+
+--------------------------------------------------------------------------------
+1. BUG / RISK SURFACE (by severity, file:line)
+--------------------------------------------------------------------------------
+  P0/P1 — THE #958-CLASS BYPASS (the whole audit's target)
+    src/hooks/useSeasonFinancials.js:69-139 — reads raw financial_accounts +
+    financial_transactions and RE-IMPLEMENTS the balance math in JS:
+      billed += (season_fee_cents - discount_cents)   // FUNNEL: 0 (fee is a txn)
+      txn loop handles 'payment' + 'refund' ONLY — 'fee' and 'adjustment' SKIPPED.
+    → for a FUNNEL family: billed reads 0, balance reads NEGATIVE, "% collected"
+      reads ∞→100%, families-owing count understates. Identical to the pre-#958 view
+      bug. Consumers hit: FinancialDashboardPage (stats + per-family list) and
+      AdminProgramHealth (paymentPct). FIX: read family_balances (collected =
+      net_paid_cents, due = GREATEST(balance_cents,0)); delete the inline math.
+  P2 — FamilyBalanceList.jsx:81 displays raw f.season_fee_cents / f.discount_cents
+      → "$0 fee" for funnel families (the balance shown is correct; the fee/discount
+      breakdown line is the leak). Fix: show billed/net_paid from the view.
+  P2 — RecordPaymentForm is payment-ONLY. No refund / adjustment recording UI
+      (the view buckets both correctly; admins just can't enter them). Feature gap.
+  P3 — the 'fee' positive invariant (transaction_type<>'fee' OR amount_cents>0) is
+      enforced only by the B0 RPC guard, NOT a DB CHECK. Add the CHECK
+      (defense-in-depth; a non-RPC writer could post a non-positive fee).
+  P3 — guardrails: financialMathAudit.test.js ALLOWLISTS useSeasonFinancials (the
+      buggy file), and useSeasonFinancials.computation.test.js has IMPORTED-only
+      fixtures. Add a funnel fixture; tighten the allowlist after the hook moves to
+      the view.
+
+--------------------------------------------------------------------------------
+2. LANE FINDINGS
+--------------------------------------------------------------------------------
+  A (Financials dashboard) — the P0 above. stats.billed/outstanding/familiesOwing
+    and the per-family balance map are FUNNEL-WRONG; stats.paid/net/fees CORRECT;
+    parent FamilyBalanceCard CORRECT (reads the view). % progress can render a
+    false 100%.
+  B (recording) — payment + refund correct in BOTH view and hook; 'adjustment'
+    MISSING in the hook (same bypass); processing_fee_cents correctly excluded from
+    balance; no refund/adjustment recording UI; no owed-amount pre-fill.
+  C (the keystone bypass enumeration) — EXACTLY TWO raw-column money READS:
+    useSeasonFinancials (CRITICAL) + FamilyBalanceList:81 (display leak). The 8
+    CLEAN view-readers: useFamilyPrograms, useOpenRegistration (H-1), useRoster,
+    useFamiliesOwingCount, alerts/queries, FamilyBalanceCard, registrationLane (H-2),
+    FinancialDashboardPage (season filter only). Legit WRITES: leagueAppsImport,
+    RecordPaymentForm, B0, seeds. Different-question reads (correct, NOT balance):
+    useProgramRegistrations + RegistrationRow (registration_fees = per-reg cost),
+    estimateCart (preview), useCoachComp (separate coach_payouts ledger).
+  D (import + rollover) — import path clean (season_fee_cents + payment txns);
+    funnel B0 clean; the (org,guardian,season_id) UNIQUE cleanly serializes both
+    models and MIXED accounts reconcile (billed = season_fee + SUM fee txns);
+    rollover hardcodes carry=0 and touches no money; the season_id RESTRICT FK
+    guards the ledger from cascade-delete. CLEAN.
+  E (CC live) — ledger identity HOLDS on production: billed $166,910.47 - net_paid
+    $165,635.47 = balance $1,275.00 = outstanding $1,275.00. The view reconciles
+    both models; no surface-level double-count at the source.
+
+--------------------------------------------------------------------------------
+3. LANE F — THE MODEL DECISION (evidence + CC lean; architect rules)
+--------------------------------------------------------------------------------
+  EVIDENCE (CC live, this audit):
+   • 164 financial_accounts, ALL imported (season_fee_cents>0); ZERO funnel accounts
+     (0 'fee'-txn accounts); 0 discount accounts. The funnel money model is wired but
+     has NO production data yet (Fall 2026 Tryouts: fee set, 0 registrations).
+   • UNIFY backfill DRY-RUN (rollback-txn): re-expressed every imported account's fee
+     as a 'fee' transaction + zeroed season_fee_cents/discount_cents → 164/164
+     accounts balance UNCHANGED, pre_sum == post_sum == $1,275.00. UNIFY IS
+     BALANCE-PRESERVING AND ROLLBACK-PROVEN.
+   • Anything reading season_fee_cents outside the view = the two bypasses in §1
+     (useSeasonFinancials, FamilyBalanceList:81). Nothing else.
+  THE TWO END-STATES (your fork):
+   (UNIFY) imported fee becomes a 'fee' txn; season_fee_cents/discount_cents go
+     vestigial (or dropped); billed lives ONLY in transactions; ONE model. A
+     one-time backfill (proven safe above). STRUCTURALLY kills the #958 bug class:
+     with no season_fee_cents to read, a bypass consumer has nothing to mis-bucket —
+     every reader must go through the view (or sum txns identically).
+   (DUAL) keep both shapes; lock the view as the sole reconciler. Lower churn now;
+     permanently carries two shapes AND the #958-class risk (a future consumer can
+     still read season_fee_cents and miss the funnel shape — this audit found 2 that
+     already did).
+  CC LEAN: UNIFY, and NOW. Rationale tightened by the audit: the bug class EXISTS
+    BECAUSE two shapes let a consumer read the imported shape and miss the funnel
+    one. Unify removes the shape → removes the class. The backfill is proven
+    balance-preserving and is at its cheapest possible moment (0 funnel rows, a clean
+    all-imported ledger). Dual leaves the trap armed. (AP#39 — committing to the
+    lean; you rule.) NOTE: even under UNIFY, the useSeasonFinancials fix (read the
+    view) ships FIRST — it's correct under either model and unblocks the dashboard.
+
+--------------------------------------------------------------------------------
+4. RECOMMENDED FINANCIALS REDESIGN SCOPE (for your ruling)
+--------------------------------------------------------------------------------
+  F-1  Fix useSeasonFinancials → read family_balances (the view), delete the inline
+       math. One read path. Ships first; correct under unify OR dual. Add a funnel
+       fixture; tighten the drift-test allowlist. (Closes the P0.)
+  F-2  FamilyBalanceList: show billed/net_paid from the view, not raw columns. (P2.)
+  F-3  MODEL: on your UNIFY ruling — a backfill migration (imported fee → 'fee' txn,
+       zero season_fee_cents/discount_cents), the balance-preserving DO-block +
+       rollback-proof already drafted (see §3 dry-run). + the 'fee'>0 DB CHECK (P3).
+       On DUAL — skip the backfill; keep the CHECK; document "view is the sole seam."
+  F-4  Recording UI: add refund + adjustment to RecordPaymentForm (+ owed pre-fill).
+       (P2 feature — likely its own render.)
+  F-5  Financials dashboard REDESIGN proper (the surface itself) — your design call;
+       the audit says the data is sound once F-1 lands, so this is presentation
+       (two billing models → one clean money view; funnel revenue surfaced).
+  RENDERS NEEDED: the Financials dashboard redesign (F-5) + the refund/adjustment
+  recording (F-4). F-1/F-2/F-3 are correctness, no render.
+
+--------------------------------------------------------------------------------
+5. WHAT WE NEED FROM YOU
+--------------------------------------------------------------------------------
+  Q1 (F / keystone): UNIFY or DUAL? CC leans UNIFY-now (proven safe, cheapest moment,
+     kills the bug class). Your ruling sets F-3.
+  Q2: ratify the F-1..F-5 scope + sequence (F-1 first regardless of Q1).
+  Q3: renders for F-5 (dashboard redesign) + F-4 (refund/adjustment).
+  On your model ruling + GO, CC ships F-1 (the P0) immediately, then the rest in
+  sequence; the unify backfill applies under the lane with the live rollback-proof.
+==============================================================================
+END MONEY-SEAM AUDIT.
+==============================================================================
