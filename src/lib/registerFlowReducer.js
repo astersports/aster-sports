@@ -35,7 +35,7 @@ export function reducer(s, a) {
     case 'SELECT_CHILDREN': {
       const picked = a.picks.map((p) => ({
         division_id: a.divisionId,
-        player: { ...emptyPlayer(), player_id: p.player_id, first_name: p.first_name, last_name: p.last_name, grade: p.grade ?? '', gender: p.gender ?? '' },
+        player: { ...emptyPlayer(), player_id: p.player_id, first_name: p.first_name, last_name: p.last_name, grade: p.grade ?? null, gender: p.gender ?? null },
         details: emptyDetails(),
       }));
       return { ...s, children: [...s.children, ...picked], phase: 'roster', draft: emptyDraft(''), editIndex: null, step: 0 };

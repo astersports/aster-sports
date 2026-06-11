@@ -12,8 +12,8 @@ export default function RosterVisibilityField({ value, programType, onChange }) 
   const resolved = programType === 'season' ? 'Visible' : 'Hidden';
   return (
     <div style={{ margin: '4px 0 12px' }}>
-      <div style={lbl}>Roster visibility</div>
-      <div style={seg}>
+      <div style={lbl} id="rv-field-label">Roster visibility</div>
+      <div style={seg} role="group" aria-labelledby="rv-field-label">
         {OPTS.map((o) => {
           const on = cur === o.key;
           return (

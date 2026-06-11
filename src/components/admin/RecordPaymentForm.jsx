@@ -33,8 +33,8 @@ export default function RecordPaymentForm({ account, onClose, onSaved }) {
   const [err, setErr] = useState(null);
 
   const name = account.guardians ? `${account.guardians.first_name} ${account.guardians.last_name}` : 'Unknown';
-  const balanceCents = account.balance || 0;
-  const cents = Math.round(parseFloat(amount) * 100) || 0;
+  const balanceCents = account.balance ?? 0;
+  const cents = Math.max(0, Math.round(parseFloat(amount) * 100) || 0);
   const after = balanceAfter(mode, balanceCents, cents, charge);
   const meta = META[mode];
 
@@ -68,7 +68,7 @@ export default function RecordPaymentForm({ account, onClose, onSaved }) {
           <div style={whoBal}>{balanceCents > 0 ? `${formatCurrency(balanceCents)} outstanding` : 'Paid in full'}</div>
         </div>
 
-        <div style={seg}>
+        <div style={seg} role="group" aria-label="Transaction type">
           {MONEY_MODES.map((m) => (
             <button key={m} type="button" onClick={() => setMode(m)} aria-pressed={mode === m}
               className="as-press" style={segBtn(mode === m, META[m].color)}>{META[m].label}</button>
@@ -77,7 +77,7 @@ export default function RecordPaymentForm({ account, onClose, onSaved }) {
 
         <div>
           <Label htmlFor="rm-amount">Amount ($)</Label>
-          <input id="rm-amount" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} style={inputStyle} />
+          <input id="rm-amount" type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} style={inputStyle} />
           {mode === 'refund' && <div style={warnLine}>A refund increases what the family owes.</div>}
         </div>
 
@@ -96,9 +96,9 @@ export default function RecordPaymentForm({ account, onClose, onSaved }) {
         )}
 
         {mode === 'adjustment' && (
-          <div style={seg}>
-            <button type="button" onClick={() => setCharge(false)} aria-pressed={!charge} className="as-press" style={segBtn(!charge, 'var(--as-info)')}>Credit · −balance</button>
-            <button type="button" onClick={() => setCharge(true)} aria-pressed={charge} className="as-press" style={segBtn(charge, 'var(--as-info)')}>Charge · +balance</button>
+          <div style={seg} role="group" aria-label="Adjustment direction">
+            <button type="button" onClick={() => setCharge(false)} aria-pressed={!charge} aria-label="Credit — decreases the balance" className="as-press" style={segBtn(!charge, 'var(--as-info)')}>Credit · −balance</button>
+            <button type="button" onClick={() => setCharge(true)} aria-pressed={charge} aria-label="Charge — increases the balance" className="as-press" style={segBtn(charge, 'var(--as-info)')}>Charge · +balance</button>
           </div>
         )}
 

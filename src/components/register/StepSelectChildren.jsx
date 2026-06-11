@@ -25,8 +25,8 @@ export default function StepSelectChildren({ kids, division, onContinue, onAddNe
           const on = sel.has(c.player_id);
           return (
             <button
-              key={c.player_id} type="button" disabled={blocked}
-              onClick={() => toggle(c.player_id)} aria-pressed={on}
+              key={c.player_id} type="button" aria-disabled={blocked}
+              onClick={() => { if (!blocked) toggle(c.player_id); }} aria-pressed={blocked ? undefined : on}
               aria-label={`${c.first_name}${reason ? ` — ${reason}` : ''}`}
               className={blocked ? undefined : 'as-press'} style={card(on, blocked)}
             >
@@ -45,6 +45,7 @@ export default function StepSelectChildren({ kids, division, onContinue, onAddNe
       </div>
       <button
         type="button" className="as-press" disabled={!picks.length}
+        aria-label={picks.length ? undefined : 'Select at least one child to continue'}
         style={{ ...primaryBtn, marginTop: 18, opacity: picks.length ? 1 : 0.5 }}
         onClick={() => onContinue(picks)}
       >
