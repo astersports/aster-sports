@@ -1,0 +1,81 @@
+==============================================================================
+CC  →  ARCHITECT : HANDOFF + NEXT-PHASE RECOMMENDATION
+Date 2026-06-11. Via Frank. Covers: where the two shipped phases stand, the
+recommended next phase (Financials, fronted by a money-seam audit), the open items
+awaiting your ratification, and the CC↔architect operating protocol we run by.
+Plain text + full chat paste + delivered as a file.
+==============================================================================
+
+A. STATE OF THE TWO SHIPPED PHASES
+   PROGRAMS — build RATIFIED by you (PROGRAMS_CLOSE_RATIFICATION_2026-06-10);
+     phase-close gated on Frank's S0-S4 device-smoke. S0 is DONE live (Fall 2026
+     Tryouts now carries the implicit flat-fee unit at $35, 0 registrations — D1
+     proven through the real admin UI). All forks D1-D7 + R1-R7 + A1 built.
+   HOME — built end-to-end (H-1 admin Registration rollup lane, H-2 parent
+     register-CTA + balance, H-3 label) + the #958 family_balances funnel-billing
+     fix your H-1 verify gate surfaced. Admin lane live-verified (S1 face).
+     Phase-close gated on the HS0-HS3 device-smoke (CC_HOME_REDESIGN_CLOSEOUT_
+     2026-06-11). Your read on "scope, not plumbing" was the right diagnosis and the
+     rollup state-machine spec landed clean.
+
+B. OPEN ITEMS AWAITING YOU (none blocking new work)
+   B1  Ratify the programs + Home phase CLOSES once Frank's two device-smokes pass
+       (S0-S4, HS0-HS3) — closed is evidence-gated, per your rule; the smokes are the
+       first real-data runs.
+   B2  VISUAL RATIFY of the parent Home lane (H-2). It was built SOLO from your
+       recommendation text — the parent render was "on GO" and Frank had CC carry
+       Home end-to-end. It is a small conditional card (register-CTA + "$X due");
+       a render-vs-build check when convenient.
+   B3  Carried forks (named triggers): FU-1 gender smoke + fixture assertion before
+       the first gendered season; FU-2 family_cap_policy into get_public_program
+       before a family-cap org onboards.
+
+C. NEXT-PHASE RECOMMENDATION (CC lean — your ruling)
+   FINANCIALS redesign, fronted by a MONEY-SEAM multi-agent audit.
+   EVIDENCE: the funnel introduced a SECOND billing model (fee-as-transaction) into a
+     family_balances/Financials stack built for the IMPORTED model (fee-on-account).
+     #958 proved the two diverge at the seam — the view mis-bucketed the funnel 'fee'
+     txn in billed/net_paid (only balance_cents was right), which ALSO silently broke
+     the Financials dashboard's "collected" for every funnel family. One bug at a new
+     seam is rarely the only one.
+   PLAN: audit the seam BEFORE redesigning (same shape that made programs land clean).
+     Five lanes — A Financials dashboard+hooks across imported+funnel; B payment/
+     refund/adjustment recording; C family_balances #63 sweep (My Family, Home lanes,
+     roster dot, detail); D import + rollover money carry; E CC live-DB dual-model
+     replays + a $166,910/$165,635/$1,275 ledger consistency check post-#958. Then a
+     §16.15 audit doc → you rule the Financials redesign + renders → CC builds.
+   CC LEAN: GO on the money-seam audit as the front end of a Financials phase. The
+     one alternative (a broad platform audit) is NOT my lean — the #958 canary points
+     at the money seam, and the rest of the app is strong (Teams/Team Pulse are
+     GameChanger-class, your read). Follow the canary, don't cast wide.
+
+D. THE CC ↔ ARCHITECT OPERATING PROTOCOL (so we stay in sync, §11.8)
+   LANES: CC implements + verifies against ground truth (file:line, execute_sql,
+     deployed state) and produces artifacts WITH evidence + a labeled LEAN (AP#39);
+     CC does NOT settle a fork unilaterally. YOU frame + rule forks, produce
+     mobile-first HTML renders, and ratify; you don't touch DB/repo. FRANK ratifies +
+     relays; his real-time signals drive continuation (no pre-locked contracts).
+   DOC-TO-DOC: every cross-lane artifact = a committed plain-text .txt in docs/ +
+     full chat paste + delivered as a file. Decisions you must make arrive as an
+     ARCHITECT_DECISION_REQUEST_<date>.txt (REQUEST · EVIDENCE · OPTIONS+REQUIREMENTS
+     · CC LEAN). Your renders are the build target; CC flags divergences, never
+     silently reinterprets.
+   CLOSE IS EVIDENCE-GATED (your rule): CC writes the close-out; you ratify build +
+     forks; a real-data smoke is the gate; follow-ups carry with triggers.
+   VERIFY-BEFORE-BUILD: when your spec carries a data assumption, CC verifies it live
+     first and surfaces failures as decisions (the #958 path) rather than building
+     over them.
+   DELIVERY: CC drives the full PR cycle (create→ready→auto-merge SQUASH→verified
+     merge), applies migrations via MCP + writes the AP#21 mirror same turn, keeps
+     every file ≤150 lines, var(--as-*) tokens, 44px taps, mobile-first; lint+build+
+     full vitest green before "build clean." You see the result + render; you ratify.
+
+E. WHAT WE NEED FROM YOU NEXT
+   1. Ratify (or amend) the GO on the money-seam audit → Financials redesign (§C).
+   2. When Frank's smokes pass, ratify the two phase closes (B1).
+   3. At your convenience: the parent-lane visual ratify (B2).
+   On your GO, CC launches the four read-only audit agents + the live-DB replays and
+   returns the synthesized §16.15 audit doc for your design ruling.
+==============================================================================
+END ARCHITECT HANDOFF.
+==============================================================================

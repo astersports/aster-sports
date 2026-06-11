@@ -1,0 +1,180 @@
+==============================================================================
+CC SESSION HANDOFF  →  NEW CC CHAT
+Date 2026-06-11. Hand this to a fresh Claude Code session to continue the AsterSports
+work. Read CLAUDE.md FIRST (it overrides everything). This doc = current state +
+the full CC↔architect protocol so the next session operates identically.
+==============================================================================
+
+0. WHAT THIS IS
+   AsterSports — multi-tenant youth-sports SaaS. Pilot org: Legacy Hoopers (LH).
+   Live: https://astersports.app · repo github.com/LegacyHoopers/aster-sports ·
+   Supabase project vrwwpsbfbnveawqwbdmj · branch you work on:
+   claude/programs-redesign-audit-gw06tg (designated feature branch; PRs → main).
+   Three lanes build this platform: CC (you — implement + verify), the ARCHITECT
+   (a separate Claude chat — design + ratify), and FRANK (operator — ratifies +
+   relays between lanes). §11.8 of CLAUDE.md is the collaboration doctrine.
+
+==============================================================================
+1. CURRENT STATE (two phases just shipped; both build-complete, smoke-gated)
+==============================================================================
+  PROGRAMS REDESIGN — registration funnel + admin. Shipped this arc:
+    parent funnel (flat-fee non-season unit D1, multi-child one-submit R1,
+    a11y R4, gender capture R2 + M2 server enforcement R7), admin (program
+    detail, implicit fee editor, mark-confirmed A1), security (D2/pr1b RLS
+    narrowing), D3 reg-open gate. 4 migrations applied+mirrored+live-verified.
+    Close: docs/PROGRAMS_CLOSE_RATIFICATION_2026-06-10.txt (build RATIFIED;
+    phase-close gated on Frank's S0-S4 device-smoke). S0 IS DONE LIVE — Fall 2026
+    Tryouts now has the implicit unit + a $35 fee, 0 registrations; the link is
+    registrable.
+  HOME REDESIGN — surface the funnel on the landing screens. Shipped:
+    H-1 admin Registration rollup lane (useOpenRegistration + HomeRegistrationCard,
+    S0-S4 state machine), H-2 parent register-CTA + balance (ParentHomeRegistration,
+    reuses useFamilyPrograms), H-3 "Out"→"Outstanding" label. Plus #958 — a
+    family_balances funnel-billing FIX (the 'fee' transaction was mis-bucketed in
+    billed/net_paid; only balance was right; this ALSO silently broke the Financials
+    dashboard's "collected" for funnel families). Close:
+    docs/CC_HOME_REDESIGN_CLOSEOUT_2026-06-11.txt (gated on HS0-HS3 device-smoke).
+
+  CANONICAL DOCS in repo/docs (read these to reconstruct context):
+    PROGRAMS_AUDIT_AND_PLAN_2026-06-10.txt (the §16.15 L99 audit)
+    ARCHITECT_DECISION_REQUEST_2026-06-10.txt + PROGRAMS_RULINGS_D1D7_2026-06-10.txt
+    PROGRAMS_CLOSE_RATIFICATION_2026-06-10.txt
+    H1_SPEC_HOME_REGISTRATION_LANE_2026-06-10 (architect spec; in chat history)
+    CC_HOME_REDESIGN_CLOSEOUT_2026-06-11.txt
+    g1/g2/g4 + home-registration-rollup render .html files in docs/.
+
+  CARRIED FOLLOW-UPS (parked at named triggers — NOT blocking):
+    FU-1 gender built-but-unexercised: add a gender_mismatch fixture assertion +
+         run a real gendered-division smoke BEFORE the first gendered season opens.
+    FU-2 family_cap_policy not in get_public_program → funnel preview shows no
+         discount line for a cap-org until confirmation. Add before a family-cap
+         org onboards (no-op for LH; null policy).
+    FU-3 H-2 parent lane was built SOLO (no architect render) — wants an architect
+         VISUAL ratify when convenient. Non-blocking.
+
+==============================================================================
+2. RECOMMENDED NEXT PHASE (CC lean — architect/Frank ratify)
+==============================================================================
+  FINANCIALS redesign, fronted by a MONEY-SEAM multi-agent audit. Rationale: the
+  funnel introduced a SECOND billing model (fee-as-transaction) into a
+  family_balances/Financials stack built for the IMPORTED model (fee-on-account).
+  #958 proved the two models diverge at the seam (and that one bug hit Financials
+  silently). One bug at a new seam is rarely the only one — audit the seam before
+  redesigning. Audit lanes (read-only, parallel):
+    A  Financials dashboard + hooks (useSeasonFinancials, useFamiliesOwingCount):
+       every collected/billed/paid/outstanding render correct across imported+funnel?
+    B  payment/refund/adjustment recording (RecordPaymentForm, transaction types).
+    C  family_balances consumers #63 sweep (My Family, Home lanes, roster dot, detail).
+    D  import + rollover money carry (LeagueApps import, rollover_season, season_id FK).
+    E  CC live-DB: rollback-txn replays of BOTH models + a consistency check of the
+       live ledger ($166,910 billed / $165,635 gross / $1,275 out) post-#958.
+  Then a §16.15 audit doc → architect rules the redesign + renders → build.
+  (Frank asked for this recommendation; awaiting his GO to launch the agents.)
+
+==============================================================================
+3. CC ↔ ARCHITECT PROTOCOL (the rules — operate exactly like this)
+==============================================================================
+  LANES & DIVISION OF LABOR (§11.8 r2)
+    • CC implements + verifies against the CLOSEST ground truth available (file:line,
+      execute_sql results, deployed state — the §11.7 source hierarchy). Produces the
+      artifact WITH evidence + a labeled LEAN (AP#39 — commit to the lean). CC does
+      NOT settle an architectural fork unilaterally; it surfaces evidence + lean and
+      the architect/Frank decide.
+    • ARCHITECT frames decisions/forks, rules them, produces mobile-first HTML
+      renders, ratifies. Does NOT touch DB/repo/edge (that's all CC).
+    • FRANK ratifies + relays. His real-time signals (go / stop / "1" / routing)
+      drive continuation — there is no pre-locked session contract (AP#56/#59 retired).
+
+  ROUND-TRIP IS DOC-TO-DOC (§11.8 r1, r3, r6; §49)
+    • EVERY architect-facing artifact = a committed plain-text .txt in docs/ PLUS a
+      full chat paste PLUS delivered as a file (SendUserFile — Frank prefers files).
+      Plain text; NO triple-backtick wrap around the whole doc; NEVER a
+      summary-instead-of-paste; NEVER deferred. The doc IS the deliverable; the paste
+      is how the architect receives it.
+    • A DECISION the architect must make → a committed ARCHITECT_DECISION_REQUEST_
+      <date>.txt: per decision = REQUEST (1 line) · CONTEXT/EVIDENCE (file:line or
+      query) · OPTIONS each with REQUIREMENTS · CC's labeled LEAN.
+    • The RENDER is the build target (§16.15) — build to the architect's mockup; flag
+      divergences, don't silently reinterpret.
+
+  PHASE CLOSE IS EVIDENCE-GATED (§11.8 r4 — the architect's hard rule)
+    • A phase is NOT "closed" on a summary line. CC writes the close-out review
+      (audit result + open forks + triage); the architect RATIFIES the build + forks;
+      then a REAL-DATA device-smoke (not a rollback-txn fixture) is the close GATE.
+      Fixtures are correct pre-flight, not a real run. Carry follow-ups with named
+      triggers.
+
+  VERIFY-BEFORE-BUILD (AP#60 / the gate that caught #958)
+    • When the architect's spec carries a data/behavior assumption, CC verifies it
+      LIVE before building. If verification fails, SURFACE it as a finding+decision —
+      do NOT build over it. (#958: the architect's collected formula was wrong; CC
+      caught it via a rollback-txn replay, fixed the view, and only then built H-1.)
+
+  SESSION HANDOFF (§11.8 r5)
+    • Every session ends with a committed CC_SESSION_HANDOFF_<date>.txt (this file's
+      kind) Frank can hand the architect.
+
+==============================================================================
+4. WORKFLOW MECHANICS (operational — do these every time)
+==============================================================================
+  BRANCH: develop on claude/programs-redesign-audit-gw06tg. Each PR squash-merges
+    and the remote branch is deleted, so the pattern per new PR is: git checkout main
+    && git fetch origin main && git reset --hard origin/main && delete + recreate the
+    branch, commit, push. ONE PR at a time (the single branch serializes; wait for
+    merge before the next). Branch divergence pre-flight (AP#35) at session start.
+  PR LIFECYCLE (§15 + AP#54): create PR (draft ok) → IMMEDIATELY in the same MCP
+    burst flip ready (update_pull_request draft:false) + enable_pr_auto_merge
+    (mergeMethod SQUASH) → never leave a PR in draft (GitHub won't auto-merge drafts).
+    Vercel bot deploy-status comments need NO action. After push, ALWAYS open a PR.
+  MIGRATIONS (AP#21): apply via Supabase MCP apply_migration; write the repo mirror
+    .sql in the SAME turn, filename = the production version string from
+    list_migrations. Verify live: impersonated-JWT replay for RLS
+    (set_config('request.jwt.claims',...) + set role authenticated, rollback);
+    rollback-txn replay for RPC changes (BEGIN … submit_registration(payload) …
+    ROLLBACK). Get_advisors at schema-change session close.
+  VERIFY BEFORE "BUILD CLEAN": npm run lint && npm run build && npm test (full vitest;
+    set VITE_SUPABASE_URL=https://ci-dummy.supabase.co VITE_SUPABASE_ANON_KEY=
+    ci-dummy-anon-key) + the §0 grep checklist. Every file ≤150 lines (4 exceptions).
+    var(--as-*) tokens only, no hardcoded hex (except team_color from DB). 44px taps.
+    Mobile-first single-column. PR body ends with Frank's manual-verification steps.
+  GITHUB = MCP tools only (mcp__github__*), no gh CLI. Repo scope: LegacyHoopers/
+    aster-sports. Subscribe_pr_activity events arrive as webhooks; CC drives
+    create→ready→auto-merge→verified-merge; don't poll with sleep.
+
+==============================================================================
+5. ANTI-PATTERNS THAT GOVERN THE MONEY WORK (the load-bearing ones)
+==============================================================================
+  #63  one source + one scope per concept (THE dominant bug class). Every money
+       number from ONE source (family_balances), labeled scope; two surfaces showing
+       the same concept must agree or label the scope difference. The whole money
+       seam audit is a #63 sweep.
+  #36  destructure {data,error}; surface error before using data (never silent []).
+  #43  cross-surface fixes ship with an invariant test.
+  #46  PRs touching *Card/*Row/*Tile ship a test (or screenshot/token-ref).
+  #60  verify, don't infer (source hierarchy; the #958 catch).
+  #21  migration mirror written same turn as the MCP apply.
+  #39  position+hedge tell — commit to the lean; the hedge is often the truer answer.
+  family_balances CONTRACT (post-#958): collected = SUM(net_paid_cents),
+       due = SUM(GREATEST(balance_cents,0)); season_id IS the program FK (funnel) /
+       the season (imported). balance_cents is the invariant across both models.
+
+==============================================================================
+6. DEVICE-SMOKE GATES (Frank runs these; the new chat should know them)
+==============================================================================
+  PROGRAMS S0-S4: S0 set tryout fee → flat-fee hero (DONE); S1 register 1 child;
+    S2 register 2-in-one-submit + family_balances delta; S3 mark-confirmed (badge
+    moves, payment line doesn't); S4 funnel a11y. GREEN → programs closed.
+  HOME HS0-HS3: HS0 admin lane shows Fall 2026 Tryouts S1 card (verified live);
+    HS1 register → lane count + money move; HS2 parent Home register-CTA + "$X due";
+    HS3 Financials correct post-view-fix. GREEN → Home closed.
+
+==============================================================================
+7. IMMEDIATE NEXT ACTION FOR THE NEW CHAT
+==============================================================================
+  1. Read CLAUDE.md (esp. §0, §11.5-§11.8, §15, §16.14-§16.16). 2. Branch pre-flight
+     (AP#35). 3. If Frank says GO on the Financials money-seam audit (§2), launch the
+     four read-only agents + run the live-DB replays, synthesize a §16.15 audit doc
+     for the architect. Else await routing. 4. Honor every protocol in §3-§5.
+==============================================================================
+END HANDOFF.
+==============================================================================
