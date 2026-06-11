@@ -12,6 +12,7 @@ import HomeShell from '../components/home/HomeShell';
 import HomeGreeting from '../components/home/HomeGreeting';
 import NeedsYouSection from '../components/home/NeedsYouSection';
 import ComingUpSection from '../components/home/ComingUpSection';
+import HomeRegistrationCard from '../components/home/HomeRegistrationCard';
 import AdminTail from '../components/home/AdminTail';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { firstNameFrom } from '../lib/greetings';
@@ -19,6 +20,7 @@ import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import { seasonProgress } from '../lib/seasonProgress';
 import { isHomeOffSeason } from '../lib/home/offSeason';
 import { useActivePrograms } from '../hooks/useActivePrograms';
+import { useOpenRegistration } from '../hooks/useOpenRegistration';
 
 // Admin home — shell-contract-v2 rewrite (home redesign Phase 3). Composes
 // HomeShell's inner slots over AppShell chrome; the hooks own the fetching,
@@ -41,6 +43,7 @@ export default function AdminHomePage() {
   );
   const comingUp = useParentComingUp(activities, now, excludeIds);
   const weather = useWeather(...WEATHER_DEFAULT_COORDS);
+  const openReg = useOpenRegistration();
 
   const name = firstNameFrom(user);
   const progress = seasonProgress(activeSeason, now).label;
@@ -68,6 +71,7 @@ export default function AdminHomePage() {
           onSeeSchedule={() => navigate('/schedule')}
         />
       )}
+      registration={openReg.openCount > 0 ? <HomeRegistrationCard data={openReg} onNavigate={navigate} /> : null}
       tail={<AdminTail season={activeSeason} nowMs={now} eventsCount={activities.length} />}
     />
   );
