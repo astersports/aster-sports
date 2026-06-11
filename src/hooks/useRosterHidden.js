@@ -12,13 +12,15 @@ export function useRosterHidden(teamId) {
     let alive = true;
     (async () => {
       if (!teamId) { if (alive) setHidden(false); return; }
-      const { data: t } = await supabase
+      const { data: t, error: tErr } = await supabase
         .from('teams').select('roster_visibility_override, season_id').eq('id', teamId).maybeSingle();
+      if (tErr) { console.error('useRosterHidden teams:', tErr.message); return; }
       if (!alive || !t) return;
       let pr = {};
       if (t.season_id) {
-        const { data: p } = await supabase
+        const { data: p, error: pErr } = await supabase
           .from('programs').select('roster_visibility, program_type').eq('id', t.season_id).maybeSingle();
+        if (pErr) { console.error('useRosterHidden programs:', pErr.message); return; }
         pr = p || {};
       }
       if (alive) setHidden(rosterVisible(t.roster_visibility_override, pr.roster_visibility, pr.program_type) === false);
