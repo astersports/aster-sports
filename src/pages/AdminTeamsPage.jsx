@@ -119,6 +119,7 @@ export default function AdminTeamsPage() {
       <TeamFormSheet
         open={sheetOpen}
         program={editing}
+        programType={activeSeason?.program_type ?? 'season'}
         onClose={() => setSheetOpen(false)}
         onSave={save}
         onDelete={remove}

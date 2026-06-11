@@ -33,14 +33,16 @@ describe('StepSelectChildren', () => {
   it('an ineligible kid (RG-3) is disabled and shows the reason', () => {
     render(<StepSelectChildren kids={kids} division={division} onContinue={vi.fn()} onAddNew={vi.fn()} />);
     const milo = screen.getByRole('button', { name: /^Milo/ });
-    expect(milo).toBeDisabled();
+    expect(milo).toHaveAttribute('aria-disabled', 'true'); // focusable so SRs read the reason
     expect(milo.getAttribute('aria-label')).toMatch(/below this group/);
+    fireEvent.click(milo);
+    expect(screen.getByRole('button', { name: /continue/i })).toBeDisabled(); // blocked card not selectable
   });
 
   it('an already-registered kid (RG-4) is disabled with the badge', () => {
     render(<StepSelectChildren kids={kids} division={division} onContinue={vi.fn()} onAddNew={vi.fn()} />);
     const reg = screen.getByRole('button', { name: /^Registered/ });
-    expect(reg).toBeDisabled();
+    expect(reg).toHaveAttribute('aria-disabled', 'true');
     expect(reg.getAttribute('aria-label')).toMatch(/Already registered/);
   });
 

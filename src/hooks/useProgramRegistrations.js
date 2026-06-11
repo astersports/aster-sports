@@ -14,7 +14,7 @@ export function useProgramRegistrations(programId) {
     setLoading(true);
     setError(null);
     const [pRes, rRes] = await Promise.all([
-      supabase.from('programs').select('id, name, public_slug, is_published, program_type, status, start_date, end_date, reg_opens_at, reg_closes_at').eq('id', programId).maybeSingle(),
+      supabase.from('programs').select('id, name, public_slug, is_published, program_type, status, start_date, end_date, reg_opens_at, reg_closes_at, roster_visibility').eq('id', programId).maybeSingle(),
       supabase.from('registrations')
         .select('id, status, created_at, players(first_name, last_name), registration_fees(amount_cents)')
         .eq('program_id', programId)

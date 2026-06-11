@@ -18,8 +18,9 @@ export function useFunnelRevenue(orgId) {
         .from('programs')
         .select('id, name, reg_opens_at, reg_closes_at')
         .eq('org_id', orgId).eq('is_published', true).eq('status', 'active')
-        .in('program_type', ['tryout', 'camp']);
-      if (pErr) { console.error('useFunnelRevenue programs:', pErr.message); return; }
+        .in('program_type', ['tryout', 'camp'])
+        .order('reg_opens_at', { ascending: false }); // deterministic pick if >1 open
+      if (pErr) { console.error('useFunnelRevenue programs:', pErr.message); if (alive) setState(null); return; }
       const open = (progs || []).find((p) => {
         const o = p.reg_opens_at ? new Date(p.reg_opens_at).getTime() : null;
         const c = p.reg_closes_at ? new Date(p.reg_closes_at).getTime() : null;
@@ -28,7 +29,7 @@ export function useFunnelRevenue(orgId) {
       if (!open) { if (alive) setState(null); return; }
       const { data: bal, error: bErr } = await supabase
         .from('family_balances').select('net_paid_cents').eq('org_id', orgId).eq('season_id', open.id);
-      if (bErr) { console.error('useFunnelRevenue balances:', bErr.message); return; }
+      if (bErr) { console.error('useFunnelRevenue balances:', bErr.message); if (alive) setState(null); return; }
       const collectedCents = (bal || []).reduce((s, r) => s + (Number(r.net_paid_cents) || 0), 0);
       if (alive) setState({ name: open.name, collectedCents });
     })();

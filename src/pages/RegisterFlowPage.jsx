@@ -36,14 +36,14 @@ export default function RegisterFlowPage() {
 
   const divisions = data?.divisions || [];
   const onlyOneDivision = divisions.length === 1;
-  // B3 funnel: an authed parent gets their identity pre-filled; if they have
-  // children AND the program is single-division (tryout/camp/season-with-one-unit),
-  // open on the select-your-children step. Multi-division stays per-child manual.
+  // B3 funnel: an authed parent with a usable guardian email gets identity pre-fill +
+  // (with children, single-division) the select step. No email → manual flow (the
+  // authed path skips the guardian step, else submit fails). Multi-division → manual.
   const initedRef = useRef(false);
   useEffect(() => {
-    if (initedRef.current || identity.loading || !identity.authed) return;
+    if (initedRef.current || identity.loading || !identity.authed || !identity.guardian?.email) return;
     initedRef.current = true;
-    dispatch({ type: 'AUTHED_INIT', guardian: identity.guardian || {}, select: identity.children.length > 0 && onlyOneDivision });
+    dispatch({ type: 'AUTHED_INIT', guardian: identity.guardian, select: identity.children.length > 0 && onlyOneDivision });
   }, [identity, onlyOneDivision]);
 
   if (loading || identity.loading) return <div style={centered}>Loading…</div>;

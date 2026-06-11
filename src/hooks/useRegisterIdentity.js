@@ -24,9 +24,15 @@ export function useRegisterIdentity(programId) {
     (async () => {
       if (authLoading) { if (alive) setState({ ...EMPTY, loading: true }); return; }
       if (!user) { if (alive) setState(EMPTY); return; }
-      const { data: gRow } = await supabase
+      // AP#36: surface every read's error. On any error, degrade to authed:false so
+      // the wizard keeps the (always-correct) manual flow rather than silently
+      // showing an empty child list — which would push a returning parent back to
+      // re-typing (the double-reg hole). player_guardians/players/registrations are
+      // FK-scoped (no org_id column); RLS scopes them to the caller's guardian.
+      const { data: gRow, error: gErr } = await supabase
         .from('guardians').select('first_name, last_name, email, phone').eq('user_id', user.id).maybeSingle();
-      const { data: links } = await supabase.from('player_guardians').select('player_id');
+      const { data: links, error: lErr } = await supabase.from('player_guardians').select('player_id');
+      if (gErr || lErr) { console.error('useRegisterIdentity:', (gErr || lErr).message); if (alive) setState(EMPTY); return; }
       const ids = [...new Set((links || []).map((l) => l.player_id))];
       let children = [];
       if (ids.length) {
@@ -34,8 +40,9 @@ export function useRegisterIdentity(programId) {
           supabase.from('players').select('id, first_name, last_name, grade, gender').in('id', ids).order('first_name'),
           programId
             ? supabase.from('registrations').select('player_id').eq('program_id', programId).neq('status', 'cancelled').in('player_id', ids)
-            : Promise.resolve({ data: [] }),
+            : Promise.resolve({ data: [], error: null }),
         ]);
+        if (pRes.error || rRes.error) { console.error('useRegisterIdentity:', (pRes.error || rRes.error).message); if (alive) setState(EMPTY); return; }
         const reg = new Set((rRes.data || []).map((r) => r.player_id));
         children = (pRes.data || []).map((p) => ({
           player_id: p.id, first_name: p.first_name, last_name: p.last_name,

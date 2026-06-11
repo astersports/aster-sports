@@ -14,7 +14,7 @@ export default function FinancialSummaryCard({ stats, seasonName, funnel, fmt })
       </div>
       <div style={split} />
       <Line label="Outstanding" scopeTag="season" value={fmt(stats.outstanding)} valueColor="var(--as-danger)" />
-      <Line label="Processing fees" value={`−${fmt(stats.fees)}`} />
+      <Line label="Processing fees" scopeTag="season" value={`−${fmt(stats.fees)}`} />
       <Line label="Net to bank" scopeTag="season" value={fmt(stats.net)} strong />
       {funnel && <Line label="Funnel revenue" scopeTag={funnel.name} value={fmt(funnel.collectedCents)} />}
     </div>
@@ -30,7 +30,7 @@ function Line({ label, scopeTag, value, valueColor, strong }) {
   );
 }
 
-const card = { backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)', borderTop: '3px solid var(--as-accent)', borderRadius: 13, padding: 16, marginBottom: 24, boxShadow: 'var(--as-shadow-sm)' };
+const card = { backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)', borderTop: '3px solid var(--as-accent)', borderRadius: 10, padding: 16, marginBottom: 24, boxShadow: 'var(--as-shadow-sm)' };
 const scope = { fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', marginBottom: 10 };
 const grid = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 };
 const big = { fontSize: 22, fontWeight: 700, color: 'var(--as-text-primary)', fontVariantNumeric: 'tabular-nums' };
