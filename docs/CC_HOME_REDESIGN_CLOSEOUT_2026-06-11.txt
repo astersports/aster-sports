@@ -1,0 +1,85 @@
+==============================================================================
+CC -> ARCHITECT + FRANK : HOME REDESIGN , PHASE CLOSE-OUT
+Date 2026-06-11. §11.8 r4 (phase close-out) + r5 (handoff). Plain text + full chat
+paste + delivered as a file. Build COMPLETE; phase-close gated on a Home
+device-smoke (same evidence-gated discipline as the programs close).
+==============================================================================
+
+ONE-LINE STATE
+  The Home redesign is built end-to-end (H-1 admin lane + H-2 parent lane + H-3
+  label polish) plus the family_balances funnel-billing fix the H-1 verify gate
+  surfaced. The admin lane is live-verified against production; the parent lane is
+  built + unit-tested but, like the funnel itself, has not yet run with a real
+  parent session — that device-smoke is the close gate.
+
+--------------------------------------------------------------------------------
+WHAT SHIPPED (PRs, one line each — all merged)
+--------------------------------------------------------------------------------
+  #958  fix(db) family_balances funnel billing — 'fee' txns count as billed, not
+        net_paid. Found during the H-1 verify; corrected a LATENT bug that also hit
+        the Financials dashboard. balance_cents invariant (no "owes" moved);
+        verified on the live $166,910/$165,635/$1,275 ledger. Architect Option A.
+  #959  feat(home) H-1 — admin Home Registration rollup lane (useOpenRegistration +
+        HomeRegistrationCard S0-S4 state machine). Live-verified: LH renders S1
+        (Fall 2026 Tryouts, fee $35, 0 registered).
+  #960  feat(home) H-2 — parent Home register-CTA + family balance
+        (ParentHomeRegistration, reuses useFamilyPrograms B1; conditional).
+  #961  feat(home) H-3 — Program Health "Out" -> "Outstanding" label clarity.
+
+--------------------------------------------------------------------------------
+PHASE CLOSE-OUT (the architect's H-1..H-3 + the diagnosis)
+--------------------------------------------------------------------------------
+  Diagnosis (architect, ratified): the funnel was invisible on Home because of
+  SCOPE — Program Health is active-season-scoped and the open tryout is a
+  non-active program — not plumbing. FIXED by a conditional, program-scoped
+  Registration lane; season health stays season-scoped. Two scopes, never one
+  merged number (#63 held throughout).
+  H-1 admin lane ........... BUILT + LIVE-VERIFIED (#959). S0-S4 state machine,
+                             incl. the pre-fee nudge (was LH's state until S0).
+  H-2 parent lane .......... BUILT + unit-tested (#960). Built SOLO from the
+                             recommendation (the parent render was "on GO"); see
+                             the follow-up — worth an architect visual ratify.
+  H-3 label polish ......... BUILT (#961).
+  family_balances fix ...... APPLIED + verified (#958). One shared money source
+                             for the lane AND Financials; collected = net_paid_cents,
+                             due = SUM(max(balance,0)).
+  Lane shape ............... ROLLUP (Frank's call, overriding per-program). Degrades
+                             to the single-program look at N=1 (LH today).
+
+--------------------------------------------------------------------------------
+PHASE-CLOSE GATE (Home device-smoke — the first real-data run of the parent lane)
+--------------------------------------------------------------------------------
+  HS0  Admin Home shows the "Registration" card for Fall 2026 Tryouts (S1):
+       Open · closes Jun 26 · Registered 0 · $0 · $0; tap -> the program detail.
+       (Already confirmed via live query; confirm on the phone.)
+  HS1  Register a child through the funnel, then re-open Admin Home: the lane's
+       Registered + the program-scoped Collected/Due move (off family_balances).
+  HS2  Parent Home (a guardian account): the "Register <kids>" CTA appears for an
+       open eligible program -> taps to /r/<slug>; if the family owes, a "$X due"
+       row -> taps to My Family. Both gone when nothing's open and nothing owed.
+  HS3  Financials dashboard still reads correct after the view fix (imported
+       numbers unchanged; a funnel payment now shows correct collected).
+  GREEN on HS0-HS3 -> Home phase CLOSED.
+
+--------------------------------------------------------------------------------
+FOLLOW-UPS CARRIED (with named triggers — none blocking)
+--------------------------------------------------------------------------------
+  NEW  H-2 was built without an architect render (parent render was "on GO";
+       Frank had CC carry Home solo). Recommend an architect VISUAL ratify of the
+       parent lane when convenient — not a blocker; it's a small, conditional card.
+  FROM PROGRAMS (still parked):
+  FU-1 gender built-but-unexercised — add a gender_mismatch fixture assertion + a
+       real gendered-division smoke BEFORE the first gendered season opens.
+  FU-2 family_cap_policy not in get_public_program — the funnel preview shows no
+       discount line for a cap-org until confirmation. Add before a family-cap org
+       onboards (no-op for LH; null policy).
+
+--------------------------------------------------------------------------------
+NEXT ACTION (operator)
+--------------------------------------------------------------------------------
+  Run the Home device-smoke (HS0-HS3) when at a phone. On green, Home is closed.
+  Then: point CC at the next surface, or pick up the parked follow-ups when their
+  trigger arrives. Nothing else has CC's name on it.
+==============================================================================
+END HOME CLOSE-OUT.
+==============================================================================
