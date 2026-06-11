@@ -1,0 +1,101 @@
+==============================================================================
+CC -> ARCHITECT : CLOSE-OUT + SOUND-OFF (2026-06-11)
+Per §11.8 rule 4 (forks ratified before a phase closes) + rule 5. Three build
+phases shipped end-to-end (money seam / Financials, privacy + roster visibility,
+funnel child-select) + a 10-lane audit. This is the relay artifact: what shipped,
+how it was verified ("built the right way"), the audit result, and the open forks
+awaiting your ratification. Plain text + full chat paste + delivered as a file.
+==============================================================================
+
+A. WHAT SHIPPED (16 PRs, #967–#982; one line each)
+   MONEY SEAM (Financials):
+     #967  F-1 — useSeasonFinancials reads the family_balances VIEW, not raw columns
+     #969  F-2 — FamilyBalanceList reads billed/paid from the view (last raw-col reader)
+     #973  STEP-2 — UNIFY: 164 imported accounts backfilled to 'fee' txns, columns
+           zeroed; ONE model (billed = SUM('fee')); balance-preserving + fail-loud
+     #978  F-4 — record money: Payment / Refund / Adjustment in one form
+     #979  F-5 — Financials dashboard polish (scope labels · net-to-bank · funnel revenue)
+     (#968 = the F-1..F-5 decision-request you ruled.)
+   PRIVACY + ROSTER VISIBILITY:
+     #970  P0 — My Family + the Home registration lane show OWN children only
+     #972  Roster-visibility RLS half (programs.roster_visibility + teammate-fn default)
+     #977  Roster-visibility FULL build (team override + program toggle + parent line)
+     (#971/#974 = the roster-visibility decision + spec you ruled/rendered.)
+   FUNNEL CHILD-SELECT:
+     #976  Authed parents SELECT existing children (closes the double-registration hole)
+     (#975 = the register-existing-children spec you rendered.)
+   AUDIT + FOLLOW-UPS:
+     #980  10-lane multi-agent session audit (docs/SESSION_AUDIT_2026-06-11.txt)
+     #981  Audit fixes — P0 program toggle + P1 hooks + P2 a11y/polish
+     #982  AUD-6 — leagueAppsImport posts a 'fee' txn under the unified model
+
+B. HOW IT WAS BUILT (the "built the right way" answer — the discipline held)
+   - LANE MODEL: every architectural fork went to you as a committed decision/spec
+     .txt (F-1..F-5, roster RV-2..RV-6, register RG-1..RG-5); you ruled + rendered;
+     CC built to the renders; CC never settled a fork unilaterally. The renders
+     (admin controls R1/R2, parent hidden-roster R3, funnel select, F-4/F-5) were
+     the build targets — built as drawn; divergences flagged, never reinterpreted.
+   - VERIFY-BEFORE-BUILD: every data assumption checked live first. #958 (funnel-
+     billing view mis-bucket) was caught by your H-1 verify gate and fixed before
+     STEP-2. The unify backfill was rollback-PROVEN (164/164 byte-identical) BEFORE
+     the real apply, which carried the same DO-block assertion inline (Rule 19).
+   - LIVE VERIFICATION on every DB change (impersonated-JWT / rolled-back replays):
+     ledger holds $166,910.47 / $165,635.47 / $1,275.00 after unify; parent sees 27
+     players not 115; non-own player_id rejected; roster override Show->48 / Hide->13;
+     refund + adjustment move the balance correctly; funnel revenue resolves
+     "Fall 2026 Tryouts -> $0.00".
+   - AP#21 mirrors written same-turn for all 6 migrations (parity audit-confirmed).
+     AP#54 same-burst ready + auto-merge on every PR. Files ≤150 throughout. lint +
+     build + full vitest green on every PR (1693 tests at session end).
+
+C. AUDIT RESULT (10 read-only agents across the session's surfaces)
+   HEADLINE: no data loss, no privacy leak, no security regression.
+   - PRIVACY lane CLEAN: own-child scoping correct everywhere (useFamilyPrograms,
+     family_balances view, parent_context_v, the submit_registration gate, roster +
+     registration RLS, multi-guardian). No unfiltered players read leaks.
+   - SECURITY/MIGRATION lane CLEAN: mirror parity intact; admin-only writes on the new
+     columns (parent cannot write); not_your_player gate holds for anon; no new ERROR
+     advisors; §16.16 config-consumption confirmed (no dead config).
+   - FIXED (shipped #981/#982): 1 P0 (program "Show roster to families" toggle never
+     loaded its saved value — the program fetch omitted the column), the P1 cluster
+     (useRegisterIdentity AP#36 + guardian-email edge; AdminTeamsPage programType;
+     leagueAppsImport zero-bill), and a P2 a11y/token/polish batch.
+   - Full triage: docs/SESSION_AUDIT_2026-06-11.txt (#980).
+
+D. OPEN FORKS — AWAITING YOUR RATIFICATION
+   D1. PHASE CLOSES (evidence-gated, your rule). Both phases are BUILD-COMPLETE and
+       AUDIT-CLEAN; not "closed" until you ratify. Remaining gate: Frank's device-
+       smoke of the Financials dashboard + the funnel select + the roster controls on
+       the deploy. On green, ratify the closes.
+   D2. PRODUCT DECISIONS surfaced by the audit (no code answer — your/Frank's call):
+       D-a  Record-money opens only for OWING families — add an entry point to record
+            a refund/adjustment against a paid-in-full family, or leave it?
+       D-b  Adding a SECOND existing child from the roster hub drops to manual re-type
+            (RPC dedups safely). Wire "add another" back to the select screen? (trigger)
+       D-c  Select screen dead-end when ALL of a parent's kids are already-registered /
+            ineligible — add an explanatory line?
+       D-d  Multi-division authed parents stay on manual entry (select is single-
+            division only). Carry as a trigger, or extend select to multi-division?
+       D-e  A parent sees a teammate's age (derived from dob) on the player profile.
+            RLS-intended — confirm, or restrict to own child?
+       D-f  submit_registration is anon-callable BY DESIGN (the public funnel); the
+            advisor WARN is expected. CC lean: document the intent. Lock down instead?
+   D3. AUD-12 (deferred): FamilyBalanceList's `balances` prop is now redundant
+       (byAccount carries balance) — harmless cleanup, no behavior change.
+
+E. CARRIED TRIGGERS (parked, not blocking)
+   - FU-1 gender smoke + fixture before the first gendered season.
+   - FU-2 family_cap_policy into get_public_program before a cap-org onboards.
+   - Per-player roster opt-out (custody/safety) — the RV-6 future feature.
+   - Multi-division funnel select (D-d).
+
+F. WHAT WE NEED FROM YOU
+   1. Ratify the two phase closes on Frank's smoke-green (D1).
+   2. Rule D-a..D-f (D2) — batch them or rule on sight; CC builds the ones that
+      become work.
+   3. Everything else is closed: privacy + security need no action; the #63 doctrine
+      is fully satisfied at the billing layer (one ledger model), Stripe-ready for
+      Phase 6-7 when it opens.
+==============================================================================
+END CLOSE-OUT.
+==============================================================================
