@@ -5,10 +5,12 @@ import { seasonProgress } from '../../lib/seasonProgress';
 
 // AdminProgramHealth — the v2 "Program health" context card (shell contract
 // v2, per HOME_RENDERS admin). A single context card: "{season} · Week X of Y"
-// + a 4-KPI row (Players · Events · Collected · Out). Replaces the v1
+// + a 4-KPI row (Players · Events · Collected · Outstanding). Replaces the v1
 // progress-bar ProgramHealthCard. Players + Collected from
-// useProgramHealthMetrics, Events from the page (activities), Out from
-// useFamiliesOwingCount (all-seasons).
+// useProgramHealthMetrics, Events from the page (activities), Outstanding from
+// useFamiliesOwingCount (all-seasons). H-3: "Out" was ambiguous (owed vs paid
+// out) — relabeled "Outstanding"; the per-KPI scope sub-label ('all-time' here
+// vs 'season') keeps the two timeframes from reading as one number (AP#63).
 const LABEL = {
   fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
   textTransform: 'uppercase', color: 'var(--as-text-meta)', marginBottom: 8, padding: '0 2px',
@@ -42,7 +44,7 @@ export default function AdminProgramHealth({ season, nowMs, eventsCount = 0 }) {
     { v: playersCount, l: 'Players', scope: 'season' },
     { v: eventsCount, l: 'Events', scope: 'season' },
     { v: paymentPct != null ? `${paymentPct}%` : '—', l: 'Collected', scope: 'season', good: paymentPct === 100 },
-    { v: shortDollars(totalCents), l: 'Out', scope: 'all-time', loading: owingLoading },
+    { v: shortDollars(totalCents), l: 'Outstanding', scope: 'all-time', loading: owingLoading },
   ];
   return (
     <section className="min-w-0" aria-label="Program health">
