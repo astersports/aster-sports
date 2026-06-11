@@ -64,6 +64,14 @@ describe('useSeasonFinancials computation', () => {
 
     expect(result.current.balances).toEqual({ a1: 0, a2: 30000, a3: 50000 });
 
+    // byAccount exposes per-account view money (F-2: FamilyBalanceList reads
+    // billed/net_paid here, not raw season_fee/discount columns).
+    expect(result.current.byAccount).toEqual({
+      a1: { billed: 70000, netPaid: 70000, balance: 0 },
+      a2: { billed: 60000, netPaid: 30000, balance: 30000 },
+      a3: { billed: 50000, netPaid: 0, balance: 50000 }, // funnel
+    });
+
     const { stats } = result.current;
     expect(stats.billed).toBe(70000 + 60000 + 50000); // 180000 (incl. funnel a3)
     expect(stats.paid).toBe(70000 + 30000); // 100000

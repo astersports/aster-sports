@@ -48,7 +48,7 @@ export default function FinancialDashboardPage() {
   // Per anti-pattern #42 — single source of truth for financial
   // state across this page and admin-home's payment-overdue lane.
   // Previously inline at :57-69 here; extracted PR #303.
-  const { accounts, balances, stats, loading, refetch } = useSeasonFinancials(orgId, seasonId);
+  const { accounts, balances, byAccount, stats, loading, refetch } = useSeasonFinancials(orgId, seasonId);
 
   const fmt = formatCurrency;  // shared helper (style:currency) — identical $X,XXX.00 output
   const currentSeason = seasons.find((s) => s.id === seasonId);
@@ -99,7 +99,7 @@ export default function FinancialDashboardPage() {
             <StatCard label="Families" value={accounts.length} sub={currentSeason?.name || ''} color="var(--as-text-primary)" />
           </div>
 
-          <FamilyBalanceList accounts={accounts} balances={balances} fmt={fmt} initialOwing={owingParam} onRecordPayment={setPayingAccount}
+          <FamilyBalanceList accounts={accounts} balances={balances} byAccount={byAccount} fmt={fmt} initialOwing={owingParam} onRecordPayment={setPayingAccount}
             onNudge={(family) => {
               const uid = family.guardians?.user_id;
               navigate(uid ? `/messages?dm=${uid}` : '/messages');

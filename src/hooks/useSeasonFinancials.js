@@ -110,21 +110,29 @@ export function useSeasonFinancials(orgId, seasonId, guardianId = null) {
   // sourced from the family_balances view (one read path). Memoized off
   // balanceRows so consumers don't recompute every render. When isStale,
   // short-circuit to EMPTY_STATS so consumers don't see prior-key data.
-  const { balances, stats } = useMemo(() => {
-    if (isStale) return { balances: {}, stats: EMPTY_STATS };
+  const { balances, byAccount, stats } = useMemo(() => {
+    if (isStale) return { balances: {}, byAccount: {}, stats: EMPTY_STATS };
     let billed = 0; let paid = 0; let fees = 0; let outstanding = 0; let familiesOwing = 0;
     const bal = {};
+    const by = {};
     balanceRows.forEach((r) => {
+      const billedC = Number(r.billed_cents) || 0;
+      const netPaidC = Number(r.net_paid_cents) || 0;
       const b = Number(r.balance_cents) || 0;
       bal[r.account_id] = b;
-      billed += Number(r.billed_cents) || 0;
-      paid += Number(r.net_paid_cents) || 0;
+      // byAccount exposes the view's per-account money so display surfaces
+      // (FamilyBalanceList, F-2) read billed/net_paid from the view instead
+      // of the raw season_fee/discount columns STEP 2 will zero.
+      by[r.account_id] = { billed: billedC, netPaid: netPaidC, balance: b };
+      billed += billedC;
+      paid += netPaidC;
       fees += Number(r.total_fees_cents) || 0;
       outstanding += b;
       if (b > 0) familiesOwing += 1;
     });
     return {
       balances: bal,
+      byAccount: by,
       stats: {
         billed, paid, fees,
         net: paid - fees,
@@ -138,6 +146,7 @@ export function useSeasonFinancials(orgId, seasonId, guardianId = null) {
   return {
     accounts: isStale ? [] : accounts,
     balances,
+    byAccount,
     stats,
     loading: loading || isStale,
     error,
