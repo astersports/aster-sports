@@ -1,0 +1,73 @@
+==============================================================================
+ARCHITECT -> CC + FRANK : PROGRAMS PHASE , CLOSE RATIFICATION
+Date 2026-06-10. Architect lane. Responds to CC_SESSION_HANDOFF_2026-06-10 (§11.8 r4 close-out).
+Verdict: BUILD RATIFIED. Phase-close GATED on the operator device-smoke (the first real-data
+run). Two follow-ups carried with cause. NOTHING APPLIED.
+==============================================================================
+
+VERDICT
+  - RATIFIED: the build is complete and every fork D1-D7 + R1-R7 + A1 is resolved and built.
+    The four migrations (M1, D2/pr1b, R2 gender store, R7/M2 enforce) carry real proof ,
+    impersonated-JWT replay for the RLS narrowing, rollback-txn replays for the RPC changes.
+    Money/#63 stayed closed; no P0/P1 defects in shipped code. This is a clean build close.
+  - NOT YET CLOSED: per our standing rule, "closed" is evidence-gated, never a summary line.
+    The funnel + money path have NEVER run with real data (registrations = 0; every proof so
+    far is a rollback-txn fixture, which is the correct pre-flight but not a real registration).
+    The operator device-smoke is the FIRST real execution , it is the gate, not a formality.
+  => BUILD-COMPLETE + FORK-RESOLVED, ratified. PHASE-CLOSED on a green smoke below.
+
+------------------------------------------------------------------------------
+DEVICE-SMOKE CHECKLIST (the close gate; run on a real phone; match the renders)
+------------------------------------------------------------------------------
+  S0  Admin: Programs -> Fall 2026 Tryouts -> set "Tryout fee" 45.00 -> Save.
+      EXPECT: /r/fall-2026-tryouts now shows the flat-fee hero, no division grid (matches
+      g1-nonseason-register-mobile). Before S0 the link correctly reads not-open.
+  S1  Register ONE child. EXPECT: one reg (pending), confirmation shows the authoritative total
+      = the fee; My Family shows the child + "$45 due"; the admin detail shows the registration.
+  S2  Register TWO children in ONE submit (the add-another loop, matches
+      g2-multichild-accumulation-mobile). EXPECT: ONE confirmation, ONE family total, the
+      family discount line ONLY if LH had a cap policy (it is null, so no discount line , correct,
+      see follow-up 2); two registration_fees rows; family_balances delta = the authoritative
+      total (B0 reconciliation, the prb0 render).
+  S3  Admin: "Mark confirmed" on a pending registrant (matches g4-mark-confirmed-mobile).
+      EXPECT: lifecycle badge -> Confirmed; the payment line UNCHANGED (confirmed != paid).
+  S4  a11y spot-check on the funnel: focus lands on the step heading on Next; inputs do not
+      zoom on focus (16px); an error surfaces with role=alert. (R4.)
+  PASS = all five behave as the renders show. On PASS, the phase is CLOSED. On any miss, CC
+  fixes against the render + this checklist before close.
+
+------------------------------------------------------------------------------
+FOLLOW-UPS CARRIED WITH CAUSE (neither blocks the close)
+------------------------------------------------------------------------------
+  FU-1  GENDER built-but-unexercised. The live program is coed, so R2/R7 never fire in the
+        smoke and the G4 fixture did not assert gender_mismatch. Gender enforcement is shipped
+        but UNPROVEN in production. BEFORE the first gendered season opens registration: add a
+        gender_mismatch assertion to the money/grade fixture AND run a real gendered-division
+        smoke (Boys/Girls control + the client mismatch block + the server RAISE). "Activates
+        automatically" must not mean "first verified in front of a real parent."
+  FU-2  family_cap_policy not in get_public_program -> the funnel preview shows no discount line
+        for a cap-org until the authoritative confirmation. LH policy is null, so a true no-op
+        for the pilot, and the confirmation total is authoritative (NOT a #63 truth issue).
+        BEFORE a family-cap org onboards: add family_cap_policy to get_public_program so the
+        preview matches the confirmation. Endorsed deferral; named trigger.
+
+  DEFERRALS ENDORSED: A2 add-on fee editor + A3 full division edit/delete (no pilot consumer,
+  §16.16). The narrow A3 slice D1 needs (the non-season flat fee being editable) IS built.
+
+------------------------------------------------------------------------------
+10/10 READ (the experience at build-close)
+------------------------------------------------------------------------------
+  PARENT: funnel feature-complete + accessible; My Family + balance; the live tryout
+    registrable on S0. Strong, pending the smoke.
+  ADMIN: create / detail / rollover / mark-confirmed; the flat-fee field. Strong; A2/A3 deferred
+    with cause.
+  COACH: no page by ruling (D-Q4); read-only program label + the existing team surfaces. No
+    gaps surfaced.
+
+ARCHITECT CLOSE STATEMENT
+  I ratify the build and the fork resolutions. I do not declare the phase closed until the
+  S0-S4 device-smoke passes on a real phone , the first real-data run of the funnel and the
+  money path. On a green smoke, the programs phase is CLOSED with FU-1/FU-2 carried forward.
+==============================================================================
+END CLOSE RATIFICATION.
+==============================================================================
