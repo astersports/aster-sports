@@ -10,7 +10,10 @@
 > unchanged (a customer org; AsterSports is the platform above it). **Repo/deploy id renamed
 > 2026-06-08:** the GitHub repo + Vercel deploy id `skyfire-app` → `aster-sports` (rename-in-place
 > under the LegacyHoopers account; GitHub auto-redirects the old name), and the legacy
-> `skyfire-app.vercel.app` alias was removed — production is `astersports.app`. **Surviving legacy
+> `skyfire-app.vercel.app` alias was removed — production is `astersports.app`. **Repo org moved
+> 2026-06-11:** the repo transferred to the `astersports` GitHub org — live remote is
+> `github.com/astersports/aster-sports` (GitHub redirects the old org path) and the Vercel project
+> lives under the `astersports` team (`vercel.com/astersports/aster-sports`). **Surviving legacy
 > identifiers (deliberately NOT renamed):** the immutable `002_skyfire_foundation`
 > migration filename + the `ember_live` CHECK-constraint data value in migrations; the `@ember`
 > ICS `UID` suffix (`icalHelpers.js` + `team-feed`) → a calendar-dedup stable key, changing it
@@ -20,7 +23,7 @@
 > Single source of truth for all Claude Code sessions.
 > Place at project root: `~/aster-sports/CLAUDE.md`
 > Branch: `main` (v2 retired May 11, 2026 — see `docs/archive/PRE_3_AUDIT_2026-05-11.md`)
-> Last updated: June 1, 2026
+> Last updated: June 11, 2026
 
 ---
 
@@ -79,7 +82,7 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
 
 **Live environment:**
 - App: https://astersports.app
-- Repo: github.com/LegacyHoopers/aster-sports (private)
+- Repo: github.com/astersports/aster-sports (private; org move 2026-06-11 — was LegacyHoopers)
 - Supabase project: `vrwwpsbfbnveawqwbdmj`
 - Admin: admin@legacyhoopers.org (user_id: `1e06a3d4-769b-42c0-b90b-92787410ee5a`, org_id: `e3e95e21-3571-4e9a-985a-d5d01480d4a6`)
 - Local path: `~/aster-sports` | branch: `main`

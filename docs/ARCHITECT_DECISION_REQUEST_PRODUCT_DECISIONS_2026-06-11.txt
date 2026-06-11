@@ -1,0 +1,202 @@
+==============================================================================
+ARCHITECT DECISION REQUEST — PRODUCT DECISIONS D-a..D-f
+Date 2026-06-11. CC -> architect + Frank, per CLAUDE.md §11.8 rule 6.
+Source: docs/SESSION_AUDIT_2026-06-11.txt "PRODUCT DECISIONS FOR FRANK" (the six
+items the 10-lane audit surfaced as product calls, not bugs — #981 already shipped
+the audit's P0/P1/P2 fixes; these are what remains). Routed per the NEW_CHAT
+handoff NEXT MOVE. All evidence re-verified live this session: file:line on main
+@ e2b81ae4 (astersports/aster-sports); SQL via execute_sql on vrwwpsbfbnveawqwbdmj;
+advisors via get_advisors 2026-06-11 (0 ERROR / 50 WARN / 5 INFO security).
+Per AP#39 each item carries a committed CC LEAN. Frank/architect rule; CC then
+ships ruled items as small PRs grouped by surface.
+==============================================================================
+
+------------------------------------------------------------------------------
+D-a — RECORD-MONEY ENTRY POINT FOR PAID-IN-FULL FAMILIES
+------------------------------------------------------------------------------
+REQUEST: Should the admin be able to open the record-money form (payment /
+refund / adjustment) for a family whose balance is $0 / paid-in-full?
+
+EVIDENCE:
+- src/components/admin/FamilyBalanceList.jsx:76 — the row's onClick gates on
+  owing state: `onClick={() => f.balance > 0 && onRecordPayment(f)}`; :81 cursor
+  is pointer only when owing; :100 the "Tap to record" hint renders only when
+  owing. Paid rows are inert.
+- src/pages/FinancialDashboardPage.jsx:105 — the ONLY mount of RecordPaymentForm
+  in the app (grep: 2 files total, the form + this mount). No other entry point.
+- The form itself (src/components/admin/RecordPaymentForm.jsx, F-4 / PR #978)
+  already supports payment / refund / adjustment(credit|charge) with
+  mode-specific guards — the capability exists; only the entry point gates it.
+
+OPTIONS + REQUIREMENTS:
+1. Open for ALL families — drop the balance>0 gate; row affordance becomes
+   "Tap to record" for everyone; a $0-balance row opens the form with refund/
+   adjustment as the sensible default. REQUIREMENTS: one-line gate change +
+   affordance copy + default-mode tweak + test update. Tiny PR.
+2. Keep the gate; add a secondary entry point (per-family overflow action or a
+   future FamilyDetail surface). REQUIREMENTS: a new UI surface/mount — larger
+   lift; no existing page naturally hosts it today.
+3. Keep as-is. REQUIREMENTS: none; refunds/adjustments for paid families stay
+   unrecordable in-app (operator falls back to SQL when one happens).
+
+CC LEAN: Option 1. Refunds happen precisely to paid-in-full families — the
+current gate blocks the form exactly when the refund workflow needs it. The
+form's mode guards already prevent nonsense entries; no new surface needed.
+
+------------------------------------------------------------------------------
+D-b — "ADD ANOTHER CHILD" DROPS TO MANUAL ENTRY, NOT THE SELECT SCREEN
+------------------------------------------------------------------------------
+REQUEST: After an authed parent registers child #1 via the select screen, "Add
+another child" (children-roster hub) appends a blank MANUAL child (re-type).
+Wire it back to the select screen now, or carry as a trigger?
+
+EVIDENCE:
+- src/components/register/StepChildrenRoster.jsx:28 — "+ Add another child"
+  calls onAdd, which appends an empty child to the client children[] array
+  (manual entry; per the file's header comment, lines 5-7).
+- The select step exists only at funnel entry: src/pages/RegisterFlowPage.jsx:72-83
+  (B3 funnel; SELECT_CHILDREN dispatch at :83).
+- Safety today: the (program, player_id) dedupe guard in submit_registration
+  rejects a re-typed duplicate ("already registered") — the double-reg hole
+  stays closed either way. The cost is parent re-typing + a late-surfacing
+  rejection if they re-add an already-registered kid.
+
+OPTIONS + REQUIREMENTS:
+1. Wire "Add another child" to re-enter StepSelectChildren when authed and
+   unregistered eligible kids remain (already-picked kids excluded).
+   REQUIREMENTS: a reducer edge + RegisterFlowPage routing + tests. Small-medium;
+   touches the registration state machine.
+2. Keep manual; register as a TRIGGER for the next funnel-surface PR (the
+   audit's own framing: "worth wiring back later (trigger)").
+
+CC LEAN: Option 2 — trigger now, build on next funnel touch. The safety
+property is intact; the UX cost is small today (one open single-division
+program; multi-child families mostly register in one pass via multi-select).
+
+------------------------------------------------------------------------------
+D-c — SELECT-SCREEN DEAD-END COPY (ALL KIDS BLOCKED)
+------------------------------------------------------------------------------
+REQUEST: When ALL of an authed parent's kids are already-registered or
+ineligible, the select screen's Continue just sits disabled with no explanation.
+Add a line?
+
+EVIDENCE:
+- src/components/register/StepSelectChildren.jsx:47 — `disabled={!picks.length}`;
+  :48 the explanation exists ONLY as an aria-label ("Select at least one child
+  to continue") — screen-reader-only.
+- Per-card reasons DO render (:23-24, :37 — "Already registered" / the
+  ineligibility reason), but nothing explains the dead-end as a state; the only
+  live action is "Add a child who isn't listed" (:42-44).
+
+OPTIONS + REQUIREMENTS:
+1. Add a conditional kindness line (§16.3 voice) when kids.length > 0 and every
+   kid is blocked — e.g. "Everyone's covered — your kids are all registered or
+   outside this program's range. You can add a different child below."
+   REQUIREMENTS: one conditional render + copy + a test. Tiny PR.
+2. Leave as-is (per-card reasons deemed sufficient).
+
+CC LEAN: Option 1 — the all-blocked state currently reads as a broken button;
+one line of microcopy converts it into a confirmation. §16.3 kindness mandate
+applies directly.
+
+------------------------------------------------------------------------------
+D-d — MULTI-DIVISION AUTHED SELECT PATH
+------------------------------------------------------------------------------
+REQUEST: The select-your-children path engages only for single-division
+programs; multi-division authed parents fall through to manual entry. Extend
+now, or carry as a trigger?
+
+EVIDENCE:
+- src/pages/RegisterFlowPage.jsx:38 — `const onlyOneDivision =
+  divisions.length === 1;` gates the B3 select path (:72 comment:
+  "select-your-children (authed parent, single-division)").
+- The manual loop already handles per-sibling divisions:
+  src/components/register/StepDivision.jsx:4-7 (division picker for the 2nd+
+  child; the first child's division comes from the entry URL).
+- Live state: ONE open funnel program today (AUD-10's "one open today" note).
+
+OPTIONS + REQUIREMENTS:
+1. Extend select with per-pick division assignment (reuse StepDivision per
+   picked child after selection). REQUIREMENTS: reducer support for per-pick
+   division + an extra authed-seq step + per-child-per-division eligibility.
+   Medium.
+2. Carry as a TRIGGER: build when a multi-division funnel program actually
+   opens (same trigger pattern as FU-2 family_cap_policy).
+
+CC LEAN: Option 2 — no multi-division funnel exists today and the manual path
+covers the case correctly meanwhile. The trigger fires on the first
+multi-division funnel season/org.
+
+------------------------------------------------------------------------------
+D-e — TEAMMATE AGE (DOB-DERIVED) VISIBLE ON PLAYER PROFILE
+------------------------------------------------------------------------------
+REQUEST: Any parent on a team can open a teammate's PlayerProfilePage and see
+that child's age derived from dob. Confirm as intended, or restrict to
+own-child viewers?
+
+EVIDENCE:
+- src/pages/PlayerProfilePage.jsx:24 — selects `dob` for any player the viewer
+  can read; :37 derives age from dob; :59 renders the "{age}y" chip.
+- Reachability: parents read teammate rows BY DESIGN via
+  current_user_teammate_player_ids() (§11.5 ground-truth helpers) — row-level
+  access is intended; the open question is the UI surfacing of dob-derived age
+  (and the dob column read itself) to non-own parents.
+- §16.7 privacy-locks precedent: derived personal data (streaks, attendance
+  trending) is own-child-only for the parent role.
+
+OPTIONS + REQUIREMENTS:
+1. Gate the age chip (and the dob select) to own-child viewers + coach/admin;
+   teammate view shows name/grade/team only. REQUIREMENTS: ownership check via
+   parentContext player ids + conditional select/render + AP#43 cross-role
+   invariant test. Small PR. NOTE: this is presentation-level — the dob COLUMN
+   stays row-readable under RLS; true column hardening (column grants / a
+   restricted view) is a separate, heavier change that can stage later if
+   defense-in-depth is wanted.
+2. Confirm as intended (roster-transparency posture: ages are conventional on
+   youth rosters) + document the intent in §16.7 so the next audit doesn't
+   re-flag it. REQUIREMENTS: doc-only.
+
+CC LEAN: Option 1 (UI gate now; column hardening only if the architect wants
+defense-in-depth). Grade already communicates cohort; another family's exact
+age isn't load-bearing for any parent workflow, and own-child-only is the
+platform's stated posture for derived personal data.
+
+------------------------------------------------------------------------------
+D-f — DOCUMENT THE ANON-CALLABLE submit_registration
+------------------------------------------------------------------------------
+REQUEST: submit_registration is anon-callable BY DESIGN (the public reg
+funnel). The security advisor WARNs on it and always will. Document the intent
+durably, or change the grant?
+
+EVIDENCE:
+- Live grant chain (execute_sql 2026-06-11): EXECUTE for anon, authenticated,
+  postgres, service_role on public.submit_registration(p_payload jsonb).
+- Live advisor (get_advisors security 2026-06-11): WARN
+  anon_security_definer_function_executable on the function (plus the
+  authenticated-role twin). Expected. Overall security advisors: 0 ERROR.
+- The public funnel submits through this RPC; REVOKE FROM anon breaks public
+  registration outright.
+
+OPTIONS + REQUIREMENTS:
+1. Durable in-schema documentation: a one-line migration adding
+   COMMENT ON FUNCTION public.submit_registration(jsonb) stating
+   PUBLIC-FUNNEL-BY-DESIGN + why the WARN is expected (the same
+   reconcile-in-schema pattern as §16.16's deprecation comments), + AP#21
+   mirror. REQUIREMENTS: tiny migration; zero behavior change.
+2. REVOKE EXECUTE FROM anon (per AP#23/#57 double-revoke discipline).
+   REQUIREMENTS: only valid if the funnel moves behind auth — a product
+   regression today.
+3. Leave undocumented. REQUIREMENTS: none; the WARN stays tribal knowledge and
+   every future audit re-flags it.
+
+CC LEAN: Option 1 — one COMMENT ON FUNCTION migration makes the advisor WARN
+self-explaining at the schema layer with zero behavior change.
+
+==============================================================================
+ANSWER FORMAT (per §11.8 r3, doc-to-doc): a per-item ruling — option number +
+any amendment — in the architect's reply doc is sufficient. CC will ship the
+ruled items as small PRs grouped by surface (financials: D-a; funnel: D-b/c/d;
+privacy: D-e; schema-doc: D-f).
+==============================================================================
+END.
+==============================================================================
