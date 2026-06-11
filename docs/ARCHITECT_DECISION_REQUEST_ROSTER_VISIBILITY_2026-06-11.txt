@@ -1,0 +1,129 @@
+==============================================================================
+CC -> ARCHITECT : DECISION REQUEST , ROSTER VISIBILITY (mask roster per program/team)
+Date 2026-06-11. Per §11.8 rule 6. Operator-directed: "Parents should only see their
+kids and only other kids on their team rosters. Plus on the program and team setup we
+should have a setting to mask or not show all roster players to other players. Tryouts
+no, camp maybe, team yes." Each item: REQUEST · EVIDENCE · OPTIONS+REQUIREMENTS · CC LEAN
+(AP#39). Plain text + full chat paste + delivered as a file.
+==============================================================================
+
+CONTEXT / DIAGNOSIS (live, this session)
+  - The "My Family sees all kids" P0 is FIXED + shipped (#970): My Family + the Home
+    registration lane now scope to OWN children via player_guardians.
+  - The REMAINING exposure is teammate-roster visibility, and it is NOT an RLS bug:
+    current_user_teammate_player_ids() correctly returns rosters of the teams the
+    caller's kids are on. Frank's case: Charlie is on BOTH "11U Girls" (Spring 2026,
+    program_type=season, 13 players) AND "Active Roster Lab" (program_type=CAMP, 32
+    players); Milo is on "8U Boys" (season, 14). The 48 teammate names came from the
+    32-kid CAMP roster. Season teams (13/14) are correct to show; the CAMP roster is
+    the one Frank does not want exposed to other families. This is exactly the
+    tryout/camp case.
+  - SCHEMA TODAY: program_type is an enum (season | tryout | camp; counts: season 3,
+    tryout 1, camp 2). There is NO roster-visibility column on programs OR teams. Net-new.
+  - The teammate chokepoint: current_user_teammate_player_ids() (SECURITY DEFINER)
+    = roster_members WHERE team_id = ANY(current_user_child_team_ids()). It feeds the
+    players RLS (players_select_parent_team) and every parent roster read.
+
+------------------------------------------------------------------------------
+RV-1 — MECHANISM: RLS-enforced or app-layer?
+------------------------------------------------------------------------------
+  REQUEST: is roster masking enforced in RLS or only hidden in the UI?
+  OPTIONS:
+    (A) RLS-enforced: exclude hidden teams' rosters inside
+        current_user_teammate_player_ids() (and thus from the players RLS the parent
+        sees). REQUIRES: the fn joins team -> program, drops teams whose effective
+        roster_visibility is false. The data never reaches the client.
+    (B) App-layer only: fetch all teammates, hide in the component. REQUIRES: nothing
+        in RLS; trivially bypassable via the API. Leaks the names to anyone reading
+        the network response.
+  CC LEAN: (A) RLS-enforced. This is privacy; app-layer hiding ships a leak as a
+    fix (the §16.7.1 two-surface lesson). The own kid stays visible via
+    players_select_parent regardless, so a parent on a hidden camp still sees their
+    own child, just not the other 31.
+
+------------------------------------------------------------------------------
+RV-2 — PLACEMENT / GRANULARITY: program, team, or both?
+------------------------------------------------------------------------------
+  REQUEST: where does the setting live? (Frank said "program AND team setup.")
+  OPTIONS:
+    (A) Program-level only: programs.roster_visibility boolean; all teams inherit.
+        Simplest; no per-team control.
+    (B) Program default + team override: programs.roster_visibility (default by type)
+        + teams.roster_visibility_override (nullable; NULL = inherit program).
+        Effective = COALESCE(team.override, program.roster_visibility). REQUIRES: two
+        columns + the COALESCE in the fn + two UI toggles.
+    (C) Team-level only: teams.roster_visibility boolean. No program default; admin
+        sets each team. Misses the "set it once for the whole tryout" ergonomic.
+  CC LEAN: (B). Matches Frank's "program and team" ask: the program sets the sensible
+    default for all its teams (one switch for a whole tryout), the team override
+    handles the exception (e.g. one camp team you DO want visible). NULL-inherit keeps
+    the common case zero-touch.
+
+------------------------------------------------------------------------------
+RV-3 — DEFAULTS per program_type
+------------------------------------------------------------------------------
+  REQUEST: the default roster_visibility per program_type. (Frank: tryout no, camp
+    maybe, team yes.)
+  OPTIONS / LEAN (one table):
+    season  -> VISIBLE (true)   "team yes"
+    tryout  -> HIDDEN  (false)  "tryouts no"
+    camp    -> HIDDEN  (false)  "camp maybe" -> default private, admin can flip on
+  CC LEAN: default the column from program_type at create time (season=true,
+    tryout=false, camp=false). Privacy-first: camp defaults hidden, the admin opts IN
+    to visible. (Flagging the one genuine choice for Frank: camp default hidden vs
+    visible — lean hidden.) BACKFILL existing rows by the same rule (so Active Roster
+    Lab becomes hidden immediately, Spring 2026 stays visible).
+
+------------------------------------------------------------------------------
+RV-4 — ENFORCEMENT SCOPE (which surfaces the fn change covers)
+------------------------------------------------------------------------------
+  REQUEST: confirm the teammate-fn change is the single chokepoint.
+  EVIDENCE: parent-visible teammate reads route through players RLS
+    (players_select_parent_team -> current_user_teammate_player_ids()): the Teams
+    roster, My Family teammate context, attendance grid, ride board. Changing the fn
+    narrows all of them at once. Staff (admin/coach) read via players_select_staff —
+    UNAFFECTED (they still see everyone). Own child always visible via
+    players_select_parent.
+  CC LEAN: fn-level change is the chokepoint; I will audit the 4 read surfaces above
+    in the build PR and add an AP#43 invariant test (a hidden-program teammate must
+    NOT appear in a parent's player set; a visible-team teammate MUST).
+
+------------------------------------------------------------------------------
+RV-5 — ADMIN UI (your render)
+------------------------------------------------------------------------------
+  REQUEST: the toggle placement + copy in program setup and team setup.
+  EVIDENCE: program create/edit + team create/edit forms exist (ProgramForm / team
+    setup). A single toggle each: "Show roster to families" (program) + a
+    "Use program default / Show / Hide" control on the team (the override).
+  CC LEAN: defer to your render. Suggested: program form = one switch with a helper
+    line naming the default for the chosen type ("Tryouts hide the roster by
+    default"); team form = a 3-state (Inherit / Show / Hide). I build to your render.
+
+------------------------------------------------------------------------------
+RV-6 — WITHIN-TEAM SEMANTICS (v1 scope)
+------------------------------------------------------------------------------
+  REQUEST: for a VISIBLE team, is it all-or-nothing, or a per-player opt-out?
+  CC LEAN: all-or-nothing at the team level for v1 (no per-player privacy toggle).
+    Per-player opt-out is a future refinement (carry a trigger), not this build —
+    Frank's ask is program/team-level.
+
+------------------------------------------------------------------------------
+SEQUENCE + A VELOCITY FORK FOR FRANK
+------------------------------------------------------------------------------
+  FULL BUILD (on your rulings + render): schema migration (programs.roster_visibility
+    + teams.roster_visibility_override, defaults-by-type + backfill) -> RLS fn update
+    -> admin UI toggles to your render -> AP#43 invariant test + the 4-surface audit.
+  FAST-TRACK MITIGATION (optional, Frank's call): ship the schema + RLS-fn +
+    type-defaults backfill NOW as a privacy mitigation (Active Roster Lab + the tryout
+    go hidden immediately; season stays visible), with the team-override + admin UI
+    toggle following your render. This closes the live camp exposure without waiting
+    on the UI. No UI in the fast-track = admins can't yet flip a default, but the
+    privacy-correct defaults are live.
+
+WHAT WE NEED:
+  - ARCHITECT: rule RV-1..RV-4 + RV-6; produce the RV-5 render.
+  - FRANK: (a) fast-track the RLS mitigation now, or wait for the full build?
+           (b) camp default hidden (lean) or visible?
+==============================================================================
+END DECISION REQUEST.
+==============================================================================
