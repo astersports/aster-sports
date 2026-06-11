@@ -1,0 +1,11 @@
+-- Pilot cutover (Frank GO 2026-06-11): drop the mandatory-pilot guard so the
+-- operator can clear pilot_test_recipient_email (REDIRECT -> FILTER mode) and,
+-- later, disable pilot_mode_enabled (go-live). The guard did its job through the
+-- comms pilot: every send redirected to the test inbox; cutover required this
+-- explicit two-key ceremony (drop trigger, then clear the email).
+--
+-- The guard FUNCTION public.guard_pilot_cutover() is KEPT so the lock can be
+-- re-armed in one line if a future phase wants pilot mandatory again:
+--   CREATE TRIGGER trg_guard_pilot_cutover BEFORE UPDATE ON public.organization_settings
+--     FOR EACH ROW EXECUTE FUNCTION public.guard_pilot_cutover();
+DROP TRIGGER IF EXISTS trg_guard_pilot_cutover ON public.organization_settings;

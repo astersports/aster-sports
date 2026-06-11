@@ -1,0 +1,243 @@
+==============================================================================
+START-HERE HANDOFF  ->  NEW CLAUDE CODE CHAT (astersports/aster-sports)
+Date 2026-06-11. Hand this to a fresh CC session to continue the AsterSports redesign
++ audit with full CC<->architect (Claude.ai) collaboration. READ CLAUDE.md FIRST — it
+overrides everything. This doc = operating manual + current state + open work, built
+from a 5-agent inventory. Plain text + full chat paste + delivered as a file (§11.8).
+==============================================================================
+
+0. ORIENT (do this first)
+   - The repo MOVED: github.com/astersports/aster-sports (was LegacyHoopers/aster-sports).
+     Vercel: vercel.com/astersports/aster-sports. Operator email: frank@astersports.co.
+     Supabase project ref vrwwpsbfbnveawqwbdmj UNCHANGED (connected by ref, healthy).
+     Admin org_id e3e95e21-3571-4e9a-985a-d5d01480d4a6.
+   - NEW-REPO ONBOARDING CHECKLIST (first actions):
+       1. Confirm the Claude Code GitHub App is installed on the astersports org +
+          this session is scoped to astersports/aster-sports.
+       2. Land the 2 PARKED files (see §6) — the pilot-cutover migration mirror +
+          the prior pm handoff — as the first commit(s). Prod DB already has migration
+          20260611184918 applied, so the repo is one mirror BEHIND prod until this
+          lands. Do NOT `supabase db reset` before it lands.
+       3. Small doc PR: update CLAUDE.md LIVE-state refs (repo + Vercel) to the new
+          org. (Rename doctrine: live-state refs DO get updated; archive/brand-named
+          planning-doc names stay frozen.)
+       4. Verify Vercel Git connection points to the new repo + astersports.app attached.
+       5. Run the §9.1 pre-flight (branch-divergence + mirror reconciliation).
+
+==============================================================================
+1. HOW WE WORK — CC <-> ARCHITECT PROTOCOL + DISCIPLINES
+==============================================================================
+LANES:
+  CC (Claude Code): implements + verifies against ground truth (file:line, execute_sql,
+    deployed state); produces committed artifacts WITH evidence + a labeled LEAN (AP#39).
+    CC does NOT settle an architectural fork unilaterally.
+  ARCHITECT (separate Claude.ai chat): design lane — frames forks, produces mobile-first
+    HTML RENDERS, ratifies. Does NOT touch DB/repo (Supabase tools may be in its context;
+    it leaves them unused — that lane discipline is what keeps the build clean).
+  FRANK (operator): ratifies + relays between lanes; real-time signals drive continuation.
+
+§11.8 ARCHITECT COLLABORATION (all 6):
+  1. Every cross-lane artifact = a committed plain-text .txt in docs/ PLUS a full chat
+     paste PLUS delivered as a file. No backtick-wrap of the whole doc; never a
+     summary-instead-of-paste; never deferred. The doc IS the deliverable.
+  2. Division of labor: CC verifies + surfaces evidence + a labeled lean; architect
+     frames/rules; Frank ratifies. CC never settles a fork alone.
+  3. Round-trip is doc-to-doc: architect questions arrive as a doc; CC answers with an
+     evidence-grounded .txt (Frank's questions carried verbatim inside CC's doc).
+  4. Forks ratified before a phase CLOSES: CC writes the close-out review (audit +
+     open forks + triage); architect ratification IS the close.
+  5. Every session ends with a committed CC_SESSION_HANDOFF_<date>.txt (this kind of doc).
+  6. Architect DECISIONS go in a committed ARCHITECT_DECISION_REQUEST_<date>.txt:
+     per item REQUEST / EVIDENCE (file:line or query) / OPTIONS+REQUIREMENTS / CC LEAN.
+     Batch multiple. NOT for pure verification asks or status recaps.
+
+§11.7 SOURCE HIERARCHY (verify before claiming — AP#60):
+  1 live system state (execute_sql / pull_request_read / Read / deployed) > 2 user's
+  empirical report (authoritative when it contradicts a claim — reframe, don't defend) >
+  3 installed source / type defs / migration files > 4 vendor docs > 5 inference (only
+  when nothing else is reachable AND explicitly labeled).
+
+DELIVERY (§12 / §15 / AP#54 / AP#21):
+  - Branch off main; PR; in the SAME MCP burst as create_pull_request: flip ready +
+    enable_pr_auto_merge SQUASH (single-commit) / MERGE (multi-commit). Verify merge via
+    pull_request_read (AP#22). NEVER commit to main.
+  - If enable_pr_auto_merge reports mergeable_state:unstable but all check_runs are
+    success -> merge_pull_request directly (squash).
+  - apply_migration via MCP -> write the AP#21 mirror .sql (canonical version-string
+    filename) the SAME turn.
+  - Every PR: lint + build + full vitest green before "build clean".
+
+KEY ANTI-PATTERNS to keep applying every session:
+  #5 (SELECT auth.uid()) wrapper in RLS · #15 FullScreenForm for 3+ fields · #21 migration
+  mirror same-turn · #33 shared secrets in app_secrets (NOT Deno.env; webhook signing
+  secret is the exception) · #36 destructure data AND error · #37 .eq('org_id') first on
+  org-scoped tables · #39 commit to the lean · #43 cross-surface invariant test · #54
+  same-burst ready+auto-merge · #60 verify don't infer.
+
+§0 ANTI-DRIFT (non-negotiable): never change/invent/rename a --as-* token (accessibility-
+  gap additions allowed only with a CSS comment naming the gap); no hardcoded hex in
+  components except team_color from DB; no %/dvh overlay heights on iOS (use
+  visualViewport / fixed inset:0); BottomSheet only for 1-2 controls; if a design
+  decision isn't in CLAUDE.md, ASK; touch only what the prompt asks; prompts carry exact
+  code blocks. Run the §0 verification grep gates before "build clean".
+
+==============================================================================
+2. DESIGN SYSTEM + RENDER COLLABORATION
+==============================================================================
+BRAND: AsterSports. Tokens --as-*; classes as-*; consts ASTER_BRAND/ASTER_DISPLAY_NAME
+  in src/lib/asterDefaults.js; domain astersports.app. Tenant "Legacy Hoopers" is a
+  customer org, not the platform. Surviving legacy ids deliberately NOT renamed:
+  002_skyfire_foundation migration filename, ember_live CHECK value, @ember ICS UID
+  suffix (calendar dedup key), historical EMBER_*/SKYFIRE_* docs. No user-facing string
+  says Skyfire/Ember/Vela.
+
+TOKENS (§3 LOCKED): cool-gray surfaces (NOT warm/beige). gold = achievement ONLY (never
+  act-now amber, never system cobalt). --as-accent/--as-header = brand, overridden per
+  org at runtime via AuthContext (LH overrides = cobalt #4a8fd4 family). team_color is
+  the ONLY inline hex allowed (from teams.team_color). Future locked addition:
+  --as-text-meta #6B7280 (closes the --as-text-tertiary AA gap).
+
+COMPONENTS (§7 LOCKED): 44px taps; inputs 44px / bg-tertiary / 1.5px border / 10px
+  radius; cards bg-card / border-default / 10px / shadow-sm; modals rgba(0,0,0,0.3)
+  (never bg-black/50); Lucide only, stroke 1.75, 16/20/24; three shadows sm/md/lg;
+  radius 6/10/16/9999; Inter 400-700, scale 24/20/17/15/13/11, event time 17px bold;
+  4px spacing grid. Forms 3+ fields -> FullScreenForm; 1-2 / RSVP -> BottomSheet (AP#15).
+
+ELITE PRINCIPLES (§16.1-16.13, applied continuously): optimistic per-row / pessimistic
+  bulk+cascading; density 2-state home-level (user_preferences.card_density); kindness
+  microcopy; a11y table-stakes (ships continuously); two notification streams (A reminders
+  3d/1d/4h; B RSVP nudges auto-DRAFT only, <N going default 5, 48h window); EN<->ES
+  translation; privacy locks; override audit; perf budget (<=350KB, FCP<=1.5s); CRITICAL
+  §16.12 per-player GAME stats BLOCKED in 2026 (engagement stats OK). §16.13 10-point
+  merge gate.
+
+RENDER LOOP: the ARCHITECT's mobile-first HTML renders ARE the build target. CC builds
+  to them exactly, flags divergences, never silently reinterprets. This is the working
+  mode every phase. THIS SESSION's renders, all BUILT: g1 non-season register · g2
+  multi-child accumulation · g4 mark-confirmed · roster admin controls R1/R2 · parent
+  hidden-roster R3 · funnel child-select (RG-1..5) · F-4 record-money · F-5 dashboard ·
+  unified-model. (FU-3: H-2 parent registration lane was built SOLO — architect visual
+  ratify wanted when convenient; non-blocking.)
+
+==============================================================================
+3. L99 REDESIGN METHODOLOGY + SURFACE MAP
+==============================================================================
+L99 TEMPLATE (§16.15 — all 5 ship in the audit doc BEFORE any PR-A code):
+  (a) initial audit pass — file-by-file read of the full mount tree, findings P0-P3 w/
+      file:line; (b) deep-read addendum — 2nd pass (~40% miss rate without it);
+  (c) anti-pattern cross-reference (§11); (d) per-role wireframes (parent/coach/admin/
+      view-as) for any multi-role surface; (e) explicit out-of-scope list.
+DETAIL-PAGE SHAPE (§16.14): one hero card (title + metadata + state summary + per-role
+  action stack) + CollapsibleSection for the rest (closed by default, header carries
+  summary text). No floating destructive buttons; no auto-expand on time alone.
+
+SURFACE STATUS:
+  DONE (full L99): Event Detail (#392-394) · Team Detail/Roster (Teams A/B/C) · Home all
+    3 roles (shell-contract-v2).
+  DONE THIS SESSION: Financials F-1..F-5 · roster visibility · funnel child-select ·
+    My Family (PR-B1).
+  CANDIDATES / not-yet:
+    - Schedule (src/pages/SchedulePage.jsx ~112) — NO hero; dead density key
+      'schedule-list' (§16.2 is single home-level key); per-role behavior (parent
+      child-filter / admin wizard FAB / coach team filter). HIGHEST-frequency surface
+      after Home -> the natural NEXT L99 target.
+    - Records (RecordsPage ~131) — partial (StatHeroBar + accordion); a non-standard
+      token name to check.
+    - Player Profile (PlayerProfilePage ~92) — no hero; NOTE §16.12 forbids per-player
+      game stats (engagement-only).
+    - Messages / Account / Admin Settings / AdminTeamsPage — lower priority / by-design
+      thin.
+
+==============================================================================
+4. CURRENT BUILD STATE + LIVE FACTS
+==============================================================================
+MERGED THIS SESSION (#967-#983, on the OLD repo's main; carries to the new repo):
+  MONEY SEAM: #967 F-1 (hook->view) · #969 F-2 (list->view) · #973 STEP-2 unify ·
+    #978 F-4 record-money · #979 F-5 dashboard. (Plus #958 the family_balances funnel fix.)
+  PRIVACY+ROSTER: #970 P0 own-children · #972 roster-visibility RLS · #977 full build.
+  FUNNEL: #976 authed select existing children.
+  AUDIT+FIX: #980 10-lane audit · #981 audit fixes (P0+P1+P2) · #982 import 'fee' txn.
+  DOCS: #968/#971/#974/#975 decision/spec requests · #983 close-out.
+
+MIGRATIONS THIS SESSION (supabase/migrations/, all applied + mirrored EXCEPT the last):
+  20260611023342 family_balances funnel fix · 20260611104945 roster_visibility +
+  teammate-fn default · 20260611105511 unify_billing_model_ledger · 20260611112250
+  submit_registration player_id select path · 20260611113738 teams roster_visibility_
+  override · 20260611184918 pilot_cutover_drop_guard_trigger (APPLIED + REGISTERED in
+  prod, mirror UNPUSHED — see §6).
+
+LIVE FACTS (execute_sql, read-only, this session):
+  - Unified ledger HOLDS: family_balances SUM billed 16,691,047 / net_paid 16,563,547 /
+    balance 127,500 ($166,910.47 / $165,635.47 / $1,275.00). Balance-preserving unify ok.
+  - Comms email FIXED: app_secrets.resend_api_key repopulated with the new key (re_b…,
+    operator-supplied). Root cause was an AP#33 sync gap (rebuild rotated the env but not
+    the app_secrets row the code reads first). RUNBOOK: rotating Resend = update
+    app_secrets.resend_api_key FIRST, env second.
+  - Comms PILOT = FILTER mode (intentional end-state): pilot_mode_enabled=true,
+    pilot_test_recipient_email=NULL, is_pilot_family count=1 (Frank, fsamaritano@gmail.com).
+    -> sends go to that ONE pilot family only. The mandatory-pilot guard trigger was
+    dropped on Frank GO (migration 20260611184918); the guard FUNCTION is kept so the
+    lock re-arms in one line. GO-LIVE to all families = set pilot_mode_enabled=false
+    (one UPDATE now). Hardcoded ADMIN_BCC audit copy still goes to olivejuiceinc1@gmail.com
+    (constant in 3 lib files; move to admin@ is a small PR if wanted).
+
+==============================================================================
+5. OPEN WORK / BACKLOG
+==============================================================================
+(a) AWAITING ARCHITECT / FRANK RATIFICATION
+  - Two PHASE CLOSES (money-seam + privacy/roster/funnel): build-complete, audit-clean;
+    gate = Frank's device-smoke of the deploy (email now reaches him). On green ->
+    architect ratifies (§11.8 r4).
+  - FORK E (LEGAL / CAN-SPAM): pilot stays ON until a footer mailing address (or per-kind
+    send gate) lands; then pilot_mode_enabled can flip. No code until LEGAL resolves.
+  - §4.A PR 5 family_guide actor-validation: code-complete (PR #266); gate = Frank drives
+    one family_guide send as fsamaritano (Charlie+Milo) ~10 min -> flips to SHIPPED.
+  - E6 durable pii_audit_log row on pilot cutover (interim Sentry capture fires; a real DB
+    row needs an insert policy / SECDEF RPC). No urgency pre-go-live.
+  - S3 Home-Layout settings: BLOCKED pending ARCHITECT_DECISION_REQUEST_S3 ruling
+    (quick_actions_config stale/unwired; no step-0 consumer). S7 Briefings settings:
+    parked behind FORK C sign-off.
+
+(b) PRODUCT DECISIONS D-a..D-f (from docs/SESSION_AUDIT_2026-06-11.txt — Frank's call):
+  D-a record-money entry point for paid-in-full families (refund/adjustment)?
+  D-b "add another child" from roster hub -> back to the authed select screen? (trigger)
+  D-c select-screen dead-end copy when all kids registered/ineligible?
+  D-d multi-division funnel select — extend, or carry as a trigger?
+  D-e teammate age (dob) visible on PlayerProfilePage — confirm RLS-intended / restrict?
+  D-f document the anon-callable submit_registration (public funnel; WARN expected)?
+
+(c) CARRIED TRIGGERS (parked): FU-1 gender smoke+fixture before first gendered season ·
+  FU-2 family_cap_policy into get_public_program before a cap-org onboards · RV-6
+  per-player roster opt-out (custody/safety) · D-d multi-division funnel select ·
+  ADMIN_BCC constant -> admin@ (optional) · FU-3 H-2 architect visual ratify.
+
+(d) DEFERRED CLEANUPS: AUD-12 FamilyBalanceList `balances` prop redundant (byAccount
+  carries balance) · compose kind-picker simplification (StepKindPicker/BriefingComposer
+  parallels BriefingNewPage — candidate D-9, needs §16.15 audit) · UPCOMING-PREP cards
+  blocked on event_prep_notes schema · games_recap kind unbuilt (Frank's primary briefing
+  ask) · P3 pre-existing notes (useProgramHealthMetrics deep-nested filter may no-op;
+  FinancialDashboardPage init Promise.all swallows errors AP#36; parentContext missing
+  org_id [double-gated]; 154 multiple_permissive_policies WARNs all pre-existing).
+
+(e) PARKED INFRA: migration 20260611184918 + the pm handoff are committed locally on
+  branch claude/pilot-cutover-mirror (2 commits ahead) but UNPUSHED (repo moved). Land
+  them first in the new repo (§0 / §6).
+
+==============================================================================
+6. PARKED ARTIFACTS (land these FIRST in astersports/aster-sports)
+==============================================================================
+  - supabase/migrations/20260611184918_pilot_cutover_drop_guard_trigger.sql (APPLIED in
+    prod; restores AP#21 mirror parity).
+  - docs/CC_SESSION_HANDOFF_2026-06-11_pm.txt (the close-out / infra handoff).
+  - docs/NEW_CHAT_HANDOFF_ASTERSPORTS_2026-06-11.txt (this doc).
+  All committed on branch claude/pilot-cutover-mirror; delivered to Frank as files this
+  session. Cherry-pick / push the branch into the new repo. Prod migration history is
+  AHEAD of repo files by 20260611184918 until landed — reconcile before any db reset.
+
+NEXT MOVE (after onboarding + parked-files land): pick up the two phase closes on Frank's
+smoke, then route D-a..D-f to the architect (one ARCHITECT_DECISION_REQUEST doc), and/or
+open the next L99 redesign (Schedule is the lead candidate). #63 is satisfied at the
+billing layer (one ledger model) — Stripe-ready for Phase 6-7 when it opens.
+==============================================================================
+END START-HERE HANDOFF.
+==============================================================================

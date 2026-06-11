@@ -30,6 +30,29 @@ the next round of silent divergence.
 
 ## 1. SHIPPED RECENTLY (last 7 days)
 
+### Session 2026-06-11 — money-seam unify + roster visibility + funnel select + pilot cutover (PRs #958, #967–#983) — RECONCILED 2026-06-11
+
+Money seam cut over to the unified one-ledger model (`family_balances` as the single
+source; billed = SUM('fee')): #967 F-1 hook→view, #969 F-2 list→view, #973 STEP-2
+unify (balance-preserving: $166,910.47 billed / $165,635.47 net held), #978 F-4
+record-money (payment/refund/adjustment in one form), #979 F-5 dashboard polish,
+#958 family_balances funnel-fee fix, #982 import posts 'fee' txns (AUD-6).
+Privacy/roster: #970 parent sees own children only (P0), #972 roster-visibility RLS +
+teammate-fn default, #977 full build (program/team override + admin UI + parent line).
+Funnel: #976 authed parents select existing children (closes the double-reg hole).
+Audit: #980 10-lane session audit (`docs/SESSION_AUDIT_2026-06-11.txt`), #981 fixes
+(P0 AUD-1 + P1 AUD-2..5 + P2 batch). Docs: #968/#971/#974/#975 decision/spec
+requests, #983 architect close-out. Migrations 20260611023342 / 104945 / 105511 /
+112250 / 113738 + 20260611184918 (pilot-cutover guard-trigger drop — mirror landed
+2026-06-11 in the new repo, restoring AP#21 parity). Comms pilot now FILTER mode
+(one pilot family, Frank); go-live = flip `pilot_mode_enabled` false, gated on FORK E
+(LEGAL). **Repo moved to `github.com/astersports/aster-sports`** (Vercel project
+`vercel.com/astersports/aster-sports`; Supabase ref + domains unchanged). Canonical
+state docs: `docs/NEW_CHAT_HANDOFF_ASTERSPORTS_2026-06-11.txt` +
+`docs/ARCHITECT_CLOSEOUT_2026-06-11.txt`. (§4 detailed arc reconciliation for
+2026-06-05..11 remains open; this entry + the §4.0 top-of-stack block cover the
+top level.)
+
 ### Session 2026-06-01/02 — AsterSports rebrand cutover + §17.5 audit (PRs #619–#640; two-agent)
 
 Skyfire/Ember → **Aster Sports** rebrand shipped end-to-end + go-live cutover, with the §17.5
@@ -454,6 +477,18 @@ The arcs below trail the codebase badly (anti-pattern #45 staleness).
 This index is the **trustworthy top-level "what's next"** — verified by
 grep + MCP query on 2026-05-27. Read this before trusting the detailed
 arc bodies.
+
+**OPEN at 2026-06-11 close (top-of-stack — read first):**
+- Two PHASE CLOSES (money-seam; privacy/roster/funnel): build-complete + audit-clean; gate =
+  Frank's device-smoke of the deploy → architect ratification (§11.8 r4).
+- Product decisions D-a..D-f routed via `docs/ARCHITECT_DECISION_REQUEST_PRODUCT_DECISIONS_2026-06-11.txt`
+  (evidence + CC leans; Frank/architect rule, then CC ships ruled items as small PRs by surface).
+- FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
+  per-kind send gate lands.
+- Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
+  roster opt-out · D-b add-another→select · D-d multi-division funnel select · ADMIN_BCC → admin@
+  (optional) · FU-3 H-2 architect visual ratify.
+- Next L99 lead candidate: Schedule (`src/pages/SchedulePage.jsx`).
 
 **§4 FORK E punch list (architect deploy-review ruling 2026-06-09; one PR each).**
 E1 [GATE] family_guide footer mailing address — RULED by Frank: KEEP IT OUT (option 3).
