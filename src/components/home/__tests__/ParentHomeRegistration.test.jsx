@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 //
-// H-2 — the parent Home registration + balance lane. Conditional: absent when
-// nothing is open AND nothing is owed. One open program → a named Register CTA
-// (/r/:slug); 2+ → a count CTA to My Family; a positive family due → a "$X due"
-// row to My Family. familyDueCents sums only positive, non-managed balances.
+// H-2 / B2 — built to the architect's home-parent-lane render. Two conditional
+// sections: "Open for registration" (one program → name + Open badge + "For
+// <kids> · closes <date>" + a Register CTA to /r/:slug; 2+ → a count + "View all"
+// to My Family) and "Your balance" (a positive family due → "Family balance"
+// + "$X due" → My Family). Absent when nothing open AND nothing owed.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
@@ -21,29 +22,33 @@ describe('familyDueCents (pure)', () => {
   });
 });
 
-describe('ParentHomeRegistration', () => {
+describe('ParentHomeRegistration (B2 render target)', () => {
   it('renders nothing when nothing open and nothing owed', () => {
     const { container } = render(<ParentHomeRegistration family={{ openPrograms: [], familyBalances: [] }} onNavigate={vi.fn()} />);
     expect(container.firstChild).toBeNull();
   });
 
-  it('one open program → named Register CTA deep-linking to /r/:slug', () => {
+  it('one open program → name + Open badge + "For <kids> · closes" + Register CTA to /r/:slug', () => {
     render(<ParentHomeRegistration family={{ openPrograms: [open1], familyBalances: [] }} onNavigate={vi.fn()} />);
-    expect(screen.getByText(/register charlie and milo/i)).toBeTruthy();
-    expect(screen.getByText(/Fall 2026 Tryouts · closes Jun 26/)).toBeTruthy();
-    expect(screen.getByRole('link').getAttribute('href')).toBe('/r/fall-2026-tryouts');
+    expect(screen.getByText('Fall 2026 Tryouts')).toBeTruthy();
+    expect(screen.getByText('Open')).toBeTruthy();
+    expect(screen.getByText(/For Charlie and Milo · closes Jun 26/)).toBeTruthy();
+    const cta = screen.getByRole('link', { name: /register/i });
+    expect(cta.getAttribute('href')).toBe('/r/fall-2026-tryouts');
   });
 
-  it('two+ open → count CTA to My Family', () => {
+  it('two+ open → count + "View all" to My Family', () => {
     const onNavigate = vi.fn();
     render(<ParentHomeRegistration family={{ openPrograms: [open1, { ...open1, id: 'p2', slug: 's2' }], familyBalances: [] }} onNavigate={onNavigate} />);
-    fireEvent.click(screen.getByText(/2 programs open to register/i));
+    expect(screen.getByText('2 programs open')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /view all/i }));
     expect(onNavigate).toHaveBeenCalledWith('/family');
   });
 
-  it('positive family due → "$X due" row to My Family', () => {
+  it('positive family due → "Family balance" + "$X due" → My Family', () => {
     const onNavigate = vi.fn();
     render(<ParentHomeRegistration family={{ openPrograms: [], familyBalances: [bal(8000)] }} onNavigate={onNavigate} />);
+    expect(screen.getByText('Family balance')).toBeTruthy();
     fireEvent.click(screen.getByText('$80.00 due'));
     expect(onNavigate).toHaveBeenCalledWith('/family');
   });
