@@ -691,8 +691,16 @@ arc bodies.
   height delta); V5 academy = facts chip, never a fake control in the RSVP slot; V6 state
   treatments restated; V7 coherence scope (V7.1 detail-denominator ships FIRST, V7.2 home chip
   vocabulary later, one PR each); V8 build plan PR-V1 (denominator + AP#43 test) → PR-V2 (card
-  pair to the render) → PR-V3 (home vocabulary, post-re-grade). AWAITING: Frank's ratification
-  (grade the render on device → GO).
+  pair to the render) → PR-V3 (home vocabulary, post-re-grade). ROUND 1 GRADED 5/10 → ROUND 2 (time-rail anatomy,
+  R2-1..R2-5: team-colored time rail as the card's axis, ONE facts line replacing chip confetti,
+  one status pill max, RSVP primacy, TODAY header) RATIFIED — Frank: GO (2026-06-12 16:00 ET).
+  **PR-V1 SHIPPED:** the SD-6 contract extracted to `lib/rsvpEligibility.js` (eligibleRoster +
+  denominatorFor — games: rostered+activated academy; practices: rostered+ALL academy, closing a
+  PR-A' contract hole where academy kids were excluded from practice denominators); detail
+  surfaces (hero / roster lock / RSVP summary) now receive the ELIGIBLE roster (the "14 no reply"
+  divergence dead), RSVP tab keeps the full roster for activation management; useScheduleData
+  re-derives through the same function — cross-surface agreement BY CONSTRUCTION + AP#43
+  invariant test. NEXT: PR-V2 (time-rail card pair to the round-2 render).
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

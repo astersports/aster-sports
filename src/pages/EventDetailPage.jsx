@@ -27,6 +27,7 @@ import ScopeChoiceDialog from '../components/event/ScopeChoiceDialog';
 import CollapsibleSection from '../components/shared/CollapsibleSection';
 import { composeFromEvent } from '../lib/briefings/composeFromEvent';
 import { eventTimeState, isRsvpOpen } from '../lib/eventWindows';
+import { eligibleRoster } from '../lib/rsvpEligibility';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 const ScheduleChangeComposer = lazy(() => import('../components/event/ScheduleChangeComposer'));
@@ -47,10 +48,8 @@ export default function EventDetailPage() {
     { startAt: event?.start_at, isStaff: role === 'admin' || role === 'coach', actorUserId: user?.id, actorName: user?.user_metadata?.full_name || user?.email || null });
   const refetchAll = useCallback(() => { refetch(); refetchRsvps(); }, [refetch, refetchRsvps]);
   useRefetchOnVisible(refetchAll);
-  const [editing, setEditing] = useState(false);
-  const [editMode, setEditMode] = useState('instance');
-  const [showCheckin, setShowCheckin] = useState(false);
-  const [showScoreSheet, setShowScoreSheet] = useState(false);
+  const [editing, setEditing] = useState(false), [editMode, setEditMode] = useState('instance');
+  const [showCheckin, setShowCheckin] = useState(false), [showScoreSheet, setShowScoreSheet] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [dutyCount, setDutyCount] = useState(0);
   const [pendingDiff, setPendingDiff] = useState(null);
@@ -73,11 +72,13 @@ export default function EventDetailPage() {
   }, [searchParams, rsvpLoading, roster.length]);
   const { requestDelete, pendingDelete, confirmDelete, cancelDelete } = useEventDelete(event);
   // Hooks must run on every render; gate the inner fetch on `enabled` instead.
-  const isStaff = role === 'admin' || role === 'coach';
-  const isGameType = event?.event_type === 'game' || event?.event_type === 'tournament';
+  const isStaff = role === 'admin' || role === 'coach', isGameType = event?.event_type === 'game' || event?.event_type === 'tournament';
   const isPast = event ? eventTimeState(event) === 'completed' : false; // SD-2 spine (was a 4h inline fallback — divergent def #3)
   const canActivateAcademy = isStaff && isGameType && !isPast;
-  const { activatedSet, toggle: toggleActivation } = useEventActivations(event?.id, canActivateAcademy);
+  // PR-V1: activations read for all roles (toggle stays staff-gated); count
+  // surfaces get the SD-6 ELIGIBLE roster, the RSVP tab keeps the full roster.
+  const { activatedSet, toggle: toggleActivation } = useEventActivations(event?.id, isGameType);
+  const eligible = eligibleRoster(roster, event?.event_type, activatedSet);
   const lock = useEventRosterLock(event?.id);
 
   if (eventLoading) return <div style={{ backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}><EventDetailHero.Skeleton /></div>;
@@ -105,10 +106,10 @@ export default function EventDetailPage() {
   return (
     <div style={{ backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} onCancel={() => setEventStatus('cancelled')} onReinstate={() => setEventStatus('scheduled')} />
-      <EventDetailHero event={event} isStaff={isStaff} isPast={isPast} rsvps={rsvps} roster={roster} onEnterScore={() => setShowScoreSheet(true)} onLockRoster={() => document.querySelector('[data-section="lock-roster"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} onNotify={() => navigate(composeFromEvent(event, isPast, { intent: 'notify' }))} onRsvpChange={refetchRsvps} />
+      <EventDetailHero event={event} isStaff={isStaff} isPast={isPast} rsvps={rsvps} roster={eligible} onEnterScore={() => setShowScoreSheet(true)} onLockRoster={() => document.querySelector('[data-section="lock-roster"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} onNotify={() => navigate(composeFromEvent(event, isPast, { intent: 'notify' }))} onRsvpChange={refetchRsvps} />
       {isStaff && <GameDayMode event={event} isStaff={isStaff} isGameType={isGameType} />}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
-      {isStaff && !isPast && <div data-section="lock-roster"><EventRosterLockSection event={event} isStaff={isStaff} rsvps={rsvps} roster={roster} onChange={refetchAll} /></div>}
+      {isStaff && !isPast && <div data-section="lock-roster"><EventRosterLockSection event={event} isStaff={isStaff} rsvps={rsvps} roster={eligible} onChange={refetchAll} /></div>}
       {event.parent_event_id && (
         <div style={{ padding: '6px 16px', fontSize: 13, color: 'var(--as-text-tertiary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Repeat size={12} strokeWidth={1.75} /> Part of a recurring series
@@ -121,7 +122,7 @@ export default function EventDetailPage() {
         <EventRidesTab event={event} />
       </CollapsibleSection>
       <CollapsibleSection title="RSVPs" sectionKey="rsvps" defaultOpen={false} count={`${rsvps.filter((r) => r.response === 'going').length}/${roster.length}`}>
-        <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} readOnly={isStaff ? false : !isRsvpOpen(event.start_at)} overrideActive={isStaff && !isRsvpOpen(event.start_at)} auditMap={auditMap} canActivateAcademy={canActivateAcademy} activatedSet={activatedSet} onToggleActivation={toggleActivation} />
+        <EventRsvpTab roster={roster} summaryRoster={eligible} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} readOnly={isStaff ? false : !isRsvpOpen(event.start_at)} overrideActive={isStaff && !isRsvpOpen(event.start_at)} auditMap={auditMap} canActivateAcademy={canActivateAcademy} activatedSet={activatedSet} onToggleActivation={toggleActivation} />
       </CollapsibleSection>
       {isStaff && isGameType && teamId && !isPast && <CollapsibleSection title="Academy call-ups" sectionKey="academy-callups" defaultOpen={false}><AcademyCallupPicker event={event} team={team} isStaff={isStaff} isLocked={lock.isLocked} academyCallupPlayerIds={lock.academyCallupPlayerIds} addCallup={lock.addCallup} removeCallup={lock.removeCallup} /></CollapsibleSection>}
       {dutyCount > 0 && <CollapsibleSection title="Volunteers" sectionKey="duties" defaultOpen={false} count={`${dutyCount}`}><EventDutiesTab eventId={event.id} /></CollapsibleSection>}

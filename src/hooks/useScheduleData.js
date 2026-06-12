@@ -9,6 +9,7 @@ import { useEventDutyCounts } from './useEventDutyCounts';
 import { useGameResultsMap } from './useGameResultsMap';
 import { rosterVisible } from '../lib/rosterVisibility';
 import { cacheKey } from '../lib/rsvpCache';
+import { denominatorFor } from '../lib/rsvpEligibility';
 
 // SCH-2 / DL-7 / VF-11 batch hook (SCHEDULE_L99_BUILD_SPEC §4 + §10.3).
 // ONE composed fetch layer for the whole visible schedule list: events,
@@ -25,7 +26,7 @@ export function useScheduleData() {
   const { counts: rideCounts } = useEventRideCounts(activities);
   const { counts: dutyCounts } = useEventDutyCounts(activities);
   const gameResults = useGameResultsMap(activities);
-  const [batch, setBatch] = useState({ childRsvps: {}, activated: {}, activationCounts: {}, rosteredByTeam: {}, commitments: {}, program: null });
+  const [batch, setBatch] = useState({ childRsvps: {}, activated: {}, activationCounts: {}, rosteredByTeam: {}, academyByTeam: {}, commitments: {}, program: null });
 
   const kidIds = useMemo(() => (myChildren || []).map((c) => c.playerId).filter(Boolean).sort().join(','), [myChildren]);
   const stableKey = useMemo(() => {
@@ -44,7 +45,7 @@ export function useScheduleData() {
     Promise.all([
       kids.length ? supabase.from('event_rsvps').select('event_id, player_id, response').in('event_id', ids).in('player_id', kids) : Promise.resolve({ data: [] }),
       supabase.from('player_activations').select('event_id, player_id').in('event_id', ids),
-      teamIds.length ? supabase.from('team_players').select('team_id').in('team_id', teamIds).eq('status', 'active').eq('roster_type', 'rostered') : Promise.resolve({ data: [] }),
+      teamIds.length ? supabase.from('team_players').select('team_id, roster_type').in('team_id', teamIds).eq('status', 'active') : Promise.resolve({ data: [] }),
       guardianId ? supabase.from('event_duties').select('event_id, duty_name').in('event_id', ids).eq('guardian_id', guardianId) : Promise.resolve({ data: [] }),
       user?.id ? supabase.from('event_ride_offers').select('event_id').in('event_id', ids).eq('driver_user_id', user.id).eq('status', 'active') : Promise.resolve({ data: [] }),
       activeSeason?.id ? supabase.from('programs').select('roster_visibility, program_type').eq('id', activeSeason.id).maybeSingle() : Promise.resolve({ data: null }),
@@ -60,31 +61,37 @@ export function useScheduleData() {
         activationCounts[r.event_id] = (activationCounts[r.event_id] || 0) + 1;
       });
       const rosteredByTeam = {};
-      (tpRes.data || []).forEach((r) => { rosteredByTeam[r.team_id] = (rosteredByTeam[r.team_id] || 0) + 1; });
+      const academyByTeam = {};
+      (tpRes.data || []).forEach((r) => {
+        if (r.roster_type === 'rostered') rosteredByTeam[r.team_id] = (rosteredByTeam[r.team_id] || 0) + 1;
+        else academyByTeam[r.team_id] = (academyByTeam[r.team_id] || 0) + 1;
+      });
       const commitments = {};
       (dutyRes.data || []).forEach((r) => { commitments[r.event_id] = r.duty_name ? `You signed up: ${r.duty_name}` : 'You signed up'; });
       (rideRes.data || []).forEach((r) => { commitments[r.event_id] = commitments[r.event_id] ? `You're driving · ${commitments[r.event_id]}` : "You're driving"; });
-      setBatch({ childRsvps, activated, activationCounts, rosteredByTeam, commitments, program: progRes.data || null });
+      setBatch({ childRsvps, activated, activationCounts, rosteredByTeam, academyByTeam, commitments, program: progRes.data || null });
     });
     return () => { cancelled = true; };
   }, [stableKey, kidIds, guardianId, user?.id, activeSeason?.id]);
 
-  // SD-6: the real committed denominator = rostered + activated academy.
-  // Replaces the roster_members raw size (which counted unactivated
-  // academy kids — the inflated "12NR" Frank saw on his own screenshots).
+  // SD-6 via the ONE contract (lib/rsvpEligibility, PR-V1): games count
+  // rostered + activated academy; practices count rostered + ALL academy
+  // (practices ARE the academy program). Same function the detail page
+  // derives from — the surfaces cannot diverge again.
   const counts = useMemo(() => {
     const out = {};
     (activities || []).forEach((a) => {
       const raw = rawCounts[a.id];
       if (!raw) return;
-      const denominator = (batch.rosteredByTeam[a.team_id] ?? null) === null
+      const rostered = batch.rosteredByTeam[a.team_id];
+      const denominator = rostered === undefined && batch.academyByTeam[a.team_id] === undefined
         ? raw.total
-        : batch.rosteredByTeam[a.team_id] + (batch.activationCounts[a.id] || 0);
+        : denominatorFor(a.event_type, rostered || 0, batch.academyByTeam[a.team_id] || 0, batch.activationCounts[a.id] || 0);
       const noResponse = Math.max(0, denominator - raw.going - raw.maybe - raw.not_going);
       out[a.id] = { ...raw, denominator, noResponse, total: denominator };
     });
     return out;
-  }, [activities, rawCounts, batch.rosteredByTeam, batch.activationCounts]);
+  }, [activities, rawCounts, batch.rosteredByTeam, batch.academyByTeam, batch.activationCounts]);
 
   // §10.1(2) privacy guard: suppress the going count (parents only) when
   // the team's RESOLVED roster visibility is Hidden (tryout/eval/camp).
