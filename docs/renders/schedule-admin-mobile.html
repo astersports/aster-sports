@@ -3,78 +3,128 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Schedule , admin (mobile)</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Schedule — Admin</title>
 <style>
-  :root{--as-navy:#22304f;--as-cobalt:#4a8fd4;--as-cobalt-dark:#3070b0;--as-green:#1f9d57;--as-red:#c0392b;--as-amber:#c2700a;--as-live:#d6492f;
-    --as-violet:#a78bfa;--as-cyan:#06b6d4;--as-slate:#94a3b8;--as-surface:#f1f3f7;--as-border:#e6e9ef;--as-border-2:#eef1f5;--as-text:#151924;--as-text-2:#475467;--as-muted:#6b7686;}
-  *{box-sizing:border-box;margin:0;padding:0}html{-webkit-text-size-adjust:100%}
-  body{font-family:'Inter',system-ui,sans-serif;background:var(--as-surface);color:var(--as-text);-webkit-font-smoothing:antialiased;line-height:1.4}
-  .wrap{width:100%;max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative}
-  .statusbar{background:#fff;padding:max(11px,env(safe-area-inset-top)) 22px 6px;display:flex;justify-content:space-between;font:600 14px Inter}
-  .hdr{background:var(--as-navy);color:#fff;display:flex;align-items:center;gap:10px;padding:11px 16px}
-  .hdr .logo{width:32px;height:32px;border-radius:8px;background:#16223c;display:grid;place-items:center;font-size:16px;flex:none}
-  .hdr h1{font-size:17px;font-weight:700;flex:1}
-  .toggle{display:flex;background:#16223c;border-radius:9px;padding:3px;gap:3px}
-  .toggle b{font:700 12px Inter;padding:6px 11px;border-radius:7px;color:#9fb0d0}.toggle b.on{background:#2b3c5e;color:#fff}
-  .body{padding:11px 14px calc(90px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
-
-  .filters{display:flex;gap:7px;flex-wrap:wrap}
-  .fsel{min-height:38px;border:1px solid var(--as-border);background:#fff;border-radius:8px;padding:0 11px;font:600 12.5px Inter;color:var(--as-text);display:flex;align-items:center;gap:5px}
-  .fsel svg{width:14px;height:14px;stroke:var(--as-muted);stroke-width:2;fill:none}
-  .fsel.dens{margin-left:auto;color:var(--as-cobalt-dark);border-color:#cfe0f5;background:#eef5fc}
-
-  .sectlbl{font:700 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--as-muted);padding:5px 2px 1px}
-  .daylbl{font:700 12px Inter;color:var(--as-navy);padding:3px 2px}
-  .daylbl span{color:var(--as-live);font-weight:700;margin-left:6px}
-
-  .row{background:#fff;border:1px solid var(--as-border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px}
-  .row .tm{font:700 12px Inter;color:var(--as-navy);width:48px;white-space:nowrap}
-  .bar{width:3px;align-self:stretch;border-radius:2px;flex:none}
-  .row .info{flex:1;min-width:0}
-  .row .info .t{font-size:13.5px;font-weight:600;color:var(--as-navy);display:flex;align-items:center;gap:6px}
-  .row .info .s{font-size:11.5px;color:var(--as-text-2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .typ{font:700 9px Inter;letter-spacing:.03em;text-transform:uppercase;padding:1px 5px;border-radius:4px}
-  .typ.game{background:#fbe6cf;color:var(--as-amber)}.typ.prac{background:#eaf0f7;color:var(--as-cobalt-dark)}
-  .nums{display:flex;flex-direction:column;align-items:flex-end;gap:1px;white-space:nowrap}
-  .nums .ct{font:700 13px Inter;color:var(--as-navy);font-variant-numeric:tabular-nums}
-  .nums .nr{font:600 10px Inter;color:var(--as-muted)}
-  .ride{font:600 11px Inter;color:var(--as-cobalt-dark)}
-
-  .fab{position:absolute;right:18px;bottom:calc(22px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;background:var(--as-cobalt);box-shadow:0 6px 18px rgba(74,143,212,.42);display:grid;place-items:center}
-  .fab svg{width:26px;height:26px;stroke:#fff;stroke-width:2.4;fill:none}
-  .anno{background:#f3f8fe;border:1px solid #cfe0f5;border-radius:11px;padding:12px 14px;margin-top:4px}
-  .anno p{font-size:12px;color:var(--as-text-2)}.anno p b{color:var(--as-text);font-weight:600}
-  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  :root{
+    --as-bg:#f5f6f8; --as-card:#ffffff; --as-border:#e6e8ec;
+    --as-text:#16181d; --as-text-2:#4b5563; --as-meta:#6b7280;
+    --as-accent:#4a8fd4; --as-live:#16a34a; --win:#15803d; --warn:#b45309; --draft:#6b7280;
+    --r6:6px; --r10:10px;
+    --sh-sm:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.04);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:Inter,-apple-system,system-ui,sans-serif;background:#c9ccd2;
+    display:flex;justify-content:center;padding:20px;color:var(--as-text)}
+  .phone{width:390px;max-width:100%;background:var(--as-bg);border-radius:38px;overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative;height:844px;display:flex;flex-direction:column}
+  .statusbar{height:50px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;
+    padding:0 24px 8px;font-size:13px;font-weight:600}
+  .hdr{flex:none;padding:6px 18px 10px}
+  .toprow{display:flex;align-items:center;justify-content:space-between}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--as-meta);text-transform:uppercase}
+  .h1{font-size:24px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+  .sharebtn{height:38px;width:38px;border-radius:var(--r6);background:var(--as-card);border:1.5px solid var(--as-border);
+    display:flex;align-items:center;justify-content:center;color:var(--as-text-2)}
+  .viewtoggle{display:inline-flex;margin-top:13px;background:var(--as-card);border:1.5px solid var(--as-border);
+    border-radius:999px;padding:3px}
+  .vbtn{font-size:13px;font-weight:600;padding:6px 16px;border-radius:999px;color:var(--as-text-2)}
+  .vbtn.on{background:var(--as-accent);color:#fff}
+  /* week strip */
+  .weekstrip{display:flex;gap:5px;margin-top:13px}
+  .wday{flex:1;text-align:center;padding:8px 0;border-radius:var(--r10);background:var(--as-card);
+    border:1px solid var(--as-border)}
+  .wday .dow{font-size:10px;font-weight:700;color:var(--as-meta);text-transform:uppercase}
+  .wday .dnum{font-size:15px;font-weight:700;margin-top:2px}
+  .wday .dots{display:flex;gap:2px;justify-content:center;margin-top:4px;height:6px}
+  .wday .ddot{width:5px;height:5px;border-radius:50%}
+  .wday.sel{background:#16181d;border-color:#16181d}
+  .wday.sel .dow,.wday.sel .dnum{color:#fff}
+  .scroll{flex:1;overflow-y:auto;padding:4px 18px 90px}
+  .band{margin-top:16px}
+  .bandhdr{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .bandlabel{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--as-meta)}
+  .card{background:var(--as-card);border:1px solid var(--as-border);border-radius:var(--r10);
+    box-shadow:var(--sh-sm);padding:13px 14px 13px 16px;position:relative;overflow:hidden;margin-bottom:10px}
+  .card .stripe{position:absolute;left:0;top:0;bottom:0;width:4px}
+  .row1{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .time{font-size:17px;font-weight:700;letter-spacing:-.01em}
+  .badge{font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;white-space:nowrap}
+  .b-count{background:rgba(74,143,212,.12);color:var(--as-accent)}
+  .b-draft{background:rgba(107,114,128,.14);color:var(--draft);display:flex;align-items:center;gap:5px}
+  .title{font-size:15px;font-weight:600;margin-top:5px}
+  .meta{font-size:13px;color:var(--as-text-2);margin-top:3px}
+  .teamtag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--as-text-2);margin-top:7px}
+  .tdot{width:9px;height:9px;border-radius:3px}
+  .opsrow{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px;padding-top:11px;border-top:1px solid var(--as-border)}
+  .stat{font-size:12px;font-weight:700;padding:5px 9px;border-radius:var(--r6)}
+  .stat-att{background:rgba(22,163,74,.10);color:var(--win)}
+  .stat-warn{background:rgba(180,83,9,.10);color:var(--warn)}
+  .fab{position:absolute;right:18px;bottom:96px;width:56px;height:56px;border-radius:18px;
+    background:var(--as-accent);box-shadow:0 8px 20px rgba(74,143,212,.45);display:flex;
+    align-items:center;justify-content:center;color:#fff}
+  .nav{position:absolute;bottom:0;left:0;right:0;height:78px;background:rgba(255,255,255,.92);
+    backdrop-filter:blur(12px);border-top:1px solid var(--as-border);display:flex;padding-bottom:18px}
+  .nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    font-size:10px;font-weight:600;color:var(--as-meta);text-decoration:none}
+  .nav a.on{color:var(--as-accent)}
+  .nav svg{width:22px;height:22px}
+  svg{stroke-width:1.75}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679;&#9679;&#9679;</span></div>
-  <div class="hdr"><span class="logo">&#9876;&#65039;</span><h1>Schedule</h1><span class="toggle"><b class="on">All</b><b>Games</b></span></div>
-
-  <div class="body">
-    <div class="filters">
-      <span class="fsel">All teams <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
-      <span class="fsel">All types <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
-      <span class="fsel dens">Detailed <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span>5G &nbsp; 100%</span></div>
+  <div class="hdr">
+    <div class="toprow">
+      <div><div class="eyebrow">Legacy Hoopers &middot; Admin</div><div class="h1">Schedule</div></div>
+      <div class="sharebtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5 8.6 10.5"/></svg></div>
     </div>
-
-    <div class="sectlbl">Next 7 days</div>
-    <div class="daylbl">Thursday Jun 12 <span>&middot; Today</span></div>
-
-    <div class="row"><span class="tm">6:00p</span><span class="bar" style="background:var(--as-cobalt)"></span><div class="info"><div class="t"><span class="typ prac">Prac</span>10U Black</div><div class="s">WCC Gym 2 &middot; 71&deg;</div></div><div class="nums"><span class="ct">12/14</span><span class="nr">NR 2</span></div></div>
-
-    <div class="row"><span class="tm">7:30p</span><span class="bar" style="background:var(--as-violet)"></span><div class="info"><div class="t"><span class="typ game">Game</span>11U Girls</div><div class="s">@ Harrison HS &middot; 68&deg;</div></div><div class="nums"><span class="ct">8/11</span><span class="ride">&#128663; 1 short</span></div></div>
-
-    <div class="daylbl">Saturday Jun 14</div>
-    <div class="row"><span class="tm">9:00a</span><span class="bar" style="background:var(--as-cobalt)"></span><div class="info"><div class="t"><span class="typ game">Game</span>10U Black</div><div class="s">vs Rye Rebels &middot; WCC 1</div></div><div class="nums"><span class="ct">8/13</span><span class="nr">NR 3</span></div></div>
-    <div class="row"><span class="tm">11:00a</span><span class="bar" style="background:var(--as-cyan)"></span><div class="info"><div class="t"><span class="typ game">Game</span>9U Boys</div><div class="s">@ White Plains &middot; 64&deg;</div></div><div class="nums"><span class="ct">10/12</span><span class="nr">NR 1</span></div></div>
-
-    <div class="anno"><p><b>Admin job: density + the whole org at a glance.</b> Counts-forward rows (going/NR, rides short), every filter, full-org scope, density resolves to the one Account default (SD-1). The NR denominator counts rostered + activated-for-this-event only (SD-6), not never-activated academy kids. Edit affordances stay on the detail page , quick actions are backlog, not this arc.</p></div>
+    <div class="viewtoggle"><span class="vbtn">List</span><span class="vbtn on">Week</span></div>
+    <div class="weekstrip">
+      <div class="wday"><div class="dow">Mon</div><div class="dnum">9</div><div class="dots"><span class="ddot" style="background:#4a8fd4"></span></div></div>
+      <div class="wday sel"><div class="dow">Tue</div><div class="dnum">10</div><div class="dots"><span class="ddot" style="background:#a78bfa"></span><span class="ddot" style="background:#06b6d4"></span></div></div>
+      <div class="wday"><div class="dow">Wed</div><div class="dnum">11</div><div class="dots"></div></div>
+      <div class="wday"><div class="dow">Thu</div><div class="dnum">12</div><div class="dots"><span class="ddot" style="background:#94a3b8"></span></div></div>
+      <div class="wday"><div class="dow">Fri</div><div class="dnum">13</div><div class="dots"></div></div>
+      <div class="wday"><div class="dow">Sat</div><div class="dnum">14</div><div class="dots"><span class="ddot" style="background:#f59e0b"></span></div></div>
+      <div class="wday"><div class="dow">Sun</div><div class="dnum">15</div><div class="dots"><span class="ddot" style="background:#06b6d4"></span></div></div>
+    </div>
   </div>
-  <div class="fab"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+  <div class="scroll">
+    <div class="band">
+      <div class="bandhdr"><span class="bandlabel">Tuesday, June 10</span></div>
+
+      <div class="card">
+        <div class="stripe" style="background:#a78bfa"></div>
+        <div class="row1"><div class="time">5:30p</div><div class="badge b-count">in 8h</div></div>
+        <div class="title">League Play vs Greenwich</div>
+        <div class="meta">Rippowam Cisqua School</div>
+        <div class="teamtag"><span class="tdot" style="background:#a78bfa"></span>11U Girls</div>
+        <div class="opsrow">
+          <span class="stat stat-att">9 going / 11 rostered</span>
+          <span class="stat stat-warn">1 ride unfilled</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="stripe" style="background:#06b6d4"></div>
+        <div class="row1"><div class="time">7:00p</div><div class="badge b-draft"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Draft</div></div>
+        <div class="title">Practice</div>
+        <div class="meta">Hommocks Middle School</div>
+        <div class="teamtag"><span class="tdot" style="background:#06b6d4"></span>9U Boys</div>
+        <div class="opsrow">
+          <span class="stat stat-warn">Not published</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="fab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></div>
+  <div class="nav">
+    <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/></svg>Home</a>
+    <a href="#" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>Schedule</a>
+    <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V5M9 19v-8M14 19V8M19 19v-5"/></svg>Records</a>
+    <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More</a>
+  </div>
 </div>
 </body>
 </html>
