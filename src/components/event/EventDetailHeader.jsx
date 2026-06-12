@@ -47,23 +47,28 @@ export default function EventDetailHeader({ event, team, isStaff, onEdit, onDele
   // are rare-and-destructive — overflow is the right home for both.
   const handleOverflowItem = (fn) => () => { setOverflowOpen(false); fn?.(); };
 
+  // V6 (design system): the legacy full-bleed team-color wash became a
+  // white header + 6px team stripe — same V1 rule as the cards.
   return (
-    <div style={{ backgroundColor: teamColor, padding: '0 8px 16px 4px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
+    <div style={{ backgroundColor: 'var(--as-bg-card)', borderBottom: '1px solid var(--as-border-default)' }}>
+      <div style={{ height: 6, backgroundColor: teamColor }} />
+      <div style={{ padding: '0 8px 12px 4px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => navigate(-1)} className="as-press" aria-label="Go back" style={iconBtn}>
-          <ArrowLeft size={20} strokeWidth={1.75} color="var(--as-text-inverse)" />
+          <ArrowLeft size={20} strokeWidth={1.75} color="var(--as-text-secondary)" />
         </button>
         <div style={{ display: 'flex', gap: 4 }}>
-          {isStaff && <button type="button" onClick={onCheckin} className="as-press" aria-label="Take attendance" style={iconBtn}><UserCheck size={20} strokeWidth={1.75} color="var(--as-text-inverse)" /></button>}
+          {isStaff && <button type="button" onClick={onCheckin} className="as-press" aria-label="Take attendance" style={iconBtn}><UserCheck size={20} strokeWidth={1.75} color="var(--as-text-secondary)" /></button>}
           {isStaff && <>
-            <button type="button" onClick={onEdit} className="as-press" aria-label="Edit event" style={iconBtn}><Pencil size={20} strokeWidth={1.75} color="var(--as-text-inverse)" /></button>
-            <SendBriefingButton anchorKind="event" anchorId={event.id} kindFilter={briefingKinds} variant="icon-only" iconColor="var(--as-text-inverse)" />
-            <button type="button" onClick={() => setOverflowOpen(true)} className="as-press" aria-label="More actions" style={iconBtn}><MoreHorizontal size={20} strokeWidth={1.75} color="var(--as-text-inverse)" /></button>
+            <button type="button" onClick={onEdit} className="as-press" aria-label="Edit event" style={iconBtn}><Pencil size={20} strokeWidth={1.75} color="var(--as-text-secondary)" /></button>
+            <SendBriefingButton anchorKind="event" anchorId={event.id} kindFilter={briefingKinds} variant="icon-only" iconColor="var(--as-text-secondary)" />
+            <button type="button" onClick={() => setOverflowOpen(true)} className="as-press" aria-label="More actions" style={iconBtn}><MoreHorizontal size={20} strokeWidth={1.75} color="var(--as-text-secondary)" /></button>
           </>}
         </div>
       </div>
-      <div style={{ padding: '0 12px', marginTop: 4 }}>
-        <h1 style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-inverse)', margin: 0, lineHeight: 1.3 }}>{summary}</h1>
+      <div style={{ padding: '0 12px', marginTop: 2 }}>
+        <h1 style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-secondary)', margin: 0, lineHeight: 1.3 }}>{summary}</h1>
+      </div>
       </div>
       <BottomSheet open={overflowOpen} onClose={() => setOverflowOpen(false)} initialHeight="auto" expandedHeight="auto">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '8px 0 16px' }}>

@@ -32,7 +32,7 @@ describe('EventDetailHero', () => {
     const { container } = withRouter(<EventDetailHero event={event} isStaff isPast={false} rsvps={[{ response: 'going' }, { response: 'going' }, { response: 'maybe' }]} roster={[{}, {}, {}, {}]} onNotify={vi.fn()} onLockRoster={vi.fn()} />);
     expect(container.textContent).toMatch(/PHD-McCurdy/);
     expect(container.textContent).toMatch(/CYO Spellman/);
-    expect(container.textContent).toMatch(/2 going/);
+    expect(container.textContent).toMatch(/2 of 4 going/);
     expect(container.textContent).toMatch(/Notify families/);
     expect(container.textContent).toMatch(/Lock roster/);
   });

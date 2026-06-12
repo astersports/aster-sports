@@ -115,7 +115,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
 
         {!completed && !isCancelled && (
           <EventCardFacts suppressCount={suppressCount} isStaffView={isStaff(role)} count={rsvpCount} rideCount={rideCount} dutyCount={dutyCount} commitment={commitment} academyNames={academyNames} compact={compact}
-            ridesEnabled={features.rides_enabled !== false} dutiesEnabled={features.duties_enabled !== false} />
+            ridesEnabled={features.rides_enabled !== false && event.enable_rides === true} dutiesEnabled={features.duties_enabled !== false} />
         )}
         {!compact && event.notes && !completed && !isCancelled && (
           <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{event.notes}</div>

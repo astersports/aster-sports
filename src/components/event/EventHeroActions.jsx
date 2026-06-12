@@ -27,7 +27,7 @@ const BTN = { flex: '1 1 140px', minHeight: 44, padding: '0 14px', borderRadius:
 const BTN_SEC = { ...BTN, backgroundColor: 'transparent', color: 'var(--as-accent)', border: '1px solid var(--as-accent)' };
 
 export default function EventHeroActions({
-  event, isStaff, isGameType, isPast,
+  event, isStaff, isGameType, isPast, activatedSet,
   onEnterScore, onLockRoster, onNotify,
   lockCount, onRsvpChange,
 }) {
@@ -45,11 +45,23 @@ export default function EventHeroActions({
     const msAfter = now - new Date(event.start_at).getTime();
     const inArrivalWindow = msUntil <= PARENT_ARRIVAL_WINDOW_BEFORE_MS && msAfter <= PARENT_ARRIVAL_WINDOW_AFTER_MS;
     if (inArrivalWindow && isGameType) return <ParentArrivalActions event={event} />;
-    // SD-11: parent RSVP closes AT start_at (was end-based isPast — a
-    // parent could flip an RSVP mid-game).
+    // SD-11: parent RSVP closes AT start_at. V6: tri-state BUTTONS (D4)
+    // — same control grammar as the detailed schedule card; unactivated
+    // academy kids get the violet sentence, never a fake control.
+    const academy = kids.filter((c) => c.memberType === 'futures_academy' && isGameType && !activatedSet?.has(c.playerId));
     return (
       <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {kids.map((c) => <ChildRsvp key={c.playerId} child={c} eventId={event.id} eventType={event.event_type} disabled={!isRsvpOpen(event.start_at, now)} onSave={onRsvpChange} />)}
+        {kids.map((c) => (
+          <div key={c.playerId}>
+            {kids.length > 1 && <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--as-text-secondary)' }}>{c.firstName}</div>}
+            <ChildRsvp child={c} eventId={event.id} eventType={event.event_type} variant="buttons" disabled={!isRsvpOpen(event.start_at, now)} onSave={onRsvpChange} />
+          </div>
+        ))}
+        {academy.length > 0 && (
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--as-academy)' }}>
+            {`${academy.map((c) => c.firstName).join(' and ')} ${academy.length === 1 ? "isn't" : "aren't"} activated for this game`}
+          </div>
+        )}
       </div>
     );
   }

@@ -21,7 +21,7 @@ afterEach(cleanup);
 const TEAM = { id: 't-1', name: '10U Black', team_color: '#4a8fd4' };
 const HOUR = 60 * 60 * 1000;
 const upcoming = () => ({
-  id: 'e-1', team_id: 't-1', event_type: 'game', status: 'scheduled',
+  id: 'e-1', team_id: 't-1', event_type: 'game', status: 'scheduled', enable_rides: true,
   start_at: new Date(Date.now() + 26 * HOUR).toISOString(),
   end_at: new Date(Date.now() + 27 * HOUR).toISOString(),
   teams: TEAM, location_name: 'Gym',
